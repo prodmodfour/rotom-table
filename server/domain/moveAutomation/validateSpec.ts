@@ -840,11 +840,16 @@ export const validateMoveSpecOperationSequence = (
   const movementChoiceEntries = indexed.filter(({ operation }) => (
     operation.kind === 'movement-request' && operation.payload.choice !== undefined
   ))
-  if (movementChoiceEntries.length > 1) {
+  const ordinaryMovementChoiceEntries = movementChoiceEntries.filter(({ operation }) => (
+    operation.kind !== 'movement-request'
+    || (!operation.reasonCode.startsWith('ability.transporter.carry.')
+      && !operation.reasonCode.startsWith('ability.transporter.both.'))
+  ))
+  if (ordinaryMovementChoiceEntries.length > 1) {
     fail(
       'invalid-definition',
-      movementChoiceEntries[1]!.path,
-      'a MoveSpec may contain at most one durable movement choice.',
+      ordinaryMovementChoiceEntries[1]!.path,
+      'a MoveSpec may contain at most one ordinary durable movement choice; reviewed Transporter companion branches are selected mutually exclusively.',
     )
   }
   for (const { operation, path } of movementChoiceEntries) {
@@ -862,18 +867,32 @@ export const validateMoveSpecOperationSequence = (
     const isReviewedResponseOwnerMovement = operation.recipients.kind === 'response-owner'
       && responseSource !== null
       && (responseSource?.kind === 'reaction-request' || responseSource?.kind === 'choice-request')
-    if (operation.recipients.kind !== 'actor' && !isReviewedResponseOwnerMovement) {
+    const isTransporterCompanionMovement = operation.recipients.kind === 'all-placements'
+      && responseSource?.kind === 'reaction-request'
+      && responseSource.reasonCode === 'ability.transporter.optional-teleport'
+      && (operation.reasonCode.startsWith('ability.transporter.carry.')
+        || operation.reasonCode.startsWith('ability.transporter.both.'))
+    if (operation.recipients.kind !== 'actor'
+      && !isReviewedResponseOwnerMovement
+      && !isTransporterCompanionMovement) {
       fail(
         'invalid-definition',
         `${path}.recipients`,
         'a durable movement choice must belong to the authoritative actor or the accepted owner of its reviewed response request.',
       )
     }
-    if (operation.payload.mode !== 'voluntary') {
+    const isReviewedSwayForcedMovement = operation.payload.mode === 'forced'
+      && operation.recipients.kind === 'actor'
+      && operation.reasonCode.startsWith('ability.sway.push-attacker:')
+      && responseSource?.kind === 'reaction-request'
+      && responseSource.reasonCode === 'ability.sway.optional-reflect'
+    if (operation.payload.mode !== 'voluntary'
+      && operation.payload.mode !== 'teleport'
+      && !isReviewedSwayForcedMovement) {
       fail(
         'invalid-definition',
         `${path}.payload.mode`,
-        'durable movement choices currently support reviewed voluntary movement only.',
+        'durable movement choices support only reviewed voluntary movement, Sway forced placement, or authoritative Teleport endpoints.',
       )
     }
     if (
@@ -985,19 +1004,23 @@ export const validateMoveSpecOperationSequence = (
     if (
       typeof operation.payload.distance !== 'number'
       || operation.payload.distance <= 0
-      || operation.payload.choice !== undefined
+      || (mode === 'swap' && operation.payload.choice !== undefined)
       || operation.payload.displacement !== undefined
     ) {
       fail(
         'invalid-definition',
         `${path}.payload`,
-        'teleports and swaps require a positive reviewed range and no displacement or inline choice mechanics.',
+        'teleports and swaps require a positive reviewed range and no displacement mechanics; swaps cannot expose an inline endpoint choice.',
       )
     }
+    const isTransporterCompanionTeleport = operation.payload.choice !== undefined
+      && operation.recipients.kind === 'all-placements'
+      && (operation.reasonCode.startsWith('ability.transporter.carry.')
+        || operation.reasonCode.startsWith('ability.transporter.both.'))
     if (
       mode === 'teleport'
       && (
-        operation.recipients.kind !== 'actor'
+        (operation.recipients.kind !== 'actor' && !isTransporterCompanionTeleport)
         || operation.payload.destinationSetId === null
       )
     ) {
@@ -1034,42 +1057,19 @@ export const validateMoveSpecOperationSequence = (
     )
   }
   if (multiHitEntries.length >= 1) {
-    const reactionRequestIds = new Set(indexed.flatMap(({ operation }) => (
-      operation.kind === 'reaction-request' ? [operation.id] : []
-    )))
-    const overlapping = indexed.find(({ operation }) => {
-      const reviewedPostMultiReaction = operation.phase === 'cleanup'
-        && operation.source.kind === 'operation'
-        && reactionRequestIds.has(operation.source.id)
-        && operation.kind === 'direct-hp'
-        && ['ability.innards-out.hp-loss', 'ability.iron-barbs.attacker-hp-loss']
-          .includes(operation.reasonCode)
-      const reviewedPostMultiStage = operation.phase === 'cleanup'
-        && operation.source.kind === 'operation'
-        && reactionRequestIds.has(operation.source.id)
-        && operation.kind === 'combat-stage'
-        && operation.reasonCode === 'ability.justified.raise-attack'
-      const reviewedPostMultiMotorDrive = operation.phase === 'after-damage'
-        && operation.source.kind === 'lifecycle-event'
-        && operation.source.id.startsWith('ability.motor-drive.target:')
-        && operation.kind === 'combat-stage'
-        && operation.reasonCode === 'ability.motor-drive.raise-speed-on-electric-hit'
-      return operation.kind === 'damage'
-        || (operation.kind === 'direct-hp' && !reviewedPostMultiReaction)
-        || operation.kind === 'heal'
-        || operation.kind === 'condition'
-        || (operation.kind === 'combat-stage' && !reviewedPostMultiStage
-          && !reviewedPostMultiMotorDrive && !(
-          operation.phase === 'after-damage'
-          && operation.source.kind === 'operation'
-          && reactionRequestIds.has(operation.source.id)
-        ))
-    })
+    const overlapping = indexed.find(({ operation }) => (
+      operation.kind === 'damage'
+      || (
+        ['direct-hp', 'heal', 'condition', 'combat-stage'].includes(operation.kind)
+        && operation.phase !== 'after-damage'
+        && operation.phase !== 'cleanup'
+      )
+    ))
     if (overlapping) {
       fail(
         'invalid-definition',
         overlapping.path,
-        'top-level core effects cannot overlap a pre-reduced multi-hit operation; use its bounded after-each/after-all effects.',
+        'top-level core effects alongside a pre-reduced multi-hit operation must be reviewed post-damage effects.',
       )
     }
   }

@@ -34,11 +34,14 @@ import {
 } from '#shared/abilityAutomation/clientCommands'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { PokedexRecord } from '~/types/pokemon'
+import pokedexData from '~~/data/reference/pokedex.json'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { AbilitySpecTargetingKind } from '#shared/abilityAutomation/spec'
 import type { MoveSelector } from '#shared/moveAutomation/selectors'
 import { findMove } from '~~/data/ptuReference'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
+import { gridFootprintCells } from '~/utils/gridGeometry'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { splitSheetItemNames } from '~/utils/sheetItemNames'
 import {
@@ -56,6 +59,7 @@ import {
 } from '#shared/abilityAutomation/aa077'
 import { AA078_LIQUID_VOICE_OPTION_BY_ID } from '#shared/abilityAutomation/aa078'
 import { aa079MimicryTypeOptions } from '../domain/abilityAutomation/mechanics/aa079Activated'
+import { aa085QuickCloakTypeOptions } from '../domain/abilityAutomation/mechanics/aa085to100Activated'
 import {
   AA080_DREEPY_MOVEMENT_SPEED,
   AA080_MINI_NOSE_MOVEMENT_SPEED,
@@ -80,13 +84,18 @@ import {
   ABILITY_AUTOMATION_RUNTIME_REGISTRY,
   type AbilityAutomationRuntimeRegistry,
 } from '../domain/abilityAutomation/registry'
-import { resolveAuthoritativeAbilityTargets } from '../domain/abilityAutomation/targeting'
+import {
+  configuredAbilityTargetWillingness,
+  resolveAuthoritativeAbilityTargets,
+} from '../domain/abilityAutomation/targeting'
 import { createMoveAutomationWeatherResolver } from '../domain/moveAutomation/weather'
 import { aa071ForecastTypeResolution } from '../domain/abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa076BerryJuiceBuffSlots } from '../domain/abilityAutomation/mechanics/aa076Activated'
 import { aa077VoluntaryDropSlots } from '../domain/abilityAutomation/mechanics/aa077ItemIntegration'
 import { abilityIsCopyable } from '../domain/abilityAutomation/effectiveAbilities'
 import { resolveMoveAutomationItemRuleIdentity } from '../domain/moveAutomation/itemRuleData'
+import { resolveAuthoritativeMoveItemResources } from '../domain/moveAutomation/itemResources'
+import { authoritativeAbilityItemResourceRequirementsFor } from '../domain/abilityAutomation/itemProviders'
 import {
   createSqliteAbilityDeclarationOfferRepository,
   type AbilityDeclarationOfferRepository,
@@ -151,6 +160,10 @@ const declarationsFor = (
           predicate: declaration.predicate,
           requestedPlacementIds: context.tokens.map(token => token.id),
           visiblePlacementIds: context.tokens.map(token => token.id),
+          willingnessDeclarations: configuredAbilityTargetWillingness({
+            map: context.map,
+            actorPlacementId: context.actor.placement.id,
+          }),
         })
         const ballFetchTargets = context.runtime.canonicalId === 'Ball Fetch' && modeId === 'fetch'
           ? new Set((context.map.encounterState?.abilityOwnedState?.entries ?? []).flatMap(entry => (
@@ -213,6 +226,10 @@ const declarationsFor = (
           ? (() => {
               const active = [...new Set(createMoveAutomationWeatherResolver(context.map, {
                 subjectPlacementId: context.actor.placement.id,
+                subjectOccupiedCells: gridFootprintCells(
+                  context.actor.token.position,
+                  context.actor.token,
+                ),
               }).active()
                 .map(weather => AA071_WEATHER_TYPE_BY_KIND[weather.kind]))]
               return active.length > 0 ? active : ['normal' as const]
@@ -220,7 +237,7 @@ const declarationsFor = (
           : context.runtime.canonicalId === 'Mimicry' && modeId === 'activate'
             ? aa079MimicryTypeOptions(context)
             : context.runtime.canonicalId === 'Quick Cloak' && modeId === 'activate'
-              ? (['grass', 'ground', 'steel'] as const)
+              ? aa085QuickCloakTypeOptions(context)
               : POKEMON_TYPE_IDS
         options = typeIds.map((typeId, index) => option(
           declaration.id, index, declaration.kind, { kind: 'type', typeId },
@@ -244,6 +261,34 @@ const declarationsFor = (
           if (!moveNames.includes('Bonemerang')) moveNames.push('Bonemerang')
           const eligible = new Set(['Bone Club', 'Bone Rush', 'Bonemerang'])
           moveNames.splice(0, moveNames.length, ...moveNames.filter(moveName => eligible.has(moveName)))
+        }
+        if (context.runtime.canonicalId === 'Splendorous Rider' && modeId === 'activate') {
+          const known = new Set(moveNames.map(name => name.trim().toLowerCase()))
+          const mountMoves = context.tokens.filter(token => (
+            token.id !== context.actor.placement.id
+            && context.queries.relationships.relation(context.actor.placement.id, token.id) === 'ally'
+            && ptuGridDistanceBetweenFootprints(context.actor.token, token) <= 1
+          )).flatMap(token => {
+            const placement = context.queries.placements.get(token.id)
+            const resolved = placement ? context.queries.sheets.forPlacement(placement) : null
+            if (resolved?.kind !== 'pokemon') return []
+            const sheet = resolved.sheet as CharacterSheet
+            const species = (pokedexData as readonly PokedexRecord[]).find(entry => (
+              entry.species.trim().toLowerCase() === sheet.species.trim().toLowerCase()
+            ))
+            const mountable = [
+              ...(species?.capabilities?.other ?? []),
+              ...(sheet.capabilities?.other ?? []),
+            ].some(capability => /^mountable(?:\s+\d+)?$/i.test(capability.trim()))
+            if (!mountable) return []
+            return (sheet.movelist ?? []).flatMap(move => (
+              typeof move.name === 'string' && move.name.trim()
+                && !known.has(move.name.trim().toLowerCase())
+                && MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve(move.name.trim()) !== null
+                ? [move.name.trim()] : []
+            ))
+          })
+          moveNames.splice(0, moveNames.length, ...new Set(mountMoves))
         }
         if (context.runtime.canonicalId === 'Empower' && modeId === 'activate') {
           moveNames.push(...reviewedAbilityConnectionMoveNames(
@@ -319,6 +364,12 @@ const declarationsFor = (
             }))
         : context.queries.items.requirements()
             .flatMap(requirement => context.queries.items.referencesForRequirement(requirement.id))
+            .filter(reference => context.runtime.canonicalId !== 'Symbiosis' || (
+              reference.kind === 'pokemon-held'
+              && reference.owner.kind === 'sheet'
+              && reference.owner.sheetKind === 'pokemon'
+              && reference.owner.slug === context.actor.sheet.slug
+            ))
             .map((reference, index) => option(declaration.id, index, declaration.kind, {
               kind: 'item',
               itemId: reference.itemId,
@@ -432,7 +483,20 @@ const declarationsFor = (
           ))
         }
         else if (context.runtime.canonicalId === 'Regal Challenge' && modeId === 'activate') {
-          options = ['deference', 'defiance'].map((branchId, index) => option(
+          options = [
+            'defiance',
+            ...['attack', 'defense', 'special-attack', 'special-defense', 'speed', 'accuracy']
+              .map(statId => `deference.${statId}`),
+          ].map((branchId, index) => option(
+            declaration.id, index, declaration.kind, { kind: 'branch', branchId },
+          ))
+        }
+        else if (context.runtime.canonicalId === 'Strange Tempo' && modeId === 'activate') {
+          options = [
+            'act-normally',
+            ...['attack', 'defense', 'special-attack', 'special-defense', 'speed', 'accuracy']
+              .map(statId => `cure-confusion.${statId}`),
+          ].map((branchId, index) => option(
             declaration.id, index, declaration.kind, { kind: 'branch', branchId },
           ))
         }
@@ -660,10 +724,21 @@ export const beginAbilityDeclarationUseCase = (
     fail(409, 'Ability mode cannot be invoked by a declaration.')
   }
   const pokemonSheets = listRepositorySheets<CharacterSheet>(sheetRepository, 'pokemon')
+  const pokemonBySlug = new Map(pokemonSheets.map(sheet => [sheet.slug, sheet]))
+  const itemResources = resolveAuthoritativeMoveItemResources({
+    map,
+    actorPlacementId: command.actorPlacementId,
+    selectedTargetPlacementIds: [],
+    pokemonSheets: pokemonBySlug,
+    trainerSheets: trainerBySlug,
+    groupInventories: new Map(),
+    requirements: authoritativeAbilityItemResourceRequirementsFor(command.canonicalId),
+  })
   const context = buildAuthoritativeAbilityContext({
     map,
-    pokemonSheets: new Map(pokemonSheets.map(sheet => [sheet.slug, sheet])),
+    pokemonSheets: pokemonBySlug,
     trainerSheets: trainerBySlug,
+    itemResources,
     request: {
       canonicalId: command.canonicalId,
       modeId: command.modeId,

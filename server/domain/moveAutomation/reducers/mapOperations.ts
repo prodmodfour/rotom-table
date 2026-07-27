@@ -21,6 +21,7 @@ import { deepCloneJson } from '~/utils/serialization'
 import type { MoveSpecEmittedOperation } from '../executeSpec'
 import { AA073_GULP_MISSILE_CONSUME_REASON } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
 import { AA075_ILLUSION_BREAK_REASON } from '../../abilityAutomation/mechanics/aa075MoveIntegration'
+import { aa085to100BoundRecipientId } from '../../abilityAutomation/mechanics/aa085to100MoveIntegration'
 import {
   canonicalMoveEffectPlacementIds,
   expectedMoveEffectRecipientIds,
@@ -216,7 +217,16 @@ export const reduceMoveMapOperations = (
         || (emittedIds.length === 0
           && !dynamic['hit-targets'].includes(illusionTargetId))
       )
-    const expectedIds = reviewedIllusionNarrowing ? emittedIds : selectorExpectedIds
+    const boundRecipientId = aa085to100BoundRecipientId({ operation })
+    const reviewedExactRecipientNarrowing = boundRecipientId !== null
+      && (emittedIds.length === 0
+        || (emittedIds.length === 1 && emittedIds[0] === boundRecipientId))
+    const reviewedStenchNarrowing = operation.reasonCode === 'ability.stench.flinch-accuracy-penalty'
+      && emittedIds.every((id, index) => id === selectorExpectedIds[index])
+    const expectedIds = reviewedIllusionNarrowing
+      || reviewedExactRecipientNarrowing
+      || reviewedStenchNarrowing
+      ? emittedIds : selectorExpectedIds
     const dynamicGulpMissileConsume = operation.reasonCode === AA073_GULP_MISSILE_CONSUME_REASON
       && emittedIds.every((id, index) => id === expectedIds[index])
     if (
@@ -225,7 +235,7 @@ export const reduceMoveMapOperations = (
     ) {
       failMoveMapOperationReduction(
         'recipient-set-mismatch',
-        `Operation ${operation.id} recipients do not match selector ${operation.recipients.kind}.`,
+        `Operation ${operation.id} recipients do not match selector ${operation.recipients.kind} (emitted ${emittedIds.join(',') || 'none'}; expected ${expectedIds.join(',') || 'none'}).`,
       )
     }
 

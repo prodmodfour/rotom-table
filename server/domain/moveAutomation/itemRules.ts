@@ -259,11 +259,18 @@ const equippedCandidates = (input: {
     placementId: string,
     canonicalItemId: string,
   ) => boolean
+  readonly sharedEquippedReferences?: (placementId: string) => readonly MoveItemReference[]
 }): readonly ProfileCandidate[] => {
   const seen = new Set<string>()
   const candidates: ProfileCandidate[] = []
-  for (const reference of input.items.forRequirement(input.requirementId)) {
-    if (!referenceMatchesPlacement(reference, input.placement)) continue
+  for (const candidate of [
+    ...input.items.forRequirement(input.requirementId).map(reference => ({ reference, shared: false })),
+    ...(input.sharedEquippedReferences?.(input.placement.id) ?? [])
+      .map(reference => ({ reference, shared: true })),
+  ]) {
+    const { reference } = candidate
+    if (!candidate.shared && !referenceMatchesPlacement(reference, input.placement)) continue
+    if (candidate.shared && reference.kind !== 'pokemon-held') continue
     const bindingId = moveItemEffectBindingId(reference)
     if (seen.has(bindingId)) continue
     seen.add(bindingId)
@@ -331,6 +338,10 @@ export const createMoveAutomationItemRuleResolver = (input: {
     placementId: string,
     canonicalItemId: string,
   ) => boolean
+  /** Reviewed static multiplier for numeric stored-food benefits (for example Ripen). */
+  readonly digestionNumericBenefitMultiplier?: (placementId: string) => number
+  /** Exact immutable Held Item references shared by effects such as Symbiosis. */
+  readonly sharedEquippedReferences?: (placementId: string) => readonly MoveItemReference[]
 }): MoveAutomationItemRuleResolver => {
   const placements = new Map(input.placements.map(placement => [placement.id, placement]))
   const sheets = new Map(input.sheets.map(sheet => [`${sheet.kind}:${sheet.slug}`, sheet.sheet]))
@@ -370,6 +381,7 @@ export const createMoveAutomationItemRuleResolver = (input: {
             requirementId: query.requirementId!,
             items: input.items,
             rareBenefitEligibleForPlacement: input.rareBenefitEligibleForPlacement,
+            sharedEquippedReferences: input.sharedEquippedReferences,
           })
         : digestionBuffNames(placement, sheet).flatMap((name) => {
             const profile = resolveMoveAutomationItemRuleProfile(name, {
@@ -421,10 +433,16 @@ export const createMoveAutomationItemRuleResolver = (input: {
         )
       }
       const selected = eligible[0] ?? null
+      const selectedValue = selected ? contributionValue(query.query, selected.profile) : null
+      const value = query.source === 'digestion-buff'
+        && selected?.family === 'berry'
+        && typeof selectedValue === 'number'
+        ? selectedValue * Math.max(1, input.digestionNumericBenefitMultiplier?.(placement.id) ?? 1)
+        : selectedValue
       return deepFreeze({
         placementId: placement.id,
         query: query.query,
-        value: selected ? contributionValue(query.query, selected.profile) : null,
+        value,
         physicalItemCount,
         candidates,
         reasonCode: selected

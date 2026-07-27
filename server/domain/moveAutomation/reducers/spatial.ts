@@ -203,6 +203,13 @@ export interface ReduceMoveSpatialEffectsInput {
   readonly context: AuthoritativeMoveRulesContext
   readonly operations: readonly MoveResolvedSpatialEffectOperation[]
   readonly dynamicRecipients: MoveEffectDynamicRecipientSets
+  /** Nested reviewed Moves resolve selectors and relative vectors from their own actor context. */
+  readonly contextForOperation?: (
+    operation: MoveReducibleSpatialEffectOperation,
+  ) => AuthoritativeMoveRulesContext
+  readonly dynamicRecipientsForOperation?: (
+    operation: MoveReducibleSpatialEffectOperation,
+  ) => MoveEffectDynamicRecipientSets
   readonly chosenDirections?: MoveSpatialChosenDirectionResolver
   readonly destinations?: MoveSpatialDestinationResolver
   readonly willingness?: MoveSpatialWillingnessResolver
@@ -793,11 +800,6 @@ const resolveDisplacementMovement = (input: {
 export const reduceMoveSpatialEffects = (
   input: ReduceMoveSpatialEffectsInput,
 ): MoveSpatialEffectReduction => {
-  const dynamic = resolveMoveEffectDynamicRecipients(
-    input.context,
-    input.dynamicRecipients,
-    recipientFailure,
-  )
   const operationIds = new Set<string>()
   const movements: MoveReducedSpatialMovement[] = []
   const operationResults: MoveSpatialEffectOperationResult[] = []
@@ -818,6 +820,12 @@ export const reduceMoveSpatialEffects = (
   for (const emission of orderedOperations) {
     const { operation } = emission
     const operationId = operation.id
+    const operationContext = input.contextForOperation?.(operation) ?? input.context
+    const dynamic = resolveMoveEffectDynamicRecipients(
+      operationContext,
+      input.dynamicRecipientsForOperation?.(operation) ?? input.dynamicRecipients,
+      recipientFailure,
+    )
     if (isDisplacementOperation(operation)) assertDisplacementOperation(operation)
     else if (isMoveSpatialRelocationOperation(operation)) {
       assertMoveSpatialRelocationOperation(operation, fail)
@@ -829,7 +837,7 @@ export const reduceMoveSpatialEffects = (
     operationIds.add(operation.id)
 
     const emittedIds = canonicalMoveEffectPlacementIds(
-      input.context,
+      operationContext,
       emission.recipientIds,
       `spatial operation ${operation.id} recipients`,
       recipientFailure,
@@ -837,7 +845,7 @@ export const reduceMoveSpatialEffects = (
     const expectedIds = operation.recipients.kind === 'response-owner'
       ? emittedIds
       : expectedMoveEffectRecipientIds(
-          input.context,
+          operationContext,
           operation,
           dynamic,
           recipientFailure,
@@ -872,7 +880,7 @@ export const reduceMoveSpatialEffects = (
       const resolved: MoveSpatialMovement[] = []
       for (const recipientId of recipientIds) {
         const movement = resolveDisplacementMovement({
-          context: input.context,
+          context: operationContext,
           operation,
           recipientId,
           dynamic,
@@ -908,7 +916,7 @@ export const reduceMoveSpatialEffects = (
       fail('unsupported-operation', `Spatial operation ${operationId} is unsupported.`)
     }
     const resolved = resolveMoveSpatialRelocation({
-      context: input.context,
+      context: operationContext,
       operation,
       recipientIds,
       positions,
@@ -916,13 +924,13 @@ export const reduceMoveSpatialEffects = (
       destinations: input.destinations,
       willingness: input.willingness,
       resolveFootprint: (placementId, role, currentPositions) => spatialFootprint(
-        input.context,
+        operationContext,
         placementId,
         role,
         currentPositions,
       ),
       resolveDistance: recipientPlacementId => resolveSpatialDistance({
-        context: input.context,
+        context: operationContext,
         operation,
         selectorState: selectorStateFor(recipientPlacementId, dynamic),
       }),
@@ -999,6 +1007,9 @@ export const applyMoveSpatialEffectResultsToTrace = (input: {
     emission.operation.id,
     emission.operation,
   ]))
+  const nestedOperationIds = new Set(input.operations.flatMap(emission => (
+    emission.childResolutionId ? [emission.operation.id] : []
+  )))
   const resultsById = new Map(input.results.map(result => [result.operationId, result]))
   const matched = new Set<string>()
   const events = input.trace.events.map((event) => {
@@ -1009,7 +1020,9 @@ export const applyMoveSpatialEffectResultsToTrace = (input: {
     if (
       !operation
       || event.operationKind !== 'movement-request'
-      || event.phase !== operation.phase
+      // Nested operations are deliberately audited at their Ability invocation
+      // point even though spatial reduction retains their reviewed movement phase.
+      || (event.phase !== operation.phase && !nestedOperationIds.has(event.operationId))
       || event.reasonCode !== operation.reasonCode
     ) {
       return fail(
@@ -1046,7 +1059,8 @@ export const isMoveSpatialEffectEmission = (
   value.operation.kind === 'movement-request'
   && (
     value.operation.payload.displacement !== undefined
-    || value.operation.payload.mode === 'teleport'
+    || (value.operation.payload.mode === 'teleport'
+      && value.operation.payload.choice === undefined)
     || value.operation.payload.mode === 'swap'
   )
 )

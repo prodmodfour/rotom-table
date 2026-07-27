@@ -281,6 +281,42 @@ describe('authoritative durable movement choices', () => {
     }), 'movement-choice-candidate-limit')
   })
 
+  it('retains teleport semantics while revalidating a route-obstructed endpoint', () => {
+    const map: TabletopMap = {
+      ...mapFixture([
+        placement('actor', { x: 0, y: 0, z: 0 }),
+        placement('blocker', { x: 1, y: 0, z: 0 }),
+      ]),
+      dimensions: { x: 4, y: 1, z: 1 },
+    }
+    const common = {
+      kind: 'destination' as const,
+      map,
+      sheets: sheetsFor('actor', 'blocker'),
+      placementId: 'actor',
+      setId: 'test.teleport-set',
+      maximumDistance: 4,
+      mode: 'teleport' as const,
+    }
+    const set = enumerateAuthoritativeMovementChoices({
+      ...common,
+      candidateDestinations: [{ x: 3, y: 0, z: 0 }],
+    })
+
+    expect(set.mode).toBe('teleport')
+    expect(set.choices).toHaveLength(1)
+    const revalidated = revalidateAuthoritativeMovementChoice({
+      ...common,
+      option: set.choices[0]!.option,
+    })
+    expect(revalidated.movement).toMatchObject({
+      mode: 'teleport',
+      destination: { x: 3, y: 0, z: 0 },
+      path: [{ x: 0, y: 0, z: 0 }, { x: 3, y: 0, z: 0 }],
+      triggeringSteps: [],
+    })
+  })
+
   it('revalidates the selected stored option and rejects stale or forged coordinates', () => {
     const baseMap = mapFixture()
     const common = {

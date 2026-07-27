@@ -1,10 +1,16 @@
 import type { MoveResolutionAuditTrace } from '#shared/moveAutomation/trace'
+import type { EncounterState } from '#shared/moveAutomation/encounterState'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import {
   createMoveAutomationCombatStageUpdateAccumulator,
   createMoveAutomationConditionUpdateAccumulator,
 } from '~/utils/moveAutomationStatusUpdates'
+import type {
+  MoveAutomationCombatStageUpdate,
+  MoveAutomationConditionUpdate,
+  MoveAutomationHpUpdate,
+} from '~/types/moveAutomation'
 import {
   deduplicateAuthoritativeMoveSheetReads,
   type AuthoritativeMoveRulesContext,
@@ -108,6 +114,13 @@ export interface ReduceMoveCoreTokenOperationStateInput {
    * interpreter and may never widen or reorder the authoritative set.
    */
   readonly branchControlledOperationIds?: ReadonlySet<string>
+  /** State already reduced by a bounded multi-hit operation earlier in this resolution. */
+  readonly initialState?: {
+    readonly hpUpdates: readonly MoveAutomationHpUpdate[]
+    readonly conditionUpdates: readonly MoveAutomationConditionUpdate[]
+    readonly combatStageUpdates: readonly MoveAutomationCombatStageUpdate[]
+    readonly encounterState?: EncounterState
+  }
 }
 
 export interface ReduceMoveCoreTokenEffectsInput
@@ -232,6 +245,7 @@ const reduceRecipient = (options: {
       recipient: options.recipient,
       accumulator: options.hpAccumulator,
       damage: options.damage,
+      context: options.context,
     })
   }
   if (operation.kind === 'direct-hp') {
@@ -283,8 +297,40 @@ export const reduceMoveCoreTokenOperationState = (
   )
   const hpAccumulator = createMoveAutomationHpUpdateAccumulator()
   const conditionAccumulator = createMoveAutomationConditionUpdateAccumulator()
-  const conditionEncounterAccumulator = createMoveConditionEncounterStateAccumulator(input.context)
+  const conditionEncounterAccumulator = createMoveConditionEncounterStateAccumulator(
+    input.context,
+    input.initialState?.encounterState,
+  )
   const stageAccumulator = createMoveAutomationCombatStageUpdateAccumulator()
+  for (const update of input.initialState?.hpUpdates ?? []) {
+    const token = input.context.queries.tokens.get(update.id)
+      ?? failMoveCoreTokenEffectReduction(
+        'recipient-not-found',
+        `Initial multi-hit HP recipient ${update.id} was not resolved.`,
+      )
+    const currentInjuries = hpAccumulator.getInjuries(token)
+    const nextInjuries = update.injuries ?? currentInjuries
+    if (nextInjuries > currentInjuries) hpAccumulator.addInjuries(token, nextInjuries - currentInjuries)
+    else if (nextInjuries < currentInjuries) hpAccumulator.removeInjuries(token, currentInjuries - nextInjuries)
+    hpAccumulator.set(token, update.currentHp)
+    if (update.temporaryHp !== undefined) hpAccumulator.setTemporaryHp(token, update.temporaryHp)
+  }
+  for (const update of input.initialState?.conditionUpdates ?? []) {
+    const token = input.context.queries.tokens.get(update.id)
+      ?? failMoveCoreTokenEffectReduction(
+        'recipient-not-found',
+        `Initial multi-hit condition recipient ${update.id} was not resolved.`,
+      )
+    conditionAccumulator.set(token, update.conditions)
+  }
+  for (const update of input.initialState?.combatStageUpdates ?? []) {
+    const token = input.context.queries.tokens.get(update.id)
+      ?? failMoveCoreTokenEffectReduction(
+        'recipient-not-found',
+        `Initial multi-hit stage recipient ${update.id} was not resolved.`,
+      )
+    stageAccumulator.set(token, update.stages)
+  }
   const temporaryHpAvailable = Boolean(input.context.map.activeScene)
   const operationIds = new Set<string>()
   const operationResults: MoveCoreTokenEffectOperationResult[] = []
@@ -341,7 +387,7 @@ export const reduceMoveCoreTokenOperationState = (
     ) {
       failMoveCoreTokenEffectReduction(
         'recipient-set-mismatch',
-        `Operation ${operation.id} recipients do not match selector ${operation.recipients.kind}.`,
+        `Operation ${operation.id} recipients do not match selector ${operation.recipients.kind} (emitted ${emittedIds.join(',') || 'none'}; expected ${expectedIds.join(',') || 'none'}).`,
       )
     }
 
@@ -523,6 +569,7 @@ export const reduceMoveCoreTokenEffects = (
     ...(input.branchControlledOperationIds === undefined
       ? {}
       : { branchControlledOperationIds: input.branchControlledOperationIds }),
+    ...(input.initialState === undefined ? {} : { initialState: input.initialState }),
   })
   return Object.freeze({
     ...reduction,

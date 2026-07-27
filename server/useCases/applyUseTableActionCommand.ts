@@ -58,6 +58,10 @@ import { applyAa079MagmaArmorGrappleTrigger } from '../domain/abilityAutomation/
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
 import { applyAa081NaturalCureForBreather } from '../domain/abilityAutomation/mechanics/aa081LifecycleIntegration'
 import { applyAa085to100RegeneratorTrigger } from '../domain/abilityAutomation/mechanics/aa085to100LifecycleIntegration'
+import {
+  applyAa091SprintTrigger,
+  cleanupAa085to100CurledUpForBreather,
+} from '../domain/abilityAutomation/mechanics/aa085to100ActionIntegration'
 import { clearAa083PerishCountForBreather } from '../domain/abilityAutomation/mechanics/aa083LifecycleIntegration'
 import {
   aa077HasAuthoritativeDisengageWindow,
@@ -337,7 +341,7 @@ type ResolvedUseTableActionTarget = {
 
 type ResolvedActionToken = Pick<
   SpawnedPokemon,
-  'id' | 'species' | 'position' | 'base' | 'clearance' | 'sheetKind' | 'sheetSlug' | 'combatStages' | 'conditions'
+  'id' | 'species' | 'position' | 'base' | 'clearance' | 'sheetKind' | 'sheetSlug' | 'fullMaxHp' | 'maxHp' | 'combatStages' | 'conditions'
 >
 
 type SheetCacheEntry = {
@@ -903,6 +907,8 @@ const tokenFromPlacement = (
       clearance: footprint?.clearance ?? 1,
       sheetKind: placement.sheetKind,
       sheetSlug: placement.sheetSlug,
+      fullMaxHp: snapshot.fullMaxHp,
+      maxHp: snapshot.maxHp,
       combatStages: snapshot.combatStages,
       conditions: snapshot.conditions,
     }
@@ -919,6 +925,8 @@ const tokenFromPlacement = (
     clearance: footprint?.clearance ?? 1,
     sheetKind: placement.sheetKind,
     sheetSlug: placement.sheetSlug,
+    fullMaxHp: snapshot.fullMaxHp,
+    maxHp: snapshot.maxHp,
     combatStages: snapshot.combatStages,
     conditions: snapshot.conditions,
   }
@@ -1153,14 +1161,17 @@ const useManeuverPlan = (
   const mapAfterPerishCount = maneuver.name === 'Take a Breather'
     ? clearAa083PerishCountForBreather(mapAfterBreather, target.placement.id)
     : mapAfterBreather
+  const mapAfterCurledUp = maneuver.name === 'Take a Breather'
+    ? cleanupAa085to100CurledUpForBreather(mapAfterPerishCount, target.placement.id)
+    : mapAfterPerishCount
   const naturalCure = maneuver.name === 'Take a Breather'
     ? applyAa081NaturalCureForBreather({
-        map: mapAfterPerishCount,
+        map: mapAfterCurledUp,
         placement: target.placement,
         sheet: userSheet.sheet,
         operationId: command.opId,
       })
-    : { map: mapAfterPerishCount, sheet: userSheet.sheet, applied: false }
+    : { map: mapAfterCurledUp, sheet: userSheet.sheet, applied: false }
   const regenerator = maneuver.name === 'Take a Breather'
     ? applyAa085to100RegeneratorTrigger({
         map: naturalCure.map,
@@ -1171,16 +1182,25 @@ const useManeuverPlan = (
         maximumHp: user.fullMaxHp ?? user.maxHp,
       })
     : { map: naturalCure.map, sheet: naturalCure.sheet, applied: false }
+  const sprint = maneuver.name === 'Sprint'
+    ? applyAa091SprintTrigger({
+        map: regenerator.map,
+        placement: target.placement,
+        sheet: regenerator.sheet,
+        combatStages: user.combatStages,
+        operationId: command.opId,
+      })
+    : { map: regenerator.map, sheet: regenerator.sheet, applied: false }
   const mapWithCrushTrapTrigger = maneuver.name === 'Grapple' && targetToken
     ? applyAa065CrushTrapGrappleTrigger({
-        map: regenerator.map,
+        map: sprint.map,
         actorPlacement: target.placement,
         actorToken: user,
         actorSheet: userSheet.sheet as CharacterSheet,
         targetToken,
         operationId: command.opId,
       })
-    : regenerator.map
+    : sprint.map
   const grappleTargetPlacement = targetToken
     ? mapWithCrushTrapTrigger.placements.find(placement => placement.id === targetToken.id)
     : undefined
@@ -1204,8 +1224,8 @@ const useManeuverPlan = (
       })
     : mapWithAbilityTrigger
   const writePlans = new Map<string, SheetWritePlan>()
-  if (naturalCure.applied || regenerator.applied) {
-    addOrUpdateWritePlan(writePlans, userSheet, () => regenerator.sheet)
+  if (naturalCure.applied || regenerator.applied || sprint.applied) {
+    addOrUpdateWritePlan(writePlans, userSheet, () => sprint.sheet)
   }
   return {
     ok: true,

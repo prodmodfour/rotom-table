@@ -36,7 +36,9 @@ const nearbyGasOwnerIds = <Ability extends Aa081ProjectedAbility>(input: {
       || !abilities.some(ability => ability.canonicalId === 'Neutralizing Gas'
         && ability.effective !== false)) return []
     const owner = input.tokensById.get(ownerId)
-    return owner && ptuGridDistanceBetweenFootprints(owner, target) <= 1 ? [ownerId] : []
+    const conscious = owner && owner.currentHp > 0
+      && !owner.conditions.some(condition => condition.trim().toLowerCase() === 'fainted')
+    return conscious && ptuGridDistanceBetweenFootprints(owner, target) <= 1 ? [ownerId] : []
   }).sort()
 }
 

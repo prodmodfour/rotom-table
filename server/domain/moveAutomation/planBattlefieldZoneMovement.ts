@@ -252,6 +252,13 @@ export const planBattlefieldZoneMovement = (
       ignoreHazards: initialContext.queries.abilities.has(
         initialContext.actor.placement.id,
         'Infiltrator',
+      ) || initialContext.queries.abilities.has(
+        initialContext.actor.placement.id,
+        'Screen Cleaner',
+      ),
+      destroyHazards: initialContext.queries.abilities.has(
+        initialContext.actor.placement.id,
+        'Screen Cleaner',
       ),
     },
     ...(input.registry ? { registry: input.registry } : {}),

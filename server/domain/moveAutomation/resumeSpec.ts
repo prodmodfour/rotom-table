@@ -1,4 +1,5 @@
 import type { PendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
+import type { ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { AA078_LONG_REACH_BRANCH_ID } from '#shared/abilityAutomation/aa078'
 import type { MoveHazardCellSelectionWindow } from '#shared/moveAutomation/hazardCellSelection'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -43,6 +44,7 @@ import {
   type MoveAutomationRuntimeRegistry,
   type MoveSpecV2Runtime,
 } from './registry'
+import type { AbilityAutomationRuntimeRegistry } from '../abilityAutomation/registry'
 import {
   MoveSpecResolvedResponseError,
   type MoveSpecResolvedResponse,
@@ -89,6 +91,10 @@ import {
   AA078_LONG_REACH_TARGETING_OVERRIDE,
   aa078LongReachSelected,
 } from '../abilityAutomation/mechanics/aa078StaticIntegration'
+import {
+  aa085to100MoveTargetingOverride,
+  aa085to100TargetingRuleForBranchId,
+} from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 
 export type ResumeMoveSpecErrorCode =
   | 'runtime-unavailable'
@@ -124,6 +130,7 @@ export interface ResumeMoveSpecInput {
   readonly now: number
   readonly random?: AuthoritativeMoveRandomSource
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
+  readonly abilityRuntimeRegistry?: AbilityAutomationRuntimeRegistry
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
 }
 
@@ -155,6 +162,24 @@ const runtimeForPending = (
   }
   return runtime
 }
+
+const retainedRootSelection = (
+  pending: PendingMoveResolution,
+): ResolveMoveSelection => pending.rootAreaSelection
+  ? {
+      ...pending.rootAreaSelection,
+      ...(pending.rootAreaSelection.aimCell
+        ? { aimCell: { ...pending.rootAreaSelection.aimCell } }
+        : {}),
+      ...(pending.rootAreaSelection.excludedTargetPlacementIds
+        ? {
+            excludedTargetPlacementIds: [
+              ...pending.rootAreaSelection.excludedTargetPlacementIds,
+            ],
+          }
+        : {}),
+    }
+  : { kind: 'self' }
 
 const targetEvidence = (
   pending: PendingMoveResolution,
@@ -243,9 +268,12 @@ const assertDurableExecutionPrefix = (
     .slice(0, expectedTrace.length)
     .map(comparableTraceEvent)
   if (!sameJsonValue(actualTrace, expectedTrace)) {
+    const mismatchIndex = expectedTrace.findIndex((event, index) => (
+      !sameJsonValue(event, actualTrace[index])
+    ))
     fail(
       'trace-prefix-mismatch',
-      'Resumed execution did not reproduce the durable decision trace before the response window.',
+      `Resumed execution did not reproduce the durable decision trace before the response window at event ${mismatchIndex}.`,
     )
   }
 
@@ -294,48 +322,54 @@ const resolvedMovementProjection = (
   >,
 ): {
   readonly movement?: AuthoritativeMoveShiftMovement
+  readonly additionalMovements?: readonly AuthoritativeMoveShiftMovement[]
   readonly resourceMovement?: AuthoritativeMoveResourceMovement
   readonly desiredFacing?: AuthoritativeMoveResolution['desiredFacing']
 } => {
   if (execution.resolvedMovements.length === 0) return {}
-  if (execution.resolvedMovements.length > 1) {
-    return fail(
-      'execution-rejected',
-      'A resumed MoveSpec resolved more than one durable movement choice.',
-    )
-  }
-  const resolved = execution.resolvedMovements[0]!
-  const authoritative = resolved.choice.movement
-  const selection = resolved.choice.option.selection
-  if (!selection) {
-    return fail('execution-rejected', 'A resolved movement option lost its server selection.')
-  }
-  const movement: AuthoritativeMoveShiftMovement = {
-    kind: 'shift',
-    ...(authoritative.placementId === context.actor.placement.id
-      ? {}
-      : { placementId: authoritative.placementId }),
-    from: { ...authoritative.origin },
-    destination: { ...authoritative.destination },
-    pathCells: authoritative.path.map(cell => ({ ...cell })),
-    ...(selection.kind === 'movement-direction'
-      ? { direction: selection.direction }
-      : {}),
-  }
-  const movedPlacement = context.queries.placements.get(authoritative.placementId)
+  const projections = execution.resolvedMovements.map((resolved) => {
+    const authoritative = resolved.choice.movement
+    const selection = resolved.choice.option.selection
+    if (!selection) {
+      return fail('execution-rejected', 'A resolved movement option lost its server selection.')
+    }
+    const movement: AuthoritativeMoveShiftMovement = {
+      kind: 'shift',
+      ...(authoritative.placementId === context.actor.placement.id
+        ? {}
+        : { placementId: authoritative.placementId }),
+      from: { ...authoritative.origin },
+      destination: { ...authoritative.destination },
+      pathCells: authoritative.path.map(cell => ({ ...cell })),
+      ...(selection.kind === 'movement-direction'
+        ? { direction: selection.direction }
+        : {}),
+    }
+    return { movement, authoritative }
+  })
+  const primaryIndex = projections.findIndex(entry => (
+    entry.authoritative.placementId === context.actor.placement.id
+  ))
+  const selectedIndex = primaryIndex >= 0 ? primaryIndex : 0
+  const primary = projections[selectedIndex]!
+  const additionalMovements = projections
+    .filter((_entry, index) => index !== selectedIndex)
+    .map(entry => entry.movement)
+  const movedPlacement = context.queries.placements.get(primary.authoritative.placementId)
     ?? fail('execution-rejected', 'A resolved movement owner disappeared during resume.')
   const currentFacing = tokenFacingForPlacement(movedPlacement)
   const desiredFacing = tokenFacingTowardPoint(
-    authoritative.origin,
-    authoritative.destination,
+    primary.authoritative.origin,
+    primary.authoritative.destination,
     currentFacing,
   ) ?? undefined
   return {
-    movement,
-    ...(authoritative.placementId === context.actor.placement.id ? {
+    movement: primary.movement,
+    ...(additionalMovements.length > 0 ? { additionalMovements } : {}),
+    ...(primary.authoritative.placementId === context.actor.placement.id ? {
       resourceMovement: {
-        distance: authoritative.cost,
-        budget: authoritative.effectiveLimit,
+        distance: primary.authoritative.cost,
+        budget: primary.authoritative.effectiveLimit,
       },
     } : {}),
     ...(desiredFacing ? { desiredFacing } : {}),
@@ -356,9 +390,11 @@ export const resumeMoveSpec = (
   const evidence = targetEvidence(pending)
   const dustCloudBranch = pending.targetBranchId === AA068_DUST_CLOUD_BURST_BRANCH_ID
   const longReachBranch = pending.targetBranchId === AA078_LONG_REACH_BRANCH_ID
-  const reviewedTargeting = pending.targetBranchId && !dustCloudBranch && !longReachBranch
-    ? resolveMoveSpecTargetingRule(runtime.definition.spec, pending.targetBranchId)
-    : longReachBranch ? AA078_LONG_REACH_TARGETING_OVERRIDE : runtime.definition.spec.targeting
+  const remainingAbilityTargeting = aa085to100TargetingRuleForBranchId(pending.targetBranchId)
+  const reviewedTargeting = remainingAbilityTargeting
+    ?? (pending.targetBranchId && !dustCloudBranch && !longReachBranch
+      ? resolveMoveSpecTargetingRule(runtime.definition.spec, pending.targetBranchId)
+      : longReachBranch ? AA078_LONG_REACH_TARGETING_OVERRIDE : runtime.definition.spec.targeting)
   if (!reviewedTargeting) {
     return fail('execution-rejected', 'The suspended targeting branch is no longer reviewed.')
   }
@@ -376,7 +412,7 @@ export const resumeMoveSpec = (
       moveName: pending.canonicalMoveId,
       ...(pending.virtualOriginCell ? { originCell: { ...pending.virtualOriginCell } } : {}),
       ...(pending.targetBranchId ? { targetBranchId: pending.targetBranchId } : {}),
-      selection: { kind: 'self' },
+      selection: retainedRootSelection(pending),
     },
     candidatePlacementIds: evidence.evaluations.map(evaluation => evaluation.targetPlacementId),
     selectedPlacementIds: authoritativeTargetIds,
@@ -386,6 +422,7 @@ export const resumeMoveSpec = (
     resolutionId: pending.resolutionId,
     itemResources: input.itemResources,
     runtimeRegistry: registry,
+    abilityRuntimeRegistry: input.abilityRuntimeRegistry,
     legacyScripts: input.legacyScripts,
   })
   context.reads.recordPlacement(context.actor.placement)
@@ -406,7 +443,7 @@ export const resumeMoveSpec = (
         targetBranchId: pending.targetBranchId,
       })
       ? AA078_LONG_REACH_TARGETING_OVERRIDE
-      : null
+      : aa085to100MoveTargetingOverride({ context, script: entry.script })
   if (dustCloudBranch && !serverAbilityTargetingOverride) {
     return fail('execution-rejected', 'Dust Cloud targeting is no longer effective or Powder-eligible.')
   }

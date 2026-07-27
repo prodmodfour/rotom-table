@@ -13,7 +13,6 @@ import {
   normalizeTemporaryHpAmount,
 } from '~/utils/mapTemporaryHitPoints'
 import type { MoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
-import { moveAutomationRecoilImmunitySource } from '~/utils/moveAutomationRecoil'
 import type { AuthoritativeMoveRulesContext } from '../context'
 import { authoritativeAbilityHealingBlocked } from '../../abilityAutomation/healingPrevention'
 import { aa070FlyingFlyTrapPreventsDirectHp } from '../../abilityAutomation/mechanics/aa070StaticIntegration'
@@ -685,6 +684,7 @@ export const reduceDamageEffectForRecipient = (options: {
   readonly recipient: MoveCoreTokenEffectRecipient
   readonly accumulator: MoveAutomationHpUpdateAccumulator
   readonly damage: MoveCoreTokenDamageQuery
+  readonly context: AuthoritativeMoveRulesContext
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, recipient, accumulator } = options
   const previous = hpSnapshot(accumulator, recipient)
@@ -718,7 +718,10 @@ export const reduceDamageEffectForRecipient = (options: {
     }
   }
 
-  const requestedHpLoss = wholeNonNegative(resolution.hpLoss)
+  const unboundedHpLoss = wholeNonNegative(resolution.hpLoss)
+  const requestedHpLoss = options.context.queries.abilities.has(recipient.placement.id, 'Sturdy')
+    ? Math.min(unboundedHpLoss, Math.max(1, Math.floor(previous.fullMaxHp / 2)))
+    : unboundedHpLoss
   if (requestedHpLoss === 0) {
     return noOpHpResult(
       recipient,
@@ -911,7 +914,6 @@ export const reduceDirectHpEffectForRecipient = (options: {
     })
   }
 
-  const legacyRecoilImmunity = moveAutomationRecoilImmunitySource(recipient.token.abilityNames)
   const recoilImmunity = calculation.kind === 'damage-dealt'
     && calculation.roundedValue > 0
     ? options.context.queries.abilities.has(recipient.placement.id, 'Abominable')
@@ -920,7 +922,9 @@ export const reduceDirectHpEffectForRecipient = (options: {
         ? 'Magic Guard'
         : options.context.queries.abilities.has(recipient.placement.id, 'Permafrost')
           ? 'Permafrost'
-          : legacyRecoilImmunity === 'Magic Guard' ? null : legacyRecoilImmunity
+          : options.context.queries.abilities.has(recipient.placement.id, 'Rock Head')
+            ? 'Rock Head'
+            : null
     : null
   if (recoilImmunity) {
     return preventedRecoilResult({
@@ -1160,6 +1164,8 @@ export const reduceHealEffectForRecipient = (options: {
     && aa084PowerConstructBlocksTemporaryHp({
       context: options.context,
       placementId: recipient.placement.id,
+      currentHp: previous.currentHp,
+      maximumHp: previous.fullMaxHp,
     })) {
     return noOpHpResult(recipient, previous, 'ability-power-construct-temporary-hp-blocked')
   }
@@ -1221,6 +1227,12 @@ export const reduceHealEffectForRecipient = (options: {
   else {
     accumulator.set(recipient.token, directionSafePoolValue)
   }
+  if (operation.reasonCode === 'ability.soulstealer.use-normal') {
+    accumulator.removeInjuries(recipient.token, 1)
+  }
+  else if (operation.reasonCode === 'ability.soulstealer.use-killed') {
+    accumulator.removeInjuries(recipient.token, 'all')
+  }
 
   const current = hpSnapshot(accumulator, recipient)
   const details = hpTraceDetails({
@@ -1242,7 +1254,7 @@ export const reduceHealEffectForRecipient = (options: {
     } : {}),
     injury: {
       policy: operation.payload.injury,
-      injuryDelta: 0,
+      injuryDelta: current.injuries - previous.injuries,
       massiveDamageInjuries: 0,
       markerInjuries: 0,
       crossedMarkers: [],

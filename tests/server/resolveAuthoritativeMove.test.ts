@@ -361,9 +361,12 @@ describe('resolveAuthoritativeMove', () => {
     })
   })
 
-  it.each(['interrupt', 'reaction'] as const)(
-    'uses a server-reviewed %s child cost for Psychic Terrain legality',
-    (resource) => {
+  it.each([
+    { resource: 'interrupt' as const, blocked: true },
+    { resource: 'reaction' as const, blocked: false },
+  ])(
+    'uses a server-reviewed $resource child cost for Psychic Terrain legality',
+    ({ resource, blocked }) => {
       const map = mapFixture()
       map.fieldEffects = {
         weather: [],
@@ -373,7 +376,7 @@ describe('resolveAuthoritativeMove', () => {
       map.initiative = { activeId: 'target-a', round: 1 }
       let randomCalls = 0
 
-      expectFailure(() => resolveAuthoritativeMove({
+      const resolve = () => resolveAuthoritativeMove({
         map,
         pokemonSheets: sheetMap([{ name: 'Pound' }]),
         trainerSheets: new Map(),
@@ -391,8 +394,15 @@ describe('resolveAuthoritativeMove', () => {
           randomCalls += 1
           return 0.5
         },
-      }), 'move-terrain-blocked')
-      expect(randomCalls).toBe(0)
+      })
+      if (blocked) {
+        expectFailure(resolve, 'move-terrain-blocked')
+        expect(randomCalls).toBe(0)
+      }
+      else {
+        expect(resolve().transaction.attackedTargetIds).toEqual(['target-a'])
+        expect(randomCalls).toBeGreaterThan(0)
+      }
     },
   )
 

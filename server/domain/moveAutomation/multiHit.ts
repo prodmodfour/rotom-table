@@ -35,6 +35,7 @@ import {
   createMoveAutomationConditionUpdateAccumulator,
 } from '~/utils/moveAutomationStatusUpdates'
 import { normalizeConditionNames } from '~/utils/statusConditions'
+import { gridFootprintCells } from '~/utils/gridGeometry'
 import type { AuthoritativeMoveRulesContext } from './context'
 import { resolveAuthoritativeMoveUserAccuracy } from './accuracy'
 import type { MoveContextualDamageBaseResolution } from './damageBase'
@@ -87,6 +88,8 @@ import {
   aa076TokenWithEffectiveKeenEye,
 } from '../abilityAutomation/mechanics/aa076StaticIntegration'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
+import { createMoveAutomationWeatherResolver } from './weather'
+import { aa085to100TokenTerrainTags } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 import type {
   MoveCoreTokenEffectRecipient,
   MoveCoreTokenEffectRecipientResult,
@@ -513,7 +516,14 @@ const rollAccuracy = (options: {
         context: options.context,
         token: options.actor,
       }),
-      fieldEffects: options.context.queries.rooms.projectFieldEffects(),
+      fieldEffects: createMoveAutomationWeatherResolver(options.context.map, {
+        subjectPlacementId: options.target.id,
+        subjectOccupiedCells: gridFootprintCells(options.target.position, options.target),
+      }).projectFieldEffects(options.context.queries.rooms.projectFieldEffects()),
+      targetTerrainTags: aa085to100TokenTerrainTags({
+        context: options.context,
+        token: options.target,
+      }),
       dauntlessShieldActive: options.context.queries.abilities.has(
         options.target.id,
         'Dauntless Shield',
@@ -530,6 +540,9 @@ const rollAccuracy = (options: {
     attribute: 'evasion',
     baseValue: baseTargetEvasion,
     changePolicy: keenEye ? 'non-increasing' : 'all',
+    ...(options.context.queries.abilities.has(options.target.id, 'White Smoke') ? {
+      protectedFromExternalDecreasesPlacementId: options.target.id,
+    } : {}),
   }).value
   const rolled = options.context.random.roll({
     rollId,
@@ -817,6 +830,10 @@ export const executeMoveMultiHitOperation = (options: {
   readonly script: MoveAutomationScript
   readonly canonicalMoveId: string
   readonly recipientIds: readonly string[]
+  /** Reviewed reflection keeps the original target for rolls but applies every strike to this recipient. */
+  readonly reflectedRecipientIds?: ReadonlyMap<string, string>
+  /** Prime recipient-keyed randomness for a possible reflection identically before and after resume. */
+  readonly potentialReflectedRecipientIds?: ReadonlyMap<string, string>
   /** Triggered one-damage resistance steps apply to the first successful strike only. */
   readonly firstStrikeResistanceStepsByRecipient?: ReadonlyMap<string, number>
   /** Whole-attack resistance steps apply independently to every successful strike. */
@@ -859,8 +876,14 @@ export const executeMoveMultiHitOperation = (options: {
   for (const [targetIndex, recipientId] of options.recipientIds.entries()) {
     const targetOrdinal = targetIndex + 1
     const targetRecipient = resolveMoveCoreTokenRecipient(context, recipientId)
+    const damageRecipientId = options.reflectedRecipientIds?.get(recipientId) ?? recipientId
+    const damageRecipient = damageRecipientId === recipientId
+      ? targetRecipient
+      : resolveMoveCoreTokenRecipient(context, damageRecipientId)
     recipientsById.set(recipientId, targetRecipient)
+    recipientsById.set(damageRecipientId, damageRecipient)
     context.reads.recordPlacement(targetRecipient.placement)
+    if (damageRecipientId !== recipientId) context.reads.recordPlacement(damageRecipient.placement)
 
     const actorBeforeAccuracy = projectedToken({
       token: actorRecipient.token,
@@ -952,7 +975,7 @@ export const executeMoveMultiHitOperation = (options: {
         let knockout = false
         if (accuracy.result.hit) {
           successfulHitCount += 1
-          hitTargetIds.add(recipientId)
+          hitTargetIds.add(damageRecipientId)
           const critical = rollCritical({
             context,
             operation,
@@ -967,30 +990,30 @@ export const executeMoveMultiHitOperation = (options: {
             context,
             operation: damageOperation,
             script: options.script,
-            recipientId,
+            recipientId: damageRecipientId,
             canonicalMoveId: options.canonicalMoveId,
             forceActorStab: options.forceActorStab,
           })
           const fluffyType = aa070FluffyDamageTypeOverlay({
             context,
             script: options.script,
-            recipientId,
+            recipientId: damageRecipientId,
             resolved: baseResolvedType,
           })
           const damageClass = resolveMoveDamageClass({
-            context, operation: damageOperation, recipientId,
+            context, operation: damageOperation, recipientId: damageRecipientId,
           }).damageClass
           const furCoatType = aa072FurCoatDamageTypeOverlay({
             context,
             damageClass,
-            recipientId,
+            recipientId: damageRecipientId,
             resolved: fluffyType,
           })
-          const firstStrikeResistanceSteps = resistanceAppliedTargetIds.has(recipientId)
+          const firstStrikeResistanceSteps = resistanceAppliedTargetIds.has(damageRecipientId)
             ? 0
-            : options.firstStrikeResistanceStepsByRecipient?.get(recipientId) ?? 0
-          const allStrikeResistanceSteps = options.allStrikeResistanceStepsByRecipient?.get(recipientId) ?? 0
-          const kampfgeistResistance = options.kampfgeistResistanceRecipientIds?.has(recipientId)
+            : options.firstStrikeResistanceStepsByRecipient?.get(damageRecipientId) ?? 0
+          const allStrikeResistanceSteps = options.allStrikeResistanceStepsByRecipient?.get(damageRecipientId) ?? 0
+          const kampfgeistResistance = options.kampfgeistResistanceRecipientIds?.has(damageRecipientId)
             && ['Bug', 'Dark', 'Rock'].includes(furCoatType.moveType) ? 1 : 0
           const resistanceSteps = firstStrikeResistanceSteps + allStrikeResistanceSteps + kampfgeistResistance
           const aa071Type = aa071ResistDamageType({
@@ -1004,12 +1027,12 @@ export const executeMoveMultiHitOperation = (options: {
           })
           const heatproofType = aa073HeatproofDamageTypeOverlay({
             context,
-            recipientId,
+            recipientId: damageRecipientId,
             resolved: aa071Type,
           })
           const liquidOozeType = aa078LiquidOozeDamageTypeOverlay({
             context,
-            recipientId,
+            recipientId: damageRecipientId,
             resolved: heatproofType,
           })
           const resolvedType = aa076KampfgeistDamageTypeOverlay({
@@ -1017,14 +1040,16 @@ export const executeMoveMultiHitOperation = (options: {
             resolved: aa075IceScalesDamageTypeOverlay({
               context,
               damageClass,
-              recipientId,
+              recipientId: damageRecipientId,
               resolved: liquidOozeType,
             }),
           })
-          if (firstStrikeResistanceSteps > 0) resistanceAppliedTargetIds.add(recipientId)
+          if (firstStrikeResistanceSteps > 0) resistanceAppliedTargetIds.add(damageRecipientId)
           const formula = resolveMoveSpecDamageRollFormula({
             context,
             operation: damageOperation,
+            // Sway redirects an already-reviewed attack; its damage roll remains
+            // bound to the original hit target while defenses use the attacker.
             recipientId,
             canonicalMoveId: options.canonicalMoveId,
             resolvedType,
@@ -1069,21 +1094,27 @@ export const executeMoveMultiHitOperation = (options: {
             stages,
           })
           const projectedTarget = projectedToken({
-            token: targetRecipient.token,
+            token: damageRecipient.token,
             hp,
             conditions,
             stages,
           })
-          const abilityRandomInput = {
-            context,
-            script: options.script,
-            damageOperationIds: [damageOperation.id],
-            damageRecipientId: recipientId,
+          const possibleDamageRecipientIds = [...new Set([
+            recipientId,
+            options.potentialReflectedRecipientIds?.get(recipientId),
+          ].filter((id): id is string => typeof id === 'string'))]
+          for (const possibleDamageRecipientId of possibleDamageRecipientIds) {
+            const abilityRandomInput = {
+              context,
+              script: options.script,
+              damageOperationIds: [damageOperation.id],
+              damageRecipientId: possibleDamageRecipientId,
+            }
+            primeAa060MoveRandomness(abilityRandomInput)
+            primeAa061MoveRandomness(abilityRandomInput)
+            primeAa065MoveRandomness(abilityRandomInput)
+            primeAa066MoveRandomness(abilityRandomInput)
           }
-          primeAa060MoveRandomness(abilityRandomInput)
-          primeAa061MoveRandomness(abilityRandomInput)
-          primeAa065MoveRandomness(abilityRandomInput)
-          primeAa066MoveRandomness(abilityRandomInput)
           const calculation = resolveMoveSpecDamageCalculation({
             context,
             operation: damageOperation,
@@ -1107,7 +1138,7 @@ export const executeMoveMultiHitOperation = (options: {
             },
             fieldEffects: context.queries.weather.projectFieldEffects(),
             selectedTargets: options.recipientIds.flatMap((id) => {
-              const selected = context.queries.tokens.get(id)
+              const selected = context.queries.tokens.get(options.reflectedRecipientIds?.get(id) ?? id)
               return selected ? [selected] : []
             }),
             resolvedMoveType: resolvedType,
@@ -1137,8 +1168,9 @@ export const executeMoveMultiHitOperation = (options: {
           })
           const damageResult = reduceDamageEffectForRecipient({
             operation: damageOperation,
-            recipient: targetRecipient,
+            recipient: damageRecipient,
             accumulator: hp,
+            context,
             damage: {
               resolve: () => ({
                 hpLoss: calculation.breakdown.hpLoss,
@@ -1146,7 +1178,7 @@ export const executeMoveMultiHitOperation = (options: {
                 moveType: calculation.moveType.moveType,
                 ...(aa075InfiltratorBypassesTemporaryHp({
                   context,
-                  recipientId,
+                  recipientId: damageRecipientId,
                 }) ? { bypassTemporaryHp: true } : {}),
                 consultedPlacementIds: [],
                 details: {
@@ -1189,8 +1221,8 @@ export const executeMoveMultiHitOperation = (options: {
           knockout = Boolean(previous && current
             && previous.currentHp > 0
             && current.currentHp <= 0)
-          if (effectiveHpLost > 0) damagedTargetIds.add(recipientId)
-          if (knockout) faintedTargetIds.add(recipientId)
+          if (effectiveHpLost > 0) damagedTargetIds.add(damageRecipientId)
+          if (knockout) faintedTargetIds.add(damageRecipientId)
           totalRequestedHpLoss += calculation.breakdown.hpLoss
           totalEffectiveHpLost += effectiveHpLost
           damage = {
@@ -1202,8 +1234,8 @@ export const executeMoveMultiHitOperation = (options: {
             effectiveHpLost,
             realHpLost,
             absorbedByTemporaryHp,
-            targetHpAfter: current?.currentHp ?? target.currentHp,
-            targetTemporaryHpAfter: current?.temporaryHp ?? target.temporaryHp ?? 0,
+            targetHpAfter: current?.currentHp ?? damageRecipient.token.currentHp,
+            targetTemporaryHpAfter: current?.temporaryHp ?? damageRecipient.token.temporaryHp ?? 0,
             moveType: calculation.moveType,
             contextualDamageBase: calculation.contextualDamageBase,
             criticalHit: calculation.criticalHit,
@@ -1228,8 +1260,8 @@ export const executeMoveMultiHitOperation = (options: {
           context,
           parent: operation,
           timing: 'after-each',
-          target: targetRecipient,
-          targetId: recipientId,
+          target: damageRecipient,
+          targetId: damageRecipientId,
           hitIndex,
           trigger: triggerState,
           hp,
@@ -1248,7 +1280,7 @@ export const executeMoveMultiHitOperation = (options: {
         const stoppedAfterStrike = knockout || stopOnMiss
         strikes.push({
           hitIndex,
-          targetId: recipientId,
+          targetId: damageRecipientId,
           accuracy: accuracy.result,
           criticalRollId: operation.payload.critical.kind === 'per-hit'
             ? resolvedRolls.findLast(roll => (
@@ -1274,7 +1306,7 @@ export const executeMoveMultiHitOperation = (options: {
     }
 
     targetResults.push({
-      targetId: recipientId,
+      targetId: damageRecipientId,
       hitCountRollId: countResolution?.rollId ?? null,
       plannedHitCount,
       attemptedHitCount: strikes.length,
@@ -1411,9 +1443,10 @@ export const executeMoveMultiHitOperation = (options: {
     (total, result) => total + result.totalEffectiveHpLost,
     0,
   )
+  const finalRecipientIds = options.recipientIds.map(id => options.reflectedRecipientIds?.get(id) ?? id)
   const resolution: MoveMultiHitAggregateResolution = {
     operationId: operation.id,
-    recipientIds: [...options.recipientIds],
+    recipientIds: [...finalRecipientIds],
     countKind: operation.payload.count.kind,
     countScope: operation.payload.count.kind === 'fixed'
       ? 'fixed'
@@ -1426,13 +1459,13 @@ export const executeMoveMultiHitOperation = (options: {
     targets: normalizedTargetResults,
     afterAllActor,
   }
-  const hitTargetIdList = options.recipientIds.filter(id => hitTargetIds.has(id))
-  const damagedTargetIdList = options.recipientIds.filter(id => damagedTargetIds.has(id))
-  const faintedTargetIdList = options.recipientIds.filter(id => faintedTargetIds.has(id))
+  const hitTargetIdList = finalRecipientIds.filter(id => hitTargetIds.has(id))
+  const damagedTargetIdList = finalRecipientIds.filter(id => damagedTargetIds.has(id))
+  const faintedTargetIdList = finalRecipientIds.filter(id => faintedTargetIds.has(id))
 
   return deepFreeze({
     operationId: operation.id,
-    recipientIds: [...options.recipientIds],
+    recipientIds: [...finalRecipientIds],
     outcome: aggregateOutcome(mutationResults),
     resolution,
     traceResult: resolutionTrace(resolution),
@@ -1443,7 +1476,7 @@ export const executeMoveMultiHitOperation = (options: {
     conditionUpdates,
     combatStageUpdates,
     hitTargetIds: hitTargetIdList,
-    missedTargetIds: options.recipientIds.filter(id => !hitTargetIds.has(id)),
+    missedTargetIds: finalRecipientIds.filter(id => !hitTargetIds.has(id)),
     damagedTargetIds: damagedTargetIdList,
     faintedTargetIds: faintedTargetIdList,
   })

@@ -54,13 +54,21 @@ import type { MoveAutomationScript } from '~/types/moveAutomation'
 import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { CharacterSheet } from '~/types/characterSheet'
-import { resistMultiplierOneStepFurther } from '~/utils/typeChart'
+import { computeMultiplier, resistMultiplierOneStepFurther } from '~/utils/typeChart'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
+import { gridFootprintCells } from '~/utils/gridGeometry'
 import {
   buildMoveAutomationAreaTemplateCells,
-  tokensInMoveAutomationArea,
+  buildMoveAutomationAreaTemplatePlacementAtCenter,
+  buildMoveAutomationCloseBlastPlacementAtAimCell,
+  moveAutomationAreaTemplateId,
 } from '~/utils/moveAutomationAreaTemplates'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
+import {
+  resolveReviewedNestedMoveAreaTargeting,
+  reviewedNestedMoveLegalTargetIds,
+  type ReviewedNestedAreaTargetingResolution,
+} from './reviewedNestedMoveTargeting'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { GridAnchor } from '~/types/map'
 import type {
@@ -110,6 +118,8 @@ import {
   reduceMoveResolutionTrace as appendMoveResolutionTrace,
 } from './trace'
 import { orderMoveReactionOperationEntries } from './reactionOrder'
+import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
+import { resolveMoveCoreTokenRecipient } from './reducers/coreTokenRecipients'
 import { aa062BoneLordEmpowersMove } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064MoveIntegration'
 import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
@@ -302,14 +312,31 @@ import {
   AA084_PROBABILITY_CONTROL_REASON,
   aa084MoveOverlayOperations,
   aa084ProbabilityControlSelections,
+  aa084PranksterSelected,
   aa084ProteanSelected,
   applyAa084ReviewedOperations,
 } from '../abilityAutomation/mechanics/aa084MoveIntegration'
+import { aa085to100TokenTerrainTags } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
+import { createMoveAutomationWeatherResolver } from './weather'
 import {
+  AA085_REFRIGERATE_REASON,
+  AA092_STEADFAST_REASON,
+  AA092_STEELWORKER_REASON,
   AA093_STORM_DRAIN_OPTION_ID,
   AA093_STORM_DRAIN_REASON,
+  AA093_SWAY_REASON,
+  AA094_SYNCHRONIZE_REASON,
   AA095_THUNDER_BOOST_OPTION_ID,
   AA095_THUNDER_BOOST_REASON,
+  AA096_TRANSISTOR_REASON,
+  AA096_TRINITY_PHYSICAL_OPTION_ID,
+  AA096_TRINITY_REASON,
+  AA096_TRINITY_SPECIAL_OPTION_ID,
+  AA097_VIGOR_REASON,
+  AA098_VOODOO_DOLL_REASON,
+  AA098_WALLMASTER_REASON,
+  AA098_WEAPONIZE_REASON,
+  AA099_WOBBLE_REASON,
   aa085to100BoundRecipientId,
   aa085to100ExpectedOptionForOperation,
   aa085to100MoveOverlayOperations,
@@ -716,6 +743,8 @@ export interface ExecuteMoveSpecInput {
   readonly handlerRegistry?: RegisteredMoveHandlerRegistry
   /** Server-reviewed child deny policy; never parsed from a command or response. */
   readonly nestedExecutionPolicy?: NestedMoveExecutionPolicy
+  /** Internal-only usage operations bypassed by an exact reviewed Ability clause. */
+  readonly serverIgnoredUsageOperationIds?: ReadonlySet<string>
 }
 
 interface MoveSpecSelectorState {
@@ -890,6 +919,9 @@ const executableDefinition = (
         'ability.danger-syrup.sweet-scent.',
         'ability.dig-away.dig.',
         'ability.fox-fire.ember.',
+        'ability.quick-draw.move.',
+        'ability.revelation.copy.',
+        'ability.queenly-majesty.stomp.',
       ].some(prefix => parent.parentOperationId?.startsWith(prefix) === true)) {
       fail(
         'definition-integrity-mismatch',
@@ -1162,10 +1194,112 @@ const movementSheetsForContext = (
   return { pokemon, trainer }
 }
 
+const swayDestinationCandidates = (
+  operation: MoveMovementRequestEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+): readonly GridAnchor[] | undefined => {
+  const prefix = 'ability.sway.push-attacker:'
+  if (!operation.reasonCode.startsWith(prefix)) return undefined
+  const ownerId = operation.reasonCode.slice(prefix.length)
+  const owner = context.queries.tokens.get(ownerId)
+  const actor = context.actor.token
+  if (!owner) return []
+  const candidates: GridAnchor[] = []
+  const minimumY = Math.max(0, owner.position.y - actor.clearance)
+  const maximumY = Math.min(
+    context.map.dimensions.y - 1,
+    owner.position.y + owner.clearance,
+  )
+  for (let y = minimumY; y <= maximumY; y += 1) {
+    for (let z = Math.max(0, owner.position.z - actor.base);
+      z <= Math.min(context.map.dimensions.z - actor.base, owner.position.z + owner.base);
+      z += 1) {
+      for (let x = Math.max(0, owner.position.x - actor.base);
+        x <= Math.min(context.map.dimensions.x - actor.base, owner.position.x + owner.base);
+        x += 1) {
+        const position = { x, y, z }
+        if (ptuGridDistanceBetweenFootprints({ ...actor, position }, owner) <= 1) {
+          candidates.push(position)
+        }
+      }
+    }
+  }
+  return candidates
+}
+
+const transporterDestinationCandidates = (
+  operation: MoveMovementRequestEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+  placementId: string,
+  resolvedMovements: readonly MoveSpecResolvedMovement[],
+): readonly GridAnchor[] | undefined => {
+  if (!operation.reasonCode.startsWith('ability.transporter.carry.')
+    && !operation.reasonCode.startsWith('ability.transporter.both.')) return undefined
+  const actorTeleport = [...resolvedMovements].reverse().find(entry => (
+    entry.choice.movement.placementId === context.actor.placement.id
+    && entry.choice.movement.mode === 'teleport'
+  ))
+  const companion = context.queries.tokens.get(placementId)
+  if (!actorTeleport || !companion) return []
+  const movement = actorTeleport.choice.movement
+  return [{
+    x: companion.position.x + movement.destination.x - movement.origin.x,
+    y: companion.position.y + movement.destination.y - movement.origin.y,
+    z: companion.position.z + movement.destination.z - movement.origin.z,
+  }]
+}
+
+const telepathyAttackAreaCells = (
+  operation: MoveMovementRequestEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+): readonly GridAnchor[] | undefined => {
+  if (operation.reasonCode !== 'ability.telepathy.disengage-movement') return undefined
+  const selection = context.intent.selection
+  if (selection.kind !== 'area') return []
+  const script = context.queries.rules.reviewedScriptFor(context.intent.moveName)
+  const template = script?.areaTemplates?.find(candidate => (
+    moveAutomationAreaTemplateId(candidate) === selection.areaTemplateId
+  ))
+  if (!template) return []
+  const constraints = {
+    bounds: context.map.dimensions,
+    blockedCells: buildAllVoxelOccupancy(context.map.voxels),
+  }
+  if (template.kind === 'close-blast') {
+    if (!selection.aimCell) return []
+    return buildMoveAutomationCloseBlastPlacementAtAimCell({
+      template,
+      user: context.actor.token,
+      tokens: context.queries.tokens.all(),
+      aimCell: selection.aimCell,
+      includeEmpty: true,
+      ...constraints,
+    })?.cells ?? []
+  }
+  if (template.kind === 'ranged-blast') {
+    if (!selection.aimCell) return []
+    return buildMoveAutomationAreaTemplatePlacementAtCenter({
+      template,
+      user: context.actor.token,
+      tokens: context.queries.tokens.all(),
+      center: selection.aimCell,
+      includeEmpty: true,
+      ...constraints,
+    })?.cells ?? []
+  }
+  return buildMoveAutomationAreaTemplateCells({
+    template,
+    user: context.actor.token,
+    ...(selection.direction ? { direction: selection.direction } : {}),
+    ...constraints,
+  })
+}
+
 const movementChoiceSet = (
   operation: MoveMovementRequestEffectOperation,
   context: AuthoritativeMoveRulesContext,
   recipientIds: readonly string[],
+  resolvedMovements: readonly MoveSpecResolvedMovement[],
 ): AuthoritativeMovementChoiceSet => {
   const choice = operation.payload.choice
   const destinationSetId = operation.payload.destinationSetId
@@ -1182,20 +1316,32 @@ const movementChoiceSet = (
   }
   let set: AuthoritativeMovementChoiceSet
   try {
-    const placementId = operation.recipients.kind === 'response-owner'
-      ? recipientIds.length === 1
-        ? recipientIds[0]!
+    const placementId = recipientIds.length === 1
+      ? recipientIds[0]!
+      : operation.recipients.kind === 'actor'
+        ? context.actor.placement.id
         : fail(
             'definition-integrity-mismatch',
-            `Response-owner movement ${operation.id} must resolve exactly one owner.`,
+            `Movement ${operation.id} must resolve exactly one authoritative placement.`,
           )
-      : context.actor.placement.id
+    const transporterActorMatch = operation.reasonCode.match(
+      /^ability\.transporter\.actor\.(?:carry|both)\.(.+)$/,
+    )
+    const transporterCompanion = operation.reasonCode.startsWith('ability.transporter.carry.')
+      || operation.reasonCode.startsWith('ability.transporter.both.')
+    const ignoredPlacementIds = transporterActorMatch?.[1]
+      ? [transporterActorMatch[1]]
+      : transporterCompanion
+        ? [context.actor.placement.id]
+        : []
     const common = {
       map: context.map,
       sheets: movementSheetsForContext(context),
       placementId,
       setId: destinationSetId,
       maximumDistance,
+      mode: operation.payload.mode === 'teleport' ? 'teleport' as const : 'shift' as const,
+      ...(ignoredPlacementIds.length > 0 ? { ignoredPlacementIds } : {}),
     }
     set = choice.kind === 'direction'
       ? enumerateAuthoritativeMovementChoices({
@@ -1203,16 +1349,45 @@ const movementChoiceSet = (
           kind: 'direction',
           directions: choice.directions,
         })
-      : enumerateAuthoritativeMovementChoices({
-          ...common,
-          kind: 'destination',
-        })
+      : (() => {
+          const swayCandidates = swayDestinationCandidates(operation, context)
+          const transporterCandidates = transporterDestinationCandidates(
+            operation,
+            context,
+            placementId,
+            resolvedMovements,
+          )
+          const candidates = transporterCandidates ?? swayCandidates
+          return enumerateAuthoritativeMovementChoices({
+            ...common,
+            kind: 'destination',
+            ...(candidates !== undefined ? { candidateDestinations: candidates } : {}),
+          })
+        })()
   }
   catch (error) {
     return fail(
       'move-mechanics-unavailable',
       `Movement choices for ${operation.id} could not be resolved: ${error instanceof Error ? error.message : String(error)}`,
     )
+  }
+  const telepathyCells = telepathyAttackAreaCells(operation, context)
+  if (telepathyCells !== undefined) {
+    const mover = context.queries.tokens.get(set.placementId)
+    if (!mover) {
+      return fail(
+        'move-mechanics-unavailable',
+        `Telepathy mover ${set.placementId} disappeared before its Shift.`,
+      )
+    }
+    const area = new Set(telepathyCells.map(cell => `${cell.x},${cell.y},${cell.z}`))
+    set = Object.freeze({
+      ...set,
+      choices: Object.freeze(telepathyCells.length === 0 ? [] : set.choices.filter(candidate => (
+        gridFootprintCells(candidate.movement.destination, mover)
+          .every(cell => !area.has(`${cell.x},${cell.y},${cell.z}`))
+      ))),
+    })
   }
   for (const read of set.sheetReads) context.reads.recordSheet(read)
   return set
@@ -1238,6 +1413,8 @@ const revalidateMovementChoice = (
       placementId: set.placementId,
       setId: set.setId,
       maximumDistance: set.maximumDistance,
+      mode: set.mode,
+      ignoredPlacementIds: set.ignoredPlacementIds,
       kind: set.kind,
       option,
       ...(choice.kind === 'direction' ? { directions: choice.directions } : {}),
@@ -1976,6 +2153,7 @@ const executableProgram = (
   context: AuthoritativeMoveRulesContext,
   handlerRegistry: RegisteredMoveHandlerRegistry,
   responseResolver: MoveSpecResponseResolver,
+  authoritativeTargetIds: readonly string[],
   serverAbilityOverlayOperations: readonly MoveEffectOperation[] = [],
 ): ExecutableMoveSpecProgram => {
   const staticEntries = staticOperationEntries(definition.spec)
@@ -1989,7 +2167,47 @@ const executableProgram = (
     operation,
     path: `handlerOutput.operations[${index}]`,
   }))
-  const abilityEntries = serverAbilityOverlayOperations.map((operation, index) => ({
+  const reviewedScript = context.queries.rules.reviewedScriptFor(definition.spec.canonicalId)
+    ?? context.queries.rules.reviewedScriptFor(context.intent.moveName)
+    ?? fail('definition-integrity-mismatch', 'Ability overlays could not resolve the reviewed Move script.')
+  // Registered handlers materialize their reviewed operations only here. Rebuild
+  // AA-085–AA-100 overlays against that complete program so Attack-stat pushes,
+  // condition reactions, and accuracy-bound riders cannot disappear merely
+  // because a MoveSpec is handler-backed. Root/resume callers still reconstruct
+  // the same overlays before this boundary; stable IDs let us replace those in
+  // place and append only genuinely handler-dependent operations.
+  const moveOwnedEntries = [...staticEntries, ...handlerEntries]
+  const moveSourceId = moveOwnedEntries.find(entry => entry.operation.source.kind === 'move')
+    ?.operation.source.id ?? `move.${definition.spec.canonicalId}`
+  const initialRemainingOverlays = aa085to100MoveOverlayOperations({
+    context,
+    script: reviewedScript,
+    moveSourceId,
+    authoritativeTargetIds,
+    reviewedOperations: staticEntries.map(entry => entry.operation),
+  })
+  const initialRemainingIds = new Set(initialRemainingOverlays.map(operation => operation.id))
+  const completeRemainingOverlays = aa085to100MoveOverlayOperations({
+    context,
+    script: reviewedScript,
+    moveSourceId,
+    authoritativeTargetIds,
+    reviewedOperations: moveOwnedEntries.map(entry => entry.operation),
+  })
+  const completeRemainingById = new Map(completeRemainingOverlays.map(operation => [operation.id, operation]))
+  const retainedAbilityOperations = serverAbilityOverlayOperations.flatMap(operation => {
+    const rebuilt = completeRemainingById.get(operation.id)
+    if (rebuilt) return [rebuilt]
+    // An AA-085–AA-100 operation planned against an incomplete handler program
+    // is stale when the complete rebuild no longer emits its stable identity.
+    return initialRemainingIds.has(operation.id) ? [] : [operation]
+  })
+  const retainedAbilityIds = new Set(retainedAbilityOperations.map(operation => operation.id))
+  const completeAbilityOperations = [
+    ...retainedAbilityOperations,
+    ...completeRemainingOverlays.filter(operation => !retainedAbilityIds.has(operation.id)),
+  ]
+  const abilityEntries = completeAbilityOperations.map((operation, index) => ({
     operation: parseMoveEffectOperation(operation, `serverAbilityOverlayOperations[${index}]`),
     path: `serverAbilityOverlayOperations[${index}]`,
   }))
@@ -2004,9 +2222,6 @@ const executableProgram = (
       ]),
     ),
   )
-  const reviewedScript = context.queries.rules.reviewedScriptFor(definition.spec.canonicalId)
-    ?? context.queries.rules.reviewedScriptFor(context.intent.moveName)
-    ?? fail('definition-integrity-mismatch', 'Ability overlays could not resolve the reviewed Move script.')
   const selectedAa072Operations = applyAa072SelectedMoveOperations({
     script: reviewedScript,
     operations: baseReviewedEntries.map(entry => entry.operation),
@@ -2070,8 +2285,9 @@ const executableProgram = (
     {
       allowAttackedTargetAccuracyEffects:
         definition.spec.presentation.tags.includes('natural-effect-range'),
-      allowSequentialHazardResponseRequests: serverAbilityOverlayOperations.some(operation => (
+      allowSequentialHazardResponseRequests: completeAbilityOperations.some(operation => (
         operation.reasonCode === AA078_MAGIC_BOUNCE_HAZARD_REASON
+        || operation.reasonCode === AA098_WALLMASTER_REASON
       )),
     },
   )
@@ -2490,52 +2706,12 @@ const centeredNestedAreaTargeting = (input: {
   readonly context: AuthoritativeMoveRulesContext
   readonly runtime: MoveSpecV2Runtime
   readonly script: MoveAutomationScript
-}): {
-  readonly targetIds: readonly string[]
-  readonly evaluations: readonly MoveSpecAuthoritativeTargetEvaluation[]
-} | null => {
-  const targeting = input.runtime.definition.spec.targeting
-  if (targeting.kind !== 'area') return null
-  const templates = input.script.areaTemplates?.filter(template => (
-    template.kind === 'burst' || template.kind === 'cardinally-adjacent'
-  )) ?? []
-  if (templates.length !== 1 || templates.length !== (input.script.areaTemplates?.length ?? 0)) {
-    return fail(
-      'nested-targeting-invalid',
-      `Nested area spec ${input.runtime.canonicalId} requires unsupported directional or aimed geometry.`,
-    )
-  }
-  const cells = buildMoveAutomationAreaTemplateCells({
-    template: templates[0]!,
-    user: input.context.actor.token,
-    bounds: input.context.map.dimensions,
-    blockedCells: buildAllVoxelOccupancy(input.context.map.voxels),
-  })
-  const geometricIds = tokensInMoveAutomationArea({
-    cells,
-    tokens: input.context.queries.tokens.all(),
-    excludeIds: [input.context.actor.placement.id],
-  }).map(token => token.id)
-  const resolved = resolveMoveAutomationAreaTargets({
-    actorPlacementId: input.context.actor.placement.id,
-    geometricallyAffectedPlacementIds: geometricIds,
-    predicate: targeting.predicate ?? {
-      relationship: 'any', willingness: 'any', excludeActor: true,
-    },
-    relationships: input.context.queries.relationships,
-    states: input.context.queries.targetStates,
-    targetability: input.context.queries.targetability,
-    attackingMoveId: input.runtime.canonicalId,
-  })
-  return Object.freeze({
-    targetIds: canonicalPlacementIds(input.context, resolved.eligibleTargetPlacementIds),
-    evaluations: Object.freeze(resolved.evaluations.map(evaluation => Object.freeze({
-      targetPlacementId: evaluation.targetPlacementId,
-      outcome: evaluation.outcome,
-      reasonCode: evaluation.reasonCode,
-    }))),
-  })
-}
+  readonly anchorTargetPlacementId?: string | null
+  readonly centerRangedBlastOnActor?: boolean
+}): ReviewedNestedAreaTargetingResolution | null => resolveReviewedNestedMoveAreaTargeting({
+  ...input,
+  actorPlacementId: input.context.actor.placement.id,
+})
 
 const nestedTargetOptions = (input: {
   readonly context: AuthoritativeMoveRulesContext
@@ -2550,30 +2726,47 @@ const nestedTargetOptions = (input: {
   if (
     childTargeting.kind === 'none'
     || childTargeting.kind === 'self'
-    || childTargeting.kind === 'area'
     || childTargeting.kind === 'field'
     || childTargeting.kind === 'hazard'
-    || childTargeting.minTargets !== 1
-    || childTargeting.maxTargets !== 1
+    || (childTargeting.kind !== 'area' && childTargeting.minTargets !== 1)
   ) {
     return fail(
       'nested-targeting-invalid',
-      `Nested fresh target ${input.operation.id} requires a reviewed child with exactly one non-area target.`,
+      `Nested fresh target ${input.operation.id} requires a reviewed child with at least one selected target.`,
     )
   }
-  const ids = evaluateMoveSelector({
+  const selectedCandidates = evaluateMoveSelector({
     context: input.context,
     selectorState: input.selectorState,
     selector: targeting.selector,
   })
   enforceNestedExecutionBudget(() => input.budget.reserveTargets(
-    ids.length,
+    selectedCandidates.length,
     `Nested fresh-target request ${targeting.requestId}`,
   ))
+  const mechanics = input.context.queries.rules.reviewedScriptFor(input.runtime.canonicalId)
+    ?? fail('nested-targeting-invalid', `Nested child ${input.runtime.canonicalId} lost its reviewed script.`)
+  const ids = childTargeting.kind === 'area'
+    ? selectedCandidates.filter(targetPlacementId => resolveReviewedNestedMoveAreaTargeting({
+        context: input.context,
+        actorPlacementId: input.context.actor.placement.id,
+        runtime: input.runtime,
+        script: mechanics,
+        anchorTargetPlacementId: targetPlacementId,
+      }) !== null)
+    : (() => {
+        const legal = new Set(reviewedNestedMoveLegalTargetIds({
+          context: input.context,
+          actorPlacementId: input.context.actor.placement.id,
+          runtime: input.runtime,
+          script: mechanics,
+        }))
+        return selectedCandidates.filter(targetPlacementId => legal.has(targetPlacementId))
+      })()
   if (ids.length === 0) {
     return fail(
       'nested-targeting-invalid',
-      `Nested fresh target ${input.operation.id} has no legal server-derived option.`,
+      `Nested fresh target ${input.operation.id} has no legal server-derived range and geometry option.`,
     )
   }
   const options = ids.map((targetPlacementId, index): NestedMoveTargetOption => Object.freeze({
@@ -2624,7 +2817,12 @@ const projectNestedEmission = (input: {
 }): MoveSpecEmittedOperation => Object.freeze({
   operation: Object.freeze({
     ...input.emission.operation,
-    phase: input.invocationPhase,
+    // Spatial reducers require the reviewed movement timing on every emitted
+    // displacement/relocation. Other child work remains projected at the
+    // Ability invocation point so it resolves before the interrupted parent.
+    phase: input.emission.operation.kind === 'movement-request'
+      ? input.emission.operation.phase
+      : input.invocationPhase,
   }) as MoveEffectOperation,
   recipientIds: frozenIds(input.emission.recipientIds),
   childResolutionId: input.emission.childResolutionId ?? input.childResolutionId,
@@ -2756,6 +2954,7 @@ const executeMoveSpecInternal = (
     input.context,
     handlerRegistry,
     executionState.responseResolver,
+    input.authoritativeTargetIds ?? input.context.selectedPlacements.map(placement => placement.id),
     input.serverAbilityOverlayOperations,
   )
   enforceNestedExecutionBudget(() => executionState.nestedBudget.reserveOperations(
@@ -2784,6 +2983,22 @@ const executeMoveSpecInternal = (
     ...reactionRequestsByOperationId.keys(), ...choiceRequestsByOperationId.keys(),
   ])
   const responseResolver = executionState.responseResolver
+  const multiSwayRequest = program.operations.some(operation => operation.kind === 'multi-hit')
+    ? program.operations.find((operation): operation is MoveReactionRequestEffectOperation => (
+        operation.kind === 'reaction-request' && operation.reasonCode === AA093_SWAY_REASON
+      )) ?? null
+    : null
+  const multiSwayResponse = multiSwayRequest ? responseResolver.resolve({
+    requestId: multiSwayRequest.payload.requestId,
+    options: multiSwayRequest.payload.options,
+    allowPass: multiSwayRequest.payload.allowPass,
+  }) : undefined
+  const preselectedMultiSwayRequest = multiSwayResponse?.optionId !== null
+    && multiSwayResponse?.optionId !== undefined ? multiSwayRequest : null
+  const multiSwayOwnerId = multiSwayRequest
+    ? aa085to100TriggerRequirement({ operation: multiSwayRequest })?.targetId ?? null
+    : null
+  const preselectedMultiSwayOwnerId = preselectedMultiSwayRequest ? multiSwayOwnerId : null
   const hazardSelections = new Map<string, ValidatedAuthoritativeHazardCellSelection>()
   for (const selection of input.authoritativeHazardCellSelections ?? []) {
     if (hazardSelections.has(selection.operationId)) {
@@ -2864,6 +3079,7 @@ const executeMoveSpecInternal = (
   const selectedAbsorbForceOwnerIds = new Set<string>()
   const selectedBodyguardOwnerIds = new Set<string>()
   const selectedDelayedReactionOwnerIds = new Set<string>()
+  const selectedSteelworkerOwnerIds = new Set<string>()
   const selectedDragonsMawTargetIds = new Set<string>()
   const selectedAa068PostHitOwnerIds = new Set<string>()
   const selectedFriendGuardTargetIds = new Set<string>()
@@ -2871,7 +3087,11 @@ const executeMoveSpecInternal = (
   const selectedAa071ResistanceRequestOperationIds = new Set<string>()
   const selectedKampfgeistOwnerIds = new Set<string>()
   const selectedProbabilityControlOwnerIds = new Set<string>()
+  const selectedSpitefulInterventionOwnerIds = new Set<string>()
+  const selectedConditionReactionOwnerReasons = new Set<string>()
   const ordinaryKampfgeistDamageTargetIds = new Set<string>()
+  const ordinaryEffectiveDamageLossByTarget = new Map<string, number>()
+  const weebleAccuracyHitTargetIds = new Set<string>()
   // Probability Control redraws are evaluated before downstream mechanics, but
   // their audit entries must follow the durable response that authorized them.
   // Keeping the original roll trace as an exact prefix lets pending execution
@@ -3005,6 +3225,7 @@ const executeMoveSpecInternal = (
   const projectedHp = createMoveAutomationHpUpdateAccumulator()
   const projectedInjuriesByTarget = new Map<string, number>()
   let moveCancelledByReaction = false
+  let quickDrawAccuracyPenalty = 0
   const randomTableExecutions = new Map<string, ExecutedMoveRandomTable>()
   const skippedRandomTableOperationIds = new Set<string>()
   const currentSelectorState = (): MoveSpecSelectorState => ({
@@ -3285,6 +3506,16 @@ const executeMoveSpecInternal = (
         damagedTargetIds,
         faintedTargetIds,
       }
+      if (operation.kind === 'usage'
+        && input.serverIgnoredUsageOperationIds?.has(operation.id) === true) {
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation', phase, operationId: operation.id,
+          operationKind: operation.kind, recipientIds: [], outcome: 'no-op',
+          reasonCode: 'ability-reviewed-frequency-bypass',
+          input: traceJson(operation.payload), result: { status: 'frequency-ignored' },
+        })
+        continue
+      }
       if (
         moveCancelledByReaction
         && operation.kind !== 'usage'
@@ -3304,28 +3535,112 @@ const executeMoveSpecInternal = (
         continue
       }
       const resolveOperationRecipientIds = (): readonly string[] => {
+        if (operation.kind === 'reaction-request') {
+          const actorId = input.context.actor.placement.id
+          const explicitInterruptReasons = new Set([
+            'ability.queenly-majesty.optional-stomp',
+            'ability.quick-draw.optional-interrupt',
+            'ability.revelation.optional-copy',
+            'ability.sway.optional-reflect',
+            'ability.spiteful-intervention.optional-spite',
+          ])
+          const stallProtectsInitiativeAction = input.context.queries.abilities.has(actorId, 'Stall')
+            && input.context.map.encounterState?.history.currentTurn?.placementId === actorId
+            && !getMechanics().script.keywords.some(keyword => /\b(?:priority|interrupt)\b/i.test(keyword))
+            && !/\b(?:priority|interrupt)\b/i.test(getMechanics().script.range)
+            && explicitInterruptReasons.has(operation.reasonCode)
+          const rocketProtectsTurn = input.context.map.encounterState?.effects.some(effect => (
+            effect.tags.includes('aa087-rocket-uninterruptible-turn')
+            && effect.affected.placementIds.includes(actorId)
+            && effect.suppression.sources.length === 0
+            && (effect.duration.remaining === null || effect.duration.remaining > 0)
+          )) === true
+          if ((stallProtectsInitiativeAction || rocketProtectsTurn)
+            && (operation.payload.ownerPlacementIds ?? []).every(ownerId => ownerId !== actorId)) return []
+        }
+        if (operation.kind === 'reaction-request'
+          && operation.reasonCode === 'ability.queenly-majesty.optional-stomp') {
+          const script = getMechanics().script
+          const priority = script.keywords.some(keyword => /\b(?:priority|interrupt)\b/i.test(keyword))
+            || /\b(?:priority|interrupt)\b/i.test(script.range)
+            || (input.context.queries.abilities.has(input.context.actor.placement.id, 'Triage')
+              && script.keywords.some(keyword => keyword.trim().toLowerCase() === 'healing'))
+            || aa084PranksterSelected({ operations: program.operations, responses: responseResolver })
+          if (!priority) return []
+        }
         const remainingRequest = operation.kind === 'reaction-request'
           ? operation
           : operation.source.kind === 'operation'
             ? reactionRequestsByOperationId.get(operation.source.id) ?? null
             : null
+        if (operation.kind === 'reaction-request'
+          && (operation.reasonCode === 'ability.steadfast.optional-speed'
+            || operation.reasonCode === 'ability.synchronize.optional-copy-condition')
+          && operation.source.kind === 'operation') {
+          const ownerId = operation.payload.ownerPlacementIds?.[0]
+          const sourceOperation = program.operations.find(candidate => candidate.id === operation.source.id)
+          const sourceAppliedToOwner = ownerId !== undefined && trace.events.some(event => (
+            event.kind === 'operation'
+            && event.operationId === operation.source.id
+            && event.outcome === 'applied'
+            && event.recipientIds.includes(ownerId)
+          ))
+          if (!sourceAppliedToOwner || !ownerId || sourceOperation?.kind !== 'condition') return []
+          const conditionId = sourceOperation.payload.conditionId
+          if (!conditionId) return []
+          const recipient = resolveMoveCoreTokenRecipient(input.context, ownerId)
+          const immunity = createStandardMoveCoreTokenEffectImmunityQueries({
+            moveType: getMechanics().script.type,
+            moveScript: getMechanics().script,
+            context: input.context,
+          }).condition({
+            operation: sourceOperation,
+            condition: normalizeConditionName(conditionId) ?? conditionId,
+            recipient,
+          })
+          if (immunity.blockedBy) return []
+        }
         const remainingTrigger = aa085to100TriggerRequirement({
           operation,
           request: remainingRequest,
         })
-        if (remainingTrigger) {
+        const selectedTriggerRequestRetained = operation.kind !== 'reaction-request'
+          && operation.source.kind === 'operation'
+          && reactionRequestsByOperationId.has(operation.source.id)
+          && (responseOwnerIdsByRequestOperation.get(operation.source.id)?.length ?? 0) > 0
+        if (remainingTrigger && !selectedTriggerRequestRetained) {
+          const anyTarget = remainingTrigger.targetId === '*'
+          const selectedMultiSwayHit = operation.kind === 'reaction-request'
+            && operation.reasonCode === AA093_SWAY_REASON
+            && preselectedMultiSwayOwnerId === remainingTrigger.targetId
+            && multiHitExecutions.some(execution => (
+              execution.hitTargetIds.includes(input.context.actor.placement.id)
+            ))
           const eligible = remainingTrigger.requirement === 'attacked'
-            ? targetIds.includes(remainingTrigger.targetId)
+            ? anyTarget ? targetIds.length > 0 : targetIds.includes(remainingTrigger.targetId)
             : remainingTrigger.requirement === 'hit'
-              ? hitTargetIds.includes(remainingTrigger.targetId)
+              ? selectedMultiSwayHit
+                || (anyTarget ? hitTargetIds.length > 0 : hitTargetIds.includes(remainingTrigger.targetId))
               : remainingTrigger.requirement === 'missed'
-                ? missedTargetIds.includes(remainingTrigger.targetId)
+                ? anyTarget ? missedTargetIds.length > 0 : missedTargetIds.includes(remainingTrigger.targetId)
                 : remainingTrigger.requirement === 'damaged'
-                  ? damagedTargetIds.includes(remainingTrigger.targetId)
+                  ? anyTarget ? damagedTargetIds.length > 0 : damagedTargetIds.includes(remainingTrigger.targetId)
                   : remainingTrigger.requirement === 'massive'
-                    ? massiveDamageTargetIds.has(remainingTrigger.targetId)
-                    : faintedTargetIds.includes(remainingTrigger.targetId)
+                    ? anyTarget ? massiveDamageTargetIds.size > 0 : massiveDamageTargetIds.has(remainingTrigger.targetId)
+                    : anyTarget ? faintedTargetIds.length > 0 : faintedTargetIds.includes(remainingTrigger.targetId)
           if (!eligible) return []
+        }
+        if (operation.kind === 'reaction-request'
+          && (operation.reasonCode === 'ability.wobble.optional-counter'
+            || operation.reasonCode === 'ability.weeble.optional-retaliation')) {
+          const ownerId = operation.payload.ownerPlacementIds?.[0]
+          const owner = ownerId ? input.context.queries.tokens.get(ownerId) : null
+          if (!owner || projectedHp.get(owner) <= 0) return []
+        }
+        if (operation.kind === 'reaction-request' && operation.reasonCode === AA097_VIGOR_REASON) {
+          const ownerId = operation.payload.ownerPlacementIds?.[0]
+          const owner = ownerId ? input.context.queries.tokens.get(ownerId) : null
+          if (!owner || projectedHp.get(owner) !== 1) return []
         }
         if (operation.reasonCode === AA080_MOTOR_DRIVE_STAGE_REASON) {
           const ownerId = aa080MotorDriveOwnerForOperation(operation)
@@ -3377,6 +3692,20 @@ const executeMoveSpecInternal = (
             actionSourcePlacementId: input.context.actor.placement.id,
           })) return []
           let owners = canonicalPlacementIds(input.context, operation.payload.ownerPlacementIds)
+          if ((operation.reasonCode === AA092_STEADFAST_REASON
+              || operation.reasonCode === AA094_SYNCHRONIZE_REASON)
+            && operation.source.kind === 'operation') {
+            owners = owners.filter(ownerId => (
+              !selectedConditionReactionOwnerReasons.has(`${operation.reasonCode}:${ownerId}`)
+              && trace.events.some(event => (
+                event.kind === 'operation'
+                && event.operationId === operation.source.id
+                && event.outcome === 'applied'
+                && event.recipientIds.includes(ownerId)
+              ))
+            ))
+            if (owners.length === 0) return []
+          }
           if (operation.reasonCode.startsWith('ability.')) {
             const abilitiesByPlacement = new Map(input.context.queries.placements.all().map(placement => [
               placement.id,
@@ -3391,10 +3720,44 @@ const executeMoveSpecInternal = (
             }))
             if (owners.length === 0) return []
           }
+          const faintedOwnerAbilityReasons = new Set([
+            'ability.aftermath.optional-hp-loss',
+            'ability.innards-out.optional-retaliation',
+            'ability.receiver.optional-grant',
+          ])
+          if (operation.reasonCode.startsWith('ability.')
+            && !faintedOwnerAbilityReasons.has(operation.reasonCode)) {
+            owners = owners.filter((ownerId) => {
+              const owner = input.context.queries.tokens.get(ownerId)
+              return owner !== null && projectedHp.get(owner) > 0
+            })
+            if (owners.length === 0) return []
+          }
           if (/\bmelee\b/i.test(getMechanics().script.range)
             && input.context.queries.abilities.has(input.context.actor.placement.id, 'Unseen Fist')) {
-            owners = owners.filter(ownerId => ownerId === input.context.actor.placement.id)
-            if (owners.length === 0) return []
+            const unseenFistBlockedReasons = new Set([
+              'ability.queenly-majesty.optional-stomp',
+              'ability.quick-draw.optional-interrupt',
+              'ability.revelation.optional-copy',
+              'ability.rough-skin.optional-hp-loss',
+              'ability.sand-spit.optional-sand-attack',
+              'ability.spiteful-intervention.optional-spite',
+              'ability.stalwart.optional-stages',
+              'ability.steam-engine.optional-smokescreen',
+              'ability.sway.optional-reflect',
+              'ability.wandering-spirit.optional-swap',
+              'ability.weaponize.optional-intercept',
+              'ability.weeble.optional-retaliation',
+              'ability.wobble.optional-counter',
+            ])
+            if (unseenFistBlockedReasons.has(operation.reasonCode)
+              || operation.source.kind === 'encounter-effect'
+                && input.context.map.encounterState?.effects.some(effect => (
+                  effect.id === operation.source.id && effect.tags.includes('blessing')
+                ))) {
+              owners = owners.filter(ownerId => ownerId === input.context.actor.placement.id)
+              if (owners.length === 0) return []
+            }
           }
           if (operation.reasonCode === AA080_MIRROR_ARMOR_REQUEST_REASON) {
             const ownerId = owners[0] ?? null
@@ -3538,7 +3901,6 @@ const executeMoveSpecInternal = (
           if ([
             'ability.skill-link.optional-five-hits',
             'ability.spray-down.optional-ground',
-            'ability.spiteful-intervention.optional-spite',
             'ability.sumo-stance.optional-push',
             'ability.tingle.optional-debuff',
             'ability.tingly-tongue.optional-lick',
@@ -3546,6 +3908,21 @@ const executeMoveSpecInternal = (
             'ability.transistor.optional-vulnerability',
             'ability.wash-away.optional-reset',
           ].includes(operation.reasonCode)) return owners
+          if (operation.reasonCode === 'ability.spiteful-intervention.optional-spite') {
+            return owners.filter(ownerId => !selectedSpitefulInterventionOwnerIds.has(ownerId))
+          }
+          if (operation.reasonCode === 'ability.telepathy.optional-disengage') {
+            const shift = program.operations.find((candidate): candidate is MoveMovementRequestEffectOperation => (
+              candidate.kind === 'movement-request'
+              && candidate.source.kind === 'operation'
+              && candidate.source.id === operation.id
+              && candidate.reasonCode === 'ability.telepathy.disengage-movement'
+            ))
+            return shift ? owners.filter(ownerId => (
+              movementChoiceSet(shift, input.context, [ownerId], resolvedMovements).choices.length > 0
+            )) : []
+          }
+          if (operation.reasonCode === AA098_WEAPONIZE_REASON) return owners
           if (operation.reasonCode === AA078_LIGHTNING_ROD_REASON) {
             return lightningRodSelected ? [] : owners
           }
@@ -3804,6 +4181,10 @@ const executeMoveSpecInternal = (
             return defeatedOpponent ? owners : []
           }
           if (operation.payload.timing === 'post-damage') {
+            if (operation.reasonCode === AA093_SWAY_REASON
+              && preselectedMultiSwayOwnerId !== null) {
+              return owners.filter(ownerId => ownerId === preselectedMultiSwayOwnerId)
+            }
             return operation.reasonCode === 'ability.anger-point.optional-attack-stage'
               ? owners.filter(ownerId => criticalHitTargetIds.has(ownerId))
               : owners.filter(ownerId => damagedTargetIds.includes(ownerId))
@@ -3813,9 +4194,14 @@ const executeMoveSpecInternal = (
               ? owners.filter(ownerId => faintedTargetIds.includes(ownerId))
               : owners.filter(ownerId => hitTargetIds.includes(ownerId))
           }
-          return ['post-hit', 'pre-damage'].includes(operation.payload.timing)
-            ? owners.filter(ownerId => hitTargetIds.includes(ownerId))
-            : owners
+          if (['post-hit', 'pre-damage'].includes(operation.payload.timing)) {
+            if (operation.reasonCode === AA093_SWAY_REASON
+              && program.operations.some(candidate => candidate.kind === 'multi-hit')) {
+              return owners
+            }
+            return owners.filter(ownerId => hitTargetIds.includes(ownerId))
+          }
+          return owners
         }
         if (operation.reasonCode === AA081_MUMMY_SUPPRESS_REASON
           && !aa081MummySuppressionSelection({
@@ -3980,6 +4366,41 @@ const executeMoveSpecInternal = (
           const illusionTargetId = operation.source.id.slice('ability.illusion.target:'.length)
           return hitTargetIds.includes(illusionTargetId) ? [illusionTargetId] : []
         }
+        if (operation.reasonCode === 'ability.schooling.exit-solo-form') {
+          const trigger = aa085to100TriggerRequirement({ operation, request: remainingRequest })
+          const token = trigger ? input.context.queries.tokens.get(trigger.targetId) : null
+          if (!trigger || !token || !damagedTargetIds.includes(trigger.targetId)) return []
+          const maximum = Math.max(1, token.fullMaxHp ?? token.maxHp)
+          return projectedHp.get(token) * 2 < maximum
+            && projectedHp.getTemporaryHp(token) <= 0
+            ? [trigger.targetId] : []
+        }
+        if (operation.reasonCode === 'ability.shields-down.enter-core-form') {
+          const trigger = aa085to100TriggerRequirement({ operation, request: remainingRequest })
+          const token = trigger ? input.context.queries.tokens.get(trigger.targetId) : null
+          if (!trigger || !token || !damagedTargetIds.includes(trigger.targetId)) return []
+          return projectedHp.get(token) * 2 <= Math.max(1, token.fullMaxHp ?? token.maxHp)
+            ? [trigger.targetId] : []
+        }
+        if (operation.reasonCode === 'ability.quick-cloak.break-super-effective') {
+          const trigger = aa085to100TriggerRequirement({ operation, request: remainingRequest })
+          return trigger
+            && damagedTargetIds.includes(trigger.targetId)
+            && resolvedDamageTypes.some(resolution => (
+              resolution.recipientId === trigger.targetId && resolution.finalMultiplier > 1
+            )) ? [trigger.targetId] : []
+        }
+        if (operation.reasonCode === 'ability.tingly-tongue.fail-next-paralysis-save') {
+          const trigger = aa085to100TriggerRequirement({ operation, request: remainingRequest })
+          if (!trigger || !hitTargetIds.includes(trigger.targetId)) return []
+          const accuracy = [...resolvedRolls].reverse().find(roll => (
+            roll.purpose === 'accuracy' && roll.recipientId === trigger.targetId
+          ))
+          const natural = accuracy
+            ? input.context.random.snapshot().find(entry => entry.rollId === accuracy.rollId)?.naturalResult
+            : null
+          return natural !== null && natural !== undefined && natural >= 15 ? [trigger.targetId] : []
+        }
         if (operation.reasonCode === AA075_INNARDS_OUT_HP_REASON
           && operation.source.kind === 'operation') {
           const selected = [...selectedInnardsOutByOwner.entries()]
@@ -4045,7 +4466,17 @@ const executeMoveSpecInternal = (
           && aa078HasLiquidOozeHitTarget({ context: input.context, hitTargetIds: damagedTargetIds })) return []
         const targetBoundId = aa068TargetBoundOperationTargetId(operation)
           ?? aa085to100BoundRecipientId({ operation, request: remainingRequest })
-        const resolved = effectRecipientIds(input.context, selectorState, operation.recipients.kind)
+        const weebleAccuracyTarget = targetBoundId
+          && operation.reasonCode.startsWith('ability.weeble.accuracy.')
+          ? input.context.queries.placements.get(targetBoundId) ? [targetBoundId] : []
+          : null
+        const weebleRetaliationTarget = targetBoundId
+          && operation.reasonCode.startsWith('ability.weeble.target.')
+          ? weebleAccuracyHitTargetIds.has(targetBoundId) ? [targetBoundId] : []
+          : null
+        const resolved = (weebleAccuracyTarget
+          ?? weebleRetaliationTarget
+          ?? effectRecipientIds(input.context, selectorState, operation.recipients.kind))
           .filter(recipientId => targetBoundId === null || recipientId === targetBoundId)
           .filter(recipientId => !(operation.kind === 'movement-request'
             && operation.payload.mode === 'forced'
@@ -4056,13 +4487,50 @@ const executeMoveSpecInternal = (
               && effect.suppression.sources.length === 0
               && (effect.duration.remaining === null || effect.duration.remaining > 0)
             ))))
+        if (operation.reasonCode === 'ability.wobble.counter'
+          || operation.reasonCode === 'ability.wobble.mirror-coat') {
+          const retaliationType = operation.reasonCode === 'ability.wobble.counter'
+            ? 'Fighting' : 'Psychic'
+          return computeMultiplier(retaliationType, input.context.actor.token.defenderTypes) === 0
+            ? [] : resolved
+        }
         const uncancelled = resolved.filter(recipientId => {
           if (cancelledEffectTargetIds.has(recipientId)) return false
-          const shieldDustSecondary = getMechanics().script.damaging
-            && input.context.queries.abilities.has(recipientId, 'Shield Dust')
+          if (operation.reasonCode.startsWith('ability.wistful-melody.')
+            && input.context.queries.abilities.has(recipientId, 'Soundproof')) return false
+          if (operation.reasonCode === 'ability.stench.flinch-accuracy-penalty'
+            && operation.source.kind === 'operation') {
+            const sourceOperation = program.operations.find(candidate => (
+              candidate.id === operation.source.id && candidate.kind === 'condition'
+            ))
+            const sourceApplied = trace.events.some(event => (
+              event.kind === 'operation'
+              && event.operationId === operation.source.id
+              && event.outcome === 'applied'
+              && event.recipientIds.includes(recipientId)
+            ))
+            const trigger = sourceOperation?.kind === 'condition'
+              ? sourceOperation.payload.accuracyRollTrigger : undefined
+            const resolved = trigger ? [...resolvedRolls].reverse().find(roll => (
+              roll.referenceId === trigger.rollId && roll.recipientId === recipientId
+            )) : null
+            const rolled = trigger
+              ? input.context.random.snapshot().find(entry => (
+                  entry.rollId === (resolved?.rollId ?? trigger.rollId)
+                ))
+              : null
+            const triggerApplied = !trigger || Boolean(rolled && (
+              trigger.trigger.kind === 'range'
+                ? rolled.naturalResult >= trigger.trigger.minimum
+                : trigger.trigger.values.includes(rolled.naturalResult)
+            ))
+            if (!sourceApplied || !triggerApplied) return false
+          }
+          const shieldDustSecondary = input.context.queries.abilities.has(recipientId, 'Shield Dust')
             && (operation.kind === 'condition' && Boolean(operation.payload.accuracyRollTrigger)
               || operation.kind === 'combat-stage'
                 && operation.payload.trigger?.kind === 'accuracy-roll')
+            && getMechanics().script.damaging
           if (shieldDustSecondary) return false
           if (!input.context.queries.abilities.has(recipientId, 'Dry Skin')) return true
           return !aa068DrySkinCancelsRecipientEffect({
@@ -4262,8 +4730,17 @@ const executeMoveSpecInternal = (
       if (recipientIds.length === 0 && (
         operation.recipients.kind === 'response-owner'
         || (operation.source.kind === 'operation'
-          && responseRequestOperationIds.has(operation.source.id))
+          && responseRequestOperationIds.has(operation.source.id)
+          && (!(operation.kind === 'roll'
+            && operation.payload.formula.kind === 'table'
+            && 'table' in operation.payload)
+            || (responseOwnerIdsByRequestOperation.get(operation.source.id)?.length ?? 0) === 0))
       )) {
+        if (operation.kind === 'roll'
+          && operation.payload.formula.kind === 'table'
+          && 'table' in operation.payload) {
+          skippedRandomTableOperationIds.add(operation.id)
+        }
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,
@@ -4458,12 +4935,51 @@ const executeMoveSpecInternal = (
             }
           })()
         : aa078BaseEmittedOperation
-      const aa080EmittedOperation = emittedOperation.kind === 'combat-stage'
-        && emittedOperation.reasonCode === AA080_MIRROR_ARMOR_REFLECT_REASON
-        && emittedOperation.source.kind === 'lifecycle-event'
-        && emittedOperation.source.id.startsWith('ability.mirror-armor.response:')
+      const remainingCatalogRetaliation = emittedOperation.kind === 'direct-hp'
+        && (emittedOperation.reasonCode.startsWith('ability.weeble.target.')
+          || emittedOperation.reasonCode === 'ability.wobble.counter'
+          || emittedOperation.reasonCode === 'ability.wobble.mirror-coat')
+      const remainingCatalogEmittedOperation = remainingCatalogRetaliation
+        && emittedOperation.kind === 'direct-hp'
+        && emittedOperation.source.kind === 'operation'
         ? (() => {
-            const encoded = emittedOperation.source.id.slice('ability.mirror-armor.response:'.length)
+            const response = program.operations.find(candidate => (
+              candidate.id === emittedOperation.source.id && candidate.kind === 'reaction-request'
+            ))
+            const ownerId = response?.kind === 'reaction-request'
+              ? response.payload.ownerPlacementIds?.[0] ?? null : null
+            const owner = ownerId ? input.context.queries.tokens.get(ownerId) : null
+            if (!owner) return emittedOperation
+            const ordinaryLoss = ordinaryEffectiveDamageLossByTarget.get(owner.id) ?? 0
+            const multiHitLoss = multiHitExecutions.reduce((total, execution) => (
+              total + execution.resolution.targets
+                .filter(target => target.targetId === ownerId)
+                .flatMap(target => target.strikes)
+                .reduce((sum, strike) => sum + (strike.damage?.effectiveHpLost ?? 0), 0)
+            ), 0)
+            return {
+              ...emittedOperation,
+              payload: {
+                ...emittedOperation.payload,
+                calculation: {
+                  kind: 'fixed' as const,
+                  value: emittedOperation.reasonCode.startsWith('ability.weeble.target.')
+                    ? Math.floor((ordinaryLoss + multiHitLoss) / 3)
+                    : Math.min(
+                        MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+                        (ordinaryLoss + multiHitLoss) * 2,
+                      ),
+                },
+              },
+            }
+          })()
+        : emittedOperation
+      const aa080EmittedOperation = remainingCatalogEmittedOperation.kind === 'combat-stage'
+        && remainingCatalogEmittedOperation.reasonCode === AA080_MIRROR_ARMOR_REFLECT_REASON
+        && remainingCatalogEmittedOperation.source.kind === 'lifecycle-event'
+        && remainingCatalogEmittedOperation.source.id.startsWith('ability.mirror-armor.response:')
+        ? (() => {
+            const encoded = remainingCatalogEmittedOperation.source.id.slice('ability.mirror-armor.response:'.length)
             const requestId = encoded.includes(':source:')
               ? encoded.slice(0, encoded.indexOf(':source:')) : ''
             const request = program.operations.find(candidate => (
@@ -4473,17 +4989,17 @@ const executeMoveSpecInternal = (
               ? request.payload.ownerPlacementIds?.[0] ?? null
               : null
             const owner = ownerId ? input.context.queries.tokens.get(ownerId) : null
-            const stage = aa080CombatStageKey(emittedOperation.payload.stage)
-            const value = emittedOperation.payload.value
-            if (!owner || !stage || typeof value !== 'number') return emittedOperation
+            const stage = aa080CombatStageKey(remainingCatalogEmittedOperation.payload.stage)
+            const value = remainingCatalogEmittedOperation.payload.value
+            if (!owner || !stage || typeof value !== 'number') return remainingCatalogEmittedOperation
             const current = owner.combatStages[stage] ?? 0
             const reflected = Math.max(-6, current + value) - current
             return {
-              ...emittedOperation,
-              payload: { ...emittedOperation.payload, value: reflected },
+              ...remainingCatalogEmittedOperation,
+              payload: { ...remainingCatalogEmittedOperation.payload, value: reflected },
             }
           })()
-        : emittedOperation
+        : remainingCatalogEmittedOperation
       const aa082EmittedOperation = aa080EmittedOperation.kind === 'direct-hp'
         && aa080EmittedOperation.reasonCode === AA082_PACK_HUNT_HP_REASON
         ? (() => {
@@ -4510,7 +5026,11 @@ const executeMoveSpecInternal = (
             })
             const targetEvasion = resolveMoveAutomationTargetEvasion(attackScript, target, {
               attacker: owner,
-              fieldEffects: input.context.queries.rooms.projectFieldEffects(),
+              fieldEffects: createMoveAutomationWeatherResolver(input.context.map, {
+                subjectPlacementId: target.id,
+                subjectOccupiedCells: gridFootprintCells(target.position, target),
+              }).projectFieldEffects(input.context.queries.rooms.projectFieldEffects()),
+              targetTerrainTags: aa085to100TokenTerrainTags({ context: input.context, token: target }),
             }).value
             const hit = roll && resolveMoveAutomationAccuracyRoll(attackScript, roll.naturalResult, {
               userAccuracy, targetEvasion,
@@ -5078,13 +5598,34 @@ const executeMoveSpecInternal = (
               : move.script
             const blurApplies = !move.script.requiresAccuracy
               && input.context.queries.abilities.has(recipientId, 'Blur')
-            accuracyScript = blurApplies
-              ? { ...baseScriptForAccuracy, requiresAccuracy: true, ac: 2 }
-              : baseScriptForAccuracy
+            accuracyScript = operation.reasonCode.startsWith('ability.weeble.accuracy.')
+              ? { ...baseScriptForAccuracy, requiresAccuracy: true, ac: 4, damageClass: 'Physical' }
+              : blurApplies
+                ? { ...baseScriptForAccuracy, requiresAccuracy: true, ac: 2 }
+                : baseScriptForAccuracy
             const userAccuracy = resolveAuthoritativeMoveUserAccuracy(input.context, {
               targetPlacementId: recipientId,
               script: accuracyScript,
             })
+            const weebleRequest = operation.reasonCode.startsWith('ability.weeble.accuracy.')
+              && operation.source.kind === 'operation'
+              ? program.operations.find(candidate => (
+                  candidate.id === operation.source.id && candidate.kind === 'reaction-request'
+                ))
+              : null
+            const weebleOwnerId = weebleRequest?.kind === 'reaction-request'
+              ? weebleRequest.payload.ownerPlacementIds?.[0] ?? null : null
+            const weebleOwner = weebleOwnerId
+              ? input.context.queries.tokens.get(weebleOwnerId) : null
+            const userAccuracyModifiers = weebleOwner
+              ? [{
+                  sourceId: `ability.weeble:${weebleOwner.id}`,
+                  reason: 'Weeble retaliation Accuracy',
+                  value: moveAutomationUserAccuracy(weebleOwner, {
+                    fieldEffects: input.context.queries.rooms.projectFieldEffects(),
+                  }),
+                }]
+              : userAccuracy.modifiers
             const evasionRule = 'evasionRule' in operation.payload
               ? operation.payload.evasionRule
               : undefined
@@ -5129,7 +5670,11 @@ const executeMoveSpecInternal = (
                       context: input.context,
                       token: input.context.actor.token,
                     }),
-                    fieldEffects: input.context.queries.rooms.projectFieldEffects(),
+                    fieldEffects: createMoveAutomationWeatherResolver(input.context.map, {
+                      subjectPlacementId: target.id,
+                      subjectOccupiedCells: gridFootprintCells(target.position, target),
+                    }).projectFieldEffects(input.context.queries.rooms.projectFieldEffects()),
+                    targetTerrainTags: aa085to100TokenTerrainTags({ context: input.context, token: target }),
                     dauntlessShieldActive: input.context.queries.abilities.has(
                       recipientId,
                       'Dauntless Shield',
@@ -5142,9 +5687,18 @@ const executeMoveSpecInternal = (
               attribute: 'evasion',
               baseValue: targetEvasion,
               changePolicy: keenEye ? 'non-increasing' : 'all',
+              ...(input.context.queries.abilities.has(recipientId, 'White Smoke') ? {
+                protectedFromExternalDecreasesPlacementId: recipientId,
+              } : {}),
             }).value
             if (blurApplies) targetEvasion = Math.floor(targetEvasion / 2)
-            modifiers = userAccuracy.modifiers
+            modifiers = quickDrawAccuracyPenalty === 0
+              ? userAccuracyModifiers
+              : [...userAccuracyModifiers, {
+                  sourceId: 'ability.quick-draw.interrupt-hit',
+                  reason: 'Quick Draw interrupt hit',
+                  value: quickDrawAccuracyPenalty,
+                }]
           }
 
           let result = input.context.random.roll({
@@ -5243,11 +5797,15 @@ const executeMoveSpecInternal = (
               },
             )
             resolvedAccuracyRule = accuracy.accuracyRule ?? null
+            const weebleAccuracy = operation.reasonCode.startsWith('ability.weeble.accuracy.')
             if (accuracy.hit) {
-              hitSet.add(recipientId)
-              missedSet.delete(recipientId)
+              if (weebleAccuracy) weebleAccuracyHitTargetIds.add(recipientId)
+              else {
+                hitSet.add(recipientId)
+                missedSet.delete(recipientId)
+              }
             }
-            else {
+            else if (!weebleAccuracy) {
               missedSet.add(recipientId)
               hitSet.delete(recipientId)
             }
@@ -5338,22 +5896,38 @@ const executeMoveSpecInternal = (
           const baseResolvedType: MoveDamageTypeResolution = aa069Sources.length > 0
             ? { ...baseType, passiveSources: [...baseType.passiveSources, ...aa069Sources] }
             : baseType
+          const steelworkerMultiplier = selectedSteelworkerOwnerIds.has(recipientId)
+            ? computeMultiplier(baseResolvedType.moveType, ['Steel']) : null
+          const steelworkerType: MoveDamageTypeResolution = steelworkerMultiplier === null
+            ? baseResolvedType
+            : {
+                ...baseResolvedType,
+                defenderTypes: ['Steel'],
+                baseMultiplier: steelworkerMultiplier,
+                passiveMultiplier: steelworkerMultiplier,
+                passiveSources: [...baseResolvedType.passiveSources, 'Steelworker'],
+                finalMultiplier: steelworkerMultiplier,
+                finalRelation: steelworkerMultiplier === 0 ? 'immune'
+                  : steelworkerMultiplier < 1 ? 'resistant'
+                    : steelworkerMultiplier > 1 ? 'weak' : 'neutral',
+                immunitySource: steelworkerMultiplier === 0 ? 'Steelworker' : null,
+              }
           const absorbForceType: MoveDamageTypeResolution = selectedAbsorbForceOwnerIds.has(recipientId)
             && resolvedClass.damageClass === 'physical'
             ? {
-                ...baseResolvedType,
-                passiveMultiplier: resistMultiplierOneStepFurther(baseResolvedType.passiveMultiplier),
-                passiveSources: [...baseResolvedType.passiveSources, 'Absorb Force'],
-                finalMultiplier: resistMultiplierOneStepFurther(baseResolvedType.finalMultiplier),
-                finalRelation: baseResolvedType.finalMultiplier === 0
+                ...steelworkerType,
+                passiveMultiplier: resistMultiplierOneStepFurther(steelworkerType.passiveMultiplier),
+                passiveSources: [...steelworkerType.passiveSources, 'Absorb Force'],
+                finalMultiplier: resistMultiplierOneStepFurther(steelworkerType.finalMultiplier),
+                finalRelation: steelworkerType.finalMultiplier === 0
                   ? 'immune'
-                  : resistMultiplierOneStepFurther(baseResolvedType.finalMultiplier) < 1
+                  : resistMultiplierOneStepFurther(steelworkerType.finalMultiplier) < 1
                     ? 'resistant'
-                    : resistMultiplierOneStepFurther(baseResolvedType.finalMultiplier) > 1
+                    : resistMultiplierOneStepFurther(steelworkerType.finalMultiplier) > 1
                       ? 'weak'
                       : 'neutral',
               }
-            : baseResolvedType
+            : steelworkerType
           const bodyguardType: MoveDamageTypeResolution = selectedBodyguardOwnerIds.has(recipientId)
             ? {
                 ...absorbForceType,
@@ -5538,7 +6112,7 @@ const executeMoveSpecInternal = (
                 count: formula.count,
                 sides: formula.sides,
                 mod: formula.modifier,
-                rolls: [],
+                rolls: [...result.naturalResults],
                 total: result.finalValue,
               },
               manualHpLoss: '',
@@ -5573,20 +6147,30 @@ const executeMoveSpecInternal = (
             forceActorStab: aa084ProteanStab,
             ...(formula.contextualDamageBase ? { contextualDamageBase: formula.contextualDamageBase } : {}),
           })
-          if (calculation.breakdown.hpLoss > 0) projectedDamagedTargetIds.add(recipientId)
-          if (calculation.breakdown.hpLoss * 2 >= Math.max(
-            1, recipient.fullMaxHp ?? recipient.maxHp,
-          )) massiveDamageTargetIds.add(recipientId)
+          const recipientMaximumHp = Math.max(1, recipient.fullMaxHp ?? recipient.maxHp)
+          const sturdyLossLimit = input.context.queries.abilities.has(recipientId, 'Sturdy')
+            ? Math.max(1, Math.floor(recipientMaximumHp / 2)) : null
+          const boundedDamageLoss = sturdyLossLimit === null
+            ? calculation.breakdown.hpLoss
+            : Math.min(calculation.breakdown.hpLoss, sturdyLossLimit)
+          if (boundedDamageLoss > 0) projectedDamagedTargetIds.add(recipientId)
+          if (boundedDamageLoss * 2 >= recipientMaximumHp) massiveDamageTargetIds.add(recipientId)
           const bypassTemporaryHp = aa075InfiltratorBypassesTemporaryHp({
             context: input.context,
             recipientId,
           })
           const hpLoss = projectedHp.applyLossWithInjuryAutomation(
             recipient,
-            calculation.breakdown.hpLoss,
+            boundedDamageLoss,
             'damage',
             { bypassTemporaryHp },
           )
+          if (hpLoss.effectiveHpLost > 0) {
+            ordinaryEffectiveDamageLossByTarget.set(
+              recipientId,
+              (ordinaryEffectiveDamageLossByTarget.get(recipientId) ?? 0) + hpLoss.effectiveHpLost,
+            )
+          }
           if (hpLoss.effectiveHpLost > 0
             && ['Bug', 'Dark', 'Rock'].includes(resolvedType.moveType)) {
             ordinaryKampfgeistDamageTargetIds.add(recipientId)
@@ -5596,9 +6180,9 @@ const executeMoveSpecInternal = (
             ?? recipient.currentHp + (recipient.temporaryHp ?? 0)
           const remaining = bypassTemporaryHp
             ? projectedHp.get(recipient)
-            : Math.max(0, previousRemaining - calculation.breakdown.hpLoss)
+            : Math.max(0, previousRemaining - boundedDamageLoss)
           projectedRemainingHpByTarget.set(recipientId, remaining)
-          if (remaining === 0 && calculation.breakdown.hpLoss > 0) {
+          if (remaining === 0 && boundedDamageLoss > 0) {
             faintedTargetIds = canonicalPlacementIds(input.context, [...faintedTargetIds, recipientId])
           }
           rollSummaries.push({
@@ -5646,15 +6230,28 @@ const executeMoveSpecInternal = (
       }
 
       if (operation.kind === 'multi-hit') {
-        const reviewedMultiHitOperation = emittedOperation.kind === 'multi-hit'
+        const baseMultiHitOperation = emittedOperation.kind === 'multi-hit'
           ? emittedOperation
           : operation
+        const swayReflection = preselectedMultiSwayOwnerId !== null
+          && recipientIds.includes(preselectedMultiSwayOwnerId)
+        const reviewedMultiHitOperation = baseMultiHitOperation
         const execution = executeMoveMultiHitOperation({
           context: input.context,
           operation: reviewedMultiHitOperation,
           script: getMechanics().script,
           canonicalMoveId: spec.canonicalId,
           recipientIds,
+          ...(swayReflection ? {
+            reflectedRecipientIds: new Map([[
+              preselectedMultiSwayOwnerId!, input.context.actor.placement.id,
+            ]]),
+          } : {}),
+          ...(multiSwayOwnerId !== null && recipientIds.includes(multiSwayOwnerId) ? {
+            potentialReflectedRecipientIds: new Map([[
+              multiSwayOwnerId, input.context.actor.placement.id,
+            ]]),
+          } : {}),
           gorillaTacticsTriggeringDamage: aa072GorillaSelected,
           ignitionBoostTriggeringDamage: selectedIgnitionBoostRequestId !== null,
           firstStrikeResistanceStepsByRecipient: new Map(recipientIds.map(recipientId => [
@@ -5670,6 +6267,12 @@ const executeMoveSpecInternal = (
           forceActorStab: aa084ProteanStab,
         })
         multiHitExecutions.push(execution)
+        if (swayReflection) {
+          targetIds = canonicalPlacementIds(input.context, [
+            ...targetIds.filter(id => id !== preselectedMultiSwayOwnerId),
+            input.context.actor.placement.id,
+          ])
+        }
         resolvedRolls.push(...execution.resolvedRolls.map(roll => ({ ...roll })))
         hitTargetIds = canonicalPlacementIds(input.context, [
           ...hitTargetIds,
@@ -5823,7 +6426,7 @@ const executeMoveSpecInternal = (
       }
 
       if (operation.kind === 'movement-request' && operation.payload.choice) {
-        const set = movementChoiceSet(operation, input.context, recipientIds)
+        const set = movementChoiceSet(operation, input.context, recipientIds, resolvedMovements)
         const request = pendingMovementRequest(operation, recipientIds, set)
         if (request.options.length === 0) {
           if (!request.allowPass) {
@@ -6263,6 +6866,26 @@ const executeMoveSpecInternal = (
           })
         }
         const runtime = nestedRuntimeFor(input.context, nestedOperation)
+        const reviewedSpecRepeat = runtime.canonicalId === spec.canonicalId
+          && (
+            (operation.id.startsWith('ability.dancer.copy.') && operation.reasonCode === 'dancer')
+            || (operation.id.startsWith('ability.danger-syrup.sweet-scent.')
+              && operation.reasonCode === 'danger-syrup')
+            || (operation.id.startsWith('ability.dig-away.dig.')
+              && operation.reasonCode === 'dig-away')
+            || (operation.id.startsWith('ability.fox-fire.ember.')
+              && operation.reasonCode === 'fox-fire')
+            || operation.reasonCode.startsWith('ability.quick-draw.move.')
+            || operation.reasonCode === 'ability.revelation.copy-triggering-dance'
+            || operation.reasonCode === 'ability.queenly-majesty.stomp'
+          )
+        if (!reviewedSpecRepeat
+          && executionState.nestedBudget.snapshot().visitedCanonicalIds.includes(runtime.canonicalId)) {
+          return fail(
+            'nested-spec-already-visited',
+            `Nested spec ${runtime.canonicalId} was already visited by this resolution.`,
+          )
+        }
         const parentResolutionId = executionState.resolutionId
           ?? fail(
             'nested-resolution-id-missing',
@@ -6308,15 +6931,50 @@ const executeMoveSpecInternal = (
           runtime.canonicalId,
           'registered-spec',
         ).script
-        const centeredArea = centeredNestedAreaTargeting({
-          context: actorContext,
-          runtime,
-          script: actorMechanics,
-        })
-        let childTargetIds: readonly string[] = targetlessChild
-          ? []
-          : centeredArea?.targetIds
-            ?? (nestedOperation.payload.targeting.kind === 'operation-recipients' ? recipientIds : [])
+        const steamEngineSmokescreen = operation.reasonCode === 'ability.steam-engine.smokescreen'
+        let areaResolution: ReviewedNestedAreaTargetingResolution | null = null
+        let childTargetIds: readonly string[] = []
+        if (!targetlessChild && runtime.definition.spec.targeting.kind === 'self') {
+          childTargetIds = []
+        }
+        else if (areaChild && nestedOperation.payload.targeting.kind === 'operation-recipients') {
+          if (!steamEngineSmokescreen && recipientIds.length !== 1) {
+            return fail(
+              'nested-targeting-invalid',
+              `Nested area operation ${operation.id} requires one exact server-owned anchor target.`,
+            )
+          }
+          areaResolution = centeredNestedAreaTargeting({
+            context: actorContext,
+            runtime,
+            script: actorMechanics,
+            anchorTargetPlacementId: steamEngineSmokescreen ? null : recipientIds[0]!,
+            centerRangedBlastOnActor: steamEngineSmokescreen,
+          })
+          if (!areaResolution) {
+            return fail(
+              'nested-targeting-invalid',
+              `Nested area operation ${operation.id} has no legal authoritative geometry.`,
+            )
+          }
+          childTargetIds = areaResolution.targetIds
+        }
+        else if (!targetlessChild && !areaChild
+          && nestedOperation.payload.targeting.kind === 'operation-recipients') {
+          const legalTargets = new Set(reviewedNestedMoveLegalTargetIds({
+            context: actorContext,
+            actorPlacementId,
+            runtime,
+            script: actorMechanics,
+          }))
+          if (recipientIds.some(recipientId => !legalTargets.has(recipientId))) {
+            return fail(
+              'nested-targeting-invalid',
+              `Nested operation ${operation.id} lost its authoritative target range or legality.`,
+            )
+          }
+          childTargetIds = recipientIds
+        }
         let nestedOperationTraced = false
         if (
           invocation.randomSelection
@@ -6340,7 +6998,6 @@ const executeMoveSpecInternal = (
         }
 
         if (!targetlessChild
-          && centeredArea === null
           && nestedOperation.payload.targeting.kind === 'fresh-choice') {
           const choices = nestedTargetOptions({
             context: actorContext,
@@ -6415,13 +7072,27 @@ const executeMoveSpecInternal = (
               request,
             )
           }
-          childTargetIds = [
-            choices.find(({ option }) => option.id === response.optionId)?.targetPlacementId
-              ?? fail(
+          const selectedTargetId = choices.find(({ option }) => option.id === response.optionId)?.targetPlacementId
+            ?? fail(
+              'nested-targeting-invalid',
+              `Nested target option ${response.optionId} disappeared before child execution.`,
+            )
+          if (areaChild) {
+            areaResolution = centeredNestedAreaTargeting({
+              context: actorContext,
+              runtime,
+              script: actorMechanics,
+              anchorTargetPlacementId: selectedTargetId,
+            })
+            if (!areaResolution) {
+              return fail(
                 'nested-targeting-invalid',
-                `Nested target option ${response.optionId} disappeared before child execution.`,
-              ),
-          ]
+                `Nested area target ${selectedTargetId} lost its authoritative geometry.`,
+              )
+            }
+            childTargetIds = areaResolution.targetIds
+          }
+          else childTargetIds = [selectedTargetId]
         }
 
         const childContext = deriveNestedMoveRulesContext({
@@ -6444,26 +7115,23 @@ const executeMoveSpecInternal = (
           outcome: 'started',
           reasonCode: 'nested-child-started',
         })
-        const reviewedSpecRepeat = runtime.canonicalId === spec.canonicalId
-          && (
-            (operation.id.startsWith('ability.dancer.copy.') && operation.reasonCode === 'dancer')
-            || (operation.id.startsWith('ability.danger-syrup.sweet-scent.')
-              && operation.reasonCode === 'danger-syrup')
-            || (operation.id.startsWith('ability.dig-away.dig.')
-              && operation.reasonCode === 'dig-away')
-            || (operation.id.startsWith('ability.fox-fire.ember.')
-              && operation.reasonCode === 'fox-fire')
-          )
         const childMoveSourceId = runtime.definition.spec.phases
           .flatMap(block => block.operations)
           .find(candidate => candidate.source.kind === 'move')?.source.id
           ?? `move.${runtime.canonicalId}`
+        const ignoreChildFrequency = steamEngineSmokescreen
         const child = executeMoveSpecInternal({
           definition: runtime.definition,
           context: childContext,
           authoritativeTargetIds: childTargetIds,
+          ...(ignoreChildFrequency ? {
+            serverIgnoredUsageOperationIds: new Set(runtime.definition.spec.phases
+              .flatMap(block => block.operations)
+              .filter(candidate => candidate.kind === 'usage')
+              .map(candidate => candidate.id)),
+          } : {}),
           ...(reviewedSpecRepeat ? { reviewedIdentityNamespace: childResolutionId } : {}),
-          ...(centeredArea ? { authoritativeTargetEvaluations: centeredArea.evaluations } : {}),
+          ...(areaResolution ? { authoritativeTargetEvaluations: areaResolution.evaluations } : {}),
           serverAbilityOverlayOperations: [
             ...aa064MoveOverlayOperations({
               context: childContext,
@@ -6657,11 +7325,37 @@ const executeMoveSpecInternal = (
         const directChildOperationIds = child.operations.flatMap(emission => (
           emission.childResolutionId === undefined ? [emission.operation.id] : []
         ))
-        operations.push(...child.operations.map(emission => projectNestedEmission({
-          emission,
-          invocationPhase: phase,
-          childResolutionId,
-        })))
+        operations.push(...child.operations.map((emission) => {
+          const projected = projectNestedEmission({
+            emission,
+            invocationPhase: phase,
+            childResolutionId,
+          })
+          if (!steamEngineSmokescreen
+            || projected.operation.kind !== 'hazard'
+            || projected.operation.payload.action !== 'add'
+            || projected.operation.payload.geometry.kind !== 'blast'
+            || projected.operation.payload.geometry.center !== 'selected-target') return projected
+          return {
+            ...projected,
+            operation: {
+              ...projected.operation,
+              payload: {
+                ...projected.operation.payload,
+                geometry: {
+                  ...projected.operation.payload.geometry,
+                  kind: 'blast' as const,
+                  center: 'actor' as const,
+                },
+              },
+            },
+          }
+        }))
+        if (operation.reasonCode.startsWith('ability.quick-draw.move.')
+          && child.hitTargetIds.includes(input.context.actor.placement.id)
+          && !input.context.queries.abilities.has(input.context.actor.placement.id, 'Inner Focus')) {
+          quickDrawAccuracyPenalty = Math.min(quickDrawAccuracyPenalty, -2)
+        }
         childExecutions.push(Object.freeze({
           resolutionId: childResolutionId,
           parentOperationId: operation.id,
@@ -6798,6 +7492,43 @@ const executeMoveSpecInternal = (
             payload: { ...operation.payload, options },
           }
         }
+        if (operation.kind === 'reaction-request'
+          && operation.reasonCode === AA099_WOBBLE_REASON) {
+          const damageClass = getMechanics().script.damageClass?.trim().toLowerCase()
+          const optionId = damageClass === 'physical'
+            ? 'ability.wobble.counter'
+            : damageClass === 'special'
+              ? 'ability.wobble.mirror-coat'
+              : null
+          if (!optionId) {
+            return fail('definition-integrity-mismatch', 'Wobble lost the triggering Move damage class.')
+          }
+          requestOperation = {
+            ...operation,
+            payload: {
+              ...operation.payload,
+              options: operation.payload.options.filter(option => option.id === optionId),
+            },
+          }
+        }
+        if (operation.kind === 'reaction-request'
+          && operation.reasonCode === 'ability.soulstealer.optional-heal') {
+          const trigger = aa085to100TriggerRequirement({ operation })
+          const defeated = trigger ? input.context.queries.tokens.get(trigger.targetId) : null
+          if (!trigger || !defeated || !faintedTargetIds.includes(trigger.targetId)) {
+            return fail('definition-integrity-mismatch', 'Soulstealer lost its defeated target.')
+          }
+          const optionId = projectedHp.getInjuries(defeated) >= 10
+            ? 'ability.soulstealer.use-killed'
+            : 'ability.soulstealer.use-normal'
+          requestOperation = {
+            ...operation,
+            payload: {
+              ...operation.payload,
+              options: operation.payload.options.filter(option => option.id === optionId),
+            },
+          }
+        }
         const request = pendingRequest(
           requestOperation,
           recipientIds,
@@ -6840,6 +7571,33 @@ const executeMoveSpecInternal = (
                 return fail('definition-integrity-mismatch', `Thunder Boost reaction ${operation.id} received an invalid selection.`)
               }
               thunderBoostSelected = true
+            }
+            if (operation.reasonCode === 'ability.spiteful-intervention.optional-spite') {
+              selectedSpitefulInterventionOwnerIds.add(recipientIds[0]!)
+            }
+            if (operation.reasonCode === AA092_STEADFAST_REASON
+              || operation.reasonCode === AA094_SYNCHRONIZE_REASON) {
+              selectedConditionReactionOwnerReasons.add(
+                `${operation.reasonCode}:${recipientIds[0]!}`,
+              )
+            }
+            if (operation.reasonCode === AA098_VOODOO_DOLL_REASON) {
+              const optionPrefix = 'ability.voodoo-doll.target.'
+              const targetId = response.optionId.startsWith(optionPrefix)
+                ? response.optionId.slice(optionPrefix.length) : null
+              const target = targetId ? input.context.queries.tokens.get(targetId) : null
+              if (!targetId || !target
+                || targetId === input.context.actor.placement.id
+                || targetIds.includes(targetId)
+                || getMechanics().script.moveName.trim().toLowerCase() !== 'curse'
+                || !input.context.actor.token.defenderTypes.some(type => type.trim().toLowerCase() === 'ghost')
+                || ptuGridDistanceBetweenFootprints(input.context.actor.token, target) > 8) {
+                return fail('definition-integrity-mismatch', `Voodoo Doll reaction ${operation.id} received a stale target.`)
+              }
+              targetIds = canonicalPlacementIds(input.context, [...targetIds, targetId])
+              hitTargetIds = canonicalPlacementIds(input.context, [...hitTargetIds, targetId])
+              missedTargetIds = missedTargetIds.filter(id => id !== targetId)
+              automaticHitTargetIds.add(targetId)
             }
             if (operation.reasonCode === AA093_STORM_DRAIN_REASON) {
               if (response.optionId !== AA093_STORM_DRAIN_OPTION_ID || stormDrainSelected) {
@@ -6895,6 +7653,32 @@ const executeMoveSpecInternal = (
                 ))) resolvedRolls.push({ ...reflected, recipientId: reflectedId })
               }
             }
+            if (operation.reasonCode === AA096_TRINITY_REASON) {
+              const damageClass = response.optionId === AA096_TRINITY_PHYSICAL_OPTION_ID
+                ? 'Physical'
+                : response.optionId === AA096_TRINITY_SPECIAL_OPTION_ID
+                  ? 'Special'
+                  : null
+              if (!damageClass || getMechanics().script.moveName.trim().toLowerCase() !== 'tri attack') {
+                return fail('definition-integrity-mismatch', 'Trinity received an invalid damage-class choice.')
+              }
+              const currentMechanics = getMechanics()
+              mechanics = Object.freeze({
+                ...currentMechanics,
+                script: Object.freeze({ ...currentMechanics.script, damageClass }),
+              })
+            }
+            if (operation.reasonCode === AA085_REFRIGERATE_REASON) {
+              const currentMechanics = getMechanics()
+              if (!currentMechanics.script.damaging
+                || currentMechanics.script.type.trim().toLowerCase() !== 'normal') {
+                return fail('definition-integrity-mismatch', 'Refrigerate lost its Normal-Type damaging Move.')
+              }
+              mechanics = Object.freeze({
+                ...currentMechanics,
+                script: Object.freeze({ ...currentMechanics.script, type: 'Ice' }),
+              })
+            }
             if (operation.reasonCode === AA069_FIERY_CRASH_REASON
               && response.optionId === 'ability.fiery-crash.fire-type') {
               const currentMechanics = getMechanics()
@@ -6947,6 +7731,57 @@ const executeMoveSpecInternal = (
             if (operation.reasonCode === AA067_DELAYED_REACTION_REASON) {
               selectedDelayedReactionOwnerIds.add(recipientIds[0]!)
             }
+            if (operation.reasonCode === AA092_STEELWORKER_REASON) {
+              selectedSteelworkerOwnerIds.add(recipientIds[0]!)
+            }
+            if (operation.reasonCode === AA096_TRANSISTOR_REASON) {
+              const targetId = response.optionId.startsWith('ability.transistor.target.')
+                ? response.optionId.slice('ability.transistor.target.'.length) : null
+              if (!targetId || !hitTargetIds.includes(targetId)) {
+                return fail('definition-integrity-mismatch', 'Transistor selected a target that was not hit.')
+              }
+            }
+            if (operation.reasonCode === AA097_VIGOR_REASON) {
+              const ownerId = recipientIds[0]!
+              const owner = input.context.queries.tokens.get(ownerId)
+              if (owner && massiveDamageTargetIds.has(ownerId)) {
+                projectedHp.removeInjuries(owner, 1)
+                projectedInjuriesByTarget.set(ownerId, projectedHp.getInjuries(owner))
+              }
+            }
+            if (operation.reasonCode === AA093_SWAY_REASON) {
+              const ownerId = recipientIds[0]!
+              const reflectedId = input.context.actor.placement.id
+              const provisionalMultiReflection = ownerId === preselectedMultiSwayOwnerId
+                && program.operations.some(candidate => candidate.kind === 'multi-hit')
+                && multiHitExecutions.length === 0
+              if (!provisionalMultiReflection) {
+                const completedMultiReflection = ownerId === preselectedMultiSwayOwnerId
+                  && multiHitExecutions.some(execution => execution.hitTargetIds.includes(reflectedId))
+                if (!hitTargetIds.includes(ownerId) && !completedMultiReflection) {
+                  return fail('definition-integrity-mismatch', `Sway reaction ${operation.id} lost its hit owner.`)
+                }
+                targetIds = canonicalPlacementIds(input.context, [
+                  ...targetIds.filter(id => id !== ownerId), reflectedId,
+                ])
+                hitTargetIds = canonicalPlacementIds(input.context, [
+                  ...hitTargetIds.filter(id => id !== ownerId), reflectedId,
+                ])
+                missedTargetIds = missedTargetIds.filter(id => id !== reflectedId)
+                automaticHitTargetIds.add(reflectedId)
+                for (const reflected of resolvedRolls.filter(roll => (
+                  roll.recipientId === ownerId
+                  && (roll.purpose === 'accuracy' || roll.purpose === 'critical')
+                ))) {
+                  if (!resolvedRolls.some(roll => (
+                    roll.operationId === reflected.operationId
+                    && roll.referenceId === reflected.referenceId
+                    && roll.purpose === reflected.purpose
+                    && roll.recipientId === reflectedId
+                  ))) resolvedRolls.push({ ...reflected, recipientId: reflectedId })
+                }
+              }
+            }
             if (operation.reasonCode === 'ability.wind-power.optional-charge') {
               const ownerId = recipientIds[0]!
               if (!hitTargetIds.includes(ownerId)) {
@@ -6993,6 +7828,31 @@ const executeMoveSpecInternal = (
                 || operation.reasonCode === AA082_PERCEPTION_REASON
                 || operation.reasonCode === 'ability.telepathy.optional-disengage') {
                 cancelledEffectTargetIds.add(ownerId)
+              }
+            }
+            if (operation.reasonCode === AA098_WEAPONIZE_REASON) {
+              const protectedTargetId = aa085to100TriggerRequirement({ operation })?.targetId ?? null
+              if (!protectedTargetId || !hitTargetIds.includes(protectedTargetId)) {
+                return fail('definition-integrity-mismatch', `Weaponize reaction ${operation.id} lost its protected target.`)
+              }
+              const ownerId = recipientIds[0]!
+              hitTargetIds = canonicalPlacementIds(input.context, [
+                ...hitTargetIds.filter(id => id !== protectedTargetId), ownerId,
+              ])
+              targetIds = canonicalPlacementIds(input.context, [
+                ...targetIds.filter(id => id !== protectedTargetId), ownerId,
+              ])
+              missedTargetIds = missedTargetIds.filter(id => id !== ownerId)
+              for (const redirected of resolvedRolls.filter(roll => (
+                roll.recipientId === protectedTargetId
+                && (roll.purpose === 'accuracy' || roll.purpose === 'critical')
+              ))) {
+                if (!resolvedRolls.some(roll => (
+                  roll.operationId === redirected.operationId
+                  && roll.referenceId === redirected.referenceId
+                  && roll.purpose === redirected.purpose
+                  && roll.recipientId === ownerId
+                ))) resolvedRolls.push({ ...redirected, recipientId: ownerId })
               }
             }
             if (operation.reasonCode === 'ability.bodyguard.optional-redirection') {

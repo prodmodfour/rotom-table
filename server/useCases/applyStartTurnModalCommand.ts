@@ -36,6 +36,9 @@ import {
 } from '../storage/sheetRepository'
 import { aa068EarlyBirdSleepSaveBonus } from '../domain/abilityAutomation/mechanics/aa068StaticIntegration'
 import { aa069EnduringRagePreventsSave } from '../domain/abilityAutomation/mechanics/aa069StaticIntegration'
+import { effectiveRuntimeAbilityIds } from '../domain/abilityAutomation/effectiveRuntimeAbilities'
+import { normalizeConditionName } from '~/utils/statusConditions'
+import { parseEncounterState } from '#shared/moveAutomation/encounterState'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
@@ -79,6 +82,7 @@ interface ResolvedStartTurnModalContext {
   readonly map: TabletopMap
   readonly payload: StartTurnModalStateUpdatePayload
   readonly conditionRollModifier: number
+  readonly forcedConditionSaveFailureEffectId: string | null
   readonly sheetRevisionExpectation: SheetRevisionExpectation | null
 }
 
@@ -169,23 +173,49 @@ const resolveContext = async (
   if (activePlacement && !storedSheet) {
     throw new StartTurnModalCommandUseCaseError(404, 'The active placement sheet no longer exists')
   }
+  const effectiveAbilityIds = storedSheet && activePlacement
+    ? effectiveRuntimeAbilityIds({
+        map,
+        placement: activePlacement,
+        sheet: storedSheet.sheet as unknown as CharacterSheet | TrainerSheet,
+      })
+    : []
+  const canonicalCondition = payload.action === 'resolveCondition'
+    ? normalizeConditionName(payload.condition) : null
   if (storedSheet && activePlacement && payload.action === 'resolveCondition'
     && payload.resolution === 'roll'
-    && aa069EnduringRagePreventsSave({
+    && (aa069EnduringRagePreventsSave({
       map,
       placement: activePlacement,
       sheet: storedSheet.sheet as unknown as CharacterSheet | TrainerSheet,
       condition: payload.condition,
-    })) {
-    throw new StartTurnModalCommandUseCaseError(409, 'Enduring Rage prevents Save Checks to cure Enraged.')
+    }) || (canonicalCondition === 'Rage' && effectiveAbilityIds.includes('White Flame')))) {
+    throw new StartTurnModalCommandUseCaseError(409, `${effectiveAbilityIds.includes('White Flame') ? 'White Flame' : 'Enduring Rage'} prevents Save Checks to cure Enraged.`)
   }
+  const truantSaveBonus = activePlacement && map.encounterState?.effects.some(effect => (
+    effect.tags.includes('aa096-truant-refused-turn')
+    && effect.affected.placementIds.includes(activePlacement.id)
+    && effect.suppression.sources.length === 0
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+  )) ? 3 : 0
+  const forcedConditionSaveFailureEffectId = activePlacement
+    && canonicalCondition === 'Paralysis'
+    && payload.action === 'resolveCondition'
+    && payload.resolution === 'roll'
+    ? map.encounterState?.effects.find(effect => (
+        effect.tags.includes('aa095-tingly-tongue-fail-next-paralysis-save')
+        && effect.affected.placementIds.includes(activePlacement.id)
+        && effect.suppression.sources.length === 0
+        && (effect.duration.remaining === null || effect.duration.remaining > 0)
+      ))?.id ?? null
+    : null
   const conditionRollModifier = storedSheet && activePlacement && payload.action === 'resolveCondition'
     ? aa068EarlyBirdSleepSaveBonus({
         map,
         placement: activePlacement,
         sheet: storedSheet.sheet as unknown as CharacterSheet | TrainerSheet,
         condition: payload.condition,
-      })
+      }) + truantSaveBonus
     : 0
   const mapPath = mapPathForDocument(map)
   return {
@@ -193,7 +223,8 @@ const resolveContext = async (
     relativePath: dependencies.relativePath(mapPath),
     map,
     payload,
-    conditionRollModifier,
+    conditionRollModifier: forcedConditionSaveFailureEffectId ? -100 : conditionRollModifier,
+    forcedConditionSaveFailureEffectId,
     sheetRevisionExpectation: storedSheet ? {
       kind: storedSheet.kind,
       slug: storedSheet.slug,
@@ -225,8 +256,11 @@ const applyStartTurnModalCommand = (
     })
   }
 
+  const forcedFailure = context.forcedConditionSaveFailureEffectId !== null
+    && context.payload.action === 'resolveCondition'
+    && context.payload.resolution === 'roll'
   const conditionRoll = context.payload.action === 'resolveCondition' && context.payload.resolution === 'roll'
-    ? normalizeD20Roll(rollD20())
+    ? forcedFailure ? 1 : normalizeD20Roll(rollD20())
     : undefined
   const next = applyStartTurnModalStateUpdate(previous, context.payload, {
     dismissedAt: timestamp,
@@ -236,10 +270,20 @@ const applyStartTurnModalCommand = (
       conditionRollModifier: context.conditionRollModifier,
     }),
   })
+  const encounterState = context.forcedConditionSaveFailureEffectId
+    ? parseEncounterState({
+        ...context.map.encounterState,
+        effects: (context.map.encounterState?.effects ?? []).filter(effect => (
+          effect.id !== context.forcedConditionSaveFailureEffectId
+        )),
+      })
+    : context.map.encounterState
   return {
     ...context,
+    forcedConditionSaveFailureEffectId: null,
     map: {
       ...context.map,
+      encounterState,
       metadata: writeStartTurnModalState(context.map.metadata, next),
     },
   }
@@ -298,6 +342,7 @@ const currentContextForAcceptedResult = async (
         round: activeTurn?.round ?? 1,
       },
       conditionRollModifier: 0,
+      forcedConditionSaveFailureEffectId: null,
       sheetRevisionExpectation: null,
     }
   } catch {

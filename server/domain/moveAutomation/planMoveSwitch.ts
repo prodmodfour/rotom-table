@@ -9,6 +9,7 @@ import {
   createEmptyEncounterState,
   parseEncounterState,
 } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import { mapWithTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
@@ -21,6 +22,10 @@ import { reduceEncounterLifecycle } from './reduceLifecycle'
 import { createMoveSemiInvulnerableLifecycleHandler } from './semiInvulnerableLifecycle'
 import { createVortexLifecycleHandler } from './vortex'
 import { createYawnLifecycleHandler } from './yawn'
+import {
+  activelyCommandingTrainerPlacementId,
+  recordActivelyCommandedPokemon,
+} from './activePokemonCommands'
 
 export type MoveSwitchPlanningErrorCode =
   | 'switch-source-missing'
@@ -165,6 +170,10 @@ export const planAuthoritativeMoveSwitch = (input: {
 }): PlannedMoveSwitch => {
   const previousMap = deepCloneJson(input.map)
   const recalled = recalledPlacement(previousMap, input.transition)
+  const commandingTrainerId = activelyCommandingTrainerPlacementId({
+    map: previousMap,
+    pokemonPlacementId: recalled.id,
+  })
   const sentOutPlacement = input.transition.kind === 'recall-and-send-out'
     ? deepCloneJson(input.transition.sentOutPlacement)
     : null
@@ -245,11 +254,56 @@ export const planAuthoritativeMoveSwitch = (input: {
     : previousMap.placements
         .filter(placement => placement.id !== recalled.id)
         .map(placement => deepCloneJson(placement))
+  const entryEffect = sentOutPlacement ? parseEncounterEffect({
+    id: `encounter.entry.${createHash('sha256').update(`${sourceOperationId}\u0000${sentOutPlacement.id}`).digest('hex').slice(0, 24)}`,
+    kind: 'capability',
+    source: {
+      operationId: sourceOperationId,
+      moveId: 'encounter.switch',
+      placementId: sentOutPlacement.id,
+    },
+    affected: {
+      placementIds: [sentOutPlacement.id],
+      sideIds: [],
+      cells: [{ ...sentOutPlacement.position }],
+    },
+    createdRound: Math.max(1, previousMap.initiative?.round ?? lifecycle.state.history.currentRound ?? 1),
+    createdTurn: Math.max(0, lifecycle.state.history.currentTurn?.turn ?? 0),
+    duration: { kind: 'scene', remaining: null },
+    stacks: 1,
+    charges: null,
+    stackPolicy: { kind: 'replace', maxStacks: null },
+    chargePolicy: { kind: 'none', amount: null },
+    tags: ['encounter-entry', 'send-out'],
+    payload: { capabilityId: 'encounter.recent-entry', action: 'grant' },
+    dispel: { policy: 'matching-tags', tags: ['encounter-entry'] },
+    transferPolicy: 'expire',
+    suppression: { sources: [] },
+  }, 'moveSwitch.entryEffect') : null
+  const nextEncounterState = entryEffect ? parseEncounterState({
+    ...lifecycle.state,
+    effects: [
+      ...lifecycle.state.effects.filter(effect => !(
+        effect.tags.includes('encounter-entry')
+        && effect.affected.placementIds.includes(sentOutPlacement!.id)
+      )),
+      entryEffect,
+    ],
+  }) : lifecycle.state
   let nextMap = mapWithTemporaryHpForPlacement(previousMap, recalled.id, 0)
   nextMap = {
     ...nextMap,
     placements,
-    encounterState: lifecycle.state,
+    encounterState: nextEncounterState,
+  }
+  if (sentOutPlacement && input.transition.kind === 'recall-and-send-out'
+    && commandingTrainerId === input.transition.trainerPlacementId) {
+    nextMap = recordActivelyCommandedPokemon({
+      map: nextMap,
+      trainerPlacementId: commandingTrainerId,
+      pokemonPlacementId: sentOutPlacement.id,
+      operationId: input.transition.operationId,
+    })
   }
   const initiative = replaceInitiativeSlot(
     previousMap,

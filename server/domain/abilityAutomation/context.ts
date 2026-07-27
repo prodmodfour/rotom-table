@@ -83,6 +83,7 @@ import {
   type AbilityExecutionBudget,
 } from './executionBudget'
 import { projectAa081NeutralizingGasAbilities } from './mechanics/aa081NeutralizingGasIntegration'
+import { authoritativeAbilityOwnerIsConscious } from './effectiveRuntimeAbilities'
 
 export const AUTHORITATIVE_ABILITY_CONTEXT_LIMITS = Object.freeze({
   targets: 64,
@@ -621,6 +622,19 @@ export const buildAuthoritativeAbilityContext = (
     effects: map.encounterState?.effects ?? [],
     preserveSuppressedEntries: true,
   }) as ReadonlyMap<string, readonly AuthoritativeEffectiveAbility[]>
+  effectiveByPlacement = new Map([...effectiveByPlacement].map(([placementId, abilities]) => {
+    const placement = placementsById.get(placementId)
+    const sheet = placement ? sheetsByKey.get(sheetKey({
+      kind: placement.sheetKind,
+      slug: placement.sheetSlug,
+    }))?.sheet : null
+    if (sheet && authoritativeAbilityOwnerIsConscious(sheet)) return [placementId, abilities] as const
+    return [placementId, Object.freeze(abilities.map(ability => Object.freeze({
+      ...ability,
+      effective: false,
+      suppressionReasonCode: 'ability.suppressed.owner-fainted',
+    })))] as const
+  }))
   const tokensById = new Map<string, SpawnedPokemon>()
   for (const [placementId, token] of rawTokensById) {
     const effectiveAbilityNames = (effectiveByPlacement.get(placementId) ?? [])

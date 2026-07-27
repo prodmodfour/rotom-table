@@ -483,14 +483,14 @@ describe('authoritative Terrain queries', () => {
     expect(effects.every(effect => Object.isFrozen(effect))).toBe(true)
   })
 
-  it('blocks only grounded off-turn Pokémon Priority, Interrupt, and Reaction declarations', () => {
+  it('blocks only grounded off-turn Pokémon Priority and Interrupt declarations', () => {
     const fixture = {
       globalElectric: false,
       globalPsychic: false,
       localKinds: ['psychic'] as const,
     }
     const offTurn = contextFixture(fixture).queries.terrain
-    for (const timing of ['priority', 'interrupt', 'reaction'] as const) {
+    for (const timing of ['priority', 'interrupt'] as const) {
       const decision = offTurn.action({ placementId: 'actor', timing })
       expect(decision).toMatchObject({
         allowed: false,
@@ -509,6 +509,14 @@ describe('authoritative Terrain queries', () => {
       expect(Object.isFrozen(decision.trace)).toBe(true)
     }
 
+    expect(offTurn.action({ placementId: 'actor', timing: 'reaction' })).toMatchObject({
+      allowed: true,
+      blockedBy: null,
+      trace: [expect.objectContaining({
+        outcome: 'not-applicable',
+        reasonCode: 'terrain.psychic.reaction-action-unrestricted',
+      })],
+    })
     expect(contextFixture({ ...fixture, activeId: 'actor' }).queries.terrain.action({
       placementId: 'actor',
       timing: 'priority',

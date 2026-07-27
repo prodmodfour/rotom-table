@@ -168,6 +168,30 @@ const parseParameterData = (
     || !Array.isArray(input.selections)) fail('invalid-transformation', path, 'does not match its copied ability identity.')
   return input as unknown as AbilityInstanceData
 }
+export const parseAbilityTransformationAbilitySnapshot = (
+  value: unknown,
+  path = 'abilityTransformationAbilitySnapshot',
+): AbilityTransformationAbilitySnapshot => {
+  const item = record(value, path)
+  exact(item, ABILITY_FIELDS, path)
+  const instanceId = id(item.instanceId, `${path}.instanceId`)
+  const canonicalId = text(item.canonicalId, `${path}.canonicalId`)
+  if (typeof item.parameterStatus !== 'string' || !PARAMETER_STATUS_SET.has(item.parameterStatus)) {
+    fail('invalid-transformation', `${path}.parameterStatus`, 'is unsupported.')
+  }
+  const parameterStatus = item.parameterStatus as AbilityInstanceParameterStatus
+  const parameterData = parseParameterData(item.parameterData, instanceId, canonicalId, `${path}.parameterData`)
+  if ((parameterStatus === 'ready') !== (parameterData !== null)) {
+    fail('invalid-transformation', path, 'ready status must carry parameter data and other statuses must not.')
+  }
+  return Object.freeze({
+    instanceId, canonicalId,
+    definitionHash: optionalHash(item.definitionHash, `${path}.definitionHash`),
+    sourcePlacementId: nullableId(item.sourcePlacementId, `${path}.sourcePlacementId`),
+    parameterStatus, parameterData,
+  })
+}
+
 const parseMechanics = (value: unknown, path: string): AbilityTransformationMechanics => {
   const input = record(value, path)
   exact(input, MECHANICS_FIELDS, path)
@@ -177,27 +201,9 @@ const parseMechanics = (value: unknown, path: string): AbilityTransformationMech
   if (!Array.isArray(input.abilities) || input.abilities.length > ABILITY_TRANSFORMATION_LIMITS.abilities) {
     fail('limit-exceeded', `${path}.abilities`, 'must be bounded.')
   }
-  const abilities = (input.abilities as unknown[]).map((entry, index): AbilityTransformationAbilitySnapshot => {
-    const itemPath = `${path}.abilities[${index}]`
-    const item = record(entry, itemPath)
-    exact(item, ABILITY_FIELDS, itemPath)
-    const instanceId = id(item.instanceId, `${itemPath}.instanceId`)
-    const canonicalId = text(item.canonicalId, `${itemPath}.canonicalId`)
-    if (typeof item.parameterStatus !== 'string' || !PARAMETER_STATUS_SET.has(item.parameterStatus)) {
-      fail('invalid-transformation', `${itemPath}.parameterStatus`, 'is unsupported.')
-    }
-    const parameterStatus = item.parameterStatus as AbilityInstanceParameterStatus
-    const parameterData = parseParameterData(item.parameterData, instanceId, canonicalId, `${itemPath}.parameterData`)
-    if ((parameterStatus === 'ready') !== (parameterData !== null)) {
-      fail('invalid-transformation', itemPath, 'ready status must carry parameter data and other statuses must not.')
-    }
-    return Object.freeze({
-      instanceId, canonicalId,
-      definitionHash: optionalHash(item.definitionHash, `${itemPath}.definitionHash`),
-      sourcePlacementId: nullableId(item.sourcePlacementId, `${itemPath}.sourcePlacementId`),
-      parameterStatus, parameterData,
-    })
-  })
+  const abilities = (input.abilities as unknown[]).map((entry, index) => (
+    parseAbilityTransformationAbilitySnapshot(entry, `${path}.abilities[${index}]`)
+  ))
   if (new Set(abilities.map(entry => entry.instanceId)).size !== abilities.length) {
     fail('duplicate-id', `${path}.abilities`, 'must not repeat instance IDs.')
   }

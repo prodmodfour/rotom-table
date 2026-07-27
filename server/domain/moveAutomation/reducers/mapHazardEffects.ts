@@ -5,7 +5,10 @@ import {
   type EncounterState,
 } from '#shared/moveAutomation/encounterState'
 import {
+  ENCOUNTER_BARRIER_CANONICAL_PROFILE,
   ENCOUNTER_ZONE_LIMITS,
+  parseEncounterZone,
+  type EncounterBarrierZone,
   type EncounterZone,
   type EncounterZoneCell,
   type EncounterZoneOperationSource,
@@ -38,6 +41,7 @@ export interface MoveHazardZoneReduction {
 }
 
 type LayeredEncounterZone = Extract<EncounterZone, { readonly kind: 'hazard' | 'pledge' }>
+type ManagedEncounterZone = Extract<EncounterZone, { readonly kind: 'hazard' | 'pledge' | 'barrier' }>
 
 const actorSideId = (
   context: AuthoritativeMoveRulesContext,
@@ -107,10 +111,14 @@ const zonePayload = (
       maxCharges: payload.maxCharges,
     }
 
-const zoneFamilyId = (zone: LayeredEncounterZone): string => zone.payload.familyId
-const zoneEffectId = (zone: LayeredEncounterZone): string => (
-  zone.kind === 'hazard' ? zone.payload.hazardId : zone.payload.pledgeId
-)
+const zoneFamilyId = (zone: ManagedEncounterZone): string => zone.kind === 'barrier'
+  ? zone.payload.barrierId
+  : zone.payload.familyId
+const zoneEffectId = (zone: ManagedEncounterZone): string => zone.kind === 'hazard'
+  ? zone.payload.hazardId
+  : zone.kind === 'pledge'
+    ? zone.payload.pledgeId
+    : zone.payload.barrierId
 
 const sameCellGeometry = (
   zone: EncounterZone,
@@ -145,7 +153,7 @@ const parseReducedState = (
 
 const newZone = (input: {
   readonly operation: MoveHazardEffectOperation
-  readonly payload: MoveAddHazardEffectPayload
+  readonly payload: MoveAddHazardEffectPayload & { readonly zoneKind: 'hazard' | 'pledge' }
   readonly context: AuthoritativeMoveRulesContext
   readonly sideId: EncounterSideId | null
   readonly sourcePlacementId: string
@@ -178,6 +186,44 @@ const newZone = (input: {
   return payload.zoneKind === 'hazard'
     ? { ...common, kind: 'hazard', payload: zonePayload(payload) as Extract<LayeredEncounterZone, { kind: 'hazard' }>['payload'] }
     : { ...common, kind: 'pledge', payload: zonePayload(payload) as Extract<LayeredEncounterZone, { kind: 'pledge' }>['payload'] }
+}
+
+const newBarrierZone = (input: {
+  readonly operation: MoveHazardEffectOperation
+  readonly payload: MoveAddHazardEffectPayload & { readonly zoneKind: 'barrier' }
+  readonly context: AuthoritativeMoveRulesContext
+  readonly sideId: EncounterSideId | null
+  readonly sourcePlacementId: string
+  readonly cell: EncounterZoneCell
+}): EncounterBarrierZone => {
+  const { operation, payload, context, sideId, sourcePlacementId, cell } = input
+  const components = canonicalBattlefieldZoneComponents({
+    kind: 'barrier',
+    effectId: payload.effectId,
+  })
+  return parseEncounterZone({
+    id: battlefieldLayeredZoneId({
+      kind: 'barrier', familyId: payload.familyId, sideId, cells: [cell],
+    }),
+    kind: 'barrier',
+    source: operationSource(operation, context, sourcePlacementId),
+    sideId,
+    geometry: { kind: 'cells', cells: [cell] },
+    layer: 1,
+    duration: { kind: 'scene', remaining: null },
+    stacking: { kind: 'independent', maxLayers: null },
+    hooks: components.hooks,
+    modifiers: components.modifiers,
+    tags: [...new Set(['move-zone', 'barrier', payload.effectId, 'blocking-terrain'])],
+    payload: {
+      barrierId: payload.effectId,
+      currentHitPoints: ENCOUNTER_BARRIER_CANONICAL_PROFILE.currentHitPoints,
+      maximumHitPoints: ENCOUNTER_BARRIER_CANONICAL_PROFILE.maximumHitPoints,
+      damageReduction: ENCOUNTER_BARRIER_CANONICAL_PROFILE.damageReduction,
+      height: ENCOUNTER_BARRIER_CANONICAL_PROFILE.height,
+      typeIds: [...ENCOUNTER_BARRIER_CANONICAL_PROFILE.typeIds],
+    },
+  }) as EncounterBarrierZone
 }
 
 const validateExistingZone = (
@@ -230,6 +276,47 @@ const reduceAdd = (input: {
     resolutions: input.resolutions,
     operationId: input.operation.id,
   })
+  if (payload.zoneKind === 'barrier') {
+    const barrierPayload = payload as MoveAddHazardEffectPayload & { readonly zoneKind: 'barrier' }
+    const occupiedBarrierCells = new Set(input.previous.zones.flatMap(zone => (
+      zone.kind === 'barrier' && zone.geometry.kind === 'cells'
+        ? zone.geometry.cells.map(moveHazardCellSelectionCellKey)
+        : []
+    )))
+    const duplicate = cells.find(cell => occupiedBarrierCells.has(moveHazardCellSelectionCellKey(cell)))
+    if (duplicate) {
+      return failMoveMapOperationReduction(
+        'hazard-zone-conflict',
+        `Barrier operation ${input.operation.id} overlaps an existing Barrier at ${moveHazardCellSelectionCellKey(duplicate)}.`,
+      )
+    }
+    const created = cells.map(cell => newBarrierZone({
+      operation: input.operation,
+      payload: barrierPayload,
+      context: input.context,
+      sideId,
+      sourcePlacementId,
+      cell,
+    }))
+    const current = parseReducedState(input.operation.id, input.previous, [
+      ...input.previous.zones,
+      ...created,
+    ])
+    return {
+      current,
+      changed: created.length > 0,
+      details: {
+        action: 'add', zoneKind: 'barrier', familyId: payload.familyId,
+        cellCount: cells.length, createdCount: created.length,
+        updatedCount: 0, addedLayers: created.length, addedCharges: 0,
+        changed: created.length > 0,
+      },
+    }
+  }
+
+  const layeredPayload = payload as MoveAddHazardEffectPayload & {
+    readonly zoneKind: 'hazard' | 'pledge'
+  }
   const zones = [...input.previous.zones]
   let createdCount = 0
   let updatedCount = 0
@@ -238,9 +325,10 @@ const reduceAdd = (input: {
 
   for (const cell of cells) {
     const matches = zones.flatMap((zone, index) => (
-      (zone.kind === payload.zoneKind)
+      (zone.kind === 'hazard' || zone.kind === 'pledge')
+      && zone.kind === layeredPayload.zoneKind
       && zone.sideId === sideId
-      && zoneFamilyId(zone) === payload.familyId
+      && zoneFamilyId(zone) === layeredPayload.familyId
       && sameCellGeometry(zone, cell)
         ? [{ zone, index }]
         : []
@@ -255,23 +343,23 @@ const reduceAdd = (input: {
     if (!match) {
       zones.push(newZone({
         operation: input.operation,
-        payload,
+        payload: layeredPayload,
         context: input.context,
         sideId,
         sourcePlacementId,
         cell,
       }))
       createdCount += 1
-      addedLayers += payload.layers
-      addedCharges += payload.charges ?? 0
+      addedLayers += layeredPayload.layers
+      addedCharges += layeredPayload.charges ?? 0
       continue
     }
 
-    validateExistingZone(input.operation, payload, match.zone)
-    const layer = Math.min(payload.maxLayers, match.zone.layer + payload.layers)
-    const charges = payload.charges === null || payload.maxCharges === null
+    validateExistingZone(input.operation, layeredPayload, match.zone)
+    const layer = Math.min(layeredPayload.maxLayers, match.zone.layer + layeredPayload.layers)
+    const charges = layeredPayload.charges === null || layeredPayload.maxCharges === null
       ? null
-      : Math.min(payload.maxCharges, (match.zone.payload.charges ?? 0) + payload.charges)
+      : Math.min(layeredPayload.maxCharges, (match.zone.payload.charges ?? 0) + layeredPayload.charges)
     if (layer === match.zone.layer && charges === match.zone.payload.charges) continue
     zones[match.index] = {
       ...match.zone,
@@ -304,7 +392,7 @@ const reduceAdd = (input: {
 }
 
 const zoneMatchesOwnership = (
-  zone: LayeredEncounterZone,
+  zone: ManagedEncounterZone,
   filter: MoveEffectHazardOwnershipFilter,
   sourceSide: EncounterSideId | null,
   recipientSide: EncounterSideId | null,
@@ -316,7 +404,7 @@ const zoneMatchesOwnership = (
 }
 
 const geometryIntersects = (
-  zone: LayeredEncounterZone,
+  zone: ManagedEncounterZone,
   cells: ReadonlySet<string> | null,
 ): boolean => cells === null || (
   zone.geometry.kind === 'cells'
@@ -357,7 +445,7 @@ const reduceRemove = (input: {
   const zones = input.previous.zones.filter((zone) => {
     const matches = target.kind === 'zone-id'
       ? zone.id === target.zoneId
-      : (zone.kind === 'hazard' || zone.kind === 'pledge')
+      : (zone.kind === 'hazard' || zone.kind === 'pledge' || zone.kind === 'barrier')
         && target.zoneKinds.includes(zone.kind)
         && (target.familyId === null || zoneFamilyId(zone) === target.familyId)
         && zoneMatchesOwnership(zone, target.ownership, sourceSide, recipientSide)
@@ -423,7 +511,7 @@ const reduceSwapSides = (input: {
   }> = []
   const zones = input.previous.zones.map((zone): EncounterZone => {
     if (
-      (zone.kind !== 'hazard' && zone.kind !== 'pledge')
+      (zone.kind !== 'hazard' && zone.kind !== 'pledge' && zone.kind !== 'barrier')
       || !payload.zoneKinds.includes(zone.kind)
       || (zone.sideId !== sourceSide && zone.sideId !== targetSide)
       || zone.geometry.kind !== 'cells'
@@ -446,7 +534,7 @@ const reduceSwapSides = (input: {
       id,
       source: operationSource(input.operation, input.context),
       sideId,
-    } as LayeredEncounterZone
+    } as ManagedEncounterZone
   })
   const remapped = remapBattlefieldZoneSuppressionSources({
     zones,

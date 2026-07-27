@@ -60,6 +60,7 @@ import {
 import { listPendingMoveResponsesUseCase } from '~~/server/useCases/listPendingMoveResponses'
 import { parsePendingMoveResponseCommand } from '~~/server/livePlay/moveResponseCommandParser'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
+import { REMAINING_ABILITY_TEST_REGISTRY } from '../fixtures/abilityAutomation/remainingRegistry'
 
 const takeDownRow = manifestJson.moves.find(row => row.canonicalId === 'Take Down')!
 const runtime = registeredMoveAutomationRuntimeFor('Take Down')
@@ -84,6 +85,7 @@ const buildContext = (options: {
       random: createFiniteAuthoritativeMoveRandomStream(options.randomValues),
       time: 5_000,
       resolutionId: 'resolution-take-down-test',
+      abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
     }),
   }
 }
@@ -483,7 +485,10 @@ const invokeDeclaration = (
   groupInventoryRepository: harness.inventories,
   pendingResolutionRepository: harness.pending,
   commandExecutor: harness.commandExecutor,
-  planner: input => planAuthoritativeMoveStateExecution(input),
+  planner: input => planAuthoritativeMoveStateExecution({
+    ...input,
+    abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
+  }),
   random: harness.random,
   now: () => 5_000,
 })
@@ -550,6 +555,7 @@ const respond = (harness: Harness, command: MoveResponseCommand) => {
     realtimeEventRepository: harness.realtime,
     random: harness.random,
     now: () => 5_000,
+    abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
     publishPersistedRealtimeEvent: vi.fn(),
   })
   return { parsed, invoke }

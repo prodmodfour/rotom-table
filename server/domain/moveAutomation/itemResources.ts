@@ -1,5 +1,6 @@
 import { isSlug } from '#shared/paths'
 import { normalizeRevision } from '#shared/sessionRevisions'
+import { moveItemEffectBindingId } from '#shared/moveAutomation/itemEffects'
 import {
   MOVE_ITEM_REFERENCE_LIMITS,
   MOVE_ITEM_TRAINER_INVENTORY_SECTIONS,
@@ -449,7 +450,7 @@ const sheetForPlacement = (
   ? pokemonSheets.get(placement.sheetSlug) ?? null
   : trainerSheets.get(placement.sheetSlug) ?? null
 
-const equippedReferences = (
+export const authoritativeEquippedItemReferences = (
   placement: SheetPlacement,
   sheet: CharacterSheet | TrainerSheet,
 ): readonly MoveItemReference[] => {
@@ -712,7 +713,7 @@ export const resolveAuthoritativeMoveItemResources = (
     const revision = normalizeRevision(sheet.revision)
     sheetReads.push({ kind: placement.sheetKind, slug: placement.sheetSlug, revision })
     const references = mode === 'equipped'
-      ? equippedReferences(placement, sheet)
+      ? authoritativeEquippedItemReferences(placement, sheet)
       : placement.sheetKind === 'trainer'
         ? trainerInventoryReferences(
             placement.sheetSlug,
@@ -725,10 +726,40 @@ export const resolveAuthoritativeMoveItemResources = (
       candidates.push({ requirementId: requirement.id, reference })
     }
   }
+  const addSymbiosisShares = (
+    requirement: AuthoritativeMoveItemResourceRequirement,
+    beneficiary: SheetPlacement,
+  ): void => {
+    for (const effect of input.map.encounterState?.effects ?? []) {
+      if (!effect.tags.includes('aa094-symbiosis-shared-item')
+        || !effect.affected.placementIds.includes(beneficiary.id)
+        || effect.suppression.sources.length > 0
+        || (effect.duration.remaining !== null && effect.duration.remaining <= 0)) continue
+      const bindingIds = new Set(effect.tags.flatMap(tag => (
+        tag.startsWith('aa094-symbiosis-binding:')
+          ? [tag.slice('aa094-symbiosis-binding:'.length)] : []
+      )))
+      const sourcePlacement = effect.source.placementId
+        ? input.map.placements.find(placement => placement.id === effect.source.placementId) ?? null
+        : null
+      if (!sourcePlacement) continue
+      const sourceSheet = sheetForPlacement(sourcePlacement, input.pokemonSheets, input.trainerSheets)
+      if (!sourceSheet) continue
+      const revision = normalizeRevision(sourceSheet.revision)
+      sheetReads.push({ kind: sourcePlacement.sheetKind, slug: sourcePlacement.sheetSlug, revision })
+      for (const reference of authoritativeEquippedItemReferences(sourcePlacement, sourceSheet)) {
+        if (reference.kind === 'pokemon-held'
+          && bindingIds.has(moveItemEffectBindingId(reference))) {
+          candidates.push({ requirementId: requirement.id, reference })
+        }
+      }
+    }
+  }
 
   for (const requirement of requirements) {
     if (requirement.source.kind === 'actor-equipped') {
       addSheet(requirement, actor, 'equipped')
+      addSymbiosisShares(requirement, actor)
       continue
     }
     if (requirement.source.kind === 'selected-target-equipped') {

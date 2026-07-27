@@ -43,9 +43,10 @@ export interface MoveConditionEncounterStateAccumulator {
 
 export const createMoveConditionEncounterStateAccumulator = (
   context: AuthoritativeMoveRulesContext,
+  initialCurrent?: EncounterState,
 ): MoveConditionEncounterStateAccumulator => {
   const previous = parseEncounterState(context.map.encounterState ?? createEmptyEncounterState())
-  let current = deepCloneJson(previous)
+  let current = deepCloneJson(initialCurrent ?? previous)
 
   return {
     previous,
@@ -162,7 +163,7 @@ export const createSourceLinkedMoveConditionEffect = (options: {
     source: {
       operationId: options.operation.id,
       moveId: options.operation.source.id,
-      placementId: options.context.actor.placement.id,
+      placementId: duration.sourcePlacementId ?? options.context.actor.placement.id,
     },
     affected: {
       placementIds: [options.recipient.placement.id],

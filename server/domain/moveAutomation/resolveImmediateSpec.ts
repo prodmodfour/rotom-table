@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { AA078_LUNCHBOX_TEMP_HP_REASON } from '#shared/abilityAutomation/aa078'
+import { parseEncounterState } from '#shared/moveAutomation/encounterState'
 import { moveEffectBranchPaths, type MoveConditionEffectOperation, type MoveTemporaryEffectOperation } from '#shared/moveAutomation/effects'
 import {
   parseMoveResolutionAuditTrace,
@@ -139,7 +140,10 @@ import { aa081MoveOverlayOperations } from '../abilityAutomation/mechanics/aa081
 import { aa082MoveOverlayOperations } from '../abilityAutomation/mechanics/aa082MoveIntegration'
 import { aa083MoveOverlayOperations } from '../abilityAutomation/mechanics/aa083MoveIntegration'
 import { aa084MoveOverlayOperations } from '../abilityAutomation/mechanics/aa084MoveIntegration'
-import { aa085to100MoveOverlayOperations } from '../abilityAutomation/mechanics/aa085to100MoveIntegration'
+import {
+  aa085to100BoundRecipientId,
+  aa085to100MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa085to100MoveIntegration'
 import {
   AA082_ODIOUS_SPRAY_TARGETING_OVERRIDE,
   aa082OdiousSprayActive,
@@ -154,6 +158,7 @@ import {
   AA078_LONG_REACH_TARGETING_OVERRIDE,
   aa078LongReachSelected,
 } from '../abilityAutomation/mechanics/aa078StaticIntegration'
+import { aa085to100MoveTargetingOverride } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 
 export type ImmediateMoveSpecResolutionErrorCode =
   | 'execution-rejected'
@@ -189,6 +194,8 @@ export interface NativeMoveSpecResolutionProjection {
   /** Collision-checked forced/voluntary displacements in reviewed operation order. */
   readonly spatialMovements: readonly MoveReducedSpatialMovement[]
   readonly spatialOperationResults: readonly MoveSpatialEffectOperationResult[]
+  /** Durable movement choices retained with their exact reviewed operation identity. */
+  readonly resolvedMovements: MoveSpecExecutionCompleteResult['resolvedMovements']
   readonly resolvedHazardCells: MoveSpecExecutionCompleteResult['resolvedHazardCells']
   readonly trace: MoveResolutionAuditTrace
 }
@@ -626,6 +633,8 @@ const nestedRecipientResolver = (input: {
 }) => {
   const nestedRecipients = new Map(input.operations.flatMap(emission => (
     emission.childResolutionId
+      || emission.operation.reasonCode.startsWith('ability.weeble.target.')
+      || emission.operation.reasonCode.startsWith('ability.refrigerate.winters-kiss-target-heal.')
       ? [[emission.operation.id, emission.recipientIds] as const]
       : []
   )))
@@ -1075,16 +1084,20 @@ const executeReviewedMoveSpec = (
     targetBranchId: options.targetBranchId ?? undefined,
   })
   const odiousSpray = aa082OdiousSprayActive({ context: options.context, script })
+  const remainingTargetingOverride = aa085to100MoveTargetingOverride({
+    context: options.context,
+    script,
+  })
   const execution = executeMoveSpec({
     serverAbilityOverlayOperations: abilityOverlays,
-    ...(boneLordLine || dustCloudBurst || longReach || odiousSpray ? {
+    ...(boneLordLine || dustCloudBurst || longReach || odiousSpray || remainingTargetingOverride ? {
       serverAbilityTargetingOverride: dustCloudBurst
         ? AA068_DUST_CLOUD_TARGETING_OVERRIDE
         : longReach
           ? AA078_LONG_REACH_TARGETING_OVERRIDE
           : odiousSpray
             ? AA082_ODIOUS_SPRAY_TARGETING_OVERRIDE
-            : {
+            : remainingTargetingOverride ?? {
               kind: 'area' as const, minTargets: 0, maxTargets: 32,
               selector: { kind: 'area-targets' as const },
               predicate: { relationship: 'any' as const, willingness: 'any' as const, excludeActor: true },
@@ -1238,9 +1251,16 @@ export const reduceCompletedMoveSpec = (
     const context = baseContextForOperation(operation)
     if (typeof operation !== 'string') {
       const reasonCode = (operation as { readonly reasonCode?: unknown }).reasonCode
-      if (reasonCode === 'ability.gooey.lower-speed') {
-        // Gooey is paid by the struck responder but its effect targets the triggering Move's actor.
-        return context
+      if (reasonCode === 'ability.gooey.lower-speed'
+        || reasonCode === 'ability.static.paralysis'
+        || reasonCode === 'ability.tangling-hair.speed'
+        || reasonCode === 'ability.tangling-hair.slowed'
+        || reasonCode === 'ability.synchronize.copy-condition'
+        || reasonCode === 'ability.wobble.counter'
+        || reasonCode === 'ability.wobble.mirror-coat') {
+        // These responses are paid by the struck responder, but their effect
+        // explicitly addresses the triggering Move's actor.
+        return options.context
       }
       if (reasonCode === AA079_MAGICIAN_ITEM_REASON) {
         // The hit target owns the item choice, but Magician's transfer destination remains the Move actor.
@@ -1280,13 +1300,18 @@ export const reduceCompletedMoveSpec = (
     targetBranchId: options.targetBranchId ?? undefined,
   })
   const odiousSpray = aa082OdiousSprayActive({ context: options.context, script })
+  const remainingAbilityTargeting = aa085to100MoveTargetingOverride({
+    context: options.context,
+    script,
+  })
   const targeting = dustCloudBurst
     ? AA068_DUST_CLOUD_TARGETING_OVERRIDE
     : longReach
       ? AA078_LONG_REACH_TARGETING_OVERRIDE
       : odiousSpray
         ? AA082_ODIOUS_SPRAY_TARGETING_OVERRIDE
-        : resolveMoveSpecTargetingRule(
+        : remainingAbilityTargeting
+          ?? resolveMoveSpecTargetingRule(
         options.runtime.definition.spec,
         options.targetBranchId,
       ) ?? fail('execution-rejected', 'The selected MoveSpec targeting branch is unavailable.')
@@ -1334,6 +1359,9 @@ export const reduceCompletedMoveSpec = (
     for (const { operation } of uncommittedOperations) recipientControlledOperationIds.add(operation.id)
   }
   for (const { operation } of uncommittedOperations) {
+    if (aa085to100BoundRecipientId({ operation }) !== null) {
+      recipientControlledOperationIds.add(operation.id)
+    }
     if (operation.reasonCode === AA080_MIRROR_ARMOR_REFLECT_REASON
       && operation.source.kind === 'lifecycle-event'
       && operation.source.id.includes(':source:')) {
@@ -1372,31 +1400,28 @@ export const reduceCompletedMoveSpec = (
     ))) recipientControlledOperationIds.add(operation.id)
   }
   const multiHit = execution.multiHitExecutions[0] ?? null
-  const postMultiReactionStages = coreOperations.every(({ operation }) => (
-    (operation.kind === 'combat-stage'
-      && (operation.phase === 'after-damage'
-        || operation.reasonCode === 'ability.justified.raise-attack')
-      && operation.source.kind === 'operation'
-      && responseOwnerByOperationId.has(operation.source.id))
-    || (operation.kind === 'combat-stage'
-      && operation.phase === 'after-damage'
-      && operation.reasonCode === AA080_MOTOR_DRIVE_STAGE_REASON
-      && operation.source.kind === 'lifecycle-event'
-      && operation.source.id.startsWith('ability.motor-drive.target:')
-      && recipientControlledOperationIds.has(operation.id))
-    || (operation.kind === 'direct-hp'
-      && (operation.reasonCode === AA075_INNARDS_OUT_HP_REASON
-        || operation.reasonCode === AA076_IRON_BARBS_HP_REASON)
-      && operation.source.kind === 'operation'
-      && responseOwnerByOperationId.has(operation.source.id))
+  const postMultiCoreEffects = coreOperations.every(({ operation }) => (
+    operation.kind !== 'damage'
+    && (operation.phase === 'after-damage' || operation.phase === 'cleanup')
   ))
   if (execution.multiHitExecutions.length > 1
-    || (multiHit && coreOperations.length > 0 && !postMultiReactionStages)) {
+    || (multiHit && coreOperations.length > 0 && !postMultiCoreEffects)) {
     return fail(
       'multi-hit-operation-conflict',
-      'An immediate MoveSpec may contain one pre-reduced multi-hit operation plus only disjoint reviewed post-damage reaction stages.',
+      'An immediate MoveSpec may contain one pre-reduced multi-hit operation plus only reviewed post-damage core effects.',
     )
   }
+  const multiHitEncounterState = multiHit?.stateChanges.changes.find(change => (
+    change.kind === 'encounter-state'
+  ))
+  const initialMultiHitState = multiHit ? {
+    hpUpdates: multiHit.hpUpdates,
+    conditionUpdates: multiHit.conditionUpdates,
+    combatStageUpdates: multiHit.combatStageUpdates,
+    ...(multiHitEncounterState ? {
+      encounterState: parseEncounterState(multiHitEncounterState.current),
+    } : {}),
+  } : undefined
   const nestedRecipients = nestedRecipientResolver({
     context: options.context,
     operations: coreOperations,
@@ -1420,6 +1445,7 @@ export const reduceCompletedMoveSpec = (
       return owner
     },
     branchControlledOperationIds: recipientControlledOperationIds,
+    ...(initialMultiHitState ? { initialState: initialMultiHitState } : {}),
     damage: coreOperations.some(({ operation }) => operation.kind === 'damage')
       ? createDamageQuery({
           contextForOperation,
@@ -1491,6 +1517,8 @@ export const reduceCompletedMoveSpec = (
     context: options.context,
     operations: spatialOperations,
     dynamicRecipients,
+    contextForOperation,
+    dynamicRecipientsForOperation,
     branchControlledOperationIds: recipientControlledOperationIds,
     ...(options.authoritativeAreaCells
       ? { authoritativeAreaCells: options.authoritativeAreaCells }
@@ -1504,14 +1532,23 @@ export const reduceCompletedMoveSpec = (
   const transactionTargetIds = dynamicRecipients.attackedTargetIds
   const transactionHitTargetIds = dynamicRecipients.hitTargetIds
   const combinedCoreStateChanges = multiHit
-    ? createMoveStateChangePlan(mergeDisjointMoveSheetStateChanges([
-        ...multiHit.stateChanges.changes,
-        ...core.stateChanges.changes,
-      ].map((change): MoveStateChangeInput => {
-        const { id: _id, order: _order, ...input } = change
-        return structuredClone(input) as MoveStateChangeInput
-      })))
+    ? (() => {
+        const slotKey = (change: MoveStateChangePlan['changes'][number]): string => (
+          `${change.kind}:${JSON.stringify(change.scope)}`
+        )
+        const coreSlots = new Set(core.stateChanges.changes.map(slotKey))
+        return createMoveStateChangePlan(mergeDisjointMoveSheetStateChanges([
+          ...multiHit.stateChanges.changes.filter(change => !coreSlots.has(slotKey(change))),
+          ...core.stateChanges.changes,
+        ].map((change): MoveStateChangeInput => {
+          const { id: _id, order: _order, ...input } = change
+          return structuredClone(input) as MoveStateChangeInput
+        })))
+      })()
     : core.stateChanges
+  const mergeUpdates = <Update extends { readonly id: string }>(
+    ...groups: readonly (readonly Update[])[]
+  ): Update[] => [...new Map(groups.flat().map(update => [update.id, update])).values()]
   const transaction: MoveAutomationTransaction = {
     userId: options.context.actor.placement.id,
     userName: options.context.actor.token.species,
@@ -1520,18 +1557,18 @@ export const reduceCompletedMoveSpec = (
     scriptVersion: options.runtime.version,
     attackedTargetIds: [...transactionTargetIds],
     hitTargetIds: [...transactionHitTargetIds],
-    hpUpdates: [
-      ...(multiHit?.hpUpdates ?? []),
-      ...hpUpdatesFromResults(core.operationResults),
-    ],
-    conditionUpdates: [
-      ...(multiHit?.conditionUpdates ?? []),
-      ...conditionUpdatesFromResults(core.operationResults),
-    ],
-    combatStageUpdates: [
-      ...(multiHit?.combatStageUpdates ?? []),
-      ...combatStageUpdatesFromResults(core.operationResults),
-    ],
+    hpUpdates: mergeUpdates(
+      multiHit?.hpUpdates ?? [],
+      hpUpdatesFromResults(core.operationResults),
+    ),
+    conditionUpdates: mergeUpdates(
+      multiHit?.conditionUpdates ?? [],
+      conditionUpdatesFromResults(core.operationResults),
+    ),
+    combatStageUpdates: mergeUpdates(
+      multiHit?.combatStageUpdates ?? [],
+      combatStageUpdatesFromResults(core.operationResults),
+    ),
     // Native hazard mechanics persist as typed encounter zones, never as the
     // legacy free-form `hazards[]` compatibility lane.
     hazardsToAdd: [],
@@ -1571,6 +1608,7 @@ export const reduceCompletedMoveSpec = (
       itemEffects: knockOffItems.itemEffects,
       spatialMovements: spatial.movements,
       spatialOperationResults: spatial.operationResults,
+      resolvedMovements: execution.resolvedMovements,
       resolvedHazardCells: execution.resolvedHazardCells,
       trace,
     }),

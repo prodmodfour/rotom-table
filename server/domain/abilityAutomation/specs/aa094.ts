@@ -9,7 +9,7 @@ import {
 export const SWEET_VEIL_ABILITY_SPEC = staticSpec('Sweet Veil', 'aa094.sweet-veil')
 export const SWIFT_SWIM_ABILITY_SPEC = staticSpec('Swift Swim', 'aa094.swift-swim')
 export const SYMBIOSIS_ABILITY_SPEC = activatedSpec('Symbiosis', 'aa094.symbiosis', [
-  { kind: 'token', relationship: 'ally', maximumRange: 10 },
+  { kind: 'token', relationship: 'ally', maximumRange: 10, willingness: 'willing' },
   { kind: 'item' }
 ])
 export const SYNCHRONIZE_ABILITY_SPEC = triggeredSpec('Synchronize', 'aa094.synchronize', 'condition')

@@ -12,6 +12,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { footprintsOverlap } from '~/utils/gridGeometry'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { moveUsageKey } from '~/utils/moveUsage'
 import type {
@@ -67,6 +68,7 @@ import {
   type AbilityUsageEntry,
 } from '#shared/abilityAutomation/resources'
 import { reduceAbilityOwnedStateCommand } from '../abilityAutomation/ownedState'
+import type { AbilityAutomationRuntimeRegistry } from '../abilityAutomation/registry'
 import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { Aa060AnchoredMovementError, assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
 import { aa061AquaBulletStateIdsForMove, aa061BatteryStateIdsForMove } from '../abilityAutomation/mechanics/aa061MoveIntegration'
@@ -321,12 +323,43 @@ const placementStateChanges = (options: {
     entries.push(movement)
     spatialByPlacement.set(movement.recipientPlacementId, entries)
   }
-  const movementOwnerId = options.resolution.movement?.kind === 'shift'
-    ? options.resolution.movement.placementId ?? actorId
-    : actorId
-  const actorMovementOperation = options.resolution.movement
-    ? native.operations.find(({ operation }) => operation.kind === 'movement-request')?.operation
-    : null
+  const projectedMovements = [
+    ...(options.resolution.movement ? [options.resolution.movement] : []),
+    ...(options.resolution.additionalMovements ?? []),
+  ]
+  const movementOperationsByPlacement = new Map<string, typeof native.operations[number]['operation']>()
+  const claimedResolvedMovementIndexes = new Set<number>()
+  for (const [projectedIndex, movement] of projectedMovements.entries()) {
+    const placementId = movement.kind === 'shift'
+      ? movement.placementId ?? actorId
+      : actorId
+    const resolvedIndex = native.resolvedMovements.findIndex((resolved, index) => (
+      !claimedResolvedMovementIndexes.has(index)
+      && resolved.choice.movement.placementId === placementId
+      && sameAnchor(resolved.choice.movement.origin, movement.from)
+      && sameAnchor(resolved.choice.movement.destination, movement.destination)
+    ))
+    const resolved = resolvedIndex >= 0 ? native.resolvedMovements[resolvedIndex] : null
+    const operation = resolved
+      ? native.operations.find(({ operation: candidate }) => candidate.id === resolved.operationId)?.operation
+      : projectedIndex === 0
+        ? native.operations.find(({ operation: candidate }) => candidate.kind === 'movement-request')?.operation
+        : null
+    if (!operation || operation.kind !== 'movement-request') {
+      return fail(
+        'movement-operation-missing',
+        `${options.resolution.canonicalMoveName} lost the reviewed movement operation for ${placementId}.`,
+      )
+    }
+    if (movementOperationsByPlacement.has(placementId)) {
+      return fail(
+        'spatial-movement-conflict',
+        `${options.resolution.canonicalMoveName} projected more than one durable movement for ${placementId}.`,
+      )
+    }
+    if (resolvedIndex >= 0) claimedResolvedMovementIndexes.add(resolvedIndex)
+    movementOperationsByPlacement.set(placementId, operation)
+  }
   const expectedRevision = normalizeRevision(options.previousMap.revision)
   const changes: MoveStateChangeInput[] = []
 
@@ -351,15 +384,10 @@ const placementStateChanges = (options: {
           ?? 'move-spatial-displacement'
         : 'move-spatial-sequence'
     }
-    else if (previous.id === movementOwnerId && moved) {
-      if (!actorMovementOperation || actorMovementOperation.kind !== 'movement-request') {
-        return fail(
-          'movement-operation-missing',
-          `${options.resolution.canonicalMoveName} changed movement owner ${movementOwnerId} without a movement operation.`,
-        )
-      }
-      sourceOperationId = actorMovementOperation.id
-      reasonCode = actorMovementOperation.reasonCode
+    else if (moved && movementOperationsByPlacement.has(previous.id)) {
+      const movementOperation = movementOperationsByPlacement.get(previous.id)!
+      sourceOperationId = movementOperation.id
+      reasonCode = movementOperation.reasonCode
     }
     else if (previous.id !== actorId) {
       return fail(
@@ -625,18 +653,42 @@ const applyMovementTrace = (options: {
   readonly trace: MoveResolutionAuditTrace
   readonly resolution: AuthoritativeMoveResolution
 }): MoveResolutionAuditTrace => {
-  const movement = options.resolution.movement
-  if (!movement) return options.trace
-  const operation = options.resolution.nativeV2?.operations.find(({ operation: candidate }) => (
-    candidate.kind === 'movement-request'
-  ))?.operation
-  if (!operation || operation.kind !== 'movement-request') {
-    return fail('movement-operation-missing', 'Movement trace operation is missing.')
+  const projected = [
+    ...(options.resolution.movement ? [options.resolution.movement] : []),
+    ...(options.resolution.additionalMovements ?? []),
+  ]
+  if (projected.length === 0) return options.trace
+  const native = options.resolution.nativeV2
+    ?? fail('native-projection-missing', 'Movement trace native projection is missing.')
+  const movementByOperationId = new Map<string, typeof projected[number]>()
+  const claimed = new Set<number>()
+  for (const [projectedIndex, movement] of projected.entries()) {
+    const placementId = movement.kind === 'shift'
+      ? movement.placementId ?? options.resolution.actorPlacementId
+      : options.resolution.actorPlacementId
+    const resolvedIndex = native.resolvedMovements.findIndex((entry, index) => (
+      !claimed.has(index)
+      && entry.choice.movement.placementId === placementId
+      && sameAnchor(entry.choice.movement.origin, movement.from)
+      && sameAnchor(entry.choice.movement.destination, movement.destination)
+    ))
+    const resolved = resolvedIndex >= 0 ? native.resolvedMovements[resolvedIndex] : null
+    const fallbackOperation = projectedIndex === 0
+      ? native.operations.find(({ operation }) => operation.kind === 'movement-request')?.operation
+      : null
+    const operationId = resolved?.operationId ?? fallbackOperation?.id ?? null
+    if (!operationId) {
+      return fail('movement-operation-missing', `Movement trace choice for ${placementId} is missing.`)
+    }
+    if (resolvedIndex >= 0) claimed.add(resolvedIndex)
+    movementByOperationId.set(operationId, movement)
   }
-  let matched = false
+  const matched = new Set<string>()
   const events = options.trace.events.map((event) => {
-    if (event.kind !== 'operation' || event.operationId !== operation.id) return event
-    matched = true
+    if (event.kind !== 'operation') return event
+    const movement = movementByOperationId.get(event.operationId)
+    if (!movement) return event
+    matched.add(event.operationId)
     return {
       ...event,
       outcome: 'applied' as const,
@@ -649,7 +701,9 @@ const applyMovementTrace = (options: {
       },
     }
   })
-  if (!matched) return fail('movement-operation-missing', 'Movement trace event is missing.')
+  if (matched.size !== movementByOperationId.size) {
+    return fail('movement-operation-missing', 'One or more movement trace events are missing.')
+  }
   return parseMoveResolutionAuditTrace({ ...options.trace, events })
 }
 
@@ -756,11 +810,14 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.quick-draw.optional-interrupt', 'Quick Draw'],
     ['ability.rattled.optional-boost', 'Rattled'],
     ['ability.receiver.optional-copy', 'Receiver'],
+    ['ability.receiver.optional-grant', 'Receiver'],
     ['ability.refreshing-veil.optional-cure', 'Refreshing Veil'],
     ['ability.refrigerate.optional-ice-type', 'Refrigerate'],
     ['ability.revelation.optional-copy', 'Revelation'],
     ['ability.rks-system.optional-normal-defense', 'RKS System'],
     ['ability.sand-spit.optional-sand-attack', 'Sand Spit'],
+    ['ability.sap-sipper.optional-stage', 'Sap Sipper'],
+    ['ability.sequence.optional-damage', 'Sequence'],
     ['ability.rough-skin.optional-hp-loss', 'Rough Skin'],
     ['ability.shell-cannon.optional-boost', 'Shell Cannon'],
     ['ability.skill-link.optional-five-hits', 'Skill Link'],
@@ -776,8 +833,11 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.static.optional-paralysis', 'Static'],
     ['ability.steam-engine.optional-smokescreen', 'Steam Engine'],
     ['ability.steadfast.optional-speed', 'Steadfast'],
+    ['ability.steelworker.optional-steel-defense', 'Steelworker'],
+    ['ability.sticky-smoke.optional-zone', 'Sticky Smoke'],
     ['ability.storm-drain.optional-redirection', 'Storm Drain'],
     ['ability.sumo-stance.optional-push', 'Sumo Stance'],
+    ['ability.sway.optional-reflect', 'Sway'],
     ['ability.synchronize.optional-copy-condition', 'Synchronize'],
     ['ability.tangling-hair.optional-slow', 'Tangling Hair'],
     ['ability.telepathy.optional-disengage', 'Telepathy'],
@@ -786,12 +846,16 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.tingly-tongue.optional-lick', 'Tingly Tongue'],
     ['ability.tonguelash.optional-lick', 'Tonguelash'],
     ['ability.transistor.optional-vulnerability', 'Transistor'],
+    ['ability.transporter.optional-teleport', 'Transporter'],
     ['ability.vicious.optional-branch', 'Vicious'],
     ['ability.vigor.optional-heal', 'Vigor'],
+    ['ability.voodoo-doll.optional-curse', 'Voodoo Doll'],
+    ['ability.weaponize.optional-intercept', 'Weaponize'],
     ['ability.wandering-spirit.optional-swap', 'Wandering Spirit'],
     ['ability.wash-away.optional-reset', 'Wash Away'],
     ['ability.water-compaction.optional-defense', 'Water Compaction'],
     ['ability.weak-armor.optional-stages', 'Weak Armor'],
+    ['ability.weeble.optional-retaliation', 'Weeble'],
     ['ability.wind-power.optional-charge', 'Wind Power'],
     ['ability.wistful-melody.optional-stages', 'Wistful Melody'],
     ['ability.wobble.optional-counter', 'Wobble'],
@@ -802,11 +866,11 @@ const applyTriggeredAbilityPayments = (input: {
     'Galvanize', 'Gooey', 'Grim Neigh', 'Heat Mirage', 'Heliovolt', 'Horde Break',
     'Ignition Boost', 'Iron Barbs', 'Justified', 'Mirror Armor', 'Mummy',
     'Pack Hunt', 'Perception', 'Pixilate', 'Polycephaly', 'Protean',
-    'Rattled', 'Refrigerate', 'Rough Skin', 'Spinning Dance', 'Stamina', 'Steadfast', 'Tangling Hair', 'Tingle',
-    'Spiteful Intervention', 'Sumo Stance', 'Telepathy', 'Thunder Boost', 'Water Compaction', 'Weak Armor',
+    'Rattled', 'Refrigerate', 'Rough Skin', 'Sequence', 'Spinning Dance', 'Stamina', 'Steadfast', 'Tangling Hair', 'Tingle',
+    'Spiteful Intervention', 'Sumo Stance', 'Telepathy', 'Thunder Boost', 'Water Compaction', 'Weak Armor', 'Weaponize', 'Weeble',
   ])
   const daily = new Set([
-    'Dig Away', 'Disguise', 'Dodge', 'Perish Body', 'Poison Heal', 'Vigor', 'Wash Away',
+    'Dig Away', 'Disguise', 'Dodge', 'Perish Body', 'Poison Heal', 'Transporter', 'Vigor', 'Voodoo Doll', 'Wash Away',
   ])
   const actorByChildOperationId = new Map(input.childExecutions.flatMap(child => (
     child.operationIds.map(operationId => [operationId, child.actorPlacementId] as const)
@@ -844,13 +908,15 @@ const applyTriggeredAbilityPayments = (input: {
     const ability = input.context.queries.abilities.activeForPlacement(ownerId)
       .find(candidate => candidate.canonicalId === canonicalId)
       ?? fail('state-change-conflict', `Selected ${canonicalId} response lost its effective runtime.`)
-    const actionResources = canonicalId === 'Celebrate'
+    const actionResources = canonicalId === 'Sap Sipper'
+      ? ([] as const)
+      : canonicalId === 'Celebrate'
       ? (['swift', 'free'] as const)
       : canonicalId === 'Quick Draw' || canonicalId === 'Revelation'
         ? (['free', 'standard'] as const)
-      : canonicalId === 'Spiteful Intervention'
+      : canonicalId === 'Sway' || canonicalId === 'Weeble'
         ? (['standard'] as const)
-      : canonicalId === 'Sumo Stance'
+      : canonicalId === 'Sumo Stance' || canonicalId === 'Telepathy'
         ? (['shift'] as const)
       : canonicalId === 'Cruelty'
         ? (['swift'] as const)
@@ -881,10 +947,14 @@ const applyTriggeredAbilityPayments = (input: {
       placementId: ownerId,
       canonicalMoveId: `ability:${canonicalId}`,
       moveKey: `ability:${canonicalId.toLowerCase().replaceAll(' ', '-')}`,
-      range: canonicalId === 'Celebrate' || canonicalId === 'Cruelty'
+      range: canonicalId === 'Sap Sipper'
+        ? 'Special'
+        : canonicalId === 'Celebrate' || canonicalId === 'Cruelty'
         ? 'Swift Action'
         : canonicalId === 'Fade Away' || canonicalId === 'Perish Body'
           ? 'Standard Action'
+        : canonicalId === 'Telepathy'
+          ? 'Shift Action'
           : canonicalId === 'Polycephaly' || canonicalId === 'Protean'
             ? 'Swift Action'
           : canonicalId === 'Full Guard'
@@ -976,14 +1046,25 @@ const applyTriggeredAbilityPayments = (input: {
       if (existingByOperation && existingByOperation !== existing) {
         fail('state-change-conflict', `${canonicalId} response operation already paid another daily resource.`)
       }
-      if (!existingByOperation && (existing?.spent ?? 0) >= 1) {
+      const dailyLimit = canonicalId === 'Transporter' ? 3 : 1
+      const dailySpend = canonicalId === 'Transporter'
+        && input.traces.some(trace => trace.events.some(event => (
+          event.kind === 'choice'
+          && event.reasonCode === 'ability.transporter.optional-teleport'
+          && event.outcome === 'selected'
+          && event.optionId?.startsWith('ability.transporter.both.') === true
+        ))) ? 2 : 1
+      if (!existingByOperation && (existing?.spent ?? 0) + dailySpend > dailyLimit) {
         fail('state-change-conflict', `${canonicalId} has no Daily uses remaining.`)
       }
+      const dailyOperationIds = dailySpend === 2
+        ? [selection.operationId, `${selection.operationId}:daily-use:2`]
+        : [selection.operationId]
       const nextEntry: AbilityUsageEntry = existingByOperation
         ? existingByOperation
         : {
-            ...identity, limit: 1, spent: 1,
-            operationIds: [...(existing?.operationIds ?? []), selection.operationId],
+            ...identity, limit: dailyLimit, spent: (existing?.spent ?? 0) + dailySpend,
+            operationIds: [...(existing?.operationIds ?? []), ...dailyOperationIds],
           }
       work.current = {
         ...work.current,
@@ -1007,13 +1088,20 @@ const applyTriggeredAbilityPayments = (input: {
     if (previous.sceneId !== null && previous.sceneId !== sceneId) {
       fail('state-change-conflict', `${canonicalId} usage ledger belongs to another scene.`)
     }
-    const identity = { ownerId, abilityInstanceId: ability.instanceId, canonicalId, clauseId: 'base' }
+    const clauseId = canonicalId === 'Receiver'
+      ? selection.reasonCode === 'ability.receiver.optional-copy'
+        ? 'copy-on-ally-faint'
+        : selection.reasonCode === 'ability.receiver.optional-grant'
+          ? 'grant-on-faint'
+          : 'base'
+      : 'base'
+    const identity = { ownerId, abilityInstanceId: ability.instanceId, canonicalId, clauseId }
     const existingByOperation = previous.entries.find(entry => entry.operationIds.includes(selection.operationId))
     const existing = previous.entries.find(entry => abilityUsageEntryKey(entry) === abilityUsageEntryKey(identity))
     if (existingByOperation && existingByOperation !== existing) {
       fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
     }
-    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out', 'Migraine', 'Minus', 'Plus', 'Psionic Screech', 'Queenly Majesty', 'Receiver', 'Revelation', 'Solar Power', 'Soul Heart', 'Sound Lance', 'Spray Down', 'Steam Engine', 'Tingly Tongue', 'Tonguelash', 'Transistor'].includes(canonicalId)
+    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out', 'Migraine', 'Minus', 'Plus', 'Psionic Screech', 'Queenly Majesty', 'Revelation', 'Solar Power', 'Soul Heart', 'Sound Lance', 'Spray Down', 'Steam Engine', 'Tingly Tongue', 'Tonguelash', 'Transistor'].includes(canonicalId)
       ? 2
       : 1
     if (!existingByOperation && (existing?.spent ?? 0) >= limit) {
@@ -1202,6 +1290,7 @@ export const planNativeV2MoveState = (options: {
   readonly resolutionId?: string
   readonly maxMoveLogEntries?: number
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
+  readonly abilityRuntimeRegistry?: AbilityAutomationRuntimeRegistry
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
   readonly itemResources?: AuthoritativeMoveItemResources
   readonly existingSheetReads: readonly AuthoritativeMoveSheetRead[]
@@ -1232,6 +1321,7 @@ export const planNativeV2MoveState = (options: {
     time: options.plannedAt,
     resolutionId: options.resolutionId,
     runtimeRegistry: options.runtimeRegistry,
+    abilityRuntimeRegistry: options.abilityRuntimeRegistry,
     legacyScripts: options.legacyScripts,
     itemResources: options.itemResources,
   })
@@ -1551,21 +1641,56 @@ export const planNativeV2MoveState = (options: {
     `${options.resolution.canonicalMoveName} did not emit its reviewed usage operation.`,
   )
 
-  const movementPlacementId = options.resolution.movement?.kind === 'shift'
-    ? options.resolution.movement.placementId ?? options.resolution.actorPlacementId
-    : options.resolution.actorPlacementId
-  const placementTransitionMap = applyAuthoritativeMovePlacementTransition({
-    map: mapReduction.nextMap,
-    actorPlacement: actorPlacement(options.map, movementPlacementId),
-    movement: options.resolution.movement,
-    desiredFacing: options.resolution.desiredFacing,
-    fail: (code, message) => fail(
-      code === 'pass-source-position-mismatch' || code === 'shift-source-position-mismatch'
-        ? 'state-change-conflict'
-        : 'unsupported-core-map-change',
-      `${code}: ${message}`,
-    ),
-  })
+  const projectedMovementChoices = options.resolution.nativeV2?.resolvedMovements ?? []
+  for (let leftIndex = 0; leftIndex < projectedMovementChoices.length; leftIndex += 1) {
+    const left = projectedMovementChoices[leftIndex]!.choice.movement
+    for (let rightIndex = leftIndex + 1; rightIndex < projectedMovementChoices.length; rightIndex += 1) {
+      const right = projectedMovementChoices[rightIndex]!.choice.movement
+      if (left.placementId === right.placementId || footprintsOverlap(
+        left.destination,
+        left.footprint.base,
+        left.footprint.clearance,
+        right.destination,
+        right.footprint.base,
+        right.footprint.clearance,
+      )) {
+        return fail(
+          'spatial-movement-conflict',
+          `${options.resolution.canonicalMoveName} produced colliding simultaneous movement destinations for ${left.placementId} and ${right.placementId}.`,
+        )
+      }
+    }
+  }
+
+  const applyProjectedMovement = (
+    map: TabletopMap,
+    movement: AuthoritativeMoveResolution['movement'],
+    desiredFacing?: AuthoritativeMoveResolution['desiredFacing'],
+  ): TabletopMap => {
+    const placementId = movement?.kind === 'shift'
+      ? movement.placementId ?? options.resolution.actorPlacementId
+      : options.resolution.actorPlacementId
+    return applyAuthoritativeMovePlacementTransition({
+      map,
+      actorPlacement: actorPlacement(map, placementId),
+      movement,
+      desiredFacing,
+      fail: (code, message) => fail(
+        code === 'pass-source-position-mismatch' || code === 'shift-source-position-mismatch'
+          ? 'state-change-conflict'
+          : 'unsupported-core-map-change',
+        `${code}: ${message}`,
+      ),
+    })
+  }
+  let placementTransitionMap = applyProjectedMovement(
+    mapReduction.nextMap,
+    options.resolution.movement,
+    options.resolution.desiredFacing,
+  )
+  for (const movement of options.resolution.additionalMovements ?? []) {
+    placementTransitionMap = applyProjectedMovement(placementTransitionMap, movement)
+  }
   const switchedBaseMap = options.resolution.switchTransition
     ? planAuthoritativeMoveSwitch({
         map: placementTransitionMap,

@@ -16,6 +16,7 @@ import { validateAbilitySpec } from '../../server/domain/abilityAutomation/valid
 import { createAbilityResolutionTraceForContext } from '../../server/domain/abilityAutomation/trace'
 import { emptyAuthoritativeMoveItemResources } from '../../server/domain/moveAutomation/itemResources'
 import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
+import { creatureRuleOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const placement = (
   id: string,
@@ -217,6 +218,41 @@ describe('immutable authoritative ability context', () => {
       { kind: 'sheet', sheetKind: 'pokemon', slug: 'target', revision: 5 },
       { kind: 'sheet', sheetKind: 'pokemon', slug: 'ally', revision: 4 },
     ])
+  })
+
+  it('retains copied overlays while suppressing every Ability owned by a Fainted actor', () => {
+    const map = mapFixture()
+    map.encounterState = {
+      ...map.encounterState!,
+      effects: [{
+        ...creatureRuleOverlayEncounterEffectFixture({
+          domain: 'ability',
+          action: 'copy',
+          values: ['Soundproof'],
+          referencePlacementId: 'target-token',
+          suppressionScope: null,
+        }),
+        affected: { placementIds: ['actor-token'], sideIds: [], cells: [] },
+      }],
+    }
+    const pokemonSheets = new Map(sheets())
+    const actor = pokemonSheets.get('actor')!
+    pokemonSheets.set('actor', {
+      ...actor,
+      combat: { ...actor.combat!, currentHp: 0, conditions: ['Fainted'] },
+    })
+    const context = buildContext({ map, pokemonSheets })
+
+    expect(context.actor.effectiveAbilities).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        canonicalId: 'Soundproof',
+        sourceKind: 'copied',
+        effective: false,
+        suppressionReasonCode: 'ability.suppressed.owner-fainted',
+      }),
+    ]))
+    expect(context.queries.effectiveAbilities.activeForPlacement('actor-token')).toEqual([])
+    expect(context.map.encounterState?.effects).toHaveLength(1)
   })
 
   it('honors a server-derived suppressed projection without treating it as active', () => {

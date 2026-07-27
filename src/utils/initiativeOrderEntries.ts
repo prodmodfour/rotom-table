@@ -5,6 +5,7 @@ import {
   type InitiativeOrderEntry,
 } from '#shared/initiativeOrder'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
+import { clampCombatStage } from '~/utils/combatStages'
 import {
   conditionAdjustedCombatStage,
   conditionAdjustedInitiative,
@@ -98,6 +99,10 @@ export interface InitiativeOrderEntryOptions {
   readonly earlyBirdSpeedBonus?: boolean
   /** Effective Base Speed adjustment applied before Combat Stages. */
   readonly baseSpeedOffset?: number
+  /** Effective Base Speed multiplier applied before Combat Stages. */
+  readonly baseSpeedMultiplier?: number
+  /** Effective virtual Speed Combat Stages applied without mutating the sheet. */
+  readonly speedCombatStageOffset?: number
   /** Exact effective ability names used only for condition-derived initiative rules. */
   readonly conditionAbilityNames?: readonly string[]
 }
@@ -109,13 +114,16 @@ export const pokemonInitiativeOrderEntry = (
 ): InitiativeOrderEntry => {
   const conditions = pokemonConditions(sheet)
   const abilities = options.conditionAbilityNames ?? pokemonAbilityNames(sheet)
-  const baseSpeed = Math.max(1, speedTotal(resolveStats(sheet)) + (options.baseSpeedOffset ?? 0))
-  const speedCombatStage = conditionAdjustedCombatStage(
+  const baseSpeed = Math.max(1, Math.floor(
+    (speedTotal(resolveStats(sheet)) + (options.baseSpeedOffset ?? 0))
+      * (options.baseSpeedMultiplier ?? 1),
+  ))
+  const speedCombatStage = clampCombatStage(conditionAdjustedCombatStage(
     sheet.stats?.spd?.stage,
     conditions,
     'spd',
     { abilities },
-  )
+  ) + (options.speedCombatStageOffset ?? 0))
   const speed = applyCombatStageToStat(baseSpeed, speedCombatStage)
   const initiativeItemBonus = options.itemEffectsSuppressed
     ? 0

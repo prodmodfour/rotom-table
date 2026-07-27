@@ -614,11 +614,12 @@ export const materializeMovementAttackOfOpportunity = (
     .update(`${input.originMapSlug}:${input.originOpId}`)
     .digest('hex')}`
   const provoker = placementFor(input.map, input.movement.placementId)
-  if (effectiveRuntimeAbilityIds({
+  const provokerAbilityIds = effectiveRuntimeAbilityIds({
     map: input.map,
     placement: provoker,
     sheet: sheetForPlacement(provoker, input),
-  }).includes('Line Charge')) return null
+  })
+  if (provokerAbilityIds.includes('Line Charge') || provokerAbilityIds.includes('Run Away')) return null
 
   for (const step of input.movement.triggeringSteps) {
     if (step.leftAdjacentPlacementIds.length === 0) continue
@@ -1190,6 +1191,13 @@ const continueOpportunityMovement = (input: {
     timestamp: input.plannedAt,
     userName: placementDisplayName(currentPlacement, input.documents),
     maxLogEntries: input.maxMovementLogEntries,
+    ...(completedMovement ? {
+      movementEvidence: {
+        operationId: context.movementPath.sourceOperationId,
+        path: completedMovement.path,
+        mode: 'voluntary' as const,
+      },
+    } : {}),
   })
   if (lifecycle.status !== 'pending-interrupt') {
     return {

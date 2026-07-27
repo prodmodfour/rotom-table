@@ -366,6 +366,25 @@ const precomputeHook = (input: {
     }
   }
 
+  if (input.zone.kind === 'hazard' && input.subject.destroyHazards === true) {
+    const operation = removalOperation({
+      eventId: input.event.eventId,
+      zone: input.zone,
+      hook: input.hook,
+      ordinal: 1,
+      reasonCode: 'ability.screen-cleaner.destroy-crossed-hazard',
+    })
+    return {
+      decision: decision({ ...input, outcome: 'absorbed', operations: [operation] }),
+      trigger: {
+        effectId: null,
+        reasonCode: 'ability.screen-cleaner.destroy-crossed-hazard',
+        operations: [operation],
+        emittedEvents: [],
+      },
+    }
+  }
+
   const eligibility = evaluateBattlefieldZoneEntryEligibility(input)
   if (eligibility.outcome !== 'eligible' && eligibility.outcome !== 'absorbed') {
     return {
@@ -454,6 +473,7 @@ export const materializeBattlefieldZoneEntryLifecycle = (input: {
     || (input.subject.sideId !== null && !isEncounterSideId(input.subject.sideId))
     || (input.subject.grounding !== 'grounded' && input.subject.grounding !== 'airborne')
     || (input.subject.ignoreHazards !== undefined && typeof input.subject.ignoreHazards !== 'boolean')
+    || (input.subject.destroyHazards !== undefined && typeof input.subject.destroyHazards !== 'boolean')
     || !Array.isArray(input.subject.typeIds)
     || input.subject.typeIds.some(typeId => (
       typeof typeId !== 'string'

@@ -171,11 +171,15 @@ export const resolveMoveCriticalHit = (options: {
     }).suppressed
   const rareLeekBonus = rareLeekEligible ? 2 : 0
   const razorEdgeBonus = options.context.queries.abilities.has(actorId, 'Razor Edge')
-    ? options.script.moveName.toLowerCase().includes('tail') ? 3 : 2
+    ? /(?:^|\s)tail(?:\s|$)/i.test(options.script.moveName) ? 3 : 2
     : 0
   const superLuckBonus = options.context.queries.abilities.has(actorId, 'Super Luck') ? 2 : 0
   const viciousBonus = options.context.map.encounterState?.effects.some(effect => (
-    effect.tags.includes('aa097-vicious-critical')
+    effect.kind === 'capability'
+    && effect.payload.action === 'grant'
+    && effect.payload.capabilityId === 'aa097.vicious.critical-range-plus-two'
+    && effect.tags.includes('aa097-vicious-critical')
+    && effect.source.placementId === actorId
     && effect.affected.placementIds.includes(actorId)
     && effect.suppression.sources.length === 0
     && (effect.duration.remaining === null || effect.duration.remaining > 0)

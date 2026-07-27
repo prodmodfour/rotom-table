@@ -22,6 +22,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { placementToSpawned } from '~/utils/placement'
+import { gridFootprintCells } from '~/utils/gridGeometry'
 import { computeTickValue } from '~/utils/ptuHp'
 import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import { deepCloneJson } from '~/utils/serialization'
@@ -74,7 +75,10 @@ import { reduceAbilityOwnedStateLifecycle } from '../abilityAutomation/ownedStat
 import { reduceAbilityEffectLifecycleEncounter, type AbilityEffectLifecycleEvent } from '../abilityAutomation/effectLifecycle'
 import { createEmptyAbilityEntityState } from '#shared/abilityAutomation/entities'
 import { recoverAbilityEntities, reduceAbilityEntityCommand, reduceAbilityEntityLifecycle } from '../abilityAutomation/entities'
-import { registeredAbilityAutomationRuntimeFor } from '../abilityAutomation/registry'
+import {
+  registeredAbilityAutomationRuntimeFor,
+  type AbilityAutomationRuntimeRegistry,
+} from '../abilityAutomation/registry'
 import { projectAuthoritativeEffectiveAbilities } from '../abilityAutomation/effectiveAbilities'
 import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
 import { aa060AnchoredEntityCreateCommand } from '../abilityAutomation/mechanics/aa060Activated'
@@ -107,7 +111,10 @@ import {
   aa079MagmaArmorGrappleLifecycleEntries,
   createAa079MagmaArmorGrappleLifecycleHandler,
 } from '../abilityAutomation/mechanics/aa079LifecycleIntegration'
-import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
+import {
+  authoritativeAbilityOwnerIsConscious,
+  effectiveRuntimeAbilityIds,
+} from '../abilityAutomation/effectiveRuntimeAbilities'
 import {
   aa080MoodyLifecycleRecipientIds,
   createAa080MoodyLifecycleHandler,
@@ -118,6 +125,7 @@ import { clearAa084PowerOfAlchemyForKnockouts } from '../abilityAutomation/mecha
 import {
   AA096_TRUANT_HEAL_REASON,
   aa085to100LifecycleRecipientIds,
+  aa085to100StickySmokeSourceOwnerId,
   createAa085To100LifecycleHandler,
 } from '../abilityAutomation/mechanics/aa085to100LifecycleIntegration'
 import { reduceAbilityTransformationLifecycle } from '../abilityAutomation/transformations'
@@ -194,6 +202,8 @@ export interface PlanEncounterLifecycleInput {
   /** Loaded only when a trigger actually emits a sheet-backed operation. */
   readonly loadSheets: () => EncounterLifecycleSheetSnapshots
   readonly handlers?: readonly EncounterLifecycleTriggerHandler[]
+  /** Test/migration seam; production resolves the audited global Ability registry. */
+  readonly abilityRuntimeRegistry?: AbilityAutomationRuntimeRegistry
   /** Injected server entropy; clients cannot supply lifecycle rolls. */
   readonly random?: AuthoritativeMoveRandomSource
 }
@@ -623,7 +633,7 @@ const effectiveAbilityPlacementIds = (input: {
     const sheet = placement.sheetKind === 'pokemon'
       ? input.snapshots.pokemonSheets.get(placement.sheetSlug)
       : input.snapshots.trainerSheets.get(placement.sheetSlug)
-    if (!sheet) return []
+    if (!sheet || !authoritativeAbilityOwnerIsConscious(sheet)) return []
     const effective = projectAuthoritativeEffectiveAbilities({
       baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
       species: placement.sheetKind === 'pokemon' ? (sheet as CharacterSheet).species : null,
@@ -756,12 +766,61 @@ export const planEncounterLifecycle = (
       })
     : Object.freeze([])
   const remainingLifecycleSnapshots = events.some(event => (
-    event.kind === 'turn-start' || event.kind === 'turn-end'
+    event.kind === 'round-start' || event.kind === 'turn-start' || event.kind === 'turn-end'
   )) ? loadSheets() : null
+  const rocketPlacementIds = events.some(event => event.kind === 'round-start') && remainingLifecycleSnapshots
+    ? effectiveAbilityPlacementIds({
+        map: lifecycleMap, state: previousEncounterState,
+        snapshots: remainingLifecycleSnapshots, canonicalId: 'Rocket',
+      })
+    : Object.freeze([])
   const speedBoostPlacementIds = events.some(event => event.kind === 'turn-end') && remainingLifecycleSnapshots
     ? effectiveAbilityPlacementIds({
         map: lifecycleMap, state: previousEncounterState,
         snapshots: remainingLifecycleSnapshots, canonicalId: 'Speed Boost',
+      })
+    : Object.freeze([])
+  const stakeoutPlacementIds = events.some(event => event.kind === 'turn-end') && remainingLifecycleSnapshots
+    ? effectiveAbilityPlacementIds({
+        map: lifecycleMap, state: previousEncounterState,
+        snapshots: remainingLifecycleSnapshots, canonicalId: 'Stakeout',
+      })
+    : Object.freeze([])
+  const steamEngineRainPlacementIds = events.some(event => event.kind === 'turn-start')
+    && remainingLifecycleSnapshots
+    ? (() => {
+        const steamEngineIds = new Set(effectiveAbilityPlacementIds({
+          map: lifecycleMap, state: previousEncounterState,
+          snapshots: remainingLifecycleSnapshots, canonicalId: 'Steam Engine',
+        }))
+        const waterBubbleIds = new Set(effectiveAbilityPlacementIds({
+          map: lifecycleMap, state: previousEncounterState,
+          snapshots: remainingLifecycleSnapshots, canonicalId: 'Water Bubble',
+        }))
+        const lookup = {
+          pokemon: new Map(remainingLifecycleSnapshots.pokemonSheets),
+          trainer: new Map(remainingLifecycleSnapshots.trainerSheets),
+        }
+        return Object.freeze(lifecycleMap.placements.flatMap(placement => {
+          if (!steamEngineIds.has(placement.id)) return []
+          const token = placementToSpawned(placement, lookup, lifecycleMap)
+          if (!token) return []
+          const rainy = createMoveAutomationWeatherResolver(lifecycleMap, {
+            subjectPlacementId: placement.id,
+            subjectOccupiedCells: gridFootprintCells(token.position, token),
+            ...(waterBubbleIds.has(placement.id) ? {
+              virtualWeatherKind: 'rainy' as const,
+              virtualWeatherSourceId: `ability.water-bubble:${placement.id}`,
+            } : {}),
+          }).active().some(weather => weather.kind === 'rainy')
+          return rainy ? [placement.id] : []
+        }))
+      })()
+    : Object.freeze([])
+  const sunBlanketPlacementIds = events.some(event => event.kind === 'turn-start') && remainingLifecycleSnapshots
+    ? effectiveAbilityPlacementIds({
+        map: lifecycleMap, state: previousEncounterState,
+        snapshots: remainingLifecycleSnapshots, canonicalId: 'Sun Blanket',
       })
     : Object.freeze([])
   const truantPlacementIds = events.some(event => event.kind === 'turn-start') && remainingLifecycleSnapshots
@@ -770,6 +829,44 @@ export const planEncounterLifecycle = (
         snapshots: remainingLifecycleSnapshots, canonicalId: 'Truant',
       })
     : Object.freeze([])
+  const stickySmokeZones = previousEncounterState.zones.filter(zone => (
+    zone.kind === 'hazard'
+    && zone.payload.familyId === 'hazard.smoke.sticky'
+    && zone.geometry.kind === 'cells'
+    && zone.source.kind === 'operation'
+    && zone.source.placementId !== null
+  ))
+  const stickySmokeExposures = stickySmokeZones.length === 0 || !remainingLifecycleSnapshots
+    ? Object.freeze([])
+    : (() => {
+        const lookup = {
+          pokemon: new Map(remainingLifecycleSnapshots.pokemonSheets),
+          trainer: new Map(remainingLifecycleSnapshots.trainerSheets),
+        }
+        const tokens = new Map(lifecycleMap.placements.flatMap(placement => {
+          const token = placementToSpawned(placement, lookup, lifecycleMap)
+          return token ? [[placement.id, token] as const] : []
+        }))
+        return Object.freeze(stickySmokeZones.flatMap(zone => {
+          const source = zone.source
+          if (zone.geometry.kind !== 'cells' || source.kind !== 'operation'
+            || source.placementId === null) return []
+          const sourcePlacementId = source.placementId
+          const sourceOperationId = source.operationId
+          const cells = new Set(zone.geometry.cells.map(cell => `${cell.x}:${cell.y}:${cell.z}`))
+          return lifecycleMap.placements.flatMap(placement => {
+            const token = tokens.get(placement.id)
+            return token && gridFootprintCells(token.position, token).some(cell => (
+              cells.has(`${cell.x}:${cell.y}:${cell.z}`)
+            )) ? [{
+                placementId: placement.id,
+                sourcePlacementId,
+                zoneId: zone.id,
+                sourceOperationId,
+              }] : []
+          })
+        }))
+      })()
   const magmaArmorGrappleTurnEnd = events.some(event => event.kind === 'turn-end')
     && previousEncounterState.effects.some(effect => effect.tags.includes('aa079.magma-armor-grapple'))
   const magmaArmorGrappleEntries = magmaArmorGrappleTurnEnd
@@ -800,6 +897,14 @@ export const planEncounterLifecycle = (
         })
       })()
     : Object.freeze([])
+  const wishEffects = events.some(event => event.kind === 'turn-end')
+    ? previousEncounterState.effects.filter(effect => (
+        effect.tags.includes('wish')
+        && effect.tags.includes('delayed-heal')
+        && effect.suppression.sources.length === 0
+        && (effect.duration.remaining === null || effect.duration.remaining > 0)
+      ))
+    : []
   const hasDelayedReactionDebt = previousEncounterState.effects.some(effect => (
     effect.kind === 'capability' && effect.payload.capabilityId === 'aa067.delayed-reaction.hp-loss'
   ))
@@ -844,8 +949,19 @@ export const planEncounterLifecycle = (
     ...(moodyPlacementIds.length > 0
       ? [createAa080MoodyLifecycleHandler(moodyPlacementIds)]
       : []),
-    ...(speedBoostPlacementIds.length > 0 || truantPlacementIds.length > 0
-      ? [createAa085To100LifecycleHandler({ speedBoostPlacementIds, truantPlacementIds })]
+    ...(rocketPlacementIds.length > 0
+      || speedBoostPlacementIds.length > 0
+      || stakeoutPlacementIds.length > 0
+      || steamEngineRainPlacementIds.length > 0
+      || stickySmokeExposures.length > 0
+      || sunBlanketPlacementIds.length > 0
+      || truantPlacementIds.length > 0
+      || wishEffects.length > 0
+      ? [createAa085To100LifecycleHandler({
+          rocketPlacementIds, speedBoostPlacementIds, stakeoutPlacementIds,
+          stickySmokeExposures, steamEngineRainPlacementIds,
+          sunBlanketPlacementIds, truantPlacementIds, wishEffects,
+        })]
       : []),
     ...(corrosiveToxinsHandler ? [corrosiveToxinsHandler] : []),
     ...(weatherHandler ? [weatherHandler] : []),
@@ -918,6 +1034,9 @@ export const planEncounterLifecycle = (
       selectedPlacementIds: [...operationRecipientIds],
       random: () => 0.5,
       time: input.time,
+      ...(input.abilityRuntimeRegistry
+        ? { abilityRuntimeRegistry: input.abilityRuntimeRegistry }
+        : {}),
     })
     for (const operation of reduction.operations) {
       const conditionRecipients = aa065CorrosiveToxinsLifecycleRecipientIds({
@@ -986,6 +1105,12 @@ export const planEncounterLifecycle = (
           fallback: standardImmunities,
         }),
       }),
+      sourceOwnerIdForOperation: operation => operation.kind === 'combat-stage'
+        ? aa085to100StickySmokeSourceOwnerId({
+            operation,
+            exposures: stickySmokeExposures,
+          })
+        : null,
       recipientIdsForOperation: operation => recipientsByOperationId.get(operation.id) ?? [],
     })
     sheetReads = core.sheetReads
@@ -1162,5 +1287,8 @@ export const planInitiativeLifecycle = (
   time: input.time,
   loadSheets: input.loadSheets,
   handlers: input.handlers,
+  ...(input.abilityRuntimeRegistry
+    ? { abilityRuntimeRegistry: input.abilityRuntimeRegistry }
+    : {}),
   random: input.random,
 })

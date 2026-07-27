@@ -669,13 +669,23 @@ const diceBonus = (value: unknown, expected: { diceCount: number; diceSides: num
     || integer(input.modifier, `${path}.modifier`, 0, 100) !== expected.modifier) fail('invalid-mechanic', path, 'does not match the reviewed bonus.')
   return { ...expected }
 }
+const boundedText = (value: unknown, path: string, maximum = 300): string => {
+  if (typeof value !== 'string' || value.trim().length === 0 || value.length > maximum) {
+    fail('invalid-mechanic', path, `must be non-empty text no longer than ${maximum} characters.`)
+  }
+  return value as string
+}
 const REMAINING_COHORT_MECHANIC = /^aa(?:08[5-9]|09[0-9]|100)\./
 const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string): AbilitySpecJsonObject => {
   const config = record(value, path)
   const remainingCohort = REMAINING_COHORT_MECHANIC.test(mechanicId)
-  exact(config, CONFIG_FIELDS[mechanicId] ?? (remainingCohort ? ['ruleVersion'] : []), path)
+  exact(config, CONFIG_FIELDS[mechanicId] ?? (remainingCohort
+    ? ['ruleVersion', 'sourceRuleSha256', 'frequency', 'triggered'] : []), path)
   if (remainingCohort) return {
     ruleVersion: integer(config.ruleVersion, `${path}.ruleVersion`, 1, 1),
+    sourceRuleSha256: stableId(config.sourceRuleSha256, `${path}.sourceRuleSha256`),
+    frequency: boundedText(config.frequency, `${path}.frequency`),
+    triggered: bool(config.triggered, `${path}.triggered`),
   }
   switch (mechanicId) {
     case 'aa060.abominable': return { baseHpBonus: integer(config.baseHpBonus, `${path}.baseHpBonus`, 1, 100), ignoreRecoil: bool(config.ignoreRecoil, `${path}.ignoreRecoil`) }

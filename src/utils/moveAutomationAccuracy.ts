@@ -24,6 +24,7 @@ import type {
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import { mapFieldEffectsHaveActiveRoom } from '~/utils/encounterRooms'
+import { normalizeConditionNames } from '~/utils/statusConditions'
 
 export type MoveAutomationEvasionKind = 'physical' | 'special' | 'speed'
 
@@ -46,6 +47,8 @@ export interface MoveAutomationEvasionContext {
   attacker?: Pick<SpawnedPokemon, 'abilityNames'> | null
   /** Server-projected active fields; retained v1 callers never author this value. */
   fieldEffects?: MapFieldEffects | null
+  /** Authoritative material/voxel tags under the target's complete footprint. */
+  targetTerrainTags?: readonly string[]
   /** Exact effective Dauntless Shield projection; presentation callers may omit it. */
   dauntlessShieldActive?: boolean
 }
@@ -76,26 +79,30 @@ const moveAutomationTargetAbilityEvasionModifiers = (
   )
   const abilities = new Set((target.abilityNames ?? []).map(name => name.trim()))
   if (abilities.has('Perception')) modifiers.push({ source: 'Perception', modifier: 1 })
+  if (abilities.has('Telepathy')) modifiers.push({ source: 'Telepathy', modifier: 1 })
   if (abilities.has('Wonder Skin')
     && script?.damageClass?.trim().toLowerCase() === 'status') {
     modifiers.push({ source: 'Wonder Skin', modifier: 6 })
   }
   if (abilities.has('Tangled Feet')
-    && target.conditions.some(condition => ['confused', 'slowed'].includes(condition.trim().toLowerCase()))) {
+    && normalizeConditionNames(target.conditions).some(condition => (
+      condition === 'Confused' || condition === 'Slowed'
+    ))) {
     modifiers.push({ source: 'Tangled Feet', modifier: 3 })
   }
   const weather = new Set((context.fieldEffects?.weather ?? []).map(entry => entry.kind))
   const terrain = new Set((context.fieldEffects?.terrains ?? []).map(entry => entry.kind))
+  const terrainTags = new Set((context.targetTerrainTags ?? []).map(tag => tag.trim().toLowerCase()))
   if (abilities.has('Sand Veil')) {
-    modifiers.push({ source: 'Sand Veil', modifier: weather.has('sandstorm') ? 2 : 1 })
+    modifiers.push({ source: 'Sand Veil', modifier: weather.has('sandstorm') || terrainTags.has('sand') ? 2 : 1 })
   }
   if (abilities.has('Snow Cloak')) {
-    modifiers.push({ source: 'Snow Cloak', modifier: weather.has('hail') ? 2 : 1 })
+    modifiers.push({ source: 'Snow Cloak', modifier: weather.has('hail') || terrainTags.has('snow') ? 2 : 1 })
   }
   if (abilities.has('Sol Veil')) {
     modifiers.push({
       source: 'Sol Veil',
-      modifier: weather.has('sunny') || terrain.has('grassy') ? 2 : 1,
+      modifier: weather.has('sunny') || terrain.has('grassy') || terrainTags.has('grass') ? 2 : 1,
     })
   }
   return modifiers

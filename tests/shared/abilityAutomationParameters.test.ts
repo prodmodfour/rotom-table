@@ -63,6 +63,7 @@ describe('ability instance parameters', () => {
     ])).toEqual([
       ['Color Theory', 'color', 'server-roll', 12],
       ['Fabulous Trim', 'trim', 'sheet-choice', 9],
+      ['Seasonal', 'season', 'sheet-choice', 4],
       ['Serpent’s Mark', 'pattern', 'inherited-or-server-roll', 6],
       ['Type Strategist', 'type', 'sheet-choice', 18],
     ])

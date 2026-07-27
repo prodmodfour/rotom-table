@@ -86,6 +86,8 @@ export interface LivePlayResolvedMovePassMovement {
 
 export interface LivePlayResolvedMoveShiftMovement {
   readonly kind: 'shift'
+  /** Omitted only for the primary actor movement; required for additional movements. */
+  readonly placementId?: string
   readonly from: GridAnchor
   readonly destination: GridAnchor
   readonly pathCells: readonly GridAnchor[]
@@ -115,6 +117,8 @@ export interface LivePlayResolvedMoveResult {
   readonly desiredFacing?: TokenFacingDirection
   readonly area?: LivePlayResolvedMoveArea
   readonly movement?: LivePlayResolvedMoveMovement
+  /** Additional simultaneous server-reviewed placement transitions. */
+  readonly additionalMovements?: readonly LivePlayResolvedMoveShiftMovement[]
 }
 
 export type LivePlayResolvedMoveResultValidationCode =
@@ -234,6 +238,7 @@ const FORBIDDEN_CLIENT_AUTHORITY_FIELDS = new Set([
   'mapRevision',
   'pathCells',
   'movement',
+  'additionalMovements',
   'movementDistance',
   'moveDistance',
   'from',
@@ -903,6 +908,9 @@ const parseResolvedMoveMovement = (
     requireResolvedMoveField(value, 'direction', issues, `${path}.direction`)
   }
 
+  const placementId = hasOwn(value, 'placementId')
+    ? parseResolvedMoveText(value.placementId, `${path}.placementId`, issues)
+    : null
   const from = parseResolvedMoveGridAnchor(value.from, `${path}.from`, issues)
   const destination = parseResolvedMoveGridAnchor(value.destination, `${path}.destination`, issues)
   const direction = hasOwn(value, 'direction')
@@ -922,6 +930,7 @@ const parseResolvedMoveMovement = (
     ? { kind: 'pass', from, destination, direction: direction!, pathCells }
     : {
         kind: 'shift',
+        ...(placementId ? { placementId } : {}),
         from,
         destination,
         pathCells,
@@ -987,6 +996,42 @@ export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayRe
     : null
   const area = hasOwn(value, 'area') ? parseResolvedMoveArea(value.area, 'area', issues) : null
   const movement = hasOwn(value, 'movement') ? parseResolvedMoveMovement(value.movement, 'movement', issues) : null
+  const additionalMovements = (() => {
+    if (!hasOwn(value, 'additionalMovements')) return null
+    if (!Array.isArray(value.additionalMovements) || value.additionalMovements.length > 64) {
+      addResolvedMoveIssue(
+        issues,
+        'additionalMovements',
+        'invalid-field',
+        'additionalMovements must be an array of at most 64 server-reviewed shifts.',
+      )
+      return null
+    }
+    const parsed = value.additionalMovements.map((entry, index) => (
+      parseResolvedMoveMovement(entry, `additionalMovements[${index}]`, issues)
+    ))
+    const invalid = parsed.some(entry => entry?.kind !== 'shift' || !entry.placementId)
+    if (invalid) {
+      addResolvedMoveIssue(
+        issues,
+        'additionalMovements',
+        'invalid-field',
+        'Every additional movement must be a shift with an exact placementId.',
+      )
+      return null
+    }
+    const shifts = parsed as LivePlayResolvedMoveShiftMovement[]
+    if (new Set(shifts.map(entry => entry.placementId)).size !== shifts.length) {
+      addResolvedMoveIssue(
+        issues,
+        'additionalMovements',
+        'invalid-field',
+        'Additional movement placement IDs must be unique.',
+      )
+      return null
+    }
+    return shifts
+  })()
 
   if (
     issues.length > 0
@@ -1022,6 +1067,7 @@ export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayRe
       ...(desiredFacing ? { desiredFacing } : {}),
       ...(area ? { area } : {}),
       ...(movement ? { movement } : {}),
+      ...(additionalMovements ? { additionalMovements } : {}),
     },
     issues: [],
   }

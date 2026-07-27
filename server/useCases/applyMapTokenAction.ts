@@ -333,6 +333,7 @@ const authoritativeMovementSheetsForMap = (
 
 interface ResolvedNormalTokenMovement {
   readonly movement: AuthoritativeMovementSuccess
+  readonly sourceOperationId: string
   readonly encounterState: EncounterState
   /** Resource and zone state before the placement endpoint is committed. */
   readonly mapBeforeTransition: TabletopMap
@@ -393,6 +394,7 @@ const resolveNormalTokenMovement = (
         : null
       return {
         movement,
+        sourceOperationId,
         encounterState: zonePlan?.currentEncounterState ?? resourcePlan.currentEncounterState,
         mapBeforeTransition: zonePlan?.nextMap ?? resourceMap,
         zonePlan,
@@ -499,6 +501,11 @@ const applyResolvedMoveTokenToMap = (
     timestamp: dependencies.now(),
     userName: sheetDisplayName(context.placement, dependencies.readSheet),
     maxLogEntries: dependencies.maxMovementLogEntries,
+    movementEvidence: {
+      operationId: resolved.sourceOperationId,
+      path: resolved.movement.path,
+      mode: 'voluntary',
+    },
   })
   return {
     nextMap: transition.nextMap,
@@ -1384,6 +1391,13 @@ const suspendMovementForOpportunityAttack = (input: {
     timestamp,
     userName: sheetDisplayName(input.context.placement, input.dependencies.readSheet),
     maxLogEntries: input.dependencies.maxMovementLogEntries,
+    ...(committedMovement ? {
+      movementEvidence: {
+        operationId: input.command.opId,
+        path: committedMovement.path,
+        mode: 'voluntary' as const,
+      },
+    } : {}),
   })
   const encounter = parseEncounterState(
     transition.nextMap.encounterState ?? createEmptyEncounterState(),

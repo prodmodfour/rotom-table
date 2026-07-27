@@ -52,6 +52,8 @@ import { executeAa082ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa083ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa083Activated'
 import { executeAa084ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa084Activated'
 import { executeAa085To100ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa085to100Activated'
+import { authoritativeAbilityItemResourceRequirementsFor } from '../domain/abilityAutomation/itemProviders'
+import { resolveAuthoritativeMoveItemResources } from '../domain/moveAutomation/itemResources'
 import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../domain/abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
@@ -142,15 +144,27 @@ export const resolveAbilityDeclarationUseCase = (
     now,
   })
   const pokemonSheets = listRepositorySheets<CharacterSheet>(sheetRepository, 'pokemon')
+  const pokemonBySlug = new Map(pokemonSheets.map(sheet => [sheet.slug, sheet]))
+  const selectedTargetPlacementIds = targetIds(resolved.choices)
+  const itemResources = resolveAuthoritativeMoveItemResources({
+    map,
+    actorPlacementId: intent.actorPlacementId,
+    selectedTargetPlacementIds,
+    pokemonSheets: pokemonBySlug,
+    trainerSheets: trainerBySlug,
+    groupInventories: new Map(),
+    requirements: authoritativeAbilityItemResourceRequirementsFor(intent.canonicalId),
+  })
   const context = buildAuthoritativeAbilityContext({
     map,
-    pokemonSheets: new Map(pokemonSheets.map(sheet => [sheet.slug, sheet])),
+    pokemonSheets: pokemonBySlug,
     trainerSheets: trainerBySlug,
+    itemResources,
     request: {
       canonicalId: intent.canonicalId,
       modeId: intent.modeId,
       actorPlacementId: intent.actorPlacementId,
-      targetPlacementIds: targetIds(resolved.choices),
+      targetPlacementIds: selectedTargetPlacementIds,
       triggeringEvent: null,
     },
     runtime,

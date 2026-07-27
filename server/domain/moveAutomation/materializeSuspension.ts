@@ -5,6 +5,7 @@ import {
   type PendingMoveResolution,
   type PendingMoveResolutionPublicSummary,
   type PendingMoveResolutionResourceRead,
+  type PendingMoveRootAreaSelection,
   type PendingMoveResponseWindow,
 } from '#shared/moveAutomation/pendingResolution'
 import type {
@@ -70,6 +71,7 @@ export interface MaterializeMoveSpecSuspensionInput {
   readonly actorPlacementId: string
   readonly virtualOriginCell?: GridAnchor
   readonly targetBranchId?: string
+  readonly rootAreaSelection?: PendingMoveRootAreaSelection
   readonly suspendedAt: number
   readonly authoritativeSheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly authoritativeGroupInventoryReads?: readonly AuthoritativeMoveGroupInventoryRead[]
@@ -406,6 +408,23 @@ export const materializeMoveSpecSuspension = (
     actorPlacementId: input.actorPlacementId,
     ...(input.virtualOriginCell ? { virtualOriginCell: { ...input.virtualOriginCell } } : {}),
     ...(input.targetBranchId ? { targetBranchId: input.targetBranchId } : {}),
+    ...(input.rootAreaSelection
+      ? {
+          rootAreaSelection: {
+            ...input.rootAreaSelection,
+            ...(input.rootAreaSelection.aimCell
+              ? { aimCell: { ...input.rootAreaSelection.aimCell } }
+              : {}),
+            ...(input.rootAreaSelection.excludedTargetPlacementIds
+              ? {
+                  excludedTargetPlacementIds: [
+                    ...input.rootAreaSelection.excludedTargetPlacementIds,
+                  ],
+                }
+              : {}),
+          },
+        }
+      : {}),
     canonicalMoveId: input.definition.spec.canonicalId,
     specVersion: input.definition.spec.version,
     specHash: input.definition.definitionHash,

@@ -22,6 +22,7 @@ const activeEffects = (input: {
       effect.kind === 'numeric-modifier'
       && effect.payload.attribute === input.attribute
       && effect.affected.placementIds.includes(input.placementId)
+      && effect.suppression.sources.length === 0
       && (effect.duration.remaining === null || effect.duration.remaining > 0)
     ),
   )
@@ -63,6 +64,8 @@ export const applyEncounterNumericModifiers = (input: {
   readonly baseValue: number
   /** Ability-owned policy for ignoring only increases or only decreases. */
   readonly changePolicy?: 'all' | 'non-decreasing' | 'non-increasing'
+  /** White Smoke-style protection: external effects may not lower this placement's value. */
+  readonly protectedFromExternalDecreasesPlacementId?: string
 }): { readonly value: number; readonly steps: readonly EncounterNumericModifierStep[] } => {
   let value = input.baseValue
   const steps: EncounterNumericModifierStep[] = []
@@ -71,6 +74,9 @@ export const applyEncounterNumericModifiers = (input: {
     const candidate = apply(value, effect)
     if (input.changePolicy === 'non-decreasing' && candidate < previous) continue
     if (input.changePolicy === 'non-increasing' && candidate > previous) continue
+    if (candidate < previous
+      && input.protectedFromExternalDecreasesPlacementId
+      && effect.source.placementId !== input.protectedFromExternalDecreasesPlacementId) continue
     value = candidate
     steps.push(Object.freeze({
       effectId: effect.id,

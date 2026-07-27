@@ -267,13 +267,14 @@ const hazardOperation = (input: {
   readonly count: number
   readonly maxLayers: number
   readonly range?: number
+  readonly zoneKind?: 'hazard' | 'barrier'
 }): MoveHazardEffectOperation => {
   const rules = hazardRules(input.count, input.range)
   return {
     id: `${input.slug}.place-hazard`, kind: 'hazard', source: { kind: 'move', id: `move.${input.slug}` },
     recipients: { kind: 'none' }, phase: 'schedule', reasonCode: `${input.slug}.place-hazard`,
     payload: {
-      action: 'add', familyId: `hazard.${input.effectId}`, zoneKind: 'hazard', effectId: input.effectId,
+      action: 'add', familyId: `hazard.${input.effectId}`, zoneKind: input.zoneKind ?? 'hazard', effectId: input.effectId,
       ownership: 'source-side',
       geometry: {
         kind: 'selection', cellSetId: `${input.slug}.cells`, count: rules.count,
@@ -284,16 +285,23 @@ const hazardOperation = (input: {
     },
   }
 }
-const hazardSpec = (canonicalId: FieldHazardCohort226233MoveName, slug: string, effectId: string, count: number, maxLayers: number): MoveSpec => createReviewedMoveSpec({
+const hazardSpec = (
+  canonicalId: FieldHazardCohort226233MoveName,
+  slug: string,
+  effectId: string,
+  count: number,
+  maxLayers: number,
+  zoneKind: 'hazard' | 'barrier' = 'hazard',
+): MoveSpec => createReviewedMoveSpec({
   canonicalId, targeting: hazardTargeting,
-  operations: [hazardOperation({ slug, effectId, count, maxLayers }), ...standardTerminalOperations(slug)],
+  operations: [hazardOperation({ slug, effectId, count, maxLayers, zoneKind }), ...standardTerminalOperations(slug)],
   tags: ['hazard', 'hazard-cell-choice'],
 })
 export const SPIKES_MOVE_SPEC = hazardSpec('Spikes', 'spikes', 'spikes', 8, 3)
 export const STEALTH_ROCK_MOVE_SPEC = hazardSpec('Stealth Rock', 'stealth-rock', 'stealth-rock', 4, 1)
 export const STICKY_WEB_MOVE_SPEC = hazardSpec('Sticky Web', 'sticky-web', 'sticky-web', 8, 1)
 export const TOXIC_SPIKES_MOVE_SPEC = hazardSpec('Toxic Spikes', 'toxic-spikes', 'toxic-spikes', 8, 2)
-export const BARRIER_MOVE_SPEC = hazardSpec('Barrier', 'barrier', 'barrier', 4, 1)
+export const BARRIER_MOVE_SPEC = hazardSpec('Barrier', 'barrier', 'barrier', 4, 1, 'barrier')
 
 const vortexDefinition = (sourceType: string) => ({
   kind: 'vortex' as const, duration: { kind: 'scene' as const, remaining: null }, stacks: 1, charges: 4,

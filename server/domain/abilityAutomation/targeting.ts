@@ -1,4 +1,4 @@
-import type { GridAnchor } from '~/types/map'
+import type { GridAnchor, TabletopMap } from '~/types/map'
 import type { MoveAutomationAreaDirection, MoveAutomationAreaTemplate } from '~/types/moveAutomation'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import {
@@ -111,6 +111,47 @@ const footprintDistance = (
   left: AuthoritativeAbilityContext['actor']['token'],
   right: AuthoritativeAbilityContext['actor']['token'],
 ): number => ptuGridDistanceBetweenFootprints(left, right)
+
+/**
+ * Resolve server-owned willingness configuration for one ability actor.
+ *
+ * The map entry is deliberately separate from a declaration command so a
+ * client cannot assert consent in the same request that spends the ability.
+ */
+export const configuredAbilityTargetWillingness = (input: {
+  readonly map: Pick<TabletopMap, 'metadata' | 'placements'>
+  readonly actorPlacementId: string
+}): readonly MoveAutomationTargetWillingnessDeclaration[] => {
+  const configured = input.map.metadata?.abilityTargetWillingness
+  if (!Array.isArray(configured)) return Object.freeze([])
+  const known = new Set(input.map.placements.map(placement => placement.id))
+  const seen = new Set<string>()
+  const declarations: MoveAutomationTargetWillingnessDeclaration[] = []
+  for (const entry of configured) {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) continue
+    const value = entry as Record<string, unknown>
+    if (value.actorPlacementId !== input.actorPlacementId
+      || typeof value.targetPlacementId !== 'string'
+      || !known.has(value.targetPlacementId)
+      || (value.willingness !== 'willing' && value.willingness !== 'unwilling')
+      || seen.has(value.targetPlacementId)) continue
+    seen.add(value.targetPlacementId)
+    declarations.push(Object.freeze({
+      targetPlacementId: value.targetPlacementId,
+      willingness: value.willingness,
+    }))
+  }
+  return Object.freeze(declarations)
+}
+
+export const configuredAbilityTargetIsWilling = (input: {
+  readonly map: Pick<TabletopMap, 'metadata' | 'placements'>
+  readonly actorPlacementId: string
+  readonly targetPlacementId: string
+}): boolean => configuredAbilityTargetWillingness(input).some(declaration => (
+  declaration.targetPlacementId === input.targetPlacementId
+  && declaration.willingness === 'willing'
+))
 
 /**
  * Resolve ability targets from the frozen context. Requested IDs and area

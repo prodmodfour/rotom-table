@@ -12,6 +12,7 @@ import {
 } from '~/utils/tokenFacing'
 import { deepCloneJson } from '~/utils/serialization'
 import { assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
+import { recordAa085to100MovementEvidence } from '../abilityAutomation/mechanics/aa085to100MovementIntegration'
 
 export interface AuthoritativeMovementMapTransition {
   readonly nextMap: TabletopMap
@@ -44,6 +45,11 @@ export const applyAuthoritativeMovementMapTransition = (input: {
   readonly timestamp: number
   readonly userName: string
   readonly maxLogEntries?: number
+  readonly movementEvidence?: {
+    readonly operationId: string
+    readonly path: readonly GridAnchor[]
+    readonly mode: 'voluntary' | 'forced' | 'teleport'
+  }
 }): AuthoritativeMovementMapTransition => {
   if (!Number.isSafeInteger(input.distance) || input.distance < 0) {
     throw new Error('Authoritative movement transition distance must be a non-negative safe integer.')
@@ -59,7 +65,14 @@ export const applyAuthoritativeMovementMapTransition = (input: {
   const previousEncounterState = parseEncounterState(
     input.map.encounterState ?? createEmptyEncounterState(),
   )
-  const encounterState = parseEncounterState(input.encounterState)
+  const parsedEncounterState = parseEncounterState(input.encounterState)
+  const encounterState = input.movementEvidence
+    ? recordAa085to100MovementEvidence({
+        encounterState: parsedEncounterState,
+        placementId: input.placementId,
+        ...input.movementEvidence,
+      })
+    : parsedEncounterState
   const from = deepCloneJson(placement.position)
   const to = deepCloneJson(input.destination)
   const moved = !sameAnchor(from, to)

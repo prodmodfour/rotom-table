@@ -80,7 +80,10 @@ import {
   aa084MoveDamageModifiers,
   aa084PrideActor,
 } from '../abilityAutomation/mechanics/aa084StaticIntegration'
-import { aa085to100MoveDamageModifiers } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
+import {
+  aa085to100ActorForMove,
+  aa085to100MoveDamageModifiers,
+} from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -361,7 +364,11 @@ export const resolveMoveSpecDamageCalculation = (
   })
   const actor = aa084PrideActor({
     context: options.context,
-    actor: options.actor ?? options.context.actor.token,
+    actor: aa085to100ActorForMove({
+      context: options.context,
+      script: options.script,
+      actor: options.actor ?? options.context.actor.token,
+    }),
   })
   const aa060 = resolveAa060MoveDamageIntegration({
     context: options.context,

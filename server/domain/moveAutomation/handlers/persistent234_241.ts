@@ -114,6 +114,7 @@ const markerEffect = (input: {
   readonly duration: EncounterEffectDuration
   readonly charges?: number | null
   readonly recipientScope?: 'placements' | 'actor-side'
+  readonly transferPolicy?: 'retain' | 'expire' | 'baton-pass'
 }): MoveTemporaryEffectOperation => ({
   id: `${input.slug}.${input.id}`, kind: 'temporary-effect', source: { kind: 'move', id: `move.${input.slug}` },
   recipients: { kind: input.recipients }, phase: 'schedule', reasonCode: `${input.slug}.${input.id}`,
@@ -124,7 +125,8 @@ const markerEffect = (input: {
       stackPolicy: { kind: 'refresh', maxStacks: null },
       chargePolicy: input.charges ? { kind: 'consume-on-trigger', amount: 1 } : { kind: 'none', amount: null },
       tags: [input.slug, input.id], payload: { conditionId: input.id, action: 'apply', saveTiming: null },
-      dispel: { policy: 'matching-tags', tags: [input.slug, input.id] }, transferPolicy: 'expire',
+      dispel: { policy: 'matching-tags', tags: [input.slug, input.id] },
+      transferPolicy: input.transferPolicy ?? 'expire',
     },
   },
 })
@@ -344,7 +346,11 @@ const delayedMarker = (
   return [
     markerEffect({
       slug, id: name === 'Wish' ? 'delayed-heal' : 'delayed-attack', recipients: 'selected-targets',
-      duration: { kind: 'turns', subject: 'source', boundary: 'end', remaining: 1 },
+      duration: {
+        kind: 'turns', subject: 'source', boundary: 'end',
+        remaining: name === 'Wish' ? 2 : 1,
+      },
+      ...(name === 'Wish' ? { transferPolicy: 'retain' as const } : {}),
     }),
     ...standardTerminalOperations(slug),
   ]

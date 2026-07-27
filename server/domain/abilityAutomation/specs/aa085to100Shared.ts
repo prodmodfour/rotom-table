@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+import abilityRules from '../../../../data/reference/abilities.json'
 import type { AbilitySpecV1Registration } from '../registry'
 import {
   abilityMechanicOperation,
@@ -24,6 +26,7 @@ export interface RemainingTokenTarget {
   readonly minimumRange?: number
   readonly maximumRange?: number | null
   readonly adjacent?: boolean
+  readonly willingness?: 'any' | 'willing' | 'unwilling'
 }
 
 export interface RemainingSimpleTarget {
@@ -32,7 +35,26 @@ export interface RemainingSimpleTarget {
 
 export type RemainingAbilityTarget = RemainingTokenTarget | RemainingSimpleTarget
 
-const mechanicConfig = Object.freeze({ ruleVersion: 1 })
+interface CanonicalAbilityRuleRecord {
+  readonly name: string
+  readonly frequency: string
+  readonly trigger?: string
+  readonly effect: string
+}
+
+/** Bind every remaining runtime to the exact app-owned canonical rule row. */
+const mechanicConfig = (canonicalId: string): Readonly<Record<string, unknown>> => {
+  const record = (abilityRules as Readonly<Record<string, CanonicalAbilityRuleRecord>>)[canonicalId]
+  if (!record || record.name !== canonicalId || !record.frequency || !record.effect) {
+    throw new Error(`Missing canonical ability rule row for ${canonicalId}.`)
+  }
+  return Object.freeze({
+    ruleVersion: 1,
+    sourceRuleSha256: createHash('sha256').update(JSON.stringify(record)).digest('hex'),
+    frequency: record.frequency,
+    triggered: typeof record.trigger === 'string' && record.trigger.trim().length > 0,
+  })
+}
 
 const targetingFor = (
   modeId: string,
@@ -59,7 +81,7 @@ const targetingFor = (
         predicate: {
           kind: 'ability-targeting',
           relationship: target.relationship ?? 'any',
-          willingness: 'any',
+          willingness: target.willingness ?? 'any',
           excludeActor: (target.relationship ?? 'any') !== 'self',
           minimumRange: target.minimumRange ?? 0,
           maximumRange: target.maximumRange ?? null,
@@ -78,7 +100,7 @@ export const remainingStaticAbilitySpec = (
 ) => reviewedStaticAbilitySpec(
   canonicalId,
   mechanicId,
-  mechanicConfig,
+  mechanicConfig(canonicalId),
   ['mode.static', 'reviewed', 'server-authoritative'],
 )
 
@@ -89,10 +111,77 @@ export const remainingActivatedAbilitySpec = (
 ) => reviewedActivatedAbilitySpec(
   canonicalId,
   mechanicId,
-  mechanicConfig,
+  mechanicConfig(canonicalId),
   targetingFor('activate', targets),
   ['mode.activated', 'reviewed', 'server-authoritative'],
 )
+
+export const remainingStaticActivatedAbilitySpec = (
+  canonicalId: string,
+  mechanicId: string,
+) => reviewedAbilitySpec({
+  canonicalId,
+  modes: [
+    { id: 'passive', kind: 'static' },
+    { id: 'activate', kind: 'activated' },
+  ],
+  targeting: [
+    ...noAbilityTarget('passive'),
+    ...noAbilityTarget('activate'),
+  ],
+  phases: [
+    {
+      modeId: 'passive',
+      phase: 'effect',
+      operations: [abilityMechanicOperation('passive.mechanic', mechanicId, mechanicConfig(canonicalId))],
+    },
+    {
+      modeId: 'activate',
+      phase: 'effect',
+      operations: [abilityMechanicOperation('activate.mechanic', mechanicId, mechanicConfig(canonicalId))],
+    },
+  ],
+  tags: ['mode.static', 'mode.activated', 'reviewed', 'server-authoritative'],
+})
+
+export const remainingActivatedTriggeredAbilitySpec = (
+  canonicalId: string,
+  mechanicId: string,
+  eventKind: RemainingAbilityEventKind,
+) => reviewedAbilitySpec({
+  canonicalId,
+  modes: [
+    { id: 'activate', kind: 'activated' },
+    { id: 'trigger', kind: 'triggered' },
+  ],
+  subscriptions: [{
+    id: 'trigger.subscription',
+    modeId: 'trigger',
+    eventKind,
+    checkpoint: eventKind === 'lifecycle' ? 'lifecycle' : 'post-effect',
+    response: 'optional',
+    priority: 0,
+    oncePerCausalChain: true,
+    predicate: null,
+  }],
+  targeting: [
+    ...noAbilityTarget('activate'),
+    ...noAbilityTarget('trigger'),
+  ],
+  phases: [
+    {
+      modeId: 'activate',
+      phase: 'effect',
+      operations: [abilityMechanicOperation('activate.mechanic', mechanicId, mechanicConfig(canonicalId))],
+    },
+    {
+      modeId: 'trigger',
+      phase: 'effect',
+      operations: [abilityMechanicOperation('trigger.mechanic', mechanicId, mechanicConfig(canonicalId))],
+    },
+  ],
+  tags: ['mode.activated', 'mode.triggered', 'reviewed', 'server-authoritative'],
+})
 
 export const remainingTriggeredAbilitySpec = (
   canonicalId: string,
@@ -116,7 +205,7 @@ export const remainingTriggeredAbilitySpec = (
   phases: [{
     modeId: 'trigger',
     phase: 'effect',
-    operations: [abilityMechanicOperation('trigger.mechanic', mechanicId, mechanicConfig)],
+    operations: [abilityMechanicOperation('trigger.mechanic', mechanicId, mechanicConfig(canonicalId))],
   }],
   tags: ['mode.triggered', 'reviewed', 'server-authoritative'],
 })

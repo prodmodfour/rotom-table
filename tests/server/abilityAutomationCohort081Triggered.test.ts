@@ -196,6 +196,41 @@ describe('AA-081 triggered and suppression integrations', () => {
     })).toBe(true)
   })
 
+  it('retains but deactivates Neutralizing Gas after its owner is Fainted', () => {
+    const state = fixture({
+      slug: 'aa081-fainted-gas', move: 'Tackle',
+      actorAbilities: ['Neutralizing Gas'], targetAbilities: ['Filter'],
+    })
+    const actor = state.sheets.get('actor')!
+    state.sheets.set('actor', {
+      ...actor,
+      combat: { ...actor.combat!, currentHp: 0, conditions: ['Fainted'] },
+    })
+    const context = buildAuthoritativeMoveRulesContext({
+      map: state.map,
+      pokemonSheets: state.sheets,
+      trainerSheets: new Map(),
+      intent: {
+        schemaVersion: 1, placementId: 'actor', moveName: 'Tackle',
+        selection: { kind: 'single-target', targetPlacementId: 'target' },
+      },
+      candidatePlacementIds: ['target'],
+      selectedPlacementIds: ['target'],
+      random: () => 0.75,
+      time: 2_000,
+    })
+    expect(context.queries.abilities.has('actor', 'Neutralizing Gas')).toBe(false)
+    expect(context.queries.abilities.has('target', 'Filter')).toBe(true)
+    expect(aa081NeutralizingGasBlocksTriggeredAbility({
+      abilitiesByPlacement: new Map(context.queries.placements.all().map(placement => [
+        placement.id, context.queries.abilities.activeForPlacement(placement.id),
+      ] as const)),
+      tokensById: new Map(context.queries.tokens.all().map(token => [token.id, token] as const)),
+      effects: context.map.encounterState?.effects ?? [],
+      ownerPlacementId: 'target',
+    })).toBe(false)
+  })
+
   it('Natural Cure treats Take a Breather as opt-in, pays Free/Scene, and cures only Persistent Statuses', () => {
     const state = fixture({
       slug: 'aa081-natural-cure', move: 'Tackle', targetAbilities: ['Natural Cure'],

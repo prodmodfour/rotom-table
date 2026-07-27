@@ -51,11 +51,11 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { moveListOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
-const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
+const placement = (id: string, sheetSlug: string, x: number, z = 0): SheetPlacement => ({
   id,
   sheetKind: 'pokemon',
   sheetSlug,
-  position: { x, y: 0, z: 0 },
+  position: { x, y: 0, z },
 })
 
 const mapFixture = (): TabletopMap => ({
@@ -72,7 +72,7 @@ const mapFixture = (): TabletopMap => ({
   placements: [
     placement('actor-token', 'actor', 0),
     placement('target-token', 'target', 1),
-    placement('bystander-token', 'bystander', 2),
+    placement('bystander-token', 'bystander', 0, 1),
   ],
   lights: [],
   initiative: { activeId: 'actor-token', round: 1 },
@@ -1068,7 +1068,9 @@ describe('reviewed nested MoveSpec execution', () => {
   it('bounds aggregate server-derived fresh-target candidates', () => {
     const crowdSize = NESTED_MOVE_EXECUTION_LIMITS.targets + 1
     const crowdPlacements = Array.from({ length: crowdSize }, (_, index) => (
-      placement(`crowd-token-${index}`, `crowd-${index}`, index + 1)
+      // Overlap is intentional: this interpreter-level budget fixture keeps
+      // every authoritative candidate inside the reviewed Melee range.
+      placement(`crowd-token-${index}`, `crowd-${index}`, 1)
     ))
     const map: TabletopMap = {
       ...mapFixture(),

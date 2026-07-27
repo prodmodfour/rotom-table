@@ -1,4 +1,5 @@
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
+import type { ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import {
   parsePendingMoveResolution,
   type PendingMoveResolution,
@@ -38,6 +39,7 @@ import {
   type MoveStateChangePlan,
 } from './plan'
 import type { MoveAutomationRuntimeRegistry } from './registry'
+import type { AbilityAutomationRuntimeRegistry } from '../abilityAutomation/registry'
 import type {
   AuthoritativeMoveGroupInventoryRead,
   AuthoritativeMoveItemResources,
@@ -59,6 +61,7 @@ export interface PlanResumedMoveStateInput {
   readonly execution: AuthoritativeMoveExecution
   readonly plannedAt: number
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
+  readonly abilityRuntimeRegistry?: AbilityAutomationRuntimeRegistry
   readonly maxMoveLogEntries?: number
 }
 
@@ -158,6 +161,24 @@ const assertSummaryPresent = (
   }
 }
 
+const retainedRootSelection = (
+  pending: PendingMoveResolution,
+): ResolveMoveSelection => pending.rootAreaSelection
+  ? {
+      ...pending.rootAreaSelection,
+      ...(pending.rootAreaSelection.aimCell
+        ? { aimCell: { ...pending.rootAreaSelection.aimCell } }
+        : {}),
+      ...(pending.rootAreaSelection.excludedTargetPlacementIds
+        ? {
+            excludedTargetPlacementIds: [
+              ...pending.rootAreaSelection.excludedTargetPlacementIds,
+            ],
+          }
+        : {}),
+    }
+  : { kind: 'self' }
+
 const planNextWindow = (
   input: PlanResumedMoveStateInput,
 ): AuthoritativePendingMoveStatePlan => {
@@ -183,10 +204,11 @@ const planNextWindow = (
       ...(input.pendingResolution.targetBranchId
         ? { targetBranchId: input.pendingResolution.targetBranchId }
         : {}),
-      selection: { kind: 'self' },
+      selection: retainedRootSelection(input.pendingResolution),
     },
     operationId: input.responseOpId,
     runtimeRegistry: input.runtimeRegistry,
+    abilityRuntimeRegistry: input.abilityRuntimeRegistry,
   }
   const preWindowPlan = planPendingMoveResourceCosts({
     input: planningInput,
@@ -208,6 +230,9 @@ const planNextWindow = (
       : {}),
     ...(input.pendingResolution.targetBranchId
       ? { targetBranchId: input.pendingResolution.targetBranchId }
+      : {}),
+    ...(input.pendingResolution.rootAreaSelection
+      ? { rootAreaSelection: input.pendingResolution.rootAreaSelection }
       : {}),
     suspendedAt: input.plannedAt,
     authoritativeSheetReads: input.execution.sheetReads,
@@ -303,6 +328,7 @@ const planCompletion = (
     resolutionId: input.pendingResolution.resolutionId,
     maxMoveLogEntries: input.maxMoveLogEntries,
     runtimeRegistry: input.runtimeRegistry,
+    abilityRuntimeRegistry: input.abilityRuntimeRegistry,
     itemResources: input.itemResources,
     existingSheetReads: input.execution.sheetReads,
   })
@@ -320,10 +346,11 @@ const planCompletion = (
       ...(input.pendingResolution.targetBranchId
         ? { targetBranchId: input.pendingResolution.targetBranchId }
         : {}),
-      selection: { kind: 'self' },
+      selection: retainedRootSelection(input.pendingResolution),
     },
     operationId: input.responseOpId,
     runtimeRegistry: input.runtimeRegistry,
+    abilityRuntimeRegistry: input.abilityRuntimeRegistry,
   }
   const observed = observeMovePlanResources({
     planningInput,

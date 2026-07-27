@@ -3,7 +3,10 @@ import {
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
   type ResolveMoveIntent,
 } from '#shared/livePlayMoveResolution'
-import type { MoveMultiHitEffectOperation } from '#shared/moveAutomation/effects'
+import {
+  parseMoveEffectOperation,
+  type MoveMultiHitEffectOperation,
+} from '#shared/moveAutomation/effects'
 import {
   buildAuthoritativeMoveRulesContext,
 } from '~~/server/domain/moveAutomation/context'
@@ -70,6 +73,7 @@ const mapFixture = (): TabletopMap => ({
   ],
   lights: [],
   initiative: { activeId: 'actor-token', round: 1 },
+  activeScene: { name: 'Multi-Hit Scene', startedAt: 1 },
 })
 
 const intent = (): ResolveMoveIntent => ({
@@ -507,6 +511,112 @@ describe('native MoveSpec multi-hit sequences', () => {
     })
     expect(result.hitTargetIds).toEqual([])
     expect(result.missedTargetIds).toEqual(['target-token'])
+  })
+
+  it('reconciles reviewed post-damage HP, THP, condition, and stage state after multi-hit damage', () => {
+    const operation = multiHitOperation({
+      count: { kind: 'fixed', hits: 2 },
+      accuracy: { kind: 'automatic' },
+      critical: { kind: 'none' },
+      damage,
+      effects: [],
+    })
+    const postDamage = [
+      parseMoveEffectOperation({
+        id: 'operation.post-multi-heal', kind: 'heal',
+        source: { kind: 'move', id: 'move.tackle' }, recipients: { kind: 'hit-targets' },
+        phase: 'after-damage', reasonCode: 'move.tackle.post-multi-heal',
+        payload: {
+          mode: 'gain', pool: 'hit-points', calculation: { kind: 'fixed', value: 5 },
+          bounds: { minimum: null, maximum: null }, rounding: 'floor',
+          injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+        },
+      }),
+      parseMoveEffectOperation({
+        id: 'operation.post-multi-thp', kind: 'heal',
+        source: { kind: 'move', id: 'move.tackle' }, recipients: { kind: 'hit-targets' },
+        phase: 'after-damage', reasonCode: 'move.tackle.post-multi-thp',
+        payload: {
+          mode: 'gain', pool: 'temporary-hit-points', calculation: { kind: 'fixed', value: 7 },
+          bounds: { minimum: null, maximum: null }, rounding: 'floor',
+          injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+        },
+      }),
+      parseMoveEffectOperation({
+        id: 'operation.post-multi-burn', kind: 'condition',
+        source: { kind: 'move', id: 'move.tackle' }, recipients: { kind: 'hit-targets' },
+        phase: 'after-damage', reasonCode: 'move.tackle.post-multi-burn',
+        payload: {
+          action: 'apply', conditionId: 'burned', conditionSource: null,
+          filter: null, randomChoice: null, duration: null, saveTiming: 'canonical',
+          stackPolicy: { kind: 'refresh', maxStacks: null },
+        },
+      }),
+      parseMoveEffectOperation({
+        id: 'operation.post-multi-stage', kind: 'combat-stage',
+        source: { kind: 'move', id: 'move.tackle' }, recipients: { kind: 'hit-targets' },
+        phase: 'after-damage', reasonCode: 'move.tackle.post-multi-stage',
+        payload: {
+          action: 'modify', stage: 'def', selectedStage: null, value: -1,
+          stageSource: null, rounding: null,
+        },
+      }),
+    ]
+    const definition = validateMoveSpec({
+      schemaVersion: 2, canonicalId: 'Tackle', version: 2,
+      targeting: {
+        kind: 'single-target', minTargets: 1, maxTargets: 1,
+        selector: { kind: 'selected-targets' },
+      },
+      preconditions: [], costs: [],
+      phases: [
+        { phase: 'damage', operations: [operation] },
+        { phase: 'after-damage', operations: postDamage },
+      ],
+      registeredHandlerId: null,
+      presentation: { displayName: 'Tackle', vfxKey: null, tags: ['multi-hit', 'post-damage'] },
+    })
+    const runtime: MoveSpecV2Runtime = {
+      canonicalId: 'Tackle', kind: 'movespec-v2', version: definition.spec.version,
+      definitionHash: definition.definitionHash, sourceModule: 'tests/multi-hit-post-damage', definition,
+    }
+    const baselineDefinition = definitionFor(operation)
+    const baselineRuntime: MoveSpecV2Runtime = {
+      canonicalId: 'Tackle', kind: 'movespec-v2', version: baselineDefinition.spec.version,
+      definitionHash: baselineDefinition.definitionHash,
+      sourceModule: 'tests/multi-hit-post-damage-baseline', definition: baselineDefinition,
+    }
+    const baselineRules = context({ random: createFiniteAuthoritativeMoveRandomStream([0, 0]) })
+    const baselineEntry = baselineRules.queries.resolveActorMoveEntry('Tackle')
+    if (!baselineEntry.ok) throw new Error(baselineEntry.message)
+    const baseline = resolveImmediateMoveSpec({
+      context: baselineRules, runtime: baselineRuntime, entry: baselineEntry.entry,
+      authoritativeTargetIds: ['target-token'],
+    })
+    const multiHp = baseline.transaction.hpUpdates
+      .find(update => update.id === 'target-token')?.currentHp
+
+    const rules = context({ random: createFiniteAuthoritativeMoveRandomStream([0, 0]) })
+    const entry = rules.queries.resolveActorMoveEntry('Tackle')
+    if (!entry.ok) throw new Error(entry.message)
+    const resolution = resolveImmediateMoveSpec({
+      context: rules, runtime, entry: entry.entry, authoritativeTargetIds: ['target-token'],
+    })
+    const final = resolution.transaction.hpUpdates.find(update => update.id === 'target-token')
+    const target = rules.queries.tokens.get('target-token')!
+    expect(multiHp).toBeTypeOf('number')
+    expect(final).toMatchObject({
+      id: 'target-token',
+      currentHp: Math.min(target.fullMaxHp ?? target.maxHp, multiHp! + 5),
+      temporaryHp: 7,
+    })
+    expect(resolution.transaction.hpUpdates.filter(update => update.id === 'target-token')).toHaveLength(1)
+    expect(resolution.transaction.conditionUpdates).toEqual([{
+      id: 'target-token', conditions: ['Burned'],
+    }])
+    expect(resolution.transaction.combatStageUpdates).toEqual([{
+      id: 'target-token', stages: expect.objectContaining({ def: -1 }),
+    }])
   })
 
   it('carries aggregate strike state through immediate native planning projection', () => {

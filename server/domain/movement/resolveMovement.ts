@@ -1,4 +1,5 @@
 import { normalizeRevision } from '#shared/sessionRevisions'
+import { moveItemEffectBindingId } from '#shared/moveAutomation/itemEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type {
   GridAnchor,
@@ -62,8 +63,9 @@ import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntim
 import { aa079MagnetPullConstraintViolation } from '../abilityAutomation/mechanics/aa079MovementIntegration'
 import { aa082ParentalBondTetherViolation } from '../abilityAutomation/mechanics/aa082MovementIntegration'
 import { aa085to100ShadowTagPathViolation } from '../abilityAutomation/mechanics/aa085to100MovementIntegration'
+import { authoritativeEquippedItemReferences } from '../moveAutomation/itemResources'
 
-export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass'] as const
+export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass', 'teleport'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
 
 export const AUTHORITATIVE_MOVEMENT_LIMITS = Object.freeze({
@@ -193,6 +195,17 @@ export interface ResolveShiftMovementInput extends ResolveMovementInputBase {
   readonly maximumDistance?: never
 }
 
+export interface ResolveTeleportMovementInput extends ResolveMovementInputBase {
+  readonly mode: 'teleport'
+  /** Requested endpoint only; intervening route geometry is not traversed. */
+  readonly destination: GridAnchor
+  readonly policy: StandardAuthoritativeMovementPolicy
+  /** Server-reviewed simultaneous movers whose source footprints vacate atomically. */
+  readonly ignoredPlacementIds?: readonly string[]
+  readonly direction?: never
+  readonly maximumDistance?: never
+}
+
 export interface ResolvePassMovementInput extends ResolveMovementInputBase {
   readonly mode: 'pass'
   /** Server-selected direction from the reviewed Pass area declaration. */
@@ -203,7 +216,10 @@ export interface ResolvePassMovementInput extends ResolveMovementInputBase {
   readonly policy?: never
 }
 
-export type ResolveMovementInput = ResolveShiftMovementInput | ResolvePassMovementInput
+export type ResolveMovementInput =
+  | ResolveShiftMovementInput
+  | ResolvePassMovementInput
+  | ResolveTeleportMovementInput
 
 export const AUTHORITATIVE_DISPLACEMENT_MOVEMENT_MODES = [
   'forced',
@@ -821,6 +837,13 @@ const buildMovementSnapshots = (
   const placementIds = new Set<string>()
   const readByKey = new Map<string, AuthoritativeMovementSheetRead>()
   const consultedPlacementIds: string[] = []
+  const validSymbiosisItemBindingIds = new Set(map.placements.flatMap((placement) => {
+    const sheet = sheetForPlacement(placement, sheets)
+    return sheet
+      ? authoritativeEquippedItemReferences(placement, sheet)
+          .map(reference => moveItemEffectBindingId(reference))
+      : []
+  }))
 
   for (const placement of map.placements) {
     if (!validIdentifier(placement.id) || !validIdentifier(placement.sheetSlug) || !validAnchor(placement.position)) {
@@ -890,6 +913,7 @@ const buildMovementSnapshots = (
         sheet: placement.sheetKind === 'pokemon' ? sheet as CharacterSheet : null,
         effectiveAbilityIds,
         contextMap: map,
+        validSymbiosisItemBindingIds,
       }) : null
     } catch {
       token = null
@@ -1454,7 +1478,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   const rawDestination = (input as { readonly destination?: unknown }).destination
   const destination = validAnchor(rawDestination) ? cloneAnchor(rawDestination) : null
 
-  if (rawMode !== 'shift' && rawMode !== 'pass') {
+  if (rawMode !== 'shift' && rawMode !== 'pass' && rawMode !== 'teleport') {
     return failure({
       reasonCode: 'movement-mode-unsupported',
       message: `Movement mode ${mode} is not supported by the authoritative oracle.`,
@@ -1466,7 +1490,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
 
   const policy = rawMode === 'pass'
     ? resolvedPassPolicy(input)
-    : resolvedPolicy((input as ResolveShiftMovementInput).policy)
+    : resolvedPolicy((input as ResolveShiftMovementInput | ResolveTeleportMovementInput).policy)
   if (!policy) {
     return failure({
       reasonCode: 'movement-policy-invalid',
@@ -1641,7 +1665,31 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     })
   }
 
-  const occupancy = occupancyFor(mover, destination, placements)
+  const rawIgnoredPlacementIds = rawMode === 'teleport'
+    ? (input as ResolveTeleportMovementInput).ignoredPlacementIds ?? []
+    : []
+  const ignoredPlacementIds = new Set(rawIgnoredPlacementIds)
+  if (rawIgnoredPlacementIds.some(id => !validIdentifier(id) || id === placementId)
+    || ignoredPlacementIds.size !== rawIgnoredPlacementIds.length
+    || [...ignoredPlacementIds].some(id => !placements.some(placement => placement.id === id))) {
+    return failure({
+      reasonCode: 'movement-policy-invalid',
+      message: 'Teleport simultaneous-mover exclusions must be unique authoritative placement IDs other than the mover.',
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      footprint,
+      capabilities,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+  const endpointPlacements = rawMode === 'teleport' && ignoredPlacementIds.size > 0
+    ? placements.filter(placement => !ignoredPlacementIds.has(placement.id))
+    : placements
+  const occupancy = occupancyFor(mover, destination, endpointPlacements)
 
   if (sameAnchor(origin, destination) && !policy.allowSamePosition) {
     return failure({
@@ -1678,7 +1726,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     })
   }
 
-  const destinationCollision = collisionAt(destination, mover, placements, terrainIndex, groundLevelY)
+  const destinationCollision = collisionAt(destination, mover, endpointPlacements, terrainIndex, groundLevelY)
   if (destinationCollision) {
     const reasonCode = destinationCollision.kind === 'placement'
       ? 'movement-destination-occupied'
@@ -1704,6 +1752,46 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       consultedPlacementIds,
       sheetReads,
     })
+  }
+
+  if (rawMode === 'teleport') {
+    const cost = ptuGridVectorDistance({
+      x: destination.x - origin.x,
+      y: destination.y - origin.y,
+      z: destination.z - origin.z,
+    })
+    const limit = policy.maximumCost ?? 0
+    if (cost > limit) return failure({
+      reasonCode: 'movement-cost-exceeds-limit',
+      message: `The server-derived teleport distance ${cost} exceeds the reviewed limit ${limit}.`,
+      placementId, mode, policy, origin, destination,
+      path: [origin, destination], cost,
+      capabilityLimit: limit, effectiveLimit: limit,
+      footprint, occupancy, capabilities,
+      consultedPlacementIds, sheetReads,
+    })
+    const result: AuthoritativeMovementSuccess = deepFreeze({
+      ok: true,
+      reasonCode: 'movement-legal',
+      placementId,
+      mode: 'teleport',
+      policy,
+      origin,
+      destination,
+      path: [cloneAnchor(origin), cloneAnchor(destination)],
+      cost,
+      capabilityLimit: limit,
+      effectiveLimit: limit,
+      capabilities,
+      movementProfile: mover.movementProfile,
+      footprint,
+      occupancy,
+      collision: null,
+      triggeringSteps: [],
+      consultedPlacementIds,
+      sheetReads: sheetReads.map(read => ({ ...read })),
+    })
+    return enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements })
   }
 
   const sourcePlacement = input.map.placements.find(placement => placement.id === placementId)

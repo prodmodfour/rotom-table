@@ -83,6 +83,79 @@ describe('authoritative effective ability projection', () => {
     expect(Object.isFrozen(transformed[0])).toBe(true)
   })
 
+  it('preserves immutable parameter data and provenance on reviewed ability grants', () => {
+    const instanceId = 'granted:ability.receiver.copy.test:0'
+    const projected = projection(['Blaze'], [overlay('effect.receiver', {
+      domain: 'ability',
+      action: 'add',
+      values: ['Serpent’s Mark'],
+      referencePlacementId: null,
+      suppressionScope: null,
+      abilitySnapshots: [{
+        instanceId,
+        canonicalId: 'Serpent’s Mark',
+        definitionHash: null,
+        sourcePlacementId: 'fainted-ally',
+        parameterStatus: 'ready',
+        parameterData: {
+          schemaVersion: 1,
+          instanceId,
+          canonicalId: 'Serpent’s Mark',
+          definitionVersion: null,
+          selections: [{ parameterId: 'pattern', optionIds: ['attack'] }],
+        },
+      }],
+    })])
+
+    expect(projected.at(-1)).toMatchObject({
+      instanceId,
+      canonicalId: 'Serpent’s Mark',
+      sourceKind: 'granted',
+      sourcePlacementId: 'fainted-ally',
+      parameterStatus: 'ready',
+      parameterData: {
+        instanceId,
+        selections: [{ parameterId: 'pattern', optionIds: ['attack'] }],
+      },
+      effective: true,
+    })
+  })
+
+  it('projects every reviewed Seasonal selection with deterministic provenance', () => {
+    const expected = {
+      spring: 'Run Away',
+      summer: 'Grass Pelt',
+      autumn: 'Rivalry',
+      winter: 'Thick Fat',
+    } as const
+    for (const [season, grantedCanonicalId] of Object.entries(expected)) {
+      const instanceId = `base:seasonal:${season}`
+      const projected = projectAuthoritativeEffectiveAbilities({
+        baseAbilities: [{
+          instanceId,
+          canonicalId: 'Seasonal',
+          parameterStatus: 'ready',
+          parameterData: {
+            schemaVersion: 1,
+            instanceId,
+            canonicalId: 'Seasonal',
+            definitionVersion: 1,
+            selections: [{ parameterId: 'season', optionIds: [season] }],
+          },
+        }],
+        effects: [],
+        target,
+      })
+      expect(projected).toContainEqual(expect.objectContaining({
+        instanceId: `${instanceId}:grant:${season}:0`,
+        canonicalId: grantedCanonicalId,
+        sourceKind: 'granted',
+        sourcePlacementId: 'target-token',
+        effective: true,
+      }))
+    }
+  })
+
   it('applies listed and all suppression last without disabling protected abilities', () => {
     const suppressed = projection(['Blaze', 'Multitype', 'Sorcery'], [
       overlay('effect.late-grant', {

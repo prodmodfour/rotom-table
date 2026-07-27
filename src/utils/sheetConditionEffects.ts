@@ -273,7 +273,10 @@ export const conditionCombatStageModifier = (
   if (key === 'atk' && hasGutsAbility(options.abilities)
     && hasAnyCondition(set, GUTS_TRIGGERING_CONDITIONS)) modifier += 2
   if (key === 'spd' && quickFeetActiveForSet(set, options.abilities)) modifier += 2
-  return modifier
+  if (modifier === 0) return 0
+  const contrary = sheetHasCanonicalAbility(options.abilities, 'Contrary')
+  const simple = sheetHasCanonicalAbility(options.abilities, 'Simple')
+  return modifier * (contrary ? -1 : 1) * (simple ? 2 : 1)
 }
 
 export const conditionAdjustedCombatStage = (

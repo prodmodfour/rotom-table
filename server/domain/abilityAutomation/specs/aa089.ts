@@ -7,7 +7,7 @@ import {
 } from './aa085to100Shared'
 
 export const SHADOW_TAG_ABILITY_SPEC = activatedSpec('Shadow Tag', 'aa089.shadow-tag', [
-  { kind: 'token', relationship: 'enemy', maximumRange: 10 }
+  { kind: 'token', relationship: 'other', maximumRange: 1, adjacent: true }
 ])
 export const SHED_SKIN_ABILITY_SPEC = activatedSpec('Shed Skin', 'aa089.shed-skin', [
   { kind: 'branch' }

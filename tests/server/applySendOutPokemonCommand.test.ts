@@ -29,6 +29,7 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMapV2 } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { activelyCommandingTrainerPlacementId } from '~~/server/domain/moveAutomation/activePokemonCommands'
 import {
   SEND_OUT_POKEMON_PATCH_EVENT_TYPE,
   applySendOutPokemonCommandUseCase,
@@ -299,6 +300,10 @@ describe('applySendOutPokemonCommandUseCase', () => {
     ])
     expect(storedMap?.document.placements[1]?.sideId).toBe('heroes')
     expect(storedMap?.document.updatedAt).toBe(Date.parse(processedAt))
+    expect(activelyCommandingTrainerPlacementId({
+      map: storedMap!.document,
+      pokemonPlacementId: 'token-pikachu-1',
+    })).toBe('token-ash')
   })
 
   it('allows GM send-out without inferring an unknown side, rejects unauthorized players, and rejects non-owned team Pokémon', () => {

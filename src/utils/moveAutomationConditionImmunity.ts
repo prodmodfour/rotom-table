@@ -15,6 +15,7 @@ const WATER_VEIL_ABILITY_NAME = 'Water Veil'
 const WATER_BUBBLE_ABILITY_NAME = 'Water Bubble'
 const VITAL_SPIRIT_ABILITY_NAME = 'Vital Spirit'
 const TANGLED_FEET_ABILITY_NAME = 'Tangled Feet'
+const RUN_AWAY_ABILITY_NAME = 'Run Away'
 export const SWEET_VEIL_RANGE_METERS = 3
 export const PASTEL_VEIL_RANGE_METERS = 3
 
@@ -163,6 +164,9 @@ export const moveAutomationConditionImmunitySource = (
     if (hasAbility(target, IMMUNITY_ABILITY_NAME)) return IMMUNITY_ABILITY_NAME
     const pastelVeil = pastelVeilSource(target, context)
     if (pastelVeil) return pastelVeil
+  }
+  if (canonical === 'Trapped' && hasAbility(target, RUN_AWAY_ABILITY_NAME)) {
+    return RUN_AWAY_ABILITY_NAME
   }
   if ((canonical === 'Stuck' || canonical === 'Trapped') && hasType(target, 'Ghost')) return 'Ghost type'
 

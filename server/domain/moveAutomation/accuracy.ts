@@ -266,6 +266,9 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     attribute: 'accuracy',
     baseValue: preEncounterValue,
     changePolicy: keenEye ? 'non-decreasing' : 'all',
+    ...(context.queries.abilities.has(context.actor.placement.id, 'White Smoke') ? {
+      protectedFromExternalDecreasesPlacementId: context.actor.placement.id,
+    } : {}),
   })
   modifiers.push(...encounterAccuracy.steps.map(step => ({
     sourceId: step.effectId,

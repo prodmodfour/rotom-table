@@ -2,6 +2,7 @@ import type { AbilitySpecV1Registration } from '../registry'
 import {
   remainingAbilityRegistrations,
   remainingActivatedAbilitySpec as activatedSpec,
+  remainingActivatedTriggeredAbilitySpec as activatedTriggeredSpec,
   remainingStaticAbilitySpec as staticSpec,
   remainingTriggeredAbilitySpec as triggeredSpec,
 } from './aa085to100Shared'
@@ -17,7 +18,7 @@ export const SPLENDOROUS_RIDER_ABILITY_SPEC = activatedSpec('Splendorous Rider',
   { kind: 'move' }
 ])
 export const SPRAY_DOWN_ABILITY_SPEC = triggeredSpec('Spray Down', 'aa091.spray-down', 'move')
-export const SPRINT_ABILITY_SPEC = triggeredSpec('Sprint', 'aa091.sprint', 'action')
+export const SPRINT_ABILITY_SPEC = activatedTriggeredSpec('Sprint', 'aa091.sprint', 'action')
 export const STAKEOUT_ABILITY_SPEC = staticSpec('Stakeout', 'aa091.stakeout')
 export const STALL_ABILITY_SPEC = staticSpec('Stall', 'aa091.stall')
 

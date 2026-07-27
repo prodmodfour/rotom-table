@@ -330,7 +330,11 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       )
       const canonicalCondition = normalizeConditionName(condition) ?? condition
       const poisonCondition = canonicalCondition === 'Poisoned' || canonicalCondition === 'Badly Poisoned'
+      const toxicBoostAllowsPoison = poisonCondition
+        && options.context?.queries.abilities.has(recipient.placement.id, 'Toxic Boost')
+        && options.context.queries.abilities.has(recipient.placement.id, 'Immunity')
       const effectiveConditionImmunity = poisonCondition
+        && !toxicBoostAllowsPoison
         && options.context?.queries.abilities.has(recipient.placement.id, 'Immunity')
         ? 'Immunity'
         : canonicalCondition === 'Sleep'
@@ -367,21 +371,14 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             )),
           }
         : recipient.token
-      const managedConditionAbilities = new Set([
-        'immunity', 'insomnia', 'inner focus', 'keen eye', 'limber', 'tangled feet',
-        'vital spirit', 'water bubble', 'water veil',
-      ])
-      const passiveRecipient = options.context
-        ? {
-            ...typedRecipient,
-            abilityNames: typedRecipient.abilityNames?.filter(name => (
-              !managedConditionAbilities.has(name.trim().toLowerCase())
-            )),
-          }
-        : typedRecipient
+      // Runtime token abilityNames already contain only current effective abilities,
+      // including legacy-compatible rows that are not yet natively promoted. Reusing
+      // that projection here preserves suppression without dropping rollout rows.
       const passiveBlocker = moveAutomationConditionImmunitySource(
         condition,
-        passiveRecipient,
+        toxicBoostAllowsPoison
+          ? { ...typedRecipient, abilityNames: (typedRecipient.abilityNames ?? []).filter(name => name !== 'Immunity') }
+          : typedRecipient,
         options.moveType,
         conditionContext,
       )

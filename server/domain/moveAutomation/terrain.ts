@@ -713,6 +713,13 @@ export const createMoveAutomationTerrainResolver = (input: {
         reasonCode: 'terrain.psychic.non-pokemon-action-unrestricted',
       })
     }
+    if (query.timing === 'reaction') {
+      return decision({
+        allowed: true,
+        outcome: 'not-applicable',
+        reasonCode: 'terrain.psychic.reaction-action-unrestricted',
+      })
+    }
     if (input.map.initiative?.activeId === query.placementId) {
       return decision({
         allowed: true,

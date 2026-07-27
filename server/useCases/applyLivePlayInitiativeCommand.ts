@@ -57,9 +57,11 @@ import {
 } from '~/utils/initiativeOrderEntries'
 import { expireActiveOrderEffectsForInitiativeAdvanceWithResult } from '~/utils/activeOrderEffects'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
-import { resolveCanonicalSheetAbilityName, sheetAbilityNames } from '~/utils/sheetAbilities'
 import { aa063ChlorophyllInitiativeMultiplier } from '../domain/abilityAutomation/mechanics/aa063InitiativeIntegration'
-import { aa085to100InitiativeMultiplier } from '../domain/abilityAutomation/mechanics/aa085to100InitiativeIntegration'
+import {
+  aa085to100InitiativeMultiplier,
+  aa085to100InitiativeProjection,
+} from '../domain/abilityAutomation/mechanics/aa085to100InitiativeIntegration'
 import { aa074HeavyMetalInitiativeSpeedOffset } from '../domain/abilityAutomation/mechanics/aa074StaticIntegration'
 import {
   aa077EffectiveAbilityIds,
@@ -670,22 +672,30 @@ const initiativeOrder = (
     },
   })
   const innerFocusPlacementIds = new Set<string>()
+  const stallPlacementIds = new Set<string>()
   const calculatedEntries = initiativeOrderEntriesForPlacements(
     map.placements,
     trackedReader,
     placement => {
       const resolved = trackedReader(placement.sheetKind, placement.sheetSlug)
+      const effectiveAbilityIds = resolved ? aa077EffectiveAbilityIds({
+        map,
+        placement,
+        sheet: resolved.sheet as unknown as CharacterSheet | TrainerSheet,
+      }) : []
       const innerFocus = resolved ? aa076InnerFocusProtectsInitiative({
         map,
         placement,
         sheet: resolved.sheet as unknown as CharacterSheet | TrainerSheet,
       }) : false
       if (innerFocus) innerFocusPlacementIds.add(placement.id)
-      const conditionAbilityNames = resolved
-        ? sheetAbilityNames((resolved.sheet as unknown as CharacterSheet | TrainerSheet).abilities)
-            .filter(name => resolveCanonicalSheetAbilityName(name) !== 'Inner Focus')
-        : []
-      if (innerFocus) conditionAbilityNames.push('Inner Focus')
+      if (effectiveAbilityIds.includes('Stall')) stallPlacementIds.add(placement.id)
+      const remainingProjection = resolved && placement.sheetKind === 'pokemon'
+        ? aa085to100InitiativeProjection({
+            map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
+          })
+        : null
+      const conditionAbilityNames = [...effectiveAbilityIds]
       return {
         itemEffectsSuppressed: itemEffects.resolve({
           placementId: placement.id,
@@ -707,7 +717,9 @@ const initiativeOrder = (
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           }) + aa077LightMetalInitiativeSpeedOffset({
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
-          }),
+          }) + (remainingProjection?.baseSpeedOffset ?? 0),
+          baseSpeedMultiplier: remainingProjection?.baseSpeedMultiplier ?? 1,
+          speedCombatStageOffset: remainingProjection?.speedCombatStageOffset ?? 0,
         } : {}),
         earlyBirdSpeedBonus: resolved ? aa068EarlyBirdInitiativeActive({
           map,
@@ -744,12 +756,24 @@ const initiativeOrder = (
     }
   })
 
+  const calculatedOrder = initiativeOrderIds(
+    calculatedEntries,
+    manualOrderIds,
+    rooms.calculatedInitiativeDirection(),
+  )
+  const rocketPlacementIds = new Set((map.encounterState?.effects ?? []).flatMap(effect => (
+    effect.tags.includes('aa087-rocket-uninterruptible-turn')
+    && effect.suppression.sources.length === 0
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+      ? effect.affected.placementIds : []
+  )))
+  const stallOrdered = [
+    ...calculatedOrder.filter(id => rocketPlacementIds.has(id) && !stallPlacementIds.has(id)),
+    ...calculatedOrder.filter(id => !rocketPlacementIds.has(id) && !stallPlacementIds.has(id)),
+    ...calculatedOrder.filter(id => stallPlacementIds.has(id)),
+  ]
   return {
-    orderIds: initiativeOrderIds(
-      calculatedEntries,
-      manualOrderIds,
-      rooms.calculatedInitiativeDirection(),
-    ),
+    orderIds: stallOrdered,
     sheetReads: deduplicateAuthoritativeMoveSheetReads(reads),
   }
 }

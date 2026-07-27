@@ -60,6 +60,8 @@ export interface AuthoritativeMovementChoiceSet {
   readonly setId: string
   readonly placementId: string
   readonly maximumDistance: number
+  readonly mode: 'shift' | 'teleport'
+  readonly ignoredPlacementIds: readonly string[]
   readonly choices: readonly AuthoritativeMovementChoice[]
   readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
 }
@@ -70,6 +72,9 @@ interface AuthoritativeMovementChoiceInputBase {
   readonly placementId: string
   readonly setId: string
   readonly maximumDistance: number
+  readonly mode?: 'shift' | 'teleport'
+  /** Server-reviewed simultaneous movers whose current footprints will vacate. */
+  readonly ignoredPlacementIds?: readonly string[]
 }
 
 export interface EnumerateAuthoritativeDestinationChoicesInput
@@ -175,13 +180,16 @@ const validateBaseInput = (
     map: input.map,
     sheets: input.sheets,
     placementId: input.placementId,
-    mode: 'shift',
+    mode: input.mode ?? 'shift',
     destination: origin,
     policy: {
       kind: 'standard',
       allowSamePosition: true,
       maximumCost: input.maximumDistance,
     },
+    ...(input.mode === 'teleport' && input.ignoredPlacementIds
+      ? { ignoredPlacementIds: input.ignoredPlacementIds }
+      : {}),
   })
   if (!validation.ok) {
     return fail(
@@ -278,12 +286,15 @@ const resolveDestination = (
   map: input.map,
   sheets: input.sheets,
   placementId: input.placementId,
-  mode: 'shift',
+  mode: input.mode ?? 'shift',
   destination,
   policy: {
     kind: 'standard',
     maximumCost: input.maximumDistance,
   },
+  ...(input.mode === 'teleport' && input.ignoredPlacementIds
+    ? { ignoredPlacementIds: input.ignoredPlacementIds }
+    : {}),
 })
 
 const destinationSelection = (
@@ -365,6 +376,8 @@ const enumerateDestinations = (
     setId: input.setId,
     placementId: input.placementId,
     maximumDistance: input.maximumDistance,
+    mode: input.mode ?? 'shift',
+    ignoredPlacementIds: [...(input.ignoredPlacementIds ?? [])],
     choices,
     sheetReads: deduplicateSheetReads(reads),
   })
@@ -434,6 +447,8 @@ const enumerateDirections = (
     setId: input.setId,
     placementId: input.placementId,
     maximumDistance: input.maximumDistance,
+    mode: input.mode ?? 'shift',
+    ignoredPlacementIds: [...(input.ignoredPlacementIds ?? [])],
     choices,
     sheetReads: deduplicateSheetReads(reads),
   })
@@ -483,6 +498,8 @@ export const revalidateAuthoritativeMovementChoice = (
       placementId: input.placementId,
       setId: input.setId,
       maximumDistance: input.maximumDistance,
+      mode: input.mode,
+      ignoredPlacementIds: input.ignoredPlacementIds,
       directions: input.directions,
     })
     const current = set.choices.find(choice => choice.option.id === input.option.id)

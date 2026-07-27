@@ -475,6 +475,7 @@ export const resolveMoveDamageType = (options: {
   })
   return deepFreeze(aa085to100DamageTypeOverlay({
     context: options.context,
+    operation: options.operation,
     recipientId: options.recipientId,
     resolved: aa081Resolved,
   }))

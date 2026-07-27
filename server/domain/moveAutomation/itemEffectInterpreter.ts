@@ -950,6 +950,13 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
   for (const recipientId of recipientIds) {
     const recipient = input.context.queries.placements.get(recipientId)
     if (!recipient) continue
+    const unnerveBlocksTrade = input.context.map.encounterState?.effects.some(effect => (
+      effect.tags.includes('aa097-unnerve')
+      && effect.affected.placementIds.includes(recipientId)
+      && effect.suppression.sources.length === 0
+      && (effect.duration.remaining === null || effect.duration.remaining > 0)
+    )) === true
+    if (unnerveBlocksTrade) continue
     const storedItemIds = storedDigestionBuffIds(input.context, recipient)
     const candidateItemIds = payload.storageSlot === undefined
       ? storedItemIds
@@ -1075,6 +1082,30 @@ const protectedRareLeekSource = (input: {
   })
 })
 
+const protectedStickyHoldSource = (input: {
+  readonly interpretation: OperationInterpretation
+  readonly operation: MoveItemEffectOperation
+  readonly context: AuthoritativeMoveRulesContext
+}): boolean => {
+  if (!['steal', 'swap', 'knock-to-ground', 'throw', 'destroy'].includes(input.operation.payload.action)) {
+    return false
+  }
+  const references = input.interpretation.mutations.flatMap((mutation): readonly MoveItemReference[] => {
+    if ('source' in mutation) return [mutation.source]
+    if (mutation.kind === 'swap') return [mutation.left, mutation.right]
+    return []
+  })
+  return references.some((reference) => {
+    if (reference.kind !== 'pokemon-held' || reference.owner.kind !== 'sheet') return false
+    const placement = input.context.map.placements.find(candidate => (
+      candidate.sheetKind === reference.owner.sheetKind
+      && candidate.sheetSlug === reference.owner.slug
+    ))
+    return placement !== undefined
+      && input.context.queries.abilities.has(placement.id, 'Sticky Hold')
+  })
+}
+
 const interpretOperation = (input: InterpretOperationInput): OperationInterpretation => {
   const action = input.operation.payload.action
   const interpreted = action === 'give' || action === 'steal'
@@ -1094,13 +1125,21 @@ const interpretOperation = (input: InterpretOperationInput): OperationInterpreta
                 : action === 'digest-buff'
                   ? interpretDigestBuff(input)
                   : fail('unsupported-operation', `Item operation ${input.operation.id} is unsupported.`)
-  return protectedRareLeekSource({ interpretation: interpreted, context: input.context })
+  const rareLeekProtected = protectedRareLeekSource({ interpretation: interpreted, context: input.context })
+  const stickyHoldProtected = protectedStickyHoldSource({
+    interpretation: interpreted,
+    operation: input.operation,
+    context: input.context,
+  })
+  return rareLeekProtected || stickyHoldProtected
     ? {
         result: unavailable({
           operation: input.operation,
           policy: input.operation.payload.onUnavailable,
           code: 'selection-unavailable',
-          message: `Item operation ${input.operation.id} cannot remove a protected Rare Leek without its owner's willing action.`,
+          message: rareLeekProtected
+            ? `Item operation ${input.operation.id} cannot remove a protected Rare Leek without its owner's willing action.`
+            : `Item operation ${input.operation.id} cannot remove an item protected by Sticky Hold.`,
         }),
         mutations: [],
       }

@@ -4,6 +4,7 @@ import { isLivePlayOpId } from '#shared/livePlayCommands'
 import type { MoveItemEffectOperation } from '#shared/moveAutomation/effects'
 import type { MoveSpecResolvedItemChoice } from '../moveAutomation/executeSpec'
 import type { AuthoritativeMoveRulesContext } from '../moveAutomation/context'
+import type { AuthoritativeMoveItemResourceRequirement } from '../moveAutomation/itemResources'
 import {
   interpretMoveItemEffects,
   type InterpretedMoveItemEffects,
@@ -15,6 +16,18 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { AuthoritativeAbilityContext, AuthoritativeAbilityParticipant } from './context'
+
+export const AA094_SYMBIOSIS_ITEM_REQUIREMENT_ID = 'ability.symbiosis.actor-held' as const
+
+/** Minimal private item scopes required by direct ability declarations. */
+export const authoritativeAbilityItemResourceRequirementsFor = (
+  canonicalId: string,
+): readonly AuthoritativeMoveItemResourceRequirement[] => canonicalId === 'Symbiosis'
+  ? Object.freeze([Object.freeze({
+      id: AA094_SYMBIOSIS_ITEM_REQUIREMENT_ID,
+      source: Object.freeze({ kind: 'actor-equipped' as const }),
+    })])
+  : Object.freeze([])
 
 export class AuthoritativeAbilityItemProviderError extends Error {
   constructor(readonly code:

@@ -10,6 +10,8 @@ export interface BattlefieldZoneMovementSubject {
   readonly typeIds: readonly string[]
   /** Effective Infiltrator and equivalent reviewed rules suppress hazard triggers. */
   readonly ignoreHazards?: boolean
+  /** Screen Cleaner destroys each crossed hazard after treating it as non-damaging terrain. */
+  readonly destroyHazards?: boolean
 }
 
 export type BattlefieldZoneEntryEligibilityOutcome =

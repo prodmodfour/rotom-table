@@ -344,7 +344,7 @@ export const planEncounterMoveResourceCosts = (
     && entry.payload.kind === 'mark'
     && entry.payload.markId === empowerMarkId
   )) ?? null
-  const declarations = empowerMark
+  const empoweredDeclarations = empowerMark
     ? baseDeclarations.map(declaration => declaration.cost.kind === 'action-resource'
       ? {
           ...declaration,
@@ -353,7 +353,29 @@ export const planEncounterMoveResourceCosts = (
         }
       : declaration)
     : baseDeclarations
+  const starswirlPrepaid = input.canonicalMoveId.trim().toLowerCase() === 'rapid spin'
+    && previousEncounterState.effects.some(effect => (
+      effect.tags.includes('aa092-starswirl-rapid-spin')
+      && effect.affected.placementIds.includes(input.placementId)
+      && effect.suppression.sources.length === 0
+      && (effect.duration.remaining === null || effect.duration.remaining > 0)
+    ))
+  const declarations = starswirlPrepaid
+    ? empoweredDeclarations.filter(declaration => declaration.cost.kind !== 'action-resource')
+    : empoweredDeclarations
   const selectedCosts = moveResourceCostsInPhaseWindow(declarations, input)
+  const truantRefused = previousEncounterState.effects.some(effect => (
+    effect.tags.includes('aa096-truant-refused-turn')
+    && effect.affected.placementIds.includes(input.placementId)
+    && effect.suppression.sources.length === 0
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+  ))
+  if (truantRefused && selectedCosts.some(declaration => (
+    declaration.cost.kind === 'action-resource'
+    && (declaration.cost.resource === 'standard' || declaration.cost.resource === 'full')
+  ))) {
+    invalidCostPlan('Truant prevents this placement from using a Standard or Full Action this turn.')
+  }
   const compatibilityOncePerTurnFlagId = !useReviewed
     && allowLegacyFallback
     && selectedCosts.length > 0

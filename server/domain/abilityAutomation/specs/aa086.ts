@@ -16,9 +16,8 @@ export const RECKLESS_ABILITY_SPEC = staticSpec('Reckless', 'aa086.reckless')
 export const REFRESHING_VEIL_ABILITY_SPEC = triggeredSpec('Refreshing Veil', 'aa086.refreshing-veil', 'move')
 export const REFRIGERATE_ABILITY_SPEC = triggeredSpec('Refrigerate', 'aa086.refrigerate', 'move')
 export const REGAL_CHALLENGE_ABILITY_SPEC = activatedSpec('Regal Challenge', 'aa086.regal-challenge', [
-  { kind: 'token', relationship: 'other', maximumRange: 10 },
+  { kind: 'token', relationship: 'other', maximumRange: 5 },
   { kind: 'branch' },
-  { kind: 'stat' },
 ])
 export const REGENERATOR_ABILITY_SPEC = triggeredSpec('Regenerator', 'aa086.regenerator', 'presence')
 export const REVELATION_ABILITY_SPEC = triggeredSpec('Revelation', 'aa086.revelation', 'move')

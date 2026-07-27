@@ -42,6 +42,7 @@ import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/m
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
 import { applyAa081NaturalCureForBreather } from '../domain/abilityAutomation/mechanics/aa081LifecycleIntegration'
 import { applyAa085to100RegeneratorTrigger } from '../domain/abilityAutomation/mechanics/aa085to100LifecycleIntegration'
+import { cleanupAa085to100CurledUpForBreather } from '../domain/abilityAutomation/mechanics/aa085to100ActionIntegration'
 import { clearAa083PerishCountForBreather } from '../domain/abilityAutomation/mechanics/aa083LifecycleIntegration'
 import {
   aa077HasAuthoritativeDisengageWindow,
@@ -591,14 +592,17 @@ const applyManeuverCommand = (
   const afterPerishCount = maneuver.name === 'Take a Breather'
     ? clearAa083PerishCountForBreather(afterBreather, context.actorPlacement.id)
     : afterBreather
+  const afterCurledUp = maneuver.name === 'Take a Breather'
+    ? cleanupAa085to100CurledUpForBreather(afterPerishCount, context.actorPlacement.id)
+    : afterPerishCount
   const naturalCure = maneuver.name === 'Take a Breather'
     ? applyAa081NaturalCureForBreather({
-        map: afterPerishCount,
+        map: afterCurledUp,
         placement: context.actorPlacement,
         sheet: context.actorSheet.sheet as unknown as AnyLiveSheet,
         operationId: command.opId,
       })
-    : { map: afterPerishCount, sheet: context.actorSheet.sheet as unknown as AnyLiveSheet, applied: false }
+    : { map: afterCurledUp, sheet: context.actorSheet.sheet as unknown as AnyLiveSheet, applied: false }
   const regenerator = maneuver.name === 'Take a Breather'
     ? applyAa085to100RegeneratorTrigger({
         map: naturalCure.map,

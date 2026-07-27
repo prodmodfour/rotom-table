@@ -1,3 +1,5 @@
+import type { AbilityTransformationAbilitySnapshot } from '../abilityAutomation/transformations'
+import { parseAbilityTransformationAbilitySnapshot } from '../abilityAutomation/transformations'
 import {
   POKEMON_TYPE_IDS,
   pokemonTypeId,
@@ -70,6 +72,8 @@ export type EncounterCreatureAbilityOverlayPayload = {
   readonly domain: 'ability'
   /** Final canonical names are snapshotted when copy/swap resolves. */
   readonly values: readonly string[]
+  /** Optional immutable instance data for server-reviewed grants such as Receiver. */
+  readonly abilitySnapshots?: readonly AbilityTransformationAbilitySnapshot[]
 } & (
   | EncounterCreatureRuleCollectionMutation
   | EncounterCreatureRuleCollectionReferenceMutation
@@ -141,6 +145,7 @@ const COLLECTION_FIELDS = [
   'referencePlacementId',
   'suppressionScope',
 ] as const
+const ABILITY_SNAPSHOT_COLLECTION_FIELDS = [...COLLECTION_FIELDS, 'abilitySnapshots'] as const
 const SCALAR_FIELDS = ['domain', 'action', 'value', 'referencePlacementId'] as const
 const SONIC_LOCK_FIELDS = ['domain', 'action'] as const
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
@@ -350,7 +355,13 @@ const parseCollection = (
   path: string,
   domain: 'type' | 'ability',
 ): EncounterCreatureTypeOverlayPayload | EncounterCreatureAbilityOverlayPayload => {
-  assertExactFields(payload, COLLECTION_FIELDS, path)
+  const hasAbilitySnapshots = domain === 'ability'
+    && Object.prototype.hasOwnProperty.call(payload, 'abilitySnapshots')
+  assertExactFields(
+    payload,
+    hasAbilitySnapshots ? ABILITY_SNAPSHOT_COLLECTION_FIELDS : COLLECTION_FIELDS,
+    path,
+  )
   const action = parseCollectionAction(payload.action, `${path}.action`)
   const values = domain === 'type'
     ? parseTypeIds(payload.values, `${path}.values`)
@@ -366,6 +377,38 @@ const parseCollection = (
     values.length,
     `${path}.suppressionScope`,
   )
+  if (hasAbilitySnapshots) {
+    if (action !== 'add') {
+      fail('invalid-creature-rule-overlay', `${path}.abilitySnapshots`, 'are supported only for add operations.')
+    }
+    const snapshots = parseArray(
+      payload.abilitySnapshots,
+      `${path}.abilitySnapshots`,
+      ENCOUNTER_CREATURE_RULE_OVERLAY_LIMITS.abilityNames,
+    ).map((snapshot, index) => parseAbilityTransformationAbilitySnapshot(
+      snapshot,
+      `${path}.abilitySnapshots[${index}]`,
+    ))
+    if (snapshots.length !== values.length
+      || snapshots.some((snapshot, index) => snapshot.canonicalId !== values[index])) {
+      fail(
+        'invalid-creature-rule-overlay',
+        `${path}.abilitySnapshots`,
+        'must correspond one-for-one with canonical values.',
+      )
+    }
+    if (new Set(snapshots.map(snapshot => snapshot.instanceId)).size !== snapshots.length) {
+      fail('duplicate-id', `${path}.abilitySnapshots`, 'must not repeat instance IDs.')
+    }
+    return {
+      domain,
+      action,
+      values,
+      referencePlacementId,
+      suppressionScope,
+      abilitySnapshots: Object.freeze(snapshots),
+    } as EncounterCreatureAbilityOverlayPayload
+  }
   return {
     domain,
     action,

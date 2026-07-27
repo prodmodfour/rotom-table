@@ -2,6 +2,7 @@ import type { AbilitySpecV1Registration } from '../registry'
 import {
   remainingAbilityRegistrations,
   remainingActivatedAbilitySpec as activatedSpec,
+  remainingActivatedTriggeredAbilitySpec as activatedTriggeredSpec,
   remainingStaticAbilitySpec as staticSpec,
   remainingTriggeredAbilitySpec as triggeredSpec,
 } from './aa085to100Shared'
@@ -9,7 +10,7 @@ import {
 export const RIPEN_ABILITY_SPEC = staticSpec('Ripen', 'aa087.ripen')
 export const RIVALRY_ABILITY_SPEC = staticSpec('Rivalry', 'aa087.rivalry')
 export const ROCK_HEAD_ABILITY_SPEC = staticSpec('Rock Head', 'aa087.rock-head')
-export const ROCKET_ABILITY_SPEC = triggeredSpec('Rocket', 'aa087.rocket', 'lifecycle')
+export const ROCKET_ABILITY_SPEC = activatedTriggeredSpec('Rocket', 'aa087.rocket', 'lifecycle')
 export const ROOT_DOWN_ABILITY_SPEC = activatedSpec('Root Down', 'aa087.root-down')
 export const ROUGH_SKIN_ABILITY_SPEC = triggeredSpec('Rough Skin', 'aa087.rough-skin', 'move')
 export const RUN_AWAY_ABILITY_SPEC = staticSpec('Run Away', 'aa087.run-away')

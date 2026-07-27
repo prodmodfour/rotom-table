@@ -79,6 +79,7 @@ import {
   type AuthoritativeMoveSheetRead,
 } from './moveAutomation/context'
 import type { MoveAutomationRuntimeRegistry, MoveSpecV2Runtime } from './moveAutomation/registry'
+import type { AbilityAutomationRuntimeRegistry } from './abilityAutomation/registry'
 import { resolveMoveSpecTargetingRule } from './moveAutomation/targetingBranches'
 import type { AuthoritativeMoveItemResources } from './moveAutomation/itemResources'
 import {
@@ -126,7 +127,10 @@ import {
 } from './abilityAutomation/mechanics/aa078StaticIntegration'
 import { aa075ImposterTransformOverride } from './abilityAutomation/mechanics/aa075StaticIntegration'
 import { aa066DazzlingBlocksPriorityMove } from './abilityAutomation/mechanics/aa066StaticIntegration'
-import { aa085to100MovePriorityActive } from './abilityAutomation/mechanics/aa085to100StaticIntegration'
+import {
+  aa085to100MovePriorityActive,
+  aa085to100MoveTargetingOverride,
+} from './abilityAutomation/mechanics/aa085to100StaticIntegration'
 import { hasAa061AquaBulletMark, hasPendingAa061AquaBulletAttack } from './abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa062BoneLordEmpowersMove, hasPendingAa062BoneLordMove } from './abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa063RangedMove } from './abilityAutomation/mechanics/aa063MoveIntegration'
@@ -222,8 +226,10 @@ export interface ResolveAuthoritativeMoveInput {
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
   readonly tokenPositionOverrides?: ReadonlyMap<string, GridAnchor>
   readonly idFactory?: () => string
-  /** Test/migration seam; production uses the manifest-selected global registry. */
+  /** Test/migration seam; production uses the manifest-selected global move registry. */
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
+  /** Test/migration seam; production uses the manifest-selected global ability registry. */
+  readonly abilityRuntimeRegistry?: AbilityAutomationRuntimeRegistry
   /** Test/migration seam for retained v1 definitions. */
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
   /** Server-reviewed child/reaction cost policy; never supplied by move intent. */
@@ -321,6 +327,8 @@ export interface AuthoritativeMoveResolution {
   readonly desiredFacing?: TokenFacingDirection
   readonly area?: AuthoritativeMoveArea
   readonly movement?: AuthoritativeMoveMovement
+  /** Additional server-reviewed simultaneous relocations, such as a carried Teleport companion. */
+  readonly additionalMovements?: readonly AuthoritativeMoveMovement[]
   /** Server-only MA-120 facts; omitted from accepted wire results. */
   readonly resourceMovement?: AuthoritativeMoveResourceMovement
   /** Server-only roster/send-out transition; the map patch carries its durable result. */
@@ -1131,8 +1139,9 @@ const resolveNativeSelfMove = (options: {
       `${options.runtime.canonicalId} does not accept a self/field/hazard selection.`,
     )
   }
-  const hazardPlacementMove = options.entry.script.targetMode === 'hazard'
-    && options.entry.script.hazardSuggestions.length > 0
+  const hazardPlacementMove = targeting?.kind === 'hazard'
+    || (options.entry.script.targetMode === 'hazard'
+      && options.entry.script.hazardSuggestions.length > 0)
   if (
     !isSeamlessSelfMoveScript(options.entry.script)
     && !isSeamlessFieldMoveScript(options.entry.script)
@@ -1374,10 +1383,17 @@ const resolveNativeSingleTargetMove = (options: {
     script: options.entry.script,
     targetBranchId: options.context.intent.targetBranchId,
   })
-  const targeting = resolveMoveSpecTargetingRule(
+  const reviewedTargeting = resolveMoveSpecTargetingRule(
     options.runtime.definition.spec,
     options.context.intent.targetBranchId,
   )
+  const abilityTargeting = aa085to100MoveTargetingOverride({
+    context: options.context,
+    script: options.entry.script,
+  })
+  const targeting = abilityTargeting?.kind === 'single-target'
+    ? abilityTargeting
+    : reviewedTargeting
   const odiousSpray = aa082OdiousSprayActive({
     context: options.context,
     script: options.entry.script,
@@ -1568,6 +1584,9 @@ const resolveLegalTargetCountMove = (options: {
   }
 
   const submittedTargetSet = new Set(submittedTargetIds)
+  // Server map order is the canonical attack/roll order for target-count
+  // Moves. This keeps "first/second/third target" effects deterministic across
+  // clients, replay, and resume rather than trusting command array ordering.
   const selectedTargets = legalTargets.filter(target => submittedTargetSet.has(target.id))
   return {
     actorPlacement,
@@ -1630,10 +1649,17 @@ const resolveNativeTargetCountMove = (options: {
   readonly selection: Extract<ResolveMoveSelection, { kind: 'target-count' }>
   readonly moveKey: string
 }): AuthoritativeMoveExecution => {
-  const targeting = resolveMoveSpecTargetingRule(
+  const reviewedTargeting = resolveMoveSpecTargetingRule(
     options.runtime.definition.spec,
     options.context.intent.targetBranchId,
   )
+  const abilityTargeting = aa085to100MoveTargetingOverride({
+    context: options.context,
+    script: options.entry.script,
+  })
+  const targeting = abilityTargeting?.kind === 'multi-target'
+    ? abilityTargeting
+    : reviewedTargeting
   if (
     targeting?.kind !== 'multi-target'
     || targeting.selector?.kind !== 'selected-targets'
@@ -1819,10 +1845,17 @@ const resolveNativeAreaMove = (options: {
   readonly selection: Extract<ResolveMoveSelection, { kind: 'area' }>
   readonly moveKey: string
 }): AuthoritativeMoveExecution => {
-  const targeting = resolveMoveSpecTargetingRule(
+  const reviewedTargeting = resolveMoveSpecTargetingRule(
     options.runtime.definition.spec,
     options.context.intent.targetBranchId,
   )
+  const abilityTargeting = aa085to100MoveTargetingOverride({
+    context: options.context,
+    script: options.entry.script,
+  })
+  const targeting = abilityTargeting?.kind === 'area'
+    ? abilityTargeting
+    : reviewedTargeting
   const boneLordLine = options.entry.canonicalMoveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
   const dustCloudBurst = aa068DustCloudBurstEnabled({
@@ -2324,6 +2357,7 @@ export const resolveAuthoritativeMoveExecution = (
       tokenPositionOverrides: input.tokenPositionOverrides,
       idFactory: input.idFactory,
       runtimeRegistry: input.runtimeRegistry,
+      abilityRuntimeRegistry: input.abilityRuntimeRegistry,
       legacyScripts: input.legacyScripts,
       itemResources: input.itemResources,
     })

@@ -120,6 +120,12 @@ export const abilityIsCopyable = (canonicalId: string): boolean => (
   && protectionFor(protectionByCanonicalId(), canonicalId).copyable
 )
 
+/** Server-owned protection lookup for Skill Swap-style exchanges. */
+export const abilityIsTransferable = (canonicalId: string): boolean => (
+  CANONICAL_IDS.has(canonicalId)
+  && protectionFor(protectionByCanonicalId(), canonicalId).transferable
+)
+
 const canonicalNames = (values: readonly string[]): readonly string[] => {
   const seen = new Set<string>()
   const result: string[] = []
@@ -342,16 +348,24 @@ export const projectAuthoritativeEffectiveAbilities = (
         ? 'copied'
         : 'replaced'
     if (payload.action !== 'add') replaceActive(projected, `ability.replaced.${payload.action}`)
-    names.forEach((canonicalId, index) => projected.push(instance({
-      instanceId: `${sourceKind}:${effect.id}:${index}`,
-      canonicalId,
-      sourceKind,
-      sourcePlacementId: payload.referencePlacementId ?? effect.source.placementId,
-      parameterStatus: abilityRequiresInstanceParameters(canonicalId)
-        ? 'missing-required-data'
-        : 'not-parameterized',
-      parameterData: null,
-    })))
+    names.forEach((canonicalId, index) => {
+      const snapshot = payload.abilitySnapshots?.[index] ?? null
+      const projectedAbility = instance({
+        instanceId: snapshot?.instanceId ?? `${sourceKind}:${effect.id}:${index}`,
+        canonicalId,
+        sourceKind,
+        sourcePlacementId: snapshot?.sourcePlacementId
+          ?? payload.referencePlacementId
+          ?? effect.source.placementId,
+        parameterStatus: snapshot?.parameterStatus
+          ?? (abilityRequiresInstanceParameters(canonicalId)
+            ? 'missing-required-data'
+            : 'not-parameterized'),
+        parameterData: snapshot?.parameterData ?? null,
+      })
+      projectedAbility.definitionHash = snapshot?.definitionHash ?? null
+      projected.push(projectedAbility)
+    })
     assertProjectionBound(projected)
   }
 

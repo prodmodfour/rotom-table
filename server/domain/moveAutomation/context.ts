@@ -4,6 +4,7 @@ import type { AbilityInstanceData } from '#shared/abilityAutomation/parameters'
 import type { MoveResolutionTraceAncestryEntry } from '#shared/moveAutomation/trace'
 import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
 import { createEmptyEncounterTurnResources } from '#shared/moveAutomation/encounterResources'
+import { moveItemEffectBindingId } from '#shared/moveAutomation/itemEffects'
 import {
   MOVE_RULESET_PROVENANCE,
   type MoveRulesetProvenance,
@@ -51,6 +52,7 @@ import { nativeMoveAutomationPresentationScriptForMove } from '~/utils/move-auto
 import { moveAutomationScriptForTargetBranch } from '~/utils/moveAutomationTargetBranches'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { deepCloneJson } from '~/utils/serialization'
+import { gridFootprintCells } from '~/utils/gridGeometry'
 import type { RegisteredMoveHandlerRegistry } from './handlers/registry'
 import {
   createMoveAutomationBarriersAndSmokeResolver,
@@ -82,6 +84,7 @@ import {
 } from './itemRules'
 import {
   createAuthoritativeMoveItemResourceQueries,
+  authoritativeEquippedItemReferences,
   emptyAuthoritativeMoveItemResources,
   type AuthoritativeMoveItemResourceQueries,
   type AuthoritativeMoveItemResources,
@@ -147,6 +150,7 @@ import {
   type AbilitySpecV1Runtime,
 } from '../abilityAutomation/registry'
 import { projectAuthoritativeEffectiveAbilities } from '../abilityAutomation/effectiveAbilities'
+import { authoritativeAbilityOwnerIsConscious } from '../abilityAutomation/effectiveRuntimeAbilities'
 import type { AuthoritativeEffectiveAbility } from '../abilityAutomation/context'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegration'
@@ -626,6 +630,14 @@ export const buildAuthoritativeMoveRulesContext = (
   })
   const effectiveAbilitiesByPlacement = new Map<string, readonly AuthoritativeMoveEffectiveAbility[]>()
   for (const [placementId, abilities] of activeProjectedAbilities) {
+    const placement = basePlacementSnapshot.byId.get(placementId)
+    const resolvedSheet = placement
+      ? sheetByRef.get(sheetReadKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
+      : null
+    if (!resolvedSheet || !authoritativeAbilityOwnerIsConscious(resolvedSheet.sheet)) {
+      effectiveAbilitiesByPlacement.set(placementId, Object.freeze([]))
+      continue
+    }
     effectiveAbilitiesByPlacement.set(placementId, Object.freeze(abilities.flatMap((ability) => {
       if (!ability.effective) return []
       const runtime = abilityRuntimeRegistry.resolve(ability.canonicalId)
@@ -686,18 +698,22 @@ export const buildAuthoritativeMoveRulesContext = (
   const rooms = createMoveAutomationRoomResolver(map)
   const globalFields = createMoveAutomationRemainingGlobalFieldResolver(map, rooms)
   const gravity = createMoveAutomationGravityResolver({ placements, globalFields })
-  const baseWeather = createMoveAutomationWeatherResolver(map, {
-    subjectPlacementId: intent.placementId,
-  })
-  const actorHasMoldBreaker = (effectiveAbilitiesByPlacement.get(intent.placementId) ?? [])
-    .some(ability => ability.canonicalId === 'Mold Breaker')
+  const actorAbilities = effectiveAbilitiesByPlacement.get(intent.placementId) ?? []
+  const waterBubbleAbility = actorAbilities.find(ability => ability.canonicalId === 'Water Bubble')
+  const actorHasMoldBreaker = actorAbilities.some(ability => ability.canonicalId === 'Mold Breaker')
+  const declaredMoveType = findMove(intent.moveName)?.type.trim().toLowerCase() ?? null
+  const actorHasTypedDefensiveBypass = (declaredMoveType === 'electric'
+    && actorAbilities.some(ability => ability.canonicalId === 'Teravolt'))
+    || (declaredMoveType === 'fire'
+      && actorAbilities.some(ability => ability.canonicalId === 'Turboblaze'))
+  const actorBypassesDefensiveAbilities = actorHasMoldBreaker || actorHasTypedDefensiveBypass
   const abilitiesVisibleToMove = (placementId: string): readonly AuthoritativeMoveEffectiveAbility[] => (
     effectiveAbilitiesByPlacement.get(placementId) ?? Object.freeze([])
   ).filter(ability => !aa080MoldBreakerSuppressesAbility({
     actorPlacementId: intent.placementId,
     targetPlacementId: placementId,
     canonicalId: ability.canonicalId,
-    actorHasMoldBreaker,
+    actorHasMoldBreaker: actorBypassesDefensiveAbilities,
     relationship: relationships.resolve(intent.placementId, placementId).relationship,
   }))
   const abilityQueries: AuthoritativeMoveAbilityQueries = Object.freeze({
@@ -845,6 +861,16 @@ export const buildAuthoritativeMoveRulesContext = (
       ability.instanceId === entry.sourceAbilityInstanceId && ability.canonicalId === 'Arena Trap'
     ))
   ))
+  const validSymbiosisItemBindingIds = new Set(basePlacementSnapshot.placements.flatMap((placement) => {
+    const resolved = sheetByRef.get(sheetReadKey({
+      kind: placement.sheetKind,
+      slug: placement.sheetSlug,
+    }))
+    return resolved
+      ? authoritativeEquippedItemReferences(placement, resolved.sheet)
+          .map(reference => moveItemEffectBindingId(reference))
+      : []
+  }))
   const tokens = deepFreeze(baseTokens.map((token) => {
     const placement = placementById.get(token.id)
     const resolvedSheet = placement
@@ -871,6 +897,7 @@ export const buildAuthoritativeMoveRulesContext = (
       effectiveAbilityIds: (effectiveAbilitiesByPlacement.get(token.id) ?? [])
         .map(ability => ability.canonicalId),
       contextMap: map,
+      validSymbiosisItemBindingIds,
     })
     const forecast = aa071ForecastTypeResolution({
       contextMap: map,
@@ -922,7 +949,7 @@ export const buildAuthoritativeMoveRulesContext = (
     // Mold Breaker additionally strips only reviewed enemy Defensive ability
     // names from compatibility helpers so raw sheet text cannot reintroduce a
     // bypassed mechanic after the exact runtime query has rejected it.
-    const suppressDefensiveNames = actorHasMoldBreaker
+    const suppressDefensiveNames = actorBypassesDefensiveAbilities
       && relationships.resolve(intent.placementId, token.id).relationship === 'enemy'
     const effectiveToken = suppressDefensiveNames
       ? detachedFrozenJson({
@@ -962,6 +989,14 @@ export const buildAuthoritativeMoveRulesContext = (
       'actor-token-unresolved',
       `Actor placement ${actorPlacement.id} could not resolve to a spawned token.`,
     )
+  const baseWeather = createMoveAutomationWeatherResolver(map, {
+    subjectPlacementId: intent.placementId,
+    subjectOccupiedCells: gridFootprintCells(actorToken.position, actorToken),
+    ...(waterBubbleAbility ? {
+      virtualWeatherKind: 'rainy' as const,
+      virtualWeatherSourceId: `ability.water-bubble.${waterBubbleAbility.instanceId}`,
+    } : {}),
+  })
 
   const candidateIds = uniquePlacementIds(
     input.candidatePlacementIds ?? placements.map(({ id }) => id),
@@ -1044,6 +1079,32 @@ export const buildAuthoritativeMoveRulesContext = (
       canonicalItemId === 'rare-leek'
       && effectiveAbilitiesByPlacement.get(placementId)
         ?.some(ability => ability.canonicalId === 'Leek Mastery') === true
+    ),
+    digestionNumericBenefitMultiplier: placementId => (
+      effectiveAbilitiesByPlacement.get(placementId)
+        ?.some(ability => ability.canonicalId === 'Ripen') === true ? 2 : 1
+    ),
+    sharedEquippedReferences: placementId => (
+      (map.encounterState?.effects ?? []).flatMap(effect => {
+        if (!effect.tags.includes('aa094-symbiosis-shared-item')
+          || !effect.affected.placementIds.includes(placementId)
+          || effect.suppression.sources.length > 0
+          || (effect.duration.remaining !== null && effect.duration.remaining <= 0)) return []
+        const bindingIds = new Set(effect.tags.flatMap(tag => (
+          tag.startsWith('aa094-symbiosis-binding:')
+            ? [tag.slice('aa094-symbiosis-binding:'.length)] : []
+        )))
+        const sourceId = effect.source.placementId
+        const sourcePlacement = sourceId ? placementById.get(sourceId) ?? null : null
+        const sourceSheet = sourcePlacement
+          ? resolvedSheets.find(sheet => sheet.kind === sourcePlacement.sheetKind
+            && sheet.slug === sourcePlacement.sheetSlug)?.sheet ?? null
+          : null
+        return sourcePlacement && sourceSheet
+          ? authoritativeEquippedItemReferences(sourcePlacement, sourceSheet)
+              .filter(reference => bindingIds.has(moveItemEffectBindingId(reference)))
+          : []
+      })
     ),
   })
   const creatureRules = createMoveAutomationCreatureRuleResolver({
@@ -1161,11 +1222,14 @@ export const buildAuthoritativeMoveRulesContext = (
         ?? nativeMoveAutomationPresentationScriptForMove(canonicalMove.name)
       const baseScript = presentation ?? createMoveAutomationScriptFromMoveData(canonicalMove)
       const dustCloudActive = abilityQueries.has(actorPlacement.id, 'Dust Cloud')
-      const script = aa078MovePresentationScript({
-        context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries }, map },
-        script: aa068DustCloudPresentationScript({
-          script: baseScript,
-          active: dustCloudActive,
+      const script = aa085to100MovePresentationScript({
+        context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries } } as AuthoritativeMoveRulesContext,
+        script: aa078MovePresentationScript({
+          context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries }, map },
+          script: aa068DustCloudPresentationScript({
+            script: baseScript,
+            active: dustCloudActive,
+          }),
         }),
       })
       const selectedBranch = intent.targetBranchId === AA068_DUST_CLOUD_BURST_BRANCH_ID
@@ -1177,13 +1241,10 @@ export const buildAuthoritativeMoveRulesContext = (
         : intent.targetBranchId
           ? moveAutomationScriptForTargetBranch(script, intent.targetBranchId)
           : null
-      const selectedScript = aa085to100MovePresentationScript({
-        context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries } } as AuthoritativeMoveRulesContext,
-        script: aa078MovePresentationScript({
-          context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries }, map },
-          script: selectedBranch ?? script,
-          qualificationScript: baseScript,
-        }),
+      const selectedScript = aa078MovePresentationScript({
+        context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries }, map },
+        script: selectedBranch ?? script,
+        qualificationScript: baseScript,
       })
       // The reviewed spec is authoritative for intent shape. Canonical range
       // prose such as Blessing does not itself imply the self declaration that

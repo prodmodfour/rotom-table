@@ -62,6 +62,7 @@ import {
 import { readRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { applyAa065CuriousMedicineSendOutTrigger } from '../domain/abilityAutomation/mechanics/aa065PresenceIntegration'
+import { recordActivelyCommandedPokemon } from '../domain/moveAutomation/activePokemonCommands'
 
 export class ApplySendOutPokemonCommandUseCaseError<
   TStatusCode extends number = number,
@@ -982,8 +983,14 @@ export const applySendOutPokemonCommandUseCase = (
     targetResult.target.placement,
     processedAt,
   )
+  const commandedDocument = recordActivelyCommandedPokemon({
+    map: sentOutDocument,
+    trainerPlacementId: targetResult.target.trainerPlacement.id,
+    pokemonPlacementId: targetResult.target.placement.id,
+    operationId: envelope.opId,
+  })
   const nextDocument = applyAa065CuriousMedicineSendOutTrigger({
-    mapAfter: sentOutDocument,
+    mapAfter: commandedDocument,
     releasedPlacementId: targetResult.target.placement.id,
     operationId: envelope.opId,
     readPokemonSheet: slug => slug === targetResult.target.placement.sheetSlug

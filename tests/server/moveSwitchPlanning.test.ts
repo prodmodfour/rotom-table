@@ -10,6 +10,10 @@ import { isAuthoritativePendingMoveResolution } from '~~/server/domain/resolveAu
 import { planResumedMoveState } from '~~/server/domain/moveAutomation/planResumedMoveState'
 import { resumeMoveSpec } from '~~/server/domain/moveAutomation/resumeSpec'
 import {
+  activelyCommandingTrainerPlacementId,
+  recordActivelyCommandedPokemon,
+} from '~~/server/domain/moveAutomation/activePokemonCommands'
+import {
   SWITCH_ACTOR_PLACEMENT_ID,
   SWITCH_TARGET_PLACEMENT_ID,
   SWITCH_TRAINER_PLACEMENT_ID,
@@ -44,7 +48,13 @@ const declarationPlan = (
 describe('move-driven switch planning', () => {
   it('defers attack effects until a legal durable replacement is selected', () => {
     const resources = switchChoiceSheets()
-    const declaration = declarationPlan(resources)
+    const map = recordActivelyCommandedPokemon({
+      map: createSwitchChoiceMap(),
+      trainerPlacementId: SWITCH_TRAINER_PLACEMENT_ID,
+      pokemonPlacementId: SWITCH_ACTOR_PLACEMENT_ID,
+      operationId: 'test.switch.active-command',
+    })
+    const declaration = declarationPlan(resources, { map })
     expect(isAuthoritativePendingMoveStatePlan(declaration)).toBe(true)
     if (!isAuthoritativePendingMoveStatePlan(declaration)) return
 
@@ -143,6 +153,10 @@ describe('move-driven switch planning', () => {
       }),
     ])
     expect(completed.nextMap.encounterState?.pendingResolutionSummaries).toEqual([])
+    expect(activelyCommandingTrainerPlacementId({
+      map: completed.nextMap,
+      pokemonPlacementId: replacement.id,
+    })).toBe(SWITCH_TRAINER_PLACEMENT_ID)
 
     const targetWrite = completed.sheetWrites.find(
       write => write.slug === 'switch-target-sheet',
@@ -271,12 +285,18 @@ describe('move-driven switch planning', () => {
       placement => placement.sheetSlug === 'switch-replacement',
     )!
     const effects = completed.nextMap.encounterState?.effects ?? []
-    expect(effects).toHaveLength(1)
-    expect(effects[0]).toMatchObject({
+    expect(effects).toHaveLength(2)
+    expect(effects.find(effect => effect.id === passable.id)).toMatchObject({
       id: passable.id,
       source: { placementId: replacement.id },
       affected: { placementIds: [replacement.id] },
       transferPolicy: 'baton-pass',
+    })
+    expect(effects.find(effect => effect.tags.includes('encounter-entry'))).toMatchObject({
+      source: { placementId: replacement.id },
+      affected: { placementIds: [replacement.id] },
+      payload: { capabilityId: 'encounter.recent-entry', action: 'grant' },
+      transferPolicy: 'expire',
     })
     expect(effects.filter(effect => effect.id === passable.id)).toHaveLength(1)
     expect(effects.some(effect => effect.id === expiring.id)).toBe(false)

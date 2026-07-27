@@ -88,6 +88,7 @@ import {
   MOVE_AUTOMATION_RUNTIME_REGISTRY,
   type MoveAutomationRuntimeRegistry,
 } from './moveAutomation/registry'
+import type { AbilityAutomationRuntimeRegistry } from './abilityAutomation/registry'
 import { cleanupEncounterTransformationsForKnockouts } from './moveAutomation/transformationLifecycle'
 import { cleanupYawnEffectsForKnockouts } from './moveAutomation/yawn'
 import { clearAa084PowerOfAlchemyForKnockouts } from './abilityAutomation/mechanics/aa084LifecycleIntegration'
@@ -141,8 +142,10 @@ export interface PlanAuthoritativeMoveStateInput {
   /** Deterministic server identity derived from the exact declaration command. */
   readonly pendingResolutionId?: string
   readonly maxMoveLogEntries?: number
-  /** Test/migration seam; production uses the manifest-selected global registry. */
+  /** Test/migration seam; production uses the manifest-selected global move registry. */
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
+  /** Test/migration seam; production uses the manifest-selected global ability registry. */
+  readonly abilityRuntimeRegistry?: AbilityAutomationRuntimeRegistry
   /** Test/migration seam for retained v1 definitions. */
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
   /** Server-reviewed child/reaction policy; never populated from move intent. */
@@ -319,6 +322,9 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   ...(resolution.desiredFacing === undefined ? {} : { desiredFacing: resolution.desiredFacing }),
   ...(resolution.area === undefined ? {} : { area: cloneJson(resolution.area) }),
   ...(resolution.movement === undefined ? {} : { movement: cloneJson(resolution.movement) }),
+  ...(resolution.additionalMovements === undefined
+    ? {}
+    : { additionalMovements: cloneJson(resolution.additionalMovements) }),
   ...(resolution.resourceMovement === undefined
     ? {}
     : { resourceMovement: cloneJson(resolution.resourceMovement) }),
@@ -712,9 +718,13 @@ const withAbilityCostOverrides = (
   abilityAdvancedPriorityOverride: boolean | undefined,
   abilityFreeInterruptOverride: boolean | undefined,
   abilitySwiftActionOverride: boolean | undefined,
+  abilityActionPrepaidOverride = false,
 ): readonly MoveSpecCostDeclaration[] | undefined => {
+  const unpaidCosts = abilityActionPrepaidOverride
+    ? (costs ?? []).filter(declaration => declaration.cost.kind !== 'action-resource')
+    : costs
   const actionAdjusted = abilitySwiftActionOverride
-    ? (costs ?? []).map(declaration => declaration.cost.kind === 'action-resource'
+    ? (unpaidCosts ?? []).map(declaration => declaration.cost.kind === 'action-resource'
       && declaration.cost.resource === 'standard'
       ? {
           ...declaration,
@@ -723,7 +733,7 @@ const withAbilityCostOverrides = (
         }
       : declaration)
     : abilityFreeInterruptOverride
-      ? (costs ?? []).map(declaration => declaration.cost.kind === 'action-resource'
+      ? (unpaidCosts ?? []).map(declaration => declaration.cost.kind === 'action-resource'
         && declaration.cost.resource === 'standard'
         ? {
             ...declaration,
@@ -731,7 +741,7 @@ const withAbilityCostOverrides = (
             cost: { kind: 'action-resource' as const, resource: 'free' as const, amount: 1 },
           }
         : declaration)
-      : costs
+      : unpaidCosts
   if (!abilityPriorityOverride
     || actionAdjusted?.some(declaration => declaration.cost.kind === 'priority')) return actionAdjusted
   return Object.freeze([
@@ -758,6 +768,18 @@ const aa083PolycephalySwiftSelected = (
   && event.optionId === 'ability.polycephaly.swift'
 ))
 
+const aa092StarswirlRapidSpinPrepaid = (input: {
+  readonly map: TabletopMap
+  readonly actorPlacementId: string
+  readonly canonicalMoveId: string
+}): boolean => input.canonicalMoveId.trim().toLowerCase() === 'rapid spin'
+  && input.map.encounterState?.effects.some(effect => (
+    effect.tags.includes('aa092-starswirl-rapid-spin')
+    && effect.affected.placementIds.includes(input.actorPlacementId)
+    && effect.suppression.sources.length === 0
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+  )) === true
+
 const aa084PranksterAdvancedSelected = (
   trace: MoveResolutionAuditTrace,
 ): boolean => trace.events.some(event => (
@@ -777,6 +799,7 @@ const reviewedMoveResourceCosts = (
   abilityAdvancedPriorityOverride?: boolean,
   abilityFreeInterruptOverride?: boolean,
   abilitySwiftActionOverride?: boolean,
+  abilityActionPrepaidOverride?: boolean,
 ): readonly MoveSpecCostDeclaration[] | undefined => {
   if (input.resourceCostDeclarations !== undefined) {
     return withAbilityCostOverrides(
@@ -785,6 +808,7 @@ const reviewedMoveResourceCosts = (
       abilityAdvancedPriorityOverride,
       abilityFreeInterruptOverride,
       abilitySwiftActionOverride,
+      abilityActionPrepaidOverride,
     )
   }
   const runtime = (input.runtimeRegistry ?? MOVE_AUTOMATION_RUNTIME_REGISTRY)
@@ -795,6 +819,7 @@ const reviewedMoveResourceCosts = (
     abilityAdvancedPriorityOverride,
     abilityFreeInterruptOverride,
     abilitySwiftActionOverride,
+    abilityActionPrepaidOverride,
   )
 }
 
@@ -852,6 +877,11 @@ export const observeMovePlanResources = (input: {
           || aa084PranksterAdvancedSelected(input.resolution.auditTrace),
         input.resolution.abilityFreeInterruptOverride,
         aa083PolycephalySwiftSelected(input.resolution.auditTrace),
+        aa092StarswirlRapidSpinPrepaid({
+          map: input.planningInput.map,
+          actorPlacementId: input.resolution.actorPlacementId,
+          canonicalMoveId: input.resolution.canonicalMoveName,
+        }),
       ),
       minimumPhaseExclusive: input.minimumCostPhaseExclusive,
       maximumPhaseInclusive: input.maximumCostPhaseInclusive,
@@ -943,6 +973,11 @@ export const planPendingMoveResourceCosts = (options: {
       || aa084PranksterAdvancedSelected(options.execution.execution.trace),
     options.execution.abilityFreeInterruptOverride,
     aa083PolycephalySwiftSelected(options.execution.execution.trace),
+    aa092StarswirlRapidSpinPrepaid({
+      map: options.input.map,
+      actorPlacementId: options.execution.actorPlacementId,
+      canonicalMoveId: options.execution.canonicalMoveName,
+    }),
   ) ?? []
   if (reviewedCosts.length === 0) return options.existingPlan
 
@@ -1069,6 +1104,23 @@ const planPendingMoveState = (options: {
     ...(options.input.intent.originCell ? { virtualOriginCell: options.input.intent.originCell } : {}),
     ...(options.input.intent.targetBranchId
       ? { targetBranchId: options.input.intent.targetBranchId }
+      : {}),
+    ...(options.input.intent.selection.kind === 'area'
+      ? {
+          rootAreaSelection: {
+            ...options.input.intent.selection,
+            ...(options.input.intent.selection.aimCell
+              ? { aimCell: { ...options.input.intent.selection.aimCell } }
+              : {}),
+            ...(options.input.intent.selection.excludedTargetPlacementIds
+              ? {
+                  excludedTargetPlacementIds: [
+                    ...options.input.intent.selection.excludedTargetPlacementIds,
+                  ],
+                }
+              : {}),
+          },
+        }
       : {}),
     suspendedAt: options.plannedAt,
     authoritativeSheetReads: sheetReads,
@@ -1252,6 +1304,7 @@ export const planAuthoritativeMoveStateExecution = (
     tokenPositionOverrides: input.tokenPositionOverrides,
     idFactory: input.idFactory,
     runtimeRegistry: input.runtimeRegistry,
+    abilityRuntimeRegistry: input.abilityRuntimeRegistry,
     legacyScripts: input.legacyScripts,
     resourceCostDeclarations: input.resourceCostDeclarations,
     itemResources: input.itemResources,
@@ -1292,6 +1345,7 @@ export const planAuthoritativeMoveStateExecution = (
         resolutionId: input.pendingResolutionId,
         maxMoveLogEntries: input.maxMoveLogEntries,
         runtimeRegistry: input.runtimeRegistry,
+        abilityRuntimeRegistry: input.abilityRuntimeRegistry,
         legacyScripts: input.legacyScripts,
         itemResources: input.itemResources,
         existingSheetReads: sheetReads,
@@ -1426,19 +1480,34 @@ export const planAuthoritativeMoveStateExecution = (
     placementIds: knockedOutPlacementIds,
   }).map
 
-  workingMap = applyAuthoritativeMovePlacementTransition({
-    map: workingMap,
-    actorPlacement,
-    movement: resolution.movement,
-    desiredFacing: resolution.desiredFacing,
-    fail: (code, message) => fail(
-      code === 'pass-source-position-mismatch' || code === 'shift-source-position-mismatch'
-        ? 'conflict'
-        : 'invalid',
-      code,
-      message,
-    ),
-  })
+  const applyMovement = (
+    map: TabletopMap,
+    movement: AuthoritativeMoveResolution['movement'],
+    desiredFacing?: AuthoritativeMoveResolution['desiredFacing'],
+  ): TabletopMap => {
+    const placementId = movement && movement.kind === 'shift'
+      ? movement.placementId ?? resolution.actorPlacementId
+      : resolution.actorPlacementId
+    const placement = map.placements.find(candidate => candidate.id === placementId)
+      ?? fail('conflict', 'shift-source-position-mismatch', `Movement placement ${placementId} disappeared.`)
+    return applyAuthoritativeMovePlacementTransition({
+      map,
+      actorPlacement: placement,
+      movement,
+      desiredFacing,
+      fail: (code, message) => fail(
+        code === 'pass-source-position-mismatch' || code === 'shift-source-position-mismatch'
+          ? 'conflict'
+          : 'invalid',
+        code,
+        message,
+      ),
+    })
+  }
+  workingMap = applyMovement(workingMap, resolution.movement, resolution.desiredFacing)
+  for (const movement of resolution.additionalMovements ?? []) {
+    workingMap = applyMovement(workingMap, movement)
+  }
   workingMap = applyHazardsToMap(workingMap, resolution.transaction)
   workingMap = applyFieldEffectsToMap(
     workingMap,

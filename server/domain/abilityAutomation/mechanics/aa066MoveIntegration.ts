@@ -117,7 +117,13 @@ export const aa066MoveOverlayOperations = (input: {
       }), nestedMove({
         id: `ability.dancer.copy.${suffix}`, requestId,
         reasonCode: 'dancer', canonicalId: input.script.moveName,
-        selfTargeting: input.script.targetMode === 'self' || input.script.range.trim().toLowerCase() === 'self',
+        selfTargeting: input.script.targetMode === 'self'
+          || input.script.range.trim().toLowerCase() === 'self'
+          || (input.script.areaTemplates?.length
+            ? input.script.areaTemplates.every(template => (
+                template.kind === 'burst' || template.kind === 'cardinally-adjacent'
+              ))
+            : false),
       }))
     }
   }

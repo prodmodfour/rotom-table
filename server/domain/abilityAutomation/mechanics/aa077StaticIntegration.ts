@@ -4,6 +4,7 @@ import {
   aa077LeafRushMarks,
 } from '#shared/abilityAutomation/aa077'
 import type { MoveDamageEffectOperation } from '#shared/moveAutomation/effects'
+import { parseEncounterState } from '#shared/moveAutomation/encounterState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -165,40 +166,72 @@ export const aa077MoveDamageModifiers = (input: {
   return Object.freeze(modifiers)
 }
 
+const FREE_DISENGAGE_TAGS = new Set([
+  'aa086-rally-free-disengage',
+  'aa086-rattled-disengage',
+])
+
+const freeDisengageEffect = (map: TabletopMap, placementId: string) => (
+  map.encounterState?.effects.find(effect => (
+    effect.affected.placementIds.includes(placementId)
+    && effect.tags.some(tag => FREE_DISENGAGE_TAGS.has(tag))
+    && effect.suppression.sources.length === 0
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+  )) ?? null
+)
+
 export const aa077HasAuthoritativeDisengageWindow = (input: {
   readonly map: TabletopMap
   readonly placementId: string
-}): boolean => (
+}): boolean => Boolean(freeDisengageEffect(input.map, input.placementId)) || (
   input.map.encounterState?.history.currentTurn?.placementId === input.placementId
   && input.map.encounterState.turnResources[input.placementId] !== undefined
 )
 
-/** Record exact Disengage identity and its Shift payment in one map-owned ledger. */
+/** Record exact Disengage identity and consume an ability-granted Free window or ordinary Shift. */
 export const applyAa077DisengageResourceEvidence = (input: {
   readonly map: TabletopMap
   readonly placementId: string
   readonly operationId: string
-}): TabletopMap => planEncounterMoveResourceCosts({
-  map: input.map,
-  placementId: input.placementId,
-  canonicalMoveId: 'Disengage',
-  moveKey: 'maneuver:disengage',
-  range: 'Shift Action',
-  resolutionId: input.operationId,
-  sourceOperationId: input.operationId,
-  movement: null,
-  reviewedCosts: [{
-    id: 'maneuver.disengage.shift', phase: 'pay',
-    cost: { kind: 'action-resource', resource: 'shift', amount: 1 },
-  }, {
-    id: 'maneuver.disengage.evidence', phase: 'pay',
-    cost: { kind: 'once-per-turn', flagId: AA077_LANCER_DISENGAGE_FLAG_ID },
-  }],
-  allowLegacyFallback: false,
-  minimumPhaseExclusive: null,
-  maximumPhaseInclusive: 'pay',
-  markActedSinceEntry: true,
-}).nextMap
+}): TabletopMap => {
+  const granted = freeDisengageEffect(input.map, input.placementId)
+  const payment = planEncounterMoveResourceCosts({
+    map: input.map,
+    placementId: input.placementId,
+    canonicalMoveId: 'Disengage',
+    moveKey: 'maneuver:disengage',
+    range: granted ? 'Free Action' : 'Shift Action',
+    resolutionId: input.operationId,
+    sourceOperationId: input.operationId,
+    movement: null,
+    reviewedCosts: [{
+      id: granted ? 'maneuver.disengage.free' : 'maneuver.disengage.shift', phase: 'pay',
+      cost: { kind: 'action-resource', resource: granted ? 'free' : 'shift', amount: 1 },
+    }, {
+      id: 'maneuver.disengage.evidence', phase: 'pay',
+      cost: { kind: 'once-per-turn', flagId: AA077_LANCER_DISENGAGE_FLAG_ID },
+    }],
+    allowLegacyFallback: false,
+    minimumPhaseExclusive: null,
+    maximumPhaseInclusive: 'pay',
+    markActedSinceEntry: true,
+  }).nextMap
+  if (!granted || !payment.encounterState) return payment
+  return {
+    ...payment,
+    encounterState: parseEncounterState({
+      ...payment.encounterState,
+      effects: payment.encounterState.effects.flatMap(effect => {
+        if (effect.id !== granted.id) return [effect]
+        const placementIds = effect.affected.placementIds.filter(id => id !== input.placementId)
+        return placementIds.length === 0 ? [] : [{
+          ...effect,
+          affected: { ...effect.affected, placementIds },
+        }]
+      }),
+    }),
+  }
+}
 
 export const aa077IsProtectedRareLeek = (input: {
   readonly context: AuthoritativeMoveRulesContext

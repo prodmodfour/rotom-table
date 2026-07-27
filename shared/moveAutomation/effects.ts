@@ -325,7 +325,7 @@ export const MOVE_EFFECT_FIELD_CATEGORIES = [
 ] as const
 
 /** Native map-owned zone families emitted by reviewed hazard operations. */
-export const MOVE_EFFECT_HAZARD_ZONE_KINDS = ['hazard', 'pledge'] as const
+export const MOVE_EFFECT_HAZARD_ZONE_KINDS = ['hazard', 'pledge', 'barrier'] as const
 export const MOVE_EFFECT_HAZARD_OWNERSHIP_KINDS = ['source-side', 'recipient-side', 'neutral'] as const
 export const MOVE_EFFECT_HAZARD_OWNERSHIP_FILTER_KINDS = [
   'any',
@@ -1241,6 +1241,11 @@ export interface MoveConditionAccuracyRollTrigger {
 export interface MoveConditionDurationPolicy {
   /** Stable reviewed base identity; the reducer derives one instance per recipient. */
   readonly effectId: string
+  /**
+   * Server-reviewed source owner for cross-owner reaction effects. Omitted operations
+   * retain the active Move actor as their source.
+   */
+  readonly sourcePlacementId?: string
   readonly duration: EncounterEffectDuration
   /** Optional finite trigger charges; each authoritative trigger consumes one. */
   readonly charges?: number
@@ -2089,7 +2094,11 @@ const CONDITION_RANDOM_CHOICE_FIELDS = ['rollId', 'conditionIds'] as const
 const CONDITION_ACCURACY_ROLL_TRIGGER_FIELDS = ['rollId', 'trigger'] as const
 const CONDITION_OPERATION_OUTCOME_TRIGGER_FIELDS = ['operationId', 'outcome'] as const
 const CONDITION_DURATION_REQUIRED_FIELDS = ['effectId', 'duration'] as const
-const CONDITION_DURATION_OPTIONAL_FIELDS = ['charges', 'transferPolicy'] as const
+const CONDITION_DURATION_OPTIONAL_FIELDS = [
+  'sourcePlacementId',
+  'charges',
+  'transferPolicy',
+] as const
 const CONDITION_STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
 const COMBAT_STAGE_REQUIRED_FIELDS = ['action', 'stage', 'value'] as const
 const COMBAT_STAGE_OPTIONAL_FIELDS = [
@@ -3851,6 +3860,14 @@ const parseConditionDuration = (
         ownValue(input, 'duration', path),
         `${path}.duration`,
       ),
+      ...(input.sourcePlacementId === undefined
+        ? {}
+        : {
+            sourcePlacementId: parseStableId(
+              input.sourcePlacementId,
+              `${path}.sourcePlacementId`,
+            ),
+          }),
       ...(input.charges === undefined
         ? {}
         : {

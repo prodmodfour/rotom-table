@@ -59,6 +59,7 @@ import {
   type AuthoritativeMoveItemResources,
 } from '../domain/moveAutomation/itemResources'
 import type { MoveAutomationRuntimeRegistry } from '../domain/moveAutomation/registry'
+import type { AbilityAutomationRuntimeRegistry } from '../domain/abilityAutomation/registry'
 import { acceptedCommandRealtimeAppendInput } from '../livePlay/acceptedCommandRealtime'
 import { createCanonicalCommandHash } from '../livePlay/commandIdempotency'
 import type { LivePlayCommandHash } from '../livePlay/opResult'
@@ -149,6 +150,7 @@ export interface ResumePendingMoveResolutionDependencies {
   readonly realtimeEventRepository?: Pick<RealtimeEventRepository, 'appendMany'>
   readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
+  readonly abilityRuntimeRegistry?: AbilityAutomationRuntimeRegistry
   readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
   readonly maxMoveLogEntries?: number
@@ -176,6 +178,7 @@ const dependenciesWithDefaults = (input: ResumePendingMoveResolutionDependencies
     publishPersistedRealtimeEvent: input.publishPersistedRealtimeEvent
       ?? defaultPersistedRealtimeEventPublisher,
     runtimeRegistry: input.runtimeRegistry,
+    abilityRuntimeRegistry: input.abilityRuntimeRegistry,
     random: input.random,
     now: input.now ?? Date.now,
     maxMoveLogEntries: input.maxMoveLogEntries,
@@ -933,6 +936,7 @@ export const resumePendingMoveResolutionUseCase = (
         now,
         random: dependencies.random,
         runtimeRegistry: dependencies.runtimeRegistry,
+        abilityRuntimeRegistry: dependencies.abilityRuntimeRegistry,
         itemResources,
       })
     }

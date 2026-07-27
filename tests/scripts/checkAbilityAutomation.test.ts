@@ -40,7 +40,7 @@ describe('ability automation repository checker', () => {
       },
       timingConstraints: 2,
       abilityProtections: 4,
-      parameterizedAbilities: 4,
+      parameterizedAbilities: 5,
       capabilities: {
         planned: capabilitiesJson.capabilities.filter(capability => capability.implementationStatus === 'planned').length,
         implemented: capabilitiesJson.capabilities.filter(capability => capability.implementationStatus === 'implemented').length,

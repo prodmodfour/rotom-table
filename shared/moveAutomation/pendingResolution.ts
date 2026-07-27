@@ -133,6 +133,7 @@ export const PENDING_MOVE_RESOLUTION_LIMITS = Object.freeze({
   resourceReads: 512,
   responseWindows: 64,
   ownersPerWindow: 64,
+  rootAreaExcludedTargets: 32,
   optionsPerWindow: MOVE_RESPONSE_OPTION_LIMITS.optionsPerWindow,
   chosenOptions: 256,
   reactionPriorityMagnitude: MOVE_REACTION_LIMITS.priorityMagnitude,
@@ -333,6 +334,14 @@ export type PendingMoveAttackOfOpportunityContext =
 
 export type PendingMoveResolutionContinuationContext = PendingMoveAttackOfOpportunityContext
 
+export interface PendingMoveRootAreaSelection {
+  readonly kind: 'area'
+  readonly areaTemplateId: string
+  readonly direction?: MoveAutomationAreaDirection
+  readonly aimCell?: MoveResponseGridAnchor
+  readonly excludedTargetPlacementIds?: readonly string[]
+}
+
 export interface PendingMoveResolution {
   readonly schemaVersion: typeof PENDING_MOVE_RESOLUTION_SCHEMA_VERSION
   readonly continuationKind: PendingMoveResolutionContinuationKind
@@ -344,6 +353,8 @@ export interface PendingMoveResolution {
   readonly virtualOriginCell?: MoveResponseGridAnchor
   /** Server-validated targeting branch retained for deterministic continuation replay. */
   readonly targetBranchId?: string
+  /** Exact server-reviewed root area declaration retained for deterministic continuation replay. */
+  readonly rootAreaSelection?: PendingMoveRootAreaSelection
   readonly canonicalMoveId: string
   readonly specVersion: number
   readonly specHash: string
@@ -427,6 +438,11 @@ const ROOT_REQUIRED_FIELDS = [
 ] as const
 const ROOT_OPTIONAL_FIELDS = [
   'continuationKind', 'continuationContext', 'virtualOriginCell', 'targetBranchId',
+  'rootAreaSelection',
+] as const
+const ROOT_AREA_SELECTION_FIELDS = ['kind', 'areaTemplateId'] as const
+const ROOT_AREA_SELECTION_OPTIONAL_FIELDS = [
+  'direction', 'aimCell', 'excludedTargetPlacementIds',
 ] as const
 const MAP_READ_FIELDS = ['kind', 'slug', 'revision'] as const
 const SHEET_READ_FIELDS = ['kind', 'sheetKind', 'slug', 'revision'] as const
@@ -1339,6 +1355,64 @@ const requiredContinuationGridAnchor = (
   path: string,
 ): MoveResponseGridAnchor => parseContinuationGridAnchor(value, path)
   ?? fail('invalid-pending-resolution', path, 'must be a bounded grid anchor.')
+
+const parseRootAreaSelection = (
+  value: unknown,
+  path: string,
+): PendingMoveRootAreaSelection => {
+  const record = parseRecordWithOptionalFields(
+    value,
+    ROOT_AREA_SELECTION_FIELDS,
+    ROOT_AREA_SELECTION_OPTIONAL_FIELDS,
+    path,
+  )
+  if (record.kind !== 'area') {
+    fail('invalid-pending-resolution', `${path}.kind`, 'must be area.')
+  }
+  const areaTemplateId = parseStableId(record.areaTemplateId, `${path}.areaTemplateId`)
+  const direction = Object.prototype.hasOwnProperty.call(record, 'direction')
+    ? typeof record.direction === 'string' && AREA_DIRECTION_SET.has(record.direction)
+      ? record.direction as MoveAutomationAreaDirection
+      : fail(
+          'invalid-pending-resolution',
+          `${path}.direction`,
+          'must be a supported area direction.',
+        )
+    : null
+  const aimCell = Object.prototype.hasOwnProperty.call(record, 'aimCell')
+    ? requiredContinuationGridAnchor(record.aimCell, `${path}.aimCell`)
+    : null
+  const excludedTargetPlacementIds = Object.prototype.hasOwnProperty.call(
+    record,
+    'excludedTargetPlacementIds',
+  )
+    ? parseBoundedArray(
+        record.excludedTargetPlacementIds,
+        `${path}.excludedTargetPlacementIds`,
+        PENDING_MOVE_RESOLUTION_LIMITS.rootAreaExcludedTargets,
+      ).map((id, index) => parsePlacementId(
+        id,
+        `${path}.excludedTargetPlacementIds[${index}]`,
+      ))
+    : null
+  if (
+    excludedTargetPlacementIds
+    && new Set(excludedTargetPlacementIds).size !== excludedTargetPlacementIds.length
+  ) {
+    fail(
+      'duplicate-id',
+      `${path}.excludedTargetPlacementIds`,
+      'must not contain duplicate placements.',
+    )
+  }
+  return {
+    kind: 'area',
+    areaTemplateId,
+    ...(direction ? { direction } : {}),
+    ...(aimCell ? { aimCell } : {}),
+    ...(excludedTargetPlacementIds ? { excludedTargetPlacementIds } : {}),
+  }
+}
 
 const sameContinuationAnchor = (
   left: MoveResponseGridAnchor,
@@ -2337,6 +2411,9 @@ export const parsePendingMoveResolution = (
       'must be a stable targeting-branch ID.',
     )
   }
+  const rootAreaSelection = Object.prototype.hasOwnProperty.call(record, 'rootAreaSelection')
+    ? parseRootAreaSelection(record.rootAreaSelection, `${path}.rootAreaSelection`)
+    : null
   const canonicalMoveId = parseCanonicalMoveId(
     record.canonicalMoveId,
     `${path}.canonicalMoveId`,
@@ -2429,6 +2506,7 @@ export const parsePendingMoveResolution = (
     actorPlacementId,
     ...(virtualOriginCell ? { virtualOriginCell } : {}),
     ...(targetBranchId ? { targetBranchId } : {}),
+    ...(rootAreaSelection ? { rootAreaSelection } : {}),
     canonicalMoveId,
     specVersion,
     specHash,

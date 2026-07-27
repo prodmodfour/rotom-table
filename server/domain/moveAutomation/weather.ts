@@ -10,6 +10,7 @@ import {
   type WeatherHealingProfile,
 } from '#shared/moveAutomation/weather'
 import type {
+  GridAnchor,
   MapFieldEffects,
   MapWeatherKind,
   TabletopMap,
@@ -143,13 +144,27 @@ const traceEntry = (input: WeatherMechanicsTraceEntry): WeatherMechanicsTraceEnt
 )
 
 const activeWeatherInstances = (
-  map: Pick<TabletopMap, 'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState'>,
+  map: Pick<TabletopMap, 'placements' | 'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState'>,
+  subjectPlacementId?: string,
+  subjectOccupiedCells?: readonly GridAnchor[],
 ): readonly AuthoritativeWeatherInstance[] => {
   const seenKinds = new Set<MapWeatherKind>()
   const result: AuthoritativeWeatherInstance[] = []
+  const placement = subjectPlacementId
+    ? map.placements.find(candidate => candidate.id === subjectPlacementId) ?? null
+    : null
+  const subject = placement
+    ? {
+        kind: 'placement' as const,
+        placementId: placement.id,
+        sideId: placement.sideId ?? null,
+        occupiedCells: (subjectOccupiedCells?.length ? subjectOccupiedCells : [placement.position])
+          .map(cell => ({ ...cell })),
+      }
+    : { kind: 'battlefield' as const }
   for (const zone of queryBattlefieldZones(
     map,
-    { kind: 'battlefield' },
+    subject,
     { kinds: ['weather'] },
   )) {
     if (zone.kind !== 'weather' || !isMapWeatherKind(zone.payload.weatherId)) continue
@@ -549,9 +564,20 @@ const airLockMarkerIsActive = (
  */
 export const createMoveAutomationWeatherResolver = (
   map: Pick<TabletopMap, 'placements' | 'initiative' | 'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState'>,
-  options: { readonly subjectPlacementId?: string } = {},
+  options: {
+    readonly subjectPlacementId?: string
+    /** Exact authoritative footprint used for cell-scoped weather exposure. */
+    readonly subjectOccupiedCells?: readonly GridAnchor[]
+    /** A reviewed ability may let this subject elect one virtual weather profile. */
+    readonly virtualWeatherKind?: MapWeatherKind
+    readonly virtualWeatherSourceId?: string
+  } = {},
 ): MoveAutomationWeatherResolver => {
-  const global = activeWeatherInstances(map)
+  const global = activeWeatherInstances(
+    map,
+    options.subjectPlacementId,
+    options.subjectOccupiedCells,
+  )
   const heliovolt = options.subjectPlacementId
     ? (map.encounterState?.effects ?? []).find(effect => (
         effect.kind === 'capability'
@@ -562,7 +588,19 @@ export const createMoveAutomationWeatherResolver = (
         && effect.affected.placementIds.includes(options.subjectPlacementId!)
       ))
     : null
-  const active: readonly AuthoritativeWeatherInstance[] = heliovolt
+  const virtualWeather = options.virtualWeatherKind
+    ? deepFreeze([{
+        kind: options.virtualWeatherKind,
+        zoneId: options.virtualWeatherSourceId ?? `ability.virtual-weather.${options.virtualWeatherKind}`,
+        source: {
+          kind: 'operation' as const,
+          operationId: options.virtualWeatherSourceId ?? `ability.virtual-weather.${options.virtualWeatherKind}`,
+          moveId: null,
+          placementId: options.subjectPlacementId ?? null,
+        },
+      }])
+    : null
+  const active: readonly AuthoritativeWeatherInstance[] = virtualWeather ?? (heliovolt
     && !global.some(weather => weather.kind === 'sunny')
     ? deepFreeze([...global, {
         kind: 'sunny' as const,
@@ -574,7 +612,7 @@ export const createMoveAutomationWeatherResolver = (
           placementId: heliovolt.source.placementId,
         },
       }])
-    : global
+    : global)
   const base = Object.freeze({
     active: () => active,
     projectFieldEffects: (base: MapFieldEffects | null = map.fieldEffects ?? null) => {

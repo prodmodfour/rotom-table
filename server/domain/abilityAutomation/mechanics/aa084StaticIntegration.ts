@@ -93,10 +93,23 @@ export const aa084MoveDamageModifiers = (input: {
 export const aa084PowerConstructBlocksTemporaryHp = (input: {
   readonly context: Pick<AuthoritativeMoveRulesContext, 'map'>
   readonly placementId: string
-}): boolean => input.context.map.encounterState?.effects.some(effect => (
-  effect.kind === 'creature-rule-overlay'
-  && effect.payload.domain === 'form'
-  && effect.tags.includes('blocks-temporary-hp')
-  && effect.suppression.sources.length === 0
-  && effect.affected.placementIds.includes(input.placementId)
-)) === true
+  readonly currentHp?: number
+  readonly maximumHp?: number
+}): boolean => input.context.map.encounterState?.effects.some(effect => {
+  if (effect.kind !== 'creature-rule-overlay'
+    || effect.payload.domain !== 'form'
+    || effect.suppression.sources.length > 0
+    || !effect.affected.placementIds.includes(input.placementId)) return false
+  const blocks = effect.tags.includes('blocks-temporary-hp')
+    || effect.tags.includes('aa084-power-construct')
+    || (effect.tags.includes('power-construct')
+      && effect.payload.action === 'replace'
+      && effect.payload.value === 'zygarde-complete-forme')
+  if (!blocks) return false
+  if (!effect.tags.includes('aa088-schooling')) return true
+  const temporaryHp = input.context.map.temporaryHitPoints?.byPlacementId[input.placementId] ?? 0
+  if (temporaryHp > 0) return true
+  return input.currentHp === undefined || input.maximumHp === undefined
+    ? true
+    : input.currentHp * 2 >= Math.max(1, input.maximumHp)
+}) === true

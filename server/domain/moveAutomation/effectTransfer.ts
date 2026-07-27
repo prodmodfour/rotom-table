@@ -155,7 +155,12 @@ export const resolveEncounterEffectSwitchTransfer = (input: {
   const rebound = original.map((effect) => {
     if (!effectReferencesPlacement(effect, input.recalledPlacementId)) return effect
     const policy = transferPolicy(effect)
-    if (policy === 'baton-pass' && input.stateTransferPolicy === 'baton-pass') {
+    const transfersWishReplacement = effect.tags.includes('wish')
+      && effect.tags.includes('delayed-heal')
+      && effect.source.placementId === input.recalledPlacementId
+      && effect.affected.placementIds.includes(input.recalledPlacementId)
+    if (transfersWishReplacement
+      || (policy === 'baton-pass' && input.stateTransferPolicy === 'baton-pass')) {
       transferredEffectIds.push(effect.id)
       return transferredEffect(
         effect,

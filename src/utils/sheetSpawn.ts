@@ -108,12 +108,16 @@ const movementCapabilitiesFromRows = (
     if (speed != null) capabilities[key] = speed
   }
 
-  const wallclimber = otherCapabilities.some(
-    capability => capability.trim().replace(/\s+/g, ' ').toLowerCase() === 'wallclimber',
-  )
+  const normalizedOther = otherCapabilities.map(capability => capability.trim().replace(/\s+/g, ' '))
+  const wallclimber = normalizedOther.some(capability => capability.toLowerCase() === 'wallclimber')
   if (wallclimber && capabilities.overland !== undefined) {
     capabilities.climb = Math.floor(capabilities.overland / 2)
   }
+  const teleporter = normalizedOther.flatMap(capability => {
+    const match = /^Teleporter\s+(\d+)$/i.exec(capability)
+    return match?.[1] ? [Number.parseInt(match[1], 10)] : []
+  })[0]
+  if (teleporter !== undefined) capabilities.teleporter = teleporter
   return capabilities
 }
 

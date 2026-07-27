@@ -2,19 +2,20 @@ import type { AbilitySpecV1Registration } from '../registry'
 import {
   remainingAbilityRegistrations,
   remainingActivatedAbilitySpec as activatedSpec,
+  remainingActivatedTriggeredAbilitySpec as activatedTriggeredSpec,
   remainingStaticAbilitySpec as staticSpec,
   remainingTriggeredAbilitySpec as triggeredSpec,
 } from './aa085to100Shared'
 
 export const STORM_DRAIN_ABILITY_SPEC = triggeredSpec('Storm Drain', 'aa093.storm-drain', 'move')
 export const STRANGE_TEMPO_ABILITY_SPEC = activatedSpec('Strange Tempo', 'aa093.strange-tempo', [
-  { kind: 'stat' }
+  { kind: 'branch' },
 ])
 export const STRONG_JAW_ABILITY_SPEC = staticSpec('Strong Jaw', 'aa093.strong-jaw')
 export const STURDY_ABILITY_SPEC = staticSpec('Sturdy', 'aa093.sturdy')
 export const SUCTION_CUPS_ABILITY_SPEC = activatedSpec('Suction Cups', 'aa093.suction-cups')
 export const SUMO_STANCE_ABILITY_SPEC = triggeredSpec('Sumo Stance', 'aa093.sumo-stance', 'move')
-export const SUN_BLANKET_ABILITY_SPEC = triggeredSpec('Sun Blanket', 'aa093.sun-blanket', 'lifecycle')
+export const SUN_BLANKET_ABILITY_SPEC = activatedTriggeredSpec('Sun Blanket', 'aa093.sun-blanket', 'lifecycle')
 export const SUNGLOW_ABILITY_SPEC = activatedSpec('Sunglow', 'aa093.sunglow')
 export const SUPER_LUCK_ABILITY_SPEC = staticSpec('Super Luck', 'aa093.super-luck')
 export const SURGE_SURFER_ABILITY_SPEC = staticSpec('Surge Surfer', 'aa093.surge-surfer')
