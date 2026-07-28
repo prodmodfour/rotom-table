@@ -14,6 +14,8 @@ Trainer Edges and Poké Edges are separate rule families with different owners, 
 
 This file is the durable implementation ledger for Edge automation. It begins after Capability automation so capability grants and derived values have a stable authoritative owner.
 
+The canonical `Breeder` Trainer Edge crosses into a larger campaign subsystem. This plan owns the Edge's identity, prerequisites, effective permission, contribution evidence, and generic campaign-operation handoff. `BREEDING_AND_EGG_LIFECYCLE_PLAN.md` owns parent compatibility, breeding projects, durable Eggs, offspring resolution, incubation, hatching, child-sheet creation, and related campaign history.
+
 ## Canonical scope and baseline
 
 ### Trainer Edges
@@ -38,6 +40,16 @@ This file is the durable implementation ledger for Edge automation. It begins af
 - Existing exact-name checks and sheet calculations are migration inputs only.
 - Edge automation includes both live encounter behaviour and lasting sheet-derived effects.
 - Character-building prerequisite validation is a separate concern from effect execution; GM-authored exceptions must be explicit and must not silently alter canonical mechanics.
+- Current Pokémon sheets contain editable egg-group, Egg Move, and inherited-move fields, but those fields are not authoritative evidence of parentage, breeding rolls, inheritance provenance, or a durable Egg lifecycle.
+
+### Breeder cross-plan boundary
+
+- The Edge runtime owns canonical `Breeder` identity, acquisition and prerequisite validation, effective ownership, Pokémon Education contribution evidence, source hashes, and the permission to begin a breeding campaign operation.
+- The Edge runtime exposes a typed, source-agnostic campaign-operation handoff. It does not manufacture a child sheet, mutate `eggMoves` or `inheritedMoves` as a substitute for breeding, or store Eggs in Trainer inventory or Pokémon rosters.
+- `BREEDING_AND_EGG_LIFECYCLE_PLAN.md` owns compatibility, maturity adjudication, parent snapshots, species resolution, Nature/Ability/Gender choices and rolls, inheritance calculation, project timing, Egg persistence, incubation, hatching, lineage, consent, and first-species ownership rewards.
+- The semantic manifest may classify `Breeder` as `delegated-complete` only after the Edge-owned contract is executable, source-hash-bound, covered by tests, and points to the named downstream plan.
+- While the downstream subsystem is absent, the generic presentation contract must expose an honest unavailable reason rather than a fake success, prose-only instruction, or browser-authored sheet mutation.
+- This is a single reviewed delegation, not a general escape hatch. Any additional downstream delegation requires a decision-log entry and an explicit owning implementation plan.
 
 ## Non-negotiable rules
 
@@ -55,6 +67,7 @@ This file is the durable implementation ledger for Edge automation. It begins af
 12. **Generic presentation only.** Offers, passives, choices, reasons, explanations, pending responses, and accepted outcomes use the shared automation contract.
 13. **Interaction honesty.** Base Edge completion and interactions with Capabilities, Moves, Abilities, Items, Features, and campaign systems are independently certified.
 14. **No source omission by convenience.** Out-of-combat, crafting, social, contest, travel, and training Edges require authoritative support or typed adjudication.
+15. **Delegation preserves one authority.** A delegated Edge may expose permission and an unavailable handoff, but must never duplicate, pre-empt, or partially persist the downstream subsystem's campaign aggregate.
 
 ## Semantic completion contract
 
@@ -74,6 +87,15 @@ An Edge row may be marked `complete` only when all applicable clauses satisfy th
 - the semantic manifest has reviewed runtime/hash/source evidence and no hidden manual mechanic;
 - public, owner, GM, and diagnostic presentation uses the shared generic contract.
 
+A row may be marked `delegated-complete` only when all Edge-owned clauses above are complete and the manifest additionally records:
+
+- the exact downstream plan and subsystem capability identifier;
+- the source-hash-bound request, permission, contribution, privacy, and unavailable-reason contracts;
+- tests proving no downstream state is inferred, duplicated, or browser-authored;
+- a release checker that distinguishes reviewed delegation from `assisted`, `blocked`, or unimplemented semantics.
+
+`delegated-complete` is accepted semantic closure for this plan only for the reviewed `Breeder` boundary. It does not claim that breeding itself is implemented.
+
 ## Target architecture
 
 ```text
@@ -88,6 +110,17 @@ Trainer Edge catalog + Poké Edge catalog
   -> generic presentation and contribution explanation
 ```
 
+Delegated campaign-operation path:
+
+```text
+effective Breeder Edge
+  -> typed breeding permission + contribution evidence
+  -> generic campaign-operation offer
+  -> breeding subsystem capability lookup
+  -> unavailable reason until BREEDING_AND_EGG_LIFECYCLE_PLAN.md ships
+  -> downstream authoritative breeding operation
+```
+
 State ownership:
 
 - canonical definitions and manifests are app-owned;
@@ -95,7 +128,8 @@ State ownership:
 - temporary Edge effects and scene usage are encounter-owned;
 - daily or campaign-lifecycle usage is sheet/campaign-owned;
 - suspended responses and adjudications are pending-resolution-owned;
-- provenance for permanent grants is server-authored and not client-writable.
+- provenance for permanent grants is server-authored and not client-writable;
+- Eggs, breeding projects, lineage, incubation, offspring rolls, and hatch results are never Edge-owned state.
 
 ## Build and prerequisite policy
 
@@ -104,6 +138,7 @@ State ownership:
 - Adding or changing an Edge that does not meet prerequisites requires an explicit GM override record with a reason; players cannot create overrides.
 - Runtime mechanics depend on the canonical Edge instance and current effective ownership, not on whether the UI previously warned about acquisition.
 - Retraining or removal must identify dependent grants and either reverse them safely, block removal, or open a reviewed migration choice as the canonical rule requires.
+- Removal or suppression of `Breeder` affects future breeding permissions only; it must not rewrite Eggs or offspring already accepted by the downstream subsystem.
 
 ## Plan update protocol
 
@@ -111,10 +146,12 @@ State ownership:
 - `CURRENT_TICKET` names the lowest-numbered active unfinished ticket.
 - Only one ticket is `IN_PROGRESS` unless a decision-log entry permits parallel work.
 - Mark a ticket `DONE` only after focused tests and applicable Edge checkers pass.
+- EA-005 must define `delegated-complete` as a closed manifest status with an exact downstream owner; no free-form delegation labels are allowed.
 - EA-006 must replace cohort range placeholders with exact frozen names before EA-070 begins.
 - New shared machinery belongs to the earliest unfinished owning ticket; add a ticket before implementing out-of-plan semantics.
+- `Breeder` is the only approved downstream delegation in this ledger. Any additional delegation requires a recorded decision and a named plan before implementation.
 - Update progress from executable manifest reports after every cohort.
-- Set `PLAN_STATUS: DONE` only after both frozen catalogs are complete, interactions are certified, legacy execution is retired, and `scripts/quality-gate.sh` passes.
+- Set `PLAN_STATUS: DONE` only after both frozen catalogs are complete, interactions are certified, legacy execution is retired, the reviewed Breeder handoff passes its contract tests, and `scripts/quality-gate.sh` passes.
 
 ## Progress snapshot
 
@@ -123,7 +160,9 @@ State ownership:
 - Frozen Poké Edge inventory: **pending EA-002**
 - Complete Trainer Edge rows: **0**
 - Complete Poké Edge rows: **0**
+- Reviewed downstream delegations: **Breeder → breeding lifecycle plan; contract not started**
 - Assisted rows: **0**
+- Blocked/unimplemented rows: **pending frozen inventory**
 - Interaction status: **unassessed**
 - Production runtime: **partial sheet helpers only**
 - Blocking dependency: **Capability automation final acceptance**
@@ -138,12 +177,13 @@ State ownership:
 - [ ] **EA-003 — Add a dedicated Poké Edge parser and app-owned catalog** — `TODO`
   - Prefer `data/reference/poke-edges.json` or an explicitly kind-aware equivalent; do not overload Trainer Edge records.
 - [ ] **EA-004 — Adjudicate parser boundaries, duplicates, errata, and missing fields** — `TODO`
-- [ ] **EA-005 — Define separate Trainer/Poké Edge semantic manifests** — `TODO`
+- [ ] **EA-005 — Define separate Trainer/Poké Edge semantic manifests and closed delegation evidence** — `TODO`
+  - Support `complete`, `delegated-complete`, `assisted`, `blocked`, and unimplemented states without allowing delegation to hide missing direct semantics.
 - [ ] **EA-006 — Add deterministic manifest and cohort seeders** — `TODO`
   - Populate exact names into EA-070 through EA-079 before cohort implementation.
-- [ ] **EA-007 — Define Edge capability, requirement, evidence, and dependency catalogs** — `TODO`
-- [ ] **EA-008 — Add coverage, completeness, link, budget, and plan checks** — `TODO`
-- [ ] **EA-009 — Record the authoritative Edge ADR, threat model, and contributor guide** — `TODO`
+- [ ] **EA-007 — Define Edge capability, requirement, evidence, dependency, and downstream-owner catalogs** — `TODO`
+- [ ] **EA-008 — Add coverage, completeness, link, budget, delegation, and plan checks** — `TODO`
+- [ ] **EA-009 — Record the authoritative Edge ADR, threat model, contributor guide, and Breeder handoff** — `TODO`
 
 ### Phase 2 — Edge identity, sheet instances, choices, and prerequisites
 
@@ -184,7 +224,8 @@ State ownership:
 - [ ] **EA-034 — Complete move grants, weapon access, and move-list providers** — `TODO`
 - [ ] **EA-035 — Complete capture, Poké Ball, bait, net, tracking, and loyalty providers** — `TODO`
 - [ ] **EA-036 — Complete crafting, growing, grooming, fossils, camp, and tool permissions** — `TODO`
-- [ ] **EA-037 — Complete training, experience, tutoring, Poffin, and Pokémon-raising providers** — `TODO`
+- [ ] **EA-037 — Complete training, experience, tutoring, Poffin, Pokémon-raising, and Breeder permission providers** — `TODO`
+  - Produce typed Breeder eligibility and contribution evidence only; do not create Eggs, offspring, or inheritance state.
 - [ ] **EA-038 — Complete social, contest, education, travel, and information substitutions** — `TODO`
 - [ ] **EA-039 — Add ordered contribution explanations and cross-provider property tests** — `TODO`
 
@@ -196,7 +237,8 @@ State ownership:
 - [ ] **EA-043 — Complete contextual encounter actions and authorised target offers** — `TODO`
 - [ ] **EA-044 — Complete opposed checks, server-owned rolls, and rerolls** — `TODO`
 - [ ] **EA-045 — Complete inventory, crafting, money, item, and environment operations** — `TODO`
-- [ ] **EA-046 — Complete rest, training, hourly, daily, and campaign lifecycle operations** — `TODO`
+- [ ] **EA-046 — Complete Edge-owned rest, training, hourly, daily, and campaign lifecycle operations** — `TODO`
+  - Breeding project time, incubation, and hatching remain downstream-owned.
 - [ ] **EA-047 — Complete Trainer-to-Pokémon and team-scoped effects** — `TODO`
 - [ ] **EA-048 — Add durable optional triggers, pass, expiry, and GM adjudication** — `TODO`
 - [ ] **EA-049 — Add atomic multi-sheet, inventory, capture, and rollback tests** — `TODO`
@@ -217,8 +259,8 @@ State ownership:
 ### Phase 7 — Generic presentation, integration, observability, and security
 
 - [ ] **EA-060 — Project Edge passives and effective facts through the generic contract** — `TODO`
-- [ ] **EA-061 — Project activated and contextual Edge offers** — `TODO`
-- [ ] **EA-062 — Project choices, unavailable reasons, and contribution explanations** — `TODO`
+- [ ] **EA-061 — Project activated, contextual, and delegated campaign-operation Edge offers** — `TODO`
+- [ ] **EA-062 — Project choices, unavailable reasons, downstream capability gaps, and contribution explanations** — `TODO`
 - [ ] **EA-063 — Project pending responses, accepted facts, and recovery** — `TODO`
 - [ ] **EA-064 — Integrate Edge state with snapshots, realtime, and reconciliation** — `TODO`
 - [ ] **EA-065 — Add Trainer and Pokémon sheet Edge inspectors** — `TODO`
@@ -239,15 +281,16 @@ EA-006 replaces each range with exact names from the frozen inventories. Each co
 - [ ] **EA-075 — Poké Edges G–L** — `TODO`
 - [ ] **EA-076 — Poké Edges M–R** — `TODO`
 - [ ] **EA-077 — Poké Edges S–Z** — `TODO`
-- [ ] **EA-078 — Supplemental, errata, ranked, and parameterised Edge closure** — `TODO`
-- [ ] **EA-079 — Cross-family duplicate, alias, grant, and source-coverage audit** — `TODO`
+- [ ] **EA-078 — Supplemental, errata, ranked, parameterised, and delegated Edge closure** — `TODO`
+  - Require the `Breeder` row to satisfy the closed downstream-delegation contract.
+- [ ] **EA-079 — Cross-family duplicate, alias, grant, delegation, and source-coverage audit** — `TODO`
 
 ### Phase 9 — Whole-catalog certification, migration, and release
 
 - [ ] **EA-080 — Enforce strict Trainer and Poké Edge semantic closure** — `TODO`
 - [ ] **EA-081 — Run whole-catalog conformance and property suites** — `TODO`
 - [ ] **EA-082 — Certify Capability, Move, Maneuver, and Ability interactions** — `TODO`
-- [ ] **EA-083 — Certify Item, capture, inventory, crafting, and campaign interactions** — `TODO`
+- [ ] **EA-083 — Certify Item, capture, inventory, crafting, campaign, and Breeder-handoff interactions** — `TODO`
 - [ ] **EA-084 — Certify Feature grants, prerequisites, and shared-provider seams** — `TODO`
 - [ ] **EA-085 — Shadow and migrate existing Edge-derived behaviour** — `TODO`
 - [ ] **EA-086 — Complete security, privacy, backup, restart, and recovery validation** — `TODO`
@@ -255,7 +298,7 @@ EA-006 replaces each range with exact names from the frozen inventories. Each co
 - [ ] **EA-088 — Run production-like multi-client and character-progression acceptance** — `TODO`
 - [ ] **EA-089 — Retire legacy production Edge execution and free-form authority** — `TODO`
 - [ ] **EA-090 — Record final acceptance and unblock Feature automation** — `TODO`
-  - Require Edge checkers, typecheck, tests, build, `scripts/quality-gate.sh`, and zero undocumented semantic debt.
+  - Require Edge checkers, delegation checks, typecheck, tests, build, `scripts/quality-gate.sh`, no undocumented semantic debt, and no downstream breeding state owned by Edge automation.
 
 ## Decision log
 
@@ -264,3 +307,4 @@ EA-006 replaces each range with exact names from the frozen inventories. Each co
 - **2026-07-26 — Preserve GM-authored sheets without silent prerequisite bypass.** Build validation reports canonical eligibility and stores explicit GM overrides rather than hard-locking every edit or ignoring prerequisites.
 - **2026-07-26 — Make permanent grants provenance-bound.** Removing or retraining an Edge must never leave unexplained Moves, capabilities, or skill changes.
 - **2026-07-26 — Keep passive Edge effects out of action menus.** Only canonical declarations and contextual affordances become offers.
+- **2026-07-28 — Delegate the Egg lifecycle without weakening Edge completion.** Edge automation completes the `Breeder` identity, permission, evidence, and generic handoff as a closed `delegated-complete` row; the separate breeding plan owns every durable project, Egg, offspring, incubation, and hatch mechanic.
