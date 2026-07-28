@@ -39,6 +39,30 @@ describe('Pokédex reference data', () => {
     expect(steelix?.base_stats).toEqual({ hp: 10, atk: 13, def: 19, spatk: 4, spdef: 8, spd: 3 })
   })
 
+  it('uses energy-focused stat progression for the Roggenrola line', () => {
+    const bySpecies = new Map(loadPokedex().map((entry) => [entry.species, entry]))
+
+    expect(bySpecies.get('Roggenrola')?.base_stats)
+      .toEqual({ hp: 6, atk: 5, def: 9, spatk: 6, spdef: 3, spd: 2 })
+    expect(bySpecies.get('Boldore')?.base_stats)
+      .toEqual({ hp: 7, atk: 8, def: 11, spatk: 10, spdef: 5, spd: 2 })
+    expect(bySpecies.get('Gigalith')?.base_stats)
+      .toEqual({ hp: 9, atk: 11, def: 13, spatk: 13, spdef: 8, spd: 3 })
+  })
+
+  it('uses mobile, energy-focused stat progression for the Vikavolt line', () => {
+    const bySpecies = new Map(loadPokedex().map((entry) => [entry.species, entry]))
+    const vikavolt = bySpecies.get('Vikavolt')
+
+    expect(bySpecies.get('Grubbin')?.base_stats)
+      .toEqual({ hp: 5, atk: 6, def: 5, spatk: 6, spdef: 5, spd: 6 })
+    expect(bySpecies.get('Charjabug')?.base_stats)
+      .toEqual({ hp: 6, atk: 6, def: 10, spatk: 9, spdef: 8, spd: 4 })
+    expect(vikavolt?.base_stats)
+      .toEqual({ hp: 8, atk: 7, def: 9, spatk: 15, spdef: 8, spd: 10 })
+    expect(vikavolt).toMatchObject({ evolution_stage: 3, evolutions_remaining: 0 })
+  })
+
   it('contains machine moves parsed from shorthand TM sections and all-machine notes', () => {
     const pokedex = loadPokedex()
     const bySpecies = new Map(pokedex.map((entry) => [entry.species, entry]))

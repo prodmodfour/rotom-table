@@ -209971,10 +209971,10 @@
     ],
     "base_stats": {
       "hp": 7,
-      "atk": 11,
+      "atk": 8,
       "def": 11,
-      "spatk": 5,
-      "spdef": 4,
+      "spatk": 10,
+      "spdef": 5,
       "spd": 2
     },
     "abilities": {
@@ -224881,9 +224881,9 @@
     ],
     "base_stats": {
       "hp": 9,
-      "atk": 14,
+      "atk": 11,
       "def": 13,
-      "spatk": 6,
+      "spatk": 13,
       "spdef": 8,
       "spd": 3
     },
@@ -246554,9 +246554,9 @@
     ],
     "base_stats": {
       "hp": 6,
-      "atk": 8,
+      "atk": 5,
       "def": 9,
-      "spatk": 3,
+      "spatk": 6,
       "spdef": 3,
       "spd": 2
     },
@@ -299285,9 +299285,9 @@
     ],
     "base_stats": {
       "hp": 6,
-      "atk": 8,
+      "atk": 6,
       "def": 10,
-      "spatk": 6,
+      "spatk": 9,
       "spdef": 8,
       "spd": 4
     },
@@ -306762,7 +306762,7 @@
       "def": 5,
       "spatk": 6,
       "spdef": 5,
-      "spd": 5
+      "spd": 6
     },
     "abilities": {
       "basic": [
@@ -334521,7 +334521,7 @@
       "def": 9,
       "spatk": 15,
       "spdef": 8,
-      "spd": 4
+      "spd": 10
     },
     "abilities": {
       "basic": [
@@ -334553,8 +334553,8 @@
         "min_level": 0
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
+    "evolution_stage": 3,
+    "evolutions_remaining": 0,
     "size": "Medium",
     "weight": 3,
     "genderless": false,

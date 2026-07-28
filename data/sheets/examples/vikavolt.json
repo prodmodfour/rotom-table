@@ -49,7 +49,7 @@
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
