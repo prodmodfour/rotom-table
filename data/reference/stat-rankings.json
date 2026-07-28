@@ -16,7 +16,7 @@
         "hp": 989,
         "attack": 1002,
         "defense": 1007,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 577,
         "speed": 216
       }
@@ -24,9 +24,9 @@
     {
       "species": "Aerodactyl",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 19
@@ -35,9 +35,9 @@
     {
       "species": "Alakazam",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 23,
         "special_defense": 120,
         "speed": 35
@@ -46,10 +46,10 @@
     {
       "species": "Arbok",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 316
       }
@@ -59,7 +59,7 @@
       "rankings": {
         "hp": 167,
         "attack": 148,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 112
@@ -79,9 +79,9 @@
     {
       "species": "Beedrill",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 297,
         "speed": 316
@@ -92,8 +92,8 @@
       "rankings": {
         "hp": 737,
         "attack": 422,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 968,
         "speed": 785
       }
@@ -101,7 +101,7 @@
     {
       "species": "Blastoise",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 146,
         "special_attack": 251,
@@ -114,8 +114,8 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 663
       }
@@ -123,9 +123,9 @@
     {
       "species": "Butterfree",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 251,
         "special_defense": 297,
         "speed": 404
@@ -136,7 +136,7 @@
       "rankings": {
         "hp": 737,
         "attack": 964,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 1000,
         "special_defense": 1013,
         "speed": 663
@@ -156,10 +156,10 @@
     {
       "species": "Charizard",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 330,
-        "special_attack": 97,
+        "defense": 331,
+        "special_attack": 98,
         "special_defense": 200,
         "speed": 112
       }
@@ -169,7 +169,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 404
@@ -178,7 +178,7 @@
     {
       "species": "Charmeleon",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
         "special_attack": 330,
@@ -191,7 +191,7 @@
       "rankings": {
         "hp": 81,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 200,
         "speed": 537
@@ -200,9 +200,9 @@
     {
       "species": "Clefairy",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 439,
         "speed": 785
@@ -235,8 +235,8 @@
       "rankings": {
         "hp": 167,
         "attack": 545,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 120,
         "speed": 404
       }
@@ -257,7 +257,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 663
@@ -266,9 +266,9 @@
     {
       "species": "Dodrio",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 148,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 112
@@ -279,7 +279,7 @@
       "rankings": {
         "hp": 886,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 316
@@ -288,10 +288,10 @@
     {
       "species": "Dragonair",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 404
       }
@@ -312,7 +312,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 663
@@ -321,9 +321,9 @@
     {
       "species": "Drowzee",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 200,
         "speed": 785
@@ -334,7 +334,7 @@
       "rankings": {
         "hp": 886,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 439,
         "speed": 35
@@ -343,9 +343,9 @@
     {
       "species": "Eevee",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 439,
         "speed": 537
@@ -356,7 +356,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 537
@@ -365,7 +365,7 @@
     {
       "species": "Electabuzz",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 592,
         "special_attack": 156,
@@ -376,9 +376,9 @@
     {
       "species": "Electrode",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 11
@@ -387,9 +387,9 @@
     {
       "species": "Exeggcute",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 903,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 785
@@ -409,9 +409,9 @@
     {
       "species": "Fearow",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 112
@@ -420,7 +420,7 @@
     {
       "species": "Flareon",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 37,
         "defense": 592,
         "special_attack": 156,
@@ -442,7 +442,7 @@
     {
       "species": "Gengar",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 592,
         "special_attack": 36,
@@ -464,9 +464,9 @@
     {
       "species": "Gloom",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 297,
         "speed": 785
@@ -475,10 +475,10 @@
     {
       "species": "Golbat",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 216
       }
@@ -497,9 +497,9 @@
     {
       "species": "Golduck",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 216
@@ -508,7 +508,7 @@
     {
       "species": "Golem",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
         "defense": 35,
         "special_attack": 541,
@@ -519,7 +519,7 @@
     {
       "species": "Graveler",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 60,
         "special_attack": 689,
@@ -530,9 +530,9 @@
     {
       "species": "Grimer",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 893
@@ -541,10 +541,10 @@
     {
       "species": "Growlithe",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 537
       }
@@ -554,7 +554,7 @@
       "rankings": {
         "hp": 81,
         "attack": 37,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 120,
         "speed": 316
@@ -565,7 +565,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 75,
         "special_defense": 577,
         "speed": 112
@@ -576,7 +576,7 @@
       "rankings": {
         "hp": 737,
         "attack": 148,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 813,
         "special_defense": 73,
         "speed": 316
@@ -587,7 +587,7 @@
       "rankings": {
         "hp": 737,
         "attack": 88,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 73,
         "speed": 216
@@ -598,8 +598,8 @@
       "rankings": {
         "hp": 989,
         "attack": 903,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 968,
         "speed": 537
       }
@@ -609,8 +609,8 @@
       "rankings": {
         "hp": 167,
         "attack": 545,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 44,
         "speed": 404
       }
@@ -618,7 +618,7 @@
     {
       "species": "Ivysaur",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
         "special_attack": 330,
@@ -640,10 +640,10 @@
     {
       "species": "Jolteon",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 592,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 120,
         "speed": 19
       }
@@ -651,9 +651,9 @@
     {
       "species": "Jynx",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 75,
         "special_defense": 120,
         "speed": 112
@@ -673,10 +673,10 @@
     {
       "species": "Kabutops",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 88,
         "defense": 103,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 316
       }
@@ -697,7 +697,7 @@
       "rankings": {
         "hp": 737,
         "attack": 964,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 938,
         "special_defense": 968,
         "speed": 785
@@ -708,7 +708,7 @@
       "rankings": {
         "hp": 45,
         "attack": 207,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 813,
         "special_defense": 297,
         "speed": 216
@@ -717,7 +717,7 @@
     {
       "species": "Kingler",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 37,
         "defense": 60,
         "special_attack": 689,
@@ -752,7 +752,7 @@
       "rankings": {
         "hp": 21,
         "attack": 316,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 251,
         "special_defense": 120,
         "speed": 537
@@ -763,7 +763,7 @@
       "rankings": {
         "hp": 167,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 893
@@ -774,8 +774,8 @@
       "rankings": {
         "hp": 167,
         "attack": 37,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 537
       }
@@ -783,9 +783,9 @@
     {
       "species": "Machoke",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 577,
         "speed": 663
@@ -794,9 +794,9 @@
     {
       "species": "Machop",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 785
@@ -816,7 +816,7 @@
     {
       "species": "Magmar",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 592,
         "special_attack": 156,
@@ -829,7 +829,7 @@
       "rankings": {
         "hp": 989,
         "attack": 903,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 577,
         "speed": 663
@@ -851,7 +851,7 @@
       "rankings": {
         "hp": 886,
         "attack": 422,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 404
@@ -860,7 +860,7 @@
     {
       "species": "Marowak",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 103,
         "special_attack": 689,
@@ -873,7 +873,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 216
@@ -928,7 +928,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 44,
         "speed": 216
@@ -939,8 +939,8 @@
       "rankings": {
         "hp": 45,
         "attack": 148,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 120,
         "speed": 663
       }
@@ -948,9 +948,9 @@
     {
       "species": "Nidoking",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 251,
         "special_defense": 297,
         "speed": 216
@@ -970,9 +970,9 @@
     {
       "species": "Nidorina",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 537
@@ -981,7 +981,7 @@
     {
       "species": "Nidorino",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 592,
         "special_attack": 541,
@@ -992,9 +992,9 @@
     {
       "species": "Ninetales",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 120,
         "speed": 112
@@ -1025,7 +1025,7 @@
     {
       "species": "Omastar",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 35,
         "special_attack": 75,
@@ -1036,7 +1036,7 @@
     {
       "species": "Onix",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 11,
         "special_attack": 938,
@@ -1058,9 +1058,9 @@
     {
       "species": "Parasect",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 893
@@ -1069,10 +1069,10 @@
     {
       "species": "Persian",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 35
       }
@@ -1080,10 +1080,10 @@
     {
       "species": "Pidgeot",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 112
       }
@@ -1091,7 +1091,7 @@
     {
       "species": "Pidgeotto",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
         "special_attack": 689,
@@ -1104,7 +1104,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 537
@@ -1115,7 +1115,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 216
@@ -1124,7 +1124,7 @@
     {
       "species": "Pinsir",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 37,
         "defense": 146,
         "special_attack": 541,
@@ -1137,7 +1137,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 216
@@ -1146,9 +1146,9 @@
     {
       "species": "Poliwhirl",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 216
@@ -1160,7 +1160,7 @@
         "hp": 167,
         "attack": 207,
         "defense": 146,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 404
       }
@@ -1171,7 +1171,7 @@
         "hp": 737,
         "attack": 316,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 216
       }
@@ -1179,9 +1179,9 @@
     {
       "species": "Porygon",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 297,
         "speed": 785
@@ -1190,7 +1190,7 @@
     {
       "species": "Primeape",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
         "defense": 592,
         "special_attack": 541,
@@ -1203,8 +1203,8 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 537
       }
@@ -1212,7 +1212,7 @@
     {
       "species": "Raichu",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
         "defense": 592,
         "special_attack": 251,
@@ -1223,9 +1223,9 @@
     {
       "species": "Rapidash",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 65
@@ -1234,7 +1234,7 @@
     {
       "species": "Raticate",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 592,
         "special_attack": 689,
@@ -1247,7 +1247,7 @@
       "rankings": {
         "hp": 989,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 404
@@ -1267,7 +1267,7 @@
     {
       "species": "Rhyhorn",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
         "defense": 146,
         "special_attack": 938,
@@ -1289,7 +1289,7 @@
     {
       "species": "Sandslash",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 103,
         "special_attack": 689,
@@ -1300,9 +1300,9 @@
     {
       "species": "Scyther",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 65
@@ -1311,7 +1311,7 @@
     {
       "species": "Seadra",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 146,
         "special_attack": 156,
@@ -1322,10 +1322,10 @@
     {
       "species": "Seaking",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 404
       }
@@ -1333,7 +1333,7 @@
     {
       "species": "Seel",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 796,
         "defense": 592,
         "special_attack": 689,
@@ -1368,7 +1368,7 @@
       "rankings": {
         "hp": 167,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 977
@@ -1379,8 +1379,8 @@
       "rankings": {
         "hp": 9,
         "attack": 148,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 73,
         "speed": 893
       }
@@ -1401,7 +1401,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 577,
         "speed": 785
@@ -1410,7 +1410,7 @@
     {
       "species": "Starmie",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 234,
         "special_attack": 156,
@@ -1424,7 +1424,7 @@
         "hp": 989,
         "attack": 796,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 216
       }
@@ -1432,7 +1432,7 @@
     {
       "species": "Tangela",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 60,
         "special_attack": 156,
@@ -1443,7 +1443,7 @@
     {
       "species": "Tauros",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 146,
         "special_attack": 813,
@@ -1456,7 +1456,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 120,
         "speed": 404
@@ -1465,9 +1465,9 @@
     {
       "species": "Tentacruel",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 44,
         "speed": 112
@@ -1479,7 +1479,7 @@
         "hp": 21,
         "attack": 545,
         "defense": 592,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 120,
         "speed": 404
       }
@@ -1487,7 +1487,7 @@
     {
       "species": "Venomoth",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 592,
         "special_attack": 251,
@@ -1498,9 +1498,9 @@
     {
       "species": "Venonat",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 577,
         "speed": 663
@@ -1509,9 +1509,9 @@
     {
       "species": "Venusaur",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 120,
         "speed": 316
@@ -1520,9 +1520,9 @@
     {
       "species": "Victreebel",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 439,
         "speed": 404
@@ -1531,10 +1531,10 @@
     {
       "species": "Vileplume",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 234,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 200,
         "speed": 663
       }
@@ -1544,7 +1544,7 @@
       "rankings": {
         "hp": 886,
         "attack": 964,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 112
@@ -1555,7 +1555,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 439,
         "speed": 404
@@ -1564,10 +1564,10 @@
     {
       "species": "Wartortle",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 537
       }
@@ -1586,9 +1586,9 @@
     {
       "species": "Weepinbell",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 251,
         "special_defense": 727,
         "speed": 537
@@ -1597,7 +1597,7 @@
     {
       "species": "Weezing",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 60,
         "special_attack": 251,
@@ -1610,7 +1610,7 @@
       "rankings": {
         "hp": 14,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 251,
         "special_defense": 727,
         "speed": 663
@@ -1632,7 +1632,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 537
@@ -1641,7 +1641,7 @@
     {
       "species": "Aipom",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 592,
         "special_attack": 813,
@@ -1663,9 +1663,9 @@
     {
       "species": "Ariados",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 785
@@ -1676,7 +1676,7 @@
       "rankings": {
         "hp": 81,
         "attack": 796,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 663
@@ -1685,9 +1685,9 @@
     {
       "species": "Bayleef",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 537
@@ -1696,7 +1696,7 @@
     {
       "species": "Bellossom",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 146,
         "special_attack": 251,
@@ -1731,7 +1731,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 439,
         "speed": 663
@@ -1740,9 +1740,9 @@
     {
       "species": "Chinchou",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 404
@@ -1762,10 +1762,10 @@
     {
       "species": "Corsola",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 234,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 785
       }
@@ -1775,8 +1775,8 @@
       "rankings": {
         "hp": 167,
         "attack": 316,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 19
       }
@@ -1784,9 +1784,9 @@
     {
       "species": "Croconaw",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 537
@@ -1797,7 +1797,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 404
@@ -1808,8 +1808,8 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 316
       }
@@ -1830,8 +1830,8 @@
       "rankings": {
         "hp": 81,
         "attack": 545,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 663
       }
@@ -1841,8 +1841,8 @@
       "rankings": {
         "hp": 737,
         "attack": 422,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 316
       }
@@ -1861,7 +1861,7 @@
     {
       "species": "Espeon",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 592,
         "special_attack": 36,
@@ -1883,7 +1883,7 @@
     {
       "species": "Flaaffy",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 592,
         "special_attack": 330,
@@ -1894,7 +1894,7 @@
     {
       "species": "Forretress",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
         "defense": 23,
         "special_attack": 541,
@@ -1916,9 +1916,9 @@
     {
       "species": "Girafarig",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 439,
         "speed": 216
@@ -1927,7 +1927,7 @@
     {
       "species": "Gligar",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 103,
         "special_attack": 813,
@@ -1940,7 +1940,7 @@
       "rankings": {
         "hp": 167,
         "attack": 88,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 663
@@ -1949,9 +1949,9 @@
     {
       "species": "Heracross",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 37,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 813,
         "special_defense": 120,
         "speed": 216
@@ -1974,7 +1974,7 @@
         "hp": 45,
         "attack": 37,
         "defense": 234,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 4,
         "speed": 216
       }
@@ -1982,7 +1982,7 @@
     {
       "species": "Hoothoot",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 964,
         "defense": 977,
         "special_attack": 813,
@@ -1995,7 +1995,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 577,
         "speed": 663
@@ -2004,10 +2004,10 @@
     {
       "species": "Houndoom",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
-        "defense": 739,
-        "special_attack": 97,
+        "defense": 740,
+        "special_attack": 98,
         "special_defense": 297,
         "speed": 112
       }
@@ -2037,9 +2037,9 @@
     {
       "species": "Jumpluff",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 120,
         "speed": 65
@@ -2048,7 +2048,7 @@
     {
       "species": "Kingdra",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 146,
         "special_attack": 156,
@@ -2072,7 +2072,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 785
@@ -2081,9 +2081,9 @@
     {
       "species": "Ledian",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 73,
         "speed": 216
@@ -2116,8 +2116,8 @@
       "rankings": {
         "hp": 737,
         "attack": 422,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 316
       }
@@ -2136,9 +2136,9 @@
     {
       "species": "Mantine",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 903,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 15,
         "speed": 404
@@ -2147,10 +2147,10 @@
     {
       "species": "Mareep",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 903,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 785
       }
@@ -2158,9 +2158,9 @@
     {
       "species": "Marill",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 1002,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 1000,
         "special_defense": 727,
         "speed": 785
@@ -2169,7 +2169,7 @@
     {
       "species": "Meganium",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 146,
         "special_attack": 330,
@@ -2191,7 +2191,7 @@
     {
       "species": "Misdreavus",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
         "special_attack": 251,
@@ -2202,9 +2202,9 @@
     {
       "species": "Murkrow",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 251,
         "special_defense": 871,
         "speed": 216
@@ -2215,8 +2215,8 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 404
       }
@@ -2226,7 +2226,7 @@
       "rankings": {
         "hp": 81,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 330,
         "special_defense": 120,
         "speed": 404
@@ -2235,10 +2235,10 @@
     {
       "species": "Octillery",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
-        "defense": 330,
-        "special_attack": 97,
+        "defense": 331,
+        "special_attack": 98,
         "special_defense": 297,
         "speed": 663
       }
@@ -2270,7 +2270,7 @@
       "rankings": {
         "hp": 81,
         "attack": 207,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 663
@@ -2292,7 +2292,7 @@
       "rankings": {
         "hp": 167,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 251,
         "special_defense": 120,
         "speed": 404
@@ -2304,7 +2304,7 @@
         "hp": 167,
         "attack": 422,
         "defense": 234,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 120,
         "speed": 537
       }
@@ -2312,10 +2312,10 @@
     {
       "species": "Pupitar",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 663
       }
@@ -2326,7 +2326,7 @@
         "hp": 81,
         "attack": 316,
         "defense": 234,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 785
       }
@@ -2334,7 +2334,7 @@
     {
       "species": "Quilava",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
         "special_attack": 330,
@@ -2345,9 +2345,9 @@
     {
       "species": "Qwilfish",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 216
@@ -2358,7 +2358,7 @@
       "rankings": {
         "hp": 167,
         "attack": 316,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 75,
         "special_defense": 120,
         "speed": 35
@@ -2369,8 +2369,8 @@
       "rankings": {
         "hp": 886,
         "attack": 545,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 871,
         "speed": 404
       }
@@ -2378,7 +2378,7 @@
     {
       "species": "Scizor",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 37,
         "defense": 146,
         "special_attack": 541,
@@ -2411,7 +2411,7 @@
     {
       "species": "Skarmory",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 23,
         "special_attack": 813,
@@ -2422,9 +2422,9 @@
     {
       "species": "Skiploom",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 439,
         "speed": 663
@@ -2435,7 +2435,7 @@
       "rankings": {
         "hp": 81,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 73,
         "speed": 893
@@ -2446,8 +2446,8 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 871,
         "speed": 977
       }
@@ -2455,9 +2455,9 @@
     {
       "species": "Smeargle",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 1002,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 1000,
         "special_defense": 727,
         "speed": 316
@@ -2477,7 +2477,7 @@
     {
       "species": "Sneasel",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 592,
         "special_attack": 813,
@@ -2488,9 +2488,9 @@
     {
       "species": "Snubbull",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 893
@@ -2501,7 +2501,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 893
@@ -2510,7 +2510,7 @@
     {
       "species": "Stantler",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 592,
         "special_attack": 251,
@@ -2532,7 +2532,7 @@
     {
       "species": "Sudowoodo",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 60,
         "special_attack": 938,
@@ -2554,10 +2554,10 @@
     {
       "species": "Sunflora",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 592,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 200,
         "speed": 893
       }
@@ -2578,7 +2578,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 968,
         "speed": 663
@@ -2587,9 +2587,9 @@
     {
       "species": "Teddiursa",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 785
@@ -2600,7 +2600,7 @@
       "rankings": {
         "hp": 886,
         "attack": 1002,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 439,
         "speed": 977
@@ -2609,7 +2609,7 @@
     {
       "species": "Togetic",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 903,
         "defense": 234,
         "special_attack": 330,
@@ -2631,10 +2631,10 @@
     {
       "species": "Typhlosion",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 330,
-        "special_attack": 97,
+        "defense": 331,
+        "special_attack": 98,
         "special_defense": 200,
         "speed": 112
       }
@@ -2655,7 +2655,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 785
@@ -2677,8 +2677,8 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 663
       }
@@ -2688,7 +2688,7 @@
       "rankings": {
         "hp": 167,
         "attack": 37,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 537
@@ -2708,9 +2708,9 @@
     {
       "species": "Wooper",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 938,
         "special_defense": 968,
         "speed": 977
@@ -2719,9 +2719,9 @@
     {
       "species": "Xatu",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 439,
         "speed": 112
@@ -2730,9 +2730,9 @@
     {
       "species": "Yanma",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 330,
         "special_defense": 727,
         "speed": 112
@@ -2741,7 +2741,7 @@
     {
       "species": "Absol",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 37,
         "defense": 592,
         "special_attack": 330,
@@ -2752,7 +2752,7 @@
     {
       "species": "Aggron",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
         "defense": 5,
         "special_attack": 541,
@@ -2763,10 +2763,10 @@
     {
       "species": "Altaria",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
         "defense": 234,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 73,
         "speed": 316
       }
@@ -2776,7 +2776,7 @@
       "rankings": {
         "hp": 737,
         "attack": 207,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 316
@@ -2785,10 +2785,10 @@
     {
       "species": "Armaldo",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 37,
         "defense": 146,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 663
       }
@@ -2809,7 +2809,7 @@
       "rankings": {
         "hp": 737,
         "attack": 1002,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 1000,
         "special_defense": 871,
         "speed": 977
@@ -2840,9 +2840,9 @@
     {
       "species": "Banette",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 577,
         "speed": 404
@@ -2853,7 +2853,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 871,
         "speed": 537
@@ -2862,9 +2862,9 @@
     {
       "species": "Beautifly",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 156,
         "special_defense": 727,
         "speed": 404
@@ -2875,7 +2875,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 813,
         "special_defense": 577,
         "speed": 893
@@ -2884,10 +2884,10 @@
     {
       "species": "Blaziken",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 439,
         "speed": 316
       }
@@ -2895,9 +2895,9 @@
     {
       "species": "Breloom",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 37,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 404
@@ -2908,7 +2908,7 @@
       "rankings": {
         "hp": 737,
         "attack": 316,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 251,
         "special_defense": 871,
         "speed": 785
@@ -2917,7 +2917,7 @@
     {
       "species": "Cacturne",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
         "defense": 592,
         "special_attack": 75,
@@ -2928,10 +2928,10 @@
     {
       "species": "Camerupt",
       "rankings": {
-        "hp": 388,
+        "hp": 167,
         "attack": 207,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 234,
+        "special_attack": 75,
         "special_defense": 297,
         "speed": 785
       }
@@ -2942,7 +2942,7 @@
         "hp": 737,
         "attack": 316,
         "defense": 1007,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 1013,
         "speed": 404
       }
@@ -2961,10 +2961,10 @@
     {
       "species": "Castform",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 404
       }
@@ -2972,9 +2972,9 @@
     {
       "species": "Chimecho",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 404
@@ -2986,7 +2986,7 @@
         "hp": 886,
         "attack": 676,
         "defense": 234,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 893
       }
@@ -2994,10 +2994,10 @@
     {
       "species": "Claydol",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 103,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 44,
         "speed": 316
       }
@@ -3005,7 +3005,7 @@
     {
       "species": "Combusken",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
         "defense": 592,
         "special_attack": 251,
@@ -3018,7 +3018,7 @@
       "rankings": {
         "hp": 886,
         "attack": 422,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 871,
         "speed": 785
@@ -3038,7 +3038,7 @@
     {
       "species": "Crawdaunt",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 88,
         "defense": 234,
         "special_attack": 251,
@@ -3049,9 +3049,9 @@
     {
       "species": "Delcatty",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 404
@@ -3074,7 +3074,7 @@
         "hp": 737,
         "attack": 545,
         "defense": 10,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 3,
         "speed": 216
       }
@@ -3084,7 +3084,7 @@
       "rankings": {
         "hp": 737,
         "attack": 13,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 7,
         "special_defense": 727,
         "speed": 4
@@ -3126,9 +3126,9 @@
     {
       "species": "Dustox",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 200,
         "speed": 404
@@ -3139,8 +3139,8 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 871,
         "speed": 404
       }
@@ -3170,9 +3170,9 @@
     {
       "species": "Flygon",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 112
@@ -3181,9 +3181,9 @@
     {
       "species": "Gardevoir",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 36,
         "special_defense": 44,
         "speed": 316
@@ -3192,9 +3192,9 @@
     {
       "species": "Glalie",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 316
@@ -3203,10 +3203,10 @@
     {
       "species": "Gorebyss",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 103,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 297,
         "speed": 663
       }
@@ -3227,8 +3227,8 @@
       "rankings": {
         "hp": 737,
         "attack": 316,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 112
       }
@@ -3236,9 +3236,9 @@
     {
       "species": "Grumpig",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 73,
         "speed": 316
@@ -3247,9 +3247,9 @@
     {
       "species": "Gulpin",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 785
@@ -3269,7 +3269,7 @@
     {
       "species": "Huntail",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 103,
         "special_attack": 251,
@@ -3280,10 +3280,10 @@
     {
       "species": "Illumise",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 796,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 216
       }
@@ -3302,9 +3302,9 @@
     {
       "species": "Kecleon",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 44,
         "speed": 785
@@ -3315,8 +3315,8 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 663
       }
@@ -3335,7 +3335,7 @@
     {
       "species": "Lairon",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
         "defense": 23,
         "special_attack": 689,
@@ -3346,10 +3346,10 @@
     {
       "species": "Latias",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 234,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 23,
         "speed": 65
       }
@@ -3357,9 +3357,9 @@
     {
       "species": "Latios",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 36,
         "special_defense": 73,
         "speed": 65
@@ -3368,9 +3368,9 @@
     {
       "species": "Lileep",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 903,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 200,
         "speed": 977
@@ -3379,7 +3379,7 @@
     {
       "species": "Linoone",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
         "defense": 592,
         "special_attack": 689,
@@ -3390,9 +3390,9 @@
     {
       "species": "Lombre",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 439,
         "speed": 663
@@ -3412,10 +3412,10 @@
     {
       "species": "Loudred",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 871,
         "speed": 663
       }
@@ -3423,9 +3423,9 @@
     {
       "species": "Ludicolo",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 120,
         "speed": 404
@@ -3434,9 +3434,9 @@
     {
       "species": "Lunatone",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 200,
         "speed": 404
@@ -3456,7 +3456,7 @@
     {
       "species": "Makuhita",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 977,
         "special_attack": 1000,
@@ -3467,10 +3467,10 @@
     {
       "species": "Manectric",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 592,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 577,
         "speed": 65
       }
@@ -3478,9 +3478,9 @@
     {
       "species": "Marshtomp",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 439,
         "speed": 663
@@ -3489,7 +3489,7 @@
     {
       "species": "Masquerain",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 592,
         "special_attack": 330,
@@ -3511,9 +3511,9 @@
     {
       "species": "Medicham",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 316
@@ -3533,7 +3533,7 @@
     {
       "species": "Metagross",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 20,
         "defense": 35,
         "special_attack": 156,
@@ -3544,7 +3544,7 @@
     {
       "species": "Metang",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 146,
         "special_attack": 541,
@@ -3555,9 +3555,9 @@
     {
       "species": "Mightyena",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 404
@@ -3568,7 +3568,7 @@
       "rankings": {
         "hp": 81,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 23,
         "speed": 316
@@ -3577,9 +3577,9 @@
     {
       "species": "Minun",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 330,
         "special_defense": 200,
         "speed": 112
@@ -3590,7 +3590,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 785
@@ -3610,9 +3610,9 @@
     {
       "species": "Ninjask",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 3
@@ -3632,10 +3632,10 @@
     {
       "species": "Numel",
       "rankings": {
-        "hp": 566,
+        "hp": 389,
         "attack": 676,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 592,
+        "special_attack": 330,
         "special_defense": 727,
         "speed": 785
       }
@@ -3643,9 +3643,9 @@
     {
       "species": "Nuzleaf",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 871,
         "speed": 537
@@ -3654,7 +3654,7 @@
     {
       "species": "Pelipper",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
         "defense": 146,
         "special_attack": 251,
@@ -3665,9 +3665,9 @@
     {
       "species": "Plusle",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 251,
         "special_defense": 297,
         "speed": 112
@@ -3678,7 +3678,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 968,
         "speed": 785
@@ -3709,7 +3709,7 @@
     {
       "species": "Regice",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 796,
         "defense": 146,
         "special_attack": 156,
@@ -3720,7 +3720,7 @@
     {
       "species": "Regirock",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 3,
         "special_attack": 689,
@@ -3731,7 +3731,7 @@
     {
       "species": "Registeel",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 11,
         "special_attack": 330,
@@ -3755,7 +3755,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 404
@@ -3766,8 +3766,8 @@
       "rankings": {
         "hp": 737,
         "attack": 422,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 663
       }
@@ -3777,8 +3777,8 @@
       "rankings": {
         "hp": 81,
         "attack": 20,
-        "defense": 330,
-        "special_attack": 97,
+        "defense": 331,
+        "special_attack": 98,
         "special_defense": 297,
         "speed": 112
       }
@@ -3786,9 +3786,9 @@
     {
       "species": "Sceptile",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 200,
         "speed": 35
@@ -3799,7 +3799,7 @@
       "rankings": {
         "hp": 167,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 439,
         "speed": 663
@@ -3810,7 +3810,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 938,
         "special_defense": 968,
         "speed": 893
@@ -3819,7 +3819,7 @@
     {
       "species": "Seviper",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 592,
         "special_attack": 156,
@@ -3830,9 +3830,9 @@
     {
       "species": "Sharpedo",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 156,
         "special_defense": 871,
         "speed": 112
@@ -3843,7 +3843,7 @@
       "rankings": {
         "hp": 1020,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 938,
         "special_defense": 968,
         "speed": 785
@@ -3852,7 +3852,7 @@
     {
       "species": "Shelgon",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 146,
         "special_attack": 541,
@@ -3874,7 +3874,7 @@
     {
       "species": "Shroomish",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 903,
         "defense": 592,
         "special_attack": 813,
@@ -3887,7 +3887,7 @@
       "rankings": {
         "hp": 886,
         "attack": 422,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 968,
         "speed": 663
@@ -3909,7 +3909,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 663
@@ -3929,7 +3929,7 @@
     {
       "species": "Slakoth",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
         "special_attack": 813,
@@ -3942,7 +3942,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 663
@@ -3951,7 +3951,7 @@
     {
       "species": "Solrock",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 234,
         "special_attack": 541,
@@ -3962,9 +3962,9 @@
     {
       "species": "Spheal",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 893
@@ -3973,7 +3973,7 @@
     {
       "species": "Spinda",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
         "special_attack": 541,
@@ -3984,10 +3984,10 @@
     {
       "species": "Spoink",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 964,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 537
       }
@@ -4019,8 +4019,8 @@
       "rankings": {
         "hp": 81,
         "attack": 545,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 537
       }
@@ -4039,7 +4039,7 @@
     {
       "species": "Swellow",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
         "defense": 592,
         "special_attack": 689,
@@ -4063,8 +4063,8 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 663
       }
@@ -4072,7 +4072,7 @@
     {
       "species": "Torkoal",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 23,
         "special_attack": 251,
@@ -4085,7 +4085,7 @@
       "rankings": {
         "hp": 737,
         "attack": 207,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 1013
@@ -4096,7 +4096,7 @@
       "rankings": {
         "hp": 886,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 577,
         "speed": 316
@@ -4107,8 +4107,8 @@
       "rankings": {
         "hp": 81,
         "attack": 545,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 663
       }
@@ -4118,7 +4118,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 404
@@ -4127,9 +4127,9 @@
     {
       "species": "Vigoroth",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 216
@@ -4138,7 +4138,7 @@
     {
       "species": "Volbeat",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 592,
         "special_attack": 689,
@@ -4151,8 +4151,8 @@
       "rankings": {
         "hp": 21,
         "attack": 545,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 871,
         "speed": 537
       }
@@ -4162,7 +4162,7 @@
       "rankings": {
         "hp": 7,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 251,
         "special_defense": 727,
         "speed": 537
@@ -4184,7 +4184,7 @@
       "rankings": {
         "hp": 45,
         "attack": 422,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 439,
         "speed": 537
@@ -4193,7 +4193,7 @@
     {
       "species": "Whismur",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
         "defense": 1007,
         "special_attack": 689,
@@ -4217,7 +4217,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 1000,
         "special_defense": 968,
         "speed": 977
@@ -4228,7 +4228,7 @@
       "rankings": {
         "hp": 81,
         "attack": 1002,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 1000,
         "special_defense": 727,
         "speed": 977
@@ -4237,7 +4237,7 @@
     {
       "species": "Zangoose",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
         "defense": 592,
         "special_attack": 541,
@@ -4250,7 +4250,7 @@
       "rankings": {
         "hp": 886,
         "attack": 964,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 537
@@ -4261,7 +4261,7 @@
       "rankings": {
         "hp": 167,
         "attack": 316,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 251,
         "special_defense": 200,
         "speed": 537
@@ -4270,9 +4270,9 @@
     {
       "species": "Ambipom",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 439,
         "speed": 35
@@ -4292,9 +4292,9 @@
     {
       "species": "Azelf",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 37,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 36,
         "special_defense": 439,
         "speed": 35
@@ -4303,7 +4303,7 @@
     {
       "species": "Bastiodon",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
         "defense": 9,
         "special_attack": 689,
@@ -4314,7 +4314,7 @@
     {
       "species": "Bibarel",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
         "defense": 592,
         "special_attack": 541,
@@ -4325,9 +4325,9 @@
     {
       "species": "Bidoof",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 893
@@ -4347,7 +4347,7 @@
     {
       "species": "Bronzong",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 60,
         "special_attack": 330,
@@ -4358,7 +4358,7 @@
     {
       "species": "Bronzor",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 1002,
         "defense": 234,
         "special_attack": 1000,
@@ -4371,7 +4371,7 @@
       "rankings": {
         "hp": 886,
         "attack": 964,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 439,
         "speed": 537
@@ -4380,9 +4380,9 @@
     {
       "species": "Buizel",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 968,
         "speed": 216
@@ -4391,9 +4391,9 @@
     {
       "species": "Buneary",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 577,
         "speed": 216
@@ -4404,7 +4404,7 @@
       "rankings": {
         "hp": 886,
         "attack": 964,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 938,
         "special_defense": 727,
         "speed": 785
@@ -4413,9 +4413,9 @@
     {
       "species": "Carnivine",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 439,
         "speed": 663
@@ -4424,9 +4424,9 @@
     {
       "species": "Chatot",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 251,
         "special_defense": 871,
         "speed": 216
@@ -4435,9 +4435,9 @@
     {
       "species": "Cherrim",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 297,
         "speed": 216
@@ -4448,7 +4448,7 @@
       "rankings": {
         "hp": 737,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 785
@@ -4459,7 +4459,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 871,
         "speed": 537
@@ -4470,8 +4470,8 @@
       "rankings": {
         "hp": 737,
         "attack": 964,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 663
       }
@@ -4481,7 +4481,7 @@
       "rankings": {
         "hp": 989,
         "attack": 964,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 404
@@ -4490,9 +4490,9 @@
     {
       "species": "Cranidos",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 37,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 968,
         "speed": 537
@@ -4514,7 +4514,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 871,
         "speed": 663
@@ -4523,7 +4523,7 @@
     {
       "species": "Darkrai",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 234,
         "special_attack": 23,
@@ -4545,7 +4545,7 @@
     {
       "species": "Drapion",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 103,
         "special_attack": 541,
@@ -4558,7 +4558,7 @@
       "rankings": {
         "hp": 10,
         "attack": 422,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 251,
         "special_defense": 727,
         "speed": 316
@@ -4581,7 +4581,7 @@
         "hp": 737,
         "attack": 207,
         "defense": 23,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 15,
         "speed": 663
       }
@@ -4589,9 +4589,9 @@
     {
       "species": "Electivire",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 200,
         "speed": 112
@@ -4600,10 +4600,10 @@
     {
       "species": "Empoleon",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
         "defense": 234,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 120,
         "speed": 537
       }
@@ -4633,9 +4633,9 @@
     {
       "species": "Froslass",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 439,
         "speed": 65
@@ -4644,9 +4644,9 @@
     {
       "species": "Gabite",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 577,
         "speed": 316
@@ -4655,10 +4655,10 @@
     {
       "species": "Gallade",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 37,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 44,
         "speed": 316
       }
@@ -4679,7 +4679,7 @@
       "rankings": {
         "hp": 45,
         "attack": 422,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 297,
         "speed": 785
@@ -4688,9 +4688,9 @@
     {
       "species": "Gible",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 785
@@ -4721,7 +4721,7 @@
     {
       "species": "Glaceon",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 103,
         "special_attack": 36,
@@ -4734,7 +4734,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 216
@@ -4743,7 +4743,7 @@
     {
       "species": "Gliscor",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 35,
         "special_attack": 689,
@@ -4754,7 +4754,7 @@
     {
       "species": "Grotle",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
         "defense": 234,
         "special_attack": 541,
@@ -4787,9 +4787,9 @@
     {
       "species": "Hippopotas",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 893
@@ -4801,7 +4801,7 @@
         "hp": 81,
         "attack": 148,
         "defense": 60,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 663
       }
@@ -4811,8 +4811,8 @@
       "rankings": {
         "hp": 81,
         "attack": 37,
-        "defense": 739,
-        "special_attack": 97,
+        "defense": 740,
+        "special_attack": 98,
         "special_defense": 727,
         "speed": 404
       }
@@ -4820,9 +4820,9 @@
     {
       "species": "Infernape",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 439,
         "speed": 112
@@ -4833,7 +4833,7 @@
       "rankings": {
         "hp": 886,
         "attack": 964,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 893
@@ -4842,9 +4842,9 @@
     {
       "species": "Kricketune",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 404
@@ -4853,7 +4853,7 @@
     {
       "species": "Leafeon",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
         "defense": 35,
         "special_attack": 541,
@@ -4875,9 +4875,9 @@
     {
       "species": "Lopunny",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 689,
         "special_defense": 120,
         "speed": 65
@@ -4886,9 +4886,9 @@
     {
       "species": "Lucario",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 75,
         "special_defense": 439,
         "speed": 216
@@ -4897,10 +4897,10 @@
     {
       "species": "Lumineon",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 216
       }
@@ -4908,9 +4908,9 @@
     {
       "species": "Luxio",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 537
@@ -4919,9 +4919,9 @@
     {
       "species": "Luxray",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 404
@@ -4930,9 +4930,9 @@
     {
       "species": "Magmortar",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 36,
         "special_defense": 120,
         "speed": 316
@@ -4941,7 +4941,7 @@
     {
       "species": "Magnezone",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 60,
         "special_attack": 36,
@@ -4954,8 +4954,8 @@
       "rankings": {
         "hp": 45,
         "attack": 37,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 316
       }
@@ -4976,7 +4976,7 @@
       "rankings": {
         "hp": 737,
         "attack": 1002,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 44,
         "speed": 663
@@ -4985,10 +4985,10 @@
     {
       "species": "Mesprit",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
         "defense": 103,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 73,
         "speed": 316
       }
@@ -4996,10 +4996,10 @@
     {
       "species": "Mismagius",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 73,
         "speed": 65
       }
@@ -5007,9 +5007,9 @@
     {
       "species": "Monferno",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 330,
         "special_defense": 727,
         "speed": 316
@@ -5018,9 +5018,9 @@
     {
       "species": "Mothim",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 251,
         "special_defense": 727,
         "speed": 404
@@ -5031,7 +5031,7 @@
       "rankings": {
         "hp": 14,
         "attack": 316,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 200,
         "speed": 1013
@@ -5040,9 +5040,9 @@
     {
       "species": "Pachirisu",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 200,
         "speed": 112
@@ -5062,9 +5062,9 @@
     {
       "species": "Phione",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 316
@@ -5075,7 +5075,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 785
@@ -5086,7 +5086,7 @@
       "rankings": {
         "hp": 167,
         "attack": 422,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 23,
         "special_defense": 297,
         "speed": 216
@@ -5095,9 +5095,9 @@
     {
       "species": "Prinplup",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 663
@@ -5106,7 +5106,7 @@
     {
       "species": "Probopass",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 11,
         "special_attack": 330,
@@ -5117,7 +5117,7 @@
     {
       "species": "Purugly",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 592,
         "special_attack": 541,
@@ -5131,7 +5131,7 @@
         "hp": 81,
         "attack": 3,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 537
       }
@@ -5163,7 +5163,7 @@
       "rankings": {
         "hp": 886,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 537
@@ -5172,9 +5172,9 @@
     {
       "species": "Roserade",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 36,
         "special_defense": 73,
         "speed": 216
@@ -5186,7 +5186,7 @@
         "hp": 737,
         "attack": 545,
         "defense": 103,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 73,
         "speed": 216
       }
@@ -5197,7 +5197,7 @@
         "hp": 737,
         "attack": 545,
         "defense": 103,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 73,
         "speed": 216
       }
@@ -5208,7 +5208,7 @@
         "hp": 737,
         "attack": 545,
         "defense": 103,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 73,
         "speed": 216
       }
@@ -5219,7 +5219,7 @@
         "hp": 737,
         "attack": 545,
         "defense": 103,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 73,
         "speed": 216
       }
@@ -5229,7 +5229,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 216
@@ -5241,7 +5241,7 @@
         "hp": 737,
         "attack": 545,
         "defense": 103,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 73,
         "speed": 216
       }
@@ -5252,7 +5252,7 @@
         "hp": 737,
         "attack": 545,
         "defense": 103,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 73,
         "speed": 216
       }
@@ -5273,7 +5273,7 @@
       "rankings": {
         "hp": 81,
         "attack": 207,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 75,
         "special_defense": 297,
         "speed": 19
@@ -5282,9 +5282,9 @@
     {
       "species": "Shellos",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 893
@@ -5328,8 +5328,8 @@
       "rankings": {
         "hp": 81,
         "attack": 316,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 316
       }
@@ -5337,9 +5337,9 @@
     {
       "species": "Snover",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 785
@@ -5361,7 +5361,7 @@
       "rankings": {
         "hp": 167,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 577,
         "speed": 112
@@ -5370,9 +5370,9 @@
     {
       "species": "Staravia",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 316
@@ -5392,9 +5392,9 @@
     {
       "species": "Stunky",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 404
@@ -5406,7 +5406,7 @@
         "hp": 81,
         "attack": 207,
         "defense": 35,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 727,
         "speed": 663
       }
@@ -5436,9 +5436,9 @@
     {
       "species": "Toxicroak",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 439,
         "speed": 216
@@ -5447,7 +5447,7 @@
     {
       "species": "Turtwig",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 592,
         "special_attack": 689,
@@ -5458,7 +5458,7 @@
     {
       "species": "Uxie",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 35,
         "special_attack": 330,
@@ -5469,7 +5469,7 @@
     {
       "species": "Vespiquen",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 146,
         "special_attack": 330,
@@ -5480,9 +5480,9 @@
     {
       "species": "Weavile",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 200,
         "speed": 19
@@ -5491,7 +5491,7 @@
     {
       "species": "Wormadam Sandy Cloak Form",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 103,
         "special_attack": 541,
@@ -5502,10 +5502,10 @@
     {
       "species": "Wormadam Trash Cloak Form",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 146,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 120,
         "speed": 785
       }
@@ -5513,7 +5513,7 @@
     {
       "species": "Wormadam Plant Cloak Form",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 234,
         "special_attack": 330,
@@ -5535,9 +5535,9 @@
     {
       "species": "Accelgor",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 156,
         "special_defense": 577,
         "speed": 4
@@ -5548,7 +5548,7 @@
       "rankings": {
         "hp": 7,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 404
@@ -5559,7 +5559,7 @@
       "rankings": {
         "hp": 45,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 297,
         "speed": 893
@@ -5568,10 +5568,10 @@
     {
       "species": "Archen",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 148,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 404
       }
@@ -5579,10 +5579,10 @@
     {
       "species": "Archeops",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 20,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 439,
         "speed": 65
       }
@@ -5612,9 +5612,9 @@
     {
       "species": "Basculin",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 577,
         "speed": 112
@@ -5625,8 +5625,8 @@
       "rankings": {
         "hp": 81,
         "attack": 148,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 663
       }
@@ -5634,9 +5634,9 @@
     {
       "species": "Beheeyem",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 36,
         "special_defense": 120,
         "speed": 785
@@ -5645,7 +5645,7 @@
     {
       "species": "Bisharp",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 37,
         "defense": 146,
         "special_attack": 541,
@@ -5667,7 +5667,7 @@
     {
       "species": "Boldore",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 103,
         "special_attack": 156,
@@ -5691,7 +5691,7 @@
       "rankings": {
         "hp": 81,
         "attack": 88,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 316
@@ -5700,7 +5700,7 @@
     {
       "species": "Carracosta",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
         "defense": 35,
         "special_attack": 330,
@@ -5711,7 +5711,7 @@
     {
       "species": "Chandelure",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 234,
         "special_attack": 7,
@@ -5722,10 +5722,10 @@
     {
       "species": "Cinccino",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 35
       }
@@ -5744,7 +5744,7 @@
     {
       "species": "Cofagrigus",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
         "defense": 11,
         "special_attack": 156,
@@ -5777,10 +5777,10 @@
     {
       "species": "Crustle",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 35,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 663
       }
@@ -5788,7 +5788,7 @@
     {
       "species": "Cryogonal",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 796,
         "defense": 977,
         "special_attack": 156,
@@ -5799,9 +5799,9 @@
     {
       "species": "Cubchoo",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 871,
         "speed": 785
@@ -5832,9 +5832,9 @@
     {
       "species": "Darumaka",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 1000,
         "special_defense": 727,
         "speed": 663
@@ -5843,9 +5843,9 @@
     {
       "species": "Deerling",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 316
@@ -5856,7 +5856,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 785
@@ -5865,7 +5865,7 @@
     {
       "species": "Dewott",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 592,
         "special_attack": 330,
@@ -5876,9 +5876,9 @@
     {
       "species": "Drilbur",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 727,
         "speed": 404
@@ -5887,7 +5887,7 @@
     {
       "species": "Druddigon",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
         "defense": 234,
         "special_attack": 541,
@@ -5898,9 +5898,9 @@
     {
       "species": "Ducklett",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 537
@@ -5909,9 +5909,9 @@
     {
       "species": "Duosion",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 36,
         "special_defense": 577,
         "speed": 893
@@ -5920,7 +5920,7 @@
     {
       "species": "Durant",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 148,
         "defense": 103,
         "special_attack": 689,
@@ -5942,9 +5942,9 @@
     {
       "species": "Eelektrik",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 439,
         "speed": 785
@@ -5955,8 +5955,8 @@
       "rankings": {
         "hp": 167,
         "attack": 88,
-        "defense": 330,
-        "special_attack": 97,
+        "defense": 331,
+        "special_attack": 98,
         "special_defense": 297,
         "speed": 663
       }
@@ -5964,7 +5964,7 @@
     {
       "species": "Elgyem",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
         "special_attack": 251,
@@ -5977,7 +5977,7 @@
       "rankings": {
         "hp": 45,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 439,
         "speed": 404
@@ -5986,7 +5986,7 @@
     {
       "species": "Emolga",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 592,
         "special_attack": 330,
@@ -5997,7 +5997,7 @@
     {
       "species": "Escavalier",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 20,
         "defense": 103,
         "special_attack": 541,
@@ -6030,7 +6030,7 @@
     {
       "species": "Ferrothorn",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 35,
         "special_attack": 689,
@@ -6041,9 +6041,9 @@
     {
       "species": "Foongus",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 977
@@ -6052,9 +6052,9 @@
     {
       "species": "Fraxure",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 404
@@ -6063,10 +6063,10 @@
     {
       "species": "Frillish",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 903,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 785
       }
@@ -6074,7 +6074,7 @@
     {
       "species": "Galvantula",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 592,
         "special_attack": 156,
@@ -6085,9 +6085,9 @@
     {
       "species": "Garbodor",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 316
@@ -6096,7 +6096,7 @@
     {
       "species": "Genesect",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
         "defense": 146,
         "special_attack": 75,
@@ -6118,9 +6118,9 @@
     {
       "species": "Golett",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 785
@@ -6131,7 +6131,7 @@
       "rankings": {
         "hp": 167,
         "attack": 88,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 537
@@ -6142,7 +6142,7 @@
       "rankings": {
         "hp": 737,
         "attack": 964,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 439,
         "speed": 663
@@ -6151,7 +6151,7 @@
     {
       "species": "Gothitelle",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 146,
         "special_attack": 156,
@@ -6162,9 +6162,9 @@
     {
       "species": "Gothorita",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 200,
         "speed": 537
@@ -6184,7 +6184,7 @@
     {
       "species": "Haxorus",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 13,
         "defense": 234,
         "special_attack": 541,
@@ -6197,8 +6197,8 @@
       "rankings": {
         "hp": 167,
         "attack": 207,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 439,
         "speed": 404
       }
@@ -6206,9 +6206,9 @@
     {
       "species": "Herdier",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 439,
         "speed": 537
@@ -6230,7 +6230,7 @@
       "rankings": {
         "hp": 81,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 73,
         "speed": 537
@@ -6241,7 +6241,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 404
@@ -6252,7 +6252,7 @@
       "rankings": {
         "hp": 737,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 537
@@ -6272,10 +6272,10 @@
     {
       "species": "Klang",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 146,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 663
       }
@@ -6285,7 +6285,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 577,
         "speed": 893
@@ -6294,10 +6294,10 @@
     {
       "species": "Klinklang",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 60,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 216
       }
@@ -6305,9 +6305,9 @@
     {
       "species": "Krokorok",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 404
@@ -6318,8 +6318,8 @@
       "rankings": {
         "hp": 81,
         "attack": 88,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 216
       }
@@ -6360,7 +6360,7 @@
     {
       "species": "Lampent",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 903,
         "defense": 592,
         "special_attack": 156,
@@ -6385,7 +6385,7 @@
         "hp": 167,
         "attack": 13,
         "defense": 234,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 297,
         "speed": 216
       }
@@ -6393,7 +6393,7 @@
     {
       "species": "Larvesta",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
         "defense": 592,
         "special_attack": 689,
@@ -6404,10 +6404,10 @@
     {
       "species": "Leavanny",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 216
       }
@@ -6415,9 +6415,9 @@
     {
       "species": "Liepard",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 251,
         "special_defense": 727,
         "speed": 65
@@ -6426,10 +6426,10 @@
     {
       "species": "Lilligant",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 330,
-        "special_attack": 97,
+        "defense": 331,
+        "special_attack": 98,
         "special_defense": 297,
         "speed": 216
       }
@@ -6439,7 +6439,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 938,
         "special_defense": 727,
         "speed": 537
@@ -6451,7 +6451,7 @@
         "hp": 737,
         "attack": 964,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 977
       }
@@ -6470,10 +6470,10 @@
     {
       "species": "Maractus",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 297,
         "speed": 537
       }
@@ -6483,7 +6483,7 @@
       "rankings": {
         "hp": 81,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 36,
         "special_defense": 23,
         "speed": 216
@@ -6505,7 +6505,7 @@
       "rankings": {
         "hp": 737,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 404
@@ -6514,7 +6514,7 @@
     {
       "species": "Mienshao",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 37,
         "defense": 592,
         "special_attack": 156,
@@ -6525,9 +6525,9 @@
     {
       "species": "Minccino",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 316
@@ -6536,10 +6536,10 @@
     {
       "species": "Munna",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 964,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 977
       }
@@ -6550,7 +6550,7 @@
         "hp": 31,
         "attack": 676,
         "defense": 234,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 120,
         "speed": 893
       }
@@ -6558,9 +6558,9 @@
     {
       "species": "Oshawott",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 663
@@ -6569,10 +6569,10 @@
     {
       "species": "Palpitoad",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 404
       }
@@ -6582,7 +6582,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 537
@@ -6593,7 +6593,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 537
@@ -6604,7 +6604,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 537
@@ -6615,7 +6615,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 785
@@ -6626,7 +6626,7 @@
       "rankings": {
         "hp": 737,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 537
@@ -6637,8 +6637,8 @@
       "rankings": {
         "hp": 737,
         "attack": 903,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 893
       }
@@ -6648,7 +6648,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 968,
         "speed": 785
@@ -6660,7 +6660,7 @@
         "hp": 167,
         "attack": 316,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 537
       }
@@ -6670,7 +6670,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 871,
         "speed": 404
@@ -6692,7 +6692,7 @@
       "rankings": {
         "hp": 45,
         "attack": 545,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 36,
         "special_defense": 200,
         "speed": 893
@@ -6701,7 +6701,7 @@
     {
       "species": "Roggenrola",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
         "defense": 234,
         "special_attack": 541,
@@ -6712,9 +6712,9 @@
     {
       "species": "Rufflet",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 537
@@ -6726,7 +6726,7 @@
         "hp": 81,
         "attack": 207,
         "defense": 234,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 439,
         "speed": 404
       }
@@ -6736,7 +6736,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 404
@@ -6745,9 +6745,9 @@
     {
       "species": "Sawk",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 37,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 938,
         "special_defense": 297,
         "speed": 216
@@ -6756,9 +6756,9 @@
     {
       "species": "Sawsbuck",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 439,
         "speed": 112
@@ -6767,7 +6767,7 @@
     {
       "species": "Scolipede",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 234,
         "special_attack": 541,
@@ -6778,7 +6778,7 @@
     {
       "species": "Scrafty",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 60,
         "special_attack": 689,
@@ -6791,7 +6791,7 @@
       "rankings": {
         "hp": 737,
         "attack": 422,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 439,
         "speed": 663
@@ -6802,7 +6802,7 @@
       "rankings": {
         "hp": 45,
         "attack": 207,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 251,
         "special_defense": 297,
         "speed": 404
@@ -6811,7 +6811,7 @@
     {
       "species": "Serperior",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 146,
         "special_attack": 330,
@@ -6822,9 +6822,9 @@
     {
       "species": "Servine",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 316
@@ -6835,7 +6835,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 577,
         "speed": 785
@@ -6855,9 +6855,9 @@
     {
       "species": "Sigilyph",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 112
@@ -6866,7 +6866,7 @@
     {
       "species": "Simipour",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 592,
         "special_attack": 156,
@@ -6877,7 +6877,7 @@
     {
       "species": "Simisage",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 592,
         "special_attack": 156,
@@ -6888,7 +6888,7 @@
     {
       "species": "Simisear",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 592,
         "special_attack": 156,
@@ -6912,8 +6912,8 @@
       "rankings": {
         "hp": 737,
         "attack": 964,
-        "defense": 875,
-        "special_attack": 97,
+        "defense": 876,
+        "special_attack": 98,
         "special_defense": 727,
         "speed": 977
       }
@@ -6934,7 +6934,7 @@
       "rankings": {
         "hp": 45,
         "attack": 545,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 120,
         "speed": 893
@@ -6943,7 +6943,7 @@
     {
       "species": "Swadloon",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 234,
         "special_attack": 689,
@@ -6954,7 +6954,7 @@
     {
       "species": "Swanna",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
         "defense": 592,
         "special_attack": 251,
@@ -6965,7 +6965,7 @@
     {
       "species": "Swoobat",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 592,
         "special_attack": 330,
@@ -6976,9 +6976,9 @@
     {
       "species": "Tepig",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 663
@@ -6990,7 +6990,7 @@
         "hp": 167,
         "attack": 37,
         "defense": 234,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 65
       }
@@ -7009,9 +7009,9 @@
     {
       "species": "Thundurus Incarnate Forme",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 36,
         "special_defense": 297,
         "speed": 65
@@ -7020,9 +7020,9 @@
     {
       "species": "Thundurus Therian Forme",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 7,
         "special_defense": 297,
         "speed": 112
@@ -7031,7 +7031,7 @@
     {
       "species": "Timburr",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 592,
         "special_attack": 938,
@@ -7042,7 +7042,7 @@
     {
       "species": "Tirtouga",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 146,
         "special_attack": 689,
@@ -7053,9 +7053,9 @@
     {
       "species": "Tornadus Incarnate Forme",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 36,
         "special_defense": 297,
         "speed": 65
@@ -7064,10 +7064,10 @@
     {
       "species": "Tornadus Therian Forme",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 330,
-        "special_attack": 97,
+        "defense": 331,
+        "special_attack": 98,
         "special_defense": 200,
         "speed": 35
       }
@@ -7075,7 +7075,7 @@
     {
       "species": "Tranquill",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 592,
         "special_attack": 689,
@@ -7099,7 +7099,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 871,
         "speed": 537
@@ -7110,7 +7110,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 871,
         "speed": 537
@@ -7119,10 +7119,10 @@
     {
       "species": "Unfezant",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 216
       }
@@ -7132,7 +7132,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 537
@@ -7143,8 +7143,8 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 663
       }
@@ -7152,10 +7152,10 @@
     {
       "species": "Vanilluxe",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 234,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 120,
         "speed": 316
       }
@@ -7187,7 +7187,7 @@
       "rankings": {
         "hp": 167,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 23,
         "speed": 65
@@ -7198,7 +7198,7 @@
       "rankings": {
         "hp": 167,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 23,
         "special_defense": 73,
         "speed": 112
@@ -7207,9 +7207,9 @@
     {
       "species": "Vullaby",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 689,
         "special_defense": 439,
         "speed": 537
@@ -7218,9 +7218,9 @@
     {
       "species": "Watchog",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 439,
         "speed": 316
@@ -7229,7 +7229,7 @@
     {
       "species": "Whimsicott",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 234,
         "special_attack": 330,
@@ -7251,9 +7251,9 @@
     {
       "species": "Woobat",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 871,
         "speed": 404
@@ -7273,7 +7273,7 @@
     {
       "species": "Zebstrika",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 592,
         "special_attack": 330,
@@ -7295,7 +7295,7 @@
     {
       "species": "Zoroark",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 148,
         "defense": 592,
         "special_attack": 75,
@@ -7308,7 +7308,7 @@
       "rankings": {
         "hp": 886,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 330,
         "special_defense": 871,
         "speed": 404
@@ -7317,10 +7317,10 @@
     {
       "species": "Zweilous",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 537
       }
@@ -7328,7 +7328,7 @@
     {
       "species": "Aegislash",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
         "defense": 11,
         "special_attack": 689,
@@ -7339,10 +7339,10 @@
     {
       "species": "Amaura",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 676,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 663
       }
@@ -7352,7 +7352,7 @@
       "rankings": {
         "hp": 81,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 200,
         "speed": 893
@@ -7363,7 +7363,7 @@
       "rankings": {
         "hp": 31,
         "attack": 422,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 200,
         "speed": 537
@@ -7383,7 +7383,7 @@
     {
       "species": "Barbaracle",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
         "defense": 60,
         "special_attack": 689,
@@ -7394,7 +7394,7 @@
     {
       "species": "Bergmite",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 234,
         "special_attack": 938,
@@ -7407,7 +7407,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 577,
         "speed": 663
@@ -7416,7 +7416,7 @@
     {
       "species": "Braixen",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
         "special_attack": 251,
@@ -7429,7 +7429,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 537
@@ -7452,7 +7452,7 @@
         "hp": 167,
         "attack": 148,
         "defense": 60,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 537
       }
@@ -7460,9 +7460,9 @@
     {
       "species": "Chespin",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 785
@@ -7482,7 +7482,7 @@
     {
       "species": "Clawitzer",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 234,
         "special_attack": 75,
@@ -7493,7 +7493,7 @@
     {
       "species": "Dedenne",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 592,
         "special_attack": 330,
@@ -7504,10 +7504,10 @@
     {
       "species": "Delphox",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 120,
         "speed": 112
       }
@@ -7528,7 +7528,7 @@
       "rankings": {
         "hp": 167,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 689,
         "special_defense": 297,
         "speed": 316
@@ -7537,7 +7537,7 @@
     {
       "species": "Doublade",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 148,
         "defense": 11,
         "special_attack": 689,
@@ -7548,7 +7548,7 @@
     {
       "species": "Dragalge",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 234,
         "special_attack": 156,
@@ -7559,9 +7559,9 @@
     {
       "species": "Espurr",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 404
@@ -7572,7 +7572,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 537
@@ -7583,7 +7583,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 785
@@ -7592,7 +7592,7 @@
     {
       "species": "Fletchinder",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 592,
         "special_attack": 541,
@@ -7605,7 +7605,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 537
@@ -7616,7 +7616,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 330,
         "special_defense": 120,
         "speed": 663
@@ -7625,10 +7625,10 @@
     {
       "species": "Florges",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 4,
         "speed": 316
       }
@@ -7638,7 +7638,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 871,
         "speed": 404
@@ -7649,7 +7649,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 330,
         "special_defense": 577,
         "speed": 112
@@ -7658,10 +7658,10 @@
     {
       "species": "Furfrou",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 112
       }
@@ -7682,8 +7682,8 @@
       "rankings": {
         "hp": 167,
         "attack": 207,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 4,
         "speed": 316
       }
@@ -7693,7 +7693,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 785
@@ -7702,7 +7702,7 @@
     {
       "species": "Gourgeist Large",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 60,
         "special_attack": 541,
@@ -7713,7 +7713,7 @@
     {
       "species": "Gourgeist Small",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
         "defense": 60,
         "special_attack": 541,
@@ -7735,7 +7735,7 @@
     {
       "species": "Gourgeist",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 60,
         "special_attack": 541,
@@ -7746,9 +7746,9 @@
     {
       "species": "Greninja",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 439,
         "speed": 35
@@ -7757,10 +7757,10 @@
     {
       "species": "Hawlucha",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 35
       }
@@ -7768,10 +7768,10 @@
     {
       "species": "Heliolisk",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 739,
-        "special_attack": 97,
+        "defense": 740,
+        "special_attack": 98,
         "special_defense": 200,
         "speed": 65
       }
@@ -7801,7 +7801,7 @@
     {
       "species": "Hoopa Confined",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
         "defense": 592,
         "special_attack": 7,
@@ -7812,7 +7812,7 @@
     {
       "species": "Hoopa Unbound",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 7,
         "defense": 592,
         "special_attack": 2,
@@ -7825,7 +7825,7 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 663
@@ -7834,7 +7834,7 @@
     {
       "species": "Klefki",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 234,
         "special_attack": 330,
@@ -7845,10 +7845,10 @@
     {
       "species": "Litleo",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 404
       }
@@ -7859,7 +7859,7 @@
         "hp": 167,
         "attack": 316,
         "defense": 234,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 404
       }
@@ -7867,9 +7867,9 @@
     {
       "species": "Meowstic",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 796,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 112
@@ -7880,7 +7880,7 @@
       "rankings": {
         "hp": 886,
         "attack": 964,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 871,
         "speed": 537
@@ -7891,7 +7891,7 @@
       "rankings": {
         "hp": 167,
         "attack": 545,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 35
@@ -7900,7 +7900,7 @@
     {
       "species": "Pancham",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 592,
         "special_attack": 689,
@@ -7913,8 +7913,8 @@
       "rankings": {
         "hp": 167,
         "attack": 88,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 537
       }
@@ -7924,7 +7924,7 @@
       "rankings": {
         "hp": 886,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 577,
         "speed": 785
@@ -7935,7 +7935,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 577,
         "speed": 663
@@ -7946,7 +7946,7 @@
       "rankings": {
         "hp": 886,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 577,
         "speed": 537
@@ -7955,9 +7955,9 @@
     {
       "species": "Pumpkaboo Super Size",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 577,
         "speed": 785
@@ -7968,7 +7968,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 663
@@ -7979,8 +7979,8 @@
       "rankings": {
         "hp": 167,
         "attack": 545,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 439,
         "speed": 65
       }
@@ -7988,7 +7988,7 @@
     {
       "species": "Quilladin",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 146,
         "special_attack": 541,
@@ -8001,7 +8001,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 968,
         "speed": 785
@@ -8010,9 +8010,9 @@
     {
       "species": "Skiddo",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 663
@@ -8032,9 +8032,9 @@
     {
       "species": "Sliggoo",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 330,
         "special_defense": 73,
         "speed": 537
@@ -8043,7 +8043,7 @@
     {
       "species": "Slurpuff",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 234,
         "special_attack": 251,
@@ -8065,7 +8065,7 @@
     {
       "species": "Spritzee",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 796,
         "defense": 592,
         "special_attack": 541,
@@ -8076,9 +8076,9 @@
     {
       "species": "Swirlix",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 663
@@ -8089,8 +8089,8 @@
       "rankings": {
         "hp": 81,
         "attack": 545,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 23,
         "speed": 537
       }
@@ -8098,10 +8098,10 @@
     {
       "species": "Talonflame",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 19
       }
@@ -8111,8 +8111,8 @@
       "rankings": {
         "hp": 167,
         "attack": 148,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 537
       }
@@ -8120,10 +8120,10 @@
     {
       "species": "Tyrantrum",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
         "defense": 60,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 404
       }
@@ -8131,9 +8131,9 @@
     {
       "species": "Tyrunt",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 663
@@ -8142,9 +8142,9 @@
     {
       "species": "Vivillon",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 251,
         "special_defense": 727,
         "speed": 216
@@ -8186,7 +8186,7 @@
     {
       "species": "Araquanid",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 234,
         "special_attack": 689,
@@ -8199,7 +8199,7 @@
       "rankings": {
         "hp": 31,
         "attack": 37,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 537
@@ -8210,7 +8210,7 @@
       "rankings": {
         "hp": 737,
         "attack": 37,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 7,
         "special_defense": 297,
         "speed": 65
@@ -8221,7 +8221,7 @@
       "rankings": {
         "hp": 886,
         "attack": 964,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 893
@@ -8230,9 +8230,9 @@
     {
       "species": "Brionne",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 297,
         "speed": 663
@@ -8241,10 +8241,10 @@
     {
       "species": "Bruxish",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 216
       }
@@ -8266,7 +8266,7 @@
         "hp": 81,
         "attack": 207,
         "defense": 146,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 120,
         "speed": 537
       }
@@ -8274,7 +8274,7 @@
     {
       "species": "Charjabug",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 146,
         "special_attack": 251,
@@ -8320,7 +8320,7 @@
       "rankings": {
         "hp": 81,
         "attack": 37,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 439,
         "speed": 785
@@ -8342,7 +8342,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 871,
         "speed": 316
@@ -8351,10 +8351,10 @@
     {
       "species": "Dartrix",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 663
       }
@@ -8362,9 +8362,9 @@
     {
       "species": "Decidueye",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 120,
         "speed": 404
@@ -8375,7 +8375,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 439,
         "speed": 893
@@ -8384,7 +8384,7 @@
     {
       "species": "Dhelmise",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 37,
         "defense": 146,
         "special_attack": 251,
@@ -8406,7 +8406,7 @@
     {
       "species": "Drampa",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 676,
         "defense": 234,
         "special_attack": 23,
@@ -8441,7 +8441,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 871,
         "speed": 785
@@ -8461,7 +8461,7 @@
     {
       "species": "Golem Alola",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
         "defense": 35,
         "special_attack": 541,
@@ -8472,7 +8472,7 @@
     {
       "species": "Golisopod",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 37,
         "defense": 23,
         "special_attack": 541,
@@ -8483,7 +8483,7 @@
     {
       "species": "Graveler Alola",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 60,
         "special_attack": 689,
@@ -8494,9 +8494,9 @@
     {
       "species": "Grimer Alola",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 968,
         "speed": 663
@@ -8507,7 +8507,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 537
@@ -8529,7 +8529,7 @@
       "rankings": {
         "hp": 3,
         "attack": 207,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 156,
         "special_defense": 727,
         "speed": 785
@@ -8538,10 +8538,10 @@
     {
       "species": "Hakamo-o",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 234,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 404
       }
@@ -8562,7 +8562,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 663
@@ -8571,7 +8571,7 @@
     {
       "species": "Kartana",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 1,
         "defense": 35,
         "special_attack": 541,
@@ -8582,9 +8582,9 @@
     {
       "species": "Komala",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 120,
         "speed": 404
@@ -8593,7 +8593,7 @@
     {
       "species": "Kommo-o",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
         "defense": 35,
         "special_attack": 156,
@@ -8606,7 +8606,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 871,
         "speed": 404
@@ -8626,7 +8626,7 @@
     {
       "species": "Lurantis",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
         "defense": 234,
         "special_attack": 330,
@@ -8637,9 +8637,9 @@
     {
       "species": "Lycanroc Dusk",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 439,
         "speed": 65
@@ -8648,9 +8648,9 @@
     {
       "species": "Lycanroc Midday",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 439,
         "speed": 65
@@ -8661,7 +8661,7 @@
       "rankings": {
         "hp": 167,
         "attack": 88,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 541,
         "special_defense": 297,
         "speed": 316
@@ -8670,7 +8670,7 @@
     {
       "species": "Magearna",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 60,
         "special_attack": 36,
@@ -8692,7 +8692,7 @@
     {
       "species": "Marowak Alola",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 103,
         "special_attack": 689,
@@ -8705,7 +8705,7 @@
       "rankings": {
         "hp": 167,
         "attack": 37,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 251,
         "special_defense": 200,
         "speed": 19
@@ -8716,7 +8716,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 871,
         "speed": 216
@@ -8725,9 +8725,9 @@
     {
       "species": "Mimikyu",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 689,
         "special_defense": 73,
         "speed": 112
@@ -8736,7 +8736,7 @@
     {
       "species": "Minior Core",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 592,
         "special_attack": 156,
@@ -8747,7 +8747,7 @@
     {
       "species": "Minior Meteor",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 146,
         "special_attack": 541,
@@ -8761,7 +8761,7 @@
         "hp": 886,
         "attack": 903,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 977
       }
@@ -8769,9 +8769,9 @@
     {
       "species": "Mudbray",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 577,
         "speed": 663
@@ -8793,8 +8793,8 @@
       "rankings": {
         "hp": 45,
         "attack": 148,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 120,
         "speed": 663
       }
@@ -8802,9 +8802,9 @@
     {
       "species": "Naganadel",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 36,
         "special_defense": 439,
         "speed": 35
@@ -8827,7 +8827,7 @@
         "hp": 81,
         "attack": 7,
         "defense": 35,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 73,
         "speed": 316
       }
@@ -8848,7 +8848,7 @@
       "rankings": {
         "hp": 45,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 36,
         "special_defense": 23,
         "speed": 112
@@ -8857,9 +8857,9 @@
     {
       "species": "Ninetales Alola",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 120,
         "speed": 65
@@ -8870,7 +8870,7 @@
       "rankings": {
         "hp": 167,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 251,
         "special_defense": 73,
         "speed": 537
@@ -8879,9 +8879,9 @@
     {
       "species": "Oricorio Pa'u",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 439,
         "speed": 216
@@ -8890,9 +8890,9 @@
     {
       "species": "Oricorio Pom-Pom",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 439,
         "speed": 216
@@ -8901,9 +8901,9 @@
     {
       "species": "Oricorio Sensu",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 439,
         "speed": 216
@@ -8912,9 +8912,9 @@
     {
       "species": "Oricorio",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 439,
         "speed": 216
@@ -8945,7 +8945,7 @@
     {
       "species": "Persian Alola",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 592,
         "special_attack": 330,
@@ -8956,9 +8956,9 @@
     {
       "species": "Pheromosa",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 20,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 23,
         "special_defense": 871,
         "speed": 4
@@ -8978,10 +8978,10 @@
     {
       "species": "Poipole",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 404
       }
@@ -8991,8 +8991,8 @@
       "rankings": {
         "hp": 737,
         "attack": 796,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 785
       }
@@ -9000,9 +9000,9 @@
     {
       "species": "Primarina",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 36,
         "special_defense": 44,
         "speed": 537
@@ -9011,7 +9011,7 @@
     {
       "species": "Pyukumuku",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 35,
         "special_attack": 938,
@@ -9022,9 +9022,9 @@
     {
       "species": "Raichu Alola",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 156,
         "special_defense": 200,
         "speed": 65
@@ -9033,7 +9033,7 @@
     {
       "species": "Raticate Alola",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 592,
         "special_attack": 689,
@@ -9046,7 +9046,7 @@
       "rankings": {
         "hp": 989,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 404
@@ -9055,7 +9055,7 @@
     {
       "species": "Ribombee",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 592,
         "special_attack": 156,
@@ -9068,7 +9068,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 537
@@ -9077,7 +9077,7 @@
     {
       "species": "Rowlet",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 592,
         "special_attack": 689,
@@ -9090,8 +9090,8 @@
       "rankings": {
         "hp": 737,
         "attack": 903,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 871,
         "speed": 316
       }
@@ -9099,10 +9099,10 @@
     {
       "species": "Salazzle",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 592,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 577,
         "speed": 35
       }
@@ -9121,7 +9121,7 @@
     {
       "species": "Sandslash Alola",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 60,
         "special_attack": 938,
@@ -9132,10 +9132,10 @@
     {
       "species": "Sandygast",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 977
       }
@@ -9143,9 +9143,9 @@
     {
       "species": "Shiinotic",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 251,
         "special_defense": 120,
         "speed": 893
@@ -9168,7 +9168,7 @@
         "hp": 14,
         "attack": 20,
         "defense": 103,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 200,
         "speed": 112
       }
@@ -9176,7 +9176,7 @@
     {
       "species": "Stakataka",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 37,
         "defense": 2,
         "special_attack": 689,
@@ -9189,7 +9189,7 @@
       "rankings": {
         "hp": 737,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 537
@@ -9198,9 +9198,9 @@
     {
       "species": "Stufful",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 663
@@ -9209,7 +9209,7 @@
     {
       "species": "Tapu Bulu",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 37,
         "defense": 60,
         "special_attack": 251,
@@ -9220,7 +9220,7 @@
     {
       "species": "Tapu Fini",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 60,
         "special_attack": 156,
@@ -9231,7 +9231,7 @@
     {
       "species": "Tapu Koko",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
         "defense": 234,
         "special_attack": 156,
@@ -9242,9 +9242,9 @@
     {
       "species": "Tapu Lele",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 36,
         "special_defense": 44,
         "speed": 112
@@ -9253,7 +9253,7 @@
     {
       "species": "Togedemaru",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 592,
         "special_attack": 813,
@@ -9264,9 +9264,9 @@
     {
       "species": "Torracat",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 330,
         "special_defense": 727,
         "speed": 216
@@ -9275,9 +9275,9 @@
     {
       "species": "Toucannon",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 537
@@ -9297,9 +9297,9 @@
     {
       "species": "Trumbeak",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 316
@@ -9308,7 +9308,7 @@
     {
       "species": "Tsareena",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
         "defense": 146,
         "special_attack": 689,
@@ -9319,7 +9319,7 @@
     {
       "species": "Turtonator",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
         "defense": 23,
         "special_attack": 251,
@@ -9341,7 +9341,7 @@
     {
       "species": "Vikavolt",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
         "defense": 234,
         "special_attack": 7,
@@ -9352,7 +9352,7 @@
     {
       "species": "Volcanion",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
         "defense": 60,
         "special_attack": 36,
@@ -9365,7 +9365,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 439,
         "speed": 404
@@ -9376,7 +9376,7 @@
       "rankings": {
         "hp": 989,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 1000,
         "special_defense": 968,
         "speed": 316
@@ -9407,9 +9407,9 @@
     {
       "species": "Xurkitree",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 2,
         "special_defense": 439,
         "speed": 316
@@ -9431,7 +9431,7 @@
       "rankings": {
         "hp": 167,
         "attack": 148,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 11
@@ -9451,10 +9451,10 @@
     {
       "species": "Alcremie",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 330,
-        "special_attack": 97,
+        "defense": 331,
+        "special_attack": 98,
         "special_defense": 44,
         "speed": 537
       }
@@ -9464,7 +9464,7 @@
       "rankings": {
         "hp": 45,
         "attack": 316,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 893
@@ -9475,7 +9475,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 977
@@ -9508,7 +9508,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 968,
         "speed": 404
@@ -9528,7 +9528,7 @@
     {
       "species": "Barraskewda",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 88,
         "defense": 592,
         "special_attack": 541,
@@ -9550,7 +9550,7 @@
     {
       "species": "Boltund",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 592,
         "special_attack": 251,
@@ -9574,7 +9574,7 @@
       "rankings": {
         "hp": 81,
         "attack": 316,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 2,
         "special_defense": 120,
         "speed": 4
@@ -9585,7 +9585,7 @@
       "rankings": {
         "hp": 81,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 316
@@ -9594,7 +9594,7 @@
     {
       "species": "Carkol",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 676,
         "defense": 234,
         "special_attack": 541,
@@ -9607,7 +9607,7 @@
       "rankings": {
         "hp": 81,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 200,
         "speed": 404
@@ -9618,7 +9618,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 785
@@ -9627,10 +9627,10 @@
     {
       "species": "Cinderace",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
-        "defense": 330,
-        "special_attack": 423,
+        "defense": 331,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 35
       }
@@ -9662,7 +9662,7 @@
       "rankings": {
         "hp": 31,
         "attack": 37,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 439,
         "speed": 893
@@ -9671,10 +9671,10 @@
     {
       "species": "Corsola Galar",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 676,
         "defense": 146,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 120,
         "speed": 893
       }
@@ -9693,7 +9693,7 @@
     {
       "species": "Corvisquire",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 592,
         "special_attack": 813,
@@ -9704,7 +9704,7 @@
     {
       "species": "Cramorant",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 592,
         "special_attack": 251,
@@ -9715,9 +9715,9 @@
     {
       "species": "Cufant",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 785
@@ -9726,9 +9726,9 @@
     {
       "species": "Cursola",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 23,
         "special_defense": 23,
         "speed": 893
@@ -9737,9 +9737,9 @@
     {
       "species": "Darumaka Galar",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 1000,
         "special_defense": 727,
         "speed": 663
@@ -9750,7 +9750,7 @@
       "rankings": {
         "hp": 737,
         "attack": 903,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 689,
         "special_defense": 200,
         "speed": 893
@@ -9762,7 +9762,7 @@
         "hp": 167,
         "attack": 316,
         "defense": 146,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 316
       }
@@ -9783,7 +9783,7 @@
       "rankings": {
         "hp": 167,
         "attack": 88,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 11
@@ -9792,9 +9792,9 @@
     {
       "species": "Drakloak",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 112
@@ -9825,7 +9825,7 @@
     {
       "species": "Drizzile",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 592,
         "special_attack": 156,
@@ -9836,7 +9836,7 @@
     {
       "species": "Dubwool",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
         "defense": 146,
         "special_attack": 541,
@@ -9847,7 +9847,7 @@
     {
       "species": "Duraludon",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 60,
         "special_attack": 75,
@@ -9858,10 +9858,10 @@
     {
       "species": "Eiscue Ice Face",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
         "defense": 103,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 663
       }
@@ -9869,10 +9869,10 @@
     {
       "species": "Eiscue Noice Face",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 422,
-        "defense": 444,
-        "special_attack": 423,
+        "defense": 445,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 19
       }
@@ -9880,7 +9880,7 @@
     {
       "species": "Eldegoss",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
         "defense": 234,
         "special_attack": 330,
@@ -9902,10 +9902,10 @@
     {
       "species": "Falinks",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 146,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 316
       }
@@ -9913,9 +9913,9 @@
     {
       "species": "Flapple",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 577,
         "speed": 404
@@ -9924,7 +9924,7 @@
     {
       "species": "Frosmoth",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 592,
         "special_attack": 36,
@@ -9938,7 +9938,7 @@
         "hp": 81,
         "attack": 13,
         "defense": 35,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 73,
         "speed": 893
       }
@@ -9957,10 +9957,10 @@
     {
       "species": "Grapploct",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 88,
         "defense": 234,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 785
       }
@@ -9981,7 +9981,7 @@
       "rankings": {
         "hp": 81,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 537
@@ -9992,7 +9992,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 404
@@ -10003,7 +10003,7 @@
       "rankings": {
         "hp": 886,
         "attack": 964,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 785
@@ -10012,7 +10012,7 @@
     {
       "species": "Hatterene",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
         "defense": 146,
         "special_attack": 23,
@@ -10023,9 +10023,9 @@
     {
       "species": "Hattrem",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 903,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 439,
         "speed": 663
@@ -10045,9 +10045,9 @@
     {
       "species": "Indeedee Female",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 73,
         "speed": 216
@@ -10056,10 +10056,10 @@
     {
       "species": "Indeedee Male",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
         "defense": 592,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 120,
         "speed": 112
       }
@@ -10067,9 +10067,9 @@
     {
       "species": "Inteleon",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 36,
         "special_defense": 439,
         "speed": 35
@@ -10078,7 +10078,7 @@
     {
       "species": "Kubfu",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 316,
         "defense": 592,
         "special_attack": 689,
@@ -10089,7 +10089,7 @@
     {
       "species": "Linoone Galar",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
         "defense": 592,
         "special_attack": 689,
@@ -10113,7 +10113,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 871,
         "speed": 893
@@ -10135,7 +10135,7 @@
       "rankings": {
         "hp": 737,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 577,
         "speed": 893
@@ -10155,9 +10155,9 @@
     {
       "species": "Morgrem",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 330,
         "special_defense": 577,
         "speed": 404
@@ -10166,10 +10166,10 @@
     {
       "species": "Morpeko",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 577,
         "speed": 112
       }
@@ -10179,7 +10179,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 251,
         "special_defense": 200,
         "speed": 112
@@ -10188,10 +10188,10 @@
     {
       "species": "Mr. Rime",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 316,
-        "defense": 330,
-        "special_attack": 97,
+        "defense": 331,
+        "special_attack": 98,
         "special_defense": 120,
         "speed": 404
       }
@@ -10221,7 +10221,7 @@
     {
       "species": "Orbeetle",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
         "defense": 103,
         "special_attack": 330,
@@ -10232,7 +10232,7 @@
     {
       "species": "Perrserker",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
         "defense": 146,
         "special_attack": 689,
@@ -10254,9 +10254,9 @@
     {
       "species": "Polteageist",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 36,
         "special_defense": 73,
         "speed": 404
@@ -10268,7 +10268,7 @@
         "hp": 737,
         "attack": 316,
         "defense": 592,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 216
       }
@@ -10276,7 +10276,7 @@
     {
       "species": "Raboot",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 592,
         "special_attack": 541,
@@ -10287,9 +10287,9 @@
     {
       "species": "Rapidash Galar",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 65
@@ -10300,7 +10300,7 @@
       "rankings": {
         "hp": 5,
         "attack": 207,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 156,
         "special_defense": 727,
         "speed": 316
@@ -10309,9 +10309,9 @@
     {
       "species": "Regieleki",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 156,
         "special_defense": 727,
         "speed": 1
@@ -10333,7 +10333,7 @@
       "rankings": {
         "hp": 989,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 893
@@ -10344,7 +10344,7 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 537
@@ -10353,7 +10353,7 @@
     {
       "species": "Runerigus",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 11,
         "special_attack": 689,
@@ -10364,10 +10364,10 @@
     {
       "species": "Sandaconda",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
         "defense": 35,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 404
       }
@@ -10377,7 +10377,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 404
@@ -10388,7 +10388,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 663
@@ -10399,8 +10399,8 @@
       "rankings": {
         "hp": 886,
         "attack": 796,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 663
       }
@@ -10410,7 +10410,7 @@
       "rankings": {
         "hp": 737,
         "attack": 545,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 689,
         "special_defense": 727,
         "speed": 663
@@ -10419,7 +10419,7 @@
     {
       "species": "Skwovet",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 592,
         "special_attack": 813,
@@ -10443,8 +10443,8 @@
       "rankings": {
         "hp": 81,
         "attack": 545,
-        "defense": 330,
-        "special_attack": 97,
+        "defense": 331,
+        "special_attack": 98,
         "special_defense": 73,
         "speed": 893
       }
@@ -10454,7 +10454,7 @@
       "rankings": {
         "hp": 167,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 977
@@ -10465,7 +10465,7 @@
       "rankings": {
         "hp": 989,
         "attack": 964,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 968,
         "speed": 977
@@ -10476,8 +10476,8 @@
       "rankings": {
         "hp": 737,
         "attack": 903,
-        "defense": 875,
-        "special_attack": 423,
+        "defense": 876,
+        "special_attack": 424,
         "special_defense": 871,
         "speed": 404
       }
@@ -10510,7 +10510,7 @@
         "hp": 45,
         "attack": 422,
         "defense": 146,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 893
       }
@@ -10518,7 +10518,7 @@
     {
       "species": "Thievul",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 676,
         "defense": 592,
         "special_attack": 251,
@@ -10529,9 +10529,9 @@
     {
       "species": "Thwackey",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 316
@@ -10542,7 +10542,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 871,
         "speed": 785
@@ -10551,10 +10551,10 @@
     {
       "species": "Toxtricity",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 439,
         "speed": 316
       }
@@ -10584,7 +10584,7 @@
     {
       "species": "Weezing Galar",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 316,
         "defense": 60,
         "special_attack": 251,
@@ -10617,9 +10617,9 @@
     {
       "species": "Yamper",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 727,
         "speed": 893
@@ -10664,7 +10664,7 @@
         "hp": 45,
         "attack": 88,
         "defense": 103,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 120,
         "speed": 65
       }
@@ -10674,7 +10674,7 @@
       "rankings": {
         "hp": 886,
         "attack": 964,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 938,
         "special_defense": 871,
         "speed": 537
@@ -10683,7 +10683,7 @@
     {
       "species": "Arboliva",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 545,
         "defense": 234,
         "special_attack": 36,
@@ -10705,9 +10705,9 @@
     {
       "species": "Finizen",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 796,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 689,
         "special_defense": 871,
         "speed": 316
@@ -10719,7 +10719,7 @@
         "hp": 81,
         "attack": 7,
         "defense": 146,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 200,
         "speed": 112
       }
@@ -10729,7 +10729,7 @@
       "rankings": {
         "hp": 81,
         "attack": 545,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 689,
         "special_defense": 577,
         "speed": 112
@@ -10740,7 +10740,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 727,
         "speed": 893
@@ -10751,7 +10751,7 @@
       "rankings": {
         "hp": 81,
         "attack": 88,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 216
@@ -10773,7 +10773,7 @@
       "rankings": {
         "hp": 31,
         "attack": 316,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 316
@@ -10784,7 +10784,7 @@
       "rankings": {
         "hp": 31,
         "attack": 148,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 316
@@ -10795,8 +10795,8 @@
       "rankings": {
         "hp": 45,
         "attack": 422,
-        "defense": 444,
-        "special_attack": 97,
+        "defense": 445,
+        "special_attack": 98,
         "special_defense": 439,
         "speed": 404
       }
@@ -10806,7 +10806,7 @@
       "rankings": {
         "hp": 167,
         "attack": 148,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 156,
         "special_defense": 120,
         "speed": 537
@@ -10826,9 +10826,9 @@
     {
       "species": "Electrode Hisuian",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 330,
         "special_defense": 297,
         "speed": 4
@@ -10837,9 +10837,9 @@
     {
       "species": "Enamorus Incarnate Forme",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 23,
         "special_defense": 297,
         "speed": 65
@@ -10848,7 +10848,7 @@
     {
       "species": "Enamorus Therian Forme",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 88,
         "defense": 103,
         "special_attack": 23,
@@ -10859,10 +10859,10 @@
     {
       "species": "Goodra Hisuian",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 207,
         "defense": 146,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 4,
         "speed": 537
       }
@@ -10870,10 +10870,10 @@
     {
       "species": "Growlithe Hisuian",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 727,
         "speed": 537
       }
@@ -10881,7 +10881,7 @@
     {
       "species": "Kleavor",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 20,
         "defense": 146,
         "special_attack": 689,
@@ -10892,9 +10892,9 @@
     {
       "species": "Lilligant Hisuian",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 148,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 689,
         "special_defense": 297,
         "speed": 65
@@ -10906,7 +10906,7 @@
         "hp": 167,
         "attack": 88,
         "defense": 146,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 439,
         "speed": 216
       }
@@ -10925,7 +10925,7 @@
     {
       "species": "Qwilfish Hisuian",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 207,
         "defense": 234,
         "special_attack": 541,
@@ -10939,7 +10939,7 @@
         "hp": 81,
         "attack": 207,
         "defense": 234,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 439,
         "speed": 404
       }
@@ -10947,9 +10947,9 @@
     {
       "species": "Sliggoo Hisuian",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 330,
         "special_defense": 73,
         "speed": 785
@@ -10958,7 +10958,7 @@
     {
       "species": "Sneasel Hisuian",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 592,
         "special_attack": 813,
@@ -10969,7 +10969,7 @@
     {
       "species": "Sneasler",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 37,
         "defense": 592,
         "special_attack": 813,
@@ -10980,9 +10980,9 @@
     {
       "species": "Typhlosion Hisuian",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 422,
-        "defense": 330,
+        "defense": 331,
         "special_attack": 75,
         "special_defense": 200,
         "speed": 112
@@ -11004,7 +11004,7 @@
       "rankings": {
         "hp": 886,
         "attack": 964,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 541,
         "special_defense": 577,
         "speed": 112
@@ -11015,7 +11015,7 @@
       "rankings": {
         "hp": 81,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 156,
         "special_defense": 297,
         "speed": 404
@@ -11024,7 +11024,7 @@
     {
       "species": "Zoroark Hisuian",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 207,
         "defense": 592,
         "special_attack": 36,
@@ -11037,7 +11037,7 @@
       "rankings": {
         "hp": 886,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 251,
         "special_defense": 871,
         "speed": 404
@@ -11057,9 +11057,9 @@
     {
       "species": "Nidoran (F)",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 796,
-        "defense": 739,
+        "defense": 740,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 785
@@ -11070,7 +11070,7 @@
       "rankings": {
         "hp": 737,
         "attack": 676,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 813,
         "special_defense": 871,
         "speed": 663
@@ -11081,8 +11081,8 @@
       "rankings": {
         "hp": 1012,
         "attack": 964,
-        "defense": 739,
-        "special_attack": 423,
+        "defense": 740,
+        "special_attack": 424,
         "special_defense": 200,
         "speed": 537
       }
@@ -11092,7 +11092,7 @@
       "rankings": {
         "hp": 737,
         "attack": 207,
-        "defense": 444,
+        "defense": 445,
         "special_attack": 541,
         "special_defense": 200,
         "speed": 35
@@ -11145,10 +11145,10 @@
     {
       "species": "Sirfetch’d",
       "rankings": {
-        "hp": 566,
+        "hp": 567,
         "attack": 20,
         "defense": 146,
-        "special_attack": 423,
+        "special_attack": 424,
         "special_defense": 297,
         "speed": 404
       }
@@ -11805,10 +11805,10 @@
     {
       "species": "Kilowattrel",
       "rankings": {
-        "hp": 388,
+        "hp": 389,
         "attack": 545,
         "defense": 592,
-        "special_attack": 97,
+        "special_attack": 98,
         "special_defense": 577,
         "speed": 19
       }
@@ -12421,7 +12421,7 @@
     {
       "species": "Tauros Aqua Breed",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
         "defense": 103,
         "special_attack": 938,
@@ -12432,7 +12432,7 @@
     {
       "species": "Tauros Blaze Breed",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
         "defense": 103,
         "special_attack": 938,
@@ -12443,7 +12443,7 @@
     {
       "species": "Tauros Combat Breed",
       "rankings": {
-        "hp": 251,
+        "hp": 252,
         "attack": 148,
         "defense": 103,
         "special_attack": 938,
@@ -12599,7 +12599,7 @@
       "rankings": {
         "hp": 886,
         "attack": 903,
-        "defense": 875,
+        "defense": 876,
         "special_attack": 541,
         "special_defense": 871,
         "speed": 404

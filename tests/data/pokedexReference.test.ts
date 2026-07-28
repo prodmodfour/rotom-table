@@ -74,6 +74,15 @@ describe('Pokédex reference data', () => {
       .toEqual({ hp: 7, atk: 11, def: 7, spatk: 9, spdef: 9, spd: 12 })
   })
 
+  it('uses hardy volcanic-artillery stats for the Numel line', () => {
+    const bySpecies = new Map(loadPokedex().map((entry) => [entry.species, entry]))
+
+    expect(bySpecies.get('Numel')?.base_stats)
+      .toEqual({ hp: 7, atk: 6, def: 6, spatk: 8, spdef: 5, spd: 4 })
+    expect(bySpecies.get('Camerupt')?.base_stats)
+      .toEqual({ hp: 9, atk: 10, def: 9, spatk: 12, spdef: 8, spd: 4 })
+  })
+
   it('contains machine moves parsed from shorthand TM sections and all-machine notes', () => {
     const pokedex = loadPokedex()
     const bySpecies = new Map(pokedex.map((entry) => [entry.species, entry]))

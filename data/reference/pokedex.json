@@ -109410,10 +109410,10 @@
       "Ground"
     ],
     "base_stats": {
-      "hp": 7,
+      "hp": 9,
       "atk": 10,
-      "def": 7,
-      "spatk": 11,
+      "def": 9,
+      "spatk": 12,
       "spdef": 8,
       "spd": 4
     },
@@ -137040,10 +137040,10 @@
       "Ground"
     ],
     "base_stats": {
-      "hp": 6,
+      "hp": 7,
       "atk": 6,
-      "def": 4,
-      "spatk": 7,
+      "def": 6,
+      "spatk": 8,
       "spdef": 5,
       "spd": 4
     },

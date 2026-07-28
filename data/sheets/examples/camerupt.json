@@ -23,7 +23,7 @@
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "satk": {
@@ -33,7 +33,7 @@
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "spd": {
@@ -43,11 +43,11 @@
     }
   },
   "combat": {
-    "maxHp": 87,
-    "currentHp": 87,
-    "tick": 8,
+    "maxHp": 93,
+    "currentHp": 93,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 3,
       "vsAny": 1
     },
