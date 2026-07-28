@@ -120916,11 +120916,11 @@
     ],
     "base_stats": {
       "hp": 5,
-      "atk": 7,
+      "atk": 9,
       "def": 5,
-      "spatk": 9,
+      "spatk": 7,
       "spdef": 6,
-      "spd": 7
+      "spd": 10
     },
     "abilities": {
       "basic": [
@@ -143286,9 +143286,9 @@
     ],
     "base_stats": {
       "hp": 7,
-      "atk": 9,
+      "atk": 11,
       "def": 7,
-      "spatk": 11,
+      "spatk": 9,
       "spdef": 9,
       "spd": 12
     },
@@ -154439,11 +154439,11 @@
     ],
     "base_stats": {
       "hp": 4,
-      "atk": 5,
+      "atk": 7,
       "def": 4,
-      "spatk": 7,
+      "spatk": 5,
       "spdef": 6,
-      "spd": 7
+      "spd": 8
     },
     "abilities": {
       "basic": [

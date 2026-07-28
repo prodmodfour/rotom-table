@@ -27,7 +27,7 @@
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
@@ -37,7 +37,7 @@
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
@@ -48,7 +48,7 @@
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },

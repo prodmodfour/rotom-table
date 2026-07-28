@@ -63,6 +63,17 @@ describe('Pokédex reference data', () => {
     expect(vikavolt).toMatchObject({ evolution_stage: 3, evolutions_remaining: 0 })
   })
 
+  it('uses fast, physical stat progression for the Treecko line', () => {
+    const bySpecies = new Map(loadPokedex().map((entry) => [entry.species, entry]))
+
+    expect(bySpecies.get('Treecko')?.base_stats)
+      .toEqual({ hp: 4, atk: 7, def: 4, spatk: 5, spdef: 6, spd: 8 })
+    expect(bySpecies.get('Grovyle')?.base_stats)
+      .toEqual({ hp: 5, atk: 9, def: 5, spatk: 7, spdef: 6, spd: 10 })
+    expect(bySpecies.get('Sceptile')?.base_stats)
+      .toEqual({ hp: 7, atk: 11, def: 7, spatk: 9, spdef: 9, spd: 12 })
+  })
+
   it('contains machine moves parsed from shorthand TM sections and all-machine notes', () => {
     const pokedex = loadPokedex()
     const bySpecies = new Map(pokedex.map((entry) => [entry.species, entry]))

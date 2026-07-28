@@ -88,11 +88,11 @@ describe('stat rankings reference data', () => {
     expect(failures).toEqual([])
     expect(rankingsBySpecies.get('Onix')).toEqual({
       hp: 251,
-      attack: 206,
+      attack: 207,
       defense: 11,
       special_attack: 938,
       special_defense: 727,
-      speed: 402,
+      speed: 404,
     })
     expect(rankingsBySpecies.get('Steelix')).toEqual({
       hp: 81,

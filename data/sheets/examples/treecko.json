@@ -22,12 +22,12 @@
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
