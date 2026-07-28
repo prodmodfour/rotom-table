@@ -115,7 +115,6 @@ describe('API route constants', () => {
       updateAttackOfOpportunity: '/api/maps/attack-of-opportunity/update',
       updateStartTurnModal: '/api/maps/start-turn-modal/update',
       useManeuver: '/api/maps/tokens/use-maneuver',
-      useAbility: '/api/maps/tokens/use-ability',
       useOrder: '/api/maps/tokens/use-order',
       create: '/api/maps/create',
       createFolder: '/api/maps/create-folder',

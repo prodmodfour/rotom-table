@@ -299,6 +299,24 @@ const removalOperation = (input: {
   },
 }, `battlefieldZone.${input.zone.id}.removal`) as MoveHazardEffectOperation
 
+/** Materialize one deterministic lifecycle-owned removal for a crossed zone. */
+export const materializeBattlefieldZoneRemovalOperation = (input: {
+  readonly eventId: string
+  readonly zone: EncounterZone
+  readonly hookId: string
+  readonly reasonCode: string
+}): MoveHazardEffectOperation => removalOperation({
+  eventId: input.eventId,
+  zone: input.zone,
+  hook: {
+    id: input.hookId,
+    handlerId: input.hookId,
+    oncePerMovement: true,
+  },
+  ordinal: 1,
+  reasonCode: input.reasonCode,
+})
+
 const effectOperation = (input: {
   readonly eventId: string
   readonly zone: EncounterZone

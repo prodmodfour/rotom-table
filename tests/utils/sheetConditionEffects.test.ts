@@ -27,6 +27,7 @@ describe('sheet condition effects', () => {
   it('applies Quick Feet to qualifying status conditions', () => {
     expect(conditionAdjustedCombatStage(0, ['Paralysis'], 'spd', { abilities: ['Quick Feet'] })).toBe(2)
     expect(conditionAdjustedCombatStage(5, ['Sleep'], 'spd', { abilities: ['Quick Feet'] })).toBe(6)
+    expect(conditionAdjustedCombatStage(0, ['Bad Sleep'], 'spd', { abilities: ['Quick Feet'] })).toBe(2)
     expect(conditionAdjustedCombatStage(0, ['Badly Poisoned'], 'spd', { abilities: ['quick feet'] })).toBe(2)
     expect(conditionAdjustedCombatStage(0, [], 'spd', { abilities: ['Quick Feet'] })).toBe(0)
     expect(conditionAdjustedCombatStage(0, ['Paralysis'], 'atk', { abilities: ['Quick Feet'] })).toBe(0)

@@ -52,6 +52,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   USE_MOVE: 'useMove',
   RESOLVE_MOVE: 'resolveMove',
   USE_MANEUVER: 'useManeuver',
+  /** @deprecated Historical wire-reader identity; production execution returns 410/rejected. */
   USE_ABILITY: 'useAbility',
   USE_ORDER: 'useOrder',
   SET_INITIATIVE: 'setInitiative',
@@ -368,6 +369,7 @@ export interface UseManeuverPayload {
   readonly targetPlacementId?: string
 }
 
+/** @deprecated Historical wire shape only. Use the native Ability declaration intent. */
 export interface UseAbilityPayload {
   readonly placementId: string
   readonly abilityName: string
@@ -695,6 +697,7 @@ export type UseManeuverLivePlayCommand = LivePlayCommandEnvelope<
   LivePlayScope
 >
 
+/** @deprecated Historical command reader only; no production executor accepts it. */
 export type UseAbilityLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
   UseAbilityPayload,

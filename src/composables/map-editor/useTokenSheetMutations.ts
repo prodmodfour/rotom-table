@@ -6,7 +6,6 @@ import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId as defaultGetClientId } from '~/utils/clientId'
 import { getErrorMessage } from '~/utils/errorMessages'
 import {
-  applyAbilityActivationToSheet,
   applyCombatStagesToSheet,
   applyConditionsToSheet,
   applyHpToSheet,
@@ -27,7 +26,6 @@ import type {
   MoveAutomationConditionUpdate,
   MoveAutomationHpUpdate,
 } from '~/types/moveAutomation'
-import type { AbilitySheetActivationUpdate } from '~/types/abilityAutomation'
 
 export interface SheetUpdateOptions {
   allowAnyTarget?: boolean
@@ -195,19 +193,6 @@ export const useTokenSheetMutations = ({
     )
   }
 
-  const modifyAbilityActivation = async (
-    payload: AbilitySheetActivationUpdate,
-    options: SheetUpdateOptions = {},
-  ): Promise<void> => {
-    if (!payload.activated) return
-    await updatePlacedSheet(
-      payload.id,
-      (kind, sheet) => applyAbilityActivationToSheet(kind, sheet, payload.abilityName),
-      'modifyAbilityActivation',
-      options,
-    )
-  }
-
   return {
     lastError,
     clearError,
@@ -216,6 +201,5 @@ export const useTokenSheetMutations = ({
     modifyCombatStages,
     modifyConditions,
     grantExperience,
-    modifyAbilityActivation,
   }
 }

@@ -13,6 +13,8 @@ import {
 } from '#shared/moveAutomation/pendingResolution'
 import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { TabletopMap } from '~/types/map'
 import type { ShopTableDocument } from '~/types/shop'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -25,6 +27,7 @@ import {
   type RealtimePolicyPersistedSheet,
 } from '../../server/realtime/realtimeEventAccessPolicy'
 import { createPendingMoveResolutionFixture } from '../fixtures/moveAutomation/pendingResolution'
+import { projectAbilityAutomationJsonForPlayer } from '../../server/domain/abilityAutomation/realtimeProjection'
 
 const map = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
@@ -191,6 +194,49 @@ describe('realtime event map access policy', () => {
     })
   })
 
+  it('projects Ability authority out of player map events without changing the GM record', () => {
+    const privateEffect = parseEncounterEffect({
+      id: 'ability.private.target-gate',
+      kind: 'capability',
+      source: { operationId: 'intent.private', moveId: 'ability.intimidate', placementId: 'actor' },
+      affected: { placementIds: ['target'], sideIds: [], cells: [] },
+      createdRound: 1,
+      createdTurn: 0,
+      duration: { kind: 'scene', remaining: null },
+      stacks: 1,
+      charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null },
+      tags: ['ability', 'target-gate'],
+      payload: { capabilityId: 'private.gate', action: 'grant' },
+      dispel: { policy: 'none', tags: [] },
+      transferPolicy: 'retain',
+      suppression: { sources: [] },
+    })
+    const privateMap = map({
+      encounterState: {
+        ...createEmptyEncounterState(),
+        effects: [privateEffect],
+        abilityUsage: { schemaVersion: 1, sceneId: 'scene.private', entries: [] },
+      },
+    })
+    const deps = dependencies({ maps: [privateMap] })
+    const event = persistedEvent(1, { kind: 'map-access', mapSlug: 'arena' }, { data: privateMap })
+    const playerResult = filterRealtimeEventsForPrincipal({
+      events: [event], principal: player(), dependencies: deps,
+    })
+    const gmResult = filterRealtimeEventsForPrincipal({
+      events: [event], principal: gm, dependencies: deps,
+    })
+
+    expect(JSON.stringify(playerResult.allowed[0])).not.toContain('ability.intimidate')
+    expect(JSON.stringify(playerResult.allowed[0])).not.toContain('intent.private')
+    expect((playerResult.allowed[0]?.event.data as TabletopMap).encounterState?.abilityUsage)
+      .toEqual({ schemaVersion: 1, sceneId: null, entries: [] })
+    expect(JSON.stringify(gmResult.allowed[0])).toContain('ability.intimidate')
+    expect(gmResult.allowed[0]).toBe(event)
+  })
+
   it('does not let a channel name override the explicit map descriptor', () => {
     const deps = dependencies({
       maps: [map({ slug: 'visible', playerVisible: true }), map({ slug: 'hidden', playerVisible: false })],
@@ -300,6 +346,37 @@ describe('realtime event sheet access policy', () => {
       gm,
       dependencies(),
     )).toEqual({ allowed: false, reason: 'sheet-not-found' })
+  })
+
+  it('redacts map-only sheet Ability identities but retains a source controller projection', () => {
+    const visible = pokemon({
+      slug: 'visible-pika',
+      abilities: [{ name: 'Sturdy', frequency: 'Static', effect: 'Private.' }],
+    })
+    const deps = dependencies({
+      pokemonSheets: [visible],
+      playerVisibleMapKeys: ['pokemon:visible-pika'],
+    })
+    const event = persistedEvent(
+      1,
+      { kind: 'sheet-access', sheetKind: 'pokemon', sheetSlug: 'visible-pika' },
+      { data: { kind: 'pokemon', slug: 'visible-pika', sheet: visible } },
+    )
+    const participant = filterRealtimeEventsForPrincipal({
+      events: [event], principal: player(), dependencies: deps,
+    })
+    const owner = filterRealtimeEventsForPrincipal({
+      events: [event],
+      principal: player({
+        playerProfile: profile('profile_owner000', [
+          { sheetKind: 'pokemon', sheetSlug: 'visible-pika' },
+        ]),
+      }),
+      dependencies: deps,
+    })
+
+    expect(JSON.stringify(participant.allowed[0])).not.toContain('Sturdy')
+    expect(JSON.stringify(owner.allowed[0])).toContain('Sturdy')
   })
 
   it('does not trust payload or sheet runtime marker fields to grant access', () => {
@@ -515,6 +592,11 @@ describe('realtime event GM-only decisions and batch filtering', () => {
 })
 
 describe('realtime event access architecture boundaries', () => {
+  it('does not transform binary/static response bodies', () => {
+    const body = Buffer.from('const answer = 42')
+    expect(projectAbilityAutomationJsonForPlayer(body)).toBe(body)
+  })
+
   it('keeps the policy free of H3, SSE, and client imports', () => {
     const source = readFileSync('server/realtime/realtimeEventAccessPolicy.ts', 'utf8')
 

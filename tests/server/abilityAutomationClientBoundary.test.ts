@@ -9,6 +9,8 @@ import { resolveAbilityDeclarationUseCase } from '../../server/useCases/resolveA
 import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
 import { createSqliteMapRepository } from '../../server/storage/mapRepository'
 import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
+import { createSqliteRealtimeEventRepository } from '../../server/storage/realtimeEventRepository'
+import { ABILITY_AUTOMATION_REALTIME_EVENT_TYPE } from '#shared/abilityAutomation/realtime'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 
@@ -101,6 +103,18 @@ const setup = () => {
 afterEach(() => databases.splice(0).forEach(database => database.close()))
 
 describe('native ability UI/command boundary', () => {
+  it('maps malformed declaration and resolution wire values to bounded client errors', () => {
+    for (const [invoke, message] of [
+      [() => beginAbilityDeclarationUseCase({ role: 'gm', command: undefined }), 'Invalid Ability declaration command.'],
+      [() => resolveAbilityDeclarationUseCase({ role: 'gm', intent: undefined }), 'Invalid Ability declaration intent.'],
+    ] as const) {
+      let thrown: unknown
+      try { invoke() }
+      catch (error) { thrown = error }
+      expect(thrown).toMatchObject({ statusCode: 400, statusMessage: message })
+    }
+  })
+
   it('projects only controlled manifest-selected capabilities into the live snapshot', () => {
     const manifest = {
       schemaVersion: 1,
@@ -149,7 +163,12 @@ describe('native ability UI/command boundary', () => {
   })
 
   it('commits and durably replays the exact intent without a second revision', () => {
-    const { dependencies, mapRepository } = setup()
+    const { dependencies, mapRepository, database } = setup()
+    const published: unknown[] = []
+    const realtimeDependencies = {
+      ...dependencies,
+      publishPersistedRealtimeEvent: (event: unknown) => { published.push(event) },
+    }
     const offer = beginAbilityDeclarationUseCase({ role: 'gm', command: command() }, dependencies)
     const intent = {
       schemaVersion: 1,
@@ -164,15 +183,35 @@ describe('native ability UI/command boundary', () => {
       modeId: offer.modeId,
       selections: [{ declarationId: 'no-target', kind: 'none', optionIds: [] }],
     }
-    const first = resolveAbilityDeclarationUseCase({ role: 'gm', intent }, dependencies)
+    const first = resolveAbilityDeclarationUseCase({ role: 'gm', intent }, realtimeDependencies)
     expect(first).toMatchObject({
       kind: 'accepted', operationId: 'intent:one', previousRevision: 5, revision: 6,
       presentation: { outcome: 'applied' },
     })
     expect(mapRepository.getBySlug('arena-map')?.revision).toBe(6)
-    const retry = resolveAbilityDeclarationUseCase({ role: 'gm', intent }, dependencies)
+    const retry = resolveAbilityDeclarationUseCase({ role: 'gm', intent }, realtimeDependencies)
     expect(retry).toEqual(first)
     expect(mapRepository.getBySlug('arena-map')?.revision).toBe(6)
+
+    const realtime = createSqliteRealtimeEventRepository({ database }).readAfter({ afterSequence: 0 })
+    expect(realtime.events).toHaveLength(1)
+    expect(realtime.events[0]).toMatchObject({
+      access: { kind: 'map-access', mapSlug: 'arena-map' },
+      event: {
+        channel: 'map:arena-map',
+        type: ABILITY_AUTOMATION_REALTIME_EVENT_TYPE,
+        revision: 6,
+        data: {
+          schemaVersion: 1,
+          mapSlug: 'arena-map',
+          previousRevision: 5,
+          revision: 6,
+          status: 'committed',
+        },
+      },
+    })
+    expect(JSON.stringify(realtime.events[0])).not.toContain('Abominable')
+    expect(published).toHaveLength(1)
   })
 
   it('rejects inactive identities, stale capabilities, and unauthorized players before offering mechanics', () => {

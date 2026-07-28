@@ -3,6 +3,7 @@ import {
   remainingAbilityRegistrations,
   remainingActivatedAbilitySpec as activatedSpec,
   remainingStaticAbilitySpec as staticSpec,
+  remainingStaticTriggeredAbilitySpec as staticTriggeredSpec,
   remainingTriggeredAbilitySpec as triggeredSpec,
 } from './aa085to100Shared'
 
@@ -11,7 +12,7 @@ export const WHIRLWIND_KICKS_ABILITY_SPEC = staticSpec('Whirlwind Kicks', 'aa099
 export const WHITE_FLAME_ABILITY_SPEC = staticSpec('White Flame', 'aa099.white-flame')
 export const WHITE_SMOKE_ABILITY_SPEC = staticSpec('White Smoke', 'aa099.white-smoke')
 export const WILY_ABILITY_SPEC = staticSpec('Wily', 'aa099.wily')
-export const WIND_POWER_ABILITY_SPEC = triggeredSpec('Wind Power', 'aa099.wind-power', 'move')
+export const WIND_POWER_ABILITY_SPEC = staticTriggeredSpec('Wind Power', 'aa099.wind-power', 'move')
 export const WINDVEILED_ABILITY_SPEC = staticSpec('Windveiled', 'aa099.windveiled')
 export const WINTERS_KISS_ABILITY_SPEC = staticSpec('Winter’s Kiss', 'aa099.winters-kiss')
 export const WISHMASTER_ABILITY_SPEC = staticSpec('Wishmaster', 'aa099.wishmaster')

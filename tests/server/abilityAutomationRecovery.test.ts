@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   AbilityRecoveryError,
+  createAbilityMaintenanceExport,
   createAbilityRecoveryBundle,
   parseAbilityRecoveryBundle,
   recoverAbilityAutomationState,
@@ -17,6 +18,8 @@ import {
   createEmptyAbilitySceneUsageLedger,
 } from '#shared/abilityAutomation/resources'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptyAbilityTransformationState } from '#shared/abilityAutomation/transformations'
+import { reduceAbilityTransformationCommand } from '../../server/domain/abilityAutomation/transformations'
 
 const HASH = 'a'.repeat(64)
 const DEFINITION_HASH = 'b'.repeat(64)
@@ -36,6 +39,58 @@ const trace = () => createAbilityResolutionTrace({
     sourceDataSha256: HASH,
   },
   ancestry: [],
+})
+
+const transformationCommand = () => ({
+  operationId: 'operation.create-copied-form',
+  kind: 'create' as const,
+  snapshotId: 'snapshot.copied-form',
+  expectedVersion: null,
+  snapshot: {
+    snapshotId: 'snapshot.copied-form',
+    kind: 'transformation' as const,
+    placementId: 'actor-token',
+    ownerPlacementId: 'actor-token',
+    sourceAbilityInstanceId: 'base:actor-token:0',
+    canonicalId: 'Healer',
+    sourceOperationId: 'operation.trigger-copied-form',
+    duration: { kind: 'source-ability' as const },
+    mechanics: {
+      formId: 'form.copied',
+      abilityPolicy: 'replace' as const,
+      abilities: [{
+        instanceId: 'copied:snapshot.copied-form:0',
+        canonicalId: 'Blaze',
+        definitionHash: DEFINITION_HASH,
+        sourcePlacementId: 'target-token',
+        parameterStatus: 'not-parameterized' as const,
+        parameterData: null,
+      }],
+      moves: [],
+      typeIds: ['fire'],
+      footprint: { base: 1, clearance: 1 },
+      weightClass: 2,
+      capabilityTags: ['overland'],
+    },
+    copyBase: {
+      sourcePlacementId: 'target-token',
+      sourceRevision: 3,
+      sourceReadSha256: HASH,
+    },
+    presentation: {
+      public: {
+        presentationId: 'presentation.copied-form',
+        labelKey: 'ability.form.copied',
+        formId: 'form.copied',
+        assetId: 'sprite.copied-form',
+      },
+      private: {
+        truePresentationId: 'presentation.actor',
+        copiedFromPlacementId: 'target-token',
+        revealPolicy: 'owner-and-gm' as const,
+      },
+    },
+  },
 })
 
 const encounter = () => {
@@ -100,6 +155,10 @@ const encounter = () => {
         duration: { kind: 'source-ability' as const },
       }],
     },
+    abilityTransformations: reduceAbilityTransformationCommand(
+      createEmptyAbilityTransformationState(),
+      transformationCommand(),
+    ).state,
   }
 }
 
@@ -219,6 +278,14 @@ describe('ability restart, reconnect, export, and recovery', () => {
       kind: 'mode', modeId: 'active',
     })
     expect(parsed.payload.dailyUsage[0]?.usage.entries).toHaveLength(1)
+    expect(parsed.payload.encounterState.abilityTransformations?.entries[0]).toMatchObject({
+      snapshotId: 'snapshot.copied-form',
+      mechanics: {
+        formId: 'form.copied',
+        abilities: [{ canonicalId: 'Blaze', sourcePlacementId: 'target-token' }],
+      },
+      copyBase: { sourcePlacementId: 'target-token', sourceRevision: 3 },
+    })
     expect(parsed.payload.pendingResolutions[0]).toMatchObject({
       resolutionId: 'resolution.pending',
       window: { responderPrincipalIds: ['player-one'] },
@@ -243,6 +310,15 @@ describe('ability restart, reconnect, export, and recovery', () => {
     expect(recovered.pendingResolutions[0]?.continuation).toEqual({
       phase: 'effect', operationCursor: 2, selectedTargetIds: ['target-token'],
     })
+    expect(recovered.encounterState.abilityTransformations?.entries[0]?.mechanics.abilities[0])
+      .toMatchObject({ canonicalId: 'Blaze', sourcePlacementId: 'target-token' })
+
+    const exactRetry = reduceAbilityTransformationCommand(
+      recovered.encounterState.abilityTransformations,
+      transformationCommand(),
+    )
+    expect(exactRetry.status).toBe('duplicate')
+    expect(exactRetry.state).toEqual(recovered.encounterState.abilityTransformations)
   })
 
   it('reconciles stale source presence and source-ability state on restart', () => {
@@ -259,6 +335,29 @@ describe('ability restart, reconnect, export, and recovery', () => {
 
     expect(recovered.encounterState.abilityOwnedState?.entries).toEqual([])
     expect(recovered.encounterState.abilityEffectLifecycle?.entries).toEqual([])
+    expect(recovered.encounterState.abilityTransformations?.entries).toEqual([])
+  })
+
+  it('terminally abandons private prompts in maintenance JSON exports with identity-only audit evidence', () => {
+    const exported = createAbilityMaintenanceExport(payload())
+    const serialized = JSON.parse(JSON.stringify(exported))
+
+    expect(serialized).toMatchObject({
+      schemaVersion: 1,
+      policy: 'terminally-abandoned-on-maintenance-export',
+      abandonedPendingResolutions: [{
+        resolutionId: 'resolution.pending',
+        operationId: 'operation.pending',
+        mapSlug: 'recovery-arena',
+        previousStatus: 'pending',
+      }],
+      bundle: { payload: { pendingResolutions: [] } },
+    })
+    expect(JSON.stringify(exported.abandonedPendingResolutions)).not.toMatch(
+      /responder|continuation|window|roll|trace|target-token|player-one/i,
+    )
+    expect(parseAbilityRecoveryBundle(exported.bundle).payload.pendingResolutions).toEqual([])
+    expect(Object.isFrozen(exported)).toBe(true)
   })
 
   it('rejects payload tampering even when nested JSON remains valid', () => {

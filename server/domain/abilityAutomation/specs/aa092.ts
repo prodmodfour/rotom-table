@@ -5,10 +5,11 @@ import {
   remainingActivatedTriggeredAbilitySpec as activatedTriggeredSpec,
   remainingStaticAbilitySpec as staticSpec,
   remainingStaticActivatedAbilitySpec as staticActivatedSpec,
+  remainingStaticTriggeredAbilitySpec as staticTriggeredSpec,
   remainingTriggeredAbilitySpec as triggeredSpec,
 } from './aa085to100Shared'
 
-export const STALWART_ABILITY_SPEC = triggeredSpec('Stalwart', 'aa092.stalwart', 'hp')
+export const STALWART_ABILITY_SPEC = staticTriggeredSpec('Stalwart', 'aa092.stalwart', 'hp')
 export const STAMINA_ABILITY_SPEC = triggeredSpec('Stamina', 'aa092.stamina', 'move')
 export const STANCE_CHANGE_ABILITY_SPEC = staticActivatedSpec('Stance Change', 'aa092.stance-change')
 export const STARLIGHT_ABILITY_SPEC = activatedSpec('Starlight', 'aa092.starlight')

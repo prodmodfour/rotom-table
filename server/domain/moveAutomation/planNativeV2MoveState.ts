@@ -792,6 +792,7 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.migraine.optional-confusion-critical', 'Migraine'],
     ['ability.minus.optional-additional-stage-loss', 'Minus'],
     ['ability.mirror-armor.optional-reflection', 'Mirror Armor'],
+    ['ability.moxie.optional-attack-stage', 'Moxie'],
     ['ability.mummy.optional-disable', 'Mummy'],
     ['ability.pack-hunt.optional-attack', 'Pack Hunt'],
     ['ability.parry.optional-miss', 'Parry'],
@@ -864,7 +865,7 @@ const applyTriggeredAbilityPayments = (input: {
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
     'Color Change', 'Combo Striker', 'Flavorful Aroma', 'Fox Fire',
     'Galvanize', 'Gooey', 'Grim Neigh', 'Heat Mirage', 'Heliovolt', 'Horde Break',
-    'Ignition Boost', 'Iron Barbs', 'Justified', 'Mirror Armor', 'Mummy',
+    'Ignition Boost', 'Iron Barbs', 'Justified', 'Mirror Armor', 'Moxie', 'Mummy',
     'Pack Hunt', 'Perception', 'Pixilate', 'Polycephaly', 'Protean',
     'Rattled', 'Refrigerate', 'Rough Skin', 'Sequence', 'Spinning Dance', 'Stamina', 'Steadfast', 'Tangling Hair', 'Tingle',
     'Spiteful Intervention', 'Sumo Stance', 'Telepathy', 'Thunder Boost', 'Water Compaction', 'Weak Armor', 'Weaponize', 'Weeble',
@@ -908,7 +909,7 @@ const applyTriggeredAbilityPayments = (input: {
     const ability = input.context.queries.abilities.activeForPlacement(ownerId)
       .find(candidate => candidate.canonicalId === canonicalId)
       ?? fail('state-change-conflict', `Selected ${canonicalId} response lost its effective runtime.`)
-    const actionResources = canonicalId === 'Sap Sipper'
+    const actionResources = canonicalId === 'Moxie' || canonicalId === 'Sap Sipper'
       ? ([] as const)
       : canonicalId === 'Celebrate'
       ? (['swift', 'free'] as const)
@@ -947,7 +948,7 @@ const applyTriggeredAbilityPayments = (input: {
       placementId: ownerId,
       canonicalMoveId: `ability:${canonicalId}`,
       moveKey: `ability:${canonicalId.toLowerCase().replaceAll(' ', '-')}`,
-      range: canonicalId === 'Sap Sipper'
+      range: canonicalId === 'Moxie' || canonicalId === 'Sap Sipper'
         ? 'Special'
         : canonicalId === 'Celebrate' || canonicalId === 'Cruelty'
         ? 'Swift Action'

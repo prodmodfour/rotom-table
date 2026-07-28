@@ -124,7 +124,13 @@ export const aa062MoveOverlayOperations = (input: {
   readonly moveSourceId: string
 }): readonly MoveEffectOperation[] => {
   const operations: MoveEffectOperation[] = []
-  for (const targetId of [...new Set(input.context.selectedPlacements.map(placement => placement.id))].sort()) {
+  const actorBlocksTargetChanges = input.context.queries.abilities.has(
+    input.context.actor.placement.id,
+    'Stalwart',
+  )
+  for (const targetId of actorBlocksTargetChanges
+    ? []
+    : [...new Set(input.context.selectedPlacements.map(placement => placement.id))].sort()) {
     const target = input.context.queries.tokens.get(targetId)
     if (!target) continue
     const providers = input.context.queries.placements.all().flatMap((placement) => {

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
-import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
+import { parseEncounterEffect, type EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import { beginAbilityDeclarationUseCase } from '~~/server/useCases/beginAbilityDeclaration'
@@ -60,12 +60,14 @@ const battleMap = (input: {
   readonly effects?: readonly EncounterEffect[]
   readonly willingAlly?: boolean
   readonly naturalLight?: 'sunlight' | 'moonlight'
+  readonly allyPosition?: Readonly<{ x: number; y: number; z: number }>
+  readonly targetPosition?: Readonly<{ x: number; y: number; z: number }>
 }): TabletopMap => {
   const encounter = createEmptyEncounterState()
   const placements: TabletopMap['placements'] = [
     { id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', sideId: 'heroes', position: { x: 5, y: 0, z: 5 } },
-    { id: 'ally', sheetKind: 'pokemon', sheetSlug: 'ally', sideId: 'heroes', position: { x: 6, y: 0, z: 5 } },
-    { id: 'target', sheetKind: 'pokemon', sheetSlug: 'target', sideId: 'foes', position: { x: 7, y: 0, z: 5 } },
+    { id: 'ally', sheetKind: 'pokemon', sheetSlug: 'ally', sideId: 'heroes', position: input.allyPosition ?? { x: 6, y: 0, z: 5 } },
+    { id: 'target', sheetKind: 'pokemon', sheetSlug: 'target', sideId: 'foes', position: input.targetPosition ?? { x: 7, y: 0, z: 5 } },
   ]
   return {
     schemaVersion: 2, slug: input.slug, name: input.slug, revision: 5,
@@ -122,6 +124,11 @@ const setup = (input: {
   readonly targetAbility?: string
   readonly targetAbilitySelections?: readonly { readonly parameterId: string; readonly optionIds: readonly string[] }[]
   readonly actorCurrentHp?: number
+  readonly allyCurrentHp?: number
+  readonly targetCurrentHp?: number
+  readonly targetConditions?: readonly string[]
+  readonly allyPosition?: Readonly<{ x: number; y: number; z: number }>
+  readonly targetPosition?: Readonly<{ x: number; y: number; z: number }>
   readonly naturalLight?: 'sunlight' | 'moonlight'
 }) => {
   const database = openRotomDatabase({ path: ':memory:' })
@@ -135,6 +142,8 @@ const setup = (input: {
     effects: input.effects,
     willingAlly: input.willingAlly,
     naturalLight: input.naturalLight,
+    allyPosition: input.allyPosition,
+    targetPosition: input.targetPosition,
   }))
   for (const value of [
     sheet({
@@ -144,10 +153,12 @@ const setup = (input: {
       held: input.held,
       currentHp: input.actorCurrentHp,
     }),
-    sheet({ slug: 'ally', held: input.allyHeld }),
+    sheet({ slug: 'ally', held: input.allyHeld, currentHp: input.allyCurrentHp }),
     sheet({
       slug: 'target', ability: input.targetAbility,
       abilitySelections: input.targetAbilitySelections,
+      conditions: input.targetConditions,
+      currentHp: input.targetCurrentHp,
     }),
   ]) sheetRepository.saveSetupSheet('pokemon', value.slug, value as unknown as Record<string, unknown>)
   return {
@@ -214,7 +225,7 @@ const useAbility = (input: {
   } }, input.dependencies)
 }
 
-const spent = (map: TabletopMap, resource: 'free' | 'swift' | 'standard' | 'full'): number => (
+const spent = (map: TabletopMap, resource: 'free' | 'swift' | 'shift' | 'standard' | 'full'): number => (
   map.encounterState?.turnResources.actor?.actions[resource].spent ?? 0
 )
 
@@ -229,6 +240,23 @@ describe('AA-085 through AA-100 activated conformance', () => {
     })
     expect(() => begin(dependencies, mapSlug, 'Quick Curl')).toThrow()
     expect(dependencies.mapRepository.getBySlug(mapSlug)?.revision).toBe(5)
+  })
+
+  it('Psychic Surge creates a five-round authoritative Weird field', () => {
+    const mapSlug = 'remaining-psychic-surge'
+    const dependencies = setup({ slug: mapSlug, actorAbility: 'Psychic Surge' })
+    expect(useAbility({ dependencies, mapSlug, canonicalId: 'Psychic Surge' }).kind).toBe('accepted')
+    const map = dependencies.mapRepository.getBySlug(mapSlug)!
+    expect(map.fieldEffects?.terrains).toContainEqual(expect.objectContaining({
+      kind: 'psychic',
+      scope: 'field',
+    }))
+    expect(map.encounterState?.zones).toContainEqual(expect.objectContaining({
+      kind: 'terrain',
+      duration: { kind: 'rounds', boundary: 'end', remaining: 5 },
+      payload: { terrainId: 'psychic' },
+    }))
+    expect(spent(map, 'swift')).toBe(1)
   })
 
   it('Quick Curl invokes Defense Curl state, adds its own DR, pays both actions, and cleans up curled-up exactly', () => {
@@ -265,6 +293,139 @@ describe('AA-085 through AA-100 activated conformance', () => {
     })
     expect(recall.expiredEffectIds).toContain(curled!.id)
     expect(recall.effects.some(effect => effect.tags.includes('curled-up'))).toBe(false)
+  })
+
+  it('executes Pumpkingrab, Shackle, and Snuggle against exact authoritative recipients', () => {
+    const pumpSlug = 'remaining-pumpkingrab'
+    const pump = setup({
+      slug: pumpSlug, actorAbility: 'Pumpkingrab',
+      targetPosition: { x: 6, y: 0, z: 5 },
+    })
+    expect(useAbility({
+      dependencies: pump, mapSlug: pumpSlug, canonicalId: 'Pumpkingrab',
+      selected: { token: 'target' },
+    }).kind).toBe('accepted')
+    const pumpMap = pump.mapRepository.getBySlug(pumpSlug)!
+    expect(spent(pumpMap, 'standard')).toBe(1)
+    expect(pumpMap.encounterState?.effects).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        tags: expect.arrayContaining(['aa085-pumpkingrab', 'dominance']),
+        affected: expect.objectContaining({ placementIds: ['actor', 'target'] }),
+      }),
+      expect.objectContaining({
+        kind: 'condition', tags: expect.arrayContaining(['vulnerable']),
+        affected: expect.objectContaining({ placementIds: ['actor', 'target'] }),
+      }),
+    ]))
+
+    const shackleSlug = 'remaining-shackle'
+    const shackle = setup({ slug: shackleSlug, actorAbility: 'Shackle' })
+    expect(useAbility({ dependencies: shackle, mapSlug: shackleSlug, canonicalId: 'Shackle' }).kind)
+      .toBe('accepted')
+    const shackleMap = shackle.mapRepository.getBySlug(shackleSlug)!
+    expect(shackleMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      tags: expect.arrayContaining(['aa088-shackle-half-movement']),
+      affected: expect.objectContaining({ placementIds: ['target'] }),
+      duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+    }))
+
+    const snuggleSlug = 'remaining-snuggle'
+    const snuggle = setup({ slug: snuggleSlug, actorAbility: 'Snuggle' })
+    expect(useAbility({
+      dependencies: snuggle, mapSlug: snuggleSlug, canonicalId: 'Snuggle',
+      selected: { token: 'ally' },
+    }).kind).toBe('accepted')
+    const temporaryHp = snuggle.mapRepository.getBySlug(snuggleSlug)!.temporaryHitPoints?.byPlacementId
+    expect(temporaryHp?.actor).toBeGreaterThan(0)
+    expect(temporaryHp?.ally).toBeGreaterThan(0)
+    expect(temporaryHp?.target).toBeUndefined()
+  })
+
+  it('applies Rain Dish and Sand Stream with their exact weather, HP, and frequency rules', () => {
+    const rainSlug = 'remaining-rain-dish'
+    const rain = setup({ slug: rainSlug, actorAbility: 'Rain Dish', actorCurrentHp: 1 })
+    expect(useAbility({ dependencies: rain, mapSlug: rainSlug, canonicalId: 'Rain Dish' }).kind)
+      .toBe('accepted')
+    expect(savedSheet(rain).combat?.currentHp).toBeGreaterThan(1)
+    expect(savedSheet(rain).abilityUsage?.entries).toContainEqual(expect.objectContaining({
+      canonicalId: 'Rain Dish', spent: 1, limit: 5,
+    }))
+
+    const streamSlug = 'remaining-sand-stream'
+    const stream = setup({ slug: streamSlug, actorAbility: 'Sand Stream' })
+    expect(useAbility({ dependencies: stream, mapSlug: streamSlug, canonicalId: 'Sand Stream' }).kind)
+      .toBe('accepted')
+    const streamMap = stream.mapRepository.getBySlug(streamSlug)!
+    expect(streamMap.encounterState?.zones).toContainEqual(expect.objectContaining({
+      kind: 'weather', duration: { kind: 'rounds', boundary: 'end', remaining: 1 },
+      payload: { weatherId: 'sandstorm' },
+    }))
+    expect(streamMap.encounterState?.abilityUsage?.entries).toContainEqual(expect.objectContaining({
+      canonicalId: 'Sand Stream', spent: 1, limit: 3,
+    }))
+  })
+
+  it('requires Ingrain for Root Down and pays exact Shell Shield and Suction Cups actions', () => {
+    const rootSlug = 'remaining-root-down'
+    const ingrain = parseEncounterEffect({
+      id: 'move.ingrain.coat.actor', kind: 'capability',
+      source: { operationId: 'ingrain.coat', moveId: 'move.ingrain', placementId: 'actor' },
+      affected: { placementIds: ['actor'], sideIds: [], cells: [] },
+      createdRound: 1, createdTurn: 1,
+      duration: { kind: 'scene', remaining: null }, stacks: 1, charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null },
+      tags: ['ingrain', 'coat'], payload: { capabilityId: 'ingrain-coat', action: 'grant' },
+      dispel: { policy: 'matching-tags', tags: ['ingrain'] }, transferPolicy: 'expire',
+      suppression: { sources: [] },
+    })
+    const root = setup({ slug: rootSlug, actorAbility: 'Root Down', effects: [ingrain] })
+    expect(useAbility({ dependencies: root, mapSlug: rootSlug, canonicalId: 'Root Down' }).kind)
+      .toBe('accepted')
+    const rootMap = root.mapRepository.getBySlug(rootSlug)!
+    expect(spent(rootMap, 'shift')).toBe(1)
+    expect(rootMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      tags: expect.arrayContaining(['aa087-root-down-dr']),
+    }))
+
+    const shellSlug = 'remaining-shell-shield'
+    const shell = setup({ slug: shellSlug, actorAbility: 'Shell Shield' })
+    expect(useAbility({ dependencies: shell, mapSlug: shellSlug, canonicalId: 'Shell Shield' }).kind)
+      .toBe('accepted')
+    const shellMap = shell.mapRepository.getBySlug(shellSlug)!
+    expect(spent(shellMap, 'free')).toBe(1)
+    expect(spent(shellMap, 'standard')).toBe(1)
+    expect(savedSheet(shell).stats?.def?.stage).toBe(1)
+    expect(shellMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      tags: expect.arrayContaining(['shell-shield']),
+      payload: expect.objectContaining({ attribute: 'damage-reduction', value: 10 }),
+    }))
+
+    const cupsSlug = 'remaining-suction-cups'
+    const cups = setup({ slug: cupsSlug, actorAbility: 'Suction Cups' })
+    expect(useAbility({ dependencies: cups, mapSlug: cupsSlug, canonicalId: 'Suction Cups' }).kind)
+      .toBe('accepted')
+    const cupsMap = cups.mapRepository.getBySlug(cupsSlug)!
+    expect(spent(cupsMap, 'shift')).toBe(1)
+    expect(cupsMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      tags: expect.arrayContaining(['aa093-suction-cups-dr']),
+    }))
+  })
+
+  it('pays Targeting System as Lock-On and binds only its exact target', () => {
+    const mapSlug = 'remaining-targeting-system'
+    const dependencies = setup({ slug: mapSlug, actorAbility: 'Targeting System' })
+    expect(useAbility({
+      dependencies, mapSlug, canonicalId: 'Targeting System', selected: { token: 'target' },
+    }).kind).toBe('accepted')
+    const map = dependencies.mapRepository.getBySlug(mapSlug)!
+    expect(spent(map, 'free')).toBe(1)
+    expect(spent(map, 'swift')).toBe(1)
+    expect(map.encounterState?.effects).toContainEqual(expect.objectContaining({
+      tags: expect.arrayContaining(['aa094-targeting-system-lock-on']),
+      affected: expect.objectContaining({ placementIds: ['actor', 'target'] }),
+      duration: { kind: 'until-triggered', remaining: null },
+    }))
   })
 
   it('Quick Cloak offers only server-observed nearby materials and retains its cloak until canonical breakage', () => {
@@ -486,6 +647,127 @@ describe('AA-085 through AA-100 activated conformance', () => {
     expect(map.encounterState?.abilityUsage?.entries).toContainEqual(expect.objectContaining({
       canonicalId: 'Symbiosis', spent: 1, limit: 1,
     }))
+  })
+
+  it('enforces canonical target ranges for Symbiosis, Toxic Nourishment, and Unnerve', () => {
+    const distantSymbiosisSlug = 'remaining-symbiosis-distant'
+    const distantSymbiosis = setup({
+      slug: distantSymbiosisSlug,
+      actorAbility: 'Symbiosis',
+      held: 'Leftovers',
+      willingAlly: true,
+      allyPosition: { x: 7, y: 0, z: 5 },
+    })
+    expect(() => begin(distantSymbiosis, distantSymbiosisSlug, 'Symbiosis')).toThrow(
+      'Ability declaration activate.target has too few currently legal options.',
+    )
+
+    const nourishmentSlug = 'remaining-toxic-nourishment-range-five'
+    const nourishment = setup({
+      slug: nourishmentSlug,
+      actorAbility: 'Toxic Nourishment',
+      targetConditions: ['Poisoned'],
+      targetPosition: { x: 10, y: 0, z: 5 },
+    })
+    expect(begin(nourishment, nourishmentSlug, 'Toxic Nourishment').declarations
+      .find(declaration => declaration.kind === 'token')?.options).toHaveLength(1)
+    expect(useAbility({
+      dependencies: nourishment,
+      mapSlug: nourishmentSlug,
+      canonicalId: 'Toxic Nourishment',
+      selected: { token: 'target' },
+    }).kind).toBe('accepted')
+    expect((nourishment.sheetRepository.getByRef('pokemon', 'target')!.sheet as unknown as CharacterSheet)
+      .combat?.conditions).not.toContain('Poisoned')
+
+    const distantNourishmentSlug = 'remaining-toxic-nourishment-distant'
+    const distantNourishment = setup({
+      slug: distantNourishmentSlug,
+      actorAbility: 'Toxic Nourishment',
+      targetConditions: ['Badly Poisoned'],
+      targetPosition: { x: 11, y: 0, z: 5 },
+    })
+    expect(() => begin(distantNourishment, distantNourishmentSlug, 'Toxic Nourishment')).toThrow(
+      'Ability declaration activate.target has too few currently legal options.',
+    )
+
+    const unnerveSlug = 'remaining-unnerve-range-six'
+    const unnerve = setup({
+      slug: unnerveSlug,
+      actorAbility: 'Unnerve',
+      targetPosition: { x: 11, y: 0, z: 5 },
+    })
+    expect(useAbility({
+      dependencies: unnerve,
+      mapSlug: unnerveSlug,
+      canonicalId: 'Unnerve',
+      selected: { token: 'target' },
+    }).kind).toBe('accepted')
+
+    const distantUnnerveSlug = 'remaining-unnerve-distant'
+    const distantUnnerve = setup({
+      slug: distantUnnerveSlug,
+      actorAbility: 'Unnerve',
+      targetPosition: { x: 12, y: 0, z: 5 },
+    })
+    expect(() => begin(distantUnnerve, distantUnnerveSlug, 'Unnerve')).toThrow(
+      'Ability declaration activate.target has too few currently legal options.',
+    )
+  })
+
+  it('excludes canonically ineligible conscious-state, condition, and copy targets', () => {
+    const faintedSymbiosisSlug = 'remaining-symbiosis-fainted'
+    const faintedSymbiosis = setup({
+      slug: faintedSymbiosisSlug,
+      actorAbility: 'Symbiosis',
+      held: 'Leftovers',
+      willingAlly: true,
+      allyCurrentHp: 0,
+    })
+    expect(() => begin(faintedSymbiosis, faintedSymbiosisSlug, 'Symbiosis')).toThrow(
+      'Ability declaration activate.target has too few currently legal options.',
+    )
+
+    for (const testCase of [
+      { slug: 'remaining-toxic-nourishment-healthy', targetCurrentHp: 100, targetConditions: [] },
+      { slug: 'remaining-toxic-nourishment-fainted', targetCurrentHp: 0, targetConditions: ['Poisoned'] },
+    ] as const) {
+      const dependencies = setup({
+        slug: testCase.slug,
+        actorAbility: 'Toxic Nourishment',
+        targetCurrentHp: testCase.targetCurrentHp,
+        targetConditions: testCase.targetConditions,
+      })
+      expect(() => begin(dependencies, testCase.slug, 'Toxic Nourishment')).toThrow(
+        'Ability declaration activate.target has too few currently legal options.',
+      )
+    }
+
+    for (const testCase of [
+      { slug: 'remaining-trace-no-ability', targetAbility: undefined, targetCurrentHp: 100 },
+      { slug: 'remaining-trace-noncopyable', targetAbility: 'Multitype', targetCurrentHp: 100 },
+      { slug: 'remaining-trace-fainted', targetAbility: 'Stench', targetCurrentHp: 0 },
+    ] as const) {
+      const dependencies = setup({
+        slug: testCase.slug,
+        actorAbility: 'Trace',
+        targetAbility: testCase.targetAbility,
+        targetCurrentHp: testCase.targetCurrentHp,
+      })
+      expect(() => begin(dependencies, testCase.slug, 'Trace')).toThrow(
+        'Ability declaration activate.target has too few currently legal options.',
+      )
+    }
+
+    const faintedUnnerveSlug = 'remaining-unnerve-fainted'
+    const faintedUnnerve = setup({
+      slug: faintedUnnerveSlug,
+      actorAbility: 'Unnerve',
+      targetCurrentHp: 0,
+    })
+    expect(() => begin(faintedUnnerve, faintedUnnerveSlug, 'Unnerve')).toThrow(
+      'Ability declaration activate.target has too few currently legal options.',
+    )
   })
 
   it('Strange Tempo uses an authoritative Free bypass branch or a separate Standard cure branch', () => {

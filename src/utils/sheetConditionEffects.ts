@@ -52,6 +52,7 @@ const QUICK_FEET_TRIGGERING_CONDITIONS = [
   'Poisoned',
   'Badly Poisoned',
   'Sleep',
+  'Bad Sleep',
 ] as const
 const GUTS_TRIGGERING_CONDITIONS = [
   'Burned', 'Poisoned', 'Badly Poisoned', 'Paralysis', 'Frozen', 'Sleep', 'Bad Sleep',

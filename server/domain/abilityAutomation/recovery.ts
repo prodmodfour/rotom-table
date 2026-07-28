@@ -75,6 +75,21 @@ export interface RecoveredAbilityAutomationState {
   readonly pendingResolutions: readonly RecoverablePendingAbilityResolution[]
 }
 
+export interface AbilityMaintenanceExportAbandonment {
+  readonly resolutionId: string
+  readonly operationId: string
+  readonly mapSlug: string
+  readonly previousStatus: 'pending'
+}
+
+export interface AbilityMaintenanceExport {
+  readonly schemaVersion: 1
+  readonly policy: 'terminally-abandoned-on-maintenance-export'
+  /** Interchange bundle; unlike a private backup, it can never resume a prompt. */
+  readonly bundle: AbilityRecoveryBundle
+  readonly abandonedPendingResolutions: readonly AbilityMaintenanceExportAbandonment[]
+}
+
 export type AbilityRecoveryErrorCode =
   | 'invalid-bundle'
   | 'hash-mismatch'
@@ -399,6 +414,33 @@ export const createAbilityRecoveryBundle = (
   return parseAbilityRecoveryBundle({
     ...candidate,
     payloadSha256: hashPayload(candidate.payload),
+  })
+}
+
+/**
+ * Build explicit JSON interchange output. Resumable private windows belong only
+ * in a consistent database/private recovery backup; maintenance JSON export
+ * terminally abandons them and retains identity-only operator audit evidence.
+ */
+export const createAbilityMaintenanceExport = (
+  payload: AbilityRecoveryPayload,
+): AbilityMaintenanceExport => {
+  const backup = createAbilityRecoveryBundle(payload)
+  const abandonedPendingResolutions = backup.payload.pendingResolutions.map(pending => ({
+    resolutionId: pending.resolutionId,
+    operationId: pending.operationId,
+    mapSlug: pending.mapSlug,
+    previousStatus: 'pending' as const,
+  }))
+  const bundle = createAbilityRecoveryBundle({
+    ...backup.payload,
+    pendingResolutions: [],
+  })
+  return deepFreezeStrictJson({
+    schemaVersion: 1,
+    policy: 'terminally-abandoned-on-maintenance-export',
+    bundle,
+    abandonedPendingResolutions,
   })
 }
 

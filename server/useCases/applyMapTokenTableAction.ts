@@ -8,7 +8,6 @@ import {
   type LivePlaySheetScope,
   type LivePlayTableActionCommand,
   type LivePlayTokenScope,
-  type UseAbilityPayload,
   type UseManeuverPayload,
   type UseOrderPayload,
 } from '#shared/livePlayCommands'
@@ -17,27 +16,15 @@ import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import type { AbilityAutomationCategory } from '~/types/abilityAutomation'
-import { abilityEntriesForPlacement } from '~/utils/mapTokenAbilities'
 import { referenceManeuverOptions, trainerManeuverOptionsForSheet, type TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
 import { trainerOrderOptionsForSheet, type TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import {
-  applyAbilityActivationToSheet,
-  applyCombatStagesToSheet,
-  applyConditionsToSheet,
   toPersistableSheetPayload,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
-import {
-  buildLegacyTokenAbilityMenuOptions,
-  getLegacyMapAbilityAutomation as getMapAbilityAutomation,
-  resolveLegacyMapAbilityAutomationTransaction as resolveMapAbilityAutomationTransaction,
-  type LegacyTokenAbilityMenuOption,
-} from '../domain/abilityAutomation/legacyCompatibility'
 import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
 import { applyAa081NaturalCureForBreather } from '../domain/abilityAutomation/mechanics/aa081LifecycleIntegration'
@@ -48,7 +35,6 @@ import {
   aa077HasAuthoritativeDisengageWindow,
   applyAa077DisengageResourceEvidence,
 } from '../domain/abilityAutomation/mechanics/aa077StaticIntegration'
-import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import { appendActiveOrderEffect, createActiveOrderEffect } from '~/utils/activeOrderEffects'
 import { appendManeuverLogEntry, buildManeuverUseLogLines } from '~/utils/maneuverLog'
 import { appendOrderLogEntry, buildOrderUseLogLines } from '~/utils/orderLog'
@@ -72,7 +58,10 @@ import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 
-export class MapTokenTableActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
+export class MapTokenTableActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409 | 410> {}
+
+export const LEGACY_USE_ABILITY_RETIRED_MESSAGE =
+  'Legacy useAbility execution is retired; use the native Ability declaration and resolution routes.'
 
 export type LivePlayTableActionCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER
@@ -100,11 +89,10 @@ export interface LivePlayTableActionSheetUpdate {
 }
 
 export interface LivePlayTableActionSummary {
-  readonly type: 'maneuver' | 'ability' | 'order'
+  readonly type: 'maneuver' | 'order'
   readonly placementId: string
   readonly targetPlacementId?: string
   readonly name: string
-  readonly category?: AbilityAutomationCategory
 }
 
 export interface LivePlayTableActionCommandResponse {
@@ -153,13 +141,12 @@ interface ActionToken extends Pick<SpawnedPokemon,
 > {}
 
 type UnknownRecord = Record<string, unknown>
-type TableActionPayload = UseManeuverPayload | UseAbilityPayload | UseOrderPayload
+type TableActionPayload = UseManeuverPayload | UseOrderPayload
 
 const livePlayTableActionCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
 const tableActionCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
-  LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
   LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
 ])
 
@@ -287,15 +274,6 @@ const expectUseManeuverPayload = (payload: unknown): UseManeuverPayload => {
   }
 }
 
-const expectUseAbilityPayload = (payload: unknown): UseAbilityPayload => {
-  const base = expectBasePayload(payload, 'useAbility', 'abilityName')
-  return {
-    placementId: base.placementId,
-    abilityName: base.name,
-    ...(base.targetPlacementId ? { targetPlacementId: base.targetPlacementId } : {}),
-  }
-}
-
 const expectUseOrderPayload = (payload: unknown): UseOrderPayload => {
   const base = expectBasePayload(payload, 'useOrder', 'orderName')
   return {
@@ -307,8 +285,8 @@ const expectUseOrderPayload = (payload: unknown): UseOrderPayload => {
 
 const commandPayload = (command: LivePlayTableActionCommand): TableActionPayload => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER) return expectUseManeuverPayload(command.payload)
-  if (command.type === LIVE_PLAY_COMMAND_TYPES.USE_ABILITY) return expectUseAbilityPayload(command.payload)
-  return expectUseOrderPayload(command.payload)
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.USE_ORDER) return expectUseOrderPayload(command.payload)
+  throw new MapTokenTableActionUseCaseError(410, LEGACY_USE_ABILITY_RETIRED_MESSAGE)
 }
 
 const commandPlacementId = (command: LivePlayTableActionCommand): string => commandPayload(command).placementId
@@ -326,39 +304,20 @@ const metadataScopeMatches = (scopes: readonly LivePlayScope[]): boolean => scop
   scope.kind === 'map' && scope.lane === 'metadata'
 ))
 
-const sheetScopeMatches = (
-  scopes: readonly LivePlayScope[],
-  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
-  field: string,
-): boolean => scopes.some((scope) => (
-  scope.kind === 'sheet'
-  && scope.sheetKind === placement.sheetKind
-  && scope.sheetSlug === placement.sheetSlug
-  && scope.field === field
-))
-
-const mismatchedSheetScope = (
-  scopes: readonly LivePlayScope[],
-  placements: readonly Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>[],
-): LivePlaySheetScope | null => (
-  scopes.find((scope): scope is LivePlaySheetScope => (
-    scope.kind === 'sheet'
-    && !placements.some((placement) => placement.sheetKind === scope.sheetKind && placement.sheetSlug === scope.sheetSlug)
-  )) ?? null
-)
-
 const assertTableActionCommandType = (command: LivePlayTableActionCommand, expectedType?: LivePlayTableActionCommandType): void => {
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.USE_ABILITY) {
+    throw new MapTokenTableActionUseCaseError(410, LEGACY_USE_ABILITY_RETIRED_MESSAGE)
+  }
   if (expectedType && command.type !== expectedType) {
     rejectLivePlayCommand('invalid', `This route only accepts ${expectedType} commands`)
   }
   if (!tableActionCommandTypes.has(command.type)) {
-    rejectLivePlayCommand('invalid', 'Table-action live-play routes support useManeuver, useAbility, and useOrder commands only')
+    rejectLivePlayCommand('invalid', 'Table-action live-play routes support useManeuver and useOrder commands only')
   }
 }
 
 const validateCommandPayloadAndScopes = (
   command: LivePlayTableActionCommand,
-  context: Pick<ResolvedActionContext, 'actorPlacement' | 'targetPlacement'>,
 ): TableActionPayload => {
   const payload = commandPayload(command)
   if (!tokenActionScopeMatches(command.scopes, payload.placementId)) {
@@ -366,20 +325,6 @@ const validateCommandPayloadAndScopes = (
   }
   if (!metadataScopeMatches(command.scopes)) {
     rejectLivePlayCommand('invalid', `${command.type} scopes must include the map metadata scope`)
-  }
-
-  if (command.type === LIVE_PLAY_COMMAND_TYPES.USE_ABILITY) {
-    const sheetPlacements = [context.actorPlacement, ...(context.targetPlacement ? [context.targetPlacement] : [])]
-    const badSheetScope = mismatchedSheetScope(command.scopes, sheetPlacements)
-    if (badSheetScope) {
-      rejectLivePlayCommand('invalid', `${command.type} sheet scope ${badSheetScope.sheetKind}/${badSheetScope.sheetSlug} does not match the actor or target token`)
-    }
-    if (!sheetScopeMatches(command.scopes, context.actorPlacement, 'ability')) {
-      rejectLivePlayCommand('invalid', `${command.type} scopes must include the actor sheet ability scope`)
-    }
-    if (context.targetPlacement && !sheetScopeMatches(command.scopes, context.targetPlacement, 'ability')) {
-      rejectLivePlayCommand('invalid', `${command.type} scopes must include the target sheet ability scope`)
-    }
   }
 
   return payload
@@ -470,18 +415,6 @@ const resolveOrderOption = (
   if (placement.sheetKind !== 'trainer') return null
   return trainerOrderOptionsForSheet(sheet.sheet as unknown as TrainerSheet)
     .find((option) => optionMatchesName(option.name, requestedName)) ?? null
-}
-
-const resolveAbilityOption = (
-  placement: SheetPlacement,
-  sheet: PersistedSheet,
-  requestedName: string,
-): LegacyTokenAbilityMenuOption | null => {
-  const sheets = placement.sheetKind === 'pokemon'
-    ? { pokemon: new Map([[placement.sheetSlug, sheet.sheet as unknown as CharacterSheet]]) }
-    : { trainer: new Map([[placement.sheetSlug, sheet.sheet as unknown as TrainerSheet]]) }
-  const options = buildLegacyTokenAbilityMenuOptions(abilityEntriesForPlacement(placement, sheets))
-  return options.find((option) => optionMatchesName(option.name, requestedName)) ?? null
 }
 
 const addOrUpdateWritePlan = (
@@ -712,121 +645,6 @@ const applyOrderCommand = (
   }
 }
 
-const applyAbilityCommand = (
-  command: LivePlayTableActionCommand,
-  context: ResolvedActionContext,
-  currentRevision: number,
-  dependencies: LivePlayTableActionDependencySet,
-): ResolvedActionContext => {
-  const payload = expectUseAbilityPayload(command.payload)
-  const actor = tokenFromSheet(context.actorPlacement, context.actorSheet)
-  const target = context.targetPlacement && context.targetSheet
-    ? tokenFromSheet(context.targetPlacement, context.targetSheet)
-    : null
-  const option = resolveAbilityOption(context.actorPlacement, context.actorSheet, payload.abilityName)
-  if (!option) {
-    throw new MapTokenTableActionUseCaseError(
-      404,
-      `Ability ${payload.abilityName} is not present on token ${payload.placementId}'s sheet`,
-    )
-  }
-  if (!option.automation) {
-    throw new MapTokenTableActionUseCaseError(400, `Ability ${option.name} does not have map automation`)
-  }
-  if (option.automation.category === 'passive') {
-    throw new MapTokenTableActionUseCaseError(400, `Ability ${option.name} is passive and cannot be used as an active map action`)
-  }
-
-  const writePlans = new Map<string, SheetWritePlan>()
-  let logLines: readonly string[]
-  let category: AbilityAutomationCategory = option.automation.category
-  const combatStageUpdates: Array<{ id: string; stages: CombatStageMap }> = []
-  const conditionUpdates: Array<{ id: string; conditions: string[] }> = []
-  const updatedAt = dependencies.now()
-
-  if (option.automation.category === 'sheet') {
-    if (option.activated) {
-      throw new MapTokenTableActionUseCaseError(409, `Ability ${option.name} is already active on token ${payload.placementId}`)
-    }
-    addOrUpdateWritePlan(writePlans, context.actorSheet, 'ability', (kind, sheet) =>
-      applyAbilityActivationToSheet(kind, sheet, option.name),
-    )
-    logLines = [`${actor.species} activated ${option.name}.`]
-  } else {
-    const mapAutomation = getMapAbilityAutomation(option.name)
-    if (mapAutomation?.targetMode === 'target' && !target) {
-      throw new MapTokenTableActionUseCaseError(400, `Ability ${option.name} requires a target token`)
-    }
-
-    const transaction = resolveMapAbilityAutomationTransaction({
-      abilityName: option.name,
-      user: actor as SpawnedPokemon,
-      ...(target ? { target: target as SpawnedPokemon } : {}),
-      fieldEffects: context.map.fieldEffects,
-    })
-    if (!transaction) {
-      throw new MapTokenTableActionUseCaseError(409, `Ability ${option.name} could not produce an automation transaction`)
-    }
-
-    category = transaction.category
-    logLines = transaction.logLines
-    for (const update of transaction.combatStageUpdates) {
-      const updateSheet = update.id === actor.id
-        ? context.actorSheet
-        : update.id === target?.id
-          ? context.targetSheet
-          : undefined
-      if (!updateSheet) {
-        throw new MapTokenTableActionUseCaseError(409, `Ability ${option.name} references unavailable combat-stage target ${update.id}`)
-      }
-      addOrUpdateWritePlan(writePlans, updateSheet, 'combatStages', (kind, sheet) =>
-        applyCombatStagesToSheet(kind, sheet, update.stages as CombatStageMap),
-      )
-      combatStageUpdates.push({ id: update.id, stages: update.stages as CombatStageMap })
-    }
-    for (const update of transaction.conditionUpdates) {
-      const updateSheet = update.id === actor.id
-        ? context.actorSheet
-        : update.id === target?.id
-          ? context.targetSheet
-          : undefined
-      if (!updateSheet) {
-        throw new MapTokenTableActionUseCaseError(409, `Ability ${option.name} references unavailable condition target ${update.id}`)
-      }
-      addOrUpdateWritePlan(writePlans, updateSheet, 'conditions', (kind, sheet) =>
-        applyConditionsToSheet(kind, sheet, [...update.conditions]),
-      )
-      conditionUpdates.push({ id: update.id, conditions: [...update.conditions] })
-    }
-  }
-
-  const metadata = appendAbilityAutomationLogEntry(context.map.metadata, {
-    userId: actor.id,
-    userName: actor.species,
-    abilityName: option.name,
-    category,
-    combatStageUpdates,
-    conditionUpdates,
-    logLines: [...logLines],
-  }, { now: () => updatedAt })
-  const revision = nextRevision(currentRevision)
-  const sheetUpdates = [...writePlans.values()].map(sheetUpdateFromPlan)
-
-  return {
-    ...context,
-    map: { ...context.map, metadata, revision, updatedAt },
-    nextSheets: [...writePlans.values()],
-    sheetUpdates,
-    action: {
-      type: 'ability',
-      placementId: context.actorPlacement.id,
-      ...(context.targetPlacement ? { targetPlacementId: context.targetPlacement.id } : {}),
-      name: option.name,
-      category,
-    },
-  }
-}
-
 const applyTableActionCommand = (
   command: LivePlayTableActionCommand,
   context: ResolvedActionContext,
@@ -839,7 +657,7 @@ const applyTableActionCommand = (
   if (command.type === LIVE_PLAY_COMMAND_TYPES.USE_ORDER) {
     return applyOrderCommand(command, context, currentRevision, dependencies)
   }
-  return applyAbilityCommand(command, context, currentRevision, dependencies)
+  throw new MapTokenTableActionUseCaseError(410, LEGACY_USE_ABILITY_RETIRED_MESSAGE)
 }
 
 const metadataPatch = (
@@ -908,7 +726,6 @@ const actionFromAcceptedResult = (result: LivePlayCommandAccepted): LivePlayTabl
     placementId: action.placementId,
     ...(typeof action.targetPlacementId === 'string' ? { targetPlacementId: action.targetPlacementId } : {}),
     name: action.name,
-    ...(typeof action.category === 'string' ? { category: action.category as AbilityAutomationCategory } : {}),
   }
 }
 
@@ -989,6 +806,9 @@ export const executeLivePlayTableActionCommandUseCase = async (
   input: ExecuteLivePlayTableActionCommandInput,
   dependencies: LivePlayTableActionCommandDependencies = {},
 ): Promise<LivePlayTableActionCommandResponse> => {
+  if (isRecord(input.command) && input.command.type === LIVE_PLAY_COMMAND_TYPES.USE_ABILITY) {
+    throw new MapTokenTableActionUseCaseError(410, LEGACY_USE_ABILITY_RETIRED_MESSAGE)
+  }
   const deps = actionDependencies(dependencies)
   let persistedContext: ResolvedActionContext | null = null
 
@@ -1003,7 +823,7 @@ export const executeLivePlayTableActionCommandUseCase = async (
     getMapRevision: (context) => normalizeRevision(context.map.revision),
     authorize: ({ command, actor, map }) => {
       assertTableActionCommandType(command, input.expectedType)
-      validateCommandPayloadAndScopes(command, map)
+      validateCommandPayloadAndScopes(command)
       if (!actorCanControlMapPlacement({
         role: actor.role,
         profile: actor.playerProfile,

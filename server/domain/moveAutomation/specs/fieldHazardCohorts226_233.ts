@@ -363,7 +363,24 @@ const blockConditions = ['stuck', 'trapped'].map(conditionId => reviewedConditio
 }))
 export const BLOCK_MOVE_SPEC = createReviewedMoveSpec({ canonicalId: 'Block', targeting: singleTargeting(), operations: [standardAccuracy('block'), ...blockConditions, ...standardTerminalOperations('block')], tags: ['condition'] })
 
-const aquaRing = reviewedCondition({ slug: 'aqua-ring', id: 'coat', recipients: 'actor', conditionId: 'aqua-ring', phase: 'hit', duration: conditionDuration('aqua-ring.coat', { kind: 'scene', remaining: null }) })
+const aquaRing: MoveTemporaryEffectOperation = {
+  id: 'aqua-ring.coat', kind: 'temporary-effect',
+  source: { kind: 'move', id: 'move.aqua-ring' }, recipients: { kind: 'actor' },
+  phase: 'schedule', reasonCode: 'aqua-ring.coat',
+  payload: {
+    action: 'add', effectId: 'aqua-ring.coat', recipientScope: 'placements',
+    definition: {
+      kind: 'capability', duration: { kind: 'scene', remaining: null },
+      stacks: 1, charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null },
+      tags: ['aqua-ring', 'coat', 'healing'],
+      payload: { capabilityId: 'aqua-ring.coat', action: 'grant' },
+      dispel: { policy: 'matching-tags', tags: ['aqua-ring', 'coat'] },
+      transferPolicy: 'expire',
+    },
+  },
+}
 export const AQUA_RING_MOVE_SPEC = createReviewedMoveSpec({ canonicalId: 'Aqua Ring', targeting: selfTargeting(), operations: [aquaRing, ...standardTerminalOperations('aqua-ring')], tags: ['coat', 'heal', 'lifecycle'] })
 
 const chargeEffect: MoveTemporaryEffectOperation = {

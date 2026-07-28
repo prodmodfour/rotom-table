@@ -45,6 +45,7 @@ import {
   type MoveDamageTypeResolution,
 } from './damageTypes'
 import {
+  projectRecipientForAttackingUnaware,
   resolveMoveDamageClass,
   resolveMoveSpecDamageCalculation,
   type MoveSpecDamageCalculation,
@@ -507,10 +508,14 @@ const rollAccuracy = (options: {
   const keenEye = aa076KeenEyeActive(options.context)
   const baseTargetEvasion = resolveMoveAutomationTargetEvasion(
     options.script,
-    aa076TargetWithoutLegacyIlluminate(aa076TokenWithEffectiveKeenEye({
+    projectRecipientForAttackingUnaware({
       context: options.context,
-      token: options.target,
-    })),
+      actorPlacementId: options.actor.id,
+      recipient: aa076TargetWithoutLegacyIlluminate(aa076TokenWithEffectiveKeenEye({
+        context: options.context,
+        token: options.target,
+      })),
+    }),
     {
       attacker: aa076TokenWithEffectiveKeenEye({
         context: options.context,
@@ -519,7 +524,10 @@ const rollAccuracy = (options: {
       fieldEffects: createMoveAutomationWeatherResolver(options.context.map, {
         subjectPlacementId: options.target.id,
         subjectOccupiedCells: gridFootprintCells(options.target.position, options.target),
-      }).projectFieldEffects(options.context.queries.rooms.projectFieldEffects()),
+      }).projectFieldEffects(options.context.queries.terrain.projectFieldEffects(
+        options.target.id,
+        options.context.queries.rooms.projectFieldEffects(),
+      )),
       targetTerrainTags: aa085to100TokenTerrainTags({
         context: options.context,
         token: options.target,
@@ -834,6 +842,8 @@ export const executeMoveMultiHitOperation = (options: {
   readonly reflectedRecipientIds?: ReadonlyMap<string, string>
   /** Prime recipient-keyed randomness for a possible reflection identically before and after resume. */
   readonly potentialReflectedRecipientIds?: ReadonlyMap<string, string>
+  /** Targets made unaffected by an accepted whole-Move reaction retain hit evidence but take no effects. */
+  readonly unaffectedRecipientIds?: ReadonlySet<string>
   /** Triggered one-damage resistance steps apply to the first successful strike only. */
   readonly firstStrikeResistanceStepsByRecipient?: ReadonlyMap<string, number>
   /** Whole-attack resistance steps apply independently to every successful strike. */
@@ -846,6 +856,8 @@ export const executeMoveMultiHitOperation = (options: {
   readonly ignitionBoostTriggeringDamage?: boolean
   /** Same-resolution Protean changes the user's Type before STAB. */
   readonly forceActorStab?: boolean
+  /** Retain the reviewed count roll in the replay ledger, but use this accepted reviewed hit count. */
+  readonly forcedHitCount?: number
 }): MoveMultiHitExecution => {
   const { context, operation } = options
   assertRollBudget({ context, operation, recipientCount: options.recipientIds.length })
@@ -927,9 +939,21 @@ export const executeMoveMultiHitOperation = (options: {
           : null,
         resolvedRolls,
       })
+      if (options.forcedHitCount !== undefined) {
+        countResolution = {
+          ...countResolution,
+          hits: Math.max(1, Math.min(10, Math.floor(options.forcedHitCount))),
+        }
+      }
       if (operation.payload.count.kind !== 'fixed'
         && operation.payload.count.scope === 'sequence') {
         sequenceCount = countResolution
+      }
+    }
+    else if (countResolution && options.forcedHitCount !== undefined) {
+      countResolution = {
+        ...countResolution,
+        hits: Math.max(1, Math.min(10, Math.floor(options.forcedHitCount))),
       }
     }
 
@@ -1415,18 +1439,28 @@ export const executeMoveMultiHitOperation = (options: {
     },
   }))
 
+  // A response-gated whole-Move immunity is selected only after this bounded
+  // sequence establishes a genuine hit. Preserve the exact speculative rolls
+  // and trace used before suspension, but discard every target-owned mutation
+  // when replay resumes with that response accepted.
+  const unaffectedFinalRecipientIds = new Set(options.recipientIds.flatMap(recipientId => (
+    options.unaffectedRecipientIds?.has(recipientId)
+      ? [options.reflectedRecipientIds?.get(recipientId) ?? recipientId]
+      : []
+  )))
+  for (const recipientId of unaffectedFinalRecipientIds) touches.delete(recipientId)
+  const hpUpdates = hp.toUpdates().filter(update => !unaffectedFinalRecipientIds.has(update.id))
+  const conditionUpdates = conditions.toUpdates().filter(update => !unaffectedFinalRecipientIds.has(update.id))
+  const combatStageUpdates = stages.toUpdates().filter(update => !unaffectedFinalRecipientIds.has(update.id))
   const stateChanges = buildMoveCoreTokenStateChanges({
     context,
     recipientsById,
     touches,
-    hpUpdates: hp.toUpdates(),
-    conditionUpdates: conditions.toUpdates(),
-    stageUpdates: stages.toUpdates(),
+    hpUpdates,
+    conditionUpdates,
+    stageUpdates: combatStageUpdates,
     encounterStateUpdate: null,
   })
-  const hpUpdates = hp.toUpdates()
-  const conditionUpdates = conditions.toUpdates()
-  const combatStageUpdates = stages.toUpdates()
   const totalAttemptedHitCount = normalizedTargetResults.reduce(
     (total, result) => total + result.attemptedHitCount,
     0,
@@ -1460,8 +1494,12 @@ export const executeMoveMultiHitOperation = (options: {
     afterAllActor,
   }
   const hitTargetIdList = finalRecipientIds.filter(id => hitTargetIds.has(id))
-  const damagedTargetIdList = finalRecipientIds.filter(id => damagedTargetIds.has(id))
-  const faintedTargetIdList = finalRecipientIds.filter(id => faintedTargetIds.has(id))
+  const damagedTargetIdList = finalRecipientIds.filter(id => (
+    damagedTargetIds.has(id) && !unaffectedFinalRecipientIds.has(id)
+  ))
+  const faintedTargetIdList = finalRecipientIds.filter(id => (
+    faintedTargetIds.has(id) && !unaffectedFinalRecipientIds.has(id)
+  ))
 
   return deepFreeze({
     operationId: operation.id,

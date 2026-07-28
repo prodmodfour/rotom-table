@@ -33,7 +33,10 @@ import {
   reduceMoveResolutionTrace,
 } from '~~/server/domain/moveAutomation/trace'
 import type { MoveSpecResolvedItemChoice } from '~~/server/domain/moveAutomation/executeSpec'
-import { creatureRuleOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
+import {
+  capabilityEncounterEffectFixture,
+  creatureRuleOverlayEncounterEffectFixture,
+} from '../fixtures/moveAutomation/encounterEffects'
 import { createDigestionBuffTradeEffect } from '../../server/domain/moveAutomation/digestionBuffTrade'
 
 const actorId = 'item-actor'
@@ -80,6 +83,7 @@ const sheet = (
   slug: string,
   held?: string,
   revision = 3,
+  abilities: readonly string[] = [],
 ): CharacterSheet => ({
   slug,
   nickname: slug,
@@ -88,6 +92,16 @@ const sheet = (
   revision,
   combat: { currentHp: 50 },
   movelist: [{ name: 'Scratch' }],
+  abilities: abilities.map(canonicalId => ({
+    name: canonicalId,
+    automation: {
+      schemaVersion: 1,
+      instanceId: `base:${canonicalId.toLowerCase().replaceAll(' ', '-')}`,
+      canonicalId,
+      definitionVersion: null,
+      selections: [],
+    },
+  })),
   ...(held ? { items: { held } } : {}),
 })
 
@@ -95,10 +109,17 @@ const sheetsFixture = (input: {
   readonly actorHeld?: string
   readonly firstHeld?: string
   readonly secondHeld?: string
+  readonly actorAbilities?: readonly string[]
+  readonly firstAbilities?: readonly string[]
+  readonly secondAbilities?: readonly string[]
 } = {}) => new Map<string, CharacterSheet>([
-  ['item-actor-sheet', sheet('item-actor-sheet', input.actorHeld)],
-  ['item-target-one-sheet', sheet('item-target-one-sheet', input.firstHeld)],
-  ['item-target-two-sheet', sheet('item-target-two-sheet', input.secondHeld)],
+  ['item-actor-sheet', sheet('item-actor-sheet', input.actorHeld, 3, input.actorAbilities)],
+  ['item-target-one-sheet', sheet(
+    'item-target-one-sheet', input.firstHeld, 3, input.firstAbilities,
+  )],
+  ['item-target-two-sheet', sheet(
+    'item-target-two-sheet', input.secondHeld, 3, input.secondAbilities,
+  )],
 ])
 
 const requirements = {
@@ -515,6 +536,77 @@ describe('shared authoritative item effect interpreter', () => {
       position: { x: 2, y: 0, z: 1 },
       ownerPlacementId: actorId,
     })
+  })
+
+  it('uses Sticky Hold to prevent stealing, switching, destroying, and dropping an exact held item', () => {
+    const map = mapFixture()
+    const sheets = sheetsFixture({
+      actorHeld: 'Leftovers', firstHeld: 'Iron Ball', firstAbilities: ['Sticky Hold'],
+    })
+    const resources = resourcesFor({
+      map,
+      sheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.actor, requirements.targets],
+    })
+    const blocked = interpretAndPlan({
+      map,
+      sheets,
+      resources,
+      operations: [
+        emission(operation({
+          id: 'item.sticky-hold-swap', recipients: 'hit-targets',
+          payload: {
+            action: 'swap', participants: 'actor-and-first-recipient',
+            leftItem: requirementSelection(requirements.actor.id),
+            rightItem: requirementSelection(requirements.targets.id),
+            onUnavailable: 'no-op',
+          },
+        }), [firstTargetId]),
+        emission(operation({
+          id: 'item.sticky-hold-destroy', recipients: 'hit-targets',
+          payload: {
+            ...selectedPayload('destroy', requirements.targets.id), onUnavailable: 'no-op',
+          },
+        }), [firstTargetId]),
+        emission(operation({
+          id: 'item.sticky-hold-drop', recipients: 'hit-targets',
+          payload: {
+            ...selectedPayload('knock-to-ground', requirements.targets.id), onUnavailable: 'no-op',
+          },
+        }), [firstTargetId]),
+      ],
+    })
+    expect(blocked.interpretation.mutations).toEqual([])
+    expect(blocked.interpretation.results).toHaveLength(3)
+    expect(blocked.interpretation.results.every(result => (
+      result.outcome === 'no-op' && result.outcomeCode === 'selection-unavailable'
+    ))).toBe(true)
+    expect(blocked.plan.sheetWrites).toEqual([])
+    expect(blocked.plan.nextMap.encounterState?.groundItems).toEqual([])
+    expect(sheets.get('item-target-one-sheet')?.items?.held).toBe('Iron Ball')
+
+    const stealSheets = sheetsFixture({
+      firstHeld: 'Iron Ball', firstAbilities: ['Sticky Hold'],
+    })
+    const stealResources = resourcesFor({
+      map, sheets: stealSheets, selectedTargetIds: [firstTargetId],
+      requirements: [requirements.targets],
+    })
+    const stolen = interpretAndPlan({
+      map, sheets: stealSheets, resources: stealResources,
+      operations: [emission(operation({
+        id: 'item.sticky-hold-steal', recipients: 'hit-targets',
+        payload: {
+          ...selectedPayload('steal', requirements.targets.id), onUnavailable: 'no-op',
+        },
+      }), [firstTargetId])],
+    })
+    expect(stolen.interpretation).toMatchObject({
+      mutations: [],
+      results: [{ outcome: 'no-op', outcomeCode: 'selection-unavailable' }],
+    })
+    expect(stealSheets.get('item-target-one-sheet')?.items?.held).toBe('Iron Ball')
   })
 
   it('rejects illegal possession and ground transitions without changing inputs or emitting partial writes', () => {
@@ -1075,6 +1167,65 @@ describe('shared authoritative item effect interpreter', () => {
       tags: expect.arrayContaining(['digestion-buff-trade']),
     }])
     expect(storedActor.items?.digestionFood).toBe('Candy Bar')
+  })
+
+  it('blocks digestion-buff trades only for an exact active Unnerve marker', () => {
+    const initialSheets = sheetsFixture()
+    initialSheets.get('item-actor-sheet')!.items = { digestionFood: 'Candy Bar' }
+    const marker = {
+      ...capabilityEncounterEffectFixture(),
+      id: 'effect.aa097.unnerve.item-actor',
+      source: {
+        operationId: 'op_aa097_unnerve_01',
+        moveId: 'ability.unnerve',
+        placementId: firstTargetId,
+      },
+      affected: { placementIds: [actorId], sideIds: [], cells: [] },
+      duration: { kind: 'turns' as const, subject: 'source' as const, boundary: 'start' as const, remaining: 1 },
+      tags: ['ability', 'aa097-unnerve'],
+      payload: {
+        capabilityId: 'aa097.unnerve.block-stages-and-digestion',
+        action: 'grant' as const,
+      },
+      suppression: { sources: [] },
+    }
+    const map = {
+      ...mapFixture(),
+      encounterState: {
+        ...mapFixture().encounterState!,
+        effects: [marker],
+      },
+    }
+    const digestOperation = operation({
+      id: 'item.unnerve-blocked-digest',
+      recipients: 'actor',
+      payload: {
+        action: 'digest-buff',
+        canonicalItemIds: ['candy-bar'],
+        onUnavailable: 'reject',
+      },
+    })
+    expect(() => interpretMoveItemEffects({
+      context: contextFor({ map, sheets: initialSheets }),
+      operations: [emission(digestOperation, [actorId])],
+      resolvedItemChoices: [],
+    })).toThrow(/no eligible stored digestion buff/i)
+
+    const unrelatedTaggedMap = {
+      ...map,
+      encounterState: {
+        ...map.encounterState!,
+        effects: [{
+          ...marker,
+          payload: { ...marker.payload, capabilityId: 'test.unrelated-capability' },
+        }],
+      },
+    }
+    expect(interpretMoveItemEffects({
+      context: contextFor({ map: unrelatedTaggedMap, sheets: initialSheets }),
+      operations: [emission(digestOperation, [actorId])],
+      resolvedItemChoices: [],
+    }).mutations).toHaveLength(1)
   })
 
   it('stores three scene-traded Berry Storage buffs outside normal digestion limits', () => {

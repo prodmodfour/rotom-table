@@ -2,6 +2,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { projectAuthoritativeEffectiveAbilities } from './effectiveAbilities'
+import type { AuthoritativeEffectiveAbility } from './context'
 import { resolveSheetAbilityInstances } from './instanceParameters'
 import {
   ABILITY_AUTOMATION_RUNTIME_REGISTRY,
@@ -18,16 +19,20 @@ export const authoritativeAbilityOwnerIsConscious = (
     && !(conditions ?? []).some(condition => condition.trim().toLowerCase() === 'fainted')
 }
 
-/** Exact manifest-selected effective abilities for authoritative non-Move paths. */
-export const effectiveRuntimeAbilityIds = (input: {
+export interface EffectiveRuntimeAbilitiesInput {
   readonly map: Pick<TabletopMap, 'encounterState'>
   readonly placement: Pick<SheetPlacement, 'id' | 'sideId' | 'position'>
   readonly sheet: CharacterSheet | TrainerSheet
   /** Test/recovery seam; production callers use the manifest-selected registry. */
   readonly abilityRuntimeRegistry?: AbilityAutomationRuntimeRegistry
-}): readonly string[] => {
+}
+
+/** Exact manifest-selected effective ability instances for authoritative non-Move paths. */
+export const effectiveRuntimeAbilities = (
+  input: EffectiveRuntimeAbilitiesInput,
+): readonly AuthoritativeEffectiveAbility[] => {
   if (!authoritativeAbilityOwnerIsConscious(input.sheet)) return Object.freeze([])
-  return projectAuthoritativeEffectiveAbilities({
+  return Object.freeze(projectAuthoritativeEffectiveAbilities({
     baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
     species: 'species' in input.sheet ? input.sheet.species : null,
     target: {
@@ -37,11 +42,18 @@ export const effectiveRuntimeAbilityIds = (input: {
     },
     effects: input.map.encounterState?.effects ?? [],
     transformationSnapshots: input.map.encounterState?.abilityTransformations,
-  }).flatMap(ability => {
-    if (!ability.effective) return []
+  }).filter((ability) => {
+    if (!ability.effective) return false
     const runtime = (input.abilityRuntimeRegistry ?? ABILITY_AUTOMATION_RUNTIME_REGISTRY)
       .resolve(ability.canonicalId)
-    if (!runtime || (ability.definitionHash !== null && ability.definitionHash !== runtime.definitionHash)) return []
-    return [ability.canonicalId]
-  })
+    return runtime !== null
+      && (ability.definitionHash === null || ability.definitionHash === runtime.definitionHash)
+  }))
 }
+
+/** Exact manifest-selected effective ability names for authoritative non-Move paths. */
+export const effectiveRuntimeAbilityIds = (
+  input: EffectiveRuntimeAbilitiesInput,
+): readonly string[] => Object.freeze(
+  effectiveRuntimeAbilities(input).map(ability => ability.canonicalId),
+)

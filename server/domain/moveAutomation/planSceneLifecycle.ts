@@ -32,6 +32,7 @@ import type {
   EncounterLifecycleReductionResult,
   EncounterLifecycleTriggerHandler,
 } from './reduceLifecycle'
+import { transitionAbilitySceneEncounterState } from '../abilityAutomation/timing'
 
 export type SceneLifecyclePlanningErrorCode =
   | 'duplicate-event-id'
@@ -160,12 +161,16 @@ const mapAtSceneBoundary = (
   current: MapSceneState | null,
   time: number,
 ): TabletopMap => {
+  const resetEncounter = resetSceneEncounterContainers(parseEncounterState(
+    map.encounterState ?? createEmptyEncounterState(),
+  ))
   const boundaryMap: TabletopMap = {
     ...deepCloneJson(map),
     activeScene: current,
-    encounterState: resetSceneEncounterContainers(parseEncounterState(
-      map.encounterState ?? createEmptyEncounterState(),
-    )),
+    encounterState: transitionAbilitySceneEncounterState(
+      resetEncounter,
+      current ? encounterSceneId(map.slug, current) : null,
+    ),
     updatedAt: time,
   }
   const cleaned = clearMapSceneResources(boundaryMap)

@@ -82,6 +82,7 @@ import type { MoveAutomationRuntimeRegistry, MoveSpecV2Runtime } from './moveAut
 import type { AbilityAutomationRuntimeRegistry } from './abilityAutomation/registry'
 import { resolveMoveSpecTargetingRule } from './moveAutomation/targetingBranches'
 import type { AuthoritativeMoveItemResources } from './moveAutomation/itemResources'
+import type { MoveSpecAuthoritativeTargetEvaluation } from './moveAutomation/executeSpec'
 import {
   resolveMoveSpecOutcome,
   type NativeMoveSpecResolutionProjection,
@@ -362,6 +363,10 @@ export interface AuthoritativePendingMoveResolution {
   readonly resourceRange: string
   readonly resourceMovement?: AuthoritativeMoveResourceMovement
   readonly selectedTargetIds: readonly string[]
+  /** Exact server-derived root targeting evidence retained across declaration-time suspension. */
+  readonly authoritativeTargetEvaluations: readonly MoveSpecAuthoritativeTargetEvaluation[]
+  /** Exact server-derived root area cells retained across suspension. */
+  readonly authoritativeAreaCells: readonly GridAnchor[]
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly runtime: MoveSpecV2Runtime
   readonly execution: PendingMoveSpecResolution['execution']
@@ -1132,7 +1137,13 @@ const resolveNativeSelfMove = (options: {
     options.runtime.definition.spec,
     options.context.intent.targetBranchId,
   )
-  if (targeting?.kind !== 'self' && targeting?.kind !== 'field' && targeting?.kind !== 'hazard') {
+  const contextualSelfCurse = options.runtime.canonicalId === 'Curse'
+    && options.entry.script.targetMode === 'self'
+    && targeting?.kind === 'multi-target'
+    && targeting.minTargets === 0
+    && targeting.maxTargets === 1
+  if (!contextualSelfCurse
+    && targeting?.kind !== 'self' && targeting?.kind !== 'field' && targeting?.kind !== 'hazard') {
     return fail(
       'invalid',
       'selection-kind-mismatch',
@@ -1173,6 +1184,8 @@ const resolveNativeSelfMove = (options: {
       damageFormula: options.entry.damageFormula,
       resourceRange: options.entry.script.range,
       selectedTargetIds: [],
+      authoritativeTargetEvaluations: outcome.authoritativeTargetEvaluations,
+      authoritativeAreaCells: outcome.authoritativeAreaCells,
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
       execution: outcome.execution,
@@ -1398,7 +1411,15 @@ const resolveNativeSingleTargetMove = (options: {
     context: options.context,
     script: options.entry.script,
   })
-  if (boneLordLine || (!anchoredAttack && !longReach && !odiousSpray && targeting?.kind !== 'single-target')) {
+  const contextualGhostCurse = options.runtime.canonicalId === 'Curse'
+    && options.entry.script.targetMode === 'one-target'
+    && options.entry.script.targetCount === 1
+    && options.context.actor.token.defenderTypes.some(type => type.trim().toLowerCase() === 'ghost')
+    && targeting?.kind === 'multi-target'
+    && targeting.minTargets === 0
+    && targeting.maxTargets === 1
+  if (boneLordLine || (!anchoredAttack && !longReach && !odiousSpray
+    && !contextualGhostCurse && targeting?.kind !== 'single-target')) {
     return fail(
       'invalid',
       'selection-kind-mismatch',
@@ -1453,6 +1474,8 @@ const resolveNativeSingleTargetMove = (options: {
       damageFormula: options.entry.damageFormula,
       resourceRange: options.entry.script.range,
       selectedTargetIds: [target.id],
+      authoritativeTargetEvaluations: outcome.authoritativeTargetEvaluations,
+      authoritativeAreaCells: outcome.authoritativeAreaCells,
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
       execution: outcome.execution,
@@ -1699,6 +1722,8 @@ const resolveNativeTargetCountMove = (options: {
       damageFormula: options.entry.damageFormula,
       resourceRange: options.entry.script.range,
       selectedTargetIds: legal.selectedTargetIds,
+      authoritativeTargetEvaluations: outcome.authoritativeTargetEvaluations,
+      authoritativeAreaCells: outcome.authoritativeAreaCells,
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
       execution: outcome.execution,
@@ -1964,6 +1989,8 @@ const resolveNativeAreaMove = (options: {
         ? { resourceMovement: { ...placement.resourceMovement } }
         : {}),
       selectedTargetIds,
+      authoritativeTargetEvaluations: outcome.authoritativeTargetEvaluations,
+      authoritativeAreaCells: outcome.authoritativeAreaCells,
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
       execution: outcome.execution,

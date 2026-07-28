@@ -29,8 +29,10 @@ import {
 } from '#shared/abilityAutomation/statTargeting'
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import {
+  AbilityClientCommandValidationError,
   parseBeginAbilityClientDeclarationCommand,
   type AbilityClientDeclarationOffer,
+  type BeginAbilityClientDeclarationCommand,
 } from '#shared/abilityAutomation/clientCommands'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -120,6 +122,18 @@ export interface BeginAbilityDeclarationDependencies {
   readonly now?: () => number
 }
 const fail = (statusCode: number, statusMessage: string): never => { throw createError({ statusCode, statusMessage }) }
+
+const parseDeclarationCommand = (value: unknown): BeginAbilityClientDeclarationCommand => {
+  try {
+    return parseBeginAbilityClientDeclarationCommand(value)
+  }
+  catch (error) {
+    if (error instanceof AbilityClientCommandValidationError) {
+      fail(400, 'Invalid Ability declaration command.')
+    }
+    throw error
+  }
+}
 const hash = (value: unknown): string => createHash('sha256').update(stableJsonStringify(value)).digest('hex')
 const option = (
   declarationId: string,
@@ -212,6 +226,25 @@ const declarationsFor = (
           .filter(id => context.runtime.canonicalId !== 'Memory Wipe'
             || modeId !== 'swift'
             || context.queries.history.lastCompletedMove(id) !== null)
+          .filter((id) => {
+            if (modeId !== 'activate') return true
+            const token = context.tokens.find(candidate => candidate.id === id)
+            if (!token) return false
+            if ([
+              'Pumpkingrab', 'Regal Challenge', 'Shadow Tag', 'Snuggle', 'Symbiosis',
+              'Targeting System', 'Toxic Nourishment', 'Trace', 'Unnerve',
+            ].includes(context.runtime.canonicalId) && token.currentHp <= 0) return false
+            if (context.runtime.canonicalId === 'Toxic Nourishment') {
+              return normalizeConditionNames(token.conditions).some(condition => (
+                condition === 'Poisoned' || condition === 'Badly Poisoned'
+              ))
+            }
+            if (context.runtime.canonicalId === 'Trace') {
+              return context.queries.effectiveAbilities.allForPlacement(id)
+                .some(ability => ability.effective && abilityIsCopyable(ability.canonicalId))
+            }
+            return true
+          })
           .map((placementId, index) => option(declaration.id, index, declaration.kind, { kind: 'token', placementId }))
       }
       else if (declaration.kind === 'side') options = Object.values(context.sides)
@@ -695,7 +728,7 @@ export const beginAbilityDeclarationUseCase = (
   input: BeginAbilityDeclarationInput,
   dependencies: BeginAbilityDeclarationDependencies = {},
 ): AbilityClientDeclarationOffer => {
-  const command = parseBeginAbilityClientDeclarationCommand(input.command)
+  const command = parseDeclarationCommand(input.command)
   const database = dependencies.database ?? getRotomDatabase()
   const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository(database) as Pick<MapRepository<unknown>, 'get' | 'list'>
   const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(database)

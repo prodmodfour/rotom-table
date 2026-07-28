@@ -174,42 +174,6 @@ export interface MoveAutomationSpitePrompt {
   moveName: string
 }
 
-export interface MoveAutomationCuteCharmPrompt {
-  id: string
-  defenderId: string
-  defenderName: string
-  attackerId: string
-  attackerName: string
-  moveName: string
-}
-
-export interface MoveAutomationPoisonPointPrompt {
-  id: string
-  defenderId: string
-  defenderName: string
-  attackerId: string
-  attackerName: string
-  moveName: string
-}
-
-export interface MoveAutomationMoxiePrompt {
-  id: string
-  attackerId: string
-  attackerName: string
-  moveName: string
-  faintedTargetIds: string[]
-  faintedTargetNames: string[]
-}
-
-export interface MoveAutomationCelebratePrompt {
-  id: string
-  attackerId: string
-  attackerName: string
-  moveName: string
-  hitTargetIds: string[]
-  hitTargetNames: string[]
-}
-
 export type MoveAutomationTargetMode =
   | 'none'
   | 'self'

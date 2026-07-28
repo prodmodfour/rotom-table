@@ -550,7 +550,7 @@ const CONFIG_FIELDS: Readonly<Partial<Record<AbilityMechanicId, readonly string[
   'aa080.moody': ['trigger', 'dieSides', 'raisedStageDelta', 'loweredStageDelta', 'differentStats'],
   'aa080.motor-drive': ['immuneMoveType', 'damageAndEffectImmunity', 'hitStage', 'hitStageDelta', 'classification'],
   'aa080.mountain-peak': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
-  'aa080.moxie': ['trigger', 'targetRelationship', 'stage', 'stageDelta', 'oncePerMove', 'optional'],
+  'aa080.moxie': ['trigger', 'targetRelationship', 'stage', 'stageDelta', 'oncePerMove', 'optional', 'executionBoundary'],
   'aa081.mud-dweller': ['moveTypes', 'resistanceSteps'],
   'aa081.mud-shield': ['action', 'frequency', 'temporaryHpTicks', 'terrainTags', 'damageReduction', 'classification'],
   'aa081.multiscale': ['hpRequirement', 'resistanceSteps', 'classification'],
@@ -1931,6 +1931,7 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
       trigger: oneOf(config.trigger, ['user-move-faints-target'], `${path}.trigger`), targetRelationship: oneOf(config.targetRelationship, ['foe'], `${path}.targetRelationship`),
       stage: oneOf(config.stage, ['attack'], `${path}.stage`), stageDelta: integer(config.stageDelta, `${path}.stageDelta`, 1, 1),
       oncePerMove: bool(config.oncePerMove, `${path}.oncePerMove`), optional: bool(config.optional, `${path}.optional`),
+      executionBoundary: oneOf(config.executionBoundary, ['native-movespec-v2-reaction'], `${path}.executionBoundary`),
     }
     case 'aa081.mud-dweller': return {
       moveTypes: stringArray(config.moveTypes, ['ground', 'water'], `${path}.moveTypes`),

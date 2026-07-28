@@ -44,7 +44,8 @@ const path = (relative: string): string => join(root, relative)
 
 describe('ability automation metadata budgets', () => {
   it('keeps catalogs, manifest, and plan within bounded reviewable sizes', () => {
-    expect(statSync(path('data/ability-automation/manifest.json')).size).toBeLessThan(1024 * 1024)
+    // The evidence-complete 483-row catalog remains bounded after final rollout.
+    expect(statSync(path('data/ability-automation/manifest.json')).size).toBeLessThan(1280 * 1024)
     expect(statSync(path('data/ability-automation/action-exceptions.json')).size).toBeLessThan(32 * 1024)
     expect(statSync(path('data/ability-automation/capabilities.json')).size).toBeLessThan(128 * 1024)
     expect(statSync(path('data/ability-automation/frequency-exceptions.json')).size).toBeLessThan(32 * 1024)

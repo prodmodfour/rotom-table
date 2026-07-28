@@ -11,6 +11,7 @@ import {
   planEncounterLifecycle,
   planInitiativeLifecycle,
 } from '../../server/domain/moveAutomation/planInitiativeLifecycle'
+import { clearAa084PowerOfAlchemyForKnockouts } from '../../server/domain/abilityAutomation/mechanics/aa084LifecycleIntegration'
 import {
   capabilityEncounterEffectFixture,
   creatureRuleOverlayEncounterEffectFixture,
@@ -193,6 +194,45 @@ describe('AA-084 lifecycle integrations', () => {
     expect(plan.currentEncounterState.abilityTransformations?.entries).toHaveLength(0)
     expect(map).toEqual(before)
     expect(map.encounterState?.abilityTransformations?.entries).toHaveLength(1)
+  })
+
+  it('removes a Trace copy at its exact owner faint boundary', () => {
+    const map = mapFixture()
+    const previous = map.encounterState!.abilityTransformations!
+    const trace = reduceAbilityTransformationCommand(previous, {
+      operationId: 'op_aa096_trace_copy',
+      kind: 'create',
+      snapshotId: 'ability.trace.copy.test',
+      expectedVersion: null,
+      snapshot: {
+        snapshotId: 'ability.trace.copy.test', kind: 'copy',
+        placementId: 'target', ownerPlacementId: 'target',
+        sourceAbilityInstanceId: 'base:trace', canonicalId: 'Trace',
+        sourceOperationId: 'op_aa096_trace_copy', duration: { kind: 'scene' },
+        mechanics: {
+          formId: null, abilityPolicy: 'add', abilities: [{
+            instanceId: 'copied:ability.trace.copy.test:0', canonicalId: 'Prism Armor',
+            definitionHash: null, sourcePlacementId: 'other',
+            parameterStatus: 'not-parameterized', parameterData: null,
+          }],
+          moves: [], typeIds: [], footprint: null, weightClass: null, capabilityTags: [],
+        },
+        copyBase: {
+          sourcePlacementId: 'other', sourceRevision: 3, sourceReadSha256: 'b'.repeat(64),
+        },
+        presentation: {
+          public: {
+            presentationId: 'ability.trace.copy.test', labelKey: 'ability.trace.copied',
+            formId: null, assetId: null,
+          },
+          private: null,
+        },
+      },
+    }).state
+    map.encounterState = { ...map.encounterState!, abilityTransformations: trace }
+    const next = clearAa084PowerOfAlchemyForKnockouts({ map, placementIds: ['target'] })
+    expect(next.encounterState?.abilityTransformations?.entries).toHaveLength(0)
+    expect(map.encounterState?.abilityTransformations?.entries).toHaveLength(2)
   })
 
   it('expires scene-owned form effects and immutable Ability-copy snapshots at authoritative scene end', () => {

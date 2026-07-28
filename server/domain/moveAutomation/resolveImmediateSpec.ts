@@ -59,6 +59,7 @@ import {
   type MoveSpecResolvedRoll,
 } from './executeSpec'
 import type { MoveSpecV2Runtime } from './registry'
+import { moveSlug } from './specs/reviewedSpecBuilder'
 import { resolveMoveSpecTargetingRule } from './targetingBranches'
 import {
   isMoveCoreTokenEffectEmission,
@@ -620,11 +621,17 @@ const createMoveSpecOperationDynamicRecipientsResolver = (input: {
 
 const branchControlledOperationIds = (
   operations: readonly MoveSpecEmittedOperation[],
-): ReadonlySet<string> => new Set(operations.flatMap(({ operation }) => (
-  operation.kind === 'branch' && operation.payload.scope === 'recipient'
-    ? moveEffectBranchPaths(operation.payload).flatMap(path => path.operationIds)
-    : []
-)))
+): ReadonlySet<string> => new Set(operations.flatMap(({ operation }) => {
+  if (operation.kind === 'branch' && operation.payload.scope === 'recipient') {
+    return moveEffectBranchPaths(operation.payload).flatMap(path => path.operationIds)
+  }
+  // Accuracy-triggered secondary recipients may be narrowed by authoritative
+  // Shield Dust projection before reduction.
+  if (operation.kind === 'condition' && operation.payload.accuracyRollTrigger
+    || operation.kind === 'combat-stage'
+      && operation.payload.trigger?.kind === 'accuracy-roll') return [operation.id]
+  return []
+}))
 
 const nestedRecipientResolver = (input: {
   readonly context: AuthoritativeMoveRulesContext
@@ -1009,6 +1016,10 @@ export interface PendingMoveSpecResolution {
   readonly kind: 'pending'
   readonly execution: MoveSpecExecutionPendingResult
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+  /** Exact server-derived root target evidence retained even when suspension precedes target phase. */
+  readonly authoritativeTargetEvaluations: readonly MoveSpecAuthoritativeTargetEvaluation[]
+  /** Exact server-derived root area cells retained for movement and resume semantics. */
+  readonly authoritativeAreaCells: readonly { readonly x: number; readonly y: number; readonly z: number }[]
   /** Explicit typed plan containing only interpreter-approved pre-window operations. */
   readonly preWindowPlan: MoveStateChangePlan
 }
@@ -1024,7 +1035,7 @@ const executeReviewedMoveSpec = (
   const moveSourceId = options.runtime.definition.spec.phases
     .flatMap(phase => phase.operations)
     .find(operation => operation.source.kind === 'move')?.source.id
-    ?? `move.${options.runtime.canonicalId}`
+    ?? `move.${moveSlug(options.runtime.canonicalId)}`
   const overlayInput = {
     context: options.context,
     script,
@@ -1384,6 +1395,15 @@ export const reduceCompletedMoveSpec = (
     }
     const operationContext = contextForOperation(operation)
     const operationScript = scriptForOperation(operation.id)
+    // Shield Dust removes accuracy-triggered secondary recipients before the
+    // core reducers run. The resulting server-owned recipient set is a strict
+    // subset of the authored selector rather than a definition mismatch.
+    if (operationScript.damaging
+      && (operation.kind === 'condition' && Boolean(operation.payload.accuracyRollTrigger)
+        || operation.kind === 'combat-stage'
+          && operation.payload.trigger?.kind === 'accuracy-roll')) {
+      recipientControlledOperationIds.add(operation.id)
+    }
     if (operation.kind === 'heal'
       && operation.recipients.kind === 'actor'
       && aa078IsDrainMove(operationScript.moveName)) {
@@ -1704,6 +1724,16 @@ export const resolveMoveSpecOutcome = (
         ...options.context.reads.snapshot(),
         ...preWindow.sheetReads,
       ])),
+      authoritativeTargetEvaluations: Object.freeze(
+        (options.authoritativeTargetEvaluations ?? options.authoritativeTargetIds.map(targetPlacementId => ({
+          targetPlacementId,
+          outcome: 'included' as const,
+          reasonCode: 'target-selector-included',
+        }))).map(evaluation => Object.freeze({ ...evaluation })),
+      ),
+      authoritativeAreaCells: Object.freeze(
+        (options.authoritativeAreaCells ?? []).map(cell => Object.freeze({ ...cell })),
+      ),
       preWindowPlan: preWindow.stateChanges,
     })
   }

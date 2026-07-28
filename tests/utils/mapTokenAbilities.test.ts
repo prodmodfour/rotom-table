@@ -12,10 +12,12 @@ describe('map token ability menu options', () => {
       { name: 'Sand Veil', activated: true },
       { name: 'Run Away' },
     ]
-    expect(buildTokenAbilityMenuOptions(entries)).toMatchObject([
-      { name: 'Sand Veil', capability: null, activated: true },
-      { name: 'Run Away', capability: null, activated: false },
+    const withoutCapabilities = buildTokenAbilityMenuOptions(entries)
+    expect(withoutCapabilities).toMatchObject([
+      { name: 'Sand Veil', capability: null },
+      { name: 'Run Away', capability: null },
     ])
+    expect(withoutCapabilities[0]).not.toHaveProperty('activated')
 
     const ready = {
       instanceId: 'base:token:0', canonicalId: 'Sand Veil', displayName: 'Sand Veil',

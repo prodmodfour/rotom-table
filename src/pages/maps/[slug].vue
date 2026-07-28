@@ -161,8 +161,6 @@ const {
   lastError: playerProfileError,
 } = usePlayerProfiles()
 
-if (import.meta.client && isPlayer.value) loadRememberedProfile()
-
 const liveSheets = useLiveSheets({
   autoHydrate: false,
   hydrationOwner: `map:${slug}`,
@@ -1953,7 +1951,6 @@ const {
   modifyCombatStages: modifyCombatStagesViaSetupSheetSave,
   modifyConditions: modifyConditionsViaSetupSheetSave,
   grantExperience: grantExperienceViaSetupSheetSave,
-  modifyAbilityActivation,
   updatePlacedSheet,
 } = useTokenSheetMutations({
   map,
@@ -2873,28 +2870,30 @@ useMapDimensionReconciliation({
         @focus-attention="focusPresenceAttentionTarget"
       />
 
-      <LivePlayCommandRecoveryPanel
-        v-if="livePlayCommandRecoveryGate.panelVisible.value"
-        :entries="livePlayCommands.outboxEntries.value"
-        :recovery-status="livePlayCommands.outboxRecoveryStatus.value"
-        :recovery-error="livePlayCommands.outboxRecoveryError.value"
-        :block-message="livePlayCommandRecoveryGate.blockMessage.value"
-        :interaction-mode="mapInteractionMode"
-        :retrying-op-id="livePlayCommandRecoveryGate.retryingOpId.value"
-        :checking-op-id="livePlayCommandRecoveryGate.checkingOpId.value"
-        :confirming-abandon-op-id="livePlayCommandRecoveryGate.confirmingAbandonOpId.value"
-        :abandoning-op-id="livePlayCommandRecoveryGate.abandoningOpId.value"
-        :status-result-by-op-id="livePlayCommandRecoveryGate.statusResultByOpId.value"
-        :retry-disabled-message="livePlayRetryDisabledMessage"
-        :resolution-notice="livePlayCommandRecoveryGate.resolutionNotice.value"
-        @refresh="refreshLivePlayCommandRecovery"
-        @retry="retryLivePlayCommandRecoveryEntry"
-        @check-status="checkLivePlayCommandRecoveryEntryStatus"
-        @request-abandon-confirmation="requestLivePlayCommandAbandonConfirmation"
-        @cancel-abandon-confirmation="cancelLivePlayCommandAbandonConfirmation"
-        @confirm-abandon="confirmLivePlayCommandAbandonment"
-        @clear-resolution-notice="clearLivePlayCommandRecoveryResolutionNotice"
-      />
+      <ClientOnly>
+        <LivePlayCommandRecoveryPanel
+          v-if="livePlayCommandRecoveryGate.panelVisible.value"
+          :entries="livePlayCommands.outboxEntries.value"
+          :recovery-status="livePlayCommands.outboxRecoveryStatus.value"
+          :recovery-error="livePlayCommands.outboxRecoveryError.value"
+          :block-message="livePlayCommandRecoveryGate.blockMessage.value"
+          :interaction-mode="mapInteractionMode"
+          :retrying-op-id="livePlayCommandRecoveryGate.retryingOpId.value"
+          :checking-op-id="livePlayCommandRecoveryGate.checkingOpId.value"
+          :confirming-abandon-op-id="livePlayCommandRecoveryGate.confirmingAbandonOpId.value"
+          :abandoning-op-id="livePlayCommandRecoveryGate.abandoningOpId.value"
+          :status-result-by-op-id="livePlayCommandRecoveryGate.statusResultByOpId.value"
+          :retry-disabled-message="livePlayRetryDisabledMessage"
+          :resolution-notice="livePlayCommandRecoveryGate.resolutionNotice.value"
+          @refresh="refreshLivePlayCommandRecovery"
+          @retry="retryLivePlayCommandRecoveryEntry"
+          @check-status="checkLivePlayCommandRecoveryEntryStatus"
+          @request-abandon-confirmation="requestLivePlayCommandAbandonConfirmation"
+          @cancel-abandon-confirmation="cancelLivePlayCommandAbandonConfirmation"
+          @confirm-abandon="confirmLivePlayCommandAbandonment"
+          @clear-resolution-notice="clearLivePlayCommandRecoveryResolutionNotice"
+        />
+      </ClientOnly>
 
       <LivePlayLatencyDebugPanel
         v-if="livePlayLatencyDebugEnabled"

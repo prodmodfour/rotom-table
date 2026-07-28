@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   SESSION_COMMAND_ENVELOPE_VERSION,
   parseOpId,
@@ -44,7 +44,6 @@ import {
 import type { TabletopMapV2 } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
-  USE_ABILITY_PATCH_EVENT_TYPE,
   USE_MANEUVER_PATCH_EVENT_TYPE,
   USE_ORDER_PATCH_EVENT_TYPE,
   applyUseTableActionCommandUseCase,
@@ -319,41 +318,30 @@ describe('applyUseTableActionCommandUseCase', () => {
     expect(tracker.recordCount).toBe(1)
   })
 
-  it('activates sheet abilities through the command boundary with sheet rollback-safe persistence', () => {
+  it('rejects legacy session ability commands before session or sheet persistence', () => {
     const initialState = createState()
     const store = createStoreWithState(initialState)
     const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
     const sheetIo = createSheetIo()
+    const clock = vi.fn(() => processedAt)
 
-    const result = applyUseTableActionCommandUseCase({ command: createUseAbilityCommand() }, {
+    expect(() => applyUseTableActionCommandUseCase({ command: createUseAbilityCommand() }, {
       env: enabledEnv,
       store,
       operationTracker: false,
-      clock: () => processedAt,
+      clock,
       writeSnapshot: createSnapshotWriter(snapshotCalls),
       readSheet: sheetIo.readSheet,
       writeSheet: sheetIo.writeSheet,
-    })
+    })).toThrowError(expect.objectContaining({
+      statusCode: 410,
+      message: 'Legacy session useAbility execution is retired; use the native Ability declaration and resolution routes.',
+    }))
 
-    expect(result.status).toBe('accepted')
-    if (result.status !== 'accepted') throw new Error('expected accepted ability')
-    expect(result.patchEvent).toMatchObject({
-      eventType: USE_ABILITY_PATCH_EVENT_TYPE,
-      payload: {
-        tokenId: 'token-brock',
-        abilityName: 'Sand Veil',
-        category: 'sheet',
-        activated: true,
-        logLines: ['Brock activated Sand Veil.'],
-      },
-    })
-    expect(sheetIo.writes).toHaveLength(1)
-    expect(sheetIo.trainerSheet.abilities?.[0]).toMatchObject({ name: 'Sand Veil', activated: true })
-    const storedMap = getSessionMapState(result.state, 'arena-map')
-    expect(storedMap?.document.metadata?.abilityLog).toEqual([
-      expect.objectContaining({ userId: 'token-brock', abilityName: 'Sand Veil', category: 'sheet' }),
-    ])
-    expect(snapshotCalls).toHaveLength(1)
+    expect(clock).not.toHaveBeenCalled()
+    expect(sheetIo.writes).toHaveLength(0)
+    expect(snapshotCalls).toHaveLength(0)
+    expect(store.get(sessionId)?.revision).toBe(parseSessionRevision(0))
   })
 
   it('records trainer orders and authoritative active-order effects', () => {

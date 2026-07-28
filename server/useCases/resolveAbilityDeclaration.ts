@@ -1,7 +1,11 @@
 import { createHash } from 'node:crypto'
 import { createError } from 'h3'
 import type { AuthRole } from '#shared/auth'
-import { parseAbilityDeclarationIntent } from '#shared/abilityAutomation/declarationIntent'
+import {
+  AbilityDeclarationValidationError,
+  parseAbilityDeclarationIntent,
+  type AbilityDeclarationIntent,
+} from '#shared/abilityAutomation/declarationIntent'
 import { isAbilityMechanicOperation, parseAbilityMechanicOperation } from '#shared/abilityAutomation/mechanics'
 import { parseAbilityResolutionPublicResult, type AbilityResolutionPublicResult } from '#shared/abilityAutomation/results'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -56,6 +60,7 @@ import { authoritativeAbilityItemResourceRequirementsFor } from '../domain/abili
 import { resolveAuthoritativeMoveItemResources } from '../domain/moveAutomation/itemResources'
 import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../domain/abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
+import { abilityAutomationAcceptedRealtimeAppendInput } from '../domain/abilityAutomation/realtime'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
 import { createMoveStateChangePlan, type MoveStateChangePlan } from '../domain/moveAutomation/plan'
 import { createSqliteAbilityDeclarationOfferRepository, type AbilityDeclarationOfferRepository } from '../storage/abilityDeclarationOfferRepository'
@@ -63,6 +68,17 @@ import { createSqliteAbilityResolutionOperationRepository, type AbilityResolutio
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { createSqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { createSqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
+import {
+  createSqliteRealtimeEventRepository,
+  type RealtimeEventRepository,
+} from '../storage/realtimeEventRepository'
+import {
+  defaultLibraryRealtimePublicationFailureReporter,
+  defaultPersistedLibraryRealtimeEventPublisher,
+  publishPersistedLibraryRealtimeEventsAfterCommit,
+  type LibraryRealtimePublicationFailureReporter,
+  type PersistedLibraryRealtimeEventPublisher,
+} from '../realtime/libraryMutationRealtime'
 import { listRepositorySheets, type ListSheetsRepository } from './listSheets'
 import { loadMapUseCase } from './loadMap'
 
@@ -77,10 +93,24 @@ export interface ResolveAbilityDeclarationDependencies {
   readonly sheetRepository?: SheetRepository<Record<string, unknown>> & ListSheetsRepository
   readonly offerRepository?: AbilityDeclarationOfferRepository
   readonly operationRepository?: AbilityResolutionOperationRepository
+  readonly realtimeEventRepository?: Pick<RealtimeEventRepository, 'appendMany'>
+  readonly publishPersistedRealtimeEvent?: PersistedLibraryRealtimeEventPublisher
+  readonly reportAfterCommitPublicationFailure?: LibraryRealtimePublicationFailureReporter
   readonly registry?: AbilityAutomationRuntimeRegistry
   readonly now?: () => number
 }
 const fail = (statusCode: number, statusMessage: string): never => { throw createError({ statusCode, statusMessage }) }
+const parseDeclarationIntent = (value: unknown): AbilityDeclarationIntent => {
+  try {
+    return parseAbilityDeclarationIntent(value)
+  }
+  catch (error) {
+    if (error instanceof AbilityDeclarationValidationError) {
+      fail(400, 'Invalid Ability declaration intent.')
+    }
+    throw error
+  }
+}
 const targetIds = (choices: ReturnType<typeof resolveAbilityDeclarationIntent>['choices']): readonly string[] => Object.freeze([
   ...new Set(choices.flatMap(choice => choice.options.flatMap(option => (
     option.value.kind === 'token' || option.value.kind === 'self' ? [option.value.placementId] : []
@@ -108,13 +138,15 @@ export const resolveAbilityDeclarationUseCase = (
   input: ResolveAbilityDeclarationInput,
   dependencies: ResolveAbilityDeclarationDependencies = {},
 ): AbilityResolutionPublicResult => {
-  const intent = parseAbilityDeclarationIntent(input.intent)
+  const intent = parseDeclarationIntent(input.intent)
   const intentSha256 = hashAbilityDeclarationIntent(intent)
   const database = dependencies.database ?? getRotomDatabase()
   const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository(database)
   const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(database)
   const offerRepository = dependencies.offerRepository ?? createSqliteAbilityDeclarationOfferRepository(database)
   const operationRepository = dependencies.operationRepository ?? createSqliteAbilityResolutionOperationRepository(database)
+  const realtimeEventRepository = dependencies.realtimeEventRepository
+    ?? createSqliteRealtimeEventRepository({ database })
   const registry = dependencies.registry ?? ABILITY_AUTOMATION_RUNTIME_REGISTRY
   const storedOffer = offerRepository.findByOfferId(intent.offerId) ?? fail(404, 'Ability declaration offer is missing.')
   if (storedOffer.consumedIntentSha256 !== null && storedOffer.consumedIntentSha256 !== intentSha256) {
@@ -452,6 +484,7 @@ export const resolveAbilityDeclarationUseCase = (
     status: 'committed',
     presentation: { key: 'ability.resolution.completed', outcome: acceptedOutcome },
   })
+  let persistedRealtimeEvents: ReturnType<RealtimeEventRepository['appendMany']> = []
   database.withTransaction(() => {
     const retry = operationRepository.find(intent.intentId)
     if (retry) {
@@ -493,6 +526,16 @@ export const resolveAbilityDeclarationUseCase = (
       } as unknown as import('#shared/automation/strictJson').StrictJsonValue,
       createdAt: now,
     })
+    persistedRealtimeEvents = realtimeEventRepository.appendMany([
+      abilityAutomationAcceptedRealtimeAppendInput(result),
+    ])
+  })
+  publishPersistedLibraryRealtimeEventsAfterCommit({
+    events: persistedRealtimeEvents,
+    publish: dependencies.publishPersistedRealtimeEvent
+      ?? defaultPersistedLibraryRealtimeEventPublisher,
+    reportFailure: dependencies.reportAfterCommitPublicationFailure
+      ?? defaultLibraryRealtimePublicationFailureReporter,
   })
   return result
 }
@@ -541,8 +584,8 @@ export const resolveAbilityDeclarationForControllerUseCase = (
   input: ResolveAbilityDeclarationInput,
   dependencies: ResolveAbilityDeclarationDependencies = {},
 ): AbilityResolutionControllerEnvelope => {
-  const intent = parseAbilityDeclarationIntent(input.intent)
-  const result = resolveAbilityDeclarationUseCase(input, dependencies)
+  const intent = parseDeclarationIntent(input.intent)
+  const result = resolveAbilityDeclarationUseCase({ ...input, intent }, dependencies)
   const database = dependencies.database ?? getRotomDatabase()
   const repository = dependencies.operationRepository
     ?? createSqliteAbilityResolutionOperationRepository(database)

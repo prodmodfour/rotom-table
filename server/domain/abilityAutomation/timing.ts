@@ -298,19 +298,21 @@ export const planAbilityTimingPayment = (input: {
   })
 }
 
-/** Reset all temporary ability resources only at an authoritative scene transition. */
-export const planAbilitySceneResourceTransition = (input: {
-  readonly context: AuthoritativeAbilityContext
-  readonly sceneId: string
-  readonly operationId: string
-}): MoveStateChangePlan => {
-  const previous = parseEncounterState(
-    input.context.map.encounterState ?? createEmptyEncounterState(),
-  )
+/**
+ * Apply the Ability-owned half of an authoritative scene boundary. This is a
+ * pure encounter projection so the ordinary scene command can invoke it even
+ * when no Ability actor exists.
+ */
+export const transitionAbilitySceneEncounterState = (
+  value: unknown,
+  sceneId: string | null,
+): EncounterState => {
+  const previous = parseEncounterState(value)
   if (
-    previous.abilityUsage?.sceneId === input.sceneId
-    && previous.abilityTiming?.sceneId === input.sceneId
-  ) return createMoveStateChangePlan([])
+    sceneId !== null
+    && previous.abilityUsage?.sceneId === sceneId
+    && previous.abilityTiming?.sceneId === sceneId
+  ) return previous
   const durationEnded = reduceAbilityEffectLifecycleEncounter(previous, { kind: 'scene-end' }).encounter
   const ended = parseEncounterState({
     ...durationEnded,
@@ -327,24 +329,47 @@ export const planAbilitySceneResourceTransition = (input: {
       { kind: 'scene-end' },
     ),
   })
-  const abilityUsage = beginAbilitySceneUsagePeriod(
-    parseAbilitySceneUsageLedger(ended.abilityUsage ?? createEmptyAbilitySceneUsageLedger()),
-    input.sceneId,
-  )
-  const abilityTiming = timingError(() => beginAbilityTimingScene(
-    parseAbilityTimingLedger(ended.abilityTiming ?? createEmptyAbilityTimingLedger()),
-    input.sceneId,
-  ))
-  const current = parseEncounterState({
+  if (sceneId === null) {
+    return parseEncounterState({
+      ...ended,
+      abilityUsage: createEmptyAbilitySceneUsageLedger(),
+      abilityTiming: createEmptyAbilityTimingLedger(),
+      abilityEventReceipts: createEmptyAbilityEventReceiptState(),
+      abilityReactionAvailability: createEmptyAbilityReactionAvailabilityLedger(),
+    })
+  }
+  return parseEncounterState({
     ...ended,
-    abilityUsage,
-    abilityTiming,
+    abilityUsage: beginAbilitySceneUsagePeriod(
+      parseAbilitySceneUsageLedger(ended.abilityUsage ?? createEmptyAbilitySceneUsageLedger()),
+      sceneId,
+    ),
+    abilityTiming: timingError(() => beginAbilityTimingScene(
+      parseAbilityTimingLedger(ended.abilityTiming ?? createEmptyAbilityTimingLedger()),
+      sceneId,
+    )),
     abilityEventReceipts: createEmptyAbilityEventReceiptState(),
     abilityReactionAvailability: beginAbilityReactionAvailabilityScene(
       ended.abilityReactionAvailability ?? createEmptyAbilityReactionAvailabilityLedger(),
-      input.sceneId,
+      sceneId,
     ),
   })
+}
+
+/** Reset all temporary ability resources only at an authoritative scene transition. */
+export const planAbilitySceneResourceTransition = (input: {
+  readonly context: AuthoritativeAbilityContext
+  readonly sceneId: string
+  readonly operationId: string
+}): MoveStateChangePlan => {
+  const previous = parseEncounterState(
+    input.context.map.encounterState ?? createEmptyEncounterState(),
+  )
+  if (
+    previous.abilityUsage?.sceneId === input.sceneId
+    && previous.abilityTiming?.sceneId === input.sceneId
+  ) return createMoveStateChangePlan([])
+  const current = transitionAbilitySceneEncounterState(previous, input.sceneId)
   return createMoveStateChangePlan([{
     kind: 'encounter-state',
     scope: { kind: 'encounter', mapSlug: input.context.map.slug },

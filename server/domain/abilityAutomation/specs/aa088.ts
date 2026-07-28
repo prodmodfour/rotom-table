@@ -3,6 +3,7 @@ import {
   remainingAbilityRegistrations,
   remainingActivatedAbilitySpec as activatedSpec,
   remainingStaticAbilitySpec as staticSpec,
+  remainingStaticActivatedAbilitySpec as staticActivatedSpec,
   remainingTriggeredAbilitySpec as triggeredSpec,
 } from './aa085to100Shared'
 
@@ -11,7 +12,7 @@ export const SAND_VEIL_ABILITY_SPEC = staticSpec('Sand Veil', 'aa088.sand-veil')
 export const SAP_SIPPER_ABILITY_SPEC = triggeredSpec('Sap Sipper', 'aa088.sap-sipper', 'move')
 export const SCHOOLING_ABILITY_SPEC = activatedSpec('Schooling', 'aa088.schooling')
 export const SCRAPPY_ABILITY_SPEC = staticSpec('Scrappy', 'aa088.scrappy')
-export const SCREEN_CLEANER_ABILITY_SPEC = activatedSpec('Screen Cleaner', 'aa088.screen-cleaner')
+export const SCREEN_CLEANER_ABILITY_SPEC = staticActivatedSpec('Screen Cleaner', 'aa088.screen-cleaner')
 export const SEASONAL_ABILITY_SPEC = staticSpec('Seasonal', 'aa088.seasonal')
 export const SEQUENCE_ABILITY_SPEC = triggeredSpec('Sequence', 'aa088.sequence', 'move')
 export const SERENE_GRACE_ABILITY_SPEC = staticSpec('Serene Grace', 'aa088.serene-grace')

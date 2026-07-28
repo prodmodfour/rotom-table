@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import actionExceptionsJson from '../data/ability-automation/action-exceptions.json'
 import capabilityCatalogJson from '../data/ability-automation/capabilities.json'
 import frequencyExceptionsJson from '../data/ability-automation/frequency-exceptions.json'
+import interactionMatrixJson from '../data/ability-automation/interaction-matrix.json'
 import legacyBaselineJson from '../data/ability-automation/legacy-baseline.json'
 import manifestJson from '../data/ability-automation/manifest.json'
 import parameterDefinitionsJson from '../data/ability-automation/parameter-definitions.json'
@@ -21,6 +22,7 @@ import {
   parseAbilityFrequencyExceptionCatalog,
   parseCanonicalAbilityFrequencies,
 } from '#shared/abilityAutomation/frequency'
+import { parseAbilityAutomationInteractionMatrix } from '#shared/abilityAutomation/interactionMatrix'
 import {
   parseAbilityAutomationLegacyBaseline,
 } from '#shared/abilityAutomation/legacyBaseline'
@@ -38,6 +40,7 @@ import {
 import {
   parseAbilityAutomationScenarioRequirementCatalog,
 } from '#shared/abilityAutomation/scenarioRequirements'
+import { abilityAutomationInteractionReviewSha256 } from '../server/domain/abilityAutomation/interactionMatrix'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../server/domain/abilityAutomation/registry'
 
 const ROOT = resolve(import.meta.dirname, '..')
@@ -278,6 +281,24 @@ export const checkAbilityAutomationRepository = async (options: {
     || manifestIds.some((identity, index) => identity !== canonicalIds[index])
   ) {
     fail('Ability manifest must contain every canonical ability exactly once in canonical order.')
+  }
+  const interactionMatrix = parseAbilityAutomationInteractionMatrix(interactionMatrixJson)
+  if (
+    interactionMatrix.rulesetId !== catalog.rulesetId
+    || interactionMatrix.sourceDataSha256 !== catalog.sourceDataSha256
+    || interactionMatrix.canonicalAbilityCount !== catalog.abilities.length
+  ) fail('Ability interaction matrix ruleset snapshot is stale.')
+  if (interactionMatrix.reviewedManifestSha256 !== abilityAutomationInteractionReviewSha256(manifest)) {
+    fail('Ability interaction matrix manifest review snapshot is stale.')
+  }
+  for (const file of [
+    ...interactionMatrix.domains.flatMap(domain => domain.evidenceFiles),
+    ...interactionMatrix.crossDomainEvidenceFiles,
+  ]) {
+    if (!existsSync(resolve(ROOT, file))) fail(`Ability interaction evidence does not exist: ${file}.`)
+  }
+  if (manifest.abilities.some(ability => ability.interactionStatus !== 'complete')) {
+    fail('Certified ability interaction matrix requires every manifest interaction status to be complete.')
   }
 
   const capabilityByCode = new Map(

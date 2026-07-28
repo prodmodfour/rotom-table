@@ -45,6 +45,7 @@ import {
   type MoveSpecV2Runtime,
 } from './registry'
 import type { AbilityAutomationRuntimeRegistry } from '../abilityAutomation/registry'
+import { moveSlug } from './specs/reviewedSpecBuilder'
 import {
   MoveSpecResolvedResponseError,
   type MoveSpecResolvedResponse,
@@ -187,7 +188,9 @@ const targetEvidence = (
   readonly includedIds: readonly string[]
   readonly evaluations: readonly MoveSpecAuthoritativeTargetEvaluation[]
 } => {
-  const evaluations = pending.trace.events.flatMap(event => (
+  const evaluations = pending.authoritativeTargetEvaluations
+    ? pending.authoritativeTargetEvaluations.map(evaluation => ({ ...evaluation }))
+    : pending.trace.events.flatMap(event => (
     event.kind === 'target' && event.reasonCode !== 'nested-child-target'
   )
     ? [{
@@ -233,14 +236,15 @@ const comparableTraceEvent = (
   event: PendingMoveResolution['trace']['events'][number],
 ): Record<string, unknown> => {
   if (event.kind === 'operation') {
-    const { input: _input, result: _result, ...identity } = event
+    const { sequence: _sequence, input: _input, result: _result, ...identity } = event
     return identity
   }
   if (event.kind === 'predicate') {
-    const { input: _input, ...identity } = event
+    const { sequence: _sequence, input: _input, ...identity } = event
     return identity
   }
-  return event as unknown as Record<string, unknown>
+  const { sequence: _sequence, ...identity } = event
+  return identity as unknown as Record<string, unknown>
 }
 
 const assertDurableExecutionPrefix = (
@@ -264,7 +268,12 @@ const assertDurableExecutionPrefix = (
   // Everything before the operation remains a strict prefix; the durable roll
   // ledger above and chosen-option assertions below protect the rebuilt unit.
   const expectedTrace = traceBeforeCurrentOperation(pending).map(comparableTraceEvent)
+  const durableRollIds = new Set(pending.rollLedger.map(roll => roll.rollId))
   const actualTrace = execution.trace.events
+    // A reviewed response may extend a speculative multi-hit sequence. The
+    // original ledger must remain exact, while newly appended rolls are not
+    // part of the pre-window decision prefix.
+    .filter(event => event.kind !== 'roll' || durableRollIds.has(event.roll.rollId))
     .slice(0, expectedTrace.length)
     .map(comparableTraceEvent)
   if (!sameJsonValue(actualTrace, expectedTrace)) {
@@ -477,7 +486,7 @@ export const resumeMoveSpec = (
     const moveSourceId = runtime.definition.spec.phases
       .flatMap(phase => phase.operations)
       .find(operation => operation.source.kind === 'move')?.source.id
-      ?? `move.${runtime.canonicalId}`
+      ?? `move.${moveSlug(runtime.canonicalId)}`
     execution = executeMoveSpec({
       definition: runtime.definition,
       ...(serverAbilityTargetingOverride
@@ -664,6 +673,8 @@ export const resumeMoveSpec = (
         ? { resourceMovement: movementProjection.resourceMovement }
         : {}),
       selectedTargetIds: [...authoritativeTargetIds],
+      authoritativeTargetEvaluations: evidence.evaluations,
+      authoritativeAreaCells: pending.authoritativeAreaCells ?? [],
       sheetReads: deduplicateAuthoritativeMoveSheetReads([
         ...context.reads.snapshot(),
         ...execution.sheetReads,
@@ -685,6 +696,9 @@ export const resumeMoveSpec = (
       authoritativeTargetIds,
       ...(targetingKind === 'area'
         ? { authoritativeTargetEvaluations: evidence.evaluations }
+        : {}),
+      ...(pending.authoritativeAreaCells
+        ? { authoritativeAreaCells: pending.authoritativeAreaCells }
         : {}),
     },
     execution,

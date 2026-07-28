@@ -1,6 +1,6 @@
 # Ability automation contributor guide
 
-Ability automation is an in-progress server-authoritative live-play initiative. The canonical denominator is 483 abilities; current progress and the only ordered implementation queue live in [`ABILITY_AUTOMATION_PLAN.md`](../implementation-plans/ABILITY_AUTOMATION_PLAN.md). A menu badge, helper function, name-based move hook, or existing browser transaction is not completion evidence.
+Ability automation is the server-authoritative live-play subsystem for the frozen 483-Ability catalog. Semantic closure, local production-like acceptance, and legacy-runtime retirement are complete. The [release acceptance record](ability-automation-release-acceptance.md) states the unexecuted production deployment/observation dependencies; ticket authority remains the only ordered ledger, [`ABILITY_AUTOMATION_PLAN.md`](../implementation-plans/ABILITY_AUTOMATION_PLAN.md). A menu badge, helper function, name-based Move hook, or browser transaction is never completion evidence.
 
 Read [ADR 011](adrs/011-authoritative-ability-automation-runtime.md) before changing runtime behavior. The MoveSpec guide remains relevant for shared mechanical operations, but AbilitySpec owns different declaration, frequency, passive, and event-subscription semantics.
 
@@ -23,7 +23,7 @@ Privacy is default-deny. Viewer privileges are additive, but each asset is proje
 
 `shared/abilityAutomation/results.ts` enforces this split at the wire boundary. Public accepted results contain only operation/resolution/map identities, one revision transition, terminal outcome, and a generic presentation key. Public pending results add only phase, timestamps, and outstanding-window count—never ability, actor, responder, option, roll, trace, or read identity. Authorized views add bounded ability identity and operation counts or one opaque response window. `server/domain/abilityAutomation/results.ts` performs role/responder authorization and strips private recipient IDs, effect operation IDs, principal lists, state plans, reads, rolls, and traces before strict parsing.
 
-The closed policy and reciprocal threat/asset links are enforced by `shared/abilityAutomation/privacy.ts` and `data/ability-automation/privacy-matrix.json`.
+The closed policy and reciprocal threat/asset links are enforced by `shared/abilityAutomation/privacy.ts` and `data/ability-automation/privacy-matrix.json`. Production declaration and resolution routes emit only the aggregate buckets defined by `shared/abilityAutomation/observability.ts`: a closed event label, bounded denial family, duration bucket, and count buckets. The observability record has no map, actor, ability, responder, option, roll, operation, sheet, or trace identity, and a failed telemetry sink cannot affect authoritative execution.
 
 Important locations:
 
@@ -34,20 +34,30 @@ Important locations:
 - `data/ability-automation/manifest.json`: one truthful semantic row per canonical ability.
 - `data/ability-automation/legacy-baseline.json`: immutable source-linked snapshot of partial pre-AbilitySpec behavior fragments; never completion evidence.
 - `data/ability-automation/privacy-matrix.json`: default-deny threat, asset, audience, disclosure, and control policy.
+- `data/ability-automation/interaction-matrix.json`: source- and manifest-bound certification for move, ability, item, feature, condition, weather, terrain, hazard, form, and capability composition.
 - `data/ability-automation/capabilities.json`: closed mechanic dependency graph.
 - `data/ability-automation/scenario-requirements.json`: closed requirement-to-evidence mapping.
 - `shared/abilityAutomation/`: strict ruleset, manifest, capability, and evidence contracts; later AbilitySpec/event/intent wire schemas.
-- `server/domain/abilityAutomation/`: future reviewed specs, handlers, interpreter adapters, event routing, and planning.
-- `tests/shared/`, `tests/server/`, and future `tests/fixtures/abilityAutomation/`: contract and executable conformance evidence.
+- `server/domain/abilityAutomation/`: reviewed specs, handlers, interpreter adapters, event routing, planning, recovery, and composition contracts.
+- `tests/shared/`, `tests/server/`, and `tests/fixtures/abilityAutomation/`: contract and executable conformance evidence.
+- `docs/ability-automation-manual-qa.md`: operator canary, privacy, reconnect, restart, recovery, correction, and release-check runbook.
+- `docs/ability-automation-release-acceptance.md`: final repository/prodlike evidence and explicit production deployment/observation dependencies.
 
-## Legacy isolation and migration
+## Legacy isolation, migration, and retirement
 
-`data/ability-automation/legacy-baseline.json` is a frozen audit, not a runtime registry and not completion evidence. Pre-AbilitySpec transactions may be reached only through:
+`data/ability-automation/legacy-baseline.json` is a frozen historical audit, not a runtime registry and not completion evidence. `data/ability-automation/legacy-migration.json` binds each of its 45 fragment owners to one exact manifest-selected native runtime under `native-only-no-dual-write` policy.
 
-- `src/utils/abilityAutomationLegacyCompatibility.ts` for the live-play client panel;
-- `server/domain/abilityAutomation/legacyCompatibility.ts` for authoritative table actions.
+AA-110 retired production legacy execution:
 
-`server/domain/abilityAutomation/runtimeSelection.ts` accepts only manifest-certified `abilityspec-v1` registrations. It has no legacy input or fallback. To retire a legacy fragment, add and certify its native AbilitySpec behavior, route production execution to the native selector, remove the compatibility call, and retain the baseline entry as historical migration evidence.
+- clients invoke only `POST /api/maps/abilities/declarations` and `POST /api/maps/abilities/resolve` through `useAbilityAutomationGateway`;
+- `POST /api/maps/tokens/use-ability` is an authenticated `410 Gone` tombstone that parses no body and performs no read, write, operation-store, or realtime mutation;
+- legacy map/session `useAbility` command executors reject before authoritative reads or writes, and WebSocket delivery receives a non-retryable unsupported-message rejection;
+- the browser transaction registry, compatibility wrappers, setup-sheet activation mutation, empty browser prompt surfaces, and former Moxie/Celebrate/Cute Charm/Poison Point prompt builders have no production execution path;
+- historical `abilities[].activated` bytes remain readable in old sheet documents but are never rendered as controls, projected into token Evasion, or consulted by authoritative mechanics; every current sheet persistence path strips the field, and Sand Veil/Snow Cloak now resolve only from effective Ability and weather authority;
+- Moxie, Celebrate, Cute Charm, and Poison Point now suspend and resume only through their native Ability-owned MoveSpec overlays. The historical `ability-follow-ups` continuation discriminator remains readable because it also carries the canonical Spite Move reaction, but no new Ability window can be authored there and a persisted historical Ability window fails closed instead of applying a legacy effect; and
+- `shared/livePlayCommands.ts` and `shared/sessionTableActionCommands.ts` retain deprecated strict wire readers so old bytes can be diagnosed. `src/utils/abilityAutomation.ts` and the historical follow-up-spec module path remain inert/source-compatible audit anchors, not mechanic selectors.
+
+`shared/abilityAutomation/legacyCompatibility.ts` is the executable retirement policy. `server/domain/abilityAutomation/runtimeSelection.ts` accepts only manifest-certified `abilityspec-v1` registrations and has no legacy input or fallback. Before deploying the retirement release, verify there are no outstanding historical Ability windows under the compatibility continuation; use the private maintenance-abandonment/export workflow rather than trying to resume one. Rollback uses the prior application release plus the normal SQLite backup path and never rewrites private campaign data as part of repository deployment.
 
 ## Work from the plan
 
@@ -138,7 +148,7 @@ Model each clause. A Bonus paragraph may be Static while the primary effect is a
 
 `shared/abilityAutomation/ownedState.ts` stores marks, bounded counters, token pools, modes, and forms in one strict encounter-owned envelope. Every entry has an optimistic version, source ability/owner linkage, linked targets, lifecycle policy, and create/last-operation ancestry. `server/domain/abilityAutomation/ownedState.ts` validates closed commands, hashes their exact JSON, retains scene receipts, rejects conflicting retries and stale versions, authorizes the active source ability and targets, and plans one revision-checked encounter update. Presence, source-ability, target, scene, and restart cleanup are deterministic. The immutable context and pure handler port expose read-only bounded queries; normal scene transition clears this state atomically with other ability resources.
 
-`server/domain/abilityAutomation/recovery.ts` exports a strict private recovery bundle containing the complete encounter envelope, lasting Daily ledgers, and pending private results with trace, roll ledger, response window, responder principals, and opaque JSON continuation cursor. A deterministic SHA-256 detects backup corruption; it is not a substitute for storage access control or encryption. Import verifies ruleset, map revision, trace/roll identity, and exact runtime version/hash/module before reconciling timing, presence, source ability, weather, terrain, and owned state. Reconnect callers retain the private result and must use the existing authorization projector; raw bundles must never be sent to table clients. Normal SQLite map/sheet JSON export preserves these fields because they are part of the canonical documents.
+`server/domain/abilityAutomation/recovery.ts` exports a strict private recovery bundle containing the complete encounter envelope, lasting Daily ledgers, and pending private results with trace, roll ledger, response window, responder principals, and opaque JSON continuation cursor. A deterministic SHA-256 detects backup corruption; it is not a substitute for storage access control or encryption. Import verifies ruleset, map revision, trace/roll identity, and exact runtime version/hash/module before reconciling timing, presence, source ability, weather, terrain, owned state, entities, forms, and copied-Ability snapshots. Reconnect callers retain the private result and must use the existing authorization projector; raw bundles must never be sent to table clients. A consistent private database/recovery backup is required to resume prompts. `createAbilityMaintenanceExport` instead terminally abandons private pending resolutions, emits only identity/status audit evidence, and produces an interchange bundle with no resumable window; a maintenance JSON export must never masquerade as a resumable backup.
 
 `shared/abilityAutomation/events.ts` is the closed private event grammar consumed by ability routing. It carries only accepted server facts in seven families: action, HP, condition, combat stage, item, field, and lifecycle. Each payload has exact fields and outcome arithmetic/invariants; batches require unique IDs plus monotonic sequence, map revision, and captured time. Target and tag order remains semantic. These events may contain private HP, ownership, or ability-instance facts and are never public realtime DTOs. Later routing tickets may extend the versioned vocabulary with reviewed move/damage details rather than accepting arbitrary event metadata.
 
@@ -182,7 +192,7 @@ The current adapter is `server/domain/abilityAutomation/sharedKernelExtensions.t
 
 `server/domain/abilityAutomation/statePlan.ts` joins that typed state plan with the complete deduplicated context read set, exact runtime identity, private trace, and exact roll ledger. Every map/sheet/group-inventory write must have a matching read at the same expected revision, and every authoritative roll must occur exactly once in the trace. The commit API enters one store-supplied physical transaction, checks every consulted resource—including read-only resources—before any write, applies all typed map/encounter/sheet/inventory changes, and stores trace/roll evidence in that same transaction. A stale or missing read raises a conflict before state or audit is applied.
 
-`shared/abilityAutomation/performanceBudgets.ts` and `server/domain/abilityAutomation/executionBudget.ts` bound each causal chain before allocation grows: per-event fan-out and triggers, total events/triggers, nested depth and child executions, operations, per-operation and total recipients, rolls, choices, and trace events. Child executions share parent counters. The context wraps its random ledger and shared-effect planner with the same budget; later routers/windows consume the event/trigger/choice counters. Negative, fractional, over-canonical, or exhausted budgets fail closed, and synthetic maximum checks have a CI wall-time guard.
+`shared/abilityAutomation/performanceBudgets.ts` and `server/domain/abilityAutomation/executionBudget.ts` bound each causal chain before allocation grows: per-event fan-out and triggers, total events/triggers, nested depth and child executions, operations, per-operation and total recipients, rolls, choices, and trace events. Child executions share parent counters. The context wraps its random ledger and shared-effect planner with the same budget; later routers/windows consume the event/trigger/choice counters. Negative, fractional, over-canonical, or exhausted budgets fail closed. `tests/server/abilityAutomationCatalogPerformance.test.ts` additionally enforces post-import wall-time budgets for rebuilding all 483 exact runtimes, routing across all 483, aggregating the maximum 1,024 passive providers, repeated common Move resolution with effective Abilities, the exact 64-trigger fan-out ceiling, and 128 durable pending resumes.
 
 Add a reusable typed primitive when multiple abilities need a missing concept. A primitive owns parsing, limits, pure evaluation/reduction, trace behavior, state ownership, and tests.
 
@@ -386,9 +396,10 @@ or mechanics. Exact intent retries retain object identity in the client and are 
 server operation store. Accepted results use the redacted result contract and force an authoritative
 snapshot reconciliation. Private offers and accepted audits are stored in dedicated SQLite tables;
 changed request/intent reuse, stale revisions, inactive instances, and unauthorized actors fail
-closed. The first direct execution adapter accepts only reviewed handler-free, precondition-free,
-cost-free shared Combat Stage operations; every other operation shape remains explicitly rejected
-until its closed adapter is wired rather than falling back to legacy client mutations.
+closed. All 483 manifest rows select exact registered AbilitySpec runtimes. Their reviewed adapters
+cover activated, triggered, Static, movement, item, field, form, lifecycle, and nested-Move effects;
+unsupported or malformed operation shapes fail closed and never fall back to browser mutations or
+the retired transaction registry.
 
 Relationship providers derive ally/enemy/self membership, same-side sets, bounded auras, and
 cardinal/all adjacency from authoritative placement sides and footprints. Interception creates an
@@ -427,6 +438,20 @@ AA-074 applies Heavy Metal and both Huge Power identities before Combat Stages f
 AA-075 makes Hypnotic’s Hypnosis and Imposter’s Transform available through effective-ability Connection overlays, with automatic-hit and Free-Interrupt rules revalidated by the server. Ice Body, Ice Face, Ice Scales, Illuminate, Immunity, and Infiltrator execute at their exact healing, Temporary HP/form, Special-resistance, Accuracy/Blindsense, poison-application, Stealth, hazard, Blessing, and Substitute boundaries. Ice Shield accepts only one-to-three contiguous authoritative cells with an adjacent segment and creates reviewed typed barriers. Ignition Boost is a resumable adjacent-Ally reaction that adds exactly +5 to the triggering Fire damage and permits at most one benefit. Illusion stores Focus-bounded creature or object marks and active appearance durably, but projects them only to rendering; a damaging hit removes the projection without changing any mechanical token facts. Innards Out reconstructs its optional Free-Action window across resume, resists every successful strike of the triggering attack, totals actual real-HP loss after Temporary HP and mitigation, and applies twice that total to one server-bounded foe within two meters even if the user Faints.
 
 AA-076 applies Inner Focus, Insomnia, Instinct, Intrepid Sword, Iron Fist, and Keen Eye through exact effective-ability queries at the condition, Initiative, Evasion, combat-stage, damage-base, Accuracy, cover, smoke, and Rest-authorization boundaries. Interference and Intimidate pay authoritative actions and Scene gates before creating bounded one-round Accuracy or per-target Scene evidence. Juicy Energy offers only exact stored Shuckle’s Berry Juice branches, gates Honey Paws capacity and Gluttony limits by effective abilities, revalidates storage, and commits consumption, Level healing, Free Action, Daily use, and digestion-trade state atomically. Iron Barbs, Justified, and Kampfgeist use owner-authorized Free-Action windows reconstructed for ordinary, multi-hit, nested, pending, and resumed execution; they preserve one-Tick retaliation, Dark/AoO Attack stages and Intercept checks, matching typed resistance, Scene use, and Fighting STAB without client-authored trigger facts.
+
+## Debug and correct mechanics
+
+Start from authority, not presentation. Capture the canonical Ability ID, mode/subscription, exact manifest runtime version/hash/source module, sanitized map revision and read facts, operation/resolution identity, accepted event checkpoint, and private trace only in an access-controlled reproduction. Compare immediate and resumed traces by stable event/roll/operation identity; volatile sequence values are not semantic evidence. Reproduce with an immutable local fixture and run the narrow cohort, interaction, privacy, recovery, and retry tests before changing code.
+
+Classify the defect before editing:
+
+- **Canonical data defect:** repair through checked-in provenance and a source-hash-bound adjudication; never silently rewrite runtime prose.
+- **Spec or mechanic defect:** change the reviewed AbilitySpec/integration, regenerate the exact definition hash, update conformance evidence, and update the manifest row.
+- **Shared provider/kernel defect:** add a focused regression for affected and unaffected consumers, then rerun dependency-closed conformance and interaction evidence.
+- **Interaction defect:** update executable composition evidence and the interaction matrix. Any runtime, provenance, capability, or conformance change also requires recomputing `reviewedManifestSha256` in both interaction and legacy-migration certification artifacts.
+- **Private campaign-state defect:** do not patch data unless explicitly requested and backed up. Prefer a typed GM/game action; app behavior fixes belong in this repository and deploy through GitHub.
+
+Never fix a failed hash by copying the observed hash into metadata before reviewing why executable material changed. Never log raw declarations, response windows, sheets, rolls, traces, or continuations. Use the bounded observability record and the operator runbook for production-like diagnosis.
 
 ## Evidence
 
@@ -480,7 +505,7 @@ Before sharing a completed ticket or phase, run:
 bash scripts/quality-gate.sh
 ```
 
-The quality gate runs non-strict ability metadata, budgets, and plan consistency during migration. It must not bypass the existing strict completed Move automation checks.
+The quality gate runs Ability metadata, budgets, plan consistency, the strict completed Move checks, typechecking, the full test suite, and a production build. Final Ability release acceptance must additionally run `npm run check:ability-automation-complete` until that strict command is part of the gate itself.
 
 ## Common failures
 

@@ -47,8 +47,6 @@ const switchProfileRoute = computed(() => playerProfileSwitchRoute(route.fullPat
 
 const isActive = (path: string) => isAppNavItemActive(route.path, path)
 
-if (import.meta.client && isPlayer.value) loadRememberedProfile()
-
 const syncPlayerProfileForNavigation = async () => {
   if (!isPlayer.value) return
 

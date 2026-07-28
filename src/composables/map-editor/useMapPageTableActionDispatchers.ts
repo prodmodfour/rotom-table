@@ -2,12 +2,6 @@ export interface MapPageTableActionDispatchResult {
   readonly dispatched: boolean
 }
 
-export interface MapPageAbilityActionEvent {
-  readonly userId: string
-  readonly abilityName: string
-  readonly targetTokenId?: string
-}
-
 export interface MapPageManeuverActionEvent {
   readonly userId: string
   readonly maneuverName: string
@@ -21,11 +15,6 @@ export interface MapPageOrderActionEvent {
 }
 
 export interface MapPageTableActionLiveCommands {
-  readonly useAbility: (payload: {
-    placementId: string
-    abilityName: string
-    targetPlacementId?: string
-  }) => Promise<MapPageTableActionDispatchResult>
   readonly useManeuver: (payload: {
     placementId: string
     maneuverName: string
@@ -44,7 +33,6 @@ export interface UseMapPageTableActionDispatchersOptions {
 }
 
 export interface UseMapPageTableActionDispatchersReturn {
-  readonly dispatchAbilityUse: (event: MapPageAbilityActionEvent) => Promise<boolean> | undefined
   readonly dispatchManeuverUse: (event: MapPageManeuverActionEvent) => Promise<boolean> | undefined
   readonly dispatchOrderUse: (event: MapPageOrderActionEvent) => Promise<boolean> | undefined
 }
@@ -63,15 +51,6 @@ export const useMapPageTableActionDispatchers = ({
   livePlayCommands,
 }: UseMapPageTableActionDispatchersOptions): UseMapPageTableActionDispatchersReturn => {
   const shouldUseLiveTableActionRoutes = (): boolean => !isSetupEditMode()
-
-  const dispatchAbilityUse = (event: MapPageAbilityActionEvent): Promise<boolean> | undefined => {
-    if (!shouldUseLiveTableActionRoutes()) return undefined
-    return commandAccepted(livePlayCommands.useAbility({
-      placementId: event.userId,
-      abilityName: event.abilityName,
-      ...(event.targetTokenId ? { targetPlacementId: event.targetTokenId } : {}),
-    }))
-  }
 
   const dispatchManeuverUse = (event: MapPageManeuverActionEvent): Promise<boolean> | undefined => {
     if (!shouldUseLiveTableActionRoutes()) return undefined
@@ -92,7 +71,6 @@ export const useMapPageTableActionDispatchers = ({
   }
 
   return {
-    dispatchAbilityUse,
     dispatchManeuverUse,
     dispatchOrderUse,
   }

@@ -1,0 +1,862 @@
+{
+  "schemaVersion": 1,
+  "baselineCapturedAt": "2026-07-09",
+  "canonicalSourceSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+  "reviewedManifestSha256": "76e9dc8c725872d2060a9b5e3ffd46de1128b623df60a014cd6fb13783fd110c",
+  "reviewedAt": "2026-07-31",
+  "migrationPolicy": "native-only-no-dual-write",
+  "entries": [
+    {
+      "canonicalId": "Battle Armor",
+      "legacyCategories": [
+        "critical-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "b56cf9de1882a060779f77acc9bcc9d795f5c230aa2e9170be7d1d3e466ef5b0",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa061.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort061.test.ts",
+        "tests/server/abilityAutomationCohort061AquaBullet.test.ts",
+        "tests/server/abilityAutomationCohort061ArenaTrap.test.ts",
+        "tests/server/abilityAutomationCohort061AuraBreak.test.ts",
+        "tests/server/abilityAutomationCohort061BadDreams.test.ts",
+        "tests/server/abilityAutomationCohort061BallFetch.test.ts",
+        "tests/server/abilityAutomationCohort061Battery.test.ts",
+        "tests/server/abilityAutomationCohort061Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Celebrate",
+      "legacyCategories": [
+        "active-transaction",
+        "move-follow-up"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "a262546e26c1254aced5bbe58a8ba4fa315341411472df2c11aaa4826454943d",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa063.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort063Activated.test.ts",
+        "tests/server/abilityAutomationCohort063ClayCannons.test.ts",
+        "tests/server/abilityAutomationCohort063Static.test.ts",
+        "tests/server/abilityAutomationCohort063Triggered.test.ts",
+        "tests/server/abilityAutomationLegacyIsolation.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Compound Eyes",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "90e79e397f14c503891baa8b33e8cd2b738fb3cfe827f4557158933e25be8507",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa064.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort064Activated.test.ts",
+        "tests/server/abilityAutomationCohort064Static.test.ts",
+        "tests/server/abilityAutomationCohort064Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Cute Charm",
+      "legacyCategories": [
+        "move-follow-up"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "4b2c5cd56de7b431eb932afff41913a5ce6f722327bee78e72b3250e5544198c",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort065Activated.test.ts",
+        "tests/server/abilityAutomationCohort065Static.test.ts",
+        "tests/server/abilityAutomationCohort065Triggered.test.ts",
+        "tests/server/abilityAutomationLegacyIsolation.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Desert Weather",
+      "legacyCategories": [
+        "weather-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "41a5313561b2e65b75a8a249526a3d7c758c4e6171132867b8c5bef0941b5326",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa067.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort067Activated.test.ts",
+        "tests/server/abilityAutomationCohort067Static.test.ts",
+        "tests/server/abilityAutomationCohort067Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Drown Out",
+      "legacyCategories": [
+        "reaction-definition"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "064b1d876e03f428eeb446f40f5f55a599b4bcac04d94b59ddd4c2fbc2b5d194",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa068.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort068Activated.test.ts",
+        "tests/server/abilityAutomationCohort068Static.test.ts",
+        "tests/server/abilityAutomationCohort068Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Flash Fire",
+      "legacyCategories": [
+        "condition-immunity",
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "9e3d3ab73d1bf5b368f59792c49932de159cd50e9bd7245400d67bc0fea7cd33",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort070Activated.test.ts",
+        "tests/server/abilityAutomationCohort070Static.test.ts",
+        "tests/server/abilityAutomationCohort070Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Healer",
+      "legacyCategories": [
+        "active-transaction"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "140ad45283b11731f0956eaebae7c71b96ad654d0ad5fbb32b0dca24bcd6bdc3",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa073.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort073Activated.test.ts",
+        "tests/server/abilityAutomationCohort073Harvest.test.ts",
+        "tests/server/abilityAutomationCohort073Static.test.ts",
+        "tests/server/abilityAutomationCohort073Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Ice Face",
+      "legacyCategories": [
+        "weather-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "1cf0d26d34a82d911da2554026991ec6986d20301cd4d60157c4967fcc5ebf02",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa075.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort075Activated.test.ts",
+        "tests/server/abilityAutomationCohort075Static.test.ts",
+        "tests/server/abilityAutomationCohort075Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Illuminate",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "1aa5ee3258293bc4ca72d0dfe5aaf5c55945968f57ef21a47f7a589654ac835f",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa075.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort075Activated.test.ts",
+        "tests/server/abilityAutomationCohort075Static.test.ts",
+        "tests/server/abilityAutomationCohort075Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Immunity",
+      "legacyCategories": [
+        "condition-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "14de1c6115948db7bc971506152a80b1fb5079c743f616077bbb8dd5848ef648",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa075.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort075Activated.test.ts",
+        "tests/server/abilityAutomationCohort075Static.test.ts",
+        "tests/server/abilityAutomationCohort075Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Inner Focus",
+      "legacyCategories": [
+        "condition-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "c160932596c1aca919bb44ee64dda72fe8b917eefe4569b07c584e0710fbc5d2",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa076.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort076Activated.test.ts",
+        "tests/server/abilityAutomationCohort076Static.test.ts",
+        "tests/server/abilityAutomationCohort076Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Insomnia",
+      "legacyCategories": [
+        "ability-overlay"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "773c3909c73cb84e5bec1181aa8ad354b4dfca6dc0c488088c442059fe8a25d0",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa076.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort076Activated.test.ts",
+        "tests/server/abilityAutomationCohort076Static.test.ts",
+        "tests/server/abilityAutomationCohort076Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Intimidate",
+      "legacyCategories": [
+        "active-transaction"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "d14c1e289f1ed8b9191d695017cdcf8de40834847107e31926e452a61849b0b2",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa076.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort076Activated.test.ts",
+        "tests/server/abilityAutomationCohort076Static.test.ts",
+        "tests/server/abilityAutomationCohort076Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Keen Eye",
+      "legacyCategories": [
+        "condition-immunity",
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "d592aba4204f0823176beb41cc21d848aacf6b2a7bf0c6d7d6b11551dfd0225c",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa076.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort076Activated.test.ts",
+        "tests/server/abilityAutomationCohort076Static.test.ts",
+        "tests/server/abilityAutomationCohort076Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Leaf Guard",
+      "legacyCategories": [
+        "active-transaction"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "5c2a7aed2bc42846f29e35f2da959a93fd5fc619b6867b60a3712a7dec7b7124",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa077.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort077Activated.test.ts",
+        "tests/server/abilityAutomationCohort077Static.test.ts",
+        "tests/server/abilityAutomationCohort077Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Levitate",
+      "legacyCategories": [
+        "ability-overlay",
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "973c33edd723cd2ac20f7ba2180d6e720d26cbcbd136b6ab7085750de2f44283",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa077.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort077Activated.test.ts",
+        "tests/server/abilityAutomationCohort077Static.test.ts",
+        "tests/server/abilityAutomationCohort077Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Magic Guard",
+      "legacyCategories": [
+        "recoil-immunity",
+        "weather-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "f1dfde53a87c5c894017c161c9fa67cd6eb908a9796c1edbb67bb1ffa76989ea",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort079Activated.test.ts",
+        "tests/server/abilityAutomationCohort079Static.test.ts",
+        "tests/server/abilityAutomationCohort079Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Motor Drive",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "ac7824a7ba36ca01aa590120e12e736e263fbf3283e7d9244ad8447038fddfe4",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa080.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort080Activated.test.ts",
+        "tests/server/abilityAutomationCohort080Static.test.ts",
+        "tests/server/abilityAutomationCohort080Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Moxie",
+      "legacyCategories": [
+        "active-transaction",
+        "move-follow-up"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "256aa9e5546c7baf9cc7d77eb4b18d2dc23f47e54b5c4686e2b5c91b04736983",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa080.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort080Activated.test.ts",
+        "tests/server/abilityAutomationCohort080Static.test.ts",
+        "tests/server/abilityAutomationCohort080Triggered.test.ts",
+        "tests/server/abilityAutomationLegacyIsolation.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Mud Dweller",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "ee659e4db62c24022699b3acbe0d5e85077f72a06a13a7c3c5e9561634bf6997",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa081.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort081Activated.test.ts",
+        "tests/server/abilityAutomationCohort081Static.test.ts",
+        "tests/server/abilityAutomationCohort081Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "No Guard",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "490cba9b554c825c81927e27f8bb22e5481b9983a4bfea9d3b7a674714716850",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa081.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort081Activated.test.ts",
+        "tests/server/abilityAutomationCohort081Static.test.ts",
+        "tests/server/abilityAutomationCohort081Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Overcoat",
+      "legacyCategories": [
+        "weather-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "c90a50021ac7d895f24333761496c92151bd489eb29d15ec9cdffb6952bfbdd3",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa082.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort082Static.test.ts",
+        "tests/server/abilityAutomationCohort082Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Own Tempo",
+      "legacyCategories": [
+        "condition-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "1b8b59cfc0af357d454fddb249c9a427d8135fd937fd854f4ca7858bec303660",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa082.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort082Static.test.ts",
+        "tests/server/abilityAutomationCohort082Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Pastel Veil",
+      "legacyCategories": [
+        "condition-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "8515bfb5d7b73a89e1e18fa48ea0352cc16b790c8c31477cb54b2586db0195a6",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa082.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort082Static.test.ts",
+        "tests/server/abilityAutomationCohort082Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Permafrost",
+      "legacyCategories": [
+        "weather-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "3a927d59f30aef6b8ecd26f5365abbaeea3fc9bb2e5674c86b8dfb4f6ebbaf5a",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa083.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort083Activated.test.ts",
+        "tests/server/abilityAutomationCohort083Lifecycle.test.ts",
+        "tests/server/abilityAutomationCohort083Static.test.ts",
+        "tests/server/abilityAutomationCohort083Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Poison Point",
+      "legacyCategories": [
+        "move-follow-up"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "6567579016f55d54534ce70bd50bf953868c5b64b4334c495e1af09c92161f53",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa083.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort083Activated.test.ts",
+        "tests/server/abilityAutomationCohort083Lifecycle.test.ts",
+        "tests/server/abilityAutomationCohort083Static.test.ts",
+        "tests/server/abilityAutomationCohort083Triggered.test.ts",
+        "tests/server/abilityAutomationLegacyIsolation.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Poison Touch",
+      "legacyCategories": [
+        "move-script-rewrite"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "098e13d892f049faa3f85cdddbd1c1a15ca2d8d87ea5f2757202a9e856733f1b",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa083.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort083Activated.test.ts",
+        "tests/server/abilityAutomationCohort083Lifecycle.test.ts",
+        "tests/server/abilityAutomationCohort083Static.test.ts",
+        "tests/server/abilityAutomationCohort083Triggered.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Quick Feet",
+      "legacyCategories": [
+        "derived-sheet"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "a1caaefc504d94df7386b698a9e8901bf9e7c6d3c3d10e6b44810808e7332e1e",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa085.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Reckless",
+      "legacyCategories": [
+        "move-interaction"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "8f4eef478794f6f063cd6687aba4742e5886b7c78ebfd6a5d53d04bd7ba3e68c",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa086.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Rock Head",
+      "legacyCategories": [
+        "recoil-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "f836b0a1668be974e3cde43f9218fb5d19fcb78d13de76047c68d4f7a41e4cf7",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa087.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Sand Force",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "fd5b29daf66cbb33283b058c0109868893d563ff884b76abd01be08e69b3048d",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa087.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Sand Veil",
+      "legacyCategories": [
+        "sheet-toggle",
+        "weather-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "00903507c091452b1721a8fb6f88639da0f136e9427c0c6e70007ff4df850f8a",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa088.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts",
+        "tests/server/abilityAutomationLegacyIsolation.test.ts",
+        "tests/utils/sheetEvasionBonuses.test.ts",
+        "tests/utils/sheets/persistence.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Sap Sipper",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "7c23c67856abf615e03401f6f97637732bc6b06361727bf2f881b5ce92128736",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa088.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Shell Armor",
+      "legacyCategories": [
+        "critical-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "c7dae3fc66e4bebdbb3caa06128ba2109816f42936bec93dd3000ddf9604b532",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa089.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Shield Dust",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "de4f8dddd08b8cc7810ceb64dcaeffd360839454e0cba1356622aa6ff5928f5c",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa089.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Simple",
+      "legacyCategories": [
+        "ability-overlay"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "1731cdc483d4c9327de1b27798936a35bec72f7b81a5a8d69d63402d08d3fbe0",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa089.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Snow Cloak",
+      "legacyCategories": [
+        "sheet-toggle",
+        "weather-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "133492d9f8fba84030d786be4029f4ca46e425458a5620fb24b7e7d079f31833",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa090.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts",
+        "tests/server/abilityAutomationLegacyIsolation.test.ts",
+        "tests/utils/sheetEvasionBonuses.test.ts",
+        "tests/utils/sheets/persistence.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Snow Warning",
+      "legacyCategories": [
+        "weather-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "4a5862d4fa73c8d80689ed8da95a89b12522f3a2976baca3b236e36593117e2b",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa090.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Soundproof",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "29c588965e963b980bd1b1f65a628e3a5a5ef601c121d3488e177f2f3b2997dc",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa091.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Sweet Veil",
+      "legacyCategories": [
+        "condition-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "2333e7924b75d1184e242fef21d5f4a30554e039ad6953e2b02660954e53e9bd",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa094.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Tolerance",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "de5e7c2d79f3bb0fcf55bc4a891fe114e9a580de37faa7a4d00fec0d80eab502",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa095.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Volt Absorb",
+      "legacyCategories": [
+        "passive-provider"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "69872975987eb7542fd4ec8e758c866a7acc19a292644d4696f36b8a975e2d4e",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa097.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Water Veil",
+      "legacyCategories": [
+        "condition-immunity"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "ac37f751f462eb9599d3f63d4de01d1c04e21dbb1817dd9efa4b894af05ef6d6",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa098.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    },
+    {
+      "canonicalId": "Weird Power",
+      "legacyCategories": [
+        "derived-sheet"
+      ],
+      "nativeRuntime": {
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "4357f2098fd161fbb62494f8765470794aaaec9ea0e6ef9124b969e63ee47b38",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa099.ts"
+      },
+      "disposition": "native-certified",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts"
+      ]
+    }
+  ]
+}

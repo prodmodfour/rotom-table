@@ -89,27 +89,6 @@ describe('usePokemonSheetRowActions', () => {
     expect(sheet.value?.movelist?.map((move) => move.name)).toEqual(['A', 'B', 'C'])
   })
 
-  it('toggles activatable ability state', () => {
-    const sheet = ref<CharacterSheet | null>(makeSheet())
-    const actions = usePokemonSheetRowActions(sheet)
-
-    sheet.value!.abilities = [{ name: 'Sand Veil' }]
-
-    actions.toggleAbilityActivation(0)
-    expect(sheet.value?.abilities?.[0].activated).toBe(true)
-
-    actions.toggleAbilityActivation(0)
-    expect(sheet.value?.abilities?.[0].activated).toBe(false)
-
-    sheet.value!.abilities = [{ name: 'Snow Cloak' }]
-    actions.toggleAbilityActivation(0)
-    expect(sheet.value?.abilities?.[0].activated).toBe(true)
-
-    sheet.value!.abilities = [{ name: 'Run Away', activated: true }]
-    actions.toggleAbilityActivation(0)
-    expect(sheet.value?.abilities?.[0]).toEqual({ name: 'Run Away' })
-  })
-
   it('updates held item names and strips lookup-backed item details', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     const actions = usePokemonSheetRowActions(sheet)
@@ -181,7 +160,6 @@ describe('usePokemonSheetRowActions', () => {
     actions.setVitaminFlag('heartBooster', true)
     actions.setVitaminNumber('heartScales', 1)
     actions.setVitaminText('notes', 'Ignored')
-    actions.toggleAbilityActivation(0)
     actions.removeEggMove(0)
     actions.removeAppliedMove(0)
     actions.setInheritedMove('20', 'Ignored')

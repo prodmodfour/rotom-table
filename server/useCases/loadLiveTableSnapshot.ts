@@ -15,6 +15,10 @@ import type { PlayerSessionAccessGrant } from '../utils/sessionPlayerAccess'
 import { authorizeSheetList, playerSheetAccessContextFromKeys } from './authorizeSheetList'
 import { listRepositorySheets, type ListSheetsRepository } from './listSheets'
 import { buildAbilityClientCapabilityBundle } from '../domain/abilityAutomation/clientCapabilities'
+import {
+  projectAbilityAutomationMapForPlayer,
+  projectAbilityAutomationSheetForPlayer,
+} from '../domain/abilityAutomation/clientStateProjection'
 import { loadMapUseCase, normalizeLoadMapSlug } from './loadMap'
 
 export interface LoadLiveTableSnapshotInput {
@@ -84,22 +88,27 @@ export const loadLiveTableSnapshotUseCase = (
       trainerSheets,
     })
 
+    const abilityCapabilities = buildAbilityClientCapabilityBundle({
+      role: input.role,
+      playerProfile: input.playerProfile,
+      map,
+      mapRevision: revision,
+      pokemonSheets: authorizedSheets.pokemonSheets,
+      trainerSheets: authorizedSheets.trainerSheets,
+    })
     return {
       schemaVersion: LIVE_TABLE_SNAPSHOT_SCHEMA_VERSION,
-      map,
+      map: input.role === 'player' ? projectAbilityAutomationMapForPlayer(map) : map,
       mapRevision: revision,
       interactionMode: mode.interactionMode,
       interactionModeUpdatedAt: mode.updatedAt,
-      pokemonSheets: authorizedSheets.pokemonSheets,
-      trainerSheets: authorizedSheets.trainerSheets,
-      abilityCapabilities: buildAbilityClientCapabilityBundle({
-        role: input.role,
-        playerProfile: input.playerProfile,
-        map,
-        mapRevision: revision,
-        pokemonSheets: authorizedSheets.pokemonSheets,
-        trainerSheets: authorizedSheets.trainerSheets,
-      }),
+      pokemonSheets: input.role === 'player'
+        ? authorizedSheets.pokemonSheets.map(sheet => projectAbilityAutomationSheetForPlayer(sheet))
+        : authorizedSheets.pokemonSheets,
+      trainerSheets: input.role === 'player'
+        ? authorizedSheets.trainerSheets.map(sheet => projectAbilityAutomationSheetForPlayer(sheet))
+        : authorizedSheets.trainerSheets,
+      abilityCapabilities,
     }
   })
 }

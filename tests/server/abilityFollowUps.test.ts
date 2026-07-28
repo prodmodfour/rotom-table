@@ -9,10 +9,9 @@ import {
   materializeAbilityFollowUps,
   planAbilityFollowUpResponse,
 } from '~~/server/domain/moveAutomation/abilityFollowUps'
-import { buildAuthoritativeMoveRulesContext } from '~~/server/domain/moveAutomation/context'
 import {
-  abilityFollowUpSpecForKind,
-  buildAbilityFollowUpEffectOperations,
+  buildSpiteFollowUpEffectOperations,
+  SPITE_FOLLOW_UP_RESPONSE_SPEC,
 } from '~~/server/domain/moveAutomation/abilityFollowUpSpecs'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
@@ -97,26 +96,20 @@ const sheets = (actorAbilities: readonly string[] = ['Celebrate']) => ({
   trainerSheets: new Map(),
 })
 
-const reviewedLegacyWindow = (
-  kind: 'celebrate' | 'cute-charm' | 'poison-point' | 'spite',
-  ownership: readonly ({ readonly kind: 'actor'; readonly id: null } | { readonly kind: 'placement'; readonly id: string })[],
-): PendingMoveReactionResponseWindow => {
-  const spec = abilityFollowUpSpecForKind(kind)
-  return {
-    windowId: `ability-follow-up.${kind}.legacy-test`,
-    operationId: `ability-follow-up.${kind}.legacy-test.request`,
-    kind: 'reaction' as const,
-    phase: 'cleanup' as const,
-    reasonCode: spec.reasonCode,
-    promptKey: spec.promptKey,
-    ownership,
-    options: [{ id: spec.optionId, labelKey: spec.optionLabelKey }],
-    allowPass: true,
-    timing: 'cleanup' as const,
-    priority: spec.priority,
-    depth: 0,
-  }
-}
+const retiredCuteCharmWindow = (): PendingMoveReactionResponseWindow => ({
+  windowId: 'ability-follow-up.cute-charm.historical',
+  operationId: 'ability-follow-up.cute-charm.historical.request',
+  kind: 'reaction',
+  phase: 'cleanup',
+  reasonCode: 'ability.cute-charm.follow-up',
+  promptKey: 'ability.cute-charm.infatuate-attacker',
+  ownership: [{ kind: 'placement', id: 'target-token' }],
+  options: [{ id: 'ability.cute-charm.apply', labelKey: 'ability.cute-charm.apply-infatuation' }],
+  allowPass: true,
+  timing: 'cleanup',
+  priority: 300,
+  depth: 0,
+})
 
 const materializedFollowUps = () => {
   const map = mapFixture()
@@ -148,17 +141,15 @@ const materializedFollowUps = () => {
   return { map, documents, resolution, pending }
 }
 
-describe('durable ability follow-ups', () => {
-  it('materializes reviewed server windows in deterministic priority order with correct ownership', () => {
+describe('durable post-Move follow-ups after Ability retirement', () => {
+  it('materializes only the reviewed Spite Move window with correct ownership', () => {
     const { pending } = materializedFollowUps()
 
     expect(pending.continuationKind).toBe('ability-follow-ups')
     expect(pending.outstandingWindows.map(window => window.reasonCode)).toEqual([
-      'ability.poison-point.follow-up',
       'move.spite.follow-up',
     ])
     expect(pending.outstandingWindows.map(window => window.ownership)).toEqual([
-      [{ kind: 'placement', id: 'target-token' }],
       [{ kind: 'placement', id: 'target-token' }],
     ])
     expect(pending.outstandingWindows.every(window => (
@@ -167,90 +158,31 @@ describe('durable ability follow-ups', () => {
       && window.allowPass
     ))).toBe(true)
     expect(activePendingMoveResponseWindows(pending).map(window => window.reasonCode)).toEqual([
-      'ability.poison-point.follow-up',
+      'move.spite.follow-up',
     ])
     expect(pending.trace.program.runtimeKind).toBe('ability-follow-ups')
   })
 
-  it('authors typed operations for every reviewed legacy follow-up', () => {
-    const { map, documents, pending } = materializedFollowUps()
-    const context = buildAuthoritativeMoveRulesContext({
-      map,
-      ...documents,
-      intent: {
-        schemaVersion: 1,
-        placementId: 'actor-token',
-        moveName: 'Tackle',
-        selection: { kind: 'self' },
-      },
-      selectedPlacementIds: [],
-      random: () => 0,
-      time: 2_000,
-    })
-    const byReason = new Map(pending.outstandingWindows.map(window => [window.reasonCode, window]))
-    const operationKinds = (kind: 'celebrate' | 'cute-charm' | 'poison-point' | 'spite') => {
-      const spec = abilityFollowUpSpecForKind(kind)
-      return buildAbilityFollowUpEffectOperations({
-        window: byReason.get(spec.reasonCode) ?? reviewedLegacyWindow(
-          kind,
-          kind === 'celebrate'
-            ? [{ kind: 'actor', id: null }]
-            : [{ kind: 'placement', id: 'target-token' }],
-        ),
-        optionId: spec.optionId,
-        canonicalMoveId: 'Tackle',
-        context,
-      })
-    }
-
-    expect(operationKinds('celebrate').map(operation => operation.kind)).toEqual(['log'])
-    expect(operationKinds('cute-charm')).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        kind: 'condition',
-        payload: expect.objectContaining({ conditionId: 'infatuation', conditionDetail: 'Defender' }),
-      }),
-    ]))
-    expect(operationKinds('poison-point')).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        kind: 'condition',
-        payload: expect.objectContaining({ conditionId: 'poisoned' }),
-      }),
-    ]))
-    expect(operationKinds('spite')).toEqual(expect.arrayContaining([
+  it('authors only typed Spite operations', () => {
+    const { pending } = materializedFollowUps()
+    expect(buildSpiteFollowUpEffectOperations({
+      window: pending.outstandingWindows[0]!,
+      optionId: SPITE_FOLLOW_UP_RESPONSE_SPEC.optionId,
+      canonicalMoveId: 'Tackle',
+    })).toEqual(expect.arrayContaining([
       expect.objectContaining({
         kind: 'condition',
         payload: expect.objectContaining({ conditionId: 'disabled', conditionDetail: 'Tackle' }),
       }),
     ]))
-
-    const moxie = abilityFollowUpSpecForKind('moxie')
-    expect(buildAbilityFollowUpEffectOperations({
-      window: {
-        windowId: 'ability-follow-up.moxie.1',
-        operationId: 'ability-follow-up.moxie.1.request',
-        kind: 'reaction',
-        phase: 'cleanup',
-        reasonCode: moxie.reasonCode,
-        promptKey: moxie.promptKey,
-        ownership: [{ kind: 'actor', id: null }],
-        options: [{ id: moxie.optionId, labelKey: moxie.optionLabelKey }],
-        allowPass: true,
-        timing: 'cleanup',
-        priority: moxie.priority,
-        depth: 0,
-      },
-      optionId: moxie.optionId,
+    expect(() => buildSpiteFollowUpEffectOperations({
+      window: retiredCuteCharmWindow(),
+      optionId: 'ability.cute-charm.apply',
       canonicalMoveId: 'Tackle',
-      context,
-    })).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        kind: 'combat-stage',
-        payload: expect.objectContaining({ action: 'modify', stage: 'atk', value: 1 }),
-      }),
-    ]))
+    })).toThrow('no reviewed Spite definition')
   })
 
-  it('plans a selected Cute Charm option as a typed detailed condition', () => {
+  it('rejects a persisted historical Ability window without planning a write', () => {
     const { map, documents, pending } = materializedFollowUps()
     const durableMap: TabletopMap = {
       ...map,
@@ -260,71 +192,24 @@ describe('durable ability follow-ups', () => {
         pendingResolutionSummaries: [pending.publicSummary],
       },
     }
-    const window = reviewedLegacyWindow('cute-charm', [{ kind: 'placement', id: 'target-token' }])
-    const priorityBlocked = {
-      ...pending,
-      outstandingWindows: [
-        reviewedLegacyWindow('celebrate', [{ kind: 'actor', id: null }]),
-        window,
-      ],
-      publicSummary: {
-        ...pending.publicSummary,
-        outstandingWindowCount: 2,
-      },
-    }
-    expect(() => planAbilityFollowUpResponse({
-      pendingResolution: priorityBlocked,
-      responseOpId: 'op_outoforder001',
-      responseWindowId: window.windowId,
-      responseOptionId: window.options[0]!.id,
-      chosenBy: { kind: 'gm', id: null },
-      map: durableMap,
-      ...documents,
-      plannedAt: 2_000,
-    })).toThrow('current reviewed priority')
-
-    const cuteCharmOnly = {
+    const window = retiredCuteCharmWindow()
+    const historical = {
       ...pending,
       outstandingWindows: [window],
-      publicSummary: {
-        ...pending.publicSummary,
-        outstandingWindowCount: 1,
-      },
+      publicSummary: { ...pending.publicSummary, outstandingWindowCount: 1 },
     }
-
-    const plan = planAbilityFollowUpResponse({
-      pendingResolution: cuteCharmOnly,
-      responseOpId: 'op_abilityanswer01',
+    expect(() => planAbilityFollowUpResponse({
+      pendingResolution: historical,
+      responseOpId: 'op_retired_ability_answer',
       responseWindowId: window.windowId,
       responseOptionId: window.options[0]!.id,
       chosenBy: { kind: 'gm', id: null },
       map: durableMap,
       ...documents,
       plannedAt: 2_000,
-    })
-
-    expect(plan.revision).toBe(6)
-    expect(plan.sheetWrites).toHaveLength(1)
-    expect(plan.sheetWrites[0]).toMatchObject({
-      kind: 'pokemon',
-      slug: 'actor',
-      expectedRevision: 2,
-      revision: 3,
-      changedFields: ['conditions'],
-      nextSheet: {
-        combat: { conditions: ['Infatuation: Defender'] },
-      },
-    })
-    expect(plan.pendingResolution.status).toBe('committed')
-    expect(plan.pendingResolution.outstandingWindows).toHaveLength(0)
-    expect(plan.pendingResolution.chosenOptions).toEqual([
-      expect.objectContaining({
-        windowId: window.windowId,
-        optionId: window.options[0]!.id,
-        responseOpId: 'op_abilityanswer01',
-      }),
-    ])
-    expect(plan.nextMap.encounterState?.pendingResolutionSummaries).toEqual([])
+    })).toThrow('Legacy Ability follow-up execution is retired')
+    expect(durableMap.revision).toBe(5)
+    expect(documents.pokemonSheets.get('actor')?.revision).toBe(2)
   })
 
   it('records pass without applying an effect and closes the final durable window', () => {

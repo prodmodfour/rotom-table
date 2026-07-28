@@ -792,6 +792,7 @@ export const interactionModeRealtimeAppendInputs = (input: {
       family: 'interaction-mode',
       operation: 'set',
       resource: slug,
+      revision: updatedAt,
       destination: mapChannel(slug),
       extra: { interactionMode: input.interactionMode, updatedAt },
     }),

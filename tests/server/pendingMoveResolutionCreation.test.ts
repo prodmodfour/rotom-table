@@ -635,7 +635,7 @@ const executeTermination = (input: {
 })
 
 describe('pending move resolution creation', () => {
-  it('persists accepted-move ability follow-ups and applies one authorized response exactly once', async () => {
+  it('persists the accepted Spite Move follow-up and applies one authorized response exactly once', async () => {
     const harness = createHarness()
     const actor = harness.sheets.getByRef('pokemon', 'actor')!
     const target = harness.sheets.getByRef('pokemon', 'target')!
@@ -646,7 +646,7 @@ describe('pending move resolution creation', () => {
       nextSheet: {
         ...actor.sheet,
         gender: 'Male',
-        abilities: [{ name: 'Celebrate' }],
+        abilities: [],
       },
     })).toBe('applied')
     expect(harness.sheets.applyLivePlayUpdate({
@@ -657,7 +657,7 @@ describe('pending move resolution creation', () => {
         ...target.sheet,
         gender: 'Female',
         movelist: [{ name: 'Spite' }],
-        abilities: [{ name: 'Cute Charm' }],
+        abilities: [],
       },
     })).toBe('applied')
 
@@ -689,20 +689,10 @@ describe('pending move resolution creation', () => {
     expect(stored?.resolution).toMatchObject({
       continuationKind: 'ability-follow-ups',
       status: 'pending',
-      outstandingWindows: expect.arrayContaining([
-        expect.objectContaining({
-          reasonCode: 'ability.celebrate.follow-up',
-          ownership: [{ kind: 'actor', id: null }],
-        }),
-        expect.objectContaining({
-          reasonCode: 'ability.cute-charm.follow-up',
-          ownership: [{ kind: 'placement', id: 'target-token' }],
-        }),
-        expect.objectContaining({
-          reasonCode: 'move.spite.follow-up',
-          ownership: [{ kind: 'placement', id: 'target-token' }],
-        }),
-      ]),
+      outstandingWindows: [{
+        reasonCode: 'move.spite.follow-up',
+        ownership: [{ kind: 'placement', id: 'target-token' }],
+      }],
     })
     expect(accepted.map?.encounterState?.pendingResolutionSummaries).toEqual([
       stored?.resolution.publicSummary,
@@ -719,60 +709,39 @@ describe('pending move resolution creation', () => {
     expect(refreshedWindows.windows).toEqual([
       expect.objectContaining({
         window: expect.objectContaining({
-          reasonCode: 'ability.celebrate.follow-up',
-          options: [{ id: 'ability.celebrate.apply', labelKey: 'ability.celebrate.use-celebrate' }],
+          reasonCode: 'move.spite.follow-up',
+          options: [{ id: 'move.spite.apply', labelKey: 'move.spite.disable-move' }],
         }),
       }),
     ])
 
-    const celebrateWindow = stored!.resolution.outstandingWindows[0]!
-    const passCelebrate: MoveResponseCommand = {
-      schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
-      opId: 'op_abilitypass001',
-      mapSlug: 'pending-arena',
-      baseRevision: 5,
-      type: MOVE_RESPONSE_COMMAND_TYPES.PASS,
-      payload: {
-        resolutionId: stored!.resolutionId,
-        windowId: celebrateWindow.windowId,
-      },
-    }
-    expect(executeResponse({ harness, command: passCelebrate, now: 1_500 }).result)
-      .toMatchObject({ ok: true, previousRevision: 5, revision: 6 })
-
-    const afterPass = harness.pending.getById(stored!.resolutionId)!
-    const cuteCharmWindow = afterPass.resolution.outstandingWindows[0]!
-    expect(cuteCharmWindow.reasonCode).toBe('ability.cute-charm.follow-up')
+    const spiteWindow = stored!.resolution.outstandingWindows[0]!
     const reaction: MoveResponseCommand = {
       schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
-      opId: 'op_abilityanswer01',
+      opId: 'op_spite_answer01',
       mapSlug: 'pending-arena',
-      baseRevision: 6,
+      baseRevision: 5,
       type: MOVE_RESPONSE_COMMAND_TYPES.REACT,
       payload: {
         resolutionId: stored!.resolutionId,
-        windowId: cuteCharmWindow.windowId,
-        optionId: cuteCharmWindow.options[0]!.id,
+        windowId: spiteWindow.windowId,
+        optionId: spiteWindow.options[0]!.id,
       },
     }
     const response = executeResponse({ harness, command: reaction, now: 2_000 })
-    expect(response.result).toMatchObject({ ok: true, previousRevision: 6, revision: 7 })
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 5, revision: 6 })
     expect(harness.sheets.getByRef('pokemon', 'actor')?.sheet).toMatchObject({
-      combat: { conditions: ['Infatuation: target'] },
+      combat: { conditions: ['Disabled: Ember'] },
     })
     const afterResponse = harness.pending.getById(stored!.resolutionId)!
-    expect(afterResponse.status).toBe('pending')
+    expect(afterResponse.status).toBe('committed')
     expect(afterResponse.resolution.chosenOptions).toEqual([
       expect.objectContaining({
-        windowId: celebrateWindow.windowId,
-        optionId: null,
-      }),
-      expect.objectContaining({
-        windowId: cuteCharmWindow.windowId,
-        optionId: cuteCharmWindow.options[0]!.id,
+        windowId: spiteWindow.windowId,
+        optionId: spiteWindow.options[0]!.id,
       }),
     ])
-    expect(afterResponse.resolution.outstandingWindows).toHaveLength(1)
+    expect(afterResponse.resolution.outstandingWindows).toHaveLength(0)
 
     const replay = replayMoveResponseCommandUseCase({ role: 'gm', command: reaction }, {
       database: harness.database,
@@ -780,7 +749,7 @@ describe('pending move resolution creation', () => {
       opRepository: harness.ops,
     })
     expect(replay?.result).toEqual(response.result)
-    expect(harness.maps.getBySlug('pending-arena')?.revision).toBe(7)
+    expect(harness.maps.getBySlug('pending-arena')?.revision).toBe(6)
     expect(harness.sheets.getByRef('pokemon', 'actor')?.revision).toBe(4)
   })
 

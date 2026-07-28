@@ -138,6 +138,23 @@ export interface MoveSpecDamageCalculation {
   readonly evaluationTrace: readonly MoveRuleEvaluationTraceEntry[]
 }
 
+/** Unaware ignores only positive defensive Combat Stages for this attack. */
+export const projectRecipientForAttackingUnaware = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly actorPlacementId: string
+  readonly recipient: SpawnedPokemon
+}): SpawnedPokemon => input.context.queries.abilities.has(input.actorPlacementId, 'Unaware')
+  ? {
+      ...input.recipient,
+      combatStages: {
+        ...input.recipient.combatStages,
+        def: Math.min(0, input.recipient.combatStages.def),
+        sdef: Math.min(0, input.recipient.combatStages.sdef),
+        spd: Math.min(0, input.recipient.combatStages.spd),
+      },
+    }
+  : input.recipient
+
 const reviewedPreTypeDamageModifiers = (
   operation: MoveDamageEffectOperation,
 ): readonly MoveDamageModifier[] => (operation.payload.preTypeDamageModifiers ?? []).map(
@@ -624,17 +641,11 @@ export const resolveMoveSpecDamageCalculation = (
     context: options.context,
     recipient: options.recipient,
   })
-  const effectiveRecipient = options.context.queries.abilities.has(actor.id, 'Unaware')
-    ? {
-        ...aa079Recipient,
-        combatStages: {
-          ...aa079Recipient.combatStages,
-          def: Math.min(0, aa079Recipient.combatStages.def),
-          sdef: Math.min(0, aa079Recipient.combatStages.sdef),
-          spd: Math.min(0, aa079Recipient.combatStages.spd),
-        },
-      }
-    : aa079Recipient
+  const effectiveRecipient = projectRecipientForAttackingUnaware({
+    context: options.context,
+    actorPlacementId: actor.id,
+    recipient: aa079Recipient,
+  })
   const baseBreakdown = resolveMoveAutomationTargetDamageBreakdown(
     resolvedScript,
     helpingHand.length > 0 ? withoutHelpingHandCondition(actor) : actor,

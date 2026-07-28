@@ -1,8 +1,8 @@
 import {
+  SHIELD_DUST_ABILITY_NAME,
   moveAutomationCombatStageBlockSource,
   tokenHasShieldDust,
 } from '~/utils/moveAutomationAbilityProtection'
-import { SHIELD_DUST_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
 import {
   PASTEL_VEIL_RANGE_METERS,
   SWEET_VEIL_RANGE_METERS,
@@ -37,6 +37,7 @@ import {
   aa080MotorDriveBlocksElectric,
 } from '../../abilityAutomation/mechanics/aa080StaticIntegration'
 import { AA080_MOTOR_DRIVE_STAGE_REASON } from '../../abilityAutomation/mechanics/aa080MoveIntegration'
+import { authoritativeUnnerveBlocksTarget } from '../unnerve'
 import type {
   MoveConditionImmunityDecision,
   MoveCoreTokenEffectImmunityDecision,
@@ -463,11 +464,10 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         )
         ?? (
           delta > 0
-          && options.context?.map.encounterState?.effects.some(effect => (
-            effect.tags.includes('aa097-unnerve')
-            && effect.affected.placementIds.includes(recipient.placement.id)
-            && effect.suppression.sources.length === 0
-          ))
+          && authoritativeUnnerveBlocksTarget(
+            options.context?.map.encounterState?.effects,
+            recipient.placement.id,
+          )
             ? 'Unnerve'
             : null
         )

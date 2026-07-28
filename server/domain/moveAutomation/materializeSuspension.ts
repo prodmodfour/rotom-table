@@ -6,6 +6,7 @@ import {
   type PendingMoveResolutionPublicSummary,
   type PendingMoveResolutionResourceRead,
   type PendingMoveRootAreaSelection,
+  type PendingMoveAuthoritativeTargetEvaluation,
   type PendingMoveResponseWindow,
 } from '#shared/moveAutomation/pendingResolution'
 import type {
@@ -72,6 +73,8 @@ export interface MaterializeMoveSpecSuspensionInput {
   readonly virtualOriginCell?: GridAnchor
   readonly targetBranchId?: string
   readonly rootAreaSelection?: PendingMoveRootAreaSelection
+  readonly authoritativeTargetEvaluations?: readonly PendingMoveAuthoritativeTargetEvaluation[]
+  readonly authoritativeAreaCells?: readonly GridAnchor[]
   readonly suspendedAt: number
   readonly authoritativeSheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly authoritativeGroupInventoryReads?: readonly AuthoritativeMoveGroupInventoryRead[]
@@ -424,6 +427,18 @@ export const materializeMoveSpecSuspension = (
               : {}),
           },
         }
+      : {}),
+    ...(input.authoritativeTargetEvaluations
+      ? {
+          authoritativeTargetEvaluations: input.authoritativeTargetEvaluations.map(evaluation => ({
+            targetPlacementId: evaluation.targetPlacementId,
+            outcome: evaluation.outcome,
+            reasonCode: evaluation.reasonCode,
+          })),
+        }
+      : {}),
+    ...(input.authoritativeAreaCells
+      ? { authoritativeAreaCells: input.authoritativeAreaCells.map(cell => ({ ...cell })) }
       : {}),
     canonicalMoveId: input.definition.spec.canonicalId,
     specVersion: input.definition.spec.version,

@@ -88,7 +88,6 @@ const {
   removeAppliedMove,
   addAbility,
   removeAbility,
-  toggleAbilityActivation,
   addEdge,
   removeEdge,
   setStat,
@@ -221,7 +220,6 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
         :ability-rows="abilityRows"
         @add-ability="addAbility"
         @remove-ability="removeAbility"
-        @toggle-ability-activation="toggleAbilityActivation"
         @add-edge="addEdge"
         @remove-edge="removeEdge"
       />

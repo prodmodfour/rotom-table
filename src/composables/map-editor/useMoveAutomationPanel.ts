@@ -89,12 +89,7 @@ import type {
   MoveAutomationFieldEffectApply,
   MoveAutomationHpUpdate,
   MoveAutomationFeedbackState,
-  MoveAutomationCelebratePrompt,
-  MoveAutomationCuteCharmPrompt,
-  MoveAutomationMoxiePrompt,
-  MoveAutomationPoisonPointPrompt,
   MoveAutomationScript,
-  MoveAutomationSpitePrompt,
   MoveAutomationTargetBranch,
   MoveAutomationTargetingOverlayState,
   MoveAutomationTransaction,
@@ -414,13 +409,6 @@ export const useMoveAutomationPanel = ({
   const moveAutomationFeedback = ref<MoveAutomationFeedbackState | null>(null)
   const moveUsageError = ref<string | null>(null)
   const moveDispatchPending = ref(false)
-  // Compatibility-only presentation state. Live-play mechanics are available
-  // exclusively through the durable response panel and remain empty here.
-  const spiteReactionPrompts = ref<MoveAutomationSpitePrompt[]>([])
-  const cuteCharmReactionPrompts = ref<MoveAutomationCuteCharmPrompt[]>([])
-  const poisonPointReactionPrompts = ref<MoveAutomationPoisonPointPrompt[]>([])
-  const moxieTriggerPrompts = ref<MoveAutomationMoxiePrompt[]>([])
-  const celebrateTriggerPrompts = ref<MoveAutomationCelebratePrompt[]>([])
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
   let pendingFeedbackTransactionApplier: (() => void) | null = null
   let moveAnimationPlanSequence = 0
@@ -1607,16 +1595,6 @@ export const useMoveAutomationPanel = ({
     })
   }
 
-  const dismissSpiteReactionPrompt = (_id: string) => {}
-  const applySpiteReactionPrompt = async (_id: string) => {}
-  const dismissCuteCharmReactionPrompt = (_id: string) => {}
-  const applyCuteCharmReactionPrompt = async (_id: string) => {}
-  const dismissPoisonPointReactionPrompt = (_id: string) => {}
-  const applyPoisonPointReactionPrompt = async (_id: string) => {}
-  const dismissMoxieTriggerPrompt = (_id: string) => {}
-  const applyMoxieTriggerPrompt = async (_id: string) => {}
-  const dismissCelebrateTriggerPrompt = (_id: string) => {}
-  const applyCelebrateTriggerPrompt = (_id: string) => {}
 
   const faceTokenForTransaction = (transaction: MoveAutomationTransaction) => {
     const user = findSpawnedPokemon(transaction.userId)
@@ -2753,11 +2731,6 @@ export const useMoveAutomationPanel = ({
     moveAutomationFeedback,
     moveUsageError,
     moveDispatchPending,
-    spiteReactionPrompts,
-    cuteCharmReactionPrompts,
-    poisonPointReactionPrompts,
-    moxieTriggerPrompts,
-    celebrateTriggerPrompts,
     tokenMoveOptionsById,
     openMoveAutomation,
     useMoveAgainstTarget,
@@ -2768,16 +2741,6 @@ export const useMoveAutomationPanel = ({
     selectMoveAutomationAreaTemplate,
     selectMoveAutomationAreaDirection,
     aimMoveAutomationArea,
-    dismissSpiteReactionPrompt,
-    applySpiteReactionPrompt,
-    dismissCuteCharmReactionPrompt,
-    applyCuteCharmReactionPrompt,
-    dismissPoisonPointReactionPrompt,
-    applyPoisonPointReactionPrompt,
-    dismissMoxieTriggerPrompt,
-    applyMoxieTriggerPrompt,
-    dismissCelebrateTriggerPrompt,
-    applyCelebrateTriggerPrompt,
     appendMoveAutomationLog,
     applyMoveAutomation,
   }

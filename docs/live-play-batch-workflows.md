@@ -52,7 +52,7 @@ Manual operator smoke coverage lives in [Private VPS live-play smoke checklist](
 | Start/end scene | Already one `setScene` command. | **Not worth batching** | Scene start/end has a single map-scene mutation and no repeated command loop. |
 | Clear combat log | Setup/edit-only local metadata cleanup. | **Not a live-play batch target** | The current handler is guarded to setup/edit mode, so it is outside live-play command batching. |
 | Move automation resolution | Normal live play dispatches one `resolveMove` command. Legacy fallback applies individual updates only when authoritative dispatch is unavailable/setup-like. | **Not worth batching for Sprint 4** | `resolveMove` is already the server-authoritative batch for move effects; do not replace it with a generic macro command. |
-| Ability, maneuver, and order use | Each use sends one table-action command; follow-up prompts may send small targeted sheet commands. | **Later / not worth batching** | The primary action is already one command. Reaction prompts are conditional and sheet/token-specific rather than repeated map cleanup. |
+| Ability, maneuver, and order use | Abilities use the native declaration/resolve offer protocol and durable server-owned responses; maneuvers and orders each send one table-action command. | **Not worth batching** | Ability mechanics and reactions are already one authoritative saga, while each maneuver/order is one command. The retired `useAbility` table action must not be batched or revived. |
 
 ## Detailed workflow audit
 
@@ -154,7 +154,7 @@ Manual operator smoke coverage lives in [Private VPS live-play smoke checklist](
 - **Current command route(s):**
   - primary: `POST /api/maps/tokens/resolve-move` via `MAP_API_PATHS.resolveMove`;
   - related primitives/fallbacks: `POST /api/maps/use-move`, `/api/maps/tokens/modify-hp`, `/api/maps/tokens/modify-combat-stages`, `/api/maps/tokens/modify-conditions`, `/api/maps/field-effects/set`, `/api/maps/hazards/place`, and `/api/maps/tokens/move`.
-  - ability/maneuver/order actions use `POST /api/maps/tokens/use-ability`, `/api/maps/tokens/use-maneuver`, and `/api/maps/tokens/use-order`.
+  - activated Abilities use the native offer/intent protocol at `POST /api/maps/abilities/declarations` and `/api/maps/abilities/resolve`; the former `/api/maps/tokens/use-ability` route is a `410 Gone` tombstone. Maneuver/order actions continue through `/api/maps/tokens/use-maneuver` and `/api/maps/tokens/use-order`.
 - **Current command type:** primary `resolveMove`; primitives remain available for direct non-move workflows.
 - **Current command scopes:** resolve-move scopes include actor action/resources/move usage, every consulted actor and target token/sheet field, encounter state, metadata, hazards/fields/zones, and explicitly reviewed external item/group-inventory resources, bounded by `LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT`. The server compares this declared conflict set with the complete planner read/write set before commit.
 - **Authority scope:** GM or selected player profile must control the acting token; server validates map visibility, selected profile links, move intent, base revision, exact revision requirement, and deterministic result application.

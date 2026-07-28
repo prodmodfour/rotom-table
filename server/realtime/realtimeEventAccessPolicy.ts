@@ -10,6 +10,8 @@ import type { ShopTableDocument } from '~/types/shop'
 import type { PendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import { pendingMoveResponseAuthorizationGrant } from '../policies/pendingMoveResponsePolicy'
+import { playerProfileCanAccessSheet } from '../policies/playerProfilePolicy'
+import { projectAbilityAutomationRealtimeEventForPlayer } from '../domain/abilityAutomation/realtimeProjection'
 import { authorizeSheetList, playerSheetAccessContextFromKeys } from '../useCases/authorizeSheetList'
 
 export type RealtimePlayerSheetAccessKey = `${SheetKind}:${string}`
@@ -291,7 +293,20 @@ export const filterRealtimeEventsForPrincipal = (
   for (const event of input.events) {
     const decision = evaluator({ access: event.access, principal: input.principal })
     if (decision.allowed) {
-      allowedEvents.push(event)
+      const sourceControllerCanInspectSheet = event.access.kind === 'sheet-access'
+        ? playerProfileCanAccessSheet(
+            input.principal.playerProfile ?? null,
+            event.access.sheetKind,
+            event.access.sheetSlug,
+            { linkedTrainerSheets: input.dependencies.listTrainerSheets() },
+          )
+        : false
+      allowedEvents.push(input.principal.role === 'player'
+        ? projectAbilityAutomationRealtimeEventForPlayer({
+            event,
+            sourceControllerCanInspectSheet,
+          })
+        : event)
     } else {
       deniedEvents.push({ event, decision })
     }

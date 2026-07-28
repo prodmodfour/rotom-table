@@ -47,7 +47,6 @@ import {
   type ThrowPokeballPayload,
   type TickFieldEffectDurationsPayload,
   type TurnTokenPayload,
-  type UseAbilityPayload,
   type UseManeuverPayload,
   type UseMovePayload,
   type UseOrderPayload,
@@ -410,11 +409,6 @@ export interface UseLivePlayCommandsReturn {
     maneuverName: string
     targetPlacementId?: string
   }) => Promise<LivePlayCommandDispatchResult>
-  useAbility: (payload: {
-    placementId: string
-    abilityName: string
-    targetPlacementId?: string
-  }) => Promise<LivePlayCommandDispatchResult>
   useOrder: (payload: {
     placementId: string
     orderName: string
@@ -439,7 +433,6 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_MOVE
   | typeof LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER
-  | typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_ORDER
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
   | typeof LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE
@@ -469,7 +462,6 @@ type LivePlayTokenCommandPayload =
   | GrantExperiencePayload
   | UseMovePayload
   | UseManeuverPayload
-  | UseAbilityPayload
   | UseOrderPayload
 
 type LivePlayMapEffectsCommandPayload =
@@ -533,7 +525,6 @@ const LIVE_PLAY_COMMAND_REQUEST_PATHS = new Set<string>([
   MAP_API_PATHS.removeFieldEffect,
   MAP_API_PATHS.tickFieldEffectDurations,
   MAP_API_PATHS.useManeuver,
-  MAP_API_PATHS.useAbility,
   MAP_API_PATHS.useOrder,
   MAP_API_PATHS.setScene,
   MAP_API_PATHS.updateAttackOfOpportunity,
@@ -998,21 +989,12 @@ export const useLivePlayCommands = (
 
   const tableActionCommandBody = (
     authContext: LivePlayCommandOutboxAuthContext,
-    type: typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER | typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY | typeof LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
-    payload: UseManeuverPayload | UseAbilityPayload | UseOrderPayload,
-  ): Record<string, unknown> => {
-    const sheetScopes = type === LIVE_PLAY_COMMAND_TYPES.USE_ABILITY
-      ? [
-          sheetScopeForPlacementId(payload.placementId, 'ability'),
-          ...(payload.targetPlacementId ? [sheetScopeForPlacementId(payload.targetPlacementId, 'ability')] : []),
-        ].filter((scope): scope is LivePlaySheetScope => scope !== null)
-      : []
-    return commandBody(authContext, type, payload, [
-      tokenScope(payload, 'action'),
-      mapScope('metadata'),
-      ...sheetScopes,
-    ])
-  }
+    type: typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER | typeof LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
+    payload: UseManeuverPayload | UseOrderPayload,
+  ): Record<string, unknown> => commandBody(authContext, type, payload, [
+    tokenScope(payload, 'action'),
+    mapScope('metadata'),
+  ])
 
   const resultOpId = (metadata: Omit<LivePlayCommandDispatchResult, 'dispatched' | 'message'>): string | null => (
     typeof metadata.opId === 'string' ? metadata.opId : null
@@ -2824,19 +2806,6 @@ export const useLivePlayCommands = (
     ),
   )
 
-  const useAbility: UseLivePlayCommandsReturn['useAbility'] = (payload) => runLivePlayCommand(
-    MAP_API_PATHS.useAbility,
-    (authContext) => tableActionCommandBody(
-      authContext,
-      LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
-      {
-        placementId: payload.placementId,
-        abilityName: payload.abilityName,
-        ...(payload.targetPlacementId ? { targetPlacementId: payload.targetPlacementId } : {}),
-      },
-    ),
-  )
-
   const useOrder: UseLivePlayCommandsReturn['useOrder'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.useOrder,
     (authContext) => tableActionCommandBody(
@@ -3871,7 +3840,6 @@ export const useLivePlayCommands = (
     removeFieldEffect,
     tickFieldEffectDurations,
     useManeuver,
-    useAbility,
     useOrder,
     setScene,
     updateAttackOfOpportunity,

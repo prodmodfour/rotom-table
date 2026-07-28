@@ -243,9 +243,8 @@ describe('AA-077 activated integrations', () => {
       intent: { schemaVersion: 1, placementId: 'actor', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target' } },
       random: () => 0.75, time: 1_000,
     })
-    // The overlay retains Sun Blanket's canonical identity/frequency without
-    // pretending its later blocked cohort runtime is already selected.
-    expect(context.queries.abilities.has('actor', 'Sun Blanket')).toBe(false)
+    // Full-catalog promotion makes both exact granted runtimes effective.
+    expect(context.queries.abilities.has('actor', 'Sun Blanket')).toBe(true)
     expect(context.queries.abilities.has('actor', 'Leaf Guard')).toBe(true)
     expect(context.queries.abilities.has('actor', 'Sturdy')).toBe(false)
 

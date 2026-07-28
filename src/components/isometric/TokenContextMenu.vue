@@ -690,7 +690,6 @@ watch(orders, (nextOrders) => {
                 >
                   {{ abilityCapabilityStatusLabel(ability.capability?.status) }}
                 </span>
-                <span v-if="ability.activated" class="action-submenu__badge action-submenu__badge--active">Sheet active</span>
               </span>
             </button>
 

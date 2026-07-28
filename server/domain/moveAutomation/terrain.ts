@@ -680,11 +680,32 @@ export const createMoveAutomationTerrainResolver = (input: {
     if (query.timing === 'ordinary') {
       return deepFreeze({ allowed: true, blockedBy: null, trace: [] })
     }
-    const resolvedMembership = membership({ placementId: query.placementId })
-    const psychic = resolvedMembership.terrains.find(terrain => terrain.kind === 'psychic') ?? null
-    const trace = resolvedMembership.trace
-      .filter(entry => entry.terrainKind === 'psychic' && entry.outcome !== 'applied')
-      .map(entry => traceEntry({ ...entry, interaction: 'action' }))
+    // Psychic Terrain's action clause is explicitly type/capability based,
+    // unlike the grounded-membership clauses of Electric, Grassy, and Misty
+    // Terrain. Resolve exact spatial exposure first, then exempt Flying Types
+    // and creatures that still have an effective Levitate movement state.
+    const spatial = spatialMembership({ placementId: query.placementId })
+    const psychicTerrains = active.filter(terrain => terrain.kind === 'psychic')
+    const psychic = psychicTerrains.find(terrain => spatial.matchedIds.has(terrain.zoneId)) ?? null
+    const trace = psychicTerrains.flatMap((terrain): readonly TerrainMechanicsTraceEntry[] => {
+      if (!spatial.available) return [traceEntry({
+        interaction: 'action', terrainKind: 'psychic', zoneId: terrain.zoneId,
+        placementId: query.placementId, outcome: 'unavailable',
+        reasonCode: membershipFailureReason(terrain, 'unavailable'), value: null,
+      })]
+      if (!spatial.matchedIds.has(terrain.zoneId)) return [traceEntry({
+        interaction: 'action', terrainKind: 'psychic', zoneId: terrain.zoneId,
+        placementId: query.placementId, outcome: 'outside-zone',
+        reasonCode: membershipFailureReason(terrain, 'outside-zone'), value: false,
+      })]
+      if (psychic?.zoneId !== terrain.zoneId) return [traceEntry({
+        interaction: 'action', terrainKind: 'psychic', zoneId: terrain.zoneId,
+        placementId: query.placementId, outcome: 'superseded',
+        reasonCode: membershipFailureReason(terrain, 'superseded'),
+        value: psychic?.zoneId ?? null,
+      })]
+      return []
+    })
     if (!psychic) return deepFreeze({ allowed: true, blockedBy: null, trace })
     const decision = (result: {
       readonly allowed: boolean
@@ -725,6 +746,22 @@ export const createMoveAutomationTerrainResolver = (input: {
         allowed: true,
         outcome: 'not-applicable',
         reasonCode: 'terrain.psychic.action-on-own-initiative',
+      })
+    }
+    const token = tokens.get(query.placementId) ?? null
+    if (token?.defenderTypes.some(type => type.trim().toLowerCase() === 'flying')) {
+      return decision({
+        allowed: true,
+        outcome: 'not-applicable',
+        reasonCode: 'terrain.psychic.flying-pokemon-unrestricted',
+      })
+    }
+    if ((token?.movementProfile?.speeds.levitate ?? 0) > 0
+      && token?.movementProfile?.state.grounding === 'airborne') {
+      return decision({
+        allowed: true,
+        outcome: 'not-applicable',
+        reasonCode: 'terrain.psychic.levitating-pokemon-unrestricted',
       })
     }
     return decision({

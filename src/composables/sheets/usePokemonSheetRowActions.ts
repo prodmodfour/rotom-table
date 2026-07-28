@@ -11,7 +11,6 @@ import type {
 import { moveArrayItem } from '~/utils/arrayReorder'
 import { coerceEvasionBonus } from '~/utils/evasion'
 import { setSheetAccuracyStage } from '~/utils/sheetAccuracy'
-import { toggleSheetAbilityActivation } from '~/utils/sheetAbilityActivation'
 import {
   POKEMON_RARE_CANDY_LIMIT,
   coercePokemonVitaminCount,
@@ -86,12 +85,6 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
 
   const removeAbility = (i: number) => {
     sheet.value?.abilities?.splice(i, 1)
-  }
-
-  const toggleAbilityActivation = (i: number) => {
-    const ability = sheet.value?.abilities?.[i]
-    if (!ability) return
-    toggleSheetAbilityActivation(ability)
   }
 
   const addEdge = () => {
@@ -182,7 +175,6 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     removeAppliedMove,
     addAbility,
     removeAbility,
-    toggleAbilityActivation,
     addEdge,
     removeEdge,
     setStat,

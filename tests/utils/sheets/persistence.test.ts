@@ -28,6 +28,27 @@ describe('sheet persistence helpers', () => {
     expect(sheet).toHaveProperty('playerProfileAccessible', true)
   })
 
+  it('strips retired Ability activation bytes without mutating historical input', () => {
+    const sheet = {
+      slug: 'veil',
+      abilities: [
+        { name: 'Sand Veil', activated: true, effect: 'Historical row' },
+        { name: 'Snow Cloak', activated: false },
+        { name: 'Run Away' },
+      ],
+    }
+
+    const persisted = stripDerivedSheetRuntimeFields(sheet)
+
+    expect(persisted.abilities).toEqual([
+      { name: 'Sand Veil', effect: 'Historical row' },
+      { name: 'Snow Cloak' },
+      { name: 'Run Away' },
+    ])
+    expect(sheet.abilities[0]).toHaveProperty('activated', true)
+    expect(persisted.abilities).not.toBe(sheet.abilities)
+  })
+
   it('returns a persistable JSON-record payload', () => {
     const payload = toPersistableSheetPayload({
       slug: 'ace',

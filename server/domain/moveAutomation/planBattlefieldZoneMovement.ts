@@ -21,6 +21,7 @@ import {
 } from '~/utils/sheets/healing'
 import {
   materializeBattlefieldZoneEntryLifecycle,
+  materializeBattlefieldZoneRemovalOperation,
   type BattlefieldZoneEntryDecision,
 } from './battlefieldZoneEntry'
 import type { BattlefieldZoneEntryDefinitionRegistry } from './battlefieldZoneDefinitions'
@@ -51,6 +52,7 @@ import type {
 } from './reducers/coreTokenEffectTypes'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
 import { reduceMoveHazardZones } from './reducers/mapHazardEffects'
+import { barrierOccupiedCells } from './barriersAndSmoke'
 import { queryBattlefieldZones } from './battlefieldZones'
 import { aa067StealthRockDamageProfile } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../abilityAutomation/mechanics/aa075TemporaryHpIntegration'
@@ -241,6 +243,10 @@ export const planBattlefieldZoneMovement = (
     'subject-state-unavailable',
     `Zone entry placement ${input.movement.movement.placementId} has no authoritative target state.`,
   )
+  const screenCleaner = initialContext.queries.abilities.has(
+    initialContext.actor.placement.id,
+    'Screen Cleaner',
+  )
   const materialized = materializeBattlefieldZoneEntryLifecycle({
     map: input.map,
     movement: input.movement,
@@ -249,17 +255,11 @@ export const planBattlefieldZoneMovement = (
       sideId: initialContext.actor.placement.sideId ?? null,
       grounding: targetState.grounding,
       typeIds: targetState.typeIds,
-      ignoreHazards: initialContext.queries.abilities.has(
+      ignoreHazards: screenCleaner || initialContext.queries.abilities.has(
         initialContext.actor.placement.id,
         'Infiltrator',
-      ) || initialContext.queries.abilities.has(
-        initialContext.actor.placement.id,
-        'Screen Cleaner',
       ),
-      destroyHazards: initialContext.queries.abilities.has(
-        initialContext.actor.placement.id,
-        'Screen Cleaner',
-      ),
+      destroyHazards: screenCleaner,
     },
     ...(input.registry ? { registry: input.registry } : {}),
   })
@@ -282,9 +282,34 @@ export const planBattlefieldZoneMovement = (
   const zoneIdByOperationId = new Map(materialized.decisions.flatMap(decision => (
     decision.operationIds.map(operationId => [operationId, decision.zoneId] as const)
   )))
-  const zonesById = new Map(queryBattlefieldZones(input.map, { kind: 'all' }).map(zone => [zone.id, zone]))
+  const zones = queryBattlefieldZones(input.map, { kind: 'all' })
+  const zonesById = new Map(zones.map(zone => [zone.id, zone]))
+  const enteringEvents = lifecycle.processedPathEvents.filter(event => (
+    event.kind === 'placement-entering'
+  ))
+  const crossedBlockingHazardOperations = screenCleaner
+    ? zones
+        .filter(zone => zone.kind === 'barrier')
+        .sort((left, right) => left.id.localeCompare(right.id))
+        .flatMap((zone) => {
+          const occupiedKeys = new Set(barrierOccupiedCells(zone, input.map.dimensions).map(cell => (
+            `${cell.x}:${cell.y}:${cell.z}`
+          )))
+          const event = enteringEvents.find(candidate => occupiedKeys.has(
+            `${candidate.cell.x}:${candidate.cell.y}:${candidate.cell.z}`,
+          ))
+          return event
+            ? [materializeBattlefieldZoneRemovalOperation({
+                eventId: event.eventId,
+                zone,
+                hookId: 'ability.screen-cleaner.blocking-hazard',
+                reasonCode: 'ability.screen-cleaner.destroy-crossed-blocking-hazard',
+              })]
+            : []
+        })
+    : []
   const operations: Array<ZoneCoreOperation | MoveHazardEffectOperation> = []
-  for (const rawOperation of lifecycle.operations) {
+  for (const rawOperation of [...lifecycle.operations, ...crossedBlockingHazardOperations]) {
     let operation = rawOperation
     if (operation.kind === 'direct-hp' && operation.reasonCode === 'zone.hazard.stealth-rock.tick') {
       const zone = zonesById.get(zoneIdByOperationId.get(operation.id) ?? '')

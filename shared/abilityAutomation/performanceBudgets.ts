@@ -18,6 +18,18 @@ export const ABILITY_AUTOMATION_ENGINE_BUDGETS = Object.freeze({
   syntheticGuardMilliseconds: 2_000,
 })
 
+/** Wall-clock CI guardrails for catalog-scale, post-import synthetic acceptance. */
+export const ABILITY_AUTOMATION_CATALOG_PERFORMANCE_BUDGETS = Object.freeze({
+  registryBuildMilliseconds: 5_000,
+  catalogRoutingMilliseconds: 2_000,
+  passiveAggregationMilliseconds: 2_000,
+  commonMoveIterations: 25,
+  commonMoveResolutionMilliseconds: 5_000,
+  worstTriggerFanOut: 64,
+  pendingResumeIterations: 128,
+  pendingResumeMilliseconds: 2_000,
+})
+
 export type AbilityAutomationEngineBudgetName = Exclude<
   keyof typeof ABILITY_AUTOMATION_ENGINE_BUDGETS,
   'syntheticGuardMilliseconds'
@@ -42,6 +54,15 @@ export const assertAbilityAutomationEngineBudgets = (): void => {
     const value = ABILITY_AUTOMATION_ENGINE_BUDGETS[name as AbilityAutomationEngineBudgetName]
     if (!Number.isSafeInteger(value) || value < 1 || value > maximum) {
       throw new Error(`Ability automation budget ${name} must remain from 1 through ${maximum}.`)
+    }
+  }
+  const catalogBudgets = ABILITY_AUTOMATION_CATALOG_PERFORMANCE_BUDGETS
+  if (catalogBudgets.worstTriggerFanOut !== ABILITY_AUTOMATION_ENGINE_BUDGETS.triggersPerEvent) {
+    throw new Error('Catalog trigger benchmark must exercise the production per-event ceiling.')
+  }
+  for (const [name, value] of Object.entries(catalogBudgets)) {
+    if (!Number.isSafeInteger(value) || value < 1 || value > 10_000) {
+      throw new Error(`Ability catalog performance budget ${name} is invalid.`)
     }
   }
 }

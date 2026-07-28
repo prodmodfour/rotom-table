@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "rotom-table-reference-abilities-v1",
+  "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+  "canonicalAbilityCount": 483,
+  "reviewedManifestSha256": "76e9dc8c725872d2060a9b5e3ffd46de1128b623df60a014cd6fb13783fd110c",
+  "reviewedAt": "2026-07-31",
+  "reviewPolicy": "compositional-domain-contracts",
+  "domains": [
+    {
+      "id": "move",
+      "status": "complete",
+      "summary": "MoveSpec declaration, targeting, accuracy, damage, multi-hit, nested execution, response, replay, and resume contracts compose with effective abilities.",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationLegacyIsolation.test.ts",
+        "tests/server/moveAutomationMultiHit.test.ts",
+        "tests/server/moveAutomationNestedMoves.test.ts",
+        "tests/server/resolveAuthoritativeMove.test.ts"
+      ]
+    },
+    {
+      "id": "ability",
+      "status": "complete",
+      "summary": "Ability grants, copies, swaps, suppression, source loss, simultaneous triggers, and nested causal chains use one effective projection and bounded ordering.",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts",
+        "tests/server/abilityAutomationEffectiveAbilities.test.ts",
+        "tests/server/abilityAutomationLegacyIsolation.test.ts",
+        "tests/server/abilityAutomationSubscriptionRouter.test.ts",
+        "tests/server/abilityAutomationTriggerChain.test.ts"
+      ]
+    },
+    {
+      "id": "item",
+      "status": "complete",
+      "summary": "Held-item identity, Berry and Digestion Buff semantics, transfer protection, item availability, willingness, usage, and atomic ownership are server-owned.",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+        "tests/server/abilityAutomationItemProviders.test.ts",
+        "tests/server/moveAutomationItemEffects.test.ts",
+        "tests/server/moveAutomationItemRules.test.ts"
+      ]
+    },
+    {
+      "id": "feature",
+      "status": "complete",
+      "summary": "Feature-derived stats, action budgets, capability markers, and source provenance compose at reviewed precedence points without trusting user-authored lookalikes.",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100ActionConformance.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts",
+        "tests/server/moveAutomationDamageStats.test.ts",
+        "tests/utils/sheetPassiveAbilityEffects.test.ts"
+      ]
+    },
+    {
+      "id": "condition",
+      "status": "complete",
+      "summary": "Condition application, cure, prevention, transfer, save, source ownership, duration, incapacity, and suppression compose through typed authoritative operations.",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationConditionProviders.test.ts",
+        "tests/server/abilityAutomationEffectLifecycle.test.ts",
+        "tests/utils/sheetConditionEffects.test.ts"
+      ]
+    },
+    {
+      "id": "weather",
+      "status": "complete",
+      "summary": "Subject-specific weather exposure, immunity, healing, damage, initiative, field creation, duration, and lifecycle use effective runtime abilities.",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts",
+        "tests/server/abilityAutomationFieldProviders.test.ts",
+        "tests/server/moveAutomationWeatherLifecycle.test.ts"
+      ]
+    },
+    {
+      "id": "terrain",
+      "status": "complete",
+      "summary": "Terrain exposure, grounding, priority restrictions, accuracy, damage, initiative, movement, and expiry are resolved per authoritative footprint and effective state.",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/abilityAutomationFieldProviders.test.ts",
+        "tests/server/moveAutomationTerrain.test.ts"
+      ]
+    },
+    {
+      "id": "hazard",
+      "status": "complete",
+      "summary": "Native hazards and barriers preserve ownership, geometry, entry effects, immunity, destruction, movement cost, targeting obstruction, and deterministic lifecycle.",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort092StickySmokeLifecycle.test.ts",
+        "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+        "tests/server/moveAutomationZoneEntryEffects.test.ts"
+      ]
+    },
+    {
+      "id": "form",
+      "status": "complete",
+      "summary": "Forms, copies, disguises, temporary grants, stat consultations, footprint, movement, typing, move access, source loss, and restoration use immutable snapshots.",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationCohort084Lifecycle.test.ts",
+        "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts",
+        "tests/server/abilityAutomationTransformations.test.ts"
+      ]
+    },
+    {
+      "id": "capability",
+      "status": "complete",
+      "summary": "Movement, grounding, command, Endure, item, entity, and other capability evidence is authoritative, suppression-aware, source-bound, and composed before dependent rules.",
+      "evidenceFiles": [
+        "tests/server/abilityAutomationEntities.test.ts",
+        "tests/server/abilityAutomationPassiveProviders.test.ts",
+        "tests/server/authoritativeMovementCapabilities.test.ts",
+        "tests/shared/abilityAutomationCapabilities.test.ts"
+      ]
+    }
+  ],
+  "crossDomainEvidenceFiles": [
+    "tests/server/abilityAutomationCohorts085to100ActivatedConformance.test.ts",
+    "tests/server/abilityAutomationCohorts085to100MoveConformance.test.ts",
+    "tests/server/abilityAutomationCohorts085to100StaticConformance.test.ts",
+    "tests/server/abilityAutomationPendingSaga.test.ts",
+    "tests/server/abilityAutomationRecovery.test.ts",
+    "tests/server/abilityAutomationResponseViews.test.ts",
+    "tests/server/abilityAutomationTriggerChain.test.ts"
+  ]
+}

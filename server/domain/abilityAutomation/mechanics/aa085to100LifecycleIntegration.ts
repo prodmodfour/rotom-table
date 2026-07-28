@@ -11,8 +11,10 @@ import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { AnyLiveSheet } from '~/utils/sheetMutations'
 import { applyHpToSheet } from '~/utils/sheetMutations'
 import { computeTickValue } from '~/utils/ptuHp'
-import { effectiveRuntimeAbilityIds } from '../effectiveRuntimeAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import {
+  effectiveRuntimeAbilities,
+  effectiveRuntimeAbilityIds,
+} from '../effectiveRuntimeAbilities'
 import type { AbilityAutomationRuntimeRegistry } from '../registry'
 import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveResources'
 import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
@@ -390,8 +392,12 @@ export const applyAa085to100RegeneratorTrigger = (input: {
   const currentHp = combat?.currentHp ?? 0
   const maximumHp = Math.max(1, input.maximumHp)
   if (currentHp >= maximumHp) return { map: input.map, sheet: input.sheet, applied: false }
-  const abilityInstance = resolveSheetAbilityInstances(input.sheet.abilities)
-    .find(ability => ability.canonicalId === 'Regenerator')
+  const abilityInstance = effectiveRuntimeAbilities({
+    map: input.map,
+    placement: input.placement,
+    sheet: input.sheet,
+    abilityRuntimeRegistry: input.abilityRuntimeRegistry,
+  }).find(ability => ability.canonicalId === 'Regenerator')
   if (!abilityInstance) return { map: input.map, sheet: input.sheet, applied: false }
   const operationId = `${input.operationId}:regenerator:${input.trigger}`
   const encounter = parseEncounterState(input.map.encounterState)
@@ -399,7 +405,10 @@ export const applyAa085to100RegeneratorTrigger = (input: {
     ? parseAbilitySceneUsageLedger(encounter.abilityUsage)
     : { ...createEmptyAbilitySceneUsageLedger(), sceneId }
   const sceneExisting = sceneUsage.entries.find(entry => (
-    entry.ownerId === input.placement.id && entry.canonicalId === 'Regenerator' && entry.clauseId === 'scene-cap'
+    entry.ownerId === input.placement.id
+    && entry.abilityInstanceId === abilityInstance.instanceId
+    && entry.canonicalId === 'Regenerator'
+    && entry.clauseId === 'scene-cap'
   ))
   if ((sceneExisting?.spent ?? 0) >= 1 && !sceneExisting?.operationIds.includes(operationId)) {
     return { map: input.map, sheet: input.sheet, applied: false }
@@ -407,8 +416,12 @@ export const applyAa085to100RegeneratorTrigger = (input: {
   const daily = parseAbilityDailyUsageLedger(
     input.sheet.abilityUsage ?? createEmptyAbilityDailyUsageLedger(),
   )
+  const dailyOwnerId = `sheet:${input.placement.sheetKind}:${input.placement.sheetSlug}`
   const dailyExisting = daily.entries.find(entry => (
-    entry.canonicalId === 'Regenerator' && entry.clauseId === 'base'
+    entry.ownerId === dailyOwnerId
+    && entry.abilityInstanceId === abilityInstance.instanceId
+    && entry.canonicalId === 'Regenerator'
+    && entry.clauseId === 'base'
   ))
   if ((dailyExisting?.spent ?? 0) >= 2 && !dailyExisting?.operationIds.includes(operationId)) {
     return { map: input.map, sheet: input.sheet, applied: false }
@@ -431,8 +444,8 @@ export const applyAa085to100RegeneratorTrigger = (input: {
     operationIds: [...(sceneExisting?.operationIds ?? []), operationId],
   }
   const dailyEntry = dailyExisting?.operationIds.includes(operationId) ? dailyExisting : {
-    ownerId: `sheet:${input.placement.sheetKind}:${input.placement.sheetSlug}`,
-    abilityInstanceId: `base:Regenerator`, canonicalId: 'Regenerator', clauseId: 'base',
+    ownerId: dailyOwnerId, abilityInstanceId: abilityInstance.instanceId,
+    canonicalId: 'Regenerator', clauseId: 'base',
     limit: 2, spent: (dailyExisting?.spent ?? 0) + 1,
     operationIds: [...(dailyExisting?.operationIds ?? []), operationId],
   }

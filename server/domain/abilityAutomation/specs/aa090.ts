@@ -3,13 +3,14 @@ import {
   remainingAbilityRegistrations,
   remainingActivatedAbilitySpec as activatedSpec,
   remainingStaticAbilitySpec as staticSpec,
+  remainingStaticActivatedAbilitySpec as staticActivatedSpec,
   remainingTriggeredAbilitySpec as triggeredSpec,
 } from './aa085to100Shared'
 
 export const SLUSH_RUSH_ABILITY_SPEC = staticSpec('Slush Rush', 'aa090.slush-rush')
 export const SNIPER_ABILITY_SPEC = staticSpec('Sniper', 'aa090.sniper')
 export const SNOW_CLOAK_ABILITY_SPEC = staticSpec('Snow Cloak', 'aa090.snow-cloak')
-export const SNOW_WARNING_ABILITY_SPEC = activatedSpec('Snow Warning', 'aa090.snow-warning')
+export const SNOW_WARNING_ABILITY_SPEC = staticActivatedSpec('Snow Warning', 'aa090.snow-warning')
 export const SNUGGLE_ABILITY_SPEC = activatedSpec('Snuggle', 'aa090.snuggle', [
   { kind: 'token', relationship: 'other', maximumRange: 1, adjacent: true }
 ])

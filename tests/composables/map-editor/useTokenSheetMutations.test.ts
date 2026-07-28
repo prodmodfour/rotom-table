@@ -128,13 +128,9 @@ describe('useTokenSheetMutations', () => {
     expect(saved[0].sheet).toMatchObject({ totalExp: 140, level: 12 })
   })
 
-  it('activates sheet ability automation and persists it', async () => {
-    const { mutations, pokemonSheets, saved } = makeMutations()
-
-    await mutations.modifyAbilityActivation({ id: 'token-1', abilityName: 'Sand Veil', activated: true })
-
-    expect(pokemonSheets.get('bolt')?.abilities?.[0]).toMatchObject({ name: 'Sand Veil', activated: true })
-    expect(saved).toHaveLength(1)
+  it('does not expose the retired setup-edit ability activation writer', () => {
+    const { mutations } = makeMutations()
+    expect(mutations).not.toHaveProperty('modifyAbilityActivation')
   })
 
   it('does not locally commit live-play sheet mutations before server authority', async () => {

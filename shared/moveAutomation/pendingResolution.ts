@@ -134,6 +134,8 @@ export const PENDING_MOVE_RESOLUTION_LIMITS = Object.freeze({
   responseWindows: 64,
   ownersPerWindow: 64,
   rootAreaExcludedTargets: 32,
+  authoritativeTargetEvaluations: 64,
+  authoritativeAreaCells: 4096,
   optionsPerWindow: MOVE_RESPONSE_OPTION_LIMITS.optionsPerWindow,
   chosenOptions: 256,
   reactionPriorityMagnitude: MOVE_REACTION_LIMITS.priorityMagnitude,
@@ -342,6 +344,12 @@ export interface PendingMoveRootAreaSelection {
   readonly excludedTargetPlacementIds?: readonly string[]
 }
 
+export interface PendingMoveAuthoritativeTargetEvaluation {
+  readonly targetPlacementId: string
+  readonly outcome: 'included' | 'excluded'
+  readonly reasonCode: string
+}
+
 export interface PendingMoveResolution {
   readonly schemaVersion: typeof PENDING_MOVE_RESOLUTION_SCHEMA_VERSION
   readonly continuationKind: PendingMoveResolutionContinuationKind
@@ -355,6 +363,10 @@ export interface PendingMoveResolution {
   readonly targetBranchId?: string
   /** Exact server-reviewed root area declaration retained for deterministic continuation replay. */
   readonly rootAreaSelection?: PendingMoveRootAreaSelection
+  /** Exact server-owned target filtering evidence, including geometric exclusions. */
+  readonly authoritativeTargetEvaluations?: readonly PendingMoveAuthoritativeTargetEvaluation[]
+  /** Exact server-owned area cells used by spatial reducers after resume. */
+  readonly authoritativeAreaCells?: readonly MoveResponseGridAnchor[]
   readonly canonicalMoveId: string
   readonly specVersion: number
   readonly specHash: string
@@ -438,11 +450,14 @@ const ROOT_REQUIRED_FIELDS = [
 ] as const
 const ROOT_OPTIONAL_FIELDS = [
   'continuationKind', 'continuationContext', 'virtualOriginCell', 'targetBranchId',
-  'rootAreaSelection',
+  'rootAreaSelection', 'authoritativeTargetEvaluations', 'authoritativeAreaCells',
 ] as const
 const ROOT_AREA_SELECTION_FIELDS = ['kind', 'areaTemplateId'] as const
 const ROOT_AREA_SELECTION_OPTIONAL_FIELDS = [
   'direction', 'aimCell', 'excludedTargetPlacementIds',
+] as const
+const AUTHORITATIVE_TARGET_EVALUATION_FIELDS = [
+  'targetPlacementId', 'outcome', 'reasonCode',
 ] as const
 const MAP_READ_FIELDS = ['kind', 'slug', 'revision'] as const
 const SHEET_READ_FIELDS = ['kind', 'sheetKind', 'slug', 'revision'] as const
@@ -1412,6 +1427,65 @@ const parseRootAreaSelection = (
     ...(aimCell ? { aimCell } : {}),
     ...(excludedTargetPlacementIds ? { excludedTargetPlacementIds } : {}),
   }
+}
+
+const parseAuthoritativeTargetEvaluations = (
+  value: unknown,
+  path: string,
+): readonly PendingMoveAuthoritativeTargetEvaluation[] => {
+  const values = parseBoundedArray(
+    value,
+    path,
+    PENDING_MOVE_RESOLUTION_LIMITS.authoritativeTargetEvaluations,
+  )
+  const seen = new Set<string>()
+  return values.map((candidate, index) => {
+    const candidatePath = `${path}[${index}]`
+    const record = parseExactRecord(
+      candidate,
+      AUTHORITATIVE_TARGET_EVALUATION_FIELDS,
+      candidatePath,
+    )
+    const targetPlacementId = parsePlacementId(
+      record.targetPlacementId,
+      `${candidatePath}.targetPlacementId`,
+    )
+    if (seen.has(targetPlacementId)) {
+      fail('duplicate-id', candidatePath, `duplicates target ${targetPlacementId}.`)
+    }
+    seen.add(targetPlacementId)
+    const outcome = record.outcome === 'included' || record.outcome === 'excluded'
+      ? record.outcome
+      : fail(
+          'invalid-pending-resolution',
+          `${candidatePath}.outcome`,
+          'must be included or excluded.',
+        )
+    return {
+      targetPlacementId,
+      outcome,
+      reasonCode: parseStableId(record.reasonCode, `${candidatePath}.reasonCode`),
+    }
+  })
+}
+
+const parseAuthoritativeAreaCells = (
+  value: unknown,
+  path: string,
+): readonly MoveResponseGridAnchor[] => {
+  const values = parseBoundedArray(
+    value,
+    path,
+    PENDING_MOVE_RESOLUTION_LIMITS.authoritativeAreaCells,
+  )
+  const seen = new Set<string>()
+  return values.map((candidate, index) => {
+    const cell = requiredContinuationGridAnchor(candidate, `${path}[${index}]`)
+    const key = `${cell.x},${cell.y},${cell.z}`
+    if (seen.has(key)) fail('duplicate-id', `${path}[${index}]`, `duplicates area cell ${key}.`)
+    seen.add(key)
+    return cell
+  })
 }
 
 const sameContinuationAnchor = (
@@ -2414,6 +2488,24 @@ export const parsePendingMoveResolution = (
   const rootAreaSelection = Object.prototype.hasOwnProperty.call(record, 'rootAreaSelection')
     ? parseRootAreaSelection(record.rootAreaSelection, `${path}.rootAreaSelection`)
     : null
+  const authoritativeTargetEvaluations = Object.prototype.hasOwnProperty.call(
+    record,
+    'authoritativeTargetEvaluations',
+  )
+    ? parseAuthoritativeTargetEvaluations(
+        record.authoritativeTargetEvaluations,
+        `${path}.authoritativeTargetEvaluations`,
+      )
+    : null
+  const authoritativeAreaCells = Object.prototype.hasOwnProperty.call(
+    record,
+    'authoritativeAreaCells',
+  )
+    ? parseAuthoritativeAreaCells(
+        record.authoritativeAreaCells,
+        `${path}.authoritativeAreaCells`,
+      )
+    : null
   const canonicalMoveId = parseCanonicalMoveId(
     record.canonicalMoveId,
     `${path}.canonicalMoveId`,
@@ -2507,6 +2599,8 @@ export const parsePendingMoveResolution = (
     ...(virtualOriginCell ? { virtualOriginCell } : {}),
     ...(targetBranchId ? { targetBranchId } : {}),
     ...(rootAreaSelection ? { rootAreaSelection } : {}),
+    ...(authoritativeTargetEvaluations ? { authoritativeTargetEvaluations } : {}),
+    ...(authoritativeAreaCells ? { authoritativeAreaCells } : {}),
     canonicalMoveId,
     specVersion,
     specHash,

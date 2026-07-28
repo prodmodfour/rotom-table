@@ -3,6 +3,7 @@ import {
   remainingAbilityRegistrations,
   remainingActivatedAbilitySpec as activatedSpec,
   remainingStaticAbilitySpec as staticSpec,
+  remainingStaticTriggeredAbilitySpec as staticTriggeredSpec,
   remainingTriggeredAbilitySpec as triggeredSpec,
 } from './aa085to100Shared'
 
@@ -20,7 +21,7 @@ export const QUICK_CLOAK_ABILITY_SPEC = activatedSpec('Quick Cloak', 'aa085.quic
 export const QUICK_CURL_ABILITY_SPEC = activatedSpec('Quick Curl', 'aa085.quick-curl')
 export const QUICK_DRAW_ABILITY_SPEC = triggeredSpec('Quick Draw', 'aa085.quick-draw', 'move')
 export const QUICK_FEET_ABILITY_SPEC = staticSpec('Quick Feet', 'aa085.quick-feet')
-export const RKS_SYSTEM_ABILITY_SPEC = triggeredSpec('RKS System', 'aa085.rks-system', 'move')
+export const RKS_SYSTEM_ABILITY_SPEC = staticTriggeredSpec('RKS System', 'aa085.rks-system', 'move')
 export const RADIANT_BEAM_ABILITY_SPEC = staticSpec('Radiant Beam', 'aa085.radiant-beam')
 
 export const AA085_ABILITY_SPECS = Object.freeze([

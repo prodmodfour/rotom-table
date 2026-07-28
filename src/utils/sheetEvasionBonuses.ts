@@ -1,4 +1,3 @@
-import { computeSheetAbilityEvasionBonus } from '~/utils/sheetAbilityActivation'
 import { heldItemSpeedEvasionBonus } from '~/utils/sheetHeldItemEffects'
 import { pokemonTrainingFeatureEvasionBonus } from '~/utils/sheets/pokemonTrainingFeatures'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -9,12 +8,11 @@ export const pokemonEvasionModifiers = (
   sheet: CharacterSheet,
 ): SpawnedPokemonEvasionModifiers => {
   const evasion = sheet.combat?.evasion
-  const abilityBonus = computeSheetAbilityEvasionBonus(sheet.abilities)
   const trainingBonus = pokemonTrainingFeatureEvasionBonus(sheet.activeTrainingFeature)
   return {
-    physical: (evasion?.vsAtkBonus ?? 0) + abilityBonus + trainingBonus,
-    special: (evasion?.vsSatkBonus ?? 0) + abilityBonus + trainingBonus,
-    speed: (evasion?.vsAnyBonus ?? 0) + abilityBonus + trainingBonus + heldItemSpeedEvasionBonus(sheet.items?.held),
+    physical: (evasion?.vsAtkBonus ?? 0) + trainingBonus,
+    special: (evasion?.vsSatkBonus ?? 0) + trainingBonus,
+    speed: (evasion?.vsAnyBonus ?? 0) + trainingBonus + heldItemSpeedEvasionBonus(sheet.items?.held),
   }
 }
 

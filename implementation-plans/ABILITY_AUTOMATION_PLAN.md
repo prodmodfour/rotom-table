@@ -1,8 +1,8 @@
 # Ability Automation Implementation Plan
 
-`PLAN_STATUS: IN_PROGRESS`
+`PLAN_STATUS: DONE`
 
-`CURRENT_TICKET: AA-085`
+`CURRENT_TICKET: AA-110`
 
 ## Goal
 
@@ -85,7 +85,7 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 ## Plan update protocol
 
 - Ticket states are `TODO`, `IN_PROGRESS`, `DONE`, or `BLOCKED`.
-- `CURRENT_TICKET` names the lowest-numbered active unfinished ticket.
+- `CURRENT_TICKET` names the lowest-numbered active unfinished ticket; a completed plan retains its final ticket ID.
 - Before starting a ticket, set only that ticket to `IN_PROGRESS` and update `CURRENT_TICKET`.
 - Mark a ticket `DONE` only after focused tests and the applicable strict checks pass.
 - Record design decisions in the decision log, not as silent scope changes.
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **84 DONE / 110 total**
+- Plan tickets: **110 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **300**
+- Semantically complete: **483**
 - Assisted: **0**
-- Blocked/unimplemented: **183**
-- Interaction status: **483 unassessed**
+- Blocked/unimplemented: **0**
+- Interaction status: **483 complete**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **300 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **483 exact manifest-selected AbilitySpec v1 runtimes**; legacy execution is retired and only bounded historical readers remain
 
 ## Tickets
 
@@ -289,60 +289,60 @@ Each cohort must review every named ability against canonical text, implement al
   - Perish Body; Permafrost; Photosynthesis; Pickpocket; Pickup; Pixilate; Plus; Poison Heal; Poison Point; Poison Touch; Poltergeist; Polycephaly
 - [x] **AA-084 — Power Construct through Psionic Screech** — `DONE`
   - Power Construct; Power Spot; Power of Alchemy; Prankster; Pressure; Pride; Prime Fury; Prism Armor; Probability Control; Propeller Tail; Protean; Psionic Screech
-- [ ] **AA-085 — Psychic Surge through Radiant Beam** — `IN_PROGRESS`
+- [x] **AA-085 — Psychic Surge through Radiant Beam** — `DONE`
   - Psychic Surge; Pumpkingrab; Punk Rock; Pure Blooded; Pure Power; Queenly Majesty; Quick Cloak; Quick Curl; Quick Draw; Quick Feet; RKS System; Radiant Beam
-- [ ] **AA-086 — Ragelope through Revelation** — `TODO`
+- [x] **AA-086 — Ragelope through Revelation** — `DONE`
   - Ragelope; Rain Dish; Rally; Rattled; Razor Edge; Receiver; Reckless; Refreshing Veil; Refrigerate; Regal Challenge; Regenerator; Revelation
-- [ ] **AA-087 — Ripen through Sand Spit** — `TODO`
+- [x] **AA-087 — Ripen through Sand Spit** — `DONE`
   - Ripen; Rivalry; Rock Head; Rocket; Root Down; Rough Skin; Run Away; Run Up; Sacred Bell; Sand Force; Sand Rush; Sand Spit
-- [ ] **AA-088 — Sand Stream through Shadow Shield** — `TODO`
+- [x] **AA-088 — Sand Stream through Shadow Shield** — `DONE`
   - Sand Stream; Sand Veil; Sap Sipper; Schooling; Scrappy; Screen Cleaner; Seasonal; Sequence; Serene Grace; Serpent’s Mark; Shackle; Shadow Shield
-- [ ] **AA-089 — Shadow Tag through Slow Start** — `TODO`
+- [x] **AA-089 — Shadow Tag through Slow Start** — `DONE`
   - Shadow Tag; Shed Skin; Sheer Force; Shell Armor; Shell Cannon; Shell Shield; Shield Dust; Shields Down; Silk Threads; Simple; Skill Link; Slow Start
-- [ ] **AA-090 — Slush Rush through Soul Heart** — `TODO`
+- [x] **AA-090 — Slush Rush through Soul Heart** — `DONE`
   - Slush Rush; Sniper; Snow Cloak; Snow Warning; Snuggle; Sol Veil; Solar Power; Solid Rock; Sonic Courtship; Soothing Tone; Sorcery; Soul Heart
-- [ ] **AA-091 — Soulstealer through Stall** — `TODO`
+- [x] **AA-091 — Soulstealer through Stall** — `DONE`
   - Soulstealer; Sound Lance; Soundproof; Speed Boost; Spike Shot; Spinning Dance; Spiteful Intervention; Splendorous Rider; Spray Down; Sprint; Stakeout; Stall
-- [ ] **AA-092 — Stalwart through Sticky Smoke** — `TODO`
+- [x] **AA-092 — Stalwart through Sticky Smoke** — `DONE`
   - Stalwart; Stamina; Stance Change; Starlight; Starswirl; Static; Steadfast; Steam Engine; Steelworker; Stench; Sticky Hold; Sticky Smoke
-- [ ] **AA-093 — Storm Drain through Sway** — `TODO`
+- [x] **AA-093 — Storm Drain through Sway** — `DONE`
   - Storm Drain; Strange Tempo; Strong Jaw; Sturdy; Suction Cups; Sumo Stance; Sun Blanket; Sunglow; Super Luck; Surge Surfer; Swarm; Sway
-- [ ] **AA-094 — Sweet Veil through Thermosensitive** — `TODO`
+- [x] **AA-094 — Sweet Veil through Thermosensitive** — `DONE`
   - Sweet Veil; Swift Swim; Symbiosis; Synchronize; Tangled Feet; Tangling Hair; Targeting System; Teamwork; Technician; Telepathy; Teravolt; Thermosensitive
-- [ ] **AA-095 — Thick Fat through Toxic Boost** — `TODO`
+- [x] **AA-095 — Thick Fat through Toxic Boost** — `DONE`
   - Thick Fat; Thrust; Thunder Boost; Tingle; Tingly Tongue; Tinted Lens; Tochukaso; Tolerance; Tonguelash; Torrent; Tough Claws; Toxic Boost
-- [ ] **AA-096 — Toxic Nourishment through Ugly** — `TODO`
+- [x] **AA-096 — Toxic Nourishment through Ugly** — `DONE`
   - Toxic Nourishment; Trace; Transistor; Transporter; Triage; Trinity; Truant; Turboblaze; Twisted Power; Type Aura; Type Strategist; Ugly
-- [ ] **AA-097 — Unaware through Volt Absorb** — `TODO`
+- [x] **AA-097 — Unaware through Volt Absorb** — `DONE`
   - Unaware; Unbreakable; Unburden; Unnerve; Unseen Fist; Vanguard; Venom; Vicious; Victory Star; Vigor; Vital Spirit; Volt Absorb
-- [ ] **AA-098 — Voodoo Doll through Weeble** — `TODO`
+- [x] **AA-098 — Voodoo Doll through Weeble** — `DONE`
   - Voodoo Doll; Wallmaster; Wandering Spirit; Wash Away; Water Absorb; Water Bubble; Water Compaction; Water Veil; Wave Rider; Weak Armor; Weaponize; Weeble
-- [ ] **AA-099 — Weird Power through Wonder Guard** — `TODO`
+- [x] **AA-099 — Weird Power through Wonder Guard** — `DONE`
   - Weird Power; Whirlwind Kicks; White Flame; White Smoke; Wily; Wind Power; Windveiled; Winter’s Kiss; Wishmaster; Wistful Melody; Wobble; Wonder Guard
-- [ ] **AA-100 — Wonder Skin through Zen Snowed** — `TODO`
+- [x] **AA-100 — Wonder Skin through Zen Snowed** — `DONE`
   - Wonder Skin; Zen Mode; Zen Snowed
 
 ### Phase 8 — Whole-catalog certification, migration, and release
 
-- [ ] **AA-101 — Enforce strict 483-row semantic closure** — `TODO`
+- [x] **AA-101 — Enforce strict 483-row semantic closure** — `DONE`
   - Require exactly 483 complete base rows, zero assisted/blocked/unimplemented rows, valid hashes/links/provenance, and no manual debt.
-- [ ] **AA-102 — Run whole-catalog conformance and property suites** — `TODO`
+- [x] **AA-102 — Run whole-catalog conformance and property suites** — `DONE`
   - Cover deterministic replay, stale conflicts, exact retry, caps, immunity, lifecycle, trigger ordering, and bounded random/property inputs.
-- [ ] **AA-103 — Certify the ability interaction matrix** — `TODO`
+- [x] **AA-103 — Certify the ability interaction matrix** — `DONE`
   - Review move, ability, item, feature, condition, weather, terrain, hazard, form, and capability interactions separately from base closure; record explicit unsupported IDs until complete.
-- [ ] **AA-104 — Shadow and migrate existing ability behavior** — `TODO`
+- [x] **AA-104 — Shadow and migrate existing ability behavior** — `DONE`
   - Compare existing supported flows against the authoritative runtime on immutable snapshots, adjudicate differences, and migrate without dual writes.
-- [ ] **AA-105 — Complete observability, security, and privacy validation** — `TODO`
+- [x] **AA-105 — Complete observability, security, and privacy validation** — `DONE`
   - Emit bounded reason codes/counts/timings only; test authorization, hidden-state redaction, malformed inputs, fan-out limits, and abuse resistance.
-- [ ] **AA-106 — Complete backup, export, restart, and recovery validation** — `TODO`
+- [x] **AA-106 — Complete backup, export, restart, and recovery validation** — `DONE`
   - Exercise pending triggers, daily/scene resources, forms, marks, copied abilities, retries, and terminal maintenance-export behavior.
-- [ ] **AA-107 — Enforce catalog-scale performance budgets** — `TODO`
+- [x] **AA-107 — Enforce catalog-scale performance budgets** — `DONE`
   - Benchmark registry load, event routing, passive aggregation, common move resolution with abilities, worst bounded trigger fan-out, and pending resume.
-- [ ] **AA-108 — Complete contributor, operator, and manual-QA documentation** — `TODO`
+- [x] **AA-108 — Complete contributor, operator, and manual-QA documentation** — `DONE`
   - Document authoring, debugging, correction, privacy, live-play UX, recovery, interactions, and release checks.
-- [ ] **AA-109 — Run production-like multi-client acceptance** — `TODO`
+- [x] **AA-109 — Run production-like multi-client acceptance** — `DONE`
   - Validate GM/player/unauthorized views, active/passive/triggered abilities, simultaneous reactions, reconnect, restart, recovery, and no private-data retention.
-- [ ] **AA-110 — Retire legacy production ability execution and record release acceptance** — `TODO`
+- [x] **AA-110 — Retire legacy production ability execution and record release acceptance** — `DONE`
   - Remove production fallback to ad hoc ability transactions/hooks, retain only explicit compatibility readers as needed, pass the final quality gate, and truthfully record deployment/observation dependencies.
 
 ## Decision log
@@ -370,6 +370,13 @@ Each cohort must review every named ability against canonical text, implement al
 - **2026-07-27 — Keep AA-079 passive projections narrow and effective-ability gated.** Magic Guard blocks only enumerated non-attack loss, Marvel Scale remains a virtual conditional Defense projection, and Mega Launcher, Merciless, Mind Mold, Magma Armor, and Mimitree preserve canonical damage, immunity, lifecycle, and frequency ordering.
 - **2026-07-28 — Treat Mini-Noses and Dreepy as durable server-owned entities.** Stable identities, exact source-runtime checks, HP, target scopes, movement, tethering, collisions, rendering, regrowth, and ranged origins remain authoritative across retry and reconnect; Dreepy collision attacks use the Missile Launch user as their mechanical source.
 - **2026-07-28 — Bind AA-080 reactions and passives to exact recipients and effective runtimes.** Minus and Mirror Armor use durable grouped stage windows, Moody records deterministic distinct-stat rolls, Motor Drive blocks only Electric attack effects while retaining unrelated self-effects, and Moxie requires a Move-fainted foe before its optional response materializes.
+- **2026-07-28 — Retire legacy execution without erasing bounded history.** Native declaration/resolve routes are the only production Ability command path; the old HTTP route is an authenticated `410 Gone` tombstone, map/session executors reject before reads or writes, browser transactions and sheet activation mechanics are inert or removed, and current sheet writes strip historical activation bytes. Former Move-produced Ability prompts now use native overlays; the compatibility continuation authors only the canonical Spite Move and fails closed for historical Ability windows. Release acceptance records repository/prodlike evidence separately from the still-unexecuted GitHub production deployment and post-deploy observation.
 - **2026-07-29 — Project AA-081 transformations and suppression before all mechanics.** Multitype owns a source-ability type snapshot, Mummy persists only the selected disableable ability suppression, and Neutralizing Gas removes Defensive providers while centrally withholding nearby or round-marked Triggered response windows; Natural Cure treats an accepted recall or Take a Breather as its affirmative optional trigger.
 - **2026-07-30 — Keep AA-082 avoidance and family state server-owned.** Perception moves its exact response owner through a durable authoritative destination choice before canceling that recipient’s attack effects, Pack Hunt retains its independent d20 before applying one Tick, and Parental Bond links the nearest allied Kangaskhan deterministically for the voluntary tether and scene-long mother rage effects.
 - **2026-07-31 — Preserve AA-084 form, copy, and reroll authority through lifecycle and replay.** Power Construct projects Complete Forme without replacing the original HP maximum and blocks later Temporary HP grants, Power of Alchemy stores an immutable copy snapshot that expires on knockout or scene end, and Probability Control retains the original roll plus a server-drawn replacement while durable resume reproduces the pre-response audit prefix; Prankster, Protean, and Psionic Screech derive costs only from selected authoritative traces, while Propeller Tail atomically pays its activation and immediate Free-Action Sprint.
+- **2026-07-31 — Close AA-085–AA-100 through exact operation and resume authority.** Effective-ability projections now govern forms, items, weather, terrain, targeting branches, nested Moves, movement, defensive rewrites, multi-hit reactions, source-linked conditions, and response-owned randomness; suspended executions retain exact server-owned targeting, geometry, rolls, traces, and reviewed branch authority.
+- **2026-07-31 — Treat canonical bonus fields as executable ability clauses.** RKS System projects its held Memory Disc type, Stalwart blocks interception and target changes, and Screen Cleaner ignores and destroys non-Blocking Hazards while treating crossed Blocking Hazards as Slow Terrain without weakening their line-of-sight rules.
+- **2026-07-31 — Certify interactions compositionally, not as an unbounded Cartesian product.** The source- and manifest-bound interaction matrix separately certifies move, ability, item, feature, condition, weather, terrain, hazard, form, and capability contracts, with executable cross-domain evidence and no hidden unsupported IDs.
+- **2026-07-31 — Bind every frozen legacy fragment to one native runtime before retirement.** The immutable migration audit maps all 45 legacy-fragment owners to exact manifest-selected runtime hashes and executable cohort evidence; native UI declarations remain the only current ability-authoring path and migration never dual-writes native and legacy state.
+- **2026-07-31 — Reconcile clients from private-safe accepted Ability evidence.** Ability commits append one bounded realtime event atomically with authoritative map and sheet writes, publish only after commit, and make connected clients reload the authorized snapshot; public events omit operation and mechanic identity, while player snapshots retain only controlled capability menus and redact Ability authority, private effects, and uncontrolled sheet identities.
+- **2026-07-31 — Accept production-like recovery without retaining disposable campaign state.** Independent GM and player clients exercised active Intimidate, passive Compound Eyes, triggered Moxie, ordered simultaneous Cute Charm and Poison Point responses, exact retry, realtime convergence, refresh, process restart with two durable response windows, authorization denial, scene-ledger alignment, and hydration-safe reload. The pre-acceptance SQLite backup was restored after preserving a disposable after-state artifact outside the campaign.

@@ -443,12 +443,18 @@ export const aa085to100AdjustedToken = (input: {
       ]),
     ))
   }
-  if (token.movementCapabilities && hasEffectTag('aa091-spray-down-grounded')) {
-    token = tokenWithMovementCapabilities(token, {
-      ...token.movementCapabilities,
-      sky: 0,
-      levitate: 0,
-    })
+  if (hasEffectTag('aa091-spray-down-grounded')) {
+    token = {
+      ...tokenWithMovementCapabilities(token, {
+        ...(token.movementCapabilities ?? {}),
+        sky: 0,
+        levitate: 0,
+      }),
+      conditions: [...new Set([
+        ...token.conditions,
+        'Groundsource Immunity Suppressed',
+      ])],
+    }
   }
   const schoolingForm = abilities.has('Schooling') && actorEffects.some(effect => (
     effect.tags.includes('aa088-schooling')
@@ -1079,14 +1085,13 @@ export const aa085to100MoveDamageModifiers = (input: {
       reasonCode: 'ability.regal-challenge.defiance-damage', value: 10,
     }))
   }
-  if ((hasWeather(input.context, 'sandstorm')
-      || tokenOccupiesMaterialTag(input.context, input.actor, 'sand'))
+  // Sandstorm's existing authoritative weather pipeline owns the canonical
+  // Sand Force +5. This provider covers sandy terrain only, without stacking
+  // a second copy when both environment clauses are active.
+  if (!hasWeather(input.context, 'sandstorm')
+    && tokenOccupiesMaterialTag(input.context, input.actor, 'sand')
     && ['ground', 'rock', 'steel'].includes(input.moveType.toLowerCase())) {
     add('Sand Force', 'sand-force', 'ability.sand-force.damage', 5)
-  }
-  if (input.context.queries.abilities.has(actorId, 'Sheer Force')
-    && /(?:effect range|\b(?:1[5-9]|20)\+)/i.test(input.script.effect)) {
-    add('Sheer Force', 'sheer-force', 'ability.sheer-force.damage', 10)
   }
   const actorInitiative = input.context.queries.placements.get(actorId)?.initiative ?? undefined
   const recipientInitiative = input.context.queries.placements.get(recipientId)?.initiative ?? undefined
@@ -1170,10 +1175,14 @@ export const aa085to100DamageTypeOverlay = (input: {
     finalMultiplier = Math.min(1, finalMultiplier * 2)
     passiveSources.push('Tinted Lens')
   }
-  const typedBypass = (moveType === 'electric'
+  const targetIsEnemy = input.context.queries.relationships.resolve(
+    actorId,
+    input.recipientId,
+  ).relationship === 'enemy'
+  const typedBypass = targetIsEnemy && ((moveType === 'electric'
     && input.context.queries.abilities.has(actorId, 'Teravolt'))
     || (moveType === 'fire'
-      && input.context.queries.abilities.has(actorId, 'Turboblaze'))
+      && input.context.queries.abilities.has(actorId, 'Turboblaze')))
   if (typedBypass) {
     const typeChartMultiplier = computeMultiplier(input.resolved.moveType, target.defenderTypes)
     const defensiveImmunity = finalMultiplier === 0 && typeChartMultiplier > 0
@@ -1255,11 +1264,13 @@ export const aa085to100AccuracyModifiers = (input: {
 }): readonly { readonly sourceId: string; readonly reason: string; readonly value: number }[] => {
   const result: { sourceId: string; reason: string; value: number }[] = []
   const actorId = input.context.actor.placement.id
-  const victory = input.context.queries.placements.all().find(placement => (
+  const victory = input.context.actor.placement.sheetKind === 'pokemon'
+    ? input.context.queries.placements.all().find(placement => (
     placement.id !== actorId
     && input.context.queries.relationships.resolve(placement.id, actorId).relationship === 'ally'
     && input.context.queries.abilities.has(placement.id, 'Victory Star')
   ))
+    : undefined
   if (victory) result.push({
     sourceId: `ability.victory-star:${victory.id}`,
     reason: 'Victory Star Accuracy', value: 2,

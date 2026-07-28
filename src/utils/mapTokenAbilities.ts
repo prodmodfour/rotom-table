@@ -1,7 +1,6 @@
 import type { AbilityClientCapability } from '#shared/abilityAutomation/clientCapabilities'
 import { lookupAbilityReference } from '~/utils/sheetAbilityLookup'
 import { deriveTrainerAutomaticAbilities } from '~/utils/sheets/trainerCombatDerivations'
-import { isSheetAbilityActivated } from '~/utils/sheetAbilityActivation'
 import type { CharacterSheet, CharacterSheetAbility } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'
 import type { PtuAbility } from '~/types/ptuReference'
@@ -19,7 +18,6 @@ export interface TokenAbilityMenuOption {
   readonly bonus: string | null
   /** Server-issued, revision-bound capability; absent means default-deny. */
   readonly capability: AbilityClientCapability | null
-  readonly activated: boolean
 }
 export interface TokenAbilityUseReference {
   readonly abilityInstanceId: string
@@ -73,7 +71,6 @@ const optionForAbility = (
   effect: fallback(reference?.effect, ability.effect),
   bonus: fallback(reference?.bonus),
   capability,
-  activated: isSheetAbilityActivated(ability),
 })
 
 /**
@@ -106,7 +103,6 @@ export const buildTokenAbilityMenuOptions = (
       effect: null,
       bonus: null,
       capability,
-      activated: false,
     })
   }
   return options

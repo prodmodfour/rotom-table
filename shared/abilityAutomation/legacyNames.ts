@@ -1,6 +1,7 @@
 /**
- * Stable names used by isolated pre-AbilitySpec compatibility code.
- * New AbilitySpec implementations should use canonical IDs from the catalog instead.
+ * @deprecated Historical import compatibility for pre-AbilitySpec helpers.
+ * Production mechanics do not import this module; native integrations own their
+ * reviewed canonical IDs alongside the relevant AbilitySpec implementation.
  */
 export const CELEBRATE_ABILITY_NAME = 'Celebrate'
 export const CUTE_CHARM_ABILITY_NAME = 'Cute Charm'

@@ -117,7 +117,8 @@ const lightningRodOperations = (input: {
   readonly moveSourceId: string
 }): readonly MoveEffectOperation[] => {
   if (input.script.type.trim().toLowerCase() !== 'electric'
-    || input.script.keywords.some(keyword => keyword.trim().toLowerCase() === 'melee')) return []
+    || input.script.keywords.some(keyword => keyword.trim().toLowerCase() === 'melee')
+    || input.context.queries.abilities.has(input.context.actor.placement.id, 'Stalwart')) return []
   const actor = input.context.actor.token
   const operations: MoveEffectOperation[] = []
   for (const placement of input.context.queries.placements.all()) {

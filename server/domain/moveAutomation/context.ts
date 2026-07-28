@@ -1209,6 +1209,20 @@ export const buildAuthoritativeMoveRulesContext = (
    * need structured canonical range, frequency, accuracy, and damage data, but
    * must not execute the retained v1 implementation selected only for rollback.
    */
+  const contextualActorMoveScript = (
+    canonicalId: string,
+    script: MoveAutomationScript,
+  ): MoveAutomationScript => canonicalId === 'Curse'
+    && actorToken.defenderTypes.some(type => type.trim().toLowerCase() === 'ghost')
+    ? {
+        ...script,
+        range: '8, 1 Target',
+        targetMode: 'one-target',
+        targetCount: 1,
+        areaTemplates: [],
+      }
+    : script
+
   const actorMoveScriptFor = (moveName: string): MoveAutomationScript | null => {
     const canonicalMove = findMove(moveName)
     const selectedRuntime = canonicalMove ? runtimes.get(canonicalMove.name) : null
@@ -1222,7 +1236,7 @@ export const buildAuthoritativeMoveRulesContext = (
         ?? nativeMoveAutomationPresentationScriptForMove(canonicalMove.name)
       const baseScript = presentation ?? createMoveAutomationScriptFromMoveData(canonicalMove)
       const dustCloudActive = abilityQueries.has(actorPlacement.id, 'Dust Cloud')
-      const script = aa085to100MovePresentationScript({
+      const script = contextualActorMoveScript(canonicalMove.name, aa085to100MovePresentationScript({
         context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries } } as AuthoritativeMoveRulesContext,
         script: aa078MovePresentationScript({
           context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries }, map },
@@ -1231,7 +1245,7 @@ export const buildAuthoritativeMoveRulesContext = (
             active: dustCloudActive,
           }),
         }),
-      })
+      }))
       const selectedBranch = intent.targetBranchId === AA068_DUST_CLOUD_BURST_BRANCH_ID
         ? aa068DustCloudSelectedScript({
             script,
@@ -1260,10 +1274,10 @@ export const buildAuthoritativeMoveRulesContext = (
     const runtime = runtimes.get(canonicalId)
     const canonicalMove = findMove(canonicalId)
     if (!canonicalMove || runtime?.kind !== 'movespec-v2') return null
-    return detachedFrozenJson(aa085to100MovePresentationScript({
+    return detachedFrozenJson(contextualActorMoveScript(canonicalMove.name, aa085to100MovePresentationScript({
       context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries } } as AuthoritativeMoveRulesContext,
       script: createMoveAutomationScriptFromMoveData(canonicalMove),
-    }))
+    })))
   }
 
   const queries: AuthoritativeMoveContextQueries = Object.freeze({

@@ -10,6 +10,7 @@ import {
   type PlayerSheetAccessKey,
 } from '../policies/playerProfilePolicy'
 import { redactSheetForPlayer } from '../utils/sheetPrivacy'
+import { projectAbilityAutomationSheetForPlayer } from '../domain/abilityAutomation/clientStateProjection'
 
 export type AuthorizableSheet = CharacterSheet | TrainerSheet
 
@@ -139,14 +140,23 @@ export const authorizeSheetList = (input: AuthorizeSheetListInput): AuthorizedSh
 
   if (!input.markPlayerAccess) {
     return {
-      pokemonSheets: pokemonSheets.map((sheet) => redactSheetForPlayer('pokemon', sheet)),
-      trainerSheets,
+      pokemonSheets: pokemonSheets.map((sheet) => projectAbilityAutomationSheetForPlayer(
+        redactSheetForPlayer('pokemon', sheet),
+        playerProfileCanAccessSheet(input.playerProfile, 'pokemon', sheet.slug, {
+          linkedTrainerSheets: input.trainerSheets,
+        }),
+      )),
+      trainerSheets: trainerSheets.map((sheet) => projectAbilityAutomationSheetForPlayer(
+        sheet,
+        playerProfileCanAccessSheet(input.playerProfile, 'trainer', sheet.slug),
+      )),
     }
   }
 
   return {
     pokemonSheets: markAuthorizedPokemonSheets(pokemonSheets, input, trainerSheets)
-      .map((sheet) => redactSheetForPlayer('pokemon', sheet)),
-    trainerSheets: markAuthorizedTrainerSheets(trainerSheets, input),
+      .map((sheet) => projectAbilityAutomationSheetForPlayer(redactSheetForPlayer('pokemon', sheet))),
+    trainerSheets: markAuthorizedTrainerSheets(trainerSheets, input)
+      .map((sheet) => projectAbilityAutomationSheetForPlayer(sheet)),
   }
 }

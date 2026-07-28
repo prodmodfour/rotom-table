@@ -12,6 +12,8 @@ import { placementToSpawned } from '~/utils/placement'
 import { pokemonInitiativeOrderEntry } from '~/utils/initiativeOrderEntries'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
+import { moveAutomationConditionImmunitySource } from '~/utils/moveAutomationConditionImmunity'
+import { resolveMoveAutomationTargetEvasion } from '~/utils/moveAutomationAccuracy'
 import { buildAuthoritativeMoveRulesContext } from '~~/server/domain/moveAutomation/context'
 import { authoritativeEquippedItemReferences } from '~~/server/domain/moveAutomation/itemResources'
 import { resolveMoveCriticalHit } from '~~/server/domain/moveAutomation/criticalHits'
@@ -22,9 +24,13 @@ import {
   aa085to100AccuracyModifiers,
   aa085to100DamageBaseBonus,
   aa085to100MoveDamageModifiers,
+  aa085to100MovePresentationScript,
+  aa085to100MovePriorityActive,
   AA085_RADIANT_BEAM_TARGET_BRANCH_ID,
+  AA090_SONIC_COURTSHIP_TARGET_BRANCH_ID,
 } from '~~/server/domain/abilityAutomation/mechanics/aa085to100StaticIntegration'
 import {
+  aa085to100InitiativeMultiplier,
   aa085to100InitiativeProjection,
 } from '~~/server/domain/abilityAutomation/mechanics/aa085to100InitiativeIntegration'
 import { recordAa085to100MovementEvidence } from '~~/server/domain/abilityAutomation/mechanics/aa085to100MovementIntegration'
@@ -98,6 +104,7 @@ const fixture = (input: {
   readonly effects?: readonly EncounterEffect[]
   readonly temporaryHp?: number
   readonly voxels?: TabletopMap['voxels']
+  readonly targetSideId?: 'heroes' | 'foes'
 }) => {
   const actor = input.actor ?? pokemon({ slug: 'actor' })
   const target = input.target ?? pokemon({ slug: 'target' })
@@ -119,7 +126,7 @@ const fixture = (input: {
       },
       {
         id: 'target', sheetKind: 'pokemon', sheetSlug: target.slug,
-        sideId: 'foes', position: { x: 12, y: 0, z: 6 },
+        sideId: input.targetSideId ?? 'foes', position: { x: 12, y: 0, z: 6 },
       },
     ],
     initiative: { activeId: 'actor', round: 1 },
@@ -277,6 +284,7 @@ describe('AA-085 through AA-100 static conformance', () => {
       readonly targetAbilities?: readonly string[]
       readonly markerReasons?: readonly string[]
       readonly targetCurrentHp?: number
+      readonly targetSideId?: 'heroes' | 'foes'
     }) => {
       const state = fixture({
         actor: pokemon({
@@ -289,6 +297,7 @@ describe('AA-085 through AA-100 static conformance', () => {
           abilities: input.targetAbilities,
           currentHp: input.targetCurrentHp,
         }),
+        ...(input.targetSideId ? { targetSideId: input.targetSideId } : {}),
       })
       const resolvedContext = context(state, input.moveName)
       const operation = parseMoveEffectOperation({
@@ -333,6 +342,10 @@ describe('AA-085 through AA-100 static conformance', () => {
       moveName: 'Thunder Shock', actorAbilities: ['Teravolt'], markerReasons: [counterMarker],
     }).finalMultiplier).toBe(1)
     expect(resolve({
+      moveName: 'Thunder Shock', actorAbilities: ['Teravolt'], markerReasons: [counterMarker],
+      targetSideId: 'heroes',
+    }).finalMultiplier).toBe(0.5)
+    expect(resolve({
       moveName: 'Thunder Shock', actorAbilities: ['Teravolt'],
       markerReasons: [rksMarker, transistorMarker],
     }).finalMultiplier).toBe(1.5)
@@ -356,6 +369,29 @@ describe('AA-085 through AA-100 static conformance', () => {
     expect(resolve({
       moveName: 'Thunder Shock', targetAbilities: ['Shadow Shield'], targetCurrentHp: 999,
     }).finalMultiplier).toBe(0.5)
+  })
+
+  it('projects Sweet Veil condition immunity only while its reviewed runtime is effective', () => {
+    const protectedState = fixture({
+      target: pokemon({ slug: 'sweet-veil-target', abilities: ['Sweet Veil'] }),
+    })
+    const protectedToken = context(protectedState).queries.tokens.get('target')!
+    expect(moveAutomationConditionImmunitySource('Sleep', protectedToken)).toBe('Sweet Veil')
+
+    const suppressedEffect = {
+      ...creatureRuleOverlayEncounterEffectFixture({
+        domain: 'ability', action: 'suppress', values: ['Sweet Veil'],
+        referencePlacementId: null, suppressionScope: 'listed',
+      }),
+      id: 'effect.suppress-sweet-veil',
+      affected: { placementIds: ['target'], sideIds: [], cells: [] },
+    }
+    const suppressedState = fixture({
+      target: pokemon({ slug: 'suppressed-sweet-veil', abilities: ['Sweet Veil'] }),
+      effects: [suppressedEffect],
+    })
+    const suppressedToken = context(suppressedState).queries.tokens.get('target')!
+    expect(moveAutomationConditionImmunitySource('Sleep', suppressedToken)).toBeNull()
   })
 
   it('projects Pure Power, Quick Feet, RKS System, and Radiant Beam from effective abilities', () => {
@@ -895,6 +931,213 @@ describe('AA-085 through AA-100 static conformance', () => {
     expect(reverted.base).toBe(1)
     expect(reverted.clearance).toBe(1)
     expect(reverted.movementCapabilities?.swim).toBe(3)
+  })
+
+  it('applies every remaining Last Chance and conditional damage provider exactly once', () => {
+    const lastChance = fixture({
+      actor: pokemon({
+        slug: 'last-chance', currentHp: 1,
+        abilities: ['Pure Blooded', 'Swarm', 'Unbreakable', 'Venom'],
+      }),
+    })
+    const lastChanceContext = context(lastChance)
+    const operation = { id: 'last-chance.damage' } as MoveDamageEffectOperation
+    const expected = new Map([
+      ['dragon', 'ability.pure-blooded.last-chance'],
+      ['bug', 'ability.swarm.last-chance'],
+      ['steel', 'ability.unbreakable.last-chance'],
+      ['poison', 'ability.venom.last-chance'],
+    ])
+    for (const [moveType, reasonCode] of expected) {
+      const modifiers = aa085to100MoveDamageModifiers({
+        context: lastChanceContext, operation,
+        script: lastChanceContext.queries.rules.reviewedScriptFor('Tackle')!,
+        actor: lastChanceContext.actor.token,
+        recipient: lastChanceContext.queries.tokens.get('target')!,
+        moveType, damageClass: 'physical', effectivenessMultiplier: 1, critical: false,
+      })
+      expect(modifiers.filter(entry => entry.reasonCode.includes('last-chance')))
+        .toEqual([expect.objectContaining({ reasonCode, value: 5 })])
+    }
+
+    const entry = parseEncounterEffect({
+      id: 'encounter-entry.target', kind: 'capability',
+      source: { operationId: 'send-out.target', moveId: 'ability.stakeout', placementId: 'target' },
+      affected: { placementIds: ['target'], sideIds: [], cells: [] },
+      createdRound: 1, createdTurn: 1,
+      duration: { kind: 'scene', remaining: null }, stacks: 1, charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null }, tags: ['encounter-entry', 'send-out'],
+      payload: { capabilityId: 'encounter-entry', action: 'grant' },
+      dispel: { policy: 'matching-tags', tags: ['encounter-entry'] },
+      transferPolicy: 'expire', suppression: { sources: [] },
+    })
+    const conditional = fixture({
+      actor: pokemon({
+        slug: 'conditional-damage', abilities: ['Sniper', 'Stakeout', 'Vanguard', 'White Flame'],
+        conditions: ['Rage'],
+      }),
+      target: pokemon({ slug: 'solid-rock-target', abilities: ['Solid Rock'] }),
+      effects: [entry],
+    })
+    conditional.map.placements[0]!.initiative = 20
+    conditional.map.placements[1]!.initiative = 10
+    const conditionalContext = context(conditional)
+    const modifiers = aa085to100MoveDamageModifiers({
+      context: conditionalContext, operation: { id: 'conditional.damage' } as MoveDamageEffectOperation,
+      script: conditionalContext.queries.rules.reviewedScriptFor('Tackle')!,
+      actor: conditionalContext.actor.token,
+      recipient: conditionalContext.queries.tokens.get('target')!,
+      moveType: 'normal', damageClass: 'physical', effectivenessMultiplier: 2, critical: true,
+    })
+    expect(modifiers.map(entry => entry.reasonCode)).toEqual(expect.arrayContaining([
+      'ability.sniper.critical-damage',
+      'ability.stakeout.recent-entry-damage',
+      'ability.vanguard.unacted-lower-initiative-damage',
+      'ability.white-flame.enraged-damage',
+      'ability.solid-rock.super-effective-reduction',
+    ]))
+  })
+
+  it('projects Scrappy, Tinted Lens, passive resistances, and Shell Armor from effective runtimes', () => {
+    const resolveType = (input: {
+      readonly actorAbilities?: readonly string[]
+      readonly targetAbilities?: readonly string[]
+      readonly targetTypes: readonly string[]
+      readonly moveType: string
+    }) => {
+      const actor = pokemon({ slug: `type-actor-${slug(input.moveType)}`, abilities: input.actorAbilities })
+      const target = pokemon({ slug: `type-target-${slug(input.moveType)}`, abilities: input.targetAbilities })
+      target.types = [...input.targetTypes]
+      const state = fixture({ actor, target })
+      const resolvedContext = context(state)
+      const operation = parseMoveEffectOperation({
+        id: `type-${slug(input.moveType)}.damage`, kind: 'damage',
+        source: { kind: 'move', id: 'move.type-test' },
+        recipients: { kind: 'selected-targets' }, phase: 'damage', reasonCode: 'type-test.damage',
+        payload: {
+          damageBase: 6, damageClass: 'physical', moveType: input.moveType.toLowerCase(),
+          accuracyRollId: null, criticalRollId: null,
+        },
+      })
+      if (operation.kind !== 'damage') throw new Error('Expected damage operation.')
+      return {
+        state, context: resolvedContext, operation,
+        type: resolveMoveDamageType({
+          context: resolvedContext, operation,
+          script: { moveName: 'Tackle', keywords: [] }, recipientId: 'target',
+        }),
+      }
+    }
+    expect(resolveType({
+      actorAbilities: ['Scrappy'], targetTypes: ['Ghost'], moveType: 'Normal',
+    }).type.finalMultiplier).toBe(1)
+    expect(resolveType({
+      actorAbilities: ['Tinted Lens'], targetTypes: ['Water'], moveType: 'Fire',
+    }).type.finalMultiplier).toBe(1)
+    for (const [abilityId, moveType] of [
+      ['Sacred Bell', 'Dark'], ['Tochukaso', 'Bug'], ['Water Bubble', 'Fire'],
+    ] as const) {
+      const result = resolveType({ targetAbilities: [abilityId], targetTypes: ['Normal'], moveType })
+      expect(result.type.finalMultiplier).toBe(0.5)
+      expect(result.type.passiveSources).toContain(abilityId)
+    }
+
+    const armor = resolveType({
+      targetAbilities: ['Shell Armor'], targetTypes: ['Normal'], moveType: 'Normal',
+    })
+    expect(resolveMoveCriticalHit({
+      context: armor.context, operation: armor.operation,
+      script: armor.context.queries.rules.reviewedScriptFor('Tackle')!,
+      recipientId: 'target', naturalRoll: 20,
+    })).toMatchObject({ candidate: true, critical: false, preventedBy: 'Shell Armor' })
+  })
+
+  it('applies Sand Rush, Slush Rush, Surge Surfer, and Swift Swim only through effective authority', () => {
+    for (const abilityId of ['Sand Rush', 'Slush Rush', 'Surge Surfer', 'Swift Swim']) {
+      const actor = pokemon({ slug: `initiative-${slug(abilityId)}`, abilities: [abilityId], currentHp: 1 })
+      const state = fixture({ actor })
+      expect(aa085to100InitiativeMultiplier({
+        map: state.map, placement: state.map.placements[0]!, sheet: actor,
+        abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
+      })).toBe(2)
+    }
+    const rainyActor = pokemon({
+      slug: 'water-bubble-swimmer', abilities: ['Swift Swim', 'Water Bubble'], currentHp: 100,
+    })
+    const rainy = fixture({ actor: rainyActor })
+    expect(aa085to100InitiativeMultiplier({
+      map: rainy.map, placement: rainy.map.placements[0]!, sheet: rainyActor,
+      abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
+    })).toBe(2)
+  })
+
+  it('projects Thermosensitive weather, Tangled Feet, Vital Spirit, Water Bubble, and Wonder Skin', () => {
+    const sunny = fixture({
+      actor: pokemon({ slug: 'sunny-thermosensitive', abilities: ['Thermosensitive'] }),
+    })
+    sunny.map.fieldEffects = { weather: [{ kind: 'sunny' }], terrains: [], rooms: [] }
+    expect(projectedActor(sunny).combatStages).toMatchObject({ atk: 2, satk: 2 })
+
+    const hail = fixture({
+      actor: pokemon({ slug: 'hail-thermosensitive', abilities: ['Thermosensitive'] }),
+    })
+    hail.map.fieldEffects = { weather: [{ kind: 'hail' }], terrains: [], rooms: [] }
+    expect(projectedActor(hail).movementCapabilities).toMatchObject({ overland: 2, swim: 1 })
+
+    const defenses = fixture({
+      target: pokemon({
+        slug: 'condition-defenses', abilities: ['Tangled Feet', 'Vital Spirit', 'Water Bubble', 'Wonder Skin'],
+        conditions: ['Confused'],
+      }),
+    })
+    const target = context(defenses).queries.tokens.get('target')!
+    expect(moveAutomationConditionImmunitySource('Vulnerable', target)).toBe('Tangled Feet')
+    expect(moveAutomationConditionImmunitySource('Sleep', target)).toBe('Vital Spirit')
+    expect(moveAutomationConditionImmunitySource('Burned', target)).toBe('Water Bubble')
+    const status = context(defenses, 'Attract').queries.rules.reviewedScriptFor('Attract')!
+    const ordinaryTarget = { ...target, abilityNames: [], conditions: [] }
+    expect(resolveMoveAutomationTargetEvasion(status, target).value
+      - resolveMoveAutomationTargetEvasion(status, ordinaryTarget).value).toBeGreaterThanOrEqual(6)
+    expect(resolveMoveAutomationTargetEvasion(
+      { ...status, damageClass: 'Physical' }, target,
+    ).abilityModifiers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ source: 'Tangled Feet', modifier: 3 }),
+    ]))
+  })
+
+  it('projects Sonic Courtship, Whirlwind Kicks, Wily, and Triage declaration rules', () => {
+    const sonic = fixture({ actor: pokemon({ slug: 'sonic', move: 'Attract', abilities: ['Sonic Courtship'] }) })
+    const sonicContext = context(sonic, 'Attract')
+    expect(aa085to100MovePresentationScript({
+      context: sonicContext,
+      script: sonicContext.queries.rules.reviewedScriptFor('Attract')!,
+    }).targetBranches).toContainEqual(expect.objectContaining({
+      id: AA090_SONIC_COURTSHIP_TARGET_BRANCH_ID,
+      range: 'Burst 3, Sonic, Friendly',
+    }))
+
+    const kicks = fixture({
+      actor: pokemon({ slug: 'kicks', move: 'Rapid Spin', abilities: ['Whirlwind Kicks'] }),
+    })
+    const kicksContext = context(kicks, 'Rapid Spin')
+    expect(aa085to100MovePresentationScript({
+      context: kicksContext,
+      script: kicksContext.queries.rules.reviewedScriptFor('Rapid Spin')!,
+    })).toMatchObject({ range: 'Burst 1', targetMode: 'multi-target' })
+
+    const wily = fixture({ actor: pokemon({ slug: 'wily', move: 'Heart Swap', abilities: ['Wily'] }) })
+    const wilyContext = context(wily, 'Heart Swap')
+    const heartSwap = wilyContext.queries.rules.reviewedScriptFor('Heart Swap')!
+    expect(aa085to100MovePresentationScript({
+      context: wilyContext,
+      script: heartSwap,
+    })).toMatchObject({ targetMode: 'multi-target', targetCount: (heartSwap.targetCount ?? 0) + 1 })
+
+    const triage = fixture({ actor: pokemon({ slug: 'triage', abilities: ['Triage'] }) })
+    expect(aa085to100MovePriorityActive({
+      context: context(triage), script: { keywords: ['Healing'] },
+    })).toBe(true)
   })
 
   it('projects every form’s base Speed offset from the exact HP, THP, and form state', () => {

@@ -102,6 +102,9 @@ const mapFixture = (options: {
     placement('actor', 1),
     placement('outside', 5),
     placement('airborne', 1),
+    placement('flying', 1),
+    placement('levitating', 1),
+    placement('grounded-levitator', 1),
     trainerPlacement('trainer', 1),
   ],
   initiative: { activeId: options.activeId ?? null, round: 1 },
@@ -122,6 +125,12 @@ const contextFixture = (options: Parameters<typeof mapFixture>[0] = {}) => {
       ['actor', sheet('actor')],
       ['outside', sheet('outside')],
       ['airborne', sheet('airborne', { capabilities: { sky: 6 } })],
+      ['flying', sheet('flying', { types: ['Flying'] })],
+      ['levitating', sheet('levitating', { capabilities: { levitate: 4 } })],
+      ['grounded-levitator', sheet('grounded-levitator', {
+        capabilities: { levitate: 4 },
+        combat: { currentHp: 50, conditions: ['Groundsource Immunity Suppressed'] },
+      })],
     ]),
     trainerSheets: new Map<string, TrainerSheet>([[
       'trainer',
@@ -133,7 +142,9 @@ const contextFixture = (options: Parameters<typeof mapFixture>[0] = {}) => {
       moveName: 'Tackle',
       selection: { kind: 'single-target', targetPlacementId: 'outside' },
     },
-    candidatePlacementIds: ['outside', 'airborne'],
+    candidatePlacementIds: [
+      'outside', 'airborne', 'flying', 'levitating', 'grounded-levitator',
+    ],
     selectedPlacementIds: ['outside'],
     random: createFiniteAuthoritativeMoveRandomStream([]),
     time: 2_000,
@@ -483,7 +494,7 @@ describe('authoritative Terrain queries', () => {
     expect(effects.every(effect => Object.isFrozen(effect))).toBe(true)
   })
 
-  it('blocks only grounded off-turn Pokémon Priority and Interrupt declarations', () => {
+  it('blocks off-turn Priority and Interrupt only for non-Flying, non-Levitating Pokémon', () => {
     const fixture = {
       globalElectric: false,
       globalPsychic: false,
@@ -528,11 +539,35 @@ describe('authoritative Terrain queries', () => {
       })],
     })
     expect(offTurn.action({ placementId: 'airborne', timing: 'interrupt' })).toMatchObject({
+      allowed: false,
+      blockedBy: 'Psychic Terrain (zone.terrain.psychic.local)',
+      trace: [expect.objectContaining({
+        outcome: 'prevented',
+        reasonCode: 'terrain.psychic.off-turn-priority-interrupt-prevention',
+      })],
+    })
+    expect(offTurn.action({ placementId: 'flying', timing: 'interrupt' })).toMatchObject({
       allowed: true,
       blockedBy: null,
       trace: [expect.objectContaining({
-        outcome: 'not-grounded',
-        reasonCode: 'terrain.psychic.not-grounded',
+        outcome: 'not-applicable',
+        reasonCode: 'terrain.psychic.flying-pokemon-unrestricted',
+      })],
+    })
+    expect(offTurn.action({ placementId: 'levitating', timing: 'priority' })).toMatchObject({
+      allowed: true,
+      blockedBy: null,
+      trace: [expect.objectContaining({
+        outcome: 'not-applicable',
+        reasonCode: 'terrain.psychic.levitating-pokemon-unrestricted',
+      })],
+    })
+    expect(offTurn.action({ placementId: 'grounded-levitator', timing: 'priority' })).toMatchObject({
+      allowed: false,
+      blockedBy: 'Psychic Terrain (zone.terrain.psychic.local)',
+      trace: [expect.objectContaining({
+        outcome: 'prevented',
+        reasonCode: 'terrain.psychic.off-turn-priority-interrupt-prevention',
       })],
     })
     expect(offTurn.action({ placementId: 'outside', timing: 'reaction' })).toMatchObject({

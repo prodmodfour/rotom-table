@@ -11,6 +11,7 @@ import type {
   MoveHealEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type { EncounterLifecycleTriggerHandler } from '~~/server/domain/moveAutomation/reduceLifecycle'
+import { encounterSceneId } from '~~/server/domain/moveAutomation/planSceneLifecycle'
 import type { PersistedSheet } from '~~/server/storage/sheetRepository'
 import type { TabletopMap } from '~/types/map'
 import { LivePlayIntegrationHarness, assertAccepted } from './livePlayIntegrationHarness'
@@ -212,11 +213,19 @@ describe('live-play scene lifecycle integration', () => {
     expect((await harness.readMap())?.activeScene).toMatchObject({ name: 'New Scene' })
     expect((await harness.readMap())?.moveUsage).toBeUndefined()
     expect((await harness.readMap())?.temporaryHitPoints?.byPlacementId).toEqual({ 'token-a': 3 })
-    expect((await harness.readMap())?.encounterState).toMatchObject({
+    const replacementMap = await harness.readMap()
+    const replacementSceneId = encounterSceneId(
+      replacementMap!.slug,
+      replacementMap!.activeScene!,
+    )
+    expect(replacementMap?.encounterState).toMatchObject({
       effects: [],
       counters: {},
       turnResources: {},
       pendingResolutionSummaries: [],
+      abilityUsage: { schemaVersion: 1, sceneId: replacementSceneId, entries: [] },
+      abilityTiming: { schemaVersion: 1, sceneId: replacementSceneId, receipts: [] },
+      abilityReactionAvailability: { schemaVersion: 1, sceneId: replacementSceneId },
     })
     expect(((await harness.readSheet('pokemon', 'alpha-mon'))?.sheet.combat as { currentHp: number }).currentHp).toBe(25)
     expect((await harness.readSheet('pokemon', 'alpha-mon'))?.revision).toBe(1)
@@ -257,7 +266,12 @@ describe('live-play scene lifecycle integration', () => {
     expect((await harness.readMap())?.activeScene).toBeUndefined()
     expect((await harness.readMap())?.temporaryHitPoints).toBeUndefined()
     expect((await harness.readMap())?.moveUsage).toBeUndefined()
-    expect((await harness.readMap())?.encounterState?.effects).toEqual([])
+    expect((await harness.readMap())?.encounterState).toMatchObject({
+      effects: [],
+      abilityUsage: { schemaVersion: 1, sceneId: null, entries: [] },
+      abilityTiming: { schemaVersion: 1, sceneId: null, receipts: [] },
+      abilityReactionAvailability: { schemaVersion: 1, sceneId: null },
+    })
     expect(((await harness.readSheet('pokemon', 'alpha-mon'))?.sheet.combat as { currentHp: number }).currentHp).toBe(25)
     expect(harness.operationRecordCount()).toBe(2)
   })

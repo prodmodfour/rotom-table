@@ -437,6 +437,32 @@ describe('durable interaction-mode events and publication', () => {
     expect(result.realtimeEvents[0]).toMatchObject({ access: { kind: 'map-access', mapSlug: 'arena' }, event: { channel: 'map:arena', type: 'map-interaction-mode-updated', data: { slug: 'arena', interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 200 } } })
   })
 
+  it('allows one client to switch the same map repeatedly without realtime dedupe conflicts', () => {
+    const { database, maps, modes, realtime } = durableHarness(6_350)
+    maps.saveSetupMap(mapDoc({ slug: 'arena' }))
+    modes.set({ slug: 'arena', interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 100 })
+
+    const setup = setMapInteractionModeUseCase({
+      slug: 'arena', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT, clientId: 'client-1',
+    }, {
+      database, mapRepository: maps, modeRepository: modes, realtimeEventRepository: realtime,
+      now: () => 200,
+    })
+    const live = setMapInteractionModeUseCase({
+      slug: 'arena', interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, clientId: 'client-1',
+    }, {
+      database, mapRepository: maps, modeRepository: modes, realtimeEventRepository: realtime,
+      now: () => 201,
+    })
+
+    expect(setup.realtimeEvents[0]?.dedupeKey).not.toBe(live.realtimeEvents[0]?.dedupeKey)
+    expect(realtime.cursorState().latestSequence).toBe(2)
+    expect(modes.get('arena')).toMatchObject({
+      interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+      updatedAt: 201,
+    })
+  })
+
   it('preserves the existing timestamped-state behavior for unchanged mode sets', () => {
     const { database, maps, modes, realtime } = durableHarness(6_400)
     maps.saveSetupMap(mapDoc({ slug: 'arena' }))

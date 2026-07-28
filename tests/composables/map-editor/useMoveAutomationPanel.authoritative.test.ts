@@ -549,7 +549,7 @@ describe('useMoveAutomationPanel authoritative dispatcher', () => {
     })
   })
 
-  it('treats missing or mismatched presentation data as accepted-with-error and does not queue reaction prompts', async () => {
+  it('treats missing or mismatched presentation data as accepted-with-error without legacy prompt surfaces', async () => {
     const moveScript = reviewedScript('Ember')
     await withRegisteredScripts([moveScript], async () => {
       const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
@@ -572,10 +572,10 @@ describe('useMoveAutomationPanel authoritative dispatcher', () => {
       expect(modifyHp).not.toHaveBeenCalled()
       expect(panel.moveUsageError.value).toContain('Move was accepted, but')
       expect(panel.moveUsageError.value).toContain('did not match requested actor')
-      expect(panel.moxieTriggerPrompts.value).toEqual([])
-      expect(panel.cuteCharmReactionPrompts.value).toEqual([])
-      expect(panel.poisonPointReactionPrompts.value).toEqual([])
-      expect(panel.spiteReactionPrompts.value).toEqual([])
+      expect(panel).not.toHaveProperty('moxieTriggerPrompts')
+      expect(panel).not.toHaveProperty('cuteCharmReactionPrompts')
+      expect(panel).not.toHaveProperty('poisonPointReactionPrompts')
+      expect(panel).not.toHaveProperty('spiteReactionPrompts')
     })
   })
 
@@ -610,7 +610,7 @@ describe('useMoveAutomationPanel authoritative dispatcher', () => {
       await panel.selectMoveAutomationTarget('target-a')
 
       expect(tokens.value.find((token) => token.id === 'target-a')?.currentHp).toBe(0)
-      expect(panel.moxieTriggerPrompts.value).toEqual([])
+      expect(panel).not.toHaveProperty('moxieTriggerPrompts')
     })
   })
 

@@ -1,8 +1,4 @@
 import { abilities as referenceAbilities, findAbility } from '~~/data/ptuReference'
-import {
-  clearSheetAbilityActivation,
-  isSheetActivatableAbility,
-} from '~/utils/sheetAbilityActivation'
 import type { CharacterSheetAbility } from '~/types/characterSheet'
 import type { PtuAbility } from '~/types/ptuReference'
 import type { TrainerAbilityEntry } from '~/types/trainerSheet'
@@ -20,6 +16,8 @@ const LOOKUP_BACKED_ABILITY_KEYS = [
   'frequency',
   'trigger',
   'effect',
+  // Historical browser activation state has no native runtime authority.
+  'activated',
 ] as const
 
 export const lookupAbilityReference = (ability: Pick<SheetAbilityLike, 'name'>): PtuAbility | null => {
@@ -45,5 +43,4 @@ export const setLookupAbilityName = (ability: SheetAbilityLike, value: unknown):
   // The sheet stores only the selected ability name; display details come from
   // data/reference/abilities.json via data/ptuReference.ts.
   clearLookupBackedAbilityFields(ability)
-  if (!isSheetActivatableAbility(ability)) clearSheetAbilityActivation(ability)
 }

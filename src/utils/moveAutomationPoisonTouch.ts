@@ -1,9 +1,9 @@
-import { POISON_TOUCH_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
 import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 import { conditionBaseName } from '~/utils/statusConditions'
 import type { MoveAutomationConditionSuggestion, MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
+export const POISON_TOUCH_ABILITY_NAME = 'Poison Touch'
 export const POISON_TOUCH_DEFAULT_THRESHOLD = '19+'
 
 const POISON_TOUCH_LABEL_MARKER = /\bPoison Touch\b/i

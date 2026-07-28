@@ -1586,6 +1586,9 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       sideId: mover.sideId,
       grounding: mover.movementProfile.state.grounding,
       typeIds: mover.typeIds,
+      ignoreHazards: mover.effectiveAbilityIds.includes('Infiltrator')
+        || mover.effectiveAbilityIds.includes('Screen Cleaner'),
+      destroyHazards: mover.effectiveAbilityIds.includes('Screen Cleaner'),
     },
   })
   const groundLevelY = input.map.groundLevelY ?? 0
@@ -2219,6 +2222,9 @@ export const resolveAuthoritativeDisplacement = (
       sideId: mover.sideId,
       grounding: mover.movementProfile.state.grounding,
       typeIds: mover.typeIds,
+      ignoreHazards: mover.effectiveAbilityIds.includes('Infiltrator')
+        || mover.effectiveAbilityIds.includes('Screen Cleaner'),
+      destroyHazards: mover.effectiveAbilityIds.includes('Screen Cleaner'),
     },
   })
   const groundLevelY = input.map.groundLevelY ?? 0

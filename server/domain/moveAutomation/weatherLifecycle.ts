@@ -5,7 +5,6 @@ import {
 } from '#shared/moveAutomation/effects'
 import type { TabletopMap } from '~/types/map'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
-import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 import type { AuthoritativeMoveRulesContext } from './context'
 import type {
   MoveCoreTokenEffectImmunityDecision,
@@ -144,18 +143,11 @@ const normalizedTypes = (
   recipient.token.defenderTypes.map(type => type.trim().toLowerCase()).filter(Boolean),
 )
 
-const hasEffectiveOrRetainedLegacyWeatherAbility = (input: {
+const hasEffectiveWeatherAbility = (input: {
   readonly context: AuthoritativeMoveRulesContext
   readonly placementId: string
   readonly ability: string
-}): boolean => {
-  if (input.context.queries.abilities.has(input.placementId, input.ability)) return true
-  // AA-082 Overcoat is registry-owned and must never fall back to raw sheet text.
-  if (input.ability === 'Overcoat') return false
-  const placement = input.context.queries.placements.get(input.placementId)
-  const resolved = placement ? input.context.queries.sheets.forPlacement(placement) : null
-  return resolved ? sheetHasCanonicalAbility(resolved.sheet.abilities, input.ability) : false
-}
+}): boolean => input.context.queries.abilities.has(input.placementId, input.ability)
 
 const adjacentAllyAbilityImmunity = (input: {
   readonly weatherKind: WeatherResidualKind
@@ -172,15 +164,16 @@ const adjacentAllyAbilityImmunity = (input: {
       'ally',
     ).matches) continue
 
-    // Ability names and footprint dimensions are sheet-derived. Every ally
-    // inspected before the deterministic answer belongs in the read set.
+    // Only adjacent allies can affect this result. Establish geometry before
+    // consulting their effective Ability projection so distant sheets do not
+    // inflate optimistic-concurrency scope.
+    if (ptuGridDistanceBetweenFootprints(provider, input.recipient.token) !== 1) continue
     consultedPlacementIds.push(provider.id)
-    if (!hasEffectiveOrRetainedLegacyWeatherAbility({
+    if (!hasEffectiveWeatherAbility({
       context: input.context,
       placementId: provider.id,
       ability,
     })) continue
-    if (ptuGridDistanceBetweenFootprints(provider, input.recipient.token) !== 1) continue
     return {
       blockedBy: `${ability} (${provider.id})`,
       consultedPlacementIds,
@@ -219,7 +212,7 @@ export const resolveWeatherResidualImmunity = (input: {
   const directAbility = [
     ...UNIVERSAL_WEATHER_IMMUNITY_ABILITIES.filter(ability => ability !== 'Magic Guard'),
     ...WEATHER_SELF_IMMUNITY_ABILITIES[input.weatherKind].filter(ability => ability !== 'Ice Face'),
-  ].find(ability => hasEffectiveOrRetainedLegacyWeatherAbility({
+  ].find(ability => hasEffectiveWeatherAbility({
     context: input.context,
     placementId: input.recipient.placement.id,
     ability,

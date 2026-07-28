@@ -3,6 +3,7 @@ import {
   remainingAbilityRegistrations,
   remainingActivatedAbilitySpec as activatedSpec,
   remainingStaticAbilitySpec as staticSpec,
+  remainingStaticActivatedAbilitySpec as staticActivatedSpec,
   remainingTriggeredAbilitySpec as triggeredSpec,
 } from './aa085to100Shared'
 
@@ -17,7 +18,7 @@ export const TOLERANCE_ABILITY_SPEC = staticSpec('Tolerance', 'aa095.tolerance')
 export const TONGUELASH_ABILITY_SPEC = triggeredSpec('Tonguelash', 'aa095.tonguelash', 'move')
 export const TORRENT_ABILITY_SPEC = staticSpec('Torrent', 'aa095.torrent')
 export const TOUGH_CLAWS_ABILITY_SPEC = staticSpec('Tough Claws', 'aa095.tough-claws')
-export const TOXIC_BOOST_ABILITY_SPEC = activatedSpec('Toxic Boost', 'aa095.toxic-boost')
+export const TOXIC_BOOST_ABILITY_SPEC = staticActivatedSpec('Toxic Boost', 'aa095.toxic-boost')
 
 export const AA095_ABILITY_SPECS = Object.freeze([
   THICK_FAT_ABILITY_SPEC, THRUST_ABILITY_SPEC, THUNDER_BOOST_ABILITY_SPEC, TINGLE_ABILITY_SPEC, TINGLY_TONGUE_ABILITY_SPEC, TINTED_LENS_ABILITY_SPEC, TOCHUKASO_ABILITY_SPEC, TOLERANCE_ABILITY_SPEC, TONGUELASH_ABILITY_SPEC, TORRENT_ABILITY_SPEC, TOUGH_CLAWS_ABILITY_SPEC, TOXIC_BOOST_ABILITY_SPEC,

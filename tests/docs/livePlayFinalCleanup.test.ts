@@ -51,10 +51,10 @@ describe('final live-play cleanup guardrails', () => {
     }
   })
 
-  it('routes maneuver ability and order actions through canonical command executors', () => {
+  it('routes manoeuvre and order commands separately from native Ability declarations', () => {
     const dispatcher = readRepoText('src/composables/map-editor/useLivePlayCommands.ts')
     expect(dispatcher).toContain('LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER')
-    expect(dispatcher).toContain('LIVE_PLAY_COMMAND_TYPES.USE_ABILITY')
+    expect(dispatcher).not.toContain('LIVE_PLAY_COMMAND_TYPES.USE_ABILITY')
     expect(dispatcher).toContain('LIVE_PLAY_COMMAND_TYPES.USE_ORDER')
     expect(dispatcher).toContain("mapScope('metadata')")
     expect(dispatcher).not.toContain('server-side command executors are migrated')
@@ -69,7 +69,10 @@ describe('final live-play cleanup guardrails', () => {
       expect(source, relativePath).not.toContain('recordMoveUsageUseCase')
     }
 
-    expect(readRepoText('server/api/maps/tokens/use-ability.post.ts')).toContain('executeLivePlayTableActionCommandUseCase')
+    const legacyAbilityRoute = readRepoText('server/api/maps/tokens/use-ability.post.ts')
+    expect(legacyAbilityRoute).toContain('statusCode: 410')
+    expect(legacyAbilityRoute).not.toContain('executeLivePlayTableActionCommandUseCase')
+    expect(readRepoText('src/pages/maps/[slug].vue')).toContain('useAbilityAutomationGateway')
     expect(readRepoText('server/api/maps/tokens/use-maneuver.post.ts')).toContain('executeLivePlayTableActionCommandUseCase')
     expect(readRepoText('server/api/maps/tokens/use-order.post.ts')).toContain('executeLivePlayTableActionCommandUseCase')
   })

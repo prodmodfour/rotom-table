@@ -26,6 +26,7 @@ import {
   harvestStoppedForSheet,
   harvestTradedForSheetThisTurn,
 } from './digestionBuffTrade'
+import { authoritativeUnnerveBlocksTarget } from './unnerve'
 import { aa072GluttonyLimits } from '../abilityAutomation/mechanics/aa072StaticIntegration'
 import { aa077IsProtectedRareLeek } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import {
@@ -950,12 +951,10 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
   for (const recipientId of recipientIds) {
     const recipient = input.context.queries.placements.get(recipientId)
     if (!recipient) continue
-    const unnerveBlocksTrade = input.context.map.encounterState?.effects.some(effect => (
-      effect.tags.includes('aa097-unnerve')
-      && effect.affected.placementIds.includes(recipientId)
-      && effect.suppression.sources.length === 0
-      && (effect.duration.remaining === null || effect.duration.remaining > 0)
-    )) === true
+    const unnerveBlocksTrade = authoritativeUnnerveBlocksTarget(
+      input.context.map.encounterState?.effects,
+      recipientId,
+    )
     if (unnerveBlocksTrade) continue
     const storedItemIds = storedDigestionBuffIds(input.context, recipient)
     const candidateItemIds = payload.storageSlot === undefined

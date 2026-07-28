@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import {
-  applyAbilityActivationToSheet,
   applyCombatStagesToSheet,
   applyConditionsToSheet,
   applyHpToSheet,
@@ -92,25 +91,6 @@ describe('sheet mutation helpers', () => {
 
     const conditioned = applyConditionsToSheet('trainer', trainer(), ['Burned', 'Disable: Tackle', 'bad-value']) as TrainerSheet
     expect(conditioned.conditions).toEqual(['Burned', 'Disabled: Tackle'])
-  })
-
-  it('activates sheet-backed ability automation without mutating the original sheet', () => {
-    const originalPokemon = pokemon()
-    const updatedPokemon = applyAbilityActivationToSheet(
-      'pokemon',
-      originalPokemon,
-      'Sand Veil',
-    ) as CharacterSheet
-
-    expect(updatedPokemon.abilities?.[0]).toMatchObject({ name: 'Sand Veil', activated: true })
-    expect(originalPokemon.abilities?.[0]).toEqual({ name: 'Sand Veil' })
-
-    const updatedSnowCloak = applyAbilityActivationToSheet(
-      'pokemon',
-      originalPokemon,
-      'Snow Cloak',
-    ) as CharacterSheet
-    expect(updatedSnowCloak.abilities?.[1]).toMatchObject({ name: 'Snow Cloak', activated: true })
   })
 
   it('creates update contexts and strips derived folder fields for persistence', () => {

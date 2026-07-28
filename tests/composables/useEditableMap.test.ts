@@ -6,6 +6,7 @@ import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInter
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
 import { LIVE_PLAY_REALTIME_EVENT_TYPES, type RealtimeEvent } from '#shared/realtime'
+import { ABILITY_AUTOMATION_REALTIME_EVENT_TYPE } from '#shared/abilityAutomation/realtime'
 import type { LivePlayLocalPrediction } from '~/utils/livePlayPredictions'
 import type { TabletopMap } from '~/types/map'
 
@@ -1020,6 +1021,36 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.getJson).toHaveBeenCalledTimes(1)
     expect(editable.mapRevision.value).toBe(3)
     expect(editable.map.value?.placements[0]?.position).toEqual({ x: 1, y: 0, z: 1 })
+  })
+
+  it('reconciles a generic Ability acceptance event through the authoritative snapshot', async () => {
+    apiMocks.getJson
+      .mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+      .mockResolvedValueOnce({
+        map: mapFixture({ revision: 2, name: 'Ability-Reconciled Arena' }),
+        revision: 2,
+      })
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: ABILITY_AUTOMATION_REALTIME_EVENT_TYPE,
+      revision: 2,
+      timestamp: 400,
+      data: {
+        schemaVersion: 1,
+        mapSlug: 'arena-map',
+        previousRevision: 1,
+        revision: 2,
+        status: 'committed',
+      },
+    })
+    await flushPromises()
+
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(2)
+    expect(editable.mapRevision.value).toBe(2)
+    expect(editable.map.value?.name).toBe('Ability-Reconciled Arena')
   })
 
   it('requests reconciliation for valid accepted events whose map patch cannot apply after acknowledgement', async () => {

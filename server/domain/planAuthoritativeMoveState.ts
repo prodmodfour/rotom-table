@@ -1122,6 +1122,8 @@ const planPendingMoveState = (options: {
           },
         }
       : {}),
+    authoritativeTargetEvaluations: options.execution.authoritativeTargetEvaluations,
+    authoritativeAreaCells: options.execution.authoritativeAreaCells,
     suspendedAt: options.plannedAt,
     authoritativeSheetReads: sheetReads,
     authoritativeGroupInventoryReads: groupInventoryReads,

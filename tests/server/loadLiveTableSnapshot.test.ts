@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { LIVE_TABLE_SNAPSHOT_SCHEMA_VERSION } from '#shared/liveTableSnapshot'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import {
   PLAYER_PROFILE_SCHEMA_VERSION,
   type PlayerProfile,
@@ -135,6 +137,94 @@ describe('load live table snapshot use case', () => {
     } catch (error) {
       expect(error).toMatchObject({ statusCode: 404, message: 'Map missing.json not found' })
     }
+  })
+
+  it('redacts Ability authority and non-controlled Ability identities from player snapshots', () => {
+    const database = db()
+    const maps = createSqliteMapRepository(database)
+    const modes = createSqliteMapInteractionModeRepository(database)
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const privateEffect = parseEncounterEffect({
+      id: 'ability.intimidate.target.private',
+      kind: 'capability',
+      source: {
+        operationId: 'intent.private-intimidate',
+        moveId: 'ability.intimidate',
+        placementId: 'actor-token',
+      },
+      affected: { placementIds: ['target-token'], sideIds: [], cells: [] },
+      createdRound: 1,
+      createdTurn: 0,
+      duration: { kind: 'scene', remaining: null },
+      stacks: 1,
+      charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null },
+      tags: ['ability', 'intimidate', 'target-gate'],
+      payload: { capabilityId: 'intimidate.targeted-this-scene', action: 'grant' },
+      dispel: { policy: 'none', tags: [] },
+      transferPolicy: 'retain',
+      suppression: { sources: [] },
+    })
+    maps.saveSetupMap(mapDoc({
+      revision: 8,
+      placements: [
+        { id: 'actor-token', sheetKind: 'pokemon', sheetSlug: 'actor-mon', position: { x: 1, y: 0, z: 1 } },
+        { id: 'target-token', sheetKind: 'pokemon', sheetSlug: 'target-mon', position: { x: 2, y: 0, z: 1 } },
+      ],
+      encounterState: {
+        ...createEmptyEncounterState(),
+        effects: [privateEffect],
+        abilityUsage: { schemaVersion: 1, sceneId: 'scene.private', entries: [] },
+        abilityTiming: {
+          schemaVersion: 1,
+          sceneId: 'scene.private',
+          round: { windowId: null, sequence: null, uses: [] },
+          turn: { windowId: null, sequence: null, uses: [] },
+          cooldowns: [],
+          receipts: [],
+        },
+      },
+    }))
+    sheets.saveSetupSheet('pokemon', 'actor-mon', pokemon({
+      slug: 'actor-mon',
+      abilities: [{ name: 'Compound Eyes', frequency: 'Static', effect: 'Private actor text.' }],
+    }) as unknown as Record<string, unknown>)
+    sheets.saveSetupSheet('pokemon', 'target-mon', pokemon({
+      slug: 'target-mon',
+      abilities: [{ name: 'Sturdy', frequency: 'Static', effect: 'Private target text.' }],
+    }) as unknown as Record<string, unknown>)
+    const actorProfile = profile('profile_actor000', [
+      { sheetKind: 'pokemon', sheetSlug: 'actor-mon' },
+    ])
+
+    const playerSnapshot = loadLiveTableSnapshotUseCase(
+      { role: 'player', slug: 'arena', playerProfile: actorProfile },
+      { database, mapRepository: maps, modeRepository: modes, sheetRepository: sheets },
+    )
+    expect(playerSnapshot.pokemonSheets.find(sheet => sheet.slug === 'actor-mon')?.abilities)
+      .toEqual([expect.objectContaining({ name: 'Compound Eyes' })])
+    expect(playerSnapshot.pokemonSheets.find(sheet => sheet.slug === 'target-mon'))
+      .not.toHaveProperty('abilities')
+    expect(playerSnapshot.map.encounterState).toMatchObject({
+      effects: [],
+      abilityUsage: { schemaVersion: 1, sceneId: null, entries: [] },
+      abilityTiming: { schemaVersion: 1, sceneId: null, receipts: [] },
+      abilityOwnedState: { schemaVersion: 1, entries: [], receipts: [] },
+      abilityTransformations: { schemaVersion: 1, entries: [], receipts: [] },
+    })
+    const serializedPlayerSnapshot = JSON.stringify(playerSnapshot)
+    expect(serializedPlayerSnapshot).not.toContain('Sturdy')
+    expect(serializedPlayerSnapshot).not.toContain('intent.private-intimidate')
+    expect(serializedPlayerSnapshot).not.toContain('target-gate')
+
+    const gmSnapshot = loadLiveTableSnapshotUseCase(
+      { role: 'gm', slug: 'arena' },
+      { database, mapRepository: maps, modeRepository: modes, sheetRepository: sheets },
+    )
+    expect(JSON.stringify(gmSnapshot)).toContain('intent.private-intimidate')
+    expect(gmSnapshot.pokemonSheets.find(sheet => sheet.slug === 'target-mon')?.abilities)
+      .toEqual([expect.objectContaining({ name: 'Sturdy' })])
   })
 
   it('rejects a player snapshot for a hidden map', () => {

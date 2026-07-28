@@ -462,38 +462,22 @@ describe('usePokemonSheetDerived', () => {
     })
   })
 
-  it('adds Sand Veil and Snow Cloak to every evasion total and increases them while activated', () => {
+  it('ignores historical sheet activation flags for encounter-dependent Ability Evasion', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       combat: { evasion: { vsAtkBonus: 0, vsSatkBonus: 0, vsAnyBonus: 0 } },
       items: {},
       abilities: [],
     }))
     const derived = usePokemonSheetDerived(sheet)
-    const withoutSandVeil = derived.pokemonEvasion.value
+    const baseline = structuredClone(derived.pokemonEvasion.value)
 
-    sheet.value!.abilities = [{ name: 'sand veil' }]
+    sheet.value!.abilities = [{ name: 'Sand Veil', activated: true }]
+    expect(derived.pokemonEvasion.value).toEqual(baseline)
+    expect(derived.pokemonEvasion.value.vsAtk.abilityBonus).toBe(0)
 
-    expect(derived.pokemonEvasion.value.vsAtk.abilityBonus).toBe(1)
-    expect(derived.pokemonEvasion.value.vsSatk.abilityBonus).toBe(1)
-    expect(derived.pokemonEvasion.value.vsAny.abilityBonus).toBe(1)
-    expect(derived.pokemonEvasion.value.vsAtk.total).toBe(Math.min(9, withoutSandVeil.vsAtk.total + 1))
-    expect(derived.pokemonEvasion.value.vsSatk.total).toBe(Math.min(9, withoutSandVeil.vsSatk.total + 1))
-    expect(derived.pokemonEvasion.value.vsAny.total).toBe(Math.min(9, withoutSandVeil.vsAny.total + 1))
-
-    sheet.value!.abilities = [{ name: 'sand veil', activated: true }]
-
-    expect(derived.pokemonEvasion.value.vsAtk.abilityBonus).toBe(2)
-    expect(derived.pokemonEvasion.value.vsSatk.abilityBonus).toBe(2)
-    expect(derived.pokemonEvasion.value.vsAny.abilityBonus).toBe(2)
-    expect(derived.pokemonEvasion.value.vsAtk.total).toBe(Math.min(9, withoutSandVeil.vsAtk.total + 2))
-    expect(derived.pokemonEvasion.value.vsSatk.total).toBe(Math.min(9, withoutSandVeil.vsSatk.total + 2))
-    expect(derived.pokemonEvasion.value.vsAny.total).toBe(Math.min(9, withoutSandVeil.vsAny.total + 2))
-
-    sheet.value!.abilities = [{ name: 'snow cloak', activated: true }]
-
-    expect(derived.pokemonEvasion.value.vsAtk.abilityBonus).toBe(2)
-    expect(derived.pokemonEvasion.value.vsSatk.abilityBonus).toBe(2)
-    expect(derived.pokemonEvasion.value.vsAny.abilityBonus).toBe(2)
+    sheet.value!.abilities = [{ name: 'Snow Cloak', activated: true }]
+    expect(derived.pokemonEvasion.value).toEqual(baseline)
+    expect(derived.pokemonEvasion.value.vsAny.abilityBonus).toBe(0)
   })
 
   it('syncs level from total experience when an experience total is present', async () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
@@ -18,28 +19,49 @@ import {
 } from '~~/server/domain/moveAutomation/activePokemonCommands'
 import {
   AA085_QUEENLY_MAJESTY_REASON,
+  AA085_REFRIGERATE_REASON,
   AA085_QUICK_DRAW_REASON,
   AA085_RKS_SYSTEM_REASON,
   AA086_RATTLED_REASON,
   AA089_SHELL_CANNON_REASON,
+  AA089_SKILL_LINK_REASON,
+  AA090_SOLAR_POWER_REASON,
   AA090_SOUL_HEART_REASON,
+  AA091_SOULSTEALER_REASON,
+  AA091_SPINNING_DANCE_REASON,
+  AA091_SPRAY_DOWN_REASON,
   AA092_STEADFAST_REASON,
+  AA092_STEELWORKER_REASON,
+  AA093_SUMO_STANCE_REASON,
   AA093_SWAY_REASON,
   AA094_SYNCHRONIZE_REASON,
   AA096_TRINITY_PHYSICAL_OPTION_ID,
+  AA095_TINGLE_REASON,
+  AA095_TINGLY_TONGUE_REASON,
+  AA095_TONGUELASH_REASON,
   AA096_TRINITY_REASON,
   AA097_VICIOUS_REASON,
+  AA097_VIGOR_REASON,
+  AA098_VOODOO_DOLL_REASON,
   AA098_WALLMASTER_REASON,
   AA098_WANDERING_SPIRIT_REASON,
+  AA098_WASH_AWAY_REASON,
+  AA098_WATER_COMPACTION_REASON,
+  AA098_WEAK_ARMOR_REASON,
   AA098_WEAPONIZE_REASON,
   AA098_WEEBLE_REASON,
+  AA099_WIND_POWER_CHARGE_OPTION_ID,
+  AA099_WIND_POWER_IMMUNITY_OPTION_ID,
+  AA099_WIND_POWER_REASON,
   AA099_WISHMASTER_REASON,
+  AA099_WISTFUL_MELODY_REASON,
   AA099_WOBBLE_REASON,
 } from '~~/server/domain/abilityAutomation/mechanics/aa085to100MoveIntegration'
 import {
   AA084_PRANKSTER_REASON,
 } from '~~/server/domain/abilityAutomation/mechanics/aa084MoveIntegration'
 import { recordAa085to100MovementEvidence } from '~~/server/domain/abilityAutomation/mechanics/aa085to100MovementIntegration'
+import { applyAa085to100RegeneratorTrigger } from '~~/server/domain/abilityAutomation/mechanics/aa085to100LifecycleIntegration'
 import {
   AA085_RADIANT_BEAM_TARGET_BRANCH_ID,
   AA090_SONIC_COURTSHIP_TARGET_BRANCH_ID,
@@ -63,6 +85,8 @@ const sheet = (input: {
   readonly types?: readonly string[]
   readonly species?: string
   readonly currentHp?: number
+  readonly injuries?: number
+  readonly conditions?: readonly string[]
 }): CharacterSheet => ({
   slug: input.slug, nickname: input.slug, species: input.species ?? 'Eevee', level: 30, revision: 4,
   types: [...(input.types ?? ['Normal'])],
@@ -74,7 +98,11 @@ const sheet = (input: {
   },
   capabilities: { overland: 5, sky: 0, swim: 2, levitate: 0, burrow: 0 },
   combatStages: { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
-  combat: { currentHp: input.currentHp ?? 150, injuries: 0, conditions: [] },
+  combat: {
+    currentHp: input.currentHp ?? 150,
+    injuries: input.injuries ?? 0,
+    conditions: [...(input.conditions ?? [])],
+  },
 })
 
 const fixture = (input: {
@@ -85,7 +113,11 @@ const fixture = (input: {
   readonly actorSpecies?: string
   readonly targetSpecies?: string
   readonly actorCurrentHp?: number
+  readonly actorInjuries?: number
   readonly targetCurrentHp?: number
+  readonly targetInjuries?: number
+  readonly actorConditions?: readonly string[]
+  readonly targetConditions?: readonly string[]
   readonly actorTypes?: readonly string[]
   readonly targetTypes?: readonly string[]
   readonly actorAllyAbilities?: readonly string[]
@@ -145,11 +177,12 @@ const fixture = (input: {
       ['actor', sheet({
         slug: 'actor', abilities: input.actorAbilities, moves: input.actorMoves,
         species: input.actorSpecies, currentHp: input.actorCurrentHp,
-        types: input.actorTypes,
+        injuries: input.actorInjuries, conditions: input.actorConditions, types: input.actorTypes,
       })],
       ['target', sheet({
         slug: 'target', abilities: input.targetAbilities, moves: input.targetMoves,
         species: input.targetSpecies, currentHp: input.targetCurrentHp,
+        injuries: input.targetInjuries, conditions: input.targetConditions,
         types: input.targetTypes,
       })],
       ...(input.actorAllyAbilities ? [[
@@ -165,6 +198,42 @@ const fixture = (input: {
     ]),
     trainerSheets: new Map<string, TrainerSheet>(),
   }
+}
+
+const withEndure = (
+  state: ReturnType<typeof fixture>,
+  source: 'reviewed' | 'forged' = 'reviewed',
+): ReturnType<typeof fixture> => {
+  const encounterState = state.map.encounterState!
+  state.map = {
+    ...state.map,
+    encounterState: {
+      ...encounterState,
+      effects: [...encounterState.effects, parseEncounterEffect({
+        id: 'move.endure.marker.target',
+        kind: 'capability',
+        source: {
+          operationId: source === 'reviewed' ? 'endure.shield' : 'forged.endure.shield',
+          moveId: 'move.endure',
+          placementId: 'target',
+        },
+        affected: { placementIds: ['target'], sideIds: [], cells: [] },
+        createdRound: 1,
+        createdTurn: 1,
+        duration: { kind: 'until-triggered', remaining: null },
+        stacks: 1,
+        charges: 1,
+        stackPolicy: { kind: 'replace', maxStacks: null },
+        chargePolicy: { kind: 'consume-on-trigger', amount: 1 },
+        tags: ['endure', 'shield'],
+        payload: { capabilityId: 'shield', action: 'grant' },
+        dispel: { policy: 'matching-tags', tags: ['endure', 'shield'] },
+        transferPolicy: 'expire',
+        suppression: { sources: [] },
+      })],
+    },
+  }
+  return state
 }
 
 const weaponizeFixture = (activelyCommanded: boolean): ReturnType<typeof fixture> => {
@@ -343,6 +412,32 @@ describe('AA-085 through AA-100 move conformance', () => {
     })
     expect(nextSheet(result, 'target').combat?.currentHp).toBeGreaterThan(100)
     expect(nextSheet(result, 'target').combat?.currentHp).toBeLessThanOrEqual(150)
+  })
+
+  it('does not impose a Scene cap on At-Will Move-triggered abilities', () => {
+    const state = fixture({ actorAbilities: ['Refrigerate'], actorMoves: ['Tackle'] })
+    state.map = {
+      ...state.map,
+      encounterState: {
+        ...state.map.encounterState!,
+        abilityUsage: {
+          schemaVersion: 1,
+          sceneId: 'scene:remaining-move',
+          entries: [{
+            ownerId: 'actor', abilityInstanceId: 'base:refrigerate',
+            canonicalId: 'Refrigerate', clauseId: 'base', limit: 1, spent: 1,
+            operationIds: ['legacy:incorrect-scene-use'],
+          }],
+        },
+      },
+    }
+    const result = complete({
+      state, moveName: 'Tackle',
+      choose: ({ reasonCode, options }) => reasonCode === AA085_REFRIGERATE_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(result.seen.map(window => window.reasonCode)).toContain(AA085_REFRIGERATE_REASON)
+    expect(result.plan.nextMap.encounterState?.abilityUsage?.entries[0]?.spent).toBe(1)
   })
 
   it('retains optional base targeting while authorizing reviewed Radiant Beam and Trinity branches', () => {
@@ -613,9 +708,154 @@ describe('AA-085 through AA-100 move conformance', () => {
       choose: ({ reasonCode }) => reasonCode === AA096_TRINITY_REASON
         ? AA096_TRINITY_PHYSICAL_OPTION_ID : null,
     })
-    expect(nextSheet(result, 'target-ally').combat?.conditions).toContain('Frozen')
-    expect(nextSheet(result, 'target').combat?.conditions).toContain('Burned')
+    expect(nextSheet(result, 'target').combat?.conditions).toContain('Frozen')
+    expect(nextSheet(result, 'target-ally').combat?.conditions).toContain('Burned')
   })
+
+  it('Serene Grace extends Trinity’s reviewed effect range by two', () => {
+    const run = (actorAbilities: readonly string[]) => complete({
+      state: fixture({ actorAbilities, actorMoves: ['Tri Attack'] }),
+      moveName: 'Tri Attack',
+      random: () => 0.7,
+      choose: ({ reasonCode }) => reasonCode === AA096_TRINITY_REASON
+        ? AA096_TRINITY_PHYSICAL_OPTION_ID : null,
+    })
+    expect(nextSheet(run(['Trinity']), 'target').combat?.conditions).not.toContain('Frozen')
+    expect(nextSheet(run(['Trinity', 'Serene Grace']), 'target').combat?.conditions).toContain('Frozen')
+  })
+
+  it('Stench extends one reviewed Fang secondary table without duplicating Flinch', () => {
+    const run = (actorAbilities: readonly string[]) => complete({
+      state: fixture({ actorAbilities, actorMoves: ['Fire Fang'] }),
+      moveName: 'Fire Fang',
+      random: () => 0.7,
+      choose: () => null,
+    })
+    expect(nextSheet(run([]), 'target').combat?.conditions).toEqual([])
+    const stench = run(['Stench'])
+    expect(nextSheet(stench, 'target').combat?.conditions).toContain('Flinch')
+    expect(nextSheet(stench, 'target').combat?.conditions?.filter(condition => condition === 'Flinch')).toHaveLength(1)
+    expect(stench.plan.resolution.auditTrace.events.filter(event => (
+      event.kind === 'operation'
+      && event.operationKind === 'condition'
+      && event.outcome === 'applied'
+      && event.reasonCode.includes('flinch')
+    ))).toHaveLength(1)
+  })
+
+  it('Shield Dust blocks accuracy-table secondary effects from damaging Moves', () => {
+    const result = complete({
+      state: fixture({
+        actorAbilities: ['Trinity'],
+        actorMoves: ['Tri Attack'],
+        targetAbilities: ['Shield Dust'],
+      }),
+      moveName: 'Tri Attack',
+      random: () => 0.95,
+      choose: ({ reasonCode }) => reasonCode === AA096_TRINITY_REASON
+        ? AA096_TRINITY_PHYSICAL_OPTION_ID : null,
+    })
+    expect(nextSheet(result, 'target').combat?.conditions).toEqual([])
+  })
+
+  it('blocks positive Combat Stages only under an exact active Unnerve marker', () => {
+    const state = fixture({ actorMoves: ['Ancient Power'] })
+    state.map = {
+      ...state.map,
+      encounterState: {
+        ...state.map.encounterState!,
+        effects: [...state.map.encounterState!.effects, parseEncounterEffect({
+          id: 'effect.aa097.unnerve.actor',
+          kind: 'capability',
+          source: {
+            operationId: 'op_aa097_unnerve_stage',
+            moveId: 'ability.unnerve',
+            placementId: 'target',
+          },
+          affected: { placementIds: ['actor'], sideIds: [], cells: [] },
+          createdRound: 1,
+          createdTurn: 1,
+          duration: { kind: 'turns', subject: 'source', boundary: 'start', remaining: 1 },
+          stacks: 1,
+          charges: null,
+          stackPolicy: { kind: 'replace', maxStacks: null },
+          chargePolicy: { kind: 'none', amount: null },
+          tags: ['ability', 'aa097-unnerve'],
+          payload: {
+            capabilityId: 'aa097.unnerve.block-stages-and-digestion',
+            action: 'grant',
+          },
+          dispel: { policy: 'matching-tags', tags: ['ability'] },
+          transferPolicy: 'expire',
+          suppression: { sources: [] },
+        })],
+      },
+    }
+    const result = complete({
+      state, moveName: 'Ancient Power', random: () => 0.95, choose: () => null,
+    })
+    const actorWrite = result.plan.sheetWrites.find(write => write.slug === 'actor')
+    expect((actorWrite?.nextSheet as CharacterSheet | undefined)?.stats?.atk?.stage ?? 0).toBe(0)
+    const stageEvent = result.plan.resolution.auditTrace.events.find(event => (
+      event.kind === 'operation' && event.reasonCode === 'ancient-power.raise-all'
+    ))
+    expect(stageEvent).toMatchObject({ kind: 'operation', outcome: 'prevented' })
+    expect(JSON.stringify(stageEvent)).toContain('Unnerve')
+  })
+
+  it('derives Sheer Force from reviewed Effect Range operations without runtime prose parsing', () => {
+    const run = (actorAbilities: readonly string[]) => complete({
+      state: fixture({ actorAbilities, actorMoves: ['Fire Fang'] }),
+      moveName: 'Fire Fang', random: () => 0.95, choose: () => null,
+    })
+    const ordinary = nextSheet(run([]), 'target')
+    const sheer = nextSheet(run(['Sheer Force']), 'target')
+    expect((ordinary.combat?.currentHp ?? 0) - (sheer.combat?.currentHp ?? 0)).toBe(10)
+    expect(sheer.combat?.conditions).toEqual([])
+  })
+
+  it('Soulstealer removes one Injury for a faint and all Injuries for a kill', () => {
+    const run = (targetInjuries: number) => complete({
+      state: fixture({
+        actorAbilities: ['Soulstealer'],
+        actorMoves: ['Tackle'],
+        actorCurrentHp: 50,
+        actorInjuries: 3,
+        targetCurrentHp: 1,
+        targetInjuries,
+      }),
+      moveName: 'Tackle',
+      random: () => 0.95,
+      choose: ({ reasonCode, options }) => reasonCode === AA091_SOULSTEALER_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    const faint = nextSheet(run(0), 'actor')
+    expect(faint.combat?.injuries).toBe(2)
+    expect(faint.combat?.currentHp).toBeGreaterThan(50)
+
+    const killed = nextSheet(run(9), 'actor')
+    expect(killed.combat?.injuries).toBe(0)
+    expect(killed.combat?.currentHp).toBeGreaterThan(faint.combat?.currentHp ?? 0)
+  })
+
+  it('Stalwart prevents Ability-driven target changes and interceptions', () => {
+    const cases = [
+      { moveName: 'Thunder Shock', providerAbility: 'Lightning Rod', reasonCode: 'ability.lightning-rod.optional-redirection' },
+      { moveName: 'Water Gun', providerAbility: 'Storm Drain', reasonCode: 'ability.storm-drain.optional-redirection' },
+      { moveName: 'Tackle', providerAbility: 'Bodyguard', reasonCode: 'ability.bodyguard.optional-redirection' },
+    ] as const
+    for (const testCase of cases) {
+      const result = complete({
+        state: fixture({
+          actorAbilities: ['Stalwart'], actorMoves: [testCase.moveName],
+          targetAllyAbilities: [testCase.providerAbility],
+        }),
+        moveName: testCase.moveName,
+        choose: ({ options }) => options[0]?.id ?? null,
+      })
+      expect(result.seen.map(window => window.reasonCode)).not.toContain(testCase.reasonCode)
+    }
+  }, 30_000)
 
   it('RKS System changes only each accepting owner in one multi-target resolution', () => {
     const result = complete({
@@ -637,13 +877,74 @@ describe('AA-085 through AA-100 move conformance', () => {
     expect(result.plan.sheetWrites.some(write => write.slug === 'target-ally')).toBe(false)
   })
 
-  it('Thrust augments a handler-backed Attack-stat Move with its reviewed Push', () => {
-    const result = complete({
+  it('Thrust adds its default Push and extends a Move that already has Push', () => {
+    const added = complete({
       state: fixture({ actorAbilities: ['Thrust'], actorMoves: ['High Jump Kick'] }),
       moveName: 'High Jump Kick', random: () => 0.5, choose: () => null,
     })
-    expect(result.plan.nextMap.placements.find(placement => placement.id === 'target')?.position)
+    expect(added.plan.nextMap.placements.find(placement => placement.id === 'target')?.position)
       .toEqual({ x: 6, y: 0, z: 4 })
+
+    const extended = complete({
+      state: fixture({ actorAbilities: ['Thrust'], actorMoves: ['Tackle'] }),
+      moveName: 'Tackle', random: () => 0.5, choose: () => null,
+    })
+    expect(extended.plan.nextMap.placements.find(placement => placement.id === 'target')?.position)
+      .toEqual({ x: 8, y: 0, z: 4 })
+  })
+
+  it('uses exact effective base and parameter-granted Regenerator instances with a once-per-Scene cap', () => {
+    const run = (state: ReturnType<typeof fixture>, operationId: string) => {
+      const placement = state.map.placements.find(candidate => candidate.id === 'actor')!
+      const actorSheet = state.pokemonSheets.get('actor')!
+      return applyAa085to100RegeneratorTrigger({
+        map: state.map,
+        placement,
+        sheet: actorSheet,
+        operationId,
+        trigger: 'take-a-breather',
+        maximumHp: 150,
+        abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
+      })
+    }
+
+    const baseState = fixture({ actorAbilities: ['Regenerator'], actorCurrentHp: 50 })
+    const base = run(baseState, 'op_regenerator_base')
+    expect(base.applied).toBe(true)
+    expect((base.sheet as CharacterSheet).combat?.currentHp).toBe(100)
+    expect((base.sheet as CharacterSheet).abilityUsage?.entries).toContainEqual(
+      expect.objectContaining({ abilityInstanceId: 'base:regenerator', canonicalId: 'Regenerator' }),
+    )
+    const capped = applyAa085to100RegeneratorTrigger({
+      map: base.map,
+      placement: baseState.map.placements.find(candidate => candidate.id === 'actor')!,
+      sheet: base.sheet,
+      operationId: 'op_regenerator_second',
+      trigger: 'recall',
+      maximumHp: 150,
+      abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
+    })
+    expect(capped.applied).toBe(false)
+
+    const grantedState = fixture({ actorCurrentHp: 50 })
+    grantedState.pokemonSheets.get('actor')!.abilities = [{
+      name: 'Serpent’s Mark',
+      automation: {
+        schemaVersion: 1,
+        instanceId: 'base:serpents-mark',
+        canonicalId: 'Serpent’s Mark',
+        definitionVersion: 1,
+        selections: [{ parameterId: 'pattern', optionIds: ['life'] }],
+      },
+    }]
+    const granted = run(grantedState, 'op_regenerator_granted')
+    expect(granted.applied).toBe(true)
+    expect((granted.sheet as CharacterSheet).abilityUsage?.entries).toContainEqual(
+      expect.objectContaining({
+        abilityInstanceId: 'base:serpents-mark:grant:life:0',
+        canonicalId: 'Regenerator',
+      }),
+    )
   })
 
   it('Defense Curl directly applies its complete reviewed state and action payment', () => {
@@ -921,6 +1222,247 @@ describe('AA-085 through AA-100 move conformance', () => {
     expect(passed.plan.nextMap.encounterState?.turnResources.target?.actions.free.spent).toBe(0)
   }, 30_000)
 
+  it('Vigor binds to a reviewed Endure trigger, heals after reaching 1 HP, and consumes the shield', () => {
+    const accepted = complete({
+      state: withEndure(fixture({
+        actorMoves: ['Tackle'], targetAbilities: ['Vigor'], targetCurrentHp: 20,
+      })),
+      moveName: 'Tackle', random: () => 0.95,
+      choose: ({ reasonCode, options }) => reasonCode === AA097_VIGOR_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(accepted.seen.map(window => window.reasonCode)).toContain(AA097_VIGOR_REASON)
+    expect(nextSheet(accepted, 'target').combat?.currentHp).toBeGreaterThan(1)
+    expect(accepted.plan.nextMap.encounterState?.effects.map(effect => effect.id))
+      .not.toContain('move.endure.marker.target')
+    expect(accepted.plan.nextMap.encounterState?.turnResources.target?.actions.free.spent).toBe(1)
+    expect(nextSheet(accepted, 'target').abilityUsage?.entries).toContainEqual(expect.objectContaining({
+      canonicalId: 'Vigor', clauseId: 'base', spent: 1, limit: 1,
+    }))
+
+    const declined = complete({
+      state: withEndure(fixture({
+        actorMoves: ['Tackle'], targetAbilities: ['Vigor'], targetCurrentHp: 20,
+      })),
+      moveName: 'Tackle', random: () => 0.95, choose: () => null,
+    })
+    expect(nextSheet(declined, 'target').combat?.currentHp).toBe(1)
+
+    const forged = complete({
+      state: withEndure(fixture({
+        actorMoves: ['Tackle'], targetAbilities: ['Vigor'], targetCurrentHp: 20,
+      }), 'forged'),
+      moveName: 'Tackle', random: () => 0.95, choose: () => null,
+    })
+    expect(forged.seen.map(window => window.reasonCode)).not.toContain(AA097_VIGOR_REASON)
+    expect(nextSheet(forged, 'target').combat?.currentHp).toBeLessThanOrEqual(0)
+
+    const heavyState = (): ReturnType<typeof fixture> => {
+      const state = withEndure(fixture({
+        actorMoves: ['Tackle'], targetAbilities: ['Vigor'], targetCurrentHp: 150,
+      }))
+      const actor = state.pokemonSheets.get('actor')!
+      state.pokemonSheets.set('actor', {
+        ...actor,
+        stats: { ...actor.stats!, atk: { ...actor.stats!.atk, added: 500 } },
+      })
+      return state
+    }
+    const heavyDeclined = complete({
+      state: heavyState(), moveName: 'Tackle', random: () => 0.95, choose: () => null,
+    })
+    const heavyAccepted = complete({
+      state: heavyState(), moveName: 'Tackle', random: () => 0.95,
+      choose: ({ reasonCode, options }) => reasonCode === AA097_VIGOR_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(nextSheet(heavyDeclined, 'target').combat?.injuries).toBeGreaterThan(0)
+    expect(nextSheet(heavyAccepted, 'target').combat?.injuries)
+      .toBe((nextSheet(heavyDeclined, 'target').combat?.injuries ?? 0) - 1)
+
+    const multi = complete({
+      state: withEndure(fixture({
+        actorMoves: ['Fury Swipes'], targetAbilities: ['Vigor'], targetCurrentHp: 20,
+      })),
+      moveName: 'Fury Swipes', random: () => 0.95,
+      choose: ({ reasonCode, options }) => reasonCode === AA097_VIGOR_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(multi.seen.map(window => window.reasonCode)).toContain(AA097_VIGOR_REASON)
+    expect(nextSheet(multi, 'target').combat?.currentHp).toBeGreaterThan(1)
+    expect(multi.plan.nextMap.encounterState?.effects.map(effect => effect.id))
+      .not.toContain('move.endure.marker.target')
+  }, 30_000)
+
+  it('Spinning Dance triggers only on a miss while able to act and allows declining its optional Shift', () => {
+    const danced = complete({
+      state: fixture({ actorMoves: ['Tackle'], targetAbilities: ['Spinning Dance'] }),
+      moveName: 'Tackle', random: () => 0,
+      choose: ({ reasonCode, options }) => reasonCode === AA091_SPINNING_DANCE_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(danced.seen.map(window => window.reasonCode)).toContain(AA091_SPINNING_DANCE_REASON)
+    expect(danced.plan.nextMap.placements.find(placement => placement.id === 'target')?.position)
+      .toEqual({ x: 5, y: 0, z: 4 })
+    expect(danced.plan.nextMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      kind: 'numeric-modifier',
+      affected: expect.objectContaining({ placementIds: ['target'] }),
+      tags: expect.arrayContaining(['aa091-spinning-dance-evasion']),
+      payload: expect.objectContaining({ attribute: 'evasion', operation: 'add', value: 1 }),
+    }))
+    expect(danced.plan.nextMap.encounterState?.turnResources.target?.actions.free.spent).toBe(1)
+
+    for (const condition of ['Paralysis', 'Sleep', 'Bad Sleep']) {
+      const blocked = complete({
+        state: fixture({
+          actorMoves: ['Tackle'], targetAbilities: ['Spinning Dance'], targetConditions: [condition],
+        }),
+        moveName: 'Tackle', random: () => 0, choose: () => null,
+      })
+      expect(blocked.seen.map(window => window.reasonCode)).not.toContain(AA091_SPINNING_DANCE_REASON)
+    }
+    const hit = complete({
+      state: fixture({ actorMoves: ['Tackle'], targetAbilities: ['Spinning Dance'] }),
+      moveName: 'Tackle', random: () => 0.95, choose: () => null,
+    })
+    expect(hit.seen.map(window => window.reasonCode)).not.toContain(AA091_SPINNING_DANCE_REASON)
+  }, 30_000)
+
+  it('Wind Power makes its owner unaffected and optionally invokes Charge, including lethal multi-hit attacks', () => {
+    const accepted = complete({
+      state: fixture({
+        actorMoves: ['Peck'], targetAbilities: ['Wind Power'], targetMoves: ['Charge'],
+      }),
+      moveName: 'Peck',
+      choose: ({ reasonCode, options }) => reasonCode === AA099_WIND_POWER_REASON
+        ? options.find(option => option.id === AA099_WIND_POWER_CHARGE_OPTION_ID)?.id ?? null
+        : null,
+    })
+    expect(accepted.seen.map(window => window.reasonCode)).toContain(AA099_WIND_POWER_REASON)
+    expect(nextSheet(accepted, 'target').combat?.currentHp).toBe(150)
+    expect(nextSheet(accepted, 'target').stats?.sdef?.stage).toBe(1)
+    expect(accepted.plan.nextMap.encounterState?.turnResources.target?.actions.free.spent).toBe(1)
+    expect(accepted.plan.nextMap.encounterState?.abilityUsage?.entries).toContainEqual(expect.objectContaining({
+      ownerId: 'target', canonicalId: 'Wind Power', spent: 1, limit: 1,
+    }))
+
+    const multi = complete({
+      state: fixture({
+        actorMoves: ['Dual Wingbeat'], targetAbilities: ['Wind Power'], targetMoves: ['Charge'],
+        targetCurrentHp: 1,
+      }),
+      moveName: 'Dual Wingbeat',
+      choose: ({ reasonCode, options }) => reasonCode === AA099_WIND_POWER_REASON
+        ? options.find(option => option.id === AA099_WIND_POWER_CHARGE_OPTION_ID)?.id ?? null
+        : null,
+    })
+    expect(multi.seen.map(window => window.reasonCode)).toContain(AA099_WIND_POWER_REASON)
+    expect(nextSheet(multi, 'target').combat?.currentHp).toBe(1)
+    expect(nextSheet(multi, 'target').stats?.sdef?.stage).toBe(1)
+    expect(multi.plan.sheetWrites.filter(write => write.slug === 'target')).toHaveLength(1)
+
+    const chargeSpentState = fixture({
+      actorMoves: ['Peck'], targetAbilities: ['Wind Power'], targetMoves: ['Charge'],
+    })
+    chargeSpentState.map = {
+      ...chargeSpentState.map,
+      moveUsage: {
+        scene: { name: 'Scene', startedAt: 1 },
+        byPlacementId: {
+          target: {
+            charge: {
+              moveName: 'Charge', frequency: 'eot', uses: 1,
+              lastUsedRound: 1, updatedAt: 1,
+            },
+          },
+        },
+      },
+    }
+    const immunityOnly = complete({
+      state: chargeSpentState,
+      moveName: 'Peck',
+      choose: ({ reasonCode, options }) => reasonCode === AA099_WIND_POWER_REASON
+        ? options.find(option => option.id === AA099_WIND_POWER_IMMUNITY_OPTION_ID)?.id ?? null
+        : null,
+    })
+    const windWindow = immunityOnly.seen.find(window => window.reasonCode === AA099_WIND_POWER_REASON)
+    expect(windWindow?.optionIds).toEqual([AA099_WIND_POWER_IMMUNITY_OPTION_ID])
+    expect(immunityOnly.plan.sheetWrites.some(write => write.slug === 'target')).toBe(false)
+    expect(immunityOnly.plan.nextMap.encounterState?.abilityUsage?.entries).toContainEqual(
+      expect.objectContaining({ ownerId: 'target', canonicalId: 'Wind Power', spent: 1 }),
+    )
+  }, 30_000)
+
+  it('composes target terrain into Sol Veil evasion for single- and multi-hit accuracy', () => {
+    const state = (move: string, grassy: boolean): ReturnType<typeof fixture> => {
+      const result = fixture({ actorMoves: [move], targetAbilities: ['Sol Veil'] })
+      if (grassy) result.map = {
+        ...result.map,
+        fieldEffects: {
+          ...(result.map.fieldEffects ?? { weather: [], terrains: [], rooms: [] }),
+          terrains: [{ kind: 'grassy', rounds: 5, scope: 'field' }],
+        },
+      }
+      return result
+    }
+    const clear = complete({
+      state: state('Tackle', false), moveName: 'Tackle', random: () => 0.35, choose: () => null,
+    })
+    const grass = complete({
+      state: state('Tackle', true), moveName: 'Tackle', random: () => 0.35, choose: () => null,
+    })
+    expect(nextSheet(clear, 'target').combat?.currentHp).toBeLessThan(150)
+    expect(grass.plan.sheetWrites.some(write => write.slug === 'target')).toBe(false)
+
+    const clearMulti = complete({
+      state: state('Fury Swipes', false),
+      moveName: 'Fury Swipes', random: () => 0.5, choose: () => null,
+    })
+    const grassMulti = complete({
+      state: state('Fury Swipes', true),
+      moveName: 'Fury Swipes', random: () => 0.5, choose: () => null,
+    })
+    expect(nextSheet(clearMulti, 'target').combat?.currentHp).toBeLessThan(150)
+    expect(grassMulti.plan.sheetWrites.some(write => write.slug === 'target')).toBe(false)
+  }, 30_000)
+
+  it('Unaware ignores positive defensive and Speed stages for single- and multi-hit accuracy', () => {
+    const stagedState = (actorAbilities: readonly string[], move: string): ReturnType<typeof fixture> => {
+      const state = fixture({ actorAbilities, actorMoves: [move] })
+      const target = state.pokemonSheets.get('target')!
+      state.pokemonSheets.set('target', {
+        ...target,
+        stats: {
+          ...target.stats!,
+          def: { ...target.stats!.def, added: 0, stage: 6 },
+          sdef: { ...target.stats!.sdef, added: 0, stage: 6 },
+          spd: { ...target.stats!.spd, added: 0, stage: 6 },
+        },
+      })
+      return state
+    }
+    const ordinary = complete({
+      state: stagedState([], 'Tackle'), moveName: 'Tackle', random: () => 0.1, choose: () => null,
+    })
+    const unaware = complete({
+      state: stagedState(['Unaware'], 'Tackle'),
+      moveName: 'Tackle', random: () => 0.1, choose: () => null,
+    })
+    expect(ordinary.plan.sheetWrites.some(write => write.slug === 'target')).toBe(false)
+    expect(nextSheet(unaware, 'target').combat?.currentHp).toBeLessThan(150)
+
+    const ordinaryMulti = complete({
+      state: stagedState([], 'Fury Swipes'),
+      moveName: 'Fury Swipes', random: () => 0.25, choose: () => null,
+    })
+    const unawareMulti = complete({
+      state: stagedState(['Unaware'], 'Fury Swipes'),
+      moveName: 'Fury Swipes', random: () => 0.25, choose: () => null,
+    })
+    expect(ordinaryMulti.plan.sheetWrites.some(write => write.slug === 'target')).toBe(false)
+    expect(nextSheet(unawareMulti, 'target').combat?.currentHp).toBeLessThan(150)
+  }, 30_000)
+
   it('enforces Wonder Guard only while the owner has a weakness and permits Super-Effective attacks', () => {
     const neutral = complete({
       state: fixture({
@@ -929,6 +1471,14 @@ describe('AA-085 through AA-100 move conformance', () => {
       moveName: 'Tackle', choose: () => null,
     })
     expect(neutral.plan.sheetWrites.some(write => write.slug === 'target')).toBe(false)
+
+    const secondary = complete({
+      state: fixture({
+        actorMoves: ['Fire Fang'], targetAbilities: ['Wonder Guard'], targetTypes: ['Normal'],
+      }),
+      moveName: 'Fire Fang', random: () => 0.95, choose: () => null,
+    })
+    expect(secondary.plan.sheetWrites.some(write => write.slug === 'target')).toBe(false)
 
     const superEffective = complete({
       state: fixture({
@@ -1035,6 +1585,10 @@ describe('AA-085 through AA-100 move conformance', () => {
     expect(result.plan.resolution.auditTrace.events).toContainEqual(expect.objectContaining({
       kind: 'operation', reasonCode: AA089_SHELL_CANNON_REASON, outcome: 'applied',
     }))
+    // Shell Cannon increases the user's charge speeds; it must never enlarge
+    // Tackle's separate forced Push operation.
+    expect(result.plan.nextMap.placements.find(placement => placement.id === 'target')?.position)
+      .toEqual({ x: 7, y: 0, z: 4 })
 
     const bent = fixture({
       actorSpecies: 'Blastoise', actorAbilities: ['Shell Cannon'], actorMoves: ['Tackle'],
@@ -1405,6 +1959,23 @@ describe('AA-085 through AA-100 move conformance', () => {
     }
   }, 30_000)
 
+  it('defers ordinary hit reactions until same-resolution faint suppression is known', () => {
+    const run = (targetCurrentHp: number) => complete({
+      state: fixture({ targetAbilities: ['Static'], targetCurrentHp }),
+      moveName: 'Tackle',
+      random: () => 0.95,
+      choose: ({ options }) => options[0]?.id ?? null,
+    })
+    const surviving = run(150)
+    expect(surviving.seen.map(window => window.reasonCode)).toContain('ability.static.optional-paralysis')
+    expect(nextSheet(surviving, 'actor').combat?.conditions).toContain('Paralysis')
+
+    const fainted = run(1)
+    expect(fainted.seen.map(window => window.reasonCode)).not.toContain('ability.static.optional-paralysis')
+    expect((fainted.plan.sheetWrites.find(write => write.slug === 'actor')?.nextSheet as CharacterSheet | undefined)
+      ?.combat?.conditions ?? []).not.toContain('Paralysis')
+  })
+
   it('suppresses Soul Heart when its exact owner also Faints in the triggering resolution', () => {
     const result = complete({
       state: fixture({
@@ -1450,6 +2021,365 @@ describe('AA-085 through AA-100 move conformance', () => {
           sourcePlacementId: 'target',
         })],
       }),
+    }))
+  }, 30_000)
+
+  it('Ragelope, Silk Threads, and Ugly bind their static riders to the reviewed hit', () => {
+    const ragelope = complete({
+      state: fixture({
+        actorAbilities: ['Ragelope'], actorMoves: ['Tackle'], actorConditions: [],
+      }),
+      moveName: 'Tackle', random: () => 0.95, choose: () => null,
+    })
+    expect(nextSheet(ragelope, 'actor').combat?.conditions).toContain('Rage')
+    expect(nextSheet(ragelope, 'actor').stats?.spd?.stage).toBe(1)
+
+    const silk = complete({
+      state: fixture({ actorAbilities: ['Silk Threads'], actorMoves: ['String Shot'] }),
+      moveName: 'String Shot', random: () => 0.95, choose: () => null,
+      selection: { kind: 'area', areaTemplateId: 'cone:any:2', direction: 'east' },
+    })
+    expect(silk.plan.resolution.auditTrace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'operation', reasonCode: 'ability.silk-threads.slowed', outcome: 'applied',
+        recipientIds: ['target'],
+      }),
+      expect.objectContaining({
+        kind: 'operation', reasonCode: 'ability.silk-threads.vulnerable', outcome: 'applied',
+        recipientIds: ['target'],
+      }),
+    ]))
+
+    const ugly = complete({
+      state: fixture({ actorAbilities: ['Ugly'], actorMoves: ['Tackle'] }),
+      moveName: 'Tackle', random: () => 0.95, choose: () => null,
+    })
+    expect(nextSheet(ugly, 'target').combat?.conditions).toContain('Flinch')
+  }, 30_000)
+
+  it('Water Absorb, Windveiled, Rough Skin, Water Compaction, and Weak Armor use exact hit evidence', () => {
+    const absorbed = complete({
+      state: fixture({
+        actorMoves: ['Water Gun'], targetAbilities: ['Water Absorb'], targetCurrentHp: 100,
+      }),
+      moveName: 'Water Gun', choose: () => null,
+    })
+    expect(nextSheet(absorbed, 'target').combat?.currentHp).toBeGreaterThan(100)
+
+    const windveiled = complete({
+      state: fixture({ actorMoves: ['Gust'], targetAbilities: ['Windveiled'] }),
+      moveName: 'Gust', choose: () => null,
+    })
+    expect(nextSheet(windveiled, 'target').stats?.spd?.stage).toBe(1)
+
+    const roughSkin = complete({
+      state: fixture({ actorMoves: ['Tackle'], targetAbilities: ['Rough Skin'] }),
+      moveName: 'Tackle',
+      choose: ({ reasonCode, options }) => reasonCode === 'ability.rough-skin.optional-hp-loss'
+        ? options[0]?.id ?? null : null,
+    })
+    expect(nextSheet(roughSkin, 'actor').combat?.currentHp).toBeLessThan(150)
+
+    const compacted = complete({
+      state: fixture({ actorMoves: ['Water Gun'], targetAbilities: ['Water Compaction'] }),
+      moveName: 'Water Gun',
+      choose: ({ reasonCode, options }) => reasonCode === AA098_WATER_COMPACTION_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(nextSheet(compacted, 'target').stats?.def?.stage).toBe(2)
+
+    const weakArmor = complete({
+      state: fixture({ actorMoves: ['Tackle'], targetAbilities: ['Weak Armor'] }),
+      moveName: 'Tackle',
+      choose: ({ reasonCode, options }) => reasonCode === AA098_WEAK_ARMOR_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(nextSheet(weakArmor, 'target').stats?.def?.stage).toBe(-1)
+    expect(nextSheet(weakArmor, 'target').stats?.spd?.stage).toBe(1)
+  }, 30_000)
+
+  it('Skill Link, Solar Power, Sumo Stance, and Tingle commit their reviewed costs and effects', () => {
+    const linked = complete({
+      state: fixture({ actorAbilities: ['Skill Link'], actorMoves: ['Bullet Seed'] }),
+      moveName: 'Bullet Seed',
+      choose: ({ reasonCode, options }) => reasonCode === AA089_SKILL_LINK_REASON
+        ? options[0]?.id ?? null : null,
+      random: () => 0.5,
+    })
+    expect(linked.seen.map(window => window.reasonCode)).toContain(AA089_SKILL_LINK_REASON)
+    expect(nextSheet(linked, 'target').combat?.currentHp).toBe(100)
+    expect(linked.plan.resolution.auditTrace.events).toContainEqual(expect.objectContaining({
+      kind: 'operation', operationId: 'bullet-seed.multi-hit',
+      result: expect.objectContaining({ totalAttemptedHitCount: 5 }),
+    }))
+
+    const solar = complete({
+      state: fixture({ actorAbilities: ['Solar Power'], actorMoves: ['Tackle'] }),
+      moveName: 'Tackle',
+      choose: ({ reasonCode, options }) => reasonCode === AA090_SOLAR_POWER_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(nextSheet(solar, 'actor').combat?.currentHp).toBeLessThan(150)
+    expect(solar.plan.resolution.auditTrace.events).toContainEqual(expect.objectContaining({
+      kind: 'operation', operationId: 'tackle.damage',
+      input: expect.objectContaining({
+        preTypeDamageModifiers: expect.arrayContaining([
+          expect.objectContaining({ reasonCode: 'ability.solar-power.damage' }),
+        ]),
+      }),
+    }))
+
+    const sumo = complete({
+      state: fixture({ actorAbilities: ['Sumo Stance'], actorMoves: ['Tackle'] }),
+      moveName: 'Tackle',
+      choose: ({ reasonCode, options }) => reasonCode === AA093_SUMO_STANCE_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(sumo.plan.nextMap.placements.find(placement => placement.id === 'target')?.position)
+      .not.toEqual({ x: 5, y: 0, z: 4 })
+    expect(sumo.plan.nextMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      tags: expect.arrayContaining(['aa093-sumo-push-immunity']),
+    }))
+
+    const tingle = complete({
+      state: fixture({ actorAbilities: ['Tingle'], actorMoves: ['Tackle'] }),
+      moveName: 'Tackle',
+      choose: ({ reasonCode, options }) => reasonCode === AA095_TINGLE_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(tingle.seen.map(window => window.reasonCode)).toContain(AA095_TINGLE_REASON)
+    expect(tingle.plan.nextMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      affected: { placementIds: ['target'], sideIds: [], cells: [] },
+      tags: expect.arrayContaining(['aa095-tingle-damage-penalty']),
+    }))
+  }, 30_000)
+
+  it('Refreshing Veil, Sound Lance, Soothing Tone, and Wistful Melody affect exact recipients', () => {
+    const refreshing = complete({
+      state: fixture({
+        actorAbilities: ['Refreshing Veil'], actorMoves: ['Aqua Ring'],
+        actorConditions: ['Poisoned'],
+      }),
+      moveName: 'Aqua Ring', selection: { kind: 'self' },
+      choose: ({ reasonCode, options }) => reasonCode === 'ability.refreshing-veil.optional-cure'
+        ? options[0]?.id ?? null : null,
+    })
+    expect(nextSheet(refreshing, 'actor').combat?.conditions).not.toContain('Poisoned')
+
+    const lance = complete({
+      state: fixture({ actorAbilities: ['Sound Lance'], actorMoves: ['Supersonic'] }),
+      moveName: 'Supersonic',
+      choose: ({ reasonCode, options }) => reasonCode === 'ability.sound-lance.optional-hp-loss'
+        ? options[0]?.id ?? null : null,
+    })
+    expect(lance.seen.map(window => window.reasonCode))
+      .toContain('ability.sound-lance.optional-hp-loss')
+    expect(nextSheet(lance, 'target').combat?.currentHp).toBeLessThan(150)
+
+    const soothing = complete({
+      state: fixture({
+        actorAbilities: ['Soothing Tone'], actorMoves: ['Helping Hand'], targetSideId: 'heroes',
+      }),
+      moveName: 'Helping Hand', choose: () => null,
+    })
+    expect(soothing.plan.nextMap.temporaryHitPoints?.byPlacementId.target).toBeGreaterThan(0)
+    expect(soothing.plan.nextMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      affected: { placementIds: ['target'], sideIds: [], cells: [] },
+      tags: expect.arrayContaining(['aa090-soothing-tone-used']),
+    }))
+
+    const wistful = complete({
+      state: fixture({ actorAbilities: ['Wistful Melody'], actorMoves: ['Sing'] }),
+      moveName: 'Sing', selection: { kind: 'area', areaTemplateId: 'burst:any:2' },
+      choose: ({ reasonCode, options }) => reasonCode === AA099_WISTFUL_MELODY_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(nextSheet(wistful, 'target').stats?.atk?.stage).toBe(-2)
+    expect(nextSheet(wistful, 'target').stats?.satk?.stage).toBe(-2)
+  }, 30_000)
+
+  it('Tingly Tongue and Tonguelash remain separate reviewed Lick branches', () => {
+    const result = complete({
+      state: fixture({
+        actorAbilities: ['Tingly Tongue', 'Tonguelash'], actorMoves: ['Lick'],
+      }),
+      moveName: 'Lick',
+      choose: ({ reasonCode, options }) => (
+        reasonCode === AA095_TINGLY_TONGUE_REASON || reasonCode === AA095_TONGUELASH_REASON
+      ) ? options[0]?.id ?? null : null,
+    })
+    expect(result.seen.map(window => window.reasonCode)).toEqual(expect.arrayContaining([
+      AA095_TINGLY_TONGUE_REASON, AA095_TONGUELASH_REASON,
+    ]))
+    expect(nextSheet(result, 'target').combat?.conditions).toEqual(expect.arrayContaining([
+      'Paralysis', 'Flinch',
+    ]))
+    expect(result.plan.nextMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      affected: { placementIds: ['target'], sideIds: [], cells: [] },
+      tags: expect.arrayContaining(['aa095-tingly-tongue-fail-next-paralysis-save']),
+    }))
+  }, 30_000)
+
+  it('Spray Down grounds the exact airborne ranged target and suppresses its movement sources', () => {
+    const state = fixture({
+      actorAbilities: ['Spray Down'], actorMoves: ['Water Gun'],
+      targetPosition: { x: 5, y: 2, z: 4 },
+    })
+    const target = state.pokemonSheets.get('target')!
+    state.pokemonSheets.set('target', {
+      ...target,
+      capabilities: { ...target.capabilities!, sky: 6, levitate: 4 },
+    })
+    const result = complete({
+      state, moveName: 'Water Gun',
+      choose: ({ reasonCode, options }) => reasonCode === AA091_SPRAY_DOWN_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(result.plan.nextMap.placements.find(placement => placement.id === 'target')?.position.y).toBe(0)
+    expect(result.plan.nextMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      affected: { placementIds: ['target'], sideIds: [], cells: [] },
+      tags: expect.arrayContaining(['aa091-spray-down-grounded']),
+    }))
+  }, 30_000)
+
+  it('Stance Change follows reviewed damaging Moves for Aegislash without a client-authored form', () => {
+    const result = complete({
+      state: fixture({
+        actorAbilities: ['Stance Change'], actorMoves: ['Tackle'], actorSpecies: 'Aegislash',
+      }),
+      moveName: 'Tackle', choose: () => null,
+    })
+    expect(result.plan.nextMap.encounterState?.effects).toContainEqual(expect.objectContaining({
+      affected: { placementIds: ['actor'], sideIds: [], cells: [] },
+      tags: expect.arrayContaining(['aa092-stance-change-sword']),
+    }))
+  }, 30_000)
+
+  it('Steelworker uses an exact adjacent Anchor and pays its Scene Free Action', () => {
+    const anchoredState = () => {
+      const state = fixture({ actorMoves: ['Tackle'], targetAbilities: ['Steelworker'] })
+      const encounter = state.map.encounterState!
+      state.map = {
+        ...state.map,
+        encounterState: {
+          ...encounter,
+          abilityEntities: {
+            schemaVersion: 1,
+            receipts: [],
+            entries: [{
+              entityId: 'entity.steelworker-anchor', version: 1, kind: 'anchor',
+              labelKey: 'ability.anchored.anchor', ownerPlacementId: 'target',
+              sourceAbilityInstanceId: 'base:anchored', canonicalId: 'Anchored',
+              sourceOperationId: 'ability.anchored.create-anchor',
+              controller: { kind: 'source-controller', id: 'target' }, sideId: 'foes',
+              position: { x: 5, y: 0, z: 5 }, base: 1, clearance: 1,
+              occupancy: 'blocking', targetability: 'targetable', movementMode: 'fixed',
+              movementSpeed: 0, maximumHp: null, currentHp: null, damageReduction: null,
+              duration: { kind: 'source-ability' }, tags: ['aa060-anchored', 'anchor'],
+              payload: {
+                kind: 'anchor', anchorKind: 'aa060.anchored',
+                anchoredPlacementIds: ['target'], preventedMovementModes: [],
+              },
+              createdOperationId: 'ability.anchored.create-anchor',
+              lastOperationId: 'ability.anchored.create-anchor',
+            }],
+          },
+        },
+      }
+      return state
+    }
+    const accepted = complete({
+      state: anchoredState(), moveName: 'Tackle',
+      choose: ({ reasonCode, options }) => reasonCode === AA092_STEELWORKER_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    const declined = complete({ state: anchoredState(), moveName: 'Tackle', choose: () => null })
+    expect(accepted.seen.map(window => window.reasonCode)).toContain(AA092_STEELWORKER_REASON)
+    expect(nextSheet(accepted, 'target').combat?.currentHp)
+      .toBeGreaterThan(nextSheet(declined, 'target').combat?.currentHp ?? 0)
+    expect(accepted.plan.nextMap.encounterState?.turnResources.target?.actions.free.spent).toBe(1)
+    expect(accepted.plan.nextMap.encounterState?.abilityUsage?.entries).toContainEqual(
+      expect.objectContaining({ ownerId: 'target', canonicalId: 'Steelworker', spent: 1 }),
+    )
+  }, 30_000)
+
+  it('Wash Away resets exact hit targets and removes every Coat except Water Sport', () => {
+    const state = fixture({ actorAbilities: ['Wash Away'], actorMoves: ['Water Gun'] })
+    const target = state.pokemonSheets.get('target')!
+    state.pokemonSheets.set('target', {
+      ...target,
+      stats: {
+        ...target.stats,
+        atk: { ...target.stats!.atk, stage: 3 },
+        def: { ...target.stats!.def, stage: -2 },
+      },
+      combatStages: { ...target.combatStages, atk: 3, def: -2 },
+    })
+    const coat = (input: { readonly id: string; readonly waterSport: boolean }) => parseEncounterEffect({
+      id: input.id,
+      kind: 'capability',
+      source: {
+        operationId: `${input.id}.operation`,
+        moveId: input.waterSport ? 'move.water-sport' : 'move.aqua-ring',
+        placementId: 'target',
+      },
+      affected: { placementIds: ['target'], sideIds: [], cells: [] },
+      createdRound: 1, createdTurn: 1,
+      duration: { kind: 'scene', remaining: null }, stacks: 1, charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null },
+      tags: ['coat', input.waterSport ? 'water-sport' : 'aqua-ring'],
+      payload: {
+        capabilityId: input.waterSport ? 'water-sport-coat' : 'aqua-ring-coat',
+        action: 'grant',
+      },
+      dispel: { policy: 'matching-tags', tags: ['coat'] }, transferPolicy: 'expire',
+      suppression: { sources: [] },
+    })
+    state.map = {
+      ...state.map,
+      encounterState: {
+        ...state.map.encounterState!,
+        effects: [
+          ...state.map.encounterState!.effects,
+          coat({ id: 'effect.aqua-ring.coat.target', waterSport: false }),
+          coat({ id: 'effect.water-sport.coat.target', waterSport: true }),
+        ],
+      },
+    }
+    const result = complete({
+      state, moveName: 'Water Gun',
+      choose: ({ reasonCode, options }) => reasonCode === AA098_WASH_AWAY_REASON
+        ? options[0]?.id ?? null : null,
+    })
+    expect(result.seen.map(window => window.reasonCode)).toContain(AA098_WASH_AWAY_REASON)
+    expect(nextSheet(result, 'target').stats?.atk?.stage).toBe(0)
+    expect(nextSheet(result, 'target').stats?.def?.stage).toBe(0)
+    const effectIds = result.plan.nextMap.encounterState?.effects.map(effect => effect.id) ?? []
+    expect(effectIds).not.toContain('effect.aqua-ring.coat.target')
+    expect(effectIds).toContain('effect.water-sport.coat.target')
+    expect(result.plan.nextMap.encounterState?.turnResources.actor?.actions.free.spent).toBe(1)
+    expect(nextSheet(result, 'actor').abilityUsage?.entries).toContainEqual(
+      expect.objectContaining({ canonicalId: 'Wash Away', spent: 1 }),
+    )
+  }, 30_000)
+
+  it('Voodoo Doll chooses one exact other Curse target and revalidates it before execution', () => {
+    const result = complete({
+      state: fixture({
+        actorAbilities: ['Voodoo Doll'], actorMoves: ['Curse'], actorTypes: ['Ghost'],
+        targetAllyAbilities: [],
+      }),
+      moveName: 'Curse',
+      selection: { kind: 'single-target', targetPlacementId: 'target' },
+      choose: ({ reasonCode, options }) => reasonCode === AA098_VOODOO_DOLL_REASON
+        ? options.find(option => option.id.includes('.target-ally'))?.id ?? null
+        : null,
+    })
+    expect(result.seen.map(window => window.reasonCode)).toContain(AA098_VOODOO_DOLL_REASON)
+    expect(result.plan.resolution.auditTrace.events).toContainEqual(expect.objectContaining({
+      kind: 'operation', operationId: 'curse.cursed', outcome: 'applied',
+      recipientIds: ['target', 'target-ally'],
     }))
   }, 30_000)
 

@@ -15,7 +15,6 @@ import {
   resolveStats,
   validateBaseRelations,
 } from '~/utils/sheets/pokemonDerived'
-import { computeSheetAbilityEvasionBonus } from '~/utils/sheetAbilityActivation'
 import { heldItemInitiativeBonus, heldItemSpeedEvasionBonus } from '~/utils/sheetHeldItemEffects'
 import {
   conditionAdjustedCombatStage,
@@ -206,7 +205,9 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     const vsAtkBonus = evasion?.vsAtkBonus ?? 0
     const vsSatkBonus = evasion?.vsSatkBonus ?? 0
     const vsAnyBonus = evasion?.vsAnyBonus ?? 0
-    const abilityBonus = computeSheetAbilityEvasionBonus(sheet.value?.abilities)
+    // Encounter-dependent Ability Evasion is projected by the authoritative
+    // live-play runtime, never by a persistent browser activation toggle.
+    const abilityBonus = 0
     const trainingBonus = activeTrainingFeatureEffects.value?.evasionBonus ?? 0
     const trainingBonusField = trainingBonus ? { trainingBonus } : {}
     const vsAnyItemBonus = heldItemSpeedEvasionBonus(sheet.value?.items?.held)

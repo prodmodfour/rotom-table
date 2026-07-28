@@ -46,6 +46,7 @@ const condition = (input: {
   readonly duration?: EncounterEffectDuration
   readonly accuracyMinimum?: number
   readonly action?: 'apply' | 'remove'
+  readonly applyTypeImmunity?: boolean
 }): MoveConditionEffectOperation => reviewedCondition({
   slug: input.slug, id: input.id, conditionId: input.conditionId,
   recipients: input.recipients ?? 'hit-targets', action: input.action,
@@ -57,7 +58,8 @@ const condition = (input: {
       trigger: { kind: 'range', minimum: input.accuracyMinimum },
     },
   } : {}),
-  applyTypeImmunity: (input.recipients ?? 'hit-targets') !== 'actor',
+  applyTypeImmunity: input.applyTypeImmunity
+    ?? (input.recipients ?? 'hit-targets') !== 'actor',
 })
 
 const clearConditions = (
@@ -334,7 +336,10 @@ const curse = (context: RegisteredMoveHandlerContext): readonly MoveEffectOperat
   ]
   return [
     reviewedDirectHp({ slug: 'curse', id: 'hp-cost', recipients: 'actor', calculation: { kind: 'percent-max', percent: 100 / 3 }, phase: 'pay', cost: { kind: 'cost', timing: 'declaration', minimumRemaining: null, damageOperationId: null } }),
-    condition({ slug: 'curse', id: 'cursed', conditionId: 'cursed', recipients: 'selected-targets', phase: 'hit', duration: { kind: 'scene', remaining: null } }),
+    condition({
+      slug: 'curse', id: 'cursed', conditionId: 'cursed', recipients: 'attacked-targets',
+      phase: 'hit', duration: { kind: 'scene', remaining: null }, applyTypeImmunity: false,
+    }),
     ...standardTerminalOperations('curse'),
   ]
 }
@@ -553,4 +558,4 @@ const run = (context: RegisteredMoveHandlerContext) => {
 }
 
 export const PERSISTENT_234_241_HANDLER_REGISTRATION: RegisteredMoveHandlerRegistration =
-  Object.freeze({ id: PERSISTENT_234_241_HANDLER_ID, version: 1, run })
+  Object.freeze({ id: PERSISTENT_234_241_HANDLER_ID, version: 2, run })

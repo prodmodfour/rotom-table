@@ -282,41 +282,30 @@ describe('live-play map token table action commands', () => {
     expect(events[0]).toMatchObject({ channel: 'map:arena', type: 'live-play-command-accepted' })
   })
 
-  it('updates ability target sheet state in the same accepted command transaction', async () => {
+  it('rejects the retired legacy ability command before reading or writing authoritative resources', async () => {
     const { deps, mapRepository, sheetRepository, events } = createDeps({ now: 2222 })
     const request = command(
       LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
       'op_actionabil',
       { placementId: 'actor', abilityName: 'Intimidate', targetPlacementId: 'target' },
-      [
-        tokenActionScope('actor'),
-        metadataScope,
-        sheetAbilityScope('sandile'),
-        sheetAbilityScope('target'),
-      ],
+      [tokenActionScope('actor'), metadataScope, sheetAbilityScope('sandile'), sheetAbilityScope('target')],
     )
 
-    const response = await executeLivePlayTableActionCommandUseCase({
+    await expect(executeLivePlayTableActionCommandUseCase({
       role: 'player',
       command: request,
       playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
       clientId: 'client-2',
       expectedType: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
-    }, deps)
+    }, deps)).rejects.toMatchObject({
+      statusCode: 410,
+      message: 'Legacy useAbility execution is retired; use the native Ability declaration and resolution routes.',
+    })
 
-    expect(response.result).toMatchObject({ ok: true, revision: 8 })
-    expect(response.action).toMatchObject({ type: 'ability', placementId: 'actor', targetPlacementId: 'target', name: 'Intimidate', category: 'map' })
-    expect(response.sheetUpdates).toHaveLength(1)
-    expect(response.sheetUpdates?.[0]).toMatchObject({ kind: 'pokemon', slug: 'target', sheet: { revision: 4, stats: { atk: { stage: 1 } } } })
-    expect((await mapRepository.getBySlug('arena'))?.metadata?.abilityLog).toMatchObject([
-      { at: 2222, userId: 'actor', abilityName: 'Intimidate', category: 'map' },
-    ])
-    expect((await sheetRepository.getByRef('pokemon', 'target'))?.sheet).toMatchObject({ revision: 4, stats: { atk: { stage: 1 } } })
-    expect(events).toEqual(expect.arrayContaining([
-      expect.objectContaining({ channel: 'sheet:pokemon:target', type: 'updated' }),
-      expect.objectContaining({ channel: 'sheets', type: 'updated' }),
-      expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted' }),
-    ]))
+    expect((await mapRepository.getBySlug('arena'))?.revision).toBe(7)
+    expect((await sheetRepository.getByRef('pokemon', 'target'))?.revision).toBe(3)
+    expect(events).toHaveLength(0)
+    expect(deps.now).not.toHaveBeenCalled()
   })
 
   it('replays duplicate opId table actions without applying effects twice', async () => {
@@ -347,78 +336,6 @@ describe('live-play map token table action commands', () => {
     expect(storedMap?.revision).toBe(8)
     expect(storedMap?.metadata?.orderLog).toHaveLength(1)
     expect(opRepository.listAcceptedOpsSinceRevision({ mapSlug: 'arena', baseRevision: 7, currentRevision: 8 })).toHaveLength(1)
-  })
-
-  it('rejects unlinked player table actions before advancing map or sheet revisions', async () => {
-    const { deps, mapRepository, sheetRepository } = createDeps()
-    const request = command(
-      LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
-      'op_actiondeny',
-      { placementId: 'actor', abilityName: 'Intimidate', targetPlacementId: 'target' },
-      [tokenActionScope('actor'), metadataScope, sheetAbilityScope('sandile'), sheetAbilityScope('target')],
-    )
-
-    const response = await executeLivePlayTableActionCommandUseCase({
-      role: 'player',
-      command: request,
-      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'unlinked' }]),
-      expectedType: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
-    }, deps)
-
-    expect(response.result).toMatchObject({ ok: false, reason: 'unauthorized', currentRevision: 7 })
-    expect((await mapRepository.getBySlug('arena'))?.revision).toBe(7)
-    expect((await sheetRepository.getByRef('pokemon', 'target'))?.revision).toBe(3)
-  })
-
-  it('rolls back the map, sheet updates, operation record, and realtime publish when an affected sheet is stale', async () => {
-    const { deps, mapRepository, sheetRepository, opRepository, events } = createDeps({ now: 4444 })
-    const staleSheetRepository = {
-      getByRef: sheetRepository.getByRef,
-      applyLivePlayUpdate: vi.fn((input: Parameters<typeof sheetRepository.applyLivePlayUpdate>[0]) => (
-        input.kind === 'pokemon' && input.slug === 'target'
-          ? 'stale' as const
-          : sheetRepository.applyLivePlayUpdate(input)
-      )),
-    }
-    const request = command(
-      LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
-      'op_actionstale',
-      { placementId: 'actor', abilityName: 'Intimidate', targetPlacementId: 'target' },
-      [
-        tokenActionScope('actor'),
-        metadataScope,
-        sheetAbilityScope('sandile'),
-        sheetAbilityScope('target'),
-      ],
-    )
-
-    const response = await executeLivePlayTableActionCommandUseCase({
-      role: 'gm',
-      command: request,
-      playerProfile: null,
-      expectedType: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
-    }, { ...deps, sheetRepository: staleSheetRepository })
-
-    expect(response.result).toMatchObject({
-      ok: false,
-      reason: 'persistence-failed',
-      currentRevision: 7,
-    })
-    expect(staleSheetRepository.applyLivePlayUpdate).toHaveBeenCalledWith(expect.objectContaining({
-      kind: 'pokemon',
-      slug: 'target',
-      expectedRevision: 3,
-    }))
-    expect((await mapRepository.getBySlug('arena'))).toMatchObject({
-      revision: 7,
-      metadata: { owner: 'gm' },
-    })
-    expect((await sheetRepository.getByRef('pokemon', 'target'))?.sheet).toMatchObject({
-      revision: 3,
-      stats: { atk: { stage: 2 } },
-    })
-    expect(opRepository.getOpRecord('arena', 'op_actionstale')).toBeNull()
-    expect(events).toHaveLength(0)
   })
 
   it('keeps GM table actions available on hidden maps through the command path', async () => {

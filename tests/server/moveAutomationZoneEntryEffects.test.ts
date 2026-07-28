@@ -103,6 +103,29 @@ const zone = (options: {
   })
 }
 
+const barrierZone = (): EncounterZone => {
+  const components = canonicalBattlefieldZoneComponents({ kind: 'barrier', effectId: 'barrier' })
+  return parseEncounterZone({
+    id: 'zone.barrier.screen-cleaner',
+    kind: 'barrier',
+    source: {
+      kind: 'operation',
+      operationId: 'operation.barrier.screen-cleaner',
+      moveId: 'barrier',
+      placementId: 'source',
+    },
+    sideId: 'red',
+    geometry: { kind: 'cells', cells: [{ x: 1, y: 0, z: 0 }] },
+    layer: 1,
+    duration: { kind: 'scene', remaining: null },
+    stacking: { kind: 'independent', maxLayers: null },
+    hooks: components.hooks,
+    modifiers: components.modifiers,
+    tags: ['move-zone', 'barrier', 'blocking-terrain'],
+    payload: { barrierId: 'barrier' },
+  })
+}
+
 const mapFixture = (options: {
   readonly zones?: readonly EncounterZone[]
   readonly mover?: SheetPlacement
@@ -336,6 +359,99 @@ describe('battlefield zone movement entry effects', () => {
       'triggered', 'guarded-once-per-movement',
     ])
     expect(suppressed.operations.length).toBeGreaterThan(0)
+  })
+
+  it('makes Screen Cleaner immune to crossed Hazards and destroys them', () => {
+    const cleaner = sheet(['Normal'], {
+      abilities: [{
+        name: 'Screen Cleaner',
+        automation: {
+          schemaVersion: 1,
+          instanceId: 'base:screen-cleaner',
+          canonicalId: 'Screen Cleaner',
+          definitionVersion: null,
+          selections: [],
+        },
+      }],
+    })
+    const map = mapFixture()
+    const resolved = movement(map, cleaner)
+    expect(resolved.cost).toBe(3)
+    expect(resolved.triggeringSteps.every(step => !step.slowCostApplied)).toBe(true)
+
+    const result = plan({ map, sheet: cleaner })
+    expect(result.operations).toContainEqual(expect.objectContaining({
+      kind: 'hazard',
+      reasonCode: 'ability.screen-cleaner.destroy-crossed-hazard',
+      payload: {
+        action: 'remove',
+        target: { kind: 'zone-id', zoneId: 'zone.hazard.spikes' },
+      },
+    }))
+    expect(result.currentEncounterState.zones).toEqual([])
+  })
+
+  it('treats crossed Blocking Hazards as Slow Terrain and destroys each segment', () => {
+    const cleaner = sheet(['Normal'], {
+      abilities: [{
+        name: 'Screen Cleaner',
+        automation: {
+          schemaVersion: 1,
+          instanceId: 'base:screen-cleaner',
+          canonicalId: 'Screen Cleaner',
+          definitionVersion: null,
+          selections: [],
+        },
+      }],
+    })
+    const map = mapFixture({ zones: [barrierZone()] })
+    const blocked = resolveMovement({
+      map,
+      sheets: sheets(),
+      placementId: 'mover',
+      mode: 'shift',
+      destination: { x: 3, y: 0, z: 0 },
+    })
+    expect(blocked).toMatchObject({ ok: false, reasonCode: 'movement-route-blocked' })
+
+    const resolved = movement(map, cleaner)
+    expect(resolved.cost).toBe(4)
+    expect(resolved.triggeringSteps.map(step => step.slowCostApplied)).toEqual([
+      true, false, false,
+    ])
+
+    const result = plan({ map, sheet: cleaner })
+    expect(result.operations).toContainEqual(expect.objectContaining({
+      kind: 'hazard',
+      reasonCode: 'ability.screen-cleaner.destroy-crossed-blocking-hazard',
+      payload: {
+        action: 'remove',
+        target: { kind: 'zone-id', zoneId: 'zone.barrier.screen-cleaner' },
+      },
+    }))
+    expect(result.currentEncounterState.zones).toEqual([])
+
+    const suppression = creatureRuleOverlayEncounterEffectFixture({
+      domain: 'ability', action: 'suppress', values: [],
+      referencePlacementId: null, suppressionScope: 'all',
+    })
+    const suppressedMap = mapFixture({ zones: [barrierZone()] })
+    suppressedMap.encounterState = {
+      ...suppressedMap.encounterState!,
+      effects: [{
+        ...suppression,
+        id: 'effect.screen-cleaner.suppressed',
+        affected: { placementIds: ['mover'], sideIds: [], cells: [] },
+      }],
+    }
+    const suppressed = resolveMovement({
+      map: suppressedMap,
+      sheets: sheets(cleaner),
+      placementId: 'mover',
+      mode: 'shift',
+      destination: { x: 3, y: 0, z: 0 },
+    })
+    expect(suppressed).toMatchObject({ ok: false, reasonCode: 'movement-route-blocked' })
   })
 
   it('fails enemy mechanics closed for source-side, unknown-side, and airborne movers', () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { resolveLoginRedirectTarget } from '~/utils/loginRedirect'
@@ -59,6 +59,9 @@ const chooseGmLogin = async () => {
 
 const choosePlayerLogin = async () => {
   loginAs('player')
+  // useCookie persists through a Vue watcher; let that cookie reach the browser
+  // before the authenticated profile-list request is issued.
+  await nextTick()
   await loadPlayerProfilesForLogin()
 }
 

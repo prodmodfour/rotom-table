@@ -122,6 +122,11 @@ const fixture = (teleporter?: number) => {
     placements,
     initiative: { activeId: 'actor', round: 1 },
     activeScene: { name: 'Scene', startedAt: 10 },
+    metadata: {
+      abilityTargetWillingness: [{
+        actorPlacementId: 'actor', targetPlacementId: 'ally', willingness: 'willing',
+      }],
+    },
     encounterState: {
       ...encounter,
       sides: {

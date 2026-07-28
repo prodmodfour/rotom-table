@@ -134,14 +134,18 @@ const buildContext = (options: {
   readonly candidatePlacementIds?: readonly string[]
   readonly selectedPlacementIds?: readonly string[]
   readonly actorTypes?: readonly string[]
+  readonly actorAbilities?: readonly string[]
   readonly targetCurrentHp?: number
   readonly bystanderCurrentHp?: number
 } = {}) => buildAuthoritativeMoveRulesContext({
   map: options.map ?? mapFixture(),
   pokemonSheets: new Map([
-    ['actor', pokemonSheet('actor', options.actorTypes
-      ? { types: [...options.actorTypes] }
-      : {})],
+    ['actor', pokemonSheet('actor', {
+      ...(options.actorTypes ? { types: [...options.actorTypes] } : {}),
+      ...(options.actorAbilities
+        ? { abilities: options.actorAbilities.map(name => ({ name })) }
+        : {}),
+    })],
     ['target', pokemonSheet('target', options.targetCurrentHp === undefined
       ? {}
       : { combat: { currentHp: options.targetCurrentHp } })],
@@ -1446,6 +1450,57 @@ describe('phased MoveSpec interpreter', () => {
     expect(traceEventsOfKind(result, 'operation')).toEqual([
       expect.objectContaining({ operationId: 'handler.contextual-log', outcome: 'applied' }),
     ])
+  })
+
+  it('rebuilds Ability overlays after a registered handler materializes its reviewed operations', () => {
+    const handlerRegistry = createRegisteredMoveHandlerRegistry([{
+      id: 'move.handler-backed-tackle',
+      version: 1,
+      run: () => ({
+        operations: [{
+          id: 'handler.tackle.damage',
+          kind: 'damage',
+          source: { kind: 'move', id: 'move.tackle' },
+          recipients: { kind: 'hit-targets' },
+          phase: 'damage',
+          reasonCode: 'move.tackle.damage',
+          payload: {
+            damageClass: 'physical',
+            damageBase: 1,
+            moveType: 'normal',
+            accuracyRollId: null,
+            criticalRollId: null,
+          },
+        }],
+        traceEntries: [],
+      }),
+    }])
+    const spec = baseSpec()
+    spec.canonicalId = 'Tackle'
+    spec.targeting = {
+      kind: 'single-target',
+      minTargets: 1,
+      maxTargets: 1,
+      selector: { kind: 'selected-targets' },
+    }
+    spec.registeredHandlerId = 'move.handler-backed-tackle'
+
+    const result = executeMoveSpec({
+      definition: definitionFor(spec, handlerRegistry),
+      context: buildContext({ actorAbilities: ['Thrust'] }),
+      handlerRegistry,
+      serverAbilityOverlayOperations: [],
+    })
+
+    expect(result.kind).toBe('complete')
+    expect(result.operations.map(entry => entry.operation)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'handler.tackle.damage', kind: 'damage' }),
+      expect.objectContaining({
+        kind: 'movement-request',
+        source: { kind: 'operation', id: 'handler.tackle.damage' },
+        reasonCode: 'ability.thrust.push',
+      }),
+    ]))
   })
 
   it('enforces one combined operation budget before handler operations can run', () => {

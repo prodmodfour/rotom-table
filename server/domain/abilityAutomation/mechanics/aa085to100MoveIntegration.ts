@@ -13,6 +13,7 @@ import type {
   MoveReactionRequestEffectOperation,
   MoveRollEffectOperation,
   MoveTemporaryEffectOperation,
+  MoveTableRollEffectPayload,
 } from '#shared/moveAutomation/effects'
 import { parseMoveEffectOperation } from '#shared/moveAutomation/effects'
 import type { PokemonTypeId } from '#shared/pokemonTypes'
@@ -32,8 +33,10 @@ import type { MoveSpecResponseResolver } from '../../moveAutomation/responses'
 import { planMoveUsageTransition } from '../../planMoveUsageTransition'
 import { activelyCommandingTrainerPlacementId } from '../../moveAutomation/activePokemonCommands'
 import { reviewedNestedMoveInvocationAvailable } from '../../moveAutomation/reviewedNestedMoveTargeting'
+import { authoritativeActiveEndureEffect } from '../../moveAutomation/endure'
 import { abilityIsCopyable, abilityIsTransferable } from '../effectiveAbilities'
 import { abilityRequiresInstanceParameters } from '../instanceParameters'
+import { configuredAbilityTargetIsWilling } from '../targeting'
 import { aa085to100StraightLineMovementToward } from './aa085to100StaticIntegration'
 
 export const AA085TO100_REASON_PREFIX = 'ability.remaining.' as const
@@ -78,6 +81,7 @@ export const AA096_TRINITY_PHYSICAL_OPTION_ID = 'ability.trinity.physical' as co
 export const AA096_TRINITY_SPECIAL_OPTION_ID = 'ability.trinity.special' as const
 export const AA097_VICIOUS_REASON = 'ability.vicious.optional-branch' as const
 export const AA097_VIGOR_REASON = 'ability.vigor.optional-heal' as const
+export const ENDURE_CONSUME_REASON = 'move.endure.consume-trigger' as const
 export const AA098_VOODOO_DOLL_REASON = 'ability.voodoo-doll.optional-curse' as const
 export const AA098_WANDERING_SPIRIT_REASON = 'ability.wandering-spirit.optional-swap' as const
 export const AA098_WASH_AWAY_REASON = 'ability.wash-away.optional-reset' as const
@@ -87,6 +91,8 @@ export const AA098_WEEBLE_REASON = 'ability.weeble.optional-retaliation' as cons
 export const AA098_WEAPONIZE_REASON = 'ability.weaponize.optional-intercept' as const
 export const AA098_WALLMASTER_REASON = 'ability.wallmaster.optional-barrier-effect' as const
 export const AA099_WIND_POWER_REASON = 'ability.wind-power.optional-charge' as const
+export const AA099_WIND_POWER_IMMUNITY_OPTION_ID = 'ability.wind-power.immunity' as const
+export const AA099_WIND_POWER_CHARGE_OPTION_ID = 'ability.wind-power.immunity-and-charge' as const
 export const AA099_WISHMASTER_REASON = 'ability.wishmaster.optional-wish-effect' as const
 export const AA099_WISTFUL_MELODY_REASON = 'ability.wistful-melody.optional-stages' as const
 export const AA099_WOBBLE_REASON = 'ability.wobble.optional-counter' as const
@@ -110,6 +116,12 @@ const instance = (
   canonicalId: string,
 ): string | null => context.queries.abilities.activeForPlacement(placementId)
   .find(ability => ability.canonicalId === canonicalId)?.instanceId ?? null
+
+const AT_WILL_MOVE_TRIGGER_ABILITIES = new Set([
+  'Rattled', 'Refrigerate', 'Rough Skin', 'Sequence', 'Spinning Dance',
+  'Stamina', 'Sumo Stance', 'Tangling Hair', 'Tingle', 'Water Compaction',
+  'Weak Armor', 'Weeble',
+])
 
 const SCENE_USE_LIMITS: Readonly<Record<string, number>> = Object.freeze({
   'Queenly Majesty': 2,
@@ -173,10 +185,14 @@ const moveFrequencyAvailable = (
   }
 }
 
+const AA085TO100_ANY_TARGET_TRIGGER_ID = 'wildcard-target' as const
+
 const triggerSource = (
   requirement: 'attacked' | 'damaged' | 'fainted' | 'hit' | 'massive' | 'missed',
   targetId: string,
-): string => `ability.remaining.trigger:${requirement}:${targetId}`
+): string => `ability.remaining.trigger:${requirement}:${
+  targetId === '*' ? AA085TO100_ANY_TARGET_TRIGGER_ID : targetId
+}`
 
 export interface Aa085To100TriggerRequirement {
   readonly requirement: 'attacked' | 'damaged' | 'fainted' | 'hit' | 'massive' | 'missed'
@@ -194,7 +210,10 @@ export const aa085to100TriggerRequirement = (input: {
       ? input.request.source.id : null
   const match = sourceId?.match(/^ability\.remaining\.trigger:(attacked|damaged|fainted|hit|massive|missed):(.+)$/)
   return match?.[1] && match[2]
-    ? { requirement: match[1] as Aa085To100TriggerRequirement['requirement'], targetId: match[2] }
+    ? {
+        requirement: match[1] as Aa085To100TriggerRequirement['requirement'],
+        targetId: match[2] === AA085TO100_ANY_TARGET_TRIGGER_ID ? '*' : match[2],
+      }
     : null
 }
 
@@ -685,26 +704,28 @@ const staticEffectRangeOperations = (input: {
   // canonical and review-owned, so static hit riders can bind to it now.
   const rollId = accuracyRollId(input.reviewedOperations)
     ?? (input.script.requiresAccuracy ? `${slug(input.script.moveName)}.accuracy-roll` : null)
+  const sereneGraceReduction = input.context.queries.abilities.has(actorId, 'Serene Grace') ? 2 : 0
   if (rollId && input.script.damaging
     && input.script.damageClass?.trim().toLowerCase() === 'physical'
     && input.context.queries.abilities.has(actorId, 'Ragelope')) {
     const enraged = normalizeConditionNames(input.context.actor.token.conditions).includes('Rage')
     const suffix = hash(input.identity, 'ragelope')
-    if (!enraged) operations.push(condition({
-      id: `ability.ragelope.rage.${suffix}`,
-      source: { kind: 'move', id: input.identity }, recipients: 'actor',
-      reasonCode: 'ability.ragelope.enraged', conditionId: 'Rage',
-      accuracyRollId: rollId, minimum: 18,
-    }))
-    operations.push(stage({
+    const stageOperation = stage({
       id: `ability.ragelope.stage.${suffix}`,
       source: { kind: 'move', id: input.identity }, recipients: 'actor',
       reasonCode: enraged ? 'ability.ragelope.attack' : 'ability.ragelope.speed',
       stat: enraged ? 'atk' : 'spd', value: 1,
       trigger: {
         kind: 'accuracy-roll', rollId,
-        trigger: { kind: 'range', minimum: 18 }, scope: 'resolution', application: 'once',
+        trigger: { kind: 'range', minimum: Math.max(1, 18 - sereneGraceReduction) },
+        scope: 'resolution', application: 'once',
       },
+    })
+    operations.push(stageOperation)
+    if (!enraged) operations.push(condition({
+      id: `ability.ragelope.rage.${suffix}`,
+      source: { kind: 'operation', id: stageOperation.id }, recipients: 'actor',
+      reasonCode: 'ability.ragelope.enraged', conditionId: 'Rage',
     }))
   }
   const hasStench = rollId !== null && input.context.queries.abilities.has(actorId, 'Stench')
@@ -719,7 +740,11 @@ const staticEffectRangeOperations = (input: {
       source: { kind: 'move', id: input.identity }, recipients: 'hit-targets',
       reasonCode: hasStench ? 'ability.stench.flinch' : 'ability.ugly.flinch',
       conditionId: 'Flinch', accuracyRollId: rollId,
-      minimum: hasStench ? (hasUgly ? 16 : 18) : 19,
+      minimum: Math.max(
+        1,
+        (hasStench ? (hasUgly ? 16 : 18) : 19)
+          - sereneGraceReduction,
+      ),
     })
     if (!existingFlinch) operations.push(grantedFlinch)
     if (hasStench) operations.push(temporary({
@@ -754,7 +779,7 @@ const staticEffectRangeOperations = (input: {
         reasonCode: `ability.trinity.condition.${index + 1}`,
         conditionId: trinityConditions[index]!,
         accuracyRollId: rollId,
-        minimum: 17,
+        minimum: Math.max(1, 17 - sereneGraceReduction),
       }))
     })
   }
@@ -783,13 +808,12 @@ const staticEffectRangeOperations = (input: {
     const shieldMove = ['king’s shield', "king's shield", 'protect'].includes(input.script.moveName.trim().toLowerCase())
       || input.script.keywords.some(keyword => keyword.trim().toLowerCase() === 'blessing')
       || (input.script.damageClass?.trim().toLowerCase() === 'status'
-        && (/(?:raise|gain).*(?:defense|special defense)|blessing/i.test(input.script.effect)
-          || input.reviewedOperations.some(operation => (
-            operation.kind === 'combat-stage'
-            && operation.payload.action === 'modify'
-            && (operation.payload.stage === 'def' || operation.payload.stage === 'sdef')
-            && (operation.payload.value ?? 0) > 0
-          ))))
+        && input.reviewedOperations.some(operation => (
+          operation.kind === 'combat-stage'
+          && operation.payload.action === 'modify'
+          && (operation.payload.stage === 'def' || operation.payload.stage === 'sdef')
+          && (operation.payload.value ?? 0) > 0
+        )))
     if (input.script.damaging || shieldMove) {
       const desiredTag = shieldMove ? 'aa092-stance-change-shield' : 'aa092-stance-change-sword'
       const staleStances = input.context.map.encounterState?.effects.filter(effect => (
@@ -1082,7 +1106,7 @@ const defensiveAutomaticOperations = (input: {
       const req = request({
         identity: input.identity, canonicalId: 'Water Compaction',
         reasonCode: AA098_WATER_COMPACTION_REASON, ownerId: targetId,
-        phase: 'hit', timing: 'post-hit', trigger: { requirement: 'hit', targetId },
+        phase: 'after-damage', timing: 'post-damage', trigger: { requirement: 'hit', targetId },
       })
       if (input.context.queries.resources.actionAvailable(targetId, 'free')) operations.push(
         req,
@@ -1097,13 +1121,14 @@ const defensiveAutomaticOperations = (input: {
       const req = request({
         identity: input.identity, canonicalId: 'Rough Skin',
         reasonCode: 'ability.rough-skin.optional-hp-loss', ownerId: targetId,
-        phase: 'hit', timing: 'post-hit', trigger: { requirement: 'hit', targetId },
+        phase: 'after-damage', timing: 'post-damage', trigger: { requirement: 'hit', targetId },
       })
       if (input.context.queries.resources.actionAvailable(targetId, 'free')) operations.push(
         req,
         directHp({
-          id: `ability.rough-skin.hp.${suffix}`, source: { kind: 'operation', id: req.id },
-          recipients: 'actor', reasonCode: 'ability.rough-skin.attacker-tick',
+          id: `ability.rough-skin.hp.${suffix}`,
+          source: { kind: 'lifecycle-event', id: triggerSource('hit', targetId) },
+          recipients: 'actor', reasonCode: `ability.rough-skin.attacker-tick:${targetId}`,
           calculation: { kind: 'percent-max', percent: 10 },
         }),
       )
@@ -1141,13 +1166,16 @@ const optionalMoveOperations = (input: {
         )) === true
       : false
     const action = canonicalId === 'Sound Lance' ? 'swift'
-      : canonicalId === 'Sumo Stance' ? 'shift' : 'free'
+      : canonicalId === 'Sumo Stance' ? 'shift'
+        : canonicalId === 'Vicious' ? null : 'free'
     if (!abilityId
-      || !input.context.queries.resources.actionAvailable(actorId, action)
+      || (action !== null && !input.context.queries.resources.actionAvailable(actorId, action))
       || dailySpent
-      || (!dailyAbility && !sceneAvailable({
-        context: input.context, ownerId: actorId, abilityInstanceId: abilityId, canonicalId,
-      }))) return null
+      || (!dailyAbility
+        && !AT_WILL_MOVE_TRIGGER_ABILITIES.has(canonicalId)
+        && !sceneAvailable({
+          context: input.context, ownerId: actorId, abilityInstanceId: abilityId, canonicalId,
+        }))) return null
     return request({
       identity: input.identity, canonicalId, reasonCode, ownerId: actorId,
       optionIds: options,
@@ -1165,6 +1193,12 @@ const optionalMoveOperations = (input: {
       candidate.id !== actorId
       && !input.targetIds.includes(candidate.id)
       && ptuGridDistanceBetweenFootprints(input.context.actor.token, candidate) <= 8
+      && input.context.queries.targetability.resolve({
+        actorPlacementId: actorId,
+        targetPlacementId: candidate.id,
+        attackingMoveId: 'Curse',
+      }).targetable
+      && input.context.queries.lineOfSight.resolve(actorId, candidate.id).targetable
     )).sort((left, right) => left.id.localeCompare(right.id))
     const req = candidates.length > 0
       ? addActorRequest(
@@ -1220,6 +1254,11 @@ const optionalMoveOperations = (input: {
       candidate.id !== actorId
       && input.context.queries.relationships.resolve(actorId, candidate.id).relationship === 'ally'
       && ptuGridDistanceBetweenFootprints(input.context.actor.token, candidate) <= 1
+      && configuredAbilityTargetIsWilling({
+        map: input.context.map,
+        actorPlacementId: actorId,
+        targetPlacementId: candidate.id,
+      })
     )).sort((left, right) => left.id.localeCompare(right.id))
     const transporterUsage = input.context.actor.sheet.sheet.abilityUsage?.entries.find(entry => (
       entry.canonicalId === 'Transporter' && entry.clauseId === 'base'
@@ -1320,7 +1359,11 @@ const optionalMoveOperations = (input: {
       'Skill Link', AA089_SKILL_LINK_REASON, undefined,
       input.targetIds.length > 0 ? { requirement: 'hit', targetId: '*' } : undefined,
     )
-    if (req) operations.push(req)
+    if (req) operations.push({
+      ...req,
+      phase: 'after-damage',
+      payload: { ...req.payload, timing: 'post-damage' },
+    })
   }
   if (input.script.damaging) {
     const abilityId = instance(input.context, actorId, 'Solar Power')
@@ -1329,7 +1372,7 @@ const optionalMoveOperations = (input: {
         || sceneAvailable({ context: input.context, ownerId: actorId, abilityInstanceId: abilityId, canonicalId: 'Solar Power', limit: 2 }))) {
       const req = request({
         identity: input.identity, canonicalId: 'Solar Power', reasonCode: AA090_SOLAR_POWER_REASON,
-        ownerId: actorId, phase: 'hit', timing: 'post-hit', priority: 92,
+        ownerId: actorId, phase: 'after-damage', timing: 'post-damage', priority: 92,
         trigger: { requirement: 'hit', targetId: '*' },
       })
       operations.push(
@@ -1338,7 +1381,7 @@ const optionalMoveOperations = (input: {
           id: `ability.solar-power.hp.${hash(input.identity, actorId)}`,
           source: { kind: 'operation', id: req.id }, recipients: 'response-owner',
           reasonCode: 'ability.solar-power.tick-cost',
-          calculation: { kind: 'percent-max', percent: 10 }, phase: 'hit',
+          calculation: { kind: 'percent-max', percent: 10 }, phase: 'after-damage',
         }),
       )
     }
@@ -1555,45 +1598,49 @@ const optionalMoveOperations = (input: {
   }
   if (input.script.moveName.trim().toLowerCase() === 'sing') {
     const req = addActorRequest('Wistful Melody', AA099_WISTFUL_MELODY_REASON)
-    if (req) for (const statId of ['atk', 'satk'] as const) operations.push(stage({
-      id: `ability.wistful-melody.${statId}.${hash(input.identity)}`,
-      source: { kind: 'operation', id: req.id }, recipients: 'attacked-targets',
-      reasonCode: `ability.wistful-melody.${statId}`, stat: statId, value: -2,
-    }))
+    if (req) {
+      operations.push(req)
+      for (const statId of ['atk', 'satk'] as const) operations.push(stage({
+        id: `ability.wistful-melody.${statId}.${hash(input.identity)}`,
+        source: { kind: 'operation', id: req.id }, recipients: 'attacked-targets',
+        reasonCode: `ability.wistful-melody.${statId}`, stat: statId, value: -2,
+      }))
+    }
+  }
+  if (melee) for (const targetId of input.targetIds) {
+    if (input.context.queries.relationships.resolve(actorId, targetId).relationship !== 'enemy') continue
+    const sumo = addActorRequest('Sumo Stance', AA093_SUMO_STANCE_REASON, undefined, {
+      requirement: 'hit', targetId,
+    })
+    if (sumo) operations.push(
+      sumo,
+      {
+        id: `ability.sumo-stance.push.${hash(input.identity, targetId)}`,
+        kind: 'movement-request', source: { kind: 'operation', id: sumo.id },
+        recipients: { kind: 'hit-targets' }, phase: 'movement',
+        reasonCode: 'ability.sumo-stance.push',
+        payload: {
+          requestId: `ability.sumo-stance.push.${hash(input.identity, targetId)}`,
+          mode: 'forced', distance: 1, destinationSetId: null,
+          displacement: {
+            vector: { kind: 'away', source: { kind: 'actor' } },
+            distancePolicy: 'up-to-distance', opportunityAttacks: 'ignore',
+          },
+        },
+      } as MoveMovementRequestEffectOperation,
+      temporary({
+        id: `ability.sumo-stance.push-immunity.${hash(input.identity, targetId)}`,
+        source: { kind: 'operation', id: sumo.id }, recipients: 'response-owner',
+        reasonCode: 'ability.sumo-stance.push-immunity', tag: 'aa093-sumo-push-immunity',
+        payload: { capabilityId: 'aa093.sumo-stance.push-immunity', action: 'grant' },
+        duration: { kind: 'turns', subject: 'source', boundary: 'start', remaining: 1 },
+      }),
+    )
   }
   if (oneTarget) {
     const targetId = input.targetIds[0]!
     const target = input.context.queries.tokens.get(targetId)
     const enemy = input.context.queries.relationships.resolve(actorId, targetId).relationship === 'enemy'
-    if (melee && enemy) {
-      const sumo = addActorRequest('Sumo Stance', AA093_SUMO_STANCE_REASON, undefined, {
-        requirement: 'hit', targetId,
-      })
-      if (sumo) operations.push(
-        sumo,
-        {
-          id: `ability.sumo-stance.push.${hash(input.identity, targetId)}`,
-          kind: 'movement-request', source: { kind: 'operation', id: sumo.id },
-          recipients: { kind: 'hit-targets' }, phase: 'movement',
-          reasonCode: 'ability.sumo-stance.push',
-          payload: {
-            requestId: `ability.sumo-stance.push.${hash(input.identity, targetId)}`,
-            mode: 'forced', distance: 1, destinationSetId: null,
-            displacement: {
-              vector: { kind: 'away', source: { kind: 'actor' } },
-              distancePolicy: 'up-to-distance', opportunityAttacks: 'ignore',
-            },
-          },
-        } as MoveMovementRequestEffectOperation,
-        temporary({
-          id: `ability.sumo-stance.push-immunity.${hash(input.identity)}`,
-          source: { kind: 'operation', id: sumo.id }, recipients: 'response-owner',
-          reasonCode: 'ability.sumo-stance.push-immunity', tag: 'aa093-sumo-push-immunity',
-          payload: { capabilityId: 'aa093.sumo-stance.push-immunity', action: 'grant' },
-          duration: { kind: 'turns', subject: 'source', boundary: 'start', remaining: 1 },
-        }),
-      )
-    }
     if (oneTargetAttack && target && enemy
       && ptuGridDistanceBetweenFootprints(input.context.actor.token, target) <= 1) {
       const req = addActorRequest('Tingle', AA095_TINGLE_REASON, undefined, {
@@ -1770,8 +1817,11 @@ const interruptCopyOperations = (input: {
       && (wielder.currentTeam ?? []).some(teamSlug => teamSlug.trim() === providerPlacement.sheetSlug)
       && [wielder.equipmentSlots?.mainHand, wielder.equipmentSlots?.offHand]
         .some(name => typeof name === 'string' && providerAliases.has(name.trim().toLowerCase()))
-    if (wielderId && input.targetIds.includes(wielderId) && livingWeapon && heldAsWeapon
+    if (wielderId && input.targetIds.length === 1 && input.targetIds[0] === wielderId
+      && input.script.targetMode === 'one-target'
+      && livingWeapon && heldAsWeapon
       && (input.script.areaTemplates?.length ?? 0) === 0
+      && !input.context.queries.abilities.has(actorId, 'Stalwart')
       && weaponizeAbilityId
       && input.context.queries.resources.actionAvailable(provider.id, 'free')) {
       operations.push(request({
@@ -1861,6 +1911,7 @@ const fieldReactionOperations = (input: {
   }
   const rangedWater = input.script.type.trim().toLowerCase() === 'water'
     && !/\bmelee\b/i.test(input.script.range)
+    && !input.context.queries.abilities.has(actorId, 'Stalwart')
   if (rangedWater) {
     for (const provider of input.context.queries.tokens.all()) {
       if (provider.id === actorId
@@ -1899,6 +1950,9 @@ const defensiveReactionOperations = (input: {
   const actorId = input.context.actor.placement.id
   const type = input.script.type.trim().toLowerCase()
   const melee = /\bmelee\b/i.test(input.script.range)
+  const oneTargetAttack = input.targetIds.length === 1
+    && input.script.targetMode === 'one-target'
+    && (input.script.areaTemplates?.length ?? 0) === 0
   const preReducedMultiHit = input.reviewedOperations.some(operation => operation.kind === 'multi-hit')
   for (const targetId of input.targetIds) {
     const target = input.context.queries.tokens.get(targetId)
@@ -1911,14 +1965,17 @@ const defensiveReactionOperations = (input: {
       const actionAvailable = canonicalId === 'Sap Sipper'
         || input.context.queries.resources.actionAvailable(targetId, action)
       if (!abilityId || !actionAvailable) return null
-      if (!['Rattled', 'Rough Skin', 'Spinning Dance', 'Stamina', 'Water Compaction', 'Weak Armor'].includes(canonicalId)
+      if (!AT_WILL_MOVE_TRIGGER_ABILITIES.has(canonicalId)
         && !sceneAvailable({
           context: input.context, ownerId: targetId, abilityInstanceId: abilityId,
           canonicalId, limit: canonicalId === 'Steam Engine' ? 2 : 1,
         })) return null
       const resolvesAfterDamage = preReducedMultiHit
         || requirement === 'damaged' || requirement === 'massive'
-        || canonicalId === 'Weeble' || canonicalId === 'Wobble'
+        || [
+          'Rattled', 'Rough Skin', 'Stamina', 'Static', 'Steam Engine',
+          'Tangling Hair', 'Wandering Spirit', 'Water Compaction', 'Weeble', 'Wobble',
+        ].includes(canonicalId)
       return request({
         identity: input.identity, canonicalId, reasonCode, ownerId: targetId,
         optionIds: options,
@@ -1999,13 +2056,23 @@ const defensiveReactionOperations = (input: {
           reasonCode: `ability.stalwart.${statId}`, stat: statId, value: 1,
         }),
       )
-      const endureActive = input.context.map.encounterState?.effects.some(effect => (
-        effect.affected.placementIds.includes(targetId)
-        && effect.tags.some(tag => tag.trim().toLowerCase() === 'endure')
-        && effect.tags.some(tag => tag.trim().toLowerCase() === 'shield')
-        && effect.suppression.sources.length === 0
-      )) === true
-      const vigor = endureActive ? optional('Vigor', AA097_VIGOR_REASON, 'damaged') : null
+      const endureEffect = authoritativeActiveEndureEffect({
+        context: input.context,
+        placementId: targetId,
+      })
+      const triggeringDamage = input.reviewedOperations.find(operation => (
+        operation.kind === 'damage' || operation.kind === 'multi-hit'
+      ))
+      if (endureEffect && triggeringDamage) operations.push({
+        id: `move.endure.consume.${hash(input.identity, targetId, endureEffect.id)}`,
+        kind: 'temporary-effect',
+        source: { kind: 'operation', id: triggeringDamage.id },
+        recipients: { kind: 'hit-targets' },
+        phase: 'after-damage',
+        reasonCode: ENDURE_CONSUME_REASON,
+        payload: { action: 'remove', effectId: endureEffect.id },
+      } as MoveTemporaryEffectOperation)
+      const vigor = endureEffect ? optional('Vigor', AA097_VIGOR_REASON, 'damaged') : null
       if (vigor) operations.push(vigor, heal({
         id: `ability.vigor.heal.${suffix}`,
         source: { kind: 'operation', id: vigor.id }, recipients: 'response-owner',
@@ -2146,7 +2213,7 @@ const defensiveReactionOperations = (input: {
           requestId: `ability.spinning-dance.destination.${suffix}`,
           mode: 'voluntary', distance: 1,
           destinationSetId: `ability.spinning-dance.destinations.${suffix}`,
-          choice: { kind: 'destination', promptKey: 'ability.spinning-dance.choose-destination', allowPass: false },
+          choice: { kind: 'destination', promptKey: 'ability.spinning-dance.choose-destination', allowPass: true },
         },
       }
       operations.push(
@@ -2164,6 +2231,7 @@ const defensiveReactionOperations = (input: {
     }
     if (melee) {
       const sway = input.script.damaging
+        && oneTargetAttack
         && input.context.queries.relationships.resolve(targetId, actorId).relationship === 'enemy'
         ? optional('Sway', AA093_SWAY_REASON) : null
       if (sway) operations.push(sway, {
@@ -2213,6 +2281,7 @@ const defensiveReactionOperations = (input: {
         }),
       )
       const opposingPokemon = input.context.actor.sheet.kind === 'pokemon'
+        && input.context.queries.placements.get(targetId)?.sheetKind === 'pokemon'
         && input.context.queries.relationships.resolve(targetId, actorId).relationship === 'enemy'
       const exchangeable = opposingPokemon
         ? input.context.queries.abilities.activeForPlacement(actorId)
@@ -2338,23 +2407,24 @@ const defensiveReactionOperations = (input: {
       ? optional('RKS System', AA085_RKS_SYSTEM_REASON) : null
     if (rks) operations.push(rks)
     if (type === 'flying') {
-      const windCandidate = optional('Wind Power', AA099_WIND_POWER_REASON)
-      const wind = windCandidate
-        && moveFrequencyAvailable(input.context, targetId, 'Charge')
+      const chargeAvailable = moveFrequencyAvailable(input.context, targetId, 'Charge')
         && reviewedNestedMoveInvocationAvailable({
           context: input.context,
           actorPlacementId: targetId,
           canonicalId: 'Charge',
         })
-        ? windCandidate : null
-      if (wind) operations.push(
-        wind,
-        nested({
+      const wind = optional('Wind Power', AA099_WIND_POWER_REASON, 'hit', [
+        AA099_WIND_POWER_IMMUNITY_OPTION_ID,
+        ...(chargeAvailable ? [AA099_WIND_POWER_CHARGE_OPTION_ID] : []),
+      ])
+      if (wind) {
+        operations.push(wind)
+        if (chargeAvailable) operations.push(nested({
           id: `ability.wind-power.charge.${suffix}`, requestId: wind.id,
           canonicalId: 'Charge', reasonCode: 'ability.wind-power.charge',
           recipients: 'response-owner', targeting: 'operation-recipients',
-        }),
-      )
+        }))
+      }
     }
   }
   return operations
@@ -2401,12 +2471,34 @@ export const aa085to100MoveOverlayOperations = (input: {
   ])
 }
 
+const isTableRollOperation = (
+  operation: MoveEffectOperation,
+): operation is MoveRollEffectOperation & { readonly payload: MoveTableRollEffectPayload } => (
+  operation.kind === 'roll' && operation.payload.formula.kind === 'table'
+)
+
 const lowerNaturalMinimum = <Trigger extends { readonly kind: string }>(
   trigger: Trigger,
   amount: number,
-): Trigger => trigger.kind === 'range' && 'minimum' in trigger
-  ? { ...trigger, minimum: Math.max(1, Number(trigger.minimum) - amount) }
-  : trigger
+): Trigger => {
+  if (trigger.kind === 'range' && 'minimum' in trigger) {
+    return { ...trigger, minimum: Math.max(1, Number(trigger.minimum) - amount) }
+  }
+  if (trigger.kind === 'natural-rolls' && 'values' in trigger && Array.isArray(trigger.values)) {
+    const values = [...new Set(trigger.values.filter((value): value is number => (
+      typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= 20
+    )))].sort((left, right) => left - right)
+    const contiguous = values.every((value, index) => index === 0 || value === values[index - 1]! + 1)
+    if (contiguous && values[0] !== undefined) {
+      const minimum = Math.max(1, values[0] - amount)
+      return { ...trigger, values: Array.from(
+        { length: values.at(-1)! - minimum + 1 },
+        (_, index) => minimum + index,
+      ) }
+    }
+  }
+  return trigger
+}
 
 const selectedResponseOptionId = (input: {
   readonly operations: readonly MoveEffectOperation[]
@@ -2441,7 +2533,6 @@ export const applyAa085to100ReviewedOperations = (input: {
 }): readonly MoveEffectOperation[] => {
   const actorId = input.context.actor.placement.id
   const refrigerate = responseSelected({ ...input, reasonCode: AA085_REFRIGERATE_REASON })
-  const skillLink = responseSelected({ ...input, reasonCode: AA089_SKILL_LINK_REASON })
   const shellCannon = responseSelected({ ...input, reasonCode: AA089_SHELL_CANNON_REASON })
   const sequence = responseSelected({ ...input, reasonCode: AA088_SEQUENCE_REASON })
   const solarPower = responseSelected({ ...input, reasonCode: AA090_SOLAR_POWER_REASON })
@@ -2459,9 +2550,25 @@ export const applyAa085to100ReviewedOperations = (input: {
     .flatMap(request => aa085to100TriggerRequirement({ operation: request })?.targetId ?? [])
   const wobbleTargetIds = selectedRequests({ ...input, reasonCode: AA099_WOBBLE_REASON })
     .flatMap(request => aa085to100TriggerRequirement({ operation: request })?.targetId ?? [])
+  const roughSkinTargetIds = new Set(
+    selectedRequests({ ...input, reasonCode: 'ability.rough-skin.optional-hp-loss' })
+      .flatMap(request => aa085to100TriggerRequirement({ operation: request })?.targetId ?? []),
+  )
   const sereneGrace = input.context.queries.abilities.has(actorId, 'Serene Grace')
   const flinchRangeBoost = Number(input.context.queries.abilities.has(actorId, 'Stench')) * 3
     + Number(input.context.queries.abilities.has(actorId, 'Ugly')) * 2
+  const flinchTableControlledOperationIds = new Set(input.operations.flatMap((candidate) => {
+    if (!isTableRollOperation(candidate)) return []
+    const controlledIds = candidate.payload.table.entries.flatMap(entry => entry.operationIds)
+    const includesFlinch = controlledIds.some(operationId => {
+      const controlled = input.operations.find(operation => operation.id === operationId)
+      return controlled?.kind === 'condition'
+        && ['flinch', 'flinched'].includes(
+          controlled.payload.conditionId?.trim().toLowerCase() ?? '',
+        )
+    })
+    return includesFlinch ? controlledIds : []
+  }))
   const sheerForce = input.context.queries.abilities.has(actorId, 'Sheer Force')
   const moveConsultsAttack = input.operations.some(operation => (
     input.moveOwnedOperationIds.has(operation.id)
@@ -2471,12 +2578,18 @@ export const applyAa085to100ReviewedOperations = (input: {
   const hasEffectRange = input.operations.some(operation => (
     input.moveOwnedOperationIds.has(operation.id)
     && (operation.kind === 'condition' && operation.payload.accuracyRollTrigger
-      || operation.kind === 'combat-stage' && operation.payload.trigger?.kind === 'accuracy-roll')
+      || operation.kind === 'combat-stage' && operation.payload.trigger?.kind === 'accuracy-roll'
+      || isTableRollOperation(operation)
+        && operation.payload.accuracyRollTrigger !== undefined)
   ))
   const actorTick = computeTickValue(
     input.context.actor.token.fullMaxHp ?? input.context.actor.token.maxHp,
   )
   return Object.freeze(input.operations.flatMap((operation): readonly MoveEffectOperation[] => {
+    if (operation.reasonCode.startsWith('ability.rough-skin.attacker-tick:')) {
+      const targetId = operation.reasonCode.slice('ability.rough-skin.attacker-tick:'.length)
+      if (!roughSkinTargetIds.has(targetId)) return []
+    }
     if (!input.moveOwnedOperationIds.has(operation.id)) return [operation]
     if (input.context.queries.abilities.has(actorId, 'Trinity')
       && input.script.moveName.trim().toLowerCase() === 'tri attack'
@@ -2501,12 +2614,37 @@ export const applyAa085to100ReviewedOperations = (input: {
     }
     if (sheerForce && hasEffectRange
       && (operation.kind === 'condition' && operation.payload.accuracyRollTrigger
-        || operation.kind === 'combat-stage' && operation.payload.trigger?.kind === 'accuracy-roll')) return []
+        || operation.kind === 'combat-stage' && operation.payload.trigger?.kind === 'accuracy-roll'
+        || isTableRollOperation(operation)
+          && operation.payload.accuracyRollTrigger !== undefined)) return []
+    if (isTableRollOperation(operation) && operation.payload.accuracyRollTrigger) {
+      const tableIncludesFlinch = operation.payload.table.entries.some(entry => (
+        entry.operationIds.some(operationId => {
+          const controlled = input.operations.find(candidate => candidate.id === operationId)
+          return controlled?.kind === 'condition'
+            && ['flinch', 'flinched'].includes(
+              controlled.payload.conditionId?.trim().toLowerCase() ?? '',
+            )
+        })
+      ))
+      const reduction = (sereneGrace ? 2 : 0) + (tableIncludesFlinch ? flinchRangeBoost : 0)
+      if (reduction > 0) return [{
+        ...operation,
+        payload: {
+          ...operation.payload,
+          accuracyRollTrigger: {
+            ...operation.payload.accuracyRollTrigger,
+            trigger: lowerNaturalMinimum(operation.payload.accuracyRollTrigger.trigger, reduction),
+          },
+        },
+      }]
+    }
     if (operation.kind === 'condition' && operation.payload.accuracyRollTrigger) {
       const flinch = ['flinch', 'flinched'].includes(
         operation.payload.conditionId?.trim().toLowerCase() ?? '',
       )
-      const reduction = (sereneGrace ? 2 : 0) + (flinch ? flinchRangeBoost : 0)
+      const reduction = (sereneGrace ? 2 : 0)
+        + (flinch || flinchTableControlledOperationIds.has(operation.id) ? flinchRangeBoost : 0)
       if (reduction > 0) return [{
         ...operation,
         payload: {
@@ -2564,6 +2702,8 @@ export const applyAa085to100ReviewedOperations = (input: {
       && shellCannon
       && ['aqua jet', 'dive', 'tackle', 'waterfall']
         .includes(input.script.moveName.trim().toLowerCase())
+      && operation.payload.mode === 'voluntary'
+      && operation.recipients.kind === 'actor'
       && typeof operation.payload.distance === 'number') {
       return [{
         ...operation,
@@ -2610,6 +2750,10 @@ export const applyAa085to100ReviewedOperations = (input: {
         : 0
       const preTypeDamageModifiers = [
         ...(operation.payload.damage.preTypeDamageModifiers ?? []),
+        ...(sheerForce && hasEffectRange ? [{
+          id: `ability.sheer-force.damage.${hash(operation.id)}`, priority: 42,
+          stackingGroup: 'aa089-sheer-force', reasonCode: 'ability.sheer-force.damage', value: 10,
+        }] : []),
         ...(sequence ? [{
           id: `ability.sequence.damage.${hash(operation.id)}`, priority: 43,
           stackingGroup: 'aa088-sequence', reasonCode: 'ability.sequence.adjacent-electric-damage',
@@ -2666,7 +2810,6 @@ export const applyAa085to100ReviewedOperations = (input: {
         ...operation,
         payload: {
           ...operation.payload,
-          ...(skillLink ? { count: { kind: 'fixed' as const, hits: 5 } } : {}),
           damage: {
             ...operation.payload.damage,
             moveType,
@@ -2698,6 +2841,10 @@ export const applyAa085to100ReviewedOperations = (input: {
     if (refrigerate && typeof moveType === 'string' && moveType.trim().toLowerCase() === 'normal') moveType = 'ice'
     const preTypeDamageModifiers = [
       ...(operation.payload.preTypeDamageModifiers ?? []),
+      ...(sheerForce && hasEffectRange ? [{
+        id: `ability.sheer-force.damage.${hash(operation.id)}`, priority: 42,
+        stackingGroup: 'aa089-sheer-force', reasonCode: 'ability.sheer-force.damage', value: 10,
+      }] : []),
       ...(sequence ? [{
         id: `ability.sequence.damage.${hash(operation.id)}`, priority: 43,
         stackingGroup: 'aa088-sequence', reasonCode: 'ability.sequence.adjacent-electric-damage',
@@ -2788,6 +2935,7 @@ export const aa085to100BoundRecipientId = (input: {
     'ability.water-absorb.heal',
     'ability.windveiled.speed',
     'ability.winters-kiss.target-heal',
+    'ability.sumo-stance.push',
     'ability.tingly-tongue.fail-next-paralysis-save',
     'ability.schooling.exit-solo-form',
   ])

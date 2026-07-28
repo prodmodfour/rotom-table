@@ -382,7 +382,7 @@ const field = (input: {
     },
     sideId: input.context.actor.placement.sideId ?? null,
     duration: {
-      kind: 'turns', subject: 'source', boundary: 'start', remaining: input.rounds,
+      kind: 'rounds', boundary: 'end', remaining: input.rounds,
     },
     replacementGroup: input.kind === 'weather'
       ? 'field.weather'
@@ -1159,8 +1159,8 @@ const toxicNourishment = (input: ExecuteInput): Aa085To100ActivatedExecution => 
   const placement = input.context.queries.placements.get(id) ?? fail('Toxic Nourishment target disappeared.')
   const target = input.context.queries.tokens.get(id) ?? fail('Toxic Nourishment target disappeared.')
   if (id === input.context.actor.placement.id
-    || ptuGridDistanceBetweenFootprints(input.context.actor.token, target) > 1) {
-    fail('Toxic Nourishment requires an adjacent other target.')
+    || ptuGridDistanceBetweenFootprints(input.context.actor.token, target) > 5) {
+    fail('Toxic Nourishment requires another target within 5 metres.')
   }
   const conditions = normalizeConditionNames(target.conditions)
   if (!conditions.some(condition => ['Poisoned', 'Badly Poisoned'].includes(condition))) {
@@ -1313,7 +1313,7 @@ export const executeAa085To100ActivatedMechanic = (
   if (input.context.actor.token.currentHp <= 0) fail('The ability cannot be used while Fainted.')
   const canonicalId = input.context.runtime.canonicalId
   if (!DIRECT_RULES[canonicalId]) return null
-  if (canonicalId === 'Psychic Surge') return field({ ...input, canonicalId, kind: 'terrain', fieldId: 'psychic', rounds: 1 })
+  if (canonicalId === 'Psychic Surge') return field({ ...input, canonicalId, kind: 'terrain', fieldId: 'psychic', rounds: 5 })
   if (canonicalId === 'Sand Stream') return field({ ...input, canonicalId, kind: 'weather', fieldId: 'sandstorm', rounds: 1 })
   if (canonicalId === 'Snow Warning') return field({ ...input, canonicalId, kind: 'weather', fieldId: 'hail', rounds: 5 })
   if (canonicalId === 'Pumpkingrab') return pumpkingrab(input)
@@ -1512,7 +1512,7 @@ export const executeAa085To100ActivatedMechanic = (
       ?? fail('Symbiosis target disappeared.')
     if (id === input.context.actor.placement.id
       || input.context.queries.relationships.relation(input.context.actor.placement.id, id) !== 'ally'
-      || ptuGridDistanceBetweenFootprints(input.context.actor.token, target) > 10
+      || ptuGridDistanceBetweenFootprints(input.context.actor.token, target) > 1
       || target.currentHp <= 0
       || !configuredAbilityTargetIsWilling({
         map: input.context.map,
@@ -1565,8 +1565,8 @@ export const executeAa085To100ActivatedMechanic = (
     const id = targetId(input)
     const target = input.context.queries.tokens.get(id) ?? fail('Unnerve target disappeared.')
     if (input.context.queries.relationships.relation(input.context.actor.placement.id, id) !== 'enemy'
-      || ptuGridDistanceBetweenFootprints(input.context.actor.token, target) > 10) {
-      fail('Unnerve requires an enemy within 10 metres.')
+      || ptuGridDistanceBetweenFootprints(input.context.actor.token, target) > 6) {
+      fail('Unnerve requires an enemy within 6 metres.')
     }
     return markerExecution(input, {
       canonicalId, affectedIds: [id], tag: 'aa097-unnerve',

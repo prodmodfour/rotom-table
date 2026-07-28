@@ -1,4 +1,3 @@
-import { SWEET_VEIL_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
 import { tokenGridDistance } from '~/utils/moveAutomationRange'
 import { KEEN_EYE_ABILITY_NAME } from '~/utils/sheetAbilityCombatModifiers'
 import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
@@ -16,6 +15,7 @@ const WATER_BUBBLE_ABILITY_NAME = 'Water Bubble'
 const VITAL_SPIRIT_ABILITY_NAME = 'Vital Spirit'
 const TANGLED_FEET_ABILITY_NAME = 'Tangled Feet'
 const RUN_AWAY_ABILITY_NAME = 'Run Away'
+export const SWEET_VEIL_ABILITY_NAME = 'Sweet Veil'
 export const SWEET_VEIL_RANGE_METERS = 3
 export const PASTEL_VEIL_RANGE_METERS = 3
 

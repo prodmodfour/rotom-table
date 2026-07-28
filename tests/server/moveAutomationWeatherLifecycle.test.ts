@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
 } from '#shared/livePlayMoveResolution'
+import { REMAINING_ABILITY_TEST_REGISTRY } from '../fixtures/abilityAutomation/remainingRegistry'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import type { MoveHealEffectOperation } from '#shared/moveAutomation/effects'
 import {
@@ -108,6 +109,7 @@ const rulesContext = (
     },
     candidatePlacementIds: fixtures.map(fixture => fixture.id),
     selectedPlacementIds: fixtures.map(fixture => fixture.id),
+    abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
     random: createFiniteAuthoritativeMoveRandomStream([]),
     time: 2_000,
   })
@@ -244,7 +246,7 @@ describe('Hail and Sandstorm lifecycle mechanics', () => {
       recipient: recipient(sandContext, 'target'),
     })).toEqual({
       blockedBy: null,
-      consultedPlacementIds: ['far-provider'],
+      consultedPlacementIds: [],
     })
   })
 

@@ -14,6 +14,7 @@ import {
 } from '~/utils/mapTemporaryHitPoints'
 import type { MoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import type { AuthoritativeMoveRulesContext } from '../context'
+import { authoritativeActiveEndureEffect } from '../endure'
 import { authoritativeAbilityHealingBlocked } from '../../abilityAutomation/healingPrevention'
 import { aa070FlyingFlyTrapPreventsDirectHp } from '../../abilityAutomation/mechanics/aa070StaticIntegration'
 import { aa079MagicGuardBlocksDirectHp } from '../../abilityAutomation/mechanics/aa079StaticIntegration'
@@ -719,9 +720,23 @@ export const reduceDamageEffectForRecipient = (options: {
   }
 
   const unboundedHpLoss = wholeNonNegative(resolution.hpLoss)
-  const requestedHpLoss = options.context.queries.abilities.has(recipient.placement.id, 'Sturdy')
+  const sturdyBoundedHpLoss = options.context.queries.abilities.has(recipient.placement.id, 'Sturdy')
     ? Math.min(unboundedHpLoss, Math.max(1, Math.floor(previous.fullMaxHp / 2)))
     : unboundedHpLoss
+  const endure = authoritativeActiveEndureEffect({
+    context: options.context,
+    placementId: recipient.placement.id,
+  })
+  const bypassTemporaryHp = resolution.bypassTemporaryHp === true
+  const realLossBeforeEndure = bypassTemporaryHp
+    ? sturdyBoundedHpLoss
+    : Math.max(0, sturdyBoundedHpLoss - previous.temporaryHp)
+  const requestedHpLoss = endure && previous.currentHp > 0
+    && realLossBeforeEndure >= previous.currentHp
+    ? bypassTemporaryHp
+      ? Math.max(0, previous.currentHp - 1)
+      : Math.max(0, previous.temporaryHp + previous.currentHp - 1)
+    : sturdyBoundedHpLoss
   if (requestedHpLoss === 0) {
     return noOpHpResult(
       recipient,
@@ -735,7 +750,7 @@ export const reduceDamageEffectForRecipient = (options: {
     recipient.token,
     requestedHpLoss,
     'damage',
-    { bypassTemporaryHp: resolution.bypassTemporaryHp === true },
+    { bypassTemporaryHp },
   )
   const current = hpSnapshot(accumulator, recipient)
   if (snapshotsEqual(previous, current)) {
@@ -1232,6 +1247,22 @@ export const reduceHealEffectForRecipient = (options: {
   }
   else if (operation.reasonCode === 'ability.soulstealer.use-killed') {
     accumulator.removeInjuries(recipient.token, 'all')
+  }
+  else if (operation.reasonCode === 'ability.vigor.tick-after-endure'
+    || operation.reasonCode === 'ability.vigor.tick-after-endure.massive-injury') {
+    const triggeringMassiveDamageInjury = operation.reasonCode.endsWith('.massive-injury')
+      || options.priorOperationResults.some(result => (
+      result.operationKind === 'damage'
+      && result.recipients.some(candidate => {
+        if (candidate.recipientId !== recipient.placement.id
+          || typeof candidate.details !== 'object'
+          || candidate.details === null
+          || Array.isArray(candidate.details)) return false
+        const massive = (candidate.details as Record<string, unknown>).massiveDamageInjuries
+        return typeof massive === 'number' && massive > 0
+      })
+    ))
+    if (triggeringMassiveDamageInjury) accumulator.removeInjuries(recipient.token, 1)
   }
 
   const current = hpSnapshot(accumulator, recipient)

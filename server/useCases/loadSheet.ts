@@ -3,7 +3,12 @@ import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { playerCanAccessSheet, type PlayerProfileLinkedTrainerSheet } from '../policies/playerProfilePolicy'
+import {
+  playerCanAccessSheet,
+  playerProfileCanAccessSheet,
+  type PlayerProfileLinkedTrainerSheet,
+} from '../policies/playerProfilePolicy'
+import { projectAbilityAutomationSheetForPlayer } from '../domain/abilityAutomation/clientStateProjection'
 import { redactSheetForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sqliteSheetRepository, type SheetRepository, type PersistedSheet } from '../storage/sheetRepository'
@@ -54,6 +59,7 @@ export const loadSheetUseCase = (
   const result = persisted ? { sheet: persistedToLoadedSheet(persisted) } : null
 
   if (!result) throw new LoadSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
+  const linkedTrainerSheets = input.kind === 'pokemon' ? [...listTrainerSheets()] : undefined
   if (
     input.role === 'player' &&
     !playerCanAccessSheet({
@@ -62,7 +68,7 @@ export const loadSheetUseCase = (
       sheet: result.sheet,
       playerProfile: input.playerProfile,
       canAccessPlayerSheet: input.canAccessPlayerSheet,
-      linkedTrainerSheets: input.kind === 'pokemon' ? listTrainerSheets : undefined,
+      linkedTrainerSheets,
     })
   ) {
     throw new LoadSheetUseCaseError(
@@ -75,7 +81,15 @@ export const loadSheetUseCase = (
     kind: input.kind,
     slug: input.slug,
     sheet: input.role === 'player'
-      ? redactSheetForPlayer(input.kind, result.sheet)
+      ? projectAbilityAutomationSheetForPlayer(
+          redactSheetForPlayer(input.kind, result.sheet),
+          playerProfileCanAccessSheet(
+            input.playerProfile,
+            input.kind,
+            input.slug,
+            { linkedTrainerSheets },
+          ),
+        )
       : result.sheet,
   }
 }

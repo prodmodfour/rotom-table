@@ -10,7 +10,7 @@ export const UNAWARE_ABILITY_SPEC = staticSpec('Unaware', 'aa097.unaware')
 export const UNBREAKABLE_ABILITY_SPEC = staticSpec('Unbreakable', 'aa097.unbreakable')
 export const UNBURDEN_ABILITY_SPEC = staticSpec('Unburden', 'aa097.unburden')
 export const UNNERVE_ABILITY_SPEC = activatedSpec('Unnerve', 'aa097.unnerve', [
-  { kind: 'token', relationship: 'enemy', maximumRange: 10 }
+  { kind: 'token', relationship: 'enemy', maximumRange: 6 }
 ])
 export const UNSEEN_FIST_ABILITY_SPEC = staticSpec('Unseen Fist', 'aa097.unseen-fist')
 export const VANGUARD_ABILITY_SPEC = staticSpec('Vanguard', 'aa097.vanguard')

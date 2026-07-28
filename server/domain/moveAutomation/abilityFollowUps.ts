@@ -20,21 +20,8 @@ import type { MoveEffectOperation } from '#shared/moveAutomation/effects'
 import type { MoveResolutionAuditTrace } from '#shared/moveAutomation/trace'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
-import type { MoveAutomationTransaction } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { moveEntriesForPlacement } from '~/utils/mapTokenMoves'
-import {
-  buildCelebrateTriggerPrompts,
-} from '~/utils/moveAutomationCelebrate'
-import {
-  buildCuteCharmReactionPrompts,
-} from '~/utils/moveAutomationCuteCharm'
-import {
-  buildMoxieTriggerPrompts,
-} from '~/utils/moveAutomationMoxie'
-import {
-  buildPoisonPointReactionPrompts,
-} from '~/utils/moveAutomationPoisonPoint'
 import {
   buildSpiteReactionPrompts,
 } from '~/utils/moveAutomationSpite'
@@ -46,12 +33,11 @@ import type {
 } from '../planAuthoritativeMoveState'
 import type { AuthoritativeMoveResolution } from '../resolveAuthoritativeMove'
 import {
-  buildAbilityFollowUpEffectOperations,
-  abilityFollowUpSpecForKind,
-  abilityFollowUpSpecForWindow,
-  ABILITY_FOLLOW_UP_DEFINITION_HASH,
-  ABILITY_FOLLOW_UP_PROGRAM_VERSION,
-  type AbilityFollowUpKind,
+  buildSpiteFollowUpEffectOperations,
+  spiteFollowUpSpecForWindow,
+  SPITE_FOLLOW_UP_DEFINITION_HASH,
+  SPITE_FOLLOW_UP_PROGRAM_VERSION,
+  SPITE_FOLLOW_UP_RESPONSE_SPEC,
 } from './abilityFollowUpSpecs'
 import {
   buildAuthoritativeMoveRulesContext,
@@ -77,12 +63,9 @@ import {
   reduceMoveMapOperations,
 } from './reducers/mapOperations'
 import { createMoveResolutionTrace, reduceMoveResolutionTrace } from './trace'
-import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../abilityAutomation/registry'
-import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
-import { createMoveAutomationRelationshipResolver } from './relationships'
 
 export interface AbilityFollowUpCandidate {
-  readonly kind: AbilityFollowUpKind
+  readonly kind: 'spite'
   readonly ownerPlacementId: string
 }
 
@@ -141,9 +124,12 @@ const tokensForMap = (
   return token ? [token] : []
 })
 
-const stablePromptId = (kind: AbilityFollowUpKind) => () => `server-${kind}`
+const stablePromptId = () => 'server-spite'
 
-/** Preserve the exact eligibility of the five former browser prompt builders. */
+/**
+ * New post-Move continuations are Move-owned: all former Ability prompts now
+ * execute inside their manifest-selected AbilitySpec Move overlays.
+ */
 export const detectAbilityFollowUps = (input: {
   readonly map: TabletopMap
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
@@ -155,72 +141,10 @@ export const detectAbilityFollowUps = (input: {
   const tokenById = new Map(tokens.map(token => [token.id, token]))
   const transaction = input.resolution.transaction
   const attacker = tokenById.get(transaction.userId)
-  if (!attacker) return []
+  if (!attacker) return Object.freeze([])
   const hitTargets = transaction.hitTargetIds.flatMap(id => tokenById.get(id) ?? [])
-  const attackedTargets = transaction.attackedTargetIds.flatMap(id => tokenById.get(id) ?? [])
-  const candidates: AbilityFollowUpCandidate[] = []
-
-  const attackerPlacement = input.map.placements.find(placement => placement.id === attacker.id)
-  const attackerSheet = attackerPlacement?.sheetKind === 'pokemon'
-    ? input.pokemonSheets.get(attackerPlacement.sheetSlug)
-    : attackerPlacement?.sheetKind === 'trainer'
-      ? input.trainerSheets.get(attackerPlacement.sheetSlug)
-      : null
-  const hasEffectiveMoxie = Boolean(attackerPlacement && attackerSheet
-    && effectiveRuntimeAbilityIds({
-      map: input.map,
-      placement: attackerPlacement,
-      sheet: attackerSheet,
-    }).includes('Moxie'))
-  const relationships = createMoveAutomationRelationshipResolver({
-    placements: input.map.placements,
-    sides: input.map.encounterState?.sides ?? {},
-  })
-  const foeHpUpdates = transaction.hpUpdates.filter(update => (
-    relationships.resolve(attacker.id, update.id).relationship === 'enemy'
-  ))
-  const moxie = hasEffectiveMoxie ? buildMoxieTriggerPrompts({
-    attacker: {
-      ...attacker,
-      abilityNames: [...(attacker.abilityNames ?? []).filter(name => name !== 'Moxie'), 'Moxie'],
-    },
-    moveName: transaction.moveName,
-    hpUpdates: foeHpUpdates,
-    hitTargetIds: transaction.hitTargetIds,
-    tokens,
-    idFactory: stablePromptId('moxie'),
-  }) : []
-  if (moxie.length > 0) candidates.push({ kind: 'moxie', ownerPlacementId: attacker.id })
-
-  const celebrate = buildCelebrateTriggerPrompts({
-    attacker,
-    moveName: transaction.moveName,
-    damaging: input.resolution.script.damaging,
-    hitTargets,
-    idFactory: stablePromptId('celebrate'),
-  })
-  if (celebrate.length > 0) candidates.push({ kind: 'celebrate', ownerPlacementId: attacker.id })
-
-  for (const prompt of buildCuteCharmReactionPrompts({
-    attacker,
-    moveName: transaction.moveName,
-    attackedTargets,
-    idFactory: stablePromptId('cute-charm'),
-  })) {
-    candidates.push({ kind: 'cute-charm', ownerPlacementId: prompt.defenderId })
-  }
-
-  for (const prompt of buildPoisonPointReactionPrompts({
-    attacker,
-    moveName: transaction.moveName,
-    hitTargets,
-    script: input.resolution.script,
-    idFactory: stablePromptId('poison-point'),
-  })) {
-    candidates.push({ kind: 'poison-point', ownerPlacementId: prompt.defenderId })
-  }
-
-  for (const prompt of buildSpiteReactionPrompts({
+  const seen = new Set<string>()
+  return Object.freeze(buildSpiteReactionPrompts({
     attacker,
     moveName: transaction.moveName,
     hitTargets,
@@ -229,25 +153,11 @@ export const detectAbilityFollowUps = (input: {
       sheets,
       { encounterEffects: input.map.encounterState?.effects ?? [] },
     ),
-    idFactory: stablePromptId('spite'),
-  })) {
-    candidates.push({ kind: 'spite', ownerPlacementId: prompt.defenderId })
-  }
-
-  const nativeCanonicalIdByKind = new Map<AbilityFollowUpKind, string>([
-    ['celebrate', 'Celebrate'],
-    ['cute-charm', 'Cute Charm'],
-  ])
-  const seen = new Set<string>()
-  return Object.freeze(candidates.filter((candidate) => {
-    const nativeCanonicalId = nativeCanonicalIdByKind.get(candidate.kind)
-    if (input.resolution.nativeV2
-      && nativeCanonicalId
-      && ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve(nativeCanonicalId)) return false
-    const key = `${candidate.kind}:${candidate.ownerPlacementId}`
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
+    idFactory: stablePromptId,
+  }).flatMap((prompt) => {
+    if (seen.has(prompt.defenderId)) return []
+    seen.add(prompt.defenderId)
+    return [{ kind: 'spite' as const, ownerPlacementId: prompt.defenderId }]
   }))
 }
 
@@ -257,7 +167,7 @@ const responseWindow = (
   index: number,
   ancestryDepth: number,
 ): PendingMoveReactionResponseWindow => {
-  const spec = abilityFollowUpSpecForKind(candidate.kind)
+  const spec = SPITE_FOLLOW_UP_RESPONSE_SPEC
   const windowId = `ability-follow-up.${candidate.kind}.${index + 1}`
   return {
     windowId,
@@ -285,8 +195,8 @@ const initialTrace = (
     program: {
       canonicalId: resolution.canonicalMoveName,
       runtimeKind: 'ability-follow-ups',
-      runtimeVersion: ABILITY_FOLLOW_UP_PROGRAM_VERSION,
-      definitionHash: ABILITY_FOLLOW_UP_DEFINITION_HASH,
+      runtimeVersion: SPITE_FOLLOW_UP_PROGRAM_VERSION,
+      definitionHash: SPITE_FOLLOW_UP_DEFINITION_HASH,
     },
     ruleset: {
       rulesetId: MOVE_RULESET_PROVENANCE.rulesetId,
@@ -425,8 +335,8 @@ export const materializeAbilityFollowUps = (
     originOpId: input.originOpId,
     actorPlacementId: input.resolution.actorPlacementId,
     canonicalMoveId: input.resolution.canonicalMoveName,
-    specVersion: ABILITY_FOLLOW_UP_PROGRAM_VERSION,
-    specHash: ABILITY_FOLLOW_UP_DEFINITION_HASH,
+    specVersion: SPITE_FOLLOW_UP_PROGRAM_VERSION,
+    specHash: SPITE_FOLLOW_UP_DEFINITION_HASH,
     rulesetId: MOVE_RULESET_PROVENANCE.rulesetId,
     rulesetHash: MOVE_RULESET_PROVENANCE.sourceData.sha256,
     phase: 'cleanup',
@@ -573,18 +483,18 @@ export const planAbilityFollowUpResponse = (input: {
     time: input.plannedAt,
   })
   context.reads.recordPlacement(context.actor.placement)
-  if (input.responseOptionId !== null
-    && window.reasonCode === 'ability.moxie.follow-up'
-    && !context.queries.abilities.has(pending.actorPlacementId, 'Moxie')) {
-    throw new Error('Selected Moxie response lost its exact effective ability runtime.')
+  const spec = spiteFollowUpSpecForWindow(window)
+  if (!spec) {
+    throw new Error(
+      'Legacy Ability follow-up execution is retired; abandon this historical pending resolution before deployment.',
+    )
   }
   const operations = input.responseOptionId === null
     ? []
-    : buildAbilityFollowUpEffectOperations({
+    : buildSpiteFollowUpEffectOperations({
         window,
         optionId: input.responseOptionId,
         canonicalMoveId: pending.canonicalMoveId,
-        context,
       })
   const emissions = emittedOperations(operations, pending.actorPlacementId)
   let trace = traceSelectedResponse({
@@ -617,8 +527,7 @@ export const planAbilityFollowUpResponse = (input: {
         presentation: {
           operationId: input.responseOpId,
           move: {
-            name: abilityFollowUpSpecForWindow(window)?.displayName
-              ?? (() => { throw new Error('Ability follow-up window definition is unavailable.') })(),
+            name: spec.displayName,
             type: 'Typeless',
           },
           selectedTargetIds: [],

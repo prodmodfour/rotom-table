@@ -236,7 +236,7 @@ const useManeuverCommandMessage = (): SessionCommandMessage<UseManeuverCommand> 
   },
 })
 
-describe('useManeuver/useAbility/useOrder WebSocket dispatch boundary', () => {
+describe('useManeuver/useOrder WebSocket dispatch boundary', () => {
   it('acks the sender and broadcasts a small maneuverUsed patch to same-session clients only', () => {
     const registry = createInMemorySessionSocketRegistry()
     const peers = createInMemorySessionSocketPeerRegistry()

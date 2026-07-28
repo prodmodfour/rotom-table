@@ -37,6 +37,7 @@ import {
   parseAcceptedLivePlayRealtimeEvent,
   type LivePlayAcceptedRealtimeEvent,
 } from '#shared/livePlayRealtimeEvents'
+import { ABILITY_AUTOMATION_REALTIME_EVENT_TYPE } from '#shared/abilityAutomation/realtime'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
@@ -688,6 +689,14 @@ export const useEditableMap = (
   }
 
   const handleRealtimeMapEvent = (event: RealtimeEvent) => {
+    if (event.type === ABILITY_AUTOMATION_REALTIME_EVENT_TYPE) {
+      const incomingRevision = eventRevision(event)
+      const currentRevision = documentRevision(map.value)
+      if (incomingRevision === null || currentRevision === null || incomingRevision > currentRevision) {
+        requestRealtimeReconciliation('Ability resolution accepted. Reloading the authoritative live table snapshot.')
+      }
+      return
+    }
     if (event.type === LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED) {
       handleAcceptedLivePlayCommandEvent(event)
       return

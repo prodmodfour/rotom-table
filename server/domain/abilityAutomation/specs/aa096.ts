@@ -7,7 +7,7 @@ import {
 } from './aa085to100Shared'
 
 export const TOXIC_NOURISHMENT_ABILITY_SPEC = activatedSpec('Toxic Nourishment', 'aa096.toxic-nourishment', [
-  { kind: 'token', relationship: 'other', maximumRange: 1, adjacent: true }
+  { kind: 'token', relationship: 'other', maximumRange: 5 }
 ])
 export const TRACE_ABILITY_SPEC = activatedSpec('Trace', 'aa096.trace', [
   { kind: 'token', relationship: 'other', maximumRange: 10 },

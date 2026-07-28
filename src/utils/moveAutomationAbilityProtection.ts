@@ -1,9 +1,10 @@
-import { SHIELD_DUST_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
 import { KEEN_EYE_ABILITY_NAME } from '~/utils/sheetAbilityCombatModifiers'
 import { sheetHasCanonicalAbility, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
+
+export const SHIELD_DUST_ABILITY_NAME = 'Shield Dust'
 
 export const tokenHasShieldDust = (
   token: Pick<SpawnedPokemon, 'abilityNames'>,

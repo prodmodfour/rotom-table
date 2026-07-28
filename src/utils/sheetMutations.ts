@@ -3,8 +3,6 @@ import { pokemonHpSnapshot, trainerHpSnapshot } from './sheetSpawn'
 import { clampHpValue, normalizeInjuryCount } from './ptuHp'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages as normalizeCombatStageMap } from './combatStages'
 import { normalizeConditionNames } from './statusConditions'
-import { activateSheetAbility } from './sheetAbilityActivation'
-import { resolveCanonicalSheetAbilityName } from './sheetAbilities'
 import { setPokemonInjuries, setTrainerInjuries } from './sheets/healing'
 import {
   calculatePokemonLevelFromExperience,
@@ -167,30 +165,5 @@ export const applyExperienceToSheet = (
   updated.totalExp = pokemonSheetCurrentTotalExperience(updated) + grantAmount
   const levelFromExperience = calculatePokemonLevelFromExperience(updated.totalExp)
   if (levelFromExperience != null) updated.level = levelFromExperience
-  return updated
-}
-
-export const applyAbilityActivationToSheet = (
-  kind: SheetKind,
-  sheet: AnyLiveSheet,
-  abilityName: string,
-): AnyLiveSheet => {
-  const canonicalName = resolveCanonicalSheetAbilityName(abilityName)
-  if (!canonicalName) return sheet
-
-  if (kind === 'pokemon') {
-    const updated = deepCloneJson(sheet as CharacterSheet)
-    const ability = updated.abilities?.find((entry) =>
-      resolveCanonicalSheetAbilityName(entry) === canonicalName,
-    )
-    if (ability) activateSheetAbility(ability)
-    return updated
-  }
-
-  const updated = deepCloneJson(sheet as TrainerSheet)
-  const ability = updated.abilities?.find((entry) =>
-    resolveCanonicalSheetAbilityName(entry) === canonicalName,
-  )
-  if (ability) activateSheetAbility(ability)
   return updated
 }

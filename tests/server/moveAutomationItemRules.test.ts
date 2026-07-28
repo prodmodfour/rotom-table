@@ -46,6 +46,7 @@ const sheet = (input: {
   readonly held?: string
   readonly digestionFood?: string
   readonly honeyPawsFood?: string
+  readonly abilities?: readonly string[]
   readonly revision?: number
 }): CharacterSheet => ({
   slug: input.slug,
@@ -55,6 +56,16 @@ const sheet = (input: {
   revision: input.revision ?? 3,
   combat: { currentHp: 60 },
   movelist: [{ name: 'Scratch' }],
+  abilities: (input.abilities ?? []).map(canonicalId => ({
+    name: canonicalId,
+    automation: {
+      schemaVersion: 1,
+      instanceId: `base:${canonicalId.toLowerCase().replaceAll(' ', '-')}`,
+      canonicalId,
+      definitionVersion: null,
+      selections: [],
+    },
+  })),
   ...(input.held || input.digestionFood || input.honeyPawsFood
     ? {
         items: {
@@ -296,6 +307,36 @@ describe('authoritative item-dependent move rules', () => {
       flingCategory: 'rare-item',
       flingPower: 10,
     })
+  })
+
+  it('projects Ripen onto an exact numeric Berry Digestion Buff contribution', () => {
+    const ordinary = contextFixture()
+    expect(evaluate(ordinary, itemExpression({
+      query: 'damage-base', source: 'digestion-buff', families: ['berry'],
+      requirementId: null, timing: 'consumable',
+    }))).toBe(6)
+
+    const sheets = sheetsFixture()
+    const actor = sheets.get('item-rule-actor-sheet')!
+    sheets.set('item-rule-actor-sheet', {
+      ...actor,
+      abilities: [{
+        name: 'Ripen',
+        automation: {
+          schemaVersion: 1, instanceId: 'base:ripen', canonicalId: 'Ripen',
+          definitionVersion: null, selections: [],
+        },
+      }],
+    })
+    const ripened = contextFixture({ sheets })
+    expect(evaluate(ripened, itemExpression({
+      query: 'damage-base', source: 'digestion-buff', families: ['berry'],
+      requirementId: null, timing: 'consumable',
+    }))).toBe(12)
+    expect(evaluate(ripened, itemExpression({
+      query: 'move-type', source: 'digestion-buff', families: ['berry'],
+      requirementId: null, timing: 'consumable',
+    }))).toBe('fire')
   })
 
   it('treats the separate Honey Paws slot as an authoritative Digestion Buff resource', () => {

@@ -9,6 +9,7 @@ import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 
 export const AA080_MOTOR_DRIVE_STAGE_REASON = 'ability.motor-drive.raise-speed-on-electric-hit' as const
+export const AA080_MOXIE_REQUEST_REASON = 'ability.moxie.optional-attack-stage' as const
 export const AA080_MIRROR_ARMOR_REQUEST_REASON = 'ability.mirror-armor.optional-reflection' as const
 export const AA080_MIRROR_ARMOR_REFLECT_REASON = 'ability.mirror-armor.reflect-stage-loss' as const
 export const AA080_MINUS_REQUEST_REASON = 'ability.minus.optional-additional-stage-loss' as const
@@ -43,6 +44,46 @@ export const aa080MotorDriveOwnerForOperation = (
   : null
 
 const requestTiming = Object.freeze({ phase: 'hit' as const, timing: 'post-hit' as const })
+
+const moxieOperations = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly moveIdentity: string
+}): readonly MoveEffectOperation[] => {
+  const actorId = input.context.actor.placement.id
+  const ability = input.context.queries.abilities.activeForPlacement(actorId)
+    .find(candidate => candidate.canonicalId === 'Moxie')
+  if (!ability) return Object.freeze([])
+  const suffix = shortHash(input.moveIdentity, actorId, ability.instanceId)
+  const requestId = `ability.moxie.request.${suffix}`
+  return Object.freeze([{
+    id: requestId,
+    kind: 'reaction-request',
+    source: { kind: 'lifecycle-event', id: `ability.moxie.owner:${actorId}` },
+    recipients: { kind: 'none' },
+    phase: 'ko',
+    reasonCode: AA080_MOXIE_REQUEST_REASON,
+    payload: {
+      requestId: `${requestId}.response`,
+      promptKey: 'ability.moxie.use',
+      options: [{ id: 'ability.moxie.use', labelKey: 'ability.moxie.raise-attack' }],
+      allowPass: true,
+      timing: 'ko',
+      priority: 59,
+      ownerPlacementIds: [actorId],
+    },
+  } satisfies MoveReactionRequestEffectOperation, {
+    id: `ability.moxie.attack.${suffix}`,
+    kind: 'combat-stage',
+    source: { kind: 'operation', id: requestId },
+    recipients: { kind: 'response-owner' },
+    phase: 'ko',
+    reasonCode: 'ability.moxie.raise-attack',
+    payload: {
+      action: 'modify', stage: 'atk', selectedStage: null, value: 1,
+      stageSource: null, rounding: null, applyTypeImmunity: false,
+    },
+  } satisfies MoveCombatStageEffectOperation])
+}
 
 const mirrorArmorOperations = (input: {
   readonly sourceOperations: readonly MoveCombatStageEffectOperation[]
@@ -206,8 +247,11 @@ export const aa080MoveOverlayOperations = (input: {
     authoritativeTargetIds: input.authoritativeTargetIds,
     moveIdentity,
   })
-  if (!input.script.damaging && input.script.type.trim().toLowerCase() !== 'electric') return reactions
-  return Object.freeze([...reactions, ...[...new Set(input.authoritativeTargetIds)].sort().flatMap(ownerId => {
+  const moxie = moxieOperations({ context: input.context, moveIdentity })
+  if (!input.script.damaging && input.script.type.trim().toLowerCase() !== 'electric') {
+    return Object.freeze([...reactions, ...moxie])
+  }
+  return Object.freeze([...reactions, ...moxie, ...[...new Set(input.authoritativeTargetIds)].sort().flatMap(ownerId => {
     const ability = input.context.queries.abilities.activeForPlacement(ownerId)
       .find(candidate => candidate.canonicalId === 'Motor Drive')
     return ability ? [motorDriveStage({

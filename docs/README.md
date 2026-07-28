@@ -12,7 +12,9 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
 - [Live play authority](live-play-authority.md) — normal `/maps/<slug>` profile-play command direction, setup/edit versus live-play boundaries, revision/idempotency glossary, and the rule forbidding browser-owned whole-map autosave for live gameplay.
 - [Move automation contributor guide](move-automation.md) — MoveSpec authoring, evidence, runtime selection, and strict completion checks.
-- [Ability automation contributor guide](ability-automation.md) — 483-ability implementation ledger, AbilitySpec modes, event subscriptions, frequency state, evidence, and migration checks.
+- [Ability automation contributor guide](ability-automation.md) — 483-Ability authority, AbilitySpec modes, event subscriptions, frequency/state ownership, debugging, evidence, and correction workflow.
+- [Ability automation operator recovery and manual QA](ability-automation-manual-qa.md) — live-play UX, multi-client privacy, retry/conflict, restart, backup/export, recovery, and release-check runbook.
+- [Ability automation release acceptance](ability-automation-release-acceptance.md) — recorded 483-Ability automated, production-like multi-client, privacy, recovery, and runtime-retirement acceptance plus production observation dependencies.
 - [Move automation release acceptance](move-automation-release-acceptance.md) — recorded 776-move automated, production-like browser, privacy, recovery, and runtime-retirement acceptance.
 - [Move automation operator recovery and manual QA](move-automation-manual-qa.md) — private live-play canary, uncertainty, restart, backup, and privacy runbook.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.

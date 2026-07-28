@@ -36,7 +36,9 @@ export const USE_MOVE_COMMAND_SCOPE_FIELD = 'moveUsage' as const
 export const USE_MANEUVER_COMMAND_TYPE = 'useManeuver' as const
 export const USE_MANEUVER_COMMAND_SCOPE_FIELD = 'maneuver' as const
 
+/** @deprecated Historical session wire-reader identity; production execution is retired. */
 export const USE_ABILITY_COMMAND_TYPE = 'useAbility' as const
+/** @deprecated Historical session scope field only. */
 export const USE_ABILITY_COMMAND_SCOPE_FIELD = 'ability' as const
 
 export const USE_ORDER_COMMAND_TYPE = 'useOrder' as const
@@ -127,6 +129,7 @@ export type UseManeuverCommand<
   SessionRevision
 >
 
+/** @deprecated Historical session payload reader only. */
 export interface UseAbilityCommandPayload {
   readonly tokenId: string
   /** Display or canonical ability name selected by the acting client. */
@@ -135,6 +138,7 @@ export interface UseAbilityCommandPayload {
   readonly targetTokenId?: string
 }
 
+/** @deprecated Historical session command reader only; sockets reject it non-retryably. */
 export type UseAbilityCommand<
   TActor extends SessionActor = SessionActor,
 > = SessionCommandEnvelope<

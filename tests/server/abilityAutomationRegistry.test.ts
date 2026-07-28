@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import abilityAutomationManifest from '../../data/ability-automation/manifest.json'
 import type {
   AbilityAutomationManifest,
   AbilityAutomationManifestRecord,
@@ -230,62 +231,10 @@ describe('ability automation production runtime registry', () => {
   })
 
   it('ships only exact evidence-backed production selections', () => {
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(300)
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(483)
+    const canonicalIds = abilityAutomationManifest.abilities.map(ability => ability.canonicalId)
     expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries().map(runtime => runtime.canonicalId))
-      .toEqual([
-        'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
-        'Air Lock', 'Ambush', 'Analytic', 'Anchored', 'Anger Point', 'Anticipation',
-        'Aqua Boost', 'Aqua Bullet', 'Arena Trap', 'Aroma Veil', 'Aura Break', 'Aura Storm',
-        'Bad Dreams', 'Ball Fetch', 'Battery', 'Battle Armor', 'Beam Cannon', 'Beast Boost',
-        'Beautiful', 'Berry Storage', 'Berserk', 'Big Pecks', 'Big Swallow', 'Blaze',
-        'Blessed Touch', 'Blow Away', 'Blur', 'Bodyguard', 'Bone Lord', 'Bone Wielder',
-        'Brimstone', 'Bulletproof', 'Bully', 'Cave Crasher', 'Celebrate', 'Chemical Romance',
-        'Cherry Power', 'Chilling Neigh', 'Chlorophyll', 'Clay Cannons', 'Clear Body', 'Cloud Nine',
-        'Cluster Mind', 'Color Change', 'Color Theory', 'Comatose', 'Combo Striker', 'Competitive',
-        'Compound Eyes', 'Confidence', 'Conqueror', 'Contrary', 'Copy Master', 'Corrosion',
-        'Corrosive Toxins', 'Cotton Down', 'Courage', 'Covert', 'Cruelty', 'Crush Trap',
-        'Cud Chew', 'Curious Medicine', 'Cursed Body', 'Cute Charm', 'Cute Tears', 'Damp',
-        'Dancer', 'Danger Syrup', 'Dark Art', 'Dark Aura', 'Dauntless Shield', 'Daze',
-        'Dazzling', 'Deadly Poison', 'Decoy', 'Deep Sleep', 'Defeatist', 'Defiant',
-        'Defy Death', 'Delayed Reaction', 'Delivery Bird', 'Desert Weather', 'Designer',
-        'Diamond Defense', 'Dig Away', 'Dire Spore', 'Discipline', 'Disguise', 'Dodge',
-        'Download', 'Dragon’s Maw', 'Dream Smoke', 'Dreamspinner', 'Drizzle', 'Drought',
-        'Drown Out', 'Dry Skin', 'Dust Cloud', 'Early Bird', 'Effect Spore', 'Eggscellence',
-        'Electric Surge', 'Electrodash', 'Emergency Exit', 'Empower', 'Enduring Rage',
-        'Enfeebling Lips', 'Exploit', 'Fabulous Trim', 'Fade Away', 'Fairy Aura',
-        'Fashion Designer', 'Fiery Crash', 'Filter', 'Flame Body', 'Flame Tongue',
-        'Flare Boost', 'Flash Fire', 'Flavorful Aroma', 'Flower Gift', 'Flower Power',
-        'Flower Veil', 'Fluffy', 'Fluffy Charge', 'Flutter', 'Flying Fly Trap',
-        'Focus', 'Forecast', 'Forest Lord', 'Forewarn', 'Fox Fire', 'Freezing Point',
-        'Friend Guard', 'Frighten', 'Frisk', 'Frostbite', 'Full Guard', 'Full Metal Body',
-        'Fur Coat', 'Gale Wings', 'Galvanize', 'Gardener', 'Gentle Vibe', 'Giver',
-        'Glisten', 'Gluttony', 'Gooey', 'Gore', 'Gorilla Tactics', 'Grass Pelt',
-        'Grassy Surge', 'Grim Neigh', 'Gulp', 'Gulp Missile', 'Guts', 'Handyman',
-        'Harvest', 'Haunt', 'Hay Fever', 'Healer', 'Heat Mirage', 'Heatproof',
-        'Heavy Metal', 'Heliovolt', 'Helper', 'Honey Paws', 'Honey Thief',
-        'Horde Break', 'Huge Power', 'Huge Power / Pure Power', 'Hunger Switch',
-        'Hustle', 'Hydration', 'Hyper Cutter', 'Hypnotic', 'Ice Body', 'Ice Face',
-        'Ice Scales', 'Ice Shield', 'Ignition Boost', 'Illuminate', 'Illusion', 'Immunity',
-        'Imposter', 'Infiltrator', 'Innards Out', 'Inner Focus', 'Insomnia', 'Instinct',
-        'Interference', 'Intimidate', 'Intrepid Sword', 'Iron Barbs', 'Iron Fist',
-        'Juicy Energy', 'Justified', 'Kampfgeist', 'Keen Eye', 'Klutz', 'Lancer',
-        'Landslide', 'Last Chance', 'Leaf Gift', 'Leaf Guard', 'Leaf Rush', 'Leafy Cloak',
-        'Leek Mastery', 'Levitate', 'Life Force', 'Light Metal', 'Lightning Kicks',
-        'Lightning Rod', 'Limber', 'Line Charge', 'Liquid Ooze', 'Liquid Voice',
-        'Long Reach', 'Lullaby', 'Lunchbox', 'Mach Speed', 'Maelstrom Pulse', 'Magic Bounce',
-        'Magic Guard', 'Magician', 'Magma Armor', 'Magnet Pull', 'Marvel Scale',
-        'Mega Launcher', 'Memory Wipe', 'Merciless', 'Migraine', 'Mimicry', 'Mimitree', 'Mind Mold',
-        'Mini-Noses', 'Minus', 'Miracle Mile', 'Mirror Armor', 'Missile Launch', 'Misty Surge',
-        'Mojo', 'Mold Breaker', 'Moody', 'Motor Drive', 'Mountain Peak', 'Moxie',
-        'Mud Dweller', 'Mud Shield', 'Multiscale', 'Multitype', 'Mummy', 'Natural Cure',
-        'Needles', 'Neuroforce', 'Neutralizing Gas', 'Nimble Strikes', 'No Guard', 'Normalize',
-        'Oblivious', 'Odious Spray', 'Omen', 'Overcharge', 'Overcoat', 'Overgrow',
-        'Own Tempo', 'Pack Hunt', 'Parental Bond', 'Parry', 'Pastel Veil', 'Perception',
-        'Perish Body', 'Permafrost', 'Photosynthesis', 'Pickpocket', 'Pickup', 'Pixilate',
-        'Plus', 'Poison Heal', 'Poison Point', 'Poison Touch', 'Poltergeist', 'Polycephaly',
-        'Power Construct', 'Power Spot', 'Power of Alchemy', 'Prankster', 'Pressure', 'Pride',
-        'Prime Fury', 'Prism Armor', 'Probability Control', 'Propeller Tail', 'Protean', 'Psionic Screech',
-      ])
+      .toEqual(canonicalIds)
     expect(registeredAbilityAutomationRuntimeFor('Adaptability')).toMatchObject({
       kind: 'abilityspec-v1', version: 1,
     })

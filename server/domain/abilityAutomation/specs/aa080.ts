@@ -187,6 +187,7 @@ export const MOUNTAIN_PEAK_ABILITY_SPEC = staticSpec('Mountain Peak', 'aa080.mou
 export const MOXIE_ABILITY_SPEC = staticSpec('Moxie', 'aa080.moxie', {
   trigger: 'user-move-faints-target', targetRelationship: 'foe',
   stage: 'attack', stageDelta: 1, oncePerMove: true, optional: true,
+  executionBoundary: 'native-movespec-v2-reaction',
 }, ['combat-stage', 'follow-up', 'reactive', 'static'])
 
 export const AA080_ABILITY_SPECS = Object.freeze([

@@ -25,13 +25,11 @@ import {
   type SessionMapSlug,
 } from '#shared/sessionState'
 import {
-  USE_ABILITY_COMMAND_SCOPE_FIELD,
   USE_ABILITY_COMMAND_TYPE,
   USE_MANEUVER_COMMAND_SCOPE_FIELD,
   USE_MANEUVER_COMMAND_TYPE,
   USE_ORDER_COMMAND_SCOPE_FIELD,
   USE_ORDER_COMMAND_TYPE,
-  validateUseAbilityCommand,
   validateUseManeuverCommand,
   validateUseOrderCommand,
   type UseAbilityCommand,
@@ -47,12 +45,6 @@ import type { SheetKind, SheetPlacement, TabletopMapV2 } from '~/types/map'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import {
-  buildLegacyTokenAbilityMenuOptions,
-  getLegacyMapAbilityAutomation as getMapAbilityAutomation,
-  resolveLegacyMapAbilityAutomationTransaction as resolveMapAbilityAutomationTransaction,
-  type LegacyTokenAbilityMenuOption,
-} from '../domain/abilityAutomation/legacyCompatibility'
 import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
 import { applyAa079MagmaArmorGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa079LifecycleIntegration'
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
@@ -67,13 +59,11 @@ import {
   aa077HasAuthoritativeDisengageWindow,
   applyAa077DisengageResourceEvidence,
 } from '../domain/abilityAutomation/mechanics/aa077StaticIntegration'
-import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import {
   appendActiveOrderEffect,
   createActiveOrderEffect,
   type ActiveOrderEffect,
 } from '~/utils/activeOrderEffects'
-import { abilityEntriesForPlacement } from '~/utils/mapTokenAbilities'
 import {
   referenceManeuverOptions,
   trainerManeuverOptionsForSheet,
@@ -91,12 +81,7 @@ import {
   appendOrderLogEntry,
   buildOrderUseLogLines,
 } from '~/utils/orderLog'
-import {
-  applyAbilityActivationToSheet,
-  applyCombatStagesToSheet,
-  applyConditionsToSheet,
-  type AnyLiveSheet,
-} from '~/utils/sheetMutations'
+import type { AnyLiveSheet } from '~/utils/sheetMutations'
 import {
   catalogEntryForPokemonSheet,
   catalogEntryForTrainerSheet,
@@ -137,8 +122,12 @@ export class ApplyUseTableActionCommandUseCaseError<
 > extends UseCaseHttpError<TStatusCode> {}
 
 export const USE_MANEUVER_PATCH_EVENT_TYPE = 'maneuverUsed' as const
+/** Historical accepted-event reader identity; new execution cannot emit it. */
 export const USE_ABILITY_PATCH_EVENT_TYPE = 'abilityUsed' as const
 export const USE_ORDER_PATCH_EVENT_TYPE = 'orderUsed' as const
+
+export const RETIRED_SESSION_USE_ABILITY_MESSAGE =
+  'Legacy session useAbility execution is retired; use the native Ability declaration and resolution routes.'
 
 export type UseTableActionCommand =
   | UseManeuverCommand
@@ -361,8 +350,8 @@ type SheetWritePlan = {
 
 type UseTableActionApplicationPlan = {
   readonly mapDocument: TabletopMapV2
-  readonly eventType: typeof USE_MANEUVER_PATCH_EVENT_TYPE | typeof USE_ABILITY_PATCH_EVENT_TYPE | typeof USE_ORDER_PATCH_EVENT_TYPE
-  readonly eventPayload: UseManeuverPatchPayload | UseAbilityPatchPayload | UseOrderPatchPayload
+  readonly eventType: typeof USE_MANEUVER_PATCH_EVENT_TYPE | typeof USE_ORDER_PATCH_EVENT_TYPE
+  readonly eventPayload: UseManeuverPatchPayload | UseOrderPatchPayload
   readonly writePlans: readonly SheetWritePlan[]
 }
 
@@ -406,8 +395,8 @@ const targetTokenIdForCommand = (command: UseTableActionCommand): string | undef
 
 const scopeFieldForCommandType = (type: UseTableActionCommandType): string => {
   if (type === USE_MANEUVER_COMMAND_TYPE) return USE_MANEUVER_COMMAND_SCOPE_FIELD
-  if (type === USE_ABILITY_COMMAND_TYPE) return USE_ABILITY_COMMAND_SCOPE_FIELD
-  return USE_ORDER_COMMAND_SCOPE_FIELD
+  if (type === USE_ORDER_COMMAND_TYPE) return USE_ORDER_COMMAND_SCOPE_FIELD
+  throw new ApplyUseTableActionCommandUseCaseError(410, RETIRED_SESSION_USE_ABILITY_MESSAGE)
 }
 
 const metadataSummary = (metadata: Record<string, unknown> | undefined): UseTableActionMetadataSummary => ({
@@ -867,21 +856,6 @@ const makeSheetCache = (readSheet: UseTableActionSheetReader) => {
   }
 }
 
-const readSheetMapsForMap = (
-  placements: readonly SheetPlacement[],
-  getSheet: (kind: SheetKind, slug: string) => SheetCacheEntry | null,
-): { readonly pokemon: Map<string, CharacterSheet>; readonly trainer: Map<string, TrainerSheet> } => {
-  const pokemon = new Map<string, CharacterSheet>()
-  const trainer = new Map<string, TrainerSheet>()
-  for (const placement of placements) {
-    const entry = getSheet(placement.sheetKind, placement.sheetSlug)
-    if (entry === null) continue
-    if (entry.kind === 'pokemon') pokemon.set(entry.slug, entry.sheet as CharacterSheet)
-    else trainer.set(entry.slug, entry.sheet as TrainerSheet)
-  }
-  return { pokemon, trainer }
-}
-
 const sheetDisplayName = (kind: SheetKind, sheet: AnyLiveSheet): string => {
   if (kind === 'pokemon') {
     const pokemon = sheet as CharacterSheet
@@ -1035,16 +1009,6 @@ const resolveManeuverOption = (
   return options.find((option) => optionMatchesName(option.name, requestedName)) ?? null
 }
 
-const resolveAbilityOption = (
-  placement: SheetPlacement,
-  sheetMaps: { readonly pokemon: Map<string, CharacterSheet>; readonly trainer: Map<string, TrainerSheet> },
-  requestedName: string,
-): LegacyTokenAbilityMenuOption | null => {
-  const entries = abilityEntriesForPlacement(placement, sheetMaps)
-  const options = buildLegacyTokenAbilityMenuOptions(entries)
-  return options.find((option) => optionMatchesName(option.name, requestedName)) ?? null
-}
-
 const resolveOrderOption = (
   placement: SheetPlacement,
   sheet: SheetCacheEntry,
@@ -1074,30 +1038,6 @@ const addOrUpdateWritePlan = (
     original: entry.sheet,
     next: update(entry.kind, entry.sheet),
   })
-}
-
-const applyCombatStageUpdatePlan = (
-  plans: Map<string, SheetWritePlan>,
-  entry: SheetCacheEntry,
-  stages: CombatStageMap,
-): void => {
-  addOrUpdateWritePlan(plans, entry, (kind, sheet) => applyCombatStagesToSheet(kind, sheet, stages))
-}
-
-const applyConditionUpdatePlan = (
-  plans: Map<string, SheetWritePlan>,
-  entry: SheetCacheEntry,
-  conditions: readonly string[],
-): void => {
-  addOrUpdateWritePlan(plans, entry, (kind, sheet) => applyConditionsToSheet(kind, sheet, [...conditions]))
-}
-
-const applyAbilityActivationPlan = (
-  plans: Map<string, SheetWritePlan>,
-  entry: SheetCacheEntry,
-  abilityName: string,
-): void => {
-  addOrUpdateWritePlan(plans, entry, (kind, sheet) => applyAbilityActivationToSheet(kind, sheet, abilityName))
 }
 
 const useManeuverPlan = (
@@ -1246,193 +1186,6 @@ const useManeuverPlan = (
   }
 }
 
-const useAbilityPlan = (
-  command: UseAbilityCommand,
-  record: UseTableActionSessionRecord,
-  target: ResolvedUseTableActionTarget,
-  user: ResolvedActionToken,
-  userSheet: SheetCacheEntry,
-  targetToken: ResolvedActionToken | undefined,
-  targetSheet: SheetCacheEntry | undefined,
-  sheetMaps: { readonly pokemon: Map<string, CharacterSheet>; readonly trainer: Map<string, TrainerSheet> },
-  processedAt: string,
-):
-  | { readonly ok: true; readonly plan: UseTableActionApplicationPlan }
-  | { readonly ok: false; readonly result: UseTableActionRejectedResult } => {
-  const option = resolveAbilityOption(target.placement, sheetMaps, command.payload.abilityName)
-  if (option === null) {
-    return {
-      ok: false,
-      result: createConflictRejection(
-        command,
-        record,
-        `Ability ${command.payload.abilityName} is not present on token ${command.payload.tokenId}'s sheet.`,
-        processedAt,
-        { retryable: false, currentState: useTableActionStateFromTarget(command, target, record.revision) },
-      ),
-    }
-  }
-
-  if (option.automation === null) {
-    return {
-      ok: false,
-      result: createConflictRejection(
-        command,
-        record,
-        `Ability ${option.name} does not have a live session automation boundary yet.`,
-        processedAt,
-        { retryable: false, currentState: useTableActionStateFromTarget(command, target, record.revision) },
-      ),
-    }
-  }
-
-  if (option.automation.category === 'passive') {
-    return {
-      ok: false,
-      result: createConflictRejection(
-        command,
-        record,
-        `Ability ${option.name} is passive and cannot be used as an active session command.`,
-        processedAt,
-        { retryable: false, currentState: useTableActionStateFromTarget(command, target, record.revision) },
-      ),
-    }
-  }
-
-  const writePlans = new Map<string, SheetWritePlan>()
-  let logLines: readonly string[]
-  let category: AbilityAutomationCategory = option.automation.category
-  const combatStageUpdates: { tokenId: string; stages: CombatStageMap }[] = []
-  const conditionUpdates: { tokenId: string; conditions: readonly string[] }[] = []
-  let activated: boolean | undefined
-
-  if (option.automation.category === 'sheet') {
-    if (option.activated) {
-      return {
-        ok: false,
-        result: createConflictRejection(
-          command,
-          record,
-          `Ability ${option.name} is already active on token ${command.payload.tokenId}.`,
-          processedAt,
-          { retryable: false, currentState: useTableActionStateFromTarget(command, target, record.revision) },
-        ),
-      }
-    }
-
-    applyAbilityActivationPlan(writePlans, userSheet, option.name)
-    activated = true
-    logLines = [`${user.species} activated ${option.name}.`]
-  } else {
-    const mapAutomation = getMapAbilityAutomation(option.name)
-    if (mapAutomation?.targetMode === 'target' && targetToken === undefined) {
-      return {
-        ok: false,
-        result: createConflictRejection(
-          command,
-          record,
-          `Ability ${option.name} requires a target token.`,
-          processedAt,
-          { retryable: false, currentState: useTableActionStateFromTarget(command, target, record.revision) },
-        ),
-      }
-    }
-
-    const transaction = resolveMapAbilityAutomationTransaction({
-      abilityName: option.name,
-      user: user as SpawnedPokemon,
-      ...(targetToken === undefined ? {} : { target: targetToken as SpawnedPokemon }),
-      fieldEffects: target.mapState.document.fieldEffects,
-    })
-    if (transaction === null) {
-      return {
-        ok: false,
-        result: createConflictRejection(
-          command,
-          record,
-          `Ability ${option.name} could not produce a valid session automation transaction.`,
-          processedAt,
-          { retryable: false, currentState: useTableActionStateFromTarget(command, target, record.revision) },
-        ),
-      }
-    }
-
-    category = transaction.category
-    logLines = transaction.logLines
-    for (const update of transaction.combatStageUpdates) {
-      const updatePlacement = findTokenPlacement(target.mapState, update.id)
-      const updateSheet = update.id === user.id ? userSheet : update.id === targetToken?.id ? targetSheet : undefined
-      if (updatePlacement === undefined || updateSheet === undefined) {
-        return {
-          ok: false,
-          result: createConflictRejection(
-            command,
-            record,
-            `Ability ${option.name} references combat-stage target ${update.id}, but that target is not available.`,
-            processedAt,
-            { retryable: true, currentState: useTableActionStateFromTarget(command, target, record.revision) },
-          ),
-        }
-      }
-      applyCombatStageUpdatePlan(writePlans, updateSheet, update.stages)
-      combatStageUpdates.push({ tokenId: update.id, stages: update.stages })
-    }
-
-    for (const update of transaction.conditionUpdates) {
-      const updatePlacement = findTokenPlacement(target.mapState, update.id)
-      const updateSheet = update.id === user.id ? userSheet : update.id === targetToken?.id ? targetSheet : undefined
-      if (updatePlacement === undefined || updateSheet === undefined) {
-        return {
-          ok: false,
-          result: createConflictRejection(
-            command,
-            record,
-            `Ability ${option.name} references condition target ${update.id}, but that target is not available.`,
-            processedAt,
-            { retryable: true, currentState: useTableActionStateFromTarget(command, target, record.revision) },
-          ),
-        }
-      }
-      applyConditionUpdatePlan(writePlans, updateSheet, update.conditions)
-      conditionUpdates.push({ tokenId: update.id, conditions: [...update.conditions] })
-    }
-  }
-
-  const metadata = appendAbilityAutomationLogEntry(target.mapState.document.metadata, {
-    userId: user.id,
-    userName: user.species,
-    abilityName: option.name,
-    category,
-    combatStageUpdates: combatStageUpdates.map((update) => ({ id: update.tokenId, stages: update.stages })),
-    conditionUpdates: conditionUpdates.map((update) => ({ id: update.tokenId, conditions: [...update.conditions] })),
-    logLines: [...logLines],
-  }, {
-    now: () => Date.parse(processedAt),
-  })
-
-  return {
-    ok: true,
-    plan: {
-      mapDocument: touchedMapDocument({ ...target.mapState.document, metadata }, processedAt),
-      eventType: USE_ABILITY_PATCH_EVENT_TYPE,
-      eventPayload: {
-        tokenId: target.placement.id,
-        mapSlug: target.mapSlug,
-        sheetKind: target.placement.sheetKind,
-        sheetSlug: target.placement.sheetSlug,
-        abilityName: option.name,
-        category,
-        ...(targetToken === undefined ? {} : { targetTokenId: targetToken.id, targetName: targetToken.species }),
-        ...(activated === undefined ? {} : { activated }),
-        combatStageUpdates,
-        conditionUpdates,
-        logLines,
-      },
-      writePlans: [...writePlans.values()],
-    },
-  }
-}
-
 const orderTargetLabel = (order: TokenOrderMenuOption): string | null => {
   const explicit = order.target?.trim()
   if (explicit) return explicit
@@ -1572,18 +1325,7 @@ const planUseTableActionApplication = (
   }
 
   if (command.type === USE_ABILITY_COMMAND_TYPE) {
-    const sheetMaps = readSheetMapsForMap(target.mapState.document.placements, getSheet)
-    return useAbilityPlan(
-      command,
-      record,
-      target,
-      userResult.token,
-      userResult.sheet,
-      targetResult.token,
-      targetResult.sheet,
-      sheetMaps,
-      processedAt,
-    )
+    throw new ApplyUseTableActionCommandUseCaseError(410, RETIRED_SESSION_USE_ABILITY_MESSAGE)
   }
 
   return useOrderPlan(
@@ -1658,14 +1400,7 @@ const validateCommandSpecifics = (
   }
 
   if (command.type === USE_ABILITY_COMMAND_TYPE) {
-    const result = validateUseAbilityCommand(command, { assignments })
-    if (!result.valid) return result
-    return {
-      valid: true,
-      command: result.command,
-      tokenResource: result.tokenResource,
-      ...(result.sheetResource === undefined ? {} : { sheetResource: result.sheetResource }),
-    }
+    throw new ApplyUseTableActionCommandUseCaseError(410, RETIRED_SESSION_USE_ABILITY_MESSAGE)
   }
 
   const result = validateUseOrderCommand(command, { assignments })
@@ -1715,6 +1450,9 @@ export const applyUseTableActionCommandUseCase = (
   const writeSheet = dependencies.writeSheet ?? (writeRuntimeSheet as unknown as UseTableActionSheetWriter)
 
   const envelope = validateEnvelopeForUseTableAction(input.command)
+  if (envelope.type === USE_ABILITY_COMMAND_TYPE) {
+    throw new ApplyUseTableActionCommandUseCaseError(410, RETIRED_SESSION_USE_ABILITY_MESSAGE)
+  }
   const record = getActiveUseTableActionRecord(activeStore, envelope)
   const processedAt = clock()
 

@@ -35,7 +35,6 @@ const buildSheetLines = (ability: TokenAbilityMenuOption): string[] => {
     lines.push(`Interaction coverage: ${capability.interactionStatus}`)
     if (capability.unavailableReasonCode) lines.push(`Reason: ${capability.unavailableReasonCode}`)
   }
-  if (ability.activated) lines.push('Sheet toggle: Active')
   return lines
 }
 

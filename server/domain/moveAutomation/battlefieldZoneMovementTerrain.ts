@@ -114,6 +114,12 @@ const movementZoneIndex = (input: {
     if (zone.kind === 'barrier' && traversalBlocked(zone)) {
       for (const cell of barrierOccupiedCells(zone, input.map.dimensions)) {
         const key = cellKey(cell.x, cell.y, cell.z)
+        if (input.subject.destroyHazards === true) {
+          // Screen Cleaner treats Blocking Hazards as Slow Terrain for movement
+          // while retaining their ordinary line-of-sight projection.
+          slowCells.add(key)
+          continue
+        }
         blockingCells.set(key, {
           ...cell,
           materialId: 'airship_wall_bulkhead',

@@ -3,7 +3,6 @@ import { useMapPageTableActionDispatchers } from '~/composables/map-editor/useMa
 
 describe('useMapPageTableActionDispatchers', () => {
   const liveCommands = () => ({
-    useAbility: vi.fn(async () => ({ dispatched: true })),
     useManeuver: vi.fn(async () => ({ dispatched: true })),
     useOrder: vi.fn(async () => ({ dispatched: true })),
   })
@@ -16,14 +15,12 @@ describe('useMapPageTableActionDispatchers', () => {
     })
 
     expect(dispatchers.dispatchManeuverUse({ userId: 'actor', maneuverName: 'Trip' })).toBeUndefined()
-    expect(dispatchers.dispatchAbilityUse({ userId: 'actor', abilityName: 'Sand Veil' })).toBeUndefined()
     expect(dispatchers.dispatchOrderUse({ userId: 'trainer', orderName: 'Agility Training' })).toBeUndefined()
     expect(commands.useManeuver).not.toHaveBeenCalled()
-    expect(commands.useAbility).not.toHaveBeenCalled()
     expect(commands.useOrder).not.toHaveBeenCalled()
   })
 
-  it('routes live manoeuvres, abilities, and orders through authoritative commands', async () => {
+  it('routes live manoeuvres and orders through authoritative commands', async () => {
     const commands = liveCommands()
     const dispatchers = useMapPageTableActionDispatchers({
       isSetupEditMode: () => false,
@@ -35,11 +32,6 @@ describe('useMapPageTableActionDispatchers', () => {
       maneuverName: 'Trip',
       targetTokenId: 'target',
     })).resolves.toBe(true)
-    await expect(dispatchers.dispatchAbilityUse({
-      userId: 'actor',
-      abilityName: 'Intimidate',
-      targetTokenId: 'target',
-    })).resolves.toBe(true)
     await expect(dispatchers.dispatchOrderUse({
       userId: 'trainer',
       orderName: 'Agility Training',
@@ -49,11 +41,6 @@ describe('useMapPageTableActionDispatchers', () => {
     expect(commands.useManeuver).toHaveBeenCalledWith({
       placementId: 'actor',
       maneuverName: 'Trip',
-      targetPlacementId: 'target',
-    })
-    expect(commands.useAbility).toHaveBeenCalledWith({
-      placementId: 'actor',
-      abilityName: 'Intimidate',
       targetPlacementId: 'target',
     })
     expect(commands.useOrder).toHaveBeenCalledWith({
@@ -68,13 +55,11 @@ describe('useMapPageTableActionDispatchers', () => {
       isSetupEditMode: () => false,
       livePlayCommands: {
         useManeuver: vi.fn(async () => ({ dispatched: false })),
-        useAbility: vi.fn(async () => { throw new Error('transport') }),
-        useOrder: vi.fn(async () => ({ dispatched: false })),
+        useOrder: vi.fn(async () => { throw new Error('transport') }),
       },
     })
 
     await expect(dispatchers.dispatchManeuverUse({ userId: 'actor', maneuverName: 'Trip' })).resolves.toBe(false)
-    await expect(dispatchers.dispatchAbilityUse({ userId: 'actor', abilityName: 'Intimidate' })).resolves.toBe(false)
     await expect(dispatchers.dispatchOrderUse({ userId: 'trainer', orderName: 'Agility Training' })).resolves.toBe(false)
   })
 })

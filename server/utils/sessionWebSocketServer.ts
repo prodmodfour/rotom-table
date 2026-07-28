@@ -50,7 +50,6 @@ import {
   type ModifyCombatStagesCommand,
   type ModifyConditionsCommand,
   type ModifyHpCommand,
-  type UseAbilityCommand,
   type UseManeuverCommand,
   type UseMoveCommand,
   type UseOrderCommand,
@@ -1731,6 +1730,17 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
 ): void => {
   const command = commandMessage.command
 
+  if (command.type === USE_ABILITY_COMMAND_TYPE) {
+    sendJson(peer, createSessionSocketErrorMessage({
+      code: 'unsupported-message',
+      message: 'Legacy session useAbility execution is retired; use the native Ability declaration and resolution routes.',
+      retryable: false,
+      sessionId: connection.sessionId,
+      currentRevision: connection.currentRevision,
+    }))
+    return
+  }
+
   if (
     command.type !== MOVE_TOKEN_COMMAND_TYPE &&
     command.type !== TURN_TOKEN_COMMAND_TYPE &&
@@ -1742,7 +1752,6 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     command.type !== MODIFY_CONDITIONS_COMMAND_TYPE &&
     command.type !== USE_MOVE_COMMAND_TYPE &&
     command.type !== USE_MANEUVER_COMMAND_TYPE &&
-    command.type !== USE_ABILITY_COMMAND_TYPE &&
     command.type !== USE_ORDER_COMMAND_TYPE &&
     command.type !== SET_INITIATIVE_COMMAND_TYPE &&
     command.type !== NEXT_INITIATIVE_COMMAND_TYPE &&
@@ -1757,7 +1766,7 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
   ) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'live session command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
+      message: 'live session command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1864,11 +1873,10 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
       })
     } else if (
       command.type === USE_MANEUVER_COMMAND_TYPE ||
-      command.type === USE_ABILITY_COMMAND_TYPE ||
       command.type === USE_ORDER_COMMAND_TYPE
     ) {
       applied = dependencies.applyUseTableActionCommand({
-        command: command as UseManeuverCommand | UseAbilityCommand | UseOrderCommand,
+        command: command as UseManeuverCommand | UseOrderCommand,
       }, {
         ...dependencies.useTableActionCommandDependencies,
         env: dependencies.env,

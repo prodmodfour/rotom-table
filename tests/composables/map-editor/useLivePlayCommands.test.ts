@@ -5561,7 +5561,7 @@ describe('useLivePlayCommands', () => {
     })
   })
 
-  it('routes GM table action helpers without inventing a player profile id', async () => {
+  it('routes GM manoeuvre and order helpers without exposing legacy ability execution', async () => {
     const map = mapFixture()
     mockTerminalResponse({
       ok: true,
@@ -5588,10 +5588,8 @@ describe('useLivePlayCommands', () => {
       orderName: 'Agility Training',
       targetPlacementId: 'target-token',
     })).resolves.toMatchObject({ dispatched: true })
-    await expect(actions.useAbility({
-      placementId: 'token-pikachu',
-      abilityName: 'Sand Veil',
-    })).resolves.toMatchObject({ dispatched: true })
+    expect(actions).not.toHaveProperty('useAbility')
+    expect(MAP_API_PATHS).not.toHaveProperty('useAbility')
 
     expect(apiMocks.postJson).toHaveBeenNthCalledWith(1, MAP_API_PATHS.useManeuver, expect.objectContaining({
       type: LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
@@ -5607,13 +5605,6 @@ describe('useLivePlayCommands', () => {
         placementId: 'token-pikachu',
         orderName: 'Agility Training',
         targetPlacementId: 'target-token',
-      },
-    }))
-    expect(apiMocks.postJson).toHaveBeenNthCalledWith(3, MAP_API_PATHS.useAbility, expect.objectContaining({
-      type: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
-      payload: {
-        placementId: 'token-pikachu',
-        abilityName: 'Sand Veil',
       },
     }))
     for (const [, body] of apiMocks.postJson.mock.calls) {
@@ -5648,70 +5639,6 @@ describe('useLivePlayCommands', () => {
     for (const [, body] of apiMocks.postJson.mock.calls) {
       expect(body).toMatchObject({ profileId: 'profile_ash00000' })
     }
-  })
-
-  it('routes table action helpers through the shared dispatcher and applies returned sheet updates', async () => {
-    const map = mapFixture()
-    const profileId = ref(parsePlayerProfileId('profile_ash00000'))
-    const applyPersistedMap = vi.fn()
-    const applySheetUpdate = vi.fn()
-    const sheetUpdate = {
-      kind: 'pokemon' as const,
-      slug: 'pikachu',
-      path: 'data/pokemon/pikachu.json',
-      sheet: { slug: 'pikachu', combat: { conditions: ['Burned'] } },
-    }
-    mockTerminalResponse({
-      ok: true,
-      opId: 'op_serverability',
-      mapSlug: 'arena-map',
-      previousRevision: 4,
-      revision: 5,
-      patches: [],
-      path: 'data/maps/arena-map.json',
-      map,
-      action: { type: 'ability', placementId: 'token-pikachu', name: 'Healer' },
-      sheetUpdates: [sheetUpdate],
-    })
-
-    const actions = useTestLivePlayCommands({
-      slug: 'arena-map',
-      authRole: ref<AuthRole>('player'),
-      playerProfileId: profileId,
-      map: ref(map),
-      mapRevision: ref(4),
-      applyPersistedMap,
-      applySheetUpdate,
-    })
-    const result = await actions.useAbility({
-      placementId: 'token-pikachu',
-      abilityName: 'Healer',
-      targetPlacementId: 'target-token',
-    })
-
-    expect(result.dispatched).toBe(true)
-    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.useAbility, expect.objectContaining({
-      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
-      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
-      mapSlug: 'arena-map',
-      baseRevision: 4,
-      type: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
-      scopes: [
-        { kind: 'token', placementId: 'token-pikachu', field: 'action' },
-        { kind: 'map', lane: 'metadata' },
-        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'ability' },
-        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'bulbasaur', field: 'ability' },
-      ],
-      payload: {
-        placementId: 'token-pikachu',
-        abilityName: 'Healer',
-        targetPlacementId: 'target-token',
-      },
-      clientId: 'ssr',
-      profileId: 'profile_ash00000',
-    }))
-    expect(applyPersistedMap).toHaveBeenCalledWith(map)
-    expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
   })
 
   it('posts resolveMove once with a normalized intent, authoritative revision, profile id, and conservative scopes', async () => {

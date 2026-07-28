@@ -93,55 +93,17 @@ describe('map token table action API routes', () => {
     vi.clearAllMocks()
   })
 
-  it('resolves selected player profiles before canonical ability commands', async () => {
-    const map = mapFixture()
-    const profile = {
-      schemaVersion: 1,
-      id: 'profile_ash00000',
-      displayName: 'Ash',
-      linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'sandile' }],
-    }
-    const command = abilityCommand()
-    mocks.resolvePlayerProfileForPolicy.mockReturnValue(profile)
-    mocks.executeLivePlayTableActionCommandUseCase.mockResolvedValue({
-      result: {
-        ok: true,
-        opId: 'op_routeabil',
-        mapSlug: 'arena',
-        previousRevision: 0,
-        revision: 1,
-        patches: [],
-      },
-      path: 'data/maps/arena.json',
-      map,
-      action: { type: 'ability', placementId: 'actor', targetPlacementId: 'target', name: 'Intimidate' },
-      sheetUpdates: [],
-    })
-
+  it('keeps the authenticated legacy ability route as a non-writing gone tombstone', async () => {
     await expect(invokeRoute(abilityRoute, {
       role: 'player',
-      body: command,
-    })).resolves.toEqual({
-      ok: true,
-      opId: 'op_routeabil',
-      mapSlug: 'arena',
-      previousRevision: 0,
-      revision: 1,
-      patches: [],
-      path: 'data/maps/arena.json',
-      map,
-      action: { type: 'ability', placementId: 'actor', targetPlacementId: 'target', name: 'Intimidate' },
-      sheetUpdates: [],
+      body: abilityCommand(),
+    })).rejects.toMatchObject({
+      statusCode: 410,
+      statusMessage: 'Legacy useAbility execution is retired; use the native Ability declaration and resolution routes.',
     })
 
-    expect(mocks.resolvePlayerProfileForPolicy).toHaveBeenCalledWith('profile_ash00000')
-    expect(mocks.executeLivePlayTableActionCommandUseCase).toHaveBeenCalledWith({
-      role: 'player',
-      command,
-      clientId: 'client-1',
-      playerProfile: profile,
-      expectedType: 'useAbility',
-    })
+    expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()
+    expect(mocks.executeLivePlayTableActionCommandUseCase).not.toHaveBeenCalled()
   })
 
   it('keeps GM table action routes independent from player profile selection', async () => {

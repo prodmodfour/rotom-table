@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import GmAdminPanelHost from '~/components/admin/GmAdminPanelHost.vue'
 import { setRealtimeClientAuthRole } from '~/utils/realtimeClientPrincipalContext'
 
@@ -10,14 +10,19 @@ const { role } = useAuth()
 const playerProfiles = usePlayerProfiles()
 
 if (import.meta.client) {
+  let mounted = false
   watch(
     role,
     (nextRole) => {
       setRealtimeClientAuthRole(nextRole)
-      if (nextRole === 'player') playerProfiles.loadRememberedProfile()
+      if (mounted && nextRole === 'player') playerProfiles.loadRememberedProfile()
     },
     { immediate: true },
   )
+  onMounted(() => {
+    mounted = true
+    if (role.value === 'player') playerProfiles.loadRememberedProfile()
+  })
 }
 </script>
 

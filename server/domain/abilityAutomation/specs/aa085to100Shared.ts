@@ -183,6 +183,46 @@ export const remainingActivatedTriggeredAbilitySpec = (
   tags: ['mode.activated', 'mode.triggered', 'reviewed', 'server-authoritative'],
 })
 
+export const remainingStaticTriggeredAbilitySpec = (
+  canonicalId: string,
+  mechanicId: string,
+  eventKind: RemainingAbilityEventKind,
+  response: 'mandatory' | 'optional' = 'optional',
+) => reviewedAbilitySpec({
+  canonicalId,
+  modes: [
+    { id: 'passive', kind: 'static' },
+    { id: 'trigger', kind: 'triggered' },
+  ],
+  subscriptions: [{
+    id: 'trigger.subscription',
+    modeId: 'trigger',
+    eventKind,
+    checkpoint: eventKind === 'lifecycle' ? 'lifecycle' : 'post-effect',
+    response,
+    priority: 0,
+    oncePerCausalChain: true,
+    predicate: null,
+  }],
+  targeting: [
+    ...noAbilityTarget('passive'),
+    ...noAbilityTarget('trigger'),
+  ],
+  phases: [
+    {
+      modeId: 'passive',
+      phase: 'effect',
+      operations: [abilityMechanicOperation('passive.mechanic', mechanicId, mechanicConfig(canonicalId))],
+    },
+    {
+      modeId: 'trigger',
+      phase: 'effect',
+      operations: [abilityMechanicOperation('trigger.mechanic', mechanicId, mechanicConfig(canonicalId))],
+    },
+  ],
+  tags: ['mode.static', 'mode.triggered', 'reviewed', 'server-authoritative'],
+})
+
 export const remainingTriggeredAbilitySpec = (
   canonicalId: string,
   mechanicId: string,

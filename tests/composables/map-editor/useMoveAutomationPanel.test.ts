@@ -1102,38 +1102,6 @@ describe('useMoveAutomationPanel', () => {
     }
   })
 
-  it('keeps retired browser follow-up state empty and non-mechanical', async () => {
-    const conditionCalls: MoveAutomationTransaction['conditionUpdates'] = []
-    const stageCalls: MoveAutomationTransaction['combatStageUpdates'] = []
-    const panel = useMoveAutomationPanel({
-      map: ref(mapFixture()),
-      spawnedPokemon: computed(() => [spawned()]),
-      pokemonBySlug: ref(new Map<string, CharacterSheet>()),
-      trainerBySlug: ref(new Map<string, TrainerSheet>()),
-      canEditMap: computed(() => false),
-      canControlPlacement: () => true,
-      modifyHp: () => undefined,
-      modifyCombatStages: update => { stageCalls.push(update) },
-      modifyConditions: update => { conditionCalls.push(update) },
-      applyMoveFieldEffect: () => undefined,
-      placeHazard: () => undefined,
-    })
-
-    await panel.applySpiteReactionPrompt('retired-spite')
-    await panel.applyCuteCharmReactionPrompt('retired-cute-charm')
-    await panel.applyPoisonPointReactionPrompt('retired-poison-point')
-    await panel.applyMoxieTriggerPrompt('retired-moxie')
-    panel.applyCelebrateTriggerPrompt('retired-celebrate')
-
-    expect(conditionCalls).toEqual([])
-    expect(stageCalls).toEqual([])
-    expect(panel.spiteReactionPrompts.value).toEqual([])
-    expect(panel.cuteCharmReactionPrompts.value).toEqual([])
-    expect(panel.poisonPointReactionPrompts.value).toEqual([])
-    expect(panel.moxieTriggerPrompts.value).toEqual([])
-    expect(panel.celebrateTriggerPrompts.value).toEqual([])
-  })
-
   it('applies sheet updates, gates map effects by GM permission, appends logs, and faces targets', async () => {
     const map = ref({
       ...mapFixture(),

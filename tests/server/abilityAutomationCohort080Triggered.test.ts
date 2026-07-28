@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
-import { parsePendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
@@ -9,14 +8,10 @@ import {
   isAuthoritativePendingMoveStatePlan,
   planAuthoritativeMoveStateExecution,
 } from '../../server/domain/planAuthoritativeMoveState'
-import { isAuthoritativePendingMoveResolution, resolveAuthoritativeMove } from '../../server/domain/resolveAuthoritativeMove'
+import { isAuthoritativePendingMoveResolution } from '../../server/domain/resolveAuthoritativeMove'
 import { resumeMoveSpec } from '../../server/domain/moveAutomation/resumeSpec'
 import { planResumedMoveState } from '../../server/domain/moveAutomation/planResumedMoveState'
 import { planEncounterLifecycle } from '../../server/domain/moveAutomation/planInitiativeLifecycle'
-import {
-  materializeAbilityFollowUps,
-  planAbilityFollowUpResponse,
-} from '../../server/domain/moveAutomation/abilityFollowUps'
 
 const id = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 const ability = (canonicalId: string) => ({
@@ -252,103 +247,60 @@ describe('AA-080 triggered and lifecycle integrations', () => {
     expect(JSON.stringify(first.reduction.trace)).toContain('ability.moody.turn-end-lower')
   })
 
-  it('Moxie materializes only from an effective runtime and a Move-fainted foe, then applies one durable optional Attack stage', () => {
+  it('Moxie uses the native MoveSpec response, revalidates its effective runtime, and triggers once per Move-fainted foe set', () => {
     const state = fixture({
       slug: 'aa080-moxie', move: 'Tackle', actorAbilities: ['Moxie'], targetHp: 1,
     })
-    const resolution = resolveAuthoritativeMove({
-      map: state.map, pokemonSheets: state.pokemonSheets, trainerSheets: new Map(),
-      intent: {
-        schemaVersion: 1, placementId: 'actor', moveName: 'Tackle',
-        selection: { kind: 'single-target', targetPlacementId: 'target' },
-      },
-      random: () => 0.95, now: () => 1_000,
-    })
-    const pending = materializeAbilityFollowUps({
-      resolutionId: 'resolution:aa080:moxie', originOpId: 'op_aa080_moxie',
-      originMapSlug: state.map.slug, continuationMapRevision: 6, createdAt: 1_000,
-      resolution, map: state.map, pokemonSheets: state.pokemonSheets, trainerSheets: new Map(),
-      sheetWrites: [],
-    })
-    expect(pending?.outstandingWindows).toContainEqual(expect.objectContaining({
-      reasonCode: 'ability.moxie.follow-up', ownership: [{ kind: 'actor', id: null }],
-      options: [{ id: 'ability.moxie.apply', labelKey: 'ability.moxie.raise-attack' }],
-    }))
-    if (!pending) return
-    const durableMap: TabletopMap = {
-      ...state.map, revision: 6,
-      encounterState: {
-        ...state.map.encounterState!, pendingResolutionSummaries: [pending.publicSummary],
-      },
-    }
-    const window = pending.outstandingWindows.find(candidate => candidate.reasonCode === 'ability.moxie.follow-up')!
-    const reconnectedPending = parsePendingMoveResolution(JSON.parse(JSON.stringify(pending)))
-    expect(reconnectedPending.publicSummary).toEqual(pending.publicSummary)
-    const responseInput = {
-      pendingResolution: reconnectedPending,
-      responseOpId: 'op_aa080_moxie_response', responseWindowId: window.windowId,
-      responseOptionId: 'ability.moxie.apply', chosenBy: { kind: 'gm' as const, id: null },
-      map: durableMap, pokemonSheets: state.pokemonSheets, trainerSheets: new Map(), plannedAt: 2_000,
-    }
-    const planned = planAbilityFollowUpResponse(responseInput)
-    expect(planAbilityFollowUpResponse(responseInput).stateChanges).toEqual(planned.stateChanges)
-    const actor = (planned.sheetWrites.find(write => write.slug === 'actor')?.nextSheet
-      ?? state.pokemonSheets.get('actor')) as CharacterSheet
-    expect(stage(actor, 'atk')).toBe(1)
-    expect(planned.nextMap.encounterState?.turnResources.actor?.actions).toEqual(
-      durableMap.encounterState?.turnResources.actor?.actions,
+    const declaration = declare(state)
+    expect(isAuthoritativePendingMoveStatePlan(declaration.result)).toBe(true)
+    if (!isAuthoritativePendingMoveStatePlan(declaration.result)) return
+    expect(declaration.result.suspension.pendingResolution.outstandingWindows).toContainEqual(
+      expect.objectContaining({
+        reasonCode: 'ability.moxie.optional-attack-stage',
+        ownership: [{ kind: 'actor', id: null }],
+        options: [{ id: 'ability.moxie.use', labelKey: 'ability.moxie.raise-attack' }],
+      }),
     )
-    expect(planned.nextMap.encounterState?.abilityUsage?.entries.some(entry => (
+    const accepted = complete(declaration, 'ability.moxie.use')
+    expect(stage(plannedSheet(accepted, state, 'actor'), 'atk')).toBe(1)
+    expect(accepted.plan.nextMap.encounterState?.turnResources.actor?.actions).toEqual(
+      state.map.encounterState?.turnResources.actor?.actions,
+    )
+    expect(accepted.plan.nextMap.encounterState?.abilityUsage?.entries.some(entry => (
       entry.canonicalId === 'Moxie'
     )) ?? false).toBe(false)
 
+    const pending = declaration.result.suspension.pendingResolution
+    const window = pending.outstandingWindows[0]!
     const staleActor = { ...state.pokemonSheets.get('actor')!, abilities: [], revision: 4 }
-    expect(() => planAbilityFollowUpResponse({
-      ...responseInput,
-      pokemonSheets: new Map([['actor', staleActor], ['target', state.pokemonSheets.get('target')!]]),
-    })).toThrow('Selected Moxie response lost its exact effective ability runtime.')
+    expect(() => resumeMoveSpec({
+      pendingResolution: structuredClone(pending),
+      map: structuredClone(declaration.result.nextMap),
+      pokemonSheets: new Map([
+        ['actor', staleActor],
+        ['target', state.pokemonSheets.get('target')!],
+      ]),
+      trainerSheets: new Map(),
+      response: { requestId: window.windowId, optionId: 'ability.moxie.use' },
+      now: 2_000,
+      random: () => 0.75,
+    })).toThrow()
 
     const multiState = fixture({
       slug: 'aa080-moxie-multi', move: 'Discharge', actorAbilities: ['Moxie'],
       targetHp: 1, includeOther: true,
     })
-    const multiResolution = resolveAuthoritativeMove({
-      map: multiState.map, pokemonSheets: multiState.pokemonSheets, trainerSheets: new Map(),
-      intent: {
-        schemaVersion: 1, placementId: 'actor', moveName: 'Discharge',
-        selection: {
-          kind: 'area',
-          areaTemplateId: moveAutomationAreaTemplateId({
-            kind: 'cardinally-adjacent', size: 1,
-          }),
-        },
-      },
-      random: () => 0.95, now: () => 1_000,
+    const multiDeclaration = declare(multiState, {
+      kind: 'area',
+      areaTemplateId: moveAutomationAreaTemplateId({ kind: 'cardinally-adjacent', size: 1 }),
     })
-    const multiPending = materializeAbilityFollowUps({
-      resolutionId: 'resolution:aa080:moxie-multi', originOpId: 'op_aa080_moxie_multi',
-      originMapSlug: multiState.map.slug, continuationMapRevision: 6, createdAt: 1_000,
-      resolution: multiResolution, map: multiState.map,
-      pokemonSheets: multiState.pokemonSheets, trainerSheets: new Map(), sheetWrites: [],
-    })
-    expect(multiPending?.outstandingWindows.filter(candidate => (
-      candidate.reasonCode === 'ability.moxie.follow-up'
+    expect(isAuthoritativePendingMoveStatePlan(multiDeclaration.result)).toBe(true)
+    if (!isAuthoritativePendingMoveStatePlan(multiDeclaration.result)) return
+    expect(multiDeclaration.result.suspension.pendingResolution.outstandingWindows.filter(window => (
+      window.reasonCode === 'ability.moxie.optional-attack-stage'
     ))).toHaveLength(1)
 
     const absent = fixture({ slug: 'aa080-moxie-absent', move: 'Tackle', targetHp: 1 })
-    const absentResolution = resolveAuthoritativeMove({
-      map: absent.map, pokemonSheets: absent.pokemonSheets, trainerSheets: new Map(),
-      intent: {
-        schemaVersion: 1, placementId: 'actor', moveName: 'Tackle',
-        selection: { kind: 'single-target', targetPlacementId: 'target' },
-      },
-      random: () => 0.95, now: () => 1_000,
-    })
-    expect(materializeAbilityFollowUps({
-      resolutionId: 'resolution:aa080:moxie-absent', originOpId: 'op_aa080_moxie_absent',
-      originMapSlug: absent.map.slug, continuationMapRevision: 6, createdAt: 1_000,
-      resolution: absentResolution, map: absent.map,
-      pokemonSheets: absent.pokemonSheets, trainerSheets: new Map(), sheetWrites: [],
-    })?.outstandingWindows.some(candidate => candidate.reasonCode === 'ability.moxie.follow-up') ?? false).toBe(false)
+    expect(isAuthoritativePendingMoveStatePlan(declare(absent).result)).toBe(false)
   })
 })
