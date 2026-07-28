@@ -29,6 +29,16 @@ describe('Pokédex reference data', () => {
     expect(nidoranM[0]).toMatchObject({ types: ['Poison'], base_stats: { hp: 5, atk: 6 } })
   })
 
+  it('uses the revised physical stat profiles for Onix and Steelix', () => {
+    const bySpecies = new Map(loadPokedex().map((entry) => [entry.species, entry]))
+    const onix = bySpecies.get('Onix')
+    const steelix = bySpecies.get('Steelix')
+
+    expect(onix?.base_stats).toEqual({ hp: 8, atk: 10, def: 15, spatk: 3, spdef: 5, spd: 7 })
+    expect(onix?.capabilities?.other).not.toContain('Underdog')
+    expect(steelix?.base_stats).toEqual({ hp: 10, atk: 13, def: 19, spatk: 4, spdef: 8, spd: 3 })
+  })
+
   it('contains machine moves parsed from shorthand TM sections and all-machine notes', () => {
     const pokedex = loadPokedex()
     const bySpecies = new Map(pokedex.map((entry) => [entry.species, entry]))

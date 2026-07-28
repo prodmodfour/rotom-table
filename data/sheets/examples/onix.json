@@ -18,7 +18,7 @@
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "def": {
@@ -38,14 +38,14 @@
     },
     "spd": {
       "base": 1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 38,
-    "currentHp": 38,
-    "tick": 3,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
       "vsAtk": 4,
       "vsSatk": 1,
@@ -141,8 +141,7 @@
       "Groundshaper",
       "Reach 3",
       "Mountable 5",
-      "Tremorsense",
-      "Underdog"
+      "Tremorsense"
     ]
   }
 }

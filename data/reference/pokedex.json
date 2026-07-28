@@ -38711,9 +38711,9 @@
       "Ground"
     ],
     "base_stats": {
-      "hp": 4,
-      "atk": 5,
-      "def": 16,
+      "hp": 8,
+      "atk": 10,
+      "def": 15,
       "spatk": 3,
       "spdef": 5,
       "spd": 7
@@ -38774,8 +38774,7 @@
         "Groundshaper",
         "Reach 3",
         "Mountable 5",
-        "Tremorsense",
-        "Underdog"
+        "Tremorsense"
       ]
     },
     "skills": {
@@ -94284,11 +94283,11 @@
       "Ground"
     ],
     "base_stats": {
-      "hp": 8,
-      "atk": 9,
-      "def": 20,
-      "spatk": 6,
-      "spdef": 7,
+      "hp": 10,
+      "atk": 13,
+      "def": 19,
+      "spatk": 4,
+      "spdef": 8,
       "spd": 3
     },
     "abilities": {
