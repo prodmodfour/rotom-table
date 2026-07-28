@@ -15,6 +15,12 @@ Treat these app-owned files as the canonical runtime reference sources:
 - `data/reference/edges.json`
 - `data/reference/capabilities.json`
 - `data/reference/features.json`
+- `data/reference/conditions.json`
+- `data/reference/items.json`
+- `data/reference/maneuvers.json`
+- `data/reference/pokedex.json`
+- `data/reference/pokemonExperienceChart.json`
+- `data/reference/rules.json`
 
 The similarly named files under `ptu-data/data/` are documentary/parser output, not runtime sources of truth.
 
