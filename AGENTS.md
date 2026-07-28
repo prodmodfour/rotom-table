@@ -19,6 +19,7 @@ Treat these app-owned files as the canonical runtime reference sources:
 - `data/reference/items.json`
 - `data/reference/maneuvers.json`
 - `data/reference/pokedex.json`
+- `data/reference/stat-rankings.json`
 - `data/reference/pokemonExperienceChart.json`
 - `data/reference/rules.json`
 
