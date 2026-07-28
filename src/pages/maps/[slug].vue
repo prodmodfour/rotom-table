@@ -4,6 +4,8 @@ import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
 import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
 import MapAbilityAutomationPanel from '~/components/map/MapAbilityAutomationPanel.vue'
+import EncounterPresentationPanel from '~/components/map/EncounterPresentationPanel.vue'
+import EncounterVfxOverlay from '~/components/map/EncounterVfxOverlay.vue'
 import LivePlayCommandRecoveryPanel from '~/components/map/LivePlayCommandRecoveryPanel.vue'
 import LivePlayLatencyDebugPanel from '~/components/map/LivePlayLatencyDebugPanel.vue'
 import MapEditorLayout from '~/components/map/MapEditorLayout.vue'
@@ -19,6 +21,7 @@ import {
   type MapSaveStatus,
 } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
+import { useApiClient } from '~/composables/useApiClient'
 import {
   movePresentationFromAcceptedRealtimeEvent,
   pokeballCaptureFromAcceptedRealtimeEvent,
@@ -60,6 +63,7 @@ import { useMapShopInterfaces } from '~/composables/map-editor/useMapShopInterfa
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useAbilityAutomationGateway } from '~/composables/map-editor/useAbilityAutomationGateway'
+import { useEncounterPresentationRuntime } from '~/composables/map-editor/useEncounterPresentationRuntime'
 import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimationQueue'
 import { useActionSplashSettings } from '~/composables/useActionSplashSettings'
 import { useInitiativeAutoFocusSettings } from '~/composables/useInitiativeAutoFocusSettings'
@@ -80,6 +84,15 @@ import {
   emptyAbilityClientCapabilityBundle,
   type AbilityClientCapabilityBundle,
 } from '#shared/abilityAutomation/clientCapabilities'
+import {
+  emptyEncounterPresentationProjection,
+  parseEncounterActionDeclarationIntent,
+  parseEncounterActionOffer,
+  parseEncounterInteractionResponseIntent,
+  type EncounterActionOffer,
+  type EncounterPendingInteractionAuthorizedView,
+  type EncounterPresentationProjection,
+} from '#shared/encounterPresentation'
 import { isPendingMoveDeclarationResult } from '#shared/moveAutomation/pendingResolution'
 import {
   aa080EntityIsActive,
@@ -106,6 +119,13 @@ import { useAttackOfOpportunityTriggers } from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { buildClientPlayerProfileTokenControlModel } from '~/utils/playerProfileTokenControl'
+import { abilityActionCapabilitiesFromEncounterPresentation } from '~/utils/encounterPresentation/abilityActionCapabilities'
+import { MAP_API_PATHS } from '~/utils/apiRoutes'
+import {
+  contextMenuAbilityOptionsFromEncounterOffers,
+  contextMenuItemOptionsFromEncounterAffordances,
+  contextMenuOptionsFromEncounterOffers,
+} from '~/utils/encounterPresentation/legacyContextMenuProjection'
 import { clearCombatLogMetadata, countCombatLogMessages } from '~/utils/combatLog'
 import { buildLivePlayBatchPendingLabel } from '~/utils/livePlayBatchCommandUi'
 import { textValueFromEvent } from '~/utils/domEvents'
@@ -195,9 +215,18 @@ const liveSheetAccessScopeKey = computed(() => buildLiveSheetAccessScopeKey({
   profileId: isPlayer.value ? selectedProfileId.value : null,
 }))
 
+const encounterPresentation = ref<EncounterPresentationProjection>(
+  emptyEncounterPresentationProjection({
+    mapSlug: slug,
+    mapRevision: 0,
+    audience: 'actor-owner',
+  }),
+)
 const abilityClientCapabilities = ref<AbilityClientCapabilityBundle>(
   emptyAbilityClientCapabilityBundle(slug, 0),
 )
+const encounterPresentationRuntime = useEncounterPresentationRuntime()
+const encounterActionApi = useApiClient()
 let requestLiveTableSnapshot: (reason?: string) => Promise<void> = async () => {
   throw new Error('Live table snapshot synchroniser is not initialised.')
 }
@@ -326,8 +355,14 @@ const handleAcceptedLivePlayCommandEventForPresentation = (
   const placementIds = livePlayRemoteAcceptedMovementTokenIds(event, adoption)
   if (placementIds.length > 0) markLivePlayRemoteAcceptedMotionTokens(placementIds)
 
-  const presentation = movePresentationFromAcceptedRealtimeEvent(event)
-  if (presentation) presentAcceptedMove(presentation, false)
+  if (event.presentation) {
+    encounterPresentationRuntime.ingest(event.presentation)
+  }
+  else {
+    // Compatibility for replaying accepted rows written before the generic contract.
+    const presentation = movePresentationFromAcceptedRealtimeEvent(event)
+    if (presentation) presentAcceptedMove(presentation, false)
+  }
 }
 
 const clearLivePlayTrackedPredictionsForReconciliation = (): void => {
@@ -382,6 +417,9 @@ const {
     handleAcceptedLivePlayCommandEventForPresentation(event, adoption)
     return acknowledgeAcceptedRealtimeEvent(event)
   },
+  onAcceptedEncounterPresentationEvent: (presentation) => {
+    encounterPresentationRuntime.ingest(presentation)
+  },
 })
 
 const liveTableSnapshotSync = useLiveTableSnapshotSync({
@@ -391,8 +429,10 @@ const liveTableSnapshotSync = useLiveTableSnapshotSync({
   sheetCache: liveSheets,
   applyMap: applyPersistedMap,
   applyInteractionMode: applyAuthoritativeMapInteractionMode,
-  applyAbilityCapabilities: (capabilities) => {
-    abilityClientCapabilities.value = capabilities
+  applyEncounterPresentation: (projection) => {
+    encounterPresentation.value = projection
+    encounterPresentationRuntime.replaceSnapshotHistory(projection.accepted)
+    abilityClientCapabilities.value = abilityActionCapabilitiesFromEncounterPresentation(projection)
   },
 })
 requestLiveTableSnapshot = liveTableSnapshotSync.requestSnapshot
@@ -575,8 +615,14 @@ const livePlayCommands = useLivePlayCommands({
   requestReconciliation: () => livePlayStateMachine.reconcile(reconcileLivePlayState),
   onCommandStarted: livePlayStateMachine.commandStarted,
   onCommandAccepted: handleLivePlayCommandAccepted,
+  onAcceptedEncounterPresentation: ({ presentation }) => {
+    encounterPresentationRuntime.ingest(presentation)
+  },
   onAcceptedMovePresentation: ({ presentation, source }) => {
-    presentAcceptedMove(presentation, source === 'http')
+    const alreadyGeneric = encounterPresentationRuntime.accepted.value.some(candidate => (
+      candidate.operationId === presentation.operationId
+    ))
+    if (!alreadyGeneric) presentAcceptedMove(presentation, source === 'http')
   },
   onCommandRejected: handleLivePlayCommandRejected,
   onCommandFailed: livePlayStateMachine.commandFailed,
@@ -1016,6 +1062,14 @@ const pendingMoveResponses = usePendingMoveResponses({
   )),
   applyPersistedMap,
   applySheetUpdate: applyLivePlaySheetUpdate,
+  onTerminalResult: (result) => {
+    if (result.ok && !('duplicate' in result) && result.presentation) {
+      encounterPresentationRuntime.ingest(result.presentation)
+    }
+    else if (result.ok && 'duplicate' in result && result.original.ok && result.original.presentation) {
+      encounterPresentationRuntime.ingest(result.original.presentation)
+    }
+  },
 })
 const pendingMoveResponseActorLabels = computed<Readonly<Record<string, string>>>(() => (
   Object.fromEntries(spawnedPokemon.value.map(token => [token.id, token.species]))
@@ -1697,6 +1751,9 @@ const {
   initiativeMenuOpen,
   layerVisibility,
   smartTerrainCutawayEnabled,
+  openFieldEffectsMenu,
+  openSheetsMenu,
+  openInitiativeMenu,
   closeFieldEffectsMenu,
   closeSheetsMenu,
   closeInitiativeMenu,
@@ -2160,7 +2217,7 @@ const {
   moveAutomationFeedback,
   moveUsageError,
   moveDispatchPending,
-  tokenMoveOptionsById,
+  tokenMoveOptionsById: rawTokenMoveOptionsById,
   openMoveAutomation: openMoveAutomationPanel,
   useMoveAgainstTarget,
   cancelMoveAutomationTargeting: cancelMoveAutomationTargetingPanel,
@@ -2207,6 +2264,7 @@ attackOfOpportunityTriggers = useAttackOfOpportunityTriggers({
 const abilityAutomationGateway = useAbilityAutomationGateway({
   playerProfileId: selectedProfileId,
   player: isPlayer,
+  presentAccepted: presentation => encounterPresentationRuntime.ingest(presentation),
   reconcileAfterAccepted: () => requestLiveTableSnapshot('Reconciling accepted ability result.'),
 })
 
@@ -2215,7 +2273,7 @@ const {
   abilityDeclarationPanel,
   activeAbilityModeSelection,
   abilityInvocationStatus,
-  tokenAbilityOptionsById,
+  tokenAbilityOptionsById: rawTokenAbilityOptionsById,
   openAbilityAutomation,
   selectAbilityMode,
   selectAbilityDeclarationOption,
@@ -2236,7 +2294,7 @@ const {
 
 const {
   maneuverActionTargeting,
-  tokenManeuverOptionsById,
+  tokenManeuverOptionsById: rawTokenManeuverOptionsById,
   useManeuver,
   cancelManeuverActionTargeting,
   selectManeuverActionTarget,
@@ -2263,7 +2321,7 @@ const orderActionPanel = useOrderActionPanel({
 })
 const {
   orderActionTargeting,
-  tokenOrderOptionsById,
+  tokenOrderOptionsById: rawTokenOrderOptionsById,
   useOrder,
   cancelOrderActionTargeting,
   selectOrderActionTarget,
@@ -2324,7 +2382,7 @@ const {
   pokeballCaptureResult,
   pokeballCaptureFeedback,
   pokeballCaptureError,
-  tokenPokeballOptionsById,
+  tokenPokeballOptionsById: rawTokenPokeballOptionsById,
   openPokeballCapture,
   selectPokeballCaptureTarget,
   cancelPokeballCaptureTargeting,
@@ -2356,6 +2414,32 @@ const {
     broadcastPokeballResult(event)
   },
 })
+
+// Compatibility-only enrichment: generic server offers decide which legacy
+// context-menu rows exist; source-specific builders may provide decorative copy.
+const tokenMoveOptionsById = computed(() => contextMenuOptionsFromEncounterOffers({
+  projection: encounterPresentation.value,
+  sourceKind: 'move',
+  optionsByParticipantId: rawTokenMoveOptionsById.value,
+}))
+const tokenManeuverOptionsById = computed(() => contextMenuOptionsFromEncounterOffers({
+  projection: encounterPresentation.value,
+  sourceKind: 'maneuver',
+  optionsByParticipantId: rawTokenManeuverOptionsById.value,
+}))
+const tokenAbilityOptionsById = computed(() => contextMenuAbilityOptionsFromEncounterOffers({
+  projection: encounterPresentation.value,
+  optionsByParticipantId: rawTokenAbilityOptionsById.value,
+}))
+const tokenOrderOptionsById = computed(() => contextMenuOptionsFromEncounterOffers({
+  projection: encounterPresentation.value,
+  sourceKind: 'order',
+  optionsByParticipantId: rawTokenOrderOptionsById.value,
+}))
+const tokenPokeballOptionsById = computed(() => contextMenuItemOptionsFromEncounterAffordances({
+  projection: encounterPresentation.value,
+  optionsByParticipantId: rawTokenPokeballOptionsById.value,
+}))
 
 const displayedPokeballCaptureResult = computed(() => (
   pokeballCaptureResult.value ?? remotePokeballCaptureResult.value
@@ -2570,6 +2654,118 @@ const useOrderFromContext = (payload: { id: string; orderName?: string | null })
   cancelManeuverActionTargeting()
   cancelAbilityAutomationTargeting()
   void useOrder(payload)
+}
+
+/** Client-local bridge from the generic offer identity to existing dispatch workflows. */
+const activateEncounterOffer = async (projectedOffer: EncounterActionOffer): Promise<void> => {
+  if (projectedOffer.mapSlug !== slug || projectedOffer.mapRevision !== mapRevision.value) {
+    await requestLiveTableSnapshot('The selected encounter offer was stale.')
+    return
+  }
+  const declaration = parseEncounterActionDeclarationIntent({
+    schemaVersion: 1,
+    intentId: `intent:${Date.now()}`,
+    offerId: projectedOffer.offerId,
+    mapSlug: projectedOffer.mapSlug,
+    baseRevision: projectedOffer.mapRevision,
+    actorParticipantId: projectedOffer.actor.participantId,
+    actionId: projectedOffer.intent.actionId,
+    selections: [],
+  })
+  let offer: EncounterActionOffer
+  try {
+    offer = parseEncounterActionOffer(await encounterActionApi.postJson(MAP_API_PATHS.declareEncounterAction, {
+      intent: declaration,
+      ...(isPlayer.value && selectedProfileId.value ? { profileId: selectedProfileId.value } : {}),
+    }))
+  }
+  catch (error) {
+    console.warn('[map page] encounter action declaration was rejected', error)
+    await requestLiveTableSnapshot('The selected encounter action changed. Refreshed authoritative actions.')
+    return
+  }
+  if (offer.offerId !== declaration.offerId
+    || offer.mapSlug !== declaration.mapSlug
+    || offer.mapRevision !== declaration.baseRevision
+    || offer.actor.participantId !== declaration.actorParticipantId
+    || offer.intent.actionId !== declaration.actionId) {
+    await requestLiveTableSnapshot('Encounter action declaration response did not match the selected offer.')
+    return
+  }
+  const id = declaration.actorParticipantId
+  if (offer.source.sourceKind === 'move') {
+    openMoveAutomationFromContext({ id, moveName: offer.source.displayName })
+    return
+  }
+  if (offer.source.sourceKind === 'maneuver') {
+    useManeuverFromContext({ id, maneuverName: offer.source.displayName })
+    return
+  }
+  if (offer.source.sourceKind === 'order') {
+    useOrderFromContext({ id, orderName: offer.source.displayName })
+    return
+  }
+  if (offer.source.sourceKind === 'ability' && offer.source.instanceId) {
+    openAbilityAutomationFromContext({
+      id,
+      abilityInstanceId: offer.source.instanceId,
+      canonicalId: offer.source.canonicalId,
+    })
+    return
+  }
+  if (offer.intent.actionId === 'capture.throw') {
+    const pokeball = encounterPresentation.value.affordances.find(affordance => (
+      affordance.actor?.participantId === id
+      && affordance.source.sourceKind === 'item'
+      && /ball/i.test(affordance.source.displayName)
+      && affordance.availability.status === 'available'
+    ))
+    if (pokeball) openPokeballCaptureFromContext({ id, pokeballName: pokeball.source.displayName })
+    return
+  }
+  selectPokemon(id)
+  if (offer.intent.actionId === 'initiative.advance') openInitiativeMenu()
+  else if (offer.intent.actionId === 'scene.manage') adminPanelOpen.value = true
+  else if (offer.intent.actionId === 'field.manage') openFieldEffectsMenu()
+  else if (offer.intent.actionId === 'hazard.manage') setMode('hazards')
+  else if (offer.intent.actionId === 'terrain.manage') setMode('build')
+  else if (offer.intent.actionId === 'token.manage') openSheetsMenu()
+}
+
+const respondToEncounterInteraction = (payload: {
+  interaction: EncounterPendingInteractionAuthorizedView
+  decision: 'choose' | 'pass' | 'cancel' | 'force-pass'
+  choiceId?: string
+  optionIds?: readonly string[]
+}): void => {
+  const response = parseEncounterInteractionResponseIntent({
+    schemaVersion: 1,
+    responseId: `response:${Date.now()}`,
+    interactionId: payload.interaction.interactionId,
+    resolutionId: payload.interaction.responseIdentity.resolutionId,
+    windowId: payload.choiceId ?? payload.interaction.responseIdentity.windowId,
+    retryKey: payload.interaction.responseIdentity.retryKey,
+    mapSlug: payload.interaction.mapSlug,
+    baseRevision: payload.interaction.mapRevision,
+    decision: payload.decision,
+    selections: payload.decision === 'choose' && payload.choiceId && payload.optionIds
+      ? [{ choiceId: payload.choiceId, optionIds: payload.optionIds }]
+      : [],
+  })
+  const reference = {
+    resolutionId: response.resolutionId,
+    windowId: response.windowId,
+  }
+  if (response.decision === 'choose' && payload.optionIds?.[0]) {
+    const choice = payload.interaction.choices.find(choice => choice.choiceId === reference.windowId)
+    if (choice?.kind === 'cell' || payload.optionIds.length > 1) {
+      void pendingMoveResponses.chooseHazardCells({ ...reference, optionIds: payload.optionIds })
+    }
+    else void pendingMoveResponses.choose({ ...reference, optionId: payload.optionIds[0] })
+  }
+  else if (response.decision === 'pass') void pendingMoveResponses.pass(reference)
+  else if (response.decision === 'force-pass') void pendingMoveResponses.forcePass(reference)
+  else if (response.decision === 'cancel') void pendingMoveResponses.cancel(reference.resolutionId)
 }
 
 const selectActionAutomationTarget = (targetId: string) => {
@@ -2848,6 +3044,27 @@ useMapDimensionReconciliation({
         @close-move-correction="gmMoveCorrections.close()"
       />
 
+      <EncounterVfxOverlay
+        :presentations="encounterPresentationRuntime.activeVfxPresentations.value"
+        :reduced-motion="encounterPresentationRuntime.reducedMotion.value"
+      />
+
+      <EncounterPresentationPanel
+        :projection="encounterPresentation"
+        :accepted="encounterPresentationRuntime.accepted.value"
+        :selected-participant-id="selectedId"
+        @activate="activateEncounterOffer"
+        @respond="respondToEncounterInteraction"
+      />
+
+      <p
+        class="encounter-presentation-announcement"
+        :aria-live="encounterPresentationRuntime.announcement.value?.priority === 'assertive' ? 'assertive' : 'polite'"
+        aria-atomic="true"
+      >
+        {{ encounterPresentationRuntime.announcement.value?.message ?? '' }}
+      </p>
+
       <MapAbilityAutomationPanel
         :mode-selection="activeAbilityModeSelection"
         :declaration="abilityDeclarationPanel"
@@ -3044,3 +3261,16 @@ useMapDimensionReconciliation({
     </template>
   </MapEditorLayout>
 </template>
+
+<style scoped>
+.encounter-presentation-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+</style>

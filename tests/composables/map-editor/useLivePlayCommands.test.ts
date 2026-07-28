@@ -3855,7 +3855,7 @@ describe('useLivePlayCommands', () => {
       message: 'Another pending command is already changing this map initiative lane.',
     })
     for (let attempts = 0; attempts < 20 && apiMocks.postJson.mock.calls.length === 0; attempts += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise((resolve) => { setTimeout(resolve, 0) })
     }
     expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
     expect(actions.status.value).toBe('saving')

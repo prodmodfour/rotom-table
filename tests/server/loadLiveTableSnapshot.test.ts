@@ -120,6 +120,13 @@ describe('load live table snapshot use case', () => {
       ['hidden-trainer', 22],
       ['public-trainer', 21],
     ])
+    expect(snapshot.encounterPresentation).toMatchObject({
+      schemaVersion: 1,
+      mapSlug: 'arena',
+      mapRevision: 7,
+      audience: 'gm',
+    })
+    expect(snapshot).not.toHaveProperty('abilityCapabilities')
   })
 
   it('returns the load-map 404 policy for a missing map', () => {
@@ -225,6 +232,72 @@ describe('load live table snapshot use case', () => {
     expect(JSON.stringify(gmSnapshot)).toContain('intent.private-intimidate')
     expect(gmSnapshot.pokemonSheets.find(sheet => sheet.slug === 'target-mon')?.abilities)
       .toEqual([expect.objectContaining({ name: 'Sturdy' })])
+  })
+
+  it('embeds only authorized pending choices in the generic responder projection', () => {
+    const database = db()
+    const maps = createSqliteMapRepository(database)
+    const modes = createSqliteMapInteractionModeRepository(database)
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const summary = {
+      schemaVersion: 1 as const,
+      resolutionId: 'resolution:pending',
+      actorPlacementId: 'actor-token',
+      canonicalMoveId: 'Ember',
+      phase: 'pre-hit' as const,
+      status: 'pending' as const,
+      outstandingWindowCount: 1,
+      createdAt: 10,
+      updatedAt: 11,
+    }
+    maps.saveSetupMap(mapDoc({
+      revision: 4,
+      placements: [{
+        id: 'actor-token', sheetKind: 'pokemon', sheetSlug: 'actor-mon', position: { x: 1, y: 0, z: 1 },
+      }],
+      encounterState: {
+        ...createEmptyEncounterState(),
+        pendingResolutionSummaries: [summary],
+      },
+    }))
+    sheets.saveSetupSheet('pokemon', 'actor-mon', pokemon({
+      slug: 'actor-mon', movelist: [{ name: 'Ember' }],
+    }) as unknown as Record<string, unknown>)
+    const snapshot = loadLiveTableSnapshotUseCase({
+      role: 'player',
+      slug: 'arena',
+      playerProfile: profile('profile_actor000', [{ sheetKind: 'pokemon', sheetSlug: 'actor-mon' }]),
+    }, {
+      database,
+      mapRepository: maps,
+      modeRepository: modes,
+      sheetRepository: sheets,
+      listPendingMoveResponses: () => ({
+        schemaVersion: 1,
+        mapSlug: 'arena',
+        windows: [{
+          schemaVersion: 1,
+          resolution: summary,
+          window: {
+            windowId: 'window:pending',
+            kind: 'choice',
+            phase: 'pre-hit',
+            reasonCode: 'move.choose',
+            promptKey: 'move.choose',
+            options: [{ id: 'option:yes', labelKey: 'Choose yes' }],
+            allowPass: true,
+            priority: null,
+          },
+        }],
+      }),
+    })
+    expect(snapshot.encounterPresentation.audience).toBe('responder-owner')
+    expect(snapshot.encounterPresentation.pending).toHaveLength(1)
+    const pending = snapshot.encounterPresentation.pending[0]
+    expect(pending?.projection).toBe('responder-owner')
+    if (!pending || pending.projection === 'public') throw new Error('Expected authorized pending interaction.')
+    expect(pending.choices[0]?.options[0]?.optionId).toBe('option:yes')
+    expect(JSON.stringify(pending)).not.toContain('ownership')
   })
 
   it('rejects a player snapshot for a hidden map', () => {

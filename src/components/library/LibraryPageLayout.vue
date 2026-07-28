@@ -5,13 +5,13 @@ defineProps<{
 </script>
 
 <template>
-  <div class="library-layout" :class="{ 'is-dragging': dragging }">
+  <main class="library-layout" :class="{ 'is-dragging': dragging }">
     <header class="library-header">
       <slot name="header" />
     </header>
 
     <slot />
-  </div>
+  </main>
 </template>
 
 <style scoped>

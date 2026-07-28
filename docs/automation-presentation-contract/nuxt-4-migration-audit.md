@@ -1,5 +1,7 @@
 # Repository-specific Nuxt 4 migration audit
 
+Accepted target: Nuxt **4.5.1** on Node **24.16.0** (2026-07-28). Nitro 2.13.4, Vite 8.1.5, Vue 3.5.40, and the exact transitive graph are locked in `package-lock.json`.
+
 This audit is bound to the Nuxt 3 rollback baseline in [nuxt-3-baseline.md](./nuxt-3-baseline.md). The target is stable Nuxt 4 without Nuxt 5 compatibility flags.
 
 ## Directory and path contract
@@ -58,6 +60,12 @@ No production logic uses generated Nuxt component names as mechanic identity. Te
 ## Deployment audit
 
 The production artifact remains a Nitro Node server started with `node .output/server/index.mjs` on Node 24. Reverse proxy forwarding, WebSocket upgrade forwarding, campaign-root permissions, hosted-write policy, SQLite WAL files, health checks, and backups are unchanged. Repository changes are deployed through GitHub; this migration does not alter production directly.
+
+## Acceptance and rollback closure
+
+`nuxt prepare`, lint, typecheck, pure and Nuxt-runtime tests, production Nitro build, production-build Playwright, axe, health/route/asset checks, and the local production-like campaign smoke are the migration gate. Results are recorded in [release-acceptance.md](release-acceptance.md).
+
+No Nuxt 5 flag, compatibility escape hatch, unexplained hydration warning, or directory relocation was required. The active rollback window to commit `c5af04b382f0aac76dfe4e96aa86804b04949e8d` is closed after final acceptance; the baseline remains a historical recovery reference. Production deployment remains the user's GitHub-based path.
 
 ## Official references
 

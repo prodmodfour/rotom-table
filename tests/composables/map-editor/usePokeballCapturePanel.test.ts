@@ -190,7 +190,7 @@ describe('usePokeballCapturePanel', () => {
   it('waits for the throw splash hook before starting capture feedback', async () => {
     vi.useFakeTimers()
     vi.spyOn(Math, 'random').mockReturnValue(0)
-    const onBeforePokeballThrow = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 100)))
+    const onBeforePokeballThrow = vi.fn(() => new Promise((resolve) => { setTimeout(resolve, 100) }))
     const { panel } = buildPanel(vi.fn(), onBeforePokeballThrow)
 
     panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
@@ -214,7 +214,7 @@ describe('usePokeballCapturePanel', () => {
     vi.spyOn(Math, 'random')
       .mockReturnValueOnce(0.99)
       .mockReturnValueOnce(0)
-    const applyCaptureOutcome = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 250)))
+    const applyCaptureOutcome = vi.fn(() => new Promise((resolve) => { setTimeout(resolve, 250) }))
     const onPokeballThrow = vi.fn()
     const onPokeballFeedback = vi.fn()
     const onPokeballResult = vi.fn()

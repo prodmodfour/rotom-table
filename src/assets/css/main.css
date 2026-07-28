@@ -48,6 +48,7 @@
   --rule-active:   rgba(var(--accent-rgb), 0.68);
 
   --accent:        var(--pokemon-red);
+  --accent-text:   #ff4652;
   --accent-rgb:    255, 31, 45;
   --accent-soft:   rgba(var(--accent-rgb), 0.16);
   --accent-muted:  var(--pokemon-red-dark);
@@ -99,6 +100,7 @@
   --rule-active:   rgba(var(--accent-rgb), 0.56);
 
   --accent:        #c51628;
+  --accent-text:   var(--accent);
   --accent-rgb:    197, 22, 40;
   --accent-soft:   rgba(var(--accent-rgb), 0.12);
   --accent-muted:  #8f1020;

@@ -30,14 +30,6 @@ export interface IsometricRenderDebugFlagOptions {
   allowProduction?: boolean
 }
 
-interface ImportMetaDebugEnvironment {
-  readonly dev?: boolean
-  readonly env?: {
-    readonly DEV?: unknown
-    readonly MODE?: unknown
-  }
-}
-
 interface ProcessDebugEnvironment {
   readonly dev?: unknown
   readonly env?: {
@@ -50,14 +42,12 @@ const DEBUG_QUERY_KEYS = new Set([ISOMETRIC_RENDER_DEBUG_QUERY_KEY, `${ISOMETRIC
 const DEBUG_QUERY_VALUES = new Set<string>(ISOMETRIC_RENDER_DEBUG_QUERY_VALUES)
 
 const defaultIsDevEnvironment = (): boolean => {
-  const meta = import.meta as ImportMetaDebugEnvironment
   const processDebug = globalThis.process as ProcessDebugEnvironment | undefined
 
   return (
-    meta.dev === true
-    || meta.env?.DEV === true
-    || meta.env?.DEV === 'true'
-    || meta.env?.MODE === 'development'
+    import.meta.dev
+    || import.meta.env.DEV
+    || import.meta.env.MODE === 'development'
     || processDebug?.dev === true
     || processDebug?.env?.NODE_ENV === 'development'
   )

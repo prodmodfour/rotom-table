@@ -241,14 +241,6 @@ type GenericMoveSemanticIntent =
 
 type PlannerEventIdFactory = (kind: MoveVfxKind, targetId?: string) => string
 
-interface MoveAnimationPlannerImportMetaEnvironment {
-  readonly dev?: boolean
-  readonly env?: {
-    readonly DEV?: unknown
-    readonly MODE?: unknown
-  }
-}
-
 interface MoveAnimationPlannerProcessEnvironment {
   readonly dev?: unknown
   readonly env?: {
@@ -543,14 +535,12 @@ const normalizePlannerOutput = (
 }
 
 const isMoveAnimationPlannerDevelopmentEnvironment = (): boolean => {
-  const meta = import.meta as MoveAnimationPlannerImportMetaEnvironment
   const processDebug = globalThis.process as MoveAnimationPlannerProcessEnvironment | undefined
 
   return (
-    meta.dev === true
-    || meta.env?.DEV === true
-    || meta.env?.DEV === 'true'
-    || meta.env?.MODE === 'development'
+    import.meta.dev
+    || import.meta.env.DEV
+    || import.meta.env.MODE === 'development'
     || processDebug?.dev === true
     || processDebug?.env?.NODE_ENV === 'development'
   )

@@ -5,6 +5,13 @@ const persistedDataWatchIgnored = [/(?:^|[\\/])data[\\/](?:sheets|trainers|maps|
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-04-22',
+  modules: ['@nuxt/eslint'],
+  eslint: {
+    checker: false,
+    config: {
+      stylistic: false,
+    },
+  },
   srcDir: 'src',
   // Keep non-app runtime directories at the project root while Nuxt app
   // source (pages, components, composables, assets, middleware) lives in src/.
@@ -36,6 +43,13 @@ export default defineNuxtConfig({
   experimental: {
     appManifest: false,
   },
+  runtimeConfig: {
+    public: {
+      // Browser contract fixtures are absent from normal production. The
+      // production-build Playwright harness opts in explicitly.
+      presentationContractPreview: false,
+    },
+  },
   watchers: {
     chokidar: {
       // Sheet, map, profile, and reference-override JSON is edited by the app
@@ -65,6 +79,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      htmlAttrs: { lang: 'en' },
       title: 'Rotom Table',
       meta: [
         {

@@ -1,4 +1,5 @@
 import type { LivePlayPatch } from './livePlayCommands'
+import type { AcceptedEncounterPresentation } from './encounterPresentation'
 import type { SheetKind } from './sheets'
 
 export interface RealtimeEvent<TData = unknown> {
@@ -16,6 +17,8 @@ export interface RealtimeEvent<TData = unknown> {
   opId?: string
   /** Optional live-play patches accepted by the server. */
   patches?: LivePlayPatch[]
+  /** Generic presentation for an already accepted action. */
+  presentation?: AcceptedEncounterPresentation
   /** Optional structured payload. */
   data?: TData
   /** Originating tab's client id, used for echo suppression. */
@@ -47,6 +50,7 @@ export interface LivePlayRealtimeEvent<TData = unknown> extends RealtimeEvent<TD
   previousRevision?: number
   opId?: string
   patches?: LivePlayPatch[]
+  presentation?: AcceptedEncounterPresentation
 }
 
 export const mapChannel = (slug: string): `map:${string}` => `map:${slug}`

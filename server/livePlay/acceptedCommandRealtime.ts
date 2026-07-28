@@ -9,6 +9,7 @@
  */
 
 import type { LivePlayCommandAccepted, LivePlayCommandEnvelope } from '#shared/livePlayCommands'
+import { acceptedEncounterPresentationFromLivePlayCommand } from '../domain/encounterPresentation/acceptedAdapters'
 import { normalizeRealtimeClientId } from '#shared/realtime'
 import {
   MAX_REALTIME_EVENT_CLIENT_ID_LENGTH,
@@ -47,7 +48,15 @@ export const acceptedCommandRealtimeAppendInput = ({
   clientId,
 }: AcceptedCommandRealtimeAppendInputOptions): AppendRealtimeEventInput => {
   const normalizedClientId = normalizeAcceptedCommandClientId(clientId ?? command.clientId)
-  const event = livePlayCommandAcceptedRealtimeEvent(result, normalizedClientId)
+  const presentation = result.presentation ?? acceptedEncounterPresentationFromLivePlayCommand({
+    command,
+    result,
+    occurredAt: result.revision,
+  })
+  const event = livePlayCommandAcceptedRealtimeEvent(
+    { ...result, presentation },
+    normalizedClientId,
+  )
   const access = {
     kind: 'map-access' as const,
     mapSlug: result.mapSlug,

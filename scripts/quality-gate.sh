@@ -79,6 +79,9 @@ if have npm; then
   run_cmd npm run check:ability-automation-budgets
   run_cmd npm run check:ability-automation-plan
 
+  pp_section "Encounter presentation contract"
+  run_cmd npm run check:encounter-presentation
+
   pp_section "Move automation metadata"
   run_cmd npm run check:move-automation
   run_cmd npm run check:move-automation-complete
@@ -89,6 +92,8 @@ if have npm; then
   run_cmd npm run lint --if-present
   run_cmd npm run typecheck --if-present
   run_cmd npm test --if-present
+  run_cmd npm run test:nuxt --if-present
+  run_cmd npm run test:e2e --if-present
   run_cmd npm run build --if-present
 else
   warn "npm not installed; skipping Node checks"

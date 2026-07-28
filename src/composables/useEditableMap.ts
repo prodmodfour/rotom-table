@@ -37,7 +37,11 @@ import {
   parseAcceptedLivePlayRealtimeEvent,
   type LivePlayAcceptedRealtimeEvent,
 } from '#shared/livePlayRealtimeEvents'
-import { ABILITY_AUTOMATION_REALTIME_EVENT_TYPE } from '#shared/abilityAutomation/realtime'
+import {
+  ABILITY_AUTOMATION_REALTIME_EVENT_TYPE,
+  parseAbilityAutomationAcceptedRealtimePayload,
+} from '#shared/abilityAutomation/realtime'
+import type { AcceptedEncounterPresentation } from '#shared/encounterPresentation'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
@@ -117,6 +121,9 @@ export interface UseEditableMapOptions {
     event: LivePlayAcceptedRealtimeEvent,
     adoption: LivePlayAcceptedEventAdoptionInfo,
   ) => void | Promise<void>
+  readonly onAcceptedEncounterPresentationEvent?: (
+    presentation: AcceptedEncounterPresentation,
+  ) => void | Promise<void>
 }
 
 export interface UseEditableMapReturn {
@@ -159,6 +166,9 @@ interface NormalizedUseEditableMapOptions extends Required<Pick<UseEditableMapOp
     event: LivePlayAcceptedRealtimeEvent,
     adoption: LivePlayAcceptedEventAdoptionInfo,
   ) => void | Promise<void>
+  readonly onAcceptedEncounterPresentationEvent?: (
+    presentation: AcceptedEncounterPresentation,
+  ) => void | Promise<void>
 }
 
 const normalizeOptions = (options: number | UseEditableMapOptions): NormalizedUseEditableMapOptions => (
@@ -177,6 +187,7 @@ const normalizeOptions = (options: number | UseEditableMapOptions): NormalizedUs
         afterLivePlayPatchesApply: options.afterLivePlayPatchesApply,
         onBeforeAuthoritativeReconciliation: options.onBeforeAuthoritativeReconciliation,
         onLivePlayCommandAcceptedEvent: options.onLivePlayCommandAcceptedEvent,
+        onAcceptedEncounterPresentationEvent: options.onAcceptedEncounterPresentationEvent,
       }
 )
 
@@ -197,6 +208,7 @@ export const useEditableMap = (
     afterLivePlayPatchesApply,
     onBeforeAuthoritativeReconciliation,
     onLivePlayCommandAcceptedEvent,
+    onAcceptedEncounterPresentationEvent,
   } = normalizeOptions(options)
   const currentInteractionMode = (): MapInteractionMode => interactionModeRef?.value ?? MAP_INTERACTION_MODES.LIVE_PLAY
   const setupEditMode = computed(() => currentInteractionMode() === MAP_INTERACTION_MODES.SETUP_EDIT)
@@ -690,6 +702,22 @@ export const useEditableMap = (
 
   const handleRealtimeMapEvent = (event: RealtimeEvent) => {
     if (event.type === ABILITY_AUTOMATION_REALTIME_EVENT_TYPE) {
+      const parsed = parseAbilityAutomationAcceptedRealtimePayload(event.data)
+      if (!parsed.valid) {
+        console.warn('[useEditableMap] invalid Ability accepted presentation', parsed.message)
+        requestRealtimeReconciliation('Ability resolution presentation was invalid. Reloading the authoritative live table snapshot.')
+        return
+      }
+      if (parsed.payload.presentation && onAcceptedEncounterPresentationEvent) {
+        try {
+          void Promise.resolve(onAcceptedEncounterPresentationEvent(parsed.payload.presentation)).catch((callbackError) => {
+            console.warn('[useEditableMap] Ability accepted presentation callback failed', callbackError)
+          })
+        }
+        catch (callbackError) {
+          console.warn('[useEditableMap] Ability accepted presentation callback failed', callbackError)
+        }
+      }
       const incomingRevision = eventRevision(event)
       const currentRevision = documentRevision(map.value)
       if (incomingRevision === null || currentRevision === null || incomingRevision > currentRevision) {

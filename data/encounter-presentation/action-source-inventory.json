@@ -1,0 +1,591 @@
+{
+  "schemaVersion": 1,
+  "contractSchemaVersion": 1,
+  "description": "Exhaustive machine-readable inventory of accepted command and non-command encounter presentation sources.",
+  "commands": [
+    {
+      "inventoryId": "live-play:moveToken",
+      "wireType": "moveToken",
+      "constant": "MOVE_TOKEN",
+      "sourceKind": "movement",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "movement.shift",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:turnToken",
+      "wireType": "turnToken",
+      "constant": "TURN_TOKEN",
+      "sourceKind": "token",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:modifyHp",
+      "wireType": "modifyHp",
+      "constant": "MODIFY_HP",
+      "sourceKind": "token",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:modifyCombatStages",
+      "wireType": "modifyCombatStages",
+      "constant": "MODIFY_COMBAT_STAGES",
+      "sourceKind": "token",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:modifyConditions",
+      "wireType": "modifyConditions",
+      "constant": "MODIFY_CONDITIONS",
+      "sourceKind": "token",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:grantExperience",
+      "wireType": "grantExperience",
+      "constant": "GRANT_EXPERIENCE",
+      "sourceKind": "system",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:useMove",
+      "wireType": "useMove",
+      "constant": "USE_MOVE",
+      "sourceKind": "move",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "move.declare",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:resolveMove",
+      "wireType": "resolveMove",
+      "constant": "RESOLVE_MOVE",
+      "sourceKind": "move",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "move.declare",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:useManeuver",
+      "wireType": "useManeuver",
+      "constant": "USE_MANEUVER",
+      "sourceKind": "maneuver",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "maneuver.declare",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:useAbility",
+      "wireType": "useAbility",
+      "constant": "USE_ABILITY",
+      "sourceKind": "ability",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "ability.declare:<modeId>",
+      "authorityPath": "retired-reader-only",
+      "acceptedAdapter": "deprecated-rejection",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "retired"
+    },
+    {
+      "inventoryId": "live-play:useOrder",
+      "wireType": "useOrder",
+      "constant": "USE_ORDER",
+      "sourceKind": "order",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "order.declare",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:setInitiative",
+      "wireType": "setInitiative",
+      "constant": "SET_INITIATIVE",
+      "sourceKind": "initiative",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "initiative.advance",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:nextInitiative",
+      "wireType": "nextInitiative",
+      "constant": "NEXT_INITIATIVE",
+      "sourceKind": "initiative",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "initiative.advance",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:previousInitiative",
+      "wireType": "previousInitiative",
+      "constant": "PREVIOUS_INITIATIVE",
+      "sourceKind": "initiative",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "initiative.advance",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:placeHazard",
+      "wireType": "placeHazard",
+      "constant": "PLACE_HAZARD",
+      "sourceKind": "hazard",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "hazard.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:removeHazard",
+      "wireType": "removeHazard",
+      "constant": "REMOVE_HAZARD",
+      "sourceKind": "hazard",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "hazard.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:clearHazards",
+      "wireType": "clearHazards",
+      "constant": "CLEAR_HAZARDS",
+      "sourceKind": "hazard",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "hazard.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:editHazards",
+      "wireType": "editHazards",
+      "constant": "EDIT_HAZARDS",
+      "sourceKind": "hazard",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "hazard.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:clearFieldEffects",
+      "wireType": "clearFieldEffects",
+      "constant": "CLEAR_FIELD_EFFECTS",
+      "sourceKind": "field-effect",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "field.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:setFieldEffect",
+      "wireType": "setFieldEffect",
+      "constant": "SET_FIELD_EFFECT",
+      "sourceKind": "field-effect",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "field.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:removeFieldEffect",
+      "wireType": "removeFieldEffect",
+      "constant": "REMOVE_FIELD_EFFECT",
+      "sourceKind": "field-effect",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "field.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:tickFieldEffectDurations",
+      "wireType": "tickFieldEffectDurations",
+      "constant": "TICK_FIELD_EFFECT_DURATIONS",
+      "sourceKind": "field-effect",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "field.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:buildTerrainVoxel",
+      "wireType": "buildTerrainVoxel",
+      "constant": "BUILD_TERRAIN_VOXEL",
+      "sourceKind": "terrain",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "terrain.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:removeTerrainVoxel",
+      "wireType": "removeTerrainVoxel",
+      "constant": "REMOVE_TERRAIN_VOXEL",
+      "sourceKind": "terrain",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "terrain.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:editTerrainVoxels",
+      "wireType": "editTerrainVoxels",
+      "constant": "EDIT_TERRAIN_VOXELS",
+      "sourceKind": "terrain",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "terrain.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:spawnToken",
+      "wireType": "spawnToken",
+      "constant": "SPAWN_TOKEN",
+      "sourceKind": "token",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:sendOutPokemon",
+      "wireType": "sendOutPokemon",
+      "constant": "SEND_OUT_POKEMON",
+      "sourceKind": "token",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:deleteToken",
+      "wireType": "deleteToken",
+      "constant": "DELETE_TOKEN",
+      "sourceKind": "token",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:throwPokeball",
+      "wireType": "throwPokeball",
+      "constant": "THROW_POKEBALL",
+      "sourceKind": "capture",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "capture.throw",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:setScene",
+      "wireType": "setScene",
+      "constant": "SET_SCENE",
+      "sourceKind": "scene",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "scene.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:updateAttackOfOpportunity",
+      "wireType": "updateAttackOfOpportunity",
+      "constant": "UPDATE_ATTACK_OF_OPPORTUNITY",
+      "sourceKind": "maneuver",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:updateStartTurnModal",
+      "wireType": "updateStartTurnModal",
+      "constant": "UPDATE_START_TURN_MODAL",
+      "sourceKind": "token",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:shopCheckout",
+      "wireType": "shopCheckout",
+      "constant": "SHOP_CHECKOUT",
+      "sourceKind": "shop",
+      "interactionRoles": [
+        "campaign-operation"
+      ],
+      "genericActionId": "shop.checkout",
+      "authorityPath": "authoritative-shop-command",
+      "acceptedAdapter": null,
+      "snapshotProjection": "out-of-encounter-shop-surface",
+      "migrationStatus": "out-of-encounter"
+    }
+  ],
+  "nonCommandSources": [
+    {
+      "inventoryId": "native:ability-declaration",
+      "sourceKind": "ability",
+      "interactionRoles": [
+        "activated-action",
+        "choice-only"
+      ],
+      "genericActionId": "ability.declare:<modeId>",
+      "authorityPath": "ability-declaration-intent",
+      "acceptedAdapter": "acceptedEncounterPresentationFromAbility",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "native:pending-move-response",
+      "sourceKind": "move",
+      "interactionRoles": [
+        "interrupt-reaction",
+        "choice-only",
+        "spatial-choice"
+      ],
+      "genericActionId": "interaction.respond",
+      "authorityPath": "durable-pending-move-resolution",
+      "acceptedAdapter": "withAcceptedEncounterPresentation",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "native:pending-ability-response",
+      "sourceKind": "ability",
+      "interactionRoles": [
+        "triggered-optional",
+        "interrupt-reaction",
+        "choice-only"
+      ],
+      "genericActionId": "interaction.respond",
+      "authorityPath": "authorized-ability-response-view",
+      "acceptedAdapter": "pendingEncounterInteractionFromAbilityView",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "projection:passive-sources",
+      "sourceKind": "ability|capability|edge|feature",
+      "interactionRoles": [
+        "passive-provider",
+        "triggered-automatic",
+        "triggered-optional"
+      ],
+      "genericActionId": null,
+      "authorityPath": "encounter-snapshot-projection",
+      "acceptedAdapter": null,
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "projection:inventory-affordances",
+      "sourceKind": "item",
+      "interactionRoles": [
+        "contextual-affordance"
+      ],
+      "genericActionId": null,
+      "authorityPath": "encounter-snapshot-projection",
+      "acceptedAdapter": null,
+      "migrationStatus": "generic-contract"
+    }
+  ],
+  "presentationSurfaces": [
+    {
+      "inventoryId": "snapshot:encounter-presentation",
+      "implementationPath": "server/useCases/loadLiveTableSnapshot.ts",
+      "contract": "EncounterPresentationProjection",
+      "authority": "server-role-projection",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "client:legacy-context-menu-adapter",
+      "implementationPath": "src/utils/encounterPresentation/legacyContextMenuProjection.ts",
+      "contract": "EncounterActionOffer|EncounterContextualAffordance",
+      "authority": "server-inclusion-local-decoration",
+      "migrationStatus": "compatibility-only"
+    },
+    {
+      "inventoryId": "client:generic-interaction-panel",
+      "implementationPath": "src/components/map/EncounterPresentationPanel.vue",
+      "contract": "EncounterPresentationProjection",
+      "authority": "presentation-only",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "client:generic-vfx-overlay",
+      "implementationPath": "src/components/map/EncounterVfxOverlay.vue",
+      "contract": "AcceptedEncounterPresentation.vfx",
+      "authority": "presentation-only",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "client:announcement-history-runtime",
+      "implementationPath": "src/composables/map-editor/useEncounterPresentationRuntime.ts",
+      "contract": "AcceptedEncounterPresentation",
+      "authority": "deduplicated-presentation-only",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "durable:accepted-realtime",
+      "implementationPath": "server/livePlay/acceptedCommandRealtime.ts",
+      "contract": "AcceptedEncounterPresentation",
+      "authority": "accepted-command-facts",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "durable:accepted-replay",
+      "implementationPath": "server/domain/encounterPresentation/replay.ts",
+      "contract": "AcceptedEncounterPresentation",
+      "authority": "bounded-durable-history",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "recovery:pending-interactions",
+      "implementationPath": "server/domain/encounterPresentation/pendingAdapters.ts",
+      "contract": "EncounterPendingInteractionView",
+      "authority": "authorized-response-and-public-summary",
+      "migrationStatus": "generic-contract"
+    }
+  ]
+}

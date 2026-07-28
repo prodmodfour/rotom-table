@@ -150,7 +150,7 @@ describe('AbilitySpec v1 envelope', () => {
     expectSpecError(callback, 'not-json', 'abilitySpec.phases[0].operations[0].run')
 
     const classInstance = validSpec()
-    class Unsafe {}
+    class Unsafe { readonly marker = true }
     classInstance.subscriptions[0]!.predicate = new Unsafe() as never
     expectSpecError(classInstance, 'not-json', 'abilitySpec.subscriptions[0].predicate')
 

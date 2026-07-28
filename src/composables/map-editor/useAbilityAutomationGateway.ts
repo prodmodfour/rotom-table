@@ -9,6 +9,7 @@ export interface UseAbilityAutomationGatewayOptions {
   readonly playerProfileId: Readonly<Ref<PlayerProfileId | null>>
   readonly player: Readonly<Ref<boolean>>
   readonly reconcileAfterAccepted?: () => Promise<unknown> | unknown
+  readonly presentAccepted?: (presentation: unknown) => void
 }
 
 /** Thin transport only; mechanics, options, authorization, rolls, and writes stay server-owned. */
@@ -23,6 +24,13 @@ export const useAbilityAutomationGateway = (options: UseAbilityAutomationGateway
   )
   const resolveDeclaration = async (intent: AbilityDeclarationIntent): Promise<unknown> => {
     const result = await postJson(MAP_API_PATHS.resolveAbilityDeclaration, { intent, ...profile() })
+    if (
+      typeof result === 'object'
+      && result !== null
+      && 'encounterPresentation' in result
+    ) {
+      options.presentAccepted?.((result as { encounterPresentation?: unknown }).encounterPresentation)
+    }
     await options.reconcileAfterAccepted?.()
     return result
   }

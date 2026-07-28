@@ -27,6 +27,7 @@ import {
   type AcceptedMoveCorrectionSheetSnapshot,
 } from '../domain/moveAutomation/planAcceptedMoveCorrection'
 import { acceptedCommandRealtimeAppendInput } from '../livePlay/acceptedCommandRealtime'
+import { withAcceptedEncounterPresentation } from '../domain/encounterPresentation/acceptedAdapters'
 import { createCanonicalCommandHash } from '../livePlay/commandIdempotency'
 import {
   parseMoveCorrectionCommand,
@@ -503,12 +504,17 @@ export const applyGmMoveCorrectionUseCase = (
 
     const scopes = correctionScopes(plan, currentParsed)
     const patch = correctionPatch({ command: currentParsed.command, plan, scopes })
-    const result = createLivePlayAcceptedResult({
-      opId: currentParsed.command.opId,
-      mapSlug: currentParsed.command.mapSlug,
-      previousRevision: plan.previousRevision,
-      revision: plan.revision,
-      patches: [patch],
+    const wireCommand = wireCorrectionCommand(currentParsed.command, scopes)
+    const result = withAcceptedEncounterPresentation({
+      command: wireCommand,
+      result: createLivePlayAcceptedResult({
+        opId: currentParsed.command.opId,
+        mapSlug: currentParsed.command.mapSlug,
+        previousRevision: plan.previousRevision,
+        revision: plan.revision,
+        patches: [patch],
+      }),
+      occurredAt: plan.nextMap.updatedAt ?? plan.revision,
     })
     const authoritativeMap = applyMapWrite(plan, dependencies)
     const sheetUpdates = applySheetWrites(plan, dependencies)
@@ -520,7 +526,6 @@ export const applyGmMoveCorrectionUseCase = (
       result,
       correctionOriginOperationId: currentParsed.command.payload.originOperationId,
     })
-    const wireCommand = wireCorrectionCommand(currentParsed.command, scopes)
     persistedEvents = dependencies.realtimeEventRepository.appendMany([
       ...livePlaySheetUpdateRealtimeAppendInputs({
         command: wireCommand,

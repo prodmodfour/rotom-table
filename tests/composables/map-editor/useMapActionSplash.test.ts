@@ -43,7 +43,7 @@ describe('useMapActionSplash', () => {
 
   it('renders a local splash and broadcasts the visual payload without waiting on publish', async () => {
     vi.useFakeTimers()
-    const publishActionSplash = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 5_000)))
+    const publishActionSplash = vi.fn(() => new Promise((resolve) => { setTimeout(resolve, 5_000) }))
     const splash = buildSplash(publishActionSplash)
 
     let leadInResolved = false

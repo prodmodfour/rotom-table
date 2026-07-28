@@ -76,7 +76,7 @@ const deferred = <T = void>() => {
 }
 
 const timeout = <T>(milliseconds: number, value: T): Promise<T> =>
-  new Promise((resolve) => setTimeout(() => resolve(value), milliseconds))
+  new Promise((resolve) => { setTimeout(() => resolve(value), milliseconds) })
 
 const createHarness = (initialMaps: readonly TestMap[]) => {
   const maps = new Map(initialMaps.map((map) => [map.slug, { ...map, log: [...map.log] }]))

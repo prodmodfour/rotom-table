@@ -107,7 +107,7 @@ const { saveSidebarScroll, setEntryListRef, sidebarRef } = usePokedexSidebarScro
   border-radius: 999px;
   padding: 0.2rem 0.6rem;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   white-space: nowrap;

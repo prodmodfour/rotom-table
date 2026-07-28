@@ -15,6 +15,11 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Ability automation contributor guide](ability-automation.md) — 483-Ability authority, AbilitySpec modes, event subscriptions, frequency/state ownership, debugging, evidence, and correction workflow.
 - [Ability automation operator recovery and manual QA](ability-automation-manual-qa.md) — live-play UX, multi-client privacy, retry/conflict, restart, backup/export, recovery, and release-check runbook.
 - [Ability automation release acceptance](ability-automation-release-acceptance.md) — recorded 483-Ability automated, production-like multi-client, privacy, recovery, and runtime-retirement acceptance plus production observation dependencies.
+- [Encounter presentation contract](encounter-presentation-contract.md) — source-agnostic offer, passive, choice, accepted-fact, privacy, and adapter contributor workflow.
+- [Encounter presentation API/schema reference](encounter-presentation-api.md) — snapshot v3, generic declarations, pending/realtime/replay semantics, parsers, and budgets.
+- [Encounter presentation operator recovery and manual QA](encounter-presentation-manual-qa.md) — GM/player privacy, pending recovery, reconnect, correction, accessibility, and production-like checks.
+- [ADR 012: Server-authoritative encounter presentation](adrs/012-server-authoritative-encounter-presentation-contract.md) — authority, role projections, durable accepted facts, compatibility, and source-as-provenance decision.
+- [Platform and encounter presentation release acceptance](automation-presentation-contract/release-acceptance.md) — Nuxt 4/tooling versions, governance, browser policy, validation, and compatibility closure.
 - [Move automation release acceptance](move-automation-release-acceptance.md) — recorded 776-move automated, production-like browser, privacy, recovery, and runtime-retirement acceptance.
 - [Move automation operator recovery and manual QA](move-automation-manual-qa.md) — private live-play canary, uncertainty, restart, backup, and privacy runbook.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.

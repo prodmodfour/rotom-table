@@ -24,6 +24,7 @@ import type { AttackOfOpportunityTriggerPayload } from './attackOfOpportunitySta
 import type { StartTurnModalStateUpdatePayload } from './startTurnModalState'
 import type { ResolveMoveIntent } from './livePlayMoveResolution'
 import type { LivePlayMoveStatePatchPayload } from './livePlayMoveState'
+import type { AcceptedEncounterPresentation } from './encounterPresentation'
 import type { EncounterEventKind } from './moveAutomation/events'
 import type { EncounterState } from './moveAutomation/encounterState'
 import type { MoveAutomationRollLedgerEntry } from './moveAutomation/random'
@@ -1206,6 +1207,8 @@ export interface LivePlayCommandAccepted {
   readonly previousRevision: number
   readonly revision: number
   readonly patches: LivePlayPatch[]
+  /** Generic, mechanics-free accepted outcome for every client surface. */
+  readonly presentation?: AcceptedEncounterPresentation
 }
 
 export interface LivePlayCommandRejected {
@@ -1281,6 +1284,7 @@ export interface CreateLivePlayAcceptedResultInput {
   readonly previousRevision: number
   readonly revision: number
   readonly patches: readonly LivePlayPatch[]
+  readonly presentation?: AcceptedEncounterPresentation
 }
 
 export interface CreateLivePlayRejectedResultInput {
@@ -1310,6 +1314,7 @@ export const createLivePlayAcceptedResult = (
   previousRevision: input.previousRevision,
   revision: input.revision,
   patches: [...input.patches],
+  ...(input.presentation === undefined ? {} : { presentation: input.presentation }),
 })
 
 export const createLivePlayRejectedResult = (

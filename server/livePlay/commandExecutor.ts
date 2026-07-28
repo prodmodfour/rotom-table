@@ -26,6 +26,7 @@ import {
 } from './opResult'
 import { livePlayOpStore, type LivePlayOpRecord, type LivePlayOpStore, type SaveLivePlayOpResultInput } from './opStore'
 import type { AcceptedMoveCompensationResult } from '../domain/moveAutomation/acceptedMoveCompensation'
+import { acceptedEncounterPresentationFromLivePlayCommand } from '../domain/encounterPresentation/acceptedAdapters'
 import { livePlayMapWriteQueue, type MapWriteQueue } from './mapWriteQueue'
 import {
   evaluateLivePlayCommandConflicts,
@@ -1040,12 +1041,25 @@ export class AuthoritativeLivePlayCommandExecutor {
       'accepted revision',
     )
     validateAcceptedPatches(command, revision, application.patches)
-    return createLivePlayAcceptedResult({
+    const result = createLivePlayAcceptedResult({
       opId: command.opId,
       mapSlug: command.mapSlug,
       previousRevision,
       revision,
       patches: application.patches,
+    })
+    const occurredAt = isRecord(application.nextMap)
+      && Number.isSafeInteger(application.nextMap.updatedAt)
+      && Number(application.nextMap.updatedAt) >= 0
+      ? Number(application.nextMap.updatedAt)
+      : revision
+    return createLivePlayAcceptedResult({
+      ...result,
+      presentation: acceptedEncounterPresentationFromLivePlayCommand({
+        command,
+        result,
+        occurredAt,
+      }),
     })
   }
 

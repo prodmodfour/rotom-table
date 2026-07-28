@@ -34,6 +34,9 @@ export const abilityAutomationAcceptedRealtimeAppendInput = (
         previousRevision: result.previousRevision,
         revision: result.revision,
         status: 'committed',
+        ...(result.encounterPresentation === undefined
+          ? {}
+          : { presentation: result.encounterPresentation }),
       },
     },
     access: { kind: 'map-access', mapSlug: result.mapSlug },

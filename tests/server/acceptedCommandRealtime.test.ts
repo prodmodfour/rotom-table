@@ -58,6 +58,12 @@ describe('accepted command realtime append helper', () => {
         revision: 5,
         opId: 'op_acceptrt01',
         patches: result.patches,
+        presentation: expect.objectContaining({
+          operationId: 'op_acceptrt01',
+          mapSlug: 'arena',
+          previousRevision: 4,
+          revision: 5,
+        }),
         clientId: 'client-1',
       },
       access: { kind: 'map-access', mapSlug: 'arena' },

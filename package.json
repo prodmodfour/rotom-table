@@ -18,6 +18,12 @@
     "realtime:prune": "node scripts/realtime-retention.mjs prune",
     "postinstall": "NODE_ENV=development nuxt prepare",
     "typecheck": "NODE_ENV=development nuxt typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "check:encounter-presentation": "node scripts/check-encounter-presentation-contract.mjs",
+    "generate:encounter-presentation-inventory": "node scripts/generate-encounter-presentation-inventory.mjs",
+    "test:nuxt": "vitest run --config vitest.nuxt.config.ts",
+    "test:e2e": "playwright test",
     "test": "vitest run",
     "test:watch": "vitest",
     "refactor:loop": "bash scripts/refactor-loop.sh",
@@ -39,6 +45,12 @@
     "sync:item-sprites": "node scripts/sync_item_sprites.mjs",
     "generate:profile-sprites": "python3 scripts/generate_profile_sprites.py"
   },
+  "overrides": {
+    "archiver": {
+      "readdir-glob": "3.0.0"
+    },
+    "minimatch": "10.2.6"
+  },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.2.8",
     "@fontsource/eb-garamond": "^5.2.7",
@@ -50,10 +62,15 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@nuxt/eslint": "^1.16.0",
+    "@nuxt/test-utils": "^4.1.0",
+    "@playwright/test": "^1.62.0",
     "@types/node": "^24.13.0",
     "@types/three": "^0.176.0",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/test-utils": "^2.4.11",
+    "eslint": "^10.8.0",
     "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.10.4",
     "typescript": "^6.0.3",

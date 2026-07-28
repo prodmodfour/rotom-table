@@ -1,4 +1,5 @@
 import { deepFreezeStrictJson } from '#shared/automation/strictJson'
+import type { EncounterPendingInteractionView } from '#shared/encounterPresentation'
 import type { AbilitySpecPhase } from '#shared/abilityAutomation/spec'
 import {
   parsePendingAbilitySaga,
@@ -9,6 +10,7 @@ import type {
   PendingAbilityOwnerKind,
   PendingAbilityResponseOwner,
 } from '#shared/abilityAutomation/pendingResolution'
+import { pendingEncounterInteractionFromAbilityView } from '../encounterPresentation/pendingAdapters'
 
 export const ABILITY_RESPONSE_VIEW_SCHEMA_VERSION = 1 as const
 
@@ -52,6 +54,9 @@ export interface AbilityPendingGmView extends AbilityPendingWindowViewBase {
 }
 
 export type AbilityPendingAuthorizedView = AbilityPendingResponderView | AbilityPendingGmView
+export type AbilityPendingAuthorizedEncounterView = AbilityPendingAuthorizedView & {
+  readonly encounterInteraction: EncounterPendingInteractionView
+}
 
 export interface AbilityPendingSourceSummary {
   readonly schemaVersion: typeof ABILITY_RESPONSE_VIEW_SCHEMA_VERSION
@@ -69,6 +74,9 @@ export interface AbilityPendingMapExistenceSummary {
   readonly mapSlug: string
   readonly revision: number
   readonly pendingWindowCount: number
+}
+export type AbilityPendingMapEncounterSummary = AbilityPendingMapExistenceSummary & {
+  readonly encounterInteraction: EncounterPendingInteractionView
 }
 
 export interface AbilityPublicSagaLogRecord {
@@ -140,7 +148,7 @@ export const projectPendingAbilityResponseView = (input: {
   readonly saga: unknown
   readonly authorization: AbilityPendingViewAuthorization
   readonly auditGmAccess?: (record: AbilityGmAccessAuditRecord) => void
-}): AbilityPendingAuthorizedView => {
+}): AbilityPendingAuthorizedEncounterView => {
   const saga = parsePendingAbilitySaga(input.saga)
   assertAuthorization(input.authorization)
   if (!active(saga)
@@ -155,7 +163,7 @@ export const projectPendingAbilityResponseView = (input: {
         'response.authorized-prompt', 'response.legal-options', 'response.owner-principals',
       ] as const),
     }))
-    return deepFreezeStrictJson({
+    const view: AbilityPendingGmView = {
       schemaVersion: ABILITY_RESPONSE_VIEW_SCHEMA_VERSION,
       kind: 'ability-pending-gm-view',
       resolutionId: saga.resolution.resolutionId,
@@ -171,9 +179,17 @@ export const projectPendingAbilityResponseView = (input: {
         abilityInstanceId: saga.resolution.trigger.abilityInstanceId,
       },
       owners: saga.resolution.window.owners,
-    }) as AbilityPendingGmView
+    }
+    return deepFreezeStrictJson({
+      ...view,
+      encounterInteraction: pendingEncounterInteractionFromAbilityView({
+        view,
+        mapRevision: view.revision,
+        participants: [],
+      }),
+    }) as AbilityPendingAuthorizedEncounterView
   }
-  return deepFreezeStrictJson({
+  const view: AbilityPendingResponderView = {
     schemaVersion: ABILITY_RESPONSE_VIEW_SCHEMA_VERSION,
     kind: 'ability-pending-responder-view',
     resolutionId: saga.resolution.resolutionId,
@@ -182,7 +198,15 @@ export const projectPendingAbilityResponseView = (input: {
     expiresAt: saga.resolution.expiresAt,
     status: 'pending',
     window: baseWindow(saga),
-  }) as AbilityPendingResponderView
+  }
+  return deepFreezeStrictJson({
+    ...view,
+    encounterInteraction: pendingEncounterInteractionFromAbilityView({
+      view,
+      mapRevision: view.revision,
+      participants: [],
+    }),
+  }) as AbilityPendingAuthorizedEncounterView
 }
 
 /** Source-controller command acknowledgement; no prompt, ability, eligibility, or responder data. */
@@ -209,11 +233,11 @@ export const projectPendingAbilityMapExistence = (input: {
   readonly sagas: readonly unknown[]
   readonly mapSlug: string
   readonly revision: number
-}): AbilityPendingMapExistenceSummary => {
+}): AbilityPendingMapEncounterSummary => {
   if (!Array.isArray(input.sagas) || input.sagas.length > 1_024
     || typeof input.mapSlug !== 'string' || !Number.isSafeInteger(input.revision)) deny()
   const sagas = input.sagas.map(saga => parsePendingAbilitySaga(saga))
-  return deepFreezeStrictJson({
+  const view: AbilityPendingMapExistenceSummary = {
     schemaVersion: ABILITY_RESPONSE_VIEW_SCHEMA_VERSION,
     kind: 'ability-pending-existence',
     mapSlug: input.mapSlug,
@@ -223,6 +247,14 @@ export const projectPendingAbilityMapExistence = (input: {
       && saga.resolution.mapSlug === input.mapSlug
       && saga.resolution.revision === input.revision
     )).length,
+  }
+  return deepFreezeStrictJson({
+    ...view,
+    encounterInteraction: pendingEncounterInteractionFromAbilityView({
+      view,
+      mapRevision: view.revision,
+      participants: [],
+    }),
   })
 }
 

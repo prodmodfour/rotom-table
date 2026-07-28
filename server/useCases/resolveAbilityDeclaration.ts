@@ -7,7 +7,11 @@ import {
   type AbilityDeclarationIntent,
 } from '#shared/abilityAutomation/declarationIntent'
 import { isAbilityMechanicOperation, parseAbilityMechanicOperation } from '#shared/abilityAutomation/mechanics'
-import { parseAbilityResolutionPublicResult, type AbilityResolutionPublicResult } from '#shared/abilityAutomation/results'
+import {
+  parseAbilityResolutionPublicResult,
+  type AbilityResolutionPublicResult,
+  type AcceptedAbilityResolutionPublicResult,
+} from '#shared/abilityAutomation/results'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -61,6 +65,7 @@ import { resolveAuthoritativeMoveItemResources } from '../domain/moveAutomation/
 import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../domain/abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { abilityAutomationAcceptedRealtimeAppendInput } from '../domain/abilityAutomation/realtime'
+import { acceptedEncounterPresentationFromAbility } from '../domain/encounterPresentation/acceptedAdapters'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
 import { createMoveStateChangePlan, type MoveStateChangePlan } from '../domain/moveAutomation/plan'
 import { createSqliteAbilityDeclarationOfferRepository, type AbilityDeclarationOfferRepository } from '../storage/abilityDeclarationOfferRepository'
@@ -473,7 +478,7 @@ export const resolveAbilityDeclarationUseCase = (
       ? { featureOwnedIncreasePlacementIds: new Set([context.actor.placement.id]) }
       : {}),
   })
-  const result = parseAbilityResolutionPublicResult({
+  const baseResult = parseAbilityResolutionPublicResult({
     schemaVersion: 1,
     kind: 'accepted',
     operationId: intent.intentId,
@@ -483,6 +488,20 @@ export const resolveAbilityDeclarationUseCase = (
     revision: nextMap.revision,
     status: 'committed',
     presentation: { key: 'ability.resolution.completed', outcome: acceptedOutcome },
+  })
+  const acceptedBaseResult: AcceptedAbilityResolutionPublicResult = baseResult.kind === 'accepted'
+    ? baseResult
+    : fail(500, 'Ability result did not reach an accepted state.')
+  const result = parseAbilityResolutionPublicResult({
+    ...acceptedBaseResult,
+    encounterPresentation: acceptedEncounterPresentationFromAbility({
+      result: acceptedBaseResult,
+      canonicalId: intent.canonicalId,
+      abilityInstanceId: intent.abilityInstanceId,
+      actorPlacementId: intent.actorPlacementId,
+      targetPlacementIds: selectedTargetPlacementIds,
+      occurredAt: now,
+    }),
   })
   let persistedRealtimeEvents: ReturnType<RealtimeEventRepository['appendMany']> = []
   database.withTransaction(() => {

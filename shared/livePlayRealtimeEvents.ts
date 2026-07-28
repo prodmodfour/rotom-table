@@ -7,6 +7,11 @@ import {
   type LivePlayPatch,
 } from './livePlayCommands'
 import { LIVE_PLAY_REALTIME_EVENT_TYPES } from './realtime'
+import {
+  EncounterPresentationValidationError,
+  parseAcceptedEncounterPresentation,
+  type AcceptedEncounterPresentation,
+} from './encounterPresentation'
 
 export interface LivePlayRealtimeEventValidationIssue {
   readonly path: string
@@ -21,6 +26,7 @@ export interface LivePlayAcceptedRealtimeEvent {
   readonly revision: number
   readonly previousRevision: number
   readonly patches: readonly LivePlayPatch[]
+  readonly presentation?: AcceptedEncounterPresentation
   readonly clientId?: string
   readonly timestamp: number
 }
@@ -174,6 +180,30 @@ export const parseAcceptedLivePlayRealtimeEvent = (
     addIssue(issues, 'clientId', 'clientId must be a string when present.')
   }
 
+  let presentation: AcceptedEncounterPresentation | undefined
+  if (hasOwn(value, 'presentation') && value.presentation !== undefined) {
+    try {
+      presentation = parseAcceptedEncounterPresentation(value.presentation)
+      if (
+        presentation.mapSlug !== value.mapSlug
+        || presentation.operationId !== value.opId
+        || presentation.previousRevision !== previousRevision
+        || presentation.revision !== revision
+      ) {
+        addIssue(issues, 'presentation', 'presentation identity and revisions must match the accepted event.')
+      }
+    }
+    catch (error) {
+      addIssue(
+        issues,
+        'presentation',
+        error instanceof EncounterPresentationValidationError
+          ? error.message
+          : 'presentation must satisfy the accepted encounter contract.',
+      )
+    }
+  }
+
   if (!Array.isArray(value.patches)) {
     addIssue(issues, 'patches', 'patches must be a non-empty array.')
   } else if (value.patches.length === 0) {
@@ -200,6 +230,7 @@ export const parseAcceptedLivePlayRealtimeEvent = (
       revision: value.revision as number,
       previousRevision: value.previousRevision as number,
       patches: detach(value.patches as LivePlayPatch[]),
+      ...(presentation === undefined ? {} : { presentation }),
       ...(typeof value.clientId === 'string' ? { clientId: value.clientId } : {}),
       timestamp: value.timestamp as number,
     },

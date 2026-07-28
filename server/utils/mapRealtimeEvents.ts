@@ -74,5 +74,6 @@ export const livePlayCommandAcceptedRealtimeEvent = (
   previousRevision: result.previousRevision,
   opId: result.opId,
   patches: [...result.patches],
+  ...(result.presentation === undefined ? {} : { presentation: result.presentation }),
   ...(clientId === undefined ? {} : { clientId }),
 })

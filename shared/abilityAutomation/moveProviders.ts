@@ -364,7 +364,8 @@ export const resolveAbilityMoveProviders = (input: {
         const move = moves.get(id)
         if (!move) return
         const values = new Set(move.connectionIds)
-        effect.action === 'add' ? values.add(effect.connectionId) : values.delete(effect.connectionId)
+        if (effect.action === 'add') values.add(effect.connectionId)
+        else values.delete(effect.connectionId)
         move.connectionIds = [...values].sort()
         touched.push(id)
       })

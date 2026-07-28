@@ -19,6 +19,7 @@ import {
 } from '../domain/moveAutomation/declarationCompensation'
 import type { ParsedMoveResponseCommand } from '../livePlay/moveResponseCommandParser'
 import { acceptedCommandRealtimeAppendInput } from '../livePlay/acceptedCommandRealtime'
+import { withAcceptedEncounterPresentation } from '../domain/encounterPresentation/acceptedAdapters'
 import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import type { PendingMoveResponseAuthorizationGrant } from '../policies/pendingMoveResponsePolicy'
 import {
@@ -292,12 +293,16 @@ const terminate = (
         sheet: storedSheet.sheet,
       }
     })
-    const result = createLivePlayAcceptedResult({
-      opId: command.opId,
-      mapSlug: command.mapSlug,
-      previousRevision: currentRevision,
-      revision,
-      patches: [],
+    const result = withAcceptedEncounterPresentation({
+      command: command as never,
+      result: createLivePlayAcceptedResult({
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: currentRevision,
+        revision,
+        patches: [],
+      }),
+      occurredAt: terminatedAt,
     })
     dependencies.opRepository.saveCommandResult({
       mapSlug: command.mapSlug,

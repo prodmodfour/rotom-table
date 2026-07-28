@@ -28,7 +28,7 @@ export const normalizeSearchQuery = (value: string) => value
   .replace(/[\u0300-\u036f]/g, '')
   .toLowerCase()
   .replace(/['\u2019]/g, '')
-  .replace(/[^a-z0-9#()\-]+/g, ' ')
+  .replace(/[^-a-z0-9#()]+/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
   // Treat a leading dash as an exclusion operator while preserving hyphenated

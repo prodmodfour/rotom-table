@@ -52,7 +52,7 @@ type MutableIssueList = LivePlayOperationStatusValidationIssue[]
 
 const UNKNOWN_RESPONSE_KEYS = new Set(['schemaVersion', 'status', 'mapSlug', 'opId'])
 const TERMINAL_RESPONSE_KEYS = new Set([...UNKNOWN_RESPONSE_KEYS, 'result'])
-const ACCEPTED_RESULT_KEYS = new Set(['ok', 'opId', 'mapSlug', 'previousRevision', 'revision', 'patches'])
+const ACCEPTED_RESULT_KEYS = new Set(['ok', 'opId', 'mapSlug', 'previousRevision', 'revision', 'patches', 'presentation'])
 const REJECTED_RESULT_KEYS = new Set(['ok', 'opId', 'mapSlug', 'reason', 'message', 'currentRevision', 'currentState'])
 
 const isRecord = (value: unknown): value is UnknownRecord => (

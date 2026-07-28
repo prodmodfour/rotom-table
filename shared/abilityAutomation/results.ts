@@ -1,6 +1,10 @@
 import { isSlug } from '../paths'
 import { ABILITY_SPEC_PHASES, type AbilitySpecPhase } from './spec'
 import { cloneStrictJson, deepFreezeStrictJson, isPlainJsonObject } from '../automation/strictJson'
+import {
+  parseAcceptedEncounterPresentation,
+  type AcceptedEncounterPresentation,
+} from '../encounterPresentation'
 
 export const ABILITY_RESOLUTION_RESULT_SCHEMA_VERSION = 1 as const
 
@@ -39,6 +43,8 @@ export interface AcceptedAbilityResolutionPublicResult
   readonly presentation: AbilityResolutionPublicPresentation & {
     readonly outcome: AbilityResolutionPublicOutcome
   }
+  /** Generic accepted outcome; absent only when reading a pre-contract row. */
+  readonly encounterPresentation?: AcceptedEncounterPresentation
 }
 
 export interface PendingAbilityResolutionPublicResult
@@ -269,7 +275,15 @@ const parsePresentation = (
 const parsePublic = (value: unknown, path: string): AbilityResolutionPublicResult => {
   const input = record(value, path)
   const pending = input.kind === 'pending'
-  exact(input, pending ? PENDING_PUBLIC_FIELDS : PUBLIC_BASE_FIELDS, path)
+  exact(
+    input,
+    pending
+      ? PENDING_PUBLIC_FIELDS
+      : Object.prototype.hasOwnProperty.call(input, 'encounterPresentation')
+        ? [...PUBLIC_BASE_FIELDS, 'encounterPresentation']
+        : PUBLIC_BASE_FIELDS,
+    path,
+  )
   if (input.schemaVersion !== ABILITY_RESOLUTION_RESULT_SCHEMA_VERSION) {
     fail('unsupported-schema-version', `${path}.schemaVersion`, 'is unsupported.')
   }
@@ -293,11 +307,23 @@ const parsePublic = (value: unknown, path: string): AbilityResolutionPublicResul
   }
   if (input.kind === 'accepted') {
     if (input.status !== 'committed') fail('inconsistent-result', `${path}.status`, 'must be committed.')
+    const encounterPresentation = Object.prototype.hasOwnProperty.call(input, 'encounterPresentation')
+      ? parseAcceptedEncounterPresentation(input.encounterPresentation)
+      : undefined
+    if (encounterPresentation && (
+      encounterPresentation.operationId !== common.operationId
+      || encounterPresentation.mapSlug !== common.mapSlug
+      || encounterPresentation.previousRevision !== previousRevision
+      || encounterPresentation.revision !== revision
+    )) {
+      fail('inconsistent-result', `${path}.encounterPresentation`, 'must match the Ability result identity and revisions.')
+    }
     return Object.freeze({
       ...common,
       kind: 'accepted',
       status: 'committed',
       presentation: parsePresentation(input.presentation, `${path}.presentation`, false) as AcceptedAbilityResolutionPublicResult['presentation'],
+      ...(encounterPresentation === undefined ? {} : { encounterPresentation }),
     })
   }
   if (input.status !== 'pending') fail('inconsistent-result', `${path}.status`, 'must be pending.')

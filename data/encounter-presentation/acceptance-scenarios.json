@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "description": "Canonical cross-source acceptance matrix for the encounter presentation contract.",
+  "scenarios": [
+    {
+      "scenarioId": "duel-single-target-hit",
+      "category": "duel",
+      "audience": "actor-owner",
+      "sourceKinds": [
+        "move"
+      ],
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "actorCount": 1,
+      "targetCount": 1,
+      "expects": [
+        "offer",
+        "accepted-outcome",
+        "change",
+        "vfx",
+        "announcement",
+        "history"
+      ]
+    },
+    {
+      "scenarioId": "crowd-area-mixed-outcome",
+      "category": "crowd",
+      "audience": "gm",
+      "sourceKinds": [
+        "move",
+        "field-effect"
+      ],
+      "interactionRoles": [
+        "activated-action",
+        "spatial-choice"
+      ],
+      "actorCount": 1,
+      "targetCount": 12,
+      "expects": [
+        "area-geometry",
+        "hit",
+        "miss",
+        "causal-order",
+        "reduced-motion"
+      ]
+    },
+    {
+      "scenarioId": "ability-applied",
+      "category": "ability",
+      "audience": "actor-owner",
+      "sourceKinds": [
+        "ability"
+      ],
+      "interactionRoles": [
+        "activated-action",
+        "choice-only"
+      ],
+      "actorCount": 1,
+      "targetCount": 2,
+      "expects": [
+        "offer",
+        "accepted-outcome",
+        "generic-realtime"
+      ]
+    },
+    {
+      "scenarioId": "passive-stacking-explanation",
+      "category": "passive",
+      "audience": "gm",
+      "sourceKinds": [
+        "ability",
+        "capability",
+        "edge",
+        "feature"
+      ],
+      "interactionRoles": [
+        "passive-provider",
+        "triggered-automatic"
+      ],
+      "actorCount": 1,
+      "targetCount": 0,
+      "expects": [
+        "passive-summary",
+        "derived-fact",
+        "contribution-order"
+      ]
+    },
+    {
+      "scenarioId": "maneuver-interrupt-reaction",
+      "category": "reaction",
+      "audience": "responder-owner",
+      "sourceKinds": [
+        "maneuver"
+      ],
+      "interactionRoles": [
+        "interrupt-reaction"
+      ],
+      "actorCount": 2,
+      "targetCount": 1,
+      "expects": [
+        "pending-interaction",
+        "authorized-options",
+        "pass"
+      ]
+    },
+    {
+      "scenarioId": "trainer-order-support",
+      "category": "order",
+      "audience": "actor-owner",
+      "sourceKinds": [
+        "order"
+      ],
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "actorCount": 1,
+      "targetCount": 1,
+      "expects": [
+        "offer",
+        "timing",
+        "targeting"
+      ]
+    },
+    {
+      "scenarioId": "capture-projectile-result",
+      "category": "capture",
+      "audience": "actor-owner",
+      "sourceKinds": [
+        "capture",
+        "item"
+      ],
+      "interactionRoles": [
+        "activated-action",
+        "contextual-affordance"
+      ],
+      "actorCount": 1,
+      "targetCount": 1,
+      "expects": [
+        "inventory-affordance",
+        "projectile-vfx",
+        "accepted-outcome"
+      ]
+    },
+    {
+      "scenarioId": "movement-interrupted",
+      "category": "movement",
+      "audience": "responder-owner",
+      "sourceKinds": [
+        "movement",
+        "maneuver"
+      ],
+      "interactionRoles": [
+        "spatial-choice",
+        "interrupt-reaction"
+      ],
+      "actorCount": 2,
+      "targetCount": 1,
+      "expects": [
+        "path",
+        "pending-interaction",
+        "retry-identity"
+      ]
+    },
+    {
+      "scenarioId": "hazard-multi-cell-choice",
+      "category": "hazard",
+      "audience": "gm",
+      "sourceKinds": [
+        "hazard",
+        "move"
+      ],
+      "interactionRoles": [
+        "choice-only",
+        "spatial-choice"
+      ],
+      "actorCount": 1,
+      "targetCount": 0,
+      "expects": [
+        "cell-options",
+        "cardinality",
+        "confirmation",
+        "force-pass"
+      ]
+    },
+    {
+      "scenarioId": "private-prevention-redaction",
+      "category": "privacy",
+      "audience": "public",
+      "sourceKinds": [
+        "ability",
+        "system"
+      ],
+      "interactionRoles": [
+        "triggered-automatic"
+      ],
+      "actorCount": 2,
+      "targetCount": 1,
+      "expects": [
+        "prevented",
+        "private-source-redaction",
+        "no-diagnostics"
+      ]
+    },
+    {
+      "scenarioId": "gm-move-correction",
+      "category": "correction",
+      "audience": "gm",
+      "sourceKinds": [
+        "move",
+        "system"
+      ],
+      "interactionRoles": [
+        "diagnostic-only"
+      ],
+      "actorCount": 1,
+      "targetCount": 3,
+      "expects": [
+        "correction-link",
+        "rollback-change-ids",
+        "causal-order"
+      ]
+    },
+    {
+      "scenarioId": "boss-phase-nested-reactions",
+      "category": "boss",
+      "audience": "gm",
+      "sourceKinds": [
+        "move",
+        "ability",
+        "feature"
+      ],
+      "interactionRoles": [
+        "triggered-optional",
+        "interrupt-reaction"
+      ],
+      "actorCount": 4,
+      "targetCount": 6,
+      "expects": [
+        "nested-choice-order",
+        "causal-depth",
+        "private-response-options",
+        "phase-change-history"
+      ]
+    },
+    {
+      "scenarioId": "reconnect-duplicate-replay",
+      "category": "recovery",
+      "audience": "actor-owner",
+      "sourceKinds": [
+        "movement",
+        "system"
+      ],
+      "interactionRoles": [
+        "activated-action",
+        "spatial-choice"
+      ],
+      "actorCount": 1,
+      "targetCount": 0,
+      "expects": [
+        "snapshot-recovery",
+        "replay-gap",
+        "duplicate-deduplication",
+        "exact-retry-identity"
+      ]
+    },
+    {
+      "scenarioId": "no-target-system-action",
+      "category": "system",
+      "audience": "gm",
+      "sourceKinds": [
+        "scene",
+        "initiative",
+        "token",
+        "terrain"
+      ],
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "actorCount": 1,
+      "targetCount": 0,
+      "expects": [
+        "gm-action",
+        "no-op-outcome",
+        "history"
+      ]
+    }
+  ],
+  "evidence": {
+    "duel-single-target-hit": [
+      "tests/server/encounterPresentationProjection.test.ts",
+      "tests/shared/encounterPresentationRealtime.test.ts"
+    ],
+    "crowd-area-mixed-outcome": [
+      "tests/server/encounterPresentationProjection.test.ts",
+      "tests/shared/encounterPresentationPerformance.test.ts"
+    ],
+    "ability-applied": [
+      "tests/server/abilityAutomationCohort080Activated.test.ts",
+      "tests/shared/encounterPresentationRealtime.test.ts"
+    ],
+    "passive-stacking-explanation": [
+      "tests/shared/encounterPresentationContracts.test.ts",
+      "tests/server/encounterPresentationProjection.test.ts"
+    ],
+    "maneuver-interrupt-reaction": [
+      "tests/server/encounterPresentationProjection.test.ts",
+      "tests/server/movementAttackOfOpportunitySuspension.test.ts"
+    ],
+    "trainer-order-support": [
+      "tests/server/encounterPresentationProjection.test.ts"
+    ],
+    "capture-projectile-result": [
+      "tests/server/encounterPresentationProjection.test.ts",
+      "tests/server/throwPokeballCommand.test.ts"
+    ],
+    "movement-interrupted": [
+      "tests/server/movementAttackOfOpportunitySuspension.test.ts",
+      "tests/server/encounterPresentationReplay.test.ts"
+    ],
+    "hazard-multi-cell-choice": [
+      "tests/server/pendingHazardCellChoiceResume.test.ts",
+      "tests/server/encounterPresentationProjection.test.ts"
+    ],
+    "private-prevention-redaction": [
+      "tests/shared/encounterPresentationContracts.test.ts",
+      "tests/server/loadLiveTableSnapshot.test.ts",
+      "tests/e2e/encounter-presentation.spec.ts"
+    ],
+    "gm-move-correction": [
+      "tests/server/gmMoveCorrections.test.ts",
+      "tests/server/encounterPresentationReplay.test.ts"
+    ],
+    "boss-phase-nested-reactions": [
+      "tests/server/moveAutomationNestedMoves.test.ts",
+      "tests/server/encounterPresentationReplay.test.ts"
+    ],
+    "reconnect-duplicate-replay": [
+      "tests/integration/realtimeReplayEndToEnd.test.ts",
+      "tests/shared/encounterPresentationRealtime.test.ts",
+      "tests/composables/map-editor/useLivePlayCommands.test.ts"
+    ],
+    "no-target-system-action": [
+      "tests/server/encounterPresentationProjection.test.ts"
+    ]
+  }
+}

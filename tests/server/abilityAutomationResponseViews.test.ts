@@ -42,6 +42,18 @@ describe('authorized ability response views and redaction', () => {
         allowPass: true,
       },
     })
+    expect(view.encounterInteraction).toMatchObject({
+      projection: 'responder-owner',
+      interactionId: 'pending:resolution.secret-one',
+      choices: [{
+        choiceId: 'window.secret',
+        options: [{ optionId: 'option.opaque-one' }],
+      }],
+      responseIdentity: {
+        resolutionId: 'resolution.secret-one',
+        windowId: 'window.secret',
+      },
+    })
     expectNoPrivateFragments(view)
     expect(Object.isFrozen(view)).toBe(true)
     expect(Object.isFrozen(view.window.options)).toBe(true)
@@ -134,6 +146,27 @@ describe('authorized ability response views and redaction', () => {
       mapSlug: 'privacy-arena',
       revision: 9,
       pendingWindowCount: 1,
+      encounterInteraction: {
+        schemaVersion: 1,
+        projection: 'public',
+        interactionId: 'pending:ability:privacy-arena:9',
+        mapSlug: 'privacy-arena',
+        mapRevision: 9,
+        status: 'pending',
+        source: null,
+        actor: null,
+        prompt: '1 Ability response pending.',
+        outstandingChoiceCount: 1,
+        allowPass: false,
+        allowCancel: false,
+        expiresAt: null,
+        announcement: {
+          announcementId: 'announcement:ability:privacy-arena:9',
+          priority: 'polite',
+          message: '1 Ability response pending.',
+          dedupeKey: 'pending:ability:privacy-arena:9',
+        },
+      },
     })
     expectNoPrivateFragments(summary)
     expect(serialized(summary)).not.toContain('resolution.secret-one')

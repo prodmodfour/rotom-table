@@ -525,18 +525,19 @@ export class FullSystemChaosHarness {
     readonly role: Ref<AuthRole>
     readonly server?: ServerInstance
   }) {
-    const harness = this
+    const openSseStream = (source: HarnessEventSource, urlText: string): void => {
+      this.openSseStream({
+        source,
+        urlText,
+        role: input.role.value,
+        server: input.server,
+      })
+    }
+    const sources = this.sources
     return class ClientEventSource extends HarnessEventSource {
       constructor(url: string) {
-        super(url, input.label, (source) => {
-          harness.openSseStream({
-            source,
-            urlText: url,
-            role: input.role.value,
-            server: input.server,
-          })
-        })
-        harness.sources.push(this)
+        super(url, input.label, source => openSseStream(source, url))
+        sources.push(this)
       }
     }
   }

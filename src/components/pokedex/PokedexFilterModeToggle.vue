@@ -46,7 +46,7 @@ const filterMode = defineModel<FilterMode>({ required: true })
 .filter-mode__button:hover,
 .filter-mode__button.active {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
 }
 </style>

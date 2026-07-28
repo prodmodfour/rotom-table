@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
-import { emptyAbilityClientCapabilityBundle } from '#shared/abilityAutomation/clientCapabilities'
+import { emptyEncounterPresentationProjection } from '#shared/encounterPresentation'
 import { LIVE_TABLE_SNAPSHOT_SCHEMA_VERSION } from '#shared/liveTableSnapshot'
 import { useLiveTableSnapshotSync } from '~/composables/map-editor/useLiveTableSnapshotSync'
 import { teardownLiveSheets, useLiveSheets } from '~/composables/useLiveSheets'
@@ -48,7 +48,12 @@ const snapshotFixture = (overrides: Record<string, unknown> = {}) => {
     interactionModeUpdatedAt: 500,
     pokemonSheets: [{ slug: 'pikachu', nickname: 'Pikachu', revision: 1 }],
     trainerSheets: [{ slug: 'ash', name: 'Ash', revision: 1 }],
-    abilityCapabilities: emptyAbilityClientCapabilityBundle('arena-map', mapRevision),
+    encounterPresentation: emptyEncounterPresentationProjection({
+      mapSlug: 'arena-map',
+      mapRevision,
+      audience: 'diagnostic',
+      generatedAt: 100,
+    }),
     ...overrides,
   }
 }
@@ -200,7 +205,7 @@ describe('useLiveTableSnapshotSync', () => {
     expect(liveSheets.hydrated.value).toBe(true)
     expect(liveSheets.pokemonBySlug.value.has('pikachu')).toBe(true)
 
-    apiMocks.getJson.mockReturnValueOnce(new Promise(() => undefined))
+    apiMocks.getJson.mockReturnValueOnce(new Promise(() => { /* intentionally unresolved */ }))
     playerProfileId.value = 'profile-b' as PlayerProfileId
     void sync.requestSnapshot('profile B')
 

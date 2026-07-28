@@ -180,14 +180,6 @@ export interface CreateMoveVfxDebugPreviewEventsOptions {
   readonly staggerMs?: number
 }
 
-interface ImportMetaDebugHarnessEnvironment {
-  readonly dev?: boolean
-  readonly env?: {
-    readonly DEV?: unknown
-    readonly MODE?: unknown
-  }
-}
-
 interface ProcessDebugHarnessEnvironment {
   readonly dev?: unknown
   readonly env?: {
@@ -226,14 +218,12 @@ const DEBUG_QUERY_KEYS = new Set([
 const DEBUG_QUERY_VALUES = new Set<string>(MOVE_VFX_DEBUG_HARNESS_QUERY_VALUES)
 
 const defaultIsDevEnvironment = (): boolean => {
-  const meta = import.meta as ImportMetaDebugHarnessEnvironment
   const processDebug = globalThis.process as ProcessDebugHarnessEnvironment | undefined
 
   return (
-    meta.dev === true
-    || meta.env?.DEV === true
-    || meta.env?.DEV === 'true'
-    || meta.env?.MODE === 'development'
+    import.meta.dev
+    || import.meta.env.DEV
+    || import.meta.env.MODE === 'development'
     || processDebug?.dev === true
     || processDebug?.env?.NODE_ENV === 'development'
   )

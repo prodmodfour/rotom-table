@@ -445,7 +445,8 @@ describe('useMoveAutomationPanel authoritative dispatcher', () => {
 
   it('uses server area cells for authoritative area VFX and does not place local hazards or field effects', async () => {
     const moveScript = branchScript()
-    const lineTemplate = moveScript.targetBranches?.find((branch) => branch.id === 'line-branch')?.areaTemplates?.[0]!
+    const lineTemplate = moveScript.targetBranches?.find((branch) => branch.id === 'line-branch')?.areaTemplates?.[0]
+    if (!lineTemplate) throw new Error('Expected line branch area template fixture.')
     const serverCells: GridAnchor[] = [{ x: 7, y: 0, z: 7 }]
     await withRegisteredScripts([moveScript], async () => {
       const placeHazard = vi.fn()

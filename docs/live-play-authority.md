@@ -258,6 +258,10 @@ The recovery panel means:
 
 Recovery never replays local presentation-only effects. Duplicate accepted/status results are idempotent and do not apply state twice.
 
+## Generic encounter interaction and presentation boundary
+
+Live snapshot schema 3 carries one required `EncounterPresentationProjection` instead of source-specific capability wire bundles. Offers are role-specific and map-revision-bound; the map client submits the exact generic offer/actor/action identity to `/api/maps/encounter-actions/declarations` before entering a source-owned target or spatial workflow. That acknowledgment never bypasses the final command's authorization, legality, revision, and transactional checks. Pending Move/Ability windows project through the same choice and retry vocabulary. New terminal command and native Ability results place bounded `AcceptedEncounterPresentation` facts in operation storage and durable realtime; pre-contract rows alone may omit them. Reconnect replay and aggregate snapshots recover the same deduplicated accepted history, while VFX, announcements, splash copy, and history remain mechanics-free projections. See [ADR 012](adrs/012-server-authoritative-encounter-presentation-contract.md) and the [API/schema reference](encounter-presentation-api.md).
+
 ## Outbox, status, retry, and abandonment
 
 Map live-play commands and shop checkout commands can be journaled in IndexedDB before send. The journal stores request path, exact body, auth context, fingerprint, state, attempts, and lease data; shop checkout rows are scoped by `shopSlug` and do not require a top-level `mapSlug` for shop-page-origin purchases. Retry resends the exact body and `opId`. Map command status checks are read-only. Map abandonment serializes against execution; if the server has already accepted the command, the accepted result wins and acknowledges the outbox. Accepted SSE acknowledges matching map outbox entries; shop checkout terminal SSE acknowledges matching checkout outbox entries and stale local shop state requests reload/reconciliation instead of applying an out-of-date result over newer local state.

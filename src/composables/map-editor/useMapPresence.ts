@@ -365,11 +365,11 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
   }
 
   const visibleEntries = computed<readonly LivePlayPresenceEntry[]>(() => {
-    expiryClockTick.value
+    void expiryClockTick.value
     return clonePresenceEntries(storedEntries.value)
   })
   const activePings = computed<readonly MapPresencePing[]>(() => {
-    expiryClockTick.value
+    void expiryClockTick.value
     const serverNow = localServerNow()
     return storedEntries.value
       .filter((entry) => entry.ping !== null && entry.ping.expiresAt > serverNow)

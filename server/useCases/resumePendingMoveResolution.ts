@@ -61,6 +61,7 @@ import {
 import type { MoveAutomationRuntimeRegistry } from '../domain/moveAutomation/registry'
 import type { AbilityAutomationRuntimeRegistry } from '../domain/abilityAutomation/registry'
 import { acceptedCommandRealtimeAppendInput } from '../livePlay/acceptedCommandRealtime'
+import { withAcceptedEncounterPresentation } from '../domain/encounterPresentation/acceptedAdapters'
 import { createCanonicalCommandHash } from '../livePlay/commandIdempotency'
 import type { LivePlayCommandHash } from '../livePlay/opResult'
 import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
@@ -757,12 +758,16 @@ export const resumePendingMoveResolutionUseCase = (
       const patches = childPlan
         ? [moveStatePatch(internalCommand, childPlan, move!, internalCommand.scopes)]
         : [responseMetadataPatch(plan, 'resolveAttackOfOpportunity')]
-      const result = createLivePlayAcceptedResult({
-        opId: input.command.opId,
-        mapSlug: input.command.mapSlug,
-        previousRevision: plan.previousRevision,
-        revision: plan.revision,
-        patches,
+      const result = withAcceptedEncounterPresentation({
+        command: internalCommand,
+        result: createLivePlayAcceptedResult({
+          opId: input.command.opId,
+          mapSlug: input.command.mapSlug,
+          previousRevision: plan.previousRevision,
+          revision: plan.revision,
+          patches,
+        }),
+        occurredAt: now,
       })
       dependencies.opRepository.saveCommandResult({
         mapSlug: input.command.mapSlug,
@@ -837,12 +842,16 @@ export const resumePendingMoveResolutionUseCase = (
       applyMap(map, plan.nextMap, dependencies)
       const sheetUpdates = applySheets(plan, dependencies)
       const patch = responseMetadataPatch(plan, 'resolveAbilityFollowUp')
-      const result = createLivePlayAcceptedResult({
-        opId: input.command.opId,
-        mapSlug: input.command.mapSlug,
-        previousRevision: plan.previousRevision,
-        revision: plan.revision,
-        patches: [patch],
+      const result = withAcceptedEncounterPresentation({
+        command: input.command as unknown as ResolveMoveLivePlayCommand,
+        result: createLivePlayAcceptedResult({
+          opId: input.command.opId,
+          mapSlug: input.command.mapSlug,
+          previousRevision: plan.previousRevision,
+          revision: plan.revision,
+          patches: [patch],
+        }),
+        occurredAt: now,
       })
       dependencies.opRepository.saveCommandResult({
         mapSlug: input.command.mapSlug,
@@ -1016,12 +1025,16 @@ export const resumePendingMoveResolutionUseCase = (
     applyMap(map, plan.nextMap, dependencies)
 
     if (isAuthoritativePendingMoveStatePlan(plan)) {
-      const result = createLivePlayAcceptedResult({
-        opId: input.command.opId,
-        mapSlug: input.command.mapSlug,
-        previousRevision: plan.previousRevision,
-        revision: plan.revision,
-        patches: [],
+      const result = withAcceptedEncounterPresentation({
+        command: input.command as unknown as ResolveMoveLivePlayCommand,
+        result: createLivePlayAcceptedResult({
+          opId: input.command.opId,
+          mapSlug: input.command.mapSlug,
+          previousRevision: plan.previousRevision,
+          revision: plan.revision,
+          patches: [],
+        }),
+        occurredAt: now,
       })
       dependencies.pendingResolutionRepository.update({
         resolution: plan.suspension.pendingResolution,
@@ -1058,12 +1071,16 @@ export const resumePendingMoveResolutionUseCase = (
       move,
       internalCommand.scopes,
     )
-    const result: LivePlayCommandAccepted = createLivePlayAcceptedResult({
-      opId: input.command.opId,
-      mapSlug: input.command.mapSlug,
-      previousRevision: plan.previousRevision,
-      revision: plan.revision,
-      patches: [patch],
+    const result: LivePlayCommandAccepted = withAcceptedEncounterPresentation({
+      command: internalCommand,
+      result: createLivePlayAcceptedResult({
+        opId: input.command.opId,
+        mapSlug: input.command.mapSlug,
+        previousRevision: plan.previousRevision,
+        revision: plan.revision,
+        patches: [patch],
+      }),
+      occurredAt: now,
     })
     dependencies.opRepository.saveCommandResult({
       mapSlug: input.command.mapSlug,

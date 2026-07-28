@@ -23,18 +23,24 @@ just encounter <region> <table> <count> preview
 Before sharing a change, run:
 
 ```bash
+npm run check:encounter-presentation
+npm run lint
 npm run typecheck
 npm test
+npm run test:nuxt
+npm run test:e2e
 npm run build
 ```
 
-The canonical quality gate runs ability metadata/plan/budget validation and both Move metadata validation and the strict 776/776 Move semantic/runtime evidence audit before typechecking, tests, and the build:
+The canonical quality gate runs Ability and Move metadata/plan/budget validation, encounter-contract consistency, lint, pure and Nuxt-runtime tests, production-build Playwright/axe acceptance, typecheck, and the build:
 
 ```bash
 bash scripts/quality-gate.sh
 ```
 
 Move authors must follow [`docs/move-automation.md`](docs/move-automation.md). It covers the spec/handler boundary, capability contracts, branch evidence, hashes, status promotion, recovery invariants, and common validation failures.
+
+All new live-play action or presentation sources must follow [`docs/encounter-presentation-contract.md`](docs/encounter-presentation-contract.md), the [schema/API reference](docs/encounter-presentation-api.md), and [ADR 012](docs/adrs/012-server-authoritative-encounter-presentation-contract.md). Do not add a source-specific snapshot bundle, infer legality from sheet/menu labels, expose private choices in map-public realtime, or derive accepted visuals from optimistic state. Run `npm run check:encounter-presentation` after changing commands, catalogs, adapters, fixtures, or docs.
 
 Ability authors must follow [`docs/ability-automation.md`](docs/ability-automation.md), [ADR 011](docs/adrs/011-authoritative-ability-automation-runtime.md), and the ordered [`ABILITY_AUTOMATION_PLAN.md`](implementation-plans/ABILITY_AUTOMATION_PLAN.md). During the migration, run:
 

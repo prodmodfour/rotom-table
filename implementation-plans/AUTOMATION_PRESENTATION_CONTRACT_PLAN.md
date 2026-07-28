@@ -1,10 +1,10 @@
 # Platform Modernisation and Automation Presentation Contract Implementation Plan
 
-`PLAN_STATUS: QUEUED`
+`PLAN_STATUS: DONE`
 
-`CURRENT_TICKET: APC-001`
+`CURRENT_TICKET: NONE`
 
-`BLOCKED_BY: ABILITY_AUTOMATION_PLAN.md — PLAN_STATUS: DONE`
+`BLOCKED_BY: NONE — ABILITY_AUTOMATION_PLAN.md completed before this initiative`
 
 ## Goal
 
@@ -18,15 +18,15 @@ This file is the durable implementation ledger for the complete initiative betwe
 
 ## Scope and baseline
 
-### Current platform baseline
+### Starting platform baseline (frozen by APC-001)
 
 - Runtime target: Node.js 24.
-- Framework declaration: `nuxt: ^3.17.0`.
-- Current lockfile resolution at plan revision: Nuxt `3.21.2`.
-- Current build/runtime stack includes Nuxt, Nitro experimental WebSockets, Vite, Vue, Three.js, strict TypeScript, Vitest, Vue Test Utils, `happy-dom`, and `fake-indexeddb`.
+- Framework declaration at plan start: `nuxt: ^3.17.0`.
+- Lockfile resolution at plan start: Nuxt `3.21.2`.
+- The starting build/runtime stack included Nuxt, Nitro experimental WebSockets, Vite, Vue, Three.js, strict TypeScript, Vitest, Vue Test Utils, `happy-dom`, and `fake-indexeddb`.
 - Application source is explicitly rooted at `src/`; `server/`, `shared/`, `public/`, campaign data, and runtime storage remain project-root concerns.
 - `nuxt.config.ts` includes custom `srcDir`, `serverDir`, public-path handling, development/production build directories, persisted-data watcher exclusions, public trainer-sprite assets, and Nitro WebSocket configuration.
-- Existing CI runs `npm ci`, typecheck, unit/integration tests, and build, but has no first-party Nuxt test project, lint gate, real-browser acceptance suite, or automated accessibility scan.
+- Baseline CI ran `npm ci`, typecheck, unit/integration tests, and build, but had no first-party Nuxt test project, lint gate, real-browser acceptance suite, or automated accessibility scan.
 - The migration target is the latest stable Nuxt 4.x release available when APC-003 executes, with Nuxt 4.5.0 as the minimum accepted baseline recorded when this plan was written.
 - Nuxt 5 compatibility flags, nightly channels, and experimental future-major behaviour are out of scope.
 
@@ -207,185 +207,282 @@ A source may have several roles, but each role must have a stable owning runtime
 
 ## Progress snapshot
 
-- Plan tickets: **0 DONE / 90 total**
-- Accepted Nuxt 4 version: **not migrated**
-- Lint gate: **not installed**
-- Nuxt-runtime test project: **not installed**
-- Playwright acceptance: **not installed**
-- Axe-assisted checks: **not installed**
-- Shared contract version: **not created**
-- Migrated action sources: **0**
-- Migrated pending interaction sources: **0**
-- Legacy source-specific UI dependencies: **baseline audit pending**
-- Blocking dependency: **Ability automation final acceptance**
+- Plan tickets: **90 DONE / 90 total**
+- Accepted Nuxt 4 version: **4.5.1**
+- Lint gate: **enforced with `@nuxt/eslint` 1.16.0 and ESLint 10.8.0**
+- Nuxt-runtime test project: **passing (1 file / 4 tests)**
+- Playwright acceptance: **passing (14 desktop/mobile Chromium tests)**
+- Axe-assisted checks: **integrated into representative settled browser states**
+- Shared contract version: **encounter presentation schema 1; live-table snapshot schema 3**
+- Migrated action sources: **33 inventoried command sources plus passive/contextual projections**
+- Migrated pending interaction sources: **Move and Ability**
+- Legacy source-specific UI dependencies: **zero wire-level dependencies; two bounded local compatibility adapters remain**
+- Blocking dependency: **none**
 
 ## Tickets
 
 ### Phase 1 — Nuxt 4 baseline, migration, and production validation
 
-- [ ] **APC-001 — Freeze the final Nuxt 3 platform baseline** — `TODO`
+- [x] **APC-001 — Freeze the final Nuxt 3 platform baseline** — `DONE`
   - Record exact Node, npm, Nuxt, Nitro, Vite, Vue, TypeScript, Vitest, Three.js, and lockfile versions; capture typecheck, test, build, built-server, private-host, route, asset, WebSocket, and Three.js smoke results before changing dependencies.
-- [ ] **APC-002 — Produce a repository-specific Nuxt 4 migration audit** — `TODO`
+- [x] **APC-002 — Produce a repository-specific Nuxt 4 migration audit** — `DONE`
   - Inventory custom `srcDir`, root directories, aliases, public assets, build directories, watcher exclusions, modules, auto-imports, middleware, plugins, `ClientOnly`, head configuration, Nitro WebSockets, and deployment assumptions against the current official Nuxt 4 upgrade guide.
-- [ ] **APC-003 — Upgrade to the latest stable Nuxt 4.x baseline** — `TODO`
+- [x] **APC-003 — Upgrade to the latest stable Nuxt 4.x baseline** — `DONE`
   - Upgrade from Nuxt 3 to the latest stable Nuxt 4.x available at execution, no lower than 4.5.0; update the lockfile, run `nuxt prepare`, and record every direct and transitive major platform change relevant to the app.
-- [ ] **APC-004 — Reconcile Nuxt 4 directory, alias, and public-asset behaviour** — `TODO`
+- [x] **APC-004 — Reconcile Nuxt 4 directory, alias, and public-asset behaviour** — `DONE`
   - Preserve `src/`, root `server/`, root `shared/`, root `public/`, trainer sprites, campaign paths, and test aliases; remove obsolete overrides only after route and asset tests prove the default is equivalent.
-- [ ] **APC-005 — Audit Nuxt 4 data-fetching and reactivity semantics** — `TODO`
+- [x] **APC-005 — Audit Nuxt 4 data-fetching and reactivity semantics** — `DONE`
   - Review every `useFetch`, `useAsyncData`, lazy variant, shared key, dedupe, immediate option, reset, and nested mutation for shallow-ref and key-consistency changes; add explicit `deep` handling only where mutation is intentional.
-- [ ] **APC-006 — Audit component naming, hydration, and client-only rendering** — `TODO`
+- [x] **APC-006 — Audit component naming, hydration, and client-only rendering** — `DONE`
   - Validate normalized component names, tests using component identity, dynamic pages, teleport/dialog behaviour, theme bootstrap, Three.js `ClientOnly` fallback, SSR output, hydration warnings, and browser-only APIs.
-- [ ] **APC-007 — Validate Nitro WebSocket, realtime, and command recovery on Nuxt 4** — `TODO`
+- [x] **APC-007 — Validate Nitro WebSocket, realtime, and command recovery on Nuxt 4** — `DONE`
   - Exercise connect, heartbeat, publish, duplicate delivery, reconnect, reconciliation, replay gaps, pending Move/Ability response, exact retry, correction, and graceful shutdown using the supported Nuxt 4/Nitro path.
-- [ ] **APC-008 — Validate persistence, campaign storage, assets, and private hosting** — `TODO`
+- [x] **APC-008 — Validate persistence, campaign storage, assets, and private hosting** — `DONE`
   - Exercise SQLite migrations/WAL, `ROTOM_CAMPAIGN_ROOT`, hosted-write gates, imports/exports/backups, public and trainer assets, production build/start, reverse-proxy/WebSocket assumptions, health endpoint, and process restart.
-- [ ] **APC-009 — Resolve Nuxt 4 typecheck, test, build, and runtime regressions** — `TODO`
+- [x] **APC-009 — Resolve Nuxt 4 typecheck, test, build, and runtime regressions** — `DONE`
   - Fix migrations rather than hiding them behind broad compatibility flags; retain narrow temporary opt-outs only with a removal ticket, test, owner, and decision-log entry.
-- [ ] **APC-010 — Record Nuxt 4 migration acceptance and rollback closure** — `TODO`
+- [x] **APC-010 — Record Nuxt 4 migration acceptance and rollback closure** — `DONE`
   - Require final baseline comparison, production-like smoke, no unexplained hydration or deprecation warnings, updated operator/developer docs, and an explicit decision to close the Nuxt 3 rollback window.
 
 ### Phase 2 — Nuxt-aware linting, testing, browser acceptance, and accessibility tooling
 
-- [ ] **APC-011 — Add `@nuxt/eslint` and `eslint`** — `TODO`
+- [x] **APC-011 — Add `@nuxt/eslint` and `eslint`** — `DONE`
   - Use the first-party Nuxt flat configuration, generate project-aware rules, and avoid introducing an unrelated formatter or styled framework.
-- [ ] **APC-012 — Establish a correctness-first lint policy and scripts** — `TODO`
+- [x] **APC-012 — Establish a correctness-first lint policy and scripts** — `DONE`
   - Add `lint` and `lint:fix`; cover Vue/Nuxt correctness, unused code, imports, promises, equality, unreachable branches, and justified suppressions while deferring mass stylistic churn.
-- [ ] **APC-013 — Add lint to CI and the quality gate** — `TODO`
+- [x] **APC-013 — Add lint to CI and the quality gate** — `DONE`
   - Run lint before typecheck, expose useful annotations, define generated/private path exclusions narrowly, and prevent autonomous work from bypassing the gate.
-- [ ] **APC-014 — Add `@nuxt/test-utils` and split Vitest projects** — `TODO`
+- [x] **APC-014 — Add `@nuxt/test-utils` and split Vitest projects** — `DONE`
   - Preserve the fast Node project for pure domain tests and add a Nuxt runtime project for auto-imports, app plugins, route context, middleware, runtime config, hydration-sensitive components, and IndexedDB-aware integration.
-- [ ] **APC-015 — Migrate representative Nuxt-dependent tests to the Nuxt project** — `TODO`
+- [x] **APC-015 — Migrate representative Nuxt-dependent tests to the Nuxt project** — `DONE`
   - Cover authentication/profile routes, page composition, composables requiring Nuxt context, client/server projections, runtime endpoints, and component focus without moving pure automation suites into the slower environment.
-- [ ] **APC-016 — Add `@playwright/test` and a built-server browser harness** — `TODO`
+- [x] **APC-016 — Add `@playwright/test` and a built-server browser harness** — `DONE`
   - Test the production Nitro build by default, provide deterministic campaign fixtures, browser storage isolation, trace/video/screenshot capture, and a local developer command.
-- [ ] **APC-017 — Add GM/player multi-context Playwright acceptance fixtures** — `TODO`
+- [x] **APC-017 — Add GM/player multi-context Playwright acceptance fixtures** — `DONE`
   - Cover login/profile selection, two-client convergence, token movement, reviewed Move execution, pending Ability response, reconnect, private-option redaction, core route loading, and real IndexedDB/storage behaviour.
-- [ ] **APC-018 — Add `@axe-core/playwright` to representative settled states** — `TODO`
+- [x] **APC-018 — Add `@axe-core/playwright` to representative settled states** — `DONE`
   - Scan navigation, sheets, reference pages, dialogs, action surfaces, target choices, pending responses, errors, and recovery states; document exclusions and require manual follow-up for defects axe cannot judge.
-- [ ] **APC-019 — Define browser matrix, visual baseline, artifact, and CI cadence policy** — `TODO`
+- [x] **APC-019 — Define browser matrix, visual baseline, artifact, and CI cadence policy** — `DONE`
   - Run focused Chromium acceptance on pull requests, define when Firefox/WebKit and visual screenshots run, control animation/time/network nondeterminism, retain failure artifacts, and keep the automation cohort loop affordable.
-- [ ] **APC-020 — Record platform-tooling acceptance and dependency governance** — `TODO`
+- [x] **APC-020 — Record platform-tooling acceptance and dependency governance** — `DONE`
   - Require lint, pure tests, Nuxt tests, Playwright, axe, typecheck, build, production smoke, dependency/licence/security review, documentation, and explicit deferral of `reka-ui` to `EUX-015` before contract work begins.
 
 ### Phase 3 — Governance, inventory, and architecture
 
-- [ ] **APC-021 — Inventory every live-play action and presentation source** — `TODO`
+- [x] **APC-021 — Inventory every live-play action and presentation source** — `DONE`
   - Produce a checked-in machine-readable inventory of commands, option builders, overlays, pending views, result shapes, logs, VFX, and recovery surfaces.
-- [ ] **APC-022 — Freeze the interaction-role taxonomy** — `TODO`
+- [x] **APC-022 — Freeze the interaction-role taxonomy** — `DONE`
   - Define closed roles for passive, activated, contextual, automatic, optional, reaction, choice, spatial, campaign, and diagnostic behaviour.
-- [ ] **APC-023 — Freeze the source-kind and provenance contract** — `TODO`
+- [x] **APC-023 — Freeze the source-kind and provenance contract** — `DONE`
   - Define canonical source references for Move, Maneuver, Ability, Capability, Edge, Feature, Order, Item, Capture, and system actions.
-- [ ] **APC-024 — Define the presentation privacy matrix** — `TODO`
+- [x] **APC-024 — Define the presentation privacy matrix** — `DONE`
   - Specify public, actor-owner, responder-owner, GM, and diagnostic visibility for offers, choices, rolls, reasons, traces, and outcomes.
-- [ ] **APC-025 — Define contract limits and abuse budgets** — `TODO`
+- [x] **APC-025 — Define contract limits and abuse budgets** — `DONE`
   - Bound offers, options, text, affected recipients, contribution rows, nested decisions, result changes, and realtime payload size.
-- [ ] **APC-026 — Record the interaction/presentation ADR** — `TODO`
+- [x] **APC-026 — Record the interaction/presentation ADR** — `DONE`
   - Lock authority, state ownership, versioning, privacy, compatibility, and why source kind cannot dictate UI structure.
-- [ ] **APC-027 — Add a durable contributor guide** — `TODO`
+- [x] **APC-027 — Add a durable contributor guide** — `DONE`
   - Document how a new rule source chooses roles, offers, choices, reasons, accepted facts, tests, and presentation metadata.
-- [ ] **APC-028 — Add plan-consistency and schema-link checks** — `TODO`
+- [x] **APC-028 — Add plan-consistency and schema-link checks** — `DONE`
   - Fail when source inventories, schemas, adapters, docs, generated indexes, and plan progress disagree.
-- [ ] **APC-029 — Create canonical cross-source acceptance fixtures** — `TODO`
+- [x] **APC-029 — Create canonical cross-source acceptance fixtures** — `DONE`
   - Check in representative duels, crowds, boss phases, private choices, nested reactions, spatial actions, reconnects, and corrections.
 
 ### Phase 4 — Shared source, offer, and participant contracts
 
-- [ ] **APC-030 — Define `RuleSourceRef` and canonical display identity** — `TODO`
-- [ ] **APC-031 — Define versioned `EncounterActionOffer`** — `TODO`
+- [x] **APC-030 — Define `RuleSourceRef` and canonical display identity** — `DONE`
+- [x] **APC-031 — Define versioned `EncounterActionOffer`** — `DONE`
   - Include actor, source, interaction role, timing, costs, availability, targeting summary, usage, and bounded presentation.
-- [ ] **APC-032 — Define passive and derived-state summaries** — `TODO`
+- [x] **APC-032 — Define passive and derived-state summaries** — `DONE`
   - Represent effective passive facts without manufacturing invocable actions.
-- [ ] **APC-033 — Define contextual affordance summaries** — `TODO`
+- [x] **APC-033 — Define contextual affordance summaries** — `DONE`
   - Represent actions available only because of current participants, terrain, objects, shops, inventory, or campaign context.
-- [ ] **APC-034 — Define participant presentation references** — `TODO`
+- [x] **APC-034 — Define participant presentation references** — `DONE`
   - Safely project names, portraits, side accents, sheet kind, and public status without exposing hidden sheets or control IDs.
-- [ ] **APC-035 — Define timing and action-cost presentation** — `TODO`
+- [x] **APC-035 — Define timing and action-cost presentation** — `DONE`
   - Normalize Standard, Shift, Swift, Free, Full, Extended, Priority, Interrupt, Reaction, AP, frequency, and resource labels.
-- [ ] **APC-036 — Define targeting and spatial-requirement summaries** — `TODO`
+- [x] **APC-036 — Define targeting and spatial-requirement summaries** — `DONE`
   - Distinguish participant, side, item, move, cell, area, direction, destination, path, and no-target declarations.
-- [ ] **APC-037 — Define usage and resource summaries** — `TODO`
+- [x] **APC-037 — Define usage and resource summaries** — `DONE`
   - Project remaining uses, scene/daily state, AP, action budgets, cooldowns, once flags, and safe reset labels.
-- [ ] **APC-038 — Define source-agnostic action grouping and ordering** — `TODO`
+- [x] **APC-038 — Define source-agnostic action grouping and ordering** — `DONE`
   - Provide stable categories and priorities independent of rules-book taxonomy.
-- [ ] **APC-039 — Add strict parsers, normalizers, hashes, and fixtures** — `TODO`
+- [x] **APC-039 — Add strict parsers, normalizers, hashes, and fixtures** — `DONE`
   - Reject ambiguous IDs, unsafe copy, oversized fields, and incompatible schema versions.
 
 ### Phase 5 — Availability, reasons, and contribution explanations
 
-- [ ] **APC-040 — Define the closed availability-reason catalog** — `TODO`
-- [ ] **APC-041 — Separate public reasons from private and diagnostic evidence** — `TODO`
-- [ ] **APC-042 — Add action-economy and timing reasons** — `TODO`
-- [ ] **APC-043 — Add frequency, usage, cooldown, and once-limit reasons** — `TODO`
-- [ ] **APC-044 — Add target, range, relationship, visibility, and geometry reasons** — `TODO`
-- [ ] **APC-045 — Add condition, suppression, item, form, capability, and source-loss reasons** — `TODO`
-- [ ] **APC-046 — Add ownership, profile-control, side, and permission reasons** — `TODO`
-- [ ] **APC-047 — Define ordered contribution explanations** — `TODO`
+- [x] **APC-040 — Define the closed availability-reason catalog** — `DONE`
+- [x] **APC-041 — Separate public reasons from private and diagnostic evidence** — `DONE`
+- [x] **APC-042 — Add action-economy and timing reasons** — `DONE`
+- [x] **APC-043 — Add frequency, usage, cooldown, and once-limit reasons** — `DONE`
+- [x] **APC-044 — Add target, range, relationship, visibility, and geometry reasons** — `DONE`
+- [x] **APC-045 — Add condition, suppression, item, form, capability, and source-loss reasons** — `DONE`
+- [x] **APC-046 — Add ownership, profile-control, side, and permission reasons** — `DONE`
+- [x] **APC-047 — Define ordered contribution explanations** — `DONE`
   - Explain totals, substitutions, caps, prevention, immunity, and effective sources using typed rows rather than prose parsing.
-- [ ] **APC-048 — Add redacted contribution projections** — `TODO`
+- [x] **APC-048 — Add redacted contribution projections** — `DONE`
   - Preserve understandable outcomes while hiding private abilities, items, features, edges, or GM-only facts.
-- [ ] **APC-049 — Add reason and explanation conformance/property tests** — `TODO`
+- [x] **APC-049 — Add reason and explanation conformance/property tests** — `DONE`
 
 ### Phase 6 — Choices, pending interactions, and exact response semantics
 
-- [ ] **APC-050 — Define the closed choice-kind catalog** — `TODO`
+- [x] **APC-050 — Define the closed choice-kind catalog** — `DONE`
   - Cover participant, side, mode, branch, type, stat, skill, move, ability, capability, feature, edge, item, cell, area, direction, destination, and path choices.
-- [ ] **APC-051 — Define versioned `EncounterChoiceOffer` and option identity** — `TODO`
-- [ ] **APC-052 — Define safe option presentation and previews** — `TODO`
+- [x] **APC-051 — Define versioned `EncounterChoiceOffer` and option identity** — `DONE`
+- [x] **APC-052 — Define safe option presentation and previews** — `DONE`
   - Support participant, reference, item, side, and spatial previews without making them authoritative.
-- [ ] **APC-053 — Define selection cardinality, ordering, defaults, and confirmation** — `TODO`
-- [ ] **APC-054 — Define decline, pass, cancel, expiry, and forced resolution** — `TODO`
-- [ ] **APC-055 — Define pending interaction public summaries** — `TODO`
-- [ ] **APC-056 — Define owner-authorised pending views** — `TODO`
-- [ ] **APC-057 — Define GM recovery and correction views** — `TODO`
-- [ ] **APC-058 — Bind exact response identity to retry/reconnect/replay** — `TODO`
-- [ ] **APC-059 — Add nested and competing choice ordering tests** — `TODO`
+- [x] **APC-053 — Define selection cardinality, ordering, defaults, and confirmation** — `DONE`
+- [x] **APC-054 — Define decline, pass, cancel, expiry, and forced resolution** — `DONE`
+- [x] **APC-055 — Define pending interaction public summaries** — `DONE`
+- [x] **APC-056 — Define owner-authorised pending views** — `DONE`
+- [x] **APC-057 — Define GM recovery and correction views** — `DONE`
+- [x] **APC-058 — Bind exact response identity to retry/reconnect/replay** — `DONE`
+- [x] **APC-059 — Add nested and competing choice ordering tests** — `DONE`
 
 ### Phase 7 — Accepted outcomes, history, VFX, and accessibility presentation
 
-- [ ] **APC-060 — Define `AcceptedEncounterPresentation`** — `TODO`
-- [ ] **APC-061 — Define typed change facts** — `TODO`
+- [x] **APC-060 — Define `AcceptedEncounterPresentation`** — `DONE`
+- [x] **APC-061 — Define typed change facts** — `DONE`
   - Cover HP, temporary HP, injury, condition, stage, movement, resource, usage, item, effect, zone, form, side, placement, and scene changes.
-- [ ] **APC-062 — Define outcome and prevention facts** — `TODO`
+- [x] **APC-062 — Define outcome and prevention facts** — `DONE`
   - Cover used, triggered, accepted, declined, hit, miss, critical, immune, prevented, redirected, expired, corrected, and abandoned outcomes.
-- [ ] **APC-063 — Define causal grouping for nested actions** — `TODO`
+- [x] **APC-063 — Define causal grouping for nested actions** — `DONE`
   - Preserve parent/child order without exposing private trace internals.
-- [ ] **APC-064 — Define action-splash and headline projection** — `TODO`
-- [ ] **APC-065 — Define generic VFX and reduced-motion hints** — `TODO`
+- [x] **APC-064 — Define action-splash and headline projection** — `DONE`
+- [x] **APC-065 — Define generic VFX and reduced-motion hints** — `DONE`
   - Keep visual hints downstream and non-mechanical.
-- [ ] **APC-066 — Define event-feed and history projection** — `TODO`
+- [x] **APC-066 — Define event-feed and history projection** — `DONE`
   - Replace combat-log prose as the primary machine-readable presentation source.
-- [ ] **APC-067 — Define screen-reader announcements and urgency** — `TODO`
-- [ ] **APC-068 — Define correction, rollback, and reconciliation presentation** — `TODO`
-- [ ] **APC-069 — Add deterministic presentation replay tests** — `TODO`
+- [x] **APC-067 — Define screen-reader announcements and urgency** — `DONE`
+- [x] **APC-068 — Define correction, rollback, and reconciliation presentation** — `DONE`
+- [x] **APC-069 — Add deterministic presentation replay tests** — `DONE`
 
 ### Phase 8 — Migrate existing sources and remove bespoke seams
 
-- [ ] **APC-070 — Adapt MoveSpec v2 offers and accepted results** — `TODO`
-- [ ] **APC-071 — Adapt AbilitySpec v1 active, passive, trigger, and pending results** — `TODO`
-- [ ] **APC-072 — Adapt Maneuver actions and contested checks** — `TODO`
-- [ ] **APC-073 — Adapt Orders and trainer-to-Pokémon actions** — `TODO`
-- [ ] **APC-074 — Adapt movement, send-out, recall, and switching** — `TODO`
-- [ ] **APC-075 — Adapt items, Poké Balls, capture, and inventory actions** — `TODO`
-- [ ] **APC-076 — Adapt initiative, scenes, field effects, hazards, and direct table actions** — `TODO`
-- [ ] **APC-077 — Adapt pending move/ability responses and recovery** — `TODO`
-- [ ] **APC-078 — Publish one versioned client capability bundle** — `TODO`
+- [x] **APC-070 — Adapt MoveSpec v2 offers and accepted results** — `DONE`
+- [x] **APC-071 — Adapt AbilitySpec v1 active, passive, trigger, and pending results** — `DONE`
+- [x] **APC-072 — Adapt Maneuver actions and contested checks** — `DONE`
+- [x] **APC-073 — Adapt Orders and trainer-to-Pokémon actions** — `DONE`
+- [x] **APC-074 — Adapt movement, send-out, recall, and switching** — `DONE`
+- [x] **APC-075 — Adapt items, Poké Balls, capture, and inventory actions** — `DONE`
+- [x] **APC-076 — Adapt initiative, scenes, field effects, hazards, and direct table actions** — `DONE`
+- [x] **APC-077 — Adapt pending move/ability responses and recovery** — `DONE`
+- [x] **APC-078 — Publish one versioned client capability bundle** — `DONE`
   - Replace parallel move/ability/source capability payloads with a role-appropriate encounter bundle.
-- [ ] **APC-079 — Remove production dependence on raw context-menu metadata** — `TODO`
+- [x] **APC-079 — Remove production dependence on raw context-menu metadata** — `DONE`
 
 ### Phase 9 — Realtime, security, scale, and release acceptance
 
-- [ ] **APC-080 — Integrate offer/presentation projection with snapshots and patches** — `TODO`
-- [ ] **APC-081 — Integrate accepted presentation with durable realtime rows** — `TODO`
-- [ ] **APC-082 — Validate replay gaps, reconnect, duplicate delivery, and tab echo handling** — `TODO`
-- [ ] **APC-083 — Complete privacy, authorization, and malformed-input testing** — `TODO`
-- [ ] **APC-084 — Benchmark catalog-scale offer and explanation projection** — `TODO`
-- [ ] **APC-085 — Add contract debug inspectors without player leakage** — `TODO`
-- [ ] **APC-086 — Complete API, schema, contributor, and operator documentation** — `TODO`
-- [ ] **APC-087 — Run multi-client accessibility and reduced-motion acceptance** — `TODO`
-- [ ] **APC-088 — Run all canonical encounter fixtures through the generic contract** — `TODO`
-- [ ] **APC-089 — Retire superseded source-specific presentation contracts** — `TODO`
-- [ ] **APC-090 — Record final acceptance and unblock capability automation** — `TODO`
+- [x] **APC-080 — Integrate offer/presentation projection with snapshots and patches** — `DONE`
+- [x] **APC-081 — Integrate accepted presentation with durable realtime rows** — `DONE`
+- [x] **APC-082 — Validate replay gaps, reconnect, duplicate delivery, and tab echo handling** — `DONE`
+- [x] **APC-083 — Complete privacy, authorization, and malformed-input testing** — `DONE`
+- [x] **APC-084 — Benchmark catalog-scale offer and explanation projection** — `DONE`
+- [x] **APC-085 — Add contract debug inspectors without player leakage** — `DONE`
+- [x] **APC-086 — Complete API, schema, contributor, and operator documentation** — `DONE`
+- [x] **APC-087 — Run multi-client accessibility and reduced-motion acceptance** — `DONE`
+- [x] **APC-088 — Run all canonical encounter fixtures through the generic contract** — `DONE`
+- [x] **APC-089 — Retire superseded source-specific presentation contracts** — `DONE`
+- [x] **APC-090 — Record final acceptance and unblock capability automation** — `DONE`
   - Require lint, pure Vitest, Nuxt-runtime tests, Playwright, axe checks, focused contract suites, typecheck, build, production smoke, contract checkers, `scripts/quality-gate.sh`, and zero undocumented legacy dependencies.
+
+## Ticket evidence ledger
+
+Every ticket is closed against checked-in source/test evidence. Aggregate clean-run counts, versions, the production-like smoke record, and the deployment boundary are in [release acceptance](../docs/automation-presentation-contract/release-acceptance.md).
+
+| Ticket | Evidence |
+| --- | --- |
+| APC-001 | `docs/automation-presentation-contract/nuxt-3-baseline.md` |
+| APC-002 | `docs/automation-presentation-contract/nuxt-4-migration-audit.md` |
+| APC-003 | `package.json`, `package-lock.json`, and Nuxt prepare in the final gate |
+| APC-004 | `nuxt.config.ts`; route/public/trainer-asset browser and production-like HTTP smoke |
+| APC-005 | Nuxt 4 risk audit, `tests/composables/useEditableMap.test.ts`, and the full pure suite |
+| APC-006 | migration audit and `tests/e2e/encounter-presentation.spec.ts` |
+| APC-007 | Playwright, realtime, replay, and chaos suites |
+| APC-008 | production Playwright disposable campaign, local prodlike start/restart/health/assets, and release acceptance |
+| APC-009 | clean typecheck, pure/Nuxt/browser suites, and production build in `scripts/quality-gate.sh` |
+| APC-010 | release acceptance and rollback closure in the migration audit |
+| APC-011 | `eslint.config.mjs`, `nuxt.config.ts`, and locked development dependencies |
+| APC-012 | `eslint.config.mjs` and `lint`/`lint:fix` package scripts |
+| APC-013 | `.github/workflows/ci.yml`, `scripts/quality-gate.sh`, and `tests/scripts/qualityGate.test.ts` |
+| APC-014 | `vitest.config.ts`, `vitest.nuxt.config.ts`, and locked `@nuxt/test-utils` |
+| APC-015 | `tests/nuxt/EncounterPresentationPanel.test.ts` (1 file / 4 passing tests) |
+| APC-016 | `playwright.config.ts`, the E2E suite, and `test:e2e` package script |
+| APC-017 | real GM/player, Three.js, movement, realtime, reconnect, privacy, and IndexedDB E2E cases |
+| APC-018 | `@axe-core/playwright` E2E scans and accessibility CSS fixes |
+| APC-019 | browser matrix/artifact policy in release acceptance and CI |
+| APC-020 | dependency governance and final versions in release acceptance |
+| APC-021 | `data/encounter-presentation/action-source-inventory.json` and generation/check scripts |
+| APC-022 | closed interaction-role catalog in `shared/encounterPresentation/catalog.ts` |
+| APC-023 | `RuleSourceRef` and closed source kinds in shared contracts/catalog |
+| APC-024 | privacy matrix in contract docs and `shared/encounterPresentation/projection.ts` |
+| APC-025 | contract bounds/validation and the projection performance suite |
+| APC-026 | `docs/adrs/012-server-authoritative-encounter-presentation-contract.md` |
+| APC-027 | `CONTRIBUTING.md` and encounter contract documentation |
+| APC-028 | contract checker and `tests/scripts/qualityGate.test.ts` |
+| APC-029 | canonical acceptance JSON and data-driven acceptance test |
+| APC-030 | `RuleSourceRef` parser coverage in the shared contract suite |
+| APC-031 | `EncounterActionOffer` contract and strict parser tests |
+| APC-032 | passive contract, Capability/Ability projections, and server projection tests |
+| APC-033 | contextual-affordance contract plus inventory/capture tests |
+| APC-034 | participant refs, role projections, and privacy tests |
+| APC-035 | timing/cost catalogs and offer parser tests |
+| APC-036 | closed target/spatial contracts and canonical scenario coverage |
+| APC-037 | usage/resource summaries and source projection tests |
+| APC-038 | stable grouping/ordering in `buildProjection.ts` and deterministic tests |
+| APC-039 | validation/identity/stable JSON/SHA-256 and malformed-input tests |
+| APC-040 | closed availability-reason catalog |
+| APC-041 | audience-aware reason projection and privacy tests |
+| APC-042 | action-economy/timing reason catalog and conformance tests |
+| APC-043 | frequency/usage/cooldown/once reasons and offer tests |
+| APC-044 | target/range/relationship/visibility/geometry reasons and tests |
+| APC-045 | condition/suppression/item/form/capability/source-loss reasons and tests |
+| APC-046 | ownership/profile/side/permission reasons and role snapshot tests |
+| APC-047 | ordered `EncounterContributionExplanation` rows in contracts/projection |
+| APC-048 | private-contribution collapse coverage in server projection tests |
+| APC-049 | reason/explanation parsing, uniqueness, bounds, and projection suites |
+| APC-050 | closed encounter choice-kind catalog and strict tests |
+| APC-051 | versioned choice/option IDs in contracts/validation |
+| APC-052 | safe bounded option presentation and unknown-field tests |
+| APC-053 | cardinality/order/default/confirmation validation and spatial scenarios |
+| APC-054 | decline/pass/cancel/expiry/force policies and pending tests |
+| APC-055 | public existence/count-only pending projections in `pendingAdapters.ts` |
+| APC-056 | authorised Move/Ability response views and privacy assertions |
+| APC-057 | GM cancel/force/recovery controls and server tests |
+| APC-058 | exact interaction/window/retry/choice/option identities in parsers, APIs, and reconnect tests |
+| APC-059 | nested boss/competing reaction scenarios and data-driven tests |
+| APC-060 | accepted-presentation contract, validator, fixtures, and adapters |
+| APC-061 | typed changes in contracts/adapters and command-pipeline tests |
+| APC-062 | closed outcome/prevention facts and strict parser coverage |
+| APC-063 | causal parent/group identities and nested fixture coverage |
+| APC-064 | generic headline/action surface and Nuxt/browser tests |
+| APC-065 | `EncounterVfxOverlay.vue`, runtime ingestion, reduced-motion hints, and E2E coverage |
+| APC-066 | history contracts, replay implementation, and replay tests |
+| APC-067 | announcement/live-region contracts and focus/browser tests |
+| APC-068 | correction/rollback/reconciliation adapters and tests |
+| APC-069 | deterministic replay tests plus duplicate/reload E2E coverage |
+| APC-070 | Move offers/results and server projection/pipeline tests |
+| APC-071 | Ability active/passive/pending/realtime adapters and tests |
+| APC-072 | Maneuver projection/classification, inventory, and server tests |
+| APC-073 | Order projection/classification, inventory, and server tests |
+| APC-074 | movement/send-out/token offers and bounded context-menu adapter tests |
+| APC-075 | item affordances/capture offers/results and capture tests |
+| APC-076 | initiative/scene/field/hazard/terrain/direct action inventory, offers, and result adapters |
+| APC-077 | Move/Ability pending adapters, response views, privacy, and recovery tests |
+| APC-078 | snapshot schema 3 encounter bundle and load/sync tests |
+| APC-079 | bounded legacy context-menu adapter and authority tests proving metadata cannot create actions |
+| APC-080 | snapshot generation/load/sync and terminal presentation ingestion tests |
+| APC-081 | durable accepted-command realtime integration and tests |
+| APC-082 | replay/chaos/composable/E2E gap, reconnect, duplicate, and echo tests |
+| APC-083 | strict malformed-input, revision, authorization, privacy, and unknown-field tests |
+| APC-084 | 512-offer size/parse budget performance test |
+| APC-085 | diagnostic-only inspector in the generic panel and Nuxt tests |
+| APC-086 | ADR, API, contract, contributor, authority, QA, migration, and release docs |
+| APC-087 | keyboard/focus/reduced-motion/mobile/axe E2E coverage and manual screen-reader/zoom runbook |
+| APC-088 | all 14 canonical scenarios validated by the data-driven acceptance test |
+| APC-089 | one wire snapshot bundle, checked inventory, migration audit, and bounded local compatibility adapters |
+| APC-090 | clean final quality gate and complete release-acceptance record |
 
 ## Decision log
 
@@ -398,3 +495,6 @@ A source may have several roles, but each role must have a stable owning runtime
 - **2026-07-26 — Preserve non-button mechanics.** Passives, effective capabilities, substitutions, triggered effects, and campaign operations receive explicit roles rather than being forced into invocable menus.
 - **2026-07-26 — Make structured accepted facts the presentation source of truth.** Logs and VFX remain projections of accepted mechanics, not alternative mechanics channels.
 - **2026-07-26 — Defer the visual redesign, not the UX contracts.** This plan supplies a supported platform and stable data/interaction primitives; `ENCOUNTER_UI_UX_PLAN.md` later replaces the map-first experience.
+- **2026-07-28 — Accept Nuxt 4.5.1 and close the active Nuxt 3 rollback window.** The exact Node/Nuxt/Nitro/Vite/Vue/tooling graph, migration audit, and historical rollback commit remain documented; no Nuxt 5 compatibility flag or migration escape hatch was required.
+- **2026-07-28 — Publish one encounter presentation wire boundary.** Live-table snapshot schema 3 carries encounter presentation schema 1; source-specific capability shapes survive only as bounded local compatibility adapters that cannot create legality.
+- **2026-07-28 — Accept the final contract and quality gate.** All 90 tickets are evidenced, 33 command sources and 14 canonical scenarios are checked, and the complete lint/typecheck/pure/Nuxt/browser/axe/build/production-like gate passes. Capability automation is unblocked.

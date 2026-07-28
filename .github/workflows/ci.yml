@@ -35,11 +35,37 @@ jobs:
       - name: Install Python dependencies
         run: python3 -m pip install -r requirements.txt
 
+      - name: Encounter presentation contract consistency
+        run: npm run check:encounter-presentation
+
+      - name: Lint
+        run: npm run lint
+
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
+      - name: Pure tests
         run: npm test
+
+      - name: Nuxt runtime tests
+        run: npm run test:nuxt
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Production-build browser and accessibility acceptance
+        run: npm run test:e2e
 
       - name: Build
         run: npm run build
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14

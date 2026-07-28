@@ -59,6 +59,7 @@ import {
 } from '#shared/livePlayOperationAbandonment'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import type { LivePlayMovePresentationSummary } from '#shared/livePlayMovePresentation'
+import type { AcceptedEncounterPresentation } from '#shared/encounterPresentation'
 import {
   parseResolveMoveIntent,
   type LivePlayResolvedMoveResult,
@@ -269,6 +270,11 @@ export interface LivePlayAcceptedMovePresentationEvent {
   readonly source: LivePlayAcceptedMovePresentationSource
 }
 
+export interface LivePlayAcceptedEncounterPresentationEvent {
+  readonly presentation: AcceptedEncounterPresentation
+  readonly source: LivePlayAcceptedMovePresentationSource
+}
+
 export interface UseLivePlayCommandsOptions {
   slug: string
   authRole: ReadonlyValueRef<AuthRole | null | undefined>
@@ -288,6 +294,9 @@ export interface UseLivePlayCommandsOptions {
   onCommandAccepted?: (response: LivePlayCommandResponse) => void
   onAcceptedMovePresentation?: (
     event: LivePlayAcceptedMovePresentationEvent,
+  ) => void | Promise<void>
+  onAcceptedEncounterPresentation?: (
+    event: LivePlayAcceptedEncounterPresentationEvent,
   ) => void | Promise<void>
   onCommandRejected?: (transition: {
     reason?: LivePlayCommandRejectionReason | null
@@ -707,6 +716,20 @@ export const useLivePlayCommands = (
     response: LivePlayCommandResponse,
     source: LivePlayAcceptedMovePresentationSource,
   ): void => {
+    const accepted = acceptedPatchResult(response)
+    if (accepted?.presentation && options.onAcceptedEncounterPresentation) {
+      try {
+        void Promise.resolve(options.onAcceptedEncounterPresentation({
+          presentation: accepted.presentation,
+          source,
+        })).catch((error) => {
+          console.warn('[useLivePlayCommands] accepted encounter presentation callback failed', error)
+        })
+      }
+      catch (error) {
+        console.warn('[useLivePlayCommands] accepted encounter presentation callback failed', error)
+      }
+    }
     if (!options.onAcceptedMovePresentation) return
     const extracted = extractAcceptedMovePresentation(response)
     if (!extracted.ok) return
@@ -718,7 +741,8 @@ export const useLivePlayCommands = (
       })).catch((error) => {
         console.warn('[useLivePlayCommands] accepted move presentation callback failed', error)
       })
-    } catch (error) {
+    }
+    catch (error) {
       console.warn('[useLivePlayCommands] accepted move presentation callback failed', error)
     }
   }

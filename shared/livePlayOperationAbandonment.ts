@@ -54,7 +54,7 @@ type UnknownRecord = Record<string, unknown>
 type MutableIssueList = LivePlayOperationAbandonmentValidationIssue[]
 
 const RESPONSE_KEYS = new Set(['schemaVersion', 'disposition', 'mapSlug', 'opId', 'result'])
-const ACCEPTED_RESULT_KEYS = new Set(['ok', 'opId', 'mapSlug', 'previousRevision', 'revision', 'patches'])
+const ACCEPTED_RESULT_KEYS = new Set(['ok', 'opId', 'mapSlug', 'previousRevision', 'revision', 'patches', 'presentation'])
 const REJECTED_RESULT_KEYS = new Set(['ok', 'opId', 'mapSlug', 'reason', 'message', 'currentRevision', 'currentState'])
 
 const isRecord = (value: unknown): value is UnknownRecord => (
