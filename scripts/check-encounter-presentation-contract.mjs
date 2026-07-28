@@ -202,7 +202,7 @@ for (const path of [
   if (!existsSync(resolve(root, path))) fail(`required artifact ${path} is missing`)
 }
 
-const plan = read('implementation-plans/AUTOMATION_PRESENTATION_CONTRACT_PLAN.md')
+const plan = read('implementation-plans/done/AUTOMATION_PRESENTATION_CONTRACT_PLAN.md')
 if (/^`PLAN_STATUS: DONE`$/m.test(plan)) {
   const unfinished = [...plan.matchAll(/^- \[ \] \*\*(APC-\d{3})/gm)].map(match => match[1])
   if (unfinished.length > 0) fail(`plan is DONE but tickets remain unchecked: ${unfinished.join(', ')}`)

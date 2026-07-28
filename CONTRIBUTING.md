@@ -42,7 +42,7 @@ Move authors must follow [`docs/move-automation.md`](docs/move-automation.md). I
 
 All new live-play action or presentation sources must follow [`docs/encounter-presentation-contract.md`](docs/encounter-presentation-contract.md), the [schema/API reference](docs/encounter-presentation-api.md), and [ADR 012](docs/adrs/012-server-authoritative-encounter-presentation-contract.md). Do not add a source-specific snapshot bundle, infer legality from sheet/menu labels, expose private choices in map-public realtime, or derive accepted visuals from optimistic state. Run `npm run check:encounter-presentation` after changing commands, catalogs, adapters, fixtures, or docs.
 
-Ability authors must follow [`docs/ability-automation.md`](docs/ability-automation.md), [ADR 011](docs/adrs/011-authoritative-ability-automation-runtime.md), and the ordered [`ABILITY_AUTOMATION_PLAN.md`](implementation-plans/ABILITY_AUTOMATION_PLAN.md). During the migration, run:
+Ability authors must follow [`docs/ability-automation.md`](docs/ability-automation.md), [ADR 011](docs/adrs/011-authoritative-ability-automation-runtime.md), and the ordered [`ABILITY_AUTOMATION_PLAN.md`](implementation-plans/done/ABILITY_AUTOMATION_PLAN.md). During the migration, run:
 
 ```bash
 npm run check:ability-automation

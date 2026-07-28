@@ -4,7 +4,7 @@
 
 `CURRENT_TICKET: CA-001`
 
-`BLOCKED_BY: AUTOMATION_PRESENTATION_CONTRACT_PLAN.md — PLAN_STATUS: DONE`
+`BLOCKED_BY: done/AUTOMATION_PRESENTATION_CONTRACT_PLAN.md — PLAN_STATUS: DONE`
 
 ## Goal
 
@@ -145,7 +145,7 @@ Classification-only rows still require authoritative projection and interaction 
 - Interaction status: **unassessed**
 - Effective projection version: **not created**
 - Production runtime: **existing partial helpers only**
-- Blocking dependency: **automation presentation contract acceptance**
+- Blocking dependency: **none — automation presentation contract accepted and archived under `implementation-plans/done/`**
 
 ## Tickets
 

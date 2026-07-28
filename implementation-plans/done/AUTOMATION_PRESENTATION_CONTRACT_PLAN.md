@@ -389,7 +389,7 @@ A source may have several roles, but each role must have a stable owning runtime
 
 ## Ticket evidence ledger
 
-Every ticket is closed against checked-in source/test evidence. Aggregate clean-run counts, versions, the production-like smoke record, and the deployment boundary are in [release acceptance](../docs/automation-presentation-contract/release-acceptance.md).
+Every ticket is closed against checked-in source/test evidence. Aggregate clean-run counts, versions, the production-like smoke record, and the deployment boundary are in [release acceptance](../../docs/automation-presentation-contract/release-acceptance.md).
 
 | Ticket | Evidence |
 | --- | --- |

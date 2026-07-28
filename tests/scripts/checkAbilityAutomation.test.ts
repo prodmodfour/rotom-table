@@ -64,7 +64,7 @@ describe('ability automation repository checker', () => {
     const result = runCheck('--check-plan', '--report')
 
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)
-    const plan = readFileSync(resolve(repoRoot, 'implementation-plans/ABILITY_AUTOMATION_PLAN.md'), 'utf8')
+    const plan = readFileSync(resolve(repoRoot, 'implementation-plans/done/ABILITY_AUTOMATION_PLAN.md'), 'utf8')
     const done = [...plan.matchAll(/\*\*(AA-\d{3}) — .+\*\* — `DONE`/g)].length
     expect(JSON.parse(result.stdout)).toMatchObject({
       canonical: 483,

@@ -1,6 +1,6 @@
 # Ability automation contributor guide
 
-Ability automation is the server-authoritative live-play subsystem for the frozen 483-Ability catalog. Semantic closure, local production-like acceptance, and legacy-runtime retirement are complete. The [release acceptance record](ability-automation-release-acceptance.md) states the unexecuted production deployment/observation dependencies; ticket authority remains the only ordered ledger, [`ABILITY_AUTOMATION_PLAN.md`](../implementation-plans/ABILITY_AUTOMATION_PLAN.md). A menu badge, helper function, name-based Move hook, or browser transaction is never completion evidence.
+Ability automation is the server-authoritative live-play subsystem for the frozen 483-Ability catalog. Semantic closure, local production-like acceptance, and legacy-runtime retirement are complete. The [release acceptance record](ability-automation-release-acceptance.md) states the unexecuted production deployment/observation dependencies; ticket authority remains the only ordered ledger, [`ABILITY_AUTOMATION_PLAN.md`](../implementation-plans/done/ABILITY_AUTOMATION_PLAN.md). A menu badge, helper function, name-based Move hook, or browser transaction is never completion evidence.
 
 Read [ADR 011](adrs/011-authoritative-ability-automation-runtime.md) before changing runtime behavior. The MoveSpec guide remains relevant for shared mechanical operations, but AbilitySpec owns different declaration, frequency, passive, and event-subscription semantics.
 
@@ -27,7 +27,7 @@ The closed policy and reciprocal threat/asset links are enforced by `shared/abil
 
 Important locations:
 
-- `implementation-plans/ABILITY_AUTOMATION_PLAN.md`: ordered tickets, progress snapshot, decisions, and 483-name cohort assignment.
+- `implementation-plans/done/ABILITY_AUTOMATION_PLAN.md`: completed tickets, progress snapshot, decisions, and 483-name cohort assignment.
 - `data/reference/abilities.json`: immediate canonical prose authority.
 - `data/ability-automation/ruleset.json`: frozen count, source hash, canonicalization, source hierarchy, and homebrew boundary.
 - `data/ability-automation/source-adjudications.json`: source-hash-bound repairs for known PDF/parser losses.
@@ -61,7 +61,7 @@ AA-110 retired production legacy execution:
 
 ## Work from the plan
 
-1. Read this guide, ADR 011, and `implementation-plans/ABILITY_AUTOMATION_PLAN.md`.
+1. Read this guide, ADR 011, and `implementation-plans/done/ABILITY_AUTOMATION_PLAN.md`.
 2. Work on the lowest unfinished ticket unless the user explicitly changes priority.
 3. Set that ticket to `IN_PROGRESS` and keep `CURRENT_TICKET` synchronized.
 4. Implement only the ticket's contract. Add reusable machinery when the ticket calls for it; do not pre-implement later cohorts speculatively.

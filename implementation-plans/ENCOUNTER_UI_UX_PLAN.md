@@ -39,7 +39,7 @@ The completed product provides:
 
 - `/maps/:slug` currently combines preparation, live play, Three.js rendering, targeting, initiative, scene state, presence, combat log, pending responses, recovery, ability panels, field effects, token context menus, and GM controls.
 - The authoritative engine already owns map/sheet state, encounter state, initiative, effects, zones, resources, pending resolutions, accepted results, realtime convergence, and recovery.
-- `AUTOMATION_PRESENTATION_CONTRACT_PLAN.md` supplies source-agnostic offers, choices, reasons, explanations, pending views, and accepted presentation facts.
+- `done/AUTOMATION_PRESENTATION_CONTRACT_PLAN.md` supplies source-agnostic offers, choices, reasons, explanations, pending views, and accepted presentation facts.
 - `DESIGN.md` is normative for identity, semantic colour, shape grammar, typography, visual layers, component anatomy, choreography, accessibility, and responsive behaviour.
 - Map preparation, terrain editing, voxel work, hazard authoring, shop interface placement, and other battlefield setup remain map-workshop concerns.
 - The redesign includes encounter authoring and may introduce a first-class encounter document after a map-backed vertical slice proves the required boundary.

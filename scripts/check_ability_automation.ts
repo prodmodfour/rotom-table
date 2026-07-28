@@ -45,7 +45,7 @@ import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../server/domain/abilityAut
 
 const ROOT = resolve(import.meta.dirname, '..')
 const ABILITIES_PATH = resolve(ROOT, 'data/reference/abilities.json')
-const PLAN_PATH = resolve(ROOT, 'implementation-plans/ABILITY_AUTOMATION_PLAN.md')
+const PLAN_PATH = resolve(ROOT, 'implementation-plans/done/ABILITY_AUTOMATION_PLAN.md')
 const EXPECTED_ABILITY_COUNT = 483
 const EXPECTED_TICKET_COUNT = 110
 const FIRST_COHORT_TICKET = 60
