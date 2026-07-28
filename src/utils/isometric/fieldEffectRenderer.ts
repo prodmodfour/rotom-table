@@ -128,7 +128,7 @@ export const createFieldEffectRenderer = (
       if (!hasVisibleAnimators()) return
 
       for (let i = 0; i < fieldEffectAnimators.length; i += 1) {
-        fieldEffectAnimators[i](delta, elapsed)
+        fieldEffectAnimators[i]?.(delta, elapsed)
       }
     },
 

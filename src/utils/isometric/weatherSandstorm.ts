@@ -112,10 +112,10 @@ export const makeSandstormWeatherVisual = (
   const syncMotes = (elapsed: number) => {
     for (let i = 0; i < moteCount; i += 1) {
       const offset = i * 3
-      motePositions[offset] = moteX[i]
+      motePositions[offset] = moteX[i]!
       motePositions[offset + 1] =
-        moteY[i] + Math.sin(elapsed * 3.4 + motePhase[i]) * moteBob[i]
-      motePositions[offset + 2] = moteZ[i]
+        moteY[i]! + Math.sin(elapsed * 3.4 + motePhase[i]!) * moteBob[i]!
+      motePositions[offset + 2] = moteZ[i]!
     }
     moteAttribute.needsUpdate = true
   }
@@ -128,6 +128,7 @@ export const makeSandstormWeatherVisual = (
       streamTexture.offset.y = (streamTexture.offset.y + delta * 0.012) % 1
       for (let i = 0; i < ribbons.length; i += 1) {
         const ribbon = ribbons[i]
+        if (!ribbon) continue
         ribbon.sprite.position.y =
           ribbon.baseY + Math.sin(elapsed * 0.42 + ribbon.phase) * 0.1
         ribbon.sprite.material.opacity =
@@ -136,12 +137,12 @@ export const makeSandstormWeatherVisual = (
       }
       for (let i = 0; i < moteCount; i += 1) {
         moteX[i] = wrapRange(
-          moteX[i] + moteSpeedX[i] * delta,
+          moteX[i]! + moteSpeedX[i]! * delta,
           bounds.minX,
           bounds.maxX,
         )
         moteZ[i] = wrapRange(
-          moteZ[i] + moteSpeedZ[i] * delta,
+          moteZ[i]! + moteSpeedZ[i]! * delta,
           bounds.minZ,
           bounds.maxZ,
         )

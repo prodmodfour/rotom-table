@@ -60,15 +60,15 @@ export const makeRainyWeatherVisual = (
   const syncPositions = () => {
     for (let i = 0; i < count; i += 1) {
       const offset = i * 6
-      const x = dropX[i]
-      const y = dropY[i]
-      const z = dropZ[i]
+      const x = dropX[i]!
+      const y = dropY[i]!
+      const z = dropZ[i]!
       positions[offset] = x
       positions[offset + 1] = y
       positions[offset + 2] = z
-      positions[offset + 3] = x + dropSlantX[i]
-      positions[offset + 4] = y - dropLength[i]
-      positions[offset + 5] = z + dropSlantZ[i]
+      positions[offset + 3] = x + dropSlantX[i]!
+      positions[offset + 4] = y - dropLength[i]!
+      positions[offset + 5] = z + dropSlantZ[i]!
     }
     positionAttribute.needsUpdate = true
   }
@@ -78,9 +78,9 @@ export const makeRainyWeatherVisual = (
     group,
     update: (delta) => {
       for (let i = 0; i < count; i += 1) {
-        let x = dropX[i] + 0.72 * delta
-        let y = dropY[i] - dropSpeed[i] * delta
-        let z = dropZ[i] + 0.28 * delta
+        let x = dropX[i]! + 0.72 * delta
+        let y = dropY[i]! - dropSpeed[i]! * delta
+        let z = dropZ[i]! + 0.28 * delta
         x = wrapRange(x, bounds.minX, bounds.maxX)
         z = wrapRange(z, bounds.minZ, bounds.maxZ)
         if (y < bounds.groundY - 0.25) {

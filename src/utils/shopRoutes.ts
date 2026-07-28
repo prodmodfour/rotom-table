@@ -58,8 +58,8 @@ export const shopCheckoutOriginFromRouteQuery = (
 }
 
 const normalizePath = (path: string): string => {
-  const [withoutHash] = path.split('#', 1)
-  const [withoutQuery] = withoutHash.split('?', 1)
+  const withoutHash = path.split('#', 1)[0] ?? ''
+  const withoutQuery = withoutHash.split('?', 1)[0]
   if (!withoutQuery || withoutQuery === '/') return '/'
   return withoutQuery.length > 1 ? withoutQuery.replace(/\/+$/, '') : withoutQuery
 }

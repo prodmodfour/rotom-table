@@ -45,7 +45,7 @@ export const paintGrassTopTexture = (ctx: CanvasRenderingContext2D, seed: number
     for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
       const n = pixelNoise(seed, x, y)
       const idx = n > 0.82 ? 2 : n < 0.18 ? 3 : n > 0.55 ? 1 : 0
-      putBlockPixel(ctx, x, y, jitterBlockColor(colors[idx], seed ^ 0x77aa33, x, y, 10))
+      putBlockPixel(ctx, x, y, jitterBlockColor(colors[idx] ?? colors[0]!, seed ^ 0x77aa33, x, y, 10))
     }
   }
 }

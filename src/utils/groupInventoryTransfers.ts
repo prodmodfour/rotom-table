@@ -255,11 +255,14 @@ export const findGroupInventoryRowById = (
   const index = rows.findIndex((entry) => normalizeRowId(entry.id) === normalizedRowId)
   if (index < 0) return null
 
+  const entry = rows[index]
+  if (!entry) return null
+
   return {
     section,
     rowId: normalizedRowId,
     index,
-    entry: cloneInventoryTransferEntry(rows[index], section, { keepRowId: true }) as GroupInventoryEntry,
+    entry: cloneInventoryTransferEntry(entry, section, { keepRowId: true }) as GroupInventoryEntry,
   }
 }
 
@@ -293,6 +296,9 @@ export const decrementOrRemoveInventorySourceRow = (
   }
 
   const sourceEntry = rows[input.rowIndex]
+  if (!sourceEntry) {
+    throw new InventoryTransferError('missing-row', 'The requested source inventory row was not found.')
+  }
 
   if (!inventoryTransferSectionUsesQuantity(input.section)) {
     if (quantity !== 1) {

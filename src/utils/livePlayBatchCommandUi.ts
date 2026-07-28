@@ -229,7 +229,7 @@ export const buildLivePlayBatchPendingLabel = (
     .filter((label): label is string => label !== null)
 
   if (labels.length === 0) return null
-  if (labels.length === 1) return labels[0]
+  if (labels.length === 1) return labels[0] ?? null
 
   const remaining = labels.length - 1
   return `${labels[0]} (+${remaining} more batch ${remaining === 1 ? 'command' : 'commands'})`

@@ -22,7 +22,7 @@ export const ptuGridVectorDistance = (delta: { x: number; y?: number; z: number 
     normalizedStepCount(delta.z),
   ].sort((left, right) => right - left)
 
-  return axes[0] + Math.floor(axes[1] / 2)
+  return (axes[0] ?? 0) + Math.floor((axes[1] ?? 0) / 2)
 }
 
 const axisSeparationDistance = (

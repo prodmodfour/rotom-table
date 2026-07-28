@@ -1107,6 +1107,7 @@ export const livePlayPresenceAccentForKey = (value: unknown): LivePlayPresenceAc
     hash = ((hash << 5) - hash + character.codePointAt(0)!) | 0
   }
   return LIVE_PLAY_PRESENCE_ACCENTS[Math.abs(hash) % LIVE_PLAY_PRESENCE_ACCENTS.length]
+    ?? LIVE_PLAY_PRESENCE_ACCENTS[0]
 }
 
 export interface BuildLivePlayPresenceParticipantSummaryInput {

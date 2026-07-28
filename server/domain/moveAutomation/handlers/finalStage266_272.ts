@@ -69,8 +69,9 @@ const D: Record<string, D> = {
   "V-Create": { db: 18, cls: "physical", type: "fire" },
 };
 const attack = (n: string, type?: PokemonTypeId): MoveEffectOperation[] => {
-  const d = D[n],
-    s = sl(n),
+  const d = D[n];
+  if (!d) throw new Error(`Missing reviewed damage metadata for ${n}.`);
+  const s = sl(n),
     critical =
       d.critical === "always"
         ? {

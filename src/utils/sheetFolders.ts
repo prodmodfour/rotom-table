@@ -52,7 +52,8 @@ const ABBREVIATIONS: Record<string, string> = {
 const titleCaseWord = (word: string): string => {
   if (!word) return ''
   const lower = word.toLowerCase()
-  if (lower in ABBREVIATIONS) return ABBREVIATIONS[lower]
+  const abbreviation = ABBREVIATIONS[lower]
+  if (abbreviation) return abbreviation
   return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
 }
 

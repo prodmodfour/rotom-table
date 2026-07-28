@@ -147,7 +147,9 @@ const buildVoxelBucketSnapshot = (
   options: VoxelRendererSyncOptions,
 ): VoxelBucketSnapshot => {
   const groupVoxels = Array.from(voxels)
-  const traits = resolveVoxelRenderTraits(groupVoxels[0], options)
+  const firstVoxel = groupVoxels[0]
+  if (!firstVoxel) throw new Error('Cannot build an empty voxel bucket snapshot.')
+  const traits = resolveVoxelRenderTraits(firstVoxel, options)
   return {
     voxels: groupVoxels,
     traits,
@@ -368,14 +370,17 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
           disposeVoxelGroup(container, existing)
         }
         const traits = snapshot.traits
+        const firstVoxel = groupVoxels[0]
+        if (!firstVoxel) continue
         const geometry = getVoxelBoxGeometry()
-        const materials = buildVoxelFaceMaterials(groupVoxels[0], traits.opacity, traits.depthWrite)
+        const materials = buildVoxelFaceMaterials(firstVoxel, traits.opacity, traits.depthWrite)
         const mesh = new THREE.InstancedMesh(geometry, materials, groupVoxels.length)
         mesh.userData.voxels = groupVoxels
         mesh.renderOrder = traits.renderOrder
         applyObjectVisibility(mesh, visible)
         for (let i = 0; i < groupVoxels.length; i += 1) {
           const v = groupVoxels[i]
+          if (!v) continue
           matrix.makeTranslation(v.x + 0.5, v.y + 0.5, v.z + 0.5)
           mesh.setMatrixAt(i, matrix)
         }

@@ -63,8 +63,8 @@ export interface ProfileAwareRouteGuardInput {
 }
 
 const normalizePath = (path: string): string => {
-  const [withoutHash] = path.split('#', 1)
-  const [withoutQuery] = withoutHash.split('?', 1)
+  const withoutHash = path.split('#', 1)[0] ?? ''
+  const withoutQuery = withoutHash.split('?', 1)[0]
   if (!withoutQuery) return HOME_PATH
   if (withoutQuery.length > 1 && withoutQuery.endsWith('/')) return withoutQuery.replace(/\/+$/, '')
   return withoutQuery

@@ -228,7 +228,7 @@ const parseCurrencyAmount = (value: InventoryEntry[TrainerInventoryAutofillField
   if (typeof value === 'number' && Number.isFinite(value)) return value
   if (typeof value !== 'string') return null
   const match = value.trim().match(/^\$?\s*([\d,]+)$/)
-  return match ? Number(match[1].replace(/,/g, '')) : null
+  return match?.[1] ? Number(match[1].replace(/,/g, '')) : null
 }
 
 const inventoryFieldValuesMatch = (

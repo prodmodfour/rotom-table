@@ -141,7 +141,9 @@ export const applyVoxelFaceMaterialStyle = (
 
   for (let i = 0; i < materials.length; i += 1) {
     const material = materials[i]
-    const texture = getBlockTexture(style, BLOCK_FACE_ROLES[i])
+    const role = BLOCK_FACE_ROLES[i]
+    if (!material || !role) continue
+    const texture = getBlockTexture(style, role)
     if (material.map !== texture) {
       material.map = texture
       material.needsUpdate = true

@@ -511,8 +511,8 @@ export const useInitiativeTracker = ({
     const targetIndex = index + direction
     if (index < 0 || targetIndex < 0 || targetIndex >= ids.length) return
     const nextIds = [...ids]
-    const targetId = nextIds[targetIndex]
-    nextIds[targetIndex] = nextIds[index]
+    const targetId = nextIds[targetIndex]!
+    nextIds[targetIndex] = nextIds[index]!
     nextIds[index] = targetId
     setManualInitiativeOrder(nextIds)
   }

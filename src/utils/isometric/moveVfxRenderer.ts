@@ -1002,7 +1002,9 @@ const moveVfxCssColorWithAlpha = (color: string, alpha: number): string => {
   const match = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(normalized)
   if (!match) return normalized
 
-  const [, red, green, blue] = match
+  const red = match[1]!
+  const green = match[2]!
+  const blue = match[3]!
   return `rgba(${parseInt(red, 16)}, ${parseInt(green, 16)}, ${parseInt(blue, 16)}, ${clamp01(alpha)})`
 }
 

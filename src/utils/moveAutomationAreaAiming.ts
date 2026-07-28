@@ -41,7 +41,7 @@ export const moveAutomationAreaDirectionFromDelta = (
   if (!Number.isFinite(delta.x) || !Number.isFinite(delta.z)) return null
   if (Math.hypot(delta.x, delta.z) < deadZone) return null
 
-  return DIRECTIONS_BY_OCTANT[normalizedOctantIndex(Math.atan2(delta.z, delta.x))]
+  return DIRECTIONS_BY_OCTANT[normalizedOctantIndex(Math.atan2(delta.z, delta.x))] ?? null
 }
 
 export const moveAutomationAreaDirectionFromPoint = (

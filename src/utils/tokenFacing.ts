@@ -59,6 +59,7 @@ export const tokenFacingStoresLegacyTurned = (facing: TokenFacingDirection): boo
 export const nextTokenFacingDirection = (facing: TokenFacingDirection): TokenFacingDirection => {
   const index = TOKEN_FACING_DIRECTIONS.indexOf(facing)
   return TOKEN_FACING_DIRECTIONS[(index + 1) % TOKEN_FACING_DIRECTIONS.length]
+    ?? DEFAULT_TOKEN_FACING_DIRECTION
 }
 
 export const nextTokenFacingForPlacement = (placement: {

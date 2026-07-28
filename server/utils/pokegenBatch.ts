@@ -107,6 +107,9 @@ export const runPokegenForRolledEncounters = async ({
     }
 
     const filename = newFiles[0]
+    if (!filename) {
+      throw new Error('Expected a generated filename after output validation.')
+    }
     const path = joinPath(dir, filename)
     try {
       files.push({

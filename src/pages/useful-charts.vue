@@ -85,6 +85,11 @@ const typeCellTitle = (cell: UsefulChartTypeCell): string => (
 )
 const typeCellClass = (cell: UsefulChartTypeCell): string => `type-chart-cell--${cell.relation}`
 const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${prefix}-${entry.db}`
+const rowAt = <T,>(column: readonly T[], oneBasedRowIndex: number): T => {
+  const row = column[oneBasedRowIndex - 1]
+  if (row === undefined) throw new Error(`Missing chart row ${oneBasedRowIndex}.`)
+  return row
+}
 </script>
 
 <template>
@@ -130,8 +135,8 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
           <tbody>
             <tr v-for="rowIndex in experienceRowsPerColumn" :key="`exp-row-${rowIndex}`">
               <template v-for="(column, columnIndex) in experienceColumns" :key="`exp-col-${columnIndex}-${rowIndex}`">
-                <th scope="row" class="numeric level-cell">{{ column[rowIndex - 1].level }}</th>
-                <td class="numeric">{{ formatInteger(column[rowIndex - 1].expNeeded) }}</td>
+                <th scope="row" class="numeric level-cell">{{ rowAt(column, rowIndex).level }}</th>
+                <td class="numeric">{{ formatInteger(rowAt(column, rowIndex).expNeeded) }}</td>
               </template>
             </tr>
           </tbody>
@@ -167,8 +172,8 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
               <tbody>
                 <tr v-for="rowIndex in damageRowsPerColumn" :key="`rolled-row-${rowIndex}`">
                   <template v-for="(column, columnIndex) in damageColumns" :key="`rolled-col-${columnIndex}-${rowIndex}`">
-                    <th scope="row" class="numeric db-cell">{{ column[rowIndex - 1].db }}</th>
-                    <td class="formula-cell">{{ column[rowIndex - 1].rolledDamage }}</td>
+                    <th scope="row" class="numeric db-cell">{{ rowAt(column, rowIndex).db }}</th>
+                    <td class="formula-cell">{{ rowAt(column, rowIndex).rolledDamage }}</td>
                   </template>
                 </tr>
               </tbody>
@@ -191,14 +196,14 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
               </thead>
               <tbody>
                 <tr v-for="rowIndex in damageRowsPerColumn" :key="`set-row-${rowIndex}`">
-                  <template v-for="(column, columnIndex) in damageColumns" :key="damageKey(column[rowIndex - 1], `set-${columnIndex}-${rowIndex}`)">
-                    <th scope="row" class="numeric db-cell">{{ column[rowIndex - 1].db }}</th>
+                  <template v-for="(column, columnIndex) in damageColumns" :key="damageKey(rowAt(column, rowIndex), `set-${columnIndex}-${rowIndex}`)">
+                    <th scope="row" class="numeric db-cell">{{ rowAt(column, rowIndex).db }}</th>
                     <td class="set-damage-cell">
-                      <span>{{ column[rowIndex - 1].setDamage.minimum }}</span>
+                      <span>{{ rowAt(column, rowIndex).setDamage.minimum }}</span>
                       <span aria-hidden="true"> / </span>
-                      <strong>{{ column[rowIndex - 1].setDamage.average }}</strong>
+                      <strong>{{ rowAt(column, rowIndex).setDamage.average }}</strong>
                       <span aria-hidden="true"> / </span>
-                      <span>{{ column[rowIndex - 1].setDamage.maximum }}</span>
+                      <span>{{ rowAt(column, rowIndex).setDamage.maximum }}</span>
                     </td>
                   </template>
                 </tr>
@@ -288,10 +293,10 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
           <tbody>
             <tr v-for="rowIndex in natureRowsPerColumn" :key="`nature-row-${rowIndex}`">
               <template v-for="(column, columnIndex) in natureColumns" :key="`nature-col-${columnIndex}-${rowIndex}`">
-                <th scope="row" class="numeric value-cell">{{ column[rowIndex - 1].value }}</th>
-                <td>{{ natureName(column[rowIndex - 1]) }}</td>
-                <td class="stat-raise">{{ statLabel(column[rowIndex - 1].plus) }}</td>
-                <td class="stat-lower">{{ statLabel(column[rowIndex - 1].minus) }}</td>
+                <th scope="row" class="numeric value-cell">{{ rowAt(column, rowIndex).value }}</th>
+                <td>{{ natureName(rowAt(column, rowIndex)) }}</td>
+                <td class="stat-raise">{{ statLabel(rowAt(column, rowIndex).plus) }}</td>
+                <td class="stat-lower">{{ statLabel(rowAt(column, rowIndex).minus) }}</td>
               </template>
             </tr>
           </tbody>

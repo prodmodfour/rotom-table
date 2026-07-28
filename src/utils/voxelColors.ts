@@ -27,7 +27,7 @@ export const buildFacePalette = (baseColor: number): VoxelFacePalette => ({
 export const parseHexColor = (input: string): number | null => {
   const match = /^#?([0-9a-fA-F]{6})$/.exec(input.trim())
   if (!match) return null
-  return parseInt(match[1], 16)
+  return parseInt(match[1]!, 16)
 }
 
 export const hexColorString = (hex: number): string =>

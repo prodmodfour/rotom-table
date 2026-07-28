@@ -68,7 +68,7 @@ export const calculatePokemonLevelFromExperience = (
   const normalizedTotalExp = normalizePokemonExperienceTotal(totalExp)
   if (normalizedTotalExp == null) return undefined
 
-  let currentLevel: number = POKEMON_EXPERIENCE_CHART[0].level
+  let currentLevel: number = POKEMON_EXPERIENCE_CHART[0]?.level ?? 1
   for (const { level, expNeeded } of POKEMON_EXPERIENCE_CHART) {
     if (expNeeded > normalizedTotalExp) break
     currentLevel = level

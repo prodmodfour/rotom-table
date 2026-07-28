@@ -87,6 +87,7 @@ export const updateMovementPathLineGeometry = (
   const positions = positionAttribute.array as Float32Array
   for (let index = 0; index < pointCount; index += 1) {
     const step = path[index]
+    if (!step) throw new Error(`Movement path is missing waypoint ${index}.`)
     const waypoint = getAnchorCenter(step, options.base)
     const offset = index * 3
     positions[offset] = waypoint.x

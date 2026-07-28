@@ -551,7 +551,8 @@ const lineBetweenCellsIsClear = (
 ): boolean => {
   const lineCells = gridCellsBetweenCellCenters(origin, target)
   for (let index = 1; index < lineCells.length - 1; index += 1) {
-    if (blockedCells.has(cellKey(lineCells[index]))) return false
+    const lineCell = lineCells[index]
+    if (lineCell && blockedCells.has(cellKey(lineCell))) return false
   }
   return true
 }

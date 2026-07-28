@@ -429,6 +429,9 @@ const resolveDeleteTokenTarget = (
   }
 
   const found = matches[0]
+  if (!found) {
+    throw new Error('Expected exactly one token placement after cardinality validation.')
+  }
   if (!placementMatchesResource(found.placement, resource)) {
     return {
       ok: false,

@@ -1302,11 +1302,12 @@ export const validateMoveSpecOperationSequence = (
               `branch operation ID ${operationId} must refer to a later operation.`,
             )
           }
-          const controlled = indexed[controlledIndex]?.operation
-          if (
-            !controlled
-            || (controlled.kind === 'roll' && controlled.payload.formula.kind === 'table')
-          ) {
+          const controlled = indexed[controlledIndex]?.operation ?? fail(
+            'unknown-reference',
+            referencePath,
+            `branch operation ID ${operationId} does not resolve.`,
+          )
+          if (controlled.kind === 'roll' && controlled.payload.formula.kind === 'table') {
             fail(
               'invalid-definition',
               referencePath,

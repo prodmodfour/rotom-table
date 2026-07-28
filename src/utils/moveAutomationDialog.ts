@@ -50,9 +50,9 @@ export const parseHazardCellText = (
     if (!trimmed) continue
     const parts = trimmed.split(/[\s,]+/).map((part) => Number(part))
     if (parts.length >= 3 && parts.slice(0, 3).every(Number.isFinite)) {
-      cells.push({ x: Math.round(parts[0]), y: Math.round(parts[1]), z: Math.round(parts[2]) })
+      cells.push({ x: Math.round(parts[0]!), y: Math.round(parts[1]!), z: Math.round(parts[2]!) })
     } else if (parts.length >= 2 && parts.slice(0, 2).every(Number.isFinite)) {
-      cells.push({ x: Math.round(parts[0]), y: fallbackY, z: Math.round(parts[1]) })
+      cells.push({ x: Math.round(parts[0]!), y: fallbackY, z: Math.round(parts[1]!) })
     }
   }
   return cells

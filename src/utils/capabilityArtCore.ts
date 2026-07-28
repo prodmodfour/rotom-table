@@ -36,8 +36,8 @@ export const capabilityArtInitials = (name: string): string => {
     .split(/[^A-Za-z0-9Δ₽]+/)
     .filter(Boolean)
   if (!parts.length) return 'CAP'
-  if (parts.length === 1) return parts[0].slice(0, 3).toUpperCase()
-  return parts.map((part) => part[0]).join('').slice(0, 3).toUpperCase()
+  if (parts.length === 1) return parts[0]!.slice(0, 3).toUpperCase()
+  return parts.map((part) => part[0]!).join('').slice(0, 3).toUpperCase()
 }
 
 export const hashCapabilityArtName = (name: string): number => {
@@ -54,8 +54,8 @@ export const fallbackCapabilityArt = (
   const accents = palette.accents.length ? palette.accents : ['#ff1f2d']
   const hash = hashCapabilityArtName(name)
   return {
-    color: backgrounds[hash % backgrounds.length],
-    accent: accents[(hash >>> 3) % accents.length],
+    color: backgrounds[hash % backgrounds.length] ?? '#12151b',
+    accent: accents[(hash >>> 3) % accents.length] ?? '#ff1f2d',
     icon: 'generic',
     label: capabilityArtInitials(name),
   }

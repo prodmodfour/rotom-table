@@ -37,10 +37,13 @@ export const matchesActiveSearchFilters = <TEntry extends PokedexSearchCandidate
 ): boolean => {
   if (filters.length === 0) return true
 
-  let matches = matchesSearchExpression(entry.searchTexts[filters[0].key], filters[0].expression)
+  const firstFilter = filters[0]
+  if (!firstFilter) return true
+  let matches = matchesSearchExpression(entry.searchTexts[firstFilter.key], firstFilter.expression)
 
   for (let index = 1; index < filters.length; index += 1) {
     const filter = filters[index]
+    if (!filter) continue
     const currentMatches = matchesSearchExpression(entry.searchTexts[filter.key], filter.expression)
     matches = filter.operator === 'and' ? matches && currentMatches : matches || currentMatches
   }

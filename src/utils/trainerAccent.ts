@@ -61,7 +61,7 @@ const readableTextColorForRgb = (rgb: RgbColor): string => {
 export const normalizeTrainerAccentColor = (value: unknown): string | null => {
   if (typeof value !== 'string') return null
   const match = HEX_COLOR_PATTERN.exec(value.trim())
-  return match ? `#${match[1].toLowerCase()}` : null
+  return match?.[1] ? `#${match[1].toLowerCase()}` : null
 }
 
 const normalizedLinkedPokemonSlugs = (

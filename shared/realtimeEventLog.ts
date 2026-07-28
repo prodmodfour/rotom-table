@@ -220,7 +220,7 @@ const stringifyCanonicalClonedJson = (value: RealtimeJsonValue): string => {
   const record = value as { readonly [key: string]: RealtimeJsonValue }
   return `{${Object.keys(record)
     .sort()
-    .map((key) => `${JSON.stringify(key)}:${stringifyCanonicalClonedJson(record[key])}`)
+    .map((key) => `${JSON.stringify(key)}:${stringifyCanonicalClonedJson(record[key]!)}`)
     .join(',')}}`
 }
 

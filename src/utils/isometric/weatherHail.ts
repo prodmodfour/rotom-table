@@ -67,11 +67,11 @@ export const makeHailWeatherVisual = (
 
   const syncInstances = (elapsed: number) => {
     for (let i = 0; i < count; i += 1) {
-      const phase = particlePhase[i]
-      const spin = particleSpin[i]
-      const baseScale = particleScale[i]
+      const phase = particlePhase[i]!
+      const spin = particleSpin[i]!
+      const baseScale = particleScale[i]!
       const pulse = 1 + Math.sin(elapsed * 5.2 + phase) * 0.08
-      position.set(particleX[i], particleY[i], particleZ[i])
+      position.set(particleX[i]!, particleY[i]!, particleZ[i]!)
       rotation.set(
         phase + elapsed * spin,
         phase * 0.7 + elapsed * spin * 0.8,
@@ -90,9 +90,9 @@ export const makeHailWeatherVisual = (
     group,
     update: (delta, elapsed) => {
       for (let i = 0; i < count; i += 1) {
-        let x = particleX[i] + particleDriftX[i] * delta
-        let y = particleY[i] - particleSpeed[i] * delta
-        let z = particleZ[i] + particleDriftZ[i] * delta
+        let x = particleX[i]! + particleDriftX[i]! * delta
+        let y = particleY[i]! - particleSpeed[i]! * delta
+        let z = particleZ[i]! + particleDriftZ[i]! * delta
         x = wrapRange(x, bounds.minX, bounds.maxX)
         z = wrapRange(z, bounds.minZ, bounds.maxZ)
         if (y < bounds.groundY + 0.02) {

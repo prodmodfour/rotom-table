@@ -131,6 +131,7 @@ export const parseAbilityAutomationInteractionMatrix = (
     const domain = record(entry, path)
     exactKeys(domain, ['id', 'status', 'summary', 'evidenceFiles'], path)
     const expectedId = ABILITY_AUTOMATION_INTERACTION_DOMAINS[index]
+      ?? fail(`${path}.id`, 'has no matching closed interaction domain.')
     if (domain.id !== expectedId) fail(`${path}.id`, `must be ${expectedId}.`)
     if (domain.status !== 'complete') fail(`${path}.status`, 'must be complete.')
     return Object.freeze({

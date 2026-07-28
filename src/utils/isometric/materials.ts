@@ -148,11 +148,14 @@ export const paintVolumeFacePalette = (
 ) => {
   const colors = volumeMaterialColors(palette)
   for (let i = 0; i < materials.length; i += 1) {
-    materials[i].color.setHex(colors[i])
-    materials[i].opacity = opacity
-    materials[i].transparent = opacity < 1
-    materials[i].depthTest = true
-    materials[i].depthWrite = false
+    const material = materials[i]
+    const color = colors[i]
+    if (!material || color === undefined) continue
+    material.color.setHex(color)
+    material.opacity = opacity
+    material.transparent = opacity < 1
+    material.depthTest = true
+    material.depthWrite = false
   }
 }
 

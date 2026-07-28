@@ -74,7 +74,7 @@ export const parseMoveAutomationStageSuggestions = (effect: string): MoveAutomat
   for (const pattern of patterns) {
     let match: RegExpExecArray | null
     while ((match = pattern.regex.exec(effect)) != null) {
-      const keys = parseMoveAutomationStatsList(match[1])
+      const keys = parseMoveAutomationStatsList(match[1] ?? '')
       if (!keys.length) continue
       const delta = Number(match[2]) * pattern.sign
       const label = normalizeMoveAutomationWhitespace(match[0])

@@ -10,7 +10,8 @@ export default defineNuxtConfig({
   // source (pages, components, composables, assets, middleware) lives in src/.
   serverDir: 'server',
   dir: {
-    public: '../public',
+    // Nuxt 4 resolves public from rootDir even with a custom srcDir.
+    public: 'public',
   },
   buildDir: isDev ? '.nuxt-dev' : '.nuxt-build',
   components: [
@@ -72,7 +73,7 @@ export default defineNuxtConfig({
         },
         {
           name: 'description',
-          content: 'A Nuxt 3 tabletop for spawning and moving Pokémon sprites on isometric maps.',
+          content: 'A live-play tabletop for spawning and moving Pokémon sprites on isometric maps.',
         },
       ],
       script: [

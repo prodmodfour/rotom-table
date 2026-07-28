@@ -93,14 +93,14 @@ const openDisabledMovePicker = () => {
   if (props.disabled) return
   if (infatuationPickerOpen.value) closeInfatuationPicker()
   disabledMovePickerOpen.value = true
-  if (!disabledMoveChoice.value && moveOptions.value.length) disabledMoveChoice.value = moveOptions.value[0]
+  if (!disabledMoveChoice.value && moveOptions.value.length) disabledMoveChoice.value = moveOptions.value[0]!
 }
 
 const openInfatuationPicker = () => {
   if (props.disabled) return
   if (disabledMovePickerOpen.value) closeDisabledMovePicker()
   infatuationPickerOpen.value = true
-  if (!infatuationChoice.value && crushOptions.value.length) infatuationChoice.value = crushOptions.value[0]
+  if (!infatuationChoice.value && crushOptions.value.length) infatuationChoice.value = crushOptions.value[0]!
 }
 
 const closeDisabledMovePicker = () => {
@@ -197,7 +197,7 @@ watch(moveOptions, (options) => {
     return
   }
   if (!options.includes(disabledMoveChoice.value) && disabledMoveChoice.value !== CUSTOM_MOVE_VALUE) {
-    disabledMoveChoice.value = options[0]
+    disabledMoveChoice.value = options[0]!
   }
 })
 
@@ -207,7 +207,7 @@ watch(crushOptions, (options) => {
     return
   }
   if (!options.includes(infatuationChoice.value) && infatuationChoice.value !== CUSTOM_INFATUATION_CRUSH_VALUE) {
-    infatuationChoice.value = options[0]
+    infatuationChoice.value = options[0]!
   }
 })
 </script>
