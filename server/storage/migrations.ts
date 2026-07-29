@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 16
+export const LATEST_STORAGE_SCHEMA_VERSION = 18
 
 export interface StorageMigration {
   readonly version: number
@@ -275,6 +275,13 @@ const addCapabilityAdjudicationResolutionCommand = (connection: DatabaseSync): v
   }
 }
 
+const addCapabilityAdjudicationResolutionRevision = (connection: DatabaseSync): void => {
+  const columns = connection.prepare('PRAGMA table_info(capability_adjudications)').all() as Array<{ name?: unknown }>
+  if (!columns.some(column => column.name === 'resolution_map_revision')) {
+    connection.exec('ALTER TABLE capability_adjudications ADD COLUMN resolution_map_revision INTEGER NULL')
+  }
+}
+
 const createCapabilityResolutionOperationTable = (connection: DatabaseSync): void => {
   connection.exec(`
     CREATE TABLE IF NOT EXISTS capability_resolution_ops (
@@ -379,6 +386,11 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     name: 'bind exact capability adjudication resolution commands',
     up: addCapabilityAdjudicationResolutionCommand,
   },
+  {
+    version: 18,
+    name: 'retain terminal capability adjudication map revisions',
+    up: addCapabilityAdjudicationResolutionRevision,
+  },
 ]
 
 const readPragmaUserVersion = (connection: DatabaseSync): number => {
@@ -404,6 +416,12 @@ const sortedMigrations = (): readonly StorageMigration[] => {
     if (migration.version !== expected) {
       throw new Error(`Storage migration versions must be contiguous; expected ${expected}, got ${migration.version}`)
     }
+  }
+  const registeredLatest = migrations.at(-1)?.version ?? 0
+  if (registeredLatest !== LATEST_STORAGE_SCHEMA_VERSION) {
+    throw new Error(
+      `Latest storage schema version ${LATEST_STORAGE_SCHEMA_VERSION} does not match registered migration ${registeredLatest}`,
+    )
   }
   return migrations
 }

@@ -76,18 +76,30 @@ describe('durable Capability GM adjudication', () => {
     }, { ...shared, now: () => now + 20 })).toThrow(/reused with changed input/i)
   })
 
-  it('rejects a pending request without executing its mechanic', () => {
+  it('rejects a pending request without executing its mechanic and replays the exact terminal result', () => {
     const { command, shared, mapRepository, now } = setup()
     executeCapabilityActionUseCase({ role: 'gm', command }, { ...shared, now: () => now })
-    const rejected = resolveCapabilityAdjudicationUseCase({ role: 'gm', command: {
+    const rejectCommand = {
       schemaVersion: 1, operationId: 'adjudication-rejection', requestId: 'adjudication-request',
       mapSlug: 'arena', baseRevision: 6, decision: 'reject', optionId: null, description: null,
-    } }, { ...shared, now: () => now + 10 })
+    } as const
+    const rejected = resolveCapabilityAdjudicationUseCase({ role: 'gm', command: rejectCommand }, {
+      ...shared, now: () => now + 10,
+    })
     expect(rejected).toMatchObject({ decision: 'reject', resolution: null, mapRevision: 7 })
     expect(mapRepository.getBySlug('arena')?.metadata?.capabilityWorldChanges).toBeUndefined()
+
+    const revisionSeven = mapRepository.getBySlug('arena')!
+    expect(mapRepository.applyLivePlayUpdate({
+      slug: 'arena', expectedRevision: 7,
+      nextMap: { ...revisionSeven, name: 'Advanced Arena', revision: 8, updatedAt: now + 15 },
+    })).toBe('applied')
+    expect(resolveCapabilityAdjudicationUseCase({ role: 'gm', command: rejectCommand }, {
+      ...shared, now: () => now + 20,
+    })).toEqual(rejected)
+
     expect(() => resolveCapabilityAdjudicationUseCase({ role: 'gm', command: {
-      schemaVersion: 1, operationId: 'adjudication-rejection', requestId: 'adjudication-request',
-      mapSlug: 'arena', baseRevision: 7, decision: 'accept', optionId: 'changed', description: 'Changed replay.',
+      ...rejectCommand, baseRevision: 7, decision: 'accept', optionId: 'changed', description: 'Changed replay.',
     } }, { ...shared, now: () => now + 20 })).toThrow(/reused with changed input/i)
   })
 

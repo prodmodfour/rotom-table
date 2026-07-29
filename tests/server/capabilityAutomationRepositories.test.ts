@@ -45,20 +45,21 @@ describe('Capability SQLite operation authority', () => {
       requestId: command.operationId, commandSha256: commandSha, command,
       definitionHash: 'b'.repeat(64), status: 'pending', requestedAt: 100, expiresAt: 200,
       resolvedAt: null, resolutionOperationId: null, resolutionCommandSha256: null,
+      resolutionMapRevision: null,
     })
     expect(repository.resolve({
       requestId: command.operationId, expectedStatus: 'pending', status: 'accepted',
       resolvedAt: 150, resolutionOperationId: 'resolution-operation-1',
-      resolutionCommandSha256: 'c'.repeat(64),
+      resolutionCommandSha256: 'c'.repeat(64), resolutionMapRevision: 4,
     })).toBe('applied')
     expect(repository.resolve({
       requestId: command.operationId, expectedStatus: 'pending', status: 'rejected',
       resolvedAt: 151, resolutionOperationId: 'resolution-operation-2',
-      resolutionCommandSha256: 'd'.repeat(64),
+      resolutionCommandSha256: 'd'.repeat(64), resolutionMapRevision: 5,
     })).toBe('stale')
     expect(repository.find(command.operationId)).toMatchObject({
       status: 'accepted', resolvedAt: 150, resolutionOperationId: 'resolution-operation-1',
-      resolutionCommandSha256: 'c'.repeat(64),
+      resolutionCommandSha256: 'c'.repeat(64), resolutionMapRevision: 4,
     })
   })
 })

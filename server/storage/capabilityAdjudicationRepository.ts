@@ -18,6 +18,8 @@ export interface StoredCapabilityAdjudication {
   readonly resolvedAt: number | null
   readonly resolutionOperationId: string | null
   readonly resolutionCommandSha256: string | null
+  /** Retained for terminal replay stability; null only on pending or legacy resolved rows. */
+  readonly resolutionMapRevision: number | null
 }
 
 export interface CapabilityAdjudicationRepository {
@@ -30,6 +32,7 @@ export interface CapabilityAdjudicationRepository {
     readonly resolvedAt: number
     readonly resolutionOperationId: string
     readonly resolutionCommandSha256: string
+    readonly resolutionMapRevision: number
   }) => 'applied' | 'stale'
 }
 
@@ -44,6 +47,7 @@ interface Row {
   resolved_at: unknown
   resolution_operation_id: unknown
   resolution_command_sha256: unknown
+  resolution_map_revision: unknown
 }
 
 const SHA = /^[0-9a-f]{64}$/
@@ -56,12 +60,17 @@ const parseRow = (row: Row | undefined): StoredCapabilityAdjudication | null => 
     || (row.resolved_at !== null && !Number.isSafeInteger(row.resolved_at))
     || (row.resolution_operation_id !== null && typeof row.resolution_operation_id !== 'string')
     || (row.resolution_command_sha256 !== null
-      && (typeof row.resolution_command_sha256 !== 'string' || !SHA.test(row.resolution_command_sha256)))) {
+      && (typeof row.resolution_command_sha256 !== 'string' || !SHA.test(row.resolution_command_sha256)))
+    || (row.resolution_map_revision !== null
+      && (!Number.isSafeInteger(row.resolution_map_revision) || Number(row.resolution_map_revision) < 0))) {
     throw new Error('Stored Capability adjudication is malformed.')
   }
   if ((row.status === 'pending') !== (row.resolved_at === null
     && row.resolution_operation_id === null && row.resolution_command_sha256 === null)) {
     throw new Error('Stored Capability adjudication resolution identity is inconsistent.')
+  }
+  if (row.status === 'pending' && row.resolution_map_revision !== null) {
+    throw new Error('Pending Capability adjudication cannot retain a terminal map revision.')
   }
   const command = parseExecuteCapabilityActionCommand(JSON.parse(row.command_json))
   if (stableJsonStringify(command) !== row.command_json || command.operationId !== row.request_id) {
@@ -78,6 +87,7 @@ const parseRow = (row: Row | undefined): StoredCapabilityAdjudication | null => 
     resolvedAt: row.resolved_at === null ? null : Number(row.resolved_at),
     resolutionOperationId: row.resolution_operation_id as string | null,
     resolutionCommandSha256: row.resolution_command_sha256 as string | null,
+    resolutionMapRevision: row.resolution_map_revision === null ? null : Number(row.resolution_map_revision),
   })
 }
 
@@ -88,7 +98,7 @@ export const createSqliteCapabilityAdjudicationRepository = (
     database.connection.prepare(`
       SELECT request_id, command_sha256, command_json, definition_hash, status,
              requested_at, expires_at, resolved_at, resolution_operation_id,
-             resolution_command_sha256
+             resolution_command_sha256, resolution_map_revision
       FROM capability_adjudications WHERE request_id = ?
     `).get(requestId) as unknown as Row | undefined,
   )
@@ -96,7 +106,7 @@ export const createSqliteCapabilityAdjudicationRepository = (
     const command = parseExecuteCapabilityActionCommand(entry.command)
     if (entry.requestId !== command.operationId || !SHA.test(entry.commandSha256) || !SHA.test(entry.definitionHash)
       || entry.status !== 'pending' || entry.resolvedAt !== null || entry.resolutionOperationId !== null
-      || entry.resolutionCommandSha256 !== null
+      || entry.resolutionCommandSha256 !== null || entry.resolutionMapRevision !== null
       || entry.expiresAt <= entry.requestedAt) throw new Error('Capability adjudication insert is invalid.')
     database.connection.prepare(`
       INSERT INTO capability_adjudications (
@@ -114,13 +124,15 @@ export const createSqliteCapabilityAdjudicationRepository = (
   const resolve: CapabilityAdjudicationRepository['resolve'] = input => {
     const result = database.connection.prepare(`
       UPDATE capability_adjudications
-      SET status = ?, resolved_at = ?, resolution_operation_id = ?, resolution_command_sha256 = ?
+      SET status = ?, resolved_at = ?, resolution_operation_id = ?,
+          resolution_command_sha256 = ?, resolution_map_revision = ?
       WHERE request_id = ? AND status = ?
     `).run(
       input.status,
       input.resolvedAt,
       input.resolutionOperationId,
       input.resolutionCommandSha256,
+      input.resolutionMapRevision,
       input.requestId,
       input.expectedStatus,
     )

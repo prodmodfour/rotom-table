@@ -464,12 +464,13 @@ const temporaryHpChange = (input: {
     if (amount <= 0
       || (() => {
         const placement = input.context.queries.placements.get(placementId)
-        const sheet = placement ? input.context.queries.sheets.forPlacement(placement)?.sheet : null
-        return placement !== null && sheet !== null && hasEffectiveSoullessCapability({
+        if (!placement) return false
+        const sheet = input.context.queries.sheets.forPlacement(placement)?.sheet
+        return sheet ? hasEffectiveSoullessCapability({
           map: input.context.map,
           placementId,
           sheet,
-        })
+        }) : false
       })()
       || authoritativeAbilityHealingBlocked({ map: input.context.map, placementId })
       || (() => {

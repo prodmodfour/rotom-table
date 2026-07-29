@@ -29,7 +29,7 @@ export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
 export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
 export const DEFAULT_MIGRATION_BACKUP_DIRNAME = 'backups'
 export const SQLITE_MIGRATION_BACKUP_PREFIX = 'rotom-sqlite-migration-'
-export const STORAGE_SCHEMA_VERSION = 14
+export const STORAGE_SCHEMA_VERSION = 18
 
 const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
@@ -849,6 +849,55 @@ const applyStorageMigrations = (connection) => {
           ON ability_resolution_ops (map_slug, result_revision, intent_id);
       `)
       setUserVersion(connection, 14)
+    }
+    if (fromVersion < 15) {
+      connection.exec(`
+        CREATE TABLE IF NOT EXISTS capability_resolution_ops (
+          operation_id TEXT PRIMARY KEY,
+          command_sha256 TEXT NOT NULL,
+          map_slug TEXT NOT NULL,
+          command_json TEXT NOT NULL,
+          result_json TEXT NOT NULL,
+          audit_json TEXT NOT NULL,
+          result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+          created_at INTEGER NOT NULL CHECK (created_at >= 0)
+        );
+
+        CREATE INDEX IF NOT EXISTS capability_resolution_ops_map_revision_idx
+          ON capability_resolution_ops (map_slug, result_revision, operation_id);
+      `)
+      setUserVersion(connection, 15)
+    }
+    if (fromVersion < 16) {
+      connection.exec(`
+        CREATE TABLE IF NOT EXISTS capability_adjudications (
+          request_id TEXT PRIMARY KEY,
+          command_sha256 TEXT NOT NULL,
+          map_slug TEXT NOT NULL,
+          actor_placement_id TEXT NOT NULL,
+          canonical_id TEXT NOT NULL,
+          action_id TEXT NOT NULL,
+          command_json TEXT NOT NULL,
+          definition_hash TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected', 'expired')),
+          requested_at INTEGER NOT NULL CHECK (requested_at >= 0),
+          expires_at INTEGER NOT NULL CHECK (expires_at > requested_at),
+          resolved_at INTEGER NULL CHECK (resolved_at IS NULL OR resolved_at >= requested_at),
+          resolution_operation_id TEXT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS capability_adjudications_map_status_idx
+          ON capability_adjudications (map_slug, status, expires_at, request_id);
+      `)
+      setUserVersion(connection, 16)
+    }
+    if (fromVersion < 17) {
+      connection.exec('ALTER TABLE capability_adjudications ADD COLUMN resolution_command_sha256 TEXT NULL')
+      setUserVersion(connection, 17)
+    }
+    if (fromVersion < 18) {
+      connection.exec('ALTER TABLE capability_adjudications ADD COLUMN resolution_map_revision INTEGER NULL')
+      setUserVersion(connection, 18)
     }
     connection.exec('COMMIT')
   } catch (error) {

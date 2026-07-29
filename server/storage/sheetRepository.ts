@@ -409,7 +409,8 @@ const withReconciledJuicerCustody = (input: {
     value: requestedState,
     sheetSlug: input.slug,
     heldItemName,
-    hasJuicer: pokemon.species.trim().toLocaleLowerCase('en-US') === 'shuckle'
+    hasJuicer: typeof pokemon.species === 'string'
+      && pokemon.species.trim().toLocaleLowerCase('en-US') === 'shuckle'
       && pokemonHasResolvedCapability(pokemon, 'Juicer'),
     now: input.updatedAt,
     sourceOperationId: input.sourceOperationId

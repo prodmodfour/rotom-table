@@ -29,6 +29,12 @@ const map = (): TabletopMap => ({
   dimensions: { x: 8, y: 4, z: 8 }, groundLevelY: 0, voxels: [], playerVisible: true,
   placements: [{ id: 'actor', sheetKind: 'pokemon', sheetSlug: 'munna', position: { x: 1, y: 1, z: 1 } }],
 } as TabletopMap)
+const playerProfile = (id: string): PlayerProfile => ({
+  schemaVersion: 1,
+  id: id as PlayerProfile['id'],
+  displayName: id as PlayerProfile['displayName'],
+  linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'munna' }],
+})
 
 const setup = () => {
   const database = openRotomDatabase({ path: ':memory:' })
@@ -360,21 +366,42 @@ describe('Capability authoritative execution use case', () => {
 
   it('binds exact operation replay to the originating principal', () => {
     const { command, dependencies } = setup()
-    const profile = (id: string): PlayerProfile => ({
-      schemaVersion: 1,
-      id: id as PlayerProfile['id'],
-      displayName: id as PlayerProfile['displayName'],
-      linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'munna' }],
-    })
     const first = executeCapabilityActionUseCase({
-      role: 'player', playerProfile: profile('profile_player01'), command,
+      role: 'player', playerProfile: playerProfile('profile_player01'), command,
     }, dependencies)
     expect(executeCapabilityActionUseCase({
-      role: 'player', playerProfile: profile('profile_player01'), command,
+      role: 'player', playerProfile: playerProfile('profile_player01'), command,
     }, dependencies)).toEqual(first)
     expect(() => executeCapabilityActionUseCase({
-      role: 'player', playerProfile: profile('profile_player02'), command,
+      role: 'player', playerProfile: playerProfile('profile_player02'), command,
     }, dependencies)).toThrow(/different principal/i)
+  })
+
+  it('denies player execution and replay after the map becomes hidden', () => {
+    const hidden = setup()
+    const currentHiddenMap = hidden.mapRepository.getBySlug('arena')!
+    expect(hidden.mapRepository.applyLivePlayUpdate({
+      slug: 'arena', expectedRevision: 5,
+      nextMap: { ...currentHiddenMap, playerVisible: false, revision: 6, updatedAt: 1_001 },
+    })).toBe('applied')
+    expect(() => executeCapabilityActionUseCase({
+      role: 'player', playerProfile: playerProfile('profile_player01'),
+      command: { ...hidden.command, baseRevision: 6 },
+    }, hidden.dependencies)).toThrow(/not player visible/i)
+
+    const replay = setup()
+    const first = executeCapabilityActionUseCase({
+      role: 'player', playerProfile: playerProfile('profile_player01'), command: replay.command,
+    }, replay.dependencies)
+    expect(first.outcome).toBe('applied')
+    const visibleMap = replay.mapRepository.getBySlug('arena')!
+    expect(replay.mapRepository.applyLivePlayUpdate({
+      slug: 'arena', expectedRevision: 5,
+      nextMap: { ...visibleMap, playerVisible: false, revision: 6, updatedAt: 1_001 },
+    })).toBe('applied')
+    expect(() => executeCapabilityActionUseCase({
+      role: 'player', playerProfile: playerProfile('profile_player01'), command: replay.command,
+    }, replay.dependencies)).toThrow(/not player visible/i)
   })
 
   it('rejects a sheet that changes after planning instead of rebasing stale mechanic output', () => {
@@ -407,6 +434,39 @@ describe('Capability authoritative execution use case', () => {
     })
     expect((fixture.sheetRepository.getByRef('trainer', 'trainer')?.sheet as unknown as TrainerSheet)
       .inventory?.pokemonItems).toEqual([])
+  })
+
+  it('rejects a consulted Trainer sheet race before committing the action', () => {
+    const fixture = setup()
+    let raced = false
+    const racingDatabase: RotomDatabase = {
+      ...fixture.database,
+      withTransaction: ((work: () => never) => {
+        if (!raced) {
+          raced = true
+          const linkedTrainer = fixture.sheetRepository.getByRef('trainer', 'trainer')!
+          expect(fixture.sheetRepository.applyLivePlayUpdate({
+            kind: 'trainer', slug: 'trainer', expectedRevision: linkedTrainer.revision,
+            nextSheet: { ...linkedTrainer.sheet, currentTeam: [], updatedAt: 999 },
+            sourceOperationId: 'concurrent-unlink',
+          })).toBe('applied')
+        }
+        return fixture.database.withTransaction(work)
+      }) as RotomDatabase['withTransaction'],
+    }
+
+    expect(() => executeCapabilityActionUseCase({ role: 'gm', command: fixture.command }, {
+      ...fixture.dependencies,
+      database: racingDatabase,
+    })).toThrow(/consulted sheet revisions changed/i)
+    expect(fixture.sheetRepository.getByRef('trainer', 'trainer')).toMatchObject({
+      revision: 4,
+      sheet: { currentTeam: [] },
+    })
+    expect((fixture.sheetRepository.getByRef('trainer', 'trainer')?.sheet as unknown as TrainerSheet)
+      .inventory?.pokemonItems).toEqual([])
+    expect((fixture.sheetRepository.getByRef('pokemon', 'munna')?.sheet as unknown as CharacterSheet)
+      .capabilityUsage?.entries ?? []).toEqual([])
   })
 
   it('rejects a map revision race before committing a sheet-only Capability action', () => {

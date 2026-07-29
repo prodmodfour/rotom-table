@@ -117,6 +117,8 @@ describe('SQLite storage foundation', () => {
     expect(tableNames(database)).toEqual([
       'ability_declaration_offers',
       'ability_resolution_ops',
+      'capability_adjudications',
+      'capability_resolution_ops',
       'group_inventories',
       'live_play_ops',
       'map_folders',
@@ -137,6 +139,8 @@ describe('SQLite storage foundation', () => {
     expect(tableNames(reopened)).toEqual([
       'ability_declaration_offers',
       'ability_resolution_ops',
+      'capability_adjudications',
+      'capability_resolution_ops',
       'group_inventories',
       'live_play_ops',
       'map_folders',

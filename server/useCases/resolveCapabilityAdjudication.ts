@@ -41,7 +41,10 @@ import {
 export interface ResolveCapabilityAdjudicationDependencies {
   readonly database?: RotomDatabase
   readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>
-  readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'list' | 'applyLivePlayUpdate'> & ListSheetsRepository
+  readonly sheetRepository?: Pick<
+    SheetRepository<Record<string, unknown>>,
+    'getByRef' | 'list' | 'assertRevisions' | 'applyLivePlayUpdate'
+  > & ListSheetsRepository
   readonly adjudicationRepository?: CapabilityAdjudicationRepository
   readonly realtimeEventRepository?: Pick<RealtimeEventRepository, 'appendMany'>
   readonly now?: () => number
@@ -82,13 +85,16 @@ export const resolveCapabilityAdjudicationUseCase = (input: {
         fail(409, 'Capability adjudication resolution operation ID was reused with changed input.')
       }
       if (pending.status === 'expired') fail(409, 'Capability adjudication request expired.')
-      const map = mapRepository.getBySlug(command.mapSlug) ?? fail(404, 'Capability map is missing.')
       const resolution = pending.status === 'accepted'
         ? createSqliteCapabilityResolutionOperationRepository(database).find(command.operationId)?.result ?? null
         : null
+      const retainedRevision = resolution?.mapRevision ?? pending.resolutionMapRevision
+      const mapRevision = retainedRevision ?? normalizeRevision(
+        (mapRepository.getBySlug(command.mapSlug) ?? fail(404, 'Capability map is missing.')).revision,
+      )
       return {
         schemaVersion: 1, operationId: command.operationId, requestId: command.requestId,
-        mapSlug: command.mapSlug, mapRevision: resolution?.mapRevision ?? normalizeRevision(map.revision),
+        mapSlug: command.mapSlug, mapRevision,
         decision: pending.status === 'accepted' ? 'accept' : 'reject', resolution,
       }
     }
@@ -122,6 +128,7 @@ export const resolveCapabilityAdjudicationUseCase = (input: {
         resolvedAt: now,
         resolutionOperationId: command.operationId,
         resolutionCommandSha256,
+        resolutionMapRevision: normalizeRevision(nextMap?.revision ?? currentRevision),
       }) === 'stale') fail(409, 'Capability adjudication was resolved concurrently.')
       return nextMap
         ? realtimeEvents.appendMany(setupMapSaveRealtimeAppendInputs(nextMap).map(event => ({ ...event, timestamp: now })))
@@ -167,6 +174,7 @@ export const resolveCapabilityAdjudicationUseCase = (input: {
         resolvedAt: now,
         resolutionOperationId: command.operationId,
         resolutionCommandSha256,
+        resolutionMapRevision: normalizeRevision(nextMap.revision),
       }) === 'stale') fail(409, 'Capability adjudication was resolved concurrently.')
       return realtimeEvents.appendMany(setupMapSaveRealtimeAppendInputs(nextMap).map(event => ({ ...event, timestamp: now })))
     })

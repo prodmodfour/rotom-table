@@ -26,6 +26,7 @@ import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
 } from '../policies/playerProfileTokenControlPolicy'
+import { canAccessMapForRole } from '../policies/mapPolicy'
 import { buildCapabilityClientCapabilityBundle } from '../domain/capabilityAutomation/clientCapabilities'
 import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
 import { reconcileCapabilityRuntimeSourceLoss } from '../domain/capabilityAutomation/sourceLoss'
@@ -77,8 +78,10 @@ export interface ExecuteCapabilityActionInput {
 export interface ExecuteCapabilityActionDependencies {
   readonly database?: RotomDatabase
   readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>
-  readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'list' | 'applyLivePlayUpdate'>
-    & Partial<Pick<SheetRepository<Record<string, unknown>>, 'save'>>
+  readonly sheetRepository?: Pick<
+    SheetRepository<Record<string, unknown>>,
+    'getByRef' | 'list' | 'assertRevisions' | 'applyLivePlayUpdate'
+  > & Partial<Pick<SheetRepository<Record<string, unknown>>, 'save'>>
     & ListSheetsRepository
   readonly operationRepository?: CapabilityResolutionOperationRepository
   readonly adjudicationRepository?: CapabilityAdjudicationRepository
@@ -280,6 +283,8 @@ export const executeCapabilityActionUseCase = (
   const adjudicationRepository = dependencies.adjudicationRepository ?? createSqliteCapabilityAdjudicationRepository(database)
   const realtimeEventRepository = dependencies.realtimeEventRepository ?? createSqliteRealtimeEventRepository({ database })
   const registry = dependencies.registry ?? CAPABILITY_AUTOMATION_RUNTIME_REGISTRY
+  const storedMap = mapRepository.getBySlug(command.mapSlug) ?? fail(404, 'Capability map is missing.')
+  if (!canAccessMapForRole(input.role, storedMap)) fail(403, 'Capability map is not player visible.')
   const existing = operationRepository.find(command.operationId)
   if (existing) {
     if (existing.commandSha256 !== commandSha256) fail(409, 'Capability operation ID was reused with changed input.')
@@ -289,11 +294,14 @@ export const executeCapabilityActionUseCase = (
     return existing.result
   }
 
-  const storedMap = mapRepository.getBySlug(command.mapSlug) ?? fail(404, 'Capability map is missing.')
   const currentRevision = normalizeRevision(storedMap.revision)
   if (currentRevision !== command.baseRevision) fail(409, 'Capability action projection is stale.')
   const pokemonSheets = listRepositorySheets<CharacterSheet>(sheetRepository, 'pokemon')
   const trainerSheets = listRepositorySheets<TrainerSheet>(sheetRepository, 'trainer')
+  const consultedSheetRevisions = [
+    ...pokemonSheets.map(sheet => ({ kind: 'pokemon' as const, slug: sheet.slug, revision: normalizeRevision(sheet.revision) })),
+    ...trainerSheets.map(sheet => ({ kind: 'trainer' as const, slug: sheet.slug, revision: normalizeRevision(sheet.revision) })),
+  ]
   const pokemonBySlug = new Map(pokemonSheets.map(sheet => [sheet.slug, sheet]))
   const trainerBySlug = new Map(trainerSheets.map(sheet => [sheet.slug, sheet]))
   const map = reconcileCapabilityRuntimeSourceLoss({
@@ -430,6 +438,7 @@ export const executeCapabilityActionUseCase = (
         racedResult = raced.result
         return []
       }
+      sheetRepository.assertRevisions(consultedSheetRevisions)
       if (mapRepository.applyLivePlayUpdate({
         slug: command.mapSlug,
         expectedRevision: currentRevision,
@@ -446,6 +455,7 @@ export const executeCapabilityActionUseCase = (
         resolvedAt: null,
         resolutionOperationId: null,
         resolutionCommandSha256: null,
+        resolutionMapRevision: null,
       })
       operationRepository.insert({
         commandSha256,
@@ -601,6 +611,7 @@ export const executeCapabilityActionUseCase = (
       racedResult = raced.result
       return []
     }
+    sheetRepository.assertRevisions(consultedSheetRevisions)
     if (mapChanged && mapRepository.applyLivePlayUpdate({
       slug: command.mapSlug,
       expectedRevision: currentRevision,
@@ -641,6 +652,7 @@ export const executeCapabilityActionUseCase = (
       resolvedAt: now,
       resolutionOperationId: command.operationId,
       resolutionCommandSha256: input.approvedAdjudication.resolutionCommandSha256,
+      resolutionMapRevision: result.mapRevision,
     }) === 'stale') fail(409, 'Capability adjudication was resolved concurrently.')
     operationRepository.insert({
       commandSha256,
