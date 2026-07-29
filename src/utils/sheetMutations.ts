@@ -1,10 +1,15 @@
 import { deepCloneJson } from './serialization'
 import { pokemonHpSnapshot, trainerHpSnapshot } from './sheetSpawn'
-import { clampHpValue, normalizeInjuryCount } from './ptuHp'
+import {
+  clampHpValue,
+  computeInjuryAdjustedMaxHp,
+  computePokemonFormulaMaxHp,
+  normalizeInjuryCount,
+} from './ptuHp'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages as normalizeCombatStageMap } from './combatStages'
 import { normalizeConditionNames } from './statusConditions'
 import { setPokemonInjuries, setTrainerInjuries } from './sheets/healing'
-import { pokemonHasResolvedCapability } from './sheets/pokemonDerived'
+import { pokemonHasResolvedCapability, resolveStats } from './sheets/pokemonDerived'
 import {
   calculatePokemonLevelFromExperience,
   pokemonExperienceNeededForLevel,
@@ -89,18 +94,39 @@ export const rollbackSheetUpdate = (context: SheetUpdateContext): void => {
   else context.sheets.set(context.slug, context.original)
 }
 
+export interface ApplyHpToSheetOptions {
+  /** Override raw sheet inference with authoritative, suppression-aware Soulless effectiveness. */
+  readonly effectiveSoulless?: boolean
+}
+
 export const applyHpToSheet = (
   kind: SheetKind,
   sheet: AnyLiveSheet,
   currentHp: number,
   injuries?: number,
+  options: ApplyHpToSheetOptions = {},
 ): AnyLiveSheet => {
   if (kind === 'pokemon') {
     const updated = deepCloneJson(sheet as CharacterSheet)
     updated.combat = { ...(updated.combat ?? {}) }
-    if (pokemonHasResolvedCapability(updated, 'Soulless')) setPokemonInjuries(updated, 0)
-    else if (injuries != null) setPokemonInjuries(updated, normalizeInjuryCount(injuries))
-    updated.combat.currentHp = clampHpValue(currentHp, pokemonHpSnapshot(updated).maxHp)
+    const effectiveSoulless = options.effectiveSoulless
+      ?? pokemonHasResolvedCapability(updated, 'Soulless')
+    if (effectiveSoulless) setPokemonInjuries(updated, 0, { effectiveSoulless: true })
+    else if (injuries != null) {
+      setPokemonInjuries(updated, normalizeInjuryCount(injuries), { effectiveSoulless: false })
+    }
+    const resolvedSoullessSuppressed = effectiveSoulless === false
+      && pokemonHasResolvedCapability(updated, 'Soulless')
+    const maximumHp = resolvedSoullessSuppressed
+      ? computeInjuryAdjustedMaxHp(
+          computePokemonFormulaMaxHp(
+            updated.level ?? 1,
+            resolveStats(updated).find(stat => stat.key === 'hp')?.total ?? 0,
+          ),
+          updated.combat.injuries,
+        )
+      : pokemonHpSnapshot(updated).maxHp
+    updated.combat.currentHp = clampHpValue(currentHp, maximumHp)
     return updated
   }
 

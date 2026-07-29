@@ -1,5 +1,5 @@
 import type { MoveResolutionAuditTrace } from '#shared/moveAutomation/trace'
-import { parseEncounterState, type EncounterState } from '#shared/moveAutomation/encounterState'
+import type { EncounterState } from '#shared/moveAutomation/encounterState'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import {
@@ -19,6 +19,10 @@ import {
 import type { MoveSpecEmittedOperation } from '../executeSpec'
 import type { MoveStateChangePlan } from '../plan'
 import { applyAa062BerserkCoreTriggers } from '../../abilityAutomation/mechanics/aa062TriggeredIntegration'
+import {
+  expandSourceEffectiveAsOneFaintedPlacements,
+  removeCrownedCapabilityModesForFaintedPlacements,
+} from '../../capabilityAutomation/hpInvariants'
 import {
   reduceCombatStageEffect,
   reduceCombatStageEffectForRecipient,
@@ -59,7 +63,6 @@ import type {
   MoveCoreTokenDamageQuery,
   MoveCoreTokenDynamicRecipientSets,
   MoveCoreTokenEffectImmunityQueries,
-  MoveCoreTokenEffectOperation,
   MoveCoreTokenEffectOperationResult,
   MoveCoreTokenEffectRecipient,
   MoveCoreTokenEffectRecipientResult,
@@ -510,23 +513,33 @@ export const reduceMoveCoreTokenOperationState = (
     })
   })
 
+  const asOneEndpointTokens = new Map<string, MoveCoreTokenEffectRecipient['token']>()
+  const initiallyFaintedAsOnePlacements = new Set<string>()
   for (const link of input.context.map.encounterState?.capabilityRuntime?.links ?? []) {
-    if (link.kind !== 'as-one-mount' || link.participantPlacementIds.length !== 1
-      || !input.context.queries.creatureRules.hasCapability(link.ownerPlacementId, 'As One')) continue
-    const ownerToken = input.context.queries.tokens.get(link.ownerPlacementId)
-    const mountToken = input.context.queries.tokens.get(link.participantPlacementIds[0]!)
-    if (!ownerToken || !mountToken) continue
-    if (hpAccumulator.get(ownerToken) <= 0 || hpAccumulator.get(mountToken) <= 0) {
-      hpAccumulator.set(ownerToken, 0)
-      hpAccumulator.set(mountToken, 0)
-      for (const token of [ownerToken, mountToken]) {
-        const placement = input.context.map.placements.find(candidate => candidate.id === token.id)
-        if (!placement) continue
-        const recipient = recipientsById.get(token.id) ?? resolveMoveCoreTokenRecipient(input.context, token.id)
-        recipientsById.set(token.id, recipient)
-        recordMoveCoreTokenRecipientRead(sheetReads, sheetReadsByKey, recipient)
-      }
+    if (link.kind !== 'as-one-mount' || link.participantPlacementIds.length !== 1) continue
+    for (const placementId of [link.ownerPlacementId, link.participantPlacementIds[0]!]) {
+      const token = input.context.queries.tokens.get(placementId)
+      if (!token) continue
+      asOneEndpointTokens.set(placementId, token)
+      if (hpAccumulator.get(token) <= 0) initiallyFaintedAsOnePlacements.add(placementId)
     }
+  }
+  const coupledFaintedPlacements = expandSourceEffectiveAsOneFaintedPlacements({
+    map: input.context.map,
+    faintedPlacementIds: initiallyFaintedAsOnePlacements,
+    sourceIsEffective: link => input.context.queries.creatureRules.hasCapabilityInstance(
+      link.ownerPlacementId,
+      link.capabilityInstanceId,
+      'As One',
+    ),
+  })
+  for (const placementId of coupledFaintedPlacements) {
+    const token = asOneEndpointTokens.get(placementId) ?? input.context.queries.tokens.get(placementId)
+    if (!token) continue
+    hpAccumulator.set(token, 0)
+    const recipient = recipientsById.get(token.id) ?? resolveMoveCoreTokenRecipient(input.context, token.id)
+    recipientsById.set(token.id, recipient)
+    recordMoveCoreTokenRecipientRead(sheetReads, sheetReadsByKey, recipient)
   }
   for (const recipient of recipientsById.values()) {
     if (!input.context.queries.creatureRules.hasCapability(recipient.placement.id, 'Soulless')) continue
@@ -543,19 +556,10 @@ export const reduceMoveCoreTokenOperationState = (
     encounterState: conditionEncounterAccumulator.current(),
   })
   const faintedPlacementIds = new Set(hpUpdates.filter(update => update.currentHp <= 0).map(update => update.id))
-  const encounterAfterCapabilityFaint = faintedPlacementIds.size > 0
-    ? parseEncounterState({
-        ...berserk.encounterState,
-        ...(berserk.encounterState.capabilityRuntime ? {
-          capabilityRuntime: {
-            ...berserk.encounterState.capabilityRuntime,
-            modes: berserk.encounterState.capabilityRuntime.modes.filter(mode => (
-              mode.mode !== 'crowned' || !faintedPlacementIds.has(mode.actorPlacementId)
-            )),
-          },
-        } : {}),
-      })
-    : berserk.encounterState
+  const encounterAfterCapabilityFaint = removeCrownedCapabilityModesForFaintedPlacements(
+    berserk.encounterState,
+    faintedPlacementIds,
+  )
   const encounterStateUpdate = sameJsonValue(conditionEncounterAccumulator.previous, encounterAfterCapabilityFaint)
     ? null
     : { previous: conditionEncounterAccumulator.previous, current: encounterAfterCapabilityFaint }

@@ -67,11 +67,13 @@ const dailyInjuryHealsRemaining = (value: unknown): number =>
 
 const positiveHealingAmount = (value: unknown): number => Math.max(0, asWholeNumber(value))
 
-interface InjuryRemovalOptions {
+export interface InjuryRemovalOptions {
   /** True for explicit GM overrides that should not consume or obey the normal daily cap. */
   ignoreDailyLimit?: boolean
   /** Set false for rule exceptions that heal Injuries but explicitly do not count against the daily cap. */
   countAgainstDailyLimit?: boolean
+  /** Override raw sheet inference with authoritative, suppression-aware Soulless effectiveness. */
+  effectiveSoulless?: boolean
 }
 
 const shouldApplyDailyInjuryLimit = (options: InjuryRemovalOptions = {}): boolean =>
@@ -231,7 +233,9 @@ export const setPokemonInjuries = (
   options: InjuryRemovalOptions = {},
 ): number => {
   const before = normalizeInjuryCount(sheet.combat?.injuries)
-  if (pokemonHasResolvedCapability(sheet, 'Soulless')) {
+  const effectiveSoulless = options.effectiveSoulless
+    ?? pokemonHasResolvedCapability(sheet, 'Soulless')
+  if (effectiveSoulless) {
     assignPokemonInjuries(sheet, 0)
     return 0
   }

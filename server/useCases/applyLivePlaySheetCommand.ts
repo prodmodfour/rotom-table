@@ -2,6 +2,7 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
   type LivePlayCommandAccepted,
+  type LivePlayCommandDuplicate,
   type LivePlayCommandResult,
   type LivePlayPatch,
   type LivePlayScope,
@@ -22,6 +23,7 @@ import type { PlayerProfile } from '#shared/playerProfiles'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { SheetKind } from '#shared/sheets'
 import { createEmptyCapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
+import type { CapabilityLinkState } from '#shared/capabilityAutomation/state'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
@@ -39,6 +41,13 @@ import {
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { pokemonExperienceNeededForLevel } from '~/utils/sheets/pokemonExperience'
+import { pokemonHasResolvedCapability, resolveStats } from '~/utils/sheets/pokemonDerived'
+import {
+  clampHpValue,
+  computeInjuryAdjustedMaxHp,
+  computePokemonFormulaMaxHp,
+  normalizeInjuryCount,
+} from '~/utils/ptuHp'
 import { normalizeMapSceneState } from '~/utils/mapSceneState'
 import {
   mapWithTemporaryHpForPlacement,
@@ -66,11 +75,16 @@ import {
   type SheetRepository,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
+import { accessibleSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 import { resolveAa062BerserkDirectTrigger } from '../domain/abilityAutomation/mechanics/aa062TriggeredIntegration'
 import { applyCapabilityEvolutionTransition } from '../domain/capabilityAutomation/evolutionProviders'
+import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
+import {
+  expandSourceEffectiveAsOneFaintedPlacements,
+  removeCrownedCapabilityModesForFaintedPlacements,
+} from '../domain/capabilityAutomation/hpInvariants'
 import {
   marsupialRelationshipClaimedSlugs,
   resolveMarsupialRelationship,
@@ -131,6 +145,27 @@ interface AdditionalLivePlaySheetWrite {
   readonly nextSheet: Record<string, unknown>
 }
 
+interface DerivedLivePlayHpPatch {
+  readonly placement: SheetPlacement
+  readonly sheet: PersistedSheet
+  readonly nextSheet?: Record<string, unknown>
+  readonly effectiveSoulless: boolean
+}
+
+interface ResolvedAsOneHpRelationship {
+  readonly link: CapabilityLinkState
+  readonly counterpartPlacement: SheetPlacement
+  readonly counterpartSheet: PersistedSheet
+  readonly counterpartHasEffectiveSoulless: boolean
+}
+
+interface ResolvedCapabilityHpContext {
+  readonly targetHasEffectiveSoulless: boolean
+  readonly asOneRelationship?: ResolvedAsOneHpRelationship
+  /** Every sheet whose exact revision informed Capability HP planning. */
+  readonly consultedSheets: readonly PersistedSheet[]
+}
+
 interface ResolvedMarsupialRelationshipContext {
   readonly resolution: ValidMarsupialRelationship
   readonly motherSheet: PersistedSheet
@@ -149,7 +184,9 @@ interface ResolvedLivePlaySheetCommandContext {
   readonly nextSheet?: Record<string, unknown>
   readonly sheetUpdate?: LivePlaySheetCommandSheetUpdate
   readonly marsupialRelationship?: ResolvedMarsupialRelationshipContext
+  readonly capabilityHp?: ResolvedCapabilityHpContext
   readonly additionalSheetWrites?: readonly AdditionalLivePlaySheetWrite[]
+  readonly additionalHpPatches?: readonly DerivedLivePlayHpPatch[]
   readonly additionalSheetUpdates?: readonly LivePlaySheetCommandSheetUpdate[]
 }
 
@@ -391,6 +428,92 @@ const assertSheetCommandType = (command: LivePlaySheetCommand, expectedType?: Li
   }
 }
 
+const capabilitySheetDocument = (
+  persisted: PersistedSheet,
+): CharacterSheet | TrainerSheet => ({
+  ...persisted.sheet,
+  slug: persisted.slug,
+  revision: persisted.revision,
+}) as unknown as CharacterSheet | TrainerSheet
+
+const resolveCapabilityHpContext = async (input: {
+  readonly map: TabletopMap
+  readonly targetPlacement: SheetPlacement
+  readonly targetSheet: PersistedSheet
+  readonly dependencies: LivePlaySheetCommandDependencySet
+}): Promise<ResolvedCapabilityHpContext> => {
+  const consultedByRef = new Map<string, PersistedSheet>([
+    [`${input.targetSheet.kind}:${input.targetSheet.slug}`, input.targetSheet],
+  ])
+  const loadPlacementSheet = async (placement: SheetPlacement): Promise<PersistedSheet> => {
+    const key = `${placement.sheetKind}:${placement.sheetSlug}`
+    const retained = consultedByRef.get(key)
+    if (retained) return retained
+    const loaded = await input.dependencies.sheetRepository.getByRef(placement.sheetKind, placement.sheetSlug)
+    if (!loaded) {
+      throw new LivePlaySheetCommandUseCaseError(
+        404,
+        `Sheet ${placement.sheetKind}/${placement.sheetSlug} required by a Capability HP link was not found`,
+      )
+    }
+    consultedByRef.set(key, loaded)
+    return loaded
+  }
+  const effectiveInstances = (
+    placement: SheetPlacement,
+    sheet: PersistedSheet,
+  ) => resolveEffectiveCapabilities({
+    map: input.map,
+    placement,
+    sheet: capabilitySheetDocument(sheet),
+  }).instances
+  const targetInstances = effectiveInstances(input.targetPlacement, input.targetSheet)
+  const targetHasEffectiveSoulless = targetInstances.some(instance => (
+    instance.canonicalId === 'Soulless' && instance.effective
+  ))
+
+  const matchingRelationships: ResolvedAsOneHpRelationship[] = []
+  for (const link of input.map.encounterState?.capabilityRuntime?.links ?? []) {
+    if (link.kind !== 'as-one-mount' || link.canonicalId !== 'As One'
+      || link.participantPlacementIds.length !== 1
+      || (link.ownerPlacementId !== input.targetPlacement.id
+        && link.participantPlacementIds[0] !== input.targetPlacement.id)) continue
+    const ownerPlacement = input.map.placements.find(candidate => candidate.id === link.ownerPlacementId)
+    const participantPlacement = input.map.placements.find(candidate => candidate.id === link.participantPlacementIds[0])
+    if (!ownerPlacement || !participantPlacement) continue
+    const ownerSheet = await loadPlacementSheet(ownerPlacement)
+    const sourceEffective = effectiveInstances(ownerPlacement, ownerSheet).some(instance => (
+      instance.effective
+      && instance.canonicalId === 'As One'
+      && instance.instanceId === link.capabilityInstanceId
+    ))
+    if (!sourceEffective) continue
+    const counterpartPlacement = ownerPlacement.id === input.targetPlacement.id
+      ? participantPlacement
+      : ownerPlacement
+    const counterpartSheet = await loadPlacementSheet(counterpartPlacement)
+    if (counterpartSheet.kind === input.targetSheet.kind && counterpartSheet.slug === input.targetSheet.slug) {
+      rejectLivePlayCommand('conflict', 'An As One relationship cannot couple two placements of the same sheet')
+    }
+    const counterpartHasEffectiveSoulless = effectiveInstances(counterpartPlacement, counterpartSheet)
+      .some(instance => instance.canonicalId === 'Soulless' && instance.effective)
+    matchingRelationships.push({
+      link,
+      counterpartPlacement,
+      counterpartSheet,
+      counterpartHasEffectiveSoulless,
+    })
+  }
+  if (matchingRelationships.length > 1) {
+    rejectLivePlayCommand('conflict', 'The selected placement belongs to conflicting source-effective As One links')
+  }
+  return {
+    targetHasEffectiveSoulless,
+    ...(matchingRelationships[0] ? { asOneRelationship: matchingRelationships[0] } : {}),
+    consultedSheets: [...consultedByRef.values()],
+  }
+}
+
 const resolveContext = async (
   command: LivePlaySheetCommand,
   actor: LivePlaySheetCommandActor,
@@ -411,6 +534,10 @@ const resolveContext = async (
   if (!sheet) {
     throw new LivePlaySheetCommandUseCaseError(404, `Sheet ${placement.sheetKind}/${placement.sheetSlug} not found`)
   }
+
+  const capabilityHp = command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
+    ? await resolveCapabilityHpContext({ map, targetPlacement: placement, targetSheet: sheet, dependencies })
+    : undefined
 
   let marsupialRelationship: ResolvedLivePlaySheetCommandContext['marsupialRelationship']
   if (command.type === LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE && placement.sheetKind === 'pokemon') {
@@ -459,10 +586,29 @@ const resolveContext = async (
     sheet,
     linkedTrainerSheets: await linkedTrainerSheetsForActor(actor, dependencies),
     ...(marsupialRelationship ? { marsupialRelationship } : {}),
+    ...(capabilityHp ? { capabilityHp } : {}),
   }
 }
 
-const hpSnapshotForSheet = (kind: SheetKind, sheet: AnyLiveSheet): HpValueState => {
+const hpSnapshotForSheet = (
+  kind: SheetKind,
+  sheet: AnyLiveSheet,
+  effectiveSoulless?: boolean,
+): HpValueState => {
+  if (kind === 'pokemon' && effectiveSoulless === false
+    && pokemonHasResolvedCapability(sheet as CharacterSheet, 'Soulless')) {
+    const pokemon = sheet as CharacterSheet
+    const injuries = normalizeInjuryCount(pokemon.combat?.injuries)
+    const hpTotal = resolveStats(pokemon).find(stat => stat.key === 'hp')?.total ?? 0
+    const fullMaxHp = computePokemonFormulaMaxHp(pokemon.level ?? 1, hpTotal)
+    const maxHp = computeInjuryAdjustedMaxHp(fullMaxHp, injuries)
+    return {
+      currentHp: clampHpValue(pokemon.combat?.currentHp ?? maxHp, maxHp),
+      maxHp,
+      fullMaxHp,
+      injuries,
+    }
+  }
   const snapshot = kind === 'pokemon'
     ? pokemonHpSnapshot(sheet as CharacterSheet)
     : trainerHpSnapshot(sheet as TrainerSheet)
@@ -532,9 +678,11 @@ const sheetFieldPatch = (
   revision: number,
   placement: SheetPlacement,
   payload: Record<string, unknown>,
+  derivedSheetScopes?: readonly LivePlaySheetScope[],
 ): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.SHEET_FIELD> => {
   const field = sheetScopeFieldFor(command)
-  const sheetScopes = command.scopes.filter((scope): scope is LivePlaySheetScope => scope.kind === 'sheet')
+  const sheetScopes = derivedSheetScopes
+    ?? command.scopes.filter((scope): scope is LivePlaySheetScope => scope.kind === 'sheet')
   return {
     schemaVersion: command.schemaVersion,
     type: LIVE_PLAY_PATCH_TYPES.SHEET_FIELD,
@@ -558,6 +706,7 @@ const tokenPatch = (
   revision: number,
   placement: SheetPlacement,
   payload: Record<string, unknown>,
+  scopes: readonly LivePlayScope[] = command.scopes,
 ): LivePlayPatch => ({
   schemaVersion: command.schemaVersion,
   type: command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
@@ -569,7 +718,7 @@ const tokenPatch = (
         : LIVE_PLAY_PATCH_TYPES.TOKEN_CONDITIONS,
   mapSlug: command.mapSlug,
   revision,
-  scopes: command.scopes,
+  scopes,
   payload: {
     placementId: placement.id,
     sheetKind: placement.sheetKind,
@@ -585,25 +734,101 @@ const applyModifyHp = (
   updatedAt: number,
 ): ResolvedLivePlaySheetCommandContext | null => {
   const payload = expectModifyHpPayload(command.payload)
-  const original = context.sheet.sheet as unknown as AnyLiveSheet
-  const previous = hpSnapshotForSheet(context.placement.sheetKind, original)
-  let updated = applyHpToSheet(context.placement.sheetKind, original, payload.currentHp, payload.injuries)
-  const current = hpSnapshotForSheet(context.placement.sheetKind, updated)
-  const sheetChanged = previous.currentHp !== current.currentHp || previous.injuries !== current.injuries
-
-  const previousTemporaryHp = temporaryHpForPlacement(context.map, context.placement.id)
+  const capabilityHp = context.capabilityHp
+  const targetHasEffectiveSoulless = capabilityHp?.targetHasEffectiveSoulless ?? false
   const requestedTemporaryHp = payload.temporaryHp
-  if (requestedTemporaryHp !== undefined && requestedTemporaryHp > 0 && !normalizeMapSceneState(context.map.activeScene)) {
+  if (requestedTemporaryHp !== undefined && requestedTemporaryHp > 0 && targetHasEffectiveSoulless) {
+    rejectLivePlayCommand('invalid', 'Soulless creatures cannot gain Temporary HP')
+  }
+  if (requestedTemporaryHp !== undefined && requestedTemporaryHp > 0
+    && !normalizeMapSceneState(context.map.activeScene)) {
     rejectLivePlayCommand('invalid', 'Temporary HP requires an active scene')
   }
-  const temporaryHpChanged = requestedTemporaryHp !== undefined && requestedTemporaryHp !== previousTemporaryHp
-  if (!sheetChanged && !temporaryHpChanged) return null
 
-  const nextSheetRevision = nextRevision(context.sheet.revision)
-  const revision = nextRevision(currentRevision)
-  const mapWithTemporaryHp = requestedTemporaryHp === undefined
+  const original = context.sheet.sheet as unknown as AnyLiveSheet
+  const previous = hpSnapshotForSheet(
+    context.placement.sheetKind,
+    original,
+    targetHasEffectiveSoulless,
+  )
+  let updated = applyHpToSheet(
+    context.placement.sheetKind,
+    original,
+    payload.currentHp,
+    payload.injuries,
+    { effectiveSoulless: targetHasEffectiveSoulless },
+  )
+
+  const relationship = capabilityHp?.asOneRelationship
+  const counterpartOriginal = relationship?.counterpartSheet.sheet as unknown as AnyLiveSheet | undefined
+  const counterpartPrevious = relationship && counterpartOriginal
+    ? hpSnapshotForSheet(
+        relationship.counterpartPlacement.sheetKind,
+        counterpartOriginal,
+        relationship.counterpartHasEffectiveSoulless,
+      )
+    : null
+  let counterpartUpdated = relationship && counterpartOriginal && counterpartPrevious
+    ? applyHpToSheet(
+        relationship.counterpartPlacement.sheetKind,
+        counterpartOriginal,
+        counterpartPrevious.currentHp,
+        undefined,
+        { effectiveSoulless: relationship.counterpartHasEffectiveSoulless },
+      )
+    : null
+  let current = hpSnapshotForSheet(context.placement.sheetKind, updated, targetHasEffectiveSoulless)
+  let counterpartCurrent = relationship && counterpartUpdated
+    ? hpSnapshotForSheet(
+        relationship.counterpartPlacement.sheetKind,
+        counterpartUpdated,
+        relationship.counterpartHasEffectiveSoulless,
+      )
+    : null
+  if (relationship && counterpartCurrent) {
+    const initiallyFainted = new Set<string>()
+    if (current.currentHp <= 0) initiallyFainted.add(context.placement.id)
+    if (counterpartCurrent.currentHp <= 0) initiallyFainted.add(relationship.counterpartPlacement.id)
+    const coupledFainted = expandSourceEffectiveAsOneFaintedPlacements({
+      map: context.map,
+      faintedPlacementIds: initiallyFainted,
+      sourceIsEffective: link => link.id === relationship.link.id,
+    })
+    if (coupledFainted.has(context.placement.id)) {
+      updated = applyHpToSheet(
+        context.placement.sheetKind,
+        updated,
+        0,
+        undefined,
+        { effectiveSoulless: targetHasEffectiveSoulless },
+      )
+      current = hpSnapshotForSheet(context.placement.sheetKind, updated, targetHasEffectiveSoulless)
+    }
+    if (coupledFainted.has(relationship.counterpartPlacement.id)) {
+      counterpartUpdated = applyHpToSheet(
+        relationship.counterpartPlacement.sheetKind,
+        counterpartUpdated!,
+        0,
+        undefined,
+        { effectiveSoulless: relationship.counterpartHasEffectiveSoulless },
+      )
+      counterpartCurrent = hpSnapshotForSheet(
+        relationship.counterpartPlacement.sheetKind,
+        counterpartUpdated,
+        relationship.counterpartHasEffectiveSoulless,
+      )
+    }
+  }
+
+  let mapWithTemporaryHp = requestedTemporaryHp === undefined
     ? context.map
     : mapWithTemporaryHpForPlacement(context.map, context.placement.id, requestedTemporaryHp)
+  if (targetHasEffectiveSoulless) {
+    mapWithTemporaryHp = mapWithTemporaryHpForPlacement(mapWithTemporaryHp, context.placement.id, 0)
+  }
+  if (relationship?.counterpartHasEffectiveSoulless) {
+    mapWithTemporaryHp = mapWithTemporaryHpForPlacement(mapWithTemporaryHp, relationship.counterpartPlacement.id, 0)
+  }
   const berserk = resolveAa062BerserkDirectTrigger({
     map: mapWithTemporaryHp,
     placement: context.placement,
@@ -620,18 +845,63 @@ const applyModifyHp = (
     stages.satk = Math.min(6, stages.satk + 1)
     updated = applyCombatStagesToSheet(context.placement.sheetKind, updated, stages)
   }
+
+  const faintedPlacementIds = new Set<string>()
+  if (current.currentHp <= 0) faintedPlacementIds.add(context.placement.id)
+  if (relationship && counterpartCurrent?.currentHp !== undefined && counterpartCurrent.currentHp <= 0) {
+    faintedPlacementIds.add(relationship.counterpartPlacement.id)
+  }
+  let reconciledMap = berserk.map
+  if (reconciledMap.encounterState) {
+    const encounterState = removeCrownedCapabilityModesForFaintedPlacements(
+      reconciledMap.encounterState,
+      faintedPlacementIds,
+    )
+    if (encounterState !== reconciledMap.encounterState) reconciledMap = { ...reconciledMap, encounterState }
+  }
+  if (!sameJsonValue(context.map.temporaryHitPoints, mapWithTemporaryHp.temporaryHitPoints)) {
+    reconciledMap = reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
+      previousMap: context.map,
+      nextMap: reconciledMap,
+      operations: [],
+    })
+  }
+
+  const sheetChanged = previous.currentHp !== current.currentHp || previous.injuries !== current.injuries
+  const counterpartChanged = Boolean(relationship && counterpartPrevious && counterpartCurrent && (
+    counterpartPrevious.currentHp !== counterpartCurrent.currentHp
+    || counterpartPrevious.injuries !== counterpartCurrent.injuries
+  ))
+  const mapChanged = !sameJsonValue(context.map, reconciledMap)
+  if (!sheetChanged && !counterpartChanged && !mapChanged) return null
+
+  const revision = nextRevision(currentRevision)
+  const nextSheetRevision = nextRevision(context.sheet.revision)
   const nextSheet = sheetChanged ? sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt) : undefined
-  const reconciledMap = requestedTemporaryHp === undefined
-    ? berserk.map
-    : reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
-        previousMap: context.map,
-        nextMap: berserk.map,
-        operations: [],
-      })
+  const counterpartNextSheet = counterpartChanged && relationship && counterpartUpdated
+    ? sheetPayloadForPersistence(counterpartUpdated, relationship.counterpartSheet.slug, updatedAt)
+    : undefined
+  const counterpartTemporaryHpChanged = Boolean(relationship && (
+    temporaryHpForPlacement(context.map, relationship.counterpartPlacement.id)
+    !== temporaryHpForPlacement(reconciledMap, relationship.counterpartPlacement.id)
+  ))
+  const counterpartWrite = counterpartNextSheet && relationship
+    ? { sheet: relationship.counterpartSheet, nextSheet: counterpartNextSheet }
+    : null
+  const counterpartHpPatch = relationship && (counterpartNextSheet || counterpartTemporaryHpChanged)
+    ? {
+        placement: relationship.counterpartPlacement,
+        sheet: relationship.counterpartSheet,
+        ...(counterpartNextSheet ? { nextSheet: counterpartNextSheet } : {}),
+        effectiveSoulless: relationship.counterpartHasEffectiveSoulless,
+      }
+    : null
   return {
     ...context,
     map: { ...reconciledMap, revision, updatedAt },
     ...(nextSheet ? { nextSheet } : {}),
+    ...(counterpartWrite ? { additionalSheetWrites: [counterpartWrite] } : {}),
+    ...(counterpartHpPatch ? { additionalHpPatches: [counterpartHpPatch] } : {}),
     ...(sheetChanged ? {
       sheetUpdate: {
         kind: context.sheet.kind,
@@ -830,11 +1100,12 @@ const valuePatchPayload = (
   sheetRevision: number,
   previousMap?: TabletopMap,
   nextMap?: TabletopMap,
+  effectiveSoulless?: boolean,
 ): Record<string, unknown> => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_HP) {
     return {
-      previous: hpSnapshotForSheet(placement.sheetKind, before),
-      current: hpSnapshotForSheet(placement.sheetKind, after),
+      previous: hpSnapshotForSheet(placement.sheetKind, before, effectiveSoulless),
+      current: hpSnapshotForSheet(placement.sheetKind, after, effectiveSoulless),
       previousTemporaryHp: previousMap ? temporaryHpForPlacement(previousMap, placement.id) : 0,
       currentTemporaryHp: nextMap ? temporaryHpForPlacement(nextMap, placement.id) : 0,
       sheetRevision,
@@ -863,6 +1134,32 @@ const valuePatchPayload = (
   }
 }
 
+const mapStateNotCoveredBySheetCommandPatches = (
+  command: LivePlaySheetCommand,
+  map: TabletopMap,
+): Record<string, unknown> => {
+  const { revision: _revision, updatedAt: _updatedAt, ...state } = map
+  if (command.type !== LIVE_PLAY_COMMAND_TYPES.MODIFY_HP) return state
+  const { temporaryHitPoints: _temporaryHitPoints, ...stateWithoutTemporaryHp } = state
+  return stateWithoutTemporaryHp
+}
+
+const reconciliationRequiredPatch = (
+  command: LivePlaySheetCommand,
+  revision: number,
+  placement: SheetPlacement,
+): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.RECONCILIATION_REQUIRED> => ({
+  schemaVersion: command.schemaVersion,
+  type: LIVE_PLAY_PATCH_TYPES.RECONCILIATION_REQUIRED,
+  mapSlug: command.mapSlug,
+  revision,
+  scopes: command.scopes,
+  payload: {
+    placementId: placement.id,
+    reason: 'authoritative map-owned state changed outside bounded sheet-command patches',
+  },
+})
+
 const patchesForAcceptedSheetCommand = (
   command: LivePlaySheetCommand,
   revision: number,
@@ -881,10 +1178,61 @@ const patchesForAcceptedSheetCommand = (
     sheetRevision,
     previousContext.map,
     nextContext.map,
+    previousContext.capabilityHp?.targetHasEffectiveSoulless,
+  )
+  const representedHpPlacementIds = new Set([previousContext.placement.id])
+  const derivedHpPatches = command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
+    ? (nextContext.additionalHpPatches ?? []).flatMap((derived): LivePlayPatch[] => {
+        representedHpPlacementIds.add(derived.placement.id)
+        const tokenScope: LivePlayTokenScope = { kind: 'token', placementId: derived.placement.id, field: 'hp' }
+        const sheetScope: LivePlaySheetScope = {
+          kind: 'sheet', sheetKind: derived.sheet.kind, sheetSlug: derived.sheet.slug, field: 'hp',
+        }
+        const derivedPayload = valuePatchPayload(
+          command,
+          derived.sheet.sheet as unknown as AnyLiveSheet,
+          (derived.nextSheet ?? derived.sheet.sheet) as unknown as AnyLiveSheet,
+          derived.placement,
+          derived.nextSheet ? nextRevision(derived.sheet.revision) : derived.sheet.revision,
+          previousContext.map,
+          nextContext.map,
+          derived.effectiveSoulless,
+        )
+        return [
+          tokenPatch(command, revision, derived.placement, derivedPayload, [tokenScope, sheetScope]),
+          ...(derived.nextSheet
+            ? [sheetFieldPatch(command, revision, derived.placement, derivedPayload, [sheetScope])]
+            : []),
+        ]
+      })
+    : []
+  const temporaryHpOnlyPatches = command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
+    ? previousContext.map.placements.flatMap((placement): LivePlayPatch[] => {
+        const previousTemporaryHp = temporaryHpForPlacement(previousContext.map, placement.id)
+        const currentTemporaryHp = temporaryHpForPlacement(nextContext.map, placement.id)
+        if (previousTemporaryHp === currentTemporaryHp || representedHpPlacementIds.has(placement.id)) return []
+        const tokenScope: LivePlayTokenScope = { kind: 'token', placementId: placement.id, field: 'hp' }
+        const sheetScope: LivePlaySheetScope = {
+          kind: 'sheet', sheetKind: placement.sheetKind, sheetSlug: placement.sheetSlug, field: 'hp',
+        }
+        return [tokenPatch(command, revision, placement, {
+          previousTemporaryHp,
+          currentTemporaryHp,
+        }, [tokenScope, sheetScope])]
+      })
+    : []
+  const requiresReconciliation = !sameJsonValue(
+    mapStateNotCoveredBySheetCommandPatches(command, previousContext.map),
+    mapStateNotCoveredBySheetCommandPatches(command, nextContext.map),
   )
   return [
+    ...(requiresReconciliation
+      ? [reconciliationRequiredPatch(command, revision, previousContext.placement)]
+      : []),
     tokenPatch(command, revision, previousContext.placement, payload),
     ...(nextContext.nextSheet ? [sheetFieldPatch(command, revision, previousContext.placement, payload)] : []),
+    ...derivedHpPatches,
+    ...temporaryHpOnlyPatches,
   ]
 }
 
@@ -911,6 +1259,19 @@ const isAcceptedResult = (result: LivePlayCommandResult): result is LivePlayComm
   result.ok === true && !('duplicate' in result)
 )
 
+const isDuplicateWithAcceptedResult = (
+  result: LivePlayCommandResult,
+): result is LivePlayCommandDuplicate & { readonly original: LivePlayCommandAccepted } => (
+  result.ok === true && 'duplicate' in result && result.original.ok === true
+)
+
+const acceptedResultFromCommandResult = (
+  result: LivePlayCommandResult,
+): LivePlayCommandAccepted | null => {
+  if (isAcceptedResult(result)) return result
+  return isDuplicateWithAcceptedResult(result) ? result.original : null
+}
+
 const placementIdFromAcceptedResult = (result: LivePlayCommandAccepted): string | null => (
   result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId ?? null
 )
@@ -919,21 +1280,62 @@ const responseFromContext = (
   result: LivePlayCommandResult,
   context: ResolvedLivePlaySheetCommandContext | null,
   role: AuthRole,
+  playerProfile: PlayerProfile | null | undefined,
 ): LivePlaySheetCommandResponse => {
   const sheetUpdates = context
     ? [...(context.sheetUpdate ? [context.sheetUpdate] : []), ...(context.additionalSheetUpdates ?? [])]
     : []
+  const projectedSheetUpdates = role === 'player' && context
+    ? (accessibleSheetUpdatesForPlayer(sheetUpdates, {
+        playerProfile,
+        linkedTrainerSheets: context.linkedTrainerSheets,
+      }) ?? [])
+    : sheetUpdates
+  const acceptedResult = acceptedResultFromCommandResult(result)
+  const scopedSheetUpdates = acceptedResult?.patches.flatMap(patch => patch.scopes.flatMap(scope => (
+    scope.kind === 'sheet'
+      ? [{ kind: scope.sheetKind, slug: scope.sheetSlug, sheet: { slug: scope.sheetSlug } }]
+      : []
+  ))) ?? []
+  const accessibleScopedSheets = role === 'player' && context
+    ? (accessibleSheetUpdatesForPlayer(scopedSheetUpdates, {
+        playerProfile,
+        linkedTrainerSheets: context.linkedTrainerSheets,
+      }) ?? [])
+    : scopedSheetUpdates
+  const accessibleSheetRefs = new Set([
+    ...projectedSheetUpdates.map(update => `${update.kind}:${update.slug}`),
+    ...accessibleScopedSheets.map(update => `${update.kind}:${update.slug}`),
+  ])
+  const projectAcceptedResult = (accepted: LivePlayCommandAccepted): LivePlayCommandAccepted => ({
+    ...accepted,
+    patches: context
+      ? accepted.patches.filter((patch) => {
+          if (patch.type === LIVE_PLAY_PATCH_TYPES.RECONCILIATION_REQUIRED) return true
+          const placementId = isRecord(patch.payload) && typeof patch.payload.placementId === 'string'
+            ? patch.payload.placementId : null
+          if (placementId === context.placement.id) return true
+          return patch.scopes.some(scope => scope.kind === 'sheet'
+            && accessibleSheetRefs.has(`${scope.sheetKind}:${scope.sheetSlug}`))
+        })
+      : [],
+  })
+  const projectedResult = role !== 'player'
+    ? result
+    : isAcceptedResult(result)
+      ? projectAcceptedResult(result)
+      : isDuplicateWithAcceptedResult(result)
+        ? { ...result, original: projectAcceptedResult(result.original) }
+        : result
   return {
-    result,
+    result: projectedResult,
     ...(context ? {
       path: context.relativePath,
-      map: context.map,
+      // Player clients apply bounded accepted patches. Returning the raw map
+      // here would bypass Capability/runtime and carried-participant projection.
+      ...(role === 'gm' ? { map: context.map } : {}),
       placement: context.placement,
-      ...(sheetUpdates.length ? {
-        sheetUpdates: role === 'player'
-          ? (redactSheetUpdatesForPlayer(sheetUpdates) ?? [])
-          : sheetUpdates,
-      } : {}),
+      ...(sheetUpdates.length ? { sheetUpdates: projectedSheetUpdates } : {}),
     } : {}),
   }
 }
@@ -957,7 +1359,14 @@ const currentContextForAcceptedResult = async (
       scopes: [{ kind: 'token', placementId, field: 'hp' }],
       payload: { placementId, currentHp: 0 },
     } as const satisfies ModifyHpLivePlayCommand
-    return await resolveContext(command, { role, playerProfile }, dependencies)
+    const context = await resolveContext(command, { role, playerProfile }, dependencies)
+    if (!actorCanControlMapPlacement({
+      role,
+      profile: playerProfile,
+      placement: context.placement,
+      linkedTrainerSheets: context.linkedTrainerSheets,
+    })) return null
+    return context
   } catch {
     return null
   }
@@ -1037,6 +1446,15 @@ export const executeLivePlaySheetCommandUseCase = async (
     commit: ({ actor, command, currentRevision, nextMap, result, recordRealtimeEvents, saveOpResult }) => {
       const nextSheet = nextMap.nextSheet
       deps.database.withTransaction(() => {
+        for (const consulted of nextMap.capabilityHp?.consultedSheets ?? []) {
+          const current = deps.sheetRepository.getByRef(consulted.kind, consulted.slug)
+          if (!current || normalizeRevision(current.revision) !== normalizeRevision(consulted.revision)) {
+            throw new LivePlaySheetCommandUseCaseError(
+              409,
+              `Sheet ${consulted.kind}/${consulted.slug} changed after Capability HP planning`,
+            )
+          }
+        }
         const persisted = toPersistedMap(
           nextMap.map,
           nextMap.map.folder ?? '',
@@ -1071,7 +1489,7 @@ export const executeLivePlaySheetCommandUseCase = async (
             nextSheet: write.nextSheet,
           })
           if (result === 'stale') {
-            throw new LivePlaySheetCommandUseCaseError(409, `Sheet ${write.sheet.kind}/${write.sheet.slug} changed before the Marsupial Experience share could be persisted`)
+            throw new LivePlaySheetCommandUseCaseError(409, `Sheet ${write.sheet.kind}/${write.sheet.slug} changed before the derived sheet consequence could be persisted`)
           }
         }
 
@@ -1082,7 +1500,7 @@ export const executeLivePlaySheetCommandUseCase = async (
         const sheetUpdate = nextSheet ? sheetUpdateFromPersisted(authoritativeSheet) : undefined
         const additionalSheetUpdates = (nextMap.additionalSheetWrites ?? []).map((write) => {
           const stored = deps.sheetRepository.getByRef(write.sheet.kind, write.sheet.slug)
-          if (!stored) throw new LivePlaySheetCommandUseCaseError(404, `Sheet ${write.sheet.kind}/${write.sheet.slug} not found after Marsupial Experience sharing`)
+          if (!stored) throw new LivePlaySheetCommandUseCaseError(404, `Sheet ${write.sheet.kind}/${write.sheet.slug} not found after a derived sheet consequence`)
           return sheetUpdateFromPersisted(stored)
         })
         recordRealtimeEvents(livePlaySheetUpdateRealtimeAppendInputs({
@@ -1108,9 +1526,10 @@ export const executeLivePlaySheetCommandUseCase = async (
     },
   })
 
+  const acceptedResult = acceptedResultFromCommandResult(result)
   const responseContext = persistedContext
-    ?? (isAcceptedResult(result)
-      ? await currentContextForAcceptedResult(result, input.role, input.playerProfile, deps)
+    ?? (acceptedResult
+      ? await currentContextForAcceptedResult(acceptedResult, input.role, input.playerProfile, deps)
       : null)
-  return responseFromContext(result, responseContext, input.role)
+  return responseFromContext(result, responseContext, input.role, input.playerProfile)
 }

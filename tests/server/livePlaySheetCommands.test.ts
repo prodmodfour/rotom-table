@@ -26,7 +26,10 @@ import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { openRotomDatabase } from '~~/server/storage/database'
 import type { SheetKind, TabletopMap } from '~/types/map'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { createEmptyCapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
+import { resolveEffectiveCapabilities } from '~~/server/domain/capabilityAutomation/effectiveCapabilities'
+import type { CharacterSheet } from '~/types/characterSheet'
 
 const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
   schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
@@ -260,6 +263,60 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   }
 }
 
+const asOneFixture = (options: { readonly sourceEffective?: boolean } = {}) => {
+  const ownerPlacement = baseMap().placements[0]!
+  const mountPlacement = {
+    id: 'mount-token', sheetKind: 'pokemon' as const, sheetSlug: 'glastrier',
+    position: { x: 1, y: 0, z: 1 }, facing: 'south-east' as const, turned: false,
+  }
+  const ownerSheet: PersistedSheet = {
+    ...pokemonSheet(),
+    sheet: {
+      ...pokemonSheet().sheet,
+      capabilities: { other: ['As One'] },
+    },
+  }
+  const mountSheet: PersistedSheet = {
+    kind: 'pokemon', slug: 'glastrier', revision: 3, updatedAt: 30,
+    sheet: {
+      slug: 'glastrier', species: 'Glastrier', level: 20,
+      combat: { currentHp: 40, injuries: 0, conditions: [] }, revision: 3, updatedAt: 30,
+    },
+  }
+  const encounter = createEmptyEncounterState()
+  const unlinkedMap = baseMap({ placements: [ownerPlacement, mountPlacement], encounterState: encounter })
+  const asOne = resolveEffectiveCapabilities({
+    map: unlinkedMap,
+    placement: ownerPlacement,
+    sheet: ownerSheet.sheet as unknown as CharacterSheet,
+  }).instances.find(instance => instance.canonicalId === 'As One' && instance.effective)!
+  const map = baseMap({
+    placements: [ownerPlacement, mountPlacement],
+    encounterState: {
+      ...encounter,
+      capabilityRuntime: {
+        ...encounter.capabilityRuntime!,
+        links: [{
+          id: 'as-one-hp-link', kind: 'as-one-mount', ownerPlacementId: ownerPlacement.id,
+          participantPlacementIds: [mountPlacement.id],
+          capabilityInstanceId: options.sourceEffective === false ? `${asOne.instanceId}:stale` : asOne.instanceId,
+          canonicalId: 'As One', establishedAt: 100, configurationId: 'Chilling Neigh',
+          sourceOperationId: 'as-one-link-operation',
+        }],
+      },
+    },
+  })
+  return { map, ownerPlacement, mountPlacement, ownerSheet, mountSheet }
+}
+
+const createAsOneHarness = (options: { readonly sourceEffective?: boolean } = {}) => {
+  const fixture = asOneFixture(options)
+  const harness = createHarness(fixture.map)
+  harness.sheets.set('pokemon:pikachu', fixture.ownerSheet)
+  harness.sheets.set('pokemon:glastrier', fixture.mountSheet)
+  return { ...fixture, harness }
+}
+
 const execute = (harness: ReturnType<typeof createHarness>, command: LivePlaySheetCommand, role: 'gm' | 'player' = 'gm') =>
   executeLivePlaySheetCommandUseCase({
     role,
@@ -315,6 +372,7 @@ describe('live-play sheet commands', () => {
     const response = await execute(harness, conditionsCommand(), 'player')
 
     expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(response.map).toBeUndefined()
     expect(harness.sheets.get('pokemon:pikachu')).toMatchObject({
       revision: 3,
       sheet: { combat: { conditions: ['Burned'] }, revision: 3 },
@@ -336,6 +394,355 @@ describe('live-play sheet commands', () => {
     expect(harness.sheetWrites).toHaveLength(0)
     expect(response.sheetUpdates).toBeUndefined()
     expect(harness.published.map((event) => (event as { channel?: string }).channel)).toEqual(['map:arena'])
+  })
+
+  it.each([
+    { target: 'owner' as const, placementId: 'linked-token', targetSlug: 'pikachu', counterpartSlug: 'glastrier' },
+    { target: 'participant' as const, placementId: 'mount-token', targetSlug: 'glastrier', counterpartSlug: 'pikachu' },
+  ])('atomically faints both exact source-effective As One participants when directly fainting the $target', async ({
+    placementId, targetSlug, counterpartSlug,
+  }) => {
+    const { harness } = createAsOneHarness()
+    const command = hpCommand({
+      opId: `op_as_one_faint_${placementId}`,
+      payload: { placementId, currentHp: 0 },
+      scopes: [
+        { kind: 'token', placementId, field: 'hp' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: targetSlug, field: 'hp' },
+      ],
+    })
+
+    const response = await execute(harness, command)
+
+    expect(response.result).toMatchObject({
+      ok: true,
+      patches: expect.arrayContaining([
+        expect.objectContaining({
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+          payload: expect.objectContaining({ placementId: 'linked-token', current: expect.objectContaining({ currentHp: 0 }) }),
+        }),
+        expect.objectContaining({
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+          payload: expect.objectContaining({ placementId: 'mount-token', current: expect.objectContaining({ currentHp: 0 }) }),
+        }),
+      ]),
+    })
+    expect(harness.sheets.get(`pokemon:${targetSlug}`)?.sheet).toMatchObject({ combat: { currentHp: 0 } })
+    expect(harness.sheets.get(`pokemon:${counterpartSlug}`)?.sheet).toMatchObject({ combat: { currentHp: 0 } })
+    expect(harness.sheetWrites).toHaveLength(2)
+    expect(response.sheetUpdates?.map(update => update.slug).sort()).toEqual(['glastrier', 'pikachu'])
+    expect(harness.published).toEqual(expect.arrayContaining([
+      expect.objectContaining({ channel: 'sheet:pokemon:pikachu', type: 'updated' }),
+      expect.objectContaining({ channel: 'sheet:pokemon:glastrier', type: 'updated' }),
+      expect.objectContaining({
+        channel: 'map:arena',
+        patches: expect.arrayContaining([
+          expect.objectContaining({ payload: expect.objectContaining({ placementId: 'linked-token' }) }),
+          expect.objectContaining({ payload: expect.objectContaining({ placementId: 'mount-token' }) }),
+        ]),
+      }),
+    ]))
+  })
+
+  it('does not propagate fainting through a mismatched As One capability instance', async () => {
+    const { harness } = createAsOneHarness({ sourceEffective: false })
+
+    const response = await execute(harness, hpCommand({
+      opId: 'op_stale_as_one_faint',
+      payload: { placementId: 'linked-token', currentHp: 0 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet).toMatchObject({ combat: { currentHp: 0 } })
+    expect(harness.sheets.get('pokemon:glastrier')?.sheet).toMatchObject({ combat: { currentHp: 40 } })
+    expect(harness.sheetWrites).toHaveLength(1)
+    expect(response.result.ok && !('duplicate' in response.result)
+      ? response.result.patches.some(patch => (
+          typeof patch.payload === 'object' && patch.payload !== null
+          && 'placementId' in patch.payload && patch.payload.placementId === 'mount-token'
+        ))
+      : true).toBe(false)
+  })
+
+  it('fails before every write when a consulted As One sheet revision changes before commit', async () => {
+    const { harness } = createAsOneHarness()
+    harness.deps.database.withTransaction = <T>(work: () => T): T => {
+      const counterpart = harness.sheets.get('pokemon:glastrier')!
+      harness.sheets.set('pokemon:glastrier', {
+        ...counterpart,
+        revision: counterpart.revision + 1,
+        sheet: { ...counterpart.sheet, revision: counterpart.revision + 1 },
+      })
+      return work()
+    }
+
+    const response = await execute(harness, hpCommand({
+      opId: 'op_as_one_stale_counterpart',
+      payload: { placementId: 'linked-token', currentHp: 0 },
+    }))
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'persistence-failed',
+      message: expect.stringContaining('glastrier changed after Capability HP planning'),
+    })
+    expect(harness.mapWrites).toEqual([])
+    expect(harness.sheetWrites).toEqual([])
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet).toMatchObject({ combat: { currentHp: 30 } })
+    expect(harness.sheets.get('pokemon:glastrier')?.sheet).toMatchObject({ combat: { currentHp: 40 } })
+  })
+
+  it('rolls back the map and primary HP write when an As One counterpart write fails', async () => {
+    const database = openRotomDatabase({ path: ':memory:' })
+    try {
+      const fixture = asOneFixture()
+      const mapRepository = createSqliteMapRepository<TabletopMap>(database)
+      const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
+      mapRepository.saveSetupMap(fixture.map)
+      sheetRepository.saveSetupSheet('pokemon', 'pikachu', fixture.ownerSheet.sheet)
+      sheetRepository.saveSetupSheet('pokemon', 'glastrier', fixture.mountSheet.sheet)
+      const executor = createAuthoritativeLivePlayCommandExecutor({
+        opStore: createInMemoryLivePlayOpStore(),
+        queue: createInProcessMapWriteQueue(),
+        ...acceptedRealtimeTestHooks([]),
+      })
+      const command = hpCommand({
+        opId: 'op_as_one_atomic_rollback',
+        payload: { placementId: 'linked-token', currentHp: 0 },
+      })
+      const failingRepository = {
+        ...sheetRepository,
+        applyLivePlayUpdate: (write: Parameters<typeof sheetRepository.applyLivePlayUpdate>[0]) => {
+          if (write.slug === 'glastrier') throw new Error('counterpart HP write failed')
+          return sheetRepository.applyLivePlayUpdate(write)
+        },
+      }
+
+      const failed = await executeLivePlaySheetCommandUseCase({
+        role: 'gm', command, expectedType: LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
+      }, {
+        database, mapRepository, sheetRepository: failingRepository, commandExecutor: executor, now: () => 2_000,
+      })
+      expect(failed.result).toMatchObject({
+        ok: false,
+        reason: 'persistence-failed',
+        message: expect.stringContaining('counterpart HP write failed'),
+      })
+      expect(mapRepository.getBySlug('arena')).toMatchObject({ revision: 4 })
+      expect(sheetRepository.getByRef('pokemon', 'pikachu')).toMatchObject({
+        revision: 2, sheet: { combat: { currentHp: 30 } },
+      })
+      expect(sheetRepository.getByRef('pokemon', 'glastrier')).toMatchObject({
+        revision: 3, sheet: { combat: { currentHp: 40 } },
+      })
+
+      const succeeded = await executeLivePlaySheetCommandUseCase({
+        role: 'gm', command, expectedType: LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
+      }, { database, mapRepository, sheetRepository, commandExecutor: executor, now: () => 2_000 })
+      expect(succeeded.result).toMatchObject({ ok: true, revision: 5 })
+      expect(sheetRepository.getByRef('pokemon', 'pikachu')?.sheet).toMatchObject({ combat: { currentHp: 0 } })
+      expect(sheetRepository.getByRef('pokemon', 'glastrier')?.sheet).toMatchObject({ combat: { currentHp: 0 } })
+    }
+    finally {
+      database.close()
+    }
+  })
+
+  it('publishes a map-only Temporary HP cleanup for a linked Soulless counterpart', async () => {
+    const fixture = asOneFixture()
+    const activeScene = { name: 'Battle', startedAt: 100 }
+    const harness = createHarness({
+      ...fixture.map,
+      activeScene,
+      temporaryHitPoints: { scene: activeScene, byPlacementId: { 'mount-token': 8 } },
+    })
+    harness.sheets.set('pokemon:pikachu', fixture.ownerSheet)
+    harness.sheets.set('pokemon:glastrier', {
+      ...fixture.mountSheet,
+      sheet: { ...fixture.mountSheet.sheet, species: 'Shedinja' },
+    })
+
+    const response = await execute(harness, hpCommand({
+      opId: 'op_as_one_soulless_temp_cleanup',
+      payload: { placementId: 'linked-token', currentHp: 30 },
+    }))
+
+    expect(response.result).toMatchObject({
+      ok: true,
+      patches: expect.arrayContaining([
+        expect.objectContaining({
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+          payload: expect.objectContaining({ placementId: 'mount-token', currentTemporaryHp: 0 }),
+        }),
+      ]),
+    })
+    expect(harness.storedMap.temporaryHitPoints).toBeUndefined()
+    expect(harness.sheetWrites).toEqual([])
+    expect(response.sheetUpdates).toBeUndefined()
+  })
+
+  it('redacts a derived As One sheet consequence from unauthorized player responses and replays', async () => {
+    const { harness } = createAsOneHarness()
+    const command = hpCommand({
+      opId: 'op_as_one_private_counterpart',
+      payload: { placementId: 'linked-token', currentHp: 0 },
+    })
+
+    const first = await execute(harness, command, 'player')
+    const replay = await execute(harness, command, 'player')
+    for (const response of [first, replay]) {
+      expect(response.map).toBeUndefined()
+      const accepted = response.result.ok && 'duplicate' in response.result
+        ? response.result.original
+        : response.result
+      expect(accepted).toMatchObject({ ok: true })
+      if (!accepted.ok) continue
+      expect(accepted.patches.some(patch => (
+        typeof patch.payload === 'object' && patch.payload !== null
+        && 'placementId' in patch.payload && patch.payload.placementId === 'mount-token'
+      ))).toBe(false)
+    }
+    expect(first.sheetUpdates?.map(update => update.slug) ?? []).toEqual(['pikachu'])
+    expect(replay.sheetUpdates ?? []).toEqual([])
+  })
+
+  it('rejects Temporary HP for effective Soulless and reconciles legacy Temporary HP and injuries', async () => {
+    const activeScene = { name: 'Battle', startedAt: 100 }
+    const harness = createHarness(baseMap({
+      activeScene,
+      temporaryHitPoints: { scene: activeScene, byPlacementId: { 'linked-token': 8 } },
+    }))
+    harness.sheets.set('pokemon:pikachu', {
+      ...pokemonSheet(),
+      sheet: {
+        ...pokemonSheet().sheet,
+        species: 'Shedinja',
+        combat: { currentHp: 1, injuries: 4, conditions: [] },
+      },
+    })
+
+    const rejected = await execute(harness, hpCommand({
+      opId: 'op_soulless_temp_reject',
+      payload: { placementId: 'linked-token', currentHp: 1, temporaryHp: 5 },
+    }))
+    expect(rejected.result).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+      message: 'Soulless creatures cannot gain Temporary HP',
+    })
+    expect(harness.mapWrites).toEqual([])
+    expect(harness.sheetWrites).toEqual([])
+
+    const reconciled = await execute(harness, hpCommand({
+      opId: 'op_soulless_reconcile',
+      payload: { placementId: 'linked-token', currentHp: 1 },
+    }))
+    expect(reconciled.result).toMatchObject({ ok: true, revision: 5 })
+    expect(harness.storedMap.temporaryHitPoints).toBeUndefined()
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet).toMatchObject({
+      combat: { currentHp: 1, injuries: 0 },
+    })
+  })
+
+  it('uses suppression-aware Soulless authority for direct Temporary HP and injuries', async () => {
+    const activeScene = { name: 'Battle', startedAt: 100 }
+    const encounter = createEmptyEncounterState()
+    const suppression = parseEncounterEffect({
+      id: 'suppress-soulless-direct-hp',
+      kind: 'capability',
+      source: { operationId: 'suppress-operation', moveId: 'test.suppress-soulless', placementId: 'unlinked-token' },
+      affected: { placementIds: ['linked-token'], sideIds: [], cells: [] },
+      createdRound: 1,
+      createdTurn: 0,
+      duration: { kind: 'scene', remaining: null },
+      stacks: 1,
+      charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null },
+      tags: ['test', 'capability-suppression'],
+      payload: { capabilityId: 'soulless', action: 'suppress' },
+      dispel: { policy: 'none', tags: [] },
+      transferPolicy: 'expire',
+      suppression: { sources: [] },
+    })
+    const harness = createHarness(baseMap({
+      activeScene,
+      encounterState: { ...encounter, effects: [suppression] },
+    }))
+    harness.sheets.set('pokemon:pikachu', {
+      ...pokemonSheet(),
+      sheet: {
+        ...pokemonSheet().sheet,
+        species: 'Shedinja',
+        combat: { currentHp: 1, injuries: 0, conditions: [] },
+      },
+    })
+
+    const response = await execute(harness, hpCommand({
+      opId: 'op_suppressed_soulless_hp',
+      payload: { placementId: 'linked-token', currentHp: 10, temporaryHp: 5, injuries: 2 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, revision: 5 })
+    expect(harness.storedMap.temporaryHitPoints?.byPlacementId['linked-token']).toBe(5)
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet).toMatchObject({ combat: { currentHp: 10, injuries: 2 } })
+  })
+
+  it('durably ends Crowned Forme on direct faint so healing cannot reactivate it', async () => {
+    const placement = baseMap().placements[0]!
+    const zacianSheet: PersistedSheet = {
+      ...pokemonSheet(),
+      sheet: {
+        ...pokemonSheet().sheet,
+        species: 'Zacian',
+        combat: { currentHp: 30, injuries: 0, conditions: [] },
+        capabilities: { other: ['Weapon Bond'] },
+      },
+    }
+    const encounter = createEmptyEncounterState()
+    const unlinkedMap = baseMap({ encounterState: encounter })
+    const weaponBond = resolveEffectiveCapabilities({
+      map: unlinkedMap,
+      placement,
+      sheet: zacianSheet.sheet as unknown as CharacterSheet,
+    }).instances.find(instance => instance.canonicalId === 'Weapon Bond' && instance.effective)!
+    const harness = createHarness(baseMap({
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'crowned-mode', actorPlacementId: placement.id,
+            capabilityInstanceId: weaponBond.instanceId, canonicalId: 'Weapon Bond', mode: 'crowned',
+            description: null, configurationId: null, activatedAt: 100, expiresAt: null,
+            sourceOperationId: 'crowned-operation',
+          }],
+        },
+      },
+    }))
+    harness.sheets.set('pokemon:pikachu', zacianSheet)
+
+    const fainted = await execute(harness, hpCommand({
+      opId: 'op_crowned_direct_faint',
+      payload: { placementId: 'linked-token', currentHp: 0 },
+    }))
+    expect(fainted.result).toMatchObject({
+      ok: true,
+      revision: 5,
+      patches: expect.arrayContaining([
+        expect.objectContaining({ type: LIVE_PLAY_PATCH_TYPES.RECONCILIATION_REQUIRED }),
+      ]),
+    })
+    expect(harness.storedMap.encounterState?.capabilityRuntime?.modes).toEqual([])
+
+    const healed = await execute(harness, hpCommand({
+      opId: 'op_crowned_direct_heal',
+      baseRevision: 5,
+      payload: { placementId: 'linked-token', currentHp: 10 },
+    }))
+    expect(healed.result).toMatchObject({ ok: true, revision: 6 })
+    expect(harness.storedMap.encounterState?.capabilityRuntime?.modes).toEqual([])
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet).toMatchObject({ combat: { currentHp: 10 } })
   })
 
   it('allows a selected player profile to grant experience to a linked Pokémon token', async () => {
