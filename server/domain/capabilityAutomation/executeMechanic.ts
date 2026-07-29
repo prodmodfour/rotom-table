@@ -601,7 +601,7 @@ const executeLetterPress = (input: ExecuteCapabilityMechanicInput): CapabilityMe
         combinedUnownCount: (prior?.combinedUnownCount ?? 1) + targets.length,
         statBonuses,
         hiddenPowers: retainedHiddenPowers,
-        sourceOperationIds: [...(prior?.sourceOperationIds ?? []), input.command.operationId],
+        sourceOperationIds: [...(prior?.sourceOperationIds ?? []).slice(-15), input.command.operationId],
       },
     }),
   }

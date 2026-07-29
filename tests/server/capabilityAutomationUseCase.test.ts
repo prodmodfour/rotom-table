@@ -409,6 +409,44 @@ describe('Capability authoritative execution use case', () => {
       .inventory?.pokemonItems).toEqual([])
   })
 
+  it('rejects a map revision race before committing a sheet-only Capability action', () => {
+    const fixture = setup()
+    let raced = false
+    const racingRepository = {
+      ...fixture.sheetRepository,
+      getByRef: (kind: Parameters<typeof fixture.sheetRepository.getByRef>[0], slug: string) => {
+        if (!raced) {
+          raced = true
+          const currentMap = fixture.mapRepository.getBySlug('arena')!
+          expect(fixture.mapRepository.applyLivePlayUpdate({
+            slug: currentMap.slug,
+            expectedRevision: currentMap.revision ?? 0,
+            nextMap: {
+              ...currentMap,
+              name: 'Concurrent map edit',
+              revision: (currentMap.revision ?? 0) + 1,
+              updatedAt: 999,
+            },
+          })).toBe('applied')
+        }
+        return fixture.sheetRepository.getByRef(kind, slug)
+      },
+    }
+
+    expect(() => executeCapabilityActionUseCase({ role: 'gm', command: fixture.command }, {
+      ...fixture.dependencies,
+      sheetRepository: racingRepository,
+    })).toThrow(/map changed before the sheet-only action/i)
+    expect(fixture.mapRepository.getBySlug('arena')).toMatchObject({
+      revision: 6,
+      name: 'Concurrent map edit',
+    })
+    expect((fixture.sheetRepository.getByRef('trainer', 'trainer')?.sheet as unknown as TrainerSheet)
+      .inventory?.pokemonItems).toEqual([])
+    expect((fixture.sheetRepository.getByRef('pokemon', 'munna')?.sheet as unknown as CharacterSheet)
+      .capabilityUsage?.entries ?? []).toEqual([])
+  })
+
   it('rejects changed operation input, stale projections, and uncontrolled player actors', () => {
     const { command, dependencies } = setup()
     executeCapabilityActionUseCase({ role: 'gm', command }, dependencies)

@@ -209,6 +209,50 @@ describe('advanced Capability mechanics', () => {
     expect(summoned.level).toBe(10)
   })
 
+  it('retains a bounded rolling window of Letter Press operation evidence', () => {
+    const actor: SheetPlacement = {
+      id: 'prime', sheetKind: 'pokemon', sheetSlug: 'prime', position: { x: 1, y: 1, z: 1 },
+    }
+    const target: SheetPlacement = {
+      id: 'next', sheetKind: 'pokemon', sheetSlug: 'next', position: { x: 2, y: 1, z: 1 },
+    }
+    const sourceOperationIds = Array.from({ length: 16 }, (_, index) => `prior-operation-${index + 1}`)
+    const prime: CharacterSheet = {
+      slug: 'prime', nickname: 'Prime Unown', species: 'Unown', level: 20,
+      capabilities: { other: ['Letter Press'] },
+      capabilityCampaignState: {
+        schemaVersion: 1,
+        storedItems: [],
+        planter: null,
+        keystoneSynchronizations: [],
+        letterPress: {
+          combinedUnownCount: 17,
+          statBonuses: { hp: 20 },
+          hiddenPowers: [],
+          sourceOperationIds,
+        },
+        marsupialPouch: null,
+      },
+    }
+    const next: CharacterSheet = {
+      slug: 'next', nickname: 'Next', species: 'Unown', level: 10,
+    }
+    const result = run({
+      canonicalId: 'Letter Press', actionId: 'combine-unown', actor,
+      map: baseMap([actor, target]), sheets: [prime, next],
+      selections: {
+        targetPlacementIds: [target.id],
+        optionId: 'stats:none;hidden-power:none',
+      },
+    })
+    const current = result.sheetMutations.find(mutation => mutation.slug === prime.slug)!.current as CharacterSheet
+    expect(current.capabilityCampaignState?.letterPress?.sourceOperationIds).toEqual([
+      ...sourceOperationIds.slice(-15),
+      'operation-combine-unown',
+    ])
+    expect(current.capabilityCampaignState?.letterPress?.combinedUnownCount).toBe(18)
+  })
+
   it('permanently combines Unown, applies four bounded stat bonuses, and suppresses Underdog', () => {
     const actor: SheetPlacement = { id: 'prime', sheetKind: 'pokemon', sheetSlug: 'prime', position: { x: 1, y: 1, z: 1 } }
     const targetIds = ['u1', 'u2', 'u3', 'u4']

@@ -606,6 +606,12 @@ export const executeCapabilityActionUseCase = (
       expectedRevision: currentRevision,
       nextMap,
     }) === 'stale') fail(409, 'Capability map changed before commit.')
+    if (!mapChanged) {
+      const currentMap = mapRepository.getBySlug(command.mapSlug)
+      if (!currentMap || normalizeRevision(currentMap.revision) !== currentRevision) {
+        fail(409, 'Capability map changed before the sheet-only action was committed.')
+      }
+    }
     for (const mutation of plannedSheets) {
       if (mutation.creating) {
         if (sheetRepository.getByRef(mutation.kind, mutation.slug)) {
