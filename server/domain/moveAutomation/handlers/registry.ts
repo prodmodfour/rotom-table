@@ -20,6 +20,7 @@ import {
   reduceMoveResolutionTrace,
 } from '../trace'
 import { ASTONISH_MOVE_HANDLER_REGISTRATION } from './astonish'
+import { CAPABILITY_WEAPON_MOVE_HANDLER_REGISTRATION } from './capabilityWeaponMoves'
 import { AREA_STAGES_207_HANDLER_REGISTRATION } from './areaStages207'
 import { DARK_VOID_MOVE_HANDLER_REGISTRATION } from './darkVoid'
 import { DYNAMIC_DAMAGE_218_225_HANDLER_REGISTRATION } from './dynamicDamage218_225'
@@ -251,6 +252,7 @@ export const createRegisteredMoveHandlerRegistry = (
 /** Add reviewed production handlers here; specs cannot register callbacks themselves. */
 export const REGISTERED_MOVE_HANDLER_REGISTRY = createRegisteredMoveHandlerRegistry([
   ASTONISH_MOVE_HANDLER_REGISTRATION,
+  CAPABILITY_WEAPON_MOVE_HANDLER_REGISTRATION,
   AREA_STAGES_207_HANDLER_REGISTRATION,
   DARK_VOID_MOVE_HANDLER_REGISTRATION,
   DYNAMIC_DAMAGE_218_225_HANDLER_REGISTRATION,

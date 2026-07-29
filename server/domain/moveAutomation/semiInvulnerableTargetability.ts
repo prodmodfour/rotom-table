@@ -34,6 +34,7 @@ export interface MoveSemiInvulnerableTargetabilityInput {
 
 export type MoveSemiInvulnerableTargetabilityReasonCode =
   | 'targetable-normal-state'
+  | 'target-excluded-capability-mode'
   | 'targetable-originating-resolution'
   | 'targetable-reviewed-exception'
   | 'target-excluded-semi-invulnerable'
@@ -52,6 +53,7 @@ export interface MoveSemiInvulnerableTargetabilityResult {
 
 export type MoveSemiInvulnerableActionReasonCode =
   | 'action-available-normal-state'
+  | 'action-blocked-capability-mode'
   | 'action-available-setup-resolution'
   | 'action-blocked-awaiting-setup-resolution'
   | 'action-blocked-carried-target'
@@ -144,6 +146,19 @@ const malformedAction = (
 /** Build immutable target/action queries over one authoritative effect snapshot. */
 export const createMoveSemiInvulnerableTargetabilityResolver = (input: {
   readonly effects: readonly EncounterEffect[]
+  /** Effective map-owned Capability modes keyed by authoritative placement ID. */
+  readonly capabilityModesByPlacement?: ReadonlyMap<string, ReadonlySet<string>>
+  /** Mount/fusion participants removed from independent play by source text. */
+  readonly capabilityCarriedPlacementIds?: ReadonlySet<string>
+  /** Participants forbidden from independent actions by a Capability state. */
+  readonly capabilityActionBlockedPlacementIds?: ReadonlySet<string>
+  /** Illusionist animation may reserve the user's Standard or Swift Action. */
+  readonly capabilityReservedStandardActionPlacementIds?: ReadonlySet<string>
+  readonly capabilityReservedSwiftActionPlacementIds?: ReadonlySet<string>
+  /** Reviewed Move range metadata determines whether a mode blocks this action. */
+  readonly actionTypeForMove?: (moveCanonicalId: string) => 'standard' | 'shift' | 'swift' | 'free' | 'full' | 'interrupt' | 'reaction'
+  /** Wired Rotom may use only the GM-selected machine Move while inside it. */
+  readonly capabilityAllowedMoveByPlacement?: ReadonlyMap<string, string>
 }): MoveSemiInvulnerableTargetabilityResolver => {
   const effects = parseEncounterEffects(
     input.effects,
@@ -170,6 +185,31 @@ export const createMoveSemiInvulnerableTargetabilityResolver = (input: {
       )
     }
 
+    if (input.capabilityCarriedPlacementIds?.has(targetPlacementId)) {
+      return deepFreezeMoveSemiInvulnerable({
+        targetable: false,
+        reasonCode: 'target-excluded-capability-mode' as const,
+        targetPlacementId,
+        state: 'carried' as const,
+        setupOperationId: null,
+        familyId: null,
+        role: null,
+        exception: null,
+      })
+    }
+    const targetCapabilityModes = input.capabilityModesByPlacement?.get(targetPlacementId)
+    if (targetCapabilityModes?.has('intangible') || targetCapabilityModes?.has('inside-machine')) {
+      return deepFreezeMoveSemiInvulnerable({
+        targetable: false,
+        reasonCode: 'target-excluded-capability-mode' as const,
+        targetPlacementId,
+        state: targetCapabilityModes.has('intangible') ? 'phased' as const : 'carried' as const,
+        setupOperationId: null,
+        familyId: null,
+        role: null,
+        exception: null,
+      })
+    }
     const targetEffect = effectForTarget(effects, targetPlacementId)
     if (targetEffect === null) return normalTargetability(targetPlacementId)
     if (targetEffect === 'ambiguous') {
@@ -229,6 +269,40 @@ export const createMoveSemiInvulnerableTargetabilityResolver = (input: {
       query.moveCanonicalId,
       'Action move canonical ID',
     )
+    if (input.capabilityCarriedPlacementIds?.has(actorPlacementId)
+      || input.capabilityActionBlockedPlacementIds?.has(actorPlacementId)) {
+      return deepFreezeMoveSemiInvulnerable({
+        available: false,
+        reasonCode: 'action-blocked-capability-mode' as const,
+        state: 'carried' as const,
+        setupOperationId: null,
+        familyId: null,
+      })
+    }
+    const capabilityModes = input.capabilityModesByPlacement?.get(actorPlacementId)
+    const wiredAllowedMove = input.capabilityAllowedMoveByPlacement?.get(actorPlacementId)
+    const wiredMoveAllowed = capabilityModes?.has('inside-machine') === true
+      && wiredAllowedMove !== undefined
+      && normalizedMoveId(wiredAllowedMove) === normalizedMoveId(moveCanonicalId)
+    const actionType = input.actionTypeForMove?.(moveCanonicalId) ?? 'standard'
+    const standardBlocked = (actionType === 'standard' || actionType === 'full') && (
+      capabilityModes?.has('intangible') === true
+      || capabilityModes?.has('shrunken') === true
+      || capabilityModes?.has('shadow-melded') === true
+      || input.capabilityReservedStandardActionPlacementIds?.has(actorPlacementId) === true
+    )
+    const swiftBlocked = actionType === 'swift'
+      && input.capabilityReservedSwiftActionPlacementIds?.has(actorPlacementId) === true
+    if (standardBlocked || swiftBlocked || capabilityModes?.has('invisible')
+      || (capabilityModes?.has('inside-machine') && !wiredMoveAllowed)) {
+      return deepFreezeMoveSemiInvulnerable({
+        available: false,
+        reasonCode: 'action-blocked-capability-mode' as const,
+        state: capabilityModes?.has('intangible') === true ? 'phased' as const : 'none' as const,
+        setupOperationId: null,
+        familyId: null,
+      })
+    }
     const actorEffect = effectForTarget(effects, actorPlacementId)
     if (actorEffect === null) {
       return deepFreezeMoveSemiInvulnerable({

@@ -1,5 +1,9 @@
 import type { AuthRole } from '#shared/auth'
 import type { AbilityClientCapability, AbilityClientCapabilityBundle } from '#shared/abilityAutomation/clientCapabilities'
+import type {
+  CapabilityClientCapabilityBundle,
+  PlacementCapabilityClientBundle,
+} from '#shared/capabilityAutomation/clientCapabilities'
 import type { AbilitySpecTargetingKind } from '#shared/abilityAutomation/spec'
 import {
   ENCOUNTER_PRESENTATION_SCHEMA_VERSION,
@@ -45,7 +49,11 @@ import { maneuverOptionsForPlacement } from '~/utils/mapTokenManeuvers'
 import { orderOptionsForPlacement } from '~/utils/mapTokenOrders'
 import { moveAutomationSemanticStatusForMenu } from '~/utils/moveAutomationSemanticStatus'
 import { moveConditionUseBlock } from '~/utils/moveConditionRestrictions'
-import { resolveCapabilities } from '~/utils/sheets/pokemonDerived'
+import { buildCapabilityClientCapabilityBundle } from '../capabilityAutomation/clientCapabilities'
+import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
+import { resolveCapabilityWeaponMoveGrants } from '../capabilityAutomation/weaponMoveGrants'
+import { capabilityWeaponMoveName } from '#shared/capabilityAutomation/weaponMoves'
+import { placementToSpawned } from '~/utils/placement'
 import { pendingEncounterInteractionsFromMoveResponses } from './pendingAdapters'
 
 export interface BuildEncounterPresentationProjectionInput {
@@ -61,6 +69,7 @@ export interface BuildEncounterPresentationProjectionInput {
 
 export interface BuildEncounterPresentationProjectionDependencies {
   readonly abilityCapabilities?: AbilityClientCapabilityBundle
+  readonly capabilityCapabilities?: CapabilityClientCapabilityBundle
   readonly pendingMoveResponses?: PendingMoveResponseWindowList | null
   readonly acceptedPresentations?: readonly AcceptedEncounterPresentation[]
 }
@@ -105,6 +114,53 @@ const presentation = (
   tone: options.tone ?? 'neutral',
 })
 
+const PUBLIC_CAPABILITY_STATE_LABELS: Readonly<Record<string, string>> = Object.freeze({
+  blended: 'Blended', glowing: 'Glowing', illusion: 'Maintaining an Illusion', inflated: 'Inflated',
+  invisible: 'Invisible', intangible: 'Intangible', 'mega-evolved': 'Mega Evolved', crowned: 'Crowned Forme',
+  'shadow-melded': 'Shadow Melded', shapechanged: 'Shapechanged', shrunken: 'Shrunken',
+  'inside-machine': 'Inside a Machine', 'zygarde-form': 'Zygarde Forme',
+  'as-one-mounted': 'Mounted as One', 'viral-fusion': 'Viral Fusion',
+  'carrying-rider': 'Carrying Rider', 'mounted-rider': 'Mounted',
+  'living-weapon': 'Engaged Living Weapon', 'living-weapon-wielder': 'Wielding Living Weapon',
+  'shadow-rider': 'Riding a Shadow', 'shadow-host': 'Carrying a Shadow Rider',
+})
+
+const capabilityPresentationStatusLabels = (map: TabletopMap, placementId: string): readonly string[] => {
+  const now = map.updatedAt ?? 0
+  const rawLabels = (map.encounterState?.capabilityRuntime?.modes ?? []).flatMap(mode => (
+    mode.actorPlacementId === placementId
+      && (mode.expiresAt === null || mode.expiresAt > now)
+      && PUBLIC_CAPABILITY_STATE_LABELS[mode.mode]
+      ? [PUBLIC_CAPABILITY_STATE_LABELS[mode.mode]!] : []
+  ))
+  const rawLinkLabels = (map.encounterState?.capabilityRuntime?.links ?? []).flatMap((link): readonly string[] => {
+    if (link.ownerPlacementId === placementId) {
+      if (link.kind === 'as-one-mount') return ['Mounted as One']
+      if (link.kind === 'viral-fusion') return ['Viral Fusion']
+      if (link.kind === 'mount-rider') return ['Carrying Rider']
+      if (link.kind === 'living-weapon') return ['Engaged Living Weapon']
+      if (link.kind === 'shadow-rider') return ['Riding a Shadow']
+    }
+    if (link.participantPlacementIds.includes(placementId)) {
+      if (link.kind === 'mount-rider') return ['Mounted']
+      if (link.kind === 'living-weapon') return ['Wielding Living Weapon']
+      if (link.kind === 'shadow-rider') return ['Carrying a Shadow Rider']
+    }
+    return []
+  })
+  const safeLabels = Array.isArray(map.metadata?.automationPresentationStates)
+    ? map.metadata.automationPresentationStates.flatMap((raw): readonly string[] => {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return []
+        const state = raw as Record<string, unknown>
+        return state.placementId === placementId
+          && typeof state.state === 'string'
+          && state.label === PUBLIC_CAPABILITY_STATE_LABELS[state.state]
+          && (state.expiresAt === null || (typeof state.expiresAt === 'number' && state.expiresAt > now))
+          ? [state.label as string] : []
+      }) : []
+  return [...new Set([...rawLabels, ...rawLinkLabels, ...safeLabels])]
+}
+
 const participantForPlacement = (
   placement: SheetPlacement,
   pokemonBySlug: ReadonlyMap<string, CharacterSheet>,
@@ -122,11 +178,12 @@ const participantForPlacement = (
     sideLabel: side?.label ?? null,
     sideAccent: side?.color && /^#[0-9a-fA-F]{6}$/.test(side.color) ? side.color : null,
     sheetKind: placement.sheetKind,
-    statusLabels: [...new Set((
-      placement.sheetKind === 'pokemon'
+    statusLabels: [...new Set([
+      ...(placement.sheetKind === 'pokemon'
         ? pokemon?.combat?.conditions ?? []
-        : trainer?.conditions ?? []
-    ).map(label => label.trim()).filter(Boolean))].slice(0, 32),
+        : trainer?.conditions ?? []),
+      ...capabilityPresentationStatusLabels(map, placement.id),
+    ].map(label => label.trim()).filter(Boolean))].slice(0, 32),
   }
 }
 
@@ -237,6 +294,8 @@ const makeOffer = (input: {
   readonly copy?: EncounterPresentationCopy
   readonly actionId: string
   readonly intentInput?: EncounterActionOffer['intent']['input']
+  readonly offerId?: string
+  readonly selectionOptions?: EncounterActionOffer['selectionOptions']
 }): EncounterActionOffer => {
   const targeting = input.targeting ?? []
   const economyReason = actionEconomyReason(input.map, input.actor.participantId, input.timing)
@@ -249,7 +308,7 @@ const makeOffer = (input: {
   const hasSpatial = targeting.some(target => target.requiresSpatialInput)
   return {
     schemaVersion: ENCOUNTER_PRESENTATION_SCHEMA_VERSION,
-    offerId: encounterPresentationStableId(
+    offerId: input.offerId ?? encounterPresentationStableId(
       'offer', input.map.slug, String(input.mapRevision), input.actor.participantId,
       input.source.sourceKind, input.source.canonicalId, input.source.instanceId ?? 'base', input.actionId,
       String(input.groupOrder), String(input.offerOrder),
@@ -272,6 +331,7 @@ const makeOffer = (input: {
       actionId: input.actionId,
       input: hasSpatial ? 'spatial' : input.intentInput ?? (targeting.some(target => target.kind !== 'none' && target.kind !== 'self') ? 'choices' : 'immediate'),
     },
+    selectionOptions: input.selectionOptions ?? [],
   }
 }
 
@@ -310,10 +370,29 @@ const moveOffers = (input: {
   readonly sheet: CharacterSheet | TrainerSheet
   readonly pokemonBySlug: ReadonlyMap<string, CharacterSheet>
   readonly trainerBySlug: ReadonlyMap<string, TrainerSheet>
-}): EncounterActionOffer[] => moveEntriesForPlacement(input.placement, {
-  pokemon: new Map(input.pokemonBySlug),
-  trainer: new Map(input.trainerBySlug),
-}, { encounterEffects: input.map.encounterState?.effects ?? [] }).map((entry, index) => {
+}): EncounterActionOffer[] => {
+  const sheets = {
+    pokemon: new Map(input.pokemonBySlug),
+    trainer: new Map(input.trainerBySlug),
+  }
+  const tokenForPlacement = (placementId: string) => {
+    const placement = input.map.placements.find(candidate => candidate.id === placementId)
+    return placement ? placementToSpawned(placement, sheets, input.map) : null
+  }
+  const token = tokenForPlacement(input.placement.id)
+  const weaponGrants = token ? resolveCapabilityWeaponMoveGrants({
+    map: input.map,
+    placement: input.placement,
+    sheet: input.sheet,
+    token,
+    pokemonSheets: sheets.pokemon,
+    trainerSheets: sheets.trainer,
+    tokenForPlacement,
+  }) : []
+  return moveEntriesForPlacement(input.placement, sheets, {
+    encounterEffects: input.map.encounterState?.effects ?? [],
+    additionalMoveEntries: weaponGrants.map(grant => grant.entry),
+  }).map((entry, index) => {
   const reference = findMove(entry.move.name)
   const name = reference?.name ?? entry.move.name
   const frequency = reference?.frequency ?? entry.move.frequency ?? null
@@ -326,12 +405,19 @@ const moveOffers = (input: {
     : (input.sheet as TrainerSheet).conditions
   const conditionBlock = moveConditionUseBlock({ name, damageClass, range, frequency }, conditions)
   const unavailable: EncounterAvailabilityReasonCode[] = [
-    ...(semantic.baseStatus === 'blocked' ? ['action.unsupported' as const] : []),
+    ...(semantic.baseStatus === 'blocked' && !capabilityWeaponMoveName(name) ? ['action.unsupported' as const] : []),
     ...(entry.moveListProjection?.available === false ? ['source.suppressed' as const] : []),
     ...(conditionBlock ? ['condition.disabled' as const] : []),
     ...(usage.unavailable ? [usage.unavailable] : []),
   ]
   const timing = timingFromText(frequency)
+  const weaponGrant = weaponGrants.find(grant => grant.canonicalId === capabilityWeaponMoveName(name))
+  const hasReach = weaponGrant?.grantsReach === true || resolveEffectiveCapabilities({
+    map: input.map, placement: input.placement, sheet: input.sheet, sheets,
+  }).instances.some(instance => instance.effective && instance.canonicalId === 'Reach')
+  const reachMeters = token && /^(?:large|huge|gigantic)$/i.test(token.size ?? '') ? 3 : 2
+  const targeting = targetingFromRange(range).map(summary => hasReach && /\bmelee\b/i.test(range ?? '')
+    ? { ...summary, rangeLabel: `${reachMeters} meters (Reach)` } : summary)
   return makeOffer({
     map: input.map,
     mapRevision: input.mapRevision,
@@ -341,16 +427,17 @@ const moveOffers = (input: {
     groupOrder: damageClass === 'Status' ? 20 : 10,
     offerOrder: index,
     timing,
-    targeting: targetingFromRange(range),
+    targeting,
     usage: usage.summary,
     availability: availabilityFromCodes(unavailable),
     copy: presentation(name, {
-      description: [reference?.type, damageClass, range].filter(Boolean).join(' · ') || null,
+      description: [reference?.type ?? entry.move.type, damageClass, range].filter(Boolean).join(' · ') || null,
       iconKey: `source.move`,
     }),
     actionId: 'move.declare',
   })
-})
+  })
+}
 
 const abilityReasonCode = (capability: AbilityClientCapability): EncounterAvailabilityReasonCode[] => {
   if (capability.status === 'ready' || capability.status === 'passive') return []
@@ -581,65 +668,261 @@ const passiveSummary = (input: {
   explanation: input.explanation ?? null,
 })
 
-const capabilityPassives = (input: {
+const capabilityParameterFact = (
+  parameters: PlacementCapabilityClientBundle['facts'][number]['parameters'],
+): EncounterDerivedFactValue | null => {
+  if (parameters.kind === 'none') return null
+  if (parameters.kind === 'value') return numberFact(parameters.value)
+  if (parameters.kind === 'jump') return textFact(`${parameters.long}/${parameters.high}`)
+  if (parameters.kind === 'rider-capacity') return numberFact(parameters.riders)
+  if (parameters.kind === 'categories') return textFact(parameters.categories.join(', '))
+  if (parameters.kind === 'qualifiers') return textFact(parameters.qualifiers.join(', '))
+  return textFact(parameters.terrains.join(', '))
+}
+
+const capabilityTargeting = (
+  contextPredicateId: string,
+): readonly EncounterTargetingSummary[] => {
+  const context = contextPredicateId.slice(contextPredicateId.lastIndexOf('.') + 1)
+  if (context === 'electronic-device' || context === 'inside-machine') return [{
+    requirementId: 'capability-device-cell', kind: 'cell', minSelections: 1, maxSelections: 1,
+    rangeLabel: null, relationshipLabel: null, requiresLineOfSight: context === 'electronic-device', requiresSpatialInput: true,
+  }]
+  if (context === 'unsynchronized-keystone-and-2tp') return [{
+    requirementId: 'capability-keystone-resource', kind: 'item', minSelections: 1, maxSelections: 1,
+    rangeLabel: null, relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: false,
+  }]
+  if (context === 'synchronized-keystone') return [{
+    requirementId: 'capability-keystone-destination', kind: 'cell', minSelections: 1, maxSelections: 1,
+    rangeLabel: '10 meters', relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: true,
+  }]
+  if (context === 'jump-destination-cell' || context === 'teleport-destination-cell' || context === 'alluring-lure-cell') return [{
+    requirementId: `capability-${context}`,
+    kind: 'cell', minSelections: 1, maxSelections: 1,
+    rangeLabel: null, relationshipLabel: null,
+    requiresLineOfSight: context === 'teleport-destination-cell', requiresSpatialInput: true,
+  }]
+  if (context === 'linked-rider-and-adjacent-cell') return [{
+    requirementId: 'capability-linked-rider', kind: 'participant', minSelections: 1, maxSelections: 1,
+    rangeLabel: null, relationshipLabel: 'Current rider', requiresLineOfSight: false, requiresSpatialInput: false,
+  }, {
+    requirementId: 'capability-adjacent-release-cell', kind: 'cell', minSelections: 1, maxSelections: 1,
+    rangeLabel: 'Adjacent', relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: true,
+  }]
+  if (context === 'visible-cell' || context === 'moving-illusion' || context === 'adjacent-release-cell') return [{
+    requirementId: `capability-${context}`, kind: 'cell', minSelections: 1, maxSelections: 1,
+    rangeLabel: context === 'adjacent-release-cell' ? 'Adjacent' : null,
+    relationshipLabel: null,
+    requiresLineOfSight: context !== 'adjacent-release-cell', requiresSpatialInput: true,
+  }]
+  if (context === 'open-space') return [{
+    requirementId: 'capability-summon-cell', kind: 'cell', minSelections: 1, maxSelections: 1,
+    rangeLabel: null, relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: true,
+  }]
+  if (context === 'plant-or-planted-berry') return [{
+    requirementId: 'capability-sprouter-plant-cell', kind: 'cell', minSelections: 0, maxSelections: 1,
+    rangeLabel: null, relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: true,
+  }, {
+    requirementId: 'capability-sprouter-berry', kind: 'item', minSelections: 0, maxSelections: 1,
+    rangeLabel: null, relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: false,
+  }]
+  if (context === 'object-in-8m' || context === 'iron-or-steel-object') return [{
+    requirementId: 'capability-object-destination', kind: 'cell', minSelections: 1, maxSelections: 1,
+    rangeLabel: context === 'object-in-8m' ? '8 meters' : null,
+    relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: true,
+  }]
+  if (context === 'zygarde-cube-and-cells' || context === 'disassemblable-zygarde'
+    || context === 'power-construct-zygarde' || context === 'zygarde-cube-and-tp') return [{
+    requirementId: 'capability-zygarde-resource', kind: 'item', minSelections: 0, maxSelections: 1,
+    rangeLabel: null, relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: false,
+  }]
+  if (context === 'close-examination-target') return [{
+    requirementId: 'capability-close-examiner', kind: 'participant', minSelections: 1, maxSelections: 1,
+    rangeLabel: 'Adjacent', relationshipLabel: 'Examiner', requiresLineOfSight: true, requiresSpatialInput: false,
+  }]
+  if (context === 'anchor-or-target-in-4m') return [{
+    requirementId: 'capability-threaded-anchor', kind: 'cell', minSelections: 0, maxSelections: 1,
+    rangeLabel: '4 meters', relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: true,
+  }, {
+    requirementId: 'capability-threaded-target', kind: 'participant', minSelections: 0, maxSelections: 1,
+    rangeLabel: '4 meters', relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: false,
+  }]
+  if (/cell|terrain|anchor|visible-cell/.test(context)) return [{
+    requirementId: 'capability-spatial-context', kind: 'area', minSelections: 1, maxSelections: 32,
+    rangeLabel: context.includes('4m') ? '4 meters' : null, relationshipLabel: null,
+    requiresLineOfSight: context.includes('visible'), requiresSpatialInput: true,
+  }]
+  if (context === 'adjacent-living-shadow' || /target|mount|rider|wielder|mind|unown|zygarde/.test(context)) return [{
+    requirementId: 'capability-target', kind: 'participant', minSelections: 1, maxSelections: 16,
+    rangeLabel: context.includes('adjacent') ? 'Adjacent' : null, relationshipLabel: null,
+    requiresLineOfSight: false, requiresSpatialInput: false,
+  }]
+  if (/item|berry|jar|weapon|seed|cube/.test(context)) return [{
+    requirementId: 'capability-item', kind: 'item', minSelections: 0, maxSelections: 1,
+    rangeLabel: null, relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: false,
+  }]
+  return [{
+    requirementId: 'capability-context', kind: 'none', minSelections: 0, maxSelections: 0,
+    rangeLabel: null, relationshipLabel: null, requiresLineOfSight: false, requiresSpatialInput: false,
+  }]
+}
+
+const boundedCapabilityDescription = (value: string | null | undefined): string | null => {
+  const normalized = value?.trim() ?? ''
+  if (!normalized) return null
+  return normalized.length <= 500 ? normalized : `${normalized.slice(0, 499).trimEnd()}…`
+}
+
+const capabilityPresentation = (input: {
   readonly map: TabletopMap
+  readonly mapRevision: number
   readonly participant: EncounterParticipantPresentationRef
-  readonly placement: SheetPlacement
-  readonly sheet: CharacterSheet | TrainerSheet
-}): EncounterPassiveSummary[] => {
-  const entries: Array<{ readonly label: string; readonly value: EncounterDerivedFactValue }> = []
-  if (input.placement.sheetKind === 'pokemon') {
-    const resolved = resolveCapabilities(input.sheet as CharacterSheet)
-    for (const row of resolved.rows) {
-      const value = typeof row.value === 'number'
-        ? numberFact(row.value)
-        : String(row.value ?? '').trim()
-          ? textFact(String(row.value).trim())
-          : null
-      if (value) entries.push({ label: row.label, value })
-    }
-    for (const other of resolved.other) entries.push({ label: other, value: booleanFact(true) })
-  }
-  else {
-    const capabilities = (input.sheet as TrainerSheet).capabilities ?? {}
-    for (const [key, raw] of Object.entries(capabilities)) {
-      if (key === 'other') continue
-      if (typeof raw === 'number' && Number.isFinite(raw)) entries.push({ label: key, value: numberFact(raw) })
-    }
-    for (const other of capabilities.other ?? []) entries.push({ label: other, value: booleanFact(true) })
-  }
-  return entries.map((entry, index) => {
-    const source = sourceRef({ kind: 'capability', canonicalId: entry.label })
+  readonly capabilityBundle: PlacementCapabilityClientBundle
+}): { readonly offers: readonly EncounterActionOffer[]; readonly passives: readonly EncounterPassiveSummary[] } => {
+  const passives = input.capabilityBundle.facts.map((fact) => {
+    const source = sourceRef({
+      kind: 'capability', canonicalId: fact.canonicalId,
+      displayName: fact.displayName, instanceId: fact.instanceId,
+    })
+    const value = fact.value !== null
+      ? numberFact(fact.value)
+      : capabilityParameterFact(fact.parameters) ?? booleanFact(true)
+    const facts: EncounterPassiveFact[] = [{
+      factId: encounterPresentationStableId('fact', input.participant.participantId, 'capability', fact.instanceId, 'effective'),
+      factKey: encounterPresentationStableId('capability', fact.canonicalId, 'effective'),
+      value,
+      label: fact.displayName,
+    }, ...fact.semanticTags.slice(0, 24).map((tag): EncounterPassiveFact => ({
+      factId: encounterPresentationStableId('fact', input.participant.participantId, 'capability', fact.instanceId, tag),
+      factKey: encounterPresentationStableId('capability-semantic', fact.canonicalId, tag),
+      value: booleanFact(true),
+      label: tag.split('-').join(' '),
+    }))]
     return passiveSummary({
       map: input.map,
       participant: input.participant,
       source,
-      facts: [{
-        factId: encounterPresentationStableId('fact', input.participant.participantId, 'capability', entry.label, String(index)),
-        factKey: encounterPresentationStableId('capability', entry.label),
-        value: entry.value,
-        label: entry.label,
-      }],
+      active: fact.active,
+      facts,
+      description: boundedCapabilityDescription(fact.contextualSummary
+        ? `${fact.contextualSummary} — ${fact.sourceEffect}`
+        : fact.sourceEffect),
       explanation: {
         schemaVersion: ENCOUNTER_PRESENTATION_SCHEMA_VERSION,
-        explanationId: encounterPresentationStableId('explanation', input.participant.participantId, 'capability', entry.label),
+        explanationId: encounterPresentationStableId('explanation', input.participant.participantId, 'capability', fact.instanceId),
         subjectId: input.participant.participantId,
-        label: `${entry.label} contribution`,
-        result: entry.value,
-        contributions: [{
-          contributionId: encounterPresentationStableId('contribution', input.participant.participantId, 'capability', entry.label, 'base'),
-          order: 0,
-          kind: 'base',
+        label: `${fact.displayName} acquisition`,
+        result: value,
+        contributions: fact.sources.slice(0, 16).map((contribution, contributionIndex) => ({
+          contributionId: encounterPresentationStableId('contribution', input.participant.participantId, fact.instanceId, String(contributionIndex)),
+          order: contributionIndex,
+          kind: contributionIndex === 0 ? 'base' as const : 'add' as const,
           source,
-          label: entry.label,
-          value: entry.value,
-          applied: true,
+          label: contribution.label,
+          value: contribution.value === null ? booleanFact(true) : numberFact(contribution.value),
+          applied: fact.active,
           private: false,
-          preventionReason: null,
-        }],
+          preventionReason: fact.active ? null : encounterAvailabilityReason('source.capability-required', {
+            sources: [source],
+            diagnosticDetail: fact.suppressionReasons.join(', ') || 'Suppressed',
+          }),
+        })),
       },
     })
   })
+  const factByInstance = new Map(input.capabilityBundle.facts.map(fact => [fact.instanceId, fact]))
+  const actionOffers = input.capabilityBundle.offers.map((offer, index) => {
+    const fact = factByInstance.get(offer.capabilityInstanceId)
+    const source = sourceRef({
+      kind: 'capability', canonicalId: offer.canonicalId,
+      displayName: fact?.displayName ?? offer.canonicalId, instanceId: offer.capabilityInstanceId,
+    })
+    const timing = timingFromText(`${offer.economy} action`)
+    const unavailableCodes: EncounterAvailabilityReasonCode[] = offer.unavailableReasonCodes.map((reason) => {
+      if (reason.startsWith('economy.standard')) return 'economy.standard-spent'
+      if (reason.startsWith('economy.shift')) return 'economy.shift-spent'
+      if (reason.startsWith('economy.swift')) return 'economy.swift-spent'
+      if (reason.startsWith('usage.daily')) return 'usage.daily-exhausted'
+      if (reason.startsWith('usage.')) return 'usage.frequency-exhausted'
+      return 'source.capability-required'
+    })
+    const group: EncounterActionOffer['group'] = offer.mechanic === 'movement-request' ? 'movement'
+      : offer.mechanic === 'shape-terrain' ? 'field'
+        : offer.mechanic === 'produce-item' || offer.mechanic === 'resolve-roll' ? 'inventory'
+          : offer.mechanic === 'campaign-time' ? 'campaign' : 'support'
+    return makeOffer({
+      map: input.map,
+      mapRevision: input.mapRevision,
+      actor: input.participant,
+      source,
+      roles: offer.economy === 'extended' ? ['activated-action', 'campaign-operation'] : ['activated-action'],
+      group,
+      groupOrder: group === 'movement' ? 25 : group === 'inventory' ? 45 : group === 'campaign' ? 80 : 35,
+      offerOrder: index,
+      timing,
+      targeting: capabilityTargeting(offer.contextPredicateId),
+      usage: {
+        frequencyLabel: offer.frequency,
+        remaining: offer.frequency === 'at-will' ? null : offer.available ? 1 : 0,
+        maximum: offer.frequency === 'at-will' ? null : 1,
+        cooldownLabel: offer.unavailableReasonCodes.some(reason => reason.includes('cooldown')) ? 'Cooldown active' : null,
+        resetLabel: offer.frequency === 'daily' ? 'Next campaign day' : offer.frequency === 'weekly' ? 'After seven campaign days' : null,
+      },
+      availability: availabilityFromCodes(unavailableCodes),
+      copy: presentation(offer.label, { description: boundedCapabilityDescription(fact?.sourceEffect), iconKey: 'source.capability' }),
+      actionId: `capability.execute:${offer.canonicalId}:${offer.actionId}`,
+      offerId: offer.offerId,
+      selectionOptions: offer.selectionOptions,
+    })
+  })
+  const privateNoticePassives = input.capabilityBundle.privateNotices.map((notice) => {
+    const source = sourceRef({
+      kind: 'capability', canonicalId: notice.canonicalId,
+      displayName: notice.label, instanceId: notice.noticeId,
+    })
+    return passiveSummary({
+      map: input.map,
+      participant: input.participant,
+      source,
+      roles: ['passive-provider'],
+      facts: [{
+        factId: encounterPresentationStableId('fact', input.participant.participantId, 'capability-notice', notice.noticeId),
+        factKey: encounterPresentationStableId('capability-notice', notice.canonicalId, notice.actionId),
+        value: textFact(notice.summary),
+        label: notice.label,
+      }],
+      description: notice.summary,
+    })
+  })
+  const adjudicationOffers = input.capabilityBundle.pendingAdjudications.map((pending, index) => {
+    const fact = factByInstance.get(pending.capabilityInstanceId)
+    const source = sourceRef({
+      kind: 'capability', canonicalId: pending.canonicalId,
+      displayName: fact?.displayName ?? pending.canonicalId,
+      instanceId: pending.capabilityInstanceId,
+    })
+    return makeOffer({
+      map: input.map,
+      mapRevision: input.mapRevision,
+      actor: input.participant,
+      source,
+      roles: ['choice-only'],
+      group: 'support',
+      groupOrder: 95,
+      offerOrder: actionOffers.length + index,
+      timing: timingFromText('free action'),
+      targeting: [],
+      usage: emptyUsage('pending GM adjudication'),
+      availability: encounterAvailable(),
+      copy: presentation(`Resolve ${pending.canonicalId}: ${pending.actionId.split('-').join(' ')}`, {
+        description: 'Review and retain a bounded source-authorized GM decision.',
+        iconKey: 'source.capability',
+      }),
+      actionId: `capability.adjudication:${pending.requestId}`,
+      offerId: encounterPresentationStableId('capability-adjudication', input.map.slug, String(input.mapRevision), pending.requestId),
+    })
+  })
+  return { offers: [...actionOffers, ...adjudicationOffers], passives: [...passives, ...privateNoticePassives] }
 }
 
 const frequencyRoles = (
@@ -917,6 +1200,18 @@ export const buildEncounterPresentationProjection = (
     participants,
     capabilities: abilityCapabilities,
   })
+  const capabilityCapabilities = dependencies.capabilityCapabilities ?? buildCapabilityClientCapabilityBundle({
+    role: input.role,
+    playerProfile: input.playerProfile,
+    map: input.map,
+    mapRevision: input.mapRevision,
+    pokemonSheets: input.pokemonSheets,
+    trainerSheets: input.trainerSheets,
+    now: input.generatedAt ?? input.map.updatedAt ?? 0,
+  })
+  const capabilityByPlacement = new Map(
+    capabilityCapabilities.placements.map(bundle => [bundle.placementId, bundle]),
+  )
   const offers: EncounterActionOffer[] = [...ability.offers]
   const passives: EncounterPassiveSummary[] = [...ability.passives]
   const affordances: EncounterContextualAffordance[] = []
@@ -951,7 +1246,17 @@ export const buildEncounterPresentationProjection = (
       actor,
       trainerBySlug,
     }))
-    passives.push(...capabilityPassives({ map: input.map, participant: actor, placement, sheet }))
+    const capabilityBundle = capabilityByPlacement.get(placement.id)
+    if (capabilityBundle) {
+      const capability = capabilityPresentation({
+        map: input.map,
+        mapRevision: input.mapRevision,
+        participant: actor,
+        capabilityBundle,
+      })
+      offers.push(...capability.offers)
+      passives.push(...capability.passives)
+    }
     const featureEdge = featureAndEdgePresentation({
       map: input.map,
       mapRevision: input.mapRevision,

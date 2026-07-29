@@ -398,6 +398,44 @@ describe('applySendOutPokemonCommandUseCase', () => {
     expect(ownershipStore.get(sessionId)?.revision).toBe(parseSessionRevision(0))
   })
 
+  it('derives live send-out range from the Trainer Throwing Range formula', () => {
+    const destination = { x: 8, y: 0, z: 1 }
+    const command = createCommand({
+      opId: parseOpId('op_sendoutdynamicrange'),
+      payload: {
+        trainerTokenId: 'token-ash', pokemonSlug: 'pikachu', tokenId: 'token-pikachu-1', position: destination,
+      },
+    })
+    const defaultResult = applySendOutPokemonCommandUseCase({ command }, {
+      env: enabledEnv,
+      store: createStoreWithState(createState()),
+      operationTracker: createInMemorySessionOperationTracker(),
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter([]),
+      resolveSheets,
+      resolveFootprint,
+    })
+    expect(defaultResult.status).toBe('rejected')
+
+    const adeptTrainer: TrainerSheet = {
+      ...trainerSheet,
+      skillBackground: { adept: 'athletics' },
+    }
+    const adeptResult = applySendOutPokemonCommandUseCase({ command: {
+      ...command,
+      opId: parseOpId('op_sendoutdynamicadept'),
+    } }, {
+      env: enabledEnv,
+      store: createStoreWithState(createState()),
+      operationTracker: createInMemorySessionOperationTracker(),
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter([]),
+      resolveSheets: () => ({ trainerSheet: adeptTrainer, pokemonSheet }),
+      resolveFootprint,
+    })
+    expect(adeptResult.status).toBe('accepted')
+  })
+
   it('rejects out-of-range destinations, tracks duplicate retries, and rolls back on snapshot failure', () => {
     const rangeStore = createStoreWithState(createState())
     const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []

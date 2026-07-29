@@ -31,10 +31,8 @@ import type { SheetPlacement, TabletopMapV2 } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { canPlacePokemon } from '~/utils/gridPlacement'
 import type { GridFootprint, PositionedGridFootprint } from '~/utils/gridGeometry'
-import {
-  isSendOutPositionWithinThrowRange,
-  POKEBALL_THROW_RANGE_SQUARES,
-} from '~/utils/mapTokenSendOut'
+import { isSendOutPositionWithinThrowRange } from '~/utils/mapTokenSendOut'
+import { trainerThrowingRangeMeters } from '~/utils/pokeballCapture'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { DEFAULT_TOKEN_FACING_DIRECTION, tokenFacingStoresLegacyTurned } from '~/utils/tokenFacing'
 import { buildVoxelOccupancy } from '~/utils/voxelOccupancy'
@@ -718,7 +716,7 @@ const validateSendOutDestination = (
   sheets: SendOutPokemonResolvedSheets,
   processedAt: string,
   resolveFootprint: SendOutPokemonFootprintResolver,
-  throwRange: number,
+  throwRange: number | undefined,
 ): SendOutPokemonRejectedResult | undefined => {
   const lookup = sheetLookupFor(target, sheets)
   const trainerFootprint = positionedFootprintForPlacement(
@@ -786,11 +784,12 @@ const validateSendOutDestination = (
     )
   }
 
+  const authoritativeThrowRange = throwRange ?? trainerThrowingRangeMeters(sheets.trainerSheet)
   const withinRange = isSendOutPositionWithinThrowRange({
     trainer: { ...trainerFootprint, clearance: trainerFootprint.clearance ?? 1 },
     pokemon: { ...pokemonFootprint, clearance: pokemonFootprint.clearance ?? 1 },
     position: target.placement.position,
-    range: throwRange,
+    range: authoritativeThrowRange,
   })
   if (!withinRange) {
     return createConflictRejection(
@@ -867,8 +866,8 @@ const validateEnvelopeForSendOutPokemon = (commandInput: unknown): SendOutPokemo
   )
 }
 
-const normalizedThrowRange = (range: number | undefined): number => {
-  if (range === undefined) return POKEBALL_THROW_RANGE_SQUARES
+const normalizedThrowRange = (range: number | undefined): number | undefined => {
+  if (range === undefined) return undefined
   if (!Number.isSafeInteger(range) || range < 0) {
     throw new ApplySendOutPokemonCommandUseCaseError(
       500,

@@ -79,6 +79,9 @@ if have npm; then
   run_cmd npm run check:ability-automation-budgets
   run_cmd npm run check:ability-automation-plan
 
+  pp_section "Capability automation metadata"
+  run_cmd npm run check:capability-automation-complete
+
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation
 

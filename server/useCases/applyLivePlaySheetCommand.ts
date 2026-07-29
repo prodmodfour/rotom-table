@@ -21,6 +21,7 @@ import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { SheetKind } from '#shared/sheets'
+import { createEmptyCapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
@@ -69,6 +70,14 @@ import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 import { resolveAa062BerserkDirectTrigger } from '../domain/abilityAutomation/mechanics/aa062TriggeredIntegration'
+import { applyCapabilityEvolutionTransition } from '../domain/capabilityAutomation/evolutionProviders'
+import {
+  marsupialRelationshipClaimedSlugs,
+  resolveMarsupialRelationship,
+  withoutMarsupialPouchState,
+  withoutMarsupialTransientMapState,
+  type ValidMarsupialRelationship,
+} from '../domain/capabilityAutomation/marsupialRelationship'
 
 export class LivePlaySheetCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -111,9 +120,23 @@ export interface LivePlaySheetCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
+    & Partial<Pick<SheetRepository<Record<string, unknown>>, 'list'>>
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
+}
+
+interface AdditionalLivePlaySheetWrite {
+  readonly sheet: PersistedSheet
+  readonly nextSheet: Record<string, unknown>
+}
+
+interface ResolvedMarsupialRelationshipContext {
+  readonly resolution: ValidMarsupialRelationship
+  readonly motherSheet: PersistedSheet
+  readonly babySheet: PersistedSheet
+  readonly motherPlacement: SheetPlacement | null
+  readonly babyPlacement: SheetPlacement | null
 }
 
 interface ResolvedLivePlaySheetCommandContext {
@@ -125,6 +148,9 @@ interface ResolvedLivePlaySheetCommandContext {
   readonly linkedTrainerSheets: readonly ServerTokenControlLinkedTrainerSheet[]
   readonly nextSheet?: Record<string, unknown>
   readonly sheetUpdate?: LivePlaySheetCommandSheetUpdate
+  readonly marsupialRelationship?: ResolvedMarsupialRelationshipContext
+  readonly additionalSheetWrites?: readonly AdditionalLivePlaySheetWrite[]
+  readonly additionalSheetUpdates?: readonly LivePlaySheetCommandSheetUpdate[]
 }
 
 interface HpValueState {
@@ -386,6 +412,44 @@ const resolveContext = async (
     throw new LivePlaySheetCommandUseCaseError(404, `Sheet ${placement.sheetKind}/${placement.sheetSlug} not found`)
   }
 
+  let marsupialRelationship: ResolvedLivePlaySheetCommandContext['marsupialRelationship']
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE && placement.sheetKind === 'pokemon') {
+    const persistedBySlug = new Map<string, PersistedSheet>([[sheet.slug, sheet]])
+    const subject = { ...sheet.sheet, slug: sheet.slug } as unknown as CharacterSheet
+    const candidateSlugs = new Set([
+      ...marsupialRelationshipClaimedSlugs(subject),
+      ...map.placements.filter(candidate => candidate.sheetKind === 'pokemon').map(candidate => candidate.sheetSlug),
+      ...(dependencies.sheetRepository.list?.('pokemon').map(candidate => candidate.slug) ?? []),
+    ])
+    for (const slug of candidateSlugs) {
+      if (persistedBySlug.has(slug)) continue
+      const candidate = await dependencies.sheetRepository.getByRef('pokemon', slug)
+      if (candidate) persistedBySlug.set(slug, candidate)
+    }
+    const pokemonBySlug = new Map([...persistedBySlug].map(([slug, persisted]) => [
+      slug,
+      { ...persisted.sheet, slug } as unknown as CharacterSheet,
+    ]))
+    const resolution = resolveMarsupialRelationship({ subjectSlug: sheet.slug, pokemonBySlug })
+    if (resolution.status === 'corrupt') rejectLivePlayCommand('conflict', resolution.message)
+    if (resolution.status === 'valid') {
+      const motherSheet = persistedBySlug.get(resolution.pouch.motherSheetSlug)
+      const babySheet = persistedBySlug.get(resolution.pouch.babySheetSlug)
+      if (!motherSheet || !babySheet) rejectLivePlayCommand('conflict', 'The authoritative Marsupial pair is unavailable')
+      marsupialRelationship = {
+        resolution,
+        motherSheet: motherSheet!,
+        babySheet: babySheet!,
+        motherPlacement: map.placements.find(candidate => (
+          candidate.sheetKind === 'pokemon' && candidate.sheetSlug === resolution.pouch.motherSheetSlug
+        )) ?? null,
+        babyPlacement: map.placements.find(candidate => (
+          candidate.sheetKind === 'pokemon' && candidate.sheetSlug === resolution.pouch.babySheetSlug
+        )) ?? null,
+      }
+    }
+  }
+
   const mapPath = mapPathForDocument(map)
   return {
     mapPath,
@@ -394,6 +458,7 @@ const resolveContext = async (
     placement,
     sheet,
     linkedTrainerSheets: await linkedTrainerSheetsForActor(actor, dependencies),
+    ...(marsupialRelationship ? { marsupialRelationship } : {}),
   }
 }
 
@@ -664,17 +729,91 @@ const applyGrantExperience = (
   }
 
   const original = context.sheet.sheet as unknown as CharacterSheet
+  const relationshipContext = context.marsupialRelationship
+  const relationship = relationshipContext?.resolution
+  const targetIsMother = relationship?.subjectRole === 'mother'
+  const shareWithBaby = targetIsMother && relationship.pouch.experienceSharePercent === 20
+  const babyAmount = shareWithBaby ? Math.floor(payload.amount * 0.2) : 0
+  const targetAmount = payload.amount - babyAmount
   const previous = experienceSnapshotForSheet(original)
-  const updated = applyExperienceToSheet(context.placement.sheetKind, original, payload.amount) as CharacterSheet
+  let updated = applyCapabilityEvolutionTransition(
+    original,
+    applyExperienceToSheet('pokemon', original, targetAmount) as CharacterSheet,
+    relationship ? { marsupialRelationship: relationship } : {},
+  ).sheet
   const current = experienceSnapshotForSheet(updated)
-  if (sameJsonValue(previous, current)) return null
 
+  const marsupialSheetPayload = (
+    next: CharacterSheet,
+    persisted: PersistedSheet,
+  ): Record<string, unknown> => {
+    const payload = sheetPayloadForPersistence(next, persisted.slug, updatedAt)
+    if (next.capabilityCampaignState === undefined
+      && (persisted.sheet as unknown as CharacterSheet).capabilityCampaignState !== undefined) {
+      payload.capabilityCampaignState = createEmptyCapabilityCampaignState()
+    }
+    return payload
+  }
+  const additionalWrites = new Map<string, AdditionalLivePlaySheetWrite>()
+  const addWrite = (persisted: PersistedSheet, next: CharacterSheet): void => {
+    if (persisted.slug === context.sheet.slug) return
+    additionalWrites.set(persisted.slug, {
+      sheet: persisted,
+      nextSheet: marsupialSheetPayload(next, persisted),
+    })
+  }
+
+  let babyUpdated: CharacterSheet | null = null
+  if (shareWithBaby && relationshipContext && babyAmount > 0) {
+    const babyOriginal = relationshipContext.babySheet.sheet as unknown as CharacterSheet
+    babyUpdated = applyCapabilityEvolutionTransition(
+      babyOriginal,
+      applyExperienceToSheet('pokemon', babyOriginal, babyAmount) as CharacterSheet,
+      { marsupialRelationship: relationshipContext.resolution },
+    ).sheet
+    addWrite(relationshipContext.babySheet, babyUpdated)
+  }
+
+  let relationshipEnded = false
+  if (relationshipContext) {
+    const babyOriginal = relationshipContext.babySheet.sheet as unknown as CharacterSheet
+    const resolvedRelationship = relationshipContext.resolution
+    const resultingBaby = context.sheet.slug === resolvedRelationship.pouch.babySheetSlug
+      ? updated
+      : babyUpdated ?? babyOriginal
+    relationshipEnded = babyOriginal.babyTemplate === true && resultingBaby.babyTemplate === false
+    if (relationshipEnded) {
+      if (context.sheet.slug === resolvedRelationship.pouch.motherSheetSlug
+        || context.sheet.slug === resolvedRelationship.pouch.babySheetSlug) {
+        updated = withoutMarsupialPouchState(updated)
+      }
+      const motherNext = context.sheet.slug === resolvedRelationship.pouch.motherSheetSlug
+        ? updated
+        : withoutMarsupialPouchState(relationshipContext.motherSheet.sheet as unknown as CharacterSheet)
+      const babyNext = context.sheet.slug === resolvedRelationship.pouch.babySheetSlug
+        ? updated
+        : withoutMarsupialPouchState(babyUpdated ?? babyOriginal)
+      addWrite(relationshipContext.motherSheet, motherNext)
+      addWrite(relationshipContext.babySheet, babyNext)
+    }
+  }
+
+  const additionalSheetWrites = [...additionalWrites.values()]
+  if (sameJsonValue(previous, current) && additionalSheetWrites.length === 0 && !relationshipEnded) return null
   const nextSheetRevision = nextRevision(context.sheet.revision)
   const revision = nextRevision(currentRevision)
+  const relationshipReconciledMap = relationshipEnded && relationship
+    ? withoutMarsupialTransientMapState(context.map, relationship)
+    : context.map
   return {
     ...context,
-    map: { ...context.map, revision, updatedAt },
-    nextSheet: sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt),
+    map: {
+      ...relationshipReconciledMap,
+      revision,
+      updatedAt,
+    },
+    nextSheet: marsupialSheetPayload(updated, context.sheet),
+    ...(additionalSheetWrites.length ? { additionalSheetWrites } : {}),
     sheetUpdate: {
       kind: context.sheet.kind,
       slug: context.sheet.slug,
@@ -781,14 +920,16 @@ const responseFromContext = (
   context: ResolvedLivePlaySheetCommandContext | null,
   role: AuthRole,
 ): LivePlaySheetCommandResponse => {
-  const sheetUpdates = context?.sheetUpdate ? [context.sheetUpdate] : undefined
+  const sheetUpdates = context
+    ? [...(context.sheetUpdate ? [context.sheetUpdate] : []), ...(context.additionalSheetUpdates ?? [])]
+    : []
   return {
     result,
     ...(context ? {
       path: context.relativePath,
       map: context.map,
       placement: context.placement,
-      ...(sheetUpdates ? {
+      ...(sheetUpdates.length ? {
         sheetUpdates: role === 'player'
           ? (redactSheetUpdatesForPlayer(sheetUpdates) ?? [])
           : sheetUpdates,
@@ -849,6 +990,25 @@ export const executeLivePlaySheetCommandUseCase = async (
       })) {
         throw new LivePlaySheetCommandUseCaseError(403, controlDeniedMessage(actor.role, actor.playerProfile))
       }
+      if (actor.role === 'player' && map.marsupialRelationship) {
+        const relationship = map.marsupialRelationship
+        const counterpartSlug = map.sheet.slug === relationship.resolution.pouch.motherSheetSlug
+          ? relationship.resolution.pouch.babySheetSlug
+          : relationship.resolution.pouch.motherSheetSlug
+        const counterpartPlacement = relationship.motherPlacement?.sheetSlug === counterpartSlug
+          ? relationship.motherPlacement
+          : relationship.babyPlacement?.sheetSlug === counterpartSlug
+            ? relationship.babyPlacement
+            : { ...map.placement, id: `marsupial-counterpart:${counterpartSlug}`, sheetKind: 'pokemon' as const, sheetSlug: counterpartSlug }
+        if (!actorCanControlMapPlacement({
+          role: actor.role,
+          profile: actor.playerProfile,
+          placement: counterpartPlacement,
+          linkedTrainerSheets: map.linkedTrainerSheets,
+        })) {
+          throw new LivePlaySheetCommandUseCaseError(403, 'The selected player profile must control both Marsupial sheets')
+        }
+      }
     },
     apply: ({ command, map, currentRevision }) => {
       const nextContext = applySheetCommand(command, map, currentRevision, deps)
@@ -903,15 +1063,31 @@ export const executeLivePlaySheetCommandUseCase = async (
             throw new LivePlaySheetCommandUseCaseError(409, `Sheet ${nextMap.sheet.kind}/${nextMap.sheet.slug} changed before the live-play command could be persisted`)
           }
         }
+        for (const write of nextMap.additionalSheetWrites ?? []) {
+          const result = deps.sheetRepository.applyLivePlayUpdate({
+            kind: write.sheet.kind,
+            slug: write.sheet.slug,
+            expectedRevision: write.sheet.revision,
+            nextSheet: write.nextSheet,
+          })
+          if (result === 'stale') {
+            throw new LivePlaySheetCommandUseCaseError(409, `Sheet ${write.sheet.kind}/${write.sheet.slug} changed before the Marsupial Experience share could be persisted`)
+          }
+        }
 
         const authoritativeSheet = deps.sheetRepository.getByRef(nextMap.sheet.kind, nextMap.sheet.slug)
         if (!authoritativeSheet) {
           throw new LivePlaySheetCommandUseCaseError(404, `Sheet ${nextMap.sheet.kind}/${nextMap.sheet.slug} not found after live-play command`)
         }
         const sheetUpdate = nextSheet ? sheetUpdateFromPersisted(authoritativeSheet) : undefined
+        const additionalSheetUpdates = (nextMap.additionalSheetWrites ?? []).map((write) => {
+          const stored = deps.sheetRepository.getByRef(write.sheet.kind, write.sheet.slug)
+          if (!stored) throw new LivePlaySheetCommandUseCaseError(404, `Sheet ${write.sheet.kind}/${write.sheet.slug} not found after Marsupial Experience sharing`)
+          return sheetUpdateFromPersisted(stored)
+        })
         recordRealtimeEvents(livePlaySheetUpdateRealtimeAppendInputs({
           command,
-          updates: sheetUpdate ? [sheetUpdate] : [],
+          updates: [...(sheetUpdate ? [sheetUpdate] : []), ...additionalSheetUpdates],
           clientId: actor.clientId,
         }))
         saveOpResult()
@@ -926,6 +1102,7 @@ export const executeLivePlaySheetCommandUseCase = async (
           placement: authoritativePlacement,
           sheet: authoritativeSheet,
           ...(sheetUpdate ? { sheetUpdate } : {}),
+          ...(additionalSheetUpdates.length ? { additionalSheetUpdates } : {}),
         }
       })
     },

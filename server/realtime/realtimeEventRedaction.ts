@@ -7,7 +7,16 @@ import { isSheetKind } from '#shared/sheets'
 import { redactResolveMovePatchesForObserver } from '../utils/moveResultPrivacy'
 import { redactSheetRecordForPlayer } from '../utils/sheetPrivacy'
 import { redactShopRecordForPlayer, redactUnknownShopRecordForPlayer } from '../utils/shopPrivacy'
-import type { RealtimeDeliveryPrincipal } from './realtimeEventAccessPolicy'
+import type {
+  RealtimeDeliveryPrincipal,
+  RealtimeEventAccessDependencies,
+} from './realtimeEventAccessPolicy'
+import { projectAbilityAutomationMapForPlayer } from '../domain/abilityAutomation/clientStateProjection'
+import { projectCapabilityAutomationMapForPlayer } from '../domain/capabilityAutomation/clientStateProjection'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import { reconcileCapabilityRuntimeSourceLoss } from '../domain/capabilityAutomation/sourceLoss'
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -41,6 +50,43 @@ const redactedShopRealtimeEvent = (
       document: redactShopRecordForPlayer(data.document),
     },
   }
+}
+
+const redactedMapRealtimeEvent = (
+  event: Record<string, unknown>,
+  data: Record<string, unknown>,
+  dependencies?: RealtimeEventAccessDependencies,
+): unknown => {
+  if (typeof data.slug !== 'string' || !isRecord(data.document)
+    || data.document.slug !== data.slug || !Array.isArray(data.document.placements)
+    || !Array.isArray(data.document.voxels)) return null
+  const rawMap = data.document as unknown as TabletopMap
+  const pokemon = new Map<string, CharacterSheet>()
+  const trainer = new Map<string, TrainerSheet>()
+  const hasCompleteSheetContext = Boolean(dependencies) && rawMap.placements.every((placement) => {
+    const persisted = dependencies?.getSheet(placement.sheetKind, placement.sheetSlug)
+    if (!persisted || !isRecord(persisted.sheet)) return false
+    const sheet = {
+      ...persisted.sheet,
+      slug: persisted.slug,
+      ...(typeof persisted.revision === 'number' ? { revision: persisted.revision } : {}),
+    }
+    if (placement.sheetKind === 'pokemon') pokemon.set(placement.sheetSlug, sheet as CharacterSheet)
+    else trainer.set(placement.sheetSlug, sheet as TrainerSheet)
+    return true
+  })
+  // A coupled participant can be intentionally absent from the public map.
+  // Without every placement sheet we cannot prove that a source-owned link is
+  // still effective, so suppress this realtime document instead of either
+  // exposing a carried participant or trusting stale raw runtime authority.
+  if (!hasCompleteSheetContext) return null
+  const sheets = { pokemon, trainer }
+  const reconciledMap = reconcileCapabilityRuntimeSourceLoss({ map: rawMap, sheets })
+  const document = projectCapabilityAutomationMapForPlayer(
+    projectAbilityAutomationMapForPlayer(reconciledMap),
+    sheets,
+  )
+  return { ...event, data: { ...data, document } }
 }
 
 const redactedShopCheckoutResultRealtimeEvent = (
@@ -88,12 +134,33 @@ const redactedResolveMoveRealtimeEvent = (
 export const redactRealtimeEventForPrincipal = (
   event: unknown,
   principal: RealtimeDeliveryPrincipal,
+  dependencies?: RealtimeEventAccessDependencies,
 ): unknown => {
   if (principal.role !== 'player' || !isRecord(event)) return event
 
   const observerSafeEvent = redactedResolveMoveRealtimeEvent(event)
   const data = observerSafeEvent.data
   if (!isRecord(data)) return observerSafeEvent
+
+  const document = isRecord(data.document) ? data.document : null
+  const isWrappedMapDocument = document !== null
+    && (Object.hasOwn(document, 'placements') || Object.hasOwn(document, 'voxels'))
+  if (isWrappedMapDocument) return redactedMapRealtimeEvent(observerSafeEvent, data, dependencies)
+
+  // Durable map update events carry the map directly in `data`; library
+  // mutation events may wrap it as `data.document`. Normalize only for the
+  // projection call, then restore the original event shape for clients.
+  const isDirectMapDocument = typeof data.slug === 'string'
+    && Array.isArray(data.placements)
+    && Array.isArray(data.voxels)
+  if (isDirectMapDocument) {
+    const projected = redactedMapRealtimeEvent(observerSafeEvent, {
+      slug: data.slug,
+      document: data,
+    }, dependencies)
+    if (!isRecord(projected) || !isRecord(projected.data) || !isRecord(projected.data.document)) return null
+    return { ...projected, data: projected.data.document }
+  }
 
   return redactedSheetRealtimeEvent(observerSafeEvent, data)
     ?? redactedShopRealtimeEvent(observerSafeEvent, data)

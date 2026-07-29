@@ -1,4 +1,11 @@
 import type { CampaignNextDayResult } from '#shared/campaign'
+import { advanceCapabilityUsageDay } from '#shared/capabilityAutomation/state'
+import {
+  capabilityCampaignStateHasContent,
+  juicerHeldItemIsLegacyShellMirror,
+  materializeJuicerCampaignStateAtTime,
+  reconcileJuicerHeldItemCustody,
+} from '#shared/capabilityAutomation/campaignState'
 import { nextRevision } from '#shared/sessionRevisions'
 import type { SheetKind } from '#shared/sheets'
 import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
@@ -6,6 +13,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { deepCloneJson } from '~/utils/serialization'
 import { stablePersistableSheetJson } from '~/utils/sheets/persistence'
+import { pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
 import {
   addHealingMutationSummary,
   applyPokemonNextDay,
@@ -128,6 +136,44 @@ const planSheet = <TSheet extends { slug: string }>(
       entries: [],
     }
   }
+  if (Object.hasOwn(candidate, 'capabilityUsage')) {
+    const transitioned = advanceCapabilityUsageDay(
+      (candidate as Record<string, unknown>).capabilityUsage as Parameters<typeof advanceCapabilityUsageDay>[0],
+      timestamp,
+    )
+    if (transitioned) (candidate as Record<string, unknown>).capabilityUsage = transitioned
+    else delete (candidate as Record<string, unknown>).capabilityUsage
+  }
+  if (kind === 'pokemon') {
+    const pokemon = candidate as unknown as CharacterSheet
+    const heldName = pokemon.items?.held?.trim() ?? ''
+    // Enrollment starts only from this server-owned custody observation (or an
+    // earlier mutation hook). Unrelated sheet updatedAt values never prove how
+    // long a same-named Berry has been continuously held.
+    const reconciled = reconcileJuicerHeldItemCustody({
+      value: pokemon.capabilityCampaignState,
+      sheetSlug: pokemon.slug,
+      heldItemName: heldName,
+      hasJuicer: pokemon.species.trim().toLocaleLowerCase('en-US') === 'shuckle'
+        && pokemonHasResolvedCapability(pokemon, 'Juicer'),
+      now: timestamp,
+      sourceOperationId: `campaign-day:${timestamp}`,
+    })
+    const materialized = materializeJuicerCampaignStateAtTime({
+      value: reconciled,
+      heldItemName: heldName,
+      now: timestamp,
+    })
+    if (capabilityCampaignStateHasContent(materialized.state)) {
+      pokemon.capabilityCampaignState = materialized.state
+      if (materialized.heldItemName !== heldName
+        || juicerHeldItemIsLegacyShellMirror(materialized.state, heldName)) {
+        // A converted shell item is independent from the ordinary held slot.
+        pokemon.items = { ...(pokemon.items ?? {}), held: '' }
+      }
+    }
+    else delete pokemon.capabilityCampaignState
+  }
   if (kind === 'pokemon' && Object.hasOwn(candidate, 'berryStorage')) {
     delete (candidate as Record<string, unknown>).berryStorage
   }
@@ -235,6 +281,7 @@ export const advanceCampaignDayUseCase = (
             slug: plan.slug,
             expectedRevision: plan.expectedRevision,
             nextSheet: plan.nextSheet,
+            sourceOperationId: `campaign-day:${timestamp}`,
           })
           if (result === 'stale') throw new Error(`${plan.kind} sheet ${plan.slug} changed during campaign-day advancement`)
         }

@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "source": "books/markdown/core/06-playing-the-game.md",
+  "units": "lb",
+  "rows": [
+    {
+      "power": 1,
+      "heavyMinimum": 2,
+      "heavyMaximum": 5,
+      "staggeringMaximum": 10,
+      "dragMaximum": 20
+    },
+    {
+      "power": 2,
+      "heavyMinimum": 20,
+      "heavyMaximum": 30,
+      "staggeringMaximum": 60,
+      "dragMaximum": 120
+    },
+    {
+      "power": 3,
+      "heavyMinimum": 35,
+      "heavyMaximum": 50,
+      "staggeringMaximum": 100,
+      "dragMaximum": 200
+    },
+    {
+      "power": 4,
+      "heavyMinimum": 45,
+      "heavyMaximum": 70,
+      "staggeringMaximum": 140,
+      "dragMaximum": 280
+    },
+    {
+      "power": 5,
+      "heavyMinimum": 60,
+      "heavyMaximum": 90,
+      "staggeringMaximum": 180,
+      "dragMaximum": 360
+    },
+    {
+      "power": 6,
+      "heavyMinimum": 75,
+      "heavyMaximum": 115,
+      "staggeringMaximum": 230,
+      "dragMaximum": 460
+    },
+    {
+      "power": 7,
+      "heavyMinimum": 100,
+      "heavyMaximum": 140,
+      "staggeringMaximum": 300,
+      "dragMaximum": 600
+    },
+    {
+      "power": 8,
+      "heavyMinimum": 120,
+      "heavyMaximum": 190,
+      "staggeringMaximum": 380,
+      "dragMaximum": 760
+    },
+    {
+      "power": 9,
+      "heavyMinimum": 150,
+      "heavyMaximum": 240,
+      "staggeringMaximum": 480,
+      "dragMaximum": 960
+    },
+    {
+      "power": 10,
+      "heavyMinimum": 200,
+      "heavyMaximum": 300,
+      "staggeringMaximum": 600,
+      "dragMaximum": 1200
+    },
+    {
+      "power": 11,
+      "heavyMinimum": 250,
+      "heavyMaximum": 375,
+      "staggeringMaximum": 750,
+      "dragMaximum": 1500
+    },
+    {
+      "power": 12,
+      "heavyMinimum": 350,
+      "heavyMaximum": 450,
+      "staggeringMaximum": 900,
+      "dragMaximum": 1800
+    },
+    {
+      "power": 13,
+      "heavyMinimum": 450,
+      "heavyMaximum": 525,
+      "staggeringMaximum": 1050,
+      "dragMaximum": 2100
+    },
+    {
+      "power": 14,
+      "heavyMinimum": 500,
+      "heavyMaximum": 600,
+      "staggeringMaximum": 1200,
+      "dragMaximum": 2400
+    },
+    {
+      "power": 15,
+      "heavyMinimum": 550,
+      "heavyMaximum": 675,
+      "staggeringMaximum": 1350,
+      "dragMaximum": 2700
+    },
+    {
+      "power": 16,
+      "heavyMinimum": 600,
+      "heavyMaximum": 750,
+      "staggeringMaximum": 1500,
+      "dragMaximum": 3000
+    }
+  ]
+}

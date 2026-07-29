@@ -1,5 +1,5 @@
 import { getPokedexEntry } from '~~/data/characterSheets'
-import { findMove } from '~~/data/ptuReference'
+import { findMove, letterPressHiddenPowerSourceSlug } from '~~/data/ptuReference'
 import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { reviewedAbilityConnectionMoveNames } from '#shared/abilityAutomation/connections'
 import {
@@ -48,6 +48,8 @@ export type TokenSheetMove = CharacterSheetMove | TrainerMove
 export interface TokenSheetMoveEntry {
   move: TokenSheetMove
   automatic: boolean
+  /** Capability-owned weapon Moves explicitly never receive STAB. */
+  suppressStab?: boolean
   /** Shared encounter-local projection consumed by both menu and server legality. */
   moveListProjection?: EncounterMoveListProjectionEntry
 }
@@ -199,6 +201,8 @@ export interface MoveEntriesForPlacementOptions {
   readonly abilityConnectionNames?: readonly string[]
   /** Additional server-reviewed temporary or form-owned move names. */
   readonly additionalMoveNames?: readonly string[]
+  /** Complete server-reviewed supplemental Moves that are not Pokémon Move catalog rows. */
+  readonly additionalMoveEntries?: readonly TokenSheetMoveEntry[]
 }
 
 const temporaryAbilityMoveNames = (
@@ -234,6 +238,7 @@ const projectTokenMoveEntries = (
   return {
     move: base?.move ?? { name: projection.canonicalMoveId },
     automatic: base?.automatic ?? false,
+    ...(base?.suppressStab ? { suppressStab: true } : {}),
     moveListProjection: projection,
   }
 })
@@ -244,7 +249,7 @@ export const moveEntriesForPlacement = (
   options: MoveEntriesForPlacementOptions = {},
 ): TokenSheetMoveEntry[] => {
   if (!placement) return []
-  const entries = placement.sheetKind === 'pokemon'
+  const baseEntries = placement.sheetKind === 'pokemon'
     ? (() => {
         const sheet = sheets.pokemon?.get(placement.sheetSlug)
         return sheet ? pokemonMoveEntriesForSheet(
@@ -260,6 +265,12 @@ export const moveEntriesForPlacement = (
         const sheet = sheets.trainer?.get(placement.sheetSlug)
         return sheet ? trainerMoveEntriesForSheet(sheet) : []
       })()
+  const additionalEntries = options.additionalMoveEntries ?? []
+  const supplementalNames = new Set(additionalEntries.map(entry => entry.move.name.trim().toLocaleLowerCase('en-US')))
+  const entries = [
+    ...baseEntries.filter(entry => !supplementalNames.has(entry.move.name.trim().toLocaleLowerCase('en-US'))),
+    ...additionalEntries,
+  ]
   return projectTokenMoveEntries(placement, entries, options.encounterEffects)
 }
 
@@ -414,8 +425,11 @@ const optionForMoveRow = (
   hasAutomationScript: boolean,
   usageContext: TokenMoveUsageContext = {},
 ): TokenMoveMenuOption => {
-  const name = row.reference?.name ?? row.move.name
-  const damageClass = fallback(row.reference?.damage_class, row.move.category)
+  const letterPressHiddenPower = letterPressHiddenPowerSourceSlug(row.move.name) !== null
+  const name = letterPressHiddenPower ? row.move.name : row.reference?.name ?? row.move.name
+  const damageClass = letterPressHiddenPower
+    ? fallback(row.move.category, row.reference?.damage_class)
+    : fallback(row.reference?.damage_class, row.move.category)
   const frequency = fallback(row.reference?.frequency, row.move.frequency)
   const range = fallback(row.reference?.range, row.move.range)
   const usage = buildTokenMoveUsageState(token.id, name, frequency, usageContext)

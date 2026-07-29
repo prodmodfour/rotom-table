@@ -465,12 +465,25 @@ const parseIntentDescriptor = (value: unknown, path: string): EncounterActionInt
   })
 }
 
-const parseActionOffer = (value: unknown, path: string): EncounterActionOffer => {
+const parseActionSelectionOption = (value: unknown, path: string) => {
   const input = record(value, path)
+  exact(input, ['kind', 'value', 'label'], path)
+  return Object.freeze({
+    kind: enumValue<'object' | 'device' | 'keystone' | 'egg' | 'trainer'>(
+      input.kind, set(['object', 'device', 'keystone', 'egg', 'trainer'] as const), `${path}.kind`,
+    ),
+    value: stableId(input.value, `${path}.value`),
+    label: requiredText(input.label, `${path}.label`, ENCOUNTER_PRESENTATION_LIMITS.labelLength),
+  })
+}
+
+const parseActionOffer = (value: unknown, path: string): EncounterActionOffer => {
+  const parsedInput = record(value, path)
+  const input = Object.hasOwn(parsedInput, 'selectionOptions') ? parsedInput : { ...parsedInput, selectionOptions: [] }
   exact(input, [
     'schemaVersion', 'offerId', 'mapSlug', 'mapRevision', 'actor', 'source', 'roles',
     'group', 'groupOrder', 'offerOrder', 'timing', 'costs', 'targeting', 'usage',
-    'availability', 'presentation', 'intent',
+    'availability', 'presentation', 'intent', 'selectionOptions',
   ], path)
   parseSchemaVersion(input.schemaVersion, `${path}.schemaVersion`)
   const roles = boundedArray(input.roles, `${path}.roles`, ENCOUNTER_INTERACTION_ROLES.length)
@@ -485,6 +498,9 @@ const parseActionOffer = (value: unknown, path: string): EncounterActionOffer =>
     .map((target, index) => parseTargeting(target, `${path}.targeting[${index}]`))
   unique(targeting.map(target => target.requirementId), `${path}.targeting`)
   const intent = parseIntentDescriptor(input.intent, `${path}.intent`)
+  const selectionOptions = boundedArray(input.selectionOptions, `${path}.selectionOptions`, ENCOUNTER_PRESENTATION_LIMITS.choicesPerInteraction)
+    .map((option, index) => parseActionSelectionOption(option, `${path}.selectionOptions[${index}]`))
+  unique(selectionOptions.map(option => `${option.kind}:${option.value}`), `${path}.selectionOptions`)
   const hasSpatial = targeting.some(target => target.requiresSpatialInput)
   if ((intent.input === 'spatial') !== hasSpatial) {
     fail('inconsistent-contract', `${path}.intent.input`, 'spatial intent must match spatial targeting.')
@@ -507,6 +523,7 @@ const parseActionOffer = (value: unknown, path: string): EncounterActionOffer =>
     availability: parseAvailability(input.availability, `${path}.availability`),
     presentation: parseCopy(input.presentation, `${path}.presentation`),
     intent,
+    selectionOptions: Object.freeze(selectionOptions),
   })
 }
 

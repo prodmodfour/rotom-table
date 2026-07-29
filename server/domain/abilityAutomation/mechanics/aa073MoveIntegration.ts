@@ -341,7 +341,10 @@ export const aa073GulpMissileAccuracyOutcome = (input: {
     + aa066DecoyEvasionBonus({ map: input.context.map, placementId: targetId })
   evasion = applyEncounterNumericModifiers({
     map: input.context.map, placementId: targetId,
-    attribute: 'evasion', baseValue: evasion,
+    attribute: 'evasion', baseValue: evasion, now: input.context.time,
+    isCapabilityEffective: canonicalId => input.context.queries.creatureRules.hasCapability(targetId, canonicalId),
+    isCapabilityInstanceEffective: (instanceId, canonicalId) => input.context.queries.creatureRules
+      .hasCapabilityInstance(targetId, instanceId, canonicalId),
   }).value
   return Object.freeze({
     hit: resolveMoveAutomationAccuracyRoll(missileScript, ledger.naturalResult, {

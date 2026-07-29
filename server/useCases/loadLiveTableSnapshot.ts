@@ -12,7 +12,11 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { createSqliteMapInteractionModeRepository, type MapInteractionModeRepository } from '../storage/mapInteractionModeRepository'
 import { createSqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { createSqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
-import { createSqliteRealtimeEventRepository } from '../storage/realtimeEventRepository'
+import {
+  createSqliteRealtimeEventRepository,
+  type PersistedRealtimeEvent,
+  type RealtimeEventRepository,
+} from '../storage/realtimeEventRepository'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqlitePlayerVisibleMapSheetAccessKeys } from '../utils/mapSheetAccess'
 import type { PlayerSessionAccessGrant } from '../utils/sessionPlayerAccess'
@@ -27,6 +31,19 @@ import {
 } from '../domain/abilityAutomation/clientStateProjection'
 import { loadMapUseCase, normalizeLoadMapSlug } from './loadMap'
 import { listPendingMoveResponsesUseCase } from './listPendingMoveResponses'
+import { buildCapabilityClientCapabilityBundle } from '../domain/capabilityAutomation/clientCapabilities'
+import {
+  projectCapabilityAutomationMapForPlayer,
+  projectCapabilityAutomationPresentationMap,
+} from '../domain/capabilityAutomation/clientStateProjection'
+import {
+  defaultPersistedRealtimeEventPublisher,
+  defaultPersistedRealtimePublicationFailureReporter,
+  publishPersistedRealtimeEventsAfterCommit,
+  type PersistedRealtimeEventPublisher,
+  type PersistedRealtimePublicationFailureReporter,
+} from '../realtime/persistedBatchPublication'
+import { persistCapabilitySourceLossOnLoad } from './persistCapabilitySourceLossOnLoad'
 
 export interface LoadLiveTableSnapshotInput {
   readonly role: AuthRole
@@ -35,15 +52,22 @@ export interface LoadLiveTableSnapshotInput {
   readonly sessionAccess?: PlayerSessionAccessGrant | null
 }
 
-type SnapshotMapRepository = Pick<MapRepository<unknown>, 'get' | 'list'>
+type SnapshotMapRepository = Pick<MapRepository<TabletopMap>, 'get' | 'list'>
+  & Partial<Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>>
 type SnapshotModeRepository = Pick<MapInteractionModeRepository, 'get'>
 type SnapshotSheetRepository = ListSheetsRepository
+  & Partial<Pick<SheetRepository<Record<string, unknown>>, 'assertRevisions'>>
+type SnapshotRealtimeEventRepository = Pick<RealtimeEventRepository, 'appendMany' | 'cursorState' | 'readAfter'>
 
 export interface LoadLiveTableSnapshotDependencies {
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly mapRepository?: SnapshotMapRepository
   readonly modeRepository?: SnapshotModeRepository
   readonly sheetRepository?: SnapshotSheetRepository
+  readonly realtimeEventRepository?: SnapshotRealtimeEventRepository
+  readonly now?: () => number
+  readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
+  readonly reportAfterCommitPublicationFailure?: PersistedRealtimePublicationFailureReporter
   readonly listPendingMoveResponses?: (input: {
     readonly role: AuthRole
     readonly mapSlug: string
@@ -80,8 +104,13 @@ export const loadLiveTableSnapshotUseCase = (
   const mapRepository = dependencies.mapRepository ?? defaultMapRepository(database)
   const modeRepository = dependencies.modeRepository ?? defaultModeRepository(database)
   const sheetRepository = dependencies.sheetRepository ?? defaultSheetRepository(database)
+  const realtimeEventRepository = dependencies.realtimeEventRepository
+    ?? ('connection' in database
+      ? createSqliteRealtimeEventRepository({ database: database as RotomDatabase })
+      : undefined)
+  let sourceLossRealtimeEvents: readonly PersistedRealtimeEvent[] = []
 
-  return database.withTransaction(() => {
+  const snapshot = database.withTransaction(() => {
     const { map, revision } = loadMapUseCase({ role: input.role, slug }, { mapRepository })
     const mode = modeRepository.get(map.slug)
     const mapSheetAccessKeys = input.role === 'player'
@@ -96,6 +125,24 @@ export const loadLiveTableSnapshotUseCase = (
 
     const pokemonSheets = listRepositorySheets<CharacterSheet>(sheetRepository, 'pokemon')
     const trainerSheets = listRepositorySheets<TrainerSheet>(sheetRepository, 'trainer')
+    const projectionSheets = {
+      pokemon: new Map(pokemonSheets.map(sheet => [sheet.slug, sheet])),
+      trainer: new Map(trainerSheets.map(sheet => [sheet.slug, sheet])),
+    }
+    const sourceLoss = persistCapabilitySourceLossOnLoad({
+      map,
+      revision,
+      sheets: projectionSheets,
+    }, {
+      database,
+      mapRepository,
+      sheetRepository,
+      realtimeEventRepository,
+      now: dependencies.now,
+    })
+    sourceLossRealtimeEvents = sourceLoss.persistedRealtimeEvents
+    const authoritativeMap = sourceLoss.map
+    const authoritativeRevision = sourceLoss.revision
     const authorizedSheets = authorizeSheetList({
       role: input.role,
       playerProfile: input.playerProfile,
@@ -104,7 +151,21 @@ export const loadLiveTableSnapshotUseCase = (
       trainerSheets,
     })
 
-    const projectedMap = input.role === 'player' ? projectAbilityAutomationMapForPlayer(map) : map
+    const authorizedPokemonSlugs = new Set(authorizedSheets.pokemonSheets.map(sheet => sheet.slug))
+    const authorizedTrainerSlugs = new Set(authorizedSheets.trainerSheets.map(sheet => sheet.slug))
+    // Authorization and projection are separate boundaries: offers are derived
+    // from raw server-owned ledgers, then only the already-redacted sheet
+    // documents are returned to the player.
+    const authorizedRawPokemonSheets = input.role === 'player'
+      ? pokemonSheets.filter(sheet => authorizedPokemonSlugs.has(sheet.slug))
+      : authorizedSheets.pokemonSheets
+    const authorizedRawTrainerSheets = input.role === 'player'
+      ? trainerSheets.filter(sheet => authorizedTrainerSlugs.has(sheet.slug))
+      : authorizedSheets.trainerSheets
+
+    const projectedMap = input.role === 'player'
+      ? projectCapabilityAutomationMapForPlayer(projectAbilityAutomationMapForPlayer(authoritativeMap), projectionSheets)
+      : projectCapabilityAutomationPresentationMap(authoritativeMap, projectionSheets)
     const projectedPokemonSheets = input.role === 'player'
       ? authorizedSheets.pokemonSheets.map(sheet => projectAbilityAutomationSheetForPlayer(sheet))
       : authorizedSheets.pokemonSheets
@@ -114,10 +175,19 @@ export const loadLiveTableSnapshotUseCase = (
     const abilityCapabilities = buildAbilityClientCapabilityBundle({
       role: input.role,
       playerProfile: input.playerProfile,
-      map,
-      mapRevision: revision,
-      pokemonSheets: authorizedSheets.pokemonSheets,
-      trainerSheets: authorizedSheets.trainerSheets,
+      map: authoritativeMap,
+      mapRevision: authoritativeRevision,
+      pokemonSheets: authorizedRawPokemonSheets,
+      trainerSheets: authorizedRawTrainerSheets,
+    })
+    const capabilityCapabilities = buildCapabilityClientCapabilityBundle({
+      role: input.role,
+      playerProfile: input.playerProfile,
+      map: authoritativeMap,
+      mapRevision: authoritativeRevision,
+      pokemonSheets: authorizedRawPokemonSheets,
+      trainerSheets: authorizedRawTrainerSheets,
+      now: authoritativeMap.updatedAt ?? 0,
     })
     const pendingMoveResponses = dependencies.listPendingMoveResponses
       ? dependencies.listPendingMoveResponses({
@@ -137,19 +207,21 @@ export const loadLiveTableSnapshotUseCase = (
           })
         : null
     const acceptedPresentations = dependencies.listAcceptedEncounterPresentations
-      ? dependencies.listAcceptedEncounterPresentations({ mapSlug: map.slug, mapRevision: revision })
-      : 'connection' in database
+      ? dependencies.listAcceptedEncounterPresentations({
+          mapSlug: authoritativeMap.slug,
+          mapRevision: authoritativeRevision,
+        })
+      : realtimeEventRepository
         ? (() => {
-            const repository = createSqliteRealtimeEventRepository({ database: database as RotomDatabase })
-            const latestSequence = repository.cursorState().latestSequence
-            const events = repository.readAfter({
+            const latestSequence = realtimeEventRepository.cursorState().latestSequence
+            const events = realtimeEventRepository.readAfter({
               afterSequence: Math.max(0, latestSequence - 500),
               limit: 500,
             }).events
             return acceptedEncounterPresentationsFromPersistedRealtimeEvents({
               events,
-              mapSlug: map.slug,
-              mapRevision: revision,
+              mapSlug: authoritativeMap.slug,
+              mapRevision: authoritativeRevision,
             })
           })()
         : []
@@ -157,15 +229,15 @@ export const loadLiveTableSnapshotUseCase = (
       role: input.role,
       playerProfile: input.playerProfile,
       map: projectedMap,
-      mapRevision: revision,
+      mapRevision: authoritativeRevision,
       pokemonSheets: projectedPokemonSheets,
       trainerSheets: projectedTrainerSheets,
-      generatedAt: map.updatedAt ?? 0,
-    }, { abilityCapabilities, pendingMoveResponses, acceptedPresentations })
+      generatedAt: authoritativeMap.updatedAt ?? 0,
+    }, { abilityCapabilities, capabilityCapabilities, pendingMoveResponses, acceptedPresentations })
     return {
       schemaVersion: LIVE_TABLE_SNAPSHOT_SCHEMA_VERSION,
       map: projectedMap,
-      mapRevision: revision,
+      mapRevision: authoritativeRevision,
       interactionMode: mode.interactionMode,
       interactionModeUpdatedAt: mode.updatedAt,
       pokemonSheets: projectedPokemonSheets,
@@ -173,4 +245,12 @@ export const loadLiveTableSnapshotUseCase = (
       encounterPresentation,
     }
   })
+  publishPersistedRealtimeEventsAfterCommit({
+    events: sourceLossRealtimeEvents,
+    operation: 'capability-source-loss-load-reconciliation',
+    publish: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedRealtimeEventPublisher,
+    reportFailure: dependencies.reportAfterCommitPublicationFailure
+      ?? defaultPersistedRealtimePublicationFailureReporter,
+  })
+  return snapshot
 }

@@ -1,5 +1,5 @@
 import type { MoveResolutionAuditTrace } from '#shared/moveAutomation/trace'
-import type { EncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterState, type EncounterState } from '#shared/moveAutomation/encounterState'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import {
@@ -248,12 +248,14 @@ const reduceRecipient = (options: {
       context: options.context,
     })
   }
+  const temporaryHpAvailable = options.temporaryHpAvailable
+    && !options.context.queries.creatureRules.hasCapability(options.recipient.placement.id, 'Soulless')
   if (operation.kind === 'direct-hp') {
     return reduceDirectHpEffectForRecipient({
       operation,
       recipient: options.recipient,
       accumulator: options.hpAccumulator,
-      temporaryHpAvailable: options.temporaryHpAvailable,
+      temporaryHpAvailable,
       immunities: options.immunities,
       context: options.context,
       hitTargetIds: options.hitTargetIds,
@@ -265,7 +267,7 @@ const reduceRecipient = (options: {
       operation,
       recipient: options.recipient,
       accumulator: options.hpAccumulator,
-      temporaryHpAvailable: options.temporaryHpAvailable,
+      temporaryHpAvailable,
       context: options.context,
       priorOperationResults: options.priorOperationResults,
     })
@@ -462,7 +464,9 @@ export const reduceMoveCoreTokenOperationState = (
         operation,
         recipients,
         accumulator: hpAccumulator,
-        temporaryHpAvailable,
+        temporaryHpAvailable: temporaryHpAvailable && recipients.every(recipient => (
+          !operationContext.queries.creatureRules.hasCapability(recipient.placement.id, 'Soulless')
+        )),
         immunities: input.immunities,
       })
     }
@@ -506,6 +510,29 @@ export const reduceMoveCoreTokenOperationState = (
     })
   })
 
+  for (const link of input.context.map.encounterState?.capabilityRuntime?.links ?? []) {
+    if (link.kind !== 'as-one-mount' || link.participantPlacementIds.length !== 1
+      || !input.context.queries.creatureRules.hasCapability(link.ownerPlacementId, 'As One')) continue
+    const ownerToken = input.context.queries.tokens.get(link.ownerPlacementId)
+    const mountToken = input.context.queries.tokens.get(link.participantPlacementIds[0]!)
+    if (!ownerToken || !mountToken) continue
+    if (hpAccumulator.get(ownerToken) <= 0 || hpAccumulator.get(mountToken) <= 0) {
+      hpAccumulator.set(ownerToken, 0)
+      hpAccumulator.set(mountToken, 0)
+      for (const token of [ownerToken, mountToken]) {
+        const placement = input.context.map.placements.find(candidate => candidate.id === token.id)
+        if (!placement) continue
+        const recipient = recipientsById.get(token.id) ?? resolveMoveCoreTokenRecipient(input.context, token.id)
+        recipientsById.set(token.id, recipient)
+        recordMoveCoreTokenRecipientRead(sheetReads, sheetReadsByKey, recipient)
+      }
+    }
+  }
+  for (const recipient of recipientsById.values()) {
+    if (!input.context.queries.creatureRules.hasCapability(recipient.placement.id, 'Soulless')) continue
+    hpAccumulator.setTemporaryHp(recipient.token, 0)
+    hpAccumulator.removeInjuries(recipient.token, 'all')
+  }
   const hpUpdates = hpAccumulator.toUpdates()
   const conditionUpdates = conditionAccumulator.toUpdates()
   const berserk = applyAa062BerserkCoreTriggers({
@@ -515,9 +542,23 @@ export const reduceMoveCoreTokenOperationState = (
     stageAccumulator,
     encounterState: conditionEncounterAccumulator.current(),
   })
-  const encounterStateUpdate = sameJsonValue(conditionEncounterAccumulator.previous, berserk.encounterState)
+  const faintedPlacementIds = new Set(hpUpdates.filter(update => update.currentHp <= 0).map(update => update.id))
+  const encounterAfterCapabilityFaint = faintedPlacementIds.size > 0
+    ? parseEncounterState({
+        ...berserk.encounterState,
+        ...(berserk.encounterState.capabilityRuntime ? {
+          capabilityRuntime: {
+            ...berserk.encounterState.capabilityRuntime,
+            modes: berserk.encounterState.capabilityRuntime.modes.filter(mode => (
+              mode.mode !== 'crowned' || !faintedPlacementIds.has(mode.actorPlacementId)
+            )),
+          },
+        } : {}),
+      })
+    : berserk.encounterState
+  const encounterStateUpdate = sameJsonValue(conditionEncounterAccumulator.previous, encounterAfterCapabilityFaint)
     ? null
-    : { previous: conditionEncounterAccumulator.previous, current: berserk.encounterState }
+    : { previous: conditionEncounterAccumulator.previous, current: encounterAfterCapabilityFaint }
   const frozenResults = deepFreeze(deepCloneJson(operationResults))
   const stateChanges = buildMoveCoreTokenStateChanges({
     context: input.context,

@@ -1,0 +1,374 @@
+import { describe, expect, it } from 'vitest'
+import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
+import { parseExecuteCapabilityActionCommand } from '#shared/capabilityAutomation/clientCommands'
+import { buildAuthoritativeMoveRulesContext } from '../../server/domain/moveAutomation/context'
+import { capabilityContextualTargetEvasionBonus } from '../../server/domain/moveAutomation/encounterNumericModifiers'
+import { executeRegisteredMoveHandler } from '../../server/domain/moveAutomation/handlers/registry'
+import { capabilityMoveRangeIsRanged } from '../../server/domain/resolveAuthoritativeMove'
+import { resolveAuthoritativeMoveUserAccuracy } from '../../server/domain/moveAutomation/accuracy'
+import { executeCapabilityMechanic } from '../../server/domain/capabilityAutomation/executeMechanic'
+import { buildEncounterPresentationProjection } from '../../server/domain/encounterPresentation/buildProjection'
+import { CAPABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/capabilityAutomation/registry'
+import { resolveEffectiveCapabilities } from '../../server/domain/capabilityAutomation/effectiveCapabilities'
+import { validateCapabilityActionSelections } from '../../server/domain/capabilityAutomation/validateSelections'
+import { capabilityCoupledPresenceIds, removeCapabilityPresenceGroup } from '../../server/domain/capabilityAutomation/presenceLifecycle'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { SheetPlacement, TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
+
+const actor: SheetPlacement = {
+  id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor-sheet', position: { x: 1, y: 0, z: 1 }, sideId: 'red',
+}
+const target: SheetPlacement = {
+  id: 'target', sheetKind: 'pokemon', sheetSlug: 'target-sheet', position: { x: 2, y: 0, z: 1 }, sideId: 'blue',
+}
+const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
+  schemaVersion: 2, slug: 'capability-interactions', name: 'Capability Interactions', revision: 1,
+  dimensions: { x: 12, y: 5, z: 12 }, groundLevelY: 0, voxels: [], placements: [actor, target],
+  initiative: { activeId: null, round: 1 }, encounterState: createEmptyEncounterState(),
+  ...overrides,
+})
+const pokemon = (slug: string, overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
+  slug, nickname: slug, species: slug === actor.sheetSlug ? 'Pikachu' : 'Snorlax', level: 30,
+  combat: { currentHp: 50 }, ...overrides,
+})
+const moveIntent = (moveName: string): ResolveMoveIntent => ({
+  schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+  placementId: actor.id,
+  moveName,
+  selection: { kind: 'single-target', targetPlacementId: target.id },
+})
+const moveContext = (
+  sheet: CharacterSheet,
+  moveName: string,
+  map = baseMap(),
+  targetSheet = pokemon(target.sheetSlug),
+) => buildAuthoritativeMoveRulesContext({
+  map,
+  pokemonSheets: new Map([[sheet.slug, sheet], [target.sheetSlug, targetSheet]]),
+  trainerSheets: new Map<string, TrainerSheet>(),
+  intent: moveIntent(moveName), candidatePlacementIds: [target.id], selectedPlacementIds: [target.id],
+  random: () => 0, time: 1_000,
+})
+
+const command = (canonicalId: string, actionId: string, selections: Record<string, unknown> = {}) => parseExecuteCapabilityActionCommand({
+  schemaVersion: 1, operationId: `operation:${actionId}`, mapSlug: 'capability-interactions', baseRevision: 1,
+  offerId: `offer:${actionId}`, actorPlacementId: actor.id,
+  capabilityInstanceId: `capability:actor:${canonicalId.replaceAll(' ', '_20')}:base`, canonicalId, actionId,
+  selections: {
+    targetPlacementIds: [], cells: [], optionId: null, recipientTrainerSlug: null,
+    canonicalItemId: null, description: null, gmConfirmed: false, ...selections,
+  },
+})
+
+describe('Capability interactions with moves, edges, and coupled presence', () => {
+  it('applies Basic Ranged Attacks only to its selected elemental Struggle capability', () => {
+    const fireMove = 'Struggle (Firestarter Special)'
+    const ranged = pokemon(actor.sheetSlug, {
+      movelist: [{ name: fireMove }], capabilities: { other: ['Firestarter'] },
+      edges: [{ name: 'Basic Ranged Attacks (Firestarter)' }],
+    })
+    expect(moveContext(ranged, fireMove).queries.resolveActorMoveEntry(fireMove)).toMatchObject({
+      ok: true, entry: { script: { range: '6, 1 Target' } },
+    })
+
+    const wrongSelection = { ...ranged, edges: [{ name: 'Basic Ranged Attacks (Fountain)' }] }
+    const unresolved = moveContext(wrongSelection, fireMove).queries.resolveActorMoveEntry(fireMove)
+    expect(unresolved.ok && unresolved.entry.script.range).not.toBe('6, 1 Target')
+  })
+
+  it('keeps Telekinetic Struggle at Focus Rank and TK Mastery at Focus Rank plus two', () => {
+    const moveName = 'Struggle (Telekinetic Special)'
+    const base = pokemon(actor.sheetSlug, {
+      movelist: [{ name: moveName }], capabilities: { other: ['Telekinetic'] }, skills: { focus: '6d6' },
+    })
+    expect(moveContext(base, moveName).queries.resolveActorMoveEntry(moveName)).toMatchObject({
+      ok: true, entry: { script: { range: '6, 1 Target' } },
+    })
+    const mastery = { ...base, edges: [{ name: 'TK Mastery' }] }
+    expect(moveContext(mastery, moveName).queries.resolveActorMoveEntry(moveName)).toMatchObject({
+      ok: true, entry: { script: { range: '8, 1 Target' } },
+    })
+  })
+
+  it('projects only size-legal Wielder weapon benefits and caps granted Moves at Adept rank', () => {
+    const small = pokemon(actor.sheetSlug, {
+      species: 'Pikachu', skills: { combat: '4d6' }, capabilities: { other: ['Wielder'] },
+      items: { held: 'Honed Claws' },
+    })
+    expect(moveContext(small, 'Struggle').queries.resolveActorMoveEntry('Struggle')).toMatchObject({
+      ok: true, entry: { script: { damageBase: 5 } },
+    })
+    const woundingContext = moveContext(small, 'Wounding Strike')
+    expect(woundingContext.queries.resolveActorMoveEntry('Wounding Strike')).toMatchObject({
+      ok: true, entry: { hasStab: false, script: { damageBase: 7 } },
+    })
+    const woundingRuntime = woundingContext.queries.rules.runtimeFor('Wounding Strike')
+    expect(woundingRuntime).toMatchObject({
+      kind: 'movespec-v2',
+      sourceModule: 'server/domain/capabilityAutomation/weaponMoveRuntime.ts',
+    })
+    if (woundingRuntime?.kind !== 'movespec-v2' || !woundingRuntime.definition.registeredHandler) {
+      throw new Error('Expected native Wounding Strike handler runtime.')
+    }
+    const handler = woundingContext.handlerRegistry.resolve(woundingRuntime.definition.registeredHandler.id)
+    if (!handler) throw new Error('Expected registered capability weapon Move handler.')
+    expect(executeRegisteredMoveHandler({
+      registration: handler,
+      expectedVersion: woundingRuntime.definition.registeredHandler.version,
+      context: woundingContext,
+      maximumOperations: 32,
+    }).operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'damage', payload: expect.objectContaining({ damageBase: 7 }) }),
+      expect.objectContaining({ kind: 'direct-hp', payload: expect.objectContaining({
+        calculation: { kind: 'percent-max', percent: 10 },
+      }) }),
+    ]))
+    expect(moveContext(small, 'Gouge').queries.resolveActorMoveEntry('Gouge')).toMatchObject({ ok: false })
+    const knife = { ...small, items: { held: 'Survival Knife' } }
+    expect(moveContext(knife, 'Cheap Shot').queries.resolveActorMoveEntry('Cheap Shot')).toMatchObject({
+      ok: true, entry: { script: { damageBase: 6 } },
+    })
+    const unownedWeaponMove = pokemon(actor.sheetSlug, {
+      species: 'Pikachu', movelist: [{ name: 'Wounding Strike' }],
+    })
+    expect(moveContext(unownedWeaponMove, 'Wounding Strike').queries.resolveActorMoveEntry('Wounding Strike'))
+      .toMatchObject({ ok: false, reason: 'creature-rule-blocked' })
+
+    const large = pokemon(actor.sheetSlug, {
+      species: 'Snorlax', skills: { combat: '6d6' }, capabilities: { other: ['Wielder'] },
+      items: { held: 'Meteor Masher' },
+    })
+    expect(moveContext(large, 'Backswing').queries.resolveActorMoveEntry('Backswing')).toMatchObject({
+      ok: true,
+      entry: { script: { damageBase: 9, ac: 3 } },
+    })
+    expect(moveContext(large, 'Titanic Slam').queries.resolveActorMoveEntry('Titanic Slam')).toMatchObject({ ok: false })
+  })
+
+  it('publishes source-owned Wielder Moves through Encounter Presentation without exposing Master grants', () => {
+    const sheet = pokemon(actor.sheetSlug, {
+      species: 'Snorlax', skills: { combat: '6d6' }, capabilities: { other: ['Wielder'] },
+      items: { held: 'Quarterstaff' },
+    })
+    const projection = buildEncounterPresentationProjection({
+      role: 'gm',
+      map: baseMap(),
+      mapRevision: 1,
+      pokemonSheets: [sheet, pokemon(target.sheetSlug)],
+      trainerSheets: [],
+      generatedAt: 1_000,
+    })
+    const backswing = projection.offers.find(offer => offer.source.canonicalId === 'Backswing')
+    expect(backswing).toMatchObject({
+      intent: { actionId: 'move.declare' },
+      availability: { status: 'available', reasons: [] },
+      targeting: [expect.objectContaining({ rangeLabel: '3 meters (Reach)' })],
+    })
+    expect(projection.offers.some(offer => offer.source.canonicalId === 'Titanic Slam')).toBe(false)
+  })
+
+  it('grants Living Weapon Moves only through an exact source-effective link and linked wielder rank', () => {
+    const wielder = pokemon(actor.sheetSlug, {
+      species: 'Pikachu', skills: { combat: '4d6' }, items: { held: '' },
+    })
+    const weapon = pokemon(target.sheetSlug, {
+      species: 'Honedge', capabilities: { other: ['Living Weapon'] },
+    })
+    const sourceInstance = resolveEffectiveCapabilities({
+      map: baseMap(),
+      placement: target,
+      sheet: weapon,
+      sheets: {
+        pokemon: new Map([[wielder.slug, wielder], [weapon.slug, weapon]]),
+        trainer: new Map(),
+      },
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'Living Weapon')
+    if (!sourceInstance) throw new Error('Expected Living Weapon source fixture.')
+    const encounter = createEmptyEncounterState()
+    const map = baseMap({
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...createEmptyCapabilityRuntimeState(),
+          links: [{
+            id: 'capability.link.living-weapon',
+            kind: 'living-weapon',
+            ownerPlacementId: target.id,
+            participantPlacementIds: [actor.id],
+            capabilityInstanceId: sourceInstance.instanceId,
+            canonicalId: 'Living Weapon',
+            establishedAt: 1,
+            configurationId: null,
+            sourceOperationId: 'operation:living-weapon',
+          }],
+        },
+      },
+    })
+    expect(moveContext(wielder, 'Wounding Strike', map, weapon).queries.resolveActorMoveEntry('Wounding Strike'))
+      .toMatchObject({ ok: true, entry: { hasStab: false, script: { damageBase: 7 } } })
+
+    const activeWeaponContext = moveContext(wielder, 'Struggle', map, weapon)
+    const activeStruggle = activeWeaponContext.queries.resolveActorMoveEntry('Struggle')
+    if (!activeStruggle.ok) throw new Error('Expected Living Weapon Struggle fixture.')
+    const faintedWeaponContext = moveContext(wielder, 'Struggle', map, {
+      ...weapon, combat: { ...weapon.combat, currentHp: 0 },
+    })
+    const faintedStruggle = faintedWeaponContext.queries.resolveActorMoveEntry('Struggle')
+    if (!faintedStruggle.ok) throw new Error('Expected fainted Living Weapon Struggle fixture.')
+    const activeAccuracy = resolveAuthoritativeMoveUserAccuracy(activeWeaponContext, {
+      script: activeStruggle.entry.script,
+    })
+    const faintedAccuracy = resolveAuthoritativeMoveUserAccuracy(faintedWeaponContext, {
+      script: faintedStruggle.entry.script,
+    })
+    expect(faintedAccuracy.value).toBe(activeAccuracy.value - 2)
+    expect(faintedAccuracy.modifiers).toContainEqual(expect.objectContaining({
+      reason: 'Fainted Living Weapon', value: -2,
+    }))
+
+    const unqualified = { ...wielder, skills: { combat: '3d6' } }
+    expect(moveContext(unqualified, 'Wounding Strike', map, weapon).queries.resolveActorMoveEntry('Wounding Strike'))
+      .toMatchObject({ ok: false, reason: 'creature-rule-blocked' })
+    const lostSource = { ...weapon, species: 'Pikachu', capabilities: { other: [] } }
+    expect(moveContext(wielder, 'Wounding Strike', map, lostSource).queries.resolveActorMoveEntry('Wounding Strike'))
+      .toMatchObject({ ok: false, reason: 'creature-rule-blocked' })
+
+    const masterWielder = { ...wielder, skills: { combat: '6d6' } }
+    const aegislash = { ...weapon, species: 'Aegislash' }
+    const aegislashSource = resolveEffectiveCapabilities({
+      map: baseMap(), placement: target, sheet: aegislash,
+      sheets: {
+        pokemon: new Map([[masterWielder.slug, masterWielder], [aegislash.slug, aegislash]]),
+        trainer: new Map(),
+      },
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'Living Weapon')
+    if (!aegislashSource) throw new Error('Expected Aegislash Living Weapon source fixture.')
+    const bleedMap = baseMap({
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...createEmptyCapabilityRuntimeState(),
+          links: [{
+            id: 'capability.link.aegislash', kind: 'living-weapon', ownerPlacementId: target.id,
+            participantPlacementIds: [actor.id], capabilityInstanceId: aegislashSource.instanceId,
+            canonicalId: 'Living Weapon', establishedAt: 1, configurationId: null,
+            sourceOperationId: 'operation:aegislash',
+          }],
+        },
+      },
+    })
+    const bleedContext = moveContext(masterWielder, 'Bleed!', bleedMap, aegislash)
+    expect(bleedContext.queries.resolveActorMoveEntry('Bleed!')).toMatchObject({
+      ok: true, entry: { script: { damageBase: 10 } },
+    })
+    const bleedRuntime = bleedContext.queries.rules.runtimeFor('Bleed!')
+    if (bleedRuntime?.kind !== 'movespec-v2' || !bleedRuntime.definition.registeredHandler) {
+      throw new Error('Expected native Bleed! runtime.')
+    }
+    const bleedHandler = bleedContext.handlerRegistry.resolve(bleedRuntime.definition.registeredHandler.id)
+    if (!bleedHandler) throw new Error('Expected capability weapon Move handler.')
+    expect(executeRegisteredMoveHandler({
+      registration: bleedHandler,
+      expectedVersion: bleedRuntime.definition.registeredHandler.version,
+      context: bleedContext,
+      maximumOperations: 32,
+    }).operations).toContainEqual(expect.objectContaining({
+      kind: 'temporary-effect',
+      reasonCode: 'bleed.bleed-three-turns',
+      payload: expect.objectContaining({
+        definition: expect.objectContaining({
+          duration: { kind: 'turns', subject: 'target', boundary: 'start', remaining: 3 },
+          charges: 3,
+        }),
+      }),
+    }))
+  })
+
+  it('classifies numeric and template ranges as ranged for Blender and Stealth', () => {
+    const sheet = pokemon(actor.sheetSlug, { capabilities: { other: ['Blender'] } })
+    const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require('Blender').spec.actions.find(entry => entry.actionId === 'blend')!
+    const blended = executeCapabilityMechanic({
+      map: baseMap(), actorPlacement: actor, actorSheet: sheet,
+      pokemonSheets: new Map([[sheet.slug, sheet], [target.sheetSlug, pokemon(target.sheetSlug)]]),
+      trainerSheets: new Map(), linkedTrainerSlugs: new Set(), command: command('Blender', 'blend'), action,
+      now: 1_000, rollDie: () => { throw new Error('Blender does not roll.') },
+    }).map
+    expect(capabilityContextualTargetEvasionBonus({ map: blended, placementId: actor.id, range: '6, 1 Target' })).toBe(2)
+    expect(capabilityContextualTargetEvasionBonus({ map: blended, placementId: actor.id, range: 'Cone 2' })).toBe(2)
+    expect(capabilityContextualTargetEvasionBonus({ map: blended, placementId: actor.id, range: 'Melee, 1 Target' })).toBe(0)
+    expect(['6, 1 Target', 'Focus Rank', 'Line 4', 'Cone 2', 'Blast 3', 'Burst 1', 'Ranged, 1 Target']
+      .every(capabilityMoveRangeIsRanged)).toBe(true)
+    expect(capabilityMoveRangeIsRanged('Melee, 1 Target')).toBe(false)
+  })
+
+  it('retains each Letter Press Hidden Power identity and selected attack class in authoritative Move resolution', () => {
+    const sheet = pokemon(actor.sheetSlug, {
+      movelist: [
+        { name: 'Hidden Power [Letter Press:first]', category: 'Physical' },
+        { name: 'Hidden Power [Letter Press:second]', category: 'Special' },
+      ],
+      capabilityCampaignState: {
+        schemaVersion: 1, storedItems: [], planter: null, keystoneSynchronizations: [],
+        letterPress: {
+          combinedUnownCount: 2, statBonuses: {}, sourceOperationIds: ['combine'],
+          hiddenPowers: [
+            { sourceSheetSlug: 'first', attackStat: 'attack' },
+            { sourceSheetSlug: 'second', attackStat: 'special-attack' },
+          ],
+        },
+      },
+    })
+    expect(moveContext(sheet, 'Hidden Power [Letter Press:first]').queries.resolveActorMoveEntry('Hidden Power [Letter Press:first]'))
+      .toMatchObject({ ok: true, entry: { canonicalMoveName: 'Hidden Power', script: { damageClass: 'Physical' } } })
+    expect(moveContext(sheet, 'Hidden Power [Letter Press:second]').queries.resolveActorMoveEntry('Hidden Power [Letter Press:second]'))
+      .toMatchObject({ ok: true, entry: { canonicalMoveName: 'Hidden Power', script: { damageClass: 'Special' } } })
+  })
+
+  it('requires exact suitable-rider context for a non-Trainer Mountable rider', () => {
+    const mount = pokemon(actor.sheetSlug, { capabilities: { other: ['Mountable 1'] } })
+    const rider = pokemon(target.sheetSlug, { species: 'Pikachu' })
+    const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require('Mountable X').spec.actions
+      .find(entry => entry.actionId === 'accept-rider')!
+    const selections = { targetPlacementIds: [target.id] }
+    const baseInput = {
+      map: baseMap({ metadata: { capabilityWillingTargets: [`${actor.id}:${target.id}`] } }),
+      actor, actorSheet: mount, pokemonSheets: new Map([[mount.slug, mount], [rider.slug, rider]]),
+      trainerSheets: new Map<string, TrainerSheet>(), command: {
+        ...command('Mountable X', 'accept-rider', selections),
+        capabilityInstanceId: 'capability:actor:Mountable_20X:riders-1',
+      }, action, now: 1_000,
+    }
+    expect(() => validateCapabilityActionSelections(baseInput)).toThrow(/average Trainers|rider context/i)
+    expect(() => validateCapabilityActionSelections({
+      ...baseInput,
+      map: { ...baseInput.map, metadata: {
+        ...baseInput.map.metadata,
+        capabilityContexts: [`suitable-rider:${actor.id}:${target.id}`],
+      } },
+    })).not.toThrow()
+  })
+
+  it('treats coupled links as undirected physical presence groups', () => {
+    const encounter = createEmptyEncounterState()
+    const linked = baseMap({
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'fusion', kind: 'viral-fusion', ownerPlacementId: actor.id, participantPlacementIds: [target.id],
+            capabilityInstanceId: 'capability:actor:Viral_20Fusion:base', canonicalId: 'Viral Fusion',
+            establishedAt: 1, configurationId: 'Photon Geyser', sourceOperationId: 'fusion-operation',
+          }],
+        },
+      },
+    })
+    expect([...capabilityCoupledPresenceIds(linked, target.id)].sort()).toEqual(['actor', 'target'])
+    const removed = removeCapabilityPresenceGroup({ map: linked, ownerPlacementId: target.id })
+    expect(removed.map.placements).toEqual([])
+    expect(removed.map.encounterState?.capabilityRuntime?.links).toEqual([])
+  })
+})

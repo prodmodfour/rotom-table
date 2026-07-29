@@ -244,6 +244,38 @@ const resolvedSkillSource = (
     modifier = row.modifier
   }
 
+  const viralLink = (context.map.encounterState?.capabilityRuntime?.links ?? []).find(link => (
+    link.kind === 'viral-fusion' && link.ownerPlacementId === placementId && link.participantPlacementIds.length === 1
+  ))
+  if (viralLink
+    && context.queries.creatureRules.hasCapabilityInstance(
+      placementId,
+      viralLink.capabilityInstanceId,
+      viralLink.canonicalId,
+    )
+    && ['athletics', 'acrobatics', 'combat', 'stealth', 'perception'].includes(source.skill)) {
+    const bondedPlacement = context.queries.placements.get(viralLink.participantPlacementIds[0]!)
+    const bondedSheet = bondedPlacement ? context.queries.sheets.forPlacement(bondedPlacement) : null
+    if (bondedPlacement && bondedSheet) {
+      context.reads.recordPlacement(bondedPlacement)
+      if (bondedSheet.kind === 'pokemon') {
+        const parsed = parseSkillDiceValue(resolveSkills(bondedSheet.sheet as CharacterSheet)
+          .find(skill => skill.key === source.skill)?.value)
+        if (parsed) {
+          dice = Math.min(6, parsed.dice + 1)
+          modifier = parsed.modifier
+        }
+      }
+      else {
+        const row = resolveTrainerSkills(bondedSheet.sheet as TrainerSheet).find(skill => skill.key === source.skill)
+        if (row) {
+          dice = Math.min(6, row.rankValue + 1)
+          modifier = row.modifier
+        }
+      }
+    }
+  }
+
   if (
     !Number.isSafeInteger(dice)
     || dice < 1
@@ -350,8 +382,24 @@ const prepareRoll = (options: {
         placementId: options.placementId,
         attribute: 'skill-check',
         baseValue: 0,
+        now: options.input.context.time,
+        isCapabilityEffective: canonicalId => options.input.context.queries.creatureRules.hasCapability(options.placementId, canonicalId),
+        isCapabilityInstanceEffective: (instanceId, canonicalId) => options.input.context.queries.creatureRules
+          .hasCapabilityInstance(options.placementId, instanceId, canonicalId),
       })
     : { value: 0, steps: [] as const }
+  const shadowMeldStealthBonus = source.kind === 'skill'
+    && source.skill?.trim().toLowerCase() === 'stealth'
+    && options.input.context.queries.creatureRules.hasCapability(options.placementId, 'Shadow Meld')
+    && (options.input.context.map.encounterState?.capabilityRuntime?.modes ?? []).some(mode => (
+      mode.actorPlacementId === options.placementId && mode.mode === 'shadow-melded'
+      && options.input.context.queries.creatureRules.hasCapabilityInstance(
+        options.placementId,
+        mode.capabilityInstanceId,
+        mode.canonicalId,
+      )
+      && (mode.expiresAt === null || mode.expiresAt > options.input.context.time)
+    )) ? 4 : 0
   const infiltratorBonus = source.kind === 'skill'
     ? aa075InfiltratorStealthBonus({
         context: options.input.context,
@@ -373,6 +421,12 @@ const prepareRoll = (options: {
       value: step.delta,
       evaluationTrace: [] as const,
     })),
+    ...(shadowMeldStealthBonus === 0 ? [] : [deepFreeze({
+      sourceId: 'capability.shadow-meld',
+      reasonCode: 'capability.shadow-meld.stealth-bonus',
+      value: shadowMeldStealthBonus,
+      evaluationTrace: [] as const,
+    })]),
     ...(infiltratorBonus === 0 ? [] : [deepFreeze({
       sourceId: 'ability.infiltrator',
       reasonCode: 'ability.infiltrator.stealth-bonus',

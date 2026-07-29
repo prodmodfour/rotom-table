@@ -4,7 +4,8 @@ import {
   aa080EntityIsActive,
   aa080IsMiniNoseEntity,
 } from '#shared/abilityAutomation/aa080'
-import { findMove } from '~~/data/ptuReference'
+import { capabilityWeaponMove, livingWeaponMoveNames } from '#shared/capabilityAutomation/weaponMoves'
+import { resolveWielderWeaponProfile } from '#shared/capabilityAutomation/wielder'
 import {
   buildTokenMoveMenuOptions,
   moveEntriesForPlacement,
@@ -15,7 +16,6 @@ import {
   type ResolvedCanonicalMoveEntry,
 } from '~/utils/authoritativeMoveEntries'
 import {
-  buildMoveAutomationScriptFromMoveData,
   isSeamlessAreaConfirmationScript,
   isSeamlessFieldMoveScript,
   isSeamlessSelfMoveScript,
@@ -78,6 +78,7 @@ import {
 } from '~/utils/moveAutomationLog'
 import { playDiceRollSound } from '~/utils/soundEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
+import { pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
 import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
   MoveAutomationAreaDirection,
@@ -444,11 +445,66 @@ export const useMoveAutomationPanel = ({
 
   const moveEntriesForId = (id: string | null | undefined): TokenSheetMoveEntry[] => {
     if (!map.value || !id) return []
-    return moveEntriesForPlacement(
-      map.value.placements.find((item) => item.id === id),
-      sheetLookup(),
-      { encounterEffects: map.value.encounterState?.effects ?? [] },
-    )
+    const placement = map.value.placements.find((item) => item.id === id)
+    if (!placement) return []
+    const token = spawnedPokemon.value.find(candidate => candidate.id === id) ?? null
+    const supplemental = new Map<string, TokenSheetMoveEntry>()
+    if (placement.sheetKind === 'pokemon' && token) {
+      const sheet = pokemonBySlug.value?.get(placement.sheetSlug)
+      const profile = sheet && pokemonHasResolvedCapability(sheet, 'Wielder')
+        ? resolveWielderWeaponProfile({ heldItemName: sheet.items?.held, size: token.size })
+        : null
+      if (profile?.adeptMoveName && (token.combatSkillRankValue ?? 0) >= 4) {
+        const move = capabilityWeaponMove(profile.adeptMoveName)
+        if (move) supplemental.set(move.name, {
+          move: {
+            ...move,
+            db: (move.db ?? 0) + profile.damageBaseBonus,
+            ac: typeof move.ac === 'number' ? move.ac + profile.accuracyCheckPenalty : move.ac,
+            range: profile.grantsReach && /\bmelee\b/i.test(move.range ?? '')
+              ? `${/^(?:large|huge|gigantic)$/i.test(token.size ?? '') ? 3 : 2}, ${/2 Targets/i.test(move.range ?? '') ? '2 Targets' : '1 Target'}`
+              : move.range,
+          },
+          automatic: true,
+          suppressStab: true,
+        })
+      }
+    }
+
+    const publicStates = Array.isArray(map.value.metadata?.automationPresentationStates)
+      ? map.value.metadata.automationPresentationStates as Array<Record<string, unknown>> : []
+    const livingWeaponState = publicStates.find(state => (
+      state.placementId === id
+      && (state.state === 'living-weapon' || state.state === 'living-weapon-wielder')
+      && typeof state.counterpartPlacementId === 'string'
+    ))
+    if (livingWeaponState) {
+      const counterpartPlacementId = livingWeaponState.counterpartPlacementId as string
+      const livingWeaponPlacementId = livingWeaponState.state === 'living-weapon' ? id : counterpartPlacementId
+      const wielderPlacementId = livingWeaponState.state === 'living-weapon' ? counterpartPlacementId : id
+      const livingWeaponPlacement = map.value.placements.find(candidate => candidate.id === livingWeaponPlacementId)
+      const livingWeaponSheet = livingWeaponPlacement?.sheetKind === 'pokemon'
+        ? pokemonBySlug.value?.get(livingWeaponPlacement.sheetSlug) ?? null : null
+      const wielderToken = spawnedPokemon.value.find(candidate => candidate.id === wielderPlacementId) ?? null
+      if (livingWeaponSheet && wielderToken) {
+        for (const moveName of livingWeaponMoveNames(
+          livingWeaponSheet.species,
+          wielderToken.combatSkillRankValue,
+        )) {
+          const move = capabilityWeaponMove(moveName)
+          if (!move || supplemental.has(move.name)) continue
+          supplemental.set(move.name, {
+            move: { ...move, db: (move.db ?? 0) + 1 },
+            automatic: true,
+            suppressStab: true,
+          })
+        }
+      }
+    }
+    return moveEntriesForPlacement(placement, sheetLookup(), {
+      encounterEffects: map.value.encounterState?.effects ?? [],
+      additionalMoveEntries: [...supplemental.values()],
+    })
   }
 
   const findSpawnedPokemon = (id: string | null | undefined): SpawnedPokemon | null =>

@@ -164,9 +164,23 @@ const MOVE_ALIASES: Record<string, string> = {
   'struggle-zapper': 'Struggle (Zapper Special)',
 }
 
+const LETTER_PRESS_HIDDEN_POWER_PATTERN = /^Hidden Power \[Letter Press:([a-z0-9-]{1,120})\]$/
+
+/** Stable display/dispatch identity for one retained Prime Unown Hidden Power. */
+export const letterPressHiddenPowerMoveName = (sourceSheetSlug: string): string => {
+  const slug = sourceSheetSlug.trim()
+  if (!/^[a-z0-9-]{1,120}$/.test(slug)) throw new Error('Letter Press Hidden Power source must be a stable sheet slug.')
+  return `Hidden Power [Letter Press:${slug}]`
+}
+
+export const letterPressHiddenPowerSourceSlug = (moveName: string): string | null => (
+  LETTER_PRESS_HIDDEN_POWER_PATTERN.exec(moveName.trim())?.[1] ?? null
+)
+
 export const findMove = (name: string): PtuMove | null => {
   const direct = resolveByExactOrSlug(name, moveByName, moveBySlug)
   if (direct) return direct
+  if (letterPressHiddenPowerSourceSlug(name)) return resolveByExactOrSlug('Hidden Power', moveByName, moveBySlug)
   const alias = MOVE_ALIASES[toSlug(name)]
   return alias ? resolveByExactOrSlug(alias, moveByName, moveBySlug) : null
 }

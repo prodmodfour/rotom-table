@@ -12,6 +12,8 @@ import { createEmptyEncounterState, parseEncounterState } from '#shared/moveAuto
 import { createEmptyAbilityDailyUsageLedger, parseAbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
 import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { GridAnchor } from '~/types/map'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import type { AnyLiveSheet } from '~/utils/sheetMutations'
 import { applyCombatStagesToSheet, applyConditionsToSheet } from '~/utils/sheetMutations'
 import { deepCloneJson } from '~/utils/serialization'
@@ -30,6 +32,7 @@ import type { AuthoritativeAbilityContext } from '../context'
 import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
 import { planAbilityFrequencyPayment } from '../usage'
 import { aa084PowerConstructBlocksTemporaryHp } from './aa084StaticIntegration'
+import { resolveEffectiveCapabilities } from '../../capabilityAutomation/effectiveCapabilities'
 
 const SCENE_FREQUENCY = Object.freeze({
   raw: 'Scene', actionText: '', kind: 'scene', uses: 1, exceptionId: null,
@@ -181,9 +184,22 @@ const gentleVibe = (input: {
   readonly operationId: string
 }): Aa072ActivatedExecution => {
   const paid = paySceneAction({ ...input, canonicalId: 'Gentle Vibe', resource: 'standard' })
+  const pokemonSheets = new Map(input.context.resolvedSheets.flatMap(resolved => (
+    resolved.kind === 'pokemon' ? [[resolved.slug, resolved.sheet as CharacterSheet] as const] : []
+  )))
+  const trainerSheets = new Map(input.context.resolvedSheets.flatMap(resolved => (
+    resolved.kind === 'trainer' ? [[resolved.slug, resolved.sheet as TrainerSheet] as const] : []
+  )))
   const affected = input.context.queries.placements.all().filter((placement) => {
     const token = input.context.queries.tokens.get(placement.id)
-    return token && ptuGridDistanceBetweenFootprints(input.context.actor.token, token) <= 2
+    const resolved = input.context.queries.sheets.forPlacement(placement)
+    if (!token || !resolved || ptuGridDistanceBetweenFootprints(input.context.actor.token, token) > 2) return false
+    return !resolveEffectiveCapabilities({
+      map: input.context.map,
+      placement,
+      sheet: resolved.sheet,
+      sheets: { pokemon: pokemonSheets, trainer: trainerSheets },
+    }).instances.some(instance => instance.effective && instance.canonicalId === 'Mindlock')
   }).sort((left, right) => left.id < right.id ? -1 : left.id > right.id ? 1 : 0)
   const affectedIds = new Set(affected.map(placement => placement.id))
   const changes: MoveStateChangeInput[] = []

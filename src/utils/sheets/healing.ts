@@ -2,7 +2,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
 import type { TrainerApPool, TrainerSheet } from '~/types/trainerSheet'
 import { clampHpValue, computeInjuryAdjustedMaxHp, normalizeInjuryCount } from '~/utils/ptuHp'
-import { computeFullMaxHp, resolveStats } from '~/utils/sheets/pokemonDerived'
+import { computeFullMaxHp, pokemonHasResolvedCapability, resolveStats } from '~/utils/sheets/pokemonDerived'
 import { computeTrainerFullMaxHp, computeTrainerMaxAp, computeTrainerMaxHp } from '~/utils/sheets/trainerDerived'
 import { resolvedStatTotal } from '~/utils/sheets/resolvedStatRows'
 
@@ -231,6 +231,10 @@ export const setPokemonInjuries = (
   options: InjuryRemovalOptions = {},
 ): number => {
   const before = normalizeInjuryCount(sheet.combat?.injuries)
+  if (pokemonHasResolvedCapability(sheet, 'Soulless')) {
+    assignPokemonInjuries(sheet, 0)
+    return 0
+  }
   const requested = nonNegativeWhole(value)
   if (requested >= before) return assignPokemonInjuries(sheet, requested)
 

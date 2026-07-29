@@ -46,8 +46,41 @@ export interface SheetLookup {
 
 type PlacementConditionMap = Pick<
   TabletopMap,
-  'activeScene' | 'temporaryHitPoints' | 'encounterState'
+  'activeScene' | 'temporaryHitPoints' | 'encounterState' | 'metadata'
 >
+
+const projectCapabilityPresentationToken = (
+  token: SpawnedPokemon,
+  map: PlacementConditionMap | null | undefined,
+): SpawnedPokemon => {
+  const states = Array.isArray(map?.metadata?.automationPresentationStates)
+    ? map.metadata.automationPresentationStates.flatMap((raw): readonly Record<string, unknown>[] => (
+        raw && typeof raw === 'object' && !Array.isArray(raw)
+          && (raw as Record<string, unknown>).placementId === token.id
+          ? [raw as Record<string, unknown>] : []
+      )) : []
+  const has = (state: string): boolean => states.some(entry => entry.state === state)
+  const described = (state: string): string | null => {
+    const description = states.find(entry => entry.state === state)?.description
+    return typeof description === 'string' && description.trim() && description.length <= 240
+      ? description.trim() : null
+  }
+  if (states.length === 0) return token
+  const scale = has('inflated') ? 1.25 : has('shrunken') ? 0.25 : 1
+  const shape = described('shapechanged')
+  const zygarde = described('zygarde-form')
+  const weatherForm = described('weather-form')
+  return {
+    ...token,
+    ...(shape ? { species: shape }
+      : zygarde ? { species: zygarde === '10-percent' ? 'Zygarde 10% Forme' : 'Zygarde 50% Forme' }
+        : weatherForm ? { species: weatherForm } : {}),
+    width: Math.max(0.05, token.width * scale),
+    height: Math.max(0.05, token.height * scale),
+    base: Math.max(1, Math.ceil(token.base * scale)),
+    clearance: has('shadow-melded') ? 1 : Math.max(1, Math.ceil(token.clearance * scale)),
+  }
+}
 
 const effectiveConditionsForPlacement = (
   placement: SheetPlacement,
@@ -73,11 +106,12 @@ const effectiveMovementForPlacement = (
   movementTraits: NonNullable<SpawnedPokemon['movementTraits']>,
   conditions: readonly string[],
   map: PlacementConditionMap | null | undefined,
+  deferEncounterMovementProjection = false,
 ) => projectEffectiveMovement({
   sheetCapabilities: movementCapabilities,
   sheetTraits: movementTraits,
   sheetConditions: conditions,
-  encounterEffects: map?.encounterState?.effects,
+  encounterEffects: deferEncounterMovementProjection ? [] : map?.encounterState?.effects,
   target: {
     placementId: placement.id,
     ...(placement.sideId === undefined ? {} : { sideId: placement.sideId }),
@@ -179,6 +213,8 @@ export const unresolvedPlacementReferences = (
 export interface PlacementSpawnOptions {
   /** AA-077 is projected from exact effective abilities by authoritative callers. */
   readonly skipAa077NativeProjection?: boolean
+  /** Defer generic typed movement effects so authoritative static providers run first. */
+  readonly deferEncounterMovementProjection?: boolean
 }
 
 export const placementToSpawned = (
@@ -211,6 +247,7 @@ export const placementToSpawned = (
       hp.movementTraits,
       hp.conditions,
       map,
+      options.deferEncounterMovementProjection,
     )
     const defenderCapabilities = defenderCapabilitiesForMovement(movement)
     const abilityNames = pokemonTokenAbilityNames(sheet)
@@ -268,12 +305,15 @@ export const placementToSpawned = (
       placement,
       token: baseToken,
       effects: map?.encounterState?.effects,
+      deferEncounterMovementProjection: options.deferEncounterMovementProjection,
     })
-    return projectNativeAbilityTokenStats(projectEncounterCreatureRuleToken({
+    return projectCapabilityPresentationToken(projectNativeAbilityTokenStats(projectEncounterCreatureRuleToken({
       placement,
       token: transformedToken,
       effects: map?.encounterState?.effects,
-    }), sheet, options)
+      baseFormSpecies: sheet.species,
+      forceProfile: true,
+    }), sheet, options), map)
   }
   const sheet = sheets.trainer.get(placement.sheetSlug)
   if (!sheet) return null
@@ -294,6 +334,7 @@ export const placementToSpawned = (
     hp.movementTraits,
     hp.conditions,
     map,
+    options.deferEncounterMovementProjection,
   )
   const defenderCapabilities = defenderCapabilitiesForMovement(movement)
   const abilityNames = trainerTokenAbilityNames(sheet)
@@ -334,11 +375,12 @@ export const placementToSpawned = (
     conditions: hp.conditions,
     tokenItems: trainerEquippedItemNames(sheet),
   }
-  return projectNativeAbilityTokenStats(projectEncounterCreatureRuleToken({
+  return projectCapabilityPresentationToken(projectNativeAbilityTokenStats(projectEncounterCreatureRuleToken({
     placement,
     token: baseToken,
     effects: map?.encounterState?.effects,
-  }), sheet, options)
+    forceProfile: true,
+  }), sheet, options), map)
 }
 
 export const placementsToSpawned = (

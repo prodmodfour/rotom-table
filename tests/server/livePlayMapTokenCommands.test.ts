@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
+import { createEmptyCapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
 import { parseEncounterZone } from '#shared/moveAutomation/encounterZones'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -224,6 +225,9 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
     published,
     get storedMap() {
       return storedMap
+    },
+    replaceStoredMapForTest(nextMap: TabletopMap) {
+      storedMap = nextMap
     },
   }
 }
@@ -801,6 +805,208 @@ describe('live-play map token commands', () => {
     expect(harness.published).toEqual(expect.arrayContaining([
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', revision: 5, opId: 'op_mapsendout1' }),
     ]))
+  })
+
+  it('never independently spawns or sends out a Baby Template even when pouch state is missing', async () => {
+    const harness = createHarness()
+    harness.deps.readSheet.mockImplementation((kind: string, slug: string) => ({
+      sheet: kind === 'trainer'
+        ? { slug, name: 'Boss', level: 10, revision: 1, currentTeam: ['kangaskhan-baby'], capabilities: { overland: 5 } }
+        : slug === 'kangaskhan-baby'
+          ? {
+              slug, nickname: 'Baby', species: 'Kangaskhan', level: 5, revision: 1,
+              capabilities: { overland: 6 }, babyTemplate: true,
+            }
+          : { slug, nickname: 'Bolt', species: 'Pikachu', level: 10, revision: 1, capabilities: { overland: 6 } },
+    }))
+
+    const spawned = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: spawnCommand({
+        opId: 'op_spawn_baby_template',
+        payload: {
+          placement: {
+            id: 'baby-spawn', sheetKind: 'pokemon', sheetSlug: 'kangaskhan-baby',
+            position: { x: 3, y: 0, z: 3 }, sideId: 'wild', facing: 'south-east', turned: false,
+          },
+        },
+        scopes: [{ kind: 'token', placementId: 'baby-spawn', field: 'spawn' }],
+      }),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
+    }, harness.deps)
+    expect(spawned.result).toMatchObject({ ok: false, reason: 'conflict' })
+
+    const sent = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: sendOutCommand({
+        opId: 'op_send_baby_template',
+        payload: {
+          trainerId: 'unlinked-token', pokemonSlug: 'kangaskhan-baby', tokenId: 'baby-send-out',
+          position: { x: 3, y: 0, z: 2 }, facing: 'south-east',
+        },
+        scopes: [
+          { kind: 'token', placementId: 'unlinked-token', field: 'sendOut' },
+          { kind: 'token', placementId: 'baby-send-out', field: 'spawn' },
+        ],
+      }),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+    }, harness.deps)
+    expect(sent.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(harness.writes).toEqual([])
+  })
+
+  it('fails closed when a Marsupial mother and baby do not retain exact reciprocal share state', async () => {
+    const harness = createHarness()
+    const motherPouch = {
+      motherSheetSlug: 'kangaskhan-mother', babySheetSlug: 'kangaskhan-baby', experienceSharePercent: 20,
+      establishedAt: 1_000, sourceOperationId: 'op_shelterpersist1',
+    }
+    harness.deps.readSheet.mockImplementation((kind: string, slug: string) => ({
+      sheet: kind === 'trainer'
+        ? {
+            slug, name: 'Boss', level: 10, revision: 1,
+            currentTeam: ['kangaskhan-mother', 'kangaskhan-baby'], capabilities: { overland: 5 },
+          }
+        : slug === 'kangaskhan-mother'
+          ? {
+              slug, nickname: 'Mother', species: 'Kangaskhan', level: 30, revision: 1, capabilities: { overland: 6 },
+              capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: motherPouch },
+            }
+          : slug === 'kangaskhan-baby'
+            ? {
+                slug, nickname: 'Baby', species: 'Kangaskhan', level: 5, revision: 1, capabilities: { overland: 6 },
+                babyTemplate: true,
+                capabilityCampaignState: {
+                  ...createEmptyCapabilityCampaignState(),
+                  marsupialPouch: { ...motherPouch, experienceSharePercent: 0 },
+                },
+              }
+            : { slug, nickname: 'Bolt', species: 'Pikachu', level: 10, revision: 1, capabilities: { overland: 6 } },
+    }))
+
+    const response = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: sendOutCommand({
+        opId: 'op_send_corrupt_marsupial',
+        payload: {
+          trainerId: 'unlinked-token', pokemonSlug: 'kangaskhan-mother', tokenId: 'sent-out-mother',
+          position: { x: 3, y: 0, z: 2 }, facing: 'south-east',
+        },
+        scopes: [
+          { kind: 'token', placementId: 'unlinked-token', field: 'sendOut' },
+          { kind: 'token', placementId: 'sent-out-mother', field: 'spawn' },
+        ],
+      }),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+    }, harness.deps)
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(harness.writes).toEqual([])
+  })
+
+  it('restores and recalls a persistent Marsupial mother/baby presence group atomically', async () => {
+    const harness = createHarness()
+    const pouch = {
+      motherSheetSlug: 'kangaskhan-mother',
+      babySheetSlug: 'kangaskhan-baby',
+      experienceSharePercent: 20,
+      establishedAt: 1_000,
+      sourceOperationId: 'op_shelterpersist1',
+    }
+    harness.deps.readSheet.mockImplementation((kind: string, slug: string) => ({
+      sheet: kind === 'trainer'
+        ? {
+            slug, name: 'Boss', level: 10, revision: 1,
+            currentTeam: ['kangaskhan-mother', 'kangaskhan-baby'], capabilities: { overland: 5 },
+          }
+        : slug === 'kangaskhan-mother'
+          ? {
+              slug, nickname: 'Mother', species: 'Kangaskhan', level: 30, revision: 1,
+              capabilities: { overland: 6 },
+              capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+            }
+          : slug === 'kangaskhan-baby'
+            ? {
+                slug, nickname: 'Baby', species: 'Kangaskhan', level: 5, revision: 1,
+                capabilities: { overland: 6 }, babyTemplate: true,
+                capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+              }
+            : {
+                slug, nickname: 'Bolt', species: 'Pikachu', level: 10, revision: 1,
+                capabilities: { overland: 6 },
+              },
+    }))
+    const command = sendOutCommand({
+      opId: 'op_sendmarsupial1',
+      payload: {
+        trainerId: 'unlinked-token',
+        pokemonSlug: 'kangaskhan-mother',
+        tokenId: 'sent-out-mother',
+        position: { x: 3, y: 0, z: 2 },
+        facing: 'south-east',
+      },
+      scopes: [
+        { kind: 'token', placementId: 'unlinked-token', field: 'sendOut' },
+        { kind: 'token', placementId: 'sent-out-mother', field: 'spawn' },
+      ],
+    })
+
+    const sent = await executeMapTokenLivePlayCommandUseCase({
+      role: 'player', command, clientId: 'player-client',
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'giovanni' }]),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+    }, harness.deps)
+
+    expect(sent.result).toMatchObject({ ok: true, revision: 5 })
+    expect(harness.storedMap.placements).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'sent-out-mother', sheetSlug: 'kangaskhan-mother', position: { x: 3, y: 0, z: 2 } }),
+      expect.objectContaining({ id: 'sent-out-mother-marsupial-baby', sheetSlug: 'kangaskhan-baby', position: { x: 3, y: 0, z: 2 } }),
+    ]))
+    expect(harness.storedMap.encounterState?.capabilityRuntime?.links).toContainEqual(expect.objectContaining({
+      kind: 'marsupial-pouch',
+      ownerPlacementId: 'sent-out-mother',
+      participantPlacementIds: ['sent-out-mother-marsupial-baby'],
+    }))
+    if (!sent.result.ok || 'duplicate' in sent.result) throw new Error('expected accepted send-out')
+    expect(sent.result.patches).toHaveLength(2)
+    expect(sent.result.patches[1]).toMatchObject({
+      type: 'map.placements',
+      scopes: [{ kind: 'token', placementId: 'sent-out-mother-marsupial-baby', field: 'spawn' }],
+      payload: { placementId: 'sent-out-mother-marsupial-baby', previous: null },
+    })
+
+    // Durable reciprocal sheets, not disposable map mirrors, own recall grouping.
+    const beforeRecall = harness.storedMap
+    harness.replaceStoredMapForTest({
+      ...beforeRecall,
+      metadata: { ...(beforeRecall.metadata ?? {}), capabilityMarsupialPouches: [] },
+      ...(beforeRecall.encounterState ? {
+        encounterState: {
+          ...beforeRecall.encounterState,
+          ...(beforeRecall.encounterState.capabilityRuntime ? {
+            capabilityRuntime: { ...beforeRecall.encounterState.capabilityRuntime, links: [] },
+          } : {}),
+        },
+      } : {}),
+    })
+    const recalled = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: deleteCommand({
+        opId: 'op_recallmarsupial1',
+        baseRevision: 5,
+        payload: { placementId: 'sent-out-mother-marsupial-baby' },
+        scopes: [{ kind: 'token', placementId: 'sent-out-mother-marsupial-baby', field: 'delete' }],
+      }),
+      playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+    }, harness.deps)
+
+    expect(recalled.result).toMatchObject({ ok: true, revision: 6 })
+    expect(harness.storedMap.placements.some(placement => (
+      placement.id === 'sent-out-mother' || placement.id === 'sent-out-mother-marsupial-baby'
+    ))).toBe(false)
+    if (!recalled.result.ok || 'duplicate' in recalled.result) throw new Error('expected accepted recall')
+    expect(recalled.result.patches).toHaveLength(2)
   })
 
   it('materializes a durable Ball Fetch trigger from an authoritative send-out', async () => {

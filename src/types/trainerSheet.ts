@@ -1,5 +1,6 @@
 import type { AbilityInstanceData } from '#shared/abilityAutomation/parameters'
 import type { AbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
+import type { CapabilityUsageLedger } from '#shared/capabilityAutomation/state'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
@@ -323,6 +324,8 @@ export interface TrainerSheet {
   moveUsage?: SheetMoveUsageState
   /** Lasting server-owned Daily ability usage for the current campaign day. */
   abilityUsage?: AbilityDailyUsageLedger
+  /** Server-owned Daily/Weekly/hourly Capability resources. */
+  capabilityUsage?: CapabilityUsageLedger
   abilities?: TrainerAbilityEntry[]
   maneuvers?: TrainerManeuver[]
   /** Pokémon Training & Orders that the trainer can apply to their team. */

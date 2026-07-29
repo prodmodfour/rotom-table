@@ -1,9 +1,11 @@
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { parseCapabilityLabel } from '#shared/capabilityAutomation/catalog'
 import { projectAuthoritativeEffectiveAbilities } from './effectiveAbilities'
 import type { AuthoritativeEffectiveAbility } from './context'
 import { resolveSheetAbilityInstances } from './instanceParameters'
+import { pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
 import {
   ABILITY_AUTOMATION_RUNTIME_REGISTRY,
   type AbilityAutomationRuntimeRegistry,
@@ -19,6 +21,24 @@ export const authoritativeAbilityOwnerIsConscious = (
     && !(conditions ?? []).some(condition => condition.trim().toLowerCase() === 'fainted')
 }
 
+export const hasEffectiveSoullessCapability = (input: {
+  readonly map: Pick<TabletopMap, 'encounterState'>
+  readonly placementId: string
+  readonly sheet: CharacterSheet | TrainerSheet
+}): boolean => {
+  if (!('species' in input.sheet) || !pokemonHasResolvedCapability(input.sheet, 'Soulless')) return false
+  return !(input.map.encounterState?.effects ?? []).some(effect => {
+    if (effect.kind !== 'capability' || effect.payload.action === 'grant'
+      || effect.suppression.sources.length > 0
+      || (effect.duration.remaining !== null && effect.duration.remaining <= 0)
+      || !effect.affected.placementIds.includes(input.placementId)) return false
+    const parsed = parseCapabilityLabel(effect.payload.capabilityId
+      .replace(/^(?:capability|movement)[.:]/i, '')
+      .replace(/[._-]+/g, ' '))
+    return parsed.canonicalId === 'Soulless'
+  })
+}
+
 export interface EffectiveRuntimeAbilitiesInput {
   readonly map: Pick<TabletopMap, 'encounterState'>
   readonly placement: Pick<SheetPlacement, 'id' | 'sideId' | 'position'>
@@ -32,8 +52,22 @@ export const effectiveRuntimeAbilities = (
   input: EffectiveRuntimeAbilitiesInput,
 ): readonly AuthoritativeEffectiveAbility[] => {
   if (!authoritativeAbilityOwnerIsConscious(input.sheet)) return Object.freeze([])
+  const sheetAbilityInstances = resolveSheetAbilityInstances(input.sheet.abilities)
+  const soullessWonderGuard = hasEffectiveSoullessCapability({
+    map: input.map,
+    placementId: input.placement.id,
+    sheet: input.sheet,
+  })
+    && !sheetAbilityInstances.some(ability => ability.canonicalId === 'Wonder Guard')
+    ? [{
+        instanceId: `capability:${input.placement.id}:Soulless:Wonder_Guard`,
+        canonicalId: 'Wonder Guard',
+        parameterStatus: 'not-parameterized' as const,
+        parameterData: null,
+      }]
+    : []
   return Object.freeze(projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+    baseAbilities: [...sheetAbilityInstances, ...soullessWonderGuard],
     species: 'species' in input.sheet ? input.sheet.species : null,
     target: {
       placementId: input.placement.id,

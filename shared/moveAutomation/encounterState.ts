@@ -1,4 +1,10 @@
 import {
+  CapabilityStateValidationError,
+  createEmptyCapabilityRuntimeState,
+  parseCapabilityRuntimeState,
+  type CapabilityRuntimeState,
+} from '../capabilityAutomation/state'
+import {
   AbilityEventReceiptValidationError,
   createEmptyAbilityEventReceiptState,
   parseAbilityEventReceiptState,
@@ -170,6 +176,8 @@ export interface EncounterState {
   readonly abilityReactionAvailability?: AbilityReactionAvailabilityLedger
   readonly abilityEntities?: AbilityEntityState
   readonly abilityTransformations?: AbilityTransformationState
+  /** Typed, bounded, map-owned modes, links, tasks, and scene usage for canonical Capabilities. */
+  readonly capabilityRuntime?: CapabilityRuntimeState
   readonly zones: readonly EncounterZone[]
   /** Map-owned dropped/thrown item stacks with bounded authoritative provenance. */
   readonly groundItems: readonly MapGroundItem[]
@@ -212,6 +220,7 @@ const ENCOUNTER_STATE_FIELDS = [
   'abilityReactionAvailability',
   'abilityEntities',
   'abilityTransformations',
+  'capabilityRuntime',
   'zones',
   'groundItems',
   'pendingResolutionSummaries',
@@ -228,7 +237,8 @@ const REQUIRED_ENCOUNTER_STATE_FIELDS = ENCOUNTER_STATE_FIELDS.filter(
     && field !== 'abilityEventReceipts'
     && field !== 'abilityReactionAvailability'
     && field !== 'abilityEntities'
-    && field !== 'abilityTransformations',
+    && field !== 'abilityTransformations'
+    && field !== 'capabilityRuntime',
 )
 
 const LIST_CONTAINER_KEYS = [
@@ -571,6 +581,22 @@ const parseAbilityTransformations = (value: unknown): AbilityTransformationState
   }
 }
 
+const parseCapabilityRuntime = (value: unknown): CapabilityRuntimeState => {
+  try {
+    return parseCapabilityRuntimeState(value, 'encounterState.capabilityRuntime')
+  }
+  catch (error) {
+    if (error instanceof CapabilityStateValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.detail,
+      )
+    }
+    throw error
+  }
+}
+
 const parsePendingResolutionSummaries = (
   value: unknown,
 ): readonly PendingMoveResolutionPublicSummary[] => {
@@ -747,6 +773,7 @@ export const createEmptyEncounterState = (): EncounterState => ({
   abilityReactionAvailability: createEmptyAbilityReactionAvailabilityLedger(),
   abilityEntities: createEmptyAbilityEntityState(),
   abilityTransformations: createEmptyAbilityTransformationState(),
+  capabilityRuntime: createEmptyCapabilityRuntimeState(),
   zones: [],
   groundItems: [],
   pendingResolutionSummaries: [],
@@ -807,6 +834,9 @@ export const parseEncounterState = (value: unknown): EncounterState => {
     ),
     abilityTransformations: parseAbilityTransformations(
       value.abilityTransformations ?? createEmptyAbilityTransformationState(),
+    ),
+    capabilityRuntime: parseCapabilityRuntime(
+      value.capabilityRuntime ?? createEmptyCapabilityRuntimeState(),
     ),
     zones: parseEncounterZoneList(value.zones, sides),
     groundItems: parseGroundItemList(value.groundItems ?? [], sides),

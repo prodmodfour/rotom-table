@@ -1,5 +1,6 @@
 import capabilityCatalogJson from '~~/data/move-automation/capabilities.json'
 import menuStatusJson from '~~/data/move-automation/menu-status.json'
+import { capabilityWeaponMoveName } from '#shared/capabilityAutomation/weaponMoves'
 import type {
   MoveAutomationBaseStatus,
   MoveAutomationInteractionStatus,
@@ -158,13 +159,30 @@ const UNREVIEWED_MOVE_STATUS: MoveAutomationSemanticStatus = Object.freeze({
   ]),
 })
 
-/** Resolve only canonical manifest rows; unknown/custom names return null. */
+const capabilityWeaponSemanticStatus = (canonicalId: string): MoveAutomationSemanticStatus => Object.freeze({
+  canonicalId,
+  baseStatus: 'complete',
+  baseStatusLabel: BASE_STATUS_LABELS.complete,
+  interactionStatus: 'complete',
+  interactionStatusLabel: INTERACTION_STATUS_LABELS.complete,
+  runtimeKind: 'movespec-v2',
+  blockerCodes: Object.freeze([]),
+  limitations: Object.freeze([]),
+  manualSteps: Object.freeze([]),
+  details: Object.freeze([]),
+})
+
+/** Resolve canonical manifest rows and reviewed Capability-owned weapon Moves. */
 export const findMoveAutomationSemanticStatus = (
   moveName: string | null | undefined,
 ): MoveAutomationSemanticStatus | null => {
   if (typeof moveName !== 'string') return null
   const key = normalizedMoveName(moveName)
-  return key ? statusByMoveName.get(key) ?? null : null
+  if (!key) return null
+  const manifest = statusByMoveName.get(key)
+  if (manifest) return manifest
+  const weaponMove = capabilityWeaponMoveName(moveName)
+  return weaponMove ? capabilityWeaponSemanticStatus(weaponMove) : null
 }
 
 /** Resolve menu state, failing closed for unknown/custom move names. */

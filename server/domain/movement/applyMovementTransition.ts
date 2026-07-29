@@ -44,11 +44,13 @@ export const applyAuthoritativeMovementMapTransition = (input: {
   readonly encounterState: EncounterState
   readonly timestamp: number
   readonly userName: string
+  /** Exact source-effective companions returned by the movement oracle. */
+  readonly linkedCompanionPlacementIds?: readonly string[]
   readonly maxLogEntries?: number
   readonly movementEvidence?: {
     readonly operationId: string
     readonly path: readonly GridAnchor[]
-    readonly mode: 'voluntary' | 'forced' | 'teleport'
+    readonly mode: 'voluntary' | 'jump' | 'forced' | 'teleport'
   }
 }): AuthoritativeMovementMapTransition => {
   if (!Number.isSafeInteger(input.distance) || input.distance < 0) {
@@ -66,7 +68,7 @@ export const applyAuthoritativeMovementMapTransition = (input: {
     input.map.encounterState ?? createEmptyEncounterState(),
   )
   const parsedEncounterState = parseEncounterState(input.encounterState)
-  const encounterState = input.movementEvidence
+  let encounterState = input.movementEvidence
     ? recordAa085to100MovementEvidence({
         encounterState: parsedEncounterState,
         placementId: input.placementId,
@@ -89,7 +91,10 @@ export const applyAuthoritativeMovementMapTransition = (input: {
           turned: tokenFacingStoresLegacyTurned(nextFacing),
         }),
   }
-  const metadata = moved
+  // Companion identities are evidence returned by the authoritative movement
+  // oracle. Never rediscover them from raw persisted links at transition time.
+  const linkedCompanionIds = new Set(input.linkedCompanionPlacementIds ?? [])
+  let metadata = moved
     ? appendMovementLogEntry(input.map.metadata, {
         userId: placement.id,
         userName: input.userName,
@@ -101,13 +106,57 @@ export const applyAuthoritativeMovementMapTransition = (input: {
         maxLogEntries: input.maxLogEntries,
       })
     : deepCloneJson(input.map.metadata)
+  if (moved && Array.isArray(input.map.metadata?.capabilityIllusions)) {
+    const contactedOwnerIds = new Set(input.map.metadata.capabilityIllusions.flatMap((raw): readonly string[] => {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return []
+      const illusion = raw as Record<string, unknown>
+      const position = illusion.position as Record<string, unknown> | undefined
+      return illusion.ownerPlacementId !== placement.id
+        && position?.x === to.x && position.y === to.y && position.z === to.z
+        && typeof illusion.ownerPlacementId === 'string'
+        ? [illusion.ownerPlacementId] : []
+    }))
+    if (contactedOwnerIds.size > 0) {
+      metadata = {
+        ...(metadata ?? {}),
+        capabilityIllusions: input.map.metadata.capabilityIllusions.filter(raw => (
+          !contactedOwnerIds.has(String((raw as Record<string, unknown>)?.ownerPlacementId))
+        )),
+      }
+      encounterState = parseEncounterState({
+        ...encounterState,
+        capabilityRuntime: encounterState.capabilityRuntime ? {
+          ...encounterState.capabilityRuntime,
+          modes: encounterState.capabilityRuntime.modes.filter(mode => (
+            mode.mode !== 'illusion' || !contactedOwnerIds.has(mode.actorPlacementId)
+          )),
+        } : encounterState.capabilityRuntime,
+        effects: encounterState.effects.filter(effect => (
+          ![...contactedOwnerIds].some(ownerId => effect.id === `capability.mode.${ownerId}.illusion`)
+        )),
+      })
+    }
+  }
+  if (moved && Array.isArray(metadata?.capabilityObjects)) {
+    const movingPlacementIds = new Set([placement.id, ...linkedCompanionIds])
+    metadata = {
+      ...(metadata ?? {}),
+      capabilityObjects: metadata.capabilityObjects.map((raw) => {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)
+          || !movingPlacementIds.has(String((raw as Record<string, unknown>).attachedToPlacementId))) return raw
+        return { ...(raw as Record<string, unknown>), position: { ...to } }
+      }),
+    }
+  }
 
   return {
     nextMap: {
       ...deepCloneJson(input.map),
-      placements: input.map.placements.map(candidate => (
-        candidate.id === placement.id ? nextPlacement : deepCloneJson(candidate)
-      )),
+      placements: input.map.placements.map(candidate => {
+        if (candidate.id === placement.id) return nextPlacement
+        if (linkedCompanionIds.has(candidate.id)) return { ...deepCloneJson(candidate), position: { ...to } }
+        return deepCloneJson(candidate)
+      }),
       metadata,
       encounterState,
       updatedAt: input.timestamp,

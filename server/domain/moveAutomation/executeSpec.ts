@@ -137,7 +137,10 @@ import {
 } from '../abilityAutomation/mechanics/aa067MoveIntegration'
 import { AA067_DELAYED_REACTION_TYPE_SOURCE } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 import { applyAa067DeliveryBirdItemChoiceEntries } from '../abilityAutomation/mechanics/aa067ItemIntegration'
-import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
+import {
+  applyEncounterNumericModifiers,
+  capabilityContextualTargetEvasionBonus,
+} from './encounterNumericModifiers'
 import {
   aa069DamageBaseBonus,
   aa069DamageBaseSources,
@@ -5837,7 +5840,29 @@ const executeMoveSpecInternal = (
               map: input.context.map,
               placementId: recipientId,
               attribute: 'evasion',
-              baseValue: targetEvasion,
+              now: input.context.time,
+              isCapabilityEffective: canonicalId => input.context.queries.creatureRules.hasCapability(recipientId, canonicalId),
+              isCapabilityInstanceEffective: (instanceId, canonicalId) => input.context.queries.creatureRules
+                .hasCapabilityInstance(recipientId, instanceId, canonicalId),
+              baseValue: targetEvasion + capabilityContextualTargetEvasionBonus({
+                map: input.context.map,
+                placementId: recipientId,
+                range: accuracyScript.range,
+                now: input.context.time,
+                isCapabilityEffective: canonicalId => input.context.queries.creatureRules.hasCapability(recipientId, canonicalId),
+                isCapabilityInstanceEffective: (instanceId, canonicalId) => input.context.queries.creatureRules
+                  .hasCapabilityInstance(recipientId, instanceId, canonicalId),
+                hasCapabilityForPlacement: (placementId, canonicalId) => input.context.queries.creatureRules.hasCapability(placementId, canonicalId),
+                hasCapabilityInstanceForPlacement: (placementId, instanceId, canonicalId) => input.context.queries.creatureRules
+                  .hasCapabilityInstance(placementId, instanceId, canonicalId),
+                speciesForPlacement: (placementId) => {
+                  const placement = input.context.queries.placements.get(placementId)
+                  const resolved = placement ? input.context.queries.sheets.forPlacement(placement) : null
+                  return placement?.sheetKind === 'pokemon'
+                    ? (resolved?.sheet as CharacterSheet | undefined)?.species ?? null
+                    : input.context.queries.tokens.get(placementId)?.species ?? null
+                },
+              }),
               changePolicy: keenEye ? 'non-increasing' : 'all',
               ...(input.context.queries.abilities.has(recipientId, 'White Smoke') ? {
                 protectedFromExternalDecreasesPlacementId: recipientId,

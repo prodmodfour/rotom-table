@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto'
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
@@ -13,6 +14,7 @@ import {
 } from '#shared/livePlayCommands'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
+import { createEmptyEncounterState, parseEncounterState } from '#shared/moveAutomation/encounterState'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -31,6 +33,8 @@ import { applyAa081NaturalCureForBreather } from '../domain/abilityAutomation/me
 import { applyAa085to100RegeneratorTrigger } from '../domain/abilityAutomation/mechanics/aa085to100LifecycleIntegration'
 import { cleanupAa085to100CurledUpForBreather } from '../domain/abilityAutomation/mechanics/aa085to100ActionIntegration'
 import { clearAa083PerishCountForBreather } from '../domain/abilityAutomation/mechanics/aa083LifecycleIntegration'
+import { resolveAuthoritativeDisarm } from '../domain/maneuverAutomation/disarm'
+import { spendEncounterMoveResourceCosts } from '../domain/moveAutomation/reduceEncounterResources'
 import {
   aa077HasAuthoritativeDisengageWindow,
   applyAa077DisengageResourceEvidence,
@@ -111,6 +115,7 @@ export interface LivePlayTableActionCommandDependencies {
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly now?: () => number
   readonly idFactory?: () => string
+  readonly rollDie?: (label: string, sides: number) => number
   readonly relativePath?: (path: string) => string
 }
 
@@ -157,6 +162,7 @@ const actionDependencies = (dependencies: LivePlayTableActionCommandDependencies
   database: dependencies.database ?? getRotomDatabase(),
   now: dependencies.now ?? Date.now,
   idFactory: dependencies.idFactory,
+  rollDie: dependencies.rollDie ?? ((_label: string, sides: number) => randomInt(1, sides + 1)),
   relativePath: dependencies.relativePath ?? ((path: string) => path),
 })
 
@@ -182,8 +188,6 @@ const linkedTrainerSheetsForActor = async (
 const isRecord = (value: unknown): value is UnknownRecord => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
 )
-
-const nonEmptyString = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0
 
 const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => logicalMapResourcePath(map)
 
@@ -484,6 +488,39 @@ const sheetUpdateFromPersisted = (sheet: PersistedSheet): LivePlayTableActionShe
   sheet: sheet.sheet,
 })
 
+const spendDisarmStandardAction = (
+  map: TabletopMap,
+  placementId: string,
+  operationId: string,
+): TabletopMap => {
+  if (map.initiative?.activeId && map.initiative.activeId !== placementId) {
+    rejectLivePlayCommand('invalid', 'Disarm may only be declared during the actor’s Initiative turn.')
+  }
+  const encounter = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
+  const round = map.initiative?.round ?? encounter.history.currentRound ?? null
+  const turn = encounter.history.currentTurn?.turn ?? round
+  const spent = spendEncounterMoveResourceCosts(encounter.turnResources, {
+    placementId,
+    canonicalMoveId: 'Disarm',
+    resolutionId: operationId,
+    sourceOperationId: operationId,
+    costs: [{
+      id: 'maneuver.disarm.cost.standard-action',
+      phase: 'pay',
+      cost: { kind: 'action-resource', resource: 'standard', amount: 1 },
+    }],
+    movementBudget: null,
+    movementDistance: 0,
+    round,
+    turn,
+    actedThisRound: false,
+  })
+  return {
+    ...map,
+    encounterState: parseEncounterState({ ...encounter, turnResources: spent.resources }),
+  }
+}
+
 const applyManeuverCommand = (
   command: LivePlayTableActionCommand,
   context: ResolvedActionContext,
@@ -509,13 +546,56 @@ const applyManeuverCommand = (
     rejectLivePlayCommand('invalid', 'Disengage requires the actor’s authoritative current-turn resource ledger.')
   }
 
-  const metadata = appendManeuverLogEntry(context.map.metadata, {
+  let maneuverMap = context.map
+  let disarmResult: ReturnType<typeof resolveAuthoritativeDisarm> | null = null
+  if (maneuver.name === 'Disarm') {
+    const targetPlacement = context.targetPlacement
+    const targetSheet = context.targetSheet
+    if (!targetPlacement || !targetSheet) {
+      throw new MapTokenTableActionUseCaseError(400, 'Disarm requires one authoritative target placement.')
+    }
+    if (targetPlacement.id === context.actorPlacement.id) {
+      throw new MapTokenTableActionUseCaseError(400, 'Disarm cannot target the acting placement.')
+    }
+    maneuverMap = spendDisarmStandardAction(maneuverMap, context.actorPlacement.id, command.opId)
+    const pokemonSheets = new Map<string, CharacterSheet>()
+    const trainerSheets = new Map<string, TrainerSheet>()
+    const addSheet = (sheet: PersistedSheet): void => {
+      if (sheet.kind === 'pokemon') pokemonSheets.set(sheet.slug, sheet.sheet as unknown as CharacterSheet)
+      else trainerSheets.set(sheet.slug, sheet.sheet as unknown as TrainerSheet)
+    }
+    addSheet(context.actorSheet)
+    addSheet(targetSheet)
+    try {
+      const resolvedDisarm = resolveAuthoritativeDisarm({
+        map: maneuverMap,
+        actorPlacement: context.actorPlacement,
+        targetPlacement,
+        actorSheet: context.actorSheet.sheet as unknown as CharacterSheet | TrainerSheet,
+        targetSheet: targetSheet.sheet as unknown as CharacterSheet | TrainerSheet,
+        pokemonSheets,
+        trainerSheets,
+        operationId: command.opId,
+        rollDie: dependencies.rollDie,
+      })
+      disarmResult = resolvedDisarm
+      maneuverMap = resolvedDisarm.map
+    }
+    catch (error) {
+      rejectLivePlayCommand('invalid', error instanceof Error ? error.message : 'Disarm could not be resolved.')
+    }
+  }
+
+  const maneuverLines = buildManeuverUseLogLines(actor as SpawnedPokemon, maneuver, {
+    target: target as SpawnedPokemon | null,
+  })
+  const metadata = appendManeuverLogEntry(maneuverMap.metadata, {
     userId: actor.id,
     userName: actor.species,
     maneuverName: maneuver.name,
-    lines: buildManeuverUseLogLines(actor as SpawnedPokemon, maneuver, { target: target as SpawnedPokemon | null }),
+    lines: [...maneuverLines, ...(disarmResult?.lines ?? [])],
   }, { now: dependencies.now })
-  const withMetadata = { ...context.map, metadata }
+  const withMetadata = { ...maneuverMap, metadata }
   const afterBreather = maneuver.name === 'Take a Breather'
     ? cleanupAa065CrueltyHealingBlockForBreather({
         map: withMetadata,
@@ -569,6 +649,9 @@ const applyManeuverCommand = (
   const writePlans = new Map<string, SheetWritePlan>()
   if (naturalCure.applied || regenerator.applied) {
     addOrUpdateWritePlan(writePlans, context.actorSheet, 'ability-lifecycle', () => regenerator.sheet)
+  }
+  if (disarmResult?.changedTargetSheet && context.targetSheet) {
+    addOrUpdateWritePlan(writePlans, context.targetSheet, 'equipment', () => disarmResult.targetSheet)
   }
   const nextSheets = [...writePlans.values()]
   return {

@@ -33,6 +33,7 @@ import { gridFootprintCells } from '~/utils/gridGeometry'
 import { getVoxelMaterialDefinition } from '~/utils/mapMaterials'
 import { normalizeConditionName, normalizeConditionNames } from '~/utils/statusConditions'
 import { abilityIsCopyable } from '../effectiveAbilities'
+import { hasEffectiveSoullessCapability } from '../effectiveRuntimeAbilities'
 import { reduceAbilityTransformationCommand } from '../transformations'
 import { applyMapGlobalField } from '../../moveAutomation/fieldMapState'
 import { buildAuthoritativeMoveRulesContext } from '../../moveAutomation/context'
@@ -461,6 +462,15 @@ const temporaryHpChange = (input: {
   const byPlacementId = { ...currentBase.byPlacementId }
   for (const [placementId, amount] of Object.entries(input.additions)) {
     if (amount <= 0
+      || (() => {
+        const placement = input.context.queries.placements.get(placementId)
+        const sheet = placement ? input.context.queries.sheets.forPlacement(placement)?.sheet : null
+        return placement !== null && sheet !== null && hasEffectiveSoullessCapability({
+          map: input.context.map,
+          placementId,
+          sheet,
+        })
+      })()
       || authoritativeAbilityHealingBlocked({ map: input.context.map, placementId })
       || (() => {
         const token = input.context.queries.tokens.get(placementId)

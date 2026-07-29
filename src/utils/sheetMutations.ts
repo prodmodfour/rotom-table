@@ -4,6 +4,7 @@ import { clampHpValue, normalizeInjuryCount } from './ptuHp'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages as normalizeCombatStageMap } from './combatStages'
 import { normalizeConditionNames } from './statusConditions'
 import { setPokemonInjuries, setTrainerInjuries } from './sheets/healing'
+import { pokemonHasResolvedCapability } from './sheets/pokemonDerived'
 import {
   calculatePokemonLevelFromExperience,
   pokemonExperienceNeededForLevel,
@@ -97,7 +98,8 @@ export const applyHpToSheet = (
   if (kind === 'pokemon') {
     const updated = deepCloneJson(sheet as CharacterSheet)
     updated.combat = { ...(updated.combat ?? {}) }
-    if (injuries != null) setPokemonInjuries(updated, normalizeInjuryCount(injuries))
+    if (pokemonHasResolvedCapability(updated, 'Soulless')) setPokemonInjuries(updated, 0)
+    else if (injuries != null) setPokemonInjuries(updated, normalizeInjuryCount(injuries))
     updated.combat.currentHp = clampHpValue(currentHp, pokemonHpSnapshot(updated).maxHp)
     return updated
   }

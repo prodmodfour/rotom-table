@@ -13,10 +13,14 @@ export interface EncounterNumericModifierStep {
 }
 
 const activeEffects = (input: {
-  readonly map: Pick<TabletopMap, 'encounterState'>
+  readonly map: Pick<TabletopMap, 'encounterState' | 'updatedAt'>
   readonly placementId: string
   readonly attribute: EncounterEffectNumericAttribute
+  readonly now?: number
+  readonly isCapabilityEffective?: (canonicalId: string) => boolean
+  readonly isCapabilityInstanceEffective?: (capabilityInstanceId: string, canonicalId: string) => boolean
 }): readonly EncounterNumericModifierEffect[] => {
+  const evaluationTime = input.now ?? input.map.updatedAt ?? 0
   const effects = (input.map.encounterState?.effects ?? []).filter(
     (effect): effect is EncounterNumericModifierEffect => (
       effect.kind === 'numeric-modifier'
@@ -24,6 +28,18 @@ const activeEffects = (input: {
       && effect.affected.placementIds.includes(input.placementId)
       && effect.suppression.sources.length === 0
       && (effect.duration.remaining === null || effect.duration.remaining > 0)
+      && (() => {
+        const modeTag = effect.tags.find(tag => tag.startsWith('capability-mode.'))
+        if (!modeTag) return true
+        const modeKind = modeTag.slice('capability-mode.'.length)
+        return (input.map.encounterState?.capabilityRuntime?.modes ?? []).some(mode => (
+          mode.actorPlacementId === input.placementId
+          && mode.mode === modeKind
+          && (mode.expiresAt === null || mode.expiresAt > evaluationTime)
+          && (input.isCapabilityInstanceEffective?.(mode.capabilityInstanceId, mode.canonicalId)
+            ?? input.isCapabilityEffective?.(mode.canonicalId) ?? true)
+        ))
+      })()
     ),
   )
   // Repeated Aromatic Mist uses refresh the same source bonus for recipients
@@ -58,10 +74,13 @@ const apply = (value: number, effect: EncounterNumericModifierEffect): number =>
 
 /** Apply map-owned numeric effects in their persisted deterministic order. */
 export const applyEncounterNumericModifiers = (input: {
-  readonly map: Pick<TabletopMap, 'encounterState'>
+  readonly map: Pick<TabletopMap, 'encounterState' | 'updatedAt'>
   readonly placementId: string
   readonly attribute: EncounterEffectNumericAttribute
   readonly baseValue: number
+  readonly now?: number
+  readonly isCapabilityEffective?: (canonicalId: string) => boolean
+  readonly isCapabilityInstanceEffective?: (capabilityInstanceId: string, canonicalId: string) => boolean
   /** Ability-owned policy for ignoring only increases or only decreases. */
   readonly changePolicy?: 'all' | 'non-decreasing' | 'non-increasing'
   /** White Smoke-style protection: external effects may not lower this placement's value. */
@@ -92,3 +111,44 @@ export const applyEncounterNumericModifiers = (input: {
 }
 
 export const encounterNumericModifierEffects = activeEffects
+
+/**
+ * Context-sensitive half of Blender: its persisted mode effect supplies +2
+ * against every attack; Ranged attacks gain the reviewed additional +2.
+ */
+export const capabilityContextualTargetEvasionBonus = (input: {
+  readonly map: Pick<TabletopMap, 'encounterState' | 'updatedAt'>
+  readonly placementId: string
+  readonly range: string
+  readonly now?: number
+  readonly isCapabilityEffective?: (canonicalId: string) => boolean
+  readonly isCapabilityInstanceEffective?: (capabilityInstanceId: string, canonicalId: string) => boolean
+  readonly hasCapabilityForPlacement?: (placementId: string, canonicalId: string) => boolean
+  readonly hasCapabilityInstanceForPlacement?: (placementId: string, capabilityInstanceId: string, canonicalId: string) => boolean
+  readonly speciesForPlacement?: (placementId: string) => string | null
+}): number => {
+  const livingWeaponBonus = (input.map.encounterState?.capabilityRuntime?.links ?? []).some(link => (
+    link.kind === 'living-weapon'
+    && link.participantPlacementIds.includes(input.placementId)
+    && input.hasCapabilityForPlacement?.(link.ownerPlacementId, 'Living Weapon') === true
+    && (input.hasCapabilityInstanceForPlacement?.(
+      link.ownerPlacementId,
+      link.capabilityInstanceId,
+      link.canonicalId,
+    ) ?? true)
+    && ['doublade', 'aegislash'].includes(input.speciesForPlacement?.(link.ownerPlacementId)?.trim().toLocaleLowerCase('en-US') ?? '')
+  )) ? 2 : 0
+  // PTU expresses most ranged attacks as a numeric/template range rather than
+  // literally including the word “Ranged”; only explicit Melee ranges use the
+  // melee Blender bonus without the additional ranged +2.
+  if (/\bmelee\b/i.test(input.range)) return livingWeaponBonus
+  return livingWeaponBonus + (activeEffects({
+    map: input.map,
+    placementId: input.placementId,
+    attribute: 'evasion',
+    now: input.now,
+    isCapabilityEffective: input.isCapabilityEffective,
+    isCapabilityInstanceEffective: input.isCapabilityInstanceEffective,
+  })
+    .some(effect => effect.tags.includes('capability-mode.blended')) ? 2 : 0)
+}

@@ -20,6 +20,7 @@ import {
 } from '~/utils/ptuGridDistance'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import { normalizeConditionNames } from '~/utils/statusConditions'
+import { encounterCreatureRuleProfileForToken } from '~/utils/encounterCreatureRules'
 import { parseMoveAutomationAreaTemplates } from '~/utils/moveAutomationAreaTemplates'
 import {
   POKEMON_TYPES,
@@ -135,7 +136,7 @@ const naturewalkFrom = (values: readonly string[] | undefined): string | null =>
   return match?.[1]?.trim() || null
 }
 
-const formProjectedToken = (input: {
+export const formProjectedToken = (input: {
   readonly token: SpawnedPokemon
   readonly sheet: CharacterSheet | null
   readonly targetSpecies: string
@@ -147,9 +148,7 @@ const formProjectedToken = (input: {
   const target = POKEDEX_BY_SPECIES.get(input.targetSpecies.trim().toLowerCase()) ?? null
   if (!source || !target || source.species === target.species) return {
     ...input.token,
-    creatureRules: input.token.creatureRules
-      ? { ...input.token.creatureRules, formId: input.formId }
-      : input.token.creatureRules,
+    creatureRules: { ...encounterCreatureRuleProfileForToken(input.token), formId: input.formId },
   }
   const sourceStats = source.base_stats
   const targetStats = target.base_stats
@@ -250,9 +249,7 @@ const formProjectedToken = (input: {
         levitate: movementCapabilities.levitate ?? target.capabilities.levitate ?? 0,
       },
     } : {}),
-    creatureRules: input.token.creatureRules
-      ? { ...input.token.creatureRules, formId: input.formId }
-      : input.token.creatureRules,
+    creatureRules: { ...encounterCreatureRuleProfileForToken(input.token), formId: input.formId },
   }
 }
 

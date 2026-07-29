@@ -44,6 +44,8 @@ export const MOVE_SHEET_STATE_FIELDS = [
   'abilities',
   /** Shared sheet field used by authoritative Daily ability resources. */
   'abilityUsage',
+  /** Shared sheet field used by authoritative Capability resources. */
+  'capabilityUsage',
   /** Extended-Rest-bound Berry Storage digestion buffs. */
   'berryStorage',
 ] as const
@@ -64,6 +66,8 @@ export interface VersionedMoveEncounterState {
   readonly abilityOwnedState?: unknown
   /** Optional replay receipts for accepted ability-trigger event derivation. */
   readonly abilityEventReceipts?: unknown
+  /** Optional typed state for server-authoritative Capability actions. */
+  readonly capabilityRuntime?: unknown
 }
 
 export interface MoveMapStateChangeScope {

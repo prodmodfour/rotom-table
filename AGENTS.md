@@ -15,6 +15,13 @@ This workspace has limited shared memory. Repeated or concurrent TypeScript, Vit
 - Do not rerun an already-passing suite unless its relevant dependency surface changed. Keep track of validated commands and results across handoffs.
 - If memory pressure or an OOM occurs, stop duplicate validation processes, inspect active processes, and resume with one bounded command at a time.
 
+## Git progress discipline
+
+- Parent agents should create coherent incremental commits and push the active branch as work progresses instead of accumulating a long-lived dirty workspace.
+- Review staged paths before every commit. Never commit secrets, environment files, private campaign data, databases, logs, build output, or unrelated local runtime artifacts.
+- Commit and push reviewed child-agent integrations promptly, and leave the active worktree clean at handoff whenever practical.
+- Long-running work may use clearly described checkpoint commits, but do not present an unvalidated checkpoint as completed or production-ready.
+
 ## Liveplay
 This is a lvieplay only app. Local hosting is deprecated. All features implemented should work for liveplay.
 

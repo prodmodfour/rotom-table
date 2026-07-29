@@ -1,0 +1,1835 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-capability-automation",
+  "canonicalSourceSha256": "8f819401d40c598ae781ae0b273fd749575e05d6997a79c64be61f4ced8f654e",
+  "entryCount": 83,
+  "entries": [
+    {
+      "canonicalId": "Alluring",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "lure-with-alluring",
+          "action": "extended",
+          "frequency": "daily",
+          "context": "alluring-lure-cell"
+        },
+        {
+          "id": "distract-with-alluring",
+          "action": "standard",
+          "frequency": "daily",
+          "context": "wild-target"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "816db94cca5ae2259e871dda21fecd12d8d48af94af86830f620e676134cd2fd"
+    },
+    {
+      "canonicalId": "Amorphous",
+      "ticketId": "CA-031",
+      "category": "movement",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "ba20c29be92ecea26c97136eb4024cbcb54c1254eaee2713837f04c8c04d240a"
+    },
+    {
+      "canonicalId": "As One",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "mount",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "adjacent-willing-mount"
+        },
+        {
+          "id": "dismount",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "adjacent-release-cell"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "9e7874b671daa544161238bc3bc03ee44b5c8c014fe0d39d96297f605c54d48e"
+    },
+    {
+      "canonicalId": "Aura Pulse",
+      "ticketId": "CA-034",
+      "category": "communication",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "communicate",
+          "action": "free",
+          "frequency": "at-will",
+          "context": "communication-target"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "2ed22dff157c486d5c763e10c02af6911ca377e56d533e50102eef261d9d09f9"
+    },
+    {
+      "canonicalId": "Aura Reader",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "read-aura",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "living-target"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "b03df0a23fe95f60e4aca0aef418403773027200bfcc47d17c0416c15397a91a"
+    },
+    {
+      "canonicalId": "Blender",
+      "ticketId": "CA-037",
+      "category": "crafting",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "blend",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "encounter"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "bba352200cc4bd8440e71b492dcd6ac8318fcf1f0cafb4ee274a603b888327c8"
+    },
+    {
+      "canonicalId": "Blindsense",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "1ed8c0c0c71a5abc29564e0c03c7e0da755b8a52f8f1e01e24b731fd328c51eb"
+    },
+    {
+      "canonicalId": "Bloom",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "67e5dd15d4c0e8ff4c30dbf34644ab8d11b5c7e1daf502118e60595296f23630"
+    },
+    {
+      "canonicalId": "Burrow",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "632ce80859b61973eae4cc79b03417eed4baa7cd811acf77f1d3d59c12752a02"
+    },
+    {
+      "canonicalId": "Chilled",
+      "ticketId": "CA-039",
+      "category": "integrated",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "99a8e4777ec3b133c95b99058821b72901f0ac47549b07a984d2675abf39e081"
+    },
+    {
+      "canonicalId": "Darkvision",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "8f49ed5f04415e5e06df28d68c46d4efc759d20a9037d4f0e376d1babfd9da9e"
+    },
+    {
+      "canonicalId": "Dead Silent",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "85eb33cbd0b6beffe3f0eeb26c8cdbfbf85d5629b17349154cfc20cf08f0b316"
+    },
+    {
+      "canonicalId": "Delta Evolution",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "mega-evolve",
+          "action": "swift",
+          "frequency": "at-will",
+          "context": "delta-mega-ready"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "e140f3557dd16613b31f73d4d9bfc36a83d8e34fcb915a85fd835c8e8dcf1568"
+    },
+    {
+      "canonicalId": "Dream Mist",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": 20,
+      "itemOutputs": [
+        "Dream Mist"
+      ],
+      "actions": [
+        {
+          "id": "produce-dream-mist",
+          "action": "extended",
+          "frequency": "daily",
+          "context": "collection-jar"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "090d93416a66cc3c615f1f67981ac2f0c808ac92fa07811ddfd21932b5eaaa41"
+    },
+    {
+      "canonicalId": "Dream Reader",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "read-dream",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "sleeping-target"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "4fe67853b5aa82cb03a7268317260d952dee796609fc795ff23ed5485ba16704"
+    },
+    {
+      "canonicalId": "Egg Warmer",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "warm-egg",
+          "action": "extended",
+          "frequency": "cooldown",
+          "context": "egg"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "a1fd185b2a3f2582ab78324949da9af96924513cda7bc85c125267caa82fc2c9"
+    },
+    {
+      "canonicalId": "Firestarter",
+      "ticketId": "CA-035",
+      "category": "struggle",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "b081178fdd36e16e5e603f75861e8224d826a21baa25581850a10e7893d9b451"
+    },
+    {
+      "canonicalId": "Fortune",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": 20,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "roam-for-fortune",
+          "action": "extended",
+          "frequency": "daily",
+          "context": "city-or-town-one-hour"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "3d5856fc0c69f35be5ac8bc97ce29592d9664f1197ebfeb8293d59985af2654c"
+    },
+    {
+      "canonicalId": "Fountain",
+      "ticketId": "CA-035",
+      "category": "struggle",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "454dba29af6c25717c26baf99875fd79b783f1d8d467d11e941835ff1973a8a8"
+    },
+    {
+      "canonicalId": "Freezer",
+      "ticketId": "CA-035",
+      "category": "struggle",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "a74279cd108e671a69d0c78840b5611ada4df4176c4fc90d612d1e004da6d879"
+    },
+    {
+      "canonicalId": "Gather Unown",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": 20,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "gather-unown",
+          "action": "standard",
+          "frequency": "weekly",
+          "context": "open-space"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "7f184563641b3b530b8da2679b8860015624fbeffa6f573dc231703f323153f6"
+    },
+    {
+      "canonicalId": "Gilled",
+      "ticketId": "CA-036",
+      "category": "terrain",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "dbeee5355a6560ce53f867a1f8916c76a5dfe7a7d48cdd0b72ce2ea88e786ea6"
+    },
+    {
+      "canonicalId": "Glow",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "emit-light",
+          "action": "free",
+          "frequency": "at-will",
+          "context": "not-glowing"
+        },
+        {
+          "id": "stop-light",
+          "action": "free",
+          "frequency": "at-will",
+          "context": "glowing"
+        },
+        {
+          "id": "influence-nearby-wilds",
+          "action": "free",
+          "frequency": "at-will",
+          "context": "glowing-nearby-wilds"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "91506c71dc258987c918b7c7c0ce16b92ec6bc6d95d2fc3765681b2e6f356e23"
+    },
+    {
+      "canonicalId": "Groundshaper",
+      "ticketId": "CA-036",
+      "category": "terrain",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "shape-ground",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "cardinal-ground-cells"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "d5e94f75355a53b768781ed5cbcfb313321964948b7520f6b07b25b071f25138"
+    },
+    {
+      "canonicalId": "Guster",
+      "ticketId": "CA-035",
+      "category": "struggle",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "13ddf02b0e23ce23079ecdaa678632e8d15e25d8723809da3493ad4e48943b17"
+    },
+    {
+      "canonicalId": "Heart Gift",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": 30,
+      "itemOutputs": [
+        "Heart Scale"
+      ],
+      "actions": [
+        {
+          "id": "produce-heart-scale",
+          "action": "extended",
+          "frequency": "weekly",
+          "context": "item-recipient"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "41a489c1e2a56628faf08554c781daf7f3f111d015c244b5b6c8fc91520aa659"
+    },
+    {
+      "canonicalId": "Heater",
+      "ticketId": "CA-039",
+      "category": "integrated",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "96655df3192668c3af47c86ef3aca72a3845adec3254bbe21008e8d4a1643bc2"
+    },
+    {
+      "canonicalId": "Herb Growth",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": 20,
+      "itemOutputs": [
+        "Revival Herb"
+      ],
+      "actions": [
+        {
+          "id": "produce-revival-herb",
+          "action": "extended",
+          "frequency": "daily",
+          "context": "item-recipient"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "7758c2a1b74f201732c1f7a5c710c3223be7295fb1dd6e05f4dfcc8e76ec2858"
+    },
+    {
+      "canonicalId": "High Jump",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "c2a971a978bb0b9ccc1f994dc51a52f8e50090e403b128cd6a86d6c5557dec8f"
+    },
+    {
+      "canonicalId": "Honey Gather",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [
+        "Honey"
+      ],
+      "actions": [
+        {
+          "id": "gather-honey",
+          "action": "extended",
+          "frequency": "daily",
+          "context": "abundant-plant-life-and-collection-jar"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "808b993090fbe64ea711e38b0171c3d83dfef5bcae6f2196eb720fab3c10f859"
+    },
+    {
+      "canonicalId": "Illusionist",
+      "ticketId": "CA-037",
+      "category": "crafting",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "create-illusion",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "visible-cell"
+        },
+        {
+          "id": "reposition-illusion",
+          "action": "free",
+          "frequency": "at-will",
+          "context": "moving-illusion"
+        },
+        {
+          "id": "dismiss-illusion",
+          "action": "free",
+          "frequency": "at-will",
+          "context": "owned-illusion"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "e8771cb51cd08d25692d141a16b26c69faf454ed625f6ab0e51eec7d62d995a8"
+    },
+    {
+      "canonicalId": "Inflatable",
+      "ticketId": "CA-031",
+      "category": "movement",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "inflate",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "normal-form"
+        },
+        {
+          "id": "deflate",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "inflated"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "ccc5f65d6d07d37f8d931c3c4c3959bbf46f15236c3321cfa6464b9f92f2d316"
+    },
+    {
+      "canonicalId": "Invisibility",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "become-invisible",
+          "action": "shift",
+          "frequency": "cooldown",
+          "context": "visible-and-ready"
+        },
+        {
+          "id": "become-visible",
+          "action": "free",
+          "frequency": "at-will",
+          "context": "invisible"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "b81df7dda9f8e1167cf64d48ca008f199ab680ad869b38064a5cacd3b5d5e5d7"
+    },
+    {
+      "canonicalId": "Juicer",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [
+        "Shuckle’s Berry Juice",
+        "Rare Candy"
+      ],
+      "actions": [
+        {
+          "id": "consume-juicer-shell-juice-as-snack",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "stored-juicer-juice"
+        },
+        {
+          "id": "collect-juicer-output",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "stored-juicer-output"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "c56aa7d544bf9d994604a807bd255aadcc4bb1ea5a4db0e3d188e4da41b1a62b"
+    },
+    {
+      "canonicalId": "Jump",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "jump",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "jump-destination-cell"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "15bf9423ffcb30e46878dfba0c9a3a4aa081582d77d1af4c13a9a8035409c861"
+    },
+    {
+      "canonicalId": "Keystone Warp",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "synchronize-keystone",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "unsynchronized-keystone-and-2tp"
+        },
+        {
+          "id": "keystone-warp",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "synchronized-keystone"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "c6de4487718bca6d9f0532aa66111331e2451d9763511d3dad574ef3adea5704"
+    },
+    {
+      "canonicalId": "Letter Press",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "combine-unown",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "eligible-unown"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "5cfe75a0d9c3e307a1068bb8b46c9056793a233b04e4163885b32f89f7507ba9"
+    },
+    {
+      "canonicalId": "Levitate",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "fc3ad393230d3933616d031b9aca3fdbec599743488f45ad39553f5cba21300b"
+    },
+    {
+      "canonicalId": "Living Weapon",
+      "ticketId": "CA-037",
+      "category": "crafting",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "engage-wielder",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "adjacent-willing-wielder"
+        },
+        {
+          "id": "disengage-wielder",
+          "action": "swift",
+          "frequency": "at-will",
+          "context": "adjacent-release-cell"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "d925a0c15b37d9972a0b009c2e8e048bcd0e738a2ae3310aa3b7376d7b4f1e56"
+    },
+    {
+      "canonicalId": "Long Jump",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "d740d2361de175c08a40b4a8690f99c88aee6a1773e0ac9626292003e97e95ac"
+    },
+    {
+      "canonicalId": "Magnetic",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "manipulate-metal",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "iron-or-steel-object"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "863b10bcd86acaffbb26e3af4d1d7fe725df86b0f156d0d3b72ed4646a55dd77"
+    },
+    {
+      "canonicalId": "Marsupial",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "shelter-baby",
+          "action": "free",
+          "frequency": "at-will",
+          "context": "adjacent-willing-baby-target"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "dc661e4d53f3a4e58ea756b96ff4aab0e3a35c40a4cc2a2aafcf18fab18cc2d6"
+    },
+    {
+      "canonicalId": "Materializer",
+      "ticketId": "CA-035",
+      "category": "struggle",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "23beaf152142d6fc15a7704d600ff51726eef637050bd61079bdf679e7514692"
+    },
+    {
+      "canonicalId": "Milk Collection",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": 20,
+      "itemOutputs": [
+        "MooMoo Milk"
+      ],
+      "actions": [
+        {
+          "id": "produce-moomoo-milk",
+          "action": "extended",
+          "frequency": "daily",
+          "context": "collection-jar"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "d71b76f2f8e519b540e4904eab5ff5bd58c388631ff8cd067ea024c71565235b"
+    },
+    {
+      "canonicalId": "Mindlock",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "991fb36080f9cd636693e6a7561aab8fc6584a329c19c1b1b4be3ae491375826"
+    },
+    {
+      "canonicalId": "Mountable X",
+      "ticketId": "CA-031",
+      "category": "movement",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "accept-rider",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "adjacent-willing-rider"
+        },
+        {
+          "id": "release-rider",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "linked-rider-and-adjacent-cell"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "09f75629ab56a10823cb9094297f3566e6026d18530f144c6537f69c236741b7"
+    },
+    {
+      "canonicalId": "Mushroom Harvest",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": 20,
+      "itemOutputs": [
+        "Tiny Mushroom",
+        "Big Mushroom",
+        "Balm Mushroom"
+      ],
+      "actions": [
+        {
+          "id": "harvest-mushroom",
+          "action": "extended",
+          "frequency": "daily",
+          "context": "item-recipient"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "27d6fb8474682673f092be0ad6923f68b445ee59bef32940ab950014893cd955"
+    },
+    {
+      "canonicalId": "Naturewalk",
+      "ticketId": "CA-031",
+      "category": "movement",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "0a2c475004c4386d77a483fe121326f156734ef0f4dc03bb90dcd00a0b979304"
+    },
+    {
+      "canonicalId": "Overland",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "56e5e17e44fb27cfd139cddd9fef65d96034751a22218fa52d329cc15db1f7c3"
+    },
+    {
+      "canonicalId": "Pack Mon",
+      "ticketId": "CA-034",
+      "category": "communication",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "062ae97f93076493d609547d67f2176e71922e8cbcf78bc39d5e26ce277eb717"
+    },
+    {
+      "canonicalId": "Pearl Creation",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "daa02b1557d619682aa672e169cd1b8aa4ba85d31dfb597c42ea3be41ed23a81"
+    },
+    {
+      "canonicalId": "Phasing",
+      "ticketId": "CA-031",
+      "category": "movement",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "become-intangible",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "tangible"
+        },
+        {
+          "id": "become-tangible",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "intangible"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "3e3788b640cce1799c7e80bd90bee47081dfceff943596e329ed83e0a41f23c6"
+    },
+    {
+      "canonicalId": "Planter",
+      "ticketId": "CA-037",
+      "category": "crafting",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "plant",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "empty-planter-and-seed"
+        },
+        {
+          "id": "harvest",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "yielding-planter"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "ef96a634b05021f19039d275babcaab175ccfeda9cd5a4a05f763eb573a9d4e3"
+    },
+    {
+      "canonicalId": "Power",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "4f3ab18126c9a57acdc44334de47e57ebf3cde56cf76a7ab22974e0c744c1c7b"
+    },
+    {
+      "canonicalId": "Premonition",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "66232830a2a891a4edca3ec24ba5b282d8bd5d50ae3251d923c3f5628d9a5789"
+    },
+    {
+      "canonicalId": "Reach",
+      "ticketId": "CA-031",
+      "category": "movement",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "c15a4a01cd71eb52f960c8d8ee51b07c4be6c4d1b386fe47d574aeb066545363"
+    },
+    {
+      "canonicalId": "Shadow Meld",
+      "ticketId": "CA-031",
+      "category": "movement",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "meld",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "lit-surface-shadow"
+        },
+        {
+          "id": "reform",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "shadow-melded"
+        },
+        {
+          "id": "ride-shadow",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "adjacent-living-shadow"
+        },
+        {
+          "id": "leave-shadow",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "adjacent-release-cell"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "be83280878b9227b67c5c4bf7c846100ae2548b6284578f2521c34fadc0e5650"
+    },
+    {
+      "canonicalId": "Shapeshifter",
+      "ticketId": "CA-037",
+      "category": "crafting",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "change-shape",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "valid-shape-description"
+        },
+        {
+          "id": "oppose-examination",
+          "action": "free",
+          "frequency": "at-will",
+          "context": "close-examination-target"
+        },
+        {
+          "id": "restore-shape",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "shapechanged"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "ec2230536a9c4725af76ed83d51e55def71fdc5bc94126d06390ac62f3ff3739"
+    },
+    {
+      "canonicalId": "Shrinkable",
+      "ticketId": "CA-031",
+      "category": "movement",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "shrink",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "normal-form"
+        },
+        {
+          "id": "restore-size",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "shrunken"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "4a92dcc23dad6f3e8a6fc119f10f610207fe5b80832cbbcfe3af154c57c7973d"
+    },
+    {
+      "canonicalId": "Sky",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "a8cf7a7f129e429d5fde7021dfb51c8ce576d7eac6a406590017f9f167f87a45"
+    },
+    {
+      "canonicalId": "Soulless",
+      "ticketId": "CA-039",
+      "category": "integrated",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "1b69bff02a32cd4c378149d8dd1e3a0173832e2320e067d971dc1cf0cd7cd4b6"
+    },
+    {
+      "canonicalId": "Split Evolution",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "1f463c39539afc3bfa2370277564ede35274dcbe5d1695675046f0b627ddc318"
+    },
+    {
+      "canonicalId": "Sprouter",
+      "ticketId": "CA-038",
+      "category": "gathering",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "sprout",
+          "action": "standard",
+          "frequency": "weekly",
+          "context": "plant-or-planted-berry"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "9567cb76f636dd448d8ecece0db0fa4970d8a23c3efb47b6ed3bec901b94fcff"
+    },
+    {
+      "canonicalId": "Stealth",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "72339c16960641c7236be14afd52dd62b6940308642517f799efb0f36f2e5667"
+    },
+    {
+      "canonicalId": "Swim",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "e6427bd6f944a8a2d035dbb3495f9d688be1cf2e262d427a06d00903c6831a39"
+    },
+    {
+      "canonicalId": "Telekinetic",
+      "ticketId": "CA-034",
+      "category": "communication",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "manipulate-object",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "object-in-8m"
+        },
+        {
+          "id": "telekinetic-maneuver",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "maneuver-target-in-focus-range"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "4d98f8aa73fd446bab2287e259548826c8daf97c12a243882487c97df851d5c7"
+    },
+    {
+      "canonicalId": "Telepath",
+      "ticketId": "CA-034",
+      "category": "communication",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "read-mind",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "mind-in-focus-range"
+        },
+        {
+          "id": "project-thought",
+          "action": "free",
+          "frequency": "at-will",
+          "context": "communication-targets"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "cbd527a6f461bdb35f29487240a9c63fd2cb1434e4a7ce9f4ccd54ce9c1489e5"
+    },
+    {
+      "canonicalId": "Teleporter",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "teleport",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "teleport-destination-cell"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "5742abb00e364b50045a7108f599e945380d0d178cf8ef3015848aba2c63e751"
+    },
+    {
+      "canonicalId": "Threaded",
+      "ticketId": "CA-031",
+      "category": "movement",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "threaded-shift",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "anchor-or-target-in-4m"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "2edde28f536be9a8d59cdb8cec7116561247fe2396e6886908c4754a5c3e0c20"
+    },
+    {
+      "canonicalId": "Throwing Range",
+      "ticketId": "CA-030",
+      "category": "numeric",
+      "automationStatus": "native",
+      "runtimeKind": "numeric",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "450e23c3bb0592992d88af9c089e1cc017ee9b54238f14bfd2581f835feb1d04"
+    },
+    {
+      "canonicalId": "Tracker",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "track-scent",
+          "action": "extended",
+          "frequency": "hourly",
+          "context": "scent-trail"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "1a5267d6de5f4bc72bab17277cbed3a06ee4359a20c32a811d3942bae1fe8335"
+    },
+    {
+      "canonicalId": "Tremorsense",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "73a5aec7359385f534c9d31415e08251c4406c658daf8a9fdfb86a0991fc5b87"
+    },
+    {
+      "canonicalId": "Underdog",
+      "ticketId": "CA-039",
+      "category": "integrated",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "75d60b104443b7661349c92117f6d2511ce951c0d8dd08bad7219984a3540efb"
+    },
+    {
+      "canonicalId": "Viral Fusion",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "bond",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "willing-or-helpless-target"
+        },
+        {
+          "id": "release-bond",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "adjacent-release-cell"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "984753b80939f93522a27c09aa07eb8f6c986942b18f311bba33e2a884fcbf4c"
+    },
+    {
+      "canonicalId": "Volatile Bomb",
+      "ticketId": "CA-039",
+      "category": "integrated",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "aa12ea7510f7172d2a73a9f01260aa3201acb916088ba4b83211ebc659735b89"
+    },
+    {
+      "canonicalId": "Wallclimber",
+      "ticketId": "CA-031",
+      "category": "movement",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "655fba2408d8d01e7f71634ee95f087b0584d3fec68d721b6249940e0e34bdff"
+    },
+    {
+      "canonicalId": "Weapon Bond",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "assume-crowned-form",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "ancestral-weapon"
+        },
+        {
+          "id": "relinquish-crowned-form",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "crowned-form"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "84ce3fb4c1a521d66e7b0991b021dd81c7c9b087680d1634f21b782fb6b5c141"
+    },
+    {
+      "canonicalId": "Weathershape",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "a6fd9da61010490643b0b765254634b3c0b3b54e94fe3f88474f2c42f73f2b39"
+    },
+    {
+      "canonicalId": "Wielder",
+      "ticketId": "CA-037",
+      "category": "crafting",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "8615eb71e43d8fefec38aad08c1a362b5c96a6492036a20ef35eb3664eaf7f53"
+    },
+    {
+      "canonicalId": "Wired",
+      "ticketId": "CA-034",
+      "category": "communication",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "enter-machine",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "electronic-device"
+        },
+        {
+          "id": "exit-machine",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "inside-machine"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "7c57bc3cdf599d3234512cf290e02a618389905a39f5995eb9e884bdbf97285f"
+    },
+    {
+      "canonicalId": "X-Ray Vision",
+      "ticketId": "CA-033",
+      "category": "sense",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "693320372568dabb670262984e026ac8bd8ba2e3e0d5659cb4608eb669a718e0"
+    },
+    {
+      "canonicalId": "Zapper",
+      "ticketId": "CA-035",
+      "category": "struggle",
+      "automationStatus": "native",
+      "runtimeKind": "passive-or-integrated",
+      "presentationPolicy": "passive-fact-only",
+      "adjudicationPolicy": "deterministic",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "db5dd52815b7c64d1d236bda06cf57b74fe56f8dd1666e836e314527625734a3"
+    },
+    {
+      "canonicalId": "Zygarde Cells",
+      "ticketId": "CA-040",
+      "category": "form",
+      "automationStatus": "native",
+      "runtimeKind": "action-and-passive",
+      "presentationPolicy": "contextual-offer",
+      "adjudicationPolicy": "bounded-gm",
+      "levelRequirement": null,
+      "itemOutputs": [],
+      "actions": [
+        {
+          "id": "assemble-zygarde",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "zygarde-cube-and-cells"
+        },
+        {
+          "id": "disassemble-zygarde",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "disassemblable-zygarde"
+        },
+        {
+          "id": "change-zygarde-form",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "power-construct-zygarde"
+        },
+        {
+          "id": "tutor-cube-move",
+          "action": "extended",
+          "frequency": "at-will",
+          "context": "zygarde-cube-and-tp"
+        }
+      ],
+      "passiveProjection": true,
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "sourceEffectSha256": "b48896934d2b66ac76971c0beba2486a6068b7515e7c02cf7d4d1d3e54a1e69d"
+    }
+  ],
+  "certification": {
+    "unresolvedEntries": 0,
+    "manualOnlyEntries": 0,
+    "legacyExecutableEntries": 0,
+    "reviewedAt": "2026-07-28"
+  }
+}

@@ -155,8 +155,18 @@ const capabilityGrantFromSpecial = (special: string | null | undefined): string 
   return match?.[1]?.trim() || null
 }
 
+const CANONICAL_CAPABILITY_MOVE_GRANTS: Readonly<Record<string, string>> = Object.freeze({
+  Fly: 'Grants Sky +4',
+  Dive: 'Grants Swim +3',
+  Dig: 'Grants Burrow +3',
+  Teleport: 'Grants Teleporter +4',
+  Transform: 'Grants Shapeshifter',
+  Stockpile: 'Grants Inflatable',
+})
 const specialTextForMove = (move: Pick<CharacterSheetMove, 'name' | 'special'>): string | null => {
   const moveName = typeof move.name === 'string' ? move.name.trim() : ''
+  const reviewedCapabilityGrant = CANONICAL_CAPABILITY_MOVE_GRANTS[moveName]
+  if (reviewedCapabilityGrant) return reviewedCapabilityGrant
   const reference = moveName ? findMove(moveName) : null
   return reference?.special ?? move.special ?? null
 }

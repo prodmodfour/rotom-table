@@ -1,5 +1,7 @@
 import type { AbilityInstanceData } from '#shared/abilityAutomation/parameters'
 import type { AbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
+import type { CapabilityUsageLedger } from '#shared/capabilityAutomation/state'
+import type { CapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
@@ -237,6 +239,13 @@ export interface CharacterSheet {
 
   /** PTU nature name, e.g. ``"Hardy"``, ``"Modest"``. */
   nature?: string
+  /** Canonical Marsupial/Baby Template lifecycle marker. */
+  babyTemplate?: boolean
+  /** Irreversible Letter Press membership; combined sheets cannot act or spawn independently. */
+  letterPressCombinedInto?: {
+    ownerSheetSlug: string
+    sourceOperationId: string
+  }
   /** Cached/legacy Nature stat choices from the PTU Nature Chart. The renderer
    *  derives Nat +/- from `nature`, so these are not manually edited. */
   natureMod?: { plus?: StatKey; minus?: StatKey }
@@ -275,6 +284,10 @@ export interface CharacterSheet {
   moveUsage?: SheetMoveUsageState
   /** Lasting server-owned Daily ability usage for the current campaign day. */
   abilityUsage?: AbilityDailyUsageLedger
+  /** Server-owned Daily/Weekly/hourly Capability resources. */
+  capabilityUsage?: CapabilityUsageLedger
+  /** Durable Capability-owned shell/planter state advanced only by the authoritative campaign clock. */
+  capabilityCampaignState?: CapabilityCampaignState
   /** Extended-Rest-bound Berry Storage digestion buffs. */
   berryStorage?: {
     schemaVersion: 1

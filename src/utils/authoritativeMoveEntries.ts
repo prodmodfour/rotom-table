@@ -66,6 +66,8 @@ export interface ResolveCanonicalMoveEntryInput {
   readonly abilityConnectionNames?: readonly string[]
   /** Server-reviewed form or encounter move grants. */
   readonly additionalMoveNames?: readonly string[]
+  /** Complete server-reviewed supplemental Move records, such as Capability weapon Moves. */
+  readonly additionalMoveEntries?: readonly TokenSheetMoveEntry[]
   /** Server resolution injects the immutable runtime selected for this snapshot. */
   readonly scriptForMove?: (moveName: string) => MoveAutomationScript | null
   /** Required by server contexts to reject stale temporary copies after runtime drift. */
@@ -120,7 +122,7 @@ const buildResolvedMoveEntries = (
   token: SpawnedPokemon,
   scriptForMove?: (moveName: string) => MoveAutomationScript | null,
 ): ResolvedCanonicalMoveEntry[] => sourceEntries.flatMap((sourceEntry) => buildMoveAutomationMoveEntries([sourceEntry.move], {
-  stabTypes: token.sheetKind === 'pokemon' ? token.defenderTypes : [],
+  stabTypes: sourceEntry.suppressStab ? [] : token.sheetKind === 'pokemon' ? token.defenderTypes : [],
   combatSkillRankValue: token.combatSkillRankValue,
   loyalty: token.sheetKind === 'pokemon' ? token.loyalty : undefined,
   ...(scriptForMove ? { scriptForMove } : {}),
@@ -140,6 +142,7 @@ const buildResolvedMoveEntries = (
     sourceEntry: {
       move: cloneJson(sourceEntry.move),
       automatic: sourceEntry.automatic,
+      ...(sourceEntry.suppressStab ? { suppressStab: true } : {}),
       ...(sourceEntry.moveListProjection
         ? { moveListProjection: cloneJson(sourceEntry.moveListProjection) }
         : {}),
@@ -163,6 +166,7 @@ export const resolveCanonicalMoveEntryForPlacement = ({
   encounterEffects,
   abilityConnectionNames,
   additionalMoveNames,
+  additionalMoveEntries,
   scriptForMove,
   definitionHashForMove,
   frequencyForMove,
@@ -179,6 +183,7 @@ export const resolveCanonicalMoveEntryForPlacement = ({
     encounterEffects,
     ...(abilityConnectionNames ? { abilityConnectionNames } : {}),
     ...(additionalMoveNames ? { additionalMoveNames } : {}),
+    ...(additionalMoveEntries ? { additionalMoveEntries } : {}),
   })
   const entry = buildResolvedMoveEntries(sourceEntries, token, scriptForMove)
     .find((candidate) => moveEntryMatchesName(candidate, normalizedMoveName)) ?? null

@@ -62,6 +62,8 @@ import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
+import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
+import { resolveMarsupialRelationship } from '../domain/capabilityAutomation/marsupialRelationship'
 
 export class ThrowPokeballCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -420,6 +422,117 @@ const validateTargetIsUnlinked = (
   return linkedSlugs
 }
 
+interface MarsupialCapturePair {
+  readonly motherPlacementId: string
+  readonly babyPlacementId: string
+  readonly babySlug: string
+}
+
+interface CapabilityCaptureCompanion {
+  readonly placementId: string
+  readonly sheetSlug: string
+  readonly kind: 'marsupial' | 'as-one-mount' | 'viral-fusion'
+}
+
+const capabilityCaptureCompanions = (
+  context: ResolvedThrowPokeballCommandContext,
+  marsupial: MarsupialCapturePair | null,
+): readonly CapabilityCaptureCompanion[] => {
+  const companions: CapabilityCaptureCompanion[] = marsupial ? [{
+    placementId: marsupial.babyPlacementId,
+    sheetSlug: marsupial.babySlug,
+    kind: 'marsupial',
+  }] : []
+  const sourceCapabilities = resolveEffectiveCapabilities({
+    map: context.map,
+    placement: context.targetPlacement,
+    sheet: context.pokemonBySlug.get(context.targetPlacement.sheetSlug)!,
+    sheets: { pokemon: context.sheetLookup.pokemon, trainer: context.sheetLookup.trainer },
+  })
+  for (const link of context.map.encounterState?.capabilityRuntime?.links ?? []) {
+    if (link.ownerPlacementId !== context.targetPlacement.id
+      || (link.kind !== 'as-one-mount' && link.kind !== 'viral-fusion')
+      || !sourceCapabilities.instances.some(instance => (
+        instance.instanceId === link.capabilityInstanceId
+        && instance.canonicalId === link.canonicalId
+        && instance.effective
+      ))) continue
+    for (const placementId of link.participantPlacementIds) {
+      const placement = context.map.placements.find(candidate => candidate.id === placementId)
+      if (placement?.sheetKind !== 'pokemon') continue
+      companions.push({ placementId, sheetSlug: placement.sheetSlug, kind: link.kind })
+    }
+  }
+  return [...new Map(companions.map(companion => [companion.placementId, companion])).values()]
+}
+
+const marsupialRelationshipForCaptureTarget = (
+  context: ResolvedThrowPokeballCommandContext,
+) => {
+  const relationship = resolveMarsupialRelationship({
+    subjectSlug: context.targetPlacement.sheetSlug,
+    pokemonBySlug: context.pokemonBySlug,
+  })
+  if (relationship.status === 'corrupt') rejectLivePlayCommand('conflict', relationship.message)
+  return relationship
+}
+
+const marsupialCapturePairForMother = (
+  context: ResolvedThrowPokeballCommandContext,
+): MarsupialCapturePair | null => {
+  const relationship = marsupialRelationshipForCaptureTarget(context)
+  if (relationship.status !== 'valid' || relationship.subjectRole !== 'mother') return null
+  const motherPlacement = context.map.placements.find(placement => (
+    placement.sheetKind === 'pokemon' && placement.sheetSlug === relationship.pouch.motherSheetSlug
+  ))
+  const babyPlacement = context.map.placements.find(placement => (
+    placement.sheetKind === 'pokemon' && placement.sheetSlug === relationship.pouch.babySheetSlug
+  ))
+  if (!motherPlacement || !babyPlacement || motherPlacement.id !== context.targetPlacement.id) {
+    rejectLivePlayCommand('conflict', 'The authoritative Marsupial pair is not deployed together and cannot be captured partially')
+  }
+  return {
+    motherPlacementId: motherPlacement!.id,
+    babyPlacementId: babyPlacement!.id,
+    babySlug: babyPlacement!.sheetSlug,
+  }
+}
+
+const rejectCombinedParticipantCapture = (context: ResolvedThrowPokeballCommandContext): void => {
+  for (const link of context.map.encounterState?.capabilityRuntime?.links ?? []) {
+    if ((link.kind !== 'as-one-mount' && link.kind !== 'viral-fusion')
+      || !link.participantPlacementIds.includes(context.targetPlacement.id)) continue
+    const owner = context.map.placements.find(placement => placement.id === link.ownerPlacementId)
+    const ownerSheet = owner?.sheetKind === 'pokemon' ? context.pokemonBySlug.get(owner.sheetSlug) : null
+    if (!owner || !ownerSheet) continue
+    const effective = resolveEffectiveCapabilities({
+      map: context.map,
+      placement: owner,
+      sheet: ownerSheet,
+      sheets: { pokemon: context.sheetLookup.pokemon, trainer: context.sheetLookup.trainer },
+    })
+    if (effective.instances.some(instance => instance.effective
+      && instance.instanceId === link.capabilityInstanceId && instance.canonicalId === link.canonicalId)) {
+      rejectLivePlayCommand('conflict', 'A mounted As One or Viral Fusion participant cannot be targeted or captured separately')
+    }
+  }
+}
+
+const rejectProtectedMarsupialBabyCapture = (context: ResolvedThrowPokeballCommandContext): void => {
+  const relationship = marsupialRelationshipForCaptureTarget(context)
+  if (relationship.status !== 'valid' || relationship.subjectRole !== 'baby') return
+  const motherPlacement = context.map.placements.find(placement => (
+    placement.sheetKind === 'pokemon' && placement.sheetSlug === relationship.pouch.motherSheetSlug
+  ))
+  if (!motherPlacement) {
+    rejectLivePlayCommand('conflict', 'A bound Baby-Template Kangaskhan cannot be captured while deployed without its mother')
+  }
+  const mother = placementToSpawned(motherPlacement!, context.sheetLookup, context.map)
+  if (mother && mother.currentHp > 0) {
+    rejectLivePlayCommand('conflict', 'A Baby Template Kangaskhan in its conscious mother’s pouch cannot be targeted or captured separately')
+  }
+}
+
 const validateTargetIsInRange = (
   context: ResolvedThrowPokeballCommandContext,
   linkedSlugs: ReadonlySet<string>,
@@ -648,7 +761,15 @@ const applyThrowPokeballCommand = (
   const trainerSheet = persistedSheetToTrainerSheet(context.trainerSheet)
   const targetSheet = persistedSheetToPokemonSheet(context.targetSheet)
   const pokeball = optionForPayload(trainerSheet, payload)
+  rejectCombinedParticipantCapture(context)
+  rejectProtectedMarsupialBabyCapture(context)
   const linkedSlugs = validateTargetIsUnlinked(context)
+  const prospectiveMarsupialPair = marsupialCapturePairForMother(context)
+  const prospectiveCompanions = capabilityCaptureCompanions(context, prospectiveMarsupialPair)
+  const alreadyLinkedCompanion = prospectiveCompanions.find(companion => linkedSlugs.has(companion.sheetSlug))
+  if (alreadyLinkedCompanion) {
+    rejectLivePlayCommand('conflict', `The ${alreadyLinkedCompanion.kind} companion ${alreadyLinkedCompanion.sheetSlug} is already linked to a Trainer roster`)
+  }
   validateTargetIsInRange(context, linkedSlugs)
 
   const capture = resolvePokeballCaptureAttempt({
@@ -672,6 +793,17 @@ const applyThrowPokeballCommand = (
 
   const nextTrainer = deepCloneJson(trainerSheet) as TrainerSheet
   const trainerApplyResult = applyPokeballCaptureOutcomeToTrainerSheet(nextTrainer, event)
+  const marsupialPair = event.result.success ? prospectiveMarsupialPair : null
+  const captureCompanions = event.result.success ? prospectiveCompanions : []
+  for (const companion of captureCompanions) {
+    if (linkedSlugs.has(companion.sheetSlug)
+      || (nextTrainer.currentTeam ?? []).includes(companion.sheetSlug)
+      || (nextTrainer.boxedPokemon ?? []).includes(companion.sheetSlug)) continue
+    if ((nextTrainer.currentTeam ?? []).length < 6) {
+      nextTrainer.currentTeam = [...(nextTrainer.currentTeam ?? []), companion.sheetSlug]
+    }
+    else nextTrainer.boxedPokemon = [...(nextTrainer.boxedPokemon ?? []), companion.sheetSlug]
+  }
   if (!trainerApplyResult.consumed) {
     rejectLivePlayCommand('conflict', `Could not consume ${pokeball.name} from the authoritative trainer sheet`)
   }
@@ -685,18 +817,47 @@ const applyThrowPokeballCommand = (
     now: () => timestamp,
     maxLogEntries: dependencies.maxLogEntries,
   })
-  const nextInitiative = event.result.success && context.map.initiative?.activeId === context.targetPlacement.id
+  const removedCapturePlacementIds = new Set([
+    context.targetPlacement.id,
+    ...captureCompanions.map(companion => companion.placementId),
+  ])
+  const nextInitiative = event.result.success && context.map.initiative?.activeId
+    && removedCapturePlacementIds.has(context.map.initiative.activeId)
     ? { ...context.map.initiative, activeId: null }
     : context.map.initiative
   const revision = nextRevision(currentRevision)
+  const capabilityRuntime = context.map.encounterState?.capabilityRuntime
+  const nextEncounterState = event.result.success && capabilityRuntime ? {
+    ...context.map.encounterState!,
+    effects: context.map.encounterState!.effects.filter(effect => (
+      !effect.affected.placementIds.some(placementId => removedCapturePlacementIds.has(placementId))
+    )),
+    capabilityRuntime: {
+      ...capabilityRuntime,
+      modes: capabilityRuntime.modes.filter(mode => !removedCapturePlacementIds.has(mode.actorPlacementId)),
+      links: capabilityRuntime.links.filter(link => (
+        !removedCapturePlacementIds.has(link.ownerPlacementId)
+        && !link.participantPlacementIds.some(placementId => removedCapturePlacementIds.has(placementId))
+      )),
+    },
+  } : context.map.encounterState
   const nextMap: TabletopMap = {
     ...context.map,
     revision,
     updatedAt: timestamp,
-    metadata: nextMetadata,
+    metadata: marsupialPair ? {
+      ...nextMetadata,
+      capabilityMarsupialPouches: (Array.isArray(nextMetadata.capabilityMarsupialPouches)
+        ? nextMetadata.capabilityMarsupialPouches : []).filter(raw => {
+        const pouch = raw as Record<string, unknown>
+        return pouch?.motherPlacementId !== marsupialPair.motherPlacementId
+          && pouch?.babyPlacementId !== marsupialPair.babyPlacementId
+      }),
+    } : nextMetadata,
     placements: event.result.success
-      ? context.map.placements.filter((placement) => placement.id !== context.targetPlacement.id)
+      ? context.map.placements.filter((placement) => !removedCapturePlacementIds.has(placement.id))
       : context.map.placements,
+    ...(nextEncounterState === undefined ? {} : { encounterState: nextEncounterState }),
     ...(nextInitiative === undefined ? {} : { initiative: nextInitiative }),
   }
   const nextContext: ResolvedThrowPokeballCommandContext = {

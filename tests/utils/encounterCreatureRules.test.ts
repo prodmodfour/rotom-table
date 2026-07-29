@@ -3,6 +3,8 @@ import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import { encounterCreatureRuleProfileForToken } from '~/utils/encounterCreatureRules'
 import { placementToSpawned } from '~/utils/placement'
 import {
   capabilityEncounterEffectFixture,
@@ -168,9 +170,57 @@ describe('encounter creature-rule token projection', () => {
     const restored = placementToSpawned(placement, lookups, map([]))!
 
     expect(active.creatureRules?.sonicLocked).toBe(true)
-    expect(restored.creatureRules).toBeUndefined()
+    expect(restored.creatureRules).toMatchObject({
+      formId: 'ditto',
+      capabilityIds: expect.arrayContaining(['Jump', 'capability.jump']),
+      sources: [],
+    })
     expect(restored.defenderTypes.map(type => type.toLowerCase())).toEqual(['normal'])
     expect(restored.abilityNames).toEqual(['Limber'])
     expect(restored.ruleCapabilities?.size).toBe('Small')
+  })
+
+  it('always materializes Trainer rules and preserves raw zero Jump and Teleporter identities', () => {
+    const trainerPlacement: SheetPlacement = {
+      id: 'trainer-token',
+      sheetKind: 'trainer',
+      sheetSlug: 'jumper',
+      position: { x: 0, y: 0, z: 0 },
+    }
+    const trainer: TrainerSheet = {
+      slug: 'jumper',
+      name: 'Jumper',
+      level: 1,
+      capabilities: {
+        highJump: 0,
+        longJump: 0,
+        other: ['Teleporter 4'],
+      },
+    }
+    const spawned = placementToSpawned(trainerPlacement, {
+      pokemon: new Map(),
+      trainer: new Map([[trainer.slug, trainer]]),
+    })!
+
+    expect(spawned.movementTraits?.jump).toEqual({ long: 0, high: 0 })
+    expect(spawned.movementCapabilities?.teleporter).toBe(4)
+    expect(spawned.creatureRules?.capabilityIds).toEqual(expect.arrayContaining([
+      'Jump',
+      'capability.jump',
+      'movement.jump',
+      'Teleporter',
+      'capability.teleporter',
+      'movement.teleport',
+    ]))
+
+    const { creatureRules: _creatureRules, ...rawToken } = spawned
+    expect(encounterCreatureRuleProfileForToken(rawToken).capabilityIds).toEqual(expect.arrayContaining([
+      'Jump',
+      'capability.jump',
+      'movement.jump',
+      'Teleporter',
+      'capability.teleporter',
+      'movement.teleport',
+    ]))
   })
 })

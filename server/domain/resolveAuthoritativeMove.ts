@@ -12,6 +12,7 @@ import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type { ResolveMoveIntent, ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS } from '#shared/livePlayMoveResolution'
 import { moveUsageKey } from '~/utils/moveUsage'
+import { findMove } from '~~/data/ptuReference'
 import type { ResolvedCanonicalMoveEntry } from '~/utils/authoritativeMoveEntries'
 import {
   isSeamlessAreaConfirmationScript,
@@ -65,6 +66,8 @@ import type {
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { selectedPokemonCapabilityEdges } from '#shared/capabilityAutomation/pokemonEdges'
+import { requiredStruggleCapabilityForMoveName } from '~/utils/struggleMoves'
 import {
   isStatusAfflictionCondition,
   normalizeConditionName,
@@ -178,6 +181,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'target-out-of-range'
   | 'target-semi-invulnerable'
   | 'target-line-of-sight-blocked'
+  | 'target-stealth-protected'
   | 'duplicate-target-id'
   | 'empty-target-selection'
   | 'too-many-targets'
@@ -1231,6 +1235,60 @@ const assertAuthoritativeTargetLineOfSight = (
   )
 }
 
+export const capabilityMoveRangeIsRanged = (range: string): boolean => (
+  !/\bmelee\b/i.test(range)
+  && (/\branged\b/i.test(range)
+    || /^\s*\d+\b/.test(range)
+    || /\b(?:focus rank|line|cone|blast|burst)\b/i.test(range))
+)
+
+const targetUsedRangedMoveInStealthWindow = (
+  context: AuthoritativeMoveRulesContext,
+  targetPlacementId: string,
+): boolean => {
+  const currentRound = context.map.encounterState?.history.currentRound ?? context.map.initiative?.round ?? 0
+  return context.queries.history.completedMovesThisScene(targetPlacementId).some((completed) => {
+    const use = context.queries.history.moveUse(completed.resolutionId)
+    const round = use?.declaration?.round
+    if (round === null || round === undefined || round < currentRound - 1 || round > currentRound) return false
+    const reference = findMove(completed.canonicalId)
+    if (reference && capabilityMoveRangeIsRanged(reference.range ?? '')) return true
+    const placement = context.queries.placements.get(targetPlacementId)
+    const resolvedSheet = placement ? context.queries.sheets.forPlacement(placement) : null
+    const capability = requiredStruggleCapabilityForMoveName(completed.canonicalId)
+    return placement?.sheetKind === 'pokemon' && resolvedSheet && capability
+      ? selectedPokemonCapabilityEdges(resolvedSheet.sheet as CharacterSheet, 'Basic Ranged Attacks')
+          .some(selected => selected.trim().toLocaleLowerCase('en-US') === capability.toLocaleLowerCase('en-US'))
+      : /telekinetic/i.test(completed.canonicalId)
+  })
+}
+
+const assertStealthTargetability = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly script: MoveAutomationScript
+  readonly target: SpawnedPokemon
+}): void => {
+  if (!capabilityMoveRangeIsRanged(input.script.range)
+    || !input.context.queries.creatureRules.hasCapability(input.target.id, 'Stealth')
+    || targetUsedRangedMoveInStealthWindow(input.context, input.target.id)) return
+  const sight = input.context.queries.lineOfSight.resolve(
+    input.context.actor.placement.id,
+    input.target.id,
+  )
+  const targetOnRoughTerrain = input.context.map.voxels.some(voxel => (
+    voxel.x >= input.target.position.x && voxel.x < input.target.position.x + input.target.base
+    && voxel.z >= input.target.position.z && voxel.z < input.target.position.z + input.target.base
+    && voxel.y >= input.target.position.y && voxel.y < input.target.position.y + (input.target.clearance ?? 1)
+    && (voxel.tags ?? []).some(tag => ['rough', 'rough-terrain', 'cover'].includes(tag.toLowerCase()))
+  ))
+  if (sight.cover !== 'rough-terrain' && !targetOnRoughTerrain) return
+  fail(
+    'unauthorized-state',
+    'target-stealth-protected',
+    `${input.target.id} cannot be targeted by a Ranged Move through Rough Terrain while Stealth is protected.`,
+  )
+}
+
 const authoritativeTargetAccuracyModifiers = (
   context: AuthoritativeMoveRulesContext,
   target: SpawnedPokemon,
@@ -1252,13 +1310,19 @@ const resolveLegalSingleTarget = (options: {
   readonly desiredFacing: ReturnType<typeof desiredFacingTowardToken>
 } => {
   const { placement: actorPlacement, token: actor } = options.context.actor
-  const rangeMeters = parseSingleTargetMoveRangeMeters(options.script.range, {
+  const parsedRangeMeters = parseSingleTargetMoveRangeMeters(options.script.range, {
     focusSkillRankValue: actor.focusSkillRankValue,
   }) ?? fail(
     'unsupported',
     'unsupported-range',
     `${options.script.moveName} has an unsupported target range.`,
   )
+  const reachSize = options.context.queries.creatureRules.resolve(actorPlacement.id)?.size?.toLowerCase()
+  const reachMeters = options.context.queries.creatureRules.hasCapability(actorPlacement.id, 'Reach')
+    && /\bmelee\b/i.test(options.script.range)
+    ? ['large', 'huge', 'gigantic'].includes(reachSize ?? '') ? 3 : 2
+    : 0
+  const rangeMeters = Math.max(parsedRangeMeters, reachMeters)
   const resolvedTarget = resolveSelectedTarget(options.context, options.targetPlacementId)
   recordSheetReadForPlacement(options.context, resolvedTarget.placement)
   const targetability = options.context.queries.targetability.resolve({
@@ -1278,6 +1342,11 @@ const resolveLegalSingleTarget = (options: {
     resolvedTarget.token.id,
     options.script.moveName,
   )
+  assertStealthTargetability({
+    context: options.context,
+    script: options.script,
+    target: resolvedTarget.token,
+  })
   const legalTargets = legalSingleTargetTokens({
     script: options.script,
     user: actor,
@@ -2118,6 +2187,11 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
   const entry = moveEntryResult.ok
     ? moveEntryResult.entry
     : fail('not-found', 'move-absent', 'Move entry resolution failed.')
+  if (entry.canonicalMoveName === 'Mind Reader' && submittedTargetIds.some(targetId => (
+    context.queries.creatureRules.hasCapability(targetId, 'Mindlock')
+  ))) {
+    fail('unauthorized-state', 'move-creature-rule-blocked', 'Mindlock prevents Mind Reader from targeting this participant.')
+  }
   if (entry.canonicalMoveName === 'Rest'
     && context.queries.abilities.has(actorPlacement.id, 'Insomnia')) {
     fail(

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LIVE_PLAY_COMMAND_TYPES, type ThrowPokeballLivePlayCommand } from '#shared/livePlayCommands'
+import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
@@ -97,6 +99,7 @@ const setup = (options: {
   readonly trainer?: TrainerSheet
   readonly target?: CharacterSheet
   readonly extraTrainer?: TrainerSheet
+  readonly extraPokemon?: CharacterSheet
   readonly published?: unknown[]
 } = {}) => {
   const database = openMemoryDatabase()
@@ -109,6 +112,7 @@ const setup = (options: {
   sheets.saveSetupSheet('trainer', 'ash', (options.trainer ?? trainerSheet()) as unknown as Record<string, unknown>)
   sheets.saveSetupSheet('pokemon', 'pidgey', (options.target ?? targetSheet()) as unknown as Record<string, unknown>)
   if (options.extraTrainer) sheets.saveSetupSheet('trainer', options.extraTrainer.slug, options.extraTrainer as unknown as Record<string, unknown>)
+  if (options.extraPokemon) sheets.saveSetupSheet('pokemon', options.extraPokemon.slug, options.extraPokemon as unknown as Record<string, unknown>)
   modes.set({ slug: map.slug, interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 1_700_000_000_000 })
   const published = options.published ?? []
   const executor = createAuthoritativeLivePlayCommandExecutor({
@@ -184,6 +188,41 @@ describe('throwPokeball live-play command', () => {
     expect(env.ops.getStoredOpRecord('arena', 'op_capture001')).toMatchObject({ result: response.result })
     expect(env.published).toHaveLength(5)
     expect(env.published.at(-1)).toMatchObject({ type: 'live-play-command-accepted', opId: 'op_capture001' })
+  })
+
+  it('captures an effective As One mount into the same Ball roster transaction and removes the coupled placements', async () => {
+    const mountedMap = baseMap({
+      placements: [
+        { id: 'trainer-1', sheetKind: 'trainer', sheetSlug: 'ash', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-1', sheetKind: 'pokemon', sheetSlug: 'pidgey', position: { x: 1, y: 0, z: 0 } },
+        { id: 'mount-1', sheetKind: 'pokemon', sheetSlug: 'ponyta', position: { x: 1, y: 0, z: 0 } },
+      ],
+      encounterState: {
+        ...createEmptyEncounterState(),
+        capabilityRuntime: {
+          ...createEmptyCapabilityRuntimeState(),
+          links: [{
+            id: 'capability.link.target-1.as-one-mount', kind: 'as-one-mount', ownerPlacementId: 'target-1',
+            participantPlacementIds: ['mount-1'], capabilityInstanceId: 'capability:target-1:As_20One:base',
+            canonicalId: 'As One', establishedAt: 100, configurationId: 'Run Away', sourceOperationId: 'mount-operation',
+          }],
+        },
+      },
+    })
+    const env = setup({
+      map: mountedMap,
+      target: targetSheet({ capabilities: { other: ['As One'] } }),
+      extraPokemon: { slug: 'ponyta', nickname: 'Ponyta', species: 'Ponyta', level: 5 },
+    })
+    const response = await execute({
+      ...env,
+      command: commandFor(mountedMap, 'op_capture_as_one'),
+      random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
+    })
+    expect(response.capture?.result.success).toBe(true)
+    expect(env.maps.getBySlug('arena')?.placements.map(placement => placement.id)).toEqual(['trainer-1'])
+    expect(env.maps.getBySlug('arena')?.encounterState?.capabilityRuntime?.links).toEqual([])
+    expect(env.sheets.getByRef('trainer', 'ash')?.sheet.currentTeam).toEqual(['pidgey', 'ponyta'])
   })
 
   it('puts a captured Pokémon in the box when the trainer team is full', async () => {
@@ -278,6 +317,37 @@ describe('throwPokeball live-play command', () => {
     expect(linkedResponse.result).toMatchObject({ ok: false, reason: 'conflict' })
     expect(linkedRandom).not.toHaveBeenCalled()
     expect(linked.sheets.getByRef('trainer', 'ash')?.sheet.inventory).toMatchObject({ pokeBalls: [{ qty: 2 }] })
+  })
+
+  it('uses the resolved Trainer Throwing Range formula for capture targeting', async () => {
+    const rangedMap = baseMap({
+      placements: [
+        { id: 'trainer-1', sheetKind: 'trainer', sheetSlug: 'ash', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-1', sheetKind: 'pokemon', sheetSlug: 'pidgey', position: { x: 7, y: 0, z: 0 } },
+      ],
+    })
+    const defaultTrainer = setup({ map: rangedMap, trainer: trainerSheet({ capabilities: undefined }) })
+    const defaultRandom = vi.fn()
+    const defaultResponse = await execute({
+      ...defaultTrainer,
+      command: commandFor(rangedMap, 'op_capture_formula_default'),
+      random: defaultRandom,
+    })
+    expect(defaultResponse.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(defaultRandom).not.toHaveBeenCalled()
+
+    const adeptTrainer = setup({
+      map: rangedMap,
+      trainer: trainerSheet({ capabilities: undefined, skillBackground: { adept: 'athletics' } }),
+    })
+    const adeptRandom = vi.fn().mockReturnValueOnce(0)
+    const adeptResponse = await execute({
+      ...adeptTrainer,
+      command: commandFor(rangedMap, 'op_capture_formula_adept'),
+      random: adeptRandom,
+    })
+    expect(adeptResponse.result).toMatchObject({ ok: true })
+    expect(adeptRandom).toHaveBeenCalledTimes(1)
   })
 
   it('enforces player trainer control while allowing GM throws without a profile', async () => {

@@ -1,0 +1,488 @@
+#!/usr/bin/env python3
+"""Freeze the canonical PTU capability corpus and seed reviewed automation metadata.
+
+The checked-in JSON outputs are review artifacts.  This script is intentionally
+strict: source drift must be reviewed instead of silently changing runtime
+semantics.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import subprocess
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+REFERENCE = ROOT / "data/reference/capabilities.json"
+OUT = ROOT / "data/capability-automation"
+PARSER = ROOT / "ptu-data/parse_capabilities.py"
+SOURCE_PRIORITY = [
+    "books/markdown/arceus_references.md",
+    "books/markdown/swsh_-_armor_crown_references.md",
+    "books/markdown/sumo_references.md",
+    "books/markdown/errata-3.md",
+    "books/markdown/errata-2.md",
+    "books/markdown/core/10-indices-and-reference.md",
+    "books/markdown/core/06-playing-the-game.md",
+    "books/markdown/core/02-character-creation.md",
+]
+
+NUMERIC = {
+    "Burrow", "High Jump", "Jump", "Levitate", "Long Jump", "Overland",
+    "Power", "Sky", "Swim", "Teleporter", "Throwing Range",
+}
+MOVEMENT = {
+    "Amorphous", "Inflatable", "Mountable X", "Naturewalk", "Phasing",
+    "Reach", "Shadow Meld", "Shrinkable", "Threaded", "Wallclimber",
+}
+SENSES = {
+    "Aura Reader", "Blindsense", "Darkvision", "Dead Silent", "Dream Reader",
+    "Glow", "Invisibility", "Magnetic", "Mindlock", "Premonition", "Stealth",
+    "Tracker", "Tremorsense", "X-Ray Vision",
+}
+COMMUNICATION = {"Aura Pulse", "Pack Mon", "Telepath", "Telekinetic", "Wired"}
+STRUGGLE = {"Firestarter", "Fountain", "Freezer", "Guster", "Materializer", "Zapper"}
+TERRAIN = {"Groundshaper", "Gilled"}
+CRAFTING = {"Blender", "Illusionist", "Living Weapon", "Planter", "Shapeshifter", "Wielder"}
+GATHERING = {
+    "Alluring", "Dream Mist", "Egg Warmer", "Fortune", "Gather Unown",
+    "Heart Gift", "Herb Growth", "Honey Gather", "Juicer", "Milk Collection",
+    "Mushroom Harvest", "Pearl Creation", "Sprouter",
+}
+FORMS = {
+    "As One", "Bloom", "Delta Evolution", "Keystone Warp", "Letter Press",
+    "Marsupial", "Split Evolution", "Viral Fusion", "Weapon Bond",
+    "Weathershape", "Zygarde Cells",
+}
+INTEGRATED = {"Chilled", "Heater", "Soulless", "Underdog", "Volatile Bomb"}
+
+# Reviewed source-owned actions.  Contextual means the presentation layer must
+# prove the named context before surfacing an offer; this is never a universal
+# "Use Capability" menu.
+ACTIONS: dict[str, list[dict[str, Any]]] = {
+    "Alluring": [
+        {"id": "lure-with-alluring", "action": "extended", "frequency": "daily", "context": "alluring-lure-cell"},
+        {"id": "distract-with-alluring", "action": "standard", "frequency": "daily", "context": "wild-target"},
+    ],
+    "As One": [
+        {"id": "mount", "action": "extended", "frequency": "at-will", "context": "adjacent-willing-mount"},
+        {"id": "dismount", "action": "extended", "frequency": "at-will", "context": "adjacent-release-cell"},
+    ],
+    "Aura Pulse": [{"id": "communicate", "action": "free", "frequency": "at-will", "context": "communication-target"}],
+    "Aura Reader": [{"id": "read-aura", "action": "standard", "frequency": "at-will", "context": "living-target"}],
+    "Blender": [{"id": "blend", "action": "shift", "frequency": "at-will", "context": "encounter"}],
+    "Delta Evolution": [{"id": "mega-evolve", "action": "swift", "frequency": "at-will", "context": "delta-mega-ready"}],
+    "Dream Mist": [{"id": "produce-dream-mist", "action": "extended", "frequency": "daily", "context": "collection-jar"}],
+    "Dream Reader": [{"id": "read-dream", "action": "standard", "frequency": "at-will", "context": "sleeping-target"}],
+    "Egg Warmer": [{"id": "warm-egg", "action": "extended", "frequency": "cooldown", "context": "egg"}],
+    "Fortune": [{"id": "roam-for-fortune", "action": "extended", "frequency": "daily", "context": "city-or-town-one-hour"}],
+    "Gather Unown": [{"id": "gather-unown", "action": "standard", "frequency": "weekly", "context": "open-space"}],
+    "Glow": [
+        {"id": "emit-light", "action": "free", "frequency": "at-will", "context": "not-glowing"},
+        {"id": "stop-light", "action": "free", "frequency": "at-will", "context": "glowing"},
+        {"id": "influence-nearby-wilds", "action": "free", "frequency": "at-will", "context": "glowing-nearby-wilds"},
+    ],
+    "Groundshaper": [{"id": "shape-ground", "action": "standard", "frequency": "at-will", "context": "cardinal-ground-cells"}],
+    "Heart Gift": [{"id": "produce-heart-scale", "action": "extended", "frequency": "weekly", "context": "item-recipient"}],
+    "Herb Growth": [{"id": "produce-revival-herb", "action": "extended", "frequency": "daily", "context": "item-recipient"}],
+    "Honey Gather": [{"id": "gather-honey", "action": "extended", "frequency": "daily", "context": "abundant-plant-life-and-collection-jar"}],
+    "Illusionist": [
+        {"id": "create-illusion", "action": "standard", "frequency": "at-will", "context": "visible-cell"},
+        {"id": "reposition-illusion", "action": "free", "frequency": "at-will", "context": "moving-illusion"},
+        {"id": "dismiss-illusion", "action": "free", "frequency": "at-will", "context": "owned-illusion"},
+    ],
+    "Inflatable": [
+        {"id": "inflate", "action": "standard", "frequency": "at-will", "context": "normal-form"},
+        {"id": "deflate", "action": "shift", "frequency": "at-will", "context": "inflated"},
+    ],
+    "Invisibility": [
+        {"id": "become-invisible", "action": "shift", "frequency": "cooldown", "context": "visible-and-ready"},
+        {"id": "become-visible", "action": "free", "frequency": "at-will", "context": "invisible"},
+    ],
+    "Juicer": [
+        {"id": "consume-juicer-shell-juice-as-snack", "action": "extended", "frequency": "at-will", "context": "stored-juicer-juice"},
+        {"id": "collect-juicer-output", "action": "extended", "frequency": "at-will", "context": "stored-juicer-output"},
+    ],
+    "Jump": [{"id": "jump", "action": "shift", "frequency": "at-will", "context": "jump-destination-cell"}],
+    "Keystone Warp": [
+        {"id": "synchronize-keystone", "action": "extended", "frequency": "at-will", "context": "unsynchronized-keystone-and-2tp"},
+        {"id": "keystone-warp", "action": "standard", "frequency": "at-will", "context": "synchronized-keystone"},
+    ],
+    "Letter Press": [{"id": "combine-unown", "action": "extended", "frequency": "at-will", "context": "eligible-unown"}],
+    "Living Weapon": [
+        {"id": "engage-wielder", "action": "standard", "frequency": "at-will", "context": "adjacent-willing-wielder"},
+        {"id": "disengage-wielder", "action": "swift", "frequency": "at-will", "context": "adjacent-release-cell"},
+    ],
+    "Magnetic": [{"id": "manipulate-metal", "action": "standard", "frequency": "at-will", "context": "iron-or-steel-object"}],
+    "Milk Collection": [{"id": "produce-moomoo-milk", "action": "extended", "frequency": "daily", "context": "collection-jar"}],
+    "Marsupial": [{"id": "shelter-baby", "action": "free", "frequency": "at-will", "context": "adjacent-willing-baby-target"}],
+    "Mountable X": [
+        {"id": "accept-rider", "action": "extended", "frequency": "at-will", "context": "adjacent-willing-rider"},
+        {"id": "release-rider", "action": "extended", "frequency": "at-will", "context": "linked-rider-and-adjacent-cell"},
+    ],
+    "Mushroom Harvest": [{"id": "harvest-mushroom", "action": "extended", "frequency": "daily", "context": "item-recipient"}],
+    "Phasing": [
+        {"id": "become-intangible", "action": "standard", "frequency": "at-will", "context": "tangible"},
+        {"id": "become-tangible", "action": "shift", "frequency": "at-will", "context": "intangible"},
+    ],
+    "Planter": [
+        {"id": "plant", "action": "extended", "frequency": "at-will", "context": "empty-planter-and-seed"},
+        {"id": "harvest", "action": "extended", "frequency": "at-will", "context": "yielding-planter"},
+    ],
+    "Shadow Meld": [
+        {"id": "meld", "action": "standard", "frequency": "at-will", "context": "lit-surface-shadow"},
+        {"id": "reform", "action": "shift", "frequency": "at-will", "context": "shadow-melded"},
+        {"id": "ride-shadow", "action": "shift", "frequency": "at-will", "context": "adjacent-living-shadow"},
+        {"id": "leave-shadow", "action": "shift", "frequency": "at-will", "context": "adjacent-release-cell"},
+    ],
+    "Shapeshifter": [
+        {"id": "change-shape", "action": "standard", "frequency": "at-will", "context": "valid-shape-description"},
+        {"id": "oppose-examination", "action": "free", "frequency": "at-will", "context": "close-examination-target"},
+        {"id": "restore-shape", "action": "standard", "frequency": "at-will", "context": "shapechanged"},
+    ],
+    "Shrinkable": [
+        {"id": "shrink", "action": "standard", "frequency": "at-will", "context": "normal-form"},
+        {"id": "restore-size", "action": "standard", "frequency": "at-will", "context": "shrunken"},
+    ],
+    "Sprouter": [{"id": "sprout", "action": "standard", "frequency": "weekly", "context": "plant-or-planted-berry"}],
+    "Telekinetic": [
+        {"id": "manipulate-object", "action": "standard", "frequency": "at-will", "context": "object-in-8m"},
+        {"id": "telekinetic-maneuver", "action": "standard", "frequency": "at-will", "context": "maneuver-target-in-focus-range"},
+    ],
+    "Telepath": [
+        {"id": "read-mind", "action": "standard", "frequency": "at-will", "context": "mind-in-focus-range"},
+        {"id": "project-thought", "action": "free", "frequency": "at-will", "context": "communication-targets"},
+    ],
+    "Teleporter": [{"id": "teleport", "action": "shift", "frequency": "at-will", "context": "teleport-destination-cell"}],
+    "Threaded": [{"id": "threaded-shift", "action": "shift", "frequency": "at-will", "context": "anchor-or-target-in-4m"}],
+    "Tracker": [{"id": "track-scent", "action": "extended", "frequency": "hourly", "context": "scent-trail"}],
+    "Viral Fusion": [
+        {"id": "bond", "action": "extended", "frequency": "at-will", "context": "willing-or-helpless-target"},
+        {"id": "release-bond", "action": "extended", "frequency": "at-will", "context": "adjacent-release-cell"},
+    ],
+    "Weapon Bond": [
+        {"id": "assume-crowned-form", "action": "extended", "frequency": "at-will", "context": "ancestral-weapon"},
+        {"id": "relinquish-crowned-form", "action": "extended", "frequency": "at-will", "context": "crowned-form"},
+    ],
+    "Wired": [
+        {"id": "enter-machine", "action": "standard", "frequency": "at-will", "context": "electronic-device"},
+        {"id": "exit-machine", "action": "shift", "frequency": "at-will", "context": "inside-machine"},
+    ],
+    "Zygarde Cells": [
+        {"id": "assemble-zygarde", "action": "extended", "frequency": "at-will", "context": "zygarde-cube-and-cells"},
+        {"id": "disassemble-zygarde", "action": "extended", "frequency": "at-will", "context": "disassemblable-zygarde"},
+        {"id": "change-zygarde-form", "action": "extended", "frequency": "at-will", "context": "power-construct-zygarde"},
+        {"id": "tutor-cube-move", "action": "extended", "frequency": "at-will", "context": "zygarde-cube-and-tp"},
+    ],
+}
+
+BOUNDED_GM = {
+    "Alluring", "Aura Reader", "Dream Reader", "Egg Warmer", "Fortune",
+    "Glow", "Illusionist", "Letter Press", "Magnetic",
+    "Marsupial", "Pack Mon", "Planter", "Premonition", "Shapeshifter",
+    "Split Evolution", "Sprouter", "Telepath", "Tracker", "Wired", "X-Ray Vision",
+    "Zygarde Cells",
+}
+LEVEL_REQUIREMENTS = {
+    "Dream Mist": 20, "Fortune": 20, "Gather Unown": 20, "Heart Gift": 30,
+    "Herb Growth": 20, "Milk Collection": 20, "Mushroom Harvest": 20,
+}
+ITEM_OUTPUTS = {
+    "Dream Mist": ["Dream Mist"], "Heart Gift": ["Heart Scale"],
+    "Herb Growth": ["Revival Herb"], "Honey Gather": ["Honey"],
+    "Juicer": ["Shuckle’s Berry Juice", "Rare Candy"],
+    "Milk Collection": ["MooMoo Milk"],
+    "Mushroom Harvest": ["Tiny Mushroom", "Big Mushroom", "Balm Mushroom"],
+}
+
+
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def stable_bytes(value: Any) -> bytes:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+
+
+def git_blob(path: str) -> str:
+    return subprocess.check_output(["git", "hash-object", path], cwd=ROOT, text=True).strip()
+
+
+def category(name: str) -> str:
+    for label, names in [
+        ("numeric", NUMERIC), ("movement", MOVEMENT), ("sense", SENSES),
+        ("communication", COMMUNICATION), ("struggle", STRUGGLE),
+        ("terrain", TERRAIN), ("crafting", CRAFTING), ("gathering", GATHERING),
+        ("form", FORMS), ("integrated", INTEGRATED),
+    ]:
+        if name in names:
+            return label
+    raise ValueError(f"Unclassified capability: {name}")
+
+
+def ticket_for(name: str) -> str:
+    group = category(name)
+    return {
+        "numeric": "CA-030", "movement": "CA-031", "sense": "CA-033",
+        "communication": "CA-034", "struggle": "CA-035", "terrain": "CA-036",
+        "crafting": "CA-037", "gathering": "CA-038", "integrated": "CA-039",
+        "form": "CA-040",
+    }[group]
+
+
+def source_path_for(basename: str) -> str:
+    matches = [path for path in SOURCE_PRIORITY if Path(path).name == basename]
+    if len(matches) != 1:
+        raise ValueError(f"Expected exactly one source for {basename}: {matches}")
+    return matches[0]
+
+
+def write_json(name: str, value: Any) -> None:
+    (OUT / name).write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def main() -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    corpus = json.loads(REFERENCE.read_text(encoding="utf-8"))
+    if not isinstance(corpus, dict) or len(corpus) != 83:
+        raise ValueError("Canonical capability corpus must be an 83-entry object")
+    ids = sorted(corpus)
+    if set(ids) != (NUMERIC | MOVEMENT | SENSES | COMMUNICATION | STRUGGLE | TERRAIN | CRAFTING | GATHERING | FORMS | INTEGRATED):
+        missing = set(ids) - (NUMERIC | MOVEMENT | SENSES | COMMUNICATION | STRUGGLE | TERRAIN | CRAFTING | GATHERING | FORMS | INTEGRATED)
+        extra = (NUMERIC | MOVEMENT | SENSES | COMMUNICATION | STRUGGLE | TERRAIN | CRAFTING | GATHERING | FORMS | INTEGRATED) - set(ids)
+        raise ValueError(f"Classification drift; missing={missing}, extra={extra}")
+
+    source_rows = []
+    for priority, path in enumerate(SOURCE_PRIORITY):
+        raw = (ROOT / path).read_bytes()
+        source_rows.append({
+            "priority": priority,
+            "path": path,
+            "basename": Path(path).name,
+            "bytes": len(raw),
+            "sha256": sha256_bytes(raw),
+            "gitBlob": git_blob(path),
+        })
+    source_by_path = {row["path"]: row for row in source_rows}
+
+    records = []
+    for index, name in enumerate(ids):
+        record = corpus[name]
+        if record.get("name") != name or not record.get("effect") or not record.get("source"):
+            raise ValueError(f"Malformed canonical record {name}")
+        path = source_path_for(record["source"])
+        records.append({
+            "index": index,
+            "canonicalId": name,
+            "source": record["source"],
+            "sourcePath": path,
+            "sourceSha256": source_by_path[path]["sha256"],
+            "effectSha256": sha256_bytes(record["effect"].encode()),
+            "recordSha256": sha256_bytes(stable_bytes(record)),
+        })
+
+    reference_raw = REFERENCE.read_bytes()
+    parser_raw = PARSER.read_bytes()
+    ruleset = {
+        "schemaVersion": 1,
+        "rulesetId": "ptu-1.05-capability-automation",
+        "canonicalSource": {
+            "path": "data/reference/capabilities.json",
+            "entryCount": len(ids),
+            "bytes": len(reference_raw),
+            "sha256": sha256_bytes(reference_raw),
+            "gitBlob": git_blob("data/reference/capabilities.json"),
+        },
+        "parser": {
+            "path": "ptu-data/parse_capabilities.py",
+            "bytes": len(parser_raw),
+            "sha256": sha256_bytes(parser_raw),
+            "gitBlob": git_blob("ptu-data/parse_capabilities.py"),
+        },
+        "sourcePriority": source_rows,
+        "precedencePolicy": "first parsed definition wins in listed newest-supplement-to-core order",
+        "runtimeAuthority": "data/reference/capabilities.json",
+        "reviewPolicy": {
+            "sourceDrift": "fail-closed",
+            "unknownCapability": "preserve-as-unresolved-sheet-label-and-do-not-execute",
+            "ambiguousRule": "bounded-gm-adjudication-with-structured-audit-note",
+            "clientAuthority": "none",
+        },
+    }
+    write_json("ruleset.json", ruleset)
+
+    inventory = {
+        "schemaVersion": 1,
+        "rulesetId": ruleset["rulesetId"],
+        "canonicalSourceSha256": ruleset["canonicalSource"]["sha256"],
+        "entryCount": len(ids),
+        "identityOrder": "unicode-code-point",
+        "canonicalIds": ids,
+        "records": records,
+        "parserAudit": {
+            "parsedEntryCount": 83,
+            "sourceContributions": {
+                "arceus_references.md": 0,
+                "swsh_-_armor_crown_references.md": 2,
+                "sumo_references.md": 2,
+                "errata-3.md": 0,
+                "errata-2.md": 0,
+                "10-indices-and-reference.md": 68,
+                "06-playing-the-game.md": 9,
+                "02-character-creation.md": 2,
+            },
+            "shadowedDefinitions": [],
+            "canonicalDifferencesFromParserOutput": [
+                {"canonicalId": "Sky", "adjudicationId": "CA-SRC-001"},
+                {"canonicalId": "Levitate", "adjudicationId": "CA-SRC-002"},
+            ],
+            "status": "reviewed",
+        },
+    }
+    write_json("inventory.json", inventory)
+
+    adjudications = {
+        "schemaVersion": 1,
+        "rulesetId": ruleset["rulesetId"],
+        "status": "reviewed-no-open-source-gaps",
+        "entries": [
+            {
+                "id": "CA-SRC-001", "canonicalId": "Sky", "status": "accepted",
+                "issue": "The basic-capability paragraph omits the Groundsource immunity used by the Groundsource keyword definition and later rules.",
+                "decision": "Retain the canonical sentence: a positive Sky Speed grants Groundsource immunity unless a grounding rule suppresses it.",
+                "evidence": ["books/markdown/core/06-playing-the-game.md", "books/markdown/core/10-indices-and-reference.md"],
+            },
+            {
+                "id": "CA-SRC-002", "canonicalId": "Levitate", "status": "accepted",
+                "issue": "The basic-capability paragraph omits the Groundsource immunity used by the Groundsource keyword definition and later rules.",
+                "decision": "Retain the canonical sentence: a positive Levitate Speed grants Groundsource immunity unless a grounding rule suppresses it.",
+                "evidence": ["books/markdown/core/06-playing-the-game.md", "books/markdown/core/10-indices-and-reference.md"],
+            },
+            {
+                "id": "CA-SRC-003", "canonicalId": "Power", "status": "accepted",
+                "issue": "The parser intentionally captures the Power prose before the source table.",
+                "decision": "Runtime limits use the complete 1-16 table in the same source; the frozen table is checked separately.",
+                "evidence": ["books/markdown/core/06-playing-the-game.md", "src/utils/usefulCharts.ts"],
+            },
+            {
+                "id": "CA-SRC-004", "canonicalId": "Mountable X", "status": "accepted",
+                "issue": "X is a parameter while species and sheet data use labels such as Mountable 1.",
+                "decision": "Canonical identity remains Mountable X; strict acquisition parsing records the positive integer as parameter riders.",
+                "evidence": ["books/markdown/core/10-indices-and-reference.md", "data/reference/pokedex.json"],
+            },
+            {
+                "id": "CA-SRC-005", "canonicalId": "Freezer", "status": "accepted",
+                "issue": "Source extraction joins Ice-Typed as IceTyped (and Guster similarly joins Flying-Typed).",
+                "decision": "Preserve source prose bytes but normalize the reviewed struggle-attack type to canonical Pokémon type IDs.",
+                "evidence": ["books/markdown/core/10-indices-and-reference.md"],
+            },
+            {
+                "id": "CA-SRC-006", "canonicalId": "Swim", "status": "accepted",
+                "issue": "The final sentence refers to an Underwater Capability rather than Swim.",
+                "decision": "Treat Underwater as an obvious local reference to the Swim Capability; Dive adds 3 to Swim.",
+                "evidence": ["books/markdown/core/06-playing-the-game.md"],
+            },
+            {
+                "id": "CA-SRC-007", "canonicalId": "Sky", "status": "accepted",
+                "issue": "The Fly Move record says Grants Sky +3 while the canonical Sky Capability says Fly raises Sky by 4.",
+                "decision": "Capability acquisition follows the canonical Capability rule: Fly grants or raises Sky by 4.",
+                "evidence": ["data/reference/capabilities.json", "data/reference/moves.json", "books/markdown/core/06-playing-the-game.md"],
+            },
+            {
+                "id": "CA-SRC-008", "canonicalId": "Delta Evolution", "status": "accepted",
+                "issue": "Species data contains reviewed spelling noise: Delta Evolver, X- Ray Vision, Invisbility, and a merged Tracker Underdog label.",
+                "decision": "Normalize only those exact compatibility spellings and split the exact merged label into Tracker plus Underdog; retain every raw source label as provenance.",
+                "evidence": ["data/reference/pokedex.json", "data/reference/capabilities.json"],
+            },
+        ],
+    }
+    write_json("source-adjudications.json", adjudications)
+
+    manifest_entries = []
+    for name in ids:
+        actions = ACTIONS.get(name, [])
+        group = category(name)
+        passive_only = not actions
+        manifest_entries.append({
+            "canonicalId": name,
+            "ticketId": ticket_for(name),
+            "category": group,
+            "automationStatus": "native",
+            "runtimeKind": "numeric" if group == "numeric" else "action-and-passive" if actions else "passive-or-integrated",
+            "presentationPolicy": "contextual-offer" if actions else "passive-fact-only",
+            "adjudicationPolicy": "bounded-gm" if name in BOUNDED_GM else "deterministic",
+            "levelRequirement": LEVEL_REQUIREMENTS.get(name),
+            "itemOutputs": ITEM_OUTPUTS.get(name, []),
+            "actions": actions,
+            "passiveProjection": True,
+            "serverAuthoritative": True,
+            "legacyExecutionAllowed": False,
+            "sourceEffectSha256": next(row["effectSha256"] for row in records if row["canonicalId"] == name),
+        })
+    manifest = {
+        "schemaVersion": 1,
+        "rulesetId": ruleset["rulesetId"],
+        "canonicalSourceSha256": ruleset["canonicalSource"]["sha256"],
+        "entryCount": len(manifest_entries),
+        "entries": manifest_entries,
+        "certification": {
+            "unresolvedEntries": 0,
+            "manualOnlyEntries": 0,
+            "legacyExecutableEntries": 0,
+            "reviewedAt": "2026-07-28",
+        },
+    }
+    write_json("manifest.json", manifest)
+
+    requirements = []
+    for entry in manifest_entries:
+        name = entry["canonicalId"]
+        requirements.append({
+            "id": f"capability:{name}:passive",
+            "canonicalId": name,
+            "kind": "passive-projection",
+            "given": "the actor owns an effective canonical capability instance",
+            "when": "the authoritative encounter presentation is projected",
+            "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied",
+        })
+        for action in entry["actions"]:
+            requirements.append({
+                "id": f"capability:{name}:action:{action['id']}",
+                "canonicalId": name,
+                "kind": "contextual-action",
+                "actionId": action["id"],
+                "given": f"the actor owns the capability and authoritative context satisfies {action['context']}",
+                "when": "the capability action is offered and declared",
+                "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output",
+            })
+    write_json("scenario-requirements.json", {
+        "schemaVersion": 1,
+        "rulesetId": ruleset["rulesetId"],
+        "requirementCount": len(requirements),
+        "requirements": requirements,
+    })
+
+    power_rows = [
+        [1, 2, 5, 10, 20], [2, 20, 30, 60, 120], [3, 35, 50, 100, 200],
+        [4, 45, 70, 140, 280], [5, 60, 90, 180, 360], [6, 75, 115, 230, 460],
+        [7, 100, 140, 300, 600], [8, 120, 190, 380, 760], [9, 150, 240, 480, 960],
+        [10, 200, 300, 600, 1200], [11, 250, 375, 750, 1500], [12, 350, 450, 900, 1800],
+        [13, 450, 525, 1050, 2100], [14, 500, 600, 1200, 2400], [15, 550, 675, 1350, 2700],
+        [16, 600, 750, 1500, 3000],
+    ]
+    write_json("power-chart.json", {
+        "schemaVersion": 1,
+        "source": "books/markdown/core/06-playing-the-game.md",
+        "units": "lb",
+        "rows": [
+            {"power": p, "heavyMinimum": h0, "heavyMaximum": h1, "staggeringMaximum": s, "dragMaximum": d}
+            for p, h0, h1, s, d in power_rows
+        ],
+    })
+
+    print(f"Seeded {len(ids)} reviewed capabilities and {len(requirements)} scenarios in {OUT.relative_to(ROOT)}")
+
+
+if __name__ == "__main__":
+    main()

@@ -3,6 +3,7 @@ import type {
   MoveDamageTypeEffectivenessPolicy,
   MoveEffectTypeRelation,
 } from '#shared/moveAutomation/effects'
+import { isCapabilityWeaponMoveName } from '#shared/capabilityAutomation/weaponMoves'
 import type { MoveRuleEvaluationTraceEntry, MoveRuleSelectorState } from './evaluateExpression'
 import { evaluateMoveExpression } from './evaluateExpression'
 import type { AuthoritativeMoveRulesContext } from './context'
@@ -444,7 +445,11 @@ export const resolveMoveDamageType = (options: {
       ?? (finalMultiplier === 0 && effectivenessOverride === 0
         ? 'effectiveness override'
         : null)
-  const hasStab = options.context.actor.token.sheetKind === 'pokemon'
+  // PTU weapon Moves never benefit from STAB, including when a same-resolution
+  // type-changing Ability would otherwise force it. Their Normal typing still
+  // participates in effectiveness and immunity normally.
+  const hasStab = !isCapabilityWeaponMoveName(options.canonicalMoveId ?? options.script.moveName)
+    && options.context.actor.token.sheetKind === 'pokemon'
     && (options.forceActorStab === true
       || options.context.actor.token.defenderTypes.some(type => canonicalType(type) === moveType.type))
 

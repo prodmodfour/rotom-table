@@ -1,0 +1,1319 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-capability-automation",
+  "requirementCount": 155,
+  "requirements": [
+    {
+      "id": "capability:Alluring:passive",
+      "canonicalId": "Alluring",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Alluring:action:lure-with-alluring",
+      "canonicalId": "Alluring",
+      "kind": "contextual-action",
+      "actionId": "lure-with-alluring",
+      "given": "the actor owns the capability and authoritative context satisfies alluring-lure-cell",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Alluring:action:distract-with-alluring",
+      "canonicalId": "Alluring",
+      "kind": "contextual-action",
+      "actionId": "distract-with-alluring",
+      "given": "the actor owns the capability and authoritative context satisfies wild-target",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Amorphous:passive",
+      "canonicalId": "Amorphous",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:As One:passive",
+      "canonicalId": "As One",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:As One:action:mount",
+      "canonicalId": "As One",
+      "kind": "contextual-action",
+      "actionId": "mount",
+      "given": "the actor owns the capability and authoritative context satisfies adjacent-willing-mount",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:As One:action:dismount",
+      "canonicalId": "As One",
+      "kind": "contextual-action",
+      "actionId": "dismount",
+      "given": "the actor owns the capability and authoritative context satisfies adjacent-release-cell",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Aura Pulse:passive",
+      "canonicalId": "Aura Pulse",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Aura Pulse:action:communicate",
+      "canonicalId": "Aura Pulse",
+      "kind": "contextual-action",
+      "actionId": "communicate",
+      "given": "the actor owns the capability and authoritative context satisfies communication-target",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Aura Reader:passive",
+      "canonicalId": "Aura Reader",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Aura Reader:action:read-aura",
+      "canonicalId": "Aura Reader",
+      "kind": "contextual-action",
+      "actionId": "read-aura",
+      "given": "the actor owns the capability and authoritative context satisfies living-target",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Blender:passive",
+      "canonicalId": "Blender",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Blender:action:blend",
+      "canonicalId": "Blender",
+      "kind": "contextual-action",
+      "actionId": "blend",
+      "given": "the actor owns the capability and authoritative context satisfies encounter",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Blindsense:passive",
+      "canonicalId": "Blindsense",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Bloom:passive",
+      "canonicalId": "Bloom",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Burrow:passive",
+      "canonicalId": "Burrow",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Chilled:passive",
+      "canonicalId": "Chilled",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Darkvision:passive",
+      "canonicalId": "Darkvision",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Dead Silent:passive",
+      "canonicalId": "Dead Silent",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Delta Evolution:passive",
+      "canonicalId": "Delta Evolution",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Delta Evolution:action:mega-evolve",
+      "canonicalId": "Delta Evolution",
+      "kind": "contextual-action",
+      "actionId": "mega-evolve",
+      "given": "the actor owns the capability and authoritative context satisfies delta-mega-ready",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Dream Mist:passive",
+      "canonicalId": "Dream Mist",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Dream Mist:action:produce-dream-mist",
+      "canonicalId": "Dream Mist",
+      "kind": "contextual-action",
+      "actionId": "produce-dream-mist",
+      "given": "the actor owns the capability and authoritative context satisfies collection-jar",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Dream Reader:passive",
+      "canonicalId": "Dream Reader",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Dream Reader:action:read-dream",
+      "canonicalId": "Dream Reader",
+      "kind": "contextual-action",
+      "actionId": "read-dream",
+      "given": "the actor owns the capability and authoritative context satisfies sleeping-target",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Egg Warmer:passive",
+      "canonicalId": "Egg Warmer",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Egg Warmer:action:warm-egg",
+      "canonicalId": "Egg Warmer",
+      "kind": "contextual-action",
+      "actionId": "warm-egg",
+      "given": "the actor owns the capability and authoritative context satisfies egg",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Firestarter:passive",
+      "canonicalId": "Firestarter",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Fortune:passive",
+      "canonicalId": "Fortune",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Fortune:action:roam-for-fortune",
+      "canonicalId": "Fortune",
+      "kind": "contextual-action",
+      "actionId": "roam-for-fortune",
+      "given": "the actor owns the capability and authoritative context satisfies city-or-town-one-hour",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Fountain:passive",
+      "canonicalId": "Fountain",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Freezer:passive",
+      "canonicalId": "Freezer",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Gather Unown:passive",
+      "canonicalId": "Gather Unown",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Gather Unown:action:gather-unown",
+      "canonicalId": "Gather Unown",
+      "kind": "contextual-action",
+      "actionId": "gather-unown",
+      "given": "the actor owns the capability and authoritative context satisfies open-space",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Gilled:passive",
+      "canonicalId": "Gilled",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Glow:passive",
+      "canonicalId": "Glow",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Glow:action:emit-light",
+      "canonicalId": "Glow",
+      "kind": "contextual-action",
+      "actionId": "emit-light",
+      "given": "the actor owns the capability and authoritative context satisfies not-glowing",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Glow:action:stop-light",
+      "canonicalId": "Glow",
+      "kind": "contextual-action",
+      "actionId": "stop-light",
+      "given": "the actor owns the capability and authoritative context satisfies glowing",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Glow:action:influence-nearby-wilds",
+      "canonicalId": "Glow",
+      "kind": "contextual-action",
+      "actionId": "influence-nearby-wilds",
+      "given": "the actor owns the capability and authoritative context satisfies glowing-nearby-wilds",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Groundshaper:passive",
+      "canonicalId": "Groundshaper",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Groundshaper:action:shape-ground",
+      "canonicalId": "Groundshaper",
+      "kind": "contextual-action",
+      "actionId": "shape-ground",
+      "given": "the actor owns the capability and authoritative context satisfies cardinal-ground-cells",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Guster:passive",
+      "canonicalId": "Guster",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Heart Gift:passive",
+      "canonicalId": "Heart Gift",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Heart Gift:action:produce-heart-scale",
+      "canonicalId": "Heart Gift",
+      "kind": "contextual-action",
+      "actionId": "produce-heart-scale",
+      "given": "the actor owns the capability and authoritative context satisfies item-recipient",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Heater:passive",
+      "canonicalId": "Heater",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Herb Growth:passive",
+      "canonicalId": "Herb Growth",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Herb Growth:action:produce-revival-herb",
+      "canonicalId": "Herb Growth",
+      "kind": "contextual-action",
+      "actionId": "produce-revival-herb",
+      "given": "the actor owns the capability and authoritative context satisfies item-recipient",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:High Jump:passive",
+      "canonicalId": "High Jump",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Honey Gather:passive",
+      "canonicalId": "Honey Gather",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Honey Gather:action:gather-honey",
+      "canonicalId": "Honey Gather",
+      "kind": "contextual-action",
+      "actionId": "gather-honey",
+      "given": "the actor owns the capability and authoritative context satisfies abundant-plant-life-and-collection-jar",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Illusionist:passive",
+      "canonicalId": "Illusionist",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Illusionist:action:create-illusion",
+      "canonicalId": "Illusionist",
+      "kind": "contextual-action",
+      "actionId": "create-illusion",
+      "given": "the actor owns the capability and authoritative context satisfies visible-cell",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Illusionist:action:reposition-illusion",
+      "canonicalId": "Illusionist",
+      "kind": "contextual-action",
+      "actionId": "reposition-illusion",
+      "given": "the actor owns the capability and authoritative context satisfies moving-illusion",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Illusionist:action:dismiss-illusion",
+      "canonicalId": "Illusionist",
+      "kind": "contextual-action",
+      "actionId": "dismiss-illusion",
+      "given": "the actor owns the capability and authoritative context satisfies owned-illusion",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Inflatable:passive",
+      "canonicalId": "Inflatable",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Inflatable:action:inflate",
+      "canonicalId": "Inflatable",
+      "kind": "contextual-action",
+      "actionId": "inflate",
+      "given": "the actor owns the capability and authoritative context satisfies normal-form",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Inflatable:action:deflate",
+      "canonicalId": "Inflatable",
+      "kind": "contextual-action",
+      "actionId": "deflate",
+      "given": "the actor owns the capability and authoritative context satisfies inflated",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Invisibility:passive",
+      "canonicalId": "Invisibility",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Invisibility:action:become-invisible",
+      "canonicalId": "Invisibility",
+      "kind": "contextual-action",
+      "actionId": "become-invisible",
+      "given": "the actor owns the capability and authoritative context satisfies visible-and-ready",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Invisibility:action:become-visible",
+      "canonicalId": "Invisibility",
+      "kind": "contextual-action",
+      "actionId": "become-visible",
+      "given": "the actor owns the capability and authoritative context satisfies invisible",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Juicer:passive",
+      "canonicalId": "Juicer",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Juicer:action:consume-juicer-shell-juice-as-snack",
+      "canonicalId": "Juicer",
+      "kind": "contextual-action",
+      "actionId": "consume-juicer-shell-juice-as-snack",
+      "given": "the actor owns the capability and authoritative context satisfies stored-juicer-juice",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Juicer:action:collect-juicer-output",
+      "canonicalId": "Juicer",
+      "kind": "contextual-action",
+      "actionId": "collect-juicer-output",
+      "given": "the actor owns the capability and authoritative context satisfies stored-juicer-output",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Jump:passive",
+      "canonicalId": "Jump",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Jump:action:jump",
+      "canonicalId": "Jump",
+      "kind": "contextual-action",
+      "actionId": "jump",
+      "given": "the actor owns the capability and authoritative context satisfies jump-destination-cell",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Keystone Warp:passive",
+      "canonicalId": "Keystone Warp",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Keystone Warp:action:synchronize-keystone",
+      "canonicalId": "Keystone Warp",
+      "kind": "contextual-action",
+      "actionId": "synchronize-keystone",
+      "given": "the actor owns the capability and authoritative context satisfies unsynchronized-keystone-and-2tp",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Keystone Warp:action:keystone-warp",
+      "canonicalId": "Keystone Warp",
+      "kind": "contextual-action",
+      "actionId": "keystone-warp",
+      "given": "the actor owns the capability and authoritative context satisfies synchronized-keystone",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Letter Press:passive",
+      "canonicalId": "Letter Press",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Letter Press:action:combine-unown",
+      "canonicalId": "Letter Press",
+      "kind": "contextual-action",
+      "actionId": "combine-unown",
+      "given": "the actor owns the capability and authoritative context satisfies eligible-unown",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Levitate:passive",
+      "canonicalId": "Levitate",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Living Weapon:passive",
+      "canonicalId": "Living Weapon",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Living Weapon:action:engage-wielder",
+      "canonicalId": "Living Weapon",
+      "kind": "contextual-action",
+      "actionId": "engage-wielder",
+      "given": "the actor owns the capability and authoritative context satisfies adjacent-willing-wielder",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Living Weapon:action:disengage-wielder",
+      "canonicalId": "Living Weapon",
+      "kind": "contextual-action",
+      "actionId": "disengage-wielder",
+      "given": "the actor owns the capability and authoritative context satisfies adjacent-release-cell",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Long Jump:passive",
+      "canonicalId": "Long Jump",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Magnetic:passive",
+      "canonicalId": "Magnetic",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Magnetic:action:manipulate-metal",
+      "canonicalId": "Magnetic",
+      "kind": "contextual-action",
+      "actionId": "manipulate-metal",
+      "given": "the actor owns the capability and authoritative context satisfies iron-or-steel-object",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Marsupial:passive",
+      "canonicalId": "Marsupial",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Marsupial:action:shelter-baby",
+      "canonicalId": "Marsupial",
+      "kind": "contextual-action",
+      "actionId": "shelter-baby",
+      "given": "the actor owns the capability and authoritative context satisfies adjacent-willing-baby-target",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Materializer:passive",
+      "canonicalId": "Materializer",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Milk Collection:passive",
+      "canonicalId": "Milk Collection",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Milk Collection:action:produce-moomoo-milk",
+      "canonicalId": "Milk Collection",
+      "kind": "contextual-action",
+      "actionId": "produce-moomoo-milk",
+      "given": "the actor owns the capability and authoritative context satisfies collection-jar",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Mindlock:passive",
+      "canonicalId": "Mindlock",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Mountable X:passive",
+      "canonicalId": "Mountable X",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Mountable X:action:accept-rider",
+      "canonicalId": "Mountable X",
+      "kind": "contextual-action",
+      "actionId": "accept-rider",
+      "given": "the actor owns the capability and authoritative context satisfies adjacent-willing-rider",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Mountable X:action:release-rider",
+      "canonicalId": "Mountable X",
+      "kind": "contextual-action",
+      "actionId": "release-rider",
+      "given": "the actor owns the capability and authoritative context satisfies linked-rider-and-adjacent-cell",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Mushroom Harvest:passive",
+      "canonicalId": "Mushroom Harvest",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Mushroom Harvest:action:harvest-mushroom",
+      "canonicalId": "Mushroom Harvest",
+      "kind": "contextual-action",
+      "actionId": "harvest-mushroom",
+      "given": "the actor owns the capability and authoritative context satisfies item-recipient",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Naturewalk:passive",
+      "canonicalId": "Naturewalk",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Overland:passive",
+      "canonicalId": "Overland",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Pack Mon:passive",
+      "canonicalId": "Pack Mon",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Pearl Creation:passive",
+      "canonicalId": "Pearl Creation",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Phasing:passive",
+      "canonicalId": "Phasing",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Phasing:action:become-intangible",
+      "canonicalId": "Phasing",
+      "kind": "contextual-action",
+      "actionId": "become-intangible",
+      "given": "the actor owns the capability and authoritative context satisfies tangible",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Phasing:action:become-tangible",
+      "canonicalId": "Phasing",
+      "kind": "contextual-action",
+      "actionId": "become-tangible",
+      "given": "the actor owns the capability and authoritative context satisfies intangible",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Planter:passive",
+      "canonicalId": "Planter",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Planter:action:plant",
+      "canonicalId": "Planter",
+      "kind": "contextual-action",
+      "actionId": "plant",
+      "given": "the actor owns the capability and authoritative context satisfies empty-planter-and-seed",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Planter:action:harvest",
+      "canonicalId": "Planter",
+      "kind": "contextual-action",
+      "actionId": "harvest",
+      "given": "the actor owns the capability and authoritative context satisfies yielding-planter",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Power:passive",
+      "canonicalId": "Power",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Premonition:passive",
+      "canonicalId": "Premonition",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Reach:passive",
+      "canonicalId": "Reach",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Shadow Meld:passive",
+      "canonicalId": "Shadow Meld",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Shadow Meld:action:meld",
+      "canonicalId": "Shadow Meld",
+      "kind": "contextual-action",
+      "actionId": "meld",
+      "given": "the actor owns the capability and authoritative context satisfies lit-surface-shadow",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Shadow Meld:action:reform",
+      "canonicalId": "Shadow Meld",
+      "kind": "contextual-action",
+      "actionId": "reform",
+      "given": "the actor owns the capability and authoritative context satisfies shadow-melded",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Shadow Meld:action:ride-shadow",
+      "canonicalId": "Shadow Meld",
+      "kind": "contextual-action",
+      "actionId": "ride-shadow",
+      "given": "the actor owns the capability and authoritative context satisfies adjacent-living-shadow",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Shadow Meld:action:leave-shadow",
+      "canonicalId": "Shadow Meld",
+      "kind": "contextual-action",
+      "actionId": "leave-shadow",
+      "given": "the actor owns the capability and authoritative context satisfies adjacent-release-cell",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Shapeshifter:passive",
+      "canonicalId": "Shapeshifter",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Shapeshifter:action:change-shape",
+      "canonicalId": "Shapeshifter",
+      "kind": "contextual-action",
+      "actionId": "change-shape",
+      "given": "the actor owns the capability and authoritative context satisfies valid-shape-description",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Shapeshifter:action:oppose-examination",
+      "canonicalId": "Shapeshifter",
+      "kind": "contextual-action",
+      "actionId": "oppose-examination",
+      "given": "the actor owns the capability and authoritative context satisfies close-examination-target",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Shapeshifter:action:restore-shape",
+      "canonicalId": "Shapeshifter",
+      "kind": "contextual-action",
+      "actionId": "restore-shape",
+      "given": "the actor owns the capability and authoritative context satisfies shapechanged",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Shrinkable:passive",
+      "canonicalId": "Shrinkable",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Shrinkable:action:shrink",
+      "canonicalId": "Shrinkable",
+      "kind": "contextual-action",
+      "actionId": "shrink",
+      "given": "the actor owns the capability and authoritative context satisfies normal-form",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Shrinkable:action:restore-size",
+      "canonicalId": "Shrinkable",
+      "kind": "contextual-action",
+      "actionId": "restore-size",
+      "given": "the actor owns the capability and authoritative context satisfies shrunken",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Sky:passive",
+      "canonicalId": "Sky",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Soulless:passive",
+      "canonicalId": "Soulless",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Split Evolution:passive",
+      "canonicalId": "Split Evolution",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Sprouter:passive",
+      "canonicalId": "Sprouter",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Sprouter:action:sprout",
+      "canonicalId": "Sprouter",
+      "kind": "contextual-action",
+      "actionId": "sprout",
+      "given": "the actor owns the capability and authoritative context satisfies plant-or-planted-berry",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Stealth:passive",
+      "canonicalId": "Stealth",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Swim:passive",
+      "canonicalId": "Swim",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Telekinetic:passive",
+      "canonicalId": "Telekinetic",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Telekinetic:action:manipulate-object",
+      "canonicalId": "Telekinetic",
+      "kind": "contextual-action",
+      "actionId": "manipulate-object",
+      "given": "the actor owns the capability and authoritative context satisfies object-in-8m",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Telekinetic:action:telekinetic-maneuver",
+      "canonicalId": "Telekinetic",
+      "kind": "contextual-action",
+      "actionId": "telekinetic-maneuver",
+      "given": "the actor owns the capability and authoritative context satisfies maneuver-target-in-focus-range",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Telepath:passive",
+      "canonicalId": "Telepath",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Telepath:action:read-mind",
+      "canonicalId": "Telepath",
+      "kind": "contextual-action",
+      "actionId": "read-mind",
+      "given": "the actor owns the capability and authoritative context satisfies mind-in-focus-range",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Telepath:action:project-thought",
+      "canonicalId": "Telepath",
+      "kind": "contextual-action",
+      "actionId": "project-thought",
+      "given": "the actor owns the capability and authoritative context satisfies communication-targets",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Teleporter:passive",
+      "canonicalId": "Teleporter",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Teleporter:action:teleport",
+      "canonicalId": "Teleporter",
+      "kind": "contextual-action",
+      "actionId": "teleport",
+      "given": "the actor owns the capability and authoritative context satisfies teleport-destination-cell",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Threaded:passive",
+      "canonicalId": "Threaded",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Threaded:action:threaded-shift",
+      "canonicalId": "Threaded",
+      "kind": "contextual-action",
+      "actionId": "threaded-shift",
+      "given": "the actor owns the capability and authoritative context satisfies anchor-or-target-in-4m",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Throwing Range:passive",
+      "canonicalId": "Throwing Range",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Tracker:passive",
+      "canonicalId": "Tracker",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Tracker:action:track-scent",
+      "canonicalId": "Tracker",
+      "kind": "contextual-action",
+      "actionId": "track-scent",
+      "given": "the actor owns the capability and authoritative context satisfies scent-trail",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Tremorsense:passive",
+      "canonicalId": "Tremorsense",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Underdog:passive",
+      "canonicalId": "Underdog",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Viral Fusion:passive",
+      "canonicalId": "Viral Fusion",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Viral Fusion:action:bond",
+      "canonicalId": "Viral Fusion",
+      "kind": "contextual-action",
+      "actionId": "bond",
+      "given": "the actor owns the capability and authoritative context satisfies willing-or-helpless-target",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Viral Fusion:action:release-bond",
+      "canonicalId": "Viral Fusion",
+      "kind": "contextual-action",
+      "actionId": "release-bond",
+      "given": "the actor owns the capability and authoritative context satisfies adjacent-release-cell",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Volatile Bomb:passive",
+      "canonicalId": "Volatile Bomb",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Wallclimber:passive",
+      "canonicalId": "Wallclimber",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Weapon Bond:passive",
+      "canonicalId": "Weapon Bond",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Weapon Bond:action:assume-crowned-form",
+      "canonicalId": "Weapon Bond",
+      "kind": "contextual-action",
+      "actionId": "assume-crowned-form",
+      "given": "the actor owns the capability and authoritative context satisfies ancestral-weapon",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Weapon Bond:action:relinquish-crowned-form",
+      "canonicalId": "Weapon Bond",
+      "kind": "contextual-action",
+      "actionId": "relinquish-crowned-form",
+      "given": "the actor owns the capability and authoritative context satisfies crowned-form",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Weathershape:passive",
+      "canonicalId": "Weathershape",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Wielder:passive",
+      "canonicalId": "Wielder",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Wired:passive",
+      "canonicalId": "Wired",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Wired:action:enter-machine",
+      "canonicalId": "Wired",
+      "kind": "contextual-action",
+      "actionId": "enter-machine",
+      "given": "the actor owns the capability and authoritative context satisfies electronic-device",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Wired:action:exit-machine",
+      "canonicalId": "Wired",
+      "kind": "contextual-action",
+      "actionId": "exit-machine",
+      "given": "the actor owns the capability and authoritative context satisfies inside-machine",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:X-Ray Vision:passive",
+      "canonicalId": "X-Ray Vision",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Zapper:passive",
+      "canonicalId": "Zapper",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Zygarde Cells:passive",
+      "canonicalId": "Zygarde Cells",
+      "kind": "passive-projection",
+      "given": "the actor owns an effective canonical capability instance",
+      "when": "the authoritative encounter presentation is projected",
+      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Zygarde Cells:action:assemble-zygarde",
+      "canonicalId": "Zygarde Cells",
+      "kind": "contextual-action",
+      "actionId": "assemble-zygarde",
+      "given": "the actor owns the capability and authoritative context satisfies zygarde-cube-and-cells",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Zygarde Cells:action:disassemble-zygarde",
+      "canonicalId": "Zygarde Cells",
+      "kind": "contextual-action",
+      "actionId": "disassemble-zygarde",
+      "given": "the actor owns the capability and authoritative context satisfies disassemblable-zygarde",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Zygarde Cells:action:change-zygarde-form",
+      "canonicalId": "Zygarde Cells",
+      "kind": "contextual-action",
+      "actionId": "change-zygarde-form",
+      "given": "the actor owns the capability and authoritative context satisfies power-construct-zygarde",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    },
+    {
+      "id": "capability:Zygarde Cells:action:tutor-cube-move",
+      "canonicalId": "Zygarde Cells",
+      "kind": "contextual-action",
+      "actionId": "tutor-cube-move",
+      "given": "the actor owns the capability and authoritative context satisfies zygarde-cube-and-tp",
+      "when": "the capability action is offered and declared",
+      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+    }
+  ]
+}

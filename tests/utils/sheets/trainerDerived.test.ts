@@ -110,6 +110,22 @@ describe('trainer sheet derived helpers', () => {
     })
   })
 
+  it('uses Traveler Survival substitutions only for the capabilities named by the Edge', () => {
+    const capabilities = computeDefaultTrainerCapabilities(makeTrainer({
+      skillBackground: { adept: 'survival', novice: 'acrobatics', pathetic: 'athletics' },
+      edges: [{ name: 'Expert Skills (Survival)' }, { name: 'Traveler' }],
+    }))
+
+    expect(capabilities).toEqual({
+      overland: 7,
+      throwingRange: 5,
+      highJump: 1,
+      longJump: 2,
+      swim: 3,
+      power: 5,
+    })
+  })
+
   it('resolves default and optional capabilities', () => {
     const capabilities = resolveTrainerCapabilities(makeTrainer({
       capabilities: { overland: 8, sky: 4, other: ['Aura Reader'] },

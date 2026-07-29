@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
+  LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+} from '#shared/livePlayMoveResolution'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import {
   projectEncounterCreatureRules,
 } from '#shared/moveAutomation/creatureRuleOverlays'
-import type { SheetPlacement } from '~/types/map'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import { buildAuthoritativeMoveRulesContext } from '~~/server/domain/moveAutomation/context'
 import {
   createMoveAutomationCreatureRuleResolver,
   MoveAutomationCreatureRuleQueryError,
@@ -112,6 +119,149 @@ describe('authoritative creature-rule queries', () => {
       'pokemon:target-token',
       'pokemon:target-token',
     ])
+  })
+
+  it('uses exact canonical capability identities for Pokémon and Trainers despite unrelated overlays', () => {
+    const pokemonId = 'pokemon-token'
+    const trainerId = 'trainer-token'
+    const identities = (id: string) => [{
+      instanceId: `capability:${id}:Jump:jump-0-0`,
+      canonicalId: 'Jump',
+    }, {
+      instanceId: `capability:${id}:Teleporter:value-4`,
+      canonicalId: 'Teleporter',
+    }]
+    const resolver = createMoveAutomationCreatureRuleResolver({
+      placements: [
+        placement(pokemonId),
+        { ...placement(trainerId), sheetKind: 'trainer' },
+      ],
+      tokens: [
+        token(pokemonId),
+        { ...token(trainerId), sheetKind: 'trainer' },
+      ],
+      effectiveCapabilityIdentitiesByPlacement: new Map([
+        [pokemonId, identities(pokemonId)],
+        [trainerId, identities(trainerId)],
+      ]),
+    })
+
+    for (const id of [pokemonId, trainerId]) {
+      expect(resolver.resolve(id)?.capabilityIds).toEqual([
+        'Jump',
+        'capability.jump',
+        'movement.jump',
+        'Teleporter',
+        'capability.teleporter',
+        'movement.teleport',
+      ])
+      expect(resolver.hasCapability(id, 'Jump')).toBe(true)
+      expect(resolver.hasCapability(id, 'movement.jump')).toBe(true)
+      expect(resolver.hasCapability(id, 'capability.teleporter')).toBe(true)
+      expect(resolver.hasCapability(id, 'movement.teleport')).toBe(true)
+      expect(resolver.hasCapability(id, 'Swim')).toBe(false)
+      expect(resolver.hasCapabilityInstance(
+        id,
+        `capability:${id}:Jump:jump-0-0`,
+        'Jump',
+      )).toBe(true)
+      expect(resolver.hasCapabilityInstance(
+        id,
+        `capability:${id}:Jump:jump-0-0`,
+        'Teleporter',
+      )).toBe(false)
+      expect(resolver.hasCapabilityInstance(
+        id,
+        `capability:${id}:Teleporter:value-4`,
+        'Jump',
+      )).toBe(false)
+    }
+  })
+
+  it('wires canonical Pokémon and Trainer identities through the authoritative context', () => {
+    const pokemonPlacement = placement('pokemon-token')
+    const trainerPlacement: SheetPlacement = {
+      ...placement('trainer-token'),
+      sheetKind: 'trainer',
+    }
+    const unrelatedOverlay = {
+      ...creatureRuleOverlayEncounterEffectFixture({
+        domain: 'sonic-lock',
+        action: 'lock',
+      }),
+      affected: {
+        placementIds: [pokemonPlacement.id, trainerPlacement.id],
+        sideIds: [],
+        cells: [],
+      },
+    }
+    const map: TabletopMap = {
+      schemaVersion: 2,
+      slug: 'canonical-capability-arena',
+      name: 'Canonical Capability Arena',
+      revision: 1,
+      dimensions: { x: 8, y: 3, z: 8 },
+      voxels: [],
+      placements: [pokemonPlacement, trainerPlacement],
+      encounterState: {
+        ...createEmptyEncounterState(),
+        effects: [unrelatedOverlay],
+      },
+    }
+    const pokemon: CharacterSheet = {
+      slug: pokemonPlacement.sheetSlug,
+      nickname: 'Jumper',
+      species: 'Ditto',
+      level: 20,
+      movelist: [{ name: 'Tackle' }],
+      capabilities: { jump: '0/0', other: ['Teleporter 4'] },
+    }
+    const trainer: TrainerSheet = {
+      slug: trainerPlacement.sheetSlug,
+      name: 'Trainer Jumper',
+      level: 20,
+      capabilities: { highJump: 0, longJump: 0, other: ['Teleporter 4'] },
+    }
+    const context = buildAuthoritativeMoveRulesContext({
+      map,
+      pokemonSheets: new Map([[pokemon.slug, pokemon]]),
+      trainerSheets: new Map([[trainer.slug, trainer]]),
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: pokemonPlacement.id,
+        moveName: 'Tackle',
+        selection: { kind: 'single-target', targetPlacementId: trainerPlacement.id },
+      },
+      candidatePlacementIds: [trainerPlacement.id],
+      selectedPlacementIds: [trainerPlacement.id],
+      random: () => 0.5,
+      time: 1_000,
+    })
+
+    for (const placementId of [pokemonPlacement.id, trainerPlacement.id]) {
+      const jumpInstanceId = `capability:${placementId}:Jump:jump-0-0`
+      const teleporterInstanceId = `capability:${placementId}:Teleporter:value-4`
+      expect(context.queries.creatureRules.resolve(placementId)?.capabilityIds).toEqual(
+        expect.arrayContaining(['Jump', 'movement.jump', 'Teleporter', 'movement.teleport']),
+      )
+      expect(context.queries.creatureRules.hasCapability(placementId, 'Jump')).toBe(true)
+      expect(context.queries.creatureRules.hasCapability(placementId, 'Teleporter')).toBe(true)
+      expect(context.queries.creatureRules.hasCapabilityInstance(
+        placementId,
+        jumpInstanceId,
+        'Jump',
+      )).toBe(true)
+      expect(context.queries.creatureRules.hasCapabilityInstance(
+        placementId,
+        jumpInstanceId,
+        'Teleporter',
+      )).toBe(false)
+      expect(context.queries.creatureRules.hasCapabilityInstance(
+        placementId,
+        teleporterInstanceId,
+        'Teleporter',
+      )).toBe(true)
+    }
   })
 
   it('expires through ordinary lifecycle timing and recomputes the underlying rules', () => {

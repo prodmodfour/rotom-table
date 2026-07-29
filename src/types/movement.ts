@@ -31,7 +31,10 @@ export interface MovementJumpCapability {
 
 /** Non-speed capabilities that participate in authoritative route queries. */
 export interface MovementCapabilityTraits {
+  /** Owning Phasing ignores Slow Terrain even while tangible. */
   readonly phasing: boolean
+  /** Encounter-owned Phasing mode; permits traversal through Blocking Terrain. */
+  readonly intangible?: boolean
   readonly jump: MovementJumpCapability
 }
 

@@ -35,6 +35,7 @@ const sheet = (input: {
   readonly held?: string
   readonly abilitySelections?: readonly { readonly parameterId: string; readonly optionIds: readonly string[] }[]
   readonly currentHp?: number
+  readonly capabilitiesOther?: readonly string[]
 }): CharacterSheet => ({
   slug: input.slug, nickname: input.slug, species: input.species ?? 'Eevee',
   level: 30, revision: 3, types: ['Normal'],
@@ -47,7 +48,10 @@ const sheet = (input: {
     hp: { added: 20 }, atk: { added: 15 }, def: { added: 15 },
     satk: { added: 15 }, sdef: { added: 15 }, spd: { added: 15 },
   },
-  capabilities: { overland: 5, sky: 0, swim: 2, levitate: 0, burrow: 0 },
+  capabilities: {
+    overland: 5, sky: 0, swim: 2, levitate: 0, burrow: 0,
+    ...(input.capabilitiesOther?.length ? { other: [...input.capabilitiesOther] } : {}),
+  },
   combatStages: { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
   combat: { currentHp: input.currentHp ?? 100, injuries: 0, conditions: [...(input.conditions ?? [])] },
   ...(input.held ? { items: { held: input.held } } : {}),
@@ -125,6 +129,7 @@ const setup = (input: {
   readonly targetAbilitySelections?: readonly { readonly parameterId: string; readonly optionIds: readonly string[] }[]
   readonly actorCurrentHp?: number
   readonly allyCurrentHp?: number
+  readonly allyCapabilities?: readonly string[]
   readonly targetCurrentHp?: number
   readonly targetConditions?: readonly string[]
   readonly allyPosition?: Readonly<{ x: number; y: number; z: number }>
@@ -153,7 +158,10 @@ const setup = (input: {
       held: input.held,
       currentHp: input.actorCurrentHp,
     }),
-    sheet({ slug: 'ally', held: input.allyHeld, currentHp: input.allyCurrentHp }),
+    sheet({
+      slug: 'ally', held: input.allyHeld, currentHp: input.allyCurrentHp,
+      capabilitiesOther: input.allyCapabilities,
+    }),
     sheet({
       slug: 'target', ability: input.targetAbility,
       abilitySelections: input.targetAbilitySelections,
@@ -339,6 +347,51 @@ describe('AA-085 through AA-100 activated conformance', () => {
     expect(temporaryHp?.actor).toBeGreaterThan(0)
     expect(temporaryHp?.ally).toBeGreaterThan(0)
     expect(temporaryHp?.target).toBeUndefined()
+
+    const soullessSlug = 'remaining-snuggle-soulless'
+    const soulless = setup({
+      slug: soullessSlug, actorAbility: 'Snuggle', allyCapabilities: ['Soulless'],
+    })
+    expect(useAbility({
+      dependencies: soulless, mapSlug: soullessSlug, canonicalId: 'Snuggle',
+      selected: { token: 'ally' },
+    }).kind).toBe('accepted')
+    const blockedTemporaryHp = soulless.mapRepository.getBySlug(soullessSlug)!.temporaryHitPoints?.byPlacementId
+    expect(blockedTemporaryHp?.actor).toBeGreaterThan(0)
+    expect(blockedTemporaryHp?.ally).toBeUndefined()
+
+    const suppressedSoullessSlug = 'remaining-snuggle-suppressed-soulless'
+    const suppressedSoulless = setup({
+      slug: suppressedSoullessSlug,
+      actorAbility: 'Snuggle',
+      allyCapabilities: ['Soulless'],
+      effects: [parseEncounterEffect({
+        id: 'test.suppressed-soulless',
+        kind: 'capability',
+        source: { operationId: 'test.suppress-soulless', moveId: 'test.suppress-soulless', placementId: 'actor' },
+        affected: { placementIds: ['ally'], sideIds: [], cells: [] },
+        createdRound: 1,
+        createdTurn: 0,
+        duration: { kind: 'scene', remaining: null },
+        stacks: 1,
+        charges: null,
+        stackPolicy: { kind: 'replace', maxStacks: null },
+        chargePolicy: { kind: 'none', amount: null },
+        tags: ['test', 'capability-suppression'],
+        payload: { capabilityId: 'soulless', action: 'suppress' },
+        dispel: { policy: 'none', tags: [] },
+        transferPolicy: 'expire',
+        suppression: { sources: [] },
+      })],
+    })
+    expect(useAbility({
+      dependencies: suppressedSoulless,
+      mapSlug: suppressedSoullessSlug,
+      canonicalId: 'Snuggle',
+      selected: { token: 'ally' },
+    }).kind).toBe('accepted')
+    expect(suppressedSoulless.mapRepository.getBySlug(suppressedSoullessSlug)!
+      .temporaryHitPoints?.byPlacementId.ally).toBeGreaterThan(0)
   })
 
   it('applies Rain Dish and Sand Stream with their exact weather, HP, and frequency rules', () => {

@@ -75,8 +75,11 @@ export const buildAbilityClientCapabilityBundle = (
     linkedTrainerSheets,
   }))
   const encounterState = input.map.encounterState
+  const capabilityCarriedIds = new Set((encounterState?.capabilityRuntime?.links ?? []).flatMap(link => (
+    link.kind === 'as-one-mount' || link.kind === 'viral-fusion' ? [...link.participantPlacementIds] : []
+  )))
   const placements = input.map.placements.flatMap((placement) => {
-    if (!controlledIds.has(placement.id)) return []
+    if (!controlledIds.has(placement.id) || capabilityCarriedIds.has(placement.id)) return []
     const sheet = placement.sheetKind === 'pokemon'
       ? pokemonBySlug.get(placement.sheetSlug)
       : trainerBySlug.get(placement.sheetSlug)

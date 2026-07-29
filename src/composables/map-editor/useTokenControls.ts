@@ -20,8 +20,8 @@ import { sheetEditorPath } from '~/utils/sheetRoutes'
 import {
   buildTokenSendOutOptionsByPlacementId,
   isSendOutPositionWithinThrowRange,
-  POKEBALL_THROW_RANGE_SQUARES,
 } from '~/utils/mapTokenSendOut'
+import { trainerThrowingRangeMeters } from '~/utils/pokeballCapture'
 import {
   DEFAULT_TOKEN_FACING_DIRECTION,
   nextTokenFacingForPlacement,
@@ -258,7 +258,7 @@ export const useTokenControls = ({
       trainer,
       pokemon: option.preview,
       position: payload.position,
-      range: POKEBALL_THROW_RANGE_SQUARES,
+      range: trainerThrowingRangeMeters(trainerBySlug.value?.get(trainerPlacement.sheetSlug)),
     })) return null
 
     return { trainer, trainerPlacement, option }

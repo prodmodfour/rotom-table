@@ -362,6 +362,9 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             : canonicalCondition === 'Blindness'
               && options.context?.queries.abilities.has(recipient.placement.id, 'Keen Eye')
               ? 'Keen Eye'
+            : canonicalCondition === 'Blindness'
+              && options.context?.queries.creatureRules.hasCapability(recipient.placement.id, 'Blindsense')
+              ? 'Blindsense'
               : null
       if (effectiveConditionImmunity) return conditionDecision(effectiveConditionImmunity, providerIds)
       const typedRecipient = corrosionBypass

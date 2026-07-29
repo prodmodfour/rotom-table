@@ -4,8 +4,7 @@ import { DEFAULT_TOKEN_FACING_DIRECTION } from '~/utils/tokenFacing'
 import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
 import { getClearanceValue } from '~/utils/gridGeometry'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
-
-export const POKEBALL_THROW_RANGE_SQUARES = 6
+import { trainerThrowingRangeMeters } from '~/utils/pokeballCapture'
 
 export interface TokenSendOutOption {
   pokemonSlug: string
@@ -14,6 +13,7 @@ export interface TokenSendOutOption {
   level: number
   spriteUrl: string | null
   preview: SpawnedPokemon
+  throwRange: number
 }
 
 const uniqueNonEmptySlugs = (slugs: readonly string[] | undefined): string[] => {
@@ -74,6 +74,7 @@ export const buildTokenSendOutOptionsForPlacement = (
       level: pokemonSheet.level,
       spriteUrl: preview.spriteUrl ?? null,
       preview,
+      throwRange: trainerThrowingRangeMeters(trainerSheet),
     }]
   })
 }
@@ -127,6 +128,7 @@ export const isSendOutPositionWithinThrowRange = (options: {
   trainer: Pick<SpawnedPokemon, 'base' | 'clearance' | 'position'>
   pokemon: Pick<SpawnedPokemon, 'base' | 'clearance'>
   position: GridAnchor
-  range?: number
+  range: number
 }): boolean =>
-  getSendOutThrowDistance(options) <= (options.range ?? POKEBALL_THROW_RANGE_SQUARES)
+  Number.isFinite(options.range) && options.range >= 0
+  && getSendOutThrowDistance(options) <= options.range

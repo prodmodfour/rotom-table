@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 14
+export const LATEST_STORAGE_SCHEMA_VERSION = 16
 
 export interface StorageMigration {
   readonly version: number
@@ -245,6 +245,54 @@ const createAbilityResolutionOperationTable = (connection: DatabaseSync): void =
   `)
 }
 
+const createCapabilityAdjudicationTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS capability_adjudications (
+      request_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL,
+      map_slug TEXT NOT NULL,
+      actor_placement_id TEXT NOT NULL,
+      canonical_id TEXT NOT NULL,
+      action_id TEXT NOT NULL,
+      command_json TEXT NOT NULL,
+      definition_hash TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected', 'expired')),
+      requested_at INTEGER NOT NULL CHECK (requested_at >= 0),
+      expires_at INTEGER NOT NULL CHECK (expires_at > requested_at),
+      resolved_at INTEGER NULL CHECK (resolved_at IS NULL OR resolved_at >= requested_at),
+      resolution_operation_id TEXT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS capability_adjudications_map_status_idx
+      ON capability_adjudications (map_slug, status, expires_at, request_id);
+  `)
+}
+
+const addCapabilityAdjudicationResolutionCommand = (connection: DatabaseSync): void => {
+  const columns = connection.prepare('PRAGMA table_info(capability_adjudications)').all() as Array<{ name?: unknown }>
+  if (!columns.some(column => column.name === 'resolution_command_sha256')) {
+    connection.exec('ALTER TABLE capability_adjudications ADD COLUMN resolution_command_sha256 TEXT NULL')
+  }
+}
+
+const createCapabilityResolutionOperationTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS capability_resolution_ops (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL,
+      map_slug TEXT NOT NULL,
+      command_json TEXT NOT NULL,
+      result_json TEXT NOT NULL,
+      audit_json TEXT NOT NULL,
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+
+    CREATE INDEX IF NOT EXISTS capability_resolution_ops_map_revision_idx
+      ON capability_resolution_ops (map_slug, result_revision, operation_id);
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -315,6 +363,21 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 14,
     name: 'store accepted ability resolution operations and private audits',
     up: createAbilityResolutionOperationTable,
+  },
+  {
+    version: 15,
+    name: 'store replay-safe capability resolution operations and private audits',
+    up: createCapabilityResolutionOperationTable,
+  },
+  {
+    version: 16,
+    name: 'store durable bounded capability adjudication requests',
+    up: createCapabilityAdjudicationTable,
+  },
+  {
+    version: 17,
+    name: 'bind exact capability adjudication resolution commands',
+    up: addCapabilityAdjudicationResolutionCommand,
   },
 ]
 

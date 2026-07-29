@@ -121,7 +121,7 @@ describe('pokemon sheet derived helpers', () => {
     }))
 
     expect(resolved.rows).toEqual(expect.arrayContaining([
-      { label: 'Sky', value: 3 },
+      { label: 'Sky', value: 4 },
       { label: 'Burrow', value: 3 },
       { label: 'Jump', value: '2/2' },
       { label: 'Power', value: 2 },

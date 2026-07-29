@@ -7,7 +7,6 @@ import {
   buildTokenSendOutOptionsForPlacement,
   getSendOutThrowDistance,
   isSendOutPositionWithinThrowRange,
-  POKEBALL_THROW_RANGE_SQUARES,
 } from '~/utils/mapTokenSendOut'
 
 const pokemonSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
@@ -78,6 +77,7 @@ describe('map token send-out helpers', () => {
       species: 'Pikachu',
       level: 12,
     })
+    expect(options[0]?.throwRange).toBe(6)
     expect(options[0]?.preview).toMatchObject({
       id: 'sendout-preview:trainer-1:sparky',
       sheetKind: 'pokemon',
@@ -86,7 +86,7 @@ describe('map token send-out helpers', () => {
     })
   })
 
-  it('measures 3D throw distance so elevated send-outs are legal within 6 squares', () => {
+  it('measures 3D throw distance against the resolved Trainer Throwing Range', () => {
     const trainer = spawned({ id: 'trainer', base: 1, position: { x: 5, y: 1, z: 5 } })
     const pokemon = spawned({ base: 1 })
 
@@ -100,13 +100,13 @@ describe('map token send-out helpers', () => {
       trainer,
       pokemon,
       position: { x: 5, y: 7, z: 5 },
-      range: POKEBALL_THROW_RANGE_SQUARES,
+      range: 6,
     })).toBe(true)
     expect(isSendOutPositionWithinThrowRange({
       trainer,
       pokemon,
       position: { x: 5, y: 8, z: 5 },
-      range: POKEBALL_THROW_RANGE_SQUARES,
+      range: 6,
     })).toBe(false)
   })
 })

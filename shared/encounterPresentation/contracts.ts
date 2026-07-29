@@ -105,6 +105,12 @@ export interface EncounterActionIntentDescriptor {
   readonly input: 'immediate' | 'choices' | 'spatial'
 }
 
+export interface EncounterActionSelectionOption {
+  readonly kind: 'object' | 'device' | 'keystone' | 'egg' | 'trainer'
+  readonly value: string
+  readonly label: string
+}
+
 export interface EncounterActionOffer {
   readonly schemaVersion: typeof ENCOUNTER_PRESENTATION_SCHEMA_VERSION
   readonly offerId: string
@@ -123,6 +129,8 @@ export interface EncounterActionOffer {
   readonly availability: EncounterAvailability
   readonly presentation: EncounterPresentationCopy
   readonly intent: EncounterActionIntentDescriptor
+  /** Authorized bounded resource identities consumed by typed action controls. */
+  readonly selectionOptions?: readonly EncounterActionSelectionOption[]
 }
 
 export interface EncounterDerivedFactValue {

@@ -1,7 +1,16 @@
 import { sanitizeFolderPath, validateSlug } from '#shared/paths'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import { isSheetKind, SHEET_KINDS, type SheetKind } from '#shared/sheets'
+import {
+  capabilityCampaignStateHasContent,
+  juicerHeldItemIsLegacyShellMirror,
+  materializeJuicerCampaignStateAtTime,
+  parseCapabilityCampaignState,
+  reconcileJuicerHeldItemCustody,
+} from '#shared/capabilityAutomation/campaignState'
+import type { CharacterSheet } from '~/types/characterSheet'
 import { sameJsonValue } from '~/utils/serialization'
+import { pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
 import { stripDerivedSheetRuntimeFields } from '~/utils/sheets/persistence'
 import {
   preservePokemonGmFieldsForPlayerSave,
@@ -144,6 +153,10 @@ export interface ApplyLivePlaySheetUpdateInput {
   readonly slug: string
   readonly expectedRevision: number
   readonly nextSheet: Record<string, unknown>
+  /** Exact server operation identity used for held-item custody evidence. */
+  readonly sourceOperationId?: string
+  /** Set only when authority proves an item replacement hidden by an unchanged legacy held-item label. */
+  readonly heldItemCustodyChanged?: boolean
 }
 
 export type LivePlaySheetUpdateResult = 'applied' | 'stale'
@@ -352,6 +365,70 @@ const semanticSheetSnapshot = (sheet: Record<string, unknown>): Record<string, u
   delete snapshot.sessionPlayerAccessible
   delete snapshot.playerProfileAccessible
   return snapshot
+}
+
+const withReconciledJuicerCustody = (input: {
+  readonly slug: string
+  readonly currentSheet: Record<string, unknown>
+  readonly nextSheet: Record<string, unknown>
+  readonly nextRevision: number
+  readonly updatedAt: number
+  readonly sourceOperationId?: string
+  readonly heldItemCustodyChanged?: boolean
+}): Record<string, unknown> => {
+  const candidate = cloneStoredJson(input.nextSheet) as Record<string, unknown>
+  const pokemon = candidate as unknown as CharacterSheet
+  const current = input.currentSheet as unknown as CharacterSheet
+  const currentState = parseCapabilityCampaignState(current.capabilityCampaignState)
+  const currentMaterialized = materializeJuicerCampaignStateAtTime({
+    value: currentState,
+    heldItemName: current.items?.held,
+    now: input.updatedAt,
+  })
+  let requestedState = parseCapabilityCampaignState(pokemon.capabilityCampaignState)
+  const currentItem = currentState.storedItems[0]
+  const advancedCurrentItem = currentMaterialized.state.storedItems[0]
+  const requestedItem = requestedState.storedItems[0]
+  const copiedStaleCurrentItem = Boolean(
+    currentItem && advancedCurrentItem && requestedItem
+    && sameJsonValue(currentItem, requestedItem)
+    && !sameJsonValue(currentItem, advancedCurrentItem),
+  )
+  let heldItemName = pokemon.items?.held ?? ''
+  if (copiedStaleCurrentItem) {
+    requestedState = parseCapabilityCampaignState({
+      ...requestedState,
+      storedItems: currentMaterialized.state.storedItems,
+    })
+    if (currentMaterialized.transitionedFromHeldBerry
+      && heldItemName.trim().toLocaleLowerCase('en-US') === (current.items?.held ?? '').trim().toLocaleLowerCase('en-US')) {
+      heldItemName = currentMaterialized.heldItemName
+    }
+  }
+  const reconciled = reconcileJuicerHeldItemCustody({
+    value: requestedState,
+    sheetSlug: input.slug,
+    heldItemName,
+    hasJuicer: pokemon.species.trim().toLocaleLowerCase('en-US') === 'shuckle'
+      && pokemonHasResolvedCapability(pokemon, 'Juicer'),
+    now: input.updatedAt,
+    sourceOperationId: input.sourceOperationId
+      ?? `sheet-live:${input.slug}:revision:${input.nextRevision}`,
+    forceCustodyReset: input.heldItemCustodyChanged === true,
+  })
+  const materialized = materializeJuicerCampaignStateAtTime({
+    value: reconciled,
+    heldItemName,
+    now: input.updatedAt,
+  })
+  const state = materialized.state
+  const legacyShellMirror = juicerHeldItemIsLegacyShellMirror(state, pokemon.items?.held)
+  if (materialized.heldItemName !== (pokemon.items?.held ?? '') || legacyShellMirror) {
+    candidate.items = { ...(pokemon.items ?? {}), held: legacyShellMirror ? '' : materialized.heldItemName }
+  }
+  if (capabilityCampaignStateHasContent(state)) candidate.capabilityCampaignState = state
+  else delete candidate.capabilityCampaignState
+  return candidate
 }
 
 export const createSqliteSheetRepository = <TDocument = unknown>(
@@ -879,8 +956,19 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
 
       const revision = nextRevision(expectedRevision)
       const updatedAt = timestampOrNow(input.nextSheet.updatedAt, `live-play ${kind} sheet ${slug} updatedAt`)
+      const custodyReconciled = kind === 'pokemon'
+        ? withReconciledJuicerCustody({
+            slug,
+            currentSheet: current.sheet,
+            nextSheet: input.nextSheet,
+            nextRevision: revision,
+            updatedAt,
+            ...(input.sourceOperationId ? { sourceOperationId: input.sourceOperationId } : {}),
+            ...(input.heldItemCustodyChanged === true ? { heldItemCustodyChanged: true } : {}),
+          })
+        : input.nextSheet
       const nextSheet = normalizeSheetForStorage(kind, slug, {
-        ...input.nextSheet,
+        ...custodyReconciled,
         folder: current.sheet.folder ?? '',
       }, {
         folder: current.sheet.folder as string | undefined,

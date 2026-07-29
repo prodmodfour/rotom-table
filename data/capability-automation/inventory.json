@@ -1,0 +1,866 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-capability-automation",
+  "canonicalSourceSha256": "8f819401d40c598ae781ae0b273fd749575e05d6997a79c64be61f4ced8f654e",
+  "entryCount": 83,
+  "identityOrder": "unicode-code-point",
+  "canonicalIds": [
+    "Alluring",
+    "Amorphous",
+    "As One",
+    "Aura Pulse",
+    "Aura Reader",
+    "Blender",
+    "Blindsense",
+    "Bloom",
+    "Burrow",
+    "Chilled",
+    "Darkvision",
+    "Dead Silent",
+    "Delta Evolution",
+    "Dream Mist",
+    "Dream Reader",
+    "Egg Warmer",
+    "Firestarter",
+    "Fortune",
+    "Fountain",
+    "Freezer",
+    "Gather Unown",
+    "Gilled",
+    "Glow",
+    "Groundshaper",
+    "Guster",
+    "Heart Gift",
+    "Heater",
+    "Herb Growth",
+    "High Jump",
+    "Honey Gather",
+    "Illusionist",
+    "Inflatable",
+    "Invisibility",
+    "Juicer",
+    "Jump",
+    "Keystone Warp",
+    "Letter Press",
+    "Levitate",
+    "Living Weapon",
+    "Long Jump",
+    "Magnetic",
+    "Marsupial",
+    "Materializer",
+    "Milk Collection",
+    "Mindlock",
+    "Mountable X",
+    "Mushroom Harvest",
+    "Naturewalk",
+    "Overland",
+    "Pack Mon",
+    "Pearl Creation",
+    "Phasing",
+    "Planter",
+    "Power",
+    "Premonition",
+    "Reach",
+    "Shadow Meld",
+    "Shapeshifter",
+    "Shrinkable",
+    "Sky",
+    "Soulless",
+    "Split Evolution",
+    "Sprouter",
+    "Stealth",
+    "Swim",
+    "Telekinetic",
+    "Telepath",
+    "Teleporter",
+    "Threaded",
+    "Throwing Range",
+    "Tracker",
+    "Tremorsense",
+    "Underdog",
+    "Viral Fusion",
+    "Volatile Bomb",
+    "Wallclimber",
+    "Weapon Bond",
+    "Weathershape",
+    "Wielder",
+    "Wired",
+    "X-Ray Vision",
+    "Zapper",
+    "Zygarde Cells"
+  ],
+  "records": [
+    {
+      "index": 0,
+      "canonicalId": "Alluring",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "816db94cca5ae2259e871dda21fecd12d8d48af94af86830f620e676134cd2fd",
+      "recordSha256": "180522361af36c5a17b0671bdb355fc7ea5684a86ab923a70b7b35bf8cf435da"
+    },
+    {
+      "index": 1,
+      "canonicalId": "Amorphous",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "ba20c29be92ecea26c97136eb4024cbcb54c1254eaee2713837f04c8c04d240a",
+      "recordSha256": "dd1d040fb698404537ffe8324889af7b65322fa0ec8d75c284052f0952c2ba64"
+    },
+    {
+      "index": 2,
+      "canonicalId": "As One",
+      "source": "swsh_-_armor_crown_references.md",
+      "sourcePath": "books/markdown/swsh_-_armor_crown_references.md",
+      "sourceSha256": "784d7f4a725539ce34519df0cdc7e7a0efa1a6cce386abd1aaa53ef832c4d228",
+      "effectSha256": "9e7874b671daa544161238bc3bc03ee44b5c8c014fe0d39d96297f605c54d48e",
+      "recordSha256": "759a136ada48293b66fd63ee0ca0b99c8f98c9ce69af46508af284d72700688a"
+    },
+    {
+      "index": 3,
+      "canonicalId": "Aura Pulse",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "2ed22dff157c486d5c763e10c02af6911ca377e56d533e50102eef261d9d09f9",
+      "recordSha256": "238b032c8fcd475bfca0f1c468087c140d99641696c4e05357e6d8679841776a"
+    },
+    {
+      "index": 4,
+      "canonicalId": "Aura Reader",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "b03df0a23fe95f60e4aca0aef418403773027200bfcc47d17c0416c15397a91a",
+      "recordSha256": "1dccd9dd6ed47760b5b37dede153aeb38ee8447adff3965a001beec4633620b6"
+    },
+    {
+      "index": 5,
+      "canonicalId": "Blender",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "bba352200cc4bd8440e71b492dcd6ac8318fcf1f0cafb4ee274a603b888327c8",
+      "recordSha256": "850ba64413930215fa3f81ceaf3ca6b65c91b6716adb339e88796414932c8268"
+    },
+    {
+      "index": 6,
+      "canonicalId": "Blindsense",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "1ed8c0c0c71a5abc29564e0c03c7e0da755b8a52f8f1e01e24b731fd328c51eb",
+      "recordSha256": "379d30b3519c3ebe56164f7bdca9602ce92ab570d397b26f0992b82a770b3f0d"
+    },
+    {
+      "index": 7,
+      "canonicalId": "Bloom",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "67e5dd15d4c0e8ff4c30dbf34644ab8d11b5c7e1daf502118e60595296f23630",
+      "recordSha256": "22af6be0bdb9c3636d586c8e82818a4d539f998b5b052c4d60cd55064b1d7303"
+    },
+    {
+      "index": 8,
+      "canonicalId": "Burrow",
+      "source": "06-playing-the-game.md",
+      "sourcePath": "books/markdown/core/06-playing-the-game.md",
+      "sourceSha256": "612aab4863fed80ba1e1166c1861b64cae40949fbaa8f7888e7c2f74cff45f78",
+      "effectSha256": "632ce80859b61973eae4cc79b03417eed4baa7cd811acf77f1d3d59c12752a02",
+      "recordSha256": "dd88e21cd90cfd691cff37bc06a82f6bc18bb50a128d7be878b94bc8f612359c"
+    },
+    {
+      "index": 9,
+      "canonicalId": "Chilled",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "99a8e4777ec3b133c95b99058821b72901f0ac47549b07a984d2675abf39e081",
+      "recordSha256": "4901a5cd0f61a31936563afc4e9bd756028a566cd069aaec510ebdbb65ea80dc"
+    },
+    {
+      "index": 10,
+      "canonicalId": "Darkvision",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "8f49ed5f04415e5e06df28d68c46d4efc759d20a9037d4f0e376d1babfd9da9e",
+      "recordSha256": "748fbccc92e2d3335a86c96a2431a4db8ab20adcf7f36e4fb61d69a92943ff6f"
+    },
+    {
+      "index": 11,
+      "canonicalId": "Dead Silent",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "85eb33cbd0b6beffe3f0eeb26c8cdbfbf85d5629b17349154cfc20cf08f0b316",
+      "recordSha256": "1bae9fba239da0248a23a3cedc9e7e5e02c87bc9c8b32569a304df152c01d6c8"
+    },
+    {
+      "index": 12,
+      "canonicalId": "Delta Evolution",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "e140f3557dd16613b31f73d4d9bfc36a83d8e34fcb915a85fd835c8e8dcf1568",
+      "recordSha256": "0f7be9635e8f0f53c97269ccacfe05de8c909cbe53535524d4f0a2342f13c9af"
+    },
+    {
+      "index": 13,
+      "canonicalId": "Dream Mist",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "090d93416a66cc3c615f1f67981ac2f0c808ac92fa07811ddfd21932b5eaaa41",
+      "recordSha256": "fdd92f0a1ee651c61ffde7053900764d03ef5bb78725f101f1301f267aca4ab2"
+    },
+    {
+      "index": 14,
+      "canonicalId": "Dream Reader",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "4fe67853b5aa82cb03a7268317260d952dee796609fc795ff23ed5485ba16704",
+      "recordSha256": "ceb352888d6c8becfc72e6a52e11277216ec52167050fde9c818d47e8fd20775"
+    },
+    {
+      "index": 15,
+      "canonicalId": "Egg Warmer",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "a1fd185b2a3f2582ab78324949da9af96924513cda7bc85c125267caa82fc2c9",
+      "recordSha256": "0a1d07189484fd6eac9cea666c8b67f716897cacf43565b142996337737c423c"
+    },
+    {
+      "index": 16,
+      "canonicalId": "Firestarter",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "b081178fdd36e16e5e603f75861e8224d826a21baa25581850a10e7893d9b451",
+      "recordSha256": "1859108bec6c6fa396916b1156b64b4e7f91f325534b58b87cfdaa04a24bd377"
+    },
+    {
+      "index": 17,
+      "canonicalId": "Fortune",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "3d5856fc0c69f35be5ac8bc97ce29592d9664f1197ebfeb8293d59985af2654c",
+      "recordSha256": "16f944633c53393506332baaf70f68463b966490eb0f8f7f0a1eb9419f104b73"
+    },
+    {
+      "index": 18,
+      "canonicalId": "Fountain",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "454dba29af6c25717c26baf99875fd79b783f1d8d467d11e941835ff1973a8a8",
+      "recordSha256": "cfdaa42fa3bd26d82c248e934a21c3b21d3341724610b5a531c40ebc8dff992b"
+    },
+    {
+      "index": 19,
+      "canonicalId": "Freezer",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "a74279cd108e671a69d0c78840b5611ada4df4176c4fc90d612d1e004da6d879",
+      "recordSha256": "75f7e258f64b707838ae580d3b2df99cebe9fe8f378e4f4ef8f9b7647c9751e5"
+    },
+    {
+      "index": 20,
+      "canonicalId": "Gather Unown",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "7f184563641b3b530b8da2679b8860015624fbeffa6f573dc231703f323153f6",
+      "recordSha256": "b37f0aba9c2a8000ab47ac3de0a4ccdffdadc1c29394b44848158c9152532e5d"
+    },
+    {
+      "index": 21,
+      "canonicalId": "Gilled",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "dbeee5355a6560ce53f867a1f8916c76a5dfe7a7d48cdd0b72ce2ea88e786ea6",
+      "recordSha256": "6f824a5437904faf15638e96bec05bdf4e5bd42e362a57877cf5bf8ff1bf750b"
+    },
+    {
+      "index": 22,
+      "canonicalId": "Glow",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "91506c71dc258987c918b7c7c0ce16b92ec6bc6d95d2fc3765681b2e6f356e23",
+      "recordSha256": "95bb3434abb11918b28b47f45eacd8b60dd92cb7804d7f569bdc3b82bf3ec6af"
+    },
+    {
+      "index": 23,
+      "canonicalId": "Groundshaper",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "d5e94f75355a53b768781ed5cbcfb313321964948b7520f6b07b25b071f25138",
+      "recordSha256": "b4d23b3cbba1aaaec7da703d3255288b41bb1fc90ac25faf140b59dfb04987f6"
+    },
+    {
+      "index": 24,
+      "canonicalId": "Guster",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "13ddf02b0e23ce23079ecdaa678632e8d15e25d8723809da3493ad4e48943b17",
+      "recordSha256": "2a7ee256d65aa8cfa915230f6d0c2f0adafc94a95b960211b191a117f595703a"
+    },
+    {
+      "index": 25,
+      "canonicalId": "Heart Gift",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "41a489c1e2a56628faf08554c781daf7f3f111d015c244b5b6c8fc91520aa659",
+      "recordSha256": "d3bfecb6119718af4c3a14de9baff8eef5f11aeda7c83c3eee2da13737d7a129"
+    },
+    {
+      "index": 26,
+      "canonicalId": "Heater",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "96655df3192668c3af47c86ef3aca72a3845adec3254bbe21008e8d4a1643bc2",
+      "recordSha256": "77e6fd56e110527665ade5c9d7e4ac558b9c831894e019015e7d52cb2f8840ca"
+    },
+    {
+      "index": 27,
+      "canonicalId": "Herb Growth",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "7758c2a1b74f201732c1f7a5c710c3223be7295fb1dd6e05f4dfcc8e76ec2858",
+      "recordSha256": "8f0f168a1e6ad7205abd0f52e445887ba0a68e7874c3bfe65e93b5924579142d"
+    },
+    {
+      "index": 28,
+      "canonicalId": "High Jump",
+      "source": "02-character-creation.md",
+      "sourcePath": "books/markdown/core/02-character-creation.md",
+      "sourceSha256": "ca4e9f631b18f1a63b441eb01927426319212c780d7318d9547182817df1ac15",
+      "effectSha256": "c2a971a978bb0b9ccc1f994dc51a52f8e50090e403b128cd6a86d6c5557dec8f",
+      "recordSha256": "ecfc97a94c21e17ae2fa962133abeafbc1683184029ab6691fd6b16b10c96b4b"
+    },
+    {
+      "index": 29,
+      "canonicalId": "Honey Gather",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "808b993090fbe64ea711e38b0171c3d83dfef5bcae6f2196eb720fab3c10f859",
+      "recordSha256": "25f8b625e55760d1ee32a92921378a6305e68cf69553c10ec36094c9ce197064"
+    },
+    {
+      "index": 30,
+      "canonicalId": "Illusionist",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "e8771cb51cd08d25692d141a16b26c69faf454ed625f6ab0e51eec7d62d995a8",
+      "recordSha256": "5ece40f28c477b4303ae731cc290c6e5269f33e27fc7bf04e56691bf7097c96b"
+    },
+    {
+      "index": 31,
+      "canonicalId": "Inflatable",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "ccc5f65d6d07d37f8d931c3c4c3959bbf46f15236c3321cfa6464b9f92f2d316",
+      "recordSha256": "91efe5de2cb08952f9ca86b5c01ba70d9e60b11dfb4b3fdd5651108f9939d99b"
+    },
+    {
+      "index": 32,
+      "canonicalId": "Invisibility",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "b81df7dda9f8e1167cf64d48ca008f199ab680ad869b38064a5cacd3b5d5e5d7",
+      "recordSha256": "c0a43208cfbbe433faccffe2e39e2e4107f314e7dd3703b6a96365724d6d78da"
+    },
+    {
+      "index": 33,
+      "canonicalId": "Juicer",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "c56aa7d544bf9d994604a807bd255aadcc4bb1ea5a4db0e3d188e4da41b1a62b",
+      "recordSha256": "3c87ea27a0d23e0bbbfcb137100c5f573666402b06703222ce2c63c6fbed3bd7"
+    },
+    {
+      "index": 34,
+      "canonicalId": "Jump",
+      "source": "06-playing-the-game.md",
+      "sourcePath": "books/markdown/core/06-playing-the-game.md",
+      "sourceSha256": "612aab4863fed80ba1e1166c1861b64cae40949fbaa8f7888e7c2f74cff45f78",
+      "effectSha256": "15bf9423ffcb30e46878dfba0c9a3a4aa081582d77d1af4c13a9a8035409c861",
+      "recordSha256": "f0024fd0f334987806ce0b3be37524c6f7cf0e9a7e7c999593e389c9a24b38d7"
+    },
+    {
+      "index": 35,
+      "canonicalId": "Keystone Warp",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "c6de4487718bca6d9f0532aa66111331e2451d9763511d3dad574ef3adea5704",
+      "recordSha256": "eb17e27865c43698b6b2bbff3e3d37fd425f897c4f170abcb7276abd93a91aad"
+    },
+    {
+      "index": 36,
+      "canonicalId": "Letter Press",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "5cfe75a0d9c3e307a1068bb8b46c9056793a233b04e4163885b32f89f7507ba9",
+      "recordSha256": "6ffc71eff3c43190457782ac1c87969f039a42e4982f21f0bf5a5eec5cb339ff"
+    },
+    {
+      "index": 37,
+      "canonicalId": "Levitate",
+      "source": "06-playing-the-game.md",
+      "sourcePath": "books/markdown/core/06-playing-the-game.md",
+      "sourceSha256": "612aab4863fed80ba1e1166c1861b64cae40949fbaa8f7888e7c2f74cff45f78",
+      "effectSha256": "fc3ad393230d3933616d031b9aca3fdbec599743488f45ad39553f5cba21300b",
+      "recordSha256": "3947959c770348fb8147b0647d69999ae1f172a0042a0c20aecc680007e3aa3b"
+    },
+    {
+      "index": 38,
+      "canonicalId": "Living Weapon",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "d925a0c15b37d9972a0b009c2e8e048bcd0e738a2ae3310aa3b7376d7b4f1e56",
+      "recordSha256": "a996bebb883eee17e6763cd0aea64084321dcaa81d3a812a3dc48a6be17b01e1"
+    },
+    {
+      "index": 39,
+      "canonicalId": "Long Jump",
+      "source": "02-character-creation.md",
+      "sourcePath": "books/markdown/core/02-character-creation.md",
+      "sourceSha256": "ca4e9f631b18f1a63b441eb01927426319212c780d7318d9547182817df1ac15",
+      "effectSha256": "d740d2361de175c08a40b4a8690f99c88aee6a1773e0ac9626292003e97e95ac",
+      "recordSha256": "f2a10cc73cb4f7da1057f49ef8461e890a280d0098d672dbd8b1f7d84958fdf1"
+    },
+    {
+      "index": 40,
+      "canonicalId": "Magnetic",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "863b10bcd86acaffbb26e3af4d1d7fe725df86b0f156d0d3b72ed4646a55dd77",
+      "recordSha256": "57446eca3df1f5f41b8c8d0f964495b40ced410e105785dd8093d36f6debf4b2"
+    },
+    {
+      "index": 41,
+      "canonicalId": "Marsupial",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "dc661e4d53f3a4e58ea756b96ff4aab0e3a35c40a4cc2a2aafcf18fab18cc2d6",
+      "recordSha256": "53dc93317b11e843ab462e9eec8c84e312a2cf66801f74ab208284a20b06296d"
+    },
+    {
+      "index": 42,
+      "canonicalId": "Materializer",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "23beaf152142d6fc15a7704d600ff51726eef637050bd61079bdf679e7514692",
+      "recordSha256": "ff24796e416e7eee3145a43b016364eecd0949e011dbdc1de8a0fa062b9f8564"
+    },
+    {
+      "index": 43,
+      "canonicalId": "Milk Collection",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "d71b76f2f8e519b540e4904eab5ff5bd58c388631ff8cd067ea024c71565235b",
+      "recordSha256": "7ebab9e30a1a0506185f0f59671146fa2f7a5be93b2fd9cfa34a1677396048a0"
+    },
+    {
+      "index": 44,
+      "canonicalId": "Mindlock",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "991fb36080f9cd636693e6a7561aab8fc6584a329c19c1b1b4be3ae491375826",
+      "recordSha256": "b55acfca9a990035fb22dd1822b97567ae612d0e57920a0d08e3c065cb4d8043"
+    },
+    {
+      "index": 45,
+      "canonicalId": "Mountable X",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "09f75629ab56a10823cb9094297f3566e6026d18530f144c6537f69c236741b7",
+      "recordSha256": "513d44537f7e0079c04fb58a090eed6cb7935b92a45e138b6a0fa690446d1bce"
+    },
+    {
+      "index": 46,
+      "canonicalId": "Mushroom Harvest",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "27d6fb8474682673f092be0ad6923f68b445ee59bef32940ab950014893cd955",
+      "recordSha256": "f93b1c2c29dc81318b4e38989073938c5a9770e0a50ce09cd5575737fbdc6789"
+    },
+    {
+      "index": 47,
+      "canonicalId": "Naturewalk",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "0a2c475004c4386d77a483fe121326f156734ef0f4dc03bb90dcd00a0b979304",
+      "recordSha256": "69caca7a127362146d914e1c17161481c94a963f6e15fb55b400fb485b664ce0"
+    },
+    {
+      "index": 48,
+      "canonicalId": "Overland",
+      "source": "06-playing-the-game.md",
+      "sourcePath": "books/markdown/core/06-playing-the-game.md",
+      "sourceSha256": "612aab4863fed80ba1e1166c1861b64cae40949fbaa8f7888e7c2f74cff45f78",
+      "effectSha256": "56e5e17e44fb27cfd139cddd9fef65d96034751a22218fa52d329cc15db1f7c3",
+      "recordSha256": "12a15ab532b2086ca7a525c48bb3a434e834c5a908ac32037ed94a2a608ba1eb"
+    },
+    {
+      "index": 49,
+      "canonicalId": "Pack Mon",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "062ae97f93076493d609547d67f2176e71922e8cbcf78bc39d5e26ce277eb717",
+      "recordSha256": "a2b5ddab210e9e095f3bb3ac4793ee12ce773ae1c643d56d415335bd47cd790f"
+    },
+    {
+      "index": 50,
+      "canonicalId": "Pearl Creation",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "daa02b1557d619682aa672e169cd1b8aa4ba85d31dfb597c42ea3be41ed23a81",
+      "recordSha256": "c4977e671dcedb153165f48a4733c749817f854b59865668524c20b2a8cc6b55"
+    },
+    {
+      "index": 51,
+      "canonicalId": "Phasing",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "3e3788b640cce1799c7e80bd90bee47081dfceff943596e329ed83e0a41f23c6",
+      "recordSha256": "d4d34e3a1dc0129fa6a5ca3925b7884b31b7f636882cdbdc9230eefdaafb219a"
+    },
+    {
+      "index": 52,
+      "canonicalId": "Planter",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "ef96a634b05021f19039d275babcaab175ccfeda9cd5a4a05f763eb573a9d4e3",
+      "recordSha256": "748c1960d78464047ae534a92ae49cdd64b598d23001779488590093af785a0e"
+    },
+    {
+      "index": 53,
+      "canonicalId": "Power",
+      "source": "06-playing-the-game.md",
+      "sourcePath": "books/markdown/core/06-playing-the-game.md",
+      "sourceSha256": "612aab4863fed80ba1e1166c1861b64cae40949fbaa8f7888e7c2f74cff45f78",
+      "effectSha256": "4f3ab18126c9a57acdc44334de47e57ebf3cde56cf76a7ab22974e0c744c1c7b",
+      "recordSha256": "f811c2c067589542934f4e12c38a064ac8f187a3fb50b46b626e6da2b4de4423"
+    },
+    {
+      "index": 54,
+      "canonicalId": "Premonition",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "66232830a2a891a4edca3ec24ba5b282d8bd5d50ae3251d923c3f5628d9a5789",
+      "recordSha256": "f4bcfc4961cb245a12bd8cbca4117182b4ea14be0986989d291347d27236778d"
+    },
+    {
+      "index": 55,
+      "canonicalId": "Reach",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "c15a4a01cd71eb52f960c8d8ee51b07c4be6c4d1b386fe47d574aeb066545363",
+      "recordSha256": "34f720f2a070eadd3b3718e019a30ff217c7591e788d465ed3c80fa4ede7395c"
+    },
+    {
+      "index": 56,
+      "canonicalId": "Shadow Meld",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "be83280878b9227b67c5c4bf7c846100ae2548b6284578f2521c34fadc0e5650",
+      "recordSha256": "be769107491c0c29691fecf16db7a48058f76891e9984700b58afae25a55fff6"
+    },
+    {
+      "index": 57,
+      "canonicalId": "Shapeshifter",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "ec2230536a9c4725af76ed83d51e55def71fdc5bc94126d06390ac62f3ff3739",
+      "recordSha256": "e300d064e7a5ad9e6f8dab323c59895a5eda52c4e29f621f9ec3dde307afc86a"
+    },
+    {
+      "index": 58,
+      "canonicalId": "Shrinkable",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "4a92dcc23dad6f3e8a6fc119f10f610207fe5b80832cbbcfe3af154c57c7973d",
+      "recordSha256": "1443115cbc13483274b3e603626dab430ac613737680bc5ea78854f522e4d2d2"
+    },
+    {
+      "index": 59,
+      "canonicalId": "Sky",
+      "source": "06-playing-the-game.md",
+      "sourcePath": "books/markdown/core/06-playing-the-game.md",
+      "sourceSha256": "612aab4863fed80ba1e1166c1861b64cae40949fbaa8f7888e7c2f74cff45f78",
+      "effectSha256": "a8cf7a7f129e429d5fde7021dfb51c8ce576d7eac6a406590017f9f167f87a45",
+      "recordSha256": "e2145138e7d67a7a0fecc239d57cca7c2bca98b88e7d4252dce9eed11109adde"
+    },
+    {
+      "index": 60,
+      "canonicalId": "Soulless",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "1b69bff02a32cd4c378149d8dd1e3a0173832e2320e067d971dc1cf0cd7cd4b6",
+      "recordSha256": "00defa69aef3d4259052175e7490695a9137feed5d2ee14415b912adddb5ace6"
+    },
+    {
+      "index": 61,
+      "canonicalId": "Split Evolution",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "1f463c39539afc3bfa2370277564ede35274dcbe5d1695675046f0b627ddc318",
+      "recordSha256": "40264c6c8562844f9473726c41d0dc64b64574296f46ef7de03c07145b3e7daf"
+    },
+    {
+      "index": 62,
+      "canonicalId": "Sprouter",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "9567cb76f636dd448d8ecece0db0fa4970d8a23c3efb47b6ed3bec901b94fcff",
+      "recordSha256": "08e083b6cafc7888bcf3ea7316a29541ebe3e706cedaa6c81261f0bb951436db"
+    },
+    {
+      "index": 63,
+      "canonicalId": "Stealth",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "72339c16960641c7236be14afd52dd62b6940308642517f799efb0f36f2e5667",
+      "recordSha256": "bd23ee5e8ef293b6b795a81ffe875cc1179ae7d8c0943c158a055f9a7a6026c0"
+    },
+    {
+      "index": 64,
+      "canonicalId": "Swim",
+      "source": "06-playing-the-game.md",
+      "sourcePath": "books/markdown/core/06-playing-the-game.md",
+      "sourceSha256": "612aab4863fed80ba1e1166c1861b64cae40949fbaa8f7888e7c2f74cff45f78",
+      "effectSha256": "e6427bd6f944a8a2d035dbb3495f9d688be1cf2e262d427a06d00903c6831a39",
+      "recordSha256": "5769fd431d7bbb23d75bf6a27b22935bf51f8d42a3450f651bc42b89b8a0c949"
+    },
+    {
+      "index": 65,
+      "canonicalId": "Telekinetic",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "4d98f8aa73fd446bab2287e259548826c8daf97c12a243882487c97df851d5c7",
+      "recordSha256": "e6fc43976f4747156188601e814b513fa8349890c01c353dee2a12a381c754d8"
+    },
+    {
+      "index": 66,
+      "canonicalId": "Telepath",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "cbd527a6f461bdb35f29487240a9c63fd2cb1434e4a7ce9f4ccd54ce9c1489e5",
+      "recordSha256": "9ff6be63e9f15aa54bfd5b5e43c92552a121839d651a5e362ba9f545326c28ff"
+    },
+    {
+      "index": 67,
+      "canonicalId": "Teleporter",
+      "source": "06-playing-the-game.md",
+      "sourcePath": "books/markdown/core/06-playing-the-game.md",
+      "sourceSha256": "612aab4863fed80ba1e1166c1861b64cae40949fbaa8f7888e7c2f74cff45f78",
+      "effectSha256": "5742abb00e364b50045a7108f599e945380d0d178cf8ef3015848aba2c63e751",
+      "recordSha256": "41127820b17463fa062911d4f1ff543353dcb5e6415349671848a40f0c161a85"
+    },
+    {
+      "index": 68,
+      "canonicalId": "Threaded",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "2edde28f536be9a8d59cdb8cec7116561247fe2396e6886908c4754a5c3e0c20",
+      "recordSha256": "7fc2f0c5226dfb5466ba83a84292a398e0c37e50de4e03d31fe925fb422927dd"
+    },
+    {
+      "index": 69,
+      "canonicalId": "Throwing Range",
+      "source": "06-playing-the-game.md",
+      "sourcePath": "books/markdown/core/06-playing-the-game.md",
+      "sourceSha256": "612aab4863fed80ba1e1166c1861b64cae40949fbaa8f7888e7c2f74cff45f78",
+      "effectSha256": "450e23c3bb0592992d88af9c089e1cc017ee9b54238f14bfd2581f835feb1d04",
+      "recordSha256": "477ab2f285fa0e8dec0a151040a0fa2a2c1111bc1049050aff0390c81b2029eb"
+    },
+    {
+      "index": 70,
+      "canonicalId": "Tracker",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "1a5267d6de5f4bc72bab17277cbed3a06ee4359a20c32a811d3942bae1fe8335",
+      "recordSha256": "b039d2e3de0f0dec8c61aacdcd360498cc0e3698019acc9469d692bfc7a71d75"
+    },
+    {
+      "index": 71,
+      "canonicalId": "Tremorsense",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "73a5aec7359385f534c9d31415e08251c4406c658daf8a9fdfb86a0991fc5b87",
+      "recordSha256": "72ab4ef9cdf9fb99ef24b0b5ad726d0f14fb49047397c7003b3062e8582d97a0"
+    },
+    {
+      "index": 72,
+      "canonicalId": "Underdog",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "75d60b104443b7661349c92117f6d2511ce951c0d8dd08bad7219984a3540efb",
+      "recordSha256": "0f14aa581f4ca571821e2de9fddbc4b5e0d2572f5210fd12a7e424868b940416"
+    },
+    {
+      "index": 73,
+      "canonicalId": "Viral Fusion",
+      "source": "sumo_references.md",
+      "sourcePath": "books/markdown/sumo_references.md",
+      "sourceSha256": "592001dee213738438e3b7a8973637134cf5f54b49f10f3a0f4012d0e319ddc8",
+      "effectSha256": "984753b80939f93522a27c09aa07eb8f6c986942b18f311bba33e2a884fcbf4c",
+      "recordSha256": "08fd2f3ac8b608e598f7d7e9ec6820c93cdc9e69cd62b7c8125e6d61ffab9d28"
+    },
+    {
+      "index": 74,
+      "canonicalId": "Volatile Bomb",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "aa12ea7510f7172d2a73a9f01260aa3201acb916088ba4b83211ebc659735b89",
+      "recordSha256": "0c49add6bbb90134c00112b8bf552d0c85b3da61c86253937c5975fdeae83ea5"
+    },
+    {
+      "index": 75,
+      "canonicalId": "Wallclimber",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "655fba2408d8d01e7f71634ee95f087b0584d3fec68d721b6249940e0e34bdff",
+      "recordSha256": "fec9b89ccbaf7b361563872fbd9194ff5f25973f351ced9cd15206dd8b0a707a"
+    },
+    {
+      "index": 76,
+      "canonicalId": "Weapon Bond",
+      "source": "swsh_-_armor_crown_references.md",
+      "sourcePath": "books/markdown/swsh_-_armor_crown_references.md",
+      "sourceSha256": "784d7f4a725539ce34519df0cdc7e7a0efa1a6cce386abd1aaa53ef832c4d228",
+      "effectSha256": "84ce3fb4c1a521d66e7b0991b021dd81c7c9b087680d1634f21b782fb6b5c141",
+      "recordSha256": "e940dbe95e1cdc81f33c5bec93fd2fde5ffe475877d483300dc227d7f9324222"
+    },
+    {
+      "index": 77,
+      "canonicalId": "Weathershape",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "a6fd9da61010490643b0b765254634b3c0b3b54e94fe3f88474f2c42f73f2b39",
+      "recordSha256": "d5ef406515e6a01f77ad8aacaec7cc4696d4a84f1ac5c67557916cc9bf28924b"
+    },
+    {
+      "index": 78,
+      "canonicalId": "Wielder",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "8615eb71e43d8fefec38aad08c1a362b5c96a6492036a20ef35eb3664eaf7f53",
+      "recordSha256": "e397496a91cbb14d22cd20281d01cfe125984d78df81a1b07806047947464c67"
+    },
+    {
+      "index": 79,
+      "canonicalId": "Wired",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "7c57bc3cdf599d3234512cf290e02a618389905a39f5995eb9e884bdbf97285f",
+      "recordSha256": "9053431245a869fc9db98f7b78edba6caae7a34d9141414d6b5336db12d70371"
+    },
+    {
+      "index": 80,
+      "canonicalId": "X-Ray Vision",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "693320372568dabb670262984e026ac8bd8ba2e3e0d5659cb4608eb669a718e0",
+      "recordSha256": "23c7096c0eedf3fb0db2075da469890a34a93bb2b4ea0c8a55ce9e91c4d4e86f"
+    },
+    {
+      "index": 81,
+      "canonicalId": "Zapper",
+      "source": "10-indices-and-reference.md",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "effectSha256": "db5dd52815b7c64d1d236bda06cf57b74fe56f8dd1666e836e314527625734a3",
+      "recordSha256": "6e51aab0215c4af4ee6eea647ed18643c85ae9f67cf8be47b2e86de5d4c0a932"
+    },
+    {
+      "index": 82,
+      "canonicalId": "Zygarde Cells",
+      "source": "sumo_references.md",
+      "sourcePath": "books/markdown/sumo_references.md",
+      "sourceSha256": "592001dee213738438e3b7a8973637134cf5f54b49f10f3a0f4012d0e319ddc8",
+      "effectSha256": "b48896934d2b66ac76971c0beba2486a6068b7515e7c02cf7d4d1d3e54a1e69d",
+      "recordSha256": "34142aad6e1a7e8e3cecdcd603f2943902e211f225da33482bbdfffae24a1163"
+    }
+  ],
+  "parserAudit": {
+    "parsedEntryCount": 83,
+    "sourceContributions": {
+      "arceus_references.md": 0,
+      "swsh_-_armor_crown_references.md": 2,
+      "sumo_references.md": 2,
+      "errata-3.md": 0,
+      "errata-2.md": 0,
+      "10-indices-and-reference.md": 68,
+      "06-playing-the-game.md": 9,
+      "02-character-creation.md": 2
+    },
+    "shadowedDefinitions": [],
+    "canonicalDifferencesFromParserOutput": [
+      {
+        "canonicalId": "Sky",
+        "adjudicationId": "CA-SRC-001"
+      },
+      {
+        "canonicalId": "Levitate",
+        "adjudicationId": "CA-SRC-002"
+      }
+    ],
+    "status": "reviewed"
+  }
+}

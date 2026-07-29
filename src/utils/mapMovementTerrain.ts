@@ -76,6 +76,7 @@ const SLOW_TERRAIN_TAGS = new Set([
   'mud',
   'muck',
   'snow',
+  'slow-terrain',
 ])
 
 const lowerTagsForVoxel = (voxel: MapVoxelV2): Set<string> => {
@@ -147,7 +148,7 @@ const uniqueRequirements = (
 ): MovementTerrainRequirement[] => Array.from(new Set(requirements))
 
 const isSlowTaggedTerrain = (tags: ReadonlySet<string>): boolean =>
-  Array.from(SLOW_TERRAIN_TAGS).some((tag) => tags.has(tag))
+  !tags.has('basic-terrain') && Array.from(SLOW_TERRAIN_TAGS).some((tag) => tags.has(tag))
 
 const isWaterTerrain = (tags: ReadonlySet<string>): boolean => tags.has('water')
 

@@ -502,6 +502,58 @@ describe('authoritative opposed checks and saving throws', () => {
     }))
   })
 
+  it('shares Viral Fusion skills only while the link references the exact effective source instance', () => {
+    const run = (capabilityInstanceId: string) => {
+      const encounter = createEmptyEncounterState()
+      const linkedMap: TabletopMap = {
+        ...mapFixture(),
+        encounterState: {
+          ...encounter,
+          capabilityRuntime: {
+            ...encounter.capabilityRuntime!,
+            links: [{
+              id: 'viral-link', kind: 'viral-fusion', ownerPlacementId: 'actor-token',
+              participantPlacementIds: ['target-token'], capabilityInstanceId, canonicalId: 'Viral Fusion',
+              establishedAt: 1, configurationId: 'Tackle', sourceOperationId: 'viral-operation',
+            }],
+          },
+        },
+      }
+      const context = buildAuthoritativeMoveRulesContext({
+        map: linkedMap,
+        pokemonSheets: new Map([
+          ['actor', pokemonSheet('actor', { capabilities: { other: ['Viral Fusion'] }, skills: { athletics: '1d6' } })],
+          ['target', pokemonSheet('target', { skills: { athletics: '5d6', combat: '2d6' } })],
+        ]),
+        trainerSheets: new Map<string, TrainerSheet>(), intent: intent(),
+        candidatePlacementIds: ['target-token'], selectedPlacementIds: ['target-token'],
+        random: createFiniteAuthoritativeMoveRandomStream(Array.from({
+          length: capabilityInstanceId.endsWith(':base') ? 8 : 3,
+        }, () => 0)), time: 50_000,
+      })
+      return executeMoveSpec({
+        definition: definitionFor({
+          kind: 'opposed', checkId: 'check.viral-skill',
+          actorRoll: {
+            rollId: 'roll.viral.actor', source: { kind: 'skill', skill: 'athletics' },
+            modifiers: [], reroll: { count: 0, keep: 'latest' }, resourceReroll: null,
+          },
+          targetRoll: {
+            rollId: 'roll.viral.target', source: { kind: 'skill', skill: 'combat' },
+            modifiers: [], reroll: { count: 0, keep: 'latest' }, resourceReroll: null,
+          },
+          tie: { kind: 'failure' }, branches: { success: 'success', failure: 'failure' },
+        }),
+        context,
+      })
+    }
+
+    const exact = run('capability:actor-token:Viral_20Fusion:base')
+    expect(exact.resolvedChecks[0]?.actor?.source).toMatchObject({ formula: { kind: 'dice', count: 6 } })
+    const stale = run('capability:actor-token:Viral_20Fusion:stale')
+    expect(stale.resolvedChecks[0]?.actor?.source).toMatchObject({ formula: { kind: 'dice', count: 1 } })
+  })
+
   it('records a provisional failure then returns a typed resource-spend reroll request', () => {
     const stream = createFiniteAuthoritativeMoveRandomStream([0, 0.9])
     const result = executeMoveSpec({

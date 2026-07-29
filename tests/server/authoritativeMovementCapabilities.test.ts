@@ -9,6 +9,8 @@ import {
   resolveMovement,
   type AuthoritativeMovementSheets,
 } from '~~/server/domain/movement/resolveMovement'
+import { applyAuthoritativeMovementMapTransition } from '~~/server/domain/movement/applyMovementTransition'
+import { resolveEffectiveCapabilities } from '~~/server/domain/capabilityAutomation/effectiveCapabilities'
 
 const placement = (position = { x: 0, y: 0, z: 0 }): SheetPlacement => ({
   id: 'actor',
@@ -128,6 +130,22 @@ describe('authoritative movement capabilities', () => {
     })
   })
 
+  it('does not restore raw Phasing traits while the exact Capability is suppressed', () => {
+    const sheet = pokemonSheet({ overland: 6, other: ['Phasing'] })
+    const suppressed = movementEffect({
+      id: 'effect.suppress-phasing', capabilityId: 'phasing', action: 'suppress',
+    })
+    const result = resolve(map({
+      voxels: [{ x: 1, y: 0, z: 0, materialId: 'mud', blocksMovement: false }],
+      encounterState: { ...createEmptyEncounterState(), effects: [suppressed] },
+    }), sheet, { x: 1, y: 0, z: 0 })
+    expect(result).toMatchObject({
+      ok: true,
+      cost: 2,
+      movementProfile: { traits: { phasing: false } },
+    })
+  })
+
   it('lets a valued typed effect grant aerial movement and restores legality on expiry', () => {
     const sheet = pokemonSheet({ overland: 5 })
     const levitate = movementEffect({
@@ -166,6 +184,91 @@ describe('authoritative movement capabilities', () => {
       ok: false,
       reasonCode: 'movement-capability-missing',
     })
+  })
+
+  it('moves an exact source-effective linked companion with the authoritative transition', () => {
+    const actorSheet = pokemonSheet({ overland: 5, other: ['As One'] })
+    const mountSheet: CharacterSheet = {
+      slug: 'mount', nickname: 'Mount', species: 'Bulbasaur', level: 10,
+      capabilities: { overland: 5 },
+    }
+    const actor = placement()
+    const mount: SheetPlacement = {
+      id: 'mount', sheetKind: 'pokemon', sheetSlug: 'mount', position: { x: 0, y: 0, z: 0 },
+    }
+    const baseMap = map({ placements: [actor, mount], encounterState: createEmptyEncounterState() })
+    const lookup = {
+      pokemon: new Map([[actorSheet.slug, actorSheet], [mountSheet.slug, mountSheet]]),
+      trainer: new Map<string, TrainerSheet>(),
+    }
+    const instance = resolveEffectiveCapabilities({
+      map: baseMap, placement: actor, sheet: actorSheet, sheets: lookup,
+    }).instances.find(candidate => candidate.effective && candidate.canonicalId === 'As One')!
+    const encounter = createEmptyEncounterState()
+    const linkedMap = map({
+      placements: [actor, mount],
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'active-link', kind: 'as-one-mount', ownerPlacementId: 'actor',
+            participantPlacementIds: ['mount'], capabilityInstanceId: instance.instanceId,
+            canonicalId: 'As One', establishedAt: 1, configurationId: null,
+            sourceOperationId: 'operation',
+          }],
+        },
+      },
+    })
+    const result = resolveMovement({
+      map: linkedMap, sheets: lookup, placementId: 'actor', mode: 'shift',
+      destination: { x: 1, y: 0, z: 0 },
+    })
+    expect(result).toMatchObject({ ok: true, linkedCompanionPlacementIds: ['mount'] })
+    if (!result.ok) throw new Error(result.message)
+    const transition = applyAuthoritativeMovementMapTransition({
+      map: linkedMap, placementId: 'actor', destination: result.destination,
+      distance: result.cost, encounterState: linkedMap.encounterState!, timestamp: 10,
+      userName: 'Actor', linkedCompanionPlacementIds: result.linkedCompanionPlacementIds,
+    })
+    expect(transition.nextMap.placements.find(candidate => candidate.id === 'mount')?.position)
+      .toEqual({ x: 1, y: 0, z: 0 })
+  })
+
+  it('does not let a source-lost link hide collisions or move stale companions', () => {
+    const actorSheet = pokemonSheet({ overland: 5, other: [] })
+    const mountSheet: CharacterSheet = {
+      slug: 'mount', nickname: 'Mount', species: 'Bulbasaur', level: 10,
+      capabilities: { overland: 5 },
+    }
+    const encounter = createEmptyEncounterState()
+    const arena = map({
+      placements: [
+        placement(),
+        { id: 'mount', sheetKind: 'pokemon', sheetSlug: 'mount', position: { x: 1, y: 0, z: 0 } },
+      ],
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'stale-link', kind: 'as-one-mount', ownerPlacementId: 'actor',
+            participantPlacementIds: ['mount'], capabilityInstanceId: 'lost-as-one-source',
+            canonicalId: 'As One', establishedAt: 1, configurationId: null,
+            sourceOperationId: 'old-operation',
+          }],
+        },
+      },
+    })
+    const result = resolveMovement({
+      map: arena,
+      sheets: {
+        pokemon: new Map([[actorSheet.slug, actorSheet], [mountSheet.slug, mountSheet]]),
+        trainer: new Map(),
+      },
+      placementId: 'actor', mode: 'shift', destination: { x: 1, y: 0, z: 0 },
+    })
+    expect(result).toMatchObject({ ok: false, reasonCode: 'movement-destination-occupied' })
   })
 
   it('temporarily suppresses a sheet mode without rewriting the sheet', () => {

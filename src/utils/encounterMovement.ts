@@ -1,3 +1,4 @@
+import { parseCapabilityLabel } from '#shared/capabilityAutomation/catalog'
 import type {
   EncounterCapabilityEffect,
   EncounterEffect,
@@ -124,7 +125,9 @@ const effectAppliesToTarget = (
 
 const effectIsActive = (
   effect: EncounterCapabilityEffect | EncounterNumericModifierEffect,
-): boolean => effect.suppression.sources.length === 0 && effect.charges !== 0
+): boolean => effect.suppression.sources.length === 0
+  && effect.charges !== 0
+  && (effect.duration.remaining === null || effect.duration.remaining > 0)
 
 const activeApplicableEffects = (
   effects: readonly EncounterEffect[] | null | undefined,
@@ -170,15 +173,40 @@ const normalizedBaseTraits = (
   },
 })
 
+const canonicalMovementModeById: Readonly<Record<string, MovementMode>> = Object.freeze({
+  Overland: 'overland',
+  Sky: 'sky',
+  Swim: 'swim',
+  Burrow: 'burrow',
+  Levitate: 'levitate',
+  Phasing: 'phasing',
+  Jump: 'jump',
+  Wallclimber: 'climb',
+})
+
+const parsedCanonicalCapabilityId = (capabilityId: string): string | null => {
+  const direct = parseCapabilityLabel(capabilityId)
+  if (direct.canonicalId) return direct.canonicalId
+  return parseCapabilityLabel(capabilityId
+    .replace(/^(?:capability|movement)(?:\.mode)?[.:]/i, '')
+    .replace(/[._-]+/g, ' ')).canonicalId
+}
+
 const movementModeFromCapabilityId = (capabilityId: string): MovementMode | null => {
   const normalized = capabilityId.startsWith(MOVEMENT_MODE_EFFECT_PREFIX)
     ? capabilityId.slice(MOVEMENT_MODE_EFFECT_PREFIX.length)
     : capabilityId.startsWith('movement.')
       ? capabilityId.slice('movement.'.length)
       : ''
-  return (MOVEMENT_MODES as readonly string[]).includes(normalized)
-    ? normalized as MovementMode
-    : null
+  if ((MOVEMENT_MODES as readonly string[]).includes(normalized)) return normalized as MovementMode
+  const canonicalId = parsedCanonicalCapabilityId(capabilityId)
+  return canonicalId ? canonicalMovementModeById[canonicalId] ?? null : null
+}
+
+const speedKeyFromCapabilityId = (capabilityId: string): MovementCapabilityKey | null => {
+  const mode = movementModeFromCapabilityId(capabilityId)
+  if (mode) return speedKeyForMode(mode)
+  return parsedCanonicalCapabilityId(capabilityId) === 'Teleporter' ? 'teleporter' : null
 }
 
 const semiInvulnerableStateFromCapabilityId = (
@@ -238,8 +266,7 @@ const taggedSpeedKeys = (
   effect: EncounterNumericModifierEffect,
 ): readonly MovementCapabilityKey[] => {
   const tagged = effect.tags.flatMap((tag) => {
-    const mode = movementModeFromCapabilityId(tag)
-    const key = mode ? speedKeyForMode(mode) : null
+    const key = speedKeyFromCapabilityId(tag)
     return key ? [key] : []
   })
   return [...new Set(tagged)]
@@ -295,7 +322,8 @@ const applyCapabilityEffect = (input: MutableMovementEffectState): boolean => {
   }
 
   const mode = movementModeFromCapabilityId(effect.payload.capabilityId)
-  if (!mode) return false
+  const directSpeedKey = speedKeyFromCapabilityId(effect.payload.capabilityId)
+  if (!mode && !directSpeedKey) return false
 
   if (mode === 'phasing') {
     const next = effect.payload.action === 'grant'
@@ -319,13 +347,17 @@ const applyCapabilityEffect = (input: MutableMovementEffectState): boolean => {
     return changed
   }
 
-  const speedKey = speedKeyForMode(mode)!
+  const speedKey = directSpeedKey!
   if (effect.payload.action === 'suppress') {
     if (input.speeds[speedKey] === undefined) return false
     delete input.speeds[speedKey]
     return true
   }
-  const grantedSpeed = effect.payload.value ?? input.baseSpeeds[speedKey]
+  const grantedSpeed = effect.payload.value
+    ?? input.baseSpeeds[speedKey]
+    ?? (speedKey === 'climb' && input.speeds.overland !== undefined
+      ? Math.floor(input.speeds.overland / 2)
+      : undefined)
   if (grantedSpeed === undefined) return false
   const changed = input.speeds[speedKey] !== grantedSpeed
   input.speeds[speedKey] = grantedSpeed

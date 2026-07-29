@@ -196,6 +196,16 @@ describe('load live table snapshot use case', () => {
     sheets.saveSetupSheet('pokemon', 'actor-mon', pokemon({
       slug: 'actor-mon',
       abilities: [{ name: 'Compound Eyes', frequency: 'Static', effect: 'Private actor text.' }],
+      capabilities: { other: ['Invisibility'] },
+      capabilityUsage: {
+        schemaVersion: 1,
+        entries: [{
+          id: 'invisibility-cooldown', canonicalId: 'Invisibility', actionId: 'become-invisible',
+          capabilityInstanceId: 'capability:actor-token:Invisibility:base', period: 'cooldown',
+          usedAt: 1, availableAt: Number.MAX_SAFE_INTEGER, remainingDayAdvances: null,
+          sourceOperationId: 'private-invisibility-operation',
+        }],
+      },
     }) as unknown as Record<string, unknown>)
     sheets.saveSetupSheet('pokemon', 'target-mon', pokemon({
       slug: 'target-mon',
@@ -224,6 +234,9 @@ describe('load live table snapshot use case', () => {
     expect(serializedPlayerSnapshot).not.toContain('Sturdy')
     expect(serializedPlayerSnapshot).not.toContain('intent.private-intimidate')
     expect(serializedPlayerSnapshot).not.toContain('target-gate')
+    expect(serializedPlayerSnapshot).not.toContain('private-invisibility-operation')
+    expect(serializedPlayerSnapshot).not.toContain('capabilityUsage')
+    expect(serializedPlayerSnapshot).not.toContain('become-invisible')
 
     const gmSnapshot = loadLiveTableSnapshotUseCase(
       { role: 'gm', slug: 'arena' },

@@ -335,7 +335,9 @@ class RealtimeSseConnection {
 
       if (!decision.allowed) continue
 
-      await this.writeData(redactRealtimeEventForPrincipal(record.event, this.principal), record.sequence)
+      await this.writeData(redactRealtimeEventForPrincipal(
+        record.event, this.principal, this.accessDependencies,
+      ), record.sequence)
       lastAllowedSequence = record.sequence
     }
 
@@ -429,7 +431,9 @@ class RealtimeSseConnection {
           dependencies: this.accessDependencies,
         })
         if (!decision.allowed) continue
-        await this.writeData(redactRealtimeEventForPrincipal(publication.event, this.principal))
+        await this.writeData(redactRealtimeEventForPrincipal(
+          publication.event, this.principal, this.accessDependencies,
+        ))
       }
     } catch (error) {
       this.logger.error?.('[events] transient SSE delivery failed', { ...this.logContext, error })

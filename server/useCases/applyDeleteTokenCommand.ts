@@ -26,6 +26,7 @@ import {
   type MoveTokenPosition,
 } from '#shared/sessionTokenCommands'
 import type { SheetPlacement, TabletopMapV2 } from '~/types/map'
+import { removeCapabilityPresenceGroup } from '../domain/capabilityAutomation/presenceLifecycle'
 import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/sessionHosting'
 import {
   sessionOperationTracker,
@@ -470,14 +471,12 @@ const deletedMapDocument = (
   processedAt: string,
 ): TabletopMapV2 => {
   const updatedAtMs = Date.parse(processedAt)
-  const nextInitiative = map.initiative?.activeId === target.placement.id
-    ? { ...map.initiative, activeId: null }
-    : map.initiative
-
+  const removed = removeCapabilityPresenceGroup({
+    map,
+    ownerPlacementId: target.placement.id,
+  }).map
   return {
-    ...map,
-    placements: map.placements.filter((_, index) => index !== target.placementIndex),
-    ...(nextInitiative === undefined ? {} : { initiative: nextInitiative }),
+    ...removed,
     ...(Number.isFinite(updatedAtMs) ? { updatedAt: updatedAtMs } : {}),
   }
 }

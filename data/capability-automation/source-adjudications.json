@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-capability-automation",
+  "status": "reviewed-no-open-source-gaps",
+  "entries": [
+    {
+      "id": "CA-SRC-001",
+      "canonicalId": "Sky",
+      "status": "accepted",
+      "issue": "The basic-capability paragraph omits the Groundsource immunity used by the Groundsource keyword definition and later rules.",
+      "decision": "Retain the canonical sentence: a positive Sky Speed grants Groundsource immunity unless a grounding rule suppresses it.",
+      "evidence": [
+        "books/markdown/core/06-playing-the-game.md",
+        "books/markdown/core/10-indices-and-reference.md"
+      ]
+    },
+    {
+      "id": "CA-SRC-002",
+      "canonicalId": "Levitate",
+      "status": "accepted",
+      "issue": "The basic-capability paragraph omits the Groundsource immunity used by the Groundsource keyword definition and later rules.",
+      "decision": "Retain the canonical sentence: a positive Levitate Speed grants Groundsource immunity unless a grounding rule suppresses it.",
+      "evidence": [
+        "books/markdown/core/06-playing-the-game.md",
+        "books/markdown/core/10-indices-and-reference.md"
+      ]
+    },
+    {
+      "id": "CA-SRC-003",
+      "canonicalId": "Power",
+      "status": "accepted",
+      "issue": "The parser intentionally captures the Power prose before the source table.",
+      "decision": "Runtime limits use the complete 1-16 table in the same source; the frozen table is checked separately.",
+      "evidence": [
+        "books/markdown/core/06-playing-the-game.md",
+        "src/utils/usefulCharts.ts"
+      ]
+    },
+    {
+      "id": "CA-SRC-004",
+      "canonicalId": "Mountable X",
+      "status": "accepted",
+      "issue": "X is a parameter while species and sheet data use labels such as Mountable 1.",
+      "decision": "Canonical identity remains Mountable X; strict acquisition parsing records the positive integer as parameter riders.",
+      "evidence": [
+        "books/markdown/core/10-indices-and-reference.md",
+        "data/reference/pokedex.json"
+      ]
+    },
+    {
+      "id": "CA-SRC-005",
+      "canonicalId": "Freezer",
+      "status": "accepted",
+      "issue": "Source extraction joins Ice-Typed as IceTyped (and Guster similarly joins Flying-Typed).",
+      "decision": "Preserve source prose bytes but normalize the reviewed struggle-attack type to canonical Pokémon type IDs.",
+      "evidence": [
+        "books/markdown/core/10-indices-and-reference.md"
+      ]
+    },
+    {
+      "id": "CA-SRC-006",
+      "canonicalId": "Swim",
+      "status": "accepted",
+      "issue": "The final sentence refers to an Underwater Capability rather than Swim.",
+      "decision": "Treat Underwater as an obvious local reference to the Swim Capability; Dive adds 3 to Swim.",
+      "evidence": [
+        "books/markdown/core/06-playing-the-game.md"
+      ]
+    },
+    {
+      "id": "CA-SRC-007",
+      "canonicalId": "Sky",
+      "status": "accepted",
+      "issue": "The Fly Move record says Grants Sky +3 while the canonical Sky Capability says Fly raises Sky by 4.",
+      "decision": "Capability acquisition follows the canonical Capability rule: Fly grants or raises Sky by 4.",
+      "evidence": [
+        "data/reference/capabilities.json",
+        "data/reference/moves.json",
+        "books/markdown/core/06-playing-the-game.md"
+      ]
+    },
+    {
+      "id": "CA-SRC-008",
+      "canonicalId": "Delta Evolution",
+      "status": "accepted",
+      "issue": "Species data contains reviewed spelling noise: Delta Evolver, X- Ray Vision, Invisbility, and a merged Tracker Underdog label.",
+      "decision": "Normalize only those exact compatibility spellings and split the exact merged label into Tracker plus Underdog; retain every raw source label as provenance.",
+      "evidence": [
+        "data/reference/pokedex.json",
+        "data/reference/capabilities.json"
+      ]
+    }
+  ]
+}

@@ -21,8 +21,12 @@ import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { executeLivePlaySheetCommandUseCase } from '~~/server/useCases/applyLivePlaySheetCommand'
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
-import type { PersistedSheet } from '~~/server/storage/sheetRepository'
+import { createSqliteSheetRepository, type PersistedSheet } from '~~/server/storage/sheetRepository'
+import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
+import { openRotomDatabase } from '~~/server/storage/database'
 import type { SheetKind, TabletopMap } from '~/types/map'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptyCapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
 
 const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
   schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
@@ -204,6 +208,15 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   }
   const sheetRepository = {
     getByRef: vi.fn((kind: SheetKind, slug: string) => sheets.get(keyForSheet(kind, slug)) ?? null),
+    list: vi.fn((kind?: SheetKind) => [...sheets.values()]
+      .filter(sheet => kind === undefined || sheet.kind === kind)
+      .map(sheet => ({
+        kind: sheet.kind,
+        slug: sheet.slug,
+        document: sheet.sheet,
+        revision: sheet.revision,
+        updatedAt: sheet.updatedAt,
+      }))),
     applyLivePlayUpdate: vi.fn((input: {
       kind: SheetKind
       slug: string
@@ -346,6 +359,198 @@ describe('live-play sheet commands', () => {
         ]),
       }),
     ]))
+  })
+
+  it('atomically shares twenty percent with the durable off-map Marsupial counterpart', async () => {
+    const pouch = {
+      motherSheetSlug: 'pikachu', babySheetSlug: 'kangaskhan-baby', experienceSharePercent: 20 as const,
+      establishedAt: 20, sourceOperationId: 'shelter-operation',
+    }
+    const harness = createHarness()
+    harness.sheets.set('pokemon:pikachu', {
+      ...pokemonSheet(),
+      sheet: {
+        ...pokemonSheet().sheet, species: 'Kangaskhan', nickname: 'Mother', level: 30,
+        capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+      },
+    })
+    harness.sheets.set('pokemon:kangaskhan-baby', {
+      kind: 'pokemon', slug: 'kangaskhan-baby', revision: 1, updatedAt: 30,
+      sheet: {
+        slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 20,
+        totalExp: 500, babyTemplate: true, revision: 1, updatedAt: 30,
+        capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+      },
+    })
+
+    const response = await execute(harness, grantExperienceCommand(), 'gm')
+
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet.totalExp).toBe(596)
+    expect(harness.sheets.get('pokemon:kangaskhan-baby')?.sheet.totalExp).toBe(524)
+    expect(response.sheetUpdates?.map(update => update.slug)).toEqual(['pikachu', 'kangaskhan-baby'])
+    expect(harness.sheetWrites).toHaveLength(2)
+  })
+
+  it('fails closed without awarding Experience when reciprocal Marsupial state is corrupt', async () => {
+    const motherPouch = {
+      motherSheetSlug: 'pikachu', babySheetSlug: 'kangaskhan-baby', experienceSharePercent: 20 as const,
+      establishedAt: 20, sourceOperationId: 'shelter-operation',
+    }
+    const harness = createHarness()
+    harness.sheets.set('pokemon:pikachu', {
+      ...pokemonSheet(),
+      sheet: {
+        ...pokemonSheet().sheet, species: 'Kangaskhan', nickname: 'Mother', level: 30,
+        capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: motherPouch },
+      },
+    })
+    harness.sheets.set('pokemon:kangaskhan-baby', {
+      kind: 'pokemon', slug: 'kangaskhan-baby', revision: 1, updatedAt: 30,
+      sheet: {
+        slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 20,
+        totalExp: 500, babyTemplate: true, revision: 1, updatedAt: 30,
+        capabilityCampaignState: {
+          ...createEmptyCapabilityCampaignState(),
+          marsupialPouch: { ...motherPouch, experienceSharePercent: 0 },
+        },
+      },
+    })
+
+    const response = await execute(harness, grantExperienceCommand({ opId: 'op_corrupt_marsupial_xp' }), 'gm')
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet.totalExp).toBe(500)
+    expect(harness.sheets.get('pokemon:kangaskhan-baby')?.sheet.totalExp).toBe(500)
+    expect(harness.sheetWrites).toEqual([])
+    expect(harness.mapWrites).toEqual([])
+  })
+
+  it('ends the durable Marsupial pouch relationship when the baby reaches Level 25', async () => {
+    const babyPlacement = {
+      id: 'baby-token', sheetKind: 'pokemon' as const, sheetSlug: 'kangaskhan-baby',
+      position: { x: 1, y: 0, z: 2 }, facing: 'south-east' as const, turned: false,
+    }
+    const pouch = {
+      motherSheetSlug: 'pikachu', babySheetSlug: 'kangaskhan-baby', experienceSharePercent: 20 as const,
+      establishedAt: 20, sourceOperationId: 'shelter-operation',
+    }
+    const encounter = createEmptyEncounterState()
+    const harness = createHarness(baseMap({
+      placements: [...baseMap().placements, babyPlacement],
+      metadata: { capabilityMarsupialPouches: [{
+        motherPlacementId: 'linked-token', babyPlacementId: 'baby-token', experienceSharePercent: 20,
+        capabilityInstanceId: 'capability:linked-token:Marsupial:base',
+      }] },
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'marsupial-link', ownerPlacementId: 'linked-token', participantPlacementIds: ['baby-token'],
+            capabilityInstanceId: 'capability:linked-token:Marsupial:base', canonicalId: 'Marsupial',
+            kind: 'marsupial-pouch', establishedAt: 20, configurationId: 'experience-share:20',
+            sourceOperationId: 'shelter-operation',
+          }],
+        },
+      },
+    }))
+    harness.sheets.set('pokemon:pikachu', {
+      ...pokemonSheet(),
+      sheet: {
+        ...pokemonSheet().sheet, species: 'Kangaskhan', nickname: 'Mother', level: 30,
+        capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+      },
+    })
+    harness.sheets.set('pokemon:kangaskhan-baby', {
+      kind: 'pokemon', slug: 'kangaskhan-baby', revision: 1, updatedAt: 30,
+      sheet: {
+        slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 24,
+        totalExp: 740, babyTemplate: true, revision: 1, updatedAt: 30,
+        capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+      },
+    })
+    const command = grantExperienceCommand({ payload: { placementId: 'linked-token', amount: 50 } })
+
+    const first = await execute(harness, command, 'gm')
+    const replay = await execute(harness, command, 'gm')
+
+    expect(first.result).toMatchObject({ ok: true, revision: 5 })
+    expect(replay.result).toEqual(first.result)
+    expect(harness.sheets.get('pokemon:kangaskhan-baby')?.sheet).toMatchObject({
+      level: 25,
+      babyTemplate: false,
+    })
+    expect(harness.sheets.get('pokemon:kangaskhan-baby')?.sheet.capabilityCampaignState?.marsupialPouch ?? null).toBeNull()
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet.capabilityCampaignState?.marsupialPouch ?? null).toBeNull()
+    expect(harness.storedMap.metadata?.capabilityMarsupialPouches).toEqual([])
+    expect(harness.storedMap.encounterState?.capabilityRuntime?.links).toEqual([])
+    expect(harness.sheetWrites).toHaveLength(2)
+  })
+
+  it('rolls back an off-map Marsupial share failure and then replays exactly once', async () => {
+    const database = openRotomDatabase({ path: ':memory:' })
+    try {
+      const mapRepository = createSqliteMapRepository<TabletopMap>(database)
+      const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
+      const pouch = {
+        motherSheetSlug: 'pikachu', babySheetSlug: 'kangaskhan-baby', experienceSharePercent: 20 as const,
+        establishedAt: 20, sourceOperationId: 'shelter-operation',
+      }
+      mapRepository.saveSetupMap(baseMap())
+      sheetRepository.saveSetupSheet('pokemon', 'pikachu', {
+        ...pokemonSheet().sheet, slug: 'pikachu', species: 'Kangaskhan', nickname: 'Mother', level: 30,
+        capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+      })
+      sheetRepository.saveSetupSheet('pokemon', 'kangaskhan-baby', {
+        slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 20,
+        totalExp: 500, babyTemplate: true, revision: 1, updatedAt: 30,
+        capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+      })
+      sheetRepository.saveSetupSheet('trainer', 'giovanni', trainerSheet().sheet)
+      const published: unknown[] = []
+      const executor = createAuthoritativeLivePlayCommandExecutor({
+        opStore: createInMemoryLivePlayOpStore(),
+        queue: createInProcessMapWriteQueue(),
+        ...acceptedRealtimeTestHooks(published),
+      })
+      const command = grantExperienceCommand({ opId: 'op_marsupial_rollback_replay' })
+      const failingRepository = {
+        ...sheetRepository,
+        applyLivePlayUpdate: (write: Parameters<typeof sheetRepository.applyLivePlayUpdate>[0]) => {
+          if (write.slug === 'kangaskhan-baby') throw new Error('baby write failed')
+          return sheetRepository.applyLivePlayUpdate(write)
+        },
+      }
+
+      const failed = await executeLivePlaySheetCommandUseCase({
+        role: 'gm', command, expectedType: LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
+      }, {
+        database, mapRepository, sheetRepository: failingRepository, commandExecutor: executor, now: () => 2_000,
+      })
+      expect(failed.result).toMatchObject({
+        ok: false, reason: 'persistence-failed', message: expect.stringContaining('baby write failed'),
+      })
+      expect(mapRepository.getBySlug('arena')).toMatchObject({ revision: 4 })
+      expect(sheetRepository.getByRef('pokemon', 'pikachu')).toMatchObject({ revision: 2, sheet: { totalExp: 500 } })
+      expect(sheetRepository.getByRef('pokemon', 'kangaskhan-baby')).toMatchObject({ revision: 1, sheet: { totalExp: 500 } })
+
+      const dependencies = {
+        database, mapRepository, sheetRepository, commandExecutor: executor, now: () => 2_000,
+      }
+      const first = await executeLivePlaySheetCommandUseCase({
+        role: 'gm', command, expectedType: LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
+      }, dependencies)
+      const replay = await executeLivePlaySheetCommandUseCase({
+        role: 'gm', command, expectedType: LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
+      }, dependencies)
+      expect(replay.result).toEqual(first.result)
+      expect(sheetRepository.getByRef('pokemon', 'pikachu')).toMatchObject({ revision: 3, sheet: { totalExp: 596 } })
+      expect(sheetRepository.getByRef('pokemon', 'kangaskhan-baby')).toMatchObject({ revision: 2, sheet: { totalExp: 524 } })
+      expect(mapRepository.getBySlug('arena')).toMatchObject({ revision: 5 })
+    }
+    finally {
+      database.close()
+    }
   })
 
   it('rejects player sheet commands for tokens outside the selected profile', async () => {

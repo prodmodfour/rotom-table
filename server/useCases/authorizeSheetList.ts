@@ -147,7 +147,7 @@ export const authorizeSheetList = (input: AuthorizeSheetListInput): AuthorizedSh
         }),
       )),
       trainerSheets: trainerSheets.map((sheet) => projectAbilityAutomationSheetForPlayer(
-        sheet,
+        redactSheetForPlayer('trainer', sheet),
         playerProfileCanAccessSheet(input.playerProfile, 'trainer', sheet.slug),
       )),
     }
@@ -157,6 +157,6 @@ export const authorizeSheetList = (input: AuthorizeSheetListInput): AuthorizedSh
     pokemonSheets: markAuthorizedPokemonSheets(pokemonSheets, input, trainerSheets)
       .map((sheet) => projectAbilityAutomationSheetForPlayer(redactSheetForPlayer('pokemon', sheet))),
     trainerSheets: markAuthorizedTrainerSheets(trainerSheets, input)
-      .map((sheet) => projectAbilityAutomationSheetForPlayer(sheet)),
+      .map((sheet) => projectAbilityAutomationSheetForPlayer(redactSheetForPlayer('trainer', sheet))),
   }
 }

@@ -65,6 +65,14 @@ import {
   isVortexEffect,
 } from './vortex'
 import { createYawnLifecycleHandler } from './yawn'
+import { createCapabilityLifecycleHandler } from './capabilityLifecycle'
+import {
+  activeMoveSemiInvulnerableEffectsForPlacement,
+  moveSemiInvulnerableStateForEffect,
+} from './semiInvulnerableEffects'
+import { CAPABILITY_BURROW_NEXT_TURN_STANDARD_FLAG_ID } from './reduceEncounterResources'
+import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
+import { reconcileCapabilityRuntimeSourceLoss } from '../capabilityAutomation/sourceLoss'
 import {
   createAuthoritativeMoveRandom,
   type AuthoritativeMoveRandomSource,
@@ -917,6 +925,29 @@ export const planEncounterLifecycle = (
   const weatherHandler = createWeatherResidualLifecycleHandler(lifecycleMap)
   const terrainHandler = createGrassyTerrainLifecycleHandler(lifecycleMap)
   const corrosiveToxinsHandler = createAa065CorrosiveToxinsLifecycleHandler(lifecycleMap)
+  const activeCapabilityModeEffectIds = new Set<string>()
+  if (events.some(event => event.kind === 'round-end')) {
+    const snapshots = loadSheets()
+    for (const mode of previousEncounterState.capabilityRuntime?.modes ?? []) {
+      if (mode.mode !== 'intangible') continue
+      const placement = lifecycleMap.placements.find(candidate => candidate.id === mode.actorPlacementId)
+      const sheet = placement?.sheetKind === 'pokemon'
+        ? snapshots.pokemonSheets.get(placement.sheetSlug)
+        : placement ? snapshots.trainerSheets.get(placement.sheetSlug) : null
+      if (!placement || !sheet) continue
+      const effective = resolveEffectiveCapabilities({
+        map: lifecycleMap,
+        placement,
+        sheet,
+        sheets: { pokemon: snapshots.pokemonSheets, trainer: snapshots.trainerSheets },
+      }).instances.some(instance => (
+        instance.instanceId === mode.capabilityInstanceId
+        && instance.canonicalId === 'Phasing'
+        && instance.effective
+      ))
+      if (effective) activeCapabilityModeEffectIds.add(mode.id)
+    }
+  }
   // Registered handlers retain caller order. Built-in encounter effects run
   // next, followed by weather and terrain; field transitions remain event-local
   // and last.
@@ -927,6 +958,7 @@ export const planEncounterLifecycle = (
       : []),
     createVortexLifecycleHandler(),
     createYawnLifecycleHandler(),
+    createCapabilityLifecycleHandler(activeCapabilityModeEffectIds),
     ...(deepSleepPlacementIds.length > 0
       ? [createAa066DeepSleepLifecycleHandler(deepSleepPlacementIds)]
       : []),
@@ -1248,7 +1280,116 @@ export const planEncounterLifecycle = (
     }
     currentEncounterState = parseEncounterState({ ...currentEncounterState, turnResources })
   }
+  const illusionUpkeepByPlacement = new Map(plannedEvents.flatMap(event => {
+    if (event.kind !== 'turn-start') return []
+    const mode = currentEncounterState.capabilityRuntime?.modes.find(candidate => (
+      candidate.actorPlacementId === event.placementId
+      && candidate.mode === 'illusion'
+      && (candidate.expiresAt === null || candidate.expiresAt > input.time)
+    ))
+    const resource = /(?:^|;)motion:major$/.test(mode?.configurationId ?? '') ? 'standard' as const
+      : /(?:^|;)motion:minor$/.test(mode?.configurationId ?? '') ? 'swift' as const : null
+    return mode && resource ? [[event.placementId, { modeId: mode.id, resource }] as const] : []
+  }))
+  if (illusionUpkeepByPlacement.size > 0) {
+    const turnResources = { ...currentEncounterState.turnResources }
+    const droppedOwners = new Set<string>()
+    for (const [placementId, upkeep] of illusionUpkeepByPlacement) {
+      const ledger = turnResources[placementId]
+      if (!ledger) {
+        droppedOwners.add(placementId)
+        continue
+      }
+      const action = ledger.actions[upkeep.resource]
+      if (action.budget !== null && action.spent >= action.budget) {
+        droppedOwners.add(placementId)
+        continue
+      }
+      turnResources[placementId] = {
+        ...ledger,
+        actions: {
+          ...ledger.actions,
+          [upkeep.resource]: { ...action, spent: action.spent + 1 },
+        },
+      }
+    }
+    currentEncounterState = parseEncounterState({
+      ...currentEncounterState,
+      turnResources,
+      capabilityRuntime: currentEncounterState.capabilityRuntime ? {
+        ...currentEncounterState.capabilityRuntime,
+        modes: currentEncounterState.capabilityRuntime.modes.filter(mode => (
+          mode.mode !== 'illusion' || !droppedOwners.has(mode.actorPlacementId)
+        )),
+      } : currentEncounterState.capabilityRuntime,
+      effects: currentEncounterState.effects.filter(effect => (
+        ![...droppedOwners].some(ownerId => effect.id === `capability.mode.${ownerId}.illusion`)
+      )),
+    })
+    if (droppedOwners.size > 0 && Array.isArray(nextMap.metadata?.capabilityIllusions)) {
+      nextMap = {
+        ...nextMap,
+        metadata: {
+          ...(nextMap.metadata ?? {}),
+          capabilityIllusions: nextMap.metadata.capabilityIllusions.filter(raw => (
+            !droppedOwners.has(String((raw as Record<string, unknown>)?.ownerPlacementId))
+          )),
+        },
+      }
+    }
+  }
+  const undergroundTurnEndIds = new Set(plannedEvents.flatMap(event => {
+    if (event.kind !== 'turn-end') return []
+    const placement = nextMap.placements.find(candidate => candidate.id === event.placementId)
+    if (!placement) return []
+    const semiInvulnerableUnderground = activeMoveSemiInvulnerableEffectsForPlacement(
+      currentEncounterState.effects,
+      placement.id,
+    ).some(effect => moveSemiInvulnerableStateForEffect(effect) === 'underground')
+    const terrainUnderground = nextMap.voxels.some(voxel => (
+      voxel.x === placement.position.x && voxel.y === placement.position.y && voxel.z === placement.position.z
+      && (voxel.tags ?? []).some(tag => tag === 'burrow' || tag === 'underground')
+    )) || placement.position.y < (nextMap.groundLevelY ?? 0)
+    return semiInvulnerableUnderground || terrainUnderground ? [placement.id] : []
+  }))
+  if (undergroundTurnEndIds.size > 0) {
+    const turnResources = { ...currentEncounterState.turnResources }
+    for (const placementId of undergroundTurnEndIds) {
+      const ledger = turnResources[placementId]
+      if (!ledger) continue
+      const standard = ledger.actions.standard
+      const full = ledger.actions.full
+      const standardAvailable = standard.budget === null
+        || standard.spent + full.spent < standard.budget
+      if (standardAvailable) {
+        turnResources[placementId] = {
+          ...ledger,
+          actions: {
+            ...ledger.actions,
+            standard: { ...standard, spent: Math.max(standard.spent, standard.budget ?? standard.spent + 1) },
+          },
+        }
+      }
+      else if (!ledger.oncePerTurnFlags.some(flag => flag.id === CAPABILITY_BURROW_NEXT_TURN_STANDARD_FLAG_ID)) {
+        turnResources[placementId] = {
+          ...ledger,
+          oncePerTurnFlags: [...ledger.oncePerTurnFlags, {
+            id: CAPABILITY_BURROW_NEXT_TURN_STANDARD_FLAG_ID,
+            sourceOperationId: `capability.burrow.upkeep:${placementId}:${ledger.round ?? 0}:${ledger.turn ?? 0}`,
+            resetOn: ['turn-start'] as const,
+          }].sort((left, right) => left.id.localeCompare(right.id)),
+        }
+      }
+    }
+    currentEncounterState = parseEncounterState({ ...currentEncounterState, turnResources })
+  }
   nextMap.encounterState = deepCloneJson(currentEncounterState)
+  const sourceLossSheets = loadSheets()
+  nextMap = reconcileCapabilityRuntimeSourceLoss({
+    map: nextMap,
+    sheets: { pokemon: sourceLossSheets.pokemonSheets, trainer: sourceLossSheets.trainerSheets },
+  })
+  currentEncounterState = parseEncounterState(nextMap.encounterState ?? currentEncounterState)
   nextMap = reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
     previousMap: input.map,
     nextMap,

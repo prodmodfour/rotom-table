@@ -18,7 +18,14 @@ export interface SheetUpdateRecord<TSheet extends Record<string, unknown> = Reco
 export const redactSheetRecordForPlayer = <TSheet extends Record<string, unknown>>(
   kind: SheetKind,
   sheet: TSheet,
-): TSheet => (kind === 'pokemon' ? redactPokemonGmFields(sheet) : sheet)
+): TSheet => {
+  const projected = { ...(kind === 'pokemon' ? redactPokemonGmFields(sheet) : sheet) }
+  // Capability operation IDs, retry clocks, and campaign internals are
+  // projected through authorized facts/offers rather than raw sheet state.
+  delete projected.capabilityUsage
+  delete projected.capabilityCampaignState
+  return projected as TSheet
+}
 
 export const redactSheetForPlayer = <TSheet extends SheetPrivacyDocument>(
   kind: SheetKind,
@@ -26,7 +33,6 @@ export const redactSheetForPlayer = <TSheet extends SheetPrivacyDocument>(
 ): TSheet => redactSheetRecordForPlayer(kind, sheet as unknown as Record<string, unknown>) as unknown as TSheet
 
 export const redactSheetUpdateForPlayer = <TUpdate extends SheetUpdateRecord>(update: TUpdate): TUpdate => {
-  if (update.kind !== 'pokemon') return update
   return {
     ...update,
     sheet: redactSheetRecordForPlayer(update.kind, update.sheet),

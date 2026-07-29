@@ -1,6 +1,10 @@
 import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
 import { AA069_FADE_AWAY_SHIFT_MARK } from '#shared/abilityAutomation/aa069'
 import { parseEncounterState } from '#shared/moveAutomation/encounterState'
+import {
+  createEncounterTurnResourceLedger,
+  parseEncounterTurnResources,
+} from '#shared/moveAutomation/encounterResources'
 import type { TabletopMap } from '~/types/map'
 import {
   planEncounterMoveResourceCosts,
@@ -113,7 +117,60 @@ export const planAuthoritativeMovementResources = (input: {
     allowLegacyFallback: false,
     markActedSinceEntry: spendAction && !fadeAwayShift && input.movement.policy.kind === 'standard',
   })
-  if (!fadeAwayShift) return planned
+  const synchronizeLivingWeaponMovement = (
+    observation: PlannedMoveResourceObservation,
+  ): PlannedMoveResourceObservation => {
+    if (input.movement.policy.kind !== 'standard') return observation
+    const companionIds = new Set(input.movement.linkedCompanionPlacementIds ?? [])
+    const livingGroup = new Set([input.movement.placementId])
+    let expanded = true
+    while (expanded) {
+      expanded = false
+      for (const link of input.map.encounterState?.capabilityRuntime?.links ?? []) {
+        if (link.kind !== 'living-weapon'
+          || !companionIds.has(link.ownerPlacementId) && link.ownerPlacementId !== input.movement.placementId
+          || !link.participantPlacementIds.some(id => companionIds.has(id) || id === input.movement.placementId)) continue
+        for (const id of [link.ownerPlacementId, ...link.participantPlacementIds]) {
+          if (!livingGroup.has(id)) {
+            livingGroup.add(id)
+            expanded = true
+          }
+        }
+      }
+    }
+    if (livingGroup.size < 2) return observation
+    const encounter = observation.currentEncounterState
+    const actorLedger = encounter.turnResources[input.movement.placementId]
+    if (!actorLedger) return observation
+    const turnResources = { ...encounter.turnResources }
+    for (const placementId of livingGroup) {
+      const ledger = turnResources[placementId] ?? createEncounterTurnResourceLedger({
+        placementId,
+        round: actorLedger.round,
+        turn: actorLedger.turn,
+      })
+      turnResources[placementId] = {
+        ...ledger,
+        movement: {
+          ...ledger.movement,
+          budget: actorLedger.movement.budget,
+          spent: actorLedger.movement.spent,
+        },
+      }
+    }
+    const currentEncounterState = parseEncounterState({
+      ...encounter,
+      turnResources: parseEncounterTurnResources(turnResources),
+    })
+    return Object.freeze({
+      ...observation,
+      currentEncounterState,
+      nextMap: { ...observation.nextMap, encounterState: currentEncounterState },
+      changed: true,
+    })
+  }
+  const synchronized = synchronizeLivingWeaponMovement(planned)
+  if (!fadeAwayShift) return synchronized
   const abilityOwnedState = fadeAwayOwnedShift
     ? reduceAbilityOwnedStateCommand(planned.currentEncounterState.abilityOwnedState, {
         operationId: `${input.sourceOperationId}:fade-away-shift`,
@@ -121,17 +178,17 @@ export const planAuthoritativeMovementResources = (input: {
         stateId: fadeAwayOwnedShift.stateId,
         expectedVersion: fadeAwayOwnedShift.version,
       }).state
-    : planned.currentEncounterState.abilityOwnedState
+    : synchronized.currentEncounterState.abilityOwnedState
   const effects = fadeAwayEffectShift
-    ? planned.currentEncounterState.effects.filter(effect => effect.id !== fadeAwayEffectShift.id)
-    : planned.currentEncounterState.effects
+    ? synchronized.currentEncounterState.effects.filter(effect => effect.id !== fadeAwayEffectShift.id)
+    : synchronized.currentEncounterState.effects
   const currentEncounterState = parseEncounterState({
-    ...planned.currentEncounterState,
+    ...synchronized.currentEncounterState,
     abilityOwnedState,
     effects,
   })
   return Object.freeze({
-    ...planned,
+    ...synchronized,
     currentEncounterState,
     nextMap: { ...planned.nextMap, encounterState: currentEncounterState },
     changed: true,

@@ -84,6 +84,12 @@ import {
   emptyAbilityClientCapabilityBundle,
   type AbilityClientCapabilityBundle,
 } from '#shared/abilityAutomation/clientCapabilities'
+import { parseResolveCapabilityAdjudicationCommand } from '#shared/capabilityAutomation/adjudications'
+import {
+  parseCapabilityActionPublicResult,
+  parseExecuteCapabilityActionCommand,
+  type CapabilityActionSelections,
+} from '#shared/capabilityAutomation/clientCommands'
 import {
   emptyEncounterPresentationProjection,
   parseEncounterActionDeclarationIntent,
@@ -2656,6 +2662,95 @@ const useOrderFromContext = (payload: { id: string; orderName?: string | null })
   void useOrder(payload)
 }
 
+const activeCapabilityAction = ref<{ readonly offer: EncounterActionOffer; readonly actionId: string } | null>(null)
+const activeCapabilityAdjudicationOffer = ref<EncounterActionOffer | null>(null)
+const capabilityParticipantChoices = computed(() => (map.value?.placements ?? []).map(placement => ({
+  id: placement.id,
+  label: livePlayTokenLabel(placement.id),
+})))
+const capabilityTrainerSlugs = computed(() => [...trainerBySlug.value.keys()].sort((left, right) => left.localeCompare(right)))
+
+const closeCapabilityActionModal = (): void => { activeCapabilityAction.value = null }
+const closeCapabilityAdjudicationModal = (): void => { activeCapabilityAdjudicationOffer.value = null }
+
+const resolveCapabilityAdjudicationOffer = (offer: EncounterActionOffer): void => {
+  if (!isGm.value || !offer.intent.actionId.startsWith('capability.adjudication:')) return
+  activeCapabilityAdjudicationOffer.value = offer
+}
+
+const submitCapabilityAdjudication = async (selection: {
+  readonly decision: 'accept' | 'reject'
+  readonly optionId: string | null
+  readonly description: string | null
+}): Promise<void> => {
+  const offer = activeCapabilityAdjudicationOffer.value
+  if (!offer) return
+  const prefix = 'capability.adjudication:'
+  const requestId = offer.intent.actionId.startsWith(prefix) ? offer.intent.actionId.slice(prefix.length) : ''
+  if (!requestId) return
+  closeCapabilityAdjudicationModal()
+  const command = parseResolveCapabilityAdjudicationCommand({
+    schemaVersion: 1,
+    operationId: `capability-adjudication:${Date.now()}:${Math.random().toString(36).slice(2, 10)}`,
+    mapSlug: offer.mapSlug,
+    baseRevision: offer.mapRevision,
+    requestId,
+    decision: selection.decision,
+    optionId: selection.optionId,
+    description: selection.description,
+  })
+  try {
+    await encounterActionApi.postJson(MAP_API_PATHS.resolveCapabilityAdjudication, { command })
+    await requestLiveTableSnapshot('Capability adjudication resolved; refreshed authoritative state.')
+  }
+  catch (error) {
+    console.warn('[map page] Capability adjudication was rejected', error)
+    await requestLiveTableSnapshot('Capability adjudication changed. Refreshed authoritative state.')
+  }
+}
+
+const executeCapabilityOffer = (offer: EncounterActionOffer): void => {
+  if (!offer.source.instanceId) return
+  const prefix = `capability.execute:${offer.source.canonicalId}:`
+  const actionId = offer.intent.actionId.startsWith(prefix) ? offer.intent.actionId.slice(prefix.length) : ''
+  if (!actionId) return
+  activeCapabilityAction.value = { offer, actionId }
+}
+
+const submitCapabilityAction = async (selections: CapabilityActionSelections): Promise<void> => {
+  const pending = activeCapabilityAction.value
+  if (!pending?.offer.source.instanceId) return
+  closeCapabilityActionModal()
+  const { offer, actionId } = pending
+  const command = parseExecuteCapabilityActionCommand({
+    schemaVersion: 1,
+    operationId: `capability:${Date.now()}:${Math.random().toString(36).slice(2, 10)}`,
+    mapSlug: offer.mapSlug,
+    baseRevision: offer.mapRevision,
+    offerId: offer.offerId,
+    actorPlacementId: offer.actor.participantId,
+    capabilityInstanceId: offer.source.instanceId,
+    canonicalId: offer.source.canonicalId,
+    actionId,
+    selections,
+  })
+  try {
+    const result = parseCapabilityActionPublicResult(await encounterActionApi.postJson(
+      MAP_API_PATHS.executeCapabilityAction,
+      {
+        command,
+        ...(isPlayer.value && selectedProfileId.value ? { profileId: selectedProfileId.value } : {}),
+      },
+    ))
+    if (result.adjudicationNote) window.alert(result.adjudicationNote)
+    await requestLiveTableSnapshot('Capability action resolved; refreshed authoritative state.')
+  }
+  catch (error) {
+    console.warn('[map page] Capability action was rejected', error)
+    await requestLiveTableSnapshot('The selected Capability action changed. Refreshed authoritative state.')
+  }
+}
+
 /** Client-local bridge from the generic offer identity to existing dispatch workflows. */
 const activateEncounterOffer = async (projectedOffer: EncounterActionOffer): Promise<void> => {
   if (projectedOffer.mapSlug !== slug || projectedOffer.mapRevision !== mapRevision.value) {
@@ -2711,6 +2806,15 @@ const activateEncounterOffer = async (projectedOffer: EncounterActionOffer): Pro
       abilityInstanceId: offer.source.instanceId,
       canonicalId: offer.source.canonicalId,
     })
+    return
+  }
+  if (offer.source.sourceKind === 'capability' && offer.intent.actionId.startsWith('capability.adjudication:')) {
+    await resolveCapabilityAdjudicationOffer(offer)
+    return
+  }
+  if (offer.source.sourceKind === 'capability' && offer.source.instanceId
+    && offer.intent.actionId.startsWith('capability.execute:')) {
+    await executeCapabilityOffer(offer)
     return
   }
   if (offer.intent.actionId === 'capture.throw') {
@@ -3121,6 +3225,25 @@ useMapDimensionReconciliation({
     </template>
 
     <template #modals>
+      <CapabilityActionModal
+        v-if="activeCapabilityAction"
+        :offer="activeCapabilityAction.offer"
+        :action-id="activeCapabilityAction.actionId"
+        :participants="capabilityParticipantChoices.filter(participant => participant.id !== activeCapabilityAction?.offer.actor.participantId)"
+        :trainer-slugs="capabilityTrainerSlugs"
+        :can-confirm-as-gm="isGm"
+        @submit="submitCapabilityAction"
+        @cancel="closeCapabilityActionModal"
+      />
+
+      <CapabilityAdjudicationModal
+        v-if="activeCapabilityAdjudicationOffer"
+        :offer="activeCapabilityAdjudicationOffer"
+        :participants="capabilityParticipantChoices.filter(participant => participant.id !== activeCapabilityAdjudicationOffer?.actor.participantId)"
+        @submit="submitCapabilityAdjudication"
+        @cancel="closeCapabilityAdjudicationModal"
+      />
+
       <StartTurnModal
         v-if="activeStartTurnModal"
         :character-name="activeStartTurnModal.characterName"

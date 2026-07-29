@@ -30,6 +30,8 @@ export const ENCOUNTER_REACTION_AVAILABLE_RESOURCE_ID = 'reaction.available' as 
 export const ENCOUNTER_MOVEMENT_RESOURCE_ID = 'movement' as const
 export const ENCOUNTER_ONCE_PER_TURN_RESOURCE_PREFIX = 'once-per-turn.' as const
 export const ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID = 'cost.exhaust.next-turn' as const
+export const CAPABILITY_BURROW_NEXT_TURN_STANDARD_FLAG_ID = 'capability.burrow.next-turn-standard' as const
+export const CAPABILITY_ALLURING_NEXT_TURN_STANDARD_FLAG_ID = 'capability.alluring.next-turn-standard' as const
 export const ENCOUNTER_EXHAUST_COMMAND_FLAG_ID = 'cost.exhaust.command' as const
 export const ENCOUNTER_PRIORITY_ADVANCED_NEXT_TURN_FLAG_ID = 'cost.priority.advanced.next-turn' as const
 /** Persists until the placement leaves, recording that its opening action has passed. */
@@ -293,6 +295,10 @@ const setTurnWindow = (
     flag.id === ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID
     || flag.id === ENCOUNTER_PRIORITY_ADVANCED_NEXT_TURN_FLAG_ID
   ))
+  const forfeitsNextStandard = previous.oncePerTurnFlags.some(flag => (
+    flag.id === CAPABILITY_BURROW_NEXT_TURN_STANDARD_FLAG_ID
+      || flag.id === CAPABILITY_ALLURING_NEXT_TURN_STANDARD_FLAG_ID
+  ))
   let ledger = resetLedger(previous, 'turn-start')
   if (ledger.setupExecute?.status === 'setting-up') {
     ledger = {
@@ -306,6 +312,7 @@ const setTurnWindow = (
   if (forfeitsNextTurn) {
     ledger = spendAction(spendAction(ledger, 'standard', 1), 'shift', 1)
   }
+  else if (forfeitsNextStandard) ledger = spendAction(ledger, 'standard', 1)
   return withLedger(resources, {
     ...ledger,
     round: event.round,
@@ -425,6 +432,10 @@ const prepareLedgerWindow = (
       flag.id === ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID
       || flag.id === ENCOUNTER_PRIORITY_ADVANCED_NEXT_TURN_FLAG_ID
     ))
+    const forfeitsNextStandard = ledger.oncePerTurnFlags.some(flag => (
+      flag.id === CAPABILITY_BURROW_NEXT_TURN_STANDARD_FLAG_ID
+        || flag.id === CAPABILITY_ALLURING_NEXT_TURN_STANDARD_FLAG_ID
+    ))
     ledger = {
       ...resetLedger(ledger, 'turn-start'),
       round: input.round ?? ledger.round,
@@ -433,6 +444,7 @@ const prepareLedgerWindow = (
     if (forfeitsNextTurn) {
       ledger = spendAction(spendAction(ledger, 'standard', 1), 'shift', 1)
     }
+    else if (forfeitsNextStandard) ledger = spendAction(ledger, 'standard', 1)
   }
   return {
     ...ledger,

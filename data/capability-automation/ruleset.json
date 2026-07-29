@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-capability-automation",
+  "canonicalSource": {
+    "path": "data/reference/capabilities.json",
+    "entryCount": 83,
+    "bytes": 42465,
+    "sha256": "8f819401d40c598ae781ae0b273fd749575e05d6997a79c64be61f4ced8f654e",
+    "gitBlob": "8d89cc293797ad9fb77d8f6f1b5840146b1e871b"
+  },
+  "parser": {
+    "path": "ptu-data/parse_capabilities.py",
+    "bytes": 7049,
+    "sha256": "a3351fb525520a6522833371f411a7449737f1c0f153a4c5f0e66a4b1bdc0bc4",
+    "gitBlob": "629345e2a03ecb9e015119415872432811bc4db6"
+  },
+  "sourcePriority": [
+    {
+      "priority": 0,
+      "path": "books/markdown/arceus_references.md",
+      "basename": "arceus_references.md",
+      "bytes": 9238,
+      "sha256": "ea178314170a31d22f0a475d897bbb07aaa23b62aa5f52d67ea6628cbba3ace5",
+      "gitBlob": "84aaf90d27e985f440da8d53bac90783431ab5bc"
+    },
+    {
+      "priority": 1,
+      "path": "books/markdown/swsh_-_armor_crown_references.md",
+      "basename": "swsh_-_armor_crown_references.md",
+      "bytes": 36820,
+      "sha256": "784d7f4a725539ce34519df0cdc7e7a0efa1a6cce386abd1aaa53ef832c4d228",
+      "gitBlob": "6c8b46b5bccec6717535ac2e96b02659fd21b862"
+    },
+    {
+      "priority": 2,
+      "path": "books/markdown/sumo_references.md",
+      "basename": "sumo_references.md",
+      "bytes": 35757,
+      "sha256": "592001dee213738438e3b7a8973637134cf5f54b49f10f3a0f4012d0e319ddc8",
+      "gitBlob": "44b2664035aa66a22362a6b374fc0bc7f6b0e6c3"
+    },
+    {
+      "priority": 3,
+      "path": "books/markdown/errata-3.md",
+      "basename": "errata-3.md",
+      "bytes": 41554,
+      "sha256": "d589c68c0b12c18de4df30b5e37351297b324d7f7fa4a8cda63cda5c7ff154b8",
+      "gitBlob": "50b579bfe17c7b322941a3460f6b698c8064dac8"
+    },
+    {
+      "priority": 4,
+      "path": "books/markdown/errata-2.md",
+      "basename": "errata-2.md",
+      "bytes": 19689,
+      "sha256": "1b8be900ac33dd8d621c7acda801ad535f0f8532142829c5409d907c081a1c70",
+      "gitBlob": "b322cbd41e3a7a48389d88cbb6a3237c5d2c6aca"
+    },
+    {
+      "priority": 5,
+      "path": "books/markdown/core/10-indices-and-reference.md",
+      "basename": "10-indices-and-reference.md",
+      "bytes": 321315,
+      "sha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "gitBlob": "75b2ba42dc83236c50fee6858d5bb4d50e931c18"
+    },
+    {
+      "priority": 6,
+      "path": "books/markdown/core/06-playing-the-game.md",
+      "basename": "06-playing-the-game.md",
+      "bytes": 24570,
+      "sha256": "612aab4863fed80ba1e1166c1861b64cae40949fbaa8f7888e7c2f74cff45f78",
+      "gitBlob": "9d8343bc54094c621f8fb97d904583cf7e5f0454"
+    },
+    {
+      "priority": 7,
+      "path": "books/markdown/core/02-character-creation.md",
+      "basename": "02-character-creation.md",
+      "bytes": 69944,
+      "sha256": "ca4e9f631b18f1a63b441eb01927426319212c780d7318d9547182817df1ac15",
+      "gitBlob": "0d70506d34879009c406760a4d59d61e30a60609"
+    }
+  ],
+  "precedencePolicy": "first parsed definition wins in listed newest-supplement-to-core order",
+  "runtimeAuthority": "data/reference/capabilities.json",
+  "reviewPolicy": {
+    "sourceDrift": "fail-closed",
+    "unknownCapability": "preserve-as-unresolved-sheet-label-and-do-not-execute",
+    "ambiguousRule": "bounded-gm-adjudication-with-structured-audit-note",
+    "clientAuthority": "none"
+  }
+}

@@ -12,6 +12,7 @@
  */
 import pokedexData from '~~/data/reference/pokedex.json'
 import { computeFullMaxHp, computeMaxHp, resolveCapabilities, resolveSkills, resolveStats, type ResolvedCapability } from '~/utils/sheets/pokemonDerived'
+import { selectedPokemonCapabilityEdges } from '#shared/capabilityAutomation/pokemonEdges'
 import { computeTrainerFullMaxHp, computeTrainerMaxHp, resolveTrainerCapabilities, resolveTrainerSkills, resolveTrainerStats, type TrainerCapabilityRow } from '~/utils/sheets/trainerDerived'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import { trainerCatalog } from '~~/data/trainerCatalog'
@@ -91,15 +92,22 @@ const movementCapabilitiesFromRows = (
   trainingFeature: unknown,
   speedCombatStage: unknown,
   otherCapabilities: readonly string[],
+  capabilityBonuses: Readonly<Partial<Record<keyof MovementCapabilitySpeeds, number>>> = {},
 ): MovementCapabilitySpeeds => {
   const capabilities: MovementCapabilitySpeeds = {}
 
   for (const row of rows) {
     const key = movementCapabilityKeyFromLabel(row.label)
     if (!key) continue
+    const bonus = capabilityBonuses[key] ?? 0
+    const baseValue = bonus > 0 && typeof row.value === 'number'
+      ? row.value + bonus
+      : bonus > 0 && typeof row.value === 'string' && Number.isFinite(Number(row.value))
+        ? Number(row.value) + bonus
+        : row.value
     const adjustedValue = adjustedSheetMovementCapabilityValue(
       row.label,
-      row.value,
+      baseValue,
       conditions,
       trainingFeature,
       speedCombatStage,
@@ -129,31 +137,33 @@ const nonNegativeInteger = (value: unknown): number => (
 
 const movementJumpFromRows = (
   rows: readonly CapabilityNumberRow[],
+  bonuses: { readonly long?: number; readonly high?: number } = {},
 ): MovementJumpCapability => {
   const combined = rows.find(row => row.label === 'Jump')?.value
   if (typeof combined === 'string') {
     const match = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(combined)
     if (match) {
       return {
-        long: Number.parseInt(match[1] ?? '0', 10),
-        high: Number.parseInt(match[2] ?? '0', 10),
+        long: Number.parseInt(match[1] ?? '0', 10) + (bonuses.long ?? 0),
+        high: Number.parseInt(match[2] ?? '0', 10) + (bonuses.high ?? 0),
       }
     }
   }
   return {
-    long: nonNegativeInteger(rows.find(row => row.label === 'Long Jump')?.value),
-    high: nonNegativeInteger(rows.find(row => row.label === 'High Jump')?.value),
+    long: nonNegativeInteger(rows.find(row => row.label === 'Long Jump')?.value) + (bonuses.long ?? 0),
+    high: nonNegativeInteger(rows.find(row => row.label === 'High Jump')?.value) + (bonuses.high ?? 0),
   }
 }
 
 const movementTraitsFromRows = (
   rows: readonly CapabilityNumberRow[],
   otherCapabilities: readonly string[],
+  jumpBonuses: { readonly long?: number; readonly high?: number } = {},
 ): MovementCapabilityTraits => ({
   phasing: otherCapabilities.some(
     capability => capability.trim().replace(/\s+/g, ' ').toLowerCase() === 'phasing',
   ),
-  jump: movementJumpFromRows(rows),
+  jump: movementJumpFromRows(rows, jumpBonuses),
 })
 
 type ResolvedPokemonSkills = ReturnType<typeof resolveSkills>
@@ -263,16 +273,28 @@ export const pokemonHpSnapshot = (
   const skillRows = resolveSkills(sheet)
   const activeTrainingFeature = normalizePokemonTrainingFeatureName(sheet.activeTrainingFeature) ?? undefined
   const accuracyRollBonus = pokemonTrainingFeatureAccuracyRollBonus(activeTrainingFeature)
+  const advancedMobility = new Set(selectedPokemonCapabilityEdges(sheet, 'Advanced Mobility')
+    .map(value => value.trim().toLocaleLowerCase('en-US')))
+  const capabilityTraining = new Set(selectedPokemonCapabilityEdges(sheet, 'Capability Training')
+    .map(value => value.trim().toLocaleLowerCase('en-US')))
   const movementCapabilities = movementCapabilitiesFromRows(
     capabilityRows,
     conditions,
     activeTrainingFeature,
     combatStages.spd,
     resolvedCapabilities.other,
+    Object.fromEntries(([
+      ['overland', 'overland'], ['sky', 'sky'], ['swim', 'swim'],
+      ['levitate', 'levitate'], ['burrow', 'burrow'],
+    ] as const).flatMap(([key, label]) => advancedMobility.has(label) ? [[key, 2]] : [])),
   )
   const movementTraits = movementTraitsFromRows(
     capabilityRows,
     resolvedCapabilities.other,
+    {
+      long: ['long jump', 'long', 'jump (long)'].some(value => capabilityTraining.has(value)) ? 1 : 0,
+      high: ['high jump', 'high', 'jump (high)'].some(value => capabilityTraining.has(value)) ? 1 : 0,
+    },
   )
   const loyalty = normalizePokemonLoyalty(sheet.loyalty)
   return {
@@ -353,9 +375,11 @@ export const trainerHpSnapshot = (
     combatStages.spd,
     resolvedCapabilities.other,
   )
+  const acrobat = (sheet.edges ?? []).some(edge => edge.name.trim().toLocaleLowerCase('en-US') === 'acrobat')
   const movementTraits = movementTraitsFromRows(
     capabilityRows,
     resolvedCapabilities.other,
+    acrobat ? { long: 1, high: 1 } : {},
   )
   return {
     currentHp,

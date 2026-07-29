@@ -40,7 +40,12 @@ import {
   ptuGridDistanceBetweenFootprints,
   ptuGridVectorDistance,
 } from '~/utils/ptuGridDistance'
-import { conditionAdjustedMovementCapability } from '~/utils/sheetConditionEffects'
+import {
+  conditionAdjustedMovementCapability,
+  conditionBlocksShiftMovement,
+  conditionSlowsMovement,
+} from '~/utils/sheetConditionEffects'
+import { projectEffectiveMovement } from '~/utils/encounterMovement'
 import {
   buildMapMovementTerrainIndex,
   movementTerrainForAnchor,
@@ -64,6 +69,31 @@ import { aa079MagnetPullConstraintViolation } from '../abilityAutomation/mechani
 import { aa082ParentalBondTetherViolation } from '../abilityAutomation/mechanics/aa082MovementIntegration'
 import { aa085to100ShadowTagPathViolation } from '../abilityAutomation/mechanics/aa085to100MovementIntegration'
 import { authoritativeEquippedItemReferences } from '../moveAutomation/itemResources'
+import { getVoxelMaterialDefinition } from '~/utils/mapMaterials'
+import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
+
+const NATUREWALK_TERRAIN_TAGS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  arctic: ['arctic', 'ice', 'snow', 'tundra'], tundra: ['arctic', 'ice', 'snow', 'tundra'],
+  beach: ['beach', 'coast', 'sand'], cave: ['cave', 'underground'], desert: ['desert', 'sand'],
+  forest: ['forest', 'woodland'], grassland: ['grassland', 'grass'], mountain: ['mountain', 'rock'],
+  ocean: ['ocean', 'water', 'deep'], urban: ['urban', 'city'], wetlands: ['wetlands', 'swamp', 'mud', 'muck'],
+})
+const naturewalkAdjustedVoxels = (
+  voxels: readonly MapVoxelV2[],
+  terrains: readonly string[],
+): readonly MapVoxelV2[] => {
+  const accepted = new Set(terrains.flatMap(terrain => {
+    const normalized = terrain.trim().toLocaleLowerCase('en-US')
+    return NATUREWALK_TERRAIN_TAGS[normalized] ?? [normalized]
+  }))
+  if (accepted.size === 0) return voxels
+  return voxels.map(voxel => {
+    const material = getVoxelMaterialDefinition(voxel)
+    const tags = new Set([...(material.tags ?? []), ...(voxel.tags ?? [])].map(tag => tag.toLocaleLowerCase('en-US')))
+    if (![...accepted].some(tag => tags.has(tag))) return voxel
+    return { ...voxel, tags: [...new Set([...(voxel.tags ?? []), 'basic-terrain'])] }
+  })
+}
 
 export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass', 'teleport'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
@@ -182,6 +212,8 @@ export interface AuthoritativeMovementSheets {
 interface ResolveMovementInputBase {
   readonly map: TabletopMap
   readonly sheets: AuthoritativeMovementSheets
+  /** Server-owned deterministic evaluation time for expiring movement modes. */
+  readonly now?: number
   /** Map-local placement identity. Geometry never comes from a client copy. */
   readonly placementId: string
 }
@@ -276,6 +308,8 @@ export interface ResolveAuthoritativeDisplacementInput extends ResolveMovementIn
   readonly vector: GridAnchor
   readonly requestedDistance: number
   readonly distancePolicy: AuthoritativeDisplacementDistancePolicy
+  /** Exact simultaneous companions excluded from occupancy, never from audit reads. */
+  readonly ignoredPlacementIds?: readonly string[]
 }
 
 export interface AuthoritativeDisplacementObstruction {
@@ -326,15 +360,19 @@ export type AuthoritativeDisplacementResult =
   | AuthoritativeDisplacementSuccess
   | AuthoritativeDisplacementFailure
 
-export const AUTHORITATIVE_RELOCATION_MODES = ['teleport', 'swap'] as const
+export const AUTHORITATIVE_RELOCATION_MODES = ['teleport', 'swap', 'separate', 'jump'] as const
 export type AuthoritativeRelocationMode = (typeof AUTHORITATIVE_RELOCATION_MODES)[number]
 
 /** Server-only endpoint relocation. Route cells and movement speeds are intentionally irrelevant. */
 export interface ResolveAuthoritativeRelocationInput extends ResolveMovementInputBase {
   readonly mode: AuthoritativeRelocationMode
   readonly destination: GridAnchor
-  /** A swap counterpart may occupy this endpoint until the atomic commit. */
+  /** Simultaneous movers may occupy both origin and endpoint until commit. */
   readonly ignoredPlacementIds?: readonly string[]
+  /** Ignored placements that co-relocate to this same destination atomically. */
+  readonly linkedCompanionPlacementIds?: readonly string[]
+  /** A separating participant may overlap only the origin before commit. */
+  readonly ignoredOriginPlacementIds?: readonly string[]
 }
 
 export interface AuthoritativeRelocationSuccess {
@@ -471,6 +509,8 @@ export interface AuthoritativeMovementSuccess {
   readonly movementProfile: EffectiveMovementProfile
   readonly footprint: AuthoritativeMovementFootprint
   readonly occupancy: AuthoritativeMovementOccupancy
+  /** Exact source-effective companions that share this movement transition. */
+  readonly linkedCompanionPlacementIds?: readonly string[]
   readonly collision: null
   readonly triggeringSteps: readonly AuthoritativeMovementTriggeringStep[]
   readonly consultedPlacementIds: readonly string[]
@@ -514,6 +554,10 @@ interface MovementPlacementSnapshot extends PositionedGridFootprint {
   readonly speciesId: string
   readonly currentHp: number
   readonly effectiveAbilityIds: readonly string[]
+  readonly effectiveCapabilityIds: readonly string[]
+  readonly effectiveCapabilityInstanceIds: readonly string[]
+  readonly equippedItemIds: readonly string[]
+  readonly naturewalkTerrains: readonly string[]
   readonly movementCapabilities: MovementCapabilitySpeeds
   readonly movementTraits: MovementCapabilityTraits
   readonly movementProfile: EffectiveMovementProfile
@@ -828,6 +872,7 @@ const buildMovementSnapshots = (
   map: TabletopMap,
   sheets: AuthoritativeMovementSheets,
   placementId: string,
+  now: number = map.updatedAt ?? 0,
 ): MovementSnapshotResult => {
   const sheetLookup: SheetLookup = {
     pokemon: new Map(sheets.pokemon),
@@ -837,6 +882,7 @@ const buildMovementSnapshots = (
   const placementIds = new Set<string>()
   const readByKey = new Map<string, AuthoritativeMovementSheetRead>()
   const consultedPlacementIds: string[] = []
+  const capabilityMovementBlockedPlacementIds = new Set<string>()
   const validSymbiosisItemBindingIds = new Set(map.placements.flatMap((placement) => {
     const sheet = sheetForPlacement(placement, sheets)
     return sheet
@@ -896,13 +942,17 @@ const buildMovementSnapshots = (
     }
 
     let token: ReturnType<typeof placementToSpawned>
+    let nativeToken: ReturnType<typeof placementToSpawned> = null
     const effectiveAbilityIds = effectiveRuntimeAbilityIds({ map, placement, sheet })
     try {
-      const nativeToken = placementToSpawned(
+      nativeToken = placementToSpawned(
         placement,
         sheetLookup,
         map,
-        { skipAa077NativeProjection: true },
+        {
+          skipAa077NativeProjection: true,
+          deferEncounterMovementProjection: true,
+        },
       )
       const aa077Token = nativeToken ? aa077AdjustedToken({
         token: nativeToken,
@@ -942,6 +992,82 @@ const buildMovementSnapshots = (
       }
     }
 
+    if (placement.sheetKind === 'pokemon'
+      && ((sheet as CharacterSheet).babyTemplate === true || (sheet as CharacterSheet).letterPressCombinedInto)) {
+      capabilityMovementBlockedPlacementIds.add(placement.id)
+    }
+    const effectiveCapabilities = resolveEffectiveCapabilities({
+      map,
+      placement,
+      sheet,
+      sheets: { pokemon: sheets.pokemon, trainer: sheets.trainer },
+    })
+    const activeModes = (map.encounterState?.capabilityRuntime?.modes ?? []).filter(mode => (
+      mode.actorPlacementId === placement.id
+      && (mode.expiresAt === null || mode.expiresAt > now)
+      && effectiveCapabilities.instances.some(instance => (
+        instance.instanceId === mode.capabilityInstanceId
+        && instance.canonicalId === mode.canonicalId
+        && instance.effective
+      ))
+    ))
+    const intangible = activeModes.some(mode => mode.mode === 'intangible')
+    const amorphous = effectiveCapabilities.instances.some(instance => instance.effective && instance.canonicalId === 'Amorphous')
+      && !activeModes.some(mode => mode.mode === 'inflated')
+    const sizeScale = activeModes.some(mode => mode.mode === 'inflated') ? 1.25
+      : activeModes.some(mode => mode.mode === 'shrunken') ? 0.25 : 1
+    const base = amorphous ? 1 : Math.max(1, Math.ceil(token.base * sizeScale))
+    const clearance = amorphous || activeModes.some(mode => mode.mode === 'shadow-melded')
+      ? 1
+      : Math.max(1, Math.ceil(getClearanceValue(token) * sizeScale))
+    let movementBaseSpeeds = { ...(token.movementCapabilities ?? {}) }
+    // AA-projected Slowed is introduced after the spawn base. Apply that new
+    // condition once before generic encounter movement overlays.
+    if (conditionSlowsMovement(token.conditions)
+      && (token.transformation !== undefined || !conditionSlowsMovement(nativeToken?.conditions))) {
+      movementBaseSpeeds = Object.fromEntries(Object.entries(movementBaseSpeeds).map(([key, value]) => [
+        key,
+        conditionAdjustedMovementCapability(key, value, ['Slowed']),
+      ])) as MovementCapabilitySpeeds
+    }
+    let movement = projectEffectiveMovement({
+      sheetCapabilities: movementBaseSpeeds,
+      sheetTraits: token.movementTraits,
+      sheetConditions: token.conditions,
+      encounterEffects: map.encounterState?.effects,
+      target: {
+        placementId: placement.id,
+        ...(placement.sideId === undefined ? {} : { sideId: placement.sideId }),
+        position: placement.position,
+        base,
+        clearance,
+      },
+    })
+    // A later grant/set is not allowed to bypass effective Shift blockers.
+    // Retain owned keys at zero so blocking is distinct from suppression.
+    if (conditionBlocksShiftMovement(token.conditions)) {
+      const blockedSpeeds = Object.fromEntries(Object.entries(movement.speeds).map(([key, value]) => [
+        key,
+        ([...SHIFT_MOVEMENT_CAPABILITY_KEYS, 'teleporter'] as readonly string[]).includes(key)
+          && value !== undefined ? 0 : value,
+      ])) as MovementCapabilitySpeeds
+      const synchronized = projectEffectiveMovement({
+        sheetCapabilities: blockedSpeeds,
+        sheetTraits: movement.traits,
+        sheetConditions: token.conditions,
+        encounterEffects: [],
+        target: { placementId: placement.id },
+      })
+      movement = {
+        ...synchronized,
+        state: movement.state,
+        sourceEffectIds: movement.sourceEffectIds,
+      }
+    }
+    const movementCapabilities = { ...movement.speeds }
+    const jump = { ...movement.traits.jump }
+    const phasing = movement.traits.phasing
+
     placements.push({
       id: placement.id,
       sheetKind: placement.sheetKind,
@@ -951,16 +1077,42 @@ const buildMovementSnapshots = (
       speciesId: token.species.trim().toLowerCase(),
       currentHp: token.currentHp,
       effectiveAbilityIds,
+      effectiveCapabilityIds: effectiveCapabilities.instances.filter(instance => instance.effective).map(instance => instance.canonicalId),
+      effectiveCapabilityInstanceIds: effectiveCapabilities.instances.filter(instance => instance.effective).map(instance => instance.instanceId),
+      equippedItemIds: authoritativeEquippedItemReferences(placement, sheet).map(reference => reference.canonicalItemId),
+      naturewalkTerrains: effectiveCapabilities.instances.flatMap(instance => (
+        instance.effective && instance.canonicalId === 'Naturewalk' && instance.parameters.kind === 'terrains'
+          ? [...instance.parameters.terrains] : []
+      )),
       position: cloneAnchor(placement.position),
-      base: token.base,
-      clearance: getClearanceValue(token),
-      movementCapabilities: { ...(token.movementCapabilities ?? {}) },
+      base,
+      clearance,
+      movementCapabilities,
       movementTraits: {
-        phasing: token.movementTraits.phasing,
-        jump: { ...token.movementTraits.jump },
+        phasing,
+        intangible,
+        jump,
       },
-      movementProfile: token.movementProfile,
+      movementProfile: {
+        ...movement,
+        speeds: movementCapabilities,
+        traits: { ...movement.traits, phasing, intangible, jump },
+        ...(activeModes.some(mode => mode.mode === 'inside-machine') ? {
+          state: { ...movement.state, semiInvulnerable: 'carried' },
+        } : {}),
+      },
     })
+  }
+
+  for (const [index, placement] of placements.entries()) {
+    if (!capabilityMovementBlockedPlacementIds.has(placement.id)) continue
+    placements[index] = {
+      ...placement,
+      movementProfile: {
+        ...placement.movementProfile,
+        state: { ...placement.movementProfile.state, semiInvulnerable: 'carried' },
+      },
+    }
   }
 
   const arenaTrapMarks = (map.encounterState?.abilityOwnedState?.entries ?? []).filter(entry => (
@@ -987,6 +1139,53 @@ const buildMovementSnapshots = (
       ...target,
       movementCapabilities,
       movementProfile: { ...target.movementProfile, speeds: movementCapabilities },
+    }
+  }
+
+  for (const link of map.encounterState?.capabilityRuntime?.links ?? []) {
+    const ownerIndex = placements.findIndex(placement => placement.id === link.ownerPlacementId)
+    if (ownerIndex < 0 || !placements[ownerIndex]!.effectiveCapabilityInstanceIds.includes(link.capabilityInstanceId)) continue
+    const participantIndexes = link.participantPlacementIds
+      .map(id => placements.findIndex(placement => placement.id === id))
+      .filter(index => index >= 0)
+    if ((link.kind === 'as-one-mount' || link.kind === 'viral-fusion') && participantIndexes.length === 1) {
+      const owner = placements[ownerIndex]!
+      const participant = placements[participantIndexes[0]!]!
+      placements[ownerIndex] = {
+        ...owner,
+        ...(link.kind === 'as-one-mount' ? { base: participant.base, clearance: participant.clearance } : {}),
+        movementCapabilities: { ...participant.movementCapabilities },
+        movementTraits: { ...participant.movementTraits, jump: { ...participant.movementTraits.jump } },
+        movementProfile: {
+          ...owner.movementProfile,
+          speeds: { ...participant.movementCapabilities },
+          traits: { ...participant.movementTraits, jump: { ...participant.movementTraits.jump } },
+        },
+      }
+    }
+    if (link.kind === 'living-weapon' && participantIndexes.length === 1) {
+      const owner = placements[ownerIndex]!
+      const wielder = placements[participantIndexes[0]!]!
+      placements[ownerIndex] = {
+        ...owner,
+        movementCapabilities: { ...wielder.movementCapabilities },
+        movementProfile: {
+          ...owner.movementProfile,
+          speeds: { ...wielder.movementCapabilities },
+        },
+      }
+    }
+    if (link.kind === 'as-one-mount' || link.kind === 'viral-fusion' || link.kind === 'mount-rider') {
+      for (const participantIndex of participantIndexes) {
+        const participant = placements[participantIndex]!
+        placements[participantIndex] = {
+          ...participant,
+          movementProfile: {
+            ...participant.movementProfile,
+            state: { ...participant.movementProfile.state, semiInvulnerable: 'carried' },
+          },
+        }
+      }
     }
   }
 
@@ -1536,7 +1735,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     })
   }
 
-  const snapshotResult = buildMovementSnapshots(input.map, input.sheets, placementId)
+  const snapshotResult = buildMovementSnapshots(input.map, input.sheets, placementId, input.now)
   if (!snapshotResult.ok) {
     return failure({
       reasonCode: snapshotResult.reasonCode,
@@ -1553,12 +1752,58 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   const gravity = gravityResolverForMap(input.map)
   const snapshots = projectGravityMovementSnapshots(snapshotResult, gravity)
   const { mover, placements, sheetReads } = snapshots
+  const linkedCompanionIds = new Set<string>()
+  const linkedMovementGroup = new Set([placementId])
+  const links = input.map.encounterState?.capabilityRuntime?.links ?? []
+  let expanded = true
+  while (expanded) {
+    expanded = false
+    for (const link of links) {
+      const owner = placements.find(candidate => candidate.id === link.ownerPlacementId)
+      if (!owner?.effectiveCapabilityInstanceIds.includes(link.capabilityInstanceId)) continue
+      const add = (id: string): void => {
+        if (linkedMovementGroup.has(id)) return
+        linkedMovementGroup.add(id)
+        expanded = true
+      }
+      if (link.kind === 'living-weapon'
+        && (linkedMovementGroup.has(link.ownerPlacementId)
+          || link.participantPlacementIds.some(id => linkedMovementGroup.has(id)))) {
+        add(link.ownerPlacementId)
+        link.participantPlacementIds.forEach(add)
+      }
+      else if (link.kind === 'shadow-rider'
+        && link.participantPlacementIds.some(id => linkedMovementGroup.has(id))) {
+        add(link.ownerPlacementId)
+      }
+      else if (['as-one-mount', 'viral-fusion', 'mount-rider', 'marsupial-pouch'].includes(link.kind)
+        && linkedMovementGroup.has(link.ownerPlacementId)) {
+        link.participantPlacementIds.forEach(add)
+      }
+    }
+  }
+  if (mover.effectiveCapabilityIds.includes('Marsupial')
+    && Array.isArray(input.map.metadata?.capabilityMarsupialPouches)) {
+    for (const raw of input.map.metadata.capabilityMarsupialPouches) {
+      const pouch = raw as Record<string, unknown>
+      if (pouch?.motherPlacementId === placementId && typeof pouch.babyPlacementId === 'string'
+        && placements.some(candidate => candidate.id === pouch.babyPlacementId)) {
+        linkedMovementGroup.add(pouch.babyPlacementId)
+      }
+    }
+  }
+  linkedMovementGroup.delete(placementId)
+  linkedMovementGroup.forEach(id => linkedCompanionIds.add(id))
+  const collisionPlacements = placements.filter(placement => !linkedCompanionIds.has(placement.id))
+  const withLinkedCompanions = (result: AuthoritativeMovementResult): AuthoritativeMovementResult => result.ok
+    ? deepFreeze({ ...result, linkedCompanionPlacementIds: [...linkedCompanionIds] })
+    : result
   const origin = cloneAnchor(mover.position)
   const footprint: AuthoritativeMovementFootprint = {
     base: mover.base,
     clearance: getClearanceValue(mover),
   }
-  const requestedOccupancy = destination ? occupancyFor(mover, destination, placements) : null
+  const requestedOccupancy = destination ? occupancyFor(mover, destination, collisionPlacements) : null
   const consultedPlacementIds = placements.map(placement => placement.id)
   const capabilities = resolvedCapabilities(mover, [])
   if (mover.movementProfile.state.semiInvulnerable !== 'none') {
@@ -1580,7 +1825,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   }
   const terrainIndex = withBattlefieldZoneMovementTerrain({
     map: input.map,
-    terrain: buildMapMovementTerrainIndex(input.map.voxels),
+    terrain: buildMapMovementTerrainIndex(naturewalkAdjustedVoxels(input.map.voxels, mover.naturewalkTerrains)),
     subject: {
       placementId: mover.id,
       sideId: mover.sideId,
@@ -1611,7 +1856,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     })
   }
 
-  const originCollision = collisionAt(origin, mover, placements, terrainIndex, groundLevelY)
+  const originCollision = collisionAt(origin, mover, collisionPlacements, terrainIndex, groundLevelY)
   if (originCollision) {
     const terrainOnly = originCollision.kind === 'terrain'
     return failure({
@@ -1640,7 +1885,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       placementId,
       policy,
       mover,
-      placements,
+      placements: collisionPlacements,
       origin,
       footprint,
       terrainIndex,
@@ -1648,7 +1893,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       consultedPlacementIds,
       sheetReads,
     })
-    return enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements })
+    return withLinkedCompanions(enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements }))
   }
 
   // The mode-specific validation above already rejected this case. Keep the
@@ -1689,9 +1934,9 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       sheetReads,
     })
   }
-  const endpointPlacements = rawMode === 'teleport' && ignoredPlacementIds.size > 0
-    ? placements.filter(placement => !ignoredPlacementIds.has(placement.id))
-    : placements
+  const endpointPlacements = collisionPlacements.filter(placement => (
+    !(rawMode === 'teleport' && ignoredPlacementIds.has(placement.id))
+  ))
   const occupancy = occupancyFor(mover, destination, endpointPlacements)
 
   if (sameAnchor(origin, destination) && !policy.allowSamePosition) {
@@ -1730,7 +1975,8 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   }
 
   const destinationCollision = collisionAt(destination, mover, endpointPlacements, terrainIndex, groundLevelY)
-  if (destinationCollision) {
+  const intangibleTraversal = rawMode === 'shift' && mover.movementTraits.intangible === true
+  if (destinationCollision && !(intangibleTraversal && destinationCollision.kind === 'terrain')) {
     const reasonCode = destinationCollision.kind === 'placement'
       ? 'movement-destination-occupied'
       : destinationCollision.kind === 'terrain'
@@ -1794,7 +2040,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       consultedPlacementIds,
       sheetReads: sheetReads.map(read => ({ ...read })),
     })
-    return enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements })
+    return withLinkedCompanions(enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements }))
   }
 
   const sourcePlacement = input.map.placements.find(placement => placement.id === placementId)
@@ -1814,7 +2060,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     pokemon: mover,
     start: origin,
     goal: destination,
-    pokemons: placements,
+    pokemons: intangibleTraversal ? [] : endpointPlacements,
     dimensions: input.map.dimensions,
     exceptId: mover.id,
     terrainIndex,
@@ -1828,7 +2074,19 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     ...(policy.kind === 'gm-override' ? { costLimit: policy.maximumCost } : {}),
   })
   const pathCapabilities = resolvedCapabilities(mover, pathResult.capabilityKeys)
-  const capabilityLimit = pathResult.movementLimit
+  const snowBootsPenalty = mover.equippedItemIds.includes('snow-boots')
+    && pathResult.capabilityKeys.includes('overland')
+    && (pathResult.path ?? []).some(anchor => input.map.voxels.some((voxel) => {
+      if (voxel.x < anchor.x || voxel.x >= anchor.x + mover.base
+        || voxel.z < anchor.z || voxel.z >= anchor.z + mover.base
+        || Math.abs(voxel.y - anchor.y) > 1) return false
+      const material = getVoxelMaterialDefinition(voxel)
+      return [...(voxel.tags ?? []), ...(material.tags ?? []), voxel.materialId]
+        .some(tag => /^(?:ice|snow|deep[- ]snow)$/i.test(tag.trim()))
+    }))
+  const capabilityLimit = pathResult.movementLimit === null
+    ? null
+    : Math.max(0, pathResult.movementLimit - (snowBootsPenalty ? 1 : 0))
   const resolvedEffectiveLimit = capabilityLimit === null
     ? null
     : effectiveLimit(capabilityLimit, policy)
@@ -1949,7 +2207,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     consultedPlacementIds,
     sheetReads: sheetReads.map(read => ({ ...read })),
   })
-  return enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements })
+  return withLinkedCompanions(enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements }))
 }
 
 const DISPLACEMENT_MOVEMENT_MODE_SET = new Set<string>(
@@ -2192,7 +2450,7 @@ export const resolveAuthoritativeDisplacement = (
       distancePolicy,
     })
   }
-  const snapshotResult = buildMovementSnapshots(input.map, input.sheets, placementId)
+  const snapshotResult = buildMovementSnapshots(input.map, input.sheets, placementId, input.now)
   if (!snapshotResult.ok) {
     return displacementFailure({
       reasonCode: displacementSnapshotFailureCode(snapshotResult.reasonCode),
@@ -2214,9 +2472,18 @@ export const resolveAuthoritativeDisplacement = (
   const { mover, placements, sheetReads } = snapshots
   const origin = cloneAnchor(mover.position)
   const consultedPlacementIds = placements.map(placement => placement.id)
+  const ignored = new Set(input.ignoredPlacementIds ?? [])
+  if (ignored.has(placementId) || [...ignored].some(id => !consultedPlacementIds.includes(id))) {
+    return displacementFailure({
+      reasonCode: 'displacement-policy-invalid',
+      message: 'Displacement ignored-placement identities must name other authoritative placements.',
+      placementId, movementMode, distancePolicy, consultedPlacementIds, sheetReads,
+    })
+  }
+  const collisionPlacements = placements.filter(placement => !ignored.has(placement.id))
   const terrainIndex = withBattlefieldZoneMovementTerrain({
     map: input.map,
-    terrain: buildMapMovementTerrainIndex(input.map.voxels),
+    terrain: buildMapMovementTerrainIndex(naturewalkAdjustedVoxels(input.map.voxels, mover.naturewalkTerrains)),
     subject: {
       placementId: mover.id,
       sideId: mover.sideId,
@@ -2242,7 +2509,7 @@ export const resolveAuthoritativeDisplacement = (
   const originCollision = collisionAt(
     origin,
     mover,
-    placements,
+    collisionPlacements,
     terrainIndex,
     groundLevelY,
   )
@@ -2282,7 +2549,7 @@ export const resolveAuthoritativeDisplacement = (
     const collision = collisionAt(
       candidate.anchor,
       mover,
-      placements,
+      collisionPlacements,
       terrainIndex,
       groundLevelY,
     )
@@ -2304,7 +2571,7 @@ export const resolveAuthoritativeDisplacement = (
       pokemon: mover,
       start: previous,
       goal: candidate.anchor,
-      pokemons: placements,
+      pokemons: collisionPlacements,
       dimensions: input.map.dimensions,
       exceptId: mover.id,
       terrainIndex,
@@ -2436,7 +2703,7 @@ export const resolveAuthoritativeDisplacement = (
     })
   }
   const triggeringSteps = pathSteps.map(step => (
-    triggeringStep(step, mover, placements, pathSteps.length)
+    triggeringStep(step, mover, collisionPlacements, pathSteps.length)
   ))
   return deepFreeze({
     ok: true,
@@ -2496,7 +2763,7 @@ export const resolveAuthoritativeRelocation = (
   const raw = input as ResolveAuthoritativeRelocationInput & Record<string, unknown>
   const placementId = typeof raw.placementId === 'string' ? raw.placementId : String(raw.placementId)
   const mode = typeof raw.mode === 'string' ? raw.mode : String(raw.mode)
-  if (mode !== 'teleport' && mode !== 'swap') {
+  if (mode !== 'teleport' && mode !== 'swap' && mode !== 'separate' && mode !== 'jump') {
     return relocationFailure({
       reasonCode: 'relocation-mode-unsupported', message: `Relocation mode ${mode} is unsupported.`,
       placementId, mode,
@@ -2512,7 +2779,7 @@ export const resolveAuthoritativeRelocation = (
   if (invalidMap) {
     return relocationFailure({ reasonCode: 'relocation-map-invalid', message: invalidMap, placementId, mode })
   }
-  const snapshotsResult = buildMovementSnapshots(input.map, input.sheets, placementId)
+  const snapshotsResult = buildMovementSnapshots(input.map, input.sheets, placementId, input.now)
   if (!snapshotsResult.ok) {
     return relocationFailure({
       reasonCode: relocationSnapshotFailureCode(snapshotsResult.reasonCode),
@@ -2530,7 +2797,11 @@ export const resolveAuthoritativeRelocation = (
   const destination = cloneAnchor(raw.destination)
   const consultedPlacementIds = snapshots.placements.map(placement => placement.id)
   const ignored = new Set(input.ignoredPlacementIds ?? [])
-  if (ignored.has(placementId) || [...ignored].some(id => !consultedPlacementIds.includes(id))) {
+  const linkedCompanions = new Set(input.linkedCompanionPlacementIds ?? [])
+  const ignoredOrigin = new Set(input.ignoredOriginPlacementIds ?? [])
+  if (ignored.has(placementId) || linkedCompanions.has(placementId) || ignoredOrigin.has(placementId)
+    || [...ignored, ...ignoredOrigin, ...linkedCompanions].some(id => !consultedPlacementIds.includes(id))
+    || [...linkedCompanions].some(id => !ignored.has(id))) {
     return relocationFailure({
       reasonCode: 'relocation-destination-invalid',
       message: 'Relocation ignored-placement identities must name other authoritative placements.',
@@ -2539,7 +2810,7 @@ export const resolveAuthoritativeRelocation = (
   }
   const terrainIndex = withBattlefieldZoneMovementTerrain({
     map: input.map,
-    terrain: buildMapMovementTerrainIndex(input.map.voxels),
+    terrain: buildMapMovementTerrainIndex(naturewalkAdjustedVoxels(input.map.voxels, mover.naturewalkTerrains)),
     subject: {
       placementId: mover.id, sideId: mover.sideId,
       grounding: mover.movementProfile.state.grounding, typeIds: mover.typeIds,
@@ -2552,7 +2823,9 @@ export const resolveAuthoritativeRelocation = (
       placementId, mode, origin, destination, consultedPlacementIds, sheetReads,
     })
   }
-  const originCollision = collisionAt(origin, mover, snapshots.placements, terrainIndex, groundLevelY)
+  const collisionPlacements = snapshots.placements.filter(placement => !ignored.has(placement.id))
+  const originCollisionPlacements = collisionPlacements.filter(placement => !ignoredOrigin.has(placement.id))
+  const originCollision = collisionAt(origin, mover, originCollisionPlacements, terrainIndex, groundLevelY)
   if (originCollision) {
     return relocationFailure({
       reasonCode: 'relocation-origin-collision', message: 'Relocation origin intersects authoritative occupancy.',
@@ -2579,7 +2852,7 @@ export const resolveAuthoritativeRelocation = (
   const collision = collisionAt(
     destination,
     mover,
-    snapshots.placements.filter(placement => !ignored.has(placement.id)),
+    collisionPlacements,
     terrainIndex,
     groundLevelY,
   )
@@ -2589,7 +2862,37 @@ export const resolveAuthoritativeRelocation = (
       placementId, mode, origin, destination, collision, consultedPlacementIds, sheetReads,
     })
   }
-  const distance = ptuGridDistanceBetweenFootprints(mover, { ...mover, position: destination })
+  const movingGroupIds = new Set([placementId, ...linkedCompanions])
+  const externalPlacements = snapshots.placements.filter(candidate => !movingGroupIds.has(candidate.id))
+  for (const companionId of linkedCompanions) {
+    const companion = snapshots.placements.find(candidate => candidate.id === companionId)!
+    if (!isAnchorWithinBounds(destination, companion, input.map.dimensions)) {
+      return relocationFailure({
+        reasonCode: 'relocation-destination-out-of-bounds',
+        message: `Linked relocation companion ${companionId} would leave map bounds.`,
+        placementId, mode, origin, destination, collision: boundsCollision(destination), consultedPlacementIds, sheetReads,
+      })
+    }
+    const companionCollision = collisionAt(
+      destination,
+      companion,
+      externalPlacements,
+      terrainIndex,
+      groundLevelY,
+    )
+    if (companionCollision) {
+      return relocationFailure({
+        reasonCode: 'relocation-destination-occupied',
+        message: `Linked relocation companion ${companionId} intersects authoritative occupancy.`,
+        placementId, mode, origin, destination, collision: companionCollision, consultedPlacementIds, sheetReads,
+      })
+    }
+  }
+  const distance = ptuGridVectorDistance({
+    x: destination.x - origin.x,
+    y: destination.y - origin.y,
+    z: destination.z - origin.z,
+  })
   const same = sameAnchor(origin, destination)
   const terrain = displacementTerrain({ anchor: destination, mover, terrainIndex, groundLevelY })
   const step: MovementPathStep | null = same ? null : {

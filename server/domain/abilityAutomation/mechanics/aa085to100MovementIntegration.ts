@@ -16,9 +16,9 @@ export const recordAa085to100MovementEvidence = (input: {
   readonly placementId: string
   readonly operationId: string
   readonly path: readonly GridAnchor[]
-  readonly mode: 'voluntary' | 'forced' | 'teleport'
+  readonly mode: 'voluntary' | 'jump' | 'forced' | 'teleport'
 }): EncounterState => {
-  if (input.mode !== 'voluntary' || input.path.length < 2) return input.encounterState
+  if ((input.mode !== 'voluntary' && input.mode !== 'jump') || input.path.length < 2) return input.encounterState
   const origin = input.path[0]!
   if (input.path.every(step => distance(origin, step) === 0)) return input.encounterState
   const currentTurn = input.encounterState.history.currentTurn
@@ -30,7 +30,7 @@ export const recordAa085to100MovementEvidence = (input: {
     kind: 'capability',
     source: {
       operationId: input.operationId,
-      moveId: 'movement.shift',
+      moveId: input.mode === 'jump' ? 'capability.jump' : 'movement.shift',
       placementId: input.placementId,
     },
     affected: {
@@ -45,8 +45,8 @@ export const recordAa085to100MovementEvidence = (input: {
     charges: null,
     stackPolicy: { kind: 'replace', maxStacks: null },
     chargePolicy: { kind: 'none', amount: null },
-    tags: ['ability', 'aa085to100-movement-evidence', 'movement-mode:voluntary'],
-    payload: { capabilityId: 'aa085to100.movement.voluntary-route', action: 'grant' },
+    tags: ['ability', 'aa085to100-movement-evidence', `movement-mode:${input.mode}`],
+    payload: { capabilityId: `aa085to100.movement.${input.mode}-route`, action: 'grant' },
     dispel: { policy: 'matching-tags', tags: ['aa085to100-movement-evidence'] },
     transferPolicy: 'expire',
     suppression: { sources: [] },

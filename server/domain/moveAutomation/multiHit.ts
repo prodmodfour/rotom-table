@@ -51,6 +51,7 @@ import {
   type MoveSpecDamageCalculation,
 } from './damageStats'
 import type { MoveStateChangePlan } from './plan'
+import type { CharacterSheet } from '~/types/characterSheet'
 import { reduceCombatStageEffectForRecipient } from './reducers/combatStage'
 import { reduceConditionEffectForRecipient } from './reducers/condition'
 import {
@@ -88,7 +89,10 @@ import {
   aa076TargetWithoutLegacyIlluminate,
   aa076TokenWithEffectiveKeenEye,
 } from '../abilityAutomation/mechanics/aa076StaticIntegration'
-import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
+import {
+  applyEncounterNumericModifiers,
+  capabilityContextualTargetEvasionBonus,
+} from './encounterNumericModifiers'
 import { createMoveAutomationWeatherResolver } from './weather'
 import { aa085to100TokenTerrainTags } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 import type {
@@ -546,7 +550,29 @@ const rollAccuracy = (options: {
     map: options.context.map,
     placementId: options.target.id,
     attribute: 'evasion',
-    baseValue: baseTargetEvasion,
+    now: options.context.time,
+    isCapabilityEffective: canonicalId => options.context.queries.creatureRules.hasCapability(options.target.id, canonicalId),
+    isCapabilityInstanceEffective: (instanceId, canonicalId) => options.context.queries.creatureRules
+      .hasCapabilityInstance(options.target.id, instanceId, canonicalId),
+    baseValue: baseTargetEvasion + capabilityContextualTargetEvasionBonus({
+      map: options.context.map,
+      placementId: options.target.id,
+      range: options.script.range,
+      now: options.context.time,
+      isCapabilityEffective: canonicalId => options.context.queries.creatureRules.hasCapability(options.target.id, canonicalId),
+      isCapabilityInstanceEffective: (instanceId, canonicalId) => options.context.queries.creatureRules
+        .hasCapabilityInstance(options.target.id, instanceId, canonicalId),
+      hasCapabilityForPlacement: (placementId, canonicalId) => options.context.queries.creatureRules.hasCapability(placementId, canonicalId),
+      hasCapabilityInstanceForPlacement: (placementId, instanceId, canonicalId) => options.context.queries.creatureRules
+        .hasCapabilityInstance(placementId, instanceId, canonicalId),
+      speciesForPlacement: (placementId) => {
+        const placement = options.context.queries.placements.get(placementId)
+        const resolved = placement ? options.context.queries.sheets.forPlacement(placement) : null
+        return placement?.sheetKind === 'pokemon'
+          ? (resolved?.sheet as CharacterSheet | undefined)?.species ?? null
+          : options.context.queries.tokens.get(placementId)?.species ?? null
+      },
+    }),
     changePolicy: keenEye ? 'non-increasing' : 'all',
     ...(options.context.queries.abilities.has(options.target.id, 'White Smoke') ? {
       protectedFromExternalDecreasesPlacementId: options.target.id,

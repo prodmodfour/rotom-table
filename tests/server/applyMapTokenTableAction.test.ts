@@ -93,6 +93,7 @@ const createDeps = (options: {
   sheets?: Record<string, CharacterSheet | TrainerSheet>
   now?: number
   idFactory?: () => string
+  rollDie?: (label: string, sides: number) => number
 } = {}) => {
   const root = mkdtempSync(join(tmpdir(), 'rotom-table-actions-'))
   tempRoots.push(root)
@@ -134,6 +135,7 @@ const createDeps = (options: {
       database,
       now: vi.fn(() => options.now ?? 5000),
       idFactory: options.idFactory,
+      rollDie: options.rollDie,
       publishRealtimeEvent: vi.fn((event) => events.push(event)),
       relativePath: vi.fn((path: string) => path.replace(/.*data\//, 'data/')),
     },
@@ -280,6 +282,74 @@ describe('live-play map token table action commands', () => {
     ])
     expect(events).toHaveLength(1)
     expect(events[0]).toMatchObject({ channel: 'map:arena', type: 'live-play-command-accepted' })
+  })
+
+  it('resolves Wielder Disarm rolls, action spend, item custody, and ground placement atomically', async () => {
+    const encounter = createEmptyEncounterState()
+    const map = baseMap({
+      placements: [
+        { id: 'actor', sheetKind: 'pokemon', sheetSlug: 'sandile', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target', sheetKind: 'pokemon', sheetSlug: 'target', position: { x: 1, y: 0, z: 0 } },
+      ],
+      initiative: { activeId: 'actor', round: 2 },
+      encounterState: {
+        ...encounter,
+        history: {
+          ...encounter.history,
+          currentRound: 2,
+          currentTurn: { round: 2, turn: 1, placementId: 'actor' },
+        },
+        turnResources: {
+          actor: createEncounterTurnResourceLedger({ placementId: 'actor', round: 2, turn: 1 }),
+        },
+      },
+    })
+    const { deps, mapRepository, sheetRepository } = createDeps({
+      map,
+      sheets: {
+        'pokemon:sandile': pokemonSheet({
+          capabilities: { other: ['Wielder'] },
+          skills: { combat: '4d6', stealth: '2d6' },
+        }),
+        'pokemon:target': pokemonSheet({
+          slug: 'target', nickname: 'Target', species: 'Pikachu', abilities: [],
+          skills: { combat: '2d6', stealth: '2d6' },
+          items: { held: 'Honed Claws' },
+        }),
+      },
+      now: 2111,
+      rollDie: (label, sides) => label.startsWith('disarm.accuracy')
+        ? sides
+        : label.startsWith('disarm.actor-') ? sides : 1,
+    })
+    const response = await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
+      command: command(
+        LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+        'op_disarm_wielder1',
+        { placementId: 'actor', maneuverName: 'Disarm', targetPlacementId: 'target' },
+        [tokenActionScope('actor'), metadataScope, {
+          kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'target', field: 'equipment',
+        }],
+      ),
+    }, deps)
+
+    expect(response.result).toMatchObject({ ok: true, revision: 8 })
+    expect((await sheetRepository.getByRef('pokemon', 'target'))?.sheet).toMatchObject({
+      items: { held: '' },
+    })
+    const storedMap = await mapRepository.getBySlug('arena')
+    expect(storedMap?.encounterState?.turnResources.actor?.actions.standard.spent).toBe(1)
+    expect(storedMap?.encounterState?.groundItems).toContainEqual(expect.objectContaining({
+      canonicalItemName: 'Honed Claws',
+      ownerPlacementId: 'target',
+      position: { x: 1, y: 0, z: 0 },
+    }))
+    expect(storedMap?.metadata?.maneuverLog?.[0]?.lines).toEqual(expect.arrayContaining([
+      expect.stringContaining('Wielder +2'),
+      expect.stringContaining('Honed Claws fell'),
+    ]))
   })
 
   it('rejects the retired legacy ability command before reading or writing authoritative resources', async () => {

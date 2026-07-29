@@ -146,17 +146,24 @@ export const computeDefaultTrainerCapabilities = (sheet: TrainerSheet): DefaultT
   const skills = resolveTrainerSkills(sheet)
   const athletics = trainerSkillRankValue(skills, 'athletics')
   const acrobatics = trainerSkillRankValue(skills, 'acrobatics')
+  const survival = trainerSkillRankValue(skills, 'survival')
   const combat = trainerSkillRankValue(skills, 'combat')
-  const overland = 3 + Math.floor((athletics + acrobatics) / 2)
+  const traveler = (sheet.edges ?? []).some(edge => edge.name.trim().toLocaleLowerCase('en-US') === 'traveler')
+  const powerAthletics = traveler ? survival : athletics
+  const jumpAcrobatics = traveler ? survival : acrobatics
+  const overlandRanks = traveler
+    ? Math.max(athletics, acrobatics) + survival
+    : athletics + acrobatics
+  const overland = 3 + Math.floor(overlandRanks / 2)
 
   return {
     overland,
     throwingRange: 4 + athletics,
-    highJump: (acrobatics >= SKILL_RANK_TO_VALUE.Adept ? 1 : 0) + (acrobatics >= SKILL_RANK_TO_VALUE.Master ? 1 : 0),
-    longJump: Math.floor(acrobatics / 2),
+    highJump: (jumpAcrobatics >= SKILL_RANK_TO_VALUE.Adept ? 1 : 0) + (jumpAcrobatics >= SKILL_RANK_TO_VALUE.Master ? 1 : 0),
+    longJump: Math.floor(jumpAcrobatics / 2),
     swim: Math.floor(overland / 2),
     power: 4
-      + (athletics >= SKILL_RANK_TO_VALUE.Novice ? 1 : 0)
+      + (powerAthletics >= SKILL_RANK_TO_VALUE.Novice ? 1 : 0)
       + (combat >= SKILL_RANK_TO_VALUE.Adept ? 1 : 0),
   }
 }

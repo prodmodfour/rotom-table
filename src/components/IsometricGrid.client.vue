@@ -57,10 +57,7 @@ import type { TokenAbilityMenuOption, TokenAbilityUseReference } from '~/utils/m
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
 import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
-import {
-  POKEBALL_THROW_RANGE_SQUARES,
-  type TokenSendOutOption,
-} from '~/utils/mapTokenSendOut'
+import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { TokenPokeballOption } from '~/utils/pokeballCapture'
 import {
   DEFAULT_FACING_DIRECTION,
@@ -420,7 +417,7 @@ const activeSendOutRequest = computed(() => {
     pokemonSlug: placement.pokemonSlug,
     trainer,
     pokemon: option.preview,
-    range: POKEBALL_THROW_RANGE_SQUARES,
+    range: option.throwRange,
   }
 })
 

@@ -5,7 +5,6 @@ import { canPlacePokemon } from '~/utils/gridPlacement'
 import {
   getSendOutThrowDistance,
   isSendOutPositionWithinThrowRange,
-  POKEBALL_THROW_RANGE_SQUARES,
 } from '~/utils/mapTokenSendOut'
 import {
   EMPTY_MOVE_PREVIEW,
@@ -20,7 +19,7 @@ export interface TokenSendOutRequest {
   pokemonSlug: string
   trainer: SpawnedPokemon
   pokemon: SpawnedPokemon
-  range?: number
+  range: number
 }
 
 export interface TokenSendOutPreviewRenderer {
@@ -103,7 +102,7 @@ export const createIsometricTokenSendOutInteractionController = (
       return
     }
 
-    const range = request.range ?? POKEBALL_THROW_RANGE_SQUARES
+    const range = request.range
     const canPlace = canPlacePokemon(
       request.pokemon,
       anchor,

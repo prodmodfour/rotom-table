@@ -3,6 +3,10 @@ import { MAP_INTERACTION_MODES } from '../../shared/mapInteractionMode'
 import { PLAYER_PROFILE_SCHEMA_VERSION, type PlayerProfile, type PlayerProfileDisplayName, type PlayerProfileId } from '../../shared/playerProfiles'
 import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
 import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
+import { createSqliteMapRepository } from '../../server/storage/mapRepository'
+import { createEmptyCapabilityCampaignState } from '../../shared/capabilityAutomation/campaignState'
+import { createEmptyEncounterState } from '../../shared/moveAutomation/encounterState'
+import type { TabletopMap } from '~/types/map'
 import {
   createSqliteRealtimeEventRepository,
   RealtimeEventDedupeConflictError,
@@ -106,6 +110,42 @@ describe('save sheet use case', () => {
     })
     expect(realtime.readAfter({ afterSequence: 0 }).events).toEqual(result.realtimeEvents)
     expect(published).toEqual(result.realtimeEvents)
+  })
+
+  it('owns Juicer Berry custody epochs across setup held-item saves without using unrelated updatedAt', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    sheets.saveSetupSheet('pokemon', 'shuckle', pokemonSheet({
+      slug: 'shuckle', nickname: 'Shuckle', species: 'Shuckle', level: 20,
+      items: { held: 'Potion' },
+    }))
+    const saveHeld = (expectedRevision: number, held: string, now: number) => saveSheetUseCase({
+      role: 'gm', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon', slug: 'shuckle', expectedRevision,
+      sheet: {
+        slug: 'shuckle', nickname: `Shuckle ${now}`, species: 'Shuckle', level: 20,
+        items: { held },
+      },
+    }, { database, sheetRepository: sheets, realtimeEventRepository: realtime, now: () => now })
+
+    const enrolled = saveHeld(4, 'Oran Berry', 500).sheet
+    const first = (enrolled.capabilityCampaignState as any).storedItems[0]
+    expect(first).toMatchObject({ canonicalItemId: 'oran-berry', stage: 'berry', custodyStartedAt: 500 })
+
+    const unrelated = saveHeld(5, 'Oran Berry', 50_000).sheet
+    expect((unrelated.capabilityCampaignState as any).storedItems[0]).toEqual(first)
+
+    const changedBerry = saveHeld(6, 'Sitrus Berry', 60_000).sheet
+    const second = (changedBerry.capabilityCampaignState as any).storedItems[0]
+    expect(second).toMatchObject({ canonicalItemId: 'sitrus-berry', custodyStartedAt: 60_000 })
+    expect(second.custodyFingerprint).not.toBe(first.custodyFingerprint)
+
+    expect(saveHeld(7, '', 70_000).sheet.capabilityCampaignState).toBeUndefined()
+    const sameNameReplacement = saveHeld(8, 'Oran Berry', 80_000).sheet
+    expect((sameNameReplacement.capabilityCampaignState as any).storedItems[0]).toMatchObject({
+      canonicalItemId: 'oran-berry', custodyStartedAt: 80_000,
+    })
   })
 
   it('server-rolls Color Theory acquisition and ignores client-authored parameter mechanics', () => {
@@ -342,6 +382,129 @@ describe('save sheet use case', () => {
 
     expect(sheets.getByRef('pokemon', 'pika')?.sheet).toMatchObject({ nickname: 'Pika', revision: 4, updatedAt: 100 })
     expect(realtime.cursorState().latestSequence).toBe(1)
+  })
+
+  it('preserves server-owned reciprocal Marsupial state against setup-save forgery and erasure', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const pouch = {
+      motherSheetSlug: 'kangaskhan-mother', babySheetSlug: 'kangaskhan-baby', experienceSharePercent: 20 as const,
+      establishedAt: 100, sourceOperationId: 'shelter-operation',
+    }
+    sheets.saveSetupSheet('pokemon', 'kangaskhan-mother', {
+      slug: 'kangaskhan-mother', nickname: 'Mother', species: 'Kangaskhan', level: 30, revision: 1, updatedAt: 100,
+      capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+    })
+    sheets.saveSetupSheet('pokemon', 'kangaskhan-baby', {
+      slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 10, babyTemplate: true,
+      revision: 1, updatedAt: 100,
+      capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+    })
+
+    const result = saveSheetUseCase({
+      role: 'gm', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon', slug: 'kangaskhan-baby', expectedRevision: 1,
+      sheet: {
+        slug: 'kangaskhan-baby', nickname: 'Baby edited', species: 'Kangaskhan', level: 10, babyTemplate: false,
+        capabilityCampaignState: {
+          ...createEmptyCapabilityCampaignState(),
+          marsupialPouch: { ...pouch, experienceSharePercent: 0, motherSheetSlug: 'forged-mother' },
+        },
+      },
+    }, { database, sheetRepository: sheets, realtimeEventRepository: realtime, now: () => 200 })
+
+    expect(result.sheet).toMatchObject({ nickname: 'Baby edited', babyTemplate: true })
+    expect((result.sheet.capabilityCampaignState as Record<string, unknown>).marsupialPouch).toEqual(pouch)
+    expect(sheets.getByRef('pokemon', 'kangaskhan-mother')?.sheet.capabilityCampaignState)
+      .toMatchObject({ marsupialPouch: pouch })
+
+    sheets.saveSetupSheet('pokemon', 'unbound-baby', {
+      slug: 'unbound-baby', nickname: 'Unbound', species: 'Kangaskhan', level: 10, revision: 1, updatedAt: 100,
+    })
+    const forged = saveSheetUseCase({
+      role: 'gm', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon', slug: 'unbound-baby', expectedRevision: 1,
+      sheet: {
+        slug: 'unbound-baby', nickname: 'Unbound', species: 'Kangaskhan', level: 10,
+        capabilityCampaignState: {
+          ...createEmptyCapabilityCampaignState(),
+          marsupialPouch: { ...pouch, babySheetSlug: 'unbound-baby' },
+        },
+      },
+    }, { database, sheetRepository: sheets, realtimeEventRepository: realtime, now: () => 201 })
+    expect((forged.sheet.capabilityCampaignState as Record<string, unknown> | undefined)?.marsupialPouch ?? null).toBeNull()
+  })
+
+  it('atomically exits a Level 25 Marsupial baby across both sheets and map mirrors, including rollback', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const maps = createSqliteMapRepository<TabletopMap>(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const pouch = {
+      motherSheetSlug: 'kangaskhan-mother', babySheetSlug: 'kangaskhan-baby', experienceSharePercent: 20 as const,
+      establishedAt: 100, sourceOperationId: 'shelter-operation',
+    }
+    sheets.saveSetupSheet('pokemon', 'kangaskhan-mother', {
+      slug: 'kangaskhan-mother', nickname: 'Mother', species: 'Kangaskhan', level: 30, revision: 1, updatedAt: 100,
+      capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+    })
+    sheets.saveSetupSheet('pokemon', 'kangaskhan-baby', {
+      slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 24, babyTemplate: true,
+      revision: 1, updatedAt: 100,
+      capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+    })
+    const encounter = createEmptyEncounterState()
+    maps.saveSetupMap({
+      schemaVersion: 2, slug: 'arena', name: 'Arena', revision: 4, updatedAt: 100,
+      dimensions: { x: 6, y: 3, z: 6 }, groundLevelY: 0, voxels: [], hazards: [], lights: [],
+      fieldEffects: { weather: [], terrains: [], rooms: [] }, placements: [
+        { id: 'mother-token', sheetKind: 'pokemon', sheetSlug: 'kangaskhan-mother', position: { x: 1, y: 0, z: 1 } },
+        { id: 'baby-token', sheetKind: 'pokemon', sheetSlug: 'kangaskhan-baby', position: { x: 1, y: 0, z: 1 } },
+      ],
+      metadata: { capabilityMarsupialPouches: [{ motherPlacementId: 'mother-token', babyPlacementId: 'baby-token' }] },
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'pouch-link', kind: 'marsupial-pouch', ownerPlacementId: 'mother-token', participantPlacementIds: ['baby-token'],
+            capabilityInstanceId: 'marsupial-source', canonicalId: 'Marsupial', establishedAt: 100,
+            configurationId: 'experience-share:20', sourceOperationId: 'shelter-operation',
+          }],
+        },
+      },
+    } as TabletopMap)
+    const input = {
+      role: 'gm' as const, interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon' as const, slug: 'kangaskhan-baby', expectedRevision: 1,
+      sheet: { slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 25, babyTemplate: true },
+    }
+    const failingRealtime = {
+      database,
+      appendMany: vi.fn(() => { throw new Error('lifecycle event failure') }),
+    }
+
+    expect(() => saveSheetUseCase(input, {
+      database, sheetRepository: sheets, mapRepository: maps, realtimeEventRepository: failingRealtime, now: () => 200,
+    })).toThrow('lifecycle event failure')
+    expect(sheets.getByRef('pokemon', 'kangaskhan-baby')).toMatchObject({ revision: 1, sheet: { babyTemplate: true } })
+    expect(sheets.getByRef('pokemon', 'kangaskhan-mother')?.sheet.capabilityCampaignState).toBeDefined()
+    expect(maps.getBySlug('arena')).toMatchObject({ revision: 4 })
+
+    saveSheetUseCase(input, {
+      database, sheetRepository: sheets, mapRepository: maps, realtimeEventRepository: realtime, now: () => 200,
+    })
+    expect(sheets.getByRef('pokemon', 'kangaskhan-baby')).toMatchObject({
+      revision: 2, sheet: { level: 25, babyTemplate: false },
+    })
+    expect(sheets.getByRef('pokemon', 'kangaskhan-baby')?.sheet.capabilityCampaignState).toBeUndefined()
+    expect(sheets.getByRef('pokemon', 'kangaskhan-mother')?.sheet.capabilityCampaignState).toBeUndefined()
+    expect(maps.getBySlug('arena')).toMatchObject({
+      revision: 5,
+      metadata: { capabilityMarsupialPouches: [] },
+      encounterState: { capabilityRuntime: { links: [] } },
+    })
   })
 
   it('blocks live-play whole-sheet saves and inaccessible player saves', () => {

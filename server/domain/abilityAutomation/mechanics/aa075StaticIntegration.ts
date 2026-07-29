@@ -27,10 +27,7 @@ export const aa075IceScalesDamageTypeOverlay = (input: {
 
 const hasBlindsense = (token: SpawnedPokemon): boolean => (
   token.creatureRules?.capabilityIds.some(id => (
-    id === 'capability.blindsense' || id.startsWith('capability.blindsense-')
-  )) === true
-  || token.ruleCapabilities?.other.some(value => (
-    /^blindsense(?:\s|$)/i.test(value.trim())
+    id === 'Blindsense' || id === 'capability.blindsense'
   )) === true
 )
 

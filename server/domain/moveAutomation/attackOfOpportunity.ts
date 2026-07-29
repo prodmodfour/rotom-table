@@ -1190,6 +1190,7 @@ const continueOpportunityMovement = (input: {
     encounterState: zonePlan?.currentEncounterState ?? resources.currentEncounterState,
     timestamp: input.plannedAt,
     userName: placementDisplayName(currentPlacement, input.documents),
+    linkedCompanionPlacementIds: movement.linkedCompanionPlacementIds,
     maxLogEntries: input.maxMovementLogEntries,
     ...(completedMovement ? {
       movementEvidence: {

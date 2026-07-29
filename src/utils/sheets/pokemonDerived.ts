@@ -13,6 +13,7 @@ import {
   resolveMoveGrantedCapabilities,
 } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 import { resolvePokemonVitaminSummary } from '~/utils/sheets/pokemonVitamins'
+import { parseCapabilityLabel } from '#shared/capabilityAutomation/catalog'
 
 const pokedexBySpecies = new Map<string, PokedexRecord>(
   (pokedexData as PokedexRecord[]).map((entry) => [entry.species, entry]),
@@ -64,7 +65,9 @@ export interface ResolvedStat {
   mod: number
   /** Net Base Stat adjustment from Vitamins minus stat suppressants. */
   vitaminAdjustment: number
-  /** Nature- and Vitamin-adjusted Base Stat (Species + Mod + Vitamin adjustment). */
+  /** Permanent Base Stat adjustment from Capability state such as Letter Press. */
+  capabilityAdjustment: number
+  /** Nature-, Vitamin-, and Capability-adjusted Base Stat. */
   base: number
   /** Stat points earned on level-up. */
   added: number
@@ -139,7 +142,9 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
     const speciesValue = speciesValueFor(key)
     const mod = baseStats ? adjustedNatureModForStat(speciesValue, key, plus, minus) : 0
     const vitaminAdjustment = vitaminSummary.statNetAdjustments[key]
-    const rawBase = speciesValue + mod + vitaminAdjustment
+    const capabilityBaseStatBonus = (sheet.capabilityCampaignState?.letterPress?.statBonuses[key] ?? 0)
+      - (sheet.babyTemplate === true ? 5 : 0)
+    const rawBase = speciesValue + mod + vitaminAdjustment + capabilityBaseStatBonus
     const base = speciesValue > 0 ? Math.max(1, rawBase) : Math.max(0, rawBase)
     const added = personal.added ?? 0
     const stage = personal.stage ?? 0
@@ -150,6 +155,7 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
       species: speciesValue,
       mod,
       vitaminAdjustment,
+      capabilityAdjustment: capabilityBaseStatBonus,
       base,
       added,
       stage,
@@ -168,12 +174,35 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
  * ``HP`` here is the resolved Total HP stat from the sheet. Legacy
  * ``combat.maxHp`` values are ignored so the sheet always derives HP.
  */
+const capabilityGrantingMoves = (sheet: CharacterSheet) => [
+  ...(sheet.movelist ?? []),
+  ...(sheet.appliedMoves ?? []),
+]
+
+export const pokemonHasResolvedCapability = (
+  sheet: CharacterSheet,
+  canonicalId: string,
+): boolean => resolvePokemonOtherCapabilities(
+  getPokedexEntry(sheet.species),
+  sheet.capabilities,
+  { other: resolveMoveGrantedCapabilities(capabilityGrantingMoves(sheet)).other },
+).some((capability) => {
+  const normalized = capability.trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US')
+  const requested = canonicalId.toLocaleLowerCase('en-US')
+  if (normalized === 'tracker underdog' && (requested === 'tracker' || requested === 'underdog')) return true
+  return parseCapabilityLabel(capability).canonicalId?.toLocaleLowerCase('en-US') === requested
+})
+
 export const computeFullMaxHp = (sheet: CharacterSheet, hpTotal: number): number =>
-  computePokemonFormulaMaxHp(sheet.level ?? 1, hpTotal)
+  pokemonHasResolvedCapability(sheet, 'Soulless')
+    ? 1
+    : computePokemonFormulaMaxHp(sheet.level ?? 1, hpTotal)
 
 /** Effective Max HP / healing cap after Injuries (Core Combat p.250). */
 export const computeMaxHp = (sheet: CharacterSheet, hpTotal: number): number =>
-  computeInjuryAdjustedMaxHp(computeFullMaxHp(sheet, hpTotal), sheet.combat?.injuries)
+  pokemonHasResolvedCapability(sheet, 'Soulless')
+    ? 1
+    : computeInjuryAdjustedMaxHp(computeFullMaxHp(sheet, hpTotal), sheet.combat?.injuries)
 
 /** Resolved skill row (label + value). Mixes species defaults and overrides. */
 export interface ResolvedSkill {
@@ -246,7 +275,7 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
   const species = getPokedexEntry(sheet.species)
   const speciesCaps = species?.capabilities ?? {}
   const sheetCaps = sheet.capabilities ?? {}
-  const moveGrantedCapabilities = resolveMoveGrantedCapabilities(sheet.movelist)
+  const moveGrantedCapabilities = resolveMoveGrantedCapabilities(capabilityGrantingMoves(sheet))
 
   const baseLevitate = applyNumberedCapabilityBonus(
     sheetCaps.levitate ?? speciesCaps.levitate,

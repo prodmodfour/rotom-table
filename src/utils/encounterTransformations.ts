@@ -39,6 +39,8 @@ export const projectEncounterTransformationToken = (input: {
   readonly placement: Pick<SheetPlacement, 'id' | 'sideId' | 'position'>
   readonly token: SpawnedPokemon
   readonly effects?: readonly EncounterEffect[] | null
+  /** Server movement snapshots apply generic movement effects after static providers. */
+  readonly deferEncounterMovementProjection?: boolean
 }): SpawnedPokemon => {
   const effect = activeEncounterTransformation({
     placementId: input.placement.id,
@@ -64,7 +66,7 @@ export const projectEncounterTransformationToken = (input: {
     sheetCapabilities: capabilities.movementSpeeds,
     sheetTraits: capabilities.movementTraits,
     sheetConditions: conditions,
-    encounterEffects: input.effects,
+    encounterEffects: input.deferEncounterMovementProjection ? [] : input.effects,
     target,
   })
   const defenderCapabilities = defenderCapabilitiesForMovement(movement)

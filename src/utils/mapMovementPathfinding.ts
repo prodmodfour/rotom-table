@@ -334,10 +334,18 @@ const evaluateAnchorMovementOptions = ({
     terrain: terrainIndex,
     groundLevelY,
   })
-  if (terrain.blocked) return []
+  if (terrain.blocked && traits?.intangible !== true) return []
 
   const options: AnchorMovementEvaluation[] = []
-  const primaryCapabilityKeys = primaryCapabilityKeysForTerrain(terrain, capabilities)
+  const phasingCapabilityKeys = terrain.blocked && traits?.intangible === true
+    ? (['overland', 'sky', 'swim', 'levitate', 'burrow', 'climb'] as const)
+        .filter(key => movementCapabilitySpeed(capabilities, key) !== undefined)
+        .sort((left, right) => (movementCapabilitySpeed(capabilities, right) ?? 0) - (movementCapabilitySpeed(capabilities, left) ?? 0))
+        .slice(0, 1)
+    : null
+  const primaryCapabilityKeys = phasingCapabilityKeys?.length
+    ? [...phasingCapabilityKeys]
+    : primaryCapabilityKeysForTerrain(terrain, capabilities)
   if (primaryCapabilityKeys) {
     options.push({
       capabilityKeys: primaryCapabilityKeys,
