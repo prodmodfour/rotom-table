@@ -255,6 +255,16 @@ ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
         "when": "the controlled wielder readies its Living Weapon Light Shield as a Standard Action",
         "then": "the server grants +4 total Evasion, 10 Damage Reduction, and Slowed through the end of the wielder's next turn, with exact-link and source-loss cleanup",
     },
+    ("Telekinetic", "telekinetic-maneuver"): {
+        "given": "an effective Telekinetic source targets one participant within Focus Rank metres",
+        "when": "it attempts Push, Trip, or Disarm using the reviewed Status Attack and opposed Focus rules",
+        "then": "the server applies authoritative Accuracy and Evasion with natural 1 always missing and natural 20 always hitting before resolving the opposed check and typed result",
+    },
+    ("Threaded", "threaded-shift"): {
+        "given": "an effective Threaded source selects an authoritative object, anchor, or participant within four metres",
+        "when": "relative weight and willingness determine which participant moves",
+        "then": "the server resolves any required AC 6 Status Attack with natural 1 always missing and natural 20 always hitting, then commits only legal authoritative movement",
+    },
 }
 
 ITEM_OUTPUTS = {

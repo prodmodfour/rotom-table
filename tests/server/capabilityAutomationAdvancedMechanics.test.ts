@@ -31,6 +31,7 @@ const run = (input: {
   trainers?: readonly TrainerSheet[]
   linkedTrainerSlugs?: readonly string[]
   selections?: Record<string, unknown>
+  rollDie?: (rollId: string, sides: number, count?: number) => CapabilityServerRoll
 }) => {
   const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require(input.canonicalId).spec.actions
     .find(candidate => candidate.actionId === input.actionId)!
@@ -47,7 +48,7 @@ const run = (input: {
     map: input.map, actorPlacement: input.actor, actorSheet: bySlug.get(input.actor.sheetSlug)!,
     pokemonSheets: bySlug, trainerSheets: trainerBySlug,
     linkedTrainerSlugs: new Set(input.linkedTrainerSlugs ?? []),
-    command, action, now: 1_000, rollDie,
+    command, action, now: 1_000, rollDie: input.rollDie ?? rollDie,
   })
 }
 
@@ -98,6 +99,46 @@ describe('advanced Capability mechanics', () => {
     expect(result.map.encounterState?.groundItems).toContainEqual(expect.objectContaining({
       canonicalItemName: 'Potion', quantity: 1, position: target.position,
     }))
+  })
+
+  it('honors natural-1 automatic misses for Capability-authored Accuracy Checks', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 },
+    }
+    const target: SheetPlacement = {
+      id: 'target', sheetKind: 'pokemon', sheetSlug: 'target', position: { x: 2, y: 0, z: 1 },
+    }
+    const naturalOne = (rollId: string, sides: number, count = 1): CapabilityServerRoll => ({
+      rollId, expression: `${count}d${sides}`, dice: Array.from({ length: count }, () => 1),
+      modifier: 0, total: count,
+    })
+    const telekinetic: CharacterSheet = {
+      slug: 'actor', nickname: 'Psychic', species: 'Abra', level: 20,
+      skills: { focus: '6d6' }, combatStages: { acc: 6 }, capabilities: { other: ['Telekinetic'] },
+    }
+    const defender: CharacterSheet = {
+      slug: 'target', nickname: 'Defender', species: 'Charmander', level: 5,
+      skills: { combat: '1d6', stealth: '1d6' }, items: { held: 'Potion' },
+    }
+    const telekineticResult = run({
+      canonicalId: 'Telekinetic', actionId: 'telekinetic-maneuver', actor,
+      map: baseMap([actor, target]), sheets: [telekinetic, defender], rollDie: naturalOne,
+      selections: { targetPlacementIds: ['target'], optionId: 'disarm' },
+    })
+    expect(telekineticResult.reasonCode).toBe('capability.telekinetic.maneuver-accuracy-missed')
+    expect(telekineticResult.rolls).toHaveLength(1)
+
+    const threader: CharacterSheet = {
+      ...telekinetic, nickname: 'Threader', species: 'Spinarak',
+      capabilities: { other: ['Threaded'] },
+    }
+    const threadedResult = run({
+      canonicalId: 'Threaded', actionId: 'threaded-shift', actor,
+      map: baseMap([actor, target]), sheets: [threader, defender], rollDie: naturalOne,
+      selections: { targetPlacementIds: ['target'], optionId: 'unwilling-target' },
+    })
+    expect(threadedResult.reasonCode).toBe('capability.threaded.accuracy-missed')
+    expect(threadedResult.rolls).toHaveLength(1)
   })
 
   it('compares authoritative object weight and pulls a lighter Threaded object toward the user', () => {

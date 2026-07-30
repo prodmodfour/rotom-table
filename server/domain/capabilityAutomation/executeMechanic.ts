@@ -1330,6 +1330,11 @@ const participantWeightClass = (
   ? pokemonWeightClass(sheet as CharacterSheet)
   : trainerWeightClass(sheet as TrainerSheet)
 
+const accuracyRollHits = (roll: CapabilityServerRoll, accuracyCheck: number): boolean => {
+  const natural = roll.dice[0]
+  return natural === 20 || (natural !== 1 && roll.total >= accuracyCheck)
+}
+
 const THREADED_STATUS_SCRIPT: MoveAutomationScript = Object.freeze({
   kind: 'explicit', moveName: 'Threaded', version: 1, targetMode: 'one-target', targetCount: 1,
   damaging: false, requiresAccuracy: true, damageBase: null, damageClass: 'Status', type: 'Bug',
@@ -1382,7 +1387,7 @@ const executeThreadedShift = (input: ExecuteCapabilityMechanicInput): Capability
       total: rawAccuracy.total + accuracyModifier,
     })
     rolls.push(accuracy)
-    if (accuracy.total < threadedAc) return {
+    if (!accuracyRollHits(accuracy, threadedAc)) return {
       map: input.map, sheetMutations: [], rolls, produced: [], outcome: 'no-op',
       reasonCode: 'capability.threaded.accuracy-missed', adjudicationNote: `Threaded did not meet AC ${threadedAc} after authoritative Accuracy and Evasion.`,
     }
@@ -2338,7 +2343,7 @@ const executeSkillChallenge = (input: ExecuteCapabilityMechanicInput): Capabilit
       total: raw.total + accuracyModifier,
     })
     maneuverAccuracyRolls.push(accuracy)
-    if (accuracy.total < maneuverAc) return {
+    if (!accuracyRollHits(accuracy, maneuverAc)) return {
       map: input.map, sheetMutations: [], rolls: maneuverAccuracyRolls, produced: [], outcome: 'no-op',
       reasonCode: 'capability.telekinetic.maneuver-accuracy-missed',
       adjudicationNote: `Telekinetic ${maneuverId} did not meet AC ${maneuverAc} after authoritative Accuracy and Evasion.`,

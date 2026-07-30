@@ -1067,9 +1067,9 @@
       "canonicalId": "Telekinetic",
       "kind": "contextual-action",
       "actionId": "telekinetic-maneuver",
-      "given": "the actor owns the capability and authoritative context satisfies maneuver-target-in-focus-range",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "an effective Telekinetic source targets one participant within Focus Rank metres",
+      "when": "it attempts Push, Trip, or Disarm using the reviewed Status Attack and opposed Focus rules",
+      "then": "the server applies authoritative Accuracy and Evasion with natural 1 always missing and natural 20 always hitting before resolving the opposed check and typed result"
     },
     {
       "id": "capability:Telepath:passive",
@@ -1127,9 +1127,9 @@
       "canonicalId": "Threaded",
       "kind": "contextual-action",
       "actionId": "threaded-shift",
-      "given": "the actor owns the capability and authoritative context satisfies anchor-or-target-in-4m",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "an effective Threaded source selects an authoritative object, anchor, or participant within four metres",
+      "when": "relative weight and willingness determine which participant moves",
+      "then": "the server resolves any required AC 6 Status Attack with natural 1 always missing and natural 20 always hitting, then commits only legal authoritative movement"
     },
     {
       "id": "capability:Throwing Range:passive",
