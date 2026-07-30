@@ -1941,6 +1941,7 @@ const executeRoll = (input: ExecuteCapabilityMechanicInput): CapabilityMechanicE
       nickname: `Unown ${form}`,
       species: 'Unown',
       level,
+      movelist: [{ name: 'Hidden Power' }],
     }
     const placement: SheetPlacement = {
       id: placementId, sheetKind: 'pokemon', sheetSlug: slug, position: { ...position },
@@ -2434,6 +2435,16 @@ const executeSkillChallenge = (input: ExecuteCapabilityMechanicInput): Capabilit
       reasonCode: 'capability.telekinetic.trip-applied', adjudicationNote: null,
     }
     if (maneuver === 'push') {
+      const requestedDistance = Math.floor((
+        skillExpression(input.actorSheet, input.actorPlacement.sheetKind, 'focus').count
+        + (input.actorPlacement.sheetKind === 'pokemon'
+          && hasPokemonCapabilityEdge(input.actorSheet as CharacterSheet, 'TK Mastery') ? 2 : 0)
+      ) / 2)
+      if (requestedDistance < 1) return {
+        map: input.map, sheetMutations: [], rolls: [...maneuverAccuracyRolls, actorFocus, targetRoll], produced: [], outcome: 'no-op',
+        reasonCode: 'capability.telekinetic.push-zero-range',
+        adjudicationNote: 'Half the user’s effective Focus Rank rounds down to 0 metres.',
+      }
       const vector = {
         x: Math.sign(target.placement.position.x - input.actorPlacement.position.x),
         y: Math.sign(target.placement.position.y - input.actorPlacement.position.y),
@@ -2446,11 +2457,7 @@ const executeSkillChallenge = (input: ExecuteCapabilityMechanicInput): Capabilit
         now: input.now,
         movementMode: 'forced',
         vector,
-        requestedDistance: Math.max(1, Math.floor((
-          skillExpression(input.actorSheet, input.actorPlacement.sheetKind, 'focus').count
-          + (input.actorPlacement.sheetKind === 'pokemon'
-            && hasPokemonCapabilityEdge(input.actorSheet as CharacterSheet, 'TK Mastery') ? 2 : 0)
-        ) / 2)),
+        requestedDistance,
         distancePolicy: 'up-to-distance',
         ignoredPlacementIds: capabilityLinkedMovementPlacementIds(input, target.placement.id),
       })

@@ -22,6 +22,20 @@ const selections = (overrides: Record<string, unknown> = {}) => ({
   targetPlacementIds: [], cells: [], optionId: null, recipientTrainerSlug: null,
   canonicalItemId: null, description: null, gmConfirmed: true, ...overrides,
 })
+const commandFor = (input: {
+  canonicalId: string
+  actionId: string
+  map: TabletopMap
+  actor: SheetPlacement
+  selections?: Record<string, unknown>
+}) => parseExecuteCapabilityActionCommand({
+  schemaVersion: 1, operationId: `operation-${input.actionId}`, mapSlug: input.map.slug,
+  baseRevision: input.map.revision ?? 0, offerId: 'offer', actorPlacementId: input.actor.id,
+  capabilityInstanceId: `capability:${input.actor.id}:${input.canonicalId.replaceAll(' ', '_')}:base`,
+  canonicalId: input.canonicalId, actionId: input.actionId,
+  selections: selections(input.selections),
+})
+
 const run = (input: {
   canonicalId: string
   actionId: string
@@ -35,13 +49,7 @@ const run = (input: {
 }) => {
   const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require(input.canonicalId).spec.actions
     .find(candidate => candidate.actionId === input.actionId)!
-  const command = parseExecuteCapabilityActionCommand({
-    schemaVersion: 1, operationId: `operation-${input.actionId}`, mapSlug: input.map.slug,
-    baseRevision: input.map.revision ?? 0, offerId: 'offer', actorPlacementId: input.actor.id,
-    capabilityInstanceId: `capability:${input.actor.id}:${input.canonicalId.replaceAll(' ', '_')}:base`,
-    canonicalId: input.canonicalId, actionId: input.actionId,
-    selections: selections(input.selections),
-  })
+  const command = commandFor(input)
   const bySlug = new Map(input.sheets.map(sheet => [sheet.slug, sheet]))
   const trainerBySlug = new Map((input.trainers ?? []).map(sheet => [sheet.slug, sheet]))
   return executeCapabilityMechanic({
@@ -49,6 +57,33 @@ const run = (input: {
     pokemonSheets: bySlug, trainerSheets: trainerBySlug,
     linkedTrainerSlugs: new Set(input.linkedTrainerSlugs ?? []),
     command, action, now: 1_000, rollDie: input.rollDie ?? rollDie,
+  })
+}
+
+const validateAction = (input: {
+  canonicalId: string
+  actionId: string
+  map: TabletopMap
+  actor: SheetPlacement
+  sheets: readonly CharacterSheet[]
+  trainers?: readonly TrainerSheet[]
+  selections?: Record<string, unknown>
+}): void => {
+  const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require(input.canonicalId).spec.actions
+    .find(candidate => candidate.actionId === input.actionId)!
+  const pokemonSheets = new Map(input.sheets.map(sheet => [sheet.slug, sheet]))
+  const trainerSheets = new Map((input.trainers ?? []).map(sheet => [sheet.slug, sheet]))
+  validateCapabilityActionSelections({
+    map: input.map,
+    actor: input.actor,
+    actorSheet: input.actor.sheetKind === 'pokemon'
+      ? pokemonSheets.get(input.actor.sheetSlug)!
+      : trainerSheets.get(input.actor.sheetSlug)!,
+    pokemonSheets,
+    trainerSheets,
+    command: commandFor(input),
+    action,
+    now: 1_000,
   })
 }
 
@@ -139,6 +174,150 @@ describe('advanced Capability mechanics', () => {
     })
     expect(threadedResult.reasonCode).toBe('capability.threaded.accuracy-missed')
     expect(threadedResult.rolls).toHaveLength(1)
+  })
+
+  it.each([
+    ['Telekinetic', 'telekinetic-maneuver', 'disarm'],
+    ['Threaded', 'threaded-shift', 'unwilling-target'],
+  ] as const)('prevents %s attacks from targeting an effectively intangible participant', (canonicalId, actionId, optionId) => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 },
+    }
+    const target: SheetPlacement = {
+      id: 'target', sheetKind: 'pokemon', sheetSlug: 'target', position: { x: 2, y: 0, z: 1 },
+    }
+    const attacker: CharacterSheet = {
+      slug: 'actor', nickname: 'Attacker', species: canonicalId === 'Telekinetic' ? 'Abra' : 'Spinarak', level: 20,
+      skills: { focus: '4d6' }, capabilities: { other: [canonicalId] },
+    }
+    const defender: CharacterSheet = {
+      slug: 'target', nickname: 'Ghost', species: 'Gastly', level: 20,
+      capabilities: { other: ['Phasing'] },
+    }
+    const encounter = createEmptyEncounterState()
+    const map: TabletopMap = {
+      ...baseMap([actor, target]),
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'phasing-mode', actorPlacementId: target.id,
+            capabilityInstanceId: 'capability:target:Phasing:base', canonicalId: 'Phasing',
+            mode: 'intangible', description: null, configurationId: null,
+            activatedAt: 500, expiresAt: null, sourceOperationId: 'operation-phasing',
+          }],
+        },
+      },
+    }
+    expect(() => validateAction({
+      canonicalId, actionId, actor, map, sheets: [attacker, defender],
+      selections: { targetPlacementIds: [target.id], optionId },
+    })).toThrow(/Intangible targets cannot be targeted/i)
+  })
+
+  it('allows Pokémon Telepaths to project thoughts to ordinary Trainers', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 },
+    }
+    const target: SheetPlacement = {
+      id: 'trainer', sheetKind: 'trainer', sheetSlug: 'trainer', position: { x: 2, y: 0, z: 1 },
+    }
+    const telepath: CharacterSheet = {
+      slug: 'actor', nickname: 'Telepath', species: 'Abra', level: 20,
+      skills: { focus: '2d6' }, capabilities: { other: ['Telepath'] },
+    }
+    const trainer: TrainerSheet = { slug: 'trainer', name: 'Trainer', level: 10 }
+    expect(() => validateAction({
+      canonicalId: 'Telepath', actionId: 'project-thought', actor,
+      map: baseMap([actor, target]), sheets: [telepath], trainers: [trainer],
+      selections: { targetPlacementIds: [target.id], description: 'A short warning.' },
+    })).not.toThrow()
+  })
+
+  it('rejects cross-device Wired exits without an exact authoritative network', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 },
+    }
+    const wired: CharacterSheet = {
+      slug: 'actor', nickname: 'Wired', species: 'Porygon', level: 20,
+      capabilities: { other: ['Wired'] },
+    }
+    const encounter = createEmptyEncounterState()
+    const map: TabletopMap = {
+      ...baseMap([actor]),
+      metadata: {
+        capabilityDevices: [
+          { id: 'source', position: { x: 1, y: 0, z: 1 } },
+          { id: 'destination', position: { x: 4, y: 0, z: 1 } },
+        ],
+      },
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'wired-mode', actorPlacementId: actor.id,
+            capabilityInstanceId: 'capability:actor:Wired:base', canonicalId: 'Wired',
+            mode: 'inside-machine', description: null, configurationId: 'source',
+            activatedAt: 500, expiresAt: null, sourceOperationId: 'operation-wired',
+          }],
+        },
+      },
+    }
+    expect(() => validateAction({
+      canonicalId: 'Wired', actionId: 'exit-machine', actor, map, sheets: [wired],
+      selections: { optionId: 'destination', cells: [{ x: 4, y: 0, z: 1 }] },
+    })).toThrow(/exact authoritative network/i)
+    expect(() => validateAction({
+      canonicalId: 'Wired', actionId: 'exit-machine', actor, map, sheets: [wired],
+      selections: { optionId: 'source', cells: [{ x: 1, y: 0, z: 1 }] },
+    })).not.toThrow()
+  })
+
+  it('uses exact Trainer weight for Telekinetic Push eligibility', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 },
+    }
+    const target: SheetPlacement = {
+      id: 'trainer', sheetKind: 'trainer', sheetSlug: 'trainer', position: { x: 2, y: 0, z: 1 },
+    }
+    const telekinetic: CharacterSheet = {
+      slug: 'actor', nickname: 'Psychic', species: 'Abra', level: 20,
+      skills: { focus: '4d6' }, capabilities: { other: ['Telekinetic'] },
+    }
+    const trainer: TrainerSheet = {
+      slug: 'trainer', name: 'Trainer', level: 10, weight: '70 lbs', skills: { athletics: '1d6', combat: '1d6' },
+    }
+    expect(() => validateAction({
+      canonicalId: 'Telekinetic', actionId: 'telekinetic-maneuver', actor,
+      map: baseMap([actor, target]), sheets: [telekinetic], trainers: [trainer],
+      selections: { targetPlacementIds: [target.id], optionId: 'push' },
+    })).not.toThrow()
+  })
+
+  it('rounds half of Focus Rank down to zero for Telekinetic Push', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 },
+    }
+    const target: SheetPlacement = {
+      id: 'target', sheetKind: 'pokemon', sheetSlug: 'target', position: { x: 2, y: 0, z: 1 },
+    }
+    const telekinetic: CharacterSheet = {
+      slug: 'actor', nickname: 'Psychic', species: 'Abra', level: 20,
+      skills: { focus: '1d6+10' }, capabilities: { other: ['Telekinetic'] },
+    }
+    const defender: CharacterSheet = {
+      slug: 'target', nickname: 'Defender', species: 'Charmander', level: 5,
+      skills: { combat: '1d6', athletics: '1d6' },
+    }
+    const result = run({
+      canonicalId: 'Telekinetic', actionId: 'telekinetic-maneuver', actor,
+      map: baseMap([actor, target]), sheets: [telekinetic, defender],
+      selections: { targetPlacementIds: [target.id], optionId: 'push' },
+    })
+    expect(result.reasonCode).toBe('capability.telekinetic.push-zero-range')
+    expect(result.map.placements.find(candidate => candidate.id === target.id)?.position).toEqual(target.position)
   })
 
   it('compares authoritative object weight and pulls a lighter Threaded object toward the user', () => {
@@ -248,6 +427,44 @@ describe('advanced Capability mechanics', () => {
     const summoned = result.sheetMutations.find(mutation => mutation.previous === null)?.current as CharacterSheet
     expect(summoned.species).toBe('Unown')
     expect(summoned.level).toBe(10)
+    expect(summoned.movelist).toEqual([{ name: 'Hidden Power' }])
+  })
+
+  it('rejects an existing Prime Unown as a Letter Press participant', () => {
+    const actor: SheetPlacement = {
+      id: 'prime', sheetKind: 'pokemon', sheetSlug: 'prime', position: { x: 1, y: 1, z: 1 },
+    }
+    const target: SheetPlacement = {
+      id: 'nested-prime', sheetKind: 'pokemon', sheetSlug: 'nested-prime', position: { x: 2, y: 1, z: 1 },
+    }
+    const prime: CharacterSheet = {
+      slug: 'prime', nickname: 'Prime', species: 'Unown', level: 20,
+      capabilities: { other: ['Letter Press'] }, movelist: [{ name: 'Hidden Power' }],
+    }
+    const nestedPrime: CharacterSheet = {
+      slug: 'nested-prime', nickname: 'Nested Prime', species: 'Unown', level: 20,
+      movelist: [{ name: 'Hidden Power' }],
+      capabilityCampaignState: {
+        schemaVersion: 1, storedItems: [], planter: null, keystoneSynchronizations: [],
+        letterPress: {
+          combinedUnownCount: 2, statBonuses: { hp: 5 }, hiddenPowers: [],
+          sourceOperationIds: ['prior-combination'],
+        },
+        marsupialPouch: null,
+      },
+    }
+    const map: TabletopMap = {
+      ...baseMap([actor, target]),
+      metadata: { capabilityWillingTargets: [`${actor.id}:${target.id}`] },
+    }
+    expect(() => validateAction({
+      canonicalId: 'Letter Press', actionId: 'combine-unown', actor, map,
+      sheets: [prime, nestedPrime],
+      selections: {
+        targetPlacementIds: [target.id],
+        optionId: 'stats:hp;hidden-power:attack,special',
+      },
+    })).toThrow(/cannot consume an existing Prime Unown/i)
   })
 
   it('retains a bounded rolling window of Letter Press operation evidence', () => {

@@ -12,6 +12,7 @@ import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState
 import { redactSheetRecordForPlayer, redactSheetUpdateForPlayer } from '../../server/utils/sheetPrivacy'
 import { redactRealtimeEventForPrincipal } from '../../server/realtime/realtimeEventRedaction'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import type { TabletopMap } from '~/types/map'
 import type { RealtimeEventAccessDependencies } from '../../server/realtime/realtimeEventAccessPolicy'
 
@@ -78,11 +79,35 @@ describe('Capability passive context providers', () => {
     expect(xRayVisionCanPenetrate({ thicknessFeet: 1, material: 'drywall' })).toBe(true)
     expect(xRayVisionCanPenetrate({ thicknessFeet: 1.01, material: 'paper' })).toBe(false)
     expect(xRayVisionCanPenetrate({ thicknessFeet: 0.1, material: 'lead' })).toBe(false)
+    expect(xRayVisionCanPenetrate({ thicknessFeet: 0.1, material: 'lead-lined steel' })).toBe(false)
+    expect(xRayVisionCanPenetrate({ thicknessFeet: 0.1, material: 'tungsten alloy' })).toBe(false)
+    expect(xRayVisionCanPenetrate({ thicknessFeet: 0.1, material: '   ' })).toBe(false)
     expect(tremorsenseCanResolve({ distanceMeters: 5, inGround: true })).toBe(true)
     expect(tremorsenseCanResolve({ distanceMeters: 6, inGround: true })).toBe(false)
     expect(resolvePremonitionBand({ magnitude: 3, proximity: 3 })).toEqual({
       warningBand: 'specific-area-days', revealsSpecificArea: true,
     })
+  })
+
+  it('marks actual Capability actions unavailable while their actor is Fainted', () => {
+    const fainted: CharacterSheet = {
+      slug: 'fainted', nickname: 'Fainted', species: 'Miltank', level: 20,
+      combat: { currentHp: 0 }, capabilities: { other: ['Milk Collection'] },
+    }
+    const trainer: TrainerSheet = {
+      slug: 'trainer', name: 'Trainer', level: 10, currentTeam: [fainted.slug],
+      inventory: { keyItems: [{ id: 'jar', name: 'Collection Jar', qty: 1 }], pokemonItems: [] },
+    }
+    const map = {
+      schemaVersion: 2, id: 'fainted-map', slug: 'fainted-map', name: 'Fainted', revision: 1, updatedAt: 200,
+      dimensions: { x: 4, y: 3, z: 4 }, groundLevelY: 0, voxels: [],
+      placements: [{ id: 'fainted', sheetKind: 'pokemon' as const, sheetSlug: fainted.slug, position: { x: 1, y: 0, z: 1 } }],
+    } as TabletopMap
+    const offer = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map, mapRevision: 1, pokemonSheets: [fainted], trainerSheets: [trainer], now: 200,
+    }).placements[0]!.offers.find(candidate => candidate.actionId === 'produce-moomoo-milk')
+    expect(offer).toMatchObject({ available: false })
+    expect(offer?.unavailableReasonCodes).toContain('actor.fainted')
   })
 
   it('removes private sensory and retry authority from player map documents', () => {

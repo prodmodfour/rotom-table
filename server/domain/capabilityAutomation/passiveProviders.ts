@@ -22,10 +22,14 @@ export const resolvePackMonDisposition = (input: {
 export const xRayVisionCanPenetrate = (input: {
   readonly thicknessFeet: number
   readonly material: string
-}): boolean => Number.isFinite(input.thicknessFeet)
-  && input.thicknessFeet >= 0
-  && input.thicknessFeet <= 1
-  && !/^(?:lead|tungsten)$/i.test(input.material.trim())
+}): boolean => {
+  const material = input.material.trim()
+  return Number.isFinite(input.thicknessFeet)
+    && input.thicknessFeet >= 0
+    && input.thicknessFeet <= 1
+    && material.length > 0
+    && !/(?:^|[^a-z])(?:lead|tungsten)(?:[^a-z]|$)/i.test(material)
+}
 
 export const tremorsenseCanResolve = (input: {
   readonly distanceMeters: number

@@ -19,6 +19,7 @@ import {
   actorControlledMapPlacementIds,
   playerProfileLinkedTrainerSheetsForTokenControl,
 } from '../../policies/playerProfileTokenControlPolicy'
+import { capabilityActorCanTakeAction } from './actionEligibility'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
 import { CAPABILITY_AUTOMATION_RUNTIME_REGISTRY } from './registry'
 import { computePokemonTutorPointsEarnedForSheet } from '~/utils/sheets/pokemonTutorPoints'
@@ -798,6 +799,7 @@ export const buildCapabilityClientCapabilityBundle = (
           effectiveInstanceIds,
         })) continue
         const reasons: string[] = []
+        if (!capabilityActorCanTakeAction(sheet, action.economy)) reasons.push('actor.fainted')
         const activeModeEntries = (input.map.encounterState?.capabilityRuntime?.modes ?? [])
           .filter(entry => entry.actorPlacementId === placement.id
             && effectiveInstanceIds.has(entry.capabilityInstanceId)
@@ -902,6 +904,7 @@ export const buildCapabilityClientCapabilityBundle = (
               && (entry.expiresAt === null || entry.expiresAt > now))
             .map(entry => entry.mode))
           const reasons: string[] = []
+          if (!capabilityActorCanTakeAction(sheet, action.economy)) reasons.push('actor.fainted')
           if (action.economy === 'standard'
             && (activeModes.has('intangible') || activeModes.has('shadow-melded') || activeModes.has('shrunken'))) {
             reasons.push('capability.standard-action-blocked')

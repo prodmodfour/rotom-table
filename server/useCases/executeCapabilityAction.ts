@@ -27,6 +27,7 @@ import {
   playerProfileLinkedTrainerSheetsForTokenControl,
 } from '../policies/playerProfileTokenControlPolicy'
 import { canAccessMapForRole } from '../policies/mapPolicy'
+import { capabilityActorCanTakeAction } from '../domain/capabilityAutomation/actionEligibility'
 import { buildCapabilityClientCapabilityBundle } from '../domain/capabilityAutomation/clientCapabilities'
 import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
 import { reconcileCapabilityRuntimeSourceLoss } from '../domain/capabilityAutomation/sourceLoss'
@@ -378,6 +379,9 @@ export const executeCapabilityActionUseCase = (
   const runtime = registry.resolve(command.canonicalId) ?? fail(409, 'Capability has no reviewed native runtime.')
   const action = runtime.spec.actions.find(candidate => candidate.actionId === command.actionId)
     ?? fail(409, 'Capability action is not registered.')
+  if (!capabilityActorCanTakeAction(actingSheet, action.economy)) {
+    fail(409, 'Fainted participants cannot take Capability actions.')
+  }
 
   for (const targetId of mechanicCommand.selections.targetPlacementIds) {
     if (!map.placements.some(placement => placement.id === targetId)) fail(400, `Capability target ${targetId} does not exist.`)

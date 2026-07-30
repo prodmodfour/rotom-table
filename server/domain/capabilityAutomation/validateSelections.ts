@@ -228,12 +228,17 @@ const capabilityWorldObjects = (map: TabletopMap): readonly CapabilityWorldObjec
 const worldObjectWeightClass = (pounds: number): number => pounds <= 25 ? 1
   : pounds <= 55 ? 2 : pounds <= 110 ? 3 : pounds <= 220 ? 4 : pounds <= 440 ? 5 : 6
 
-const trainerWeightClass = (sheet: TrainerSheet): number => {
+const trainerWeightPounds = (sheet: TrainerSheet): number | null => {
   const match = /^\s*(\d+(?:\.\d+)?)\s*(lb|lbs|pounds?|kg|kilograms?)?\s*$/i.exec(sheet.weight ?? '')
-  if (!match) return 4
+  if (!match) return null
   const value = Number(match[1])
   const pounds = /^(?:kg|kilograms?)$/i.test(match[2] ?? '') ? value * 2.2046226218 : value
-  return Number.isFinite(pounds) && pounds > 0 ? worldObjectWeightClass(pounds) : 4
+  return Number.isFinite(pounds) && pounds > 0 ? pounds : null
+}
+
+const trainerWeightClass = (sheet: TrainerSheet): number => {
+  const pounds = trainerWeightPounds(sheet)
+  return pounds === null ? 4 : worldObjectWeightClass(pounds)
 }
 
 const selectedWorldObjectIds = (optionId: string | null): readonly string[] => {
@@ -652,9 +657,10 @@ export const validateCapabilityActionSelections = (input: {
     }
   }
 
-  const attackLikeTargeting = input.command.actionId === 'telekinetic-maneuver'
-    || input.command.actionId === 'distract-with-alluring'
+  const physicalCapabilityAttackTargeting = input.command.actionId === 'telekinetic-maneuver'
     || (input.command.actionId === 'threaded-shift' && input.command.selections.optionId === 'unwilling-target')
+  const attackLikeTargeting = physicalCapabilityAttackTargeting
+    || input.command.actionId === 'distract-with-alluring'
   if (attackLikeTargeting && Array.isArray(input.map.metadata?.capabilityMarsupialPouches)) {
     const protectedBabyIds = new Set(input.map.metadata.capabilityMarsupialPouches.flatMap((raw): readonly string[] => {
       const pouch = raw as Record<string, unknown>
@@ -689,6 +695,18 @@ export const validateCapabilityActionSelections = (input: {
     if ((input.command.actionId === 'read-dream' || input.command.actionId === 'read-mind')
       && effective.instances.some(instance => instance.effective && instance.canonicalId === 'Mindlock')) {
       fail('target-mindlocked', 'Mindlock prevents this Capability information action.')
+    }
+    if (physicalCapabilityAttackTargeting) {
+      const effectiveInstanceIds = new Set(effective.instances
+        .filter(instance => instance.effective)
+        .map(instance => instance.instanceId))
+      const intangible = input.map.encounterState?.capabilityRuntime?.modes.some(mode => (
+        mode.actorPlacementId === targets[index]!.id
+        && mode.mode === 'intangible'
+        && effectiveInstanceIds.has(mode.capabilityInstanceId)
+        && (mode.expiresAt === null || mode.expiresAt > input.now)
+      )) === true
+      if (intangible) fail('target-intangible', 'Intangible targets cannot be targeted by Capability attacks.')
     }
   }
 
@@ -812,7 +830,15 @@ export const validateCapabilityActionSelections = (input: {
         && (entry.expiresAt === null || entry.expiresAt > input.now)
       ))
       const source = devices.map(raw => raw as Record<string, unknown>).find(candidate => candidate.id === mode?.configurationId)
-      if (!source || source.networkId !== device!.networkId) fail('wired-device-not-connected', 'Wired exit destination must share the source device’s authoritative network.')
+      const sourceNetworkId = typeof source?.networkId === 'string'
+        && /^[A-Za-z0-9._:/-]{1,160}$/.test(source.networkId) ? source.networkId : null
+      const destinationNetworkId = typeof device!.networkId === 'string'
+        && /^[A-Za-z0-9._:/-]{1,160}$/.test(device!.networkId) ? device!.networkId : null
+      const exitingOccupiedDevice = source?.id === device!.id
+      if (!source || (!exitingOccupiedDevice
+        && (!sourceNetworkId || !destinationNetworkId || sourceNetworkId !== destinationNetworkId))) {
+        fail('wired-device-not-connected', 'Wired exit destinations must be the occupied device or share its exact authoritative network.')
+      }
     }
     if (input.command.actionId === 'enter-machine') {
       const isRotom = input.actor.sheetKind === 'pokemon'
@@ -1169,6 +1195,7 @@ export const validateCapabilityActionSelections = (input: {
   if (input.command.actionId === 'project-thought') {
     const actorIsPokemon = input.actor.sheetKind === 'pokemon'
     if (actorIsPokemon && targets.some((target, index) => {
+      if (target.sheetKind === 'trainer') return false
       const effective = resolveEffectiveCapabilities({
         map: input.map,
         placement: target,
@@ -1176,7 +1203,7 @@ export const validateCapabilityActionSelections = (input: {
         sheets: { pokemon: input.pokemonSheets, trainer: input.trainerSheets },
       })
       return !effective.instances.some(instance => instance.effective && instance.canonicalId === 'Telepath')
-    })) fail('telepath-projection-target-invalid', 'Pokémon Telepaths may project thoughts only to other Telepaths.')
+    })) fail('telepath-projection-target-invalid', 'Pokémon Telepaths may project to Trainers or other Telepaths.')
   }
 
   if (input.command.actionId === 'threaded-shift') {
@@ -1288,6 +1315,8 @@ export const validateCapabilityActionSelections = (input: {
       fail('option-invalid', 'Telekinetic maneuver must be disarm, trip, or push.')
     }
     if (input.command.selections.optionId === 'push' && targets[0]) {
+      const exactTrainerPounds = targets[0]!.sheetKind === 'trainer'
+        ? trainerWeightPounds(targetSheets[0] as TrainerSheet) : null
       const targetWeightClass = targets[0]!.sheetKind === 'pokemon'
         ? Math.max(1, Math.floor((targetSheets[0] as CharacterSheet).capabilities?.weight
           ?? pokedexBySpecies.get((targetSheets[0] as CharacterSheet).species.trim().toLocaleLowerCase('en-US'))?.weight ?? 1))
@@ -1295,8 +1324,9 @@ export const validateCapabilityActionSelections = (input: {
       const maximumPoundsByWeightClass: Readonly<Record<number, number>> = {
         1: 25, 2: 55, 3: 110, 4: 220, 5: 440, 6: Number.POSITIVE_INFINITY, 7: Number.POSITIVE_INFINITY,
       }
-      if ((maximumPoundsByWeightClass[targetWeightClass] ?? Number.POSITIVE_INFINITY)
-        > capabilityPowerLimits(telekineticFocus).heavyMaximum) {
+      const authoritativeTargetPounds = exactTrainerPounds
+        ?? (maximumPoundsByWeightClass[targetWeightClass] ?? Number.POSITIVE_INFINITY)
+      if (authoritativeTargetPounds > capabilityPowerLimits(telekineticFocus).heavyMaximum) {
         fail('telekinetic-push-target-too-heavy', 'Telekinetic Push requires a target no heavier than the user’s Focus-derived Heavy Lifting rating.')
       }
     }
@@ -1673,6 +1703,12 @@ export const validateCapabilityActionSelections = (input: {
     if (targets.some((target, index) => target.sheetKind !== 'pokemon'
       || (targetSheets[index] as CharacterSheet).species.trim().toLocaleLowerCase('en-US') !== 'unown')) {
       fail('unown-required', 'Letter Press may combine only authoritative Unown targets.')
+    }
+    if (targetSheets.some(sheet => {
+      const pokemon = sheet as CharacterSheet
+      return Boolean(pokemon.letterPressCombinedInto || pokemon.capabilityCampaignState?.letterPress)
+    })) {
+      fail('letter-press-prime-target-prohibited', 'Letter Press cannot consume an existing Prime Unown or an Unown already combined into one.')
     }
     if (targets.some(target => !targetIsWilling(input.map, input.actor.id, target.id))) {
       fail('letter-press-target-not-willing', 'Irreversible Letter Press combination requires exact authoritative willingness for every participant.')

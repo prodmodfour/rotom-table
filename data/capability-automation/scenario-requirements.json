@@ -302,9 +302,9 @@
       "canonicalId": "Gather Unown",
       "kind": "contextual-action",
       "actionId": "gather-unown",
-      "given": "the actor owns the capability and authoritative context satisfies open-space",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "an effective Level 20 Gather Unown source selects one legal authoritative destination",
+      "when": "the server rolls the summoned Unown's level and form",
+      "then": "the server creates one non-hostile independent Unown with canonical Hidden Power and no inherited encounter side"
     },
     {
       "id": "capability:Gilled:passive",
@@ -610,9 +610,9 @@
       "canonicalId": "Letter Press",
       "kind": "contextual-action",
       "actionId": "combine-unown",
-      "given": "the actor owns the capability and authoritative context satisfies eligible-unown",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "an effective Letter Press source selects willing independent Unown and bounded permanent choices",
+      "when": "the irreversible combination is validated",
+      "then": "the server rejects nested Prime or already-combined participants and atomically removes only legal independent sources while retaining permanent provenance"
     },
     {
       "id": "capability:Levitate:passive",
@@ -1069,7 +1069,7 @@
       "actionId": "telekinetic-maneuver",
       "given": "an effective Telekinetic source targets one participant within Focus Rank metres",
       "when": "it attempts Push, Trip, or Disarm using the reviewed Status Attack and opposed Focus rules",
-      "then": "the server applies authoritative Accuracy and Evasion with natural 1 always missing and natural 20 always hitting before resolving the opposed check and typed result"
+      "then": "the server rejects effective intangible targets, applies authoritative Accuracy and Evasion with natural 1 always missing and natural 20 always hitting, compares exact Trainer weight when available for Push, and rounds half Focus Rank down without a one-metre minimum"
     },
     {
       "id": "capability:Telepath:passive",
@@ -1093,9 +1093,9 @@
       "canonicalId": "Telepath",
       "kind": "contextual-action",
       "actionId": "project-thought",
-      "given": "the actor owns the capability and authoritative context satisfies communication-targets",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "an effective Pokémon Telepath selects no more than half its Focus Rank in communication targets",
+      "when": "the free thought projection is validated",
+      "then": "ordinary Trainers are legal recipients while Pokémon recipients must themselves have effective Telepath"
     },
     {
       "id": "capability:Teleporter:passive",
@@ -1278,17 +1278,17 @@
       "canonicalId": "Wired",
       "kind": "contextual-action",
       "actionId": "exit-machine",
-      "given": "the actor owns the capability and authoritative context satisfies inside-machine",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "an exact effective Wired source occupies one authoritative electronic device",
+      "when": "it selects an exit device and exact retained cell",
+      "then": "the occupied device is always a legal exit while cross-device travel requires matching non-empty bounded authoritative network identities"
     },
     {
       "id": "capability:X-Ray Vision:passive",
       "canonicalId": "X-Ray Vision",
       "kind": "passive-projection",
-      "given": "the actor owns an effective canonical capability instance",
-      "when": "the authoritative encounter presentation is projected",
-      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+      "given": "an effective X-Ray Vision source examines one bounded GM-authored solid barrier",
+      "when": "the barrier has a retained material and non-negative finite thickness",
+      "then": "the server permits sight through at most one foot while any lead- or tungsten-bearing composite blocks sight regardless of thickness and unknown material fails closed"
     },
     {
       "id": "capability:Zapper:passive",

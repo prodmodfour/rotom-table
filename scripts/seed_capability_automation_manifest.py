@@ -217,6 +217,11 @@ PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
         "when": "equipment, Disarm, Struggle, Reach, Accuracy, Damage Base, and weapon Move rules are projected",
         "then": "the server applies the exact melee profile and grants only its Adept Combat Move even when the wielder qualifies for Master rank; ranged, size-illegal, and Master-only grants remain unavailable",
     },
+    "X-Ray Vision": {
+        "given": "an effective X-Ray Vision source examines one bounded GM-authored solid barrier",
+        "when": "the barrier has a retained material and non-negative finite thickness",
+        "then": "the server permits sight through at most one foot while any lead- or tungsten-bearing composite blocks sight regardless of thickness and unknown material fails closed",
+    },
 }
 
 ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
@@ -255,12 +260,32 @@ ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
         "when": "the controlled wielder readies its Living Weapon Light Shield as a Standard Action",
         "then": "the server grants +4 total Evasion, 10 Damage Reduction, and Slowed through the end of the wielder's next turn, with exact-link and source-loss cleanup",
     },
+    ("Gather Unown", "gather-unown"): {
+        "given": "an effective Level 20 Gather Unown source selects one legal authoritative destination",
+        "when": "the server rolls the summoned Unown's level and form",
+        "then": "the server creates one non-hostile independent Unown with canonical Hidden Power and no inherited encounter side",
+    },
+    ("Letter Press", "combine-unown"): {
+        "given": "an effective Letter Press source selects willing independent Unown and bounded permanent choices",
+        "when": "the irreversible combination is validated",
+        "then": "the server rejects nested Prime or already-combined participants and atomically removes only legal independent sources while retaining permanent provenance",
+    },
     ("Telekinetic", "telekinetic-maneuver"): {
         "given": "an effective Telekinetic source targets one participant within Focus Rank metres",
         "when": "it attempts Push, Trip, or Disarm using the reviewed Status Attack and opposed Focus rules",
-        "then": "the server applies authoritative Accuracy and Evasion with natural 1 always missing and natural 20 always hitting before resolving the opposed check and typed result",
+        "then": "the server rejects effective intangible targets, applies authoritative Accuracy and Evasion with natural 1 always missing and natural 20 always hitting, compares exact Trainer weight when available for Push, and rounds half Focus Rank down without a one-metre minimum",
     },
-    ("Threaded", "threaded-shift"): {
+    ("Telepath", "project-thought"): {
+        "given": "an effective Pokémon Telepath selects no more than half its Focus Rank in communication targets",
+        "when": "the free thought projection is validated",
+        "then": "ordinary Trainers are legal recipients while Pokémon recipients must themselves have effective Telepath",
+    },
+    ("Wired", "exit-machine"): {
+        "given": "an exact effective Wired source occupies one authoritative electronic device",
+        "when": "it selects an exit device and exact retained cell",
+        "then": "the occupied device is always a legal exit while cross-device travel requires matching non-empty bounded authoritative network identities",
+    },
+    ("Threaded", "threaded-shift"):  {
         "given": "an effective Threaded source selects an authoritative object, anchor, or participant within four metres",
         "when": "relative weight and willingness determine which participant moves",
         "then": "the server resolves any required AC 6 Status Attack with natural 1 always missing and natural 20 always hitting, then commits only legal authoritative movement",
