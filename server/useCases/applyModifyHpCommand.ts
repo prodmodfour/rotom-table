@@ -65,6 +65,7 @@ import {
 } from '../utils/sessionStore'
 import { readRuntimeSheet, writeRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
 
 export class ApplyModifyHpCommandUseCaseError<
   TStatusCode extends number = number,
@@ -626,11 +627,74 @@ const resolveModifyHpSheet = (
   }
 
   const previousHp = hpSnapshotForSheet(target.placement.sheetKind, sheetResult.sheet)
+  const capabilityRuntime = target.mapState.document.encounterState?.capabilityRuntime
+  const backingPlacementIds = new Set(target.mapState.document.placements
+    .filter(placement => (
+      placement.sheetKind === target.placement.sheetKind
+      && placement.sheetSlug === target.placement.sheetSlug
+    ))
+    .map(placement => placement.id))
+  const hasAsOneLink = (capabilityRuntime?.links ?? []).some(link => (
+    link.kind === 'as-one-mount'
+    && link.canonicalId === 'As One'
+    && (backingPlacementIds.has(link.ownerPlacementId)
+      || link.participantPlacementIds.some(id => backingPlacementIds.has(id)))
+  ))
+  if (hasAsOneLink) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        'Legacy hosted-session HP changes cannot atomically reconcile As One; use profile live play.',
+        processedAt,
+        { retryable: false, currentState: null },
+      ),
+    }
+  }
+  const hasCrownedMode = (capabilityRuntime?.modes ?? []).some(mode => (
+    backingPlacementIds.has(mode.actorPlacementId)
+    && mode.canonicalId === 'Weapon Bond'
+    && mode.mode === 'crowned'
+  ))
+  if (hasCrownedMode && (previousHp.currentHp <= 0 || command.payload.currentHp <= 0)) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        'Legacy hosted-session HP changes cannot atomically terminate Crowned Forme; use profile live play.',
+        processedAt,
+        { retryable: false, currentState: null },
+      ),
+    }
+  }
+  const soullessAuthorities = new Set(target.mapState.document.placements
+    .filter(placement => backingPlacementIds.has(placement.id))
+    .map(placement => resolveEffectiveCapabilities({
+      map: target.mapState.document,
+      placement,
+      sheet: sheetResult.sheet,
+    }).instances.some(instance => instance.effective && instance.canonicalId === 'Soulless')))
+  if (soullessAuthorities.size > 1) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        'This sheet has contradictory Soulless authority across map placements; use profile live play.',
+        processedAt,
+        { retryable: false, currentState: null },
+      ),
+    }
+  }
+  const effectiveSoulless = soullessAuthorities.has(true)
   const updated = applyHpToSheet(
     target.placement.sheetKind,
     sheetResult.sheet,
     command.payload.currentHp,
     command.payload.injuries,
+    { effectiveSoulless },
   )
   const currentHp = hpSnapshotForSheet(target.placement.sheetKind, updated)
 
