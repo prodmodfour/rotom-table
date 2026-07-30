@@ -97,6 +97,20 @@ describe('CapabilityActionModal typed serialization', () => {
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({ recipientTrainerSlug: 'linked-trainer' })
   })
 
+  it('serializes a GM-confirmed Tracker branch with an exact prey identity', async () => {
+    const wrapper = mountModal('track-scent', offer([]))
+    await wrapper.get('select').setValue('specific')
+    await wrapper.get('input[placeholder="pokemon:species-or-campaign-id"]').setValue('pokemon:eevee-42')
+    await wrapper.get('textarea').setValue('The trail leads north.')
+    await wrapper.get('input[type="checkbox"]').setValue(true)
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
+      optionId: 'specific;prey:pokemon:eevee-42',
+      description: 'The trail leads north.',
+      gmConfirmed: true,
+    })
+  })
+
   it('serializes Dream Mist viewers as a bounded canonical option', async () => {
     const participantTarget: EncounterTargetingSummary = {
       requirementId: 'target', kind: 'participant', minSelections: 1, maxSelections: 1,

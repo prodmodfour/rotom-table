@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { CapabilityActionSelections } from '#shared/capabilityAutomation/clientCommands'
 import { CANONICAL_PTU_BERRY_NAMES } from '#shared/capabilityAutomation/items'
+import { trackerScentSelectionId, type TrackerScentBranch } from '#shared/capabilityAutomation/tracker'
 import type { EncounterActionOffer } from '#shared/encounterPresentation/contracts'
 import { abilities, items, moves } from '~~/data/ptuReference'
 import pokedexJson from '~~/data/reference/pokedex.json'
@@ -32,6 +33,7 @@ const optionId = ref('')
 const recipientTrainerSlug = ref('')
 const canonicalItemId = ref('')
 const description = ref('')
+const trackerPreyIdentity = ref('')
 const dreamViewerIds = ref<string[]>([])
 const gmConfirmed = ref(false)
 const trickyDc = ref<number | null>(null)
@@ -229,6 +231,7 @@ watch(() => [props.offer.offerId, props.actionId] as const, () => {
   recipientTrainerSlug.value = ''
   canonicalItemId.value = ''
   description.value = ''
+  trackerPreyIdentity.value = ''
   dreamViewerIds.value = []
   gmConfirmed.value = false
   trickyDc.value = null
@@ -329,6 +332,12 @@ const submit = (): void => {
     validationError.value = 'Enter the bounded private message payload.'
     return
   }
+  if (action.value === 'track-scent' && gmConfirmed.value
+    && (!trackerPreyIdentity.value.trim()
+      || trackerScentSelectionId(optionId.value as TrackerScentBranch, trackerPreyIdentity.value.trim()) === null)) {
+    validationError.value = 'Bind the check to one bounded exact authoritative prey identity.'
+    return
+  }
   let retainedOption = optionId.value.trim()
   if (action.value === 'lure-with-alluring') retainedOption = `species:${alluringSpecies.value.trim()};level:${alluringLevel.value}`
   if (action.value === 'read-aura') retainedOption = `hue:${auraHue.value.trim()};tone:${auraTone.value}`
@@ -336,6 +345,12 @@ const submit = (): void => {
     retainedOption = `size-mm:${illusionWidth.value}x${illusionHeight.value}x${illusionDepth.value};motion:${illusionMotion.value}`
   }
   if (action.value === 'change-shape') retainedOption = `mass-percent:${shapeMassPercent.value};kind:${shapeKind.value}`
+  if (action.value === 'track-scent' && trackerPreyIdentity.value.trim()) {
+    retainedOption = trackerScentSelectionId(
+      optionId.value as TrackerScentBranch,
+      trackerPreyIdentity.value.trim(),
+    ) ?? ''
+  }
   if (action.value === 'assemble-zygarde') {
     retainedOption = `cells:${zygardeCells.value};form:${zygardeForm.value};nature:${zygardeNature.value.trim()};level:${zygardeLevel.value}`
   }
@@ -548,6 +563,11 @@ const submit = (): void => {
             <option value="" disabled>Select an authoritative item or resource</option>
             <option v-for="choice in itemChoices" :key="choice.value" :value="choice.value">{{ choice.label }}</option>
           </select>
+        </label>
+
+        <label v-if="actionId === 'track-scent' && canConfirmAsGm" class="capability-modal__field">
+          <span>Exact authoritative prey identity</span>
+          <input v-model="trackerPreyIdentity" maxlength="160" placeholder="pokemon:species-or-campaign-id">
         </label>
 
         <label v-if="showDescription" class="capability-modal__field">

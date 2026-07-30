@@ -19,7 +19,7 @@ const viewerPlacement: SheetPlacement = {
 }
 const actor: CharacterSheet = {
   slug: actorPlacement.sheetSlug, nickname: 'Reader', species: 'Pikachu', level: 30,
-  capabilities: { other: ['Dream Reader', 'Illusionist'] }, skills: { focus: '4d6' },
+  capabilities: { other: ['Dream Reader', 'Illusionist', 'Tracker'] }, skills: { focus: '4d6', perception: '4d6' },
 }
 const target: CharacterSheet = {
   slug: targetPlacement.sheetSlug, nickname: 'Sleeper', species: 'Snorlax', level: 30,
@@ -86,6 +86,46 @@ const validate = (
 }
 
 describe('Capability sensory evidence and movable Illusions', () => {
+  it('binds Tracker evidence and private results to one exact prey identity', () => {
+    const sourceMap = map({
+      metadata: {
+        capabilityScentEvidence: [{
+          actorPlacementId: actorPlacement.id, preyIdentity: 'pokemon:eevee-42',
+          personalBelonging: true, expiresAt: 10_000,
+        }],
+      },
+    })
+    expect(() => validate('Tracker', 'track-scent', {
+      optionId: 'familiar', gmConfirmed: false,
+    }, sourceMap, 1_000)).not.toThrow()
+    expect(() => validate('Tracker', 'track-scent', {
+      optionId: 'familiar;prey:pokemon:eevee-42', description: 'The trail leads north.', gmConfirmed: true,
+    }, sourceMap, 1_000)).not.toThrow()
+    expect(() => validate('Tracker', 'track-scent', {
+      optionId: 'familiar;prey:pokemon:other', description: 'The trail leads north.', gmConfirmed: true,
+    }, sourceMap, 1_000)).toThrow(/exact prey identity/i)
+
+    const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require('Tracker').spec.actions
+      .find(entry => entry.actionId === 'track-scent')!
+    const result = executeCapabilityMechanic({
+      map: sourceMap, actorPlacement, actorSheet: actor,
+      pokemonSheets: sheets.pokemon, trainerSheets: sheets.trainer, linkedTrainerSlugs: new Set(),
+      command: command('Tracker', 'track-scent', {
+        optionId: 'familiar;prey:pokemon:eevee-42', description: 'The trail leads north.', gmConfirmed: true,
+      }),
+      action, now: 1_000,
+      rollDie: (rollId, sides, count = 1) => ({
+        rollId, expression: `${count}d${sides}`, dice: Array.from({ length: count }, () => sides),
+        modifier: 0, total: count * sides,
+      }),
+    })
+    expect(result.reasonCode).toBe('capability.tracker.scent-acquired')
+    expect(result.map.metadata?.capabilityPrivateNotices).toContainEqual(expect.objectContaining({
+      label: 'Scent Trail — pokemon:eevee-42', summary: 'The trail leads north.',
+    }))
+    expect(JSON.stringify(projectCapabilityAutomationMapForPlayer(result.map, sheets))).not.toContain('pokemon:eevee-42')
+  })
+
   it('retains bounded Dream Mist causal evidence, reuses it before expiry, and redacts it from players', () => {
     const selections = {
       targetPlacementIds: [targetPlacement.id],

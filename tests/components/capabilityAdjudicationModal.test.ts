@@ -41,6 +41,21 @@ describe('CapabilityAdjudicationModal typed serialization', () => {
     })
   })
 
+  it('serializes Tracker adjudication with a bounded exact prey identity', async () => {
+    const wrapper = mount(CapabilityAdjudicationModal, {
+      props: { offer: offer('Tracker'), participants },
+    })
+    await wrapper.get('select').setValue('random')
+    await wrapper.get('input[placeholder="pokemon:species-or-campaign-id"]').setValue('pokemon:wild-17')
+    await wrapper.get('textarea').setValue('A fresh trail bends east.')
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toEqual({
+      decision: 'accept',
+      optionId: 'random;prey:pokemon:wild-17',
+      description: 'A fresh trail bends east.',
+    })
+  })
+
   it('rejects without leaking stale option or description values', async () => {
     const wrapper = mount(CapabilityAdjudicationModal, {
       props: { offer: offer('Fortune'), participants },

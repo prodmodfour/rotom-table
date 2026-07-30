@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { trackerScentSelectionId, type TrackerScentBranch } from '#shared/capabilityAutomation/tracker'
 import type { EncounterActionOffer } from '#shared/encounterPresentation/contracts'
 import { items } from '~~/data/ptuReference'
 import pokedexJson from '~~/data/reference/pokedex.json'
@@ -31,6 +32,8 @@ const zygardeLevel = ref(20)
 const dreamMode = ref<'private-view' | 'dream-mist-image'>('private-view')
 const dreamViewerIds = ref<string[]>([])
 const telepathyAwareness = ref<'unaware' | 'aware'>('unaware')
+const trackerBranch = ref<TrackerScentBranch>('familiar')
+const trackerPreyIdentity = ref('')
 const canonicalBerryChoices = items.filter(entry => /berry/i.test(entry.name))
 const canonicalSpeciesChoices = (pokedexJson as PokedexRecord[])
   .map(entry => entry.species).sort((left, right) => left.localeCompare(right))
@@ -43,6 +46,7 @@ const optionKind = computed(() => {
   if (props.offer.source.canonicalId === 'Zygarde Cells') return 'zygarde'
   if (props.offer.source.canonicalId === 'Dream Reader') return 'dream'
   if (props.offer.source.canonicalId === 'Telepath') return 'telepath'
+  if (props.offer.source.canonicalId === 'Tracker') return 'tracker'
   return null
 })
 const requiresOption = computed(() => optionKind.value !== null)
@@ -57,6 +61,7 @@ const retainedOption = (): string | null => {
     return dreamMode.value === 'private-view' ? 'private-view' : `dream-mist-image:viewers:${dreamViewerIds.value.join(',')}`
   }
   if (optionKind.value === 'telepath') return telepathyAwareness.value
+  if (optionKind.value === 'tracker') return trackerScentSelectionId(trackerBranch.value, trackerPreyIdentity.value.trim())
   return optionId.value.trim() || null
 }
 
@@ -79,6 +84,8 @@ watch(() => props.offer.offerId, () => {
   dreamMode.value = 'private-view'
   dreamViewerIds.value = []
   telepathyAwareness.value = 'unaware'
+  trackerBranch.value = 'familiar'
+  trackerPreyIdentity.value = ''
   error.value = ''
 }, { immediate: true })
 
@@ -91,6 +98,10 @@ const submit = (): void => {
   const option = retainedOption()
   if (decision.value === 'accept' && requiresOption.value && !option) {
     error.value = 'This adjudication requires its reviewed option identity.'
+    return
+  }
+  if (decision.value === 'accept' && optionKind.value === 'tracker' && !option) {
+    error.value = 'Select a Tracker branch and one bounded exact authoritative prey identity.'
     return
   }
   if (decision.value === 'accept' && optionKind.value === 'dream' && dreamMode.value === 'dream-mist-image') {
@@ -173,6 +184,11 @@ const submit = (): void => {
         <fieldset v-if="decision === 'accept' && optionKind === 'telepath'">
           <legend>Mind-reading awareness</legend>
           <label><span>Target awareness</span><select v-model="telepathyAwareness"><option value="unaware">Unaware</option><option value="aware">Aware</option></select></label>
+        </fieldset>
+        <fieldset v-if="decision === 'accept' && optionKind === 'tracker'">
+          <legend>Tracker prey authority</legend>
+          <label><span>Scent branch</span><select v-model="trackerBranch"><option value="familiar">Smelt in past day / belonging</option><option value="random">Random scent from nothing</option><option value="specific">Specific scent from nothing</option></select></label>
+          <label><span>Exact authoritative prey identity</span><input v-model="trackerPreyIdentity" maxlength="160" placeholder="pokemon:species-or-campaign-id"></label>
         </fieldset>
         <label v-if="decision === 'accept'">
           <span>Bounded retained result</span>

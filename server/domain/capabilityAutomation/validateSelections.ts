@@ -24,6 +24,7 @@ import { resolveAuthoritativeRelocation, resolveMovement } from '../movement/res
 import { hasPokemonCapabilityEdge } from '#shared/capabilityAutomation/pokemonEdges'
 import { parseCapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
 import { canonicalPtuBerryName } from '#shared/capabilityAutomation/items'
+import { parseTrackerScentSelection } from '#shared/capabilityAutomation/tracker'
 import {
   juicerCanConsumeShellJuiceAsSnack,
   juicerShellJuice,
@@ -1335,22 +1336,24 @@ export const validateCapabilityActionSelections = (input: {
     }
   }
   if (input.command.actionId === 'track-scent') {
-    const branch = input.command.selections.optionId ?? ''
-    if (!['familiar', 'random', 'specific'].includes(branch)) {
-      fail('option-invalid', 'Tracker context must be familiar, random, or specific.')
+    const selection = parseTrackerScentSelection(input.command.selections.optionId)
+      ?? fail('option-invalid', 'Tracker context must be familiar, random, or specific with an optional bounded prey identity.')
+    if (input.command.selections.gmConfirmed && !selection.preyIdentity) {
+      fail('tracker-prey-identity-missing', 'The GM must bind the Tracker check to one exact authoritative prey identity.')
     }
-    if (branch === 'familiar') {
+    if (selection.branch === 'familiar' && input.command.selections.gmConfirmed) {
       const evidence = Array.isArray(input.map.metadata?.capabilityScentEvidence)
         ? input.map.metadata.capabilityScentEvidence as unknown[] : []
       if (!evidence.some(raw => {
         const record = raw as Record<string, unknown>
         return record?.actorPlacementId === input.actor.id
+          && record.preyIdentity === selection.preyIdentity
           && (record.personalBelonging === true
             || (typeof record.smelledAt === 'number' && record.smelledAt >= input.now - 24 * 60 * 60_000))
           && (typeof record.expiresAt !== 'number' || record.expiresAt > input.now)
-      })) fail('tracker-familiar-scent-evidence-missing', 'The familiar Tracker branch requires retained smell-within-one-day or personal-belonging evidence.')
+      })) fail('tracker-familiar-scent-evidence-missing', 'The familiar Tracker branch requires current retained evidence for that exact prey identity.')
     }
-    else if (!hasContext(input.map, 'scent-trail')) {
+    else if (selection.branch !== 'familiar' && !hasContext(input.map, 'scent-trail')) {
       fail('tracker-world-context-missing', 'Random or specific scent pickup requires an authoritative available scent-trail context.')
     }
     if (input.command.selections.gmConfirmed && !input.command.selections.description?.trim()) {

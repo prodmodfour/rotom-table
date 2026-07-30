@@ -74,6 +74,7 @@ import {
   withJuicerShellJuiceSnack,
 } from './juicer'
 import { mapWithCapabilityGlowLight } from './glow'
+import { parseTrackerScentSelection } from '#shared/capabilityAutomation/tracker'
 import {
   zygardeAssemblyMatchesPlacement,
   zygardeAssemblyRecordForPlacement,
@@ -2288,8 +2289,10 @@ const executeSkillChallenge = (input: ExecuteCapabilityMechanicInput): Capabilit
     }
   }
   if (input.command.actionId === 'track-scent') {
-    const dc = input.command.selections.optionId === 'familiar' ? 8
-      : input.command.selections.optionId === 'random' ? 14 : 20
+    const selection = parseTrackerScentSelection(input.command.selections.optionId)
+    if (!selection?.preyIdentity) throw new Error('Tracker requires an exact GM-retained prey identity.')
+    const dc = selection.branch === 'familiar' ? 8
+      : selection.branch === 'random' ? 14 : 20
     const trailSnifferBonus = input.actorPlacement.sheetKind === 'pokemon'
       && hasPokemonCapabilityEdge(input.actorSheet as CharacterSheet, 'Trail Sniffer')
       ? skillExpression(input.actorSheet, input.actorPlacement.sheetKind, 'focus').count : 0
@@ -2308,7 +2311,7 @@ const executeSkillChallenge = (input: ExecuteCapabilityMechanicInput): Capabilit
       operationId: input.command.operationId,
       canonicalId: input.command.canonicalId,
       actionId: input.command.actionId,
-      label: 'Scent Trail',
+      label: `Scent Trail — ${selection.preyIdentity}`,
       summary,
       sourcePlacementId: input.actorPlacement.id,
       revealToPlacementIds: [input.actorPlacement.id],
@@ -2318,7 +2321,9 @@ const executeSkillChallenge = (input: ExecuteCapabilityMechanicInput): Capabilit
       map, sheetMutations: [], rolls: [roll], produced: [],
       outcome: success ? 'applied' : 'no-op',
       reasonCode: success ? 'capability.tracker.scent-acquired' : 'capability.tracker.check-failed',
-      adjudicationNote: success ? `Scent trail acquired against DC ${dc}.` : `Perception ${roll.total} did not meet DC ${dc}.`,
+      adjudicationNote: success
+        ? `Scent trail for ${selection.preyIdentity} acquired against DC ${dc}.`
+        : `Perception ${roll.total} did not meet DC ${dc} for ${selection.preyIdentity}.`,
     }
   }
   const target = targetPlacementAndSheet(input)

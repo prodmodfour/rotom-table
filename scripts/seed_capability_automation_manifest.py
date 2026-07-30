@@ -285,6 +285,11 @@ ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
         "when": "the free thought projection is validated",
         "then": "ordinary Trainers are legal recipients while Pokémon recipients must themselves have effective Telepath",
     },
+    ("Tracker", "track-scent"): {
+        "given": "an effective Tracker source has its hourly use available and one GM-retained exact prey identity",
+        "when": "the familiar, random, or specific scent branch is resolved",
+        "then": "familiar evidence must match that exact prey within its retained time window, the server rolls the canonical DC, and only the Tracker receives the identity-bound trail result",
+    },
     ("Wired", "exit-machine"): {
         "given": "an exact effective Wired source occupies one authoritative electronic device",
         "when": "it selects an exit device and exact retained cell",
