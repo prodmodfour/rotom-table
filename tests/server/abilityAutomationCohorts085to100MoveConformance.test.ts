@@ -925,6 +925,16 @@ describe('AA-085 through AA-100 move conformance', () => {
       abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
     })
     expect(capped.applied).toBe(false)
+    const invalidMaximum = fixture({ actorAbilities: ['Regenerator'], actorCurrentHp: 50 })
+    expect(() => applyAa085to100RegeneratorTrigger({
+      map: invalidMaximum.map,
+      placement: invalidMaximum.map.placements.find(candidate => candidate.id === 'actor')!,
+      sheet: invalidMaximum.pokemonSheets.get('actor')!,
+      operationId: 'op_regenerator_invalid_maximum',
+      trigger: 'take-a-breather',
+      maximumHp: Number.NaN,
+      abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
+    })).toThrow(/finite positive authoritative maximum HP/)
 
     const grantedState = fixture({ actorCurrentHp: 50 })
     grantedState.pokemonSheets.get('actor')!.abilities = [{
@@ -1008,6 +1018,53 @@ describe('AA-085 through AA-100 move conformance', () => {
       currentHp: 60,
       injuries: 2,
     })
+  })
+
+  it('persists ordinary Move HP and injuries while raw Soulless is suppressed', () => {
+    const state = fixture({
+      actorMoves: ['Tackle'],
+      targetSpecies: 'Shedinja',
+      targetCurrentHp: 10,
+      targetInjuries: 2,
+    })
+    const encounter = state.map.encounterState!
+    state.map = {
+      ...state.map,
+      encounterState: {
+        ...encounter,
+        effects: [...encounter.effects, parseEncounterEffect({
+          id: 'suppress-soulless-native-move',
+          kind: 'capability',
+          source: {
+            operationId: 'suppress-soulless-native-move-operation',
+            moveId: 'test.suppress-soulless',
+            placementId: 'target',
+          },
+          affected: { placementIds: ['target'], sideIds: [], cells: [] },
+          createdRound: 1,
+          createdTurn: 1,
+          duration: { kind: 'scene', remaining: null },
+          stacks: 1,
+          charges: null,
+          stackPolicy: { kind: 'replace', maxStacks: null },
+          chargePolicy: { kind: 'none', amount: null },
+          tags: ['capability-suppression'],
+          payload: { capabilityId: 'soulless', action: 'suppress' },
+          dispel: { policy: 'none', tags: [] },
+          transferPolicy: 'expire',
+          suppression: { sources: [] },
+        })],
+      },
+    }
+    const result = complete({
+      state,
+      moveName: 'Tackle',
+      choose: () => null,
+      random: () => 0.5,
+    })
+    const persisted = nextSheet(result, 'target').combat
+    expect(persisted?.currentHp).toBeLessThan(1)
+    expect(persisted?.injuries).toBeGreaterThan(2)
   })
 
   it('Defense Curl directly applies its complete reviewed state and action payment', () => {

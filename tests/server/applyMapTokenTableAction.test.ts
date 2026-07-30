@@ -13,6 +13,7 @@ import { createEmptyEncounterState } from '../../shared/moveAutomation/encounter
 import { createEncounterTurnResourceLedger } from '../../shared/moveAutomation/encounterResources'
 import { capabilityEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 import { executeLivePlayTableActionCommandUseCase } from '../../server/useCases/applyMapTokenTableAction'
+import { resolveEffectiveCapabilities } from '../../server/domain/capabilityAutomation/effectiveCapabilities'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -200,6 +201,100 @@ describe('live-play map token table action commands', () => {
     }, deps)
     expect(response.result).toMatchObject({ ok: true, opId: 'op_takebreather1' })
     expect(mapRepository.getBySlug('arena')?.encounterState?.effects).toEqual([])
+  })
+
+  it('atomically reconciles As One and Crowned state after table-action Regenerator healing', async () => {
+    const encounter = createEmptyEncounterState()
+    const ownerSheet = pokemonSheet({
+      species: 'Eevee',
+      level: 30,
+      stats: { hp: { added: 50 } },
+      combat: { currentHp: 20, injuries: 0, conditions: [] },
+      abilities: [{ name: 'Regenerator' }],
+      capabilities: { other: ['As One'] },
+    })
+    const mountPlacement = {
+      id: 'mount', sheetKind: 'pokemon' as const, sheetSlug: 'mount', position: { x: 0, y: 0, z: 0 },
+    }
+    const placements = [...baseMap().placements, mountPlacement]
+    const sourceMap = baseMap({ placements, encounterState: encounter })
+    const asOne = resolveEffectiveCapabilities({
+      map: sourceMap,
+      placement: placements[0]!,
+      sheet: ownerSheet,
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'As One')!
+    const map = baseMap({
+      placements,
+      initiative: { activeId: 'actor', round: 2 },
+      encounterState: {
+        ...encounter,
+        history: {
+          ...encounter.history,
+          sceneId: 'scene:regenerator-table-action',
+          currentRound: 2,
+          currentTurn: { round: 2, turn: 1, placementId: 'actor' },
+        },
+        turnResources: {
+          actor: createEncounterTurnResourceLedger({ placementId: 'actor', round: 2, turn: 1 }),
+        },
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'capability.link.actor.as-one-mount',
+            kind: 'as-one-mount',
+            ownerPlacementId: 'actor',
+            participantPlacementIds: ['mount'],
+            capabilityInstanceId: asOne.instanceId,
+            canonicalId: 'As One',
+            establishedAt: 100,
+            configurationId: 'Chilling Neigh',
+            sourceOperationId: 'operation:as-one',
+          }],
+          modes: [{
+            id: 'capability.mode.actor.crowned',
+            actorPlacementId: 'actor',
+            capabilityInstanceId: 'capability:actor:Weapon_Bond:base',
+            canonicalId: 'Weapon Bond',
+            mode: 'crowned',
+            description: null,
+            configurationId: 'crowned-sword',
+            activatedAt: 100,
+            expiresAt: null,
+            sourceOperationId: 'operation:crowned',
+          }],
+        },
+      },
+    })
+    const { deps, mapRepository, sheetRepository } = createDeps({
+      map,
+      now: 1110,
+      sheets: {
+        'pokemon:sandile': ownerSheet,
+        'pokemon:target': pokemonSheet({ slug: 'target', nickname: 'Target', species: 'Pikachu' }),
+        'pokemon:mount': pokemonSheet({
+          slug: 'mount', nickname: 'Mount', species: 'Glastrier',
+          combat: { currentHp: 0, injuries: 0, conditions: [] },
+        }),
+        'trainer:lenora': trainerSheet(),
+      },
+    })
+    const response = await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
+      command: command(
+        LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+        'op_regenerator_table_action',
+        { placementId: 'actor', maneuverName: 'Take a Breather' },
+        [tokenActionScope('actor'), metadataScope],
+      ),
+    }, deps)
+    expect(response.result).toMatchObject({ ok: true })
+    const stored = sheetRepository.getByRef('pokemon', 'sandile')?.sheet as CharacterSheet
+    expect(stored.abilityUsage?.entries).toContainEqual(expect.objectContaining({ canonicalId: 'Regenerator' }))
+    expect(stored.combat?.currentHp).toBe(0)
+    expect((sheetRepository.getByRef('pokemon', 'mount')?.sheet as CharacterSheet).combat?.currentHp).toBe(0)
+    expect(mapRepository.getBySlug('arena')?.encounterState?.capabilityRuntime?.modes)
+      .not.toContainEqual(expect.objectContaining({ mode: 'crowned', actorPlacementId: 'actor' }))
   })
 
   it('records exact Disengage Shift and Lancer evidence through the production maneuver path', async () => {

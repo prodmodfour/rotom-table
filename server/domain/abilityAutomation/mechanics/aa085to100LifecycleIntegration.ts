@@ -395,7 +395,10 @@ export const applyAa085to100RegeneratorTrigger = (input: {
     placementId: input.placement.id,
     sheet: input.sheet,
   })
-  const maximumHp = effectiveSoulless ? 1 : Math.max(1, input.maximumHp)
+  if (!Number.isFinite(input.maximumHp) || input.maximumHp < 1) {
+    throw new Error('Regenerator requires a finite positive authoritative maximum HP.')
+  }
+  const maximumHp = effectiveSoulless ? 1 : Math.max(1, Math.trunc(input.maximumHp))
   if (currentHp >= maximumHp) return { map: input.map, sheet: input.sheet, applied: false }
   const abilityInstance = effectiveRuntimeAbilities({
     map: input.map,

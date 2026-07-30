@@ -154,6 +154,7 @@ const projectRecipientSheet = (options: {
   readonly conditionUpdate: MoveAutomationConditionUpdate | undefined
   readonly stageUpdate: MoveAutomationCombatStageUpdate | undefined
   readonly touches: MoveCoreTokenEffectTouches
+  readonly effectiveSoulless: boolean
 }): {
   readonly previous: MoveSheetDocument
   readonly current: MoveSheetDocument
@@ -201,6 +202,7 @@ const projectRecipientSheet = (options: {
         current as AnyLiveSheet,
         update.currentHp,
         update.injuries,
+        { effectiveSoulless: options.effectiveSoulless },
       ) as MoveSheetDocument
     }
     else if (field === 'conditions') {
@@ -240,6 +242,8 @@ export interface BuildCoreTokenStateChangesInput {
     readonly previous: EncounterState
     readonly current: EncounterState
   } | null
+  /** Suppression-aware authority for every placement whose sheet may be projected. */
+  readonly effectiveSoullessPlacementIds: ReadonlySet<string>
 }
 
 /** Aggregate ordered shared-kernel output into one typed replacement per physical resource. */
@@ -317,6 +321,7 @@ export const buildCoreTokenStateChanges = (
       conditionUpdate: conditionsById.get(placementId),
       stageUpdate: stagesById.get(placementId),
       touches,
+      effectiveSoulless: options.effectiveSoullessPlacementIds.has(placementId),
     })
     if (!projected) continue
 
@@ -467,7 +472,7 @@ export const buildCoreTokenStateChanges = (
 }
 
 export interface BuildMoveCoreTokenStateChangesInput
-  extends Omit<BuildCoreTokenStateChangesInput, 'map' | 'placements' | 'time'> {
+  extends Omit<BuildCoreTokenStateChangesInput, 'map' | 'placements' | 'time' | 'effectiveSoullessPlacementIds'> {
   readonly context: AuthoritativeMoveRulesContext
 }
 
@@ -479,4 +484,7 @@ export const buildMoveCoreTokenStateChanges = (
   map: options.context.map,
   placements: options.context.queries.placements.all(),
   time: options.context.time,
+  effectiveSoullessPlacementIds: new Set(options.context.queries.placements.all()
+    .filter(placement => options.context.queries.creatureRules.hasCapability(placement.id, 'Soulless'))
+    .map(placement => placement.id)),
 })

@@ -27,11 +27,17 @@ import {
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
+import { sameJsonValue } from '~/utils/serialization'
 import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
 import { applyAa081NaturalCureForBreather } from '../domain/abilityAutomation/mechanics/aa081LifecycleIntegration'
 import { applyAa085to100RegeneratorTrigger } from '../domain/abilityAutomation/mechanics/aa085to100LifecycleIntegration'
 import { cleanupAa085to100CurledUpForBreather } from '../domain/abilityAutomation/mechanics/aa085to100ActionIntegration'
+import {
+  capabilityHpSheetKey,
+  reconcileCapabilityHpState,
+  type CapabilityHpStateSheet,
+} from '../domain/capabilityAutomation/reconcileHpState'
 import { clearAa083PerishCountForBreather } from '../domain/abilityAutomation/mechanics/aa083LifecycleIntegration'
 import { resolveAuthoritativeDisarm } from '../domain/maneuverAutomation/disarm'
 import { spendEncounterMoveResourceCosts } from '../domain/moveAutomation/reduceEncounterResources'
@@ -128,6 +134,8 @@ interface ResolvedActionContext {
   readonly actorSheet: PersistedSheet
   readonly targetSheet?: PersistedSheet
   readonly linkedTrainerSheets: readonly ServerTokenControlLinkedTrainerSheet[]
+  readonly mapSheets: ReadonlyMap<string, PersistedSheet>
+  readonly consultedHpSheetRevisions?: readonly { kind: SheetKind; slug: string; revision: number }[]
   readonly nextSheets?: readonly SheetWritePlan[]
   readonly sheetUpdates?: readonly LivePlayTableActionSheetUpdate[]
   readonly action?: LivePlayTableActionSummary
@@ -142,8 +150,19 @@ interface SheetWritePlan {
 }
 
 interface ActionToken extends Pick<SpawnedPokemon,
-  'id' | 'species' | 'position' | 'sheetKind' | 'sheetSlug' | 'combatStages' | 'conditions'
-> {}
+  | 'id'
+  | 'species'
+  | 'position'
+  | 'sheetKind'
+  | 'sheetSlug'
+  | 'combatStages'
+  | 'conditions'
+> {
+  readonly currentHp: number
+  readonly maxHp: number
+  readonly fullMaxHp: number
+  readonly injuries: number
+}
 
 type UnknownRecord = Record<string, unknown>
 type TableActionPayload = UseManeuverPayload | UseOrderPayload
@@ -223,6 +242,10 @@ const tokenFromSheet = (
       position: placement.position,
       sheetKind: placement.sheetKind,
       sheetSlug: placement.sheetSlug,
+      currentHp: snapshot.currentHp,
+      maxHp: snapshot.maxHp,
+      fullMaxHp: snapshot.fullMaxHp,
+      injuries: snapshot.injuries,
       combatStages: snapshot.combatStages,
       conditions: snapshot.conditions,
     }
@@ -235,6 +258,10 @@ const tokenFromSheet = (
     position: placement.position,
     sheetKind: placement.sheetKind,
     sheetSlug: placement.sheetSlug,
+    currentHp: snapshot.currentHp,
+    maxHp: snapshot.maxHp,
+    fullMaxHp: snapshot.fullMaxHp,
+    injuries: snapshot.injuries,
     combatStages: snapshot.combatStages,
     conditions: snapshot.conditions,
   }
@@ -379,9 +406,16 @@ const resolveContext = async (
     throw new MapTokenTableActionUseCaseError(404, `Placement ${targetPlacementId} not found`)
   }
 
-  const actorSheet = await readRequiredSheet(actorPlacement, dependencies, command.type)
+  const mapSheets = new Map<string, PersistedSheet>()
+  for (const placement of map.placements) {
+    const key = capabilityHpSheetKey(placement.sheetKind, placement.sheetSlug)
+    if (!mapSheets.has(key)) {
+      mapSheets.set(key, await readRequiredSheet(placement, dependencies, command.type))
+    }
+  }
+  const actorSheet = mapSheets.get(capabilityHpSheetKey(actorPlacement.sheetKind, actorPlacement.sheetSlug))!
   const targetSheet = targetPlacement
-    ? await readRequiredSheet(targetPlacement, dependencies, `${command.type} target`)
+    ? mapSheets.get(capabilityHpSheetKey(targetPlacement.sheetKind, targetPlacement.sheetSlug))
     : undefined
 
   const mapPath = mapPathForDocument(map)
@@ -394,6 +428,7 @@ const resolveContext = async (
     actorSheet,
     ...(targetSheet ? { targetSheet } : {}),
     linkedTrainerSheets: await linkedTrainerSheetsForActor(actor, dependencies),
+    mapSheets,
   }
 }
 
@@ -623,19 +658,49 @@ const applyManeuverCommand = (
         sheet: naturalCure.sheet,
         operationId: command.opId,
         trigger: 'take-a-breather',
-        maximumHp: (actor as SpawnedPokemon).fullMaxHp ?? (actor as SpawnedPokemon).maxHp,
+        maximumHp: actor.fullMaxHp,
       })
     : { map: naturalCure.map, sheet: naturalCure.sheet, applied: false }
+  let capabilityHpMap = regenerator.map
+  let capabilityHpSheets: ReadonlyMap<string, CapabilityHpStateSheet> | null = null
+  let consultedHpSheetRevisions: ResolvedActionContext['consultedHpSheetRevisions']
+  if (regenerator.applied) {
+    const previousSheets = new Map<string, CapabilityHpStateSheet>([...context.mapSheets].map(([key, stored]) => [key, {
+      kind: stored.kind,
+      slug: stored.slug,
+      revision: normalizeRevision(stored.revision),
+      sheet: stored.sheet as unknown as CharacterSheet | TrainerSheet,
+    }]))
+    const actorKey = capabilityHpSheetKey(context.actorPlacement.sheetKind, context.actorPlacement.sheetSlug)
+    const nextSheets = new Map(previousSheets)
+    nextSheets.set(actorKey, {
+      ...previousSheets.get(actorKey)!,
+      sheet: regenerator.sheet as CharacterSheet | TrainerSheet,
+    })
+    const reconciled = reconcileCapabilityHpState({
+      previousMap: naturalCure.map,
+      nextMap: regenerator.map,
+      previousSheets,
+      sheets: nextSheets,
+      touchedPlacementIds: new Set([context.actorPlacement.id]),
+    })
+    capabilityHpMap = reconciled.nextMap
+    capabilityHpSheets = reconciled.sheets
+    consultedHpSheetRevisions = [...reconciled.consultedSheetKeys].map((key) => {
+      const stored = context.mapSheets.get(key)!
+      return { kind: stored.kind, slug: stored.slug, revision: normalizeRevision(stored.revision) }
+    })
+  }
   const withAbilityTrigger = maneuver.name === 'Grapple' && target
     ? applyAa065CrushTrapGrappleTrigger({
-        map: regenerator.map,
+        map: capabilityHpMap,
         actorPlacement: context.actorPlacement,
         actorToken: actor as SpawnedPokemon,
         actorSheet: context.actorSheet.sheet as unknown as CharacterSheet,
         targetToken: target as SpawnedPokemon,
         operationId: command.opId,
       })
-    : regenerator.map
+    : capabilityHpMap
   const withDisengageEvidence = maneuver.name === 'Disengage'
     ? applyAa077DisengageResourceEvidence({
         map: withAbilityTrigger,
@@ -648,7 +713,17 @@ const applyManeuverCommand = (
 
   const writePlans = new Map<string, SheetWritePlan>()
   if (naturalCure.applied || regenerator.applied) {
-    addOrUpdateWritePlan(writePlans, context.actorSheet, 'ability-lifecycle', () => regenerator.sheet)
+    const actorKey = capabilityHpSheetKey(context.actorPlacement.sheetKind, context.actorPlacement.sheetSlug)
+    const actorResult = capabilityHpSheets?.get(actorKey)?.sheet ?? regenerator.sheet
+    addOrUpdateWritePlan(writePlans, context.actorSheet, 'ability-lifecycle', () => actorResult as AnyLiveSheet)
+  }
+  if (capabilityHpSheets) {
+    for (const [key, snapshot] of capabilityHpSheets) {
+      const original = context.mapSheets.get(key)
+      if (!original || key === capabilityHpSheetKey(context.actorPlacement.sheetKind, context.actorPlacement.sheetSlug)) continue
+      if (sameJsonValue(original.sheet, snapshot.sheet)) continue
+      addOrUpdateWritePlan(writePlans, original, 'capability-hp-reconciliation', () => snapshot.sheet as AnyLiveSheet)
+    }
   }
   if (disarmResult?.changedTargetSheet && context.targetSheet) {
     addOrUpdateWritePlan(writePlans, context.targetSheet, 'equipment', () => disarmResult.targetSheet)
@@ -657,6 +732,7 @@ const applyManeuverCommand = (
   return {
     ...context,
     map: { ...withDisengageEvidence, revision, updatedAt },
+    ...(consultedHpSheetRevisions ? { consultedHpSheetRevisions } : {}),
     ...(nextSheets.length > 0 ? {
       nextSheets,
       sheetUpdates: nextSheets.map(sheetUpdateFromPlan),
@@ -877,6 +953,7 @@ const currentContextForAcceptedResult = async (
       actorPlacement,
       actorSheet,
       linkedTrainerSheets,
+      mapSheets: new Map([[capabilityHpSheetKey(actorPlacement.sheetKind, actorPlacement.sheetSlug), actorSheet]]),
       action: actionFromAcceptedResult(result),
       sheetUpdates,
     }
@@ -942,6 +1019,15 @@ export const executeLivePlayTableActionCommandUseCase = async (
     },
     commit: ({ actor, command, currentRevision, nextMap, result, recordRealtimeEvents, saveOpResult }) => {
       deps.database.withTransaction(() => {
+        for (const read of nextMap.consultedHpSheetRevisions ?? []) {
+          const current = deps.sheetRepository.getByRef(read.kind, read.slug)
+          if (!current || normalizeRevision(current.revision) !== read.revision) {
+            throw new MapTokenTableActionUseCaseError(
+              409,
+              `Sheet ${read.kind}/${read.slug} changed before Capability HP reconciliation could be persisted`,
+            )
+          }
+        }
         const persistedMap = toPersistedMap(
           nextMap.map,
           nextMap.map.folder ?? '',

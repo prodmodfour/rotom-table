@@ -354,6 +354,7 @@ export const reduceAbilitySharedCombatStageEffects = (input: {
     conditionUpdates: [],
     stageUpdates: accumulator.toUpdates(),
     encounterStateUpdate: null,
+    effectiveSoullessPlacementIds: new Set(),
   })
   return Object.freeze({
     plan,
