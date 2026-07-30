@@ -558,6 +558,8 @@ interface MovementPlacementSnapshot extends PositionedGridFootprint {
   readonly effectiveCapabilityInstanceIds: readonly string[]
   readonly equippedItemIds: readonly string[]
   readonly naturewalkTerrains: readonly string[]
+  /** Amorphous may use a 1m traversal shape, but must reform at endpoints. */
+  readonly amorphousTraversal: boolean
   readonly movementCapabilities: MovementCapabilitySpeeds
   readonly movementTraits: MovementCapabilityTraits
   readonly movementProfile: EffectiveMovementProfile
@@ -1018,8 +1020,8 @@ const buildMovementSnapshots = (
       && !activeModes.some(mode => mode.mode === 'inflated')
     const sizeScale = activeModes.some(mode => mode.mode === 'inflated') ? 1.25
       : activeModes.some(mode => mode.mode === 'shrunken') ? 0.25 : 1
-    const base = amorphous ? 1 : Math.max(1, Math.ceil(token.base * sizeScale))
-    const clearance = amorphous || activeModes.some(mode => mode.mode === 'shadow-melded')
+    const base = Math.max(1, Math.ceil(token.base * sizeScale))
+    const clearance = activeModes.some(mode => mode.mode === 'shadow-melded')
       ? 1
       : Math.max(1, Math.ceil(getClearanceValue(token) * sizeScale))
     let movementBaseSpeeds = { ...(token.movementCapabilities ?? {}) }
@@ -1086,6 +1088,7 @@ const buildMovementSnapshots = (
         instance.effective && instance.canonicalId === 'Naturewalk' && instance.parameters.kind === 'terrains'
           ? [...instance.parameters.terrains] : []
       )),
+      amorphousTraversal: amorphous,
       position: cloneAnchor(placement.position),
       base,
       clearance,
@@ -1155,7 +1158,9 @@ const buildMovementSnapshots = (
       const participant = placements[participantIndexes[0]!]!
       placements[ownerIndex] = {
         ...owner,
-        ...(link.kind === 'as-one-mount' ? { base: participant.base, clearance: participant.clearance } : {}),
+        ...(link.kind === 'as-one-mount'
+          ? { base: participant.base, clearance: participant.clearance, amorphousTraversal: false }
+          : {}),
         movementCapabilities: { ...participant.movementCapabilities },
         movementTraits: { ...participant.movementTraits, jump: { ...participant.movementTraits.jump } },
         movementProfile: {
@@ -2045,6 +2050,12 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     return withLinkedCompanions(enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements }))
   }
 
+  // Amorphous changes only the occupied shape while traversing a tight route.
+  // Endpoints retain the normal authoritative footprint so every later range,
+  // adjacency, blocking, and occupancy consumer observes the same geometry.
+  const traversalMover: MovementPlacementSnapshot = mover.amorphousTraversal
+    ? { ...mover, base: 1, clearance: 1 }
+    : mover
   const sourcePlacement = input.map.placements.find(placement => placement.id === placementId)
   const sourceSheet = sourcePlacement
     ? sourcePlacement.sheetKind === 'pokemon'
@@ -2059,7 +2070,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       }).includes('Line Charge')
     : false
   const pathResult = findMovementPathForPokemon({
-    pokemon: mover,
+    pokemon: traversalMover,
     start: origin,
     goal: destination,
     pokemons: intangibleTraversal ? [] : endpointPlacements,
@@ -2079,8 +2090,8 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   const snowBootsPenalty = mover.equippedItemIds.includes('snow-boots')
     && pathResult.capabilityKeys.includes('overland')
     && (pathResult.path ?? []).some(anchor => input.map.voxels.some((voxel) => {
-      if (voxel.x < anchor.x || voxel.x >= anchor.x + mover.base
-        || voxel.z < anchor.z || voxel.z >= anchor.z + mover.base
+      if (voxel.x < anchor.x || voxel.x >= anchor.x + traversalMover.base
+        || voxel.z < anchor.z || voxel.z >= anchor.z + traversalMover.base
         || Math.abs(voxel.y - anchor.y) > 1) return false
       const material = getVoxelMaterialDefinition(voxel)
       return [...(voxel.tags ?? []), ...(material.tags ?? []), voxel.materialId]

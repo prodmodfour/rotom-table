@@ -516,6 +516,46 @@ describe('authoritative movement oracle', () => {
     expect(result.triggeringSteps[0]?.enteredCells).toHaveLength(4)
   })
 
+  it('lets Amorphous squeeze through a tight route but requires its normal endpoint footprint', () => {
+    const actor = pokemonSheet('actor', { species: 'Goodra', revision: 4 })
+    const tightRoute = map([placement('actor', 0, 0)], {
+      dimensions: { x: 6, y: 3, z: 2 },
+      voxels: [wall(2, 1), wall(3, 1)],
+    })
+    const legal = resolveMovement(input({
+      map: tightRoute,
+      sheets: sheets([actor]),
+      destination: { x: 4, y: 0, z: 0 },
+    }))
+
+    expect(legal).toMatchObject({
+      ok: true,
+      destination: { x: 4, y: 0, z: 0 },
+      footprint: { base: 2, clearance: 2 },
+      occupancy: {
+        destinationCells: expect.arrayContaining([
+          { x: 4, y: 0, z: 0 },
+          { x: 5, y: 1, z: 1 },
+        ]),
+      },
+    })
+
+    const blockedEndpoint = resolveMovement(input({
+      map: { ...tightRoute, voxels: [...tightRoute.voxels, wall(5, 1)] },
+      sheets: sheets([actor]),
+      destination: { x: 4, y: 0, z: 0 },
+    }))
+    expect(blockedEndpoint).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-destination-terrain-blocked',
+      footprint: { base: 2, clearance: 2 },
+      collision: {
+        kind: 'terrain',
+        voxelCells: expect.arrayContaining([{ x: 5, y: 0, z: 1 }]),
+      },
+    })
+  })
+
   it('returns typed endpoint collision failures with map-order evidence', () => {
     const arena = map([
       placement('actor', 0, 0),

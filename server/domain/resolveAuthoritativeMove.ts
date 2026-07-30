@@ -2209,11 +2209,6 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
       'Total Blindness prevents Moves with Priority and Interrupt Moves.',
     )
   }
-  if (entry.canonicalMoveName === 'Mind Reader' && submittedTargetIds.some(targetId => (
-    context.queries.creatureRules.hasCapability(targetId, 'Mindlock')
-  ))) {
-    fail('unauthorized-state', 'move-creature-rule-blocked', 'Mindlock prevents Mind Reader from targeting this participant.')
-  }
   if (entry.canonicalMoveName === 'Rest'
     && context.queries.abilities.has(actorPlacement.id, 'Insomnia')) {
     fail(

@@ -570,6 +570,39 @@ describe('resolveAuthoritativeMove', () => {
     expect(snapshotInput(map, pokemonSheets, trainerSheets)).toBe(before)
   })
 
+  it('resolves Mind Reader as an automatic miss against effective Mindlock while spending the Move', () => {
+    const resolution = resolveAuthoritativeMove({
+      map: mapFixture(),
+      pokemonSheets: sheetMap([{ name: 'Mind Reader' }], {
+        'target-a': { ...targetSheet('target-a'), capabilities: { other: ['Mindlock'] } },
+      }),
+      trainerSheets: new Map(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName: 'Mind Reader',
+        selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+      }),
+      random: randomSequence([0]),
+    })
+
+    expect(resolution.selectedTargetIds).toEqual(['target-a'])
+    expect(resolution.rollLedger).toEqual([])
+    expect(resolution.nativeV2?.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ operation: expect.objectContaining({ id: 'mind-reader.usage', kind: 'usage' }) }),
+      expect.objectContaining({ operation: expect.objectContaining({ id: 'mind-reader.log-completed', kind: 'log' }) }),
+    ]))
+    expect(resolution.nativeV2?.operations).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ operation: expect.objectContaining({ id: 'mind-reader.read' }) }),
+    ]))
+    expect(resolution.auditTrace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'predicate',
+        outcome: false,
+        reasonCode: 'capability.mindlock.mind-reader-auto-miss',
+      }),
+    ]))
+  })
+
   it('resolves no-roll Helping Hand through its native source-linked effect operation', () => {
     const resolution = resolveAuthoritativeMove({
       map: mapFixture(),
