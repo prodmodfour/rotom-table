@@ -22,7 +22,6 @@ import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import {
   applyCombatStagesToSheet,
   applyConditionsToSheet,
-  applyHpToSheet,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
 import { clampCombatStage } from '~/utils/combatStages'
@@ -33,7 +32,7 @@ import { gridFootprintCells } from '~/utils/gridGeometry'
 import { getVoxelMaterialDefinition } from '~/utils/mapMaterials'
 import { normalizeConditionName, normalizeConditionNames } from '~/utils/statusConditions'
 import { abilityIsCopyable } from '../effectiveAbilities'
-import { hasEffectiveSoullessCapability } from '../effectiveRuntimeAbilities'
+import { applyAbilityHpToSheet } from '../capabilityHpInvariants'
 import { reduceAbilityTransformationCommand } from '../transformations'
 import { applyMapGlobalField } from '../../moveAutomation/fieldMapState'
 import { buildAuthoritativeMoveRulesContext } from '../../moveAutomation/context'
@@ -462,16 +461,6 @@ const temporaryHpChange = (input: {
   const byPlacementId = { ...currentBase.byPlacementId }
   for (const [placementId, amount] of Object.entries(input.additions)) {
     if (amount <= 0
-      || (() => {
-        const placement = input.context.queries.placements.get(placementId)
-        if (!placement) return false
-        const sheet = input.context.queries.sheets.forPlacement(placement)?.sheet
-        return sheet ? hasEffectiveSoullessCapability({
-          map: input.context.map,
-          placementId,
-          sheet,
-        }) : false
-      })()
       || authoritativeAbilityHealingBlocked({ map: input.context.map, placementId })
       || (() => {
         const token = input.context.queries.tokens.get(placementId)
@@ -655,11 +644,13 @@ const rainDish = (input: ExecuteInput): Aa085To100ActivatedExecution => {
   return actorSheetExecution({
     ...input, canonicalId: 'Rain Dish',
     apply: (sheet) => ({
-      sheet: applyHpToSheet(
-        input.context.actor.sheet.kind, sheet,
-        Math.min(maximum, input.context.actor.token.currentHp + computeTickValue(maximum)),
-        input.context.actor.token.injuries ?? 0,
-      ),
+      sheet: applyAbilityHpToSheet({
+        context: input.context,
+        placementId: input.context.actor.placement.id,
+        sheet,
+        currentHp: Math.min(maximum, input.context.actor.token.currentHp + computeTickValue(maximum)),
+        injuries: input.context.actor.token.injuries ?? 0,
+      }),
       fields: ['hp'],
     }),
   })
@@ -729,12 +720,13 @@ const sunBlanket = (input: ExecuteInput): Aa085To100ActivatedExecution => {
     fail('Sun Blanket healing is blocked.')
   }
   const paid = paidState({ ...input, canonicalId: 'Sun Blanket' })
-  let sheet = applyHpToSheet(
-    input.context.actor.sheet.kind,
-    actorSheetWithPayment(input, paid),
-    Math.min(maximum, input.context.actor.token.currentHp + computeTickValue(maximum)),
-    input.context.actor.token.injuries ?? 0,
-  )
+  let sheet = applyAbilityHpToSheet({
+    context: input.context,
+    placementId: input.context.actor.placement.id,
+    sheet: actorSheetWithPayment(input, paid),
+    currentHp: Math.min(maximum, input.context.actor.token.currentHp + computeTickValue(maximum)),
+    injuries: input.context.actor.token.injuries ?? 0,
+  })
   sheet.revision = nextRevision(input.context.actor.sheet.revision)
   const current = parseEncounterState({
     ...paid.encounter,

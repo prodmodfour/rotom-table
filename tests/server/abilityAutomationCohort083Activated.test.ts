@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import { pokemonHpSnapshot } from '~/utils/sheetSpawn'
@@ -63,13 +64,20 @@ const map = (slug: string): TabletopMap => {
 }
 let databases: RotomDatabase[] = []
 afterEach(() => databases.splice(0).forEach(database => database.close()))
-const setup = (slug: string, canonicalId: string) => {
+const setup = (slug: string, canonicalId: string, options: {
+  readonly actor?: CharacterSheet
+  readonly map?: TabletopMap
+} = {}) => {
   const database = openRotomDatabase({ path: ':memory:' })
   databases.push(database)
   const mapRepository = createSqliteMapRepository<TabletopMap>(database)
   const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
-  mapRepository.saveSetupMap(map(slug))
-  sheetRepository.saveSetupSheet('pokemon', 'actor', sheet(canonicalId) as unknown as Record<string, unknown>)
+  mapRepository.saveSetupMap(options.map ?? map(slug))
+  sheetRepository.saveSetupSheet(
+    'pokemon',
+    'actor',
+    (options.actor ?? sheet(canonicalId)) as unknown as Record<string, unknown>,
+  )
   return { mapRepository, sheetRepository, now: () => 1000 }
 }
 const offer = (
@@ -144,6 +152,74 @@ describe('AA-083 activated integrations', () => {
         intent: intentFor({ offer: nextOffer, slug, canonicalId: 'Photosynthesis', suffix: 'repeat' }),
       }, dependencies)
     }).toThrow(/remaining|spent|uses|stale/i)
+  })
+
+  it('reconciles effective Soulless injuries and legacy Temporary HP during Ability healing', () => {
+    const slug = 'aa083-photosynthesis-soulless'
+    const actor = {
+      ...sheet('Photosynthesis'),
+      species: 'Shedinja',
+      capabilities: { other: ['Soulless'] },
+      combat: { currentHp: 1, injuries: 4, conditions: [] },
+    } satisfies CharacterSheet
+    const base = map(slug)
+    const withLegacyTemporaryHp = {
+      ...base,
+      temporaryHitPoints: {
+        scene: base.activeScene!,
+        byPlacementId: { actor: 8 },
+      },
+    } satisfies TabletopMap
+    const dependencies = setup(slug, 'Photosynthesis', {
+      actor,
+      map: withLegacyTemporaryHp,
+    })
+    const offered = offer(dependencies, slug, 'Photosynthesis')
+
+    resolveAbilityDeclarationUseCase({
+      role: 'gm',
+      intent: intentFor({ offer: offered, slug, canonicalId: 'Photosynthesis', suffix: 'soulless' }),
+    }, dependencies)
+
+    const after = dependencies.sheetRepository.getByRef('pokemon', 'actor')!.sheet as unknown as CharacterSheet
+    expect(after.combat).toMatchObject({ currentHp: 1, injuries: 0 })
+    expect(dependencies.mapRepository.getBySlug(slug)?.temporaryHitPoints).toBeUndefined()
+  })
+
+  it('uses ordinary HP and injury rules when Soulless is suppressed during Ability healing', () => {
+    const slug = 'aa083-photosynthesis-soulless-suppressed'
+    const actor = {
+      ...sheet('Photosynthesis'),
+      species: 'Shedinja',
+      capabilities: { other: ['Soulless'] },
+      combat: { currentHp: 20, injuries: 2, conditions: [] },
+    } satisfies CharacterSheet
+    const base = map(slug)
+    const suppression = parseEncounterEffect({
+      id: 'suppress-soulless-photosynthesis', kind: 'capability',
+      source: { operationId: 'suppress-soulless', moveId: 'test.suppress-soulless', placementId: 'actor' },
+      affected: { placementIds: ['actor'], sideIds: [], cells: [] },
+      createdRound: 1, createdTurn: 0, duration: { kind: 'scene', remaining: null },
+      stacks: 1, charges: null, stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null }, tags: ['test', 'capability-suppression'],
+      payload: { capabilityId: 'soulless', action: 'suppress' },
+      dispel: { policy: 'none', tags: [] }, transferPolicy: 'expire', suppression: { sources: [] },
+    })
+    const suppressedMap = {
+      ...base,
+      encounterState: { ...base.encounterState!, effects: [suppression] },
+    } satisfies TabletopMap
+    const dependencies = setup(slug, 'Photosynthesis', { actor, map: suppressedMap })
+    const offered = offer(dependencies, slug, 'Photosynthesis')
+
+    resolveAbilityDeclarationUseCase({
+      role: 'gm',
+      intent: intentFor({ offer: offered, slug, canonicalId: 'Photosynthesis', suffix: 'suppressed' }),
+    }, dependencies)
+
+    const after = dependencies.sheetRepository.getByRef('pokemon', 'actor')!.sheet as unknown as CharacterSheet
+    expect(after.combat?.currentHp).toBeGreaterThan(20)
+    expect(after.combat?.injuries).toBe(1)
   })
 
   it('Pickup uses a retained d20, creates one deterministic category item on the user cell, and spends Daily', () => {

@@ -6,11 +6,9 @@ import type { AbilityMechanicOperation } from '#shared/abilityAutomation/mechani
 import type { CombatStageMap } from '~/types/combatStages'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
-import { computeTickValue } from '~/utils/ptuHp'
 import {
   applyCombatStagesToSheet,
   applyConditionsToSheet,
-  applyHpToSheet,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
 import {
@@ -27,6 +25,7 @@ import { planAbilityOwnedStateCommand } from '../ownedState'
 import { aa062BoneLordReadyMarkId, aa062BoneLordUsedMarkId } from './aa062MoveIntegration'
 import { aa064ContraryRequestedValue } from './aa064StageIntegration'
 import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
+import { applyAbilityHpToSheet } from '../capabilityHpInvariants'
 
 const BEAUTIFUL_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Scene – Standard Action', actionText: 'Standard Action', kind: 'scene', uses: 1, exceptionId: null,
@@ -295,7 +294,12 @@ const blessedTouchExecution = (input: {
   const currentHp = authoritativeAbilityHealingBlocked({ map: input.context.map, placementId: targetId })
     ? target.currentHp
     : Math.min(target.fullMaxHp ?? target.maxHp, target.currentHp + healing)
-  const current = applyHpToSheet(resolved.kind, previous, currentHp)
+  const current = applyAbilityHpToSheet({
+    context: input.context,
+    placementId: targetId,
+    sheet: previous,
+    currentHp,
+  })
   const changes: MoveStateChangeInput[] = [
     ...(action.changed ? [{
       kind: 'encounter-state' as const,

@@ -10,7 +10,6 @@ import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import {
   applyCombatStagesToSheet,
   applyConditionsToSheet,
-  applyHpToSheet,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
 import {
@@ -25,6 +24,7 @@ import type { AuthoritativeAbilityContext } from '../context'
 import { planAbilityFrequencyPayment } from '../usage'
 import { aa064ApplyCompetitive, aa064ContraryRequestedValue } from './aa064StageIntegration'
 import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
+import { applyAbilityHpToSheet } from '../capabilityHpInvariants'
 
 const CONFIDENCE_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Scene – Standard Action', actionText: 'Standard Action', kind: 'scene', uses: 1, exceptionId: null,
@@ -126,7 +126,12 @@ const comatoseExecution = (input: {
         input.context.actor.token.maxHp,
         input.context.actor.token.currentHp + computeTickValue(input.context.actor.token.maxHp),
       )
-  const current = applyHpToSheet(input.context.actor.sheet.kind, withSleep, healedHp)
+  const current = applyAbilityHpToSheet({
+    context: input.context,
+    placementId: input.context.actor.placement.id,
+    sheet: withSleep,
+    currentHp: healedHp,
+  })
   const changes: MoveStateChangeInput[] = []
   if (action.changed) changes.push(encounterChange({
     context: input.context, operationId: `${input.operationId}:action`,

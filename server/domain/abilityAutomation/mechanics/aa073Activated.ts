@@ -7,7 +7,7 @@ import { createEmptyEncounterState, parseEncounterState } from '#shared/moveAuto
 import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { MapFieldEffects } from '~/types/map'
 import type { AnyLiveSheet } from '~/utils/sheetMutations'
-import { applyConditionsToSheet, applyHpToSheet } from '~/utils/sheetMutations'
+import { applyConditionsToSheet } from '~/utils/sheetMutations'
 import { computeTickValue, normalizeInjuryCount } from '~/utils/ptuHp'
 import { computePtuInjuryAutomation } from '~/utils/ptuInjuries'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
@@ -19,6 +19,7 @@ import {
   tokensInMoveAutomationArea,
 } from '~/utils/moveAutomationAreaTemplates'
 import type { MoveAutomationAreaDirection } from '~/types/moveAutomation'
+import { applyAbilityHpToSheet } from '../capabilityHpInvariants'
 import { findMove } from '~~/data/ptuReference'
 import {
   createMoveStateChangePlan,
@@ -214,7 +215,13 @@ const gulpExecution = (input: {
     map: input.context.map, placementId: input.context.actor.placement.id,
   }) ? token.currentHp : Math.min(maximumHp, token.currentHp + healing)
   const injuries = Math.max(0, normalizeInjuryCount(token.injuries) - 1)
-  const current = applyHpToSheet(input.context.actor.sheet.kind, paidSheet, currentHp, injuries)
+  const current = applyAbilityHpToSheet({
+    context: input.context,
+    placementId: input.context.actor.placement.id,
+    sheet: paidSheet,
+    currentHp,
+    injuries,
+  })
   current.revision = nextRevision(input.context.actor.sheet.revision)
   const hpChanged = currentHp !== token.currentHp || injuries !== normalizeInjuryCount(token.injuries)
   return Object.freeze({
@@ -375,7 +382,13 @@ const hayFeverExecution = (input: {
       fullMaxHp: token.fullMaxHp ?? token.maxHp,
       currentInjuries: normalizeInjuryCount(token.injuries), source: 'hp-loss',
     })
-    const current = applyHpToSheet(resolved.kind, previous, currentHp, injury.injuries)
+    const current = applyAbilityHpToSheet({
+      context: input.context,
+      placementId: token.id,
+      sheet: previous,
+      currentHp,
+      injuries: injury.injuries,
+    })
     changes.push(sheetChange({
       ...input, placementId: token.id, previous, current, changedFields: ['hp'],
       reasonCode: `ability.aa073.hay-fever.${mode}.tick-loss`,

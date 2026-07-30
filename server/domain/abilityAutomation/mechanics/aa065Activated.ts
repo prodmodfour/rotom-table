@@ -18,7 +18,6 @@ import { resolveMoveAutomationTargetDamageBreakdown } from '~/utils/moveAutomati
 import {
   applyCombatStagesToSheet,
   applyConditionsToSheet,
-  applyHpToSheet,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
 import {
@@ -31,8 +30,13 @@ import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveRes
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 import { reduceMoveCoreTokenOperationState } from '../../moveAutomation/reducers/coreTokenEffects'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from '../../moveAutomation/reducers/immunities'
+import { createMoveAutomationCreatureRuleResolver } from '../../moveAutomation/creatureRules'
 import type { AuthoritativeAbilityContext } from '../context'
 import { planAuthoritativeAbilityItemProviders } from '../itemProviders'
+import {
+  abilityEffectiveCapabilitiesForPlacement,
+  applyAbilityHpToSheet,
+} from '../capabilityHpInvariants'
 import { reduceAbilityOwnedStateCommand } from '../ownedState'
 import { planAbilityFrequencyPayment } from '../usage'
 import { aa065CuriousMedicineEntryStateIds } from './aa065PresenceIntegration'
@@ -242,11 +246,40 @@ const crushTrapExecution = (input: {
       criticalHit: { trigger: { kind: 'never' }, prevention: 'honor' },
     },
   }
+  const capabilityPlacementIds = new Set<string>([
+    input.context.actor.placement.id,
+    targetId,
+    ...(input.context.map.encounterState?.capabilityRuntime?.links ?? []).flatMap(link => [
+      link.ownerPlacementId,
+      ...link.participantPlacementIds,
+    ]),
+  ])
+  const effectiveCapabilityIdentitiesByPlacement = new Map(
+    [...capabilityPlacementIds].flatMap((placementId) => {
+      if (!input.context.queries.placements.get(placementId)) return []
+      const capabilities = abilityEffectiveCapabilitiesForPlacement({
+        context: input.context,
+        placementId,
+      })
+      return [[placementId, capabilities.instances.filter(instance => instance.effective).map(instance => ({
+        instanceId: instance.instanceId,
+        canonicalId: instance.canonicalId,
+      }))] as const]
+    }),
+  )
+  const creatureRules = createMoveAutomationCreatureRuleResolver({
+    placements: input.context.placements,
+    tokens: input.context.tokens,
+    effects: input.context.map.encounterState?.effects,
+    effectiveCapabilityIdentitiesByPlacement,
+    recordSheetRead: placement => input.context.reads.recordPlacement(placement),
+  })
   const moveContext = {
     ...input.context,
     queries: {
       ...input.context.queries,
       abilities: input.context.queries.effectiveAbilities,
+      creatureRules,
     },
     intent: {
       schemaVersion: 1, placementId: input.context.actor.placement.id, moveName: 'Struggle',
@@ -296,8 +329,18 @@ const crushTrapExecution = (input: {
     },
     immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'normal', context: moveContext }),
   })
+  const reducedEncounter = reduced.stateChanges.changes.find(change => change.kind === 'encounter-state')
+  const paymentContext = reducedEncounter
+    ? {
+        ...input.context,
+        map: {
+          ...input.context.map,
+          encounterState: parseEncounterState(reducedEncounter.current),
+        },
+      }
+    : input.context
   let encounter = paySceneAbility({
-    context: input.context, operationId: input.operationId,
+    context: paymentContext, operationId: input.operationId,
     abilityInstanceId: input.abilityInstanceId, canonicalId: 'Crush Trap', resource: 'free',
   })
   for (const stateId of stateIds) {
@@ -315,7 +358,7 @@ const crushTrapExecution = (input: {
         context: input.context, operationId: input.operationId,
         reasonCode: 'ability.aa065.crush-trap.action-frequency-and-mark', current: encounter,
       }),
-      ...reduced.stateChanges.changes,
+      ...reduced.stateChanges.changes.filter(change => change.kind !== 'encounter-state'),
     ]),
     presentationKey: 'ability.aa065.crush-trap.damage-applied',
   })
@@ -358,7 +401,12 @@ const cudChewEffectChanges = (input: {
     const maximum = input.context.actor.token.fullMaxHp ?? input.context.actor.token.maxHp
     const hp = Math.min(maximum, input.context.actor.token.currentHp + healing)
     if (hp === input.context.actor.token.currentHp) return Object.freeze([])
-    const current = applyHpToSheet(input.context.actor.sheet.kind, previous, hp)
+    const current = applyAbilityHpToSheet({
+      context: input.context,
+      placementId: input.context.actor.placement.id,
+      sheet: previous,
+      currentHp: hp,
+    })
     return Object.freeze([sheetChange({
       context: input.context,
       operationId: `${input.operationId}:consumable-effect`,

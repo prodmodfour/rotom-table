@@ -84,6 +84,7 @@ import {
 } from './executionBudget'
 import { projectAa081NeutralizingGasAbilities } from './mechanics/aa081NeutralizingGasIntegration'
 import { authoritativeAbilityOwnerIsConscious } from './effectiveRuntimeAbilities'
+import { projectAbilityCapabilityHpToken } from './capabilityHpInvariants'
 
 export const AUTHORITATIVE_ABILITY_CONTEXT_LIMITS = Object.freeze({
   targets: 64,
@@ -430,7 +431,15 @@ const resolveTokens = (
   const byId = new Map<string, SpawnedPokemon>()
   for (const placement of placements) {
     const token = placementToSpawned(placement, lookup, map)
-    if (token) byId.set(placement.id, detachedFrozen(token))
+    const sheet = placement.sheetKind === 'pokemon'
+      ? lookup.pokemon.get(placement.sheetSlug)
+      : lookup.trainer.get(placement.sheetSlug)
+    if (token && sheet) byId.set(placement.id, detachedFrozen(projectAbilityCapabilityHpToken({
+      map,
+      placement,
+      sheet,
+      token,
+    })))
   }
   return byId
 }

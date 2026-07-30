@@ -352,13 +352,12 @@ describe('AA-085 through AA-100 activated conformance', () => {
     const soulless = setup({
       slug: soullessSlug, actorAbility: 'Snuggle', allyCapabilities: ['Soulless'],
     })
-    expect(useAbility({
+    expect(() => useAbility({
       dependencies: soulless, mapSlug: soullessSlug, canonicalId: 'Snuggle',
       selected: { token: 'ally' },
-    }).kind).toBe('accepted')
-    const blockedTemporaryHp = soulless.mapRepository.getBySlug(soullessSlug)!.temporaryHitPoints?.byPlacementId
-    expect(blockedTemporaryHp?.actor).toBeGreaterThan(0)
-    expect(blockedTemporaryHp?.ally).toBeUndefined()
+    })).toThrow(/Soulless creatures cannot gain Temporary HP/)
+    expect(soulless.mapRepository.getBySlug(soullessSlug)).toMatchObject({ revision: 5 })
+    expect(soulless.mapRepository.getBySlug(soullessSlug)?.temporaryHitPoints).toBeUndefined()
 
     const suppressedSoullessSlug = 'remaining-snuggle-suppressed-soulless'
     const suppressedSoulless = setup({

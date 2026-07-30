@@ -5,8 +5,7 @@ import type { AbilityFrequencyDeclaration } from '#shared/abilityAutomation/freq
 import type { AbilityMechanicOperation } from '#shared/abilityAutomation/mechanics'
 import { parseEncounterState } from '#shared/moveAutomation/encounterState'
 import { parseMapGroundItem } from '#shared/moveAutomation/groundItems'
-import type { CharacterSheet } from '~/types/characterSheet'
-import { applyHpToSheet, type AnyLiveSheet } from '~/utils/sheetMutations'
+import type { AnyLiveSheet } from '~/utils/sheetMutations'
 import { deepCloneJson } from '~/utils/serialization'
 import {
   createMoveStateChangePlan,
@@ -17,6 +16,7 @@ import {
 } from '../../moveAutomation/plan'
 import type { AuthoritativeAbilityContext } from '../context'
 import { planAbilityFrequencyPayment } from '../usage'
+import { applyAbilityHpToSheet } from '../capabilityHpInvariants'
 
 const DAILY_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Daily', actionText: '', kind: 'daily', uses: 1, exceptionId: null,
@@ -83,12 +83,13 @@ const photosynthesis = (input: {
   const nextHp = Math.min(maximum, token.currentHp + healing)
   const nextInjuries = Math.max(0, (token.injuries ?? 0) - 1)
   const paid = paidDailySheet(input)
-  const current = applyHpToSheet(
-    input.context.actor.sheet.kind,
-    paid,
-    nextHp,
-    nextInjuries,
-  )
+  const current = applyAbilityHpToSheet({
+    context: input.context,
+    placementId: input.context.actor.placement.id,
+    sheet: paid,
+    currentHp: nextHp,
+    injuries: nextInjuries,
+  })
   current.revision = nextRevision(input.context.actor.sheet.revision)
   return Object.freeze({
     plan: createMoveStateChangePlan([actorSheetChange({

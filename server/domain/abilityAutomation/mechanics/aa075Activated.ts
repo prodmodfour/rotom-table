@@ -26,7 +26,7 @@ import {
 import { parseEncounterEffect, type EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { parseEncounterZone, type EncounterBarrierZone, type EncounterZoneCell } from '#shared/moveAutomation/encounterZones'
 import type { AnyLiveSheet } from '~/utils/sheetMutations'
-import { applyHpToSheet } from '~/utils/sheetMutations'
+import { applyAbilityHpToSheet } from '../capabilityHpInvariants'
 import { computeTickValue } from '~/utils/ptuHp'
 import { deepCloneJson } from '~/utils/serialization'
 import {
@@ -165,12 +165,13 @@ const iceBody = (input: {
     map: input.context.map,
     placementId: input.context.actor.placement.id,
   }) ? token.currentHp : Math.min(maximumHp, token.currentHp + healing)
-  const current = applyHpToSheet(
-    input.context.actor.sheet.kind,
-    paidSheet,
+  const current = applyAbilityHpToSheet({
+    context: input.context,
+    placementId: input.context.actor.placement.id,
+    sheet: paidSheet,
     currentHp,
-    token.injuries ?? 0,
-  )
+    injuries: token.injuries ?? 0,
+  })
   current.revision = nextRevision(input.context.actor.sheet.revision)
   return Object.freeze({
     plan: createMoveStateChangePlan([

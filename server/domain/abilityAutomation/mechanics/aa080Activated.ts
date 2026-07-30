@@ -29,7 +29,7 @@ import type { MapFieldEffects } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { AnyLiveSheet } from '~/utils/sheetMutations'
-import { applyHpToSheet } from '~/utils/sheetMutations'
+import { applyAbilityHpToSheet } from '../capabilityHpInvariants'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { footprintsOverlap, isAnchorWithinBounds } from '~/utils/gridGeometry'
@@ -522,7 +522,13 @@ const missileCollision = (input: {
     const injuries = hp.injuries ?? target.injuries ?? 0
     const hitPointsChanged = hp.currentHp !== target.currentHp || injuries !== (target.injuries ?? 0)
     if (hitPointsChanged) {
-      const current = applyHpToSheet(resolved.kind, previous, hp.currentHp, injuries)
+      const current = applyAbilityHpToSheet({
+        context: input.context,
+        placementId: targetId,
+        sheet: previous,
+        currentHp: hp.currentHp,
+        injuries,
+      })
       current.revision = nextRevision(resolved.revision)
       changes.push({
         kind: 'sheet-state',

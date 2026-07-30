@@ -6,7 +6,7 @@ import {
   parseEncounterState,
 } from '#shared/moveAutomation/encounterState'
 import type { MapFieldEffects } from '~/types/map'
-import { applyHpToSheet, type AnyLiveSheet } from '~/utils/sheetMutations'
+import type { AnyLiveSheet } from '~/utils/sheetMutations'
 import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
@@ -24,6 +24,7 @@ import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveRes
 import type { AuthoritativeAbilityContext } from '../context'
 import { planAbilityFrequencyPayment } from '../usage'
 import { aa084PowerConstructBlocksTemporaryHp } from './aa084StaticIntegration'
+import { applyAbilityHpToSheet } from '../capabilityHpInvariants'
 
 const SCENE_X3_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Scene x3', actionText: '', kind: 'scene', uses: 3, exceptionId: null,
@@ -134,7 +135,13 @@ const dreamspinnerExecution = (input: {
       currentInjuries: normalizeInjuryCount(token.injuries),
       source: 'hp-loss',
     })
-    const current = applyHpToSheet(resolved.kind, previous, currentHp, injury.injuries)
+    const current = applyAbilityHpToSheet({
+      context: input.context,
+      placementId: placement.id,
+      sheet: previous,
+      currentHp,
+      injuries: injury.injuries,
+    })
     current.revision = nextRevision(resolved.revision)
     changes.push({
       kind: 'sheet-state',

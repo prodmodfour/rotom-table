@@ -8,7 +8,7 @@ import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { computeTickValue } from '~/utils/ptuHp'
 import { normalizeConditionNames } from '~/utils/statusConditions'
-import { applyHpToSheet, type AnyLiveSheet } from '~/utils/sheetMutations'
+import type { AnyLiveSheet } from '~/utils/sheetMutations'
 import { createMoveStateChangePlan, RESTORE_PREVIOUS_MOVE_STATE_VALUE, type MoveStateChangeInput, type MoveStateChangePlan } from '../../moveAutomation/plan'
 import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveResources'
 import type { AuthoritativeAbilityContext } from '../context'
@@ -20,6 +20,7 @@ import { findMove } from '~~/data/ptuReference'
 import { aa061BallFetchReleaseMarkId } from './aa061PresenceIntegration'
 import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
 import { aa084PowerConstructBlocksTemporaryHp } from './aa084StaticIntegration'
+import { applyAbilityHpToSheet } from '../capabilityHpInvariants'
 
 const ARENA_TRAP_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Scene – Free Action', actionText: 'Free Action', kind: 'scene', uses: 1, exceptionId: null,
@@ -387,7 +388,12 @@ const badDreamsExecution = (input: {
     if (currentHp >= participant.token.currentHp) continue
     anyLoss = true
     const previous = deepCloneJson(participant.sheet.sheet) as AnyLiveSheet
-    const current = applyHpToSheet(participant.sheet.kind, previous, currentHp)
+    const current = applyAbilityHpToSheet({
+      context: input.context,
+      placementId: participant.placement.id,
+      sheet: previous,
+      currentHp,
+    })
     mutations.set(participant.placement.id, { participant, previous, current })
   }
   if (anyLoss && !authoritativeAbilityHealingBlocked({

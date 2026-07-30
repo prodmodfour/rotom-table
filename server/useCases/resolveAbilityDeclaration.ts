@@ -28,7 +28,15 @@ import {
   reduceAbilitySharedCombatStageEffects,
 } from '../domain/abilityAutomation/effectKernel'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY, type AbilityAutomationRuntimeRegistry } from '../domain/abilityAutomation/registry'
-import { createAbilityStatePlan } from '../domain/abilityAutomation/statePlan'
+import {
+  AbilityStatePlanConflictError,
+  assertAbilityStatePlanRevisions,
+  createAbilityStatePlan,
+} from '../domain/abilityAutomation/statePlan'
+import {
+  AbilityCapabilityHpInvariantError,
+  applyCapabilityHpInvariantsToAbilityPlan,
+} from '../domain/abilityAutomation/capabilityHpInvariants'
 import {
   appendAbilityTraceEvents,
   createAbilityResolutionTraceForContext,
@@ -62,7 +70,6 @@ import { executeAa084ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa085To100ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa085to100Activated'
 import { authoritativeAbilityItemResourceRequirementsFor } from '../domain/abilityAutomation/itemProviders'
 import { resolveAuthoritativeMoveItemResources } from '../domain/moveAutomation/itemResources'
-import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../domain/abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { abilityAutomationAcceptedRealtimeAppendInput } from '../domain/abilityAutomation/realtime'
 import { acceptedEncounterPresentationFromAbility } from '../domain/encounterPresentation/acceptedAdapters'
@@ -73,6 +80,10 @@ import { createSqliteAbilityResolutionOperationRepository, type AbilityResolutio
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { createSqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { createSqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
+import {
+  createSqliteGroupInventoryRepository,
+  type GroupInventoryRepository,
+} from '../storage/groupInventoryRepository'
 import {
   createSqliteRealtimeEventRepository,
   type RealtimeEventRepository,
@@ -96,6 +107,7 @@ export interface ResolveAbilityDeclarationDependencies {
   readonly database?: RotomDatabase
   readonly mapRepository?: MapRepository<unknown>
   readonly sheetRepository?: SheetRepository<Record<string, unknown>> & ListSheetsRepository
+  readonly groupInventoryRepository?: Pick<GroupInventoryRepository, 'get'>
   readonly offerRepository?: AbilityDeclarationOfferRepository
   readonly operationRepository?: AbilityResolutionOperationRepository
   readonly realtimeEventRepository?: Pick<RealtimeEventRepository, 'appendMany'>
@@ -148,6 +160,8 @@ export const resolveAbilityDeclarationUseCase = (
   const database = dependencies.database ?? getRotomDatabase()
   const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository(database)
   const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(database)
+  const groupInventoryRepository = dependencies.groupInventoryRepository
+    ?? createSqliteGroupInventoryRepository(database)
   const offerRepository = dependencies.offerRepository ?? createSqliteAbilityDeclarationOfferRepository(database)
   const operationRepository = dependencies.operationRepository ?? createSqliteAbilityResolutionOperationRepository(database)
   const realtimeEventRepository = dependencies.realtimeEventRepository
@@ -209,6 +223,9 @@ export const resolveAbilityDeclarationUseCase = (
     random: deterministicRandom(intentSha256),
     time: now,
   })
+  for (const linkedTrainerSheet of linkedTrainerSheets) {
+    context.queries.sheets.get('trainer', linkedTrainerSheet.slug)
+  }
   if (!context.actor.effectiveAbilities.some(ability => (
     ability.instanceId === intent.abilityInstanceId && ability.canonicalId === intent.canonicalId
     && ability.effective && (ability.definitionHash === null || ability.definitionHash === runtime.definitionHash)
@@ -469,15 +486,15 @@ export const resolveAbilityDeclarationUseCase = (
     acceptedOutcome = outcomeFor(reduction.operationResults)
     trace = traceAbilityCombatStageReduction(trace, reduction, context.budget)
   }
+  try {
+    resolutionPlan = applyCapabilityHpInvariantsToAbilityPlan({ context, plan: resolutionPlan })
+  }
+  catch (error) {
+    if (error instanceof AbilityCapabilityHpInvariantError) fail(409, error.message)
+    throw error
+  }
   const statePlan = createAbilityStatePlan({ context, stateChanges: resolutionPlan, trace })
-  const nextMap = reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
-    previousMap: map,
-    nextMap: materializeMap(map, resolutionPlan, now),
-    operations: [],
-    ...(context.runtime.canonicalId === 'Ice Face'
-      ? { featureOwnedIncreasePlacementIds: new Set([context.actor.placement.id]) }
-      : {}),
-  })
+  const nextMap = materializeMap(map, resolutionPlan, now)
   const baseResult = parseAbilityResolutionPublicResult({
     schemaVersion: 1,
     kind: 'accepted',
@@ -510,8 +527,21 @@ export const resolveAbilityDeclarationUseCase = (
       if (retry.intentSha256 !== intentSha256) fail(409, 'Ability intent ID was reused with changed input.')
       return
     }
-    const current = mapRepository.getBySlug(intent.mapSlug)
-    if (!current || normalizeRevision(current.revision) !== revision) fail(409, 'Ability map state changed before commit.')
+    try {
+      assertAbilityStatePlanRevisions(statePlan, (read) => {
+        if (read.kind === 'map') return mapRepository.getBySlug(read.slug)?.revision ?? null
+        if (read.kind === 'sheet') {
+          return sheetRepository.getByRef(read.sheetKind, read.slug)?.revision ?? null
+        }
+        return groupInventoryRepository.get(read.slug)?.revision ?? null
+      })
+    }
+    catch (error) {
+      if (error instanceof AbilityStatePlanConflictError) {
+        fail(409, 'Ability state changed before commit.')
+      }
+      throw error
+    }
     for (const change of resolutionPlan.changes) {
       if (change.kind !== 'sheet-state') continue
       const persisted = {

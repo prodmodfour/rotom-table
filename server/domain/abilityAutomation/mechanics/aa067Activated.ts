@@ -26,13 +26,10 @@ import {
 import { normalizeCombatStages } from '~/utils/combatStages'
 import { normalizeConditionName } from '~/utils/statusConditions'
 import {
-  computePokemonHealingVitals,
-  computeTrainerHealingVitals,
-  healPokemonHp,
-  healTrainerHp,
   removePokemonInjuries,
   removeTrainerInjuries,
 } from '~/utils/sheets/healing'
+import { normalizeInjuryCount } from '~/utils/ptuHp'
 import { deepCloneJson } from '~/utils/serialization'
 import {
   createMoveStateChangePlan,
@@ -43,6 +40,10 @@ import {
 import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveResources'
 import type { AuthoritativeAbilityContext } from '../context'
 import { planAbilityFrequencyPayment } from '../usage'
+import {
+  abilityPlacementHasEffectiveSoulless,
+  applyAbilityHpToSheet,
+} from '../capabilityHpInvariants'
 
 const SCENE_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Scene', actionText: '', kind: 'scene', uses: 1, exceptionId: null,
@@ -197,10 +198,11 @@ const defyDeathExecution = (input: {
   const match = branch?.kind === 'branch' ? /^remove-([1-3])$/.exec(branch.branchId) : null
   const requested = match ? Number(match[1]) : fail('Defy Death requires one issued Injury-count choice.')
   const previous = deepCloneJson(input.context.actor.sheet.sheet) as AnyLiveSheet
-  const current = deepCloneJson(previous) as AnyLiveSheet
-  const vitals = input.context.actor.sheet.kind === 'pokemon'
-    ? computePokemonHealingVitals(current as CharacterSheet)
-    : computeTrainerHealingVitals(current as TrainerSheet)
+  let current = deepCloneJson(previous) as AnyLiveSheet
+  const vitals = {
+    injuries: normalizeInjuryCount(input.context.actor.token.injuries),
+    fullMaxHp: input.context.actor.token.fullMaxHp ?? input.context.actor.token.maxHp,
+  }
   const identity = usageIdentity(input)
   const ledger = parseAbilityDailyUsageLedger(current.abilityUsage ?? createEmptyAbilityDailyUsageLedger())
   const existing = ledger.entries.find(entry => sameUsageIdentity(entry, identity))
@@ -223,13 +225,25 @@ const defyDeathExecution = (input: {
       ? ledger.entries.map(entry => entry === existing ? usage : entry)
       : [...ledger.entries, usage],
   })
+  const effectiveSoulless = abilityPlacementHasEffectiveSoulless({
+    context: input.context,
+    placementId: input.context.actor.placement.id,
+    sheet: current,
+  })
   const removed = input.context.actor.sheet.kind === 'pokemon'
-    ? removePokemonInjuries(current as CharacterSheet, requested, { countAgainstDailyLimit: false })
+    ? removePokemonInjuries(current as CharacterSheet, requested, {
+        countAgainstDailyLimit: false,
+        effectiveSoulless,
+      })
     : removeTrainerInjuries(current as TrainerSheet, requested, { countAgainstDailyLimit: false })
   if (removed !== requested) fail('Defy Death Injury removal was unexpectedly limited.')
   const tick = Math.max(1, Math.floor(vitals.fullMaxHp / 10))
-  if (input.context.actor.sheet.kind === 'pokemon') healPokemonHp(current as CharacterSheet, tick * removed)
-  else healTrainerHp(current as TrainerSheet, tick * removed)
+  current = applyAbilityHpToSheet({
+    context: input.context,
+    placementId: input.context.actor.placement.id,
+    sheet: current,
+    currentHp: input.context.actor.token.currentHp + tick * removed,
+  })
   const action = actionPlan({
     context: input.context, operationId: input.operationId,
     canonicalId: 'Defy Death', resource: 'swift',

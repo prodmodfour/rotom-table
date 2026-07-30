@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import { beginAbilityDeclarationUseCase } from '../../server/useCases/beginAbilityDeclaration'
@@ -60,13 +61,16 @@ const battleMap = (slug: string): TabletopMap => {
 }
 let databases: RotomDatabase[] = []
 afterEach(() => databases.splice(0).forEach(database => database.close()))
-const setup = (slug: string, canonicalId: string) => {
+const setup = (slug: string, canonicalId: string, options: {
+  readonly actor?: CharacterSheet
+  readonly map?: TabletopMap
+} = {}) => {
   const database = openRotomDatabase({ path: ':memory:' })
   databases.push(database)
   const mapRepository = createSqliteMapRepository<TabletopMap>(database)
   const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
-  mapRepository.saveSetupMap(battleMap(slug))
-  for (const value of [sheet('actor', canonicalId), sheet('target')]) {
+  mapRepository.saveSetupMap(options.map ?? battleMap(slug))
+  for (const value of [options.actor ?? sheet('actor', canonicalId), sheet('target')]) {
     sheetRepository.saveSetupSheet('pokemon', value.slug, value as unknown as Record<string, unknown>)
   }
   return { mapRepository, sheetRepository, now: () => 1_000 }
@@ -116,6 +120,60 @@ describe('AA-081 activated integrations', () => {
     expect(() => activate({
       dependencies, slug, canonicalId: 'Mud Shield', suffix: 'repeat',
     })).toThrow(/remaining|spent|uses/i)
+  })
+
+  it('rejects Mud Shield Temporary HP for exact effective Soulless before spending resources', () => {
+    const slug = 'aa081-mud-shield-soulless'
+    const actor = {
+      ...sheet('actor', 'Mud Shield'),
+      species: 'Shedinja',
+      capabilities: { other: ['Soulless'] },
+      combat: { currentHp: 1, injuries: 4, conditions: [] },
+    } satisfies CharacterSheet
+    const dependencies = setup(slug, 'Mud Shield', { actor })
+
+    expect(() => activate({ dependencies, slug, canonicalId: 'Mud Shield' }))
+      .toThrow(/Soulless creatures cannot gain Temporary HP/)
+
+    expect(dependencies.mapRepository.getBySlug(slug)).toMatchObject({
+      revision: 5,
+      encounterState: { turnResources: { actor: { actions: { swift: { spent: 0 } } } } },
+    })
+    expect(dependencies.mapRepository.getBySlug(slug)?.temporaryHitPoints).toBeUndefined()
+    expect((dependencies.sheetRepository.getByRef('pokemon', 'actor')!.sheet as unknown as CharacterSheet)
+      .combat).toMatchObject({ currentHp: 1, injuries: 4 })
+  })
+
+  it('permits Mud Shield for suppressed Soulless using ordinary projected HP', () => {
+    const slug = 'aa081-mud-shield-soulless-suppressed'
+    const actor = {
+      ...sheet('actor', 'Mud Shield'),
+      species: 'Shedinja',
+      capabilities: { other: ['Soulless'] },
+      combat: { currentHp: 20, injuries: 2, conditions: [] },
+    } satisfies CharacterSheet
+    const base = battleMap(slug)
+    const suppression = parseEncounterEffect({
+      id: 'suppress-soulless-mud-shield', kind: 'capability',
+      source: { operationId: 'suppress-soulless', moveId: 'test.suppress-soulless', placementId: 'target' },
+      affected: { placementIds: ['actor'], sideIds: [], cells: [] },
+      createdRound: 1, createdTurn: 0, duration: { kind: 'scene', remaining: null },
+      stacks: 1, charges: null, stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null }, tags: ['test', 'capability-suppression'],
+      payload: { capabilityId: 'soulless', action: 'suppress' },
+      dispel: { policy: 'none', tags: [] }, transferPolicy: 'expire', suppression: { sources: [] },
+    })
+    const map = {
+      ...base,
+      encounterState: { ...base.encounterState!, effects: [suppression] },
+    } satisfies TabletopMap
+    const dependencies = setup(slug, 'Mud Shield', { actor, map })
+
+    activate({ dependencies, slug, canonicalId: 'Mud Shield' })
+
+    expect(dependencies.mapRepository.getBySlug(slug)?.temporaryHitPoints?.byPlacementId.actor).toBe(68)
+    expect((dependencies.sheetRepository.getByRef('pokemon', 'actor')!.sheet as unknown as CharacterSheet)
+      .combat).toMatchObject({ currentHp: 20, injuries: 2 })
   })
 
   it('Multitype exposes only canonical Types, pays a Free Action, and projects a source-ability form snapshot', () => {

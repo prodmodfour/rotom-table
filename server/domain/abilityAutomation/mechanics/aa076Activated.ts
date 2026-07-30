@@ -11,7 +11,6 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { AnyLiveSheet } from '~/utils/sheetMutations'
 import { deepCloneJson } from '~/utils/serialization'
-import { healPokemonHp, healTrainerHp } from '~/utils/sheets/healing'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { resolveMoveAutomationItemRuleIdentity } from '../../moveAutomation/itemRuleData'
 import { digestionBuffTradeCount, recordDigestionBuffTrade } from '../../moveAutomation/digestionBuffTrade'
@@ -26,9 +25,14 @@ import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveRes
 import { reduceMoveCoreTokenOperationState } from '../../moveAutomation/reducers/coreTokenEffects'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from '../../moveAutomation/reducers/immunities'
 import { createMoveAutomationRelationshipResolver } from '../../moveAutomation/relationships'
+import { createMoveAutomationCreatureRuleResolver } from '../../moveAutomation/creatureRules'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 import type { AuthoritativeAbilityContext } from '../context'
 import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
+import {
+  abilityEffectiveCapabilitiesForPlacement,
+  applyAbilityHpToSheet,
+} from '../capabilityHpInvariants'
 import { attachAbilityFrequencyPayment, planAbilityFrequencyPayment } from '../usage'
 
 const SCENE_FREQUENCY = Object.freeze({
@@ -182,6 +186,31 @@ const moveContextForStage = (
     placements: context.map.placements,
     sides: context.map.encounterState?.sides ?? {},
   })
+  const capabilityPlacementIds = new Set<string>([
+    context.actor.placement.id,
+    targetId,
+    ...(context.map.encounterState?.capabilityRuntime?.links ?? []).flatMap(link => [
+      link.ownerPlacementId,
+      ...link.participantPlacementIds,
+    ]),
+  ])
+  const effectiveCapabilityIdentitiesByPlacement = new Map(
+    [...capabilityPlacementIds].flatMap((placementId) => {
+      if (!context.queries.placements.get(placementId)) return []
+      const capabilities = abilityEffectiveCapabilitiesForPlacement({ context, placementId })
+      return [[placementId, capabilities.instances.filter(instance => instance.effective).map(instance => ({
+        instanceId: instance.instanceId,
+        canonicalId: instance.canonicalId,
+      }))] as const]
+    }),
+  )
+  const creatureRules = createMoveAutomationCreatureRuleResolver({
+    placements: context.placements,
+    tokens: context.tokens,
+    effects: context.map.encounterState?.effects,
+    effectiveCapabilityIdentitiesByPlacement,
+    recordSheetRead: placement => context.reads.recordPlacement(placement),
+  })
   return {
     ...context,
     intent: {
@@ -199,6 +228,7 @@ const moveContextForStage = (
         has: context.queries.effectiveAbilities.has,
       },
       relationships,
+      creatureRules,
     },
   } as unknown as AuthoritativeMoveRulesContext
 }
@@ -428,7 +458,7 @@ const juicyEnergy = (input: {
     moveId: 'ability.juicy-energy',
   })
   const previous = deepCloneJson(input.context.actor.sheet.sheet) as AnyLiveSheet
-  const current = deepCloneJson(previous) as AnyLiveSheet
+  let current = deepCloneJson(previous) as AnyLiveSheet
   const changedItemField = consumeBerryJuice({
     sheetKind: input.context.actor.sheet.kind,
     sheet: current,
@@ -439,8 +469,12 @@ const juicyEnergy = (input: {
     placementId: input.context.actor.placement.id,
   })) {
     const healing = Math.max(0, Math.floor(input.context.actor.token.level))
-    if (input.context.actor.sheet.kind === 'pokemon') healPokemonHp(current as CharacterSheet, healing)
-    else healTrainerHp(current as TrainerSheet, healing)
+    current = applyAbilityHpToSheet({
+      context: input.context,
+      placementId: input.context.actor.placement.id,
+      sheet: current,
+      currentHp: input.context.actor.token.currentHp + healing,
+    })
   }
   current.revision = nextRevision(input.context.actor.sheet.revision)
   const hpChanged = input.context.actor.sheet.kind === 'pokemon'

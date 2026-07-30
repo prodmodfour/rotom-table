@@ -31,7 +31,7 @@ import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { applyConditionsToSheet } from '~/utils/sheetMutations'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { computeTickValue } from '~/utils/ptuHp'
-import { healPokemonHp, healTrainerHp } from '~/utils/sheets/healing'
+import { applyAbilityHpToSheet } from '../capabilityHpInvariants'
 import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveResources'
 import {
   createMoveStateChangePlan,
@@ -409,7 +409,7 @@ const lifeForce = (input: {
   const payment = frequency.plan.changes.find(change => change.kind === 'sheet-state')
     ?? fail('Life Force did not produce its Daily payment.')
   const previous = deepCloneJson(input.context.actor.sheet.sheet) as AnyLiveSheet
-  const paidSheet = deepCloneJson(payment.current) as AnyLiveSheet
+  let paidSheet = deepCloneJson(payment.current) as AnyLiveSheet
   const token = input.context.actor.token
   const maximumHp = Math.max(1, token.fullMaxHp ?? token.maxHp)
   if (!authoritativeAbilityHealingBlocked({
@@ -417,10 +417,12 @@ const lifeForce = (input: {
     placementId: input.context.actor.placement.id,
   })) {
     const healing = computeTickValue(maximumHp)
-    if (input.context.actor.sheet.kind === 'pokemon') {
-      healPokemonHp(paidSheet as CharacterSheet, healing)
-    }
-    else healTrainerHp(paidSheet as TrainerSheet, healing)
+    paidSheet = applyAbilityHpToSheet({
+      context: input.context,
+      placementId: input.context.actor.placement.id,
+      sheet: paidSheet,
+      currentHp: token.currentHp + healing,
+    })
   }
   const current = paidSheet
   current.revision = nextRevision(input.context.actor.sheet.revision)
