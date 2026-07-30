@@ -72,6 +72,7 @@ import {
   materializeJuicerSheetAtTime,
   withJuicerShellJuiceSnack,
 } from './juicer'
+import { mapWithCapabilityGlowLight } from './glow'
 
 const canonicalCapabilityItemName = (value: string): string | null => (
   findItem(value)?.name ?? canonicalPtuBerryName(value)
@@ -423,6 +424,20 @@ const applyToggle = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
     effects = effects.filter(effect => effect.id !== modeEffectId(input.actorPlacement.id, removedMode))
   }
   let nextMap = mapWithRuntimeAndEffects(input.map, runtime, effects)
+  if (addedMode === 'glowing') {
+    nextMap = mapWithCapabilityGlowLight({
+      map: nextMap,
+      placementId: input.actorPlacement.id,
+      active: true,
+    })
+  }
+  if (removedMode === 'glowing') {
+    nextMap = mapWithCapabilityGlowLight({
+      map: nextMap,
+      placementId: input.actorPlacement.id,
+      active: false,
+    })
+  }
   if (addedMode === 'illusion') {
     const cell = input.command.selections.cells[0]
     if (!cell) throw new Error('Illusionist requires one authoritative illusion cell.')

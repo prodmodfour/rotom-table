@@ -13,6 +13,7 @@ import {
 import { deepCloneJson } from '~/utils/serialization'
 import { assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
 import { recordAa085to100MovementEvidence } from '../abilityAutomation/mechanics/aa085to100MovementIntegration'
+import { relocateCapabilityGlowLights } from '../capabilityAutomation/glow'
 
 export interface AuthoritativeMovementMapTransition {
   readonly nextMap: TabletopMap
@@ -94,6 +95,7 @@ export const applyAuthoritativeMovementMapTransition = (input: {
   // Companion identities are evidence returned by the authoritative movement
   // oracle. Never rediscover them from raw persisted links at transition time.
   const linkedCompanionIds = new Set(input.linkedCompanionPlacementIds ?? [])
+  const movingPlacementIds = new Set([placement.id, ...linkedCompanionIds])
   let metadata = moved
     ? appendMovementLogEntry(input.map.metadata, {
         userId: placement.id,
@@ -138,7 +140,6 @@ export const applyAuthoritativeMovementMapTransition = (input: {
     }
   }
   if (moved && Array.isArray(metadata?.capabilityObjects)) {
-    const movingPlacementIds = new Set([placement.id, ...linkedCompanionIds])
     metadata = {
       ...(metadata ?? {}),
       capabilityObjects: metadata.capabilityObjects.map((raw) => {
@@ -159,6 +160,13 @@ export const applyAuthoritativeMovementMapTransition = (input: {
       }),
       metadata,
       encounterState,
+      ...(moved && input.map.lights ? {
+        lights: relocateCapabilityGlowLights({
+          lights: input.map.lights,
+          placementIds: movingPlacementIds,
+          destination: to,
+        }),
+      } : {}),
       updatedAt: input.timestamp,
     },
     placement: nextPlacement,

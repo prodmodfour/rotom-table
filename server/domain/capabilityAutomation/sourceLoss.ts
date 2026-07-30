@@ -3,6 +3,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
+import { capabilityGlowLightId } from './glow'
 
 const sheetForPlacement = (
   placement: TabletopMap['placements'][number],
@@ -119,6 +120,12 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
   const removedModes = runtime.modes.filter(mode => !retainedModeIds.has(mode.id))
   const removedModeIds = new Set(removedModes.map(mode => mode.id))
   const removedIllusionModes = removedModes.filter(mode => mode.mode === 'illusion')
+  const retainedGlowPlacementIds = new Set(modes
+    .filter(mode => mode.mode === 'glowing')
+    .map(mode => mode.actorPlacementId))
+  const removedGlowPlacementIds = new Set(removedModes
+    .filter(mode => mode.mode === 'glowing' && !retainedGlowPlacementIds.has(mode.actorPlacementId))
+    .map(mode => mode.actorPlacementId))
   const retainedIllusionModes = modes.filter(mode => mode.mode === 'illusion')
   const metadata = { ...(input.map.metadata ?? {}) }
   if (capabilityObjects) metadata.capabilityObjects = capabilityObjects
@@ -146,6 +153,11 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
   return {
     ...input.map,
     metadata,
+    ...(removedGlowPlacementIds.size > 0 ? {
+      lights: (input.map.lights ?? []).filter(light => (
+        ![...removedGlowPlacementIds].some(placementId => light.id === capabilityGlowLightId(placementId))
+      )),
+    } : {}),
     encounterState: {
       ...encounter,
       effects: encounter.effects.filter(effect => !removedModeIds.has(effect.id)),

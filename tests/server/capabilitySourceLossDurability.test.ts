@@ -284,6 +284,55 @@ describe('Capability source-loss durability', () => {
     ])
   })
 
+  it('removes the source-owned Glow light when its exact mode source is lost', () => {
+    const glowActor: CharacterSheet = {
+      ...actorWithSources(),
+      capabilities: { other: [...(actorWithSources().capabilities?.other ?? []), 'Glow'] },
+    }
+    const initial = baseMap()
+    const { id } = sourceInstances(initial, glowActor)
+    const encounter = createEmptyEncounterState()
+    const runtimeMap = baseMap({
+      lights: [
+        { id: 'capability.glow:actor-token', kind: 'emissive', position: actorPlacement.position },
+        { id: 'setup-light', kind: 'point', position: { x: 5, y: 1, z: 5 } },
+      ],
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'glow-mode',
+            actorPlacementId: actorPlacement.id,
+            capabilityInstanceId: id('Glow'),
+            canonicalId: 'Glow',
+            mode: 'glowing',
+            description: null,
+            configurationId: null,
+            activatedAt: 10,
+            expiresAt: null,
+            sourceOperationId: 'operation-glow',
+          }],
+        },
+      },
+    })
+    const reconciled = reconcileCapabilityRuntimeSourceLoss({
+      map: runtimeMap,
+      sheets: {
+        pokemon: new Map([
+          [actorPlacement.sheetSlug, actorWithoutSources()],
+          [partnerPlacement.sheetSlug, partnerSheet],
+        ]),
+        trainer: new Map(),
+      },
+    })
+
+    expect(reconciled.encounterState?.capabilityRuntime?.modes).toEqual([])
+    expect(reconciled.lights).toEqual([
+      { id: 'setup-light', kind: 'point', position: { x: 5, y: 1, z: 5 } },
+    ])
+  })
+
   it('durably closes source loss on load so regaining the same source cannot resurrect old state', () => {
     const database = db()
     const maps = createSqliteMapRepository<TabletopMap>(database)

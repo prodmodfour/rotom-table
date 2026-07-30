@@ -5,6 +5,7 @@ import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/
 import { executeCapabilityMechanic } from '../../server/domain/capabilityAutomation/executeMechanic'
 import { CAPABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/capabilityAutomation/registry'
 import { createCapabilityLifecycleHandler } from '../../server/domain/moveAutomation/capabilityLifecycle'
+import { applyAuthoritativeMovementMapTransition } from '../../server/domain/movement/applyMovementTransition'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -88,6 +89,30 @@ describe('native Capability mechanics', () => {
     expect(shape.map.encounterState?.capabilityRuntime?.modes[0]).toMatchObject({
       mode: 'shapechanged', configurationId: 'mass-percent:125;kind:organic', description: 'A compact quadruped shape',
     })
+  })
+
+  it('projects Glow as a body-emitted map light through movement and source-owned dismissal', () => {
+    const glowing = execute('Glow', 'emit-light')
+    expect(glowing.map.lights).toEqual([{
+      id: 'capability.glow:actor',
+      kind: 'emissive',
+      position: actorPlacement.position,
+    }])
+
+    const moved = applyAuthoritativeMovementMapTransition({
+      map: glowing.map,
+      placementId: actorPlacement.id,
+      destination: { x: 4, y: 1, z: 2 },
+      distance: 2,
+      encounterState: glowing.map.encounterState!,
+      timestamp: 2_000,
+      userName: 'Actor',
+    }).nextMap
+    expect(moved.lights?.[0]?.position).toEqual({ x: 4, y: 1, z: 2 })
+
+    const stopped = execute('Glow', 'stop-light', {}, moved)
+    expect(stopped.map.lights).toEqual([])
+    expect(stopped.map.encounterState?.capabilityRuntime?.modes).toEqual([])
   })
 
   it('separates a released linked participant into an adjacent legal cell', () => {
