@@ -87,6 +87,58 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
     expect(unresolved.ok && unresolved.entry.script.range).not.toBe('6, 1 Target')
   })
 
+  it('projects As One Basic Abilities through ordinary suppression and disables carried Ability fields', () => {
+    const rider = pokemon(actor.sheetSlug, {
+      species: 'Calyrex', capabilities: { other: ['As One'] }, movelist: [{ name: 'Tackle' }],
+    })
+    const mount = pokemon(target.sheetSlug, {
+      species: 'Ponyta', abilities: [{ name: 'Flash Fire' }, { name: 'Neutralizing Gas' }],
+    })
+    const gasPlacement: SheetPlacement = {
+      id: 'gas', sheetKind: 'pokemon', sheetSlug: 'gas-sheet', position: { x: 1, y: 0, z: 2 }, sideId: 'blue',
+    }
+    const gas = pokemon(gasPlacement.sheetSlug, {
+      species: 'Koffing', abilities: [{ name: 'Neutralizing Gas' }],
+    })
+    const unlinked = baseMap({ placements: [actor, target, gasPlacement] })
+    const source = resolveEffectiveCapabilities({
+      map: unlinked, placement: actor, sheet: rider,
+      sheets: { pokemon: new Map([[rider.slug, rider], [mount.slug, mount], [gas.slug, gas]]), trainer: new Map() },
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'As One')!
+    const linkedMap = (gasActive: boolean): TabletopMap => {
+      const encounter = createEmptyEncounterState()
+      return {
+        ...unlinked,
+        encounterState: {
+          ...encounter,
+          capabilityRuntime: {
+            ...encounter.capabilityRuntime!,
+            links: [{
+              id: 'as-one-link', kind: 'as-one-mount', ownerPlacementId: actor.id,
+              participantPlacementIds: [target.id], capabilityInstanceId: source.instanceId,
+              canonicalId: 'As One', establishedAt: 100, configurationId: 'Flash Fire',
+              sourceOperationId: 'operation-as-one',
+            }],
+          },
+        },
+        ...(gasActive ? {} : { placements: [actor, target] }),
+      }
+    }
+    const build = (gasActive: boolean) => buildAuthoritativeMoveRulesContext({
+      map: linkedMap(gasActive),
+      pokemonSheets: new Map([
+        [rider.slug, rider], [mount.slug, mount],
+        ...(gasActive ? [[gas.slug, gas] as const] : []),
+      ]),
+      trainerSheets: new Map(), intent: moveIntent('Tackle'),
+      candidatePlacementIds: [target.id], selectedPlacementIds: [target.id], random: () => 0, time: 1_000,
+    })
+    const withoutIndependentGas = build(false)
+    expect(withoutIndependentGas.queries.abilities.has(actor.id, 'Flash Fire')).toBe(true)
+    expect(withoutIndependentGas.queries.abilities.has(target.id, 'Neutralizing Gas')).toBe(false)
+    expect(build(true).queries.abilities.has(actor.id, 'Flash Fire')).toBe(false)
+  })
+
   it('keeps Telekinetic Struggle at Focus Rank and TK Mastery at Focus Rank plus two', () => {
     const moveName = 'Struggle (Telekinetic Special)'
     const base = pokemon(actor.sheetSlug, {

@@ -42,6 +42,7 @@ import {
   teleporterRoundIdentity,
   teleporterRoundUseSpent,
 } from './teleporterRoundUse'
+import { zygardeAssemblyRecordForPlacement } from './zygardeAssembly'
 
 export interface BuildCapabilityClientCapabilityBundleInput {
   readonly role: AuthRole
@@ -276,13 +277,12 @@ const contextSatisfied = (input: {
     ))
     case 'inside-machine': return mode(['inside-machine'])
     case 'crowned-form': return mode(['crowned'])
-    case 'power-construct-zygarde': return Array.isArray(map.metadata?.capabilityZygardeAssemblies)
-      && map.metadata.capabilityZygardeAssemblies.some(raw => {
-        const state = raw as Record<string, unknown>
-        return state?.actorPlacementId === placement.id && state.powerConstruct === true
-          && input.linkedTrainers.some(trainer => trainer.slug === state.trainerSlug
-            && trainerHasItem(trainer, 'Zygarde Cube'))
-      })
+    case 'power-construct-zygarde': {
+      const state = zygardeAssemblyRecordForPlacement(map, placement)
+      return state?.powerConstruct === true
+        && input.linkedTrainers.some(trainer => trainer.slug === state.trainerSlug
+          && trainerHasItem(trainer, 'Zygarde Cube'))
+    }
     case 'visible-and-ready': {
       const lastInvisible = [...(map.encounterState?.capabilityRuntime?.modes ?? [])].reverse().find(entry => (
         entry.actorPlacementId === placement.id
@@ -473,14 +473,13 @@ const contextSatisfied = (input: {
         return input.linkedTrainers.some(trainer => trainer.slug === resource?.trainerSlug)
           && Number.isSafeInteger(resource?.count) && (resource.count as number) >= 10
       })
-    case 'disassemblable-zygarde': return input.placement.sheetKind === 'pokemon'
-      && Array.isArray(map.metadata?.capabilityZygardeAssemblies)
-      && map.metadata.capabilityZygardeAssemblies.some(raw => {
-        const state = raw as Record<string, unknown>
-        return state?.actorPlacementId === placement.id && state.disassemblable === true
-          && input.linkedTrainers.some(trainer => trainer.slug === state.trainerSlug
-            && trainerHasItem(trainer, 'Zygarde Cube'))
-      })
+    case 'disassemblable-zygarde': {
+      const state = zygardeAssemblyRecordForPlacement(map, placement)
+      return input.placement.sheetKind === 'pokemon'
+        && state?.disassemblable === true
+        && input.linkedTrainers.some(trainer => trainer.slug === state.trainerSlug
+          && trainerHasItem(trainer, 'Zygarde Cube'))
+    }
     case 'zygarde-cube-and-tp': return input.placement.sheetKind === 'pokemon'
       && input.linkedTrainers.some(trainer => trainerHasItem(trainer, 'Zygarde Cube'))
       && contextual
@@ -773,7 +772,8 @@ export const buildCapabilityClientCapabilityBundle = (
     const independentActionBlocked = (
       placement.sheetKind === 'pokemon'
       && (Boolean((sheet as CharacterSheet).babyTemplate)
-        || Boolean((sheet as CharacterSheet).letterPressCombinedInto))
+        || Boolean((sheet as CharacterSheet).letterPressCombinedInto)
+        || Boolean((sheet as CharacterSheet).zygardeDisassembledIntoCells))
     ) || (input.map.encounterState?.capabilityRuntime?.links ?? []).some(link => (
       (link.kind === 'as-one-mount' || link.kind === 'viral-fusion' || link.kind === 'marsupial-pouch')
       && link.participantPlacementIds.includes(placement.id)

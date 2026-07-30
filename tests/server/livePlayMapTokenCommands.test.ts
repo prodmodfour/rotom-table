@@ -855,6 +855,55 @@ describe('live-play map token commands', () => {
     expect(harness.writes).toEqual([])
   })
 
+  it('never spawns or sends out a Zygarde sheet archived by Cube disassembly', async () => {
+    const harness = createHarness()
+    harness.deps.readSheet.mockImplementation((kind: string, slug: string) => ({
+      sheet: kind === 'trainer'
+        ? { slug, name: 'Boss', level: 10, revision: 1, currentTeam: ['archived-zygarde'], capabilities: { overland: 5 } }
+        : {
+            slug, nickname: 'Cells', species: 'Zygarde 50% Forme', level: 20, revision: 1,
+            capabilities: { overland: 7, other: ['Zygarde Cells'] },
+            zygardeDisassembledIntoCells: {
+              trainerSlug: 'giovanni', cellCount: 50, sourceOperationId: 'operation-disassembly',
+            },
+          },
+    }))
+
+    const spawned = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: spawnCommand({
+        opId: 'op_spawn_archived_zygarde',
+        payload: {
+          placement: {
+            id: 'archived-spawn', sheetKind: 'pokemon', sheetSlug: 'archived-zygarde',
+            position: { x: 3, y: 0, z: 3 }, sideId: 'wild', facing: 'south-east', turned: false,
+          },
+        },
+        scopes: [{ kind: 'token', placementId: 'archived-spawn', field: 'spawn' }],
+      }),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
+    }, harness.deps)
+    expect(spawned.result).toMatchObject({ ok: false, reason: 'conflict' })
+
+    const sent = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: sendOutCommand({
+        opId: 'op_send_archived_zygarde',
+        payload: {
+          trainerId: 'unlinked-token', pokemonSlug: 'archived-zygarde', tokenId: 'archived-send-out',
+          position: { x: 3, y: 0, z: 2 }, facing: 'south-east',
+        },
+        scopes: [
+          { kind: 'token', placementId: 'unlinked-token', field: 'sendOut' },
+          { kind: 'token', placementId: 'archived-send-out', field: 'spawn' },
+        ],
+      }),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+    }, harness.deps)
+    expect(sent.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(harness.writes).toEqual([])
+  })
+
   it('fails closed when a Marsupial mother and baby do not retain exact reciprocal share state', async () => {
     const harness = createHarness()
     const motherPouch = {

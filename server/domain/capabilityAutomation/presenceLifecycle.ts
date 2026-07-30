@@ -77,6 +77,17 @@ export const removeCapabilityPresenceGroup = <TMap extends TabletopMap>(input: {
     } : {}),
   } : undefined
   const metadata = { ...(input.map.metadata ?? {}) }
+  if (Array.isArray(metadata.capabilityZygardeAssemblies)) {
+    metadata.capabilityZygardeAssemblies = metadata.capabilityZygardeAssemblies.map(raw => {
+      const state = raw as Record<string, unknown>
+      if (typeof state?.actorSheetSlug === 'string' || typeof state?.actorPlacementId !== 'string'
+        || !removedPlacementIds.has(state.actorPlacementId)) return raw
+      const placement = input.map.placements.find(candidate => (
+        candidate.id === state.actorPlacementId && candidate.sheetKind === 'pokemon'
+      ))
+      return placement ? { ...state, actorSheetSlug: placement.sheetSlug } : raw
+    })
+  }
   if (Array.isArray(metadata.capabilityMarsupialPouches)) {
     metadata.capabilityMarsupialPouches = metadata.capabilityMarsupialPouches.filter(raw => {
       const pouch = raw as Record<string, unknown>

@@ -635,6 +635,26 @@ export const buildAuthoritativeMoveRulesContext = (
     sheets: { pokemon: sheetLookup.pokemon, trainer: sheetLookup.trainer },
   }))
   const basePlacementSnapshot = placementSnapshots(map)
+  const basicAbilitiesBySpecies = new Map((pokedexData as readonly PokedexRecord[]).map(record => [
+    record.species.trim().toLowerCase(),
+    new Set(record.abilities?.basic ?? []),
+  ]))
+  const activeCapabilityLinks = (map.encounterState?.capabilityRuntime?.links ?? []).filter((link) => {
+    const owner = basePlacementSnapshot.byId.get(link.ownerPlacementId)
+    const ownerSheet = owner
+      ? sheetByRef.get(sheetReadKey({ kind: owner.sheetKind, slug: owner.sheetSlug }))?.sheet
+      : null
+    return Boolean(owner && ownerSheet && resolveEffectiveCapabilities({
+      map,
+      placement: owner,
+      sheet: ownerSheet,
+      sheets: { pokemon: sheetLookup.pokemon, trainer: sheetLookup.trainer },
+    }).instances.some(instance => (
+      instance.instanceId === link.capabilityInstanceId
+      && instance.canonicalId === link.canonicalId
+      && instance.effective
+    )))
+  })
   const projectedAbilitiesByPlacement = new Map<string, readonly AuthoritativeEffectiveAbility[]>()
   for (const placement of basePlacementSnapshot.placements) {
     const sheet = sheetByRef.get(sheetReadKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
@@ -649,8 +669,34 @@ export const buildAuthoritativeMoveRulesContext = (
           parameterData: null,
         }]
       : []
+    const asOneAbilities = activeCapabilityLinks.flatMap((link) => {
+      if (link.kind !== 'as-one-mount' || link.ownerPlacementId !== placement.id
+        || link.participantPlacementIds.length !== 1 || link.configurationId === 'Wonder Guard') return []
+      const participant = basePlacementSnapshot.byId.get(link.participantPlacementIds[0]!)
+      const participantSheet = participant
+        ? sheetByRef.get(sheetReadKey({ kind: participant.sheetKind, slug: participant.sheetSlug }))
+        : null
+      if (!participant || participantSheet?.kind !== 'pokemon') return []
+      const species = (participantSheet.sheet as CharacterSheet).species.trim().toLowerCase()
+      const participantAbilities = resolveSheetAbilityInstances(participantSheet.sheet.abilities)
+      const selected = link.configurationId
+      const selectedBasic = selected && basicAbilitiesBySpecies.get(species)?.has(selected) === true
+        ? selected
+        : participantAbilities.find(ability => (
+            ability.canonicalId !== 'Wonder Guard'
+            && basicAbilitiesBySpecies.get(species)?.has(ability.canonicalId) === true
+          ))?.canonicalId ?? null
+      if (!selectedBasic) return []
+      const selectedInstance = participantAbilities.find(ability => ability.canonicalId === selectedBasic)
+      return [{
+        instanceId: `capability-as-one:${link.id}:${selectedBasic}`,
+        canonicalId: selectedBasic,
+        parameterStatus: selectedInstance?.parameterStatus ?? 'not-parameterized' as const,
+        parameterData: selectedInstance?.parameterData ?? null,
+      }]
+    })
     const projected = projectAuthoritativeEffectiveAbilities({
-      baseAbilities: [...sheetAbilityInstances, ...soullessWonderGuard],
+      baseAbilities: [...sheetAbilityInstances, ...soullessWonderGuard, ...asOneAbilities],
       species: sheet?.kind === 'pokemon' ? (sheet.sheet as CharacterSheet).species : null,
       target: {
         placementId: placement.id,
@@ -727,8 +773,18 @@ export const buildAuthoritativeMoveRulesContext = (
     basePlacementSnapshot.placements,
     sheetLookup,
   ).byId
+  // Physically carried As One/Viral Fusion participants do not retain an
+  // independent Ability field. Remove them before Neutralizing Gas projection
+  // so a carried participant cannot suppress its owner or nearby creatures.
+  const inactiveCapabilityParticipantIds = new Set(activeCapabilityLinks
+    .filter(link => link.kind === 'as-one-mount' || link.kind === 'viral-fusion')
+    .flatMap(link => link.participantPlacementIds))
+  const abilitiesSubjectToNeutralizingGas = new Map([...projectedAbilitiesByPlacement].map(([placementId, abilities]) => [
+    placementId,
+    inactiveCapabilityParticipantIds.has(placementId) ? Object.freeze([]) : abilities,
+  ] as const))
   const activeProjectedAbilities = projectAa081NeutralizingGasAbilities({
-    abilitiesByPlacement: projectedAbilitiesByPlacement,
+    abilitiesByPlacement: abilitiesSubjectToNeutralizingGas,
     tokensById: baseTokenById,
     effects: map.encounterState?.effects ?? [],
     preserveSuppressedEntries: false,
@@ -755,58 +811,11 @@ export const buildAuthoritativeMoveRulesContext = (
       })]
     })))
   }
-  const activeCapabilityLinks = (map.encounterState?.capabilityRuntime?.links ?? []).filter((link) => {
-    const owner = basePlacementSnapshot.byId.get(link.ownerPlacementId)
-    const ownerSheet = owner
-      ? sheetByRef.get(sheetReadKey({ kind: owner.sheetKind, slug: owner.sheetSlug }))?.sheet
-      : null
-    return Boolean(owner && ownerSheet && resolveEffectiveCapabilities({
-      map,
-      placement: owner,
-      sheet: ownerSheet,
-      sheets: { pokemon: sheetLookup.pokemon, trainer: sheetLookup.trainer },
-    }).instances.some(instance => (
-      instance.instanceId === link.capabilityInstanceId
-      && instance.canonicalId === link.canonicalId
-      && instance.effective
-    )))
-  })
-  const basicAbilitiesBySpecies = new Map((pokedexData as readonly PokedexRecord[]).map(record => [
-    record.species.trim().toLowerCase(),
-    new Set(record.abilities?.basic ?? []),
-  ]))
   const carriedParticipantAbilitySnapshots = new Map<string, readonly AuthoritativeMoveEffectiveAbility[]>()
   for (const link of activeCapabilityLinks) {
     if ((link.kind === 'as-one-mount' || link.kind === 'viral-fusion') && link.participantPlacementIds.length === 1) {
       const participantId = link.participantPlacementIds[0]!
       carriedParticipantAbilitySnapshots.set(participantId, effectiveAbilitiesByPlacement.get(participantId) ?? [])
-    }
-    if (link.kind === 'as-one-mount' && link.participantPlacementIds.length === 1 && link.configurationId !== 'Wonder Guard') {
-      const participantId = link.participantPlacementIds[0]!
-      const participant = basePlacementSnapshot.byId.get(participantId)
-      const participantSheet = participant
-        ? sheetByRef.get(sheetReadKey({ kind: participant.sheetKind, slug: participant.sheetSlug }))?.sheet
-        : null
-      const species = participant?.sheetKind === 'pokemon'
-        ? (participantSheet as CharacterSheet | null)?.species.trim().toLowerCase() : null
-      const selected = link.configurationId
-      const naturalBasic = selected && species
-        && basicAbilitiesBySpecies.get(species)?.has(selected) === true
-        ? selected : null
-      const currentlyEffective = (effectiveAbilitiesByPlacement.get(participantId) ?? [])
-        .find(ability => ability.canonicalId !== 'Wonder Guard'
-          && basicAbilitiesBySpecies.get(species ?? '')?.has(ability.canonicalId) === true)
-      const canonicalId = naturalBasic ?? currentlyEffective?.canonicalId ?? null
-      const runtime = canonicalId ? abilityRuntimeRegistry.resolve(canonicalId) : null
-      if (canonicalId && runtime) effectiveAbilitiesByPlacement.set(link.ownerPlacementId, Object.freeze([
-        ...(effectiveAbilitiesByPlacement.get(link.ownerPlacementId) ?? []),
-        Object.freeze({
-          instanceId: `capability-as-one:${link.id}:${canonicalId}`,
-          canonicalId,
-          runtime,
-          parameterData: currentlyEffective?.canonicalId === canonicalId ? currentlyEffective.parameterData : null,
-        }),
-      ]))
     }
     if (link.kind === 'living-weapon') {
       effectiveAbilitiesByPlacement.set(
@@ -899,9 +908,9 @@ export const buildAuthoritativeMoveRulesContext = (
   for (const placement of basePlacementSnapshot.placements) {
     if (placement.sheetKind !== 'pokemon') continue
     const sheet = sheetByRef.get(sheetReadKey({ kind: 'pokemon', slug: placement.sheetSlug }))?.sheet as CharacterSheet | undefined
-    if (sheet?.babyTemplate === true || sheet?.letterPressCombinedInto) {
+    if (sheet?.babyTemplate === true || sheet?.letterPressCombinedInto || sheet?.zygardeDisassembledIntoCells) {
       capabilityActionBlockedPlacementIds.add(placement.id)
-      if (sheet?.letterPressCombinedInto) capabilityCarriedPlacementIds.add(placement.id)
+      if (sheet?.letterPressCombinedInto || sheet?.zygardeDisassembledIntoCells) capabilityCarriedPlacementIds.add(placement.id)
     }
   }
   if (Array.isArray(map.metadata?.capabilityMarsupialPouches)) {
@@ -1534,6 +1543,9 @@ export const buildAuthoritativeMoveRulesContext = (
       const gainedAbility = configuredAbility ?? mountAbilities.find(ability => (
         ability.canonicalId !== 'Wonder Guard' && basicAbilities.has(ability.canonicalId)
       ))?.canonicalId ?? null
+      const effectiveGainedAbility = gainedAbility
+        && (effectiveAbilitiesByPlacement.get(token.id) ?? []).some(ability => ability.canonicalId === gainedAbility)
+        ? gainedAbility : null
       return detachedFrozenJson({
         ...token,
         base: linked.base,
@@ -1559,7 +1571,7 @@ export const buildAuthoritativeMoveRulesContext = (
             traits: movementTraits,
           },
         } : {}),
-        abilityNames: [...new Set([...(token.abilityNames ?? []), ...(gainedAbility ? [gainedAbility] : [])])],
+        abilityNames: [...new Set([...(token.abilityNames ?? []), ...(effectiveGainedAbility ? [effectiveGainedAbility] : [])])],
       })
     }
     const secondary = linked.defenderTypes[0]?.trim().toLocaleLowerCase('en-US') === 'psychic'

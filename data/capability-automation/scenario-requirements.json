@@ -59,9 +59,9 @@
       "id": "capability:As One:passive",
       "canonicalId": "As One",
       "kind": "passive-projection",
-      "given": "the actor owns an effective canonical capability instance",
-      "when": "the authoritative encounter presentation is projected",
-      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+      "given": "an exact effective As One source carries one authoritative mount and retains a legal non-Wonder-Guard Basic Ability choice",
+      "when": "the combined participant's Ability field and move rules are projected",
+      "then": "the chosen Basic Ability enters the owner's ordinary Ability projection before suppression while the carried participant has no independent Ability field"
     },
     {
       "id": "capability:As One:action:mount",
@@ -1311,27 +1311,27 @@
       "canonicalId": "Zygarde Cells",
       "kind": "contextual-action",
       "actionId": "assemble-zygarde",
-      "given": "the actor owns the capability and authoritative context satisfies zygarde-cube-and-cells",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "one effective unassembled Zygarde template is linked to an exact Cube owner with sufficient retained Cells",
+      "when": "the GM retains legal Cell count, Forme, Nature, and Level choices",
+      "then": "the server consumes Cells once and binds durable assembly authority to both the current placement and stable Pokémon sheet identity"
     },
     {
       "id": "capability:Zygarde Cells:action:disassemble-zygarde",
       "canonicalId": "Zygarde Cells",
       "kind": "contextual-action",
       "actionId": "disassemble-zygarde",
-      "given": "the actor owns the capability and authoritative context satisfies disassemblable-zygarde",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "one 10- or 50-Cell Zygarde has unambiguous durable assembly authority and its exact Cube owner is available",
+      "when": "the Extended Action returns it to Cells",
+      "then": "the server returns the exact Cell count, removes the construct from play and every roster, and irreversibly prevents the archived sheet from acting or deploying"
     },
     {
       "id": "capability:Zygarde Cells:action:change-zygarde-form",
       "canonicalId": "Zygarde Cells",
       "kind": "contextual-action",
       "actionId": "change-zygarde-form",
-      "given": "the actor owns the capability and authoritative context satisfies power-construct-zygarde",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "one 100-Cell Power Construct Zygarde has unambiguous durable assembly authority",
+      "when": "its exact Cube owner changes it between 10% and 50% Formes",
+      "then": "the server updates both active Forme mode and stable sheet-owned authority so recall and send-out restore the chosen Forme under a new placement identity"
     },
     {
       "id": "capability:Zygarde Cells:action:tutor-cube-move",

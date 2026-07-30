@@ -3,6 +3,7 @@ import { applyAa061BallFetchSendOutTriggers } from '../domain/abilityAutomation/
 import { applyAa065CuriousMedicineSendOutTrigger } from '../domain/abilityAutomation/mechanics/aa065PresenceIntegration'
 import { removeCapabilityPresenceGroup } from '../domain/capabilityAutomation/presenceLifecycle'
 import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
+import { rebindZygardeAssemblyOnPresence } from '../domain/capabilityAutomation/zygardeAssembly'
 import { parseCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
 import {
   marsupialRelationshipClaimedSlugs,
@@ -629,6 +630,7 @@ const applySpawnTokenToMap = (
   payload: SpawnTokenPayload,
   context: ResolvedMapWriteContext,
   dependencies: MapTokenActionDependencySet,
+  operationId: string,
 ): AppliedMapTokenChange => {
   const placement = normalizeLivePlaySpawnPlacement(payload.placement)
   if (!isPositionWithinMapBounds(placement.position, context.map)) {
@@ -640,6 +642,9 @@ const applySpawnTokenToMap = (
     const sheet = { ...record.sheet, slug: placement.sheetSlug } as unknown as CharacterSheet
     if (sheet.letterPressCombinedInto) {
       rejectLivePlayCommand('conflict', `Pokémon ${placement.sheetSlug} is irreversibly combined into Prime Unown ${sheet.letterPressCombinedInto.ownerSheetSlug}`)
+    }
+    if (sheet.zygardeDisassembledIntoCells) {
+      rejectLivePlayCommand('conflict', `Zygarde ${placement.sheetSlug} was irreversibly disassembled into Cells`)
     }
     const relationship = resolveMarsupialRelationship({
       subjectSlug: placement.sheetSlug,
@@ -666,13 +671,29 @@ const applySpawnTokenToMap = (
     })
   }
 
-  return {
-    nextMap: {
-      ...context.map,
-      placements: [...context.map.placements, placement],
-    },
-    placement,
+  let nextMap: TabletopMap = {
+    ...context.map,
+    placements: [...context.map.placements, placement],
   }
+  if (placement.sheetKind === 'pokemon') {
+    const record = dependencies.readSheet('pokemon', placement.sheetSlug)!
+    const sheet = { ...record.sheet, slug: placement.sheetSlug } as unknown as CharacterSheet
+    try {
+      nextMap = rebindZygardeAssemblyOnPresence({
+        map: nextMap,
+        placement,
+        sheet,
+        pokemonSheets: new Map([[sheet.slug, sheet]]),
+        trainerSheets: new Map(),
+        now: Math.max(0, context.map.updatedAt ?? 0),
+        operationId,
+      })
+    }
+    catch (error) {
+      rejectLivePlayCommand('conflict', error instanceof Error ? error.message : 'Zygarde assembly authority could not be restored')
+    }
+  }
+  return { nextMap, placement }
 }
 
 interface ResolvedSendOutPokemonMapContext {
@@ -792,6 +813,9 @@ const resolveSendOutPokemonMapContext = (
   if (pokemonSheet.letterPressCombinedInto) {
     rejectLivePlayCommand('conflict', `Pokémon ${payload.pokemonSlug} is irreversibly combined into Prime Unown ${pokemonSheet.letterPressCombinedInto.ownerSheetSlug}`)
   }
+  if (pokemonSheet.zygardeDisassembledIntoCells) {
+    rejectLivePlayCommand('conflict', `Zygarde ${payload.pokemonSlug} was irreversibly disassembled into Cells`)
+  }
   if (!trainerOwnsCurrentTeamPokemon(trainerRecord.sheet, payload.pokemonSlug)) {
     rejectLivePlayCommand('conflict', `Trainer ${trainerPlacement.sheetSlug} does not have Pokémon ${payload.pokemonSlug} on their current team`)
   }
@@ -900,6 +924,20 @@ const applySendOutPokemonToMap = (
       resolved.placement,
       ...(resolved.marsupialBaby ? [resolved.marsupialBaby.placement] : []),
     ],
+  }
+  try {
+    placedMap = rebindZygardeAssemblyOnPresence({
+      map: placedMap,
+      placement: resolved.placement,
+      sheet: resolved.pokemonSheet,
+      pokemonSheets: new Map([[resolved.pokemonSheet.slug, resolved.pokemonSheet]]),
+      trainerSheets: new Map([[resolved.trainerSheet.slug, resolved.trainerSheet]]),
+      now: Math.max(0, context.map.updatedAt ?? 0),
+      operationId,
+    })
+  }
+  catch (error) {
+    rejectLivePlayCommand('conflict', error instanceof Error ? error.message : 'Zygarde assembly authority could not be restored')
   }
   if (resolved.marsupialBaby) {
     const sheets = {
@@ -1909,7 +1947,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
       } else if (command.type === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN) {
         change = context ? applyTurnTokenToMap(expectTurnTokenPayload(command.payload), context) : null
       } else if (command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN) {
-        change = applySpawnTokenToMap(expectSpawnTokenPayload(command.payload), map, deps)
+        change = applySpawnTokenToMap(expectSpawnTokenPayload(command.payload), map, deps, command.opId)
       } else if (command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON) {
         change = applySendOutPokemonToMap(expectSendOutPokemonPayload(command.payload), map, deps, command.opId)
       } else {

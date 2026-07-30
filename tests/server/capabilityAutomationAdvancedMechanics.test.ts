@@ -3,6 +3,8 @@ import { parseExecuteCapabilityActionCommand, type CapabilityServerRoll } from '
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { executeCapabilityMechanic } from '../../server/domain/capabilityAutomation/executeMechanic'
 import { resolveEffectiveCapabilities } from '../../server/domain/capabilityAutomation/effectiveCapabilities'
+import { removeCapabilityPresenceGroup } from '../../server/domain/capabilityAutomation/presenceLifecycle'
+import { rebindZygardeAssemblyOnPresence } from '../../server/domain/capabilityAutomation/zygardeAssembly'
 import { CAPABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/capabilityAutomation/registry'
 import { validateCapabilityActionSelections } from '../../server/domain/capabilityAutomation/validateSelections'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -379,6 +381,119 @@ describe('advanced Capability mechanics', () => {
     })
     expect(() => validate(unrelated.slug)).toThrow(/Cube owner whose Cell resources formed/i)
     expect(() => validate(owner.slug)).not.toThrow()
+  })
+
+  it('disassembles a Cube-created Zygarde into Cells without leaving a duplicate playable creature', () => {
+    const actor: SheetPlacement = {
+      id: 'zygarde', sheetKind: 'pokemon', sheetSlug: 'zygarde-sheet', position: { x: 1, y: 0, z: 1 },
+    }
+    const sheet: CharacterSheet = {
+      slug: actor.sheetSlug, nickname: 'Zygarde', species: 'Zygarde 50% Forme', level: 30,
+      nature: 'Hardy', abilities: [{ name: 'Aura Break' }], capabilities: { other: ['Zygarde Cells'] },
+    }
+    const trainer: TrainerSheet = {
+      slug: 'owner', name: 'Owner', level: 20, currentTeam: [sheet.slug], boxedPokemon: [sheet.slug],
+      inventory: { keyItems: [{ id: 'cube', name: 'Zygarde Cube', qty: 1 }] },
+    }
+    const map: TabletopMap = {
+      ...baseMap([actor]),
+      metadata: {
+        capabilityZygardeCells: [{ trainerSlug: trainer.slug, count: 3 }],
+        capabilityZygardeAssemblies: [{
+          actorPlacementId: actor.id, actorSheetSlug: sheet.slug, trainerSlug: trainer.slug,
+          cellCount: 50, form: '50-percent', powerConstruct: false, disassemblable: true,
+          previousSheet: { level: 1, nature: 'Quirky', abilities: [] }, sourceOperationId: 'assembly-operation',
+        }],
+      },
+    }
+    const result = run({
+      canonicalId: 'Zygarde Cells', actionId: 'disassemble-zygarde', actor, map,
+      sheets: [sheet], trainers: [trainer], linkedTrainerSlugs: [trainer.slug],
+      selections: { recipientTrainerSlug: trainer.slug },
+    })
+    expect(result.map.placements).toEqual([])
+    expect(result.map.metadata?.capabilityZygardeAssemblies).toEqual([])
+    expect(result.map.metadata?.capabilityZygardeCells).toEqual([{ trainerSlug: trainer.slug, count: 53 }])
+    const archived = result.sheetMutations.find(mutation => mutation.slug === sheet.slug)!.current as CharacterSheet
+    expect(archived.zygardeDisassembledIntoCells).toMatchObject({ trainerSlug: trainer.slug, cellCount: 50 })
+    const owner = result.sheetMutations.find(mutation => mutation.slug === trainer.slug)!.current as TrainerSheet
+    expect(owner.currentTeam).toEqual([])
+    expect(owner.boxedPokemon).toEqual([])
+  })
+
+  it('rebinds durable Zygarde assembly Forme authority after recall and a new placement identity', () => {
+    const oldPlacement: SheetPlacement = {
+      id: 'old-placement', sheetKind: 'pokemon', sheetSlug: 'zygarde-sheet', position: { x: 1, y: 0, z: 1 },
+    }
+    const sheet: CharacterSheet = {
+      slug: oldPlacement.sheetSlug, nickname: 'Zygarde', species: 'Zygarde 50% Forme', level: 30,
+      capabilities: { other: ['Zygarde Cells'] },
+    }
+    const encounter = createEmptyEncounterState()
+    const map: TabletopMap = {
+      ...baseMap([oldPlacement]),
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'old-mode', actorPlacementId: oldPlacement.id,
+            capabilityInstanceId: 'capability:old-placement:Zygarde_Cells:base', canonicalId: 'Zygarde Cells',
+            mode: 'zygarde-form', description: '50-percent', configurationId: 'power-construct',
+            activatedAt: 100, expiresAt: null, sourceOperationId: 'assembly-operation',
+          }],
+        },
+      },
+      metadata: { capabilityZygardeAssemblies: [{
+        actorPlacementId: oldPlacement.id, trainerSlug: 'owner', cellCount: 100,
+        form: '50-percent', powerConstruct: true, disassemblable: false,
+        sourceOperationId: 'assembly-operation',
+      }] },
+    }
+    const recalled = removeCapabilityPresenceGroup({ map, ownerPlacementId: oldPlacement.id }).map
+    expect(recalled.metadata?.capabilityZygardeAssemblies).toContainEqual(expect.objectContaining({
+      actorSheetSlug: sheet.slug,
+    }))
+    const nextPlacement: SheetPlacement = {
+      ...oldPlacement, id: 'new-placement', position: { x: 3, y: 0, z: 3 },
+    }
+    const presentMap: TabletopMap = { ...recalled, placements: [nextPlacement] }
+    const rebound = rebindZygardeAssemblyOnPresence({
+      map: presentMap, placement: nextPlacement, sheet,
+      pokemonSheets: new Map([[sheet.slug, sheet]]), trainerSheets: new Map(),
+      now: 500, operationId: 'send-out-operation',
+    })
+    expect(rebound.metadata?.capabilityZygardeAssemblies).toContainEqual(expect.objectContaining({
+      actorPlacementId: nextPlacement.id, actorSheetSlug: sheet.slug, form: '50-percent',
+    }))
+    expect(rebound.encounterState?.capabilityRuntime?.modes).toContainEqual(expect.objectContaining({
+      actorPlacementId: nextPlacement.id, mode: 'zygarde-form', description: '50-percent',
+      capabilityInstanceId: 'capability:new-placement:Zygarde_20Cells:base',
+    }))
+  })
+
+  it('persists Power Construct Zygarde Forme changes in durable assembly authority', () => {
+    const actor: SheetPlacement = {
+      id: 'zygarde', sheetKind: 'pokemon', sheetSlug: 'zygarde-sheet', position: { x: 1, y: 0, z: 1 },
+    }
+    const sheet: CharacterSheet = {
+      slug: actor.sheetSlug, nickname: 'Zygarde', species: 'Zygarde 50% Forme', level: 30,
+      capabilities: { other: ['Zygarde Cells'] },
+    }
+    const map: TabletopMap = {
+      ...baseMap([actor]),
+      metadata: { capabilityZygardeAssemblies: [{
+        actorPlacementId: actor.id, actorSheetSlug: sheet.slug, trainerSlug: 'owner', cellCount: 100,
+        form: '50-percent', powerConstruct: true, disassemblable: false, sourceOperationId: 'assembly-operation',
+      }] },
+    }
+    const result = run({
+      canonicalId: 'Zygarde Cells', actionId: 'change-zygarde-form', actor, map, sheets: [sheet],
+      selections: { optionId: '10-percent', recipientTrainerSlug: 'owner' },
+    })
+    expect(result.map.metadata?.capabilityZygardeAssemblies).toContainEqual(expect.objectContaining({
+      actorSheetSlug: sheet.slug, form: '10-percent',
+    }))
   })
 
   it('removes a low-Loyalty Fortune runaway from play and every linked Trainer roster without rolling money', () => {

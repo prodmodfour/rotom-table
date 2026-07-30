@@ -858,6 +858,7 @@ describe('immutable authoritative move rules context', () => {
       expect(resolution.sheetReads).toEqual([
         { kind: 'pokemon', slug: 'actor', revision: 3 },
         { kind: 'pokemon', slug: 'target', revision: 5 },
+        { kind: 'pokemon', slug: 'ally', revision: 3 },
       ])
     }
     finally {

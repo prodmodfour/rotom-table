@@ -993,7 +993,9 @@ const buildMovementSnapshots = (
     }
 
     if (placement.sheetKind === 'pokemon'
-      && ((sheet as CharacterSheet).babyTemplate === true || (sheet as CharacterSheet).letterPressCombinedInto)) {
+      && ((sheet as CharacterSheet).babyTemplate === true
+        || (sheet as CharacterSheet).letterPressCombinedInto
+        || (sheet as CharacterSheet).zygardeDisassembledIntoCells)) {
       capabilityMovementBlockedPlacementIds.add(placement.id)
     }
     const effectiveCapabilities = resolveEffectiveCapabilities({

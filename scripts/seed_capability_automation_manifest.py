@@ -192,6 +192,11 @@ LEVEL_REQUIREMENTS = {
     "Herb Growth": 20, "Milk Collection": 20, "Mushroom Harvest": 20,
 }
 PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
+    "As One": {
+        "given": "an exact effective As One source carries one authoritative mount and retains a legal non-Wonder-Guard Basic Ability choice",
+        "when": "the combined participant's Ability field and move rules are projected",
+        "then": "the chosen Basic Ability enters the owner's ordinary Ability projection before suppression while the carried participant has no independent Ability field",
+    },
     "Illusionist": {
         "given": "an exact effective Illusionist source maintains one bounded visual Illusion",
         "when": "it is projected, contacted along authoritative movement, viewed under an active Foresight-family bypass, or loses its exact source",
@@ -285,7 +290,22 @@ ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
         "when": "it selects an exit device and exact retained cell",
         "then": "the occupied device is always a legal exit while cross-device travel requires matching non-empty bounded authoritative network identities",
     },
-    ("Threaded", "threaded-shift"):  {
+    ("Zygarde Cells", "assemble-zygarde"): {
+        "given": "one effective unassembled Zygarde template is linked to an exact Cube owner with sufficient retained Cells",
+        "when": "the GM retains legal Cell count, Forme, Nature, and Level choices",
+        "then": "the server consumes Cells once and binds durable assembly authority to both the current placement and stable Pokémon sheet identity",
+    },
+    ("Zygarde Cells", "disassemble-zygarde"): {
+        "given": "one 10- or 50-Cell Zygarde has unambiguous durable assembly authority and its exact Cube owner is available",
+        "when": "the Extended Action returns it to Cells",
+        "then": "the server returns the exact Cell count, removes the construct from play and every roster, and irreversibly prevents the archived sheet from acting or deploying",
+    },
+    ("Zygarde Cells", "change-zygarde-form"): {
+        "given": "one 100-Cell Power Construct Zygarde has unambiguous durable assembly authority",
+        "when": "its exact Cube owner changes it between 10% and 50% Formes",
+        "then": "the server updates both active Forme mode and stable sheet-owned authority so recall and send-out restore the chosen Forme under a new placement identity",
+    },
+    ("Threaded", "threaded-shift"): {
         "given": "an effective Threaded source selects an authoritative object, anchor, or participant within four metres",
         "when": "relative weight and willingness determine which participant moves",
         "then": "the server resolves any required AC 6 Status Attack with natural 1 always missing and natural 20 always hitting, then commits only legal authoritative movement",

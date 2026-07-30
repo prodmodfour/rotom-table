@@ -43,6 +43,7 @@ import {
   teleporterRoundUseSpent,
   TeleporterRoundIdentityError,
 } from './teleporterRoundUse'
+import { zygardeAssemblyRecordForPlacement } from './zygardeAssembly'
 
 const pokedexBySpecies = new Map((pokedexData as readonly PokedexRecord[]).map(record => [
   record.species.trim().toLocaleLowerCase('en-US'), record,
@@ -504,6 +505,9 @@ export const validateCapabilityActionSelections = (input: {
     }
     if (actor.letterPressCombinedInto) {
       fail('letter-press-participant-action-blocked', 'An Unown irreversibly combined into a Prime Unown cannot act separately.')
+    }
+    if (actor.zygardeDisassembledIntoCells) {
+      fail('zygarde-disassembled-action-blocked', 'A Zygarde disassembled into Cells cannot act or deploy as a Pokémon.')
     }
   }
   const coupledLinks = (input.map.encounterState?.capabilityRuntime?.links ?? []).filter(link => (
@@ -1264,11 +1268,7 @@ export const validateCapabilityActionSelections = (input: {
     }
   }
   if (input.command.actionId === 'disassemble-zygarde' || input.command.actionId === 'change-zygarde-form') {
-    const assembly = Array.isArray(input.map.metadata?.capabilityZygardeAssemblies)
-      ? input.map.metadata.capabilityZygardeAssemblies
-          .map(raw => raw as Record<string, unknown>)
-          .find(state => state?.actorPlacementId === input.actor.id)
-      : null
+    const assembly = zygardeAssemblyRecordForPlacement(input.map, input.actor)
     if (!assembly || typeof assembly.trainerSlug !== 'string') {
       fail('zygarde-assembly-missing', 'This Zygarde has no authoritative Cube assembly state.')
     }
@@ -1288,6 +1288,9 @@ export const validateCapabilityActionSelections = (input: {
   }
   if (input.command.actionId === 'assemble-zygarde') {
     if (input.actor.sheetKind !== 'pokemon') fail('pokemon-actor-required', 'Zygarde assembly requires a Pokémon actor.')
+    if (zygardeAssemblyRecordForPlacement(input.map, input.actor)) {
+      fail('zygarde-already-assembled', 'This Zygarde already has authoritative Cube assembly state.')
+    }
     const match = /^cells:(10|50|100);form:(10-percent|50-percent);nature:([^;]{1,40});level:(\d{1,3})$/.exec(input.command.selections.optionId ?? '')
     const cellCount = Number(match?.[1])
     const level = Number(match?.[4])

@@ -246,6 +246,12 @@ export interface CharacterSheet {
     ownerSheetSlug: string
     sourceOperationId: string
   }
+  /** Irreversible Cube disassembly marker; this former construct cannot deploy or act as a Pokémon. */
+  zygardeDisassembledIntoCells?: {
+    trainerSlug: string
+    cellCount: 10 | 50
+    sourceOperationId: string
+  }
   /** Cached/legacy Nature stat choices from the PTU Nature Chart. The renderer
    *  derives Nat +/- from `nature`, so these are not manually edited. */
   natureMod?: { plus?: StatKey; minus?: StatKey }

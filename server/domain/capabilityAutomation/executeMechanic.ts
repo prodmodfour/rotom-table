@@ -74,6 +74,10 @@ import {
   withJuicerShellJuiceSnack,
 } from './juicer'
 import { mapWithCapabilityGlowLight } from './glow'
+import {
+  zygardeAssemblyMatchesPlacement,
+  zygardeAssemblyRecordForPlacement,
+} from './zygardeAssembly'
 
 const canonicalCapabilityItemName = (value: string): string | null => (
   findItem(value)?.name ?? canonicalPtuBerryName(value)
@@ -483,6 +487,29 @@ const applyToggle = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
     effects = effects.filter(effect => effect.id !== modeEffectId(input.actorPlacement.id, removedMode))
   }
   let nextMap = mapWithRuntimeAndEffects(input.map, runtime, effects)
+  if (addedMode === 'zygarde-form') {
+    const state = zygardeAssemblyRecordForPlacement(input.map, input.actorPlacement)
+    if (!state) throw new Error('This Zygarde has no unambiguous authoritative assembly state.')
+    const states = Array.isArray(input.map.metadata?.capabilityZygardeAssemblies)
+      ? input.map.metadata.capabilityZygardeAssemblies as unknown[] : []
+    nextMap = {
+      ...nextMap,
+      metadata: {
+        ...(nextMap.metadata ?? {}),
+        capabilityZygardeAssemblies: states.map(raw => {
+          const candidate = raw as Record<string, unknown>
+          return candidate === state
+            ? {
+                ...candidate,
+                actorPlacementId: input.actorPlacement.id,
+                actorSheetSlug: input.actorPlacement.sheetSlug,
+                form: input.command.selections.optionId,
+              }
+            : raw
+        }),
+      },
+    }
+  }
   if (addedMode === 'glowing') {
     nextMap = mapWithCapabilityGlowLight({
       map: nextMap,
@@ -752,8 +779,7 @@ const executeZygardeAssemblyAction = (input: ExecuteCapabilityMechanicInput): Ca
   const runtime = runtimeFor(input.map)
   const rawStates = Array.isArray(input.map.metadata?.capabilityZygardeAssemblies)
     ? input.map.metadata.capabilityZygardeAssemblies as unknown[] : []
-  const previousState = rawStates.map(raw => raw as Record<string, unknown>)
-    .find(state => state?.actorPlacementId === input.actorPlacement.id)
+  const previousState = zygardeAssemblyRecordForPlacement(input.map, input.actorPlacement)
   if (input.command.actionId === 'disassemble-zygarde') {
     if (!previousState || previousState.disassemblable !== true) throw new Error('This Zygarde assembly cannot be disassembled.')
     const trainerSlug = typeof previousState.trainerSlug === 'string' ? previousState.trainerSlug : ''
@@ -771,37 +797,52 @@ const executeZygardeAssemblyAction = (input: ExecuteCapabilityMechanicInput): Ca
       return { ...resource, count: Math.max(0, Number(resource.count)) + returnedCells }
     })
     if (!matched) nextResources.push({ trainerSlug, count: returnedCells })
-    const nextRuntime = parseCapabilityRuntimeState({
-      ...runtime,
-      modes: runtime.modes.filter(mode => !(mode.actorPlacementId === input.actorPlacement.id && mode.mode === 'zygarde-form')),
-      links: runtime.links.filter(link => !(link.ownerPlacementId === input.actorPlacement.id && link.kind === 'zygarde-assembly')),
-    })
-    const sheetMutations: CapabilityMechanicSheetMutation[] = []
-    if (input.actorPlacement.sheetKind === 'pokemon') {
-      const previous = input.actorSheet as CharacterSheet
-      const snapshot = previousState.previousSheet as Record<string, unknown> | undefined
-      if (snapshot && Number.isSafeInteger(snapshot.level) && Array.isArray(snapshot.abilities)) {
-        sheetMutations.push({
-          kind: 'pokemon', slug: previous.slug, previous,
-          current: {
-            ...deepCloneJson(previous),
-            level: snapshot.level as number,
-            ...(typeof snapshot.nature === 'string' ? { nature: snapshot.nature } : { nature: undefined }),
-            abilities: deepCloneJson(snapshot.abilities) as CharacterSheet['abilities'],
-          },
-        })
-      }
+    if (input.actorPlacement.sheetKind !== 'pokemon') throw new Error('Zygarde disassembly requires a Pokémon sheet.')
+    const previous = input.actorSheet as CharacterSheet
+    const snapshot = previousState.previousSheet as Record<string, unknown> | undefined
+    if (!snapshot || !Number.isSafeInteger(snapshot.level) || !Array.isArray(snapshot.abilities)) {
+      throw new Error('The retained Zygarde pre-assembly sheet snapshot is malformed.')
     }
-    return {
-      map: mapWithRuntimeAndEffects({
-        ...input.map,
-        metadata: {
-          ...(input.map.metadata ?? {}),
-          capabilityZygardeCells: nextResources,
-          capabilityZygardeAssemblies: rawStates.filter(raw => (raw as Record<string, unknown>)?.actorPlacementId !== input.actorPlacement.id),
+    const current: CharacterSheet = {
+      ...deepCloneJson(previous),
+      level: snapshot.level as number,
+      ...(typeof snapshot.nature === 'string' ? { nature: snapshot.nature } : { nature: undefined }),
+      abilities: deepCloneJson(snapshot.abilities) as CharacterSheet['abilities'],
+      zygardeDisassembledIntoCells: {
+        trainerSlug,
+        cellCount: returnedCells as 10 | 50,
+        sourceOperationId: input.command.operationId,
+      },
+    }
+    const rosterMutations: CapabilityMechanicSheetMutation[] = [...input.trainerSheets.values()].flatMap((trainer) => {
+      if (![...(trainer.currentTeam ?? []), ...(trainer.boxedPokemon ?? [])].includes(previous.slug)) return []
+      return [{
+        kind: 'trainer' as const,
+        slug: trainer.slug,
+        previous: trainer,
+        current: {
+          ...deepCloneJson(trainer),
+          currentTeam: (trainer.currentTeam ?? []).filter(slug => slug !== previous.slug),
+          boxedPokemon: (trainer.boxedPokemon ?? []).filter(slug => slug !== previous.slug),
         },
-      }, nextRuntime, input.map.encounterState?.effects ?? []),
-      sheetMutations, rolls: [], produced: [{
+      }]
+    })
+    const withoutPresence = removeCapabilityPresenceGroup({
+      map: input.map,
+      ownerPlacementId: input.actorPlacement.id,
+    }).map
+    return {
+      map: {
+        ...withoutPresence,
+        metadata: {
+          ...(withoutPresence.metadata ?? {}),
+          capabilityZygardeCells: nextResources,
+          capabilityZygardeAssemblies: rawStates.filter(raw => !zygardeAssemblyMatchesPlacement(
+            raw as Record<string, unknown>, input.actorPlacement,
+          )),
+        },
+      },
+      sheetMutations: [{ kind: 'pokemon', slug: previous.slug, previous, current }, ...rosterMutations], rolls: [], produced: [{
         kind: 'campaign-resource', canonicalId: 'Zygarde Cell', quantity: returnedCells, recipientSheetSlug: trainerSlug,
       }],
       outcome: 'applied', reasonCode: 'capability.zygarde.disassembled', adjudicationNote: `${returnedCells} Zygarde Cells were returned to ${trainerSlug}.`,
@@ -837,6 +878,7 @@ const executeZygardeAssemblyAction = (input: ExecuteCapabilityMechanicInput): Ca
   const assemblyState = {
     id: `capability-zygarde-assembly:${input.command.operationId}`,
     actorPlacementId: input.actorPlacement.id,
+    actorSheetSlug: input.actorPlacement.sheetSlug,
     trainerSlug,
     cellCount,
     form,

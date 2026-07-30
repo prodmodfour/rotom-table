@@ -683,6 +683,37 @@ const validateTrainerOwnership = (
     }
   }
 
+  if (sheets.pokemonSheet.zygardeDisassembledIntoCells) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        `Zygarde ${command.payload.pokemonSlug} was irreversibly disassembled into Cells.`,
+        processedAt,
+        { retryable: false },
+      ),
+    }
+  }
+  const zygardeAssembly = Array.isArray(target.mapState.document.metadata?.capabilityZygardeAssemblies)
+    && target.mapState.document.metadata.capabilityZygardeAssemblies.some(raw => {
+      const state = raw as Record<string, unknown>
+      return state?.actorSheetSlug === command.payload.pokemonSlug
+        || (typeof state?.actorSheetSlug !== 'string' && state?.actorPlacementId === target.placement.id)
+    })
+  if (zygardeAssembly) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        'Legacy hosted-session send-out cannot atomically restore Zygarde assembly state; use profile live play.',
+        processedAt,
+        { retryable: false },
+      ),
+    }
+  }
+
   if (!trainerOwnsPokemon(sheets.trainerSheet, command.payload.pokemonSlug)) {
     return {
       ok: false,
