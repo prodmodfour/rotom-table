@@ -12,6 +12,8 @@ import {
   JUICER_BERRY_ELAPSED_MS,
   JUICER_JUICE_ELAPSED_MS,
 } from '#shared/capabilityAutomation/campaignState'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 
 const databases: RotomDatabase[] = []
 afterEach(() => { while (databases.length) databases.pop()!.close() })
@@ -241,6 +243,121 @@ describe('Capability authoritative execution use case', () => {
     })
     expect(mapRepository.getBySlug('arena')?.encounterState?.capabilityRuntime?.tasks).toEqual([])
     expect(executeCapabilityActionUseCase({ role: 'gm', command: resolveCommand }, dependencies)).toEqual(resolved)
+  })
+
+  it('lets a controlled wielder engage and disengage an exact willing Living Weapon source', () => {
+    const database = openRotomDatabase({ path: ':memory:' })
+    databases.push(database)
+    const mapRepository = createSqliteMapRepository<TabletopMap>(database)
+    const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const wielder: CharacterSheet = {
+      slug: 'wielder', nickname: 'Wielder', species: 'Pikachu', level: 20, revision: 2,
+      items: { held: '' },
+    }
+    const weapon: CharacterSheet = {
+      slug: 'weapon', nickname: 'Weapon', species: 'Honedge', level: 20, revision: 2,
+      capabilities: { other: ['Living Weapon'] },
+    }
+    const linked: TrainerSheet = {
+      slug: 'trainer', name: 'Trainer', level: 10, revision: 3, currentTeam: [wielder.slug],
+    }
+    const encounter = createEmptyEncounterState()
+    const livingWeaponMap: TabletopMap = {
+      ...map(),
+      placements: [
+        { id: 'wielder', sheetKind: 'pokemon', sheetSlug: wielder.slug, position: { x: 1, y: 1, z: 1 } },
+        { id: 'weapon', sheetKind: 'pokemon', sheetSlug: weapon.slug, position: { x: 1, y: 1, z: 1 } },
+      ],
+      initiative: { activeId: 'wielder', round: 1 },
+      metadata: { capabilityWillingTargets: ['weapon:wielder'] },
+      encounterState: {
+        ...encounter,
+        history: {
+          ...encounter.history,
+          sceneId: 'scene:living-weapon',
+          currentRound: 1,
+          currentTurn: { round: 1, turn: 1, placementId: 'wielder' },
+        },
+        turnResources: {
+          wielder: createEncounterTurnResourceLedger({ placementId: 'wielder', round: 1, turn: 1 }),
+          weapon: createEncounterTurnResourceLedger({ placementId: 'weapon', round: 1, turn: 1 }),
+        },
+      },
+    }
+    mapRepository.saveSetupMap(livingWeaponMap)
+    sheetRepository.saveSetupSheet('pokemon', wielder.slug, wielder as unknown as Record<string, unknown>)
+    sheetRepository.saveSetupSheet('pokemon', weapon.slug, weapon as unknown as Record<string, unknown>)
+    sheetRepository.saveSetupSheet('trainer', linked.slug, linked as unknown as Record<string, unknown>)
+    const profile: PlayerProfile = {
+      ...playerProfile('wielder-profile'),
+      linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: wielder.slug }],
+    }
+    const dependencies = {
+      database, mapRepository, sheetRepository, now: () => 1_000,
+      publishPersistedRealtimeEvent: () => {},
+    }
+    const engageOffer = buildCapabilityClientCapabilityBundle({
+      role: 'player', playerProfile: profile, map: livingWeaponMap, mapRevision: 5,
+      pokemonSheets: [wielder, weapon], trainerSheets: [linked], now: 1_000,
+    }).placements.find(candidate => candidate.placementId === 'wielder')!.offers
+      .find(candidate => candidate.actionId === 'engage-wielder')!
+    expect(engageOffer).toMatchObject({
+      actorPlacementId: 'wielder', sourcePlacementId: 'weapon', canonicalId: 'Living Weapon',
+      available: true,
+    })
+    const engageCommand = {
+      schemaVersion: 1, operationId: 'living-weapon-engage-by-wielder', mapSlug: 'arena', baseRevision: 5,
+      offerId: engageOffer.offerId, actorPlacementId: 'wielder',
+      capabilityInstanceId: engageOffer.capabilityInstanceId,
+      canonicalId: 'Living Weapon', actionId: 'engage-wielder',
+      selections: {
+        targetPlacementIds: [], cells: [], optionId: null, recipientTrainerSlug: null,
+        canonicalItemId: null, description: null, gmConfirmed: false,
+      },
+    }
+    const engaged = executeCapabilityActionUseCase({ role: 'player', playerProfile: profile, command: engageCommand }, dependencies)
+    expect(engaged).toMatchObject({ outcome: 'applied', mapRevision: 6 })
+    const engagedMap = mapRepository.getBySlug('arena')!
+    expect(engagedMap.encounterState?.capabilityRuntime?.links).toContainEqual(expect.objectContaining({
+      kind: 'living-weapon', ownerPlacementId: 'weapon', participantPlacementIds: ['wielder'],
+    }))
+    expect(engagedMap.encounterState?.turnResources.wielder?.actions.standard.spent).toBe(1)
+    expect(engagedMap.encounterState?.turnResources.weapon?.actions.standard.spent).toBe(0)
+
+    const currentWielder = sheetRepository.getByRef('pokemon', wielder.slug)!.sheet as unknown as CharacterSheet
+    const currentWeapon = sheetRepository.getByRef('pokemon', weapon.slug)!.sheet as unknown as CharacterSheet
+    const currentTrainer = sheetRepository.getByRef('trainer', linked.slug)!.sheet as unknown as TrainerSheet
+    const disengageOffer = buildCapabilityClientCapabilityBundle({
+      role: 'player', playerProfile: profile, map: engagedMap, mapRevision: 6,
+      pokemonSheets: [currentWielder, currentWeapon], trainerSheets: [currentTrainer], now: 1_001,
+    }).placements.find(candidate => candidate.placementId === 'wielder')!.offers
+      .find(candidate => candidate.actionId === 'disengage-wielder')!
+    expect(disengageOffer).toMatchObject({
+      actorPlacementId: 'wielder', sourcePlacementId: 'weapon', available: true,
+    })
+    const disengageCommand = {
+      schemaVersion: 1, operationId: 'living-weapon-disengage-by-wielder', mapSlug: 'arena', baseRevision: 6,
+      offerId: disengageOffer.offerId, actorPlacementId: 'wielder',
+      capabilityInstanceId: disengageOffer.capabilityInstanceId,
+      canonicalId: 'Living Weapon', actionId: 'disengage-wielder',
+      selections: {
+        targetPlacementIds: [], cells: [{ x: 2, y: 1, z: 1 }], optionId: null,
+        recipientTrainerSlug: null, canonicalItemId: null, description: null, gmConfirmed: false,
+      },
+    }
+    const disengaged = executeCapabilityActionUseCase({
+      role: 'player', playerProfile: profile, command: disengageCommand,
+    }, { ...dependencies, now: () => 1_001 })
+    expect(disengaged).toMatchObject({ outcome: 'applied', mapRevision: 7 })
+    const disengagedMap = mapRepository.getBySlug('arena')!
+    expect(disengagedMap.encounterState?.capabilityRuntime?.links).toEqual([])
+    expect(disengagedMap.placements.find(candidate => candidate.id === 'weapon')?.position)
+      .toEqual({ x: 2, y: 1, z: 1 })
+    expect(disengagedMap.encounterState?.turnResources.wielder?.actions.swift.spent).toBe(1)
+    expect(disengagedMap.encounterState?.turnResources.weapon?.actions.swift.spent).toBe(0)
+    expect(executeCapabilityActionUseCase({
+      role: 'player', playerProfile: profile, command: disengageCommand,
+    }, { ...dependencies, now: () => 1_001 })).toEqual(disengaged)
   })
 
   it('transactionally transfers the exact mature Juicer output and replays without duplication', () => {

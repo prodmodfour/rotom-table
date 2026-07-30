@@ -32,7 +32,10 @@ export interface CapabilityClientActionOffer {
   readonly offerId: string
   readonly mapSlug: string
   readonly mapRevision: number
+  /** Placement paying/initiating the action. */
   readonly actorPlacementId: string
+  /** Placement owning the exact Capability source; normally identical to actorPlacementId. */
+  readonly sourcePlacementId: string
   readonly capabilityInstanceId: string
   readonly canonicalId: string
   readonly actionId: string

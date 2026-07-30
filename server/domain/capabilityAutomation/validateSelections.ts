@@ -418,25 +418,31 @@ export const resolveCapabilityJumpPlan = (input: {
  */
 export const validateCapabilityActionSelections = (input: {
   readonly map: TabletopMap
+  /** Placement owning the exact Capability source. */
   readonly actor: SheetPlacement
   readonly actorSheet: CharacterSheet | TrainerSheet
+  /** Placement initiating/paying a delegated action; defaults to actor. */
+  readonly actingPlacement?: SheetPlacement
+  readonly actingSheet?: CharacterSheet | TrainerSheet
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
   readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
   readonly command: ExecuteCapabilityActionCommand
   readonly action: CapabilityRuntimeActionSpec
   readonly now: number
 }): void => {
+  const actingPlacement = input.actingPlacement ?? input.actor
+  const actingSheet = input.actingSheet ?? input.actorSheet
   const activePlacementId = input.map.initiative?.activeId
   if (activePlacementId && input.action.economy === 'extended') {
     fail('extended-action-during-initiative', 'Extended Capability actions are unavailable while initiative has an active participant.')
   }
   if (activePlacementId && input.action.economy !== 'extended' && input.action.economy !== 'none'
-    && activePlacementId !== input.actor.id) {
+    && activePlacementId !== actingPlacement.id) {
     fail('capability-actor-turn-required', 'This Capability action must be used during the actor’s authoritative initiative turn.')
   }
   const actorConditions = conditionsFor(
     input.map,
-    input.actor,
+    actingPlacement,
     input.pokemonSheets,
     input.trainerSheets,
   )
@@ -444,8 +450,8 @@ export const validateCapabilityActionSelections = (input: {
     && conditionBlocksShiftMovement(actorConditions)) {
     fail('shift-movement-condition-blocked', 'Stuck or Tripped prevents this movement-producing Shift action.')
   }
-  if (input.actor.sheetKind === 'pokemon') {
-    const actor = input.actorSheet as CharacterSheet
+  if (actingPlacement.sheetKind === 'pokemon') {
+    const actor = actingSheet as CharacterSheet
     if (actor.babyTemplate === true) {
       fail('marsupial-baby-action-blocked', 'A Baby-Template Kangaskhan cannot be commanded or take actions.')
     }
@@ -456,7 +462,7 @@ export const validateCapabilityActionSelections = (input: {
   const coupledLinks = (input.map.encounterState?.capabilityRuntime?.links ?? []).filter(link => (
     link.kind === 'as-one-mount' || link.kind === 'viral-fusion'
   ))
-  if (coupledLinks.some(link => link.participantPlacementIds.includes(input.actor.id))) {
+  if (coupledLinks.some(link => link.participantPlacementIds.includes(actingPlacement.id))) {
     fail('coupled-participant-action-blocked', 'A mounted or fused participant cannot take independent Capability actions.')
   }
   const context = input.action.contextPredicateId.slice(input.action.contextPredicateId.lastIndexOf('.') + 1)

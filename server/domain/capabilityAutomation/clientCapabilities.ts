@@ -794,6 +794,7 @@ export const buildCapabilityClientCapabilityBundle = (
           mapSlug: input.map.slug,
           mapRevision: input.mapRevision,
           actorPlacementId: placement.id,
+          sourcePlacementId: placement.id,
           capabilityInstanceId: instance.instanceId,
           canonicalId: instance.canonicalId,
           actionId: action.actionId,
@@ -806,6 +807,81 @@ export const buildCapabilityClientCapabilityBundle = (
           available: reasons.length === 0,
           unavailableReasonCodes: Object.freeze(reasons),
           selectionOptions: capabilitySelectionOptions(input.map, action.actionId, placement, actorTrainers, contexts),
+        }))
+      }
+    }
+
+    // Living Weapon is the one Capability whose canonical action authority may
+    // be exercised by its linked/adjacent counterpart. The offer remains bound
+    // to the exact source placement and instance while the acting placement
+    // owns turn economy and authorization.
+    if (!independentActionBlocked) {
+      for (const sourcePlacement of input.map.placements) {
+        if (sourcePlacement.id === placement.id) continue
+        const sourceSheet = sourcePlacement.sheetKind === 'pokemon'
+          ? pokemonBySlug.get(sourcePlacement.sheetSlug)
+          : trainerBySlug.get(sourcePlacement.sheetSlug)
+        if (!sourceSheet) continue
+        const sourceInstance = resolveEffectiveCapabilities({
+          map: input.map,
+          placement: sourcePlacement,
+          sheet: sourceSheet,
+          sheets: { pokemon: pokemonBySlug, trainer: trainerBySlug },
+        }).instances.find(instance => instance.effective && instance.canonicalId === 'Living Weapon')
+        if (!sourceInstance) continue
+        const sourceLink = (input.map.encounterState?.capabilityRuntime?.links ?? []).find(link => (
+          link.kind === 'living-weapon'
+          && link.ownerPlacementId === sourcePlacement.id
+          && link.capabilityInstanceId === sourceInstance.instanceId
+          && link.canonicalId === 'Living Weapon'
+        ))
+        const sourceWilling = Array.isArray(input.map.metadata?.capabilityWillingTargets)
+          && input.map.metadata.capabilityWillingTargets.includes(`${sourcePlacement.id}:${placement.id}`)
+        const actionId = sourceLink?.participantPlacementIds.includes(placement.id)
+          ? 'disengage-wielder'
+          : sourceLink || placementDistance(sourcePlacement, placement) > 1 || !sourceWilling
+            ? null : 'engage-wielder'
+        if (!actionId) continue
+        const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require('Living Weapon').spec.actions
+          .find(candidate => candidate.actionId === actionId)
+        if (!action) continue
+        const activeModes = new Set((input.map.encounterState?.capabilityRuntime?.modes ?? [])
+          .filter(entry => entry.actorPlacementId === placement.id
+            && effectiveInstanceIds.has(entry.capabilityInstanceId)
+            && (entry.expiresAt === null || entry.expiresAt > now))
+          .map(entry => entry.mode))
+        const reasons: string[] = []
+        if (action.economy === 'standard'
+          && (activeModes.has('intangible') || activeModes.has('shadow-melded') || activeModes.has('shrunken'))) {
+          reasons.push('capability.standard-action-blocked')
+        }
+        if (action.economy !== 'extended' && action.economy !== 'none'
+          && input.map.initiative?.activeId
+          && input.map.initiative.activeId !== placement.id) reasons.push('economy.actor-turn-required')
+        if (economySpent(input.map, placement.id, action.economy)) reasons.push(`economy.${action.economy}-spent`)
+        offers.push(Object.freeze({
+          offerId: encounterPresentationStableId(
+            'capability-offer', input.map.slug, String(input.mapRevision), placement.id,
+            sourcePlacement.id, sourceInstance.instanceId, action.actionId,
+          ),
+          mapSlug: input.map.slug,
+          mapRevision: input.mapRevision,
+          actorPlacementId: placement.id,
+          sourcePlacementId: sourcePlacement.id,
+          capabilityInstanceId: sourceInstance.instanceId,
+          canonicalId: 'Living Weapon',
+          actionId: action.actionId,
+          label: title(action.actionId),
+          economy: action.economy,
+          frequency: action.frequency,
+          mechanic: action.mechanic,
+          contextPredicateId: actionId === 'engage-wielder'
+            ? 'capability.Living Weapon.delegated-living-weapon-engage'
+            : action.contextPredicateId,
+          requiresGmConfirmation: action.requiresGmConfirmation,
+          available: reasons.length === 0,
+          unavailableReasonCodes: Object.freeze(reasons),
+          selectionOptions: Object.freeze([]),
         }))
       }
     }

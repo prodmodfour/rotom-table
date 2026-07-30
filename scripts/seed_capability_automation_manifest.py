@@ -190,6 +190,19 @@ LEVEL_REQUIREMENTS = {
     "Dream Mist": 20, "Fortune": 20, "Gather Unown": 20, "Heart Gift": 30,
     "Herb Growth": 20, "Milk Collection": 20, "Mushroom Harvest": 20,
 }
+PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
+    "Living Weapon": {
+        "given": "an exact effective Honedge-line Living Weapon source is engaged with a willing wielder",
+        "when": "equipment, movement, Ability, weapon Move, Accuracy, and Damage rules are projected",
+        "then": "the exact source supplies its species profile and rank-gated Moves, shares the wielder movement budget, suppresses No Guard, forces Aegislash Blade Forme, and applies -2 to every automated weapon roll made with it (Accuracy and Damage) while fainted",
+    },
+    "Wielder": {
+        "given": "an effective Wielder holds a size-legal man-made Small or Large Melee Weapon",
+        "when": "equipment, Disarm, Struggle, Reach, Accuracy, Damage Base, and weapon Move rules are projected",
+        "then": "the server applies the exact melee profile and grants only its Adept Combat Move even when the wielder qualifies for Master rank; ranged, size-illegal, and Master-only grants remain unavailable",
+    },
+}
+
 ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
     ("Alluring", "lure-with-alluring"): {
         "given": "the exact effective Alluring source has no active lure and its shared daily Bait use is available",
@@ -210,6 +223,16 @@ ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
         "given": "the exact effective Alluring source targets an authoritative Wild Pokémon and its shared daily Bait use is available",
         "when": "the Standard Action distraction is declared",
         "then": "the target makes a server-owned Focus check against DC 12 and a failure durably spends its next Standard Action",
+    },
+    ("Living Weapon", "engage-wielder"): {
+        "given": "an exact effective Honedge-line source and an adjacent willing participant satisfy authoritative hand or Held Item occupancy",
+        "when": "either controlled party initiates re-engagement as a Standard Action during that acting party's turn",
+        "then": "the server spends the initiating party's action and atomically creates one exact source-owned Living Weapon link with shared movement authority",
+    },
+    ("Living Weapon", "disengage-wielder"): {
+        "given": "an exact source-effective Living Weapon link exists",
+        "when": "either controlled party initiates disengagement as a Swift Action during that acting party's turn and selects a legal separation cell",
+        "then": "the server spends the initiating party's action, removes only that exact link, and authoritatively separates the Living Weapon without duplicating movement",
     },
 }
 
@@ -463,13 +486,16 @@ def main() -> None:
     requirements = []
     for entry in manifest_entries:
         name = entry["canonicalId"]
+        passive_requirement = PASSIVE_REQUIREMENT_OVERRIDES.get(name, {
+            "given": "the actor owns an effective canonical capability instance",
+            "when": "the authoritative encounter presentation is projected",
+            "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied",
+        })
         requirements.append({
             "id": f"capability:{name}:passive",
             "canonicalId": name,
             "kind": "passive-projection",
-            "given": "the actor owns an effective canonical capability instance",
-            "when": "the authoritative encounter presentation is projected",
-            "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied",
+            **passive_requirement,
         })
         for action in entry["actions"]:
             requirement = ACTION_REQUIREMENT_OVERRIDES.get((name, action["id"]), {

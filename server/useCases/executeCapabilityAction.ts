@@ -308,21 +308,64 @@ export const executeCapabilityActionUseCase = (
     map: storedMap,
     sheets: { pokemon: pokemonBySlug, trainer: trainerBySlug },
   })
-  const actorPlacement = map.placements.find(placement => placement.id === command.actorPlacementId)
+  const actingPlacement = map.placements.find(placement => placement.id === command.actorPlacementId)
     ?? fail(404, 'Capability actor placement is missing.')
-  const linkedTrainerSheets = playerProfileLinkedTrainerSheetsForTokenControl(input.playerProfile, slug => trainerBySlug.get(slug))
+  const controlLinkedTrainerSheets = playerProfileLinkedTrainerSheetsForTokenControl(
+    input.playerProfile,
+    slug => trainerBySlug.get(slug),
+  )
   if (!actorCanControlMapPlacement({
     role: input.role,
     profile: input.playerProfile,
-    placement: actorPlacement,
-    linkedTrainerSheets,
+    placement: actingPlacement,
+    linkedTrainerSheets: controlLinkedTrainerSheets,
   })) fail(403, 'Capability actor is not controlled by this principal.')
   if (input.role !== 'gm' && command.selections.gmConfirmed) fail(403, 'Only the GM may confirm a bounded Capability adjudication.')
   if (input.approvedAdjudication && input.role !== 'gm') fail(403, 'Only the GM may resume a Capability adjudication.')
+  const actingSheet = (actingPlacement.sheetKind === 'pokemon'
+    ? pokemonBySlug.get(actingPlacement.sheetSlug)
+    : trainerBySlug.get(actingPlacement.sheetSlug))
+    ?? fail(409, 'Capability acting sheet is unavailable.')
+  const now = dependencies.now?.() ?? Date.now()
+  const bundle = buildCapabilityClientCapabilityBundle({
+    role: input.role,
+    playerProfile: input.playerProfile,
+    map,
+    mapRevision: currentRevision,
+    pokemonSheets,
+    trainerSheets,
+    now,
+  })
+  const offer = bundle.placements.find(candidate => candidate.placementId === actingPlacement.id)?.offers
+    .find(candidate => candidate.offerId === command.offerId)
+    ?? fail(409, 'Capability action offer is unavailable or stale.')
+  if (offer.canonicalId !== command.canonicalId || offer.actionId !== command.actionId
+    || offer.capabilityInstanceId !== command.capabilityInstanceId) fail(409, 'Capability action offer is unavailable or stale.')
+  if (!offer.available) fail(409, offer.unavailableReasonCodes[0] ?? 'Capability action is unavailable.')
+
+  const actorPlacement = map.placements.find(placement => placement.id === offer.sourcePlacementId)
+    ?? fail(409, 'Capability source placement is unavailable.')
   const actorSheet = (actorPlacement.sheetKind === 'pokemon'
     ? pokemonBySlug.get(actorPlacement.sheetSlug)
     : trainerBySlug.get(actorPlacement.sheetSlug))
-    ?? fail(409, 'Capability actor sheet is unavailable.')
+    ?? fail(409, 'Capability source sheet is unavailable.')
+  const delegated = actorPlacement.id !== actingPlacement.id
+  if (delegated && (command.canonicalId !== 'Living Weapon'
+    || (command.actionId !== 'engage-wielder' && command.actionId !== 'disengage-wielder'))) {
+    fail(409, 'This Capability action cannot be delegated to another placement.')
+  }
+  if (delegated && command.selections.targetPlacementIds.length > 0) {
+    fail(400, 'Delegated Living Weapon actions derive their participant from the acting placement.')
+  }
+  const mechanicCommand = delegated && command.actionId === 'engage-wielder'
+    ? {
+        ...command,
+        selections: {
+          ...command.selections,
+          targetPlacementIds: [actingPlacement.id],
+        },
+      }
+    : command
 
   const effective = resolveEffectiveCapabilities({
     map,
@@ -335,34 +378,18 @@ export const executeCapabilityActionUseCase = (
   const runtime = registry.resolve(command.canonicalId) ?? fail(409, 'Capability has no reviewed native runtime.')
   const action = runtime.spec.actions.find(candidate => candidate.actionId === command.actionId)
     ?? fail(409, 'Capability action is not registered.')
-  const now = dependencies.now?.() ?? Date.now()
-  const bundle = buildCapabilityClientCapabilityBundle({
-    role: input.role,
-    playerProfile: input.playerProfile,
-    map,
-    mapRevision: currentRevision,
-    pokemonSheets,
-    trainerSheets,
-    now,
-  })
-  const offer = bundle.placements.find(candidate => candidate.placementId === actorPlacement.id)?.offers
-    .find(candidate => candidate.offerId === command.offerId)
-    ?? fail(409, 'Capability action offer is unavailable or stale.')
-  if (offer.canonicalId !== command.canonicalId || offer.actionId !== command.actionId
-    || offer.capabilityInstanceId !== command.capabilityInstanceId) fail(409, 'Capability action offer is unavailable or stale.')
-  if (!offer.available) fail(409, offer.unavailableReasonCodes[0] ?? 'Capability action is unavailable.')
 
-  for (const targetId of command.selections.targetPlacementIds) {
+  for (const targetId of mechanicCommand.selections.targetPlacementIds) {
     if (!map.placements.some(placement => placement.id === targetId)) fail(400, `Capability target ${targetId} does not exist.`)
   }
   if (input.role === 'player' && command.actionId === 'shelter-baby') {
-    const babyPlacement = map.placements.find(placement => placement.id === command.selections.targetPlacementIds[0])
+    const babyPlacement = map.placements.find(placement => placement.id === mechanicCommand.selections.targetPlacementIds[0])
       ?? fail(409, 'Marsupial baby placement is unavailable.')
     if (!actorCanControlMapPlacement({
       role: input.role,
       profile: input.playerProfile,
       placement: babyPlacement,
-      linkedTrainerSheets,
+      linkedTrainerSheets: controlLinkedTrainerSheets,
     })) fail(403, 'A player must control both Pokémon before establishing a Marsupial relationship.')
   }
 
@@ -371,9 +398,11 @@ export const executeCapabilityActionUseCase = (
       map,
       actor: actorPlacement,
       actorSheet,
+      actingPlacement,
+      actingSheet,
       pokemonSheets: pokemonBySlug,
       trainerSheets: trainerBySlug,
-      command,
+      command: mechanicCommand,
       action,
       now,
     })
@@ -520,7 +549,7 @@ export const executeCapabilityActionUseCase = (
   })
   const mapAfterCost = spendActionEconomy({
     map: sourceLossReconciledMap,
-    actorPlacementId: actorPlacement.id,
+    actorPlacementId: actingPlacement.id,
     canonicalId: command.canonicalId,
     operationId: command.operationId,
     economy: action.economy,
@@ -532,7 +561,7 @@ export const executeCapabilityActionUseCase = (
     pokemonSheets: pokemonBySlug,
     trainerSheets: trainerBySlug,
     linkedTrainerSlugs,
-    command,
+    command: mechanicCommand,
     action,
     now,
     rollDie: serverRoller(dependencies.randomInt ?? secureRandomInt),
