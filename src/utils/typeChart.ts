@@ -49,6 +49,15 @@ const SUPER: Record<PokemonType, Partial<Record<PokemonType, number>>> = {
 export const isPokemonType = (value: string): value is PokemonType =>
   (POKEMON_TYPES as readonly string[]).includes(value)
 
+const POKEMON_TYPE_BY_NORMALIZED_NAME = new Map(
+  POKEMON_TYPES.map(type => [type.toLocaleLowerCase('en-US'), type] as const),
+)
+
+/** Canonicalize persisted/runtime type labels without making the type guard unsound. */
+export const canonicalPokemonType = (value: string): PokemonType | null => (
+  POKEMON_TYPE_BY_NORMALIZED_NAME.get(value.trim().toLocaleLowerCase('en-US')) ?? null
+)
+
 /** Effectiveness of a single attacking type against a single defending type. */
 export const singleTypeMultiplier = (attacker: PokemonType, defender: PokemonType): number =>
   SUPER[attacker][defender] ?? 1
@@ -87,13 +96,15 @@ export const computeMultiplier = (
   attacker: string,
   defenders: ReadonlyArray<string | undefined>,
 ): number => {
-  if (!isPokemonType(attacker)) return 1
+  const canonicalAttacker = canonicalPokemonType(attacker)
+  if (!canonicalAttacker) return 1
 
   let effectivenessSteps = 0
   for (const defender of defenders) {
-    if (!defender || !isPokemonType(defender)) continue
+    const canonicalDefender = defender ? canonicalPokemonType(defender) : null
+    if (!canonicalDefender) continue
 
-    const singleTypeMatchup = singleTypeMultiplier(attacker, defender)
+    const singleTypeMatchup = singleTypeMultiplier(canonicalAttacker, canonicalDefender)
     if (singleTypeMatchup === 0) return 0
     if (singleTypeMatchup > 1) effectivenessSteps += 1
     if (singleTypeMatchup < 1) effectivenessSteps -= 1
