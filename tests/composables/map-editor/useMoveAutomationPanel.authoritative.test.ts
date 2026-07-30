@@ -713,6 +713,7 @@ describe('useMoveAutomationPanel authoritative dispatcher', () => {
           schemaVersion: 1,
           placementId: 'user-token',
           moveName: moveScript.moveName,
+          attackSourceId: null,
           selection: { kind: 'self' },
         },
       })

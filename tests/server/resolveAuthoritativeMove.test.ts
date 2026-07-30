@@ -277,6 +277,30 @@ describe('resolveAuthoritativeMove', () => {
     expect(snapshotInput(map, pokemonSheets, trainerSheets)).toBe(before)
   })
 
+  it('rejects HP- and condition-fainted actors before Move initiation', () => {
+    for (const actor of [
+      pokemonSheet('actor', [{ name: 'Swords Dance' }], { combat: { currentHp: 0, conditions: [] } }),
+      pokemonSheet('actor', [{ name: 'Swords Dance' }], { combat: { currentHp: 10, conditions: ['Fainted'] } }),
+    ]) {
+      let randomCalls = 0
+      const error = expectFailure(() => resolveAuthoritativeMove({
+        map: mapFixture(),
+        pokemonSheets: sheetMap([{ name: 'Swords Dance' }], { actor }),
+        trainerSheets: new Map(),
+        intent: moveIntent({
+          placementId: 'actor-token', moveName: 'Swords Dance', selection: { kind: 'self' },
+        }),
+        random: () => {
+          randomCalls += 1
+          return 0
+        },
+      }), 'actor-fainted')
+      expect(error.reason).toBe('unauthorized-state')
+      expect(error.message).toContain('Fainted actors cannot initiate Moves')
+      expect(randomCalls).toBe(0)
+    }
+  })
+
   it('uses the same canonical move usage key for case-insensitive client aliases', () => {
     const resolution = resolveAuthoritativeMove({
       map: mapFixture(),

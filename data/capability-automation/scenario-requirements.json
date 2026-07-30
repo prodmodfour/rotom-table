@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "rulesetId": "ptu-1.05-capability-automation",
-  "requirementCount": 160,
+  "requirementCount": 162,
   "requirements": [
     {
       "id": "capability:Alluring:passive",
@@ -269,9 +269,27 @@
       "canonicalId": "Fortune",
       "kind": "contextual-action",
       "actionId": "roam-for-fortune",
-      "given": "the actor owns the capability and authoritative context satisfies city-or-town-one-hour",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "the effective Level 20 Fortune source is in an authoritative City or Town context with no active roam",
+      "when": "its once-daily Extended Action is declared",
+      "then": "the server spends the daily use and persists a unique exact source-owned roam incarnation due one authoritative hour later without rolling money early"
+    },
+    {
+      "id": "capability:Fortune:action:resolve-fortune-roam",
+      "canonicalId": "Fortune",
+      "kind": "contextual-action",
+      "actionId": "resolve-fortune-roam",
+      "given": "the exact source-owned Fortune roam remains active and its one-hour boundary has elapsed",
+      "when": "an authorised GM retains the bounded low-Loyalty return or runaway outcome for that exact private task incarnation when required",
+      "then": "the server rejects stale adjudications aimed at replacement roams, rolls Level times 1d10 only on return, atomically credits the retained Trainer, or removes a runaway from play and every linked roster"
+    },
+    {
+      "id": "capability:Fortune:action:abandon-fortune-roam",
+      "canonicalId": "Fortune",
+      "kind": "contextual-action",
+      "actionId": "abandon-fortune-roam",
+      "given": "the exact source-owned Fortune roam is active",
+      "when": "the roam is abandoned or its exact source is lost",
+      "then": "the durable task and its resumable adjudication summary are removed without refunding or duplicating the spent daily use"
     },
     {
       "id": "capability:Fountain:passive",

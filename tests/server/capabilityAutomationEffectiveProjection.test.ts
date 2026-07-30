@@ -30,7 +30,7 @@ describe('effective Capability projection', () => {
       value: 8, effective: true, primarySource: { kind: 'sheet-override' },
     })
     expect(result.instances.find(instance => instance.canonicalId === 'Sky')).toMatchObject({
-      value: 9, effective: true,
+      value: 8, effective: true,
     })
     expect(result.instances.find(instance => instance.canonicalId === 'Soulless')?.sources.length).toBeGreaterThan(0)
     expect(result.instances.find(instance => instance.canonicalId === 'Naturewalk')?.parameters).toEqual({

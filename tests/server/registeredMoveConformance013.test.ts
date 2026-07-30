@@ -337,10 +337,10 @@ const assertScenarioResolution = (
 
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
     .toHaveLength(resolution.rollLedger.length)
-  const expectedReadSlugs = (scenario.selectionKind ?? 'single-target') === 'self'
-    ? ['actor']
-    : ['actor', TARGET_ID]
-  expect(resolution.sheetReads.map(read => read.slug).sort()).toEqual(expectedReadSlugs.sort())
+  // Capability/effect authority receives a complete map-sheet directory, so
+  // every map-referenced sheet is frozen even for a self-targeting Move.
+  expect(resolution.sheetReads.map(read => read.slug).sort())
+    .toEqual(['actor', TARGET_ID].sort())
 }
 
 const openHarness = (fixture: MoveFixture): CommandHarness => {

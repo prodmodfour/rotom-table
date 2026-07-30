@@ -68,6 +68,7 @@ import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
+import { capabilityStandardActionRestriction } from '../domain/capabilityAutomation/actionEligibility'
 import {
   physicalPowerSourceValues,
   resolvePhysicalPowerLoad,
@@ -506,24 +507,41 @@ const currentOrderTimeline = (map: TabletopMap): { activeId: string | null; roun
   }
 }
 
-const physicalPowerLoadForActionContext = (context: ResolvedActionContext) => {
-  const pokemonSheets = new Map<string, CharacterSheet>()
-  const trainerSheets = new Map<string, TrainerSheet>()
+const capabilitySheetsForActionContext = (context: ResolvedActionContext) => {
+  const pokemon = new Map<string, CharacterSheet>()
+  const trainer = new Map<string, TrainerSheet>()
   for (const stored of context.mapSheets.values()) {
-    if (stored.kind === 'pokemon') pokemonSheets.set(stored.slug, stored.sheet as unknown as CharacterSheet)
-    else trainerSheets.set(stored.slug, stored.sheet as unknown as TrainerSheet)
+    if (stored.kind === 'pokemon') pokemon.set(stored.slug, stored.sheet as unknown as CharacterSheet)
+    else trainer.set(stored.slug, stored.sheet as unknown as TrainerSheet)
   }
+  return { pokemon, trainer }
+}
+
+const physicalPowerLoadForActionContext = (context: ResolvedActionContext) => {
+  const sheets = capabilitySheetsForActionContext(context)
   const sheet = context.actorSheet.sheet as unknown as CharacterSheet | TrainerSheet
   const effective = resolveEffectiveCapabilities({
     map: context.map,
     placement: context.actorPlacement,
     sheet,
-    sheets: { pokemon: pokemonSheets, trainer: trainerSheets },
+    sheets,
   }).instances.filter(instance => instance.effective)
   return resolvePhysicalPowerLoad({
     map: context.map,
     placementId: context.actorPlacement.id,
     powerByCapabilityInstanceId: physicalPowerSourceValues(effective),
+  })
+}
+
+const standardActionModeRestrictionForContext = (context: ResolvedActionContext, now: number) => {
+  const sheets = capabilitySheetsForActionContext(context)
+  return capabilityStandardActionRestriction({
+    map: context.map,
+    placement: context.actorPlacement,
+    sheet: context.actorSheet.sheet as unknown as CharacterSheet | TrainerSheet,
+    pokemonSheets: sheets.pokemon,
+    trainerSheets: sheets.trainer,
+    now,
   })
 }
 
@@ -604,9 +622,12 @@ const applyManeuverCommand = (
       `Maneuver ${payload.maneuverName} is not available to token ${payload.placementId}`,
     )
   }
-  if (requiresStandardAction(maneuver.action)
-    && physicalPowerLoadForActionContext(context)?.standardActionsAllowed === false) {
-    rejectLivePlayCommand('invalid', 'Staggering Weight prevents the actor from taking this Standard Action.')
+  if (requiresStandardAction(maneuver.action)) {
+    const restriction = standardActionModeRestrictionForContext(context, dependencies.now())
+    if (restriction) rejectLivePlayCommand('invalid', restriction.message)
+    if (physicalPowerLoadForActionContext(context)?.standardActionsAllowed === false) {
+      rejectLivePlayCommand('invalid', 'Staggering Weight prevents the actor from taking this Standard Action.')
+    }
   }
   if (maneuver.name === 'Disengage' && !aa077HasAuthoritativeDisengageWindow({
     map: context.map,
@@ -801,9 +822,12 @@ const applyOrderCommand = (
         : `Order ${payload.orderName} can only be used by trainer tokens`,
     )
   }
-  if (requiresStandardAction(order.frequency)
-    && physicalPowerLoadForActionContext(context)?.standardActionsAllowed === false) {
-    rejectLivePlayCommand('invalid', 'Staggering Weight prevents the actor from taking this Standard Action.')
+  if (requiresStandardAction(order.frequency)) {
+    const restriction = standardActionModeRestrictionForContext(context, dependencies.now())
+    if (restriction) rejectLivePlayCommand('invalid', restriction.message)
+    if (physicalPowerLoadForActionContext(context)?.standardActionsAllowed === false) {
+      rejectLivePlayCommand('invalid', 'Staggering Weight prevents the actor from taking this Standard Action.')
+    }
   }
   if (orderTargetLabel(order) !== null && !target) {
     throw new MapTokenTableActionUseCaseError(400, `Order ${order.name} requires a target token`)
@@ -1058,6 +1082,15 @@ export const executeLivePlayTableActionCommandUseCase = async (
     },
     commit: ({ actor, command, currentRevision, nextMap, result, recordRealtimeEvents, saveOpResult }) => {
       deps.database.withTransaction(() => {
+        for (const consulted of nextMap.mapSheets.values()) {
+          const current = deps.sheetRepository.getByRef(consulted.kind, consulted.slug)
+          if (!current || normalizeRevision(current.revision) !== normalizeRevision(consulted.revision)) {
+            throw new MapTokenTableActionUseCaseError(
+              409,
+              `Sheet ${consulted.kind}/${consulted.slug} changed before table-action authority could be persisted`,
+            )
+          }
+        }
         for (const read of nextMap.consultedHpSheetRevisions ?? []) {
           const current = deps.sheetRepository.getByRef(read.kind, read.slug)
           if (!current || normalizeRevision(current.revision) !== read.revision) {

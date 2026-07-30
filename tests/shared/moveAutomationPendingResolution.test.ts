@@ -240,6 +240,23 @@ const expectPendingError = (
 }
 
 describe('pending move resolution contract', () => {
+  it('retains exact, source-less, and legacy-absent attack provenance distinctly', () => {
+    const attackSourceId = `attack-source.v1.${'a'.repeat(64)}`
+    expect(parsePendingMoveResolution({
+      ...pendingResolution(),
+      attackSourceId,
+    }).attackSourceId).toBe(attackSourceId)
+    expect(parsePendingMoveResolution({
+      ...pendingResolution(),
+      attackSourceId: null,
+    })).toHaveProperty('attackSourceId', null)
+    expect(parsePendingMoveResolution(pendingResolution())).not.toHaveProperty('attackSourceId')
+    expectPendingError(() => parsePendingMoveResolution({
+      ...pendingResolution(),
+      attackSourceId: 'capability.link.raw',
+    }), 'invalid-pending-resolution')
+  })
+
   it('retains a detached bounded virtual origin across durable move windows', () => {
     const source = pendingResolution()
     source.virtualOriginCell = { x: 2, y: 0, z: 3 }

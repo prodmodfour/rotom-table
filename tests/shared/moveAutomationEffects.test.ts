@@ -114,6 +114,11 @@ const VALID_PAYLOADS = {
       massiveDamage: 'never',
     },
   },
+  loyalty: {
+    action: 'decrease-rank',
+    amount: 1,
+    minimum: 0,
+  },
   heal: {
     mode: 'gain',
     pool: 'hit-points',
@@ -280,7 +285,7 @@ const validOperation = (
   recipients: {
     kind: kind === 'roll'
       ? 'none'
-      : kind === 'permanent-move-list'
+      : kind === 'permanent-move-list' || kind === 'loyalty'
         ? 'actor'
         : 'hit-targets',
   },
@@ -323,6 +328,7 @@ describe('MoveSpec typed effect operations', () => {
       'damage',
       'multi-hit',
       'direct-hp',
+      'loyalty',
       'heal',
       'condition',
       'combat-stage',

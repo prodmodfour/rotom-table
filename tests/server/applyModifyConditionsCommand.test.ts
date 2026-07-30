@@ -347,6 +347,31 @@ describe('applyModifyConditionsCommandUseCase', () => {
     expect(store.get(sessionId)?.revision).toBe(parseSessionRevision(2))
   })
 
+  it('rejects legacy hosted-session Fainted transitions that cannot reconcile Capability state atomically', () => {
+    const store = createStoreWithState(createState())
+    const sheetIo = createSheetIo()
+    const result = applyModifyConditionsCommandUseCase({
+      command: createCommand({
+        opId: parseOpId('op_modifyconduc09'),
+        payload: { tokenId: 'token-pikachu', action: 'add', conditions: ['Fainted'] },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: createInMemorySessionOperationTracker(),
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter([]),
+      readSheet: sheetIo.readSheet,
+      writeSheet: sheetIo.writeSheet,
+    })
+
+    expect(result.status).toBe('rejected')
+    if (result.status !== 'rejected') throw new Error('expected Fainted transition rejection')
+    expect(result.result).toMatchObject({ status: 'rejected', reason: 'conflict', retryable: false })
+    expect(result.result.message).toContain('cannot atomically reconcile Capability HP state')
+    expect(sheetIo.writes).toEqual([])
+  })
+
   it('rejects unauthorized player condition changes without reading sheets or writing snapshots', () => {
     const initialState = createState([])
     const store = createStoreWithState(initialState)

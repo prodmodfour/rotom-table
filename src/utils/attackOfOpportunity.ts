@@ -6,11 +6,14 @@ import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
 import type { GridAnchor } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import type { MoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 
 type MaybePromise<T> = T | Promise<T>
 
 export interface AttackOfOpportunityStruggleOption {
   name: string
+  attackSourceId?: MoveAttackSourceId
+  attackSourceLabel?: string
   type: string | null
   damageClass: string | null
   ac: number | string | null
@@ -102,6 +105,8 @@ export const attackOfOpportunityStruggleOptions = (
   .filter((move) => !move.disabledByMoveList && !move.disabledByCondition && !move.disabledByUsage)
   .map((move) => ({
     name: move.name,
+    ...(move.attackSourceId ? { attackSourceId: move.attackSourceId } : {}),
+    ...(move.attackSourceLabel ? { attackSourceLabel: move.attackSourceLabel } : {}),
     type: move.type,
     damageClass: move.damageClass,
     ac: move.ac,

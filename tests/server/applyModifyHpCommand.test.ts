@@ -447,6 +447,40 @@ describe('applyModifyHpCommandUseCase', () => {
     expect(sheetIo.writes).toHaveLength(0)
   })
 
+  it('fails closed instead of fainting a Physical Power carrier without detaching its load', () => {
+    const map: TabletopMapV2 = {
+      ...createMap(),
+      metadata: {
+        capabilityObjects: [{
+          id: 'crate', pounds: 20, position: { x: 1, y: 0, z: 1 },
+          attachedToPlacementId: 'token-pikachu',
+          attachedCapabilityInstanceId: 'capability:token-pikachu:Power:value-4',
+          attachedCapabilityCanonicalId: 'Power', attachmentKind: 'physical-power-load',
+          physicalLoadOperationId: 'operation:load', physicalLoadLastMovedRound: null,
+          physicalLoadLastCheckRound: null,
+        }],
+      },
+    }
+    const store = createStoreWithState(createState([assignment], map))
+    const sheetIo = createSheetIo()
+    const result = applyModifyHpCommandUseCase({
+      command: createCommand({ payload: { tokenId: 'token-pikachu', currentHp: 0 } }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter([]),
+      readSheet: sheetIo.readSheet,
+      writeSheet: sheetIo.writeSheet,
+    })
+
+    expect(result.status).toBe('rejected')
+    if (result.status !== 'rejected') throw new Error('expected Physical Power rejection')
+    expect(result.result.message).toContain('cannot atomically detach Physical Power loads')
+    expect(sheetIo.writes).toHaveLength(0)
+  })
+
   it('rejects unauthorized player HP changes without reading sheets or writing snapshots', () => {
     const initialState = createState([])
     const store = createStoreWithState(initialState)

@@ -12,7 +12,11 @@ import {
   abilityCapabilityStatusLabel,
   buildTokenAbilityTooltipDetail,
 } from '~/utils/mapTokenAbilityTooltips'
-import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import {
+  tokenMoveUseReference,
+  type TokenMoveMenuOption,
+  type TokenMoveUseReference,
+} from '~/utils/mapTokenMoves'
 import { moveAutomationStatusDetailsText } from '~/utils/moveAutomationSemanticStatus'
 import { useDamageDisplayMode } from '~/composables/useDamageDisplayMode'
 import { buildTokenMoveTooltipDetail } from '~/utils/mapTokenMoveTooltips'
@@ -46,7 +50,7 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages'): void
   (event: 'apply-remove-conditions'): void
   (event: 'grant-experience'): void
-  (event: 'use-move', moveName?: string | null): void
+  (event: 'use-move', move: TokenMoveUseReference): void
   (event: 'use-maneuver', maneuverName?: string | null): void
   (event: 'use-ability', ability: TokenAbilityUseReference): void
   (event: 'use-order', orderName?: string | null): void
@@ -60,7 +64,10 @@ type ActiveContextPanel = 'main' | 'moves' | 'maneuvers' | 'abilities' | 'orders
 
 interface NamedMenuItem {
   name: string
+  optionId?: string
 }
+
+const menuItemIdentity = (item: NamedMenuItem): string => item.optionId ?? item.name
 
 const activePanel = ref<ActiveContextPanel>('main')
 
@@ -138,7 +145,7 @@ const createSubmenuTooltipController = <TItem extends NamedMenuItem>(options: {
   const hoveredName = ref<string | null>(null)
   const tooltipId = useId()
   const hoveredItem = computed(() =>
-    options.items.value.find((item) => item.name === hoveredName.value) ?? null,
+    options.items.value.find((item) => menuItemIdentity(item) === hoveredName.value) ?? null,
   )
   const tooltipDetail = computed(() =>
     hoveredItem.value ? options.buildDetail(hoveredItem.value) : null,
@@ -309,7 +316,7 @@ watch(() => props.menu.id, () => resetContextPanel())
 
 watch(moves, (nextMoves) => {
   if (activePanel.value !== 'moves' || !hoveredMoveName.value) return
-  if (nextMoves.some((move) => move.name === hoveredMoveName.value)) return
+  if (nextMoves.some((move) => move.optionId === hoveredMoveName.value)) return
   hideMoveTooltip()
 })
 
@@ -508,11 +515,11 @@ watch(orders, (nextOrders) => {
           <div class="action-submenu__list action-submenu__list--moves" role="menu" aria-label="Moves">
             <button
               v-for="move in moves"
-              :key="move.name"
+              :key="move.optionId"
               type="button"
               class="action-submenu__item"
               :class="{
-                'is-active': hoveredMoveName === move.name,
+                'is-active': hoveredMoveName === move.optionId,
                 'is-disabled': !moveCanBeUsed(move),
                 [`action-submenu__item--automation-${move.automation.baseStatus}`]: true,
               }"
@@ -520,15 +527,18 @@ watch(orders, (nextOrders) => {
               :data-automation-status="move.automation.baseStatus"
               :aria-disabled="!moveCanBeUsed(move) ? 'true' : undefined"
               :title="moveAvailabilityTitle(move)"
-              :aria-describedby="hoveredMoveName === move.name && hoveredMoveTooltipDetail && isMoveTooltipVisible ? moveTooltipId : undefined"
+              :aria-describedby="hoveredMoveName === move.optionId && hoveredMoveTooltipDetail && isMoveTooltipVisible ? moveTooltipId : undefined"
               :disabled="!moveCanBeUsed(move)"
-              @pointerenter="showMoveTooltip(move.name, $event)"
+              @pointerenter="showMoveTooltip(move.optionId, $event)"
               @pointerleave="hideMoveTooltip"
-              @focus="showMoveTooltip(move.name, $event)"
+              @focus="showMoveTooltip(move.optionId, $event)"
               @blur="hideMoveTooltip"
-              @click.stop="emit('use-move', move.name)"
+              @click.stop="emit('use-move', tokenMoveUseReference(move))"
             >
-              <span class="action-submenu__name">{{ move.name }}</span>
+              <span class="action-submenu__name">
+                {{ move.name }}
+                <small v-if="move.attackSourceLabel">{{ move.attackSourceLabel }}</small>
+              </span>
               <span class="action-submenu__badges">
                 <span
                   class="action-submenu__badge action-submenu__badge--automation"
@@ -567,7 +577,7 @@ watch(orders, (nextOrders) => {
               >
                 <span
                   v-for="detail in move.automation.details"
-                  :key="`${move.name}-${detail.kind}-${detail.code}`"
+                  :key="`${move.optionId}-${detail.kind}-${detail.code}`"
                   class="action-submenu__automation-detail"
                 >
                   <strong>{{ detail.label }} · {{ detail.code }}</strong>

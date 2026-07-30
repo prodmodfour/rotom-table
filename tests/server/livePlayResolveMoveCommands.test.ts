@@ -2402,7 +2402,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     )
   })
 
-  it('does not consult or accept unknown-side Sweet Veil tokens as allied providers', async () => {
+  it('does not accept unknown-side Sweet Veil providers while freezing the complete map-sheet directory', async () => {
     const map = mapFixture({ placements: [
       placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
       placement('target-a', 'target-a', { x: 1, y: 0, z: 0 }),
@@ -2413,37 +2413,34 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       actorMoves: [{ name: 'Spore' }],
       extraSheets: [pokemonSheet('aura', [], { abilities: [{ name: 'Sweet Veil' }] })],
     })
+    const storedMap = harness.maps.getBySlug('arena')!
     const moveIntent = intent({
       placementId: 'actor-token',
       moveName: 'Spore',
       selection: { kind: 'single-target', targetPlacementId: 'target-a' },
     })
-    const planner: NonNullable<LivePlayResolveMoveCommandDependencies['planner']> = (input) => {
-      const plan = planAuthoritativeMoveState(input)
-      expect(plan.sheetReads).not.toContainEqual(expect.objectContaining({ slug: 'aura' }))
+    const race = raceConsultedSheetAfterPlanning(harness, 'aura', (plan) => {
       expect(plan.resolution.feedback).toBeUndefined()
       expect(plan.resolution.transaction.conditionUpdates).toEqual([{ id: 'target-a', conditions: ['Sleep'] }])
-
-      const aura = harness.sheets.getByRef('pokemon', 'aura')!
-      harness.sheets.save({
-        kind: 'pokemon',
-        slug: 'aura',
-        document: { ...aura.sheet, revision: aura.revision + 1, updatedAt: aura.updatedAt + 1 },
-        revision: aura.revision + 1,
-        updatedAt: aura.updatedAt + 1,
-      })
-      return plan
-    }
+      expect(JSON.stringify(plan.resolution.auditTrace.events)).not.toContain('Sweet Veil')
+    })
 
     const response = await execute(
       harness,
-      commandFor(map, moveIntent, 'op_unknownaura1'),
-      { planner, random: randomSequence([0.99]) },
+      commandFor(storedMap, moveIntent, 'op_unknownaura1'),
+      { planner: race.planner, random: randomSequence([0.99]) },
     )
 
-    expect(response.result.ok).toBe(true)
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      message: expect.stringContaining('consulted while resolving the move changed'),
+    })
+    expect(harness.maps.getBySlug('arena')).toEqual(storedMap)
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(2)
     expect(harness.sheets.getByRef('pokemon', 'aura')?.revision).toBe(3)
-    expect(harness.ops.getOpResult('arena', 'op_unknownaura1')).toEqual(response.result)
+    expect(harness.ops.getOpResult('arena', 'op_unknownaura1')).toBeNull()
+    expect(harness.events).toEqual([])
   })
 
   it('preserves mixed area target identities in the response, stored result, realtime event, and duplicate replay', async () => {

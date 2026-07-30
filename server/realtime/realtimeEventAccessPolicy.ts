@@ -12,6 +12,7 @@ import { canAccessMapForRole } from '../policies/mapPolicy'
 import { pendingMoveResponseAuthorizationGrant } from '../policies/pendingMoveResponsePolicy'
 import { playerProfileCanAccessSheet } from '../policies/playerProfilePolicy'
 import { projectAbilityAutomationRealtimeEventForPlayer } from '../domain/abilityAutomation/realtimeProjection'
+import { projectCapabilityAutomationRealtimeEventForPlayer } from '../domain/capabilityAutomation/realtimeProjection'
 import { authorizeSheetList, playerSheetAccessContextFromKeys } from '../useCases/authorizeSheetList'
 
 export type RealtimePlayerSheetAccessKey = `${SheetKind}:${string}`
@@ -302,10 +303,12 @@ export const filterRealtimeEventsForPrincipal = (
           )
         : false
       allowedEvents.push(input.principal.role === 'player'
-        ? projectAbilityAutomationRealtimeEventForPlayer({
-            event,
-            sourceControllerCanInspectSheet,
-          })
+        ? projectCapabilityAutomationRealtimeEventForPlayer(
+            projectAbilityAutomationRealtimeEventForPlayer({
+              event,
+              sourceControllerCanInspectSheet,
+            }),
+          )
         : event)
     } else {
       deniedEvents.push({ event, decision })

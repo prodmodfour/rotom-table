@@ -20,6 +20,7 @@ import {
 } from '~/types/moveAutomation'
 import type { GridAnchor } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import { isMoveAttackSourceId, type MoveAttackSourceId } from './moveAutomation/attackSource'
 
 export const LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION = 1 as const
 export const LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION = 1 as const
@@ -59,6 +60,8 @@ export interface ResolveMoveIntent {
   readonly schemaVersion: typeof LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION
   readonly placementId: string
   readonly moveName: string
+  /** String selects one exact source; null explicitly selects an ordinary native row. */
+  readonly attackSourceId?: MoveAttackSourceId | null
   readonly targetBranchId?: string
   /** Optional server-validated virtual origin enabled only by reviewed effects such as Clay Cannons. */
   readonly originCell?: GridAnchor
@@ -106,6 +109,7 @@ export interface LivePlayResolvedMoveResult {
   readonly moveKey: string
   readonly frequency: string | null
   readonly damageFormula: string | null
+  readonly attackSourceId?: MoveAttackSourceId
   readonly targetBranchId?: string
   readonly selectedTargetIds: readonly string[]
   readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
@@ -179,7 +183,7 @@ export type ParseResolveMoveIntentResult = ParseResolveMoveIntentSuccess | Parse
 
 type UnknownRecord = Record<string, unknown>
 
-const TOP_LEVEL_FIELDS = new Set(['schemaVersion', 'placementId', 'moveName', 'targetBranchId', 'originCell', 'selection'])
+const TOP_LEVEL_FIELDS = new Set(['schemaVersion', 'placementId', 'moveName', 'attackSourceId', 'targetBranchId', 'originCell', 'selection'])
 const SELF_SELECTION_FIELDS = new Set(['kind'])
 const SINGLE_TARGET_SELECTION_FIELDS = new Set(['kind', 'targetPlacementId'])
 const TARGET_COUNT_SELECTION_FIELDS = new Set(['kind', 'targetPlacementIds'])
@@ -548,6 +552,14 @@ export const parseResolveMoveIntent = (value: unknown): ParseResolveMoveIntentRe
 
   const placementId = parseBoundedText(value.placementId, 'placementId', issues)
   const moveName = parseBoundedText(value.moveName, 'moveName', issues)
+  const hasAttackSourceId = hasOwn(value, 'attackSourceId')
+  const attackSourceId = hasAttackSourceId
+    ? value.attackSourceId === null
+      ? null
+      : isMoveAttackSourceId(value.attackSourceId)
+        ? value.attackSourceId
+        : (addIssue(issues, 'attackSourceId', 'invalid-field', 'attackSourceId must be null or an opaque version-1 attack-source ID.'), undefined)
+    : undefined
   const targetBranchId = hasOwn(value, 'targetBranchId')
     ? parseBoundedText(value.targetBranchId, 'targetBranchId', issues)
     : null
@@ -566,6 +578,7 @@ export const parseResolveMoveIntent = (value: unknown): ParseResolveMoveIntentRe
       schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
       placementId,
       moveName,
+      ...(hasAttackSourceId ? { attackSourceId: attackSourceId ?? null } : {}),
       ...(targetBranchId ? { targetBranchId } : {}),
       ...(originCell ? { originCell: { ...originCell } } : {}),
       selection,
@@ -971,6 +984,11 @@ export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayRe
   const moveKey = parseResolvedMoveText(value.moveKey, 'moveKey', issues)
   const frequency = parseResolvedMoveNullableText(value.frequency, 'frequency', issues)
   const damageFormula = parseResolvedMoveNullableText(value.damageFormula, 'damageFormula', issues)
+  const attackSourceId = hasOwn(value, 'attackSourceId')
+    ? isMoveAttackSourceId(value.attackSourceId)
+      ? value.attackSourceId
+      : (addResolvedMoveIssue(issues, 'attackSourceId', 'invalid-field', 'attackSourceId must be an opaque version-1 attack-source ID.'), null)
+    : null
   const targetBranchId = hasOwn(value, 'targetBranchId')
     ? parseResolvedMoveText(value.targetBranchId, 'targetBranchId', issues)
     : null
@@ -1057,6 +1075,7 @@ export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayRe
       moveKey,
       frequency,
       damageFormula,
+      ...(attackSourceId ? { attackSourceId } : {}),
       ...(targetBranchId ? { targetBranchId } : {}),
       selectedTargetIds,
       rollLedger,

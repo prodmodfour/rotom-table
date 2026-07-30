@@ -2,12 +2,17 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
+import { isMoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
 import { createMoveAutomationWeatherResolver } from '../moveAutomation/weather'
 import {
   physicalPowerSourceValues,
   resolvePhysicalPowerLoad,
 } from './physicalPower'
+import {
+  livingWeaponAttackSourceId,
+  livingWeaponAttackSourceLabel,
+} from './livingWeaponAttackSource'
 
 export interface CapabilityPresentationSheets {
   readonly pokemon: ReadonlyMap<string, CharacterSheet>
@@ -162,10 +167,12 @@ const publicCapabilityPresentationStates = (
       state: string,
       label: string,
       presentation: Readonly<Record<string, unknown>> = {},
+      instanceKey: string = state,
     ): void => {
       if (!map.placements.some(placement => placement.id === placementId)) return
-      latest.set(`${placementId}:${state}`, {
-        id: `public-rule-state:${placementId}:${state}`,
+      const identitySuffix = instanceKey === state ? '' : `:${instanceKey}`
+      latest.set(`${placementId}:${state}${identitySuffix}`, {
+        id: `public-rule-state:${placementId}:${state}${identitySuffix}`,
         placementId,
         state,
         label,
@@ -182,15 +189,35 @@ const publicCapabilityPresentationStates = (
     }
     if (link.kind === 'living-weapon' && link.participantPlacementIds.length === 1) {
       const wielderPlacementId = link.participantPlacementIds[0]!
-      // The physical pairing is public, but the raw link/source/configuration
-      // remains private. Clients use this bounded relation only to derive an
-      // exact menu from their authorized sheets; the server re-authorizes use.
+      const ownerPlacement = map.placements.find(placement => placement.id === link.ownerPlacementId)
+      const ownerSheet = ownerPlacement?.sheetKind === 'pokemon'
+        ? sheets.pokemon.get(ownerPlacement.sheetSlug) ?? null
+        : null
+      if (!ownerPlacement || !ownerSheet) continue
+      const attackSourceName = ownerSheet.nickname?.trim() || ownerSheet.species
+      // The physical pairing and an opaque selector are public. Raw link,
+      // source, configuration, and operation identities remain private; the
+      // server independently revalidates every selected source.
+      const ownerAttackSourceId = livingWeaponAttackSourceId({
+        mapSlug: map.slug,
+        actingPlacementId: link.ownerPlacementId,
+        link,
+      })
+      const wielderAttackSourceId = livingWeaponAttackSourceId({
+        mapSlug: map.slug,
+        actingPlacementId: wielderPlacementId,
+        link,
+      })
       add(link.ownerPlacementId, 'living-weapon', 'Engaged Living Weapon', {
         counterpartPlacementId: wielderPlacementId,
-      })
+        attackSourceId: ownerAttackSourceId,
+        attackSourceLabel: livingWeaponAttackSourceLabel(attackSourceName, ownerAttackSourceId),
+      }, ownerAttackSourceId)
       add(wielderPlacementId, 'living-weapon-wielder', 'Wielding Living Weapon', {
         counterpartPlacementId: link.ownerPlacementId,
-      })
+        attackSourceId: wielderAttackSourceId,
+        attackSourceLabel: livingWeaponAttackSourceLabel(attackSourceName, wielderAttackSourceId),
+      }, wielderAttackSourceId)
     }
     if (link.kind === 'shadow-rider') {
       add(link.ownerPlacementId, 'shadow-rider', 'Riding a Shadow')
@@ -204,6 +231,63 @@ const publicCapabilityPresentationStates = (
   return [...latest.values()]
 }
 
+const preservedCapabilityPresentationStates = (
+  value: unknown,
+  placementIds: ReadonlySet<string>,
+): readonly Record<string, unknown>[] => {
+  if (!Array.isArray(value)) return []
+  const loadClasses = new Set(['unburdened', 'heavy', 'staggering', 'drag', 'too-heavy'])
+  return value.flatMap((candidate): Record<string, unknown>[] => {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return []
+    const state = candidate as Record<string, unknown>
+    if (typeof state.id !== 'string' || !state.id.startsWith('public-rule-state:') || state.id.length > 240
+      || typeof state.placementId !== 'string' || !placementIds.has(state.placementId)
+      || typeof state.state !== 'string' || !state.state || state.state.length > 120
+      || typeof state.label !== 'string' || !state.label || state.label.length > 160) return []
+    const projected: Record<string, unknown> = {
+      id: state.id,
+      placementId: state.placementId,
+      state: state.state,
+      label: state.label,
+      description: state.description === null
+        || (typeof state.description === 'string' && state.description.length <= 240)
+        ? state.description : null,
+      expiresAt: state.expiresAt === null
+        || (Number.isSafeInteger(state.expiresAt) && (state.expiresAt as number) >= 0)
+        ? state.expiresAt : null,
+    }
+    const position = state.position
+    if (position && typeof position === 'object' && !Array.isArray(position)) {
+      const point = position as Record<string, unknown>
+      if (Number.isSafeInteger(point.x) && Number.isSafeInteger(point.y) && Number.isSafeInteger(point.z)) {
+        projected.position = { x: point.x, y: point.y, z: point.z }
+      }
+    }
+    if (state.disrupted === true) projected.disrupted = true
+    if (typeof state.loadClass === 'string' && loadClasses.has(state.loadClass)) projected.loadClass = state.loadClass
+    for (const key of [
+      'movementMetersPerShift', 'speedCombatStagePenalty', 'accuracyPenalty',
+      'evasionPenalty', 'athleticsCheckDc',
+    ] as const) {
+      if (state[key] === null || (typeof state[key] === 'number' && Number.isFinite(state[key]))) {
+        projected[key] = state[key]
+      }
+    }
+    if (typeof state.standardActionsAllowed === 'boolean') {
+      projected.standardActionsAllowed = state.standardActionsAllowed
+    }
+    if (typeof state.counterpartPlacementId === 'string'
+      && placementIds.has(state.counterpartPlacementId)) {
+      projected.counterpartPlacementId = state.counterpartPlacementId
+    }
+    if (isMoveAttackSourceId(state.attackSourceId)) projected.attackSourceId = state.attackSourceId
+    if (typeof state.attackSourceLabel === 'string' && state.attackSourceLabel.length <= 120) {
+      projected.attackSourceLabel = state.attackSourceLabel
+    }
+    return [projected]
+  })
+}
+
 const isCapabilityOwnedEffect = (effect: unknown): boolean => {
   if (!effect || typeof effect !== 'object' || Array.isArray(effect)) return false
   const record = effect as Record<string, unknown>
@@ -214,6 +298,15 @@ const isCapabilityOwnedEffect = (effect: unknown): boolean => {
   return moveId.startsWith('capability.')
     || tags.some(tag => typeof tag === 'string' && (tag === 'capability' || tag.startsWith('capability-') || tag.startsWith('capability.')))
 }
+
+/** Remove every mechanics-only Capability lane from a public encounter value. */
+export const projectCapabilityAutomationEncounterStateForPlayer = (
+  encounter: NonNullable<TabletopMap['encounterState']>,
+): NonNullable<TabletopMap['encounterState']> => ({
+  ...encounter,
+  capabilityRuntime: createEmptyCapabilityRuntimeState(),
+  effects: encounter.effects.filter(effect => !isCapabilityOwnedEffect(effect)),
+})
 
 /** Add bounded, non-authoritative physical state used by shared renderers. */
 export const projectCapabilityAutomationPresentationMap = (
@@ -236,7 +329,21 @@ export const projectCapabilityAutomationMapForPlayer = (
   map: TabletopMap,
   sheets?: CapabilityPresentationSheets,
 ): TabletopMap => {
-  const presentedMap = projectCapabilityAutomationPresentationMap(map, sheets)
+  const rawRuntime = map.encounterState?.capabilityRuntime
+  const hasRawRuntimeAuthority = Boolean(rawRuntime) && (
+    rawRuntime!.usages.entries.length > 0
+    || rawRuntime!.modes.length > 0
+    || rawRuntime!.links.length > 0
+    || rawRuntime!.tasks.length > 0
+    || rawRuntime!.pendingAdjudications.length > 0
+    || rawRuntime!.checkPenalties.length > 0
+  )
+  // Preserve already-generated public presentation on a second privacy pass.
+  // A raw authoritative runtime without sheets cannot prove those states, so
+  // it deliberately drops them before stripping the authority lanes.
+  const presentedMap = sheets || hasRawRuntimeAuthority
+    ? projectCapabilityAutomationPresentationMap(map, sheets)
+    : map
   const metadata = { ...(presentedMap.metadata ?? {}) } as Record<string, unknown>
   // Capability-prefixed map metadata is an authoritative input/ledger, never a
   // player payload. Public consequences are represented by placements,
@@ -244,10 +351,20 @@ export const projectCapabilityAutomationMapForPlayer = (
   for (const key of Object.keys(metadata)) {
     if (key.startsWith('capability')) delete metadata[key]
   }
+  const presentationStates = preservedCapabilityPresentationStates(
+    metadata.automationPresentationStates,
+    new Set(presentedMap.placements.map(placement => placement.id)),
+  )
+  if (presentationStates.length > 0) metadata.automationPresentationStates = presentationStates
+  else delete metadata.automationPresentationStates
   const encounter = presentedMap.encounterState
   if (!encounter) return { ...presentedMap, metadata }
   const carriedPlacementIds = new Set((encounter.capabilityRuntime?.links ?? []).flatMap((link) => {
-    if (!sheets || (link.kind !== 'as-one-mount' && link.kind !== 'viral-fusion' && link.kind !== 'marsupial-pouch')) return []
+    if (link.kind !== 'as-one-mount' && link.kind !== 'viral-fusion' && link.kind !== 'marsupial-pouch') return []
+    // A generic response/realtime privacy hook may not have a complete sheet
+    // directory. Fail closed by hiding structurally carried participants; the
+    // sheet-aware snapshot projector narrows this to exact effective sources.
+    if (!sheets) return [...link.participantPlacementIds]
     const owner = map.placements.find(placement => placement.id === link.ownerPlacementId)
     const sheet = owner?.sheetKind === 'pokemon'
       ? sheets.pokemon.get(owner.sheetSlug)
@@ -258,18 +375,13 @@ export const projectCapabilityAutomationMapForPlayer = (
     ))
     return sourceEffective ? [...link.participantPlacementIds] : []
   }))
-  const empty = createEmptyCapabilityRuntimeState()
   return {
     ...presentedMap,
     metadata,
     placements: presentedMap.placements.filter(placement => !carriedPlacementIds.has(placement.id)),
-    encounterState: {
-      ...encounter,
-      // Raw modes/links include source identities, retained choices, hidden
-      // illusion/device data, and retry evidence. Public physical outcomes are
-      // projected separately; none of this authority crosses the player map.
-      capabilityRuntime: empty,
-      effects: encounter.effects.filter(effect => !isCapabilityOwnedEffect(effect)),
-    },
+    // Raw modes/links include source identities, retained choices, hidden
+    // illusion/device data, and retry evidence. Public physical outcomes are
+    // projected separately; none of this authority crosses the player map.
+    encounterState: projectCapabilityAutomationEncounterStateForPlayer(encounter),
   }
 }

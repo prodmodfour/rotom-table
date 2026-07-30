@@ -514,14 +514,25 @@ export const reduceMoveCoreTokenOperationState = (
   })
 
   const asOneEndpointTokens = new Map<string, MoveCoreTokenEffectRecipient['token']>()
+  const mapPlacementIds = new Set(input.context.map.placements.map(placement => placement.id))
   const initiallyFaintedAsOnePlacements = new Set<string>([
-    ...hpAccumulator.toUpdates().filter(update => update.currentHp <= 0).map(update => update.id),
-    ...conditionAccumulator.toUpdates().filter(update => update.conditions.some(
-      condition => condition.trim().toLocaleLowerCase('en-US') === 'fainted',
+    ...hpAccumulator.toUpdates().filter(update => (
+      mapPlacementIds.has(update.id) && update.currentHp <= 0
+    )).map(update => update.id),
+    ...conditionAccumulator.toUpdates().filter(update => (
+      mapPlacementIds.has(update.id) && update.conditions.some(
+        condition => condition.trim().toLocaleLowerCase('en-US') === 'fainted',
+      )
     )).map(update => update.id),
   ])
   for (const link of input.context.map.encounterState?.capabilityRuntime?.links ?? []) {
-    if (link.kind !== 'as-one-mount' || link.participantPlacementIds.length !== 1) continue
+    if (link.kind !== 'as-one-mount' || link.canonicalId !== 'As One'
+      || link.participantPlacementIds.length !== 1
+      || !input.context.queries.creatureRules.hasCapabilityInstance(
+        link.ownerPlacementId,
+        link.capabilityInstanceId,
+        'As One',
+      )) continue
     for (const placementId of [link.ownerPlacementId, link.participantPlacementIds[0]!]) {
       const token = input.context.queries.tokens.get(placementId)
       if (!token) continue
@@ -560,27 +571,32 @@ export const reduceMoveCoreTokenOperationState = (
     }
   }
   const hpUpdatesBeforeFaintClosure = new Map(hpAccumulator.toUpdates().map(update => [update.id, update]))
-  const sharedSheetInjuries = new Map<string, number>()
-  for (const placementId of coupledFaintedPlacements) {
+  const explicitlyUpdatedSheetKeys = new Set<string>()
+  for (const placementId of hpUpdatesBeforeFaintClosure.keys()) {
     const placement = input.context.queries.placements.get(placementId)
-    const update = hpUpdatesBeforeFaintClosure.get(placementId)
-    if (!placement || !update) continue
-    const key = `${placement.sheetKind}:${placement.sheetSlug}`
-    if (!sharedSheetInjuries.has(key)) sharedSheetInjuries.set(key, update.injuries ?? 0)
+    if (placement) explicitlyUpdatedSheetKeys.add(`${placement.sheetKind}:${placement.sheetSlug}`)
   }
+  const synthesizedZeroSheetKeys = new Set<string>()
   for (const placementId of coupledFaintedPlacements) {
     const token = asOneEndpointTokens.get(placementId) ?? input.context.queries.tokens.get(placementId)
     if (!token) continue
     const placement = input.context.queries.placements.get(placementId)
-    const sharedInjuries = placement
-      ? sharedSheetInjuries.get(`${placement.sheetKind}:${placement.sheetSlug}`)
-      : undefined
-    if (sharedInjuries !== undefined) {
-      const currentInjuries = hpAccumulator.getInjuries(token)
-      if (sharedInjuries > currentInjuries) hpAccumulator.addInjuries(token, sharedInjuries - currentInjuries)
-      else if (sharedInjuries < currentInjuries) hpAccumulator.removeInjuries(token, currentInjuries - sharedInjuries)
+    const sheetKey = placement ? `${placement.sheetKind}:${placement.sheetSlug}` : null
+    const hasExplicitHpUpdate = hpUpdatesBeforeFaintClosure.has(placementId)
+
+    // A shared-sheet alias observes the explicit or already-synthesized backing
+    // write. Mutating its token accumulator as well could produce a second,
+    // conflicting sheet state (for example exact overkill versus zero).
+    const backingSheetAlreadyCovered = !hasExplicitHpUpdate && sheetKey !== null && (
+      explicitlyUpdatedSheetKeys.has(sheetKey) || synthesizedZeroSheetKeys.has(sheetKey)
+    )
+    if (!backingSheetAlreadyCovered && hpAccumulator.get(token) > 0) {
+      // A Fainted condition with positive HP is an authoritative faint and must
+      // synthesize zero. Exact non-positive results, including overkill and the
+      // explicit Self-Destruct/Explosion value, remain unchanged.
+      hpAccumulator.set(token, 0)
+      if (sheetKey) synthesizedZeroSheetKeys.add(sheetKey)
     }
-    hpAccumulator.set(token, 0)
     const recipient = recipientsById.get(token.id) ?? resolveMoveCoreTokenRecipient(input.context, token.id)
     recipientsById.set(token.id, recipient)
     recordMoveCoreTokenRecipientRead(sheetReads, sheetReadsByKey, recipient)
@@ -599,7 +615,10 @@ export const reduceMoveCoreTokenOperationState = (
     stageAccumulator,
     encounterState: conditionEncounterAccumulator.current(),
   })
-  const faintedPlacementIds = new Set(hpUpdates.filter(update => update.currentHp <= 0).map(update => update.id))
+  const faintedPlacementIds = new Set([
+    ...coupledFaintedPlacements,
+    ...hpUpdates.filter(update => update.currentHp <= 0).map(update => update.id),
+  ])
   const encounterAfterCapabilityFaint = removeCrownedCapabilityModesForFaintedPlacements(
     berserk.encounterState,
     faintedPlacementIds,

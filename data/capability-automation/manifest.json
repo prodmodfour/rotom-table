@@ -380,7 +380,19 @@
           "id": "roam-for-fortune",
           "action": "extended",
           "frequency": "daily",
-          "context": "city-or-town-one-hour"
+          "context": "city-or-town"
+        },
+        {
+          "id": "resolve-fortune-roam",
+          "action": "none",
+          "frequency": "at-will",
+          "context": "fortune-roam-due"
+        },
+        {
+          "id": "abandon-fortune-roam",
+          "action": "none",
+          "frequency": "at-will",
+          "context": "fortune-roam-active"
         }
       ],
       "passiveProjection": true,

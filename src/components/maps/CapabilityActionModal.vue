@@ -121,7 +121,7 @@ const branchChoices = computed<readonly Choice[]>(() => {
   if (action.value === 'telekinetic-maneuver') return [
     { value: 'disarm', label: 'Disarm' }, { value: 'trip', label: 'Trip' }, { value: 'push', label: 'Push' },
   ]
-  if (action.value === 'roam-for-fortune') return [
+  if (action.value === 'resolve-fortune-roam') return [
     { value: 'returns', label: 'Low-Loyalty user returns' },
     { value: 'runs-away', label: 'Low-Loyalty user runs away' },
   ]
@@ -160,14 +160,14 @@ const actionsWithFreeOption = new Set([
 const actionsWithRecipient = new Set([
   'mega-evolve', 'assemble-zygarde', 'sprout', 'produce-dream-mist', 'produce-heart-scale',
   'produce-revival-herb', 'gather-honey', 'produce-moomoo-milk', 'harvest-mushroom',
-  'roam-for-fortune', 'harvest', 'collect-juicer-output',
+  'resolve-fortune-roam', 'harvest', 'collect-juicer-output',
 ])
 const actionsWithItem = new Set([
   'plant', 'tutor-cube-move', 'warm-egg', 'synchronize-keystone',
 ])
 const actionsWithDescription = new Set([
   'communicate', 'project-thought', 'track-scent', 'create-illusion', 'change-shape',
-  'read-aura', 'read-dream', 'read-mind', 'sprout', 'enter-machine', 'roam-for-fortune',
+  'read-aura', 'read-dream', 'read-mind', 'sprout', 'enter-machine', 'resolve-fortune-roam',
   'influence-nearby-wilds',
 ])
 
@@ -185,7 +185,7 @@ const showItem = computed(() => actionsWithItem.has(action.value)
 const gmConfirmationActions = new Set([
   'lure-with-alluring', 'read-aura', 'read-dream', 'manipulate-metal', 'plant', 'harvest',
   'sprout', 'read-mind', 'bond', 'combine-unown', 'track-scent', 'influence-nearby-wilds', 'change-shape',
-  'assemble-zygarde', 'roam-for-fortune', 'enter-machine', 'communicate', 'shelter-baby',
+  'assemble-zygarde', 'resolve-fortune-roam', 'enter-machine', 'communicate', 'shelter-baby',
 ])
 const showGmConfirmation = computed(() => props.canConfirmAsGm && gmConfirmationActions.has(action.value))
 const showDescription = computed(() => actionsWithDescription.has(action.value) || (showGmConfirmation.value && gmConfirmed.value))

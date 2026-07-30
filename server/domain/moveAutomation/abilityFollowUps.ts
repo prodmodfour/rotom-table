@@ -335,6 +335,7 @@ export const materializeAbilityFollowUps = (
     originOpId: input.originOpId,
     actorPlacementId: input.resolution.actorPlacementId,
     canonicalMoveId: input.resolution.canonicalMoveName,
+    attackSourceId: input.resolution.attackSourceId ?? null,
     specVersion: SPITE_FOLLOW_UP_PROGRAM_VERSION,
     specHash: SPITE_FOLLOW_UP_DEFINITION_HASH,
     rulesetId: MOVE_RULESET_PROVENANCE.rulesetId,
@@ -476,6 +477,9 @@ export const planAbilityFollowUpResponse = (input: {
       schemaVersion: 1,
       placementId: pending.actorPlacementId,
       moveName: pending.canonicalMoveId,
+      ...(Object.prototype.hasOwnProperty.call(pending, 'attackSourceId')
+        ? { attackSourceId: pending.attackSourceId ?? null }
+        : {}),
       selection: { kind: 'self' },
     },
     selectedPlacementIds: [],

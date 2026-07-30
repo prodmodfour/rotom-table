@@ -38,6 +38,9 @@ import {
   buildTokenMoveMenuOptions,
   moveEntriesForPlacement,
 } from '~/utils/mapTokenMoves'
+import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
+import { resolveLivingWeaponAttackSources } from '../capabilityAutomation/weaponMoveGrants'
+import type { MoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 import { isPlayerCharacterAttackOfOpportunityPair } from '~/utils/playerCharacterTokens'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
@@ -189,16 +192,35 @@ const sheetForPlacement = (
   return sheet
 }
 
-const optionIdForMove = (moveName: string): string => {
+const optionIdForMove = (
+  moveName: string,
+  attackSourceId: MoveAttackSourceId | null,
+): string => {
   const key = moveUsageKey(moveName)
   if (!key) throw new Error(`Attack of Opportunity move ${moveName} has no stable key.`)
-  return `attack-of-opportunity.move.${key}`
+  return attackSourceId
+    ? `attack-of-opportunity.move.${key}.${attackSourceId}`
+    : `attack-of-opportunity.move.${key}`
 }
 
-const optionLabelKeyForMove = (moveName: string): string => {
+const optionLabelKeyForMove = (
+  moveName: string,
+  attackSourceId: MoveAttackSourceId | null,
+  attackSourceLabel: string | null,
+): string => {
   const key = moveUsageKey(moveName)
   if (!key) throw new Error(`Attack of Opportunity move ${moveName} has no stable label key.`)
-  return `attack-of-opportunity.${key}`
+  if (!attackSourceId) return `attack-of-opportunity.${key}`
+  const sourceLabelKey = attackSourceLabel
+    ?.normalize('NFKD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .toLocaleLowerCase('en-US')
+    .replace(/[^a-z0-9]+/gu, '-')
+    .replace(/^-|-$/gu, '')
+    .slice(0, 48)
+    .replace(/-$/u, '')
+    || 'living-weapon'
+  return `attack-of-opportunity.${key}.${sourceLabelKey}-${attackSourceId.slice(-6)}`
 }
 
 const moveOptionsForPlacement = (
@@ -207,10 +229,33 @@ const moveOptionsForPlacement = (
   token: NonNullable<ReturnType<typeof placementToSpawned>>,
   documents: AttackOfOpportunitySheetDocuments,
 ) => {
+  const sheets = sheetsLookup(documents)
+  const encounterEffects = map.encounterState?.effects ?? []
+  const baseEntries = moveEntriesForPlacement(placement, sheets, { encounterEffects })
+  const livingWeaponSources = resolveLivingWeaponAttackSources({
+    map,
+    placement,
+    sheet: sheetForPlacement(placement, documents),
+    token,
+    pokemonSheets: documents.pokemonSheets,
+    trainerSheets: documents.trainerSheets,
+    tokenForPlacement: placementId => {
+      const candidate = map.placements.find(item => item.id === placementId)
+      return candidate ? placementToSpawned(candidate, sheets, map) : null
+    },
+  })
+  const sourcedStruggleEntries = livingWeaponSources.flatMap(source => source.actorIsWielder
+    ? baseEntries.filter(entry => isStruggleAttackMoveName(entry.move.name)).map(entry => ({
+        ...entry,
+        attackSourceId: source.attackSourceId,
+        attackSourceLabel: source.attackSourceLabel,
+      }))
+    : [])
   const options = attackOfOpportunityStruggleOptions(buildTokenMoveMenuOptions(
     token,
-    moveEntriesForPlacement(placement, sheetsLookup(documents), {
-      encounterEffects: map.encounterState?.effects ?? [],
+    moveEntriesForPlacement(placement, sheets, {
+      encounterEffects,
+      additionalMoveEntries: sourcedStruggleEntries,
     }),
     {
       mapMoveUsage: map.moveUsage,
@@ -221,14 +266,19 @@ const moveOptionsForPlacement = (
   ))
   const seen = new Set<string>()
   return options.filter(option => {
-    const id = optionIdForMove(option.name)
+    const id = optionIdForMove(option.name, option.attackSourceId ?? null)
     if (seen.has(id)) return false
     seen.add(id)
     return true
   }).map(option => ({
-    id: optionIdForMove(option.name),
-    labelKey: optionLabelKeyForMove(option.name),
+    id: optionIdForMove(option.name, option.attackSourceId ?? null),
+    labelKey: optionLabelKeyForMove(
+      option.name,
+      option.attackSourceId ?? null,
+      option.attackSourceLabel ?? null,
+    ),
     moveName: option.name,
+    attackSourceId: option.attackSourceId ?? null,
   }))
 }
 
@@ -397,7 +447,6 @@ const initialReadSet = (
     readonly originMapSlug: string
     readonly continuationMapRevision: number
   },
-  windows: readonly PendingMoveReactionResponseWindow[],
   additionalSheetReads: readonly {
     readonly kind: 'pokemon' | 'trainer'
     readonly slug: string
@@ -409,10 +458,6 @@ const initialReadSet = (
     slug: input.originMapSlug,
     revision: input.continuationMapRevision,
   }]
-  const ids = new Set([
-    input.trigger.provokerId,
-    ...windows.flatMap(window => window.ownership.flatMap(owner => owner.id ? [owner.id] : [])),
-  ])
   const seen = new Set<string>()
   const appendSheetRead = (read: {
     readonly kind: 'pokemon' | 'trainer'
@@ -430,8 +475,10 @@ const initialReadSet = (
     })
   }
   for (const read of additionalSheetReads) appendSheetRead(read)
+  // Move-option authority may consult linked Capability sources anywhere on
+  // the map. Freeze every map-referenced sheet into the durable response CAS
+  // set rather than guessing a narrower dependency closure.
   for (const placement of input.map.placements) {
-    if (!ids.has(placement.id)) continue
     const sheet = sheetForPlacement(placement, input)
     appendSheetRead({
       kind: placement.sheetKind,
@@ -490,12 +537,13 @@ export const materializeAttackOfOpportunity = (
     originOpId: input.originOpId,
     actorPlacementId: input.trigger.provokerId,
     canonicalMoveId: ATTACK_OF_OPPORTUNITY_CANONICAL_ID,
+    attackSourceId: null,
     specVersion: ATTACK_OF_OPPORTUNITY_PROGRAM_VERSION,
     specHash: ATTACK_OF_OPPORTUNITY_DEFINITION_HASH,
     rulesetId: MOVE_RULESET_PROVENANCE.rulesetId,
     rulesetHash: MOVE_RULESET_PROVENANCE.sourceData.sha256,
     phase: 'cleanup',
-    readSet: initialReadSet(input, windows),
+    readSet: initialReadSet(input),
     trace: initialTrace({
       triggerReason: input.trigger.reason,
       windows,
@@ -710,6 +758,7 @@ export const materializeMovementAttackOfOpportunity = (
       originOpId: input.originOpId,
       actorPlacementId: input.movement.placementId,
       canonicalMoveId: ATTACK_OF_OPPORTUNITY_CANONICAL_ID,
+      attackSourceId: null,
       specVersion: ATTACK_OF_OPPORTUNITY_PROGRAM_VERSION,
       specHash: ATTACK_OF_OPPORTUNITY_DEFINITION_HASH,
       rulesetId: MOVE_RULESET_PROVENANCE.rulesetId,
@@ -719,7 +768,7 @@ export const materializeMovementAttackOfOpportunity = (
         ...input,
         map: checkpointMap,
         trigger,
-      }, windows, input.movement.sheetReads),
+      }, input.movement.sheetReads),
       trace: initialTrace({
         triggerReason: 'movement',
         windows,
@@ -763,17 +812,21 @@ const ownerPlacementId = (window: PendingMoveReactionResponseWindow): string => 
   ?? (() => { throw new Error('Attack of Opportunity window lost its defending placement owner.') })()
 )
 
-const moveNameForOption = (input: {
+const moveForOption = (input: {
   readonly optionId: string
   readonly attackerId: string
   readonly map: TabletopMap
-} & AttackOfOpportunitySheetDocuments): string => {
+} & AttackOfOpportunitySheetDocuments): {
+  readonly moveName: string
+  readonly attackSourceId: MoveAttackSourceId | null
+} => {
   const placement = placementFor(input.map, input.attackerId)
   const token = placementToSpawned(placement, sheetsLookup(input), input.map)
   if (!token) throw new Error('Attack of Opportunity attacker cannot be resolved.')
-  return moveOptionsForPlacement(input.map, placement, token, input)
-    .find(option => option.id === input.optionId)?.moveName
-    ?? (() => { throw new Error('Attack of Opportunity option is no longer authoritative.') })()
+  const option = moveOptionsForPlacement(input.map, placement, token, input)
+    .find(candidate => candidate.id === input.optionId)
+  if (!option) throw new Error('Attack of Opportunity option is no longer authoritative.')
+  return { moveName: option.moveName, attackSourceId: option.attackSourceId }
 }
 
 const childResolutionId = (pending: PendingMoveResolution, responseOpId: string): string => (
@@ -1398,7 +1451,16 @@ export const planAttackOfOpportunityResponse = (input: {
   const childId = input.responseOptionId === null
     ? null
     : childResolutionId(pending, input.responseOpId)
-  const childPlan = input.responseOptionId === null
+  const selectedMove = input.responseOptionId === null
+    ? null
+    : moveForOption({
+        optionId: input.responseOptionId,
+        attackerId,
+        map: input.map,
+        pokemonSheets: input.pokemonSheets,
+        trainerSheets: input.trainerSheets,
+      })
+  const childPlan = selectedMove === null
     ? null
     : planAuthoritativeMoveState({
         map: input.map,
@@ -1407,13 +1469,8 @@ export const planAttackOfOpportunityResponse = (input: {
         intent: {
           schemaVersion: 1,
           placementId: attackerId,
-          moveName: moveNameForOption({
-            optionId: input.responseOptionId,
-            attackerId,
-            map: input.map,
-            pokemonSheets: input.pokemonSheets,
-            trainerSheets: input.trainerSheets,
-          }),
+          moveName: selectedMove.moveName,
+          attackSourceId: selectedMove.attackSourceId,
           selection: {
             kind: 'single-target',
             targetPlacementId: pending.actorPlacementId,

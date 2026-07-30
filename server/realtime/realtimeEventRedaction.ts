@@ -13,6 +13,7 @@ import type {
 } from './realtimeEventAccessPolicy'
 import { projectAbilityAutomationMapForPlayer } from '../domain/abilityAutomation/clientStateProjection'
 import { projectCapabilityAutomationMapForPlayer } from '../domain/capabilityAutomation/clientStateProjection'
+import { projectCapabilityAutomationJsonForPlayer } from '../domain/capabilityAutomation/realtimeProjection'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -140,12 +141,15 @@ export const redactRealtimeEventForPrincipal = (
 
   const observerSafeEvent = redactedResolveMoveRealtimeEvent(event)
   const data = observerSafeEvent.data
-  if (!isRecord(data)) return observerSafeEvent
+  if (!isRecord(data)) return projectCapabilityAutomationJsonForPlayer(observerSafeEvent)
 
   const document = isRecord(data.document) ? data.document : null
   const isWrappedMapDocument = document !== null
     && (Object.hasOwn(document, 'placements') || Object.hasOwn(document, 'voxels'))
-  if (isWrappedMapDocument) return redactedMapRealtimeEvent(observerSafeEvent, data, dependencies)
+  if (isWrappedMapDocument) {
+    const projected = redactedMapRealtimeEvent(observerSafeEvent, data, dependencies)
+    return projected === null ? null : projectCapabilityAutomationJsonForPlayer(projected)
+  }
 
   // Durable map update events carry the map directly in `data`; library
   // mutation events may wrap it as `data.document`. Normalize only for the
@@ -159,11 +163,12 @@ export const redactRealtimeEventForPrincipal = (
       document: data,
     }, dependencies)
     if (!isRecord(projected) || !isRecord(projected.data) || !isRecord(projected.data.document)) return null
-    return { ...projected, data: projected.data.document }
+    return projectCapabilityAutomationJsonForPlayer({ ...projected, data: projected.data.document })
   }
 
-  return redactedSheetRealtimeEvent(observerSafeEvent, data)
+  const redacted = redactedSheetRealtimeEvent(observerSafeEvent, data)
     ?? redactedShopRealtimeEvent(observerSafeEvent, data)
     ?? redactedShopCheckoutResultRealtimeEvent(observerSafeEvent, data)
     ?? observerSafeEvent
+  return projectCapabilityAutomationJsonForPlayer(redacted)
 }

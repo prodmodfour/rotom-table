@@ -14,6 +14,7 @@ import {
 import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
 import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { TabletopMap } from '~/types/map'
 import type { ShopTableDocument } from '~/types/shop'
@@ -28,6 +29,7 @@ import {
 } from '../../server/realtime/realtimeEventAccessPolicy'
 import { createPendingMoveResolutionFixture } from '../fixtures/moveAutomation/pendingResolution'
 import { projectAbilityAutomationJsonForPlayer } from '../../server/domain/abilityAutomation/realtimeProjection'
+import { projectCapabilityAutomationJsonForPlayer } from '../../server/domain/capabilityAutomation/realtimeProjection'
 
 const map = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
@@ -234,6 +236,50 @@ describe('realtime event map access policy', () => {
     expect((playerResult.allowed[0]?.event.data as TabletopMap).encounterState?.abilityUsage)
       .toEqual({ schemaVersion: 1, sceneId: null, entries: [] })
     expect(JSON.stringify(gmResult.allowed[0])).toContain('ability.intimidate')
+    expect(gmResult.allowed[0]).toBe(event)
+  })
+
+  it('projects Capability authority out of player map events without changing the GM record', () => {
+    const capabilityRuntime = {
+      ...createEmptyCapabilityRuntimeState(),
+      links: [{
+        id: 'private-capability-link',
+        kind: 'living-weapon' as const,
+        ownerPlacementId: 'weapon',
+        participantPlacementIds: ['wielder'],
+        capabilityInstanceId: 'private-capability-instance',
+        canonicalId: 'Living Weapon',
+        establishedAt: 100,
+        configurationId: null,
+        sourceOperationId: 'private-capability-operation',
+      }],
+    }
+    const privateMap = map({
+      encounterState: { ...createEmptyEncounterState(), capabilityRuntime },
+      metadata: {
+        capabilityObjects: [{ id: 'private-object', pounds: 10 }],
+        wrapper: {
+          capabilityPrivateNotices: [{ sourceOperationId: 'private-nested-operation' }],
+        },
+      },
+    })
+    const deps = dependencies({ maps: [privateMap] })
+    const event = persistedEvent(1, { kind: 'map-access', mapSlug: 'arena' }, { data: privateMap })
+    const playerResult = filterRealtimeEventsForPrincipal({
+      events: [event], principal: player(), dependencies: deps,
+    })
+    const gmResult = filterRealtimeEventsForPrincipal({
+      events: [event], principal: gm, dependencies: deps,
+    })
+
+    const playerMap = playerResult.allowed[0]?.event.data as TabletopMap
+    expect(playerMap.encounterState?.capabilityRuntime).toEqual(createEmptyCapabilityRuntimeState())
+    expect(JSON.stringify(playerMap)).not.toContain('private-capability-link')
+    expect(JSON.stringify(playerMap)).not.toContain('private-capability-instance')
+    expect(JSON.stringify(playerMap)).not.toContain('private-capability-operation')
+    expect(JSON.stringify(playerMap)).not.toContain('private-object')
+    expect(JSON.stringify(playerMap)).not.toContain('private-nested-operation')
+    expect(JSON.stringify(gmResult.allowed[0])).toContain('private-capability-link')
     expect(gmResult.allowed[0]).toBe(event)
   })
 
@@ -595,6 +641,30 @@ describe('realtime event access architecture boundaries', () => {
   it('does not transform binary/static response bodies', () => {
     const body = Buffer.from('const answer = 42')
     expect(projectAbilityAutomationJsonForPlayer(body)).toBe(body)
+  })
+
+  it('redacts nested Capability encounter patches and private sheet ledgers', () => {
+    const encounterState = {
+      ...createEmptyEncounterState(),
+      capabilityRuntime: {
+        ...createEmptyCapabilityRuntimeState(),
+        tasks: [{ private: 'task-authority' }],
+      },
+    }
+    const projected = projectCapabilityAutomationJsonForPlayer({
+      patches: [{ payload: { encounterState } }],
+      sheet: {
+        slug: 'actor',
+        capabilities: { other: ['Living Weapon'] },
+        capabilityUsage: { private: true },
+        capabilityCampaignState: { private: true },
+      },
+    }) as Record<string, unknown>
+
+    expect(JSON.stringify(projected)).not.toContain('task-authority')
+    expect(JSON.stringify(projected)).not.toContain('capabilityUsage')
+    expect(JSON.stringify(projected)).not.toContain('capabilityCampaignState')
+    expect(JSON.stringify(projected)).toContain('Living Weapon')
   })
 
   it('keeps the policy free of H3, SSE, and client imports', () => {

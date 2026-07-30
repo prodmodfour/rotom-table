@@ -423,10 +423,6 @@ export const executeCapabilityActionUseCase = (
         || (trainer.boxedPokemon ?? []).includes(actorPlacement.sheetSlug)
       )).map(trainer => trainer.slug))
 
-  const fortuneLoyaltyAdjudication = command.canonicalId === 'Fortune'
-    && command.actionId === 'roam-for-fortune'
-    && actorPlacement.sheetKind === 'pokemon'
-    && ((actorSheet as CharacterSheet).loyalty ?? 3) <= 1
   const wiredRotomAdjudication = command.canonicalId === 'Wired'
     && command.actionId === 'enter-machine'
     && actorPlacement.sheetKind === 'pokemon'
@@ -434,11 +430,20 @@ export const executeCapabilityActionUseCase = (
   const auraExchangeAdjudication = command.canonicalId === 'Aura Pulse'
     && command.actionId === 'communicate'
     && command.selections.optionId === 'exchange-surface-thoughts'
-  const requiresGmConfirmation = action.requiresGmConfirmation || fortuneLoyaltyAdjudication
+  const requiresGmConfirmation = action.requiresGmConfirmation
     || wiredRotomAdjudication || auraExchangeAdjudication
   if (requiresGmConfirmation && !command.selections.gmConfirmed) {
     const encounter = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
     const expiresAt = now + 24 * 60 * 60_000
+    const continuationId = command.canonicalId === 'Fortune'
+      && command.actionId === 'resolve-fortune-roam'
+      ? encounter.capabilityRuntime!.tasks.find(task => (
+          task.kind === 'fortune-roam'
+          && task.actorPlacementId === actorPlacement.id
+          && task.capabilityInstanceId === command.capabilityInstanceId
+          && task.canonicalId === command.canonicalId
+        ))?.id ?? fail(409, 'The exact Fortune roam continuation is unavailable.')
+      : null
     const capabilityRuntime = {
       ...encounter.capabilityRuntime!,
       pendingAdjudications: [
@@ -449,6 +454,7 @@ export const executeCapabilityActionUseCase = (
           capabilityInstanceId: command.capabilityInstanceId,
           canonicalId: command.canonicalId,
           actionId: command.actionId,
+          ...(continuationId ? { continuationId } : {}),
           requestedAt: now,
           expiresAt,
           sourceOperationId: command.operationId,
@@ -515,15 +521,28 @@ export const executeCapabilityActionUseCase = (
   }
 
   if (input.approvedAdjudication) {
+    const adjudicationEvidence = map.encounterState?.capabilityRuntime?.pendingAdjudications.find(entry => (
+      entry.requestId === input.approvedAdjudication!.requestId
+      && entry.actorPlacementId === actorPlacement.id
+      && entry.capabilityInstanceId === command.capabilityInstanceId
+      && entry.canonicalId === command.canonicalId
+      && entry.actionId === command.actionId
+      && entry.expiresAt > now
+    ))
+    const continuationIsCurrent = command.canonicalId !== 'Fortune'
+      || command.actionId !== 'resolve-fortune-roam'
+      || (typeof adjudicationEvidence?.continuationId === 'string'
+        && map.encounterState?.capabilityRuntime?.tasks.some(task => (
+          task.id === adjudicationEvidence.continuationId
+          && task.kind === 'fortune-roam'
+          && task.actorPlacementId === actorPlacement.id
+          && task.capabilityInstanceId === command.capabilityInstanceId
+          && task.canonicalId === command.canonicalId
+        )) === true)
     if (!requiresGmConfirmation || input.approvedAdjudication.definitionHash !== runtime.definitionHash
-      || !map.encounterState?.capabilityRuntime?.pendingAdjudications.some(entry => (
-        entry.requestId === input.approvedAdjudication!.requestId
-        && entry.actorPlacementId === actorPlacement.id
-        && entry.capabilityInstanceId === command.capabilityInstanceId
-        && entry.canonicalId === command.canonicalId
-        && entry.actionId === command.actionId
-        && entry.expiresAt > now
-      ))) fail(409, 'Capability adjudication resume evidence is unavailable or stale.')
+      || !adjudicationEvidence || !continuationIsCurrent) {
+      fail(409, 'Capability adjudication resume evidence is unavailable or stale.')
+    }
   }
 
   const invisibleActivatedAt = map.encounterState?.capabilityRuntime?.modes.find(mode => (

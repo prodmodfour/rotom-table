@@ -22,6 +22,7 @@ import {
   playerProfileLinkedTrainerSheetsForTokenControl,
 } from '../policies/playerProfileTokenControlPolicy'
 import { abilityMechanicRequiresStandardAction } from '../domain/abilityAutomation/actionTiming'
+import { capabilityStandardActionRestriction } from '../domain/capabilityAutomation/actionEligibility'
 import { buildAuthoritativeAbilityContext } from '../domain/abilityAutomation/context'
 import { hashAbilityDeclarationIntent, resolveAbilityDeclarationIntent } from '../domain/abilityAutomation/declarationIntent'
 import {
@@ -239,9 +240,22 @@ export const resolveAbilityDeclarationUseCase = (
   const selectedOperations = runtime.definition.spec.phases
     .filter(phase => phase.modeId === intent.modeId)
     .flatMap(phase => phase.operations.map(operation => ({ phase: phase.phase, operation })))
-  if (selectedOperations.some(entry => abilityMechanicRequiresStandardAction(entry.operation, intent.modeId))
-    && context.actor.token.physicalPowerLoad?.standardActionsAllowed === false) {
-    fail(409, 'Staggering Weight prevents the actor from taking this Standard Action.')
+  const usesStandardAction = selectedOperations.some(entry => (
+    abilityMechanicRequiresStandardAction(entry.operation, intent.modeId)
+  ))
+  if (usesStandardAction) {
+    const restriction = capabilityStandardActionRestriction({
+      map: context.map,
+      placement: context.actor.placement,
+      sheet: context.actor.sheet.sheet as CharacterSheet | TrainerSheet,
+      pokemonSheets: pokemonBySlug,
+      trainerSheets: trainerBySlug,
+      now: context.time,
+    })
+    if (restriction) fail(409, restriction.message)
+    if (context.actor.token.physicalPowerLoad?.standardActionsAllowed === false) {
+      fail(409, 'Staggering Weight prevents the actor from taking this Standard Action.')
+    }
   }
   let resolutionPlan: MoveStateChangePlan
   let acceptedOutcome: 'applied' | 'prevented' | 'no-op'

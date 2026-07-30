@@ -11,6 +11,7 @@ import type {
 import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type { ResolveMoveIntent, ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS } from '#shared/livePlayMoveResolution'
+import type { MoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 import { moveUsageKey } from '~/utils/moveUsage'
 import { findMove } from '~~/data/ptuReference'
 import type { ResolvedCanonicalMoveEntry } from '~/utils/authoritativeMoveEntries'
@@ -164,8 +165,11 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'actor-placement-missing'
   | 'actor-sheet-missing'
   | 'actor-token-unresolved'
+  | 'actor-fainted'
   | 'duplicate-placement-id'
   | 'move-absent'
+  | 'attack-source-invalid'
+  | 'attack-source-ambiguous'
   | 'move-automation-blocked'
   | 'move-condition-blocked'
   | 'move-semi-invulnerable'
@@ -324,6 +328,7 @@ export interface AuthoritativeMoveResolution {
   readonly moveKey: string
   readonly frequency: string | null
   readonly damageFormula: string | null
+  readonly attackSourceId?: MoveAttackSourceId
   readonly targetBranchId?: string
   readonly selectedTargetIds: readonly string[]
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
@@ -367,6 +372,7 @@ export interface AuthoritativePendingMoveResolution {
   readonly moveKey: string
   readonly frequency: string | null
   readonly damageFormula: string | null
+  readonly attackSourceId?: MoveAttackSourceId
   /** Retained server-only v1 compatibility range for phased cost planning. */
   readonly resourceRange: string
   readonly resourceMovement?: AuthoritativeMoveResourceMovement
@@ -593,6 +599,7 @@ const finalizeResolution = (
   void privateConditionOutcomes
   return attachResolutionDamageEffects(context, {
     ...durableResolution,
+    ...(context.intent.attackSourceId ? { attackSourceId: context.intent.attackSourceId } : {}),
     sheetReads: context.reads.snapshot(),
     rollLedger,
     auditTrace,
@@ -1190,6 +1197,8 @@ const resolveNativeSelfMove = (options: {
       moveKey: options.moveKey,
       frequency: options.entry.frequency,
       damageFormula: options.entry.damageFormula,
+      ...(options.context.intent.attackSourceId
+        ? { attackSourceId: options.context.intent.attackSourceId } : {}),
       resourceRange: options.entry.script.range,
       selectedTargetIds: [],
       authoritativeTargetEvaluations: outcome.authoritativeTargetEvaluations,
@@ -1545,6 +1554,8 @@ const resolveNativeSingleTargetMove = (options: {
       moveKey: options.moveKey,
       frequency: options.entry.frequency,
       damageFormula: options.entry.damageFormula,
+      ...(options.context.intent.attackSourceId
+        ? { attackSourceId: options.context.intent.attackSourceId } : {}),
       resourceRange: options.entry.script.range,
       selectedTargetIds: [target.id],
       authoritativeTargetEvaluations: outcome.authoritativeTargetEvaluations,
@@ -1793,6 +1804,8 @@ const resolveNativeTargetCountMove = (options: {
       moveKey: options.moveKey,
       frequency: options.entry.frequency,
       damageFormula: options.entry.damageFormula,
+      ...(options.context.intent.attackSourceId
+        ? { attackSourceId: options.context.intent.attackSourceId } : {}),
       resourceRange: options.entry.script.range,
       selectedTargetIds: legal.selectedTargetIds,
       authoritativeTargetEvaluations: outcome.authoritativeTargetEvaluations,
@@ -2057,6 +2070,8 @@ const resolveNativeAreaMove = (options: {
       moveKey: options.moveKey,
       frequency: options.entry.frequency,
       damageFormula: options.entry.damageFormula,
+      ...(options.context.intent.attackSourceId
+        ? { attackSourceId: options.context.intent.attackSourceId } : {}),
       resourceRange: options.entry.script.range,
       ...(placement.resourceMovement
         ? { resourceMovement: { ...placement.resourceMovement } }
@@ -2154,14 +2169,19 @@ const failFromContextError = (error: AuthoritativeMoveRulesContextError): never 
 
 /** Resolve mechanics exclusively from one detached authoritative snapshot. */
 export const resolveAuthoritativeMoveExecutionFromContext = (
-  context: AuthoritativeMoveRulesContext,
+  providedContext: AuthoritativeMoveRulesContext,
   options: {
     readonly resourceCostDeclarations?: readonly MoveSpecCostDeclaration[]
   } = {},
 ): AuthoritativeMoveExecution => {
+  let context = providedContext
   const { placement: actorPlacement } = context.actor
-  const { intent } = context
+  let intent = context.intent
   recordSheetReadForPlacement(context, actorPlacement)
+  if (context.actor.token.currentHp <= 0
+    || normalizeConditionNames(context.actor.token.conditions).includes('Fainted')) {
+    fail('unauthorized-state', 'actor-fainted', 'Fainted actors cannot initiate Moves.')
+  }
   const submittedTargetIds = selectedTargetIdsForSelection(intent.selection)
   assertNoDuplicateTargetIds(submittedTargetIds)
 
@@ -2185,12 +2205,24 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     if (moveEntryResult.reason === 'move-absent') {
       fail('not-found', 'move-absent', moveEntryResult.message)
     }
+    if (moveEntryResult.reason === 'attack-source-invalid') {
+      fail('unauthorized-state', 'attack-source-invalid', moveEntryResult.message)
+    }
+    if (moveEntryResult.reason === 'attack-source-ambiguous') {
+      fail('conflict', 'attack-source-ambiguous', moveEntryResult.message)
+    }
     fail('not-found', 'actor-token-unresolved', moveEntryResult.message)
   }
 
   const entry = moveEntryResult.ok
     ? moveEntryResult.entry
     : fail('not-found', 'move-absent', 'Move entry resolution failed.')
+  const selectedAttackSourceId = entry.sourceEntry.attackSourceId ?? null
+  context = Object.freeze({
+    ...context,
+    intent: Object.freeze({ ...intent, attackSourceId: selectedAttackSourceId }),
+  })
+  intent = context.intent
   if (context.actor.token.physicalPowerLoad?.standardActionsAllowed === false) {
     fail(
       'unauthorized-state',
@@ -2365,6 +2397,8 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
       if (isAuthoritativePendingMoveResolution(execution)) {
         return Object.freeze({
           ...execution,
+          ...(context.intent.attackSourceId
+            ? { attackSourceId: context.intent.attackSourceId } : {}),
           ...(abilityPriorityOverride ? { abilityPriorityOverride: true } : {}),
           ...(abilityAdvancedPriorityOverride ? { abilityAdvancedPriorityOverride: true } : {}),
           ...(abilityFreeInterruptOverride ? { abilityFreeInterruptOverride: true } : {}),
@@ -2372,6 +2406,8 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
       }
       return attachResolutionDamageEffects(context, {
         ...execution,
+        ...(context.intent.attackSourceId
+          ? { attackSourceId: context.intent.attackSourceId } : {}),
         ...(abilityPriorityOverride ? { abilityPriorityOverride: true } : {}),
         ...(abilityAdvancedPriorityOverride ? { abilityAdvancedPriorityOverride: true } : {}),
         ...(abilityFreeInterruptOverride ? { abilityFreeInterruptOverride: true } : {}),

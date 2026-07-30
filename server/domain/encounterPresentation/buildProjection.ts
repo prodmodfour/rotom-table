@@ -51,9 +51,13 @@ import { moveAutomationSemanticStatusForMenu } from '~/utils/moveAutomationSeman
 import { moveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import { buildCapabilityClientCapabilityBundle } from '../capabilityAutomation/clientCapabilities'
 import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
-import { resolveCapabilityWeaponMoveGrants } from '../capabilityAutomation/weaponMoveGrants'
+import {
+  resolveCapabilityWeaponMoveGrants,
+  resolveLivingWeaponAttackSources,
+} from '../capabilityAutomation/weaponMoveGrants'
 import { capabilityWeaponMoveName } from '#shared/capabilityAutomation/weaponMoves'
 import { placementToSpawned } from '~/utils/placement'
+import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
 import { pendingEncounterInteractionsFromMoveResponses } from './pendingAdapters'
 
 export interface BuildEncounterPresentationProjectionInput {
@@ -380,7 +384,7 @@ const moveOffers = (input: {
     return placement ? placementToSpawned(placement, sheets, input.map) : null
   }
   const token = tokenForPlacement(input.placement.id)
-  const weaponGrants = token ? resolveCapabilityWeaponMoveGrants({
+  const weaponInput = token ? {
     map: input.map,
     placement: input.placement,
     sheet: input.sheet,
@@ -388,10 +392,24 @@ const moveOffers = (input: {
     pokemonSheets: sheets.pokemon,
     trainerSheets: sheets.trainer,
     tokenForPlacement,
-  }) : []
+  } : null
+  const weaponGrants = weaponInput ? resolveCapabilityWeaponMoveGrants(weaponInput) : []
+  const livingWeaponSources = weaponInput ? resolveLivingWeaponAttackSources(weaponInput) : []
+  const encounterEffects = input.map.encounterState?.effects ?? []
+  const baseEntries = moveEntriesForPlacement(input.placement, sheets, { encounterEffects })
+  const sourcedStruggleEntries = livingWeaponSources.flatMap(source => source.actorIsWielder
+    ? baseEntries.filter(entry => isStruggleAttackMoveName(entry.move.name)).map(entry => ({
+        ...entry,
+        attackSourceId: source.attackSourceId,
+        attackSourceLabel: source.attackSourceLabel,
+      }))
+    : [])
   return moveEntriesForPlacement(input.placement, sheets, {
-    encounterEffects: input.map.encounterState?.effects ?? [],
-    additionalMoveEntries: weaponGrants.map(grant => grant.entry),
+    encounterEffects,
+    additionalMoveEntries: [
+      ...weaponGrants.map(grant => grant.entry),
+      ...sourcedStruggleEntries,
+    ],
   }).map((entry, index) => {
   const reference = findMove(entry.move.name)
   const name = reference?.name ?? entry.move.name
@@ -411,7 +429,10 @@ const moveOffers = (input: {
     ...(usage.unavailable ? [usage.unavailable] : []),
   ]
   const timing = timingFromText(frequency)
-  const weaponGrant = weaponGrants.find(grant => grant.canonicalId === capabilityWeaponMoveName(name))
+  const weaponGrant = weaponGrants.find(grant => (
+    grant.canonicalId === capabilityWeaponMoveName(name)
+    && grant.attackSourceId === (entry.attackSourceId ?? null)
+  ))
   const hasReach = weaponGrant?.grantsReach === true || resolveEffectiveCapabilities({
     map: input.map, placement: input.placement, sheet: input.sheet, sheets,
   }).instances.some(instance => instance.effective && instance.canonicalId === 'Reach')
@@ -422,7 +443,12 @@ const moveOffers = (input: {
     map: input.map,
     mapRevision: input.mapRevision,
     actor: input.actor,
-    source: sourceRef({ kind: 'move', canonicalId: name }),
+    source: sourceRef({
+      kind: 'move',
+      canonicalId: name,
+      displayName: entry.attackSourceLabel ? `${name} (${entry.attackSourceLabel})` : name,
+      instanceId: entry.attackSourceId ?? null,
+    }),
     group: damageClass === 'Status' ? 'support' : 'attack',
     groupOrder: damageClass === 'Status' ? 20 : 10,
     offerOrder: index,
@@ -430,7 +456,7 @@ const moveOffers = (input: {
     targeting,
     usage: usage.summary,
     availability: availabilityFromCodes(unavailable),
-    copy: presentation(name, {
+    copy: presentation(entry.attackSourceLabel ? `${name} · ${entry.attackSourceLabel}` : name, {
       description: [reference?.type ?? entry.move.type, damageClass, range].filter(Boolean).join(' · ') || null,
       iconKey: `source.move`,
     }),
@@ -870,7 +896,7 @@ const capabilityPresentation = (input: {
       },
       availability: availabilityFromCodes(unavailableCodes),
       copy: presentation(offer.label, { description: boundedCapabilityDescription(fact?.sourceEffect), iconKey: 'source.capability' }),
-      actionId: `capability.execute:${offer.canonicalId}:${offer.actionId}`,
+      actionId: `capability.execute:${offer.actionId}`,
       offerId: offer.offerId,
       selectionOptions: offer.selectionOptions,
     })

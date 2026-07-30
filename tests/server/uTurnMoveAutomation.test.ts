@@ -588,7 +588,7 @@ describe('U-Turn accepted durable switching saga', () => {
     })
 
     expect(terminal.result.result).toMatchObject({ ok: true })
-    expect(currentHp(harness, 'u-turn-target-sheet')).toBe(0)
+    expect(currentHp(harness, 'u-turn-target-sheet')).toBe(-15)
     expect(currentHp(harness, 'u-turn-actor-sheet')).toBe(0)
     expect(harness.maps.getBySlug('u-turn-arena')?.encounterState?.capabilityRuntime?.links).toEqual([])
   })

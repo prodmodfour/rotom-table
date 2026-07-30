@@ -100,6 +100,7 @@ import {
   type EncounterPresentationProjection,
 } from '#shared/encounterPresentation'
 import { isPendingMoveDeclarationResult } from '#shared/moveAutomation/pendingResolution'
+import { parseMoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 import {
   aa080EntityIsActive,
   aa080IsDreepyEntity,
@@ -130,6 +131,7 @@ import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import {
   contextMenuAbilityOptionsFromEncounterOffers,
   contextMenuItemOptionsFromEncounterAffordances,
+  contextMenuMoveOptionsFromEncounterOffers,
   contextMenuOptionsFromEncounterOffers,
 } from '~/utils/encounterPresentation/legacyContextMenuProjection'
 import { clearCombatLogMetadata, countCombatLogMessages } from '~/utils/combatLog'
@@ -158,6 +160,7 @@ import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TokenAbilityUseReference } from '~/utils/mapTokenAbilities'
+import type { TokenMoveUseReference } from '~/utils/mapTokenMoves'
 import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
 import {
   createEmptyTokenMotionDebugMetrics,
@@ -2423,9 +2426,8 @@ const {
 
 // Compatibility-only enrichment: generic server offers decide which legacy
 // context-menu rows exist; source-specific builders may provide decorative copy.
-const tokenMoveOptionsById = computed(() => contextMenuOptionsFromEncounterOffers({
+const tokenMoveOptionsById = computed(() => contextMenuMoveOptionsFromEncounterOffers({
   projection: encounterPresentation.value,
-  sourceKind: 'move',
   optionsByParticipantId: rawTokenMoveOptionsById.value,
 }))
 const tokenManeuverOptionsById = computed(() => contextMenuOptionsFromEncounterOffers({
@@ -2616,7 +2618,7 @@ const aimMoveAutomationArea = (aimCell: GridAnchor) => {
   aimMoveAutomationAreaPanel(aimCell)
 }
 
-const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
+const openMoveAutomationFromContext = (payload: { id: string } & TokenMoveUseReference) => {
   if (moveAutomationDispatchInFlight()) return
   cancelPokeballCaptureTargeting()
   cancelAbilityAutomationTargeting()
@@ -2711,7 +2713,7 @@ const submitCapabilityAdjudication = async (selection: {
 
 const executeCapabilityOffer = (offer: EncounterActionOffer): void => {
   if (!offer.source.instanceId) return
-  const prefix = `capability.execute:${offer.source.canonicalId}:`
+  const prefix = 'capability.execute:'
   const actionId = offer.intent.actionId.startsWith(prefix) ? offer.intent.actionId.slice(prefix.length) : ''
   if (!actionId) return
   activeCapabilityAction.value = { offer, actionId }
@@ -2783,13 +2785,27 @@ const activateEncounterOffer = async (projectedOffer: EncounterActionOffer): Pro
     || offer.mapSlug !== declaration.mapSlug
     || offer.mapRevision !== declaration.baseRevision
     || offer.actor.participantId !== declaration.actorParticipantId
-    || offer.intent.actionId !== declaration.actionId) {
+    || offer.intent.actionId !== declaration.actionId
+    || offer.source.sourceKind !== projectedOffer.source.sourceKind
+    || offer.source.canonicalId !== projectedOffer.source.canonicalId
+    || offer.source.instanceId !== projectedOffer.source.instanceId) {
     await requestLiveTableSnapshot('Encounter action declaration response did not match the selected offer.')
     return
   }
   const id = declaration.actorParticipantId
   if (offer.source.sourceKind === 'move') {
-    openMoveAutomationFromContext({ id, moveName: offer.source.displayName })
+    const attackSourceId = offer.source.instanceId === null
+      ? null
+      : parseMoveAttackSourceId(offer.source.instanceId)
+    if (offer.source.instanceId !== null && attackSourceId === null) {
+      await requestLiveTableSnapshot('The selected move source was invalid.')
+      return
+    }
+    openMoveAutomationFromContext({
+      id,
+      moveName: offer.source.canonicalId,
+      attackSourceId,
+    })
     return
   }
   if (offer.source.sourceKind === 'maneuver') {

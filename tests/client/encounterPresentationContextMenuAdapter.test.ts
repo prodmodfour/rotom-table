@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { parseEncounterPresentationProjection } from '../../shared/encounterPresentation'
 import {
   contextMenuItemOptionsFromEncounterAffordances,
+  contextMenuMoveOptionsFromEncounterOffers,
   contextMenuOptionsFromEncounterOffers,
 } from '../../src/utils/encounterPresentation/legacyContextMenuProjection'
 
@@ -81,6 +82,35 @@ describe('generic encounter context-menu compatibility adapter', () => {
       },
     })
     expect(options['actor:one']).toEqual([{ name: 'Ember', detail: 'decorative reference copy' }])
+  })
+
+  it('matches same-name move rows against the exact opaque offer source', () => {
+    const sourceId = `attack-source.v1.${'a'.repeat(64)}` as const
+    const sourcedProjection = parseEncounterPresentationProjection({
+      ...projection,
+      offers: [
+        ...projection.offers,
+        {
+          ...projection.offers[0]!,
+          offerId: 'offer:ember:living-weapon',
+          source: { ...projection.offers[0]!.source, instanceId: sourceId },
+        },
+      ],
+    })
+    const options = contextMenuMoveOptionsFromEncounterOffers({
+      projection: sourcedProjection,
+      optionsByParticipantId: {
+        'actor:one': [
+          { name: 'Ember' },
+          { name: 'Ember', attackSourceId: sourceId },
+          { name: 'Ember', attackSourceId: `attack-source.v1.${'b'.repeat(64)}` as const },
+        ],
+      },
+    })
+    expect(options['actor:one']).toEqual([
+      { name: 'Ember' },
+      { name: 'Ember', attackSourceId: sourceId },
+    ])
   })
 
   it('requires both a capture offer and a server-projected item affordance', () => {

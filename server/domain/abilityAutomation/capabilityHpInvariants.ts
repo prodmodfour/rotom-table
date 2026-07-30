@@ -440,11 +440,18 @@ export const applyCapabilityHpInvariantsToAbilityPlan = (input: {
     }
   }
   for (const placementId of fainted) {
-    updateProjectedSheet(placementId, (projected, effectiveSoulless) => applyHpToSheet(
-      projected.resolved.kind,
-      projected.current,
+    const projected = sheetForPlacement(placementId)
+    if (!projected) continue
+    const effectiveSoulless = hasCapability(placementId, 'Soulless')
+    // Preserve exact non-positive mechanic output, including overkill. A
+    // Fainted condition at positive HP and a distinct As One counterpart both
+    // require a synthetic zero-HP transition.
+    if (hpForSheet(projected.resolved.kind, projected.current, effectiveSoulless) <= 0) continue
+    updateProjectedSheet(placementId, current => applyHpToSheet(
+      current.resolved.kind,
+      current.current,
       0,
-      injuriesForSheet(projected.resolved.kind, projected.current),
+      injuriesForSheet(current.resolved.kind, current.current),
       { effectiveSoulless },
     ))
   }

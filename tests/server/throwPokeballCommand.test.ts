@@ -512,6 +512,61 @@ describe('throwPokeball live-play command', () => {
     expect(env.published).toEqual([])
   })
 
+  it('rejects when any complete-directory capture authority sheet changes before commit', async () => {
+    const observer = trainerSheet({ slug: 'observer', name: 'Observer' })
+    const env = setup({ extraTrainer: observer })
+    const racedSheetRepository = {
+      getByRef: vi.fn((kind: 'pokemon' | 'trainer', slug: string) => {
+        const stored = env.sheets.getByRef(kind, slug)
+        return stored && slug === observer.slug ? { ...stored, revision: stored.revision + 1 } : stored
+      }),
+      list: env.sheets.list,
+      applyLivePlayUpdate: env.sheets.applyLivePlayUpdate,
+    }
+
+    const response = await execute({
+      ...env,
+      sheetRepository: racedSheetRepository,
+      random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
+    })
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'persistence-failed', currentRevision: 0 })
+    expect(env.maps.getBySlug('arena')?.revision).toBe(0)
+    expect(env.sheets.getByRef('trainer', 'ash')?.revision).toBe(0)
+    expect(env.sheets.getByRef('pokemon', 'pidgey')?.revision).toBe(0)
+    expect(env.ops.getStoredOpRecord('arena', 'op_capture001')).toBeNull()
+  })
+
+  it('rejects a phantom sheet-directory insertion before capture commit', async () => {
+    const env = setup()
+    let trainerListCount = 0
+    const phantomDirectoryRepository = {
+      getByRef: env.sheets.getByRef,
+      list: vi.fn((kind: 'pokemon' | 'trainer') => {
+        const stored = env.sheets.list(kind)
+        if (kind !== 'trainer' || ++trainerListCount === 1) return stored
+        return [...stored, {
+          kind: 'trainer' as const,
+          slug: 'phantom-owner',
+          document: trainerSheet({ slug: 'phantom-owner', currentTeam: ['pidgey'] }) as unknown as Record<string, unknown>,
+          revision: 0,
+          updatedAt: 1_700_000_001_500,
+        }]
+      }),
+      applyLivePlayUpdate: env.sheets.applyLivePlayUpdate,
+    }
+
+    const response = await execute({
+      ...env,
+      sheetRepository: phantomDirectoryRepository,
+      random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
+    })
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'persistence-failed', currentRevision: 0 })
+    expect(env.maps.getBySlug('arena')?.revision).toBe(0)
+    expect(env.ops.getStoredOpRecord('arena', 'op_capture001')).toBeNull()
+  })
+
   it('rolls back operation state when the map write fails before sheet writes', async () => {
     const env = setup()
     const mapRepository = {

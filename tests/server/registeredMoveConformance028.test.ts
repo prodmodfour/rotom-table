@@ -296,7 +296,9 @@ const assertScenarioResolution = (
     damageBase: scenario.expert ? 5 : 4,
     damageClass: mechanics.damageClass,
     type: mechanics.type,
-    range: mechanics.range,
+    range: mechanics.range === 'Focus Rank, 1 Target'
+      ? '4, 1 Target'
+      : mechanics.range,
     targetMode: 'one-target',
     targetCount: 1,
   })
@@ -602,12 +604,12 @@ describe('REG-028 registered move conformance', () => {
       expect(() => resolveAuthoritativeMove({
         ...fixture,
         random: () => { throw new Error('missing capability must not roll') },
-      })).toThrowError(expect.objectContaining({ code: 'move-absent' }))
+      })).toThrowError(expect.objectContaining({ code: 'move-creature-rule-blocked' }))
       expect(() => planAuthoritativeMoveState({
         ...fixture,
         random: () => { throw new Error('missing capability must not roll') },
         operationId: `op_${evidence.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
-      })).toThrowError(expect.objectContaining({ code: 'move-absent' }))
+      })).toThrowError(expect.objectContaining({ code: 'move-creature-rule-blocked' }))
       expect({ map: fixture.map, sheets: [...fixture.pokemonSheets] }).toEqual(snapshot)
 
       const harness = openHarness(fixture)
@@ -617,9 +619,9 @@ describe('REG-028 registered move conformance', () => {
       })
       expect(response.result).toMatchObject({
         ok: false,
-        reason: 'not-found',
-        message: expect.stringContaining('is not available'),
-        currentState: { code: 'move-absent' },
+        reason: 'conflict',
+        message: expect.stringContaining('requires effective'),
+        currentState: { code: 'move-creature-rule-blocked' },
       })
       expect(harness.maps.getBySlug(fixture.map.slug)?.revision).toBe(7)
       expect(harness.sheets.list().every(sheet => sheet.revision === 3)).toBe(true)

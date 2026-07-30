@@ -648,6 +648,38 @@ describe('live-play sheet commands', () => {
     expect(harness.storedMap.encounterState?.capabilityRuntime?.modes).toEqual([])
   })
 
+  it('removes Fainted without reviving and permits a later authoritative heal', async () => {
+    const harness = createHarness()
+
+    await execute(harness, conditionsCommand({
+      opId: 'op_condition_faint_recovery_add',
+      payload: { placementId: 'linked-token', action: 'add', conditions: ['Fainted'] },
+    }))
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet).toMatchObject({
+      combat: { currentHp: 0, conditions: ['Fainted'] },
+    })
+
+    const removed = await execute(harness, conditionsCommand({
+      opId: 'op_condition_faint_recovery_remove',
+      baseRevision: 5,
+      payload: { placementId: 'linked-token', action: 'remove', conditions: ['Fainted'] },
+    }))
+    expect(removed.result).toMatchObject({ ok: true, revision: 6 })
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet).toMatchObject({
+      combat: { currentHp: 0, conditions: [] },
+    })
+
+    const healed = await execute(harness, hpCommand({
+      opId: 'op_condition_faint_recovery_heal',
+      baseRevision: 6,
+      payload: { placementId: 'linked-token', currentHp: 10 },
+    }))
+    expect(healed.result).toMatchObject({ ok: true, revision: 7 })
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet).toMatchObject({
+      combat: { currentHp: 10, conditions: [] },
+    })
+  })
+
   it('publishes Temporary HP cleanup and normalizes a linked Soulless counterpart sheet', async () => {
     const fixture = asOneFixture()
     const activeScene = { name: 'Battle', startedAt: 100 }

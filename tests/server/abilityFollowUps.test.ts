@@ -146,6 +146,7 @@ describe('durable post-Move follow-ups after Ability retirement', () => {
     const { pending } = materializedFollowUps()
 
     expect(pending.continuationKind).toBe('ability-follow-ups')
+    expect(pending).toHaveProperty('attackSourceId', null)
     expect(pending.outstandingWindows.map(window => window.reasonCode)).toEqual([
       'move.spite.follow-up',
     ])
@@ -161,6 +162,23 @@ describe('durable post-Move follow-ups after Ability retirement', () => {
       'move.spite.follow-up',
     ])
     expect(pending.trace.program.runtimeKind).toBe('ability-follow-ups')
+  })
+
+  it('preserves exact root attack provenance in a follow-up record', () => {
+    const { map, documents, resolution } = materializedFollowUps()
+    const attackSourceId = `attack-source.v1.${'a'.repeat(64)}` as const
+    const pending = materializeAbilityFollowUps({
+      resolutionId: 'resolution-ability-follow-up-source',
+      originOpId: 'op_abilityfollow_source',
+      originMapSlug: map.slug,
+      continuationMapRevision: 5,
+      createdAt: 1_000,
+      resolution: { ...resolution, attackSourceId },
+      map,
+      ...documents,
+      sheetWrites: [],
+    })
+    expect(pending).toHaveProperty('attackSourceId', attackSourceId)
   })
 
   it('authors only typed Spite operations', () => {

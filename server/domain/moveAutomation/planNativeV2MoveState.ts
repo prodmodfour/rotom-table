@@ -1418,6 +1418,7 @@ export const planNativeV2MoveState = (options: {
       schemaVersion: 1,
       placementId: options.resolution.actorPlacementId,
       moveName: options.resolution.canonicalMoveName,
+      attackSourceId: options.resolution.attackSourceId ?? null,
       selection: options.resolution.area
         ? {
             kind: 'area',

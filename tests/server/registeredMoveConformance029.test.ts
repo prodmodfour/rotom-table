@@ -1074,7 +1074,7 @@ describe('REG-029 registered move conformance', () => {
     expect(() => resolveAuthoritativeMove({
       ...fixture,
       random: () => { throw new Error('missing capability must not roll') },
-    })).toThrowError(expect.objectContaining({ code: 'move-absent' }))
+    })).toThrowError(expect.objectContaining({ code: 'move-creature-rule-blocked' }))
     expect({ map: fixture.map, sheets: [...fixture.pokemonSheets] }).toEqual(snapshot)
 
     const harness = openHarness(fixture)
@@ -1084,8 +1084,8 @@ describe('REG-029 registered move conformance', () => {
     })
     expect(response.result).toMatchObject({
       ok: false,
-      reason: 'not-found',
-      currentState: { code: 'move-absent' },
+      reason: 'conflict',
+      currentState: { code: 'move-creature-rule-blocked' },
     })
     expect(harness.maps.getBySlug(fixture.map.slug)?.revision).toBe(7)
     expect(harness.events).toEqual([])

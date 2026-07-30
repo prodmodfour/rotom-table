@@ -1,4 +1,5 @@
 import type { EncounterPresentationProjection, EncounterRuleSourceKind } from '#shared/encounterPresentation'
+import type { MoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 
 const key = (value: string): string => value.trim().toLocaleLowerCase()
 
@@ -26,6 +27,30 @@ export const contextMenuOptionsFromEncounterOffers = <Option extends { readonly 
   return Object.fromEntries(Object.entries(input.optionsByParticipantId).map(([participantId, options]) => {
     const names = namesByActor.get(participantId) ?? new Set<string>()
     return [participantId, options.filter(option => names.has(key(option.name)))]
+  }))
+}
+
+export const contextMenuMoveOptionsFromEncounterOffers = <Option extends {
+  readonly name: string
+  readonly attackSourceId?: MoveAttackSourceId
+}>(input: {
+  readonly projection: EncounterPresentationProjection
+  readonly optionsByParticipantId: Readonly<Record<string, readonly Option[]>>
+}): Record<string, Option[]> => {
+  const offersByActor = new Map<string, typeof input.projection.offers>()
+  for (const offer of input.projection.offers) {
+    if (offer.source.sourceKind !== 'move' || offer.availability.status !== 'available') continue
+    offersByActor.set(offer.actor.participantId, [
+      ...(offersByActor.get(offer.actor.participantId) ?? []),
+      offer,
+    ])
+  }
+  return Object.fromEntries(Object.entries(input.optionsByParticipantId).map(([participantId, options]) => {
+    const offers = offersByActor.get(participantId) ?? []
+    return [participantId, options.filter(option => offers.some(offer => (
+      key(offer.source.canonicalId) === key(option.name)
+      && offer.source.instanceId === (option.attackSourceId ?? null)
+    )))]
   }))
 }
 

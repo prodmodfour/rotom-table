@@ -21,6 +21,21 @@ describe('buildMoveAutomationResolveIntent', () => {
     expect(JSON.stringify(result.intent)).not.toContain('target')
   })
 
+  it('preserves exact and explicitly source-less attack provenance', () => {
+    const attackSourceId = `attack-source.v1.${'a'.repeat(64)}` as const
+    expect(buildMoveAutomationResolveIntent({
+      kind: 'self', actorPlacementId: 'actor', moveName: 'Wounding Strike', attackSourceId,
+    }).intent).toMatchObject({ attackSourceId })
+    expect(buildMoveAutomationResolveIntent({
+      kind: 'single-target', actorPlacementId: 'actor', moveName: 'Struggle',
+      attackSourceId: null, targetPlacementId: 'target',
+    }).intent).toHaveProperty('attackSourceId', null)
+    expect(buildMoveAutomationResolveIntent({
+      kind: 'area', actorPlacementId: 'actor', moveName: 'Source Area',
+      attackSourceId, areaTemplateId: 'burst:any:1',
+    }).intent).toMatchObject({ attackSourceId })
+  })
+
   it('detaches an optional server-validated virtual origin without adding mechanics', () => {
     const originCell = { x: 2, y: 0, z: 3 }
     const result = buildMoveAutomationResolveIntent({

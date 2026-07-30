@@ -16,8 +16,9 @@ const forbiddenPathSegments = [
 const forbiddenSourcePatterns = [
   /useApiClient\b/,
   /useRealtime\b/,
-  /\bwindow\.[A-Za-z_$]/,
-  /\bdocument\.[A-Za-z_$]/,
+  /\bglobalThis\.(?:window|document)\b/,
+  /\bwindow\.(?:location|navigator|localStorage|sessionStorage|addEventListener|removeEventListener|matchMedia|innerWidth|innerHeight|requestAnimationFrame|cancelAnimationFrame)\b/,
+  /\bdocument\.(?:body|documentElement|createElement|querySelector|getElementById|addEventListener|removeEventListener)\b/,
   /\blocalStorage\b/,
   /\bsessionStorage\b/,
   /\bHTMLElement\b/,

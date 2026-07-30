@@ -86,6 +86,9 @@ import { deepCloneJson } from '~/utils/serialization'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
+import { resolveEffectiveCapabilities } from '~~/server/domain/capabilityAutomation/effectiveCapabilities'
+import { livingWeaponAttackSourceId } from '~~/server/domain/capabilityAutomation/livingWeaponAttackSource'
+import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
 
 const openDatabases: RotomDatabase[] = []
 const tempDirectories: string[] = []
@@ -788,6 +791,7 @@ describe('pending move resolution creation', () => {
       originOpId: command.opId,
       actorPlacementId: 'actor-token',
       canonicalMoveId: 'Ember',
+      attackSourceId: null,
       status: 'pending',
       readSet: [
         { kind: 'map', slug: 'pending-arena', revision: 5 },
@@ -834,6 +838,186 @@ describe('pending move resolution creation', () => {
     expect(harness.sheets.list()).toEqual(beforeSheets)
     expect(harness.ops.getOpRecord('pending-arena', command.opId)).toBeNull()
     expect(harness.database.connection.isTransaction).toBe(false)
+  })
+
+  it('preserves an exact Living Weapon attack source through suspension, rematerialization, and resume', async () => {
+    const harness = createHarness({ seed: false })
+    const actorSheet: CharacterSheet = {
+      ...sheetFixture('actor', { actor: true }),
+      skills: { combat: '4d6' },
+    }
+    const targetSheet = sheetFixture('target')
+    const weaponSheet: CharacterSheet = {
+      ...sheetFixture('living-weapon'),
+      species: 'Honedge',
+      capabilities: { other: ['Living Weapon'] },
+    }
+    const weaponPlacement = placement('living-weapon-token', weaponSheet.slug, { x: 0, y: 0, z: 0 })
+    const unlinkedMap: TabletopMap = {
+      ...mapFixture(),
+      placements: [...mapFixture().placements, weaponPlacement],
+    }
+    const effectiveSource = resolveEffectiveCapabilities({
+      map: unlinkedMap,
+      placement: weaponPlacement,
+      sheet: weaponSheet,
+      sheets: {
+        pokemon: new Map([
+          [actorSheet.slug, actorSheet],
+          [targetSheet.slug, targetSheet],
+          [weaponSheet.slug, weaponSheet],
+        ]),
+        trainer: new Map(),
+      },
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'Living Weapon')
+    if (!effectiveSource) throw new Error('Expected a Living Weapon Capability source.')
+    const link = {
+      id: 'capability.link.pending-living-weapon',
+      kind: 'living-weapon' as const,
+      ownerPlacementId: weaponPlacement.id,
+      participantPlacementIds: ['actor-token'],
+      capabilityInstanceId: effectiveSource.instanceId,
+      canonicalId: 'Living Weapon',
+      establishedAt: 100,
+      configurationId: null,
+      sourceOperationId: 'operation:pending-living-weapon',
+    }
+    const map: TabletopMap = {
+      ...unlinkedMap,
+      encounterState: {
+        ...createEmptyEncounterState(),
+        capabilityRuntime: {
+          ...createEmptyCapabilityRuntimeState(),
+          links: [link],
+        },
+      },
+    }
+    const attackSourceId = livingWeaponAttackSourceId({
+      mapSlug: map.slug,
+      actingPlacementId: 'actor-token',
+      link,
+    })
+    harness.maps.save({ slug: map.slug, document: map, revision: 4, updatedAt: 100 })
+    for (const sheet of [actorSheet, targetSheet, weaponSheet]) {
+      harness.sheets.save({
+        kind: 'pokemon', slug: sheet.slug,
+        document: sheet as unknown as Record<string, unknown>,
+        revision: sheet.revision ?? 0, updatedAt: 50,
+      })
+    }
+
+    const intent: ResolveMoveIntent = {
+      ...moveIntent('Struggle'),
+      attackSourceId,
+    }
+    const declaration = commandFor(map, 'op_pendingweapon01', intent)
+    const pendingResponse = await executePending(harness, declaration, {
+      canonicalMoveId: 'Struggle',
+      withSecondWindow: true,
+    })
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) {
+      throw new Error(`Expected sourced pending declaration: ${JSON.stringify(pendingResponse.result)}`)
+    }
+    expect(pendingResponse.result).toMatchObject({ ok: true, pending: true })
+    const resolutionId = pendingResponse.result.pendingResolution.resolutionId
+    expect(harness.pending.getById(resolutionId)?.resolution).toMatchObject({
+      canonicalMoveId: 'Struggle',
+      attackSourceId,
+      readSet: expect.arrayContaining([
+        expect.objectContaining({ kind: 'sheet', slug: actorSheet.slug }),
+        expect.objectContaining({ kind: 'sheet', slug: weaponSheet.slug }),
+      ]),
+    })
+
+    const first = executeResponse({
+      harness,
+      command: responseCommand({
+        resolutionId, baseRevision: 5, opId: 'op_pendingweapon02',
+      }),
+      canonicalMoveId: 'Struggle',
+      withSecondWindow: true,
+    })
+    expect(first.result).toMatchObject({ ok: true, revision: 6 })
+    expect(harness.pending.getById(resolutionId)?.resolution).toMatchObject({
+      status: 'pending',
+      attackSourceId,
+      outstandingWindows: [{ windowId: 'scratch.follow-up-window' }],
+    })
+
+    const second = executeResponse({
+      harness,
+      command: responseCommand({
+        resolutionId,
+        baseRevision: 6,
+        opId: 'op_pendingweapon03',
+        windowId: 'scratch.follow-up-window',
+        optionId: 'follow-up.finish',
+      }),
+      canonicalMoveId: 'Struggle',
+      withSecondWindow: true,
+      now: 3_000,
+    })
+    expect(second.result).toMatchObject({ ok: true, revision: 7 })
+    expect(second.move).toMatchObject({
+      canonicalMoveName: 'Struggle',
+      attackSourceId,
+    })
+    expect(harness.pending.getById(resolutionId)?.resolution).toMatchObject({
+      status: 'committed',
+      attackSourceId,
+      outstandingWindows: [],
+    })
+
+    const completedMap = harness.maps.getBySlug(map.slug)!
+    const nextRoundMap: TabletopMap = {
+      ...completedMap,
+      revision: 8,
+      updatedAt: 4_000,
+      initiative: { ...(completedMap.initiative ?? { activeId: null, round: 1 }), round: 2 },
+      encounterState: {
+        ...completedMap.encounterState!,
+        turnResources: {},
+      },
+    }
+    expect(harness.maps.applyLivePlayUpdate({
+      slug: map.slug,
+      expectedRevision: 7,
+      nextMap: nextRoundMap,
+    })).toBe('applied')
+    const staleDeclaration = await executePending(
+      harness,
+      commandFor(nextRoundMap, 'op_pendingweapon04', intent),
+      { canonicalMoveId: 'Struggle' },
+    )
+    if (!isPendingMoveDeclarationResult(staleDeclaration.result)) {
+      throw new Error(`Expected second sourced pending declaration: ${JSON.stringify(staleDeclaration.result)}`)
+    }
+    const staleResolutionId = staleDeclaration.result.pendingResolution.resolutionId
+    const storedWeapon = harness.sheets.getByRef('pokemon', weaponSheet.slug)!
+    expect(harness.sheets.applyLivePlayUpdate({
+      kind: 'pokemon',
+      slug: weaponSheet.slug,
+      expectedRevision: storedWeapon.revision,
+      nextSheet: {
+        ...storedWeapon.sheet,
+        revision: storedWeapon.revision + 1,
+        capabilities: { other: [] },
+      },
+    })).toBe('applied')
+    const staleResume = executeResponse({
+      harness,
+      command: responseCommand({
+        resolutionId: staleResolutionId,
+        baseRevision: 9,
+        opId: 'op_pendingweapon05',
+      }),
+      canonicalMoveId: 'Struggle',
+    })
+    expect(staleResume.result).toMatchObject({ ok: false, reason: 'conflict', currentRevision: 10 })
+    expect(harness.pending.getById(staleResolutionId)).toMatchObject({
+      status: 'conflicted',
+      resolution: { attackSourceId },
+    })
   })
 
   it('retains consulted group inventory revisions in a durable suspension', async () => {

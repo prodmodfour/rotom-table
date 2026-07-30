@@ -330,11 +330,18 @@ export const reconcileCapabilityHpState = (
   }
 
   for (const placementId of fainted) {
-    updateSheet(placementId, (snapshot, effectiveSoulless) => applyHpToSheet(
-      snapshot.kind,
-      snapshot.sheet,
+    const snapshot = sheetForPlacement(placementId)
+    const effectiveSoulless = hasCapability(placementId, 'Soulless')
+    // Preserve the exact non-positive HP produced by the originating mechanic,
+    // including ordinary overkill and Self-Destruct/Explosion's required
+    // negative value. A Fainted condition at positive HP, like a distinct As
+    // One counterpart, still requires an authoritative zero-HP transition.
+    if (hpForSheet(snapshot.kind, snapshot.sheet, effectiveSoulless) <= 0) continue
+    updateSheet(placementId, current => applyHpToSheet(
+      current.kind,
+      current.sheet,
       0,
-      injuriesForSheet(snapshot.kind, snapshot.sheet),
+      injuriesForSheet(current.kind, current.sheet),
       { effectiveSoulless },
     ))
   }

@@ -203,6 +203,82 @@ describe('live-play map token table action commands', () => {
     expect(mapRepository.getBySlug('arena')?.encounterState?.effects).toEqual([])
   })
 
+  it('fails closed when any map-referenced sheet is missing', async () => {
+    const { deps, mapRepository, opRepository, events } = createDeps({
+      sheets: {
+        'pokemon:sandile': pokemonSheet(),
+        'trainer:lenora': trainerSheet(),
+      },
+    })
+    const response = await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
+      command: command(
+        LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+        'op_missing_map_sheet',
+        { placementId: 'actor', maneuverName: 'Take a Breather' },
+        [tokenActionScope('actor'), metadataScope],
+      ),
+    }, deps)
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('Sheet pokemon/target could not be loaded'),
+    })
+    expect(mapRepository.getBySlug('arena')?.revision).toBe(7)
+    expect(opRepository.getOpResult('arena', 'op_missing_map_sheet')).toEqual(response.result)
+    expect(events).toEqual([])
+  })
+
+  it('rejects a read-only map-sheet revision race before table-action commit', async () => {
+    const { deps, mapRepository, sheetRepository, opRepository, events } = createDeps()
+    const originalGetByRef = sheetRepository.getByRef.bind(sheetRepository)
+    let injectedRace = false
+    deps.sheetRepository = {
+      ...sheetRepository,
+      getByRef: (kind, slug) => {
+        const observed = originalGetByRef(kind, slug)
+        if (!injectedRace && kind === 'pokemon' && slug === 'target' && observed) {
+          injectedRace = true
+          const nextRevision = observed.revision + 1
+          sheetRepository.applyLivePlayUpdate({
+            kind,
+            slug,
+            expectedRevision: observed.revision,
+            nextSheet: {
+              ...observed.sheet,
+              revision: nextRevision,
+              updatedAt: 4_999,
+            },
+            sourceOperationId: 'concurrent-read-only-sheet-change',
+          })
+        }
+        return observed
+      },
+    }
+    const response = await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
+      command: command(
+        LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+        'op_map_sheet_race',
+        { placementId: 'actor', maneuverName: 'Take a Breather' },
+        [tokenActionScope('actor'), metadataScope],
+      ),
+    }, deps)
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'persistence-failed',
+      message: expect.stringContaining('Sheet pokemon/target changed before table-action authority'),
+    })
+    expect(mapRepository.getBySlug('arena')?.revision).toBe(7)
+    expect(sheetRepository.getByRef('pokemon', 'sandile')?.revision).toBe(3)
+    expect(sheetRepository.getByRef('pokemon', 'target')?.revision).toBe(4)
+    expect(opRepository.getOpResult('arena', 'op_map_sheet_race')).toBeNull()
+    expect(events).toEqual([])
+  })
+
   it('atomically reconciles As One and Crowned state after table-action Regenerator healing', async () => {
     const encounter = createEmptyEncounterState()
     const ownerSheet = pokemonSheet({
@@ -409,6 +485,61 @@ describe('live-play map token table action commands', () => {
       ),
       playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
     }, deps)
+    expect(response.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 7 })
+  })
+
+  it('rejects forged Standard maneuvers while an exact effective Capability mode prohibits them', async () => {
+    const actorSheet = pokemonSheet({ capabilities: { other: ['Phasing'] } })
+    const initialMap = baseMap({ initiative: { activeId: 'actor', round: 2 } })
+    const source = resolveEffectiveCapabilities({
+      map: initialMap,
+      placement: initialMap.placements.find(candidate => candidate.id === 'actor')!,
+      sheet: actorSheet,
+      sheets: {
+        pokemon: new Map([
+          [actorSheet.slug, actorSheet],
+          ['target', pokemonSheet({ slug: 'target', species: 'Pikachu' })],
+        ]),
+        trainer: new Map([['lenora', trainerSheet()]]),
+      },
+    }).instances.find(candidate => candidate.effective && candidate.canonicalId === 'Phasing')!
+    const encounter = createEmptyEncounterState()
+    const map = baseMap({
+      initiative: { activeId: 'actor', round: 2 },
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'capability.mode.actor.intangible', actorPlacementId: 'actor',
+            capabilityInstanceId: source.instanceId, canonicalId: 'Phasing', mode: 'intangible',
+            description: null, configurationId: null, activatedAt: 100, expiresAt: null,
+            sourceOperationId: 'operation:phase',
+          }],
+        },
+      },
+    })
+    const { deps } = createDeps({
+      map,
+      sheets: {
+        'pokemon:sandile': actorSheet,
+        'pokemon:target': pokemonSheet({ slug: 'target', nickname: 'Target', species: 'Pikachu' }),
+        'trainer:lenora': trainerSheet(),
+      },
+      now: 1111,
+    })
+
+    const response = await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      command: command(
+        LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+        'op_phased_trip',
+        { placementId: 'actor', maneuverName: 'Trip', targetPlacementId: 'target' },
+        [tokenActionScope('actor'), metadataScope],
+      ),
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
+    }, deps)
+
     expect(response.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 7 })
   })
 

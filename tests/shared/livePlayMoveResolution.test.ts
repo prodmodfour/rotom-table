@@ -79,6 +79,29 @@ describe('live play move-resolution intent parsing', () => {
     expect(areaIntent.selection.kind === 'area' ? areaIntent.selection.excludedTargetPlacementIds : []).not.toBe(excludedTargetPlacementIds)
   })
 
+  it('parses only bounded opaque attack-source selectors and preserves explicit null', () => {
+    const attackSourceId = `attack-source.v1.${'a'.repeat(64)}`
+    expect(expectValid({
+      ...baseIntent({ kind: 'self' }),
+      attackSourceId,
+    })).toMatchObject({ attackSourceId })
+    expect(expectValid({
+      ...baseIntent({ kind: 'self' }),
+      attackSourceId: null,
+    })).toMatchObject({ attackSourceId: null })
+    for (const attackSourceId of [
+      'capability.link.living-weapon',
+      'operation:living-weapon',
+      `attack-source.v1.${'A'.repeat(64)}`,
+      `attack-source.v1.${'a'.repeat(63)}`,
+    ]) {
+      expect(expectInvalidCodes({
+        ...baseIntent({ kind: 'self' }),
+        attackSourceId,
+      })).toContain('invalid-field')
+    }
+  })
+
   it('rejects duplicate and empty target-count selections plus malformed area placement intents', () => {
     expect(expectInvalidCodes(baseIntent({ kind: 'target-count', targetPlacementIds: ['a', 'a'] }))).toContain('duplicate-target')
     expect(expectInvalidCodes(baseIntent({ kind: 'target-count', targetPlacementIds: [] }))).toContain('invalid-field')

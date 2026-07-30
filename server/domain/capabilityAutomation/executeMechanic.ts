@@ -6,9 +6,11 @@ import type {
   ExecuteCapabilityActionCommand,
 } from '#shared/capabilityAutomation/clientCommands'
 import {
+  CAPABILITY_FORTUNE_ROAM_DURATION_MS,
   createEmptyCapabilityRuntimeState,
   parseCapabilityRuntimeState,
   type CapabilityAlluringLureTaskState,
+  type CapabilityFortuneRoamTaskState,
   type CapabilityLinkKind,
   type CapabilityLinkState,
   type CapabilityModeKind,
@@ -460,7 +462,9 @@ const applyToggle = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
         value: 2,
         map: input.map,
       }),
-      duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+      // Activation occurs during the user's current turn; two matching end
+      // boundaries retain Blender through the end of the following turn.
+      duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 2 },
     })
     return mapWithRuntimeAndEffects(input.map, runtime, effects)
   }
@@ -2042,13 +2046,90 @@ const executeRoll = (input: ExecuteCapabilityMechanicInput): CapabilityMechanicE
     note = hours === 0 ? 'The Egg Warmer roll produced no hatch-time reduction.' : `The selected egg hatch time was reduced by ${hours} hours.`
   }
   else if (input.command.actionId === 'roam-for-fortune') {
+    const runtime = runtimeFor(input.map)
+    if (runtime.tasks.some(task => task.kind === 'fortune-roam'
+      && task.actorPlacementId === input.actorPlacement.id
+      && task.capabilityInstanceId === input.command.capabilityInstanceId)) {
+      throw new Error('This exact Fortune source already has an active roam.')
+    }
+    const task: CapabilityFortuneRoamTaskState = {
+      id: `capability.task.fortune-roam.${createHash('sha256')
+        .update(`${input.map.slug}\u0000${input.actorPlacement.id}\u0000${input.command.capabilityInstanceId}\u0000${input.command.operationId}`)
+        .digest('hex')}`,
+      kind: 'fortune-roam',
+      actorPlacementId: input.actorPlacement.id,
+      capabilityInstanceId: input.command.capabilityInstanceId,
+      canonicalId: 'Fortune',
+      startedAt: input.now,
+      completesAt: input.now + CAPABILITY_FORTUNE_ROAM_DURATION_MS,
+      sourceOperationId: input.command.operationId,
+    }
+    const nextRuntime = parseCapabilityRuntimeState({
+      ...runtime,
+      tasks: [...runtime.tasks, task],
+    })
+    return {
+      map: mapWithRuntimeAndEffects(input.map, nextRuntime, input.map.encounterState?.effects ?? []),
+      sheetMutations: [], rolls: [], produced: [], outcome: 'applied',
+      reasonCode: 'capability.fortune.roam-started',
+      adjudicationNote: 'The Fortune roam is due after one authoritative hour; no money was rolled early.',
+    }
+  }
+  else if (input.command.actionId === 'abandon-fortune-roam') {
+    const runtime = runtimeFor(input.map)
+    const task = runtime.tasks.find(candidate => candidate.kind === 'fortune-roam'
+      && candidate.actorPlacementId === input.actorPlacement.id
+      && candidate.capabilityInstanceId === input.command.capabilityInstanceId
+      && candidate.canonicalId === 'Fortune')
+    if (!task) throw new Error('The exact source-owned Fortune roam is no longer active.')
+    const nextRuntime = parseCapabilityRuntimeState({
+      ...runtime,
+      tasks: runtime.tasks.filter(candidate => candidate.id !== task.id),
+      // A retained GM decision belongs to this exact roam. Invalidating its
+      // public summary prevents the durable request from consuming a later
+      // post-reset Fortune task that happens to use the same Capability source.
+      pendingAdjudications: runtime.pendingAdjudications.filter(request => !(
+        request.actorPlacementId === input.actorPlacement.id
+        && request.capabilityInstanceId === input.command.capabilityInstanceId
+        && request.canonicalId === 'Fortune'
+        && request.actionId === 'resolve-fortune-roam'
+      )),
+    })
+    return {
+      map: mapWithRuntimeAndEffects(input.map, nextRuntime, input.map.encounterState?.effects ?? []),
+      sheetMutations: [], rolls: [], produced: [], outcome: 'applied',
+      reasonCode: 'capability.fortune.roam-abandoned',
+      adjudicationNote: 'The active Fortune roam was abandoned without refunding its daily use.',
+    }
+  }
+  else if (input.command.actionId === 'resolve-fortune-roam') {
+    const runtime = runtimeFor(input.map)
+    const task = runtime.tasks.find(candidate => candidate.kind === 'fortune-roam'
+      && candidate.actorPlacementId === input.actorPlacement.id
+      && candidate.capabilityInstanceId === input.command.capabilityInstanceId
+      && candidate.canonicalId === 'Fortune')
+    if (!task || input.now < task.completesAt) {
+      throw new Error('The exact Fortune roam has not completed its authoritative one-hour duration.')
+    }
+    const withoutTask = parseCapabilityRuntimeState({
+      ...runtime,
+      tasks: runtime.tasks.filter(candidate => candidate.id !== task.id),
+    })
+    const resolvedMap = mapWithRuntimeAndEffects(
+      input.map,
+      withoutTask,
+      input.map.encounterState?.effects ?? [],
+    )
     const lowLoyalty = input.actorPlacement.sheetKind === 'pokemon'
       && ((input.actorSheet as CharacterSheet).loyalty ?? 3) <= 1
-    const decision = (input.command.selections.optionId ?? input.command.selections.description)?.trim().toLocaleLowerCase('en-US')
-    if (lowLoyalty && decision !== 'returns' && decision !== 'runs-away') {
-      throw new Error('Low-Loyalty Fortune requires the bounded GM choice returns or runs-away.')
+    const decision = (input.command.selections.optionId ?? input.command.selections.description)
+      ?.trim().toLocaleLowerCase('en-US')
+    if (decision !== 'returns' && (decision !== 'runs-away' || !lowLoyalty)) {
+      throw new Error(lowLoyalty
+        ? 'Low-Loyalty Fortune requires the bounded GM choice returns or runs-away.'
+        : 'A Fortune user above Loyalty 1 must return from its roam.')
     }
-    if (lowLoyalty && decision === 'runs-away') {
+    if (decision === 'runs-away') {
       const rosterMutations = [...input.linkedTrainerSlugs].flatMap((slug): readonly CapabilityMechanicSheetMutation[] => {
         const previous = input.trainerSheets.get(slug)
         if (!previous) return []
@@ -2062,16 +2143,17 @@ const executeRoll = (input: ExecuteCapabilityMechanicInput): CapabilityMechanicE
         }]
       })
       return {
-        map: removeCapabilityPresenceGroup({ map: input.map, ownerPlacementId: input.actorPlacement.id }).map,
+        map: removeCapabilityPresenceGroup({ map: resolvedMap, ownerPlacementId: input.actorPlacement.id }).map,
         sheetMutations: rosterMutations, rolls, produced: [], outcome: 'applied',
         reasonCode: 'capability.fortune.user-ran-away',
         adjudicationNote: 'The GM retained the canonical low-Loyalty outcome: the user ran away, left play, and was removed from linked rosters.',
       }
     }
+    map = resolvedMap
     const roll = input.rollDie('fortune', 10)
     rolls.push(roll)
     const amount = Math.max(0, input.actorSheet.level ?? 0) * roll.total
-    const recipient = recipientTrainer(input)
+    const recipient = recipientTrainer(input, true)
     mutations.push({
       kind: 'trainer', slug: recipient.slug, previous: recipient,
       current: { ...deepCloneJson(recipient), money: Math.max(0, recipient.money ?? 0) + amount },

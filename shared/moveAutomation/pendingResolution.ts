@@ -7,6 +7,7 @@ import { isSlug } from '../paths'
 import { isPlayerProfileId } from '../playerProfiles'
 import { isSheetKind, type SheetKind } from '../sheets'
 import { isEncounterSideId } from './encounterState'
+import { isMoveAttackSourceId, type MoveAttackSourceId } from './attackSource'
 import {
   MOVE_AUTOMATION_AREA_DIRECTIONS,
   type MoveAutomationAreaDirection,
@@ -358,6 +359,8 @@ export interface PendingMoveResolution {
   readonly originMapSlug: string
   readonly originOpId: LivePlayOpId
   readonly actorPlacementId: string
+  /** Present on new records: string selects one exact source, null is deliberately source-less. */
+  readonly attackSourceId?: MoveAttackSourceId | null
   readonly virtualOriginCell?: MoveResponseGridAnchor
   /** Server-validated targeting branch retained for deterministic continuation replay. */
   readonly targetBranchId?: string
@@ -449,7 +452,7 @@ const ROOT_REQUIRED_FIELDS = [
   'publicSummary',
 ] as const
 const ROOT_OPTIONAL_FIELDS = [
-  'continuationKind', 'continuationContext', 'virtualOriginCell', 'targetBranchId',
+  'continuationKind', 'continuationContext', 'attackSourceId', 'virtualOriginCell', 'targetBranchId',
   'rootAreaSelection', 'authoritativeTargetEvaluations', 'authoritativeAreaCells',
 ] as const
 const ROOT_AREA_SELECTION_FIELDS = ['kind', 'areaTemplateId'] as const
@@ -2468,6 +2471,18 @@ export const parsePendingMoveResolution = (
     originOpId,
     `${path}.continuationContext`,
   )
+  const hasAttackSourceId = Object.prototype.hasOwnProperty.call(record, 'attackSourceId')
+  const attackSourceId = hasAttackSourceId
+    ? record.attackSourceId === null
+      ? null
+      : isMoveAttackSourceId(record.attackSourceId)
+        ? record.attackSourceId
+        : fail(
+            'invalid-pending-resolution',
+            `${path}.attackSourceId`,
+            'must be null or an opaque version-1 attack-source ID.',
+          )
+    : undefined
   const virtualOriginCell = Object.prototype.hasOwnProperty.call(record, 'virtualOriginCell')
     ? requiredContinuationGridAnchor(record.virtualOriginCell, `${path}.virtualOriginCell`)
     : null
@@ -2596,6 +2611,7 @@ export const parsePendingMoveResolution = (
     originMapSlug,
     originOpId,
     actorPlacementId,
+    ...(hasAttackSourceId ? { attackSourceId: attackSourceId ?? null } : {}),
     ...(virtualOriginCell ? { virtualOriginCell } : {}),
     ...(targetBranchId ? { targetBranchId } : {}),
     ...(rootAreaSelection ? { rootAreaSelection } : {}),

@@ -63,6 +63,7 @@ import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
+import { capabilityStandardActionRestriction } from '../domain/capabilityAutomation/actionEligibility'
 import { resolveMarsupialRelationship } from '../domain/capabilityAutomation/marsupialRelationship'
 import {
   clearPhysicalPowerLoadsForPlacements,
@@ -123,6 +124,8 @@ interface ResolvedThrowPokeballCommandContext {
   readonly allTrainerSheets: readonly TrainerSheet[]
   readonly pokemonBySlug: ReadonlyMap<string, CharacterSheet>
   readonly sheetLookup: SheetLookup
+  readonly consultedSheetRevisions: readonly { readonly kind: SheetKind; readonly slug: string; readonly revision: number }[]
+  readonly consultedSheetDirectoryKeys: readonly string[]
   readonly linkedTrainerSheets: readonly ServerTokenControlLinkedTrainerSheet[]
   readonly userToken: SpawnedPokemon
   readonly targetToken: SpawnedPokemon
@@ -366,6 +369,30 @@ const resolveContext = async (
   const allTrainerSheets = storedTrainerSheets(allTrainerStored)
   const trainerBySlug = storedTrainerSheetMap(allTrainerStored)
   const pokemonBySlug = storedPokemonSheetMap(allPokemonStored)
+  const storedByKey = new Map([...allTrainerStored, ...allPokemonStored]
+    .map(stored => [`${stored.kind}:${stored.slug}`, stored] as const))
+  for (const placement of map.placements) {
+    if (!storedByKey.has(`${placement.sheetKind}:${placement.sheetSlug}`)) {
+      throw new ThrowPokeballCommandUseCaseError(
+        409,
+        `Map-referenced sheet ${placement.sheetKind}/${placement.sheetSlug} is unavailable for Poké Ball authority`,
+      )
+    }
+  }
+  // Capture ownership and Marsupial relationships inspect the complete sheet
+  // directory. Freeze every consulted revision, including the two exact reads
+  // performed before the directory snapshots, rather than only map residents.
+  const consultedByKey = new Map([...storedByKey.values()].map(stored => [
+    `${stored.kind}:${stored.slug}`,
+    { kind: stored.kind, slug: stored.slug, revision: normalizeRevision(stored.revision) },
+  ] as const))
+  consultedByKey.set(`trainer:${trainerSheet.slug}`, {
+    kind: 'trainer', slug: trainerSheet.slug, revision: normalizeRevision(trainerSheet.revision),
+  })
+  consultedByKey.set(`pokemon:${targetSheet.slug}`, {
+    kind: 'pokemon', slug: targetSheet.slug, revision: normalizeRevision(targetSheet.revision),
+  })
+  const consultedSheetRevisions = [...consultedByKey.values()]
   trainerBySlug.set(trainerSheet.slug, persistedSheetToTrainerSheet(trainerSheet))
   pokemonBySlug.set(targetSheet.slug, persistedSheetToPokemonSheet(targetSheet))
   const sheetLookup = { trainer: trainerBySlug, pokemon: pokemonBySlug }
@@ -387,6 +414,8 @@ const resolveContext = async (
     allTrainerSheets,
     pokemonBySlug,
     sheetLookup,
+    consultedSheetRevisions,
+    consultedSheetDirectoryKeys: [...storedByKey.keys()].sort(),
     linkedTrainerSheets: await linkedTrainerSheetsForActor(actor, dependencies),
     userToken,
     targetToken,
@@ -792,6 +821,15 @@ const applyThrowPokeballCommand = (
     placementId: context.targetPlacement.id,
     powerByCapabilityInstanceId: physicalPowerSourceValues(targetEffective),
   })
+  const modeRestriction = capabilityStandardActionRestriction({
+    map: context.map,
+    placement: context.trainerPlacement,
+    sheet: trainerSheet,
+    pokemonSheets: capabilitySheets.pokemon,
+    trainerSheets: capabilitySheets.trainer,
+    now: dependencies.now(),
+  })
+  if (modeRestriction) rejectLivePlayCommand('invalid', modeRestriction.message)
   if (loadedUserToken.physicalPowerLoad?.standardActionsAllowed === false) {
     rejectLivePlayCommand('invalid', 'Staggering Weight prevents the Trainer from taking the Standard Action required to throw a Poké Ball.')
   }
@@ -1015,6 +1053,8 @@ const currentContextForAcceptedResult = async (
       allTrainerSheets: [],
       pokemonBySlug: new Map(),
       sheetLookup: { pokemon: new Map(), trainer: new Map() },
+      consultedSheetRevisions: [],
+      consultedSheetDirectoryKeys: [],
       linkedTrainerSheets: [],
       userToken: {} as SpawnedPokemon,
       targetToken: {} as SpawnedPokemon,
@@ -1077,6 +1117,25 @@ export const executeThrowPokeballCommandUseCase = async (
       deps.database.withTransaction(() => {
         if (!nextMap.nextMap || !nextMap.nextTrainerSheet) {
           throw new ThrowPokeballCommandUseCaseError(409, 'throwPokeball accepted without a complete map and trainer sheet update')
+        }
+        const currentDirectoryKeys = [
+          ...deps.sheetRepository.list('trainer'),
+          ...deps.sheetRepository.list('pokemon'),
+        ].map(stored => `${stored.kind}:${stored.slug}`).sort()
+        if (JSON.stringify(currentDirectoryKeys) !== JSON.stringify(nextMap.consultedSheetDirectoryKeys)) {
+          throw new ThrowPokeballCommandUseCaseError(
+            409,
+            'The sheet directory changed before Poké Ball authority could be persisted',
+          )
+        }
+        for (const read of nextMap.consultedSheetRevisions) {
+          const current = deps.sheetRepository.getByRef(read.kind, read.slug)
+          if (!current || normalizeRevision(current.revision) !== read.revision) {
+            throw new ThrowPokeballCommandUseCaseError(
+              409,
+              `Sheet ${read.kind}/${read.slug} changed before Poké Ball authority could be persisted`,
+            )
+          }
         }
         const persisted = toPersistedMap(
           nextMap.nextMap,

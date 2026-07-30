@@ -1,14 +1,23 @@
 import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from 'vue'
 import type { LivePlayResolvedMoveResult, ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import {
+  isMoveAttackSourceId,
+  type MoveAttackSourceId,
+} from '#shared/moveAutomation/attackSource'
+import {
   aa080EntityIsActive,
   aa080IsMiniNoseEntity,
 } from '#shared/abilityAutomation/aa080'
-import { capabilityWeaponMove, livingWeaponMoveNames } from '#shared/capabilityAutomation/weaponMoves'
+import {
+  capabilityWeaponMove,
+  capabilityWeaponMoveName,
+  livingWeaponMoveNames,
+} from '#shared/capabilityAutomation/weaponMoves'
 import { resolveWielderWeaponProfile } from '#shared/capabilityAutomation/wielder'
 import {
   buildTokenMoveMenuOptions,
   moveEntriesForPlacement,
+  type TokenMoveUseReference,
   type TokenSheetMoveEntry,
 } from '~/utils/mapTokenMoves'
 import {
@@ -79,6 +88,7 @@ import {
 import { playDiceRollSound } from '~/utils/soundEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
+import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
 import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
   MoveAutomationAreaDirection,
@@ -264,6 +274,8 @@ export const moveAutomationFeedbackVfxTiming = (feedback: MoveAutomationFeedback
 
 interface VirtualOriginRequestFields {
   originCell?: GridAnchor
+  /** Exact source selected from the menu; null deliberately means ordinary/native. */
+  attackSourceId: MoveAttackSourceId | null
 }
 
 interface ActiveSelfMoveRequest extends VirtualOriginRequestFields {
@@ -326,7 +338,7 @@ interface ActiveAreaConfirmationRequest extends VirtualOriginRequestFields {
   passDestination?: GridAnchor
 }
 
-interface ActiveVirtualOriginRequest {
+interface ActiveVirtualOriginRequest extends VirtualOriginRequestFields {
   kind: 'virtual-origin'
   userId: string
   moveName: string
@@ -344,6 +356,7 @@ type ActiveMoveTargetingRequest = ActiveSingleTargetingRequest | ActiveTargetCou
 interface ActiveTargetBranchSelectionRequest {
   userId: string
   moveName: string
+  attackSourceId: MoveAttackSourceId | null
   baseScript: MoveAutomationScript
   branches: MoveAutomationTargetBranch[]
   damageFormula: string | null
@@ -448,7 +461,14 @@ export const useMoveAutomationPanel = ({
     const placement = map.value.placements.find((item) => item.id === id)
     if (!placement) return []
     const token = spawnedPokemon.value.find(candidate => candidate.id === id) ?? null
+    const encounterEffects = map.value.encounterState?.effects ?? []
+    const baseEntries = moveEntriesForPlacement(placement, sheetLookup(), { encounterEffects })
     const supplemental = new Map<string, TokenSheetMoveEntry>()
+    const retainSupplemental = (entry: TokenSheetMoveEntry): void => {
+      const normalized = entry.move.name.trim().toLocaleLowerCase('en-US')
+      supplemental.set(`${normalized}\u0000${entry.attackSourceId ?? 'ordinary'}`, entry)
+    }
+
     if (placement.sheetKind === 'pokemon' && token) {
       const sheet = pokemonBySlug.value?.get(placement.sheetSlug)
       const profile = sheet && pokemonHasResolvedCapability(sheet, 'Wielder')
@@ -456,7 +476,7 @@ export const useMoveAutomationPanel = ({
         : null
       if (profile?.adeptMoveName && (token.combatSkillRankValue ?? 0) >= 4) {
         const move = capabilityWeaponMove(profile.adeptMoveName)
-        if (move) supplemental.set(move.name, {
+        if (move) retainSupplemental({
           move: {
             ...move,
             db: (move.db ?? 0) + profile.damageBaseBonus,
@@ -473,36 +493,54 @@ export const useMoveAutomationPanel = ({
 
     const publicStates = Array.isArray(map.value.metadata?.automationPresentationStates)
       ? map.value.metadata.automationPresentationStates as Array<Record<string, unknown>> : []
-    const livingWeaponState = publicStates.find(state => (
+    const livingWeaponStates = publicStates.filter(state => (
       state.placementId === id
       && (state.state === 'living-weapon' || state.state === 'living-weapon-wielder')
       && typeof state.counterpartPlacementId === 'string'
+      && isMoveAttackSourceId(state.attackSourceId)
     ))
-    if (livingWeaponState) {
+    for (const livingWeaponState of livingWeaponStates) {
+      const attackSourceId = livingWeaponState.attackSourceId as MoveAttackSourceId
       const counterpartPlacementId = livingWeaponState.counterpartPlacementId as string
-      const livingWeaponPlacementId = livingWeaponState.state === 'living-weapon' ? id : counterpartPlacementId
-      const wielderPlacementId = livingWeaponState.state === 'living-weapon' ? counterpartPlacementId : id
+      const actorIsWielder = livingWeaponState.state === 'living-weapon-wielder'
+      const livingWeaponPlacementId = actorIsWielder ? counterpartPlacementId : id
+      const wielderPlacementId = actorIsWielder ? id : counterpartPlacementId
       const livingWeaponPlacement = map.value.placements.find(candidate => candidate.id === livingWeaponPlacementId)
       const livingWeaponSheet = livingWeaponPlacement?.sheetKind === 'pokemon'
         ? pokemonBySlug.value?.get(livingWeaponPlacement.sheetSlug) ?? null : null
       const wielderToken = spawnedPokemon.value.find(candidate => candidate.id === wielderPlacementId) ?? null
-      if (livingWeaponSheet && wielderToken) {
-        for (const moveName of livingWeaponMoveNames(
-          livingWeaponSheet.species,
-          wielderToken.combatSkillRankValue,
-        )) {
-          const move = capabilityWeaponMove(moveName)
-          if (!move || supplemental.has(move.name)) continue
-          supplemental.set(move.name, {
-            move: { ...move, db: (move.db ?? 0) + 1 },
-            automatic: true,
-            suppressStab: true,
+      if (!livingWeaponSheet || !wielderToken) continue
+      const attackSourceLabel = typeof livingWeaponState.attackSourceLabel === 'string'
+        && livingWeaponState.attackSourceLabel.trim().length <= 120
+        ? livingWeaponState.attackSourceLabel.trim()
+        : `${livingWeaponSheet.nickname?.trim() || livingWeaponSheet.species} Living Weapon`
+      for (const moveName of livingWeaponMoveNames(
+        livingWeaponSheet.species,
+        wielderToken.combatSkillRankValue,
+      )) {
+        const move = capabilityWeaponMove(moveName)
+        if (!move) continue
+        retainSupplemental({
+          move: { ...move, db: (move.db ?? 0) + 1 },
+          automatic: true,
+          suppressStab: true,
+          attackSourceId,
+          attackSourceLabel,
+        })
+      }
+      if (actorIsWielder) {
+        for (const entry of baseEntries.filter(candidate => isStruggleAttackMoveName(candidate.move.name))) {
+          retainSupplemental({
+            ...entry,
+            attackSourceId,
+            attackSourceLabel,
+            presentationDamageBaseBonus: 1,
           })
         }
       }
     }
     return moveEntriesForPlacement(placement, sheetLookup(), {
-      encounterEffects: map.value.encounterState?.effects ?? [],
+      encounterEffects,
       additionalMoveEntries: [...supplemental.values()],
     })
   }
@@ -583,15 +621,24 @@ export const useMoveAutomationPanel = ({
     if (target) faceTokenTowardToken(user, target)
   }
 
-  const moveAutomationEntryForUse = (id: string, moveName: string): ResolvedCanonicalMoveEntry | null => {
+  const moveAutomationEntryForUse = (
+    id: string,
+    moveName: string,
+    attackSourceId: MoveAttackSourceId | null | undefined = undefined,
+  ): ResolvedCanonicalMoveEntry | null => {
     const user = findSpawnedPokemon(id)
+    const supplementalMoveEntries = moveEntriesForId(id).filter(entry => (
+      Boolean(entry.attackSourceId) || capabilityWeaponMoveName(entry.move.name) !== null
+    ))
     const result = resolveCanonicalMoveEntryForPlacement({
       placement: placementById(id),
       token: user,
       sheets: sheetLookup(),
       moveName,
+      attackSourceId,
       usageContext: tokenMoveUsageContext(id),
       encounterEffects: map.value?.encounterState?.effects ?? [],
+      additionalMoveEntries: supplementalMoveEntries,
     })
     if (!result.ok) return null
 
@@ -949,6 +996,7 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
     damageFormula: string | null,
     frequency: string | null,
+    attackSourceId: MoveAttackSourceId | null,
     placement: MoveAutomationAreaTemplatePlacement,
     placements: readonly MoveAutomationAreaTemplatePlacement[],
     targetBranchId?: string,
@@ -964,6 +1012,7 @@ export const useMoveAutomationPanel = ({
       script,
       damageFormula,
       frequency,
+      attackSourceId,
       ...(targetBranchId ? { targetBranchId } : {}),
       label: placement.label,
       cells: placement.cells,
@@ -997,6 +1046,7 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
     damageFormula: string | null,
     frequency: string | null,
+    attackSourceId: MoveAttackSourceId | null,
     user: SpawnedPokemon,
     targetBranchId?: string,
   ): ActiveAreaConfirmationRequest | null => {
@@ -1012,12 +1062,16 @@ export const useMoveAutomationPanel = ({
         includeEmpty: true,
         ...areaTemplateCellConstraints(),
       })
-      return placement ? requestFromAreaPlacement(user, script, damageFormula, frequency, placement, [], targetBranchId) : null
+      return placement
+        ? requestFromAreaPlacement(user, script, damageFormula, frequency, attackSourceId, placement, [], targetBranchId)
+        : null
     }
 
     if (template.kind === 'close-blast') {
       const placement = initialCloseBlastPlacementForTemplate(user, template)
-      return placement ? requestFromAreaPlacement(user, script, damageFormula, frequency, placement, [], targetBranchId) : null
+      return placement
+        ? requestFromAreaPlacement(user, script, damageFormula, frequency, attackSourceId, placement, [], targetBranchId)
+        : null
     }
 
     const direction = template.kind === 'cone' || template.kind === 'line'
@@ -1041,6 +1095,7 @@ export const useMoveAutomationPanel = ({
       script,
       damageFormula,
       frequency,
+      attackSourceId,
       ...(targetBranchId ? { targetBranchId } : {}),
       label: template.label,
       cells,
@@ -1344,6 +1399,7 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
     damageFormula: string | null,
     frequency: string | null,
+    attackSourceId: MoveAttackSourceId | null,
     targetBranchId?: string,
   ): ActiveAreaConfirmationRequest | null => {
     if (script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(script)) return null
@@ -1356,8 +1412,8 @@ export const useMoveAutomationPanel = ({
     })
     const placement = initialAreaPlacement(placements, user)
     return placement
-      ? requestFromAreaPlacement(user, script, damageFormula, frequency, placement, placements, targetBranchId)
-      : makeFallbackAreaPlacement(script, damageFormula, frequency, user, targetBranchId)
+      ? requestFromAreaPlacement(user, script, damageFormula, frequency, attackSourceId, placement, placements, targetBranchId)
+      : makeFallbackAreaPlacement(script, damageFormula, frequency, attackSourceId, user, targetBranchId)
   }
 
   const beginAreaConfirmationForScript = (
@@ -1365,9 +1421,12 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
     damageFormula: string | null,
     frequency: string | null,
+    attackSourceId: MoveAttackSourceId | null,
     targetBranchId?: string,
   ): boolean => {
-    const request = areaConfirmationRequestForScript(user, script, damageFormula, frequency, targetBranchId)
+    const request = areaConfirmationRequestForScript(
+      user, script, damageFormula, frequency, attackSourceId, targetBranchId,
+    )
     if (!request) return false
 
     clearMoveAutomationFeedback()
@@ -1380,7 +1439,13 @@ export const useMoveAutomationPanel = ({
     const user = findSpawnedPokemon(id)
     if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
     const damageFormula = entry.script.damaging ? rollFormulaForEntry(entry) : null
-    return beginAreaConfirmationForScript(user, entry.script, damageFormula, frequencyForEntry(entry))
+    return beginAreaConfirmationForScript(
+      user,
+      entry.script,
+      damageFormula,
+      frequencyForEntry(entry),
+      entry.sourceEntry.attackSourceId ?? null,
+    )
   }
 
   const singleTargetRequestForScript = (
@@ -1388,6 +1453,7 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
     damageFormula: string | null,
     frequency: string | null,
+    attackSourceId: MoveAttackSourceId | null,
     targetBranchId?: string,
   ): ActiveSingleTargetingRequest | null => {
     const rangeMeters = parseSingleTargetMoveRangeMeters(script.range, {
@@ -1404,6 +1470,7 @@ export const useMoveAutomationPanel = ({
       script,
       damageFormula,
       frequency,
+      attackSourceId,
       rangeMeters,
       ...(targetBranchId ? { targetBranchId } : {}),
     }
@@ -1414,9 +1481,12 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
     damageFormula: string | null,
     frequency: string | null,
+    attackSourceId: MoveAttackSourceId | null,
     targetBranchId?: string,
   ): boolean => {
-    const request = singleTargetRequestForScript(user, script, damageFormula, frequency, targetBranchId)
+    const request = singleTargetRequestForScript(
+      user, script, damageFormula, frequency, attackSourceId, targetBranchId,
+    )
     if (!request) return false
 
     clearMoveAutomationFeedback()
@@ -1430,6 +1500,7 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
     damageFormula: string | null,
     frequency: string | null,
+    attackSourceId: MoveAttackSourceId | null,
     targetBranchId?: string,
   ): ActiveTargetCountRequest | null => {
     const maxTargetCount = typeof script.targetCount === 'number' && Number.isFinite(script.targetCount)
@@ -1451,6 +1522,7 @@ export const useMoveAutomationPanel = ({
       script,
       damageFormula,
       frequency,
+      attackSourceId,
       rangeMeters,
       maxTargetCount,
       selectedTargetIds: [],
@@ -1463,9 +1535,12 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
     damageFormula: string | null,
     frequency: string | null,
+    attackSourceId: MoveAttackSourceId | null,
     targetBranchId?: string,
   ): boolean => {
-    const request = targetCountRequestForScript(user, script, damageFormula, frequency, targetBranchId)
+    const request = targetCountRequestForScript(
+      user, script, damageFormula, frequency, attackSourceId, targetBranchId,
+    )
     if (!request) return false
 
     clearMoveAutomationFeedback()
@@ -1521,6 +1596,7 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
     damageFormula: string | null,
     frequency: string | null,
+    attackSourceId: MoveAttackSourceId | null,
     targetBranchId?: string,
   ): boolean => {
     const forestOrigin = forestLordOriginCell(user.id, script)
@@ -1535,7 +1611,7 @@ export const useMoveAutomationPanel = ({
     activeMoveTargetBranchSelection.value = null
     activeMoveTargeting.value = {
       kind: 'virtual-origin', userId: user.id, moveName: script.moveName,
-      script, damageFormula, frequency,
+      script, damageFormula, frequency, attackSourceId,
       originCell: exactOriginCells[0] ?? { ...user.position },
       originPolicy: miniNoseOrigins.length > 0
         ? 'mini-noses'
@@ -1554,11 +1630,20 @@ export const useMoveAutomationPanel = ({
     const virtualUser = { ...user, position: { ...request.originCell } }
     const mode = targetBranchSelectionModeForScript(request.script)
     const started = mode === 'target'
-      ? beginSingleTargetingForScript(virtualUser, request.script, request.damageFormula, request.frequency, request.targetBranchId)
+      ? beginSingleTargetingForScript(
+          virtualUser, request.script, request.damageFormula, request.frequency,
+          request.attackSourceId, request.targetBranchId,
+        )
       : mode === 'target-count'
-        ? beginTargetCountTargetingForScript(virtualUser, request.script, request.damageFormula, request.frequency, request.targetBranchId)
+        ? beginTargetCountTargetingForScript(
+            virtualUser, request.script, request.damageFormula, request.frequency,
+            request.attackSourceId, request.targetBranchId,
+          )
         : mode === 'area-confirmation'
-          ? beginAreaConfirmationForScript(virtualUser, request.script, request.damageFormula, request.frequency, request.targetBranchId)
+          ? beginAreaConfirmationForScript(
+              virtualUser, request.script, request.damageFormula, request.frequency,
+              request.attackSourceId, request.targetBranchId,
+            )
           : false
     if (started && activeMoveTargeting.value && activeMoveTargeting.value.kind !== 'virtual-origin') {
       activeMoveTargeting.value = { ...activeMoveTargeting.value, originCell: { ...request.originCell } }
@@ -1566,13 +1651,18 @@ export const useMoveAutomationPanel = ({
     return started
   }
 
-  const beginSeamlessMoveTargeting = (id: string, moveName: string | null | undefined): boolean => {
+  const beginSeamlessMoveTargeting = (
+    id: string,
+    moveName: string | null | undefined,
+    attackSourceId: MoveAttackSourceId | null | undefined,
+  ): boolean => {
     const trimmedMoveName = moveName?.trim()
     if (!trimmedMoveName) return false
     const user = findSpawnedPokemon(id)
-    const entry = moveAutomationEntryForUse(id, trimmedMoveName)
+    const entry = moveAutomationEntryForUse(id, trimmedMoveName, attackSourceId)
     if (!user || !entry) return false
     const script = moveAutomationDustCloudScript({ script: entry.script, user })
+    const resolvedAttackSourceId = entry.sourceEntry.attackSourceId ?? null
 
     if (moveAutomationHasMultipleTargetBranches(script)) {
       clearMoveAutomationFeedback()
@@ -1580,6 +1670,7 @@ export const useMoveAutomationPanel = ({
       activeMoveTargetBranchSelection.value = {
         userId: id,
         moveName: script.moveName,
+        attackSourceId: resolvedAttackSourceId,
         baseScript: script,
         branches: moveAutomationTargetBranches(script),
         damageFormula: script.damaging ? rollFormulaForEntry(entry) : null,
@@ -1589,7 +1680,11 @@ export const useMoveAutomationPanel = ({
     }
 
     if (beginClayCannonsOriginSelection(
-      user, script, script.damaging ? rollFormulaForEntry(entry) : null, frequencyForEntry(entry),
+      user,
+      script,
+      script.damaging ? rollFormulaForEntry(entry) : null,
+      frequencyForEntry(entry),
+      resolvedAttackSourceId,
     )) return true
 
     if (
@@ -1607,28 +1702,34 @@ export const useMoveAutomationPanel = ({
         script,
         damageFormula: null,
         frequency: frequencyForEntry(entry),
+        attackSourceId: resolvedAttackSourceId,
       }
       void executeSelfMoveRequest(request, user)
       return true
     }
 
     if (isSeamlessSingleTargetMoveScript(script)) {
-      return beginSingleTargetingForScript(user, script, rollFormulaForEntry(entry), frequencyForEntry(entry))
+      return beginSingleTargetingForScript(
+        user, script, rollFormulaForEntry(entry), frequencyForEntry(entry), resolvedAttackSourceId,
+      )
     }
 
     if (isSeamlessTargetCountMoveScript(script)) {
-      return beginTargetCountTargetingForScript(user, script, rollFormulaForEntry(entry), frequencyForEntry(entry))
+      return beginTargetCountTargetingForScript(
+        user, script, rollFormulaForEntry(entry), frequencyForEntry(entry), resolvedAttackSourceId,
+      )
     }
 
     return beginSeamlessAreaConfirmation(id, entry)
   }
 
-  const openMoveAutomation = (input: string | { id: string; moveName?: string | null }) => {
+  const openMoveAutomation = (input: string | ({ id: string } & Partial<TokenMoveUseReference>)) => {
     moveUsageError.value = null
     const id = typeof input === 'string' ? input : input.id
     if (!canControlPlacement(id)) return
     const moveName = typeof input === 'string' ? null : input.moveName?.trim() || null
-    if (beginSeamlessMoveTargeting(id, moveName)) return
+    const attackSourceId = typeof input === 'string' ? undefined : input.attackSourceId
+    if (beginSeamlessMoveTargeting(id, moveName, attackSourceId)) return
 
     clearMoveAutomationFeedback()
     activeMoveTargetBranchSelection.value = null
@@ -1788,6 +1889,7 @@ export const useMoveAutomationPanel = ({
       kind: 'self',
       actorPlacementId: request.userId,
       moveName: request.moveName,
+      attackSourceId: request.attackSourceId,
       targetBranchId: request.targetBranchId,
       originCell: request.originCell,
     })
@@ -1809,6 +1911,7 @@ export const useMoveAutomationPanel = ({
       kind: 'single-target',
       actorPlacementId: request.userId,
       moveName: request.moveName,
+      attackSourceId: request.attackSourceId,
       targetBranchId: request.targetBranchId,
       originCell: request.originCell,
       targetPlacementId: targetId,
@@ -1824,6 +1927,7 @@ export const useMoveAutomationPanel = ({
       kind: 'target-count',
       actorPlacementId: request.userId,
       moveName: request.moveName,
+      attackSourceId: request.attackSourceId,
       targetBranchId: request.targetBranchId,
       originCell: request.originCell,
       targetPlacementIds: selectedTargetIds,
@@ -1837,6 +1941,7 @@ export const useMoveAutomationPanel = ({
     const common = {
       actorPlacementId: request.userId,
       moveName: request.moveName,
+      attackSourceId: request.attackSourceId,
       targetBranchId: request.targetBranchId,
       originCell: request.originCell,
       areaTemplateId: request.areaTemplateId,
@@ -1880,6 +1985,9 @@ export const useMoveAutomationPanel = ({
     }
     if (!requestedMoveNameMatches(move, intent.moveName)) {
       return `Resolved move ${move.moveName} did not match requested move ${intent.moveName}.`
+    }
+    if ((move.attackSourceId ?? null) !== (intent.attackSourceId ?? null)) {
+      return 'Resolved move attack source did not match the selected source.'
     }
     if ((move.targetBranchId ?? null) !== (intent.targetBranchId ?? null)) {
       return 'Resolved move target branch did not match the selected branch.'
@@ -2336,9 +2444,10 @@ export const useMoveAutomationPanel = ({
   const singleTargetRequestForMove = (
     id: string,
     moveName: string,
+    attackSourceId: MoveAttackSourceId | null = null,
   ): ActiveSingleTargetingRequest | null => {
     const user = findSpawnedPokemon(id)
-    const entry = moveAutomationEntryForUse(id, moveName)
+    const entry = moveAutomationEntryForUse(id, moveName, attackSourceId)
     if (!user || !entry || !isSeamlessSingleTargetMoveScript(entry.script)) return null
 
     return singleTargetRequestForScript(
@@ -2346,6 +2455,7 @@ export const useMoveAutomationPanel = ({
       entry.script,
       rollFormulaForEntry(entry),
       frequencyForEntry(entry),
+      entry.sourceEntry.attackSourceId ?? null,
     )
   }
 
@@ -2353,11 +2463,14 @@ export const useMoveAutomationPanel = ({
     id: string
     targetId: string
     moveName: string
+    attackSourceId?: MoveAttackSourceId | null
     skipActionNotifications?: boolean
     logLine?: string
   }): Promise<boolean> => {
     if (!canControlPlacement(input.id)) return false
-    const request = singleTargetRequestForMove(input.id, input.moveName)
+    const request = singleTargetRequestForMove(
+      input.id, input.moveName, input.attackSourceId ?? null,
+    )
     if (!request) return false
     return executeSingleTargetMoveRequest(request, input.targetId, {
       skipActionNotifications: input.skipActionNotifications,
@@ -2375,22 +2488,28 @@ export const useMoveAutomationPanel = ({
     if (!user || !branch || !script) return
     if (unsupportedTargetBranchReason(script, user, request.damageFormula)) return
     if (beginClayCannonsOriginSelection(
-      user, script, request.damageFormula, request.frequency, branch.id,
+      user, script, request.damageFormula, request.frequency, request.attackSourceId, branch.id,
     )) return
 
     const mode = targetBranchSelectionModeForScript(script)
     if (mode === 'target') {
-      beginSingleTargetingForScript(user, script, request.damageFormula, request.frequency, branch.id)
+      beginSingleTargetingForScript(
+        user, script, request.damageFormula, request.frequency, request.attackSourceId, branch.id,
+      )
       return
     }
 
     if (mode === 'target-count') {
-      beginTargetCountTargetingForScript(user, script, request.damageFormula, request.frequency, branch.id)
+      beginTargetCountTargetingForScript(
+        user, script, request.damageFormula, request.frequency, request.attackSourceId, branch.id,
+      )
       return
     }
 
     if (mode === 'area-confirmation') {
-      beginAreaConfirmationForScript(user, script, request.damageFormula, request.frequency, branch.id)
+      beginAreaConfirmationForScript(
+        user, script, request.damageFormula, request.frequency, request.attackSourceId, branch.id,
+      )
     }
   }
 

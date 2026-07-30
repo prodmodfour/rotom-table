@@ -24,7 +24,7 @@ import type {
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PreviewState } from '~/utils/gridPreview'
 import type { TokenAbilityMenuOption, TokenAbilityUseReference } from '~/utils/mapTokenAbilities'
-import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import type { TokenMoveMenuOption, TokenMoveUseReference } from '~/utils/mapTokenMoves'
 import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
 import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
@@ -114,7 +114,7 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'grant-experience', payload: { id: string; amount: number }): void
-  (event: 'use-move', payload: { id: string; moveName?: string | null }): void
+  (event: 'use-move', payload: { id: string } & TokenMoveUseReference): void
   (event: 'use-maneuver', payload: { id: string; maneuverName?: string | null }): void
   (event: 'use-ability', payload: { id: string } & TokenAbilityUseReference): void
   (event: 'use-order', payload: { id: string; orderName?: string | null }): void

@@ -198,6 +198,9 @@ const planNextWindow = (
       schemaVersion: 1,
       placementId: input.pendingResolution.actorPlacementId,
       moveName: input.pendingResolution.canonicalMoveId,
+      ...(Object.prototype.hasOwnProperty.call(input.pendingResolution, 'attackSourceId')
+        ? { attackSourceId: input.pendingResolution.attackSourceId ?? null }
+        : {}),
       ...(input.pendingResolution.virtualOriginCell
         ? { originCell: { ...input.pendingResolution.virtualOriginCell } }
         : {}),
@@ -225,6 +228,7 @@ const planNextWindow = (
     originMapSlug: input.map.slug,
     originMapRevision: previousRevision,
     actorPlacementId: input.pendingResolution.actorPlacementId,
+    attackSourceId: input.execution.attackSourceId ?? null,
     ...(input.pendingResolution.virtualOriginCell
       ? { virtualOriginCell: input.pendingResolution.virtualOriginCell }
       : {}),
@@ -340,6 +344,9 @@ const planCompletion = (
       schemaVersion: 1,
       placementId: input.pendingResolution.actorPlacementId,
       moveName: input.pendingResolution.canonicalMoveId,
+      ...(Object.prototype.hasOwnProperty.call(input.pendingResolution, 'attackSourceId')
+        ? { attackSourceId: input.pendingResolution.attackSourceId ?? null }
+        : {}),
       ...(input.pendingResolution.virtualOriginCell
         ? { originCell: { ...input.pendingResolution.virtualOriginCell } }
         : {}),

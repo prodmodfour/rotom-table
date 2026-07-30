@@ -4,6 +4,7 @@ import {
   buildTokenMoveUsageState,
   moveEntriesForPlacement,
   pokemonMoveEntriesForSheet,
+  tokenMoveUseReference,
   trainerMoveEntriesForSheet,
 } from '~/utils/mapTokenMoves'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -50,6 +51,41 @@ const token = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
 })
 
 describe('map token move menu options', () => {
+  it('keeps native and exact same-name attack-source rows distinct', () => {
+    const sourceA = `attack-source.v1.${'a'.repeat(64)}` as const
+    const sourceB = `attack-source.v1.${'b'.repeat(64)}` as const
+    const placement = { id: 'token', sheetKind: 'pokemon' as const, sheetSlug: 'bolt' }
+    const sheet = {
+      slug: 'bolt', nickname: 'Bolt', species: 'Pikachu', level: 10,
+      movelist: [{ name: 'Struggle' }],
+    } as CharacterSheet
+    const entries = moveEntriesForPlacement(placement, {
+      pokemon: new Map([['bolt', sheet]]),
+    }, {
+      additionalMoveEntries: [
+        {
+          move: { name: 'Struggle' }, automatic: true,
+          attackSourceId: sourceA, attackSourceLabel: 'Honedge · aaaaaa',
+          presentationDamageBaseBonus: 1,
+        },
+        { move: { name: 'Struggle' }, automatic: true, attackSourceId: sourceB, attackSourceLabel: 'Doublade · bbbbbb' },
+      ],
+    })
+    const options = buildTokenMoveMenuOptions(token(), entries)
+      .filter(option => option.name === 'Struggle')
+
+    expect(options.map(option => [option.name, option.attackSourceId ?? null])).toEqual([
+      ['Struggle', null],
+      ['Struggle', sourceA],
+      ['Struggle', sourceB],
+    ])
+    expect(new Set(options.map(option => option.optionId)).size).toBe(3)
+    expect(options.map(option => option.damageBase)).toEqual([4, 5, 4])
+    expect(options[1]?.damageFormula).not.toBe(options[0]?.damageFormula)
+    expect(tokenMoveUseReference(options[0]!)).toEqual({ moveName: 'Struggle', attackSourceId: null })
+    expect(tokenMoveUseReference(options[2]!)).toEqual({ moveName: 'Struggle', attackSourceId: sourceB })
+  })
+
   it('projects reviewed Ability Connection moves as automatic live-play menu entries', () => {
     const entries = pokemonMoveEntriesForSheet({
       slug: 'connections', species: 'Exeggcute', level: 20,

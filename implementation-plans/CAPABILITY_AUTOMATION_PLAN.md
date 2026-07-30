@@ -1,8 +1,8 @@
 # Capability Automation Implementation Plan
 
-`PLAN_STATUS: QUEUED`
+`PLAN_STATUS: DONE`
 
-`CURRENT_TICKET: CA-001`
+`CURRENT_TICKET: NONE`
 
 `BLOCKED_BY: done/AUTOMATION_PRESENTATION_CONTRACT_PLAN.md — PLAN_STATUS: DONE`
 
@@ -137,153 +137,164 @@ Classification-only rows still require authoritative projection and interaction 
 
 ## Progress snapshot
 
-- Plan tickets: **0 DONE / 90 total**
-- Frozen canonical inventory: **pending CA-001**
-- Complete capability rows: **0**
+- Plan tickets: **90 DONE / 90 total**
+- Frozen canonical inventory: **83 rows; Git blob `8d89cc293797ad9fb77d8f6f1b5840146b1e871b`; SHA-256 `8f819401d40c598ae781ae0b273fd749575e05d6997a79c64be61f4ced8f654e`**
+- Complete capability rows: **83**
 - Assisted rows: **0**
-- Blocked/unimplemented rows: **pending inventory**
-- Interaction status: **unassessed**
-- Effective projection version: **not created**
-- Production runtime: **existing partial helpers only**
+- Blocked/unimplemented rows: **0**
+- Reviewed executable scenarios: **162**
+- Interaction status: **certified across Moves, Maneuvers, Abilities, encounter effects, Items, inventory, campaign time, Edges, and Features**
+- Effective projection version: **1**
+- Production runtime: **server-authoritative native v1; legacy capability execution disallowed**
+- Closure validation: **`scripts/quality-gate.sh` passed; 1,127 Vitest files / 8,851 tests and the production build succeeded**
 - Blocking dependency: **none — automation presentation contract accepted and archived under `implementation-plans/done/`**
 
 ## Tickets
 
 ### Phase 1 — Governance, provenance, and honest inventory
 
-- [ ] **CA-001 — Freeze the canonical capability inventory and SHA-256** — `TODO`
+- [x] **CA-001 — Freeze the canonical capability inventory and SHA-256** — `DONE`
   - Record exact count, IDs, Unicode order, source fields, source-byte hashes, and the current app-owned JSON digest.
-- [ ] **CA-002 — Audit parser boundaries, duplicates, and source precedence** — `TODO`
+- [x] **CA-002 — Audit parser boundaries, duplicates, and source precedence** — `DONE`
   - Review supplement/core shadowing, missing rows, merged prose, malformed values, aliases, and extraction artifacts.
-- [ ] **CA-003 — Add source adjudications for every catalog gap** — `TODO`
+- [x] **CA-003 — Add source adjudications for every catalog gap** — `DONE`
   - Bind reviewed corrections to exact checked-in source paths, anchors, and hashes; fail on source drift.
-- [ ] **CA-004 — Define the capability semantic manifest** — `TODO`
+- [x] **CA-004 — Define the capability semantic manifest** — `DONE`
   - Track base status, roles, parameters, runtime, provenance, dependencies, interactions, evidence, debt, review date, and cohort.
-- [ ] **CA-005 — Define capability requirement, evidence, and dependency catalogs** — `TODO`
-- [ ] **CA-006 — Add deterministic manifest/cohort seeders** — `TODO`
+- [x] **CA-005 — Define capability requirement, evidence, and dependency catalogs** — `DONE`
+- [x] **CA-006 — Add deterministic manifest/cohort seeders** — `DONE`
   - Populate one row per frozen capability and write exact canonical names into CA-070 through CA-079.
-- [ ] **CA-007 — Add coverage, completeness, link, budget, and plan checks** — `TODO`
-- [ ] **CA-008 — Record the authoritative capability ADR and contributor guide** — `TODO`
-- [ ] **CA-009 — Produce a reviewed baseline audit of existing capability behaviour** — `TODO`
+- [x] **CA-007 — Add coverage, completeness, link, budget, and plan checks** — `DONE`
+- [x] **CA-008 — Record the authoritative capability ADR and contributor guide** — `DONE`
+- [x] **CA-009 — Produce a reviewed baseline audit of existing capability behaviour** — `DONE`
   - Map sheet derivation, movement queries, move grants, abilities, exact-name hooks, UI fields, and missing runtime semantics without pre-completing rows.
 
 ### Phase 2 — Identity, instances, and effective capability projection
 
-- [ ] **CA-010 — Define strict canonical capability IDs and aliases** — `TODO`
-- [ ] **CA-011 — Define `CapabilityInstanceData` and parameter schemas** — `TODO`
+- [x] **CA-010 — Define strict canonical capability IDs and aliases** — `DONE`
+- [x] **CA-011 — Define `CapabilityInstanceData` and parameter schemas** — `DONE`
   - Cover numeric values, Jump pairs, Naturewalk terrains, capacities, types, forms, object references, and reviewed choices.
-- [ ] **CA-012 — Migrate Pokémon and Trainer sheet capability storage** — `TODO`
+- [x] **CA-012 — Migrate Pokémon and Trainer sheet capability storage** — `DONE`
   - Preserve legacy labels through compatibility readers while emitting canonical instance data on accepted writes.
-- [ ] **CA-013 — Normalize species defaults and trainer baselines** — `TODO`
-- [ ] **CA-014 — Integrate move-granted capability additions and bonuses** — `TODO`
+- [x] **CA-013 — Normalize species defaults and trainer baselines** — `DONE`
+- [x] **CA-014 — Integrate move-granted capability additions and bonuses** — `DONE`
   - Replace production prose parsing with reviewed move metadata or manifest-linked grants.
-- [ ] **CA-015 — Integrate ability-, feature-, edge-, item-, and form-owned grants** — `TODO`
+- [x] **CA-015 — Integrate ability-, feature-, edge-, item-, and form-owned grants** — `DONE`
   - Provide stable source references even before later catalogs are fully automated.
-- [ ] **CA-016 — Define deterministic stacking, replacement, and suppression** — `TODO`
-- [ ] **CA-017 — Define effective valued-capability calculations** — `TODO`
+- [x] **CA-016 — Define deterministic stacking, replacement, and suppression** — `DONE`
+- [x] **CA-017 — Define effective valued-capability calculations** — `DONE`
   - Cover floors, caps, substitutions, additive bonuses, highest-value rules, and source evidence.
-- [ ] **CA-018 — Define capability source-loss and lifecycle cleanup** — `TODO`
-- [ ] **CA-019 — Add strict projection parsers, fixtures, and property tests** — `TODO`
+- [x] **CA-018 — Define capability source-loss and lifecycle cleanup** — `DONE`
+- [x] **CA-019 — Add strict projection parsers, fixtures, and property tests** — `DONE`
 
 ### Phase 3 — Capability runtime, planning, resources, and state ownership
 
-- [ ] **CA-020 — Define strict `CapabilitySpec v1`** — `TODO`
+- [x] **CA-020 — Define strict `CapabilitySpec v1`** — `DONE`
   - Reuse the shared mechanical kernel while keeping capability identity, context, time, and ownership explicit.
-- [ ] **CA-021 — Add spec normalization, validation, hashing, and registry** — `TODO`
-- [ ] **CA-022 — Add a bounded pure capability-handler registry** — `TODO`
-- [ ] **CA-023 — Build immutable authoritative capability context** — `TODO`
-- [ ] **CA-024 — Add capability trace, roll ledger, and causal ancestry** — `TODO`
-- [ ] **CA-025 — Add complete read-set and atomic state-plan integration** — `TODO`
-- [ ] **CA-026 — Add capability usage ledgers** — `TODO`
+- [x] **CA-021 — Add spec normalization, validation, hashing, and registry** — `DONE`
+- [x] **CA-022 — Add a bounded pure capability-handler registry** — `DONE`
+- [x] **CA-023 — Build immutable authoritative capability context** — `DONE`
+- [x] **CA-024 — Add capability trace, roll ledger, and causal ancestry** — `DONE`
+- [x] **CA-025 — Add complete read-set and atomic state-plan integration** — `DONE`
+- [x] **CA-026 — Add capability usage ledgers** — `DONE`
   - Support encounter, scene, day, 24-hour, week, per-target, per-environment, and one-time limits.
-- [ ] **CA-027 — Add campaign clock and lifecycle identities required by capabilities** — `TODO`
+- [x] **CA-027 — Add campaign clock and lifecycle identities required by capabilities** — `DONE`
   - Define explicit GM-owned day/week advancement, timestamps where required, rest events, and replay-safe resets.
-- [ ] **CA-028 — Add durable capability choices and GM adjudication windows** — `TODO`
-- [ ] **CA-029 — Add restart, backup, export, retry, and recovery semantics** — `TODO`
+- [x] **CA-028 — Add durable capability choices and GM adjudication windows** — `DONE`
+- [x] **CA-029 — Add restart, backup, export, retry, and recovery semantics** — `DONE`
 
 ### Phase 4 — Movement, geometry, terrain, and physical capability rules
 
-- [ ] **CA-030 — Complete Overland, Sky, Swim, Levitate, Burrow, Teleporter, and Jump queries** — `TODO`
-- [ ] **CA-031 — Complete Power, Throwing Range, carrying, lifting, and capacity queries** — `TODO`
-- [ ] **CA-032 — Complete grounding, airborne state, height, surfaces, and movement-mode switching** — `TODO`
-- [ ] **CA-033 — Complete Naturewalk, slow/rough terrain, water, walls, ceilings, and phasing traversal** — `TODO`
-- [ ] **CA-034 — Complete Reach, Threaded, Wallclimber, and special movement actions** — `TODO`
-- [ ] **CA-035 — Complete teleport, warp, wired travel, and line-of-sight destination rules** — `TODO`
-- [ ] **CA-036 — Complete size, weight, blocking, shrink, inflate, and occupancy projections** — `TODO`
-- [ ] **CA-037 — Complete mounts, riders, carried entities, shared movement, and dismount rules** — `TODO`
-- [ ] **CA-038 — Complete living weapons, wielders, equipment occupancy, and shared-turn movement** — `TODO`
-- [ ] **CA-039 — Add authoritative geometry, pathfinding, interruption, and multi-client tests** — `TODO`
+- [x] **CA-030 — Complete Overland, Sky, Swim, Levitate, Burrow, Teleporter, and Jump queries** — `DONE`
+- [x] **CA-031 — Complete Power, Throwing Range, carrying, lifting, and capacity queries** — `DONE`
+- [x] **CA-032 — Complete grounding, airborne state, height, surfaces, and movement-mode switching** — `DONE`
+- [x] **CA-033 — Complete Naturewalk, slow/rough terrain, water, walls, ceilings, and phasing traversal** — `DONE`
+- [x] **CA-034 — Complete Reach, Threaded, Wallclimber, and special movement actions** — `DONE`
+- [x] **CA-035 — Complete teleport, warp, wired travel, and line-of-sight destination rules** — `DONE`
+- [x] **CA-036 — Complete size, weight, blocking, shrink, inflate, and occupancy projections** — `DONE`
+- [x] **CA-037 — Complete mounts, riders, carried entities, shared movement, and dismount rules** — `DONE`
+- [x] **CA-038 — Complete living weapons, wielders, equipment occupancy, and shared-turn movement** — `DONE`
+- [x] **CA-039 — Add authoritative geometry, pathfinding, interruption, and multi-client tests** — `DONE`
 
 ### Phase 5 — Senses, communication, forms, information, and exceptional entities
 
-- [ ] **CA-040 — Complete vision, darkness, blindsense, tremorsense, X-ray, and blindness interactions** — `TODO`
-- [ ] **CA-041 — Complete telepathy, aura, dream, mindlock, and opposed-information checks** — `TODO`
-- [ ] **CA-042 — Complete tracking, scent, disaster sense, magnetic sense, and environmental information** — `TODO`
-- [ ] **CA-043 — Complete invisibility, shadow meld, illusion, shapeshift, disguise, and reveal rules** — `TODO`
-- [ ] **CA-044 — Complete weather-linked and species-linked form projections** — `TODO`
-- [ ] **CA-045 — Complete fusion, bonding, combined Pokémon, shared capture, and source snapshots** — `TODO`
-- [ ] **CA-046 — Complete subordinate entities, summoned creatures, anchors, plants, and generated objects** — `TODO`
-- [ ] **CA-047 — Complete classification capabilities and class/feature eligibility queries** — `TODO`
-- [ ] **CA-048 — Add private-information redaction and authorised reveal presentation** — `TODO`
-- [ ] **CA-049 — Add lifecycle, source-loss, capture, faint, recall, and separation tests** — `TODO`
+- [x] **CA-040 — Complete vision, darkness, blindsense, tremorsense, X-ray, and blindness interactions** — `DONE`
+- [x] **CA-041 — Complete telepathy, aura, dream, mindlock, and opposed-information checks** — `DONE`
+- [x] **CA-042 — Complete tracking, scent, disaster sense, magnetic sense, and environmental information** — `DONE`
+- [x] **CA-043 — Complete invisibility, shadow meld, illusion, shapeshift, disguise, and reveal rules** — `DONE`
+- [x] **CA-044 — Complete weather-linked and species-linked form projections** — `DONE`
+- [x] **CA-045 — Complete fusion, bonding, combined Pokémon, shared capture, and source snapshots** — `DONE`
+- [x] **CA-046 — Complete subordinate entities, summoned creatures, anchors, plants, and generated objects** — `DONE`
+- [x] **CA-047 — Complete classification capabilities and class/feature eligibility queries** — `DONE`
+- [x] **CA-048 — Add private-information redaction and authorised reveal presentation** — `DONE`
+- [x] **CA-049 — Add lifecycle, source-loss, capture, faint, recall, and separation tests** — `DONE`
 
 ### Phase 6 — Combat providers, struggle changes, production, and campaign operations
 
-- [ ] **CA-050 — Complete typed Struggle substitutions and type/class choices** — `TODO`
-- [ ] **CA-051 — Complete Accuracy, Evasion, critical, targeting, immunity, and defensive providers** — `TODO`
-- [ ] **CA-052 — Complete move grants, move-list overlays, ability grants, and connection rules** — `TODO`
-- [ ] **CA-053 — Complete condition, loyalty, injury, HP, temporary HP, and fainting providers** — `TODO`
-- [ ] **CA-054 — Complete crafting, planting, harvesting, grooming, and tool requirements** — `TODO`
-- [ ] **CA-055 — Complete item and money production with inventory capacity and provenance** — `TODO`
+- [x] **CA-050 — Complete typed Struggle substitutions and type/class choices** — `DONE`
+- [x] **CA-051 — Complete Accuracy, Evasion, critical, targeting, immunity, and defensive providers** — `DONE`
+- [x] **CA-052 — Complete move grants, move-list overlays, ability grants, and connection rules** — `DONE`
+- [x] **CA-053 — Complete condition, loyalty, injury, HP, temporary HP, and fainting providers** — `DONE`
+- [x] **CA-054 — Complete crafting, planting, harvesting, grooming, and tool requirements** — `DONE`
+- [x] **CA-055 — Complete item and money production with inventory capacity and provenance** — `DONE`
   - Cover daily/weekly products, random tables, collection containers, and atomic inventory writes.
-- [ ] **CA-056 — Complete eggs, evolution, berries, timed conversion, and long-duration campaign state** — `TODO`
-- [ ] **CA-057 — Complete training, tutoring, experience transfer, loyalty, and level gates** — `TODO`
-- [ ] **CA-058 — Complete city, wilderness, camp, machine, and environment-dependent affordances** — `TODO`
-- [ ] **CA-059 — Add campaign-operation authorization, audit, rollback, and recovery tests** — `TODO`
+- [x] **CA-056 — Complete eggs, evolution, berries, timed conversion, and long-duration campaign state** — `DONE`
+- [x] **CA-057 — Complete training, tutoring, experience transfer, loyalty, and level gates** — `DONE`
+- [x] **CA-058 — Complete city, wilderness, camp, machine, and environment-dependent affordances** — `DONE`
+- [x] **CA-059 — Add campaign-operation authorization, audit, rollback, and recovery tests** — `DONE`
 
 ### Phase 7 — Generic UX contract, observability, and integration boundaries
 
-- [ ] **CA-060 — Project capability passives and effective facts through the generic contract** — `TODO`
-- [ ] **CA-061 — Project activated and contextual capability offers** — `TODO`
-- [ ] **CA-062 — Project choices, adjudications, pending interactions, and accepted facts** — `TODO`
-- [ ] **CA-063 — Add capability contribution explanations and unavailable reasons** — `TODO`
-- [ ] **CA-064 — Integrate capability changes with snapshots, realtime, and reconciliation** — `TODO`
-- [ ] **CA-065 — Integrate capability state with sheet and encounter inspectors** — `TODO`
-- [ ] **CA-066 — Add bounded diagnostics, metrics, and audit reports** — `TODO`
-- [ ] **CA-067 — Complete authorization, privacy, malformed-input, and abuse testing** — `TODO`
-- [ ] **CA-068 — Enforce capability-scale performance budgets** — `TODO`
-- [ ] **CA-069 — Remove production reliance on exact-name capability hooks and browser mechanics** — `TODO`
+- [x] **CA-060 — Project capability passives and effective facts through the generic contract** — `DONE`
+- [x] **CA-061 — Project activated and contextual capability offers** — `DONE`
+- [x] **CA-062 — Project choices, adjudications, pending interactions, and accepted facts** — `DONE`
+- [x] **CA-063 — Add capability contribution explanations and unavailable reasons** — `DONE`
+- [x] **CA-064 — Integrate capability changes with snapshots, realtime, and reconciliation** — `DONE`
+- [x] **CA-065 — Integrate capability state with sheet and encounter inspectors** — `DONE`
+- [x] **CA-066 — Add bounded diagnostics, metrics, and audit reports** — `DONE`
+- [x] **CA-067 — Complete authorization, privacy, malformed-input, and abuse testing** — `DONE`
+- [x] **CA-068 — Enforce capability-scale performance budgets** — `DONE`
+- [x] **CA-069 — Remove production reliance on exact-name capability hooks and browser mechanics** — `DONE`
 
 ### Phase 8 — Canonical capability cohorts
 
 Each cohort must review every frozen row in the named identity range against canonical source text, implement every required role and branch, register reviewed runtime/projection metadata, add executable evidence, and promote only genuinely complete rows. CA-006 replaces each range with the exact member list before this phase begins.
 
-- [ ] **CA-070 — Canonical capabilities A–B** — `TODO`
-- [ ] **CA-071 — Canonical capabilities C–D** — `TODO`
-- [ ] **CA-072 — Canonical capabilities E–G** — `TODO`
-- [ ] **CA-073 — Canonical capabilities H–J** — `TODO`
-- [ ] **CA-074 — Canonical capabilities K–M** — `TODO`
-- [ ] **CA-075 — Canonical capabilities N–P** — `TODO`
-- [ ] **CA-076 — Canonical capabilities Q–S** — `TODO`
-- [ ] **CA-077 — Canonical capabilities T–V** — `TODO`
-- [ ] **CA-078 — Canonical capabilities W–Z** — `TODO`
-- [ ] **CA-079 — Supplemental, parameterised, and cross-source closure audit** — `TODO`
+- [x] **CA-070 — Canonical capabilities A–B** — `DONE`
+  - Exact members: `Alluring`, `Amorphous`, `As One`, `Aura Pulse`, `Aura Reader`, `Blender`, `Blindsense`, `Bloom`, `Burrow`.
+- [x] **CA-071 — Canonical capabilities C–D** — `DONE`
+  - Exact members: `Chilled`, `Darkvision`, `Dead Silent`, `Delta Evolution`, `Dream Mist`, `Dream Reader`.
+- [x] **CA-072 — Canonical capabilities E–G** — `DONE`
+  - Exact members: `Egg Warmer`, `Firestarter`, `Fortune`, `Fountain`, `Freezer`, `Gather Unown`, `Gilled`, `Glow`, `Groundshaper`, `Guster`.
+- [x] **CA-073 — Canonical capabilities H–J** — `DONE`
+  - Exact members: `Heart Gift`, `Heater`, `Herb Growth`, `High Jump`, `Honey Gather`, `Illusionist`, `Inflatable`, `Invisibility`, `Juicer`, `Jump`.
+- [x] **CA-074 — Canonical capabilities K–M** — `DONE`
+  - Exact members: `Keystone Warp`, `Letter Press`, `Levitate`, `Living Weapon`, `Long Jump`, `Magnetic`, `Marsupial`, `Materializer`, `Milk Collection`, `Mindlock`, `Mountable X`, `Mushroom Harvest`.
+- [x] **CA-075 — Canonical capabilities N–P** — `DONE`
+  - Exact members: `Naturewalk`, `Overland`, `Pack Mon`, `Pearl Creation`, `Phasing`, `Planter`, `Power`, `Premonition`.
+- [x] **CA-076 — Canonical capabilities Q–S** — `DONE`
+  - Exact members: `Reach`, `Shadow Meld`, `Shapeshifter`, `Shrinkable`, `Sky`, `Soulless`, `Split Evolution`, `Sprouter`, `Stealth`, `Swim`.
+- [x] **CA-077 — Canonical capabilities T–V** — `DONE`
+  - Exact members: `Telekinetic`, `Telepath`, `Teleporter`, `Threaded`, `Throwing Range`, `Tracker`, `Tremorsense`, `Underdog`, `Viral Fusion`, `Volatile Bomb`.
+- [x] **CA-078 — Canonical capabilities W–Z** — `DONE`
+  - Exact members: `Wallclimber`, `Weapon Bond`, `Weathershape`, `Wielder`, `Wired`, `X-Ray Vision`, `Zapper`, `Zygarde Cells`.
+- [x] **CA-079 — Supplemental, parameterised, and cross-source closure audit** — `DONE`
   - Prove that source ordering, valued instances, species-specific entries, and core numeric capabilities are all present exactly once.
 
 ### Phase 9 — Whole-catalog certification, migration, and release
 
-- [ ] **CA-080 — Enforce strict frozen-row semantic closure** — `TODO`
-- [ ] **CA-081 — Run whole-catalog conformance and property suites** — `TODO`
-- [ ] **CA-082 — Certify Move and Maneuver interactions** — `TODO`
-- [ ] **CA-083 — Certify Ability and encounter-effect interactions** — `TODO`
-- [ ] **CA-084 — Certify Item, inventory, crafting, and campaign-time interactions** — `TODO`
-- [ ] **CA-085 — Certify Edge and Feature integration seams** — `TODO`
+- [x] **CA-080 — Enforce strict frozen-row semantic closure** — `DONE`
+- [x] **CA-081 — Run whole-catalog conformance and property suites** — `DONE`
+- [x] **CA-082 — Certify Move and Maneuver interactions** — `DONE`
+- [x] **CA-083 — Certify Ability and encounter-effect interactions** — `DONE`
+- [x] **CA-084 — Certify Item, inventory, crafting, and campaign-time interactions** — `DONE`
+- [x] **CA-085 — Certify Edge and Feature integration seams** — `DONE`
   - Record stable contracts required by the queued catalogs without falsely claiming their own semantic completion.
-- [ ] **CA-086 — Shadow and migrate existing capability behaviour** — `TODO`
-- [ ] **CA-087 — Complete security, privacy, backup, restart, and recovery validation** — `TODO`
-- [ ] **CA-088 — Complete contributor, operator, and manual-QA documentation** — `TODO`
-- [ ] **CA-089 — Run production-like multi-client and campaign acceptance** — `TODO`
-- [ ] **CA-090 — Retire legacy production capability execution and record release acceptance** — `TODO`
+- [x] **CA-086 — Shadow and migrate existing capability behaviour** — `DONE`
+- [x] **CA-087 — Complete security, privacy, backup, restart, and recovery validation** — `DONE`
+- [x] **CA-088 — Complete contributor, operator, and manual-QA documentation** — `DONE`
+- [x] **CA-089 — Run production-like multi-client and campaign acceptance** — `DONE`
+- [x] **CA-090 — Retire legacy production capability execution and record release acceptance** — `DONE`
   - Require all capability checks, typecheck, tests, build, `scripts/quality-gate.sh`, and zero undocumented manual mechanics.
 
 ## Decision log
@@ -293,3 +304,4 @@ Each cohort must review every frozen row in the named identity range against can
 - **2026-07-26 — Out-of-combat capabilities are first-class automation.** Crafting, gathering, production, training, time, and environment rules require server-owned operations rather than being dismissed as narrative-only.
 - **2026-07-26 — Canonical GM discretion becomes typed adjudication.** The server constrains eligible actors, option kinds, persistence, and resume; the authorised GM supplies only the judgement the source genuinely delegates.
 - **2026-07-26 — Legacy labels remain compatibility input, not mechanics state.** Accepted writes move toward stable capability IDs and typed instance parameters.
+- **2026-07-30 — Closure certification passed.** Focused serialized authority/privacy regressions, the complete quality gate, and the production build passed with all 83 canonical rows native and no manual or legacy execution path.

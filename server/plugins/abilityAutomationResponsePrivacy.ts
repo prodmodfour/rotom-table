@@ -1,5 +1,6 @@
 import { getAuthRole } from '../utils/auth'
 import { projectAbilityAutomationJsonForPlayer } from '../domain/abilityAutomation/realtimeProjection'
+import { projectCapabilityAutomationJsonForPlayer } from '../domain/capabilityAutomation/realtimeProjection'
 
 /**
  * Defense-in-depth for player HTTP responses. Individual read use cases still
@@ -9,6 +10,8 @@ import { projectAbilityAutomationJsonForPlayer } from '../domain/abilityAutomati
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('beforeResponse', (event, response) => {
     if (getAuthRole(event) !== 'player') return
-    response.body = projectAbilityAutomationJsonForPlayer(response.body)
+    response.body = projectCapabilityAutomationJsonForPlayer(
+      projectAbilityAutomationJsonForPlayer(response.body),
+    )
   })
 })

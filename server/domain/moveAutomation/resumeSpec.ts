@@ -411,7 +411,7 @@ export const resumeMoveSpec = (
   const authoritativeTargetIds = targetingKind === 'self'
     ? []
     : evidence.includedIds
-  const context = buildAuthoritativeMoveRulesContext({
+  let context = buildAuthoritativeMoveRulesContext({
     map: input.map,
     pokemonSheets: input.pokemonSheets,
     trainerSheets: input.trainerSheets,
@@ -419,6 +419,9 @@ export const resumeMoveSpec = (
       schemaVersion: 1,
       placementId: pending.actorPlacementId,
       moveName: pending.canonicalMoveId,
+      ...(Object.prototype.hasOwnProperty.call(pending, 'attackSourceId')
+        ? { attackSourceId: pending.attackSourceId ?? null }
+        : {}),
       ...(pending.virtualOriginCell ? { originCell: { ...pending.virtualOriginCell } } : {}),
       ...(pending.targetBranchId ? { targetBranchId: pending.targetBranchId } : {}),
       selection: retainedRootSelection(pending),
@@ -440,6 +443,11 @@ export const resumeMoveSpec = (
     return fail('move-entry-unavailable', entryResult.message)
   }
   const entry = entryResult.entry
+  const selectedAttackSourceId = entry.sourceEntry.attackSourceId ?? null
+  context = Object.freeze({
+    ...context,
+    intent: Object.freeze({ ...context.intent, attackSourceId: selectedAttackSourceId }),
+  })
   const serverAbilityTargetingOverride = aa068DustCloudBurstEnabled({
     context,
     script: entry.script,
@@ -668,6 +676,7 @@ export const resumeMoveSpec = (
       moveKey: resolvedMoveKey,
       frequency: entry.frequency,
       damageFormula: entry.damageFormula,
+      ...(selectedAttackSourceId ? { attackSourceId: selectedAttackSourceId } : {}),
       resourceRange: entry.script.range,
       ...(movementProjection.resourceMovement
         ? { resourceMovement: movementProjection.resourceMovement }
@@ -711,6 +720,7 @@ export const resumeMoveSpec = (
     moveKey: resolvedMoveKey,
     frequency: entry.frequency,
     damageFormula: entry.damageFormula,
+    ...(selectedAttackSourceId ? { attackSourceId: selectedAttackSourceId } : {}),
     selectedTargetIds: [...authoritativeTargetIds],
     sheetReads: immediate.sheetReads,
     rollLedger: immediate.rollLedger,

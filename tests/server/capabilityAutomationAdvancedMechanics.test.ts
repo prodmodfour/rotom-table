@@ -713,6 +713,56 @@ describe('advanced Capability mechanics', () => {
     }))
   })
 
+  it('requires a Level 20 Pokémon before starting a Fortune roam', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'fortune-mon', position: { x: 1, y: 1, z: 1 },
+    }
+    const pokemon: CharacterSheet = {
+      slug: actor.sheetSlug, species: 'Meowth', level: 19,
+      capabilities: { other: ['Fortune'] },
+    }
+    const map = { ...baseMap([actor]), metadata: { capabilityContexts: ['city-or-town'] } }
+    expect(() => validateAction({
+      canonicalId: 'Fortune', actionId: 'roam-for-fortune', actor, map,
+      sheets: [pokemon], selections: { gmConfirmed: false },
+    })).toThrow(/at least Level 20/i)
+  })
+
+  it('invalidates a pending Fortune decision when its exact roam is abandoned', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'fortune-mon', position: { x: 1, y: 1, z: 1 },
+    }
+    const pokemon: CharacterSheet = {
+      slug: actor.sheetSlug, species: 'Meowth', level: 20,
+      capabilities: { other: ['Fortune'] },
+    }
+    const map = baseMap([actor])
+    map.encounterState = {
+      ...map.encounterState!,
+      capabilityRuntime: {
+        ...map.encounterState!.capabilityRuntime!,
+        tasks: [{
+          id: 'capability.task.actor.fortune-roam', kind: 'fortune-roam',
+          actorPlacementId: actor.id, capabilityInstanceId: 'capability:actor:Fortune:base',
+          canonicalId: 'Fortune', startedAt: 1, completesAt: 999,
+          sourceOperationId: 'operation-roam-for-fortune',
+        }],
+        pendingAdjudications: [{
+          requestId: 'operation-resolve-old-roam', actorPlacementId: actor.id,
+          capabilityInstanceId: 'capability:actor:Fortune:base', canonicalId: 'Fortune',
+          actionId: 'resolve-fortune-roam', requestedAt: 1_000, expiresAt: 100_000,
+          sourceOperationId: 'operation-resolve-old-roam',
+        }],
+      },
+    }
+    const result = run({
+      canonicalId: 'Fortune', actionId: 'abandon-fortune-roam', actor,
+      map, sheets: [pokemon],
+    })
+    expect(result.map.encounterState?.capabilityRuntime?.tasks).toEqual([])
+    expect(result.map.encounterState?.capabilityRuntime?.pendingAdjudications).toEqual([])
+  })
+
   it('removes a low-Loyalty Fortune runaway from play and every linked Trainer roster without rolling money', () => {
     const actor: SheetPlacement = { id: 'actor', sheetKind: 'pokemon', sheetSlug: 'fortune-mon', position: { x: 1, y: 1, z: 1 } }
     const pokemon: CharacterSheet = {
@@ -725,9 +775,22 @@ describe('advanced Capability mechanics', () => {
     const second: TrainerSheet = {
       slug: 'second', name: 'Second', level: 10, currentTeam: [], boxedPokemon: [pokemon.slug],
     }
+    const fortuneMap = baseMap([actor])
+    fortuneMap.encounterState = {
+      ...fortuneMap.encounterState!,
+      capabilityRuntime: {
+        ...fortuneMap.encounterState!.capabilityRuntime!,
+        tasks: [{
+          id: 'capability.task.actor.fortune-roam', kind: 'fortune-roam',
+          actorPlacementId: actor.id, capabilityInstanceId: 'capability:actor:Fortune:base',
+          canonicalId: 'Fortune', startedAt: 1, completesAt: 999,
+          sourceOperationId: 'operation-roam-for-fortune',
+        }],
+      },
+    }
     const result = run({
-      canonicalId: 'Fortune', actionId: 'roam-for-fortune', actor,
-      map: baseMap([actor]), sheets: [pokemon], trainers: [first, second],
+      canonicalId: 'Fortune', actionId: 'resolve-fortune-roam', actor,
+      map: fortuneMap, sheets: [pokemon], trainers: [first, second],
       linkedTrainerSlugs: [first.slug, second.slug], selections: { optionId: 'runs-away' },
     })
     expect(result.reasonCode).toBe('capability.fortune.user-ran-away')

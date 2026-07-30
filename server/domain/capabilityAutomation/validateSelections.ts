@@ -6,6 +6,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { pokemonHasResolvedCapability, resolveSkills } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
+import { capabilityStandardActionRestriction } from './actionEligibility'
 import { findItem, findMove } from '~~/data/ptuReference'
 import type { TrainerInventory } from '~/types/trainerSheet'
 import { computePokemonTutorPointsEarnedForSheet } from '~/utils/sheets/pokemonTutorPoints'
@@ -537,6 +538,18 @@ export const validateCapabilityActionSelections = (input: {
     placementId: actingPlacement.id,
     powerByCapabilityInstanceId: physicalPowerSourceValues(actingEffectiveCapabilities),
   })
+  if (input.action.economy === 'standard') {
+    const restriction = capabilityStandardActionRestriction({
+      map: input.map,
+      placement: actingPlacement,
+      sheet: actingSheet,
+      pokemonSheets: input.pokemonSheets,
+      trainerSheets: input.trainerSheets,
+      now: input.now,
+      allowShrunkenRestore: input.command.actionId === 'restore-size',
+    })
+    if (restriction) fail(restriction.code, restriction.message)
+  }
   if (input.action.economy === 'standard' && actingPhysicalLoad?.standardActionsAllowed === false) {
     fail('physical-power-standard-action-blocked', 'Staggering Weight prevents the actor from taking Standard Actions.')
   }
@@ -1706,11 +1719,70 @@ export const validateCapabilityActionSelections = (input: {
     })) fail('egg-resource-missing', 'Egg Warmer requires an exact authoritative egg resource.')
   }
 
-  if (input.command.actionId === 'roam-for-fortune' && input.actor.sheetKind === 'pokemon'
-    && ((input.actorSheet as CharacterSheet).loyalty ?? 3) <= 1 && input.command.selections.gmConfirmed) {
-    const decision = (input.command.selections.optionId ?? input.command.selections.description)?.trim().toLocaleLowerCase('en-US')
-    if (decision !== 'returns' && decision !== 'runs-away') {
-      fail('fortune-loyalty-choice-invalid', 'Low-Loyalty Fortune requires the bounded GM choice returns or runs-away.')
+  if (input.command.actionId === 'roam-for-fortune'
+    || input.command.actionId === 'resolve-fortune-roam'
+    || input.command.actionId === 'abandon-fortune-roam') {
+    if (input.actor.sheetKind !== 'pokemon') {
+      fail('fortune-pokemon-required', 'Fortune roaming is available only to Pokémon.')
+    }
+    if ((input.actorSheet.level ?? 0) < 20) {
+      fail('fortune-level-required', 'Fortune roaming requires a Pokémon of at least Level 20.')
+    }
+    const task = input.map.encounterState?.capabilityRuntime?.tasks.find(candidate => (
+      candidate.kind === 'fortune-roam'
+      && candidate.actorPlacementId === input.actor.id
+      && candidate.capabilityInstanceId === input.command.capabilityInstanceId
+      && candidate.canonicalId === 'Fortune'
+    ))
+    if (input.command.actionId === 'roam-for-fortune') {
+      if (task) fail('fortune-roam-already-active', 'This exact Fortune source already has an active roam.')
+      if (input.command.selections.cells.length > 0
+        || input.command.selections.targetPlacementIds.length > 0
+        || input.command.selections.optionId !== null
+        || input.command.selections.recipientTrainerSlug !== null
+        || input.command.selections.canonicalItemId !== null
+        || input.command.selections.description !== null
+        || input.command.selections.gmConfirmed) {
+        fail('fortune-roam-start-selection-invalid', 'Starting a Fortune roam does not resolve its one-hour outcome early.')
+      }
+    }
+    else {
+      const activeTask = task
+        ?? fail('fortune-roam-task-missing', 'The exact source-owned Fortune roam is no longer active.')
+      if (input.command.actionId === 'resolve-fortune-roam' && input.now < activeTask.completesAt) {
+        fail('fortune-roam-not-due', 'The Fortune roam has not completed its authoritative one-hour duration.')
+      }
+      if (input.command.selections.cells.length > 0
+        || input.command.selections.targetPlacementIds.length > 0
+        || input.command.selections.canonicalItemId !== null) {
+        fail('fortune-roam-continuation-selection-invalid', 'Fortune roam continuation actions do not accept targets, cells, or items.')
+      }
+      if (input.command.actionId === 'abandon-fortune-roam') {
+        if (input.command.selections.optionId !== null
+          || input.command.selections.recipientTrainerSlug !== null
+          || input.command.selections.description !== null
+          || input.command.selections.gmConfirmed) {
+          fail('fortune-roam-abandon-selection-invalid', 'Abandoning a Fortune roam does not accept outcome choices.')
+        }
+      }
+      else if (input.command.selections.gmConfirmed) {
+        const decision = (input.command.selections.optionId ?? input.command.selections.description)
+          ?.trim().toLocaleLowerCase('en-US')
+        const lowLoyalty = input.actor.sheetKind === 'pokemon'
+          && ((input.actorSheet as CharacterSheet).loyalty ?? 3) <= 1
+        if (decision !== 'returns' && (decision !== 'runs-away' || !lowLoyalty)) {
+          fail('fortune-loyalty-choice-invalid', lowLoyalty
+            ? 'Low-Loyalty Fortune requires the bounded GM choice returns or runs-away.'
+            : 'A Fortune user above Loyalty 1 must return from its roam.')
+        }
+        if (decision === 'returns') {
+          const recipient = input.command.selections.recipientTrainerSlug
+          if (!recipient || !linkedTrainerSheets(input.actor, input.trainerSheets)
+            .some(trainer => trainer.slug === recipient)) {
+            fail('fortune-recipient-invalid', 'A returning Fortune user requires one exact linked Trainer recipient.')
+          }
+        }
+      }
     }
   }
 

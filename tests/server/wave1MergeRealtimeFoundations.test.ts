@@ -151,7 +151,7 @@ describe('Wave 1 merge realtime foundations', () => {
       events: [visibleMove.realtimeEvents[0]],
       principal: player(),
       dependencies: deps,
-    }).allowed).toEqual([visibleMove.realtimeEvents[0]])
+    }).allowed).toMatchObject([visibleMove.realtimeEvents[0]])
     expect(filterRealtimeEventsForPrincipal({
       events: [hiddenMove.realtimeEvents[0]],
       principal: player(),

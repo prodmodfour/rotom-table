@@ -1,10 +1,12 @@
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import type { GridAnchor } from '~/types/map'
 import type { MoveAutomationAreaDirection } from '~/types/moveAutomation'
+import type { MoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 
 interface MoveAutomationResolveIntentBaseInput {
   readonly actorPlacementId: string
   readonly moveName: string
+  readonly attackSourceId?: MoveAttackSourceId | null
   readonly targetBranchId?: string | null
   readonly originCell?: GridAnchor
 }
@@ -81,6 +83,7 @@ const baseIntentFields = (input: MoveAutomationResolveIntentBaseInput) => ({
   schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
   placementId: input.actorPlacementId.trim(),
   moveName: input.moveName.trim(),
+  ...(input.attackSourceId !== undefined ? { attackSourceId: input.attackSourceId } : {}),
   ...(nonEmptyTrimmed(input.targetBranchId) ? { targetBranchId: nonEmptyTrimmed(input.targetBranchId) } : {}),
   ...(input.originCell ? { originCell: cloneGridAnchor(input.originCell) } : {}),
 })

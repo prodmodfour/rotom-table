@@ -311,6 +311,7 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   moveKey: resolution.moveKey,
   frequency: resolution.frequency,
   damageFormula: resolution.damageFormula,
+  ...(resolution.attackSourceId == null ? {} : { attackSourceId: resolution.attackSourceId }),
   ...(resolution.targetBranchId === undefined ? {} : { targetBranchId: resolution.targetBranchId }),
   selectedTargetIds: [...resolution.selectedTargetIds],
   sheetReads: cloneJson(resolution.sheetReads),
@@ -1101,6 +1102,7 @@ const planPendingMoveState = (options: {
     originMapRevision: options.previousRevision,
     authoritativeMap: options.input.map,
     actorPlacementId: options.execution.actorPlacementId,
+    attackSourceId: options.execution.attackSourceId ?? null,
     ...(options.input.intent.originCell ? { virtualOriginCell: options.input.intent.originCell } : {}),
     ...(options.input.intent.targetBranchId
       ? { targetBranchId: options.input.intent.targetBranchId }

@@ -26,6 +26,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { defaultTargetResolutionState } from '~/utils/moveAutomationTargetResolution'
 import { applyEncounterEffectLifecycleEvent } from '../../server/domain/moveAutomation/effectLifecycle'
 import { reconcileLivingWeaponRoundMovementResources } from '../../server/domain/capabilityAutomation/livingWeaponMovement'
+import { livingWeaponAttackSourceId } from '../../server/domain/capabilityAutomation/livingWeaponAttackSource'
 import { ENCOUNTER_EVENT_SCHEMA_VERSION } from '#shared/moveAutomation/events'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 
@@ -45,10 +46,14 @@ const pokemon = (slug: string, overrides: Partial<CharacterSheet> = {}): Charact
   slug, nickname: slug, species: slug === actor.sheetSlug ? 'Pikachu' : 'Snorlax', level: 30,
   combat: { currentHp: 50 }, ...overrides,
 })
-const moveIntent = (moveName: string): ResolveMoveIntent => ({
+const moveIntent = (
+  moveName: string,
+  attackSourceId?: ResolveMoveIntent['attackSourceId'],
+): ResolveMoveIntent => ({
   schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
   placementId: actor.id,
   moveName,
+  ...(attackSourceId !== undefined ? { attackSourceId } : {}),
   selection: { kind: 'single-target', targetPlacementId: target.id },
 })
 const moveContext = (
@@ -299,7 +304,36 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
         },
       },
     })
-    const linkedContext = (actorSheet: CharacterSheet, moveName: string, livingWeaponSheet: CharacterSheet) => (
+    const livingWeaponLink = map.encounterState?.capabilityRuntime?.links[0]
+    if (!livingWeaponLink) throw new Error('Expected Living Weapon link fixture.')
+    const attackSourceId = livingWeaponAttackSourceId({
+      mapSlug: map.slug,
+      actingPlacementId: actor.id,
+      link: livingWeaponLink,
+    })
+    const projection = buildEncounterPresentationProjection({
+      role: 'gm',
+      map,
+      mapRevision: 1,
+      pokemonSheets: [wielder, victim, weapon],
+      trainerSheets: [],
+      generatedAt: 1_000,
+    })
+    expect(projection.offers.filter(offer => (
+      offer.actor.participantId === actor.id && offer.source.canonicalId === 'Struggle'
+    )).map(offer => offer.source.instanceId)).toEqual(expect.arrayContaining([null, attackSourceId]))
+    expect(projection.offers.find(offer => (
+      offer.actor.participantId === actor.id && offer.source.canonicalId === 'Wounding Strike'
+    ))?.source.instanceId).toBe(attackSourceId)
+    expect(JSON.stringify(projection)).not.toContain('operation:living-weapon')
+    expect(JSON.stringify(projection)).not.toContain('capability.link.living-weapon')
+
+    const linkedContext = (
+      actorSheet: CharacterSheet,
+      moveName: string,
+      livingWeaponSheet: CharacterSheet,
+      selectedAttackSourceId?: ResolveMoveIntent['attackSourceId'],
+    ) => (
       buildAuthoritativeMoveRulesContext({
         map,
         pokemonSheets: new Map([
@@ -308,24 +342,40 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
           [livingWeaponSheet.slug, livingWeaponSheet],
         ]),
         trainerSheets: new Map<string, TrainerSheet>(),
-        intent: moveIntent(moveName), candidatePlacementIds: [target.id], selectedPlacementIds: [target.id],
+        intent: moveIntent(moveName, selectedAttackSourceId),
+        candidatePlacementIds: [target.id], selectedPlacementIds: [target.id],
         random: () => 0, time: 1_000,
       })
     )
     expect(linkedContext(wielder, 'Wounding Strike', weapon).queries.resolveActorMoveEntry('Wounding Strike'))
       .toMatchObject({ ok: true, entry: { hasStab: false, script: { damageBase: 7 } } })
 
-    const activeWeaponContext = linkedContext(wielder, 'Struggle', weapon)
+    const nativeStruggleContext = linkedContext(wielder, 'Struggle', weapon, null)
+    const nativeStruggle = nativeStruggleContext.queries.resolveActorMoveEntry('Struggle')
+    if (!nativeStruggle.ok) throw new Error('Expected native Struggle fixture.')
+    const activeWeaponContext = linkedContext(wielder, 'Struggle', weapon, attackSourceId)
     const activeStruggle = activeWeaponContext.queries.resolveActorMoveEntry('Struggle')
     if (!activeStruggle.ok) throw new Error('Expected Living Weapon Struggle fixture.')
     const faintedWeaponContext = linkedContext(wielder, 'Struggle', {
       ...weapon, combat: { ...weapon.combat, currentHp: 0 },
-    })
+    }, attackSourceId)
     const conditionFaintedWeaponContext = linkedContext(wielder, 'Struggle', {
       ...weapon, combat: { ...weapon.combat, currentHp: 10, conditions: ['Fainted'] },
-    })
+    }, attackSourceId)
     const faintedStruggle = faintedWeaponContext.queries.resolveActorMoveEntry('Struggle')
     if (!faintedStruggle.ok) throw new Error('Expected fainted Living Weapon Struggle fixture.')
+    expect(resolveAuthoritativeMoveFromContext(activeWeaponContext).attackSourceId).toBe(attackSourceId)
+    expect(resolveAuthoritativeMoveFromContext(faintedWeaponContext).attackSourceId).toBe(attackSourceId)
+    expect(resolveAuthoritativeMoveFromContext(conditionFaintedWeaponContext).attackSourceId).toBe(attackSourceId)
+    expect(activeWeaponContext.reads.snapshot()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'pokemon', slug: wielder.slug }),
+      expect.objectContaining({ kind: 'pokemon', slug: weapon.slug }),
+    ]))
+    expect(resolveAuthoritativeMoveFromContext(nativeStruggleContext)).not.toHaveProperty('attackSourceId')
+    expect(activeStruggle.entry.script.damageBase).toBe((nativeStruggle.entry.script.damageBase ?? 0) + 1)
+    const nativeAccuracy = resolveAuthoritativeMoveUserAccuracy(nativeStruggleContext, {
+      script: nativeStruggle.entry.script,
+    })
     const activeAccuracy = resolveAuthoritativeMoveUserAccuracy(activeWeaponContext, {
       script: activeStruggle.entry.script,
     })
@@ -337,11 +387,96 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
     const conditionFaintedAccuracy = resolveAuthoritativeMoveUserAccuracy(conditionFaintedWeaponContext, {
       script: conditionFaintedStruggle.entry.script,
     })
+    expect(nativeAccuracy.value).toBe(activeAccuracy.value)
     expect(faintedAccuracy.value).toBe(activeAccuracy.value - 2)
     expect(conditionFaintedAccuracy.value).toBe(activeAccuracy.value - 2)
     expect(faintedAccuracy.modifiers).toContainEqual(expect.objectContaining({
       reason: 'Fainted Living Weapon', value: -2,
     }))
+
+    const secondWeaponPlacement: SheetPlacement = {
+      ...weaponPlacement,
+      id: 'living-weapon-two',
+      sheetSlug: 'living-weapon-sheet-two',
+    }
+    const secondWeapon = pokemon(secondWeaponPlacement.sheetSlug, {
+      species: 'Honedge', capabilities: { other: ['Living Weapon'] },
+      combat: { currentHp: 10, conditions: ['Fainted'] },
+    })
+    const multiSourceBase = baseMap({ placements: [actor, target, weaponPlacement, secondWeaponPlacement] })
+    const secondSourceInstance = resolveEffectiveCapabilities({
+      map: multiSourceBase,
+      placement: secondWeaponPlacement,
+      sheet: secondWeapon,
+      sheets: {
+        pokemon: new Map([
+          [wielder.slug, wielder], [victim.slug, victim],
+          [weapon.slug, weapon], [secondWeapon.slug, secondWeapon],
+        ]),
+        trainer: new Map(),
+      },
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'Living Weapon')
+    if (!secondSourceInstance) throw new Error('Expected second Living Weapon source fixture.')
+    const firstLink = livingWeaponLink
+    const secondLink = {
+      ...firstLink,
+      id: 'capability.link.living-weapon-two',
+      ownerPlacementId: secondWeaponPlacement.id,
+      capabilityInstanceId: secondSourceInstance.instanceId,
+      sourceOperationId: 'operation:living-weapon-two',
+    }
+    const multiSourceMap: TabletopMap = {
+      ...multiSourceBase,
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...createEmptyCapabilityRuntimeState(),
+          links: [firstLink, secondLink],
+        },
+      },
+    }
+    const firstSourceId = livingWeaponAttackSourceId({
+      mapSlug: multiSourceMap.slug, actingPlacementId: actor.id, link: firstLink,
+    })
+    const secondSourceId = livingWeaponAttackSourceId({
+      mapSlug: multiSourceMap.slug, actingPlacementId: actor.id, link: secondLink,
+    })
+    const multiSourceContext = (
+      selectedAttackSourceId?: ResolveMoveIntent['attackSourceId'],
+      moveName = 'Struggle',
+    ) => buildAuthoritativeMoveRulesContext({
+      map: multiSourceMap,
+      pokemonSheets: new Map([
+        [wielder.slug, wielder], [victim.slug, victim],
+        [weapon.slug, weapon], [secondWeapon.slug, secondWeapon],
+      ]),
+      trainerSheets: new Map(),
+      intent: moveIntent(moveName, selectedAttackSourceId),
+      candidatePlacementIds: [target.id], selectedPlacementIds: [target.id],
+      random: () => 0, time: 1_000,
+    })
+    expect(multiSourceContext(undefined, 'Wounding Strike').queries.resolveActorMoveEntry('Wounding Strike')).toMatchObject({
+      ok: false, reason: 'attack-source-ambiguous',
+    })
+    expect(multiSourceContext(null, 'Wounding Strike').queries.resolveActorMoveEntry('Wounding Strike')).toMatchObject({
+      ok: false, reason: 'move-absent',
+    })
+    expect(multiSourceContext().queries.resolveActorMoveEntry('Struggle')).toMatchObject({
+      ok: true, entry: { sourceEntry: expect.not.objectContaining({ attackSourceId: expect.anything() }) },
+    })
+    const healthySelectedContext = multiSourceContext(firstSourceId)
+    const faintedSelectedContext = multiSourceContext(secondSourceId)
+    const healthySelectedEntry = healthySelectedContext.queries.resolveActorMoveEntry('Struggle')
+    const faintedSelectedEntry = faintedSelectedContext.queries.resolveActorMoveEntry('Struggle')
+    if (!healthySelectedEntry.ok || !faintedSelectedEntry.ok) {
+      throw new Error('Expected both exact Living Weapon sources to resolve.')
+    }
+    expect(resolveAuthoritativeMoveUserAccuracy(healthySelectedContext, {
+      script: healthySelectedEntry.entry.script,
+    }).value).toBe(activeAccuracy.value)
+    expect(resolveAuthoritativeMoveUserAccuracy(faintedSelectedContext, {
+      script: faintedSelectedEntry.entry.script,
+    }).value).toBe(activeAccuracy.value - 2)
 
     const operation = parseMoveEffectOperation({
       id: 'living-weapon.damage',
@@ -387,9 +522,55 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
     const unqualified = { ...wielder, skills: { combat: '3d6' } }
     expect(linkedContext(unqualified, 'Wounding Strike', weapon).queries.resolveActorMoveEntry('Wounding Strike'))
       .toMatchObject({ ok: false, reason: 'creature-rule-blocked' })
+    const forgedSourceId = `attack-source.v1.${'f'.repeat(64)}` as const
+    expect(linkedContext(
+      wielder, 'Wounding Strike', weapon, forgedSourceId,
+    ).queries.resolveActorMoveEntry('Wounding Strike')).toMatchObject({
+      ok: false, reason: 'attack-source-invalid',
+    })
     const lostSource = { ...weapon, species: 'Pikachu', capabilities: { other: [] } }
-    expect(linkedContext(wielder, 'Wounding Strike', lostSource).queries.resolveActorMoveEntry('Wounding Strike'))
+    expect(linkedContext(
+      wielder, 'Wounding Strike', lostSource, attackSourceId,
+    ).queries.resolveActorMoveEntry('Wounding Strike'))
       .toMatchObject({ ok: false, reason: 'creature-rule-blocked' })
+
+    const relinkedLivingWeapon = {
+      ...livingWeaponLink,
+      id: 'capability.link.living-weapon.reengaged',
+      sourceOperationId: 'operation:living-weapon.reengaged',
+    }
+    const relinkedMap: TabletopMap = {
+      ...map,
+      encounterState: {
+        ...map.encounterState!,
+        capabilityRuntime: {
+          ...map.encounterState!.capabilityRuntime!,
+          links: [relinkedLivingWeapon],
+        },
+      },
+    }
+    const reengagedAttackSourceId = livingWeaponAttackSourceId({
+      mapSlug: relinkedMap.slug,
+      actingPlacementId: actor.id,
+      link: relinkedLivingWeapon,
+    })
+    const relinkedContext = (selectedAttackSourceId: ResolveMoveIntent['attackSourceId']) => (
+      buildAuthoritativeMoveRulesContext({
+        map: relinkedMap,
+        pokemonSheets: new Map([
+          [wielder.slug, wielder], [victim.slug, victim], [weapon.slug, weapon],
+        ]),
+        trainerSheets: new Map(),
+        intent: moveIntent('Wounding Strike', selectedAttackSourceId),
+        candidatePlacementIds: [target.id], selectedPlacementIds: [target.id],
+        random: () => 0, time: 1_000,
+      })
+    )
+    expect(reengagedAttackSourceId).not.toBe(attackSourceId)
+    expect(relinkedContext(attackSourceId).queries.resolveActorMoveEntry('Wounding Strike'))
+      .toMatchObject({ ok: false, reason: 'attack-source-invalid' })
+    expect(relinkedContext(reengagedAttackSourceId).queries.resolveActorMoveEntry('Wounding Strike'))
+      .toMatchObject({ ok: true, entry: { sourceEntry: { attackSourceId: reengagedAttackSourceId } } })
 
     const masterWielder = { ...wielder, skills: { combat: '6d6' } }
     const aegislash = { ...weapon, species: 'Aegislash' }
@@ -643,6 +824,17 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
     expect(capabilityContextualTargetEvasionBonus({ map: blended, placementId: actor.id, range: '6, 1 Target' })).toBe(2)
     expect(capabilityContextualTargetEvasionBonus({ map: blended, placementId: actor.id, range: 'Cone 2' })).toBe(2)
     expect(capabilityContextualTargetEvasionBonus({ map: blended, placementId: actor.id, range: 'Melee, 1 Target' })).toBe(0)
+    const firstTurnEnd = applyEncounterEffectLifecycleEvent(
+      { effects: blended.encounterState!.effects },
+      { kind: 'turn-end', placementId: actor.id },
+    )
+    expect(firstTurnEnd.effects.find(effect => effect.tags.includes('capability-mode.blended'))?.duration)
+      .toMatchObject({ remaining: 1 })
+    const secondTurnEnd = applyEncounterEffectLifecycleEvent(
+      { effects: firstTurnEnd.effects },
+      { kind: 'turn-end', placementId: actor.id },
+    )
+    expect(secondTurnEnd.effects.some(effect => effect.tags.includes('capability-mode.blended'))).toBe(false)
     expect(['6, 1 Target', 'Focus Rank', 'Line 4', 'Cone 2', 'Blast 3', 'Burst 1', 'Ranged, 1 Target']
       .every(capabilityMoveRangeIsRanged)).toBe(true)
     expect(capabilityMoveRangeIsRanged('Melee, 1 Target')).toBe(false)

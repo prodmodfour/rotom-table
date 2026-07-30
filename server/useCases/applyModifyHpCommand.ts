@@ -669,6 +669,26 @@ const resolveModifyHpSheet = (
       ),
     }
   }
+  const hasPhysicalPowerLoad = Array.isArray(target.mapState.document.metadata?.capabilityObjects)
+    && target.mapState.document.metadata.capabilityObjects.some((raw) => {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
+      const object = raw as Record<string, unknown>
+      return object.attachmentKind === 'physical-power-load'
+        && typeof object.attachedToPlacementId === 'string'
+        && backingPlacementIds.has(object.attachedToPlacementId)
+    })
+  if (hasPhysicalPowerLoad && command.payload.currentHp <= 0) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        'Legacy hosted-session HP changes cannot atomically detach Physical Power loads; use profile live play.',
+        processedAt,
+        { retryable: false, currentState: null },
+      ),
+    }
+  }
   const soullessAuthorities = new Set(target.mapState.document.placements
     .filter(placement => backingPlacementIds.has(placement.id))
     .map(placement => resolveEffectiveCapabilities({

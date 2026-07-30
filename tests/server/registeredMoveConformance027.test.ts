@@ -834,12 +834,12 @@ describe('REG-027 registered move conformance', () => {
       expect(() => resolveAuthoritativeMove({
         ...fixture,
         random: () => { throw new Error('missing capability must not roll') },
-      })).toThrowError(expect.objectContaining({ code: 'move-absent' }))
+      })).toThrowError(expect.objectContaining({ code: 'move-creature-rule-blocked' }))
       expect(() => planAuthoritativeMoveState({
         ...fixture,
         random: () => { throw new Error('missing capability must not roll') },
         operationId: `op_${scenario.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
-      })).toThrowError(expect.objectContaining({ code: 'move-absent' }))
+      })).toThrowError(expect.objectContaining({ code: 'move-creature-rule-blocked' }))
       expect({ map: fixture.map, sheets: [...fixture.pokemonSheets] }).toEqual(snapshot)
 
       const harness = openHarness(fixture)
@@ -849,8 +849,9 @@ describe('REG-027 registered move conformance', () => {
       })
       expect(response.result).toMatchObject({
         ok: false,
-        reason: 'not-found',
-        message: expect.stringContaining('is not available'),
+        reason: 'conflict',
+        message: expect.stringContaining('requires effective'),
+        currentState: { code: 'move-creature-rule-blocked' },
       })
       expect(harness.maps.getBySlug(fixture.map.slug)?.revision).toBe(7)
       expect(harness.sheets.list().every(sheet => sheet.revision === 3)).toBe(true)

@@ -38,6 +38,9 @@ import {
 } from '../../shared/playerProfiles'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
+import { resolveEffectiveCapabilities } from '../../server/domain/capabilityAutomation/effectiveCapabilities'
+import { livingWeaponAttackSourceId } from '../../server/domain/capabilityAutomation/livingWeaponAttackSource'
+import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
 
 const tempRoots: string[] = []
 const databases: RotomDatabase[] = []
@@ -316,6 +319,143 @@ describe('durable Attack of Opportunity commands', () => {
     expect(harness.maps.getBySlug('arena')?.placements.find(
       placement => placement.id === 'provoker',
     )?.position).toEqual({ x: 2, y: 0, z: 1 })
+  })
+
+  it('preserves an exact Living Weapon source when resolving a Struggle opportunity attack', async () => {
+    const harness = createHarness()
+    const attackerStored = harness.sheets.getByRef('pokemon', 'attacker-mon')!
+    const attackerSheet: CharacterSheet = {
+      ...(attackerStored.sheet as unknown as CharacterSheet),
+      revision: 3,
+      skills: { combat: '4d6' },
+    }
+    expect(harness.sheets.applyLivePlayUpdate({
+      kind: 'pokemon',
+      slug: attackerSheet.slug,
+      expectedRevision: attackerStored.revision,
+      nextSheet: attackerSheet as unknown as Record<string, unknown>,
+    })).toBe('applied')
+    const weaponSheet: CharacterSheet = {
+      ...sheet('living-weapon-mon', 'Honedge', 'Edge'),
+      capabilities: { other: ['Living Weapon'] },
+    }
+    harness.sheets.save({
+      kind: 'pokemon', slug: weaponSheet.slug,
+      document: weaponSheet as unknown as Record<string, unknown>,
+      revision: weaponSheet.revision ?? 0, updatedAt: 20,
+    })
+    const currentMap = harness.maps.getBySlug('arena')!
+    const weaponPlacement = {
+      id: 'living-weapon',
+      sheetKind: 'pokemon' as const,
+      sheetSlug: weaponSheet.slug,
+      position: { x: 0, y: 0, z: 1 },
+    }
+    const unlinkedMap: TabletopMap = {
+      ...currentMap,
+      placements: [...currentMap.placements, weaponPlacement],
+    }
+    const source = resolveEffectiveCapabilities({
+      map: unlinkedMap,
+      placement: weaponPlacement,
+      sheet: weaponSheet,
+      sheets: {
+        pokemon: new Map([
+          ['attacker-mon', attackerSheet],
+          [weaponSheet.slug, weaponSheet],
+          ['provoker-mon', sheet('provoker-mon', 'Snorlax', 'Provoker')],
+          ['target-mon', sheet('target-mon', 'Abra', 'Target')],
+        ]),
+        trainer: new Map(),
+      },
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'Living Weapon')
+    if (!source) throw new Error('Expected Living Weapon source fixture.')
+    const link = {
+      id: 'capability.link.aoo-living-weapon',
+      kind: 'living-weapon' as const,
+      ownerPlacementId: weaponPlacement.id,
+      participantPlacementIds: ['attacker'],
+      capabilityInstanceId: source.instanceId,
+      canonicalId: 'Living Weapon',
+      establishedAt: 100,
+      configurationId: null,
+      sourceOperationId: 'operation:aoo-living-weapon',
+    }
+    const linkedMap: TabletopMap = {
+      ...unlinkedMap,
+      encounterState: {
+        ...createEmptyEncounterState(),
+        capabilityRuntime: {
+          ...createEmptyCapabilityRuntimeState(),
+          links: [link],
+        },
+      },
+      revision: 8,
+      updatedAt: 100,
+    }
+    expect(harness.maps.applyLivePlayUpdate({
+      slug: linkedMap.slug,
+      expectedRevision: 7,
+      nextMap: linkedMap,
+    })).toBe('applied')
+    const attackSourceId = livingWeaponAttackSourceId({
+      mapSlug: linkedMap.slug,
+      actingPlacementId: 'attacker',
+      link,
+    })
+
+    await executeAttackOfOpportunityLivePlayCommandUseCase({
+      role: 'gm',
+      command: { ...triggerCommand('op_aoosourced01'), baseRevision: 8 },
+      clientId: 'gm-client',
+      expectedType: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+    }, harness.triggerDeps)
+    const pending = harness.pending.listByMap('arena')[0]!
+    expect(pending.resolution).toHaveProperty('attackSourceId', null)
+    expect(pending.resolution.readSet).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'sheet', slug: attackerSheet.slug, revision: 3 }),
+      expect.objectContaining({ kind: 'sheet', slug: weaponSheet.slug, revision: 2 }),
+    ]))
+    const window = pending.resolution.outstandingWindows[0]!
+    const sourcedOption = window.options.find(option => option.id.includes(attackSourceId))
+    expect(sourcedOption).toMatchObject({
+      labelKey: expect.stringContaining('edge-living-weapon'),
+    })
+    if (!sourcedOption) return
+    const command: MoveResponseCommand = {
+      schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+      opId: 'op_aoosourced02',
+      mapSlug: 'arena',
+      baseRevision: 9,
+      type: MOVE_RESPONSE_COMMAND_TYPES.REACT,
+      payload: {
+        resolutionId: pending.resolutionId,
+        windowId: window.windowId,
+        optionId: sourcedOption.id,
+      },
+    }
+    const response = resumePendingMoveResolutionUseCase({
+      command,
+      storedResolution: pending,
+      window,
+      option: sourcedOption,
+      role: 'gm',
+      playerProfile: null,
+      authorization: { chosenBy: { kind: 'gm', id: null }, source: 'gm-authority' },
+      clientId: 'gm-client',
+    }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
+      opRepository: harness.ops,
+      realtimeEventRepository: harness.realtime,
+      publishPersistedRealtimeEvent: vi.fn(),
+      random: () => 0.95,
+      now: () => 2_000,
+    })
+    expect(response.result).toMatchObject({ ok: true, revision: 10 })
+    expect(response.move).toMatchObject({ canonicalMoveName: 'Struggle', attackSourceId })
   })
 
   it('rejects a player who does not control the provoking token', async () => {

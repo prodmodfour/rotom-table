@@ -60,6 +60,21 @@ const RELATED_SHEET_FIELDS = new Set([
   'inventory',
   'equipmentSlots',
 ])
+const RECIPIENT_MUTATION_OPERATION_KINDS = new Set<string>([
+  'damage',
+  'multi-hit',
+  'direct-hp',
+  'loyalty',
+  'heal',
+  'condition',
+  'combat-stage',
+  'temporary-effect',
+  'movement-request',
+  'switch-request',
+  'item',
+  'permanent-move-list',
+  'usage',
+])
 
 const scopeKey = (scope: LivePlayScope): string => {
   if (scope.kind === 'map') return `map:${scope.lane}`
@@ -165,9 +180,24 @@ const relatedPlacementIdsForPlan = (
     for (const placementId of plan.resolution.selectedTargetIds) related.add(placementId)
   }
 
-  const readSheetRefs = new Set(plan.sheetReads.map((read) => `${read.kind}:${read.slug}`))
-  for (const placement of plan.previousMap.placements) {
-    if (readSheetRefs.has(`${placement.sheetKind}:${placement.sheetSlug}`)) related.add(placement.id)
+  // Complete authority evaluation may freeze every sheet referenced by the
+  // map. A read-set entry alone does not make an unrelated token a legal
+  // client-declared mutation scope; only actual writes may widen the bounded
+  // actor/target relation.
+  for (const write of plan.sheetWrites) {
+    for (const placementId of write.placementIds) related.add(placementId)
+  }
+  // Typed, server-emitted mutation recipients remain mechanically related even
+  // when reduction proves their write to be a no-op (notably Haze resetting an
+  // already-zero combat stage). Audit-only operations and complete read sets do
+  // not widen the client's bounded mutation scope.
+  const mapPlacementIds = new Set(plan.previousMap.placements.map(placement => placement.id))
+  for (const event of plan.resolution.auditTrace.events) {
+    if (event.kind !== 'operation'
+      || !RECIPIENT_MUTATION_OPERATION_KINDS.has(event.operationKind)) continue
+    for (const placementId of event.recipientIds) {
+      if (mapPlacementIds.has(placementId)) related.add(placementId)
+    }
   }
   return related
 }
@@ -455,13 +485,14 @@ export const validatePendingResolveMoveScopes = (input: {
     actorPlacementId,
     ...input.plan.execution.selectedTargetIds,
   ])
-  const readSheetRefs = new Set(
-    input.plan.sheetReads.map(read => `${read.kind}:${read.slug}`),
-  )
-  for (const placement of input.map.placements) {
-    if (readSheetRefs.has(`${placement.sheetKind}:${placement.sheetSlug}`)) {
-      relatedPlacementIds.add(placement.id)
-    }
+  for (const evaluation of input.plan.execution.authoritativeTargetEvaluations) {
+    // Exact server-derived area candidates may be excluded by side, immunity,
+    // or another reviewed predicate after the client has conservatively scoped
+    // them. They remain related; arbitrary complete-map sheet reads do not.
+    relatedPlacementIds.add(evaluation.targetPlacementId)
+  }
+  for (const write of input.plan.sheetWrites) {
+    for (const placementId of write.placementIds) relatedPlacementIds.add(placementId)
   }
   const placementsById = placementById(input.map)
   const groupInventoryReadSlugs = new Set(

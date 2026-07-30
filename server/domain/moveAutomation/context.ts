@@ -49,7 +49,10 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { MovementCapabilityTraits } from '~/types/movement'
 import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
 import { resolveWielderWeaponProfile } from '../capabilityAutomation/wielder'
-import { resolveCapabilityWeaponMoveGrants } from '../capabilityAutomation/weaponMoveGrants'
+import {
+  resolveCapabilityWeaponMoveGrants,
+  resolveLivingWeaponAttackSources,
+} from '../capabilityAutomation/weaponMoveGrants'
 import { CAPABILITY_WEAPON_MOVE_RUNTIMES } from '../capabilityAutomation/weaponMoveRuntime'
 import { reconcileCapabilityRuntimeSourceLoss } from '../capabilityAutomation/sourceLoss'
 import {
@@ -61,6 +64,7 @@ import {
   resolveCanonicalMoveEntryForPlacement,
   type CanonicalMoveEntryResult,
 } from '~/utils/authoritativeMoveEntries'
+import { moveEntriesForPlacement } from '~/utils/mapTokenMoves'
 import {
   EXPLICIT_MOVE_AUTOMATION_SCRIPTS,
 } from '~/utils/move-automation/registry'
@@ -1339,12 +1343,23 @@ export const buildAuthoritativeMoveRulesContext = (
       })
     }
     if (effectiveCapabilitySet) {
+      const baseMovementCapabilities = token.movementCapabilities ?? {}
       const movementCapabilities = { ...(capabilityFormToken.movementCapabilities ?? {}) }
+      const movementWasProjected = (key: keyof typeof movementCapabilities): boolean => (
+        Object.hasOwn(baseMovementCapabilities, key) !== Object.hasOwn(movementCapabilities, key)
+        || baseMovementCapabilities[key] !== movementCapabilities[key]
+      )
       const movementKeys = [
         ['Overland', 'overland'], ['Sky', 'sky'], ['Swim', 'swim'], ['Levitate', 'levitate'],
         ['Burrow', 'burrow'], ['Teleporter', 'teleporter'],
       ] as const
       for (const [canonicalId, key] of movementKeys) {
+        // Ability/weather/form projections run before the effective Capability
+        // overlay. Preserve an already transformed speed rather than restoring
+        // its raw Capability value (for example Thermosensitive hail or Minior
+        // Core); unchanged lanes still receive source-effective grants and
+        // suppression below.
+        if (movementWasProjected(key)) continue
         const instance = effectiveCapabilitySet.instances.find(candidate => (
           candidate.effective && candidate.canonicalId === canonicalId
         ))
@@ -1354,8 +1369,10 @@ export const buildAuthoritativeMoveRulesContext = (
       const wallclimber = effectiveCapabilitySet.instances.find(instance => (
         instance.effective && instance.canonicalId === 'Wallclimber'
       ))
-      if (!wallclimber) delete movementCapabilities.climb
-      else movementCapabilities.climb = Math.floor((movementCapabilities.overland ?? 0) / 2)
+      if (!movementWasProjected('climb')) {
+        if (!wallclimber) delete movementCapabilities.climb
+        else movementCapabilities.climb = Math.floor((movementCapabilities.overland ?? 0) / 2)
+      }
       const effectiveJump = effectiveCapabilitySet.instances.find(instance => (
         instance.effective && instance.canonicalId === 'Jump'
       ))
@@ -2057,15 +2074,30 @@ export const buildAuthoritativeMoveRulesContext = (
             size: actorToken.size,
           })
         : null
-      const capabilityWeaponGrants = resolveCapabilityWeaponMoveGrants({
+      const capabilityWeaponInput = {
         map,
         placement: actorPlacement,
         sheet: actorSheet.sheet,
         token: actorToken,
         pokemonSheets: sheetLookup.pokemon,
         trainerSheets: sheetLookup.trainer,
-        tokenForPlacement: placementId => tokenById.get(placementId) ?? null,
-      })
+        tokenForPlacement: (placementId: string) => tokenById.get(placementId) ?? null,
+      }
+      const capabilityWeaponGrants = resolveCapabilityWeaponMoveGrants(capabilityWeaponInput)
+      const livingWeaponAttackSources = resolveLivingWeaponAttackSources(capabilityWeaponInput)
+      const sourcedStruggleEntries = livingWeaponAttackSources.flatMap(source => (
+        source.actorIsWielder
+          ? moveEntriesForPlacement(actorPlacement, sheetLookup, {
+              encounterEffects: map.encounterState?.effects ?? [],
+              abilityConnectionNames: abilityQueries.activeForPlacement(actorPlacement.id)
+                .map(ability => ability.canonicalId),
+            }).filter(entry => isStruggleAttackMoveName(entry.move.name)).map(entry => ({
+              ...entry,
+              attackSourceId: source.attackSourceId,
+              attackSourceLabel: source.attackSourceLabel,
+            }))
+          : []
+      ))
       const grantedMoveNames = [
         ...grantedMoveNamesForActor(),
         ...capabilityWeaponGrants.map(grant => grant.canonicalId),
@@ -2078,11 +2110,15 @@ export const buildAuthoritativeMoveRulesContext = (
           message: `${requestedWeaponMove} requires an exact effective weapon source and qualifying Combat rank.`,
         }
       }
-      let resolved = resolveCanonicalMoveEntryForPlacement({
+      const requestedAttackSourceId = normalizedMoveName(moveName) === normalizedMoveName(intent.moveName)
+        ? intent.attackSourceId
+        : null
+      const moveResolutionInput = {
         placement: actorPlacement,
         token: actorToken,
         sheets: sheetLookup,
         moveName,
+        attackSourceId: requestedAttackSourceId,
         scriptForMove: actorMoveScriptFor,
         usageContext: {
           mapMoveUsage: map.moveUsage,
@@ -2095,15 +2131,15 @@ export const buildAuthoritativeMoveRulesContext = (
           .map(ability => ability.canonicalId),
         additionalMoveNames: grantedMoveNames
           .filter(name => capabilityWeaponMoveName(name) === null),
-        additionalMoveEntries: grantedMoveNames.flatMap((name) => {
-          const move = capabilityWeaponMove(name)
-          return move ? [{ move, automatic: true, suppressStab: true as const }] : []
-        }),
+        additionalMoveEntries: [
+          ...capabilityWeaponGrants.map(grant => grant.entry),
+          ...sourcedStruggleEntries,
+        ],
         definitionHashForMove: (moveName: string): string | null => {
           const canonicalId = capabilityWeaponMoveName(moveName) ?? findMove(moveName)?.name ?? null
           return canonicalId ? runtimes.get(canonicalId)?.definitionHash ?? null : null
         },
-        frequencyForMove: (canonicalMoveName, frequency) => canonicalMoveName === 'Mimic'
+        frequencyForMove: (canonicalMoveName: string, frequency: string | null) => canonicalMoveName === 'Mimic'
           && abilityQueries.has(actorPlacement.id, 'Mimitree')
           && aa079HasMimitreeRearm({
             effects: map.encounterState?.effects,
@@ -2118,8 +2154,11 @@ export const buildAuthoritativeMoveRulesContext = (
               script: { moveName: canonicalMoveName },
               frequency,
             }),
-      })
-      if (resolved.ok && wielderWeapon && isStruggleAttackMoveName(moveName)) {
+      }
+      let resolved = resolveCanonicalMoveEntryForPlacement(moveResolutionInput)
+      if (resolved.ok && wielderWeapon
+        && !resolved.entry.sourceEntry.attackSourceId
+        && isStruggleAttackMoveName(moveName)) {
         const rankedDamageBase = struggleDamageBaseForCombatRank(
           moveName, resolved.entry.script.damageBase, actorToken.combatSkillRankValue,
         )
@@ -2141,10 +2180,31 @@ export const buildAuthoritativeMoveRulesContext = (
           },
         }
       }
+      let selectedLivingWeaponSource: (typeof livingWeaponAttackSources)[number] | null = null
       if (resolved.ok) {
         const resolvedCanonicalMoveName = resolved.entry.canonicalMoveName
+        const selectedAttackSourceId = resolved.entry.sourceEntry.attackSourceId ?? null
+        const matchingLivingWeaponSources = selectedAttackSourceId
+          ? livingWeaponAttackSources.filter(source => source.attackSourceId === selectedAttackSourceId)
+          : []
+        if (selectedAttackSourceId && matchingLivingWeaponSources.length !== 1) {
+          return detachedFrozenJson({
+            ok: false,
+            reason: 'attack-source-invalid',
+            message: `${moveName.trim() || 'Move'} no longer resolves to one exact Living Weapon source.`,
+          })
+        }
+        selectedLivingWeaponSource = matchingLivingWeaponSources[0] ?? null
+        if (selectedLivingWeaponSource) {
+          readSet.recordPlacement(selectedLivingWeaponSource.ownerPlacement)
+          const wielderPlacement = placements.find(candidate => (
+            candidate.id === selectedLivingWeaponSource?.wielderPlacementId
+          ))
+          if (wielderPlacement) readSet.recordPlacement(wielderPlacement)
+        }
         const weaponGrant = capabilityWeaponGrants.find(grant => (
           grant.canonicalId === resolvedCanonicalMoveName
+          && grant.attackSourceId === selectedAttackSourceId
         ))
         if (weaponGrant) {
           const damageBase = resolved.entry.script.damageBase === null
@@ -2186,21 +2246,16 @@ export const buildAuthoritativeMoveRulesContext = (
           }
         }
       }
-      if (resolved.ok) {
-        const livingWeaponLink = activeCapabilityLinks.find(link => (
-          link.kind === 'living-weapon'
-          && (link.ownerPlacementId === actorPlacement.id || link.participantPlacementIds.includes(actorPlacement.id))
-        ))
-        const wieldedStruggle = livingWeaponLink?.participantPlacementIds.includes(actorPlacement.id) === true
-          && isStruggleAttackMoveName(moveName)
-        if (wieldedStruggle && resolved.entry.script.damageBase !== null) {
-          resolved = {
-            ...resolved,
-            entry: {
-              ...resolved.entry,
-              script: { ...resolved.entry.script, damageBase: resolved.entry.script.damageBase + 1 },
-            },
-          }
+      if (resolved.ok && selectedLivingWeaponSource?.actorIsWielder
+        && resolved.entry.sourceEntry.attackSourceId === selectedLivingWeaponSource.attackSourceId
+        && isStruggleAttackMoveName(moveName)
+        && resolved.entry.script.damageBase !== null) {
+        resolved = {
+          ...resolved,
+          entry: {
+            ...resolved.entry,
+            script: { ...resolved.entry.script, damageBase: resolved.entry.script.damageBase + 1 },
+          },
         }
       }
       if (resolved.ok && resolved.entry.canonicalMoveName === 'Hidden Power' && actorSheet.kind === 'pokemon') {

@@ -118,6 +118,71 @@ describe('canonical authoritative move-entry resolution', () => {
     expect(trainerResult.ok ? trainerResult.entry.script.moveName : null).toBe('Tackle')
   })
 
+  it('selects exact attack provenance and rejects forged or ambiguous sources', () => {
+    const sourceA = `attack-source.v1.${'a'.repeat(64)}` as const
+    const sourceB = `attack-source.v1.${'b'.repeat(64)}` as const
+    const common = {
+      placement: placement(),
+      token: token(),
+      sheets: { pokemon: new Map([['actor', pokemonSheet()]]), trainer: new Map<string, TrainerSheet>() },
+      moveName: 'Tackle',
+      additionalMoveEntries: [
+        { move: { name: 'Tackle' }, automatic: true, attackSourceId: sourceA },
+        { move: { name: 'Tackle' }, automatic: true, attackSourceId: sourceB },
+      ],
+    }
+    const legacyNative = resolveCanonicalMoveEntryForPlacement(common)
+    const explicitNative = resolveCanonicalMoveEntryForPlacement({ ...common, attackSourceId: null })
+    expect(legacyNative).toMatchObject({ ok: true })
+    expect(explicitNative).toMatchObject({ ok: true })
+    expect(legacyNative.ok ? legacyNative.entry.sourceEntry : {}).not.toHaveProperty('attackSourceId')
+    expect(explicitNative.ok ? explicitNative.entry.sourceEntry : {}).not.toHaveProperty('attackSourceId')
+    expect(resolveCanonicalMoveEntryForPlacement({ ...common, attackSourceId: sourceB })).toMatchObject({
+      ok: true, entry: { sourceEntry: { attackSourceId: sourceB } },
+    })
+    expect(resolveCanonicalMoveEntryForPlacement({
+      ...common,
+      attackSourceId: `attack-source.v1.${'c'.repeat(64)}`,
+    })).toMatchObject({ ok: false, reason: 'attack-source-invalid' })
+
+    const sourceOnly = {
+      ...common,
+      sheets: {
+        pokemon: new Map([['actor', pokemonSheet({ movelist: [] })]]),
+        trainer: new Map<string, TrainerSheet>(),
+      },
+      moveName: 'Scratch',
+      additionalMoveEntries: [
+        {
+          move: { name: 'Scratch' }, automatic: true, attackSourceId: sourceA,
+          presentationDamageBaseBonus: 1,
+        },
+      ],
+    }
+    expect(resolveCanonicalMoveEntryForPlacement(sourceOnly)).toMatchObject({
+      ok: true, entry: {
+        sourceEntry: { attackSourceId: sourceA },
+        script: { damageBase: 5 },
+      },
+    })
+    expect(resolveCanonicalMoveEntryForPlacement({
+      ...sourceOnly,
+      additionalMoveEntries: [
+        ...sourceOnly.additionalMoveEntries,
+        { move: { name: 'Scratch' }, automatic: true, attackSourceId: sourceA },
+      ],
+    })).toMatchObject({
+      ok: true, entry: { sourceEntry: { attackSourceId: sourceA } },
+    })
+    expect(resolveCanonicalMoveEntryForPlacement({
+      ...sourceOnly,
+      additionalMoveEntries: [
+        ...sourceOnly.additionalMoveEntries,
+        { move: { name: 'Scratch' }, automatic: true, attackSourceId: sourceB },
+      ],
+    })).toMatchObject({ ok: false, reason: 'attack-source-ambiguous' })
+  })
+
   it('resolves automatic Struggle and applies Combat Skill adjustments', () => {
     const result = resolveCanonicalMoveEntryForPlacement({
       placement: placement(),

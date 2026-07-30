@@ -78,7 +78,11 @@ ACTIONS: dict[str, list[dict[str, Any]]] = {
     "Dream Mist": [{"id": "produce-dream-mist", "action": "extended", "frequency": "daily", "context": "collection-jar"}],
     "Dream Reader": [{"id": "read-dream", "action": "standard", "frequency": "at-will", "context": "sleeping-target"}],
     "Egg Warmer": [{"id": "warm-egg", "action": "extended", "frequency": "cooldown", "context": "egg"}],
-    "Fortune": [{"id": "roam-for-fortune", "action": "extended", "frequency": "daily", "context": "city-or-town-one-hour"}],
+    "Fortune": [
+        {"id": "roam-for-fortune", "action": "extended", "frequency": "daily", "context": "city-or-town"},
+        {"id": "resolve-fortune-roam", "action": "none", "frequency": "at-will", "context": "fortune-roam-due"},
+        {"id": "abandon-fortune-roam", "action": "none", "frequency": "at-will", "context": "fortune-roam-active"},
+    ],
     "Gather Unown": [{"id": "gather-unown", "action": "standard", "frequency": "weekly", "context": "open-space"}],
     "Glow": [
         {"id": "emit-light", "action": "free", "frequency": "at-will", "context": "not-glowing"},
@@ -273,6 +277,21 @@ ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
         "given": "the exact effective Alluring source targets an authoritative Wild Pokémon and its shared daily Bait use is available",
         "when": "the Standard Action distraction is declared",
         "then": "the target makes a server-owned Focus check against DC 12 and a failure durably spends its next Standard Action",
+    },
+    ("Fortune", "roam-for-fortune"): {
+        "given": "the effective Level 20 Fortune source is in an authoritative City or Town context with no active roam",
+        "when": "its once-daily Extended Action is declared",
+        "then": "the server spends the daily use and persists a unique exact source-owned roam incarnation due one authoritative hour later without rolling money early",
+    },
+    ("Fortune", "resolve-fortune-roam"): {
+        "given": "the exact source-owned Fortune roam remains active and its one-hour boundary has elapsed",
+        "when": "an authorised GM retains the bounded low-Loyalty return or runaway outcome for that exact private task incarnation when required",
+        "then": "the server rejects stale adjudications aimed at replacement roams, rolls Level times 1d10 only on return, atomically credits the retained Trainer, or removes a runaway from play and every linked roster",
+    },
+    ("Fortune", "abandon-fortune-roam"): {
+        "given": "the exact source-owned Fortune roam is active",
+        "when": "the roam is abandoned or its exact source is lost",
+        "then": "the durable task and its resumable adjudication summary are removed without refunding or duplicating the spent daily use",
     },
     ("Power", "lift-load"): {
         "given": "an effective valued Power source is adjacent to one or more authoritative world objects with exact pounds",

@@ -564,6 +564,43 @@ describe('MoveSpec core token effect reducers', () => {
       { slug: 'target', hp: 0 },
       { slug: 'bystander', hp: 0 },
     ])
+
+    const staleSheets = new Map(sheets)
+    staleSheets.set('target', pokemonSheet('target', {
+      capabilities: { other: ['As One'] },
+      combat: { currentHp: 5, conditions: ['Fainted'] },
+    }))
+    const staleMap: TabletopMap = {
+      ...linkedMap,
+      encounterState: {
+        ...linkedMap.encounterState!,
+        capabilityRuntime: {
+          ...linkedMap.encounterState!.capabilityRuntime!,
+          links: linkedMap.encounterState!.capabilityRuntime!.links.map(link => ({
+            ...link,
+            capabilityInstanceId: `${source.instanceId}:stale`,
+          })),
+        },
+      },
+    }
+    const staleContext = buildAuthoritativeMoveRulesContext({
+      map: staleMap,
+      pokemonSheets: staleSheets,
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: intent(),
+      candidatePlacementIds: ['target-token', 'bystander-token'],
+      selectedPlacementIds: ['target-token'],
+      random: () => 0,
+      time: 5_000,
+    })
+    const staleResult = reduceMoveCoreTokenEffects({
+      context: staleContext,
+      operations: [],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal', context: staleContext }),
+      trace: traceFor([]),
+    })
+    expect(staleResult.stateChanges.groups.sheets).toEqual([])
   })
 
   it('evaluates fixed, percentage, and bounded formula healing and loss per recipient', () => {

@@ -1108,6 +1108,9 @@ const currentContextForPendingResult = (
       schemaVersion: 1,
       placementId: stored.resolution.actorPlacementId,
       moveName: stored.resolution.canonicalMoveId,
+      ...(Object.prototype.hasOwnProperty.call(stored.resolution, 'attackSourceId')
+        ? { attackSourceId: stored.resolution.attackSourceId ?? null }
+        : {}),
       selection: { kind: 'self' },
     },
     pokemonSheets: new Map(),

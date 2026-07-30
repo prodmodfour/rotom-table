@@ -18,6 +18,7 @@ import {
 } from '#shared/moveAutomation/encounterState'
 import { sameJsonValue } from '~/utils/serialization'
 import type { GridAnchor, TabletopMap } from '~/types/map'
+import type { MoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 import type { AuthoritativeMoveSheetRead } from './context'
 import { deduplicateAuthoritativeMoveSheetReads } from './context'
 import type {
@@ -70,6 +71,7 @@ export interface MaterializeMoveSpecSuspensionInput {
   /** Immutable creation snapshot required only for server-owned spatial options. */
   readonly authoritativeMap?: TabletopMap
   readonly actorPlacementId: string
+  readonly attackSourceId?: MoveAttackSourceId | null
   readonly virtualOriginCell?: GridAnchor
   readonly targetBranchId?: string
   readonly rootAreaSelection?: PendingMoveRootAreaSelection
@@ -413,6 +415,7 @@ export const materializeMoveSpecSuspension = (
     originMapSlug: input.originMapSlug,
     originOpId: input.originOpId,
     actorPlacementId: input.actorPlacementId,
+    attackSourceId: input.attackSourceId ?? null,
     ...(input.virtualOriginCell ? { virtualOriginCell: { ...input.virtualOriginCell } } : {}),
     ...(input.targetBranchId ? { targetBranchId: input.targetBranchId } : {}),
     ...(input.rootAreaSelection

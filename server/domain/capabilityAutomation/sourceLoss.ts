@@ -134,6 +134,11 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
     || (sourceEffective(link) && link.participantPlacementIds.every(id => placementById.has(id)))
   ))
   const tasks = runtime.tasks.filter(task => sourceEffective(task))
+  const retainedTaskIds = new Set(tasks.map(task => task.id))
+  const pendingAdjudications = runtime.pendingAdjudications.filter(entry => (
+    sourceEffective(entry)
+    && (entry.continuationId === undefined || retainedTaskIds.has(entry.continuationId))
+  ))
   const effects = encounter.effects.filter(effect => (
     !effect.tags.includes('capability.living-weapon.light-shield')
     || links.some(link => (
@@ -168,7 +173,9 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
         return retained
       }) : null
   if (modes.length === runtime.modes.length && links.length === runtime.links.length
-    && tasks.length === runtime.tasks.length && effects.length === encounter.effects.length
+    && tasks.length === runtime.tasks.length
+    && pendingAdjudications.length === runtime.pendingAdjudications.length
+    && effects.length === encounter.effects.length
     && !attachmentSourceRemoved && !pouchStateChanged) return input.map
   const retainedModeIds = new Set(modes.map(mode => mode.id))
   const removedModes = runtime.modes.filter(mode => !retainedModeIds.has(mode.id))
@@ -215,7 +222,13 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
     encounterState: {
       ...encounter,
       effects: effects.filter(effect => !removedModeIds.has(effect.id)),
-      capabilityRuntime: parseCapabilityRuntimeState({ ...runtime, modes, links, tasks }),
+      capabilityRuntime: parseCapabilityRuntimeState({
+        ...runtime,
+        modes,
+        links,
+        tasks,
+        pendingAdjudications,
+      }),
     },
   }
 }

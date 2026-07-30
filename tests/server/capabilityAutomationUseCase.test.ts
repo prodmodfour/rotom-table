@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { buildCapabilityClientCapabilityBundle } from '../../server/domain/capabilityAutomation/clientCapabilities'
 import { executeCapabilityActionUseCase } from '../../server/useCases/executeCapabilityAction'
+import { resolveCapabilityAdjudicationUseCase } from '../../server/useCases/resolveCapabilityAdjudication'
 import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
 import { createSqliteMapRepository } from '../../server/storage/mapRepository'
 import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
@@ -325,6 +326,202 @@ describe('Capability authoritative execution use case', () => {
     })
     expect(mapRepository.getBySlug('arena')?.encounterState?.capabilityRuntime?.tasks).toEqual([])
     expect(executeCapabilityActionUseCase({ role: 'gm', command: resolveCommand }, dependencies)).toEqual(resolved)
+  })
+
+  it('persists Fortune roaming for one authoritative hour before any replay-safe money roll', () => {
+    const database = openRotomDatabase({ path: ':memory:' })
+    databases.push(database)
+    const mapRepository = createSqliteMapRepository<TabletopMap>(database)
+    const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const fortunate: CharacterSheet = {
+      slug: 'fortunate', nickname: 'Fortunate', species: 'Meowth', level: 20,
+      // Low Loyalty is adjudicated only after the one-hour roam, never at start.
+      revision: 2, loyalty: 1, capabilities: { other: ['Fortune'] },
+    }
+    const owner: TrainerSheet = {
+      slug: 'owner', name: 'Owner', level: 10, revision: 3,
+      currentTeam: [fortunate.slug], money: 100,
+    }
+    const fortuneMap: TabletopMap = {
+      ...map(),
+      placements: [{ id: 'actor', sheetKind: 'pokemon', sheetSlug: fortunate.slug, position: { x: 1, y: 1, z: 1 } }],
+      metadata: { capabilityContexts: ['city-or-town'] },
+    }
+    mapRepository.saveSetupMap(fortuneMap)
+    sheetRepository.saveSetupSheet('pokemon', fortunate.slug, fortunate as unknown as Record<string, unknown>)
+    sheetRepository.saveSetupSheet('trainer', owner.slug, owner as unknown as Record<string, unknown>)
+    let now = 1_000
+    let rolls = 0
+    const dependencies = {
+      database, mapRepository, sheetRepository, now: () => now,
+      randomInt: () => { rolls += 1; return 7 },
+      publishPersistedRealtimeEvent: () => {},
+    }
+    const startOffer = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map: mapRepository.getBySlug('arena')!, mapRevision: 5,
+      pokemonSheets: [fortunate], trainerSheets: [owner], now,
+    }).placements[0]!.offers.find(candidate => candidate.actionId === 'roam-for-fortune')!
+    const startCommand = {
+      schemaVersion: 1, operationId: 'fortune-roam-start', mapSlug: 'arena', baseRevision: 5,
+      offerId: startOffer.offerId, actorPlacementId: 'actor',
+      capabilityInstanceId: startOffer.capabilityInstanceId,
+      canonicalId: 'Fortune', actionId: 'roam-for-fortune',
+      selections: {
+        targetPlacementIds: [], cells: [], optionId: null, recipientTrainerSlug: null,
+        canonicalItemId: null, description: null, gmConfirmed: false,
+      },
+    }
+    const started = executeCapabilityActionUseCase({ role: 'gm', command: startCommand }, dependencies)
+    expect(started).toMatchObject({ reasonCode: 'capability.fortune.roam-started', rolls: [], produced: [] })
+    expect(rolls).toBe(0)
+    expect(mapRepository.getBySlug('arena')?.encounterState?.capabilityRuntime?.tasks)
+      .toContainEqual(expect.objectContaining({ kind: 'fortune-roam', completesAt: 3_601_000 }))
+
+    now = 3_601_000
+    const currentMap = mapRepository.getBySlug('arena')!
+    const currentPokemon = sheetRepository.getByRef('pokemon', fortunate.slug)!.sheet as unknown as CharacterSheet
+    const currentOwner = sheetRepository.getByRef('trainer', owner.slug)!.sheet as unknown as TrainerSheet
+    const resolveOffer = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map: currentMap, mapRevision: currentMap.revision ?? 0,
+      pokemonSheets: [currentPokemon], trainerSheets: [currentOwner], now,
+    }).placements[0]!.offers.find(candidate => candidate.actionId === 'resolve-fortune-roam')!
+    const resolveCommand = {
+      schemaVersion: 1, operationId: 'fortune-roam-resolve', mapSlug: 'arena',
+      baseRevision: currentMap.revision ?? 0, offerId: resolveOffer.offerId,
+      actorPlacementId: 'actor', capabilityInstanceId: resolveOffer.capabilityInstanceId,
+      canonicalId: 'Fortune', actionId: 'resolve-fortune-roam',
+      selections: {
+        targetPlacementIds: [], cells: [], optionId: 'returns', recipientTrainerSlug: owner.slug,
+        canonicalItemId: null, description: null, gmConfirmed: true,
+      },
+    }
+    const resolved = executeCapabilityActionUseCase({ role: 'gm', command: resolveCommand }, dependencies)
+    expect(resolved).toMatchObject({
+      reasonCode: 'capability.roll-resolved',
+      rolls: [expect.objectContaining({ rollId: 'capability-roll:fortune', total: 7 })],
+      produced: [{ kind: 'money', canonicalId: 'Pokedollars', quantity: 140, recipientSheetSlug: owner.slug }],
+    })
+    expect(rolls).toBe(1)
+    expect((sheetRepository.getByRef('trainer', owner.slug)!.sheet as unknown as TrainerSheet).money).toBe(240)
+    expect(mapRepository.getBySlug('arena')?.encounterState?.capabilityRuntime?.tasks).toEqual([])
+    expect(executeCapabilityActionUseCase({ role: 'gm', command: resolveCommand }, dependencies)).toEqual(resolved)
+    expect(rolls).toBe(1)
+  })
+
+  it('rejects a stale Fortune adjudication after its exact roam was replaced', () => {
+    const database = openRotomDatabase({ path: ':memory:' })
+    databases.push(database)
+    const mapRepository = createSqliteMapRepository<TabletopMap>(database)
+    const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const fortunate: CharacterSheet = {
+      slug: 'fortunate-stale', nickname: 'Fortunate', species: 'Meowth', level: 20,
+      revision: 2, loyalty: 3, capabilities: { other: ['Fortune'] },
+    }
+    const owner: TrainerSheet = {
+      slug: 'owner-stale', name: 'Owner', level: 10, revision: 3,
+      currentTeam: [fortunate.slug], money: 100,
+    }
+    const fortuneMap: TabletopMap = {
+      ...map(),
+      placements: [{
+        id: 'actor', sheetKind: 'pokemon', sheetSlug: fortunate.slug,
+        position: { x: 1, y: 1, z: 1 },
+      }],
+      metadata: { capabilityContexts: ['city-or-town'] },
+    }
+    mapRepository.saveSetupMap(fortuneMap)
+    sheetRepository.saveSetupSheet('pokemon', fortunate.slug, fortunate as unknown as Record<string, unknown>)
+    sheetRepository.saveSetupSheet('trainer', owner.slug, owner as unknown as Record<string, unknown>)
+    let now = 1_000
+    const dependencies = {
+      database, mapRepository, sheetRepository, now: () => now,
+      randomInt: () => 7,
+      publishPersistedRealtimeEvent: () => {},
+    }
+    const offerFor = (actionId: string) => {
+      const currentMap = mapRepository.getBySlug('arena')!
+      const currentPokemon = sheetRepository.getByRef('pokemon', fortunate.slug)!.sheet as unknown as CharacterSheet
+      const currentOwner = sheetRepository.getByRef('trainer', owner.slug)!.sheet as unknown as TrainerSheet
+      return buildCapabilityClientCapabilityBundle({
+        role: 'gm', map: currentMap, mapRevision: currentMap.revision ?? 0,
+        pokemonSheets: [currentPokemon], trainerSheets: [currentOwner], now,
+      }).placements[0]!.offers.find(candidate => candidate.actionId === actionId)!
+    }
+    const startOffer = offerFor('roam-for-fortune')
+    executeCapabilityActionUseCase({
+      role: 'gm',
+      command: {
+        schemaVersion: 1, operationId: 'fortune-stale-start', mapSlug: 'arena', baseRevision: 5,
+        offerId: startOffer.offerId, actorPlacementId: 'actor',
+        capabilityInstanceId: startOffer.capabilityInstanceId,
+        canonicalId: 'Fortune', actionId: 'roam-for-fortune',
+        selections: {
+          targetPlacementIds: [], cells: [], optionId: null, recipientTrainerSlug: null,
+          canonicalItemId: null, description: null, gmConfirmed: false,
+        },
+      },
+    }, dependencies)
+
+    now = 3_601_000
+    const resolveOffer = offerFor('resolve-fortune-roam')
+    const request = executeCapabilityActionUseCase({
+      role: 'gm',
+      command: {
+        schemaVersion: 1, operationId: 'fortune-stale-request', mapSlug: 'arena',
+        baseRevision: mapRepository.getBySlug('arena')!.revision ?? 0,
+        offerId: resolveOffer.offerId, actorPlacementId: 'actor',
+        capabilityInstanceId: resolveOffer.capabilityInstanceId,
+        canonicalId: 'Fortune', actionId: 'resolve-fortune-roam',
+        selections: {
+          targetPlacementIds: [], cells: [], optionId: null, recipientTrainerSlug: owner.slug,
+          canonicalItemId: null, description: null, gmConfirmed: false,
+        },
+      },
+    }, dependencies)
+    expect(request.outcome).toBe('adjudication-required')
+
+    const withRequest = mapRepository.getBySlug('arena')!
+    const originalTask = withRequest.encounterState!.capabilityRuntime!.tasks.find(task => (
+      task.kind === 'fortune-roam'
+    ))!
+    expect(withRequest.encounterState!.capabilityRuntime!.pendingAdjudications[0])
+      .toMatchObject({ continuationId: originalTask.id })
+    const replacementMap: TabletopMap = {
+      ...withRequest,
+      revision: (withRequest.revision ?? 0) + 1,
+      updatedAt: now + 1,
+      encounterState: {
+        ...withRequest.encounterState!,
+        capabilityRuntime: {
+          ...withRequest.encounterState!.capabilityRuntime!,
+          tasks: [{
+            ...originalTask,
+            id: `capability.task.fortune-roam.${'b'.repeat(64)}`,
+            sourceOperationId: 'fortune-replacement-start',
+            startedAt: 2_000,
+            completesAt: now,
+          }],
+        },
+      },
+    }
+    mapRepository.saveSetupMap(replacementMap)
+
+    expect(() => resolveCapabilityAdjudicationUseCase({
+      role: 'gm',
+      command: {
+        schemaVersion: 1,
+        operationId: 'fortune-stale-resolution',
+        mapSlug: 'arena',
+        baseRevision: replacementMap.revision ?? 0,
+        requestId: 'fortune-stale-request',
+        decision: 'accept',
+        optionId: 'returns',
+        description: null,
+      },
+    }, dependencies)).toThrow(/resume evidence is unavailable or stale/i)
+    expect((sheetRepository.getByRef('trainer', owner.slug)!.sheet as unknown as TrainerSheet).money).toBe(100)
+    expect(mapRepository.getBySlug('arena')?.encounterState?.capabilityRuntime?.tasks[0]?.id)
+      .toBe(`capability.task.fortune-roam.${'b'.repeat(64)}`)
   })
 
   it('lets a controlled wielder engage and disengage an exact willing Living Weapon source', () => {

@@ -368,11 +368,11 @@ const assertScenarioResolution = (
 
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
     .toHaveLength(resolution.rollLedger.length)
-  const expectedReadTargetIds = scenario.expectedReadTargetIds
-    ?? scenario.targetIds
-    ?? [TARGET_A_ID]
+  // Complete Capability/effect authority freezes every map-referenced sheet,
+  // including present participants outside the selected burst.
+  const mapTargetIds = scenario.targetIds ?? [TARGET_A_ID]
   expect(resolution.sheetReads.map(read => read.slug).sort()).toEqual(
-    ['actor', ...expectedReadTargetIds].sort(),
+    ['actor', ...mapTargetIds].sort(),
   )
 }
 

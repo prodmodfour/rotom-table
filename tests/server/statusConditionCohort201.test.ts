@@ -534,7 +534,7 @@ describe('MA-201 native status-condition cohort', () => {
 
   it(MA_201_SCENARIOS.thunderWaveImmunity.scenarioId, () => {
     const cases = [
-      { types: ['Ground'], abilities: [] as string[], blocker: 'Ground type' },
+      { types: ['Ground'], abilities: [] as string[], blocker: 'ground type' },
       { types: ['Electric'], abilities: [] as string[], blocker: 'Electric type' },
       { types: ['Normal'], abilities: ['Volt Absorb'], blocker: 'Volt Absorb' },
       { types: ['Normal'], abilities: ['Motor Drive'], blocker: 'Motor Drive' },

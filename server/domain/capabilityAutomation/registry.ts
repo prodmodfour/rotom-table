@@ -31,7 +31,7 @@ const SEMANTIC_TAGS: Readonly<Record<string, readonly string[]>> = Object.freeze
   'Dream Reader': ['sleeping-dream-access', 'mindlock-blocks'],
   'Egg Warmer': ['hatch-time-reduction', 'daily-resource', 'd10-roll'],
   'Firestarter': ['struggle-type-fire', 'struggle-special-option'],
-  'Fortune': ['money-production', 'daily-resource', 'level-times-d10', 'loyalty-risk'],
+  'Fortune': ['money-production', 'daily-resource', 'one-hour-roam', 'level-times-d10', 'loyalty-risk'],
   'Fountain': ['struggle-type-water', 'struggle-special-option'],
   'Freezer': ['struggle-type-ice', 'struggle-special-option'],
   'Gather Unown': ['summon-unown', 'weekly-resource', 'level-2d8-capped'],
@@ -123,15 +123,16 @@ const CAMPAIGN_TIME_ACTIONS = new Set([
   'plant', 'harvest', 'tutor-cube-move', 'synchronize-keystone',
 ])
 const ROLL_ACTIONS = new Set([
-  'warm-egg', 'roam-for-fortune', 'gather-unown', 'harvest-mushroom',
-  'lure-with-alluring', 'resolve-alluring-lure-check', 'abandon-alluring-lure', 'oppose-examination',
+  'warm-egg', 'roam-for-fortune', 'resolve-fortune-roam', 'abandon-fortune-roam',
+  'gather-unown', 'harvest-mushroom', 'lure-with-alluring',
+  'resolve-alluring-lure-check', 'abandon-alluring-lure', 'oppose-examination',
 ])
 const GM_CONFIRMED_ACTIONS = new Set([
   'lure-with-alluring', 'read-aura', 'read-dream',
   'manipulate-metal', 'plant', 'harvest', 'sprout', 'read-mind', 'bond', 'combine-unown', 'track-scent',
   'change-shape',
   'influence-nearby-wilds',
-  'assemble-zygarde', 'shelter-baby',
+  'assemble-zygarde', 'shelter-baby', 'resolve-fortune-roam',
 ])
 
 const mechanicFor = (

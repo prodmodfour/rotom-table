@@ -663,8 +663,8 @@ describe('native MoveSpec multi-hit sequences', () => {
     expect(resolution.native.coreStateChanges.changes).toEqual([
       expect.objectContaining({
         kind: 'sheet-state',
-        sourceOperationId: 'operation.multi-hit',
-        reasonCode: 'move.tackle.multi-hit',
+        sourceOperationId: null,
+        reasonCode: 'core-token-effects',
         changedFields: ['hp'],
       }),
     ])

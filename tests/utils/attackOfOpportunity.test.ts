@@ -139,15 +139,21 @@ describe('attack of opportunity helpers', () => {
     expect(canMakeAttackOfOpportunity(token('fainted', 0, 0, { currentHp: 0 }))).toBe(false)
   })
 
-  it('lists only automated usable Struggle variants', () => {
-    expect(attackOfOpportunityStruggleOptions([
+  it('lists only automated usable Struggle variants and preserves exact attack provenance', () => {
+    const attackSourceId = `attack-source.v1.${'a'.repeat(64)}` as const
+    const options = attackOfOpportunityStruggleOptions([
       moveOption('Struggle'),
+      moveOption('Struggle', { attackSourceId, attackSourceLabel: 'Honedge · aaaaaa' }),
       moveOption('Struggle (Zapper Special)'),
       moveOption('Tackle'),
       moveOption('Struggle (Fountain Physical)', { disabledByCondition: true }),
       moveOption('Struggle (Materializer Physical)', { disabledByAutomation: true }),
       moveOption('Struggle (Guster Physical)', { disabledByMoveList: true }),
-    ]).map((move) => move.name)).toEqual(['Struggle', 'Struggle (Zapper Special)'])
+    ])
+    expect(options.map(move => move.name)).toEqual([
+      'Struggle', 'Struggle', 'Struggle (Zapper Special)',
+    ])
+    expect(options[1]).toMatchObject({ attackSourceId, attackSourceLabel: 'Honedge · aaaaaa' })
   })
 })
 

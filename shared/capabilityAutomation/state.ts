@@ -64,7 +64,8 @@ export interface CapabilityLinkState {
   readonly sourceOperationId: string
 }
 
-export const CAPABILITY_TASK_KINDS = ['juicer', 'planter', 'alluring-lure'] as const
+export const CAPABILITY_FORTUNE_ROAM_DURATION_MS = 60 * 60_000
+export const CAPABILITY_TASK_KINDS = ['juicer', 'planter', 'alluring-lure', 'fortune-roam'] as const
 export type CapabilityTaskKind = typeof CAPABILITY_TASK_KINDS[number]
 
 interface CapabilityCampaignTaskBase {
@@ -93,7 +94,14 @@ export interface CapabilityAlluringLureTaskState extends CapabilityCampaignTaskB
   readonly failedChecks: number
 }
 
-export type CapabilityCampaignTaskState = CapabilityProductionTaskState | CapabilityAlluringLureTaskState
+export interface CapabilityFortuneRoamTaskState extends CapabilityCampaignTaskBase {
+  readonly kind: 'fortune-roam'
+}
+
+export type CapabilityCampaignTaskState =
+  | CapabilityProductionTaskState
+  | CapabilityAlluringLureTaskState
+  | CapabilityFortuneRoamTaskState
 
 export interface CapabilityPendingAdjudicationState {
   readonly requestId: string
@@ -101,6 +109,8 @@ export interface CapabilityPendingAdjudicationState {
   readonly capabilityInstanceId: string
   readonly canonicalId: string
   readonly actionId: string
+  /** Exact private continuation incarnation, when the adjudication resumes a task. */
+  readonly continuationId?: string
   readonly requestedAt: number
   readonly expiresAt: number
   readonly sourceOperationId: string
@@ -317,6 +327,13 @@ export const parseCapabilityRuntimeState = (
       completesAt,
       sourceOperationId: boundedText(entry.sourceOperationId, `${itemPath}.sourceOperationId`),
     }
+    if (kind === 'fortune-roam') {
+      exact(entry, [
+        'id', 'kind', 'actorPlacementId', 'capabilityInstanceId', 'canonicalId',
+        'startedAt', 'completesAt', 'sourceOperationId',
+      ], itemPath)
+      return Object.freeze({ ...base, kind })
+    }
     if (kind === 'alluring-lure') {
       exact(entry, [
         'id', 'kind', 'actorPlacementId', 'capabilityInstanceId', 'canonicalId',
@@ -366,7 +383,12 @@ export const parseCapabilityRuntimeState = (
   const pendingAdjudications = boundedList(root.pendingAdjudications, `${path}.pendingAdjudications`, CAPABILITY_STATE_LIMITS.pendingAdjudications).map((candidate, index): CapabilityPendingAdjudicationState => {
     const itemPath = `${path}.pendingAdjudications[${index}]`
     const entry = record(candidate, itemPath)
-    exact(entry, ['requestId', 'actorPlacementId', 'capabilityInstanceId', 'canonicalId', 'actionId', 'requestedAt', 'expiresAt', 'sourceOperationId'], itemPath)
+    const hasContinuation = Object.hasOwn(entry, 'continuationId')
+    exact(entry, [
+      'requestId', 'actorPlacementId', 'capabilityInstanceId', 'canonicalId', 'actionId',
+      ...(hasContinuation ? ['continuationId'] : []),
+      'requestedAt', 'expiresAt', 'sourceOperationId',
+    ], itemPath)
     const requestedAt = timestamp(entry.requestedAt, `${itemPath}.requestedAt`)
     const expiresAt = timestamp(entry.expiresAt, `${itemPath}.expiresAt`)
     if (expiresAt <= requestedAt) fail('invalid-capability-state', `${itemPath}.expiresAt`, 'must be after requestedAt.')
@@ -376,6 +398,9 @@ export const parseCapabilityRuntimeState = (
       capabilityInstanceId: boundedText(entry.capabilityInstanceId, `${itemPath}.capabilityInstanceId`),
       canonicalId: boundedText(entry.canonicalId, `${itemPath}.canonicalId`, CAPABILITY_STATE_LIMITS.canonicalChars),
       actionId: boundedText(entry.actionId, `${itemPath}.actionId`),
+      ...(hasContinuation
+        ? { continuationId: boundedText(entry.continuationId, `${itemPath}.continuationId`) }
+        : {}),
       requestedAt,
       expiresAt,
       sourceOperationId: boundedText(entry.sourceOperationId, `${itemPath}.sourceOperationId`),

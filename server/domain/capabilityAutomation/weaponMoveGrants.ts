@@ -5,6 +5,7 @@ import {
   type CapabilityWeaponMoveName,
 } from '#shared/capabilityAutomation/weaponMoves'
 import type { CapabilityLinkState } from '#shared/capabilityAutomation/state'
+import type { MoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -12,15 +13,32 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import type { TokenSheetMoveEntry } from '~/utils/mapTokenMoves'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
 import { resolveWielderWeaponProfile, type WielderWeaponProfile } from './wielder'
+import {
+  livingWeaponAttackSourceId,
+  livingWeaponAttackSourceLabel,
+} from './livingWeaponAttackSource'
 
 export interface CapabilityWeaponMoveGrant {
   readonly canonicalId: CapabilityWeaponMoveName
   readonly entry: TokenSheetMoveEntry
   readonly sourceKind: 'wielder-item' | 'living-weapon'
   readonly sourceId: string
+  readonly attackSourceId: MoveAttackSourceId | null
+  readonly attackSourceLabel: string | null
   readonly damageBaseBonus: number
   readonly accuracyCheckPenalty: number
   readonly grantsReach: boolean
+}
+
+export interface LivingWeaponAttackSource {
+  readonly attackSourceId: MoveAttackSourceId
+  readonly attackSourceLabel: string
+  readonly link: CapabilityLinkState
+  readonly ownerPlacement: SheetPlacement
+  readonly ownerSheet: CharacterSheet
+  readonly wielderPlacementId: string
+  readonly wielderToken: SpawnedPokemon
+  readonly actorIsWielder: boolean
 }
 
 export interface ResolveCapabilityWeaponMoveGrantsInput {
@@ -65,6 +83,8 @@ const grantFor = (input: {
   readonly canonicalId: CapabilityWeaponMoveName
   readonly sourceKind: CapabilityWeaponMoveGrant['sourceKind']
   readonly sourceId: string
+  readonly attackSourceId: MoveAttackSourceId | null
+  readonly attackSourceLabel: string | null
   readonly damageBaseBonus: number
   readonly accuracyCheckPenalty: number
   readonly grantsReach: boolean
@@ -73,7 +93,13 @@ const grantFor = (input: {
   if (!move) throw new Error(`Missing reviewed capability weapon Move ${input.canonicalId}.`)
   return Object.freeze({
     ...input,
-    entry: Object.freeze({ move, automatic: true, suppressStab: true }),
+    entry: Object.freeze({
+      move,
+      automatic: true,
+      suppressStab: true,
+      ...(input.attackSourceId ? { attackSourceId: input.attackSourceId } : {}),
+      ...(input.attackSourceLabel ? { attackSourceLabel: input.attackSourceLabel } : {}),
+    }),
   })
 }
 
@@ -88,11 +114,50 @@ const itemGrant = (
     canonicalId,
     sourceKind: 'wielder-item',
     sourceId: profile.canonicalItemName,
+    attackSourceId: null,
+    attackSourceLabel: null,
     damageBaseBonus: profile.damageBaseBonus,
     accuracyCheckPenalty: profile.accuracyCheckPenalty,
     grantsReach: profile.grantsReach,
   })
 }
+
+/** Resolve every exact current Living Weapon source for one acting placement. */
+export const resolveLivingWeaponAttackSources = (
+  input: ResolveCapabilityWeaponMoveGrantsInput,
+): readonly LivingWeaponAttackSource[] => Object.freeze(
+  (input.map.encounterState?.capabilityRuntime?.links ?? []).flatMap((link): LivingWeaponAttackSource[] => {
+    if (link.kind !== 'living-weapon'
+      || link.participantPlacementIds.length !== 1
+      || (link.ownerPlacementId !== input.placement.id
+        && !link.participantPlacementIds.includes(input.placement.id))
+      || !exactEffectiveLink(link, input)) return []
+    const ownerPlacement = input.map.placements.find(placement => placement.id === link.ownerPlacementId)
+    const ownerSheet = ownerPlacement?.sheetKind === 'pokemon'
+      ? input.pokemonSheets.get(ownerPlacement.sheetSlug) ?? null : null
+    const wielderPlacementId = link.participantPlacementIds[0]!
+    const wielderToken = input.tokenForPlacement(wielderPlacementId)
+    if (!ownerPlacement || !ownerSheet || !wielderToken) return []
+    const attackSourceId = livingWeaponAttackSourceId({
+      mapSlug: input.map.slug,
+      actingPlacementId: input.placement.id,
+      link,
+    })
+    return [{
+      attackSourceId,
+      attackSourceLabel: livingWeaponAttackSourceLabel(
+        ownerSheet.nickname?.trim() || ownerSheet.species,
+        attackSourceId,
+      ),
+      link,
+      ownerPlacement,
+      ownerSheet,
+      wielderPlacementId,
+      wielderToken,
+      actorIsWielder: wielderPlacementId === input.placement.id,
+    }]
+  }),
+)
 
 /**
  * Resolve only source-effective, size/rank-legal supplemental weapon Moves.
@@ -117,23 +182,17 @@ export const resolveCapabilityWeaponMoveGrants = (
     if (grant) grants.push(grant)
   }
 
-  for (const link of input.map.encounterState?.capabilityRuntime?.links ?? []) {
-    if (link.kind !== 'living-weapon'
-      || link.participantPlacementIds.length !== 1
-      || (link.ownerPlacementId !== input.placement.id
-        && !link.participantPlacementIds.includes(input.placement.id))
-      || !exactEffectiveLink(link, input)) continue
-    const owner = input.map.placements.find(placement => placement.id === link.ownerPlacementId)
-    const ownerSheet = owner?.sheetKind === 'pokemon'
-      ? input.pokemonSheets.get(owner.sheetSlug) ?? null : null
-    const wielderId = link.participantPlacementIds[0]!
-    const wielder = input.tokenForPlacement(wielderId)
-    if (!owner || !ownerSheet || !wielder) continue
-    for (const canonicalId of livingWeaponMoveNames(ownerSheet.species, wielder.combatSkillRankValue)) {
+  for (const source of resolveLivingWeaponAttackSources(input)) {
+    for (const canonicalId of livingWeaponMoveNames(
+      source.ownerSheet.species,
+      source.wielderToken.combatSkillRankValue,
+    )) {
       grants.push(grantFor({
         canonicalId,
         sourceKind: 'living-weapon',
-        sourceId: link.id,
+        sourceId: source.link.id,
+        attackSourceId: source.attackSourceId,
+        attackSourceLabel: source.attackSourceLabel,
         damageBaseBonus: 1,
         accuracyCheckPenalty: 0,
         grantsReach: false,
@@ -141,12 +200,11 @@ export const resolveCapabilityWeaponMoveGrants = (
     }
   }
 
-  const byCanonicalId = new Map<CapabilityWeaponMoveName, CapabilityWeaponMoveGrant>()
+  const retained = new Map<string, CapabilityWeaponMoveGrant>()
   for (const grant of grants) {
-    const existing = byCanonicalId.get(grant.canonicalId)
-    if (!existing || grant.damageBaseBonus > existing.damageBaseBonus) {
-      byCanonicalId.set(grant.canonicalId, grant)
-    }
+    const key = `${grant.canonicalId}\u0000${grant.attackSourceId ?? `source:${grant.sourceKind}:${grant.sourceId}`}`
+    const existing = retained.get(key)
+    if (!existing || grant.damageBaseBonus > existing.damageBaseBonus) retained.set(key, grant)
   }
-  return Object.freeze([...byCanonicalId.values()])
+  return Object.freeze([...retained.values()])
 }

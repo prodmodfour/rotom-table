@@ -621,6 +621,20 @@ const resolveModifyConditionsSheet = (
 
   const previousConditions = conditionsSnapshotForSheet(target.placement.sheetKind, sheetResult.sheet)
   const nextConditions = nextConditionsForPayload(previousConditions, command.payload)
+  const includesFainted = (conditions: readonly string[]): boolean => normalizeConditionNames(conditions)
+    .some(condition => condition.trim().toLocaleLowerCase('en-US') === 'fainted')
+  if (includesFainted(previousConditions) !== includesFainted(nextConditions)) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        'Legacy hosted-session Fainted changes cannot atomically reconcile Capability HP state; use profile live play.',
+        processedAt,
+        { retryable: false, currentState: null },
+      ),
+    }
+  }
   const updated = applyConditionsToSheet(
     target.placement.sheetKind,
     sheetResult.sheet,

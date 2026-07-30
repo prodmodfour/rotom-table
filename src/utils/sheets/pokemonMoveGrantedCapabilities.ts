@@ -156,7 +156,7 @@ const capabilityGrantFromSpecial = (special: string | null | undefined): string 
 }
 
 const CANONICAL_CAPABILITY_MOVE_GRANTS: Readonly<Record<string, string>> = Object.freeze({
-  Fly: 'Grants Sky +4',
+  Fly: 'Grants Sky +3',
   Dive: 'Grants Swim +3',
   Dig: 'Grants Burrow +3',
   Teleport: 'Grants Teleporter +4',

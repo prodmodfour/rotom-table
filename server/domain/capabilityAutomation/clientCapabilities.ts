@@ -281,6 +281,12 @@ const contextSatisfied = (input: {
     && task.canonicalId === 'Alluring'
     && input.effectiveInstanceIds.has(task.capabilityInstanceId)
   ))
+  const fortuneRoamTask = (map.encounterState?.capabilityRuntime?.tasks ?? []).find(task => (
+    task.kind === 'fortune-roam'
+    && task.actorPlacementId === placement.id
+    && task.canonicalId === 'Fortune'
+    && input.effectiveInstanceIds.has(task.capabilityInstanceId)
+  ))
   const synchronizedKeystoneIds = placement.sheetKind === 'pokemon'
     ? new Set(parseCapabilityCampaignState((input.sheet as CharacterSheet).capabilityCampaignState)
         .keystoneSynchronizations.map(entry => entry.keystoneId))
@@ -582,7 +588,13 @@ const contextSatisfied = (input: {
     ))
     case 'abundant-plant-life-and-collection-jar': return contextual
       && input.linkedTrainers.some(trainer => trainerHasItem(trainer, 'Collection Jar'))
-    case 'city-or-town-one-hour':
+    case 'city-or-town': return placement.sheetKind === 'pokemon'
+      && (input.sheet.level ?? 0) >= 20
+      && fortuneRoamTask === undefined
+      && (contextual || explicitContext(input.contexts, 'city-or-town-one-hour'))
+    case 'fortune-roam-due': return fortuneRoamTask !== undefined
+      && input.now >= fortuneRoamTask.completesAt
+    case 'fortune-roam-active': return fortuneRoamTask !== undefined
     case 'abundant-plant-life':
     case 'plant-or-planted-berry': return contextual
     case 'scent-trail': return contextual || (Array.isArray(map.metadata?.capabilityScentEvidence)

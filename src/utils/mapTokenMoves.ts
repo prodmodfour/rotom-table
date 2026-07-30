@@ -1,6 +1,7 @@
 import { getPokedexEntry } from '~~/data/characterSheets'
 import { findMove, letterPressHiddenPowerSourceSlug } from '~~/data/ptuReference'
 import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
+import type { MoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 import { reviewedAbilityConnectionMoveNames } from '#shared/abilityAutomation/connections'
 import {
   AA083_POLTERGEIST_FORMS,
@@ -21,6 +22,8 @@ import {
 } from '~/utils/struggleMoves'
 import { deriveTrainerAutomaticMoves } from '~/utils/sheets/trainerCombatDerivations'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
+import { findMoveDamageBase } from '~/utils/moveDamageBase'
+import { averageMoveDamageForDb } from '~/utils/moveDamageDisplay'
 import { isPokemonLoyaltyDamageBaseMove } from '~/utils/sheets/pokemonLoyalty'
 import { moveConditionUseBlock, type MoveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import {
@@ -50,6 +53,11 @@ export interface TokenSheetMoveEntry {
   automatic: boolean
   /** Capability-owned weapon Moves explicitly never receive STAB. */
   suppressStab?: boolean
+  /** Opaque, non-authoritative exact attack-source selector. */
+  attackSourceId?: MoveAttackSourceId
+  attackSourceLabel?: string
+  /** Presentation-only DB adjustment; authoritative rules recompute it from the exact source. */
+  presentationDamageBaseBonus?: number
   /** Shared encounter-local projection consumed by both menu and server legality. */
   moveListProjection?: EncounterMoveListProjectionEntry
 }
@@ -92,8 +100,18 @@ export interface TokenMoveListMenuState {
   readonly blockingEffectIds: readonly string[]
 }
 
+export interface TokenMoveUseReference {
+  readonly moveName: string
+  /** Null deliberately selects the ordinary native/unsourced row. */
+  readonly attackSourceId: MoveAttackSourceId | null
+}
+
 export interface TokenMoveMenuOption {
+  /** Stable row identity; same-name native/source rows remain distinct. */
+  optionId: string
   name: string
+  attackSourceId?: MoveAttackSourceId
+  attackSourceLabel?: string
   type: string | null
   damageClass: string | null
   frequency: string | null
@@ -242,6 +260,11 @@ const projectTokenMoveEntries = (
     move: base?.move ?? { name: projection.canonicalMoveId },
     automatic: base?.automatic ?? false,
     ...(base?.suppressStab ? { suppressStab: true } : {}),
+    ...(base?.attackSourceId ? { attackSourceId: base.attackSourceId } : {}),
+    ...(base?.attackSourceLabel ? { attackSourceLabel: base.attackSourceLabel } : {}),
+    ...(base?.presentationDamageBaseBonus
+      ? { presentationDamageBaseBonus: base.presentationDamageBaseBonus }
+      : {}),
     moveListProjection: projection,
   }
 })
@@ -269,9 +292,11 @@ export const moveEntriesForPlacement = (
         return sheet ? trainerMoveEntriesForSheet(sheet) : []
       })()
   const additionalEntries = options.additionalMoveEntries ?? []
-  const supplementalNames = new Set(additionalEntries.map(entry => entry.move.name.trim().toLocaleLowerCase('en-US')))
+  const replacingSupplementalNames = new Set(additionalEntries
+    .filter(entry => !entry.attackSourceId)
+    .map(entry => entry.move.name.trim().toLocaleLowerCase('en-US')))
   const entries = [
-    ...baseEntries.filter(entry => !supplementalNames.has(entry.move.name.trim().toLocaleLowerCase('en-US'))),
+    ...baseEntries.filter(entry => !replacingSupplementalNames.has(entry.move.name.trim().toLocaleLowerCase('en-US'))),
     ...additionalEntries,
   ]
   return projectTokenMoveEntries(placement, entries, options.encounterEffects)
@@ -424,6 +449,7 @@ const moveListMenuState = (
 const optionForMoveRow = (
   row: MoveLookupRow<TokenSheetMove>,
   entry: TokenSheetMoveEntry,
+  index: number,
   token: SpawnedPokemon,
   hasAutomationScript: boolean,
   usageContext: TokenMoveUsageContext = {},
@@ -447,9 +473,28 @@ const optionForMoveRow = (
   }, token.conditions)
   const physicalLoadUseBlock = token.physicalPowerLoad?.standardActionsAllowed === false
     ? 'Staggering Weight prevents the Standard Action required to use a Move.' : null
+  const damageBase = row.damageBase === null
+    ? null
+    : row.damageBase + (entry.presentationDamageBaseBonus ?? 0)
+  const attackStat = row.attackStat ?? 0
+  const damage = damageBase === null ? null : findMoveDamageBase(damageBase)
+  const signed = (value: number): string => value === 0 ? '' : value > 0 ? `+${value}` : String(value)
+  const damageFormula = damageBase === null
+    ? null
+    : damage
+      ? `${damage.count}d${damage.sides}${signed(damage.mod)}${signed(attackStat)}`
+      : `DB ${damageBase}${signed(attackStat)}`
 
+  const optionMoveKey = name.trim().toLocaleLowerCase('en-US')
+    .replace(/[^a-z0-9]+/gu, '-')
+    .replace(/^-|-$/gu, '') || `row-${index}`
   return {
+    optionId: entry.attackSourceId
+      ? `${entry.attackSourceId}.move.${optionMoveKey}`
+      : `move-option.native.${index}.${optionMoveKey}`,
     name,
+    ...(entry.attackSourceId ? { attackSourceId: entry.attackSourceId } : {}),
+    ...(entry.attackSourceLabel ? { attackSourceLabel: entry.attackSourceLabel } : {}),
     type: fallback(row.reference?.type, row.move.type),
     damageClass,
     frequency,
@@ -457,10 +502,10 @@ const optionForMoveRow = (
     range,
     effect: fallback(row.reference?.effect, row.move.effect),
     special: fallback(row.reference?.special, row.move.special),
-    damageBase: row.damageBase,
+    damageBase,
     hasStab: row.hasStab,
-    damageAverage: row.damageAverage,
-    damageFormula: row.damageFormula,
+    damageAverage: damageBase === null ? null : averageMoveDamageForDb(damageBase, attackStat),
+    damageFormula,
     attackStat: row.attackStat,
     baseAttackStat: row.baseAttackStat,
     attackStage: row.attackStage,
@@ -487,6 +532,13 @@ const optionForMoveRow = (
   }
 }
 
+export const tokenMoveUseReference = (
+  option: Pick<TokenMoveMenuOption, 'name' | 'attackSourceId'>,
+): TokenMoveUseReference => Object.freeze({
+  moveName: option.name,
+  attackSourceId: option.attackSourceId ?? null,
+})
+
 export const buildTokenMoveMenuOptions = (
   token: SpawnedPokemon,
   entries: readonly TokenSheetMoveEntry[],
@@ -503,6 +555,6 @@ export const buildTokenMoveMenuOptions = (
     loyalty: token.sheetKind === 'pokemon' ? token.loyalty : undefined,
   })
   return rows
-    .map((row, index) => ({ row, entry: entries[index] ?? { move: row.move, automatic: false } }))
-    .map(({ row, entry }) => optionForMoveRow(row, entry, token, moveHasAutomationScript(row), usageContext))
+    .map((row, index) => ({ row, index, entry: entries[index] ?? { move: row.move, automatic: false } }))
+    .map(({ row, index, entry }) => optionForMoveRow(row, entry, index, token, moveHasAutomationScript(row), usageContext))
 }

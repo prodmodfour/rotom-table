@@ -9,6 +9,8 @@ import { projectCapabilityAutomationMapForPlayer } from '../../server/domain/cap
 import { resolveEffectiveCapabilities } from '../../server/domain/capabilityAutomation/effectiveCapabilities'
 import { buildCapabilityClientCapabilityBundle } from '../../server/domain/capabilityAutomation/clientCapabilities'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
+import { isMoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 import { LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
 import { redactResolveMovePatchesForObserver } from '../../server/utils/moveResultPrivacy'
 import { redactSheetRecordForPlayer, redactSheetUpdateForPlayer } from '../../server/utils/sheetPrivacy'
@@ -486,11 +488,41 @@ describe('Capability passive context providers', () => {
         placementId: 'wielder', state: 'living-weapon-wielder', counterpartPlacementId: 'weapon',
       }),
     ]))
+    const livingWeaponStates = (projected.metadata?.automationPresentationStates ?? [])
+      .filter(state => state && typeof state === 'object') as Array<Record<string, unknown>>
+    const sourceIds = livingWeaponStates.map(state => state.attackSourceId)
+    expect(sourceIds).toHaveLength(2)
+    expect(sourceIds.every(isMoveAttackSourceId)).toBe(true)
+    expect(new Set(sourceIds).size).toBe(2)
+    expect(livingWeaponStates.every(state => (
+      typeof state.attackSourceLabel === 'string'
+      && state.attackSourceLabel.startsWith('Edge Living Weapon · ')
+    ))).toBe(true)
     const serialized = JSON.stringify(projected)
     expect(serialized).not.toContain('private-link-id')
     expect(serialized).not.toContain('private-configuration')
     expect(serialized).not.toContain(source.instanceId)
     expect(serialized).not.toContain('private-operation')
+
+    const projectedTwice = projectCapabilityAutomationMapForPlayer(projected)
+    expect(projectedTwice.metadata?.automationPresentationStates)
+      .toEqual(projected.metadata?.automationPresentationStates)
+    expect(projectedTwice.encounterState?.capabilityRuntime)
+      .toEqual(createEmptyCapabilityRuntimeState())
+
+    const poisonedPresentation = {
+      ...projected,
+      metadata: {
+        ...projected.metadata,
+        automationPresentationStates: livingWeaponStates.map(state => ({
+          ...state,
+          capabilityInstanceId: source.instanceId,
+          sourceOperationId: 'private-operation',
+        })),
+      },
+    }
+    expect(projectCapabilityAutomationMapForPlayer(poisonedPresentation)
+      .metadata?.automationPresentationStates).toEqual(projected.metadata?.automationPresentationStates)
   })
 
   it('projects source-effective weather forms without exposing Capability authority', () => {

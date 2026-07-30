@@ -244,6 +244,9 @@ const pendingMoveItemIntent = (
     schemaVersion: 1,
     placementId: resolution.actorPlacementId,
     moveName: resolution.canonicalMoveId,
+    ...(Object.prototype.hasOwnProperty.call(resolution, 'attackSourceId')
+      ? { attackSourceId: resolution.attackSourceId ?? null }
+      : {}),
     selection,
   }
 }
@@ -497,6 +500,7 @@ const wireCommand = (
     schemaVersion: 1,
     placementId: plan.resolution.actorPlacementId,
     moveName: plan.resolution.canonicalMoveName,
+    attackSourceId: plan.resolution.attackSourceId ?? null,
     selection: { kind: 'self' },
   },
 })

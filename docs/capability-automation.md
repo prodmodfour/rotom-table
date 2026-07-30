@@ -56,20 +56,26 @@ Physical attachments retain the exact Power instance. Heavy and Staggering penal
 
 Raw object attachments, pounds, operation IDs, and round ledgers are removed from player map projection. Authorized action offers expose only the bounded object label and exact weight needed to make the selection.
 
+## Living Weapon attack provenance
+
+Native Moves and each exact Living Weapon source remain separate menu and Encounter Presentation rows, even when their Move names match. A sourced row carries an opaque `attack-source.v1.<sha256>` selector derived from the map, acting placement, and exact link incarnation. The selector is public presentation data, not authority: every declaration and resume revalidates the current source-effective link, weapon sheet, wielder rank, and granted Move and includes the consulted weapon/wielder sheets in the optimistic read set. Disengagement and re-engagement produce a new selector, so stale rows fail closed.
+
+Move intent is deliberately tri-state: an opaque string selects that exact source, `null` selects only a native/source-less row, and an omitted field is legacy compatibility that prefers native and otherwise accepts only one unique sourced row. New pending records persist string or `null`; multi-window rematerialization, reconnect, replay, and post-Move follow-ups preserve it. Raw link IDs, Capability instance IDs, configuration IDs, and source operation IDs are never projected. A fainted actor cannot initiate a Move, but a non-fainted wielder may still attack through a fainted Living Weapon; its `-2` applies only to Accuracy and Damage rolls made through that exact selected source. Native attacks and other linked weapons do not inherit it.
+
 ## Runtime state and time
 
 Temporary state lives in `encounterState.capabilityRuntime`:
 
 - modes (invisible, intangible, inflated, shrunken, shadow-melded, illusion, forms, and machine entry);
 - mount, rider, Living Weapon, fusion, Letter Press, and Zygarde links;
-- encounter usage, Telepathy retry penalties, and pending adjudications.
+- encounter usage, Telepathy retry penalties, timed Alluring lure and Fortune roam tasks, and pending adjudications.
 
 Lasting usage and campaign resources live on sheets:
 
 - `capabilityUsage` records daily, weekly, hourly, and cooldown identities;
 - `capabilityCampaignState` records Juicer stages and Planter contents.
 
-Campaign-day advancement clears Daily uses and decrements Weekly uses. Juicer binds one exact held Berry custody epoch and materializes elapsed time on authoritative offers, execution, persistence, and campaign-day advancement: after 24 elapsed hours the Berry becomes the independent shell item `Shuckle’s Berry Juice` (`shuckles-berry-juice`), and untouched shell juice becomes `Rare Candy` (`rare-candy`) after 14 further elapsed days. Legacy held items are strings, so the server retains a custody fingerprint and start timestamp and resets them on representable held-item changes; converted shell contents no longer depend on the held slot or continued Capability source. Shuckle may consume only the juice stage as its own typed Snack; collection requires an explicitly selected linked Trainer and emits the canonical item identity. Hourly and Invisibility cooldowns use server timestamps. Phasing’s round-end Tick is emitted by the initiative lifecycle reducer.
+Campaign-day advancement clears Daily uses and decrements Weekly uses. Fortune first spends its Daily use and persists an exact source-owned roam incarnation; no money is rolled until a separate authorised resolution at least one server-timed hour later. A pending GM adjudication is bound privately to that exact incarnation, so it cannot resolve a later replacement roam. Abandonment or source loss removes the task and its resumable summary without refunding the use. Juicer binds one exact held Berry custody epoch and materializes elapsed time on authoritative offers, execution, persistence, and campaign-day advancement: after 24 elapsed hours the Berry becomes the independent shell item `Shuckle’s Berry Juice` (`shuckles-berry-juice`), and untouched shell juice becomes `Rare Candy` (`rare-candy`) after 14 further elapsed days. Legacy held items are strings, so the server retains a custody fingerprint and start timestamp and resets them on representable held-item changes; converted shell contents no longer depend on the held slot or continued Capability source. Shuckle may consume only the juice stage as its own typed Snack; collection requires an explicitly selected linked Trainer and emits the canonical item identity. Hourly and Invisibility cooldowns use server timestamps. Phasing’s round-end Tick is emitted by the initiative lifecycle reducer.
 
 ## GM adjudication
 
@@ -78,16 +84,16 @@ Canonical judgement is represented by a durable request, not a manual fallback:
 1. the initial command is re-authorized and written to `capability_adjudications` with its definition hash and expiry;
 2. only a GM receives the pending offer;
 3. accept/reject uses `/api/maps/capabilities/adjudications/resolve`;
-4. acceptance revalidates the source instance, current contextual offer, target/resource state, and definition hash;
+4. acceptance revalidates the source instance, current contextual offer, exact task incarnation when applicable, target/resource state, and definition hash;
 5. the retained choice is committed atomically and the exact resolution operation is replay-safe.
 
-Low-Loyalty Fortune uses this same path conditionally. A retained `returns` result awards the server roll; `runs-away` removes the participant from play without awarding money.
+Fortune’s due roam resolution uses this path. A retained `returns` result performs the delayed server roll and awards it to one exact linked Trainer; the low-Loyalty-only `runs-away` result removes the participant from play and every linked roster without awarding money.
 
 Explosion and Self-Destruct use the durable Move-response pipeline because their ordinary damage, unavoidable `-50%` full-Max-HP result, and optional Loyalty consequence belong to one Move transaction. Unless the user has effective Volatile Bomb, the Move suspends behind one GM-only choice to lower Loyalty by exactly one rank or keep it. Resume revalidates every retained revision and atomically commits target damage, self-HP, usage, and the chosen bounded Loyalty change. Effective Volatile Bomb omits both the prompt and Loyalty mutation. Raw Loyalty and the Loyalty changed-field scope are removed from player sheet/realtime projections.
 
 ## Mechanical integration
 
-Capability providers extend existing systems rather than bypassing them:
+Capability providers extend existing systems rather than bypassing them. Source-effective Intangible, Shadow Meld, Shrinkable, and major-Illusion modes are rechecked on the server at every Standard/Full action surface (including Capability actions, Abilities, maneuvers, orders, and Poké Ball throws); Shrinkable permits only its explicit restore action.
 
 - movement and pathfinding: valued speeds, Jump, Teleporter, Burrow upkeep, Wallclimber, Phasing, Naturewalk, mounts/fusion, size modes, Threaded, and Keystone Warp;
 - Move automation: Reach, Groundsource immunity, Stealth targeting, Invisibility/Phasing targetability, Blender/Shadow Meld Evasion, Mindlock, Darkvision/Blindsense darkness handling, Soulless, self-KO Loyalty adjudication, forms, move and Ability grants;
@@ -97,7 +103,7 @@ Capability providers extend existing systems rather than bypassing them:
 
 ## Operations and recovery
 
-Capability resolutions, rolls, produced resources, definition/source hashes, and command payloads are retained in SQLite. Exact operation retries return the stored public result; changed input under the same operation ID is rejected. Map and all sheet writes use one SQLite transaction and optimistic revisions. Realtime events publish only after commit. Pending adjudications survive restart and reject stale, expired, or definition-drifted resumes.
+Capability resolutions, rolls, produced resources, definition/source hashes, and command payloads are retained in SQLite. Exact operation retries return the stored public result; changed input under the same operation ID is rejected. Map and all sheet writes use one SQLite transaction and optimistic revisions. Realtime events publish only after commit. Pending adjudications survive restart and reject stale, expired, or definition-drifted resumes. Player HTTP responses and nested realtime patches receive a final recursive privacy projection: raw Capability runtime, source ledgers, Capability-prefixed map metadata, private effects, and hidden sheet usage/campaign state are removed even when an accepted command embeds a whole authoritative map.
 
 Backups and SQLite export include the operation and adjudication tables through normal campaign database backup/export. No production code or campaign data is changed directly by this feature branch; deployment remains GitHub-driven.
 

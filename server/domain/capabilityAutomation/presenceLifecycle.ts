@@ -56,10 +56,14 @@ export const removeCapabilityPresenceGroup = <TMap extends TabletopMap>(input: {
   const runtime = input.map.encounterState?.capabilityRuntime
   const encounterState = input.map.encounterState ? {
     ...input.map.encounterState,
-    effects: input.map.encounterState.effects.filter(effect => (
-      !removedPlacementIds.has(effect.source.placementId)
-      && !effect.affected.placementIds.some(id => removedPlacementIds.has(id))
-    )),
+    effects: input.map.encounterState.effects.filter((effect) => {
+      if (effect.affected.placementIds.some(id => removedPlacementIds.has(id))) return false
+      // A retained source effect may canonically outlive its source placement
+      // (for example, Yawn follows only its target). Expiring and Baton Pass
+      // state remains exact-source-owned and cannot survive presence loss.
+      return !removedPlacementIds.has(effect.source.placementId)
+        || (effect.transferPolicy ?? 'retain') === 'retain'
+    }),
     ...(runtime ? {
       capabilityRuntime: {
         ...runtime,

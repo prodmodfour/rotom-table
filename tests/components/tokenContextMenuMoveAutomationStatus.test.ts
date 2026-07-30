@@ -29,6 +29,7 @@ const moveOption = (
   name: string,
   automation: MoveAutomationSemanticStatus,
 ): TokenMoveMenuOption => ({
+  optionId: `move-option.${name.toLowerCase().replaceAll(' ', '-')}`,
   name,
   type: 'Normal',
   damageClass: 'Physical',
@@ -198,7 +199,34 @@ describe('TokenContextMenu move semantic status', () => {
 
     await moveButtons[0]?.trigger('click')
     await moveButtons[1]?.trigger('click')
-    expect(wrapper.emitted('use-move')).toEqual([['Temporary Move']])
+    expect(wrapper.emitted('use-move')).toEqual([[
+      { moveName: 'Temporary Move', attackSourceId: null },
+    ]])
+  })
+
+  it('renders same-name native and sourced rows separately and emits exact provenance', async () => {
+    const attackSourceId = `attack-source.v1.${'a'.repeat(64)}` as const
+    const native = moveOption('Struggle', semanticStatus('complete'))
+    const sourced = {
+      ...moveOption('Struggle', semanticStatus('complete')),
+      optionId: `${attackSourceId}.move.struggle`,
+      attackSourceId,
+      attackSourceLabel: 'Edge Living Weapon · aaaaaa',
+    }
+    const wrapper = mountMenu([native, sourced])
+    const openMoves = wrapper.findAll('button').find(button => button.text().includes('Use Move'))
+    if (!openMoves) throw new Error('Use Move button was not found')
+    await openMoves.trigger('click')
+
+    const moveButtons = wrapper.findAll<HTMLButtonElement>('.action-submenu__item')
+    expect(moveButtons).toHaveLength(2)
+    expect(moveButtons[1]?.text()).toContain('Edge Living Weapon · aaaaaa')
+    await moveButtons[0]?.trigger('click')
+    await moveButtons[1]?.trigger('click')
+    expect(wrapper.emitted('use-move')).toEqual([
+      [{ moveName: 'Struggle', attackSourceId: null }],
+      [{ moveName: 'Struggle', attackSourceId }],
+    ])
   })
 
   it('keeps assisted limitations visible before use and disables blocked registry entries', async () => {
@@ -228,8 +256,8 @@ describe('TokenContextMenu move semantic status', () => {
     await assisted.trigger('click')
     await blocked.trigger('click')
     expect(wrapper.emitted('use-move')).toEqual([
-      ['Complete Move'],
-      ['Assisted Move'],
+      [{ moveName: 'Complete Move', attackSourceId: null }],
+      [{ moveName: 'Assisted Move', attackSourceId: null }],
     ])
   })
 })
