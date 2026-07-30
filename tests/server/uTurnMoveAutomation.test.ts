@@ -23,9 +23,11 @@ import {
   U_TURN_TRAINER_PLACEMENT_ID,
   U_TURN_V2_SEMANTIC_SCENARIOS,
   uTurnV2Fixture,
+  type UTurnV2Fixture,
   type UTurnV2FixtureOptions,
 } from '../fixtures/moveAutomation/uTurnV2'
 import { buildAuthoritativeMoveRulesContext } from '~~/server/domain/moveAutomation/context'
+import { resolveEffectiveCapabilities } from '~~/server/domain/capabilityAutomation/effectiveCapabilities'
 import { executeMoveSpec } from '~~/server/domain/moveAutomation/executeSpec'
 import {
   createFiniteAuthoritativeMoveRandomStream,
@@ -227,10 +229,11 @@ afterEach(() => {
 })
 
 const createHarness = (options: {
+  readonly fixture?: UTurnV2Fixture
   readonly fixtureOptions?: UTurnV2FixtureOptions
   readonly randomValues?: readonly number[]
 } = {}): Harness => {
-  const fixture = uTurnV2Fixture(options.fixtureOptions)
+  const fixture = options.fixture ?? uTurnV2Fixture(options.fixtureOptions)
   const values = [...(options.randomValues ?? [0.45, 0, 0])]
   let draws = 0
   const random = () => {
@@ -518,6 +521,76 @@ describe('U-Turn accepted durable switching saga', () => {
     expect(currentHp(harness, 'u-turn-target-sheet')).toBe(hp)
     expect(harness.drawCount()).toBe(draws)
     expect(harness.realtime.cursorState().latestSequence).toBe(realtimeSequence)
+  })
+
+  it('reconciles an exact As One faint at the Regenerator recall boundary before source loss', async () => {
+    const base = uTurnV2Fixture()
+    const actor = {
+      ...base.pokemonSheets.get('u-turn-actor-sheet')!,
+      abilities: [{ name: 'Regenerator' }],
+      capabilities: { overland: 6, other: ['As One'] },
+      combat: { currentHp: 30, injuries: 0, conditions: [] },
+    }
+    const target = {
+      ...base.pokemonSheets.get('u-turn-target-sheet')!,
+      combat: { currentHp: 1, injuries: 0, conditions: [] },
+    }
+    const pokemonSheets = new Map(base.pokemonSheets)
+    pokemonSheets.set(actor.slug, actor)
+    pokemonSheets.set(target.slug, target)
+    const actorPlacement = base.map.placements.find(({ id }) => id === U_TURN_ACTOR_PLACEMENT_ID)!
+    const targetPlacement = base.map.placements.find(({ id }) => id === U_TURN_TARGET_PLACEMENT_ID)!
+    const asOneAliasPlacement = {
+      ...targetPlacement,
+      id: 'u-turn-as-one-mount',
+      position: { ...actorPlacement.position },
+    }
+    const unlinkedMap = {
+      ...base.map,
+      placements: [...base.map.placements, asOneAliasPlacement],
+    }
+    const source = resolveEffectiveCapabilities({
+      map: unlinkedMap,
+      placement: actorPlacement,
+      sheet: actor,
+      sheets: { pokemon: pokemonSheets, trainer: base.trainerSheets },
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'As One')!
+    const encounter = base.map.encounterState!
+    const fixture: UTurnV2Fixture = {
+      ...base,
+      pokemonSheets,
+      map: {
+        ...unlinkedMap,
+        encounterState: {
+          ...encounter,
+          capabilityRuntime: {
+            ...encounter.capabilityRuntime!,
+            links: [{
+              id: 'u-turn-as-one-link', kind: 'as-one-mount',
+              ownerPlacementId: U_TURN_ACTOR_PLACEMENT_ID,
+              participantPlacementIds: [asOneAliasPlacement.id],
+              capabilityInstanceId: source.instanceId, canonicalId: 'As One', establishedAt: 100,
+              configurationId: 'Chilling Neigh', sourceOperationId: 'operation.u-turn-as-one',
+            }],
+          },
+        },
+      },
+    }
+    const harness = createHarness({ fixture })
+    const declaration = await declare(harness, 'op_u_turn_as_one_regenerator')
+    if (!isPendingMoveDeclarationResult(declaration.result)) {
+      throw new Error(`Expected pending As One U-Turn: ${JSON.stringify(declaration.result)}`)
+    }
+
+    const terminal = answerCurrent({
+      harness,
+      opId: 'op_u_turn_as_one_regenerator_response',
+    })
+
+    expect(terminal.result.result).toMatchObject({ ok: true })
+    expect(currentHp(harness, 'u-turn-target-sheet')).toBe(0)
+    expect(currentHp(harness, 'u-turn-actor-sheet')).toBe(0)
+    expect(harness.maps.getBySlug('u-turn-arena')?.encounterState?.capabilityRuntime?.links).toEqual([])
   })
 
   it('recalls a Trapped user without replacement when the responder passes', async () => {

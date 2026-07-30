@@ -27,6 +27,7 @@ import {
   recordActivelyCommandedPokemon,
 } from './activePokemonCommands'
 import { clearPhysicalPowerLoadsForPlacements } from '../capabilityAutomation/physicalPower'
+import { removeCapabilityPresenceGroup } from '../capabilityAutomation/presenceLifecycle'
 
 export type MoveSwitchPlanningErrorCode =
   | 'switch-source-missing'
@@ -317,6 +318,15 @@ export const planAuthoritativeMoveSwitch = (input: {
   )
   if (initiative === undefined) delete nextMap.initiative
   else nextMap.initiative = initiative
+
+  const presence = removeCapabilityPresenceGroup({
+    map: nextMap,
+    ownerPlacementId: recalled.id,
+  })
+  nextMap = presence.map
+  for (const placementId of presence.removedPlacementIds) {
+    nextMap = mapWithTemporaryHpForPlacement(nextMap, placementId, 0)
+  }
 
   if (sameJsonValue(previousMap.placements, nextMap.placements)) {
     return fail('switch-replacement-conflict', 'A move-driven recall must change placements.')

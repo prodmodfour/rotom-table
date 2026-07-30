@@ -514,28 +514,72 @@ export const reduceMoveCoreTokenOperationState = (
   })
 
   const asOneEndpointTokens = new Map<string, MoveCoreTokenEffectRecipient['token']>()
-  const initiallyFaintedAsOnePlacements = new Set<string>()
+  const initiallyFaintedAsOnePlacements = new Set<string>([
+    ...hpAccumulator.toUpdates().filter(update => update.currentHp <= 0).map(update => update.id),
+    ...conditionAccumulator.toUpdates().filter(update => update.conditions.some(
+      condition => condition.trim().toLocaleLowerCase('en-US') === 'fainted',
+    )).map(update => update.id),
+  ])
   for (const link of input.context.map.encounterState?.capabilityRuntime?.links ?? []) {
     if (link.kind !== 'as-one-mount' || link.participantPlacementIds.length !== 1) continue
     for (const placementId of [link.ownerPlacementId, link.participantPlacementIds[0]!]) {
       const token = input.context.queries.tokens.get(placementId)
       if (!token) continue
       asOneEndpointTokens.set(placementId, token)
-      if (hpAccumulator.get(token) <= 0) initiallyFaintedAsOnePlacements.add(placementId)
+      if (hpAccumulator.get(token) <= 0 || conditionAccumulator.get(token).some(
+        condition => condition.trim().toLocaleLowerCase('en-US') === 'fainted',
+      )) initiallyFaintedAsOnePlacements.add(placementId)
     }
   }
-  const coupledFaintedPlacements = expandSourceEffectiveAsOneFaintedPlacements({
-    map: input.context.map,
-    faintedPlacementIds: initiallyFaintedAsOnePlacements,
-    sourceIsEffective: link => input.context.queries.creatureRules.hasCapabilityInstance(
-      link.ownerPlacementId,
-      link.capabilityInstanceId,
-      'As One',
-    ),
-  })
+  const coupledFaintedPlacements = new Set(initiallyFaintedAsOnePlacements)
+  let faintClosureExpanded = true
+  while (faintClosureExpanded) {
+    faintClosureExpanded = false
+    for (const placementId of [...coupledFaintedPlacements]) {
+      const placement = input.context.queries.placements.get(placementId)
+      if (!placement) continue
+      for (const alias of input.context.map.placements) {
+        if (alias.sheetKind !== placement.sheetKind || alias.sheetSlug !== placement.sheetSlug
+          || coupledFaintedPlacements.has(alias.id)) continue
+        coupledFaintedPlacements.add(alias.id)
+        faintClosureExpanded = true
+      }
+    }
+    for (const placementId of expandSourceEffectiveAsOneFaintedPlacements({
+      map: input.context.map,
+      faintedPlacementIds: coupledFaintedPlacements,
+      sourceIsEffective: link => input.context.queries.creatureRules.hasCapabilityInstance(
+        link.ownerPlacementId,
+        link.capabilityInstanceId,
+        'As One',
+      ),
+    })) {
+      if (coupledFaintedPlacements.has(placementId)) continue
+      coupledFaintedPlacements.add(placementId)
+      faintClosureExpanded = true
+    }
+  }
+  const hpUpdatesBeforeFaintClosure = new Map(hpAccumulator.toUpdates().map(update => [update.id, update]))
+  const sharedSheetInjuries = new Map<string, number>()
+  for (const placementId of coupledFaintedPlacements) {
+    const placement = input.context.queries.placements.get(placementId)
+    const update = hpUpdatesBeforeFaintClosure.get(placementId)
+    if (!placement || !update) continue
+    const key = `${placement.sheetKind}:${placement.sheetSlug}`
+    if (!sharedSheetInjuries.has(key)) sharedSheetInjuries.set(key, update.injuries ?? 0)
+  }
   for (const placementId of coupledFaintedPlacements) {
     const token = asOneEndpointTokens.get(placementId) ?? input.context.queries.tokens.get(placementId)
     if (!token) continue
+    const placement = input.context.queries.placements.get(placementId)
+    const sharedInjuries = placement
+      ? sharedSheetInjuries.get(`${placement.sheetKind}:${placement.sheetSlug}`)
+      : undefined
+    if (sharedInjuries !== undefined) {
+      const currentInjuries = hpAccumulator.getInjuries(token)
+      if (sharedInjuries > currentInjuries) hpAccumulator.addInjuries(token, sharedInjuries - currentInjuries)
+      else if (sharedInjuries < currentInjuries) hpAccumulator.removeInjuries(token, currentInjuries - sharedInjuries)
+    }
     hpAccumulator.set(token, 0)
     const recipient = recipientsById.get(token.id) ?? resolveMoveCoreTokenRecipient(input.context, token.id)
     recipientsById.set(token.id, recipient)

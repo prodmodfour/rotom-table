@@ -39,6 +39,7 @@ import {
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   createMoveStateChangePlan,
   unavailableMoveStateCompensation,
+  type MoveSheetDocument,
   type MoveSheetStateField,
   type MoveStateChange,
   type MoveStateChangeInput,
@@ -79,6 +80,12 @@ import {
   clearPhysicalPowerLoadsForPlacements,
   relocateCapabilityAttachedObjects,
 } from '../capabilityAutomation/physicalPower'
+import {
+  capabilityHpSheetKey,
+  reconcileCapabilityHpState,
+  CapabilityHpStateReconciliationError,
+  type CapabilityHpStateSheet,
+} from '../capabilityAutomation/reconcileHpState'
 import { aa061AquaBulletStateIdsForMove, aa061BatteryStateIdsForMove } from '../abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa077LeafRushStateIdsForMove } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import { aa078StateIdsForMove } from '../abilityAutomation/mechanics/aa078StaticIntegration'
@@ -553,6 +560,8 @@ const combinedStateChanges = (options: {
   readonly mapPlan: MoveStateChangePlan
   readonly itemPlan: PlannedMoveItemMutations
   readonly triggeredAbilityPlan: MoveStateChangePlan
+  /** Final capability HP projections that replace earlier core sheet slots. */
+  readonly capabilityHpReplacementSlots: ReadonlySet<string>
   readonly placements: readonly MoveStateChangeInput[]
   readonly switchMapChanges: readonly MoveStateChangeInput[]
 }): MoveStateChangePlan => {
@@ -567,7 +576,9 @@ const combinedStateChanges = (options: {
   const triggeredAbilityInputs = options.triggeredAbilityPlan.changes.map(stripPlanIdentity)
   const permanentMoveListInputs = native.permanentMoveListStateChanges.changes
     .map(stripPlanIdentity)
-  const coreInputs = native.coreStateChanges.changes.map(stripPlanIdentity)
+  const coreInputs = native.coreStateChanges.changes
+    .map(stripPlanIdentity)
+    .filter(input => !options.capabilityHpReplacementSlots.has(stateSlotKey(input)))
   const mapEncounter = mapInputs.find(input => input.kind === 'encounter-state')
   const itemEncounter = itemInputs.find(input => input.kind === 'encounter-state')
   const coreEncounter = coreInputs.find(input => input.kind === 'encounter-state')
@@ -648,35 +659,24 @@ const combinedStateChanges = (options: {
   }
 }
 
-const relatedPlacementIds = (
-  resolution: Pick<
-    AuthoritativeMoveResolution,
-    'actorPlacementId' | 'selectedTargetIds' | 'area' | 'switchTransition'
-  >,
-): ReadonlySet<string> => new Set([
-  resolution.actorPlacementId,
-  ...resolution.selectedTargetIds,
-  ...(resolution.area?.candidateTargetIds ?? []),
-  ...(resolution.switchTransition?.kind === 'recall-and-send-out'
-    ? [resolution.switchTransition.sentOutPlacement.id]
-    : []),
-])
-
 export const nativeSheetWritesFromStateChanges = (
   map: TabletopMap,
-  resolution: Pick<
+  _resolution: Pick<
     AuthoritativeMoveResolution,
     'actorPlacementId' | 'selectedTargetIds' | 'area' | 'switchTransition'
   >,
   stateChanges: MoveStateChangePlan,
+  previousMap: TabletopMap = map,
 ): readonly AuthoritativeMoveSheetWritePlan[] => {
-  const related = relatedPlacementIds(resolution)
+  const placements = new Map([
+    ...previousMap.placements.map(placement => [placement.id, placement] as const),
+    ...map.placements.map(placement => [placement.id, placement] as const),
+  ])
   return stateChanges.changes.flatMap((change): AuthoritativeMoveSheetWritePlan[] => {
     if (change.kind !== 'sheet-state') return []
-    const placementIds = map.placements
+    const placementIds = [...placements.values()]
       .filter(placement => (
-        related.has(placement.id)
-        && placement.sheetKind === change.scope.sheetKind
+        placement.sheetKind === change.scope.sheetKind
         && placement.sheetSlug === change.scope.sheetSlug
       ))
       .map(placement => placement.id)
@@ -1471,21 +1471,79 @@ export const planNativeV2MoveState = (options: {
       ...aa078StateIdsForMove(context, options.resolution.script),
     ],
   })
+  const originalCapabilityHpSheets = new Map<string, CapabilityHpStateSheet>()
+  for (const [slug, sheet] of options.pokemonSheets) {
+    originalCapabilityHpSheets.set(capabilityHpSheetKey('pokemon', slug), {
+      kind: 'pokemon', slug, revision: normalizeRevision(sheet.revision), sheet: deepCloneJson(sheet),
+    })
+  }
+  for (const [slug, sheet] of options.trainerSheets) {
+    originalCapabilityHpSheets.set(capabilityHpSheetKey('trainer', slug), {
+      kind: 'trainer', slug, revision: normalizeRevision(sheet.revision), sheet: deepCloneJson(sheet),
+    })
+  }
+  const projectedCapabilityHpSheets = new Map([...originalCapabilityHpSheets].map(([key, snapshot]) => [
+    key,
+    { ...snapshot, sheet: deepCloneJson(snapshot.sheet) },
+  ]))
+  const capabilityHpFieldsByKey = new Map<string, Set<MoveSheetStateField>>()
+  const capabilityHpProvenanceByKey = new Map<string, {
+    readonly sourceOperationId: string | null
+    readonly reasonCode: string
+  }>()
+  const capabilityHpTouchedPlacementIds = new Set<string>()
+  for (const change of native.coreStateChanges.changes) {
+    if (change.kind !== 'sheet-state'
+      || (!change.changedFields.includes('hp') && !change.changedFields.includes('conditions'))) continue
+    const key = capabilityHpSheetKey(change.scope.sheetKind, change.scope.sheetSlug)
+    const original = projectedCapabilityHpSheets.get(key)
+      ?? fail('state-change-conflict', `Capability HP core sheet ${key} is unavailable.`)
+    projectedCapabilityHpSheets.set(key, {
+      ...original,
+      sheet: deepCloneJson(change.current) as CharacterSheet | TrainerSheet,
+    })
+    const fields = capabilityHpFieldsByKey.get(key) ?? new Set<MoveSheetStateField>()
+    for (const field of change.changedFields) fields.add(field)
+    capabilityHpFieldsByKey.set(key, fields)
+    capabilityHpProvenanceByKey.set(key, {
+      sourceOperationId: change.sourceOperationId,
+      reasonCode: change.reasonCode,
+    })
+    for (const placement of options.map.placements) {
+      if (placement.sheetKind === change.scope.sheetKind && placement.sheetSlug === change.scope.sheetSlug) {
+        capabilityHpTouchedPlacementIds.add(placement.id)
+      }
+    }
+  }
+  const temporaryHpPlacementIds = new Set([
+    ...Object.keys(options.map.temporaryHitPoints?.byPlacementId ?? {}),
+    ...Object.keys(mapAfterAbilityMarkConsumption.temporaryHitPoints?.byPlacementId ?? {}),
+  ])
+  for (const placementId of temporaryHpPlacementIds) {
+    const previous = options.map.temporaryHitPoints?.byPlacementId?.[placementId] ?? 0
+    const current = mapAfterAbilityMarkConsumption.temporaryHitPoints?.byPlacementId?.[placementId] ?? 0
+    if (previous !== current) capabilityHpTouchedPlacementIds.add(placementId)
+  }
+  for (const placementId of native.faintedPlacementIds) capabilityHpTouchedPlacementIds.add(placementId)
+
   const recalledForNaturalCure = options.resolution.switchTransition
     ? context.queries.placements.get(options.resolution.switchTransition.recalledPlacementId)
     : null
-  const recalledNaturalCureSheet = recalledForNaturalCure?.sheetKind === 'pokemon'
-    ? options.pokemonSheets.get(recalledForNaturalCure.sheetSlug) ?? null
+  const recalledKey = recalledForNaturalCure
+    ? capabilityHpSheetKey(recalledForNaturalCure.sheetKind, recalledForNaturalCure.sheetSlug)
     : null
-  const naturalCureRecall = recalledForNaturalCure && recalledNaturalCureSheet
+  const recalledProjectedSheet = recalledKey
+    ? projectedCapabilityHpSheets.get(recalledKey)?.sheet as CharacterSheet | undefined
+    : undefined
+  const naturalCureRecall = recalledForNaturalCure && recalledProjectedSheet
     ? applyAa081NaturalCureTrigger({
         map: mapAfterAbilityMarkConsumption,
         placement: recalledForNaturalCure,
-        sheet: recalledNaturalCureSheet,
+        sheet: recalledProjectedSheet,
         operationId: originOperationId,
         trigger: 'recall',
       })
-    : { map: mapAfterAbilityMarkConsumption, sheet: recalledNaturalCureSheet, applied: false }
+    : { map: mapAfterAbilityMarkConsumption, sheet: recalledProjectedSheet ?? null, applied: false }
   const recalledToken = recalledForNaturalCure
     ? context.queries.tokens.get(recalledForNaturalCure.id) : null
   const regeneratorRecall = recalledForNaturalCure && naturalCureRecall.sheet && recalledToken
@@ -1498,38 +1556,91 @@ export const planNativeV2MoveState = (options: {
         maximumHp: recalledToken.fullMaxHp ?? recalledToken.maxHp,
       })
     : { map: naturalCureRecall.map, sheet: naturalCureRecall.sheet, applied: false }
-  const naturalCureRecallPlan = createMoveStateChangePlan(
-    (naturalCureRecall.applied || regeneratorRecall.applied)
-      && recalledForNaturalCure && recalledNaturalCureSheet && regeneratorRecall.sheet
-      ? [{
-          kind: 'sheet-state' as const,
-          scope: {
-            kind: 'sheet' as const,
-            sheetKind: recalledForNaturalCure.sheetKind,
-            sheetSlug: recalledForNaturalCure.sheetSlug,
-          },
-          expectedRevision: normalizeRevision(recalledNaturalCureSheet.revision),
-          sourceOperationId: `${originOperationId}:natural-cure:recall`,
-          reasonCode: 'ability-natural-cure-recall',
-          previous: deepCloneJson(recalledNaturalCureSheet),
-          current: {
-            ...deepCloneJson(regeneratorRecall.sheet),
-            revision: nextRevision(normalizeRevision(recalledNaturalCureSheet.revision)),
-          },
-          changedFields: [
-            ...(naturalCureRecall.applied ? ['conditions' as const] : []),
-            ...(regeneratorRecall.applied ? ['hp' as const, 'abilityUsage' as const] : []),
-          ],
-          compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
-        }]
-      : [],
+  if ((naturalCureRecall.applied || regeneratorRecall.applied)
+    && recalledForNaturalCure && recalledKey && regeneratorRecall.sheet) {
+    const projected = projectedCapabilityHpSheets.get(recalledKey)
+      ?? fail('state-change-conflict', `Recalled Capability HP sheet ${recalledKey} is unavailable.`)
+    projectedCapabilityHpSheets.set(recalledKey, {
+      ...projected,
+      sheet: deepCloneJson(regeneratorRecall.sheet),
+    })
+    const fields = capabilityHpFieldsByKey.get(recalledKey) ?? new Set<MoveSheetStateField>()
+    const hadEarlierProjection = fields.size > 0
+    if (naturalCureRecall.applied) fields.add('conditions')
+    if (regeneratorRecall.applied) {
+      fields.add('hp')
+      fields.add('abilityUsage')
+    }
+    capabilityHpFieldsByKey.set(recalledKey, fields)
+    capabilityHpProvenanceByKey.set(recalledKey, hadEarlierProjection
+      ? { sourceOperationId: null, reasonCode: 'capability-hp-reconciliation' }
+      : {
+          sourceOperationId: `${originOperationId}:ability-recall`,
+          reasonCode: naturalCureRecall.applied && regeneratorRecall.applied
+            ? 'ability-natural-cure-and-regenerator-recall'
+            : naturalCureRecall.applied
+              ? 'ability-natural-cure-recall'
+              : 'ability-regenerator-recall',
+        })
+    capabilityHpTouchedPlacementIds.add(recalledForNaturalCure.id)
+  }
+
+  let capabilityHpReconciliation: ReturnType<typeof reconcileCapabilityHpState>
+  try {
+    capabilityHpReconciliation = reconcileCapabilityHpState({
+      previousMap: options.map,
+      nextMap: regeneratorRecall.map,
+      sheets: projectedCapabilityHpSheets,
+      previousSheets: originalCapabilityHpSheets,
+      touchedPlacementIds: capabilityHpTouchedPlacementIds,
+    })
+  }
+  catch (error) {
+    if (error instanceof CapabilityHpStateReconciliationError) {
+      return fail('state-change-conflict', error.message)
+    }
+    throw error
+  }
+  for (const key of capabilityHpReconciliation.changedSheetKeys) {
+    const fields = capabilityHpFieldsByKey.get(key) ?? new Set<MoveSheetStateField>()
+    fields.add('hp')
+    capabilityHpFieldsByKey.set(key, fields)
+  }
+  const capabilityHpPlan = createMoveStateChangePlan(
+    [...capabilityHpFieldsByKey].flatMap(([key, fields]): MoveStateChangeInput[] => {
+      const original = originalCapabilityHpSheets.get(key)
+      const projected = capabilityHpReconciliation.sheets.get(key)
+      if (!original || !projected || sameJsonValue(original.sheet, projected.sheet)) return []
+      const provenance = capabilityHpProvenanceByKey.get(key) ?? {
+        sourceOperationId: null,
+        reasonCode: 'capability-hp-reconciliation',
+      }
+      return [{
+        kind: 'sheet-state',
+        scope: { kind: 'sheet', sheetKind: projected.kind, sheetSlug: projected.slug },
+        expectedRevision: original.revision,
+        sourceOperationId: provenance.sourceOperationId,
+        reasonCode: provenance.reasonCode,
+        previous: deepCloneJson(original.sheet),
+        current: {
+          ...deepCloneJson(projected.sheet),
+          revision: nextRevision(original.revision),
+          updatedAt: options.plannedAt,
+        } as unknown as MoveSheetDocument,
+        changedFields: [...fields],
+        compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+      }]
+    }),
+  )
+  const capabilityHpReplacementSlots = new Set(
+    capabilityHpPlan.changes.map(change => stateSlotKey(stripPlanIdentity(change))),
   )
   const loyaltyPlan = planSelfKoLoyaltyMutation({
     context,
     resolution: options.resolution,
   })
   const triggeredAbilityPayments = applyTriggeredAbilityPayments({
-    map: regeneratorRecall.map,
+    map: capabilityHpReconciliation.nextMap,
     context,
     // Nested child events are ancestry-projected into the root trace exactly once.
     traces: [native.trace],
@@ -1848,7 +1959,7 @@ export const planNativeV2MoveState = (options: {
     ...native.permanentMoveListStateChanges.changes,
     ...triggeredAbilityPayments.sheetStateChanges.changes,
     ...loyaltyPlan.changes,
-    ...naturalCureRecallPlan.changes,
+    ...capabilityHpPlan.changes,
     ...itemPlan.stateChanges.changes,
     ...mapReduction.stateChanges.changes,
   ]
@@ -1865,11 +1976,12 @@ export const planNativeV2MoveState = (options: {
     resolution: options.resolution,
     mapPlan: mapReduction.stateChanges,
     itemPlan,
-    triggeredAbilityPlan: createMoveStateChangePlan([
+    triggeredAbilityPlan: createMoveStateChangePlan(mergeDisjointMoveSheetStateChanges([
       ...triggeredAbilityPayments.sheetStateChanges.changes.map(stripPlanIdentity),
       ...loyaltyPlan.changes.map(stripPlanIdentity),
-      ...naturalCureRecallPlan.changes.map(stripPlanIdentity),
-    ]),
+      ...capabilityHpPlan.changes.map(stripPlanIdentity),
+    ])),
+    capabilityHpReplacementSlots,
     placements,
     switchMapChanges,
   })
@@ -1880,6 +1992,10 @@ export const planNativeV2MoveState = (options: {
   const sheetReads = deduplicateAuthoritativeMoveSheetReads([
     ...options.existingSheetReads,
     ...mapReduction.sheetReads,
+    ...[...capabilityHpReconciliation.consultedSheetKeys].flatMap((key) => {
+      const snapshot = originalCapabilityHpSheets.get(key)
+      return snapshot ? [{ kind: snapshot.kind, slug: snapshot.slug, revision: snapshot.revision }] : []
+    }),
   ])
 
   return {
@@ -1888,7 +2004,7 @@ export const planNativeV2MoveState = (options: {
     previousUsage: deepCloneJson(usageProjection.previousUsage),
     usage: deepCloneJson(usageProjection.usage),
     sheetReads: deepCloneJson(sheetReads),
-    sheetWrites: nativeSheetWritesFromStateChanges(nextMap, options.resolution, stateChanges),
+    sheetWrites: nativeSheetWritesFromStateChanges(nextMap, options.resolution, stateChanges, options.map),
     mapChanges: buildAuthoritativeMoveMapChanges(options.map, nextMap),
     stateChanges,
     auditTrace,

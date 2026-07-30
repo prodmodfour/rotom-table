@@ -28,6 +28,8 @@ import {
   expandSourceEffectiveAsOneFaintedPlacements,
   removeCrownedCapabilityModesForFaintedPlacements,
 } from '../capabilityAutomation/hpInvariants'
+import { capabilityActorIsFainted } from '../capabilityAutomation/actionEligibility'
+import { clearPhysicalPowerLoadsForPlacements } from '../capabilityAutomation/physicalPower'
 import {
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   createMoveStateChangePlan,
@@ -275,7 +277,8 @@ export const applyCapabilityHpInvariantsToAbilityPlan = (input: {
 
   const initiallyTouched = new Set<string>()
   for (const change of input.plan.changes) {
-    if (change.kind !== 'sheet-state' || !change.changedFields.includes('hp')) continue
+    if (change.kind !== 'sheet-state'
+      || (!change.changedFields.includes('hp') && !change.changedFields.includes('conditions'))) continue
     for (const placement of placementById.values()) {
       if (placement.sheetKind === change.scope.sheetKind
         && placement.sheetSlug === change.scope.sheetSlug) initiallyTouched.add(placement.id)
@@ -409,11 +412,7 @@ export const applyCapabilityHpInvariantsToAbilityPlan = (input: {
   for (const placementId of related) {
     const projected = sheetForPlacement(placementId)
     if (!projected) continue
-    if (hpForSheet(
-      projected.resolved.kind,
-      projected.current,
-      hasCapability(placementId, 'Soulless'),
-    ) <= 0) faintedSeeds.add(placementId)
+    if (capabilityActorIsFainted(projected.current)) faintedSeeds.add(placementId)
   }
   const fainted = new Set(faintedSeeds)
   let faintedExpanded = hpInvariantRequired
@@ -450,15 +449,13 @@ export const applyCapabilityHpInvariantsToAbilityPlan = (input: {
     ))
   }
 
+  finalMap = clearPhysicalPowerLoadsForPlacements(finalMap, fainted)
+
   const crownedTerminationPlacements = new Set(fainted)
   for (const placementId of initiallyTouched) {
     const projected = sheetForPlacement(placementId)
     if (!projected) continue
-    if (hpForSheet(
-      projected.resolved.kind,
-      projected.original,
-      hasCapability(placementId, 'Soulless'),
-    ) <= 0) crownedTerminationPlacements.add(placementId)
+    if (capabilityActorIsFainted(projected.original)) crownedTerminationPlacements.add(placementId)
   }
   const projectedEncounter = parseEncounterState(
     finalMap.encounterState ?? createEmptyEncounterState(),
@@ -488,6 +485,7 @@ export const applyCapabilityHpInvariantsToAbilityPlan = (input: {
     projectedMap.temporaryHitPoints,
     finalMap.temporaryHitPoints,
   )
+  const metadataChangedByReconciliation = !sameJsonValue(projectedMap.metadata, finalMap.metadata)
   const previousEncounter = parseEncounterState(
     previousMap.encounterState ?? createEmptyEncounterState(),
   )
@@ -499,9 +497,11 @@ export const applyCapabilityHpInvariantsToAbilityPlan = (input: {
     previousMap.temporaryHitPoints,
     finalMap.temporaryHitPoints,
   )
+  const needsMetadataChange = !sameJsonValue(previousMap.metadata, finalMap.metadata)
 
   let emittedEncounter = false
   let emittedTemporaryHp = false
+  let emittedMetadata = false
   const output: MoveStateChangeInput[] = []
   for (const change of input.plan.changes) {
     if (change.kind === 'encounter-state') {
@@ -525,6 +525,18 @@ export const applyCapabilityHpInvariantsToAbilityPlan = (input: {
           ? { sourceOperationId: null, reasonCode: 'ability.capability-hp-invariants.temporary-hp' }
           : {}),
         current: deepCloneJson(finalMap.temporaryHitPoints),
+      } as MoveStateChangeInput)
+      continue
+    }
+    if (change.kind === 'map-metadata') {
+      if (!needsMetadataChange || emittedMetadata) continue
+      emittedMetadata = true
+      output.push({
+        ...stripPlanIdentity(change),
+        ...(metadataChangedByReconciliation
+          ? { sourceOperationId: null, reasonCode: 'ability.capability-hp-invariants.metadata' }
+          : {}),
+        current: deepCloneJson(finalMap.metadata),
       } as MoveStateChangeInput)
       continue
     }
@@ -573,6 +585,18 @@ export const applyCapabilityHpInvariantsToAbilityPlan = (input: {
       reasonCode: 'ability.capability-hp-invariants.temporary-hp',
       previous: deepCloneJson(previousMap.temporaryHitPoints),
       current: deepCloneJson(finalMap.temporaryHitPoints),
+      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+    })
+  }
+  if (needsMetadataChange && !emittedMetadata) {
+    output.push({
+      kind: 'map-metadata',
+      scope: { kind: 'map', mapSlug: previousMap.slug },
+      expectedRevision: normalizeRevision(previousMap.revision),
+      sourceOperationId: input.context.resolutionId,
+      reasonCode: 'ability.capability-hp-invariants.metadata',
+      previous: deepCloneJson(previousMap.metadata),
+      current: deepCloneJson(finalMap.metadata),
       compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
     })
   }

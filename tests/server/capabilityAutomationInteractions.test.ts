@@ -321,6 +321,9 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
     const faintedWeaponContext = linkedContext(wielder, 'Struggle', {
       ...weapon, combat: { ...weapon.combat, currentHp: 0 },
     })
+    const conditionFaintedWeaponContext = linkedContext(wielder, 'Struggle', {
+      ...weapon, combat: { ...weapon.combat, currentHp: 10, conditions: ['Fainted'] },
+    })
     const faintedStruggle = faintedWeaponContext.queries.resolveActorMoveEntry('Struggle')
     if (!faintedStruggle.ok) throw new Error('Expected fainted Living Weapon Struggle fixture.')
     const activeAccuracy = resolveAuthoritativeMoveUserAccuracy(activeWeaponContext, {
@@ -329,7 +332,13 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
     const faintedAccuracy = resolveAuthoritativeMoveUserAccuracy(faintedWeaponContext, {
       script: faintedStruggle.entry.script,
     })
+    const conditionFaintedStruggle = conditionFaintedWeaponContext.queries.resolveActorMoveEntry('Struggle')
+    if (!conditionFaintedStruggle.ok) throw new Error('Expected condition-fainted Living Weapon Struggle fixture.')
+    const conditionFaintedAccuracy = resolveAuthoritativeMoveUserAccuracy(conditionFaintedWeaponContext, {
+      script: conditionFaintedStruggle.entry.script,
+    })
     expect(faintedAccuracy.value).toBe(activeAccuracy.value - 2)
+    expect(conditionFaintedAccuracy.value).toBe(activeAccuracy.value - 2)
     expect(faintedAccuracy.modifiers).toContainEqual(expect.objectContaining({
       reason: 'Fainted Living Weapon', value: -2,
     }))

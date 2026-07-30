@@ -34,7 +34,6 @@ import {
 import {
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   createMoveStateChangePlan,
-  unavailableMoveStateCompensation,
   type MoveSheetDocument,
   type MoveSheetStateField,
   type MoveStateChangeInput,
@@ -43,6 +42,7 @@ import {
 import type { AuthoritativeMoveRulesContext } from '../context'
 import { reduceAbilityEntityCommand } from '../../abilityAutomation/entities'
 import { failMoveCoreTokenEffectReduction } from './coreTokenEffectError'
+import { resolveMoveCoreTokenRecipient } from './coreTokenRecipients'
 import type {
   MoveCoreTokenChangedField,
   MoveCoreTokenEffectOperation,
@@ -244,6 +244,8 @@ export interface BuildCoreTokenStateChangesInput {
   } | null
   /** Suppression-aware authority for every placement whose sheet may be projected. */
   readonly effectiveSoullessPlacementIds: ReadonlySet<string>
+  /** Resolve derived or pre-reduced updates that have no direct operation recipient. */
+  readonly recipientForPlacement?: (placementId: string) => MoveCoreTokenEffectRecipient
 }
 
 /** Aggregate ordered shared-kernel output into one typed replacement per physical resource. */
@@ -257,7 +259,15 @@ export const buildCoreTokenStateChanges = (
   const placementOrder = new Map(
     placements.map((placement, index) => [placement.id, index]),
   )
-  const touchedPlacementIds = [...touches.keys()].sort((left, right) => {
+  // Capability invariants can derive writes (for example an As One counterpart
+  // fainting) without a direct core operation touch. Touches carry ordering and
+  // provenance, but the authoritative update arrays define mutation membership.
+  const touchedPlacementIds = [...new Set([
+    ...touches.keys(),
+    ...options.hpUpdates.map(update => update.id),
+    ...options.conditionUpdates.map(update => update.id),
+    ...options.stageUpdates.map(update => update.id),
+  ])].sort((left, right) => {
     const leftTouches = [...(touches.get(left)?.values() ?? [])].flat()
     const rightTouches = [...(touches.get(right)?.values() ?? [])].flat()
     const operationDifference = firstTouchOrder(leftTouches) - firstTouchOrder(rightTouches)
@@ -311,6 +321,7 @@ export const buildCoreTokenStateChanges = (
   for (const placementId of touchedPlacementIds) {
     if (abilityEntityPlacementIds.has(placementId)) continue
     const recipient = options.recipientsById.get(placementId)
+      ?? options.recipientForPlacement?.(placementId)
       ?? failMoveCoreTokenEffectReduction(
         'recipient-not-found',
         `Touched recipient ${placementId} was not resolved.`,
@@ -431,6 +442,7 @@ export const buildCoreTokenStateChanges = (
     const update = hpById.get(placementId)
     if (update?.temporaryHp === undefined) continue
     const recipient = options.recipientsById.get(placementId)
+      ?? options.recipientForPlacement?.(placementId)
       ?? failMoveCoreTokenEffectReduction(
         'recipient-not-found',
         `Temporary-HP recipient ${placementId} was not resolved.`,
@@ -487,4 +499,5 @@ export const buildMoveCoreTokenStateChanges = (
   effectiveSoullessPlacementIds: new Set(options.context.queries.placements.all()
     .filter(placement => options.context.queries.creatureRules.hasCapability(placement.id, 'Soulless'))
     .map(placement => placement.id)),
+  recipientForPlacement: placementId => resolveMoveCoreTokenRecipient(options.context, placementId),
 })

@@ -20,6 +20,7 @@ import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import {
   buildAuthoritativeMoveRulesContext,
 } from '~~/server/domain/moveAutomation/context'
+import { resolveEffectiveCapabilities } from '~~/server/domain/capabilityAutomation/effectiveCapabilities'
 import {
   MoveCoreTokenEffectReductionError,
   reduceMoveCoreTokenEffects,
@@ -464,9 +465,105 @@ describe('MoveSpec core token effect reducers', () => {
     ])
     expect(result.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'target', revision: 4 },
+      { kind: 'pokemon', slug: 'actor', revision: 4 },
+      { kind: 'pokemon', slug: 'bystander', revision: 4 },
     ])
     expect(Object.isFrozen(result.operationResults)).toBe(true)
     expect(Object.isFrozen(result.trace)).toBe(true)
+  })
+
+  it('persists a source-effective As One counterpart faint without a direct operation touch', () => {
+    const map = mapFixture()
+    const sheets = new Map<string, CharacterSheet>([
+      ['actor', pokemonSheet('actor')],
+      ['target', pokemonSheet('target', {
+        capabilities: { other: ['As One'] },
+        combat: { currentHp: 5, conditions: [] },
+      })],
+      ['bystander', pokemonSheet('bystander', { combat: { currentHp: 20, conditions: [] } })],
+    ])
+    const ownerPlacement = map.placements.find(candidate => candidate.id === 'target-token')!
+    const source = resolveEffectiveCapabilities({
+      map,
+      placement: ownerPlacement,
+      sheet: sheets.get('target')!,
+      sheets: { pokemon: sheets, trainer: new Map() },
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'As One')!
+    const encounter = createEmptyEncounterState()
+    const linkedMap: TabletopMap = {
+      ...map,
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'core-reducer-as-one', kind: 'as-one-mount', ownerPlacementId: 'target-token',
+            participantPlacementIds: ['bystander-token'], capabilityInstanceId: source.instanceId,
+            canonicalId: 'As One', establishedAt: 100, configurationId: 'Chilling Neigh',
+            sourceOperationId: 'operation.core-reducer-as-one',
+          }],
+        },
+      },
+    }
+    const context = buildAuthoritativeMoveRulesContext({
+      map: linkedMap,
+      pokemonSheets: sheets,
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: intent(),
+      candidatePlacementIds: ['target-token', 'bystander-token'],
+      selectedPlacementIds: ['target-token'],
+      random: () => 0,
+      time: 5_000,
+    })
+    const loss = emission(operation(
+      'operation.as-one-faint',
+      'direct-hp',
+      directHpPayload({ calculation: { kind: 'fixed', value: 5 } }),
+    ))
+
+    const result = reduceMoveCoreTokenEffects({
+      context,
+      operations: [loss],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal', context }),
+      trace: traceFor([loss]),
+    })
+
+    expect(result.stateChanges.groups.sheets).toHaveLength(2)
+    expect(result.stateChanges.groups.sheets.map(group => ({
+      slug: group.scope.sheetSlug,
+      hp: group.changes[0]?.kind === 'sheet-state'
+        ? (group.changes[0].current as CharacterSheet).combat?.currentHp
+        : null,
+    }))).toEqual([
+      { slug: 'target', hp: 0 },
+      { slug: 'bystander', hp: 0 },
+    ])
+    expect(result.sheetReads).toEqual(expect.arrayContaining([
+      { kind: 'pokemon', slug: 'target', revision: 4 },
+      { kind: 'pokemon', slug: 'bystander', revision: 4 },
+    ]))
+
+    const faintCondition = emission(operation('operation.as-one-fainted-condition', 'condition', {
+      action: 'apply',
+      conditionId: 'fainted',
+    }))
+    const conditionResult = reduceMoveCoreTokenEffects({
+      context,
+      operations: [faintCondition],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal', context }),
+      trace: traceFor([faintCondition]),
+    })
+    expect(conditionResult.stateChanges.groups.sheets.map(group => ({
+      slug: group.scope.sheetSlug,
+      hp: group.changes[0]?.kind === 'sheet-state'
+        ? (group.changes[0].current as CharacterSheet).combat?.currentHp
+        : null,
+    }))).toEqual([
+      { slug: 'target', hp: 0 },
+      { slug: 'bystander', hp: 0 },
+    ])
   })
 
   it('evaluates fixed, percentage, and bounded formula healing and loss per recipient', () => {
@@ -982,6 +1079,7 @@ describe('MoveSpec core token effect reducers', () => {
     expect(copied.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'target', revision: 4 },
       { kind: 'pokemon', slug: 'actor', revision: 4 },
+      { kind: 'pokemon', slug: 'bystander', revision: 4 },
     ])
 
     const splitContext = buildContext(mapFixture(), { actor: 30, target: 10 })
@@ -1139,6 +1237,7 @@ describe('MoveSpec core token effect reducers', () => {
     expect(result.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'target', revision: 4 },
       { kind: 'pokemon', slug: 'actor', revision: 4 },
+      { kind: 'pokemon', slug: 'bystander', revision: 4 },
     ])
 
     const immune = reduce([levelLoss], 'Dragon', buildContext(mapFixture(), { target: 30 }))
@@ -1612,6 +1711,7 @@ describe('MoveSpec core token effect reducers', () => {
     expect(result.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'actor', revision: 4 },
       { kind: 'pokemon', slug: 'target', revision: 4 },
+      { kind: 'pokemon', slug: 'bystander', revision: 4 },
     ])
     expect(result.stateChanges.groups.sheets).toHaveLength(1)
     expect(result.stateChanges.groups.sheets[0]?.changes[0]).toMatchObject({
@@ -2175,6 +2275,7 @@ describe('MoveSpec core token effect reducers', () => {
       expect(result.sheetReads).toEqual([
         { kind: 'pokemon', slug: 'target', revision: 4 },
         { kind: 'pokemon', slug: 'bystander', revision: 4 },
+        { kind: 'pokemon', slug: 'actor', revision: 4 },
       ])
       expect(result.stateChanges.changes).toEqual([])
     }
@@ -2461,6 +2562,7 @@ describe('MoveSpec core token effect reducers', () => {
     expect(result.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'target', revision: 4 },
       { kind: 'pokemon', slug: 'bystander', revision: 4 },
+      { kind: 'pokemon', slug: 'actor', revision: 4 },
     ])
   })
 

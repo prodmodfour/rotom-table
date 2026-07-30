@@ -174,10 +174,17 @@ export const reconcileCapabilityHpState = (
     const placement = placementById.get(placementId)
     if (!placement) return null
     const snapshot = sheetForPlacement(placementId)
+    const pokemon = new Map<string, CharacterSheet>()
+    const trainer = new Map<string, TrainerSheet>()
+    for (const projected of projectedSheets.values()) {
+      if (projected.kind === 'pokemon') pokemon.set(projected.slug, projected.sheet as CharacterSheet)
+      else trainer.set(projected.slug, projected.sheet as TrainerSheet)
+    }
     const effective = resolveEffectiveCapabilities({
       map: nextMap,
       placement,
       sheet: snapshot.sheet,
+      sheets: { pokemon, trainer },
     })
     effectiveByPlacement.set(placementId, effective)
     return effective

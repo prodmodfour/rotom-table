@@ -196,7 +196,10 @@ describe('planAuthoritativeMoveState', () => {
     expect(plan.nextMap.updatedAt).toBe(999)
     expect(plan.nextMap.createdAt).toBe(1)
     expect(plan.usage).toMatchObject({ moveKey: 'swords-dance', tracking: 'map', uses: 1 })
-    expect(plan.sheetReads).toEqual([{ kind: 'pokemon', slug: 'actor', revision: 4 }])
+    expect(plan.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 4 },
+      { kind: 'pokemon', slug: 'target', revision: 3 },
+    ])
     expect(plan.resolution.sheetReads).toEqual(plan.sheetReads)
     expect(plan.mapChanges.moveUsage).toBeDefined()
     expect(plan.mapChanges.metadata?.previous).toEqual({ note: 'keep me' })

@@ -3,6 +3,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
 import type { AuthoritativeMoveRulesContext } from '../moveAutomation/context'
+import { capabilityActorIsFainted } from './actionEligibility'
 
 export interface FaintedLivingWeaponRollPenalty {
   readonly sourcePlacementId: string
@@ -26,7 +27,11 @@ export const faintedLivingWeaponRollPenalty = (input: {
       candidate.capabilityInstanceId,
       candidate.canonicalId,
     )
-    && (input.context.queries.tokens.get(candidate.ownerPlacementId)?.currentHp ?? 1) <= 0
+    && (() => {
+      const placement = input.context.queries.placements.get(candidate.ownerPlacementId)
+      const sheet = placement ? input.context.queries.sheets.forPlacement(placement) : null
+      return sheet ? capabilityActorIsFainted(sheet.sheet as CharacterSheet) : false
+    })()
   ))
   if (!link) return null
   const placement = input.context.queries.placements.get(link.ownerPlacementId)
