@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import { parseEncounterZone } from '#shared/moveAutomation/encounterZones'
 import {
   planInitiativeLifecycle,
@@ -115,6 +116,35 @@ const plan = (options: {
   return { map, actorSheet, targetSheet, result }
 }
 
+describe('Capability terrain turn lifecycle', () => {
+  it('charges Burrow upkeep on canonical material tags without duplicated voxel tags', () => {
+    const map = mapFixture({ target: { id: 'target', x: 2 } })
+    const encounter = createEmptyEncounterState()
+    map.voxels = [{ x: 0, y: 0, z: 1, materialId: 'burrow_dirt' }]
+    map.encounterState = {
+      ...encounter,
+      turnResources: {
+        actor: createEncounterTurnResourceLedger({ placementId: 'actor', round: 1, turn: 1 }),
+      },
+    }
+    const result = planInitiativeLifecycle({
+      map,
+      previous: { activeId: 'actor', round: 1 },
+      current: { activeId: 'target', round: 1 },
+      orderIds: ['actor', 'target'], operationId: 'operation:burrow-upkeep', time: 3_000,
+      loadSheets: () => ({
+        pokemonSheets: new Map([
+          ['actor', sheet({ id: 'actor', x: 0 })],
+          ['target', sheet({ id: 'target', x: 2 })],
+        ]),
+        trainerSheets: new Map<string, TrainerSheet>(),
+      }),
+    })
+
+    expect(result.currentEncounterState.turnResources.actor?.actions.standard.spent).toBe(1)
+  })
+})
+
 describe('Grassy Terrain turn lifecycle', () => {
   it('heals one grounded global-terrain member by one Tick at turn start', () => {
     const baseTarget = { id: 'target', x: 2 }
@@ -140,6 +170,7 @@ describe('Grassy Terrain turn lifecycle', () => {
     ])
     expect(fixture.result.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'target', revision: 5 },
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
     ])
     expect(fixture.result.sheetWrites).toHaveLength(1)
     expect(((fixture.result.sheetWrites[0]!.nextSheet as CharacterSheet).combat as {
@@ -177,6 +208,7 @@ describe('Grassy Terrain turn lifecycle', () => {
     expect(outside.result.reduction.operations).toHaveLength(1)
     expect(outside.result.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'target', revision: 5 },
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
     ])
     expect(outside.result.sheetWrites).toEqual([])
   })
@@ -194,6 +226,7 @@ describe('Grassy Terrain turn lifecycle', () => {
     expect(fixture.result.sheetWrites).toEqual([])
     expect(fixture.result.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'target', revision: 5 },
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
     ])
     expect(fixture.map).toEqual(mapBefore)
     expect(fixture.targetSheet).toEqual(sheetBefore)

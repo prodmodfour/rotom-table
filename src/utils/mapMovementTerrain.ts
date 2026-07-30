@@ -79,7 +79,7 @@ const SLOW_TERRAIN_TAGS = new Set([
   'slow-terrain',
 ])
 
-const lowerTagsForVoxel = (voxel: MapVoxelV2): Set<string> => {
+export const mapMovementTerrainTagsForVoxel = (voxel: MapVoxelV2): ReadonlySet<string> => {
   const material = getVoxelMaterialDefinition(voxel)
   return new Set([...(material.tags ?? []), ...(voxel.tags ?? [])].map((tag) => tag.toLowerCase()))
 }
@@ -158,7 +158,7 @@ const isDeepWaterTerrain = (voxel: MapVoxelV2, tags: ReadonlySet<string>): boole
 const isBurrowTerrain = (tags: ReadonlySet<string>): boolean => tags.has('burrow')
 
 const occupiedVoxelTerrain = (voxel: MapVoxelV2): MovementCellTerrain => {
-  const tags = lowerTagsForVoxel(voxel)
+  const tags = mapMovementTerrainTagsForVoxel(voxel)
   const blocksMovement = materialBlocksMovement(voxel)
 
   if (isWaterTerrain(tags)) {
@@ -206,7 +206,7 @@ const occupiedVoxelTerrain = (voxel: MapVoxelV2): MovementCellTerrain => {
 }
 
 const surfaceVoxelTerrain = (voxel: MapVoxelV2): MovementCellTerrain => {
-  const tags = lowerTagsForVoxel(voxel)
+  const tags = mapMovementTerrainTagsForVoxel(voxel)
 
   if (isWaterTerrain(tags)) {
     return {

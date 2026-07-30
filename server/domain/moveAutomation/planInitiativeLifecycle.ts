@@ -26,6 +26,7 @@ import { gridFootprintCells } from '~/utils/gridGeometry'
 import { computeTickValue } from '~/utils/ptuHp'
 import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import { deepCloneJson } from '~/utils/serialization'
+import { mapMovementTerrainTagsForVoxel } from '~/utils/mapMovementTerrain'
 import { normalizeConditionName } from '~/utils/statusConditions'
 import {
   buildAuthoritativeMoveRulesContext,
@@ -1346,10 +1347,11 @@ export const planEncounterLifecycle = (
       currentEncounterState.effects,
       placement.id,
     ).some(effect => moveSemiInvulnerableStateForEffect(effect) === 'underground')
-    const terrainUnderground = nextMap.voxels.some(voxel => (
-      voxel.x === placement.position.x && voxel.y === placement.position.y && voxel.z === placement.position.z
-      && (voxel.tags ?? []).some(tag => tag === 'burrow' || tag === 'underground')
-    )) || placement.position.y < (nextMap.groundLevelY ?? 0)
+    const terrainUnderground = nextMap.voxels.some((voxel) => {
+      if (voxel.x !== placement.position.x || voxel.y !== placement.position.y || voxel.z !== placement.position.z) return false
+      const terrainTags = mapMovementTerrainTagsForVoxel(voxel)
+      return terrainTags.has('burrow') || terrainTags.has('underground')
+    }) || placement.position.y < (nextMap.groundLevelY ?? 0)
     return semiInvulnerableUnderground || terrainUnderground ? [placement.id] : []
   }))
   if (undergroundTurnEndIds.size > 0) {
