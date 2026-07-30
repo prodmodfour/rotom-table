@@ -197,6 +197,16 @@ PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
         "when": "the combined participant's Ability field and move rules are projected",
         "then": "the chosen Basic Ability enters the owner's ordinary Ability projection before suppression while the carried participant has no independent Ability field",
     },
+    "Blindsense": {
+        "given": "authoritative map or placement context marks deep or total darkness or attempts to impose Blindness",
+        "when": "sight-independent combat legality and condition immunity are resolved",
+        "then": "effective Blindsense bypasses darkness Accuracy and Priority restrictions and remains immune to Blindness while retaining its canonical color and exact-form limits",
+    },
+    "Darkvision": {
+        "given": "authoritative map or placement context marks deep or total darkness",
+        "when": "Accuracy and Priority or Interrupt legality are resolved",
+        "then": "ordinary users suffer canonical Blindness penalties and total-darkness restrictions while effective Darkvision bypasses every penalty caused by loss of light",
+    },
     "Illusionist": {
         "given": "an exact effective Illusionist source maintains one bounded visual Illusion",
         "when": "it is projected, contacted along authoritative movement, viewed under an active Foresight-family bypass, or loses its exact source",
@@ -206,6 +216,11 @@ PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
         "given": "an effective Mindlock source is consulted by telepathy, Dream Reader, Gentle Vibe, Mind Reader, or Telepathic Warning authority",
         "when": "the protected participant is targeted or originates the protected attack",
         "then": "mind and dream reads are rejected, Gentle Vibe excludes the participant, Mind Reader automatically misses without applying its read marker, and Telepathic Warning cannot trigger from that attack",
+    },
+    "Pack Mon": {
+        "given": "an effective Pack Mon source is shown to authoritative Wild Pokémon with retained species and Levels",
+        "when": "obedience, fear, dominance, or Pack Leader disposition is projected",
+        "then": "canonical evolution data identifies unevolved forms without manual relationship metadata and the exact-ten higher Pack Leader clause takes precedence over same-species dominance",
     },
     "Living Weapon": {
         "given": "an exact effective Honedge-line Living Weapon source is engaged with a willing wielder",

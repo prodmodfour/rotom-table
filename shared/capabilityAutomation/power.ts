@@ -50,7 +50,7 @@ export const resolveCapabilityPowerLoad = (
     loadClass: 'staggering', movementMetersPerShift: 1, speedCombatStagePenalty: -4,
     accuracyPenalty: -4, evasionPenalty: -4, standardActionsAllowed: false, athleticsCheckDc: 4,
   }
-  if (weight <= limits.dragMaximum) return {
+  if (weight < limits.dragMaximum) return {
     loadClass: 'drag', movementMetersPerShift: 1, speedCombatStagePenalty: 0,
     accuracyPenalty: 0, evasionPenalty: 0, standardActionsAllowed: true, athleticsCheckDc: null,
   }

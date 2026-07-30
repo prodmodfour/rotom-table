@@ -136,9 +136,9 @@
       "id": "capability:Blindsense:passive",
       "canonicalId": "Blindsense",
       "kind": "passive-projection",
-      "given": "the actor owns an effective canonical capability instance",
-      "when": "the authoritative encounter presentation is projected",
-      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+      "given": "authoritative map or placement context marks deep or total darkness or attempts to impose Blindness",
+      "when": "sight-independent combat legality and condition immunity are resolved",
+      "then": "effective Blindsense bypasses darkness Accuracy and Priority restrictions and remains immune to Blindness while retaining its canonical color and exact-form limits"
     },
     {
       "id": "capability:Bloom:passive",
@@ -168,9 +168,9 @@
       "id": "capability:Darkvision:passive",
       "canonicalId": "Darkvision",
       "kind": "passive-projection",
-      "given": "the actor owns an effective canonical capability instance",
-      "when": "the authoritative encounter presentation is projected",
-      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+      "given": "authoritative map or placement context marks deep or total darkness",
+      "when": "Accuracy and Priority or Interrupt legality are resolved",
+      "then": "ordinary users suffer canonical Blindness penalties and total-darkness restrictions while effective Darkvision bypasses every penalty caused by loss of light"
     },
     {
       "id": "capability:Dead Silent:passive",
@@ -795,9 +795,9 @@
       "id": "capability:Pack Mon:passive",
       "canonicalId": "Pack Mon",
       "kind": "passive-projection",
-      "given": "the actor owns an effective canonical capability instance",
-      "when": "the authoritative encounter presentation is projected",
-      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+      "given": "an effective Pack Mon source is shown to authoritative Wild Pokémon with retained species and Levels",
+      "when": "obedience, fear, dominance, or Pack Leader disposition is projected",
+      "then": "canonical evolution data identifies unevolved forms without manual relationship metadata and the exact-ten higher Pack Leader clause takes precedence over same-species dominance"
     },
     {
       "id": "capability:Pearl Creation:passive",

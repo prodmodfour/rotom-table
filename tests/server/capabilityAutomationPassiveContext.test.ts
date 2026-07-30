@@ -26,7 +26,33 @@ describe('Capability passive context providers', () => {
     expect(resolvePackMonDisposition({ ...base, targetIsUnevolvedFormOfUser: true })).toBe('obeys')
     expect(resolvePackMonDisposition({ ...base, targetLevel: 25 })).toBe('fearful')
     expect(resolvePackMonDisposition({ ...base, targetSpecies: 'Mightyena', targetLevel: 35, bothHavePackMon: true })).toBe('dominance-fight')
+    expect(resolvePackMonDisposition({ ...base, targetSpecies: 'Mightyena', targetLevel: 40, bothHavePackMon: true })).toBe('expects-obedience')
     expect(resolvePackMonDisposition({ ...base, targetSpecies: 'Mightyena', targetLevel: 41, bothHavePackMon: true })).toBe('expects-obedience')
+  })
+
+  it('derives Pack Mon unevolved-form obedience from canonical evolution data', () => {
+    const leader: CharacterSheet = {
+      slug: 'leader', nickname: 'Leader', species: 'Mightyena', level: 20,
+      capabilities: { other: ['Pack Mon'] },
+    }
+    const wild: CharacterSheet = {
+      slug: 'wild', nickname: 'Wild', species: 'Poochyena', level: 18,
+    }
+    const testMap = {
+      schemaVersion: 2, id: 'pack-map', slug: 'pack-map', name: 'Pack', revision: 1, updatedAt: 200,
+      dimensions: { x: 6, y: 3, z: 6 }, groundLevelY: 0, voxels: [],
+      placements: [
+        { id: 'leader', sheetKind: 'pokemon' as const, sheetSlug: leader.slug, position: { x: 1, y: 0, z: 1 } },
+        { id: 'wild', sheetKind: 'pokemon' as const, sheetSlug: wild.slug, position: { x: 2, y: 0, z: 1 } },
+      ],
+      metadata: { capabilityWildPlacementIds: ['wild'] },
+    } as TabletopMap
+    const fact = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map: testMap, mapRevision: 1,
+      pokemonSheets: [leader, wild], trainerSheets: [], now: 200,
+    }).placements.find(placement => placement.placementId === 'leader')!.facts
+      .find(candidate => candidate.canonicalId === 'Pack Mon')
+    expect(fact?.contextualSummary).toBe('wild: obeys')
   })
 
   it.each(['act-as-bait', 'lure-with-alluring', 'distract-with-alluring'])(

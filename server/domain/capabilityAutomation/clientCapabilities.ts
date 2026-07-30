@@ -12,7 +12,9 @@ import type { CapabilityUsageEntry } from '#shared/capabilityAutomation/state'
 import { parseCapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { encounterPresentationStableId } from '#shared/encounterPresentation'
+import pokedexData from '~~/data/reference/pokedex.json'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { PokedexRecord } from '~/types/pokemon'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet, TrainerInventory } from '~/types/trainerSheet'
 import {
@@ -43,6 +45,19 @@ import {
   teleporterRoundUseSpent,
 } from './teleporterRoundUse'
 import { zygardeAssemblyRecordForPlacement } from './zygardeAssembly'
+
+const pokedexBySpecies = new Map((pokedexData as readonly PokedexRecord[]).map(record => [
+  record.species.trim().toLocaleLowerCase('en-US'), record,
+]))
+
+const isUnevolvedFormOf = (targetSpecies: string, evolvedSpecies: string): boolean => {
+  const evolvedId = evolvedSpecies.trim().toLocaleLowerCase('en-US')
+  const targetId = targetSpecies.trim().toLocaleLowerCase('en-US')
+  const family = pokedexBySpecies.get(evolvedId)?.evolutions ?? []
+  const evolvedStage = family.find(entry => entry.species.trim().toLocaleLowerCase('en-US') === evolvedId)?.stage
+  const targetStage = family.find(entry => entry.species.trim().toLocaleLowerCase('en-US') === targetId)?.stage
+  return typeof evolvedStage === 'number' && typeof targetStage === 'number' && targetStage < evolvedStage
+}
 
 export interface BuildCapabilityClientCapabilityBundleInput {
   readonly role: AuthRole
@@ -597,7 +612,9 @@ const passiveContextualSummary = (input: {
         targetSpecies: target.sheetKind === 'pokemon' ? (targetSheet as CharacterSheet).species : targetSheet.slug,
         targetLevel: targetSheet.level ?? 0,
         targetIsWild: true,
-        targetIsUnevolvedFormOfUser: unevolvedRelations.has(`${target.id}:${input.placement.id}`),
+        targetIsUnevolvedFormOfUser: unevolvedRelations.has(`${target.id}:${input.placement.id}`)
+          || (input.placement.sheetKind === 'pokemon' && target.sheetKind === 'pokemon'
+            && isUnevolvedFormOf((targetSheet as CharacterSheet).species, (input.sheet as CharacterSheet).species)),
         bothHavePackMon: targetHasPackMon,
       })
       return disposition === 'none' ? [] : [`${target.id}: ${disposition}`]

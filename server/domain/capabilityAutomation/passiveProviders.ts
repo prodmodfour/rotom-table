@@ -13,8 +13,10 @@ export const resolvePackMonDisposition = (input: {
   if (!input.targetIsWild) return 'none'
   const sameSpecies = input.userSpecies.trim().toLocaleLowerCase('en-US')
     === input.targetSpecies.trim().toLocaleLowerCase('en-US')
-  if (input.bothHavePackMon && sameSpecies && Math.abs(input.userLevel - input.targetLevel) <= 10) return 'dominance-fight'
+  // The later, specific Pack Leader clause wins the exact-ten overlap with
+  // the general same-species "within 10 Levels" dominance clause.
   if (input.bothHavePackMon && input.targetLevel >= input.userLevel + 10) return 'expects-obedience'
+  if (input.bothHavePackMon && sameSpecies && Math.abs(input.userLevel - input.targetLevel) <= 10) return 'dominance-fight'
   if (input.targetIsUnevolvedFormOfUser || input.targetLevel <= input.userLevel - 10) return 'obeys'
   return 'fearful'
 }

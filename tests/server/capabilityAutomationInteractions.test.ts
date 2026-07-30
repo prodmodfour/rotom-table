@@ -7,7 +7,10 @@ import { parseExecuteCapabilityActionCommand } from '#shared/capabilityAutomatio
 import { buildAuthoritativeMoveRulesContext } from '../../server/domain/moveAutomation/context'
 import { capabilityContextualTargetEvasionBonus } from '../../server/domain/moveAutomation/encounterNumericModifiers'
 import { executeRegisteredMoveHandler } from '../../server/domain/moveAutomation/handlers/registry'
-import { capabilityMoveRangeIsRanged } from '../../server/domain/resolveAuthoritativeMove'
+import {
+  capabilityMoveRangeIsRanged,
+  resolveAuthoritativeMoveFromContext,
+} from '../../server/domain/resolveAuthoritativeMove'
 import { resolveAuthoritativeMoveUserAccuracy } from '../../server/domain/moveAutomation/accuracy'
 import { resolveMoveSpecDamageCalculation } from '../../server/domain/moveAutomation/damageStats'
 import { executeCapabilityMechanic } from '../../server/domain/capabilityAutomation/executeMechanic'
@@ -137,6 +140,28 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
     expect(withoutIndependentGas.queries.abilities.has(actor.id, 'Flash Fire')).toBe(true)
     expect(withoutIndependentGas.queries.abilities.has(target.id, 'Neutralizing Gas')).toBe(false)
     expect(build(true).queries.abilities.has(actor.id, 'Flash Fire')).toBe(false)
+  })
+
+  it('applies darkness Blindness while Darkvision bypasses its Accuracy and Priority restrictions', () => {
+    const deepDarkness = baseMap({ metadata: { capabilityContexts: [`deep-darkness:${actor.id}`] } })
+    const ordinary = pokemon(actor.sheetSlug, { movelist: [{ name: 'Tackle' }] })
+    const darkvision = pokemon(actor.sheetSlug, {
+      movelist: [{ name: 'Tackle' }], capabilities: { other: ['Darkvision'] },
+    })
+    expect(resolveAuthoritativeMoveUserAccuracy(moveContext(ordinary, 'Tackle', deepDarkness)).value).toBe(-6)
+    expect(resolveAuthoritativeMoveUserAccuracy(moveContext(darkvision, 'Tackle', deepDarkness)).value).toBe(0)
+
+    const totalDarkness = baseMap({ metadata: { capabilityContexts: [`total-darkness:${actor.id}`] } })
+    const ordinaryPriority = pokemon(actor.sheetSlug, { movelist: [{ name: 'Quick Attack' }] })
+    const darkvisionPriority = pokemon(actor.sheetSlug, {
+      movelist: [{ name: 'Quick Attack' }], capabilities: { other: ['Darkvision'] },
+    })
+    expect(() => resolveAuthoritativeMoveFromContext(
+      moveContext(ordinaryPriority, 'Quick Attack', totalDarkness),
+    )).toThrow(/Total Blindness prevents/i)
+    expect(() => resolveAuthoritativeMoveFromContext(
+      moveContext(darkvisionPriority, 'Quick Attack', totalDarkness),
+    )).not.toThrow()
   })
 
   it('keeps Telekinetic Struggle at Focus Rank and TK Mastery at Focus Rank plus two', () => {

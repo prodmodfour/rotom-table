@@ -10,6 +10,10 @@ import {
 } from './helpingHand'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import { faintedLivingWeaponRollPenalty } from '../capabilityAutomation/livingWeaponRollPenalty'
+import {
+  capabilityDarknessAccuracyPenalty,
+  capabilityLightConditionForPlacement,
+} from '../capabilityAutomation/vision'
 import { aa060MoveAccuracyBonus } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import { aa071MoveAccuracyModifiers } from '../abilityAutomation/mechanics/aa071StaticIntegration'
@@ -167,6 +171,20 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     reason: 'Actor Accuracy',
     value: actorAccuracy,
   }]
+  const darknessPenalty = capabilityDarknessAccuracyPenalty({
+    condition: capabilityLightConditionForPlacement({
+      map: context.map,
+      placementId: context.actor.placement.id,
+    }),
+    hasDarkvision: context.queries.creatureRules.hasCapability(context.actor.placement.id, 'Darkvision'),
+    hasBlindsense: context.queries.creatureRules.hasCapability(context.actor.placement.id, 'Blindsense'),
+    hasKeenEye: keenEye,
+  })
+  if (darknessPenalty !== 0) modifiers.push({
+    sourceId: 'environment.darkness',
+    reason: 'Darkness Blindness',
+    value: darknessPenalty,
+  })
   if (compoundEyesBonus !== 0) {
     modifiers.push({
       sourceId: 'ability.compound-eyes',
@@ -261,6 +279,7 @@ export const resolveAuthoritativeMoveUserAccuracy = (
   modifiers.push(...remainingModifiers)
   const remainingBonus = remainingModifiers.reduce((total, modifier) => total + modifier.value, 0)
   const preEncounterValue = actorAccuracy
+    + darknessPenalty
     + compoundEyesBonus
     + (helpingHand.length > 0 ? HELPING_HAND_ACCURACY_BONUS : 0)
     + aa060Bonus

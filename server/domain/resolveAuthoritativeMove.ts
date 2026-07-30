@@ -83,6 +83,10 @@ import {
 } from './moveAutomation/context'
 import type { MoveAutomationRuntimeRegistry, MoveSpecV2Runtime } from './moveAutomation/registry'
 import type { AbilityAutomationRuntimeRegistry } from './abilityAutomation/registry'
+import {
+  capabilityLightConditionForPlacement,
+  capabilityTotalDarknessBlocksPriority,
+} from './capabilityAutomation/vision'
 import { resolveMoveSpecTargetingRule } from './moveAutomation/targetingBranches'
 import type { AuthoritativeMoveItemResources } from './moveAutomation/itemResources'
 import type { MoveSpecAuthoritativeTargetEvaluation } from './moveAutomation/executeSpec'
@@ -2187,6 +2191,22 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
   const entry = moveEntryResult.ok
     ? moveEntryResult.entry
     : fail('not-found', 'move-absent', 'Move entry resolution failed.')
+  const priorityOrInterrupt = /\b(?:Priority|Interrupt)\b/i.test(entry.script.range)
+    || entry.script.keywords.some(keyword => /\b(?:Priority|Interrupt)\b/i.test(keyword))
+  if (priorityOrInterrupt && capabilityTotalDarknessBlocksPriority({
+    condition: capabilityLightConditionForPlacement({
+      map: context.map,
+      placementId: actorPlacement.id,
+    }),
+    hasDarkvision: context.queries.creatureRules.hasCapability(actorPlacement.id, 'Darkvision'),
+    hasBlindsense: context.queries.creatureRules.hasCapability(actorPlacement.id, 'Blindsense'),
+  })) {
+    fail(
+      'unauthorized-state',
+      'move-creature-rule-blocked',
+      'Total Blindness prevents Moves with Priority and Interrupt Moves.',
+    )
+  }
   if (entry.canonicalMoveName === 'Mind Reader' && submittedTargetIds.some(targetId => (
     context.queries.creatureRules.hasCapability(targetId, 'Mindlock')
   ))) {
