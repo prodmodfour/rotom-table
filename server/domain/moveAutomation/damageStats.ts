@@ -84,6 +84,7 @@ import {
   aa085to100ActorForMove,
   aa085to100MoveDamageModifiers,
 } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
+import { faintedLivingWeaponRollPenalty } from '../capabilityAutomation/livingWeaponRollPenalty'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -536,6 +537,25 @@ export const resolveMoveSpecDamageCalculation = (
           : effect.payload.value,
     }]
   })
+  const faintedLivingWeapon = faintedLivingWeaponRollPenalty({
+    context: options.context,
+    script: options.script,
+  })
+  const faintedLivingWeaponModifiers: readonly MoveDamageModifier[] = faintedLivingWeapon
+    ? [{
+        id: `capability.living-weapon.fainted.damage:${faintedLivingWeapon.sourcePlacementId}`,
+        stage: 'pre-type-modifiers',
+        priority: 90,
+        source: {
+          kind: 'capability',
+          id: `Living Weapon:${faintedLivingWeapon.sourcePlacementId}`,
+        },
+        stackingGroup: 'capability.living-weapon.fainted-roll',
+        reasonCode: 'capability.living-weapon.fainted-roll-penalty',
+        operation: 'add',
+        value: faintedLivingWeapon.value,
+      }]
+    : []
   const helpingHand = activeHelpingHandBonusEffects({
     map: options.context.map,
     placementId: actor.id,
@@ -688,6 +708,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa084Modifiers,
         ...remainingModifiers,
         ...(options.responseDamageModifiers ?? []),
+        ...faintedLivingWeaponModifiers,
         ...encounterDamageModifiers,
         ...helpingHandModifiers,
         ...weather.modifiers,

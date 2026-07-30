@@ -9,9 +9,7 @@ import {
   withoutHelpingHandCondition,
 } from './helpingHand'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
-import type { CharacterSheet } from '~/types/characterSheet'
-import { livingWeaponMoveNames } from '#shared/capabilityAutomation/weaponMoves'
-import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
+import { faintedLivingWeaponRollPenalty } from '../capabilityAutomation/livingWeaponRollPenalty'
 import { aa060MoveAccuracyBonus } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import { aa071MoveAccuracyModifiers } from '../abilityAutomation/mechanics/aa071StaticIntegration'
@@ -245,34 +243,15 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       value: illuminateModifier,
     })
   }
-  const faintedLivingWeaponLink = (context.map.encounterState?.capabilityRuntime?.links ?? []).find(link => (
-    link.kind === 'living-weapon'
-    && link.participantPlacementIds.includes(context.actor.placement.id)
-    && context.queries.creatureRules.hasCapabilityInstance(
-      link.ownerPlacementId, link.capabilityInstanceId, link.canonicalId,
-    )
-    && (context.queries.tokens.get(link.ownerPlacementId)?.currentHp ?? 1) <= 0
-  ))
-  const livingWeaponPlacement = faintedLivingWeaponLink
-    ? context.queries.placements.get(faintedLivingWeaponLink.ownerPlacementId) : null
-  const livingWeaponSheet = livingWeaponPlacement
-    ? context.queries.sheets.forPlacement(livingWeaponPlacement) : null
-  const livingWeaponSpecies = livingWeaponPlacement?.sheetKind === 'pokemon'
-    ? (livingWeaponSheet?.sheet as CharacterSheet | undefined)?.species.trim().toLocaleLowerCase('en-US') ?? null
-    : null
-  const grantedLivingWeaponMoveNames: ReadonlySet<string> = new Set(livingWeaponMoveNames(
-    livingWeaponSpecies,
-    context.actor.token.combatSkillRankValue,
-  ))
-  const rollUsesLivingWeapon = faintedLivingWeaponLink && options.script && (
-    grantedLivingWeaponMoveNames.has(options.script.moveName)
-    || isStruggleAttackMoveName(options.script.moveName)
-  )
-  const faintedLivingWeaponPenalty = rollUsesLivingWeapon ? -2 : 0
-  if (faintedLivingWeaponPenalty !== 0) modifiers.push({
-    sourceId: `capability.living-weapon.fainted:${faintedLivingWeaponLink!.ownerPlacementId}`,
+  const faintedLivingWeapon = faintedLivingWeaponRollPenalty({
+    context,
+    script: options.script,
+  })
+  const faintedLivingWeaponPenalty = faintedLivingWeapon?.value ?? 0
+  if (faintedLivingWeapon) modifiers.push({
+    sourceId: `capability.living-weapon.fainted:${faintedLivingWeapon.sourcePlacementId}`,
     reason: 'Fainted Living Weapon',
-    value: faintedLivingWeaponPenalty,
+    value: faintedLivingWeapon.value,
   })
   const remainingModifiers = aa085to100AccuracyModifiers({
     context,

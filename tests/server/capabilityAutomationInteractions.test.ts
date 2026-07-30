@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseMoveEffectOperation } from '#shared/moveAutomation/effects'
 import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
 import { parseExecuteCapabilityActionCommand } from '#shared/capabilityAutomation/clientCommands'
 import { buildAuthoritativeMoveRulesContext } from '../../server/domain/moveAutomation/context'
@@ -8,6 +9,7 @@ import { capabilityContextualTargetEvasionBonus } from '../../server/domain/move
 import { executeRegisteredMoveHandler } from '../../server/domain/moveAutomation/handlers/registry'
 import { capabilityMoveRangeIsRanged } from '../../server/domain/resolveAuthoritativeMove'
 import { resolveAuthoritativeMoveUserAccuracy } from '../../server/domain/moveAutomation/accuracy'
+import { resolveMoveSpecDamageCalculation } from '../../server/domain/moveAutomation/damageStats'
 import { executeCapabilityMechanic } from '../../server/domain/capabilityAutomation/executeMechanic'
 import { buildEncounterPresentationProjection } from '../../server/domain/encounterPresentation/buildProjection'
 import { CAPABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/capabilityAutomation/registry'
@@ -17,6 +19,7 @@ import { capabilityCoupledPresenceIds, removeCapabilityPresenceGroup } from '../
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { defaultTargetResolutionState } from '~/utils/moveAutomationTargetResolution'
 
 const actor: SheetPlacement = {
   id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor-sheet', position: { x: 1, y: 0, z: 1 }, sideId: 'red',
@@ -174,21 +177,28 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
     const wielder = pokemon(actor.sheetSlug, {
       species: 'Pikachu', skills: { combat: '4d6' }, items: { held: '' },
     })
-    const weapon = pokemon(target.sheetSlug, {
+    const weaponPlacement: SheetPlacement = {
+      id: 'living-weapon', sheetKind: 'pokemon', sheetSlug: 'living-weapon-sheet',
+      position: { ...actor.position }, sideId: actor.sideId,
+    }
+    const weapon = pokemon(weaponPlacement.sheetSlug, {
       species: 'Honedge', capabilities: { other: ['Living Weapon'] },
     })
+    const victim = pokemon(target.sheetSlug)
+    const unlinkedMap = baseMap({ placements: [actor, target, weaponPlacement] })
     const sourceInstance = resolveEffectiveCapabilities({
-      map: baseMap(),
-      placement: target,
+      map: unlinkedMap,
+      placement: weaponPlacement,
       sheet: weapon,
       sheets: {
-        pokemon: new Map([[wielder.slug, wielder], [weapon.slug, weapon]]),
+        pokemon: new Map([[wielder.slug, wielder], [victim.slug, victim], [weapon.slug, weapon]]),
         trainer: new Map(),
       },
     }).instances.find(instance => instance.effective && instance.canonicalId === 'Living Weapon')
     if (!sourceInstance) throw new Error('Expected Living Weapon source fixture.')
     const encounter = createEmptyEncounterState()
     const map = baseMap({
+      placements: [actor, target, weaponPlacement],
       encounterState: {
         ...encounter,
         capabilityRuntime: {
@@ -196,7 +206,7 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
           links: [{
             id: 'capability.link.living-weapon',
             kind: 'living-weapon',
-            ownerPlacementId: target.id,
+            ownerPlacementId: weaponPlacement.id,
             participantPlacementIds: [actor.id],
             capabilityInstanceId: sourceInstance.instanceId,
             canonicalId: 'Living Weapon',
@@ -207,13 +217,26 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
         },
       },
     })
-    expect(moveContext(wielder, 'Wounding Strike', map, weapon).queries.resolveActorMoveEntry('Wounding Strike'))
+    const linkedContext = (actorSheet: CharacterSheet, moveName: string, livingWeaponSheet: CharacterSheet) => (
+      buildAuthoritativeMoveRulesContext({
+        map,
+        pokemonSheets: new Map([
+          [actorSheet.slug, actorSheet],
+          [victim.slug, victim],
+          [livingWeaponSheet.slug, livingWeaponSheet],
+        ]),
+        trainerSheets: new Map<string, TrainerSheet>(),
+        intent: moveIntent(moveName), candidatePlacementIds: [target.id], selectedPlacementIds: [target.id],
+        random: () => 0, time: 1_000,
+      })
+    )
+    expect(linkedContext(wielder, 'Wounding Strike', weapon).queries.resolveActorMoveEntry('Wounding Strike'))
       .toMatchObject({ ok: true, entry: { hasStab: false, script: { damageBase: 7 } } })
 
-    const activeWeaponContext = moveContext(wielder, 'Struggle', map, weapon)
+    const activeWeaponContext = linkedContext(wielder, 'Struggle', weapon)
     const activeStruggle = activeWeaponContext.queries.resolveActorMoveEntry('Struggle')
     if (!activeStruggle.ok) throw new Error('Expected Living Weapon Struggle fixture.')
-    const faintedWeaponContext = moveContext(wielder, 'Struggle', map, {
+    const faintedWeaponContext = linkedContext(wielder, 'Struggle', {
       ...weapon, combat: { ...weapon.combat, currentHp: 0 },
     })
     const faintedStruggle = faintedWeaponContext.queries.resolveActorMoveEntry('Struggle')
@@ -229,11 +252,52 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
       reason: 'Fainted Living Weapon', value: -2,
     }))
 
+    const operation = parseMoveEffectOperation({
+      id: 'living-weapon.damage',
+      kind: 'damage',
+      source: { kind: 'move', id: 'move.struggle' },
+      recipients: { kind: 'hit-targets' },
+      phase: 'damage',
+      reasonCode: 'living-weapon.damage',
+      payload: {
+        damageClass: 'physical', damageBase: 4, moveType: 'normal',
+        accuracyRollId: null, criticalRollId: null,
+      },
+    })
+    if (operation.kind !== 'damage') throw new Error('Expected Living Weapon damage operation.')
+    const resolution = {
+      ...defaultTargetResolutionState(activeStruggle.entry.script),
+      hit: true,
+      damageRoll: { formula: 'flat', count: 0, sides: 0, rolls: [], mod: 20, total: 20 },
+    }
+    const activeDamage = resolveMoveSpecDamageCalculation({
+      context: activeWeaponContext,
+      operation,
+      script: activeStruggle.entry.script,
+      recipient: activeWeaponContext.queries.tokens.get(target.id)!,
+      resolution,
+    })
+    const faintedDamage = resolveMoveSpecDamageCalculation({
+      context: faintedWeaponContext,
+      operation,
+      script: faintedStruggle.entry.script,
+      recipient: faintedWeaponContext.queries.tokens.get(target.id)!,
+      resolution,
+    })
+    expect(faintedDamage.damagePipeline?.preTypeDamage)
+      .toBe((activeDamage.damagePipeline?.preTypeDamage ?? 0) - 2)
+    expect(faintedDamage.damagePipeline?.stages.flatMap(stage => stage.modifiers)).toContainEqual(
+      expect.objectContaining({
+        reasonCode: 'capability.living-weapon.fainted-roll-penalty',
+        value: -2,
+      }),
+    )
+
     const unqualified = { ...wielder, skills: { combat: '3d6' } }
-    expect(moveContext(unqualified, 'Wounding Strike', map, weapon).queries.resolveActorMoveEntry('Wounding Strike'))
+    expect(linkedContext(unqualified, 'Wounding Strike', weapon).queries.resolveActorMoveEntry('Wounding Strike'))
       .toMatchObject({ ok: false, reason: 'creature-rule-blocked' })
     const lostSource = { ...weapon, species: 'Pikachu', capabilities: { other: [] } }
-    expect(moveContext(wielder, 'Wounding Strike', map, lostSource).queries.resolveActorMoveEntry('Wounding Strike'))
+    expect(linkedContext(wielder, 'Wounding Strike', lostSource).queries.resolveActorMoveEntry('Wounding Strike'))
       .toMatchObject({ ok: false, reason: 'creature-rule-blocked' })
 
     const masterWielder = { ...wielder, skills: { combat: '6d6' } }
