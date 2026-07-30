@@ -232,6 +232,9 @@ const contextSatisfied = (input: {
     case 'mounted': return link(['as-one-mount'])
     case 'carrying-rider': return link(['mount-rider'])
     case 'wielded': return link(['living-weapon'])
+    case 'wielded-aegislash': return link(['living-weapon'])
+      && input.placement.sheetKind === 'pokemon'
+      && (input.sheet as CharacterSheet).species.trim().toLocaleLowerCase('en-US') === 'aegislash'
     case 'bonded': return link(['viral-fusion'])
     case 'adjacent-release-cell': {
       const expectedKind = input.canonicalId === 'As One' ? 'as-one-mount'
@@ -637,6 +640,51 @@ const privateNoticesFor = (
   })
 }
 
+const illusionBypassNoticesFor = (input: {
+  readonly map: TabletopMap
+  readonly viewerPlacementId: string
+  readonly now: number
+  readonly effectiveInstanceIdsFor: (placementId: string) => ReadonlySet<string>
+}): PlacementCapabilityClientBundle['privateNotices'] => {
+  const bypassActive = (input.map.encounterState?.effects ?? []).some(effect => (
+    effect.kind === 'condition'
+    && effect.payload.conditionId === 'immunity-and-illusion-bypass'
+    && effect.affected.placementIds.includes(input.viewerPlacementId)
+    && effect.suppression.sources.length === 0
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+  ))
+  if (!bypassActive) return []
+  const rawIllusions = Array.isArray(input.map.metadata?.capabilityIllusions)
+    ? input.map.metadata.capabilityIllusions : []
+  return (input.map.encounterState?.capabilityRuntime?.modes ?? []).flatMap((mode) => {
+    if (mode.mode !== 'illusion' || (mode.expiresAt !== null && mode.expiresAt <= input.now)
+      || !input.effectiveInstanceIdsFor(mode.actorPlacementId).has(mode.capabilityInstanceId)) return []
+    const illusion = rawIllusions.find(raw => (
+      raw && typeof raw === 'object' && !Array.isArray(raw)
+      && (raw as Record<string, unknown>).ownerPlacementId === mode.actorPlacementId
+      && ((raw as Record<string, unknown>).sourceOperationId === undefined
+        || (raw as Record<string, unknown>).sourceOperationId === mode.sourceOperationId)
+    )) as Record<string, unknown> | undefined
+    const position = illusion?.position as Record<string, unknown> | undefined
+    const coordinate = Number.isSafeInteger(position?.x) && Number.isSafeInteger(position?.y)
+      && Number.isSafeInteger(position?.z)
+      ? ` at (${position!.x}, ${position!.y}, ${position!.z})` : ''
+    const appearance = typeof illusion?.description === 'string' && illusion.description.trim()
+      ? ` (${illusion.description.trim().slice(0, 240)})` : ''
+    return [Object.freeze({
+      noticeId: encounterPresentationStableId(
+        'capability-illusion-bypass', input.map.slug, input.viewerPlacementId, mode.actorPlacementId,
+      ),
+      canonicalId: 'Illusionist',
+      actionId: 'see-through-illusion',
+      label: 'Illusion Bypassed',
+      summary: `Foresight-family perception identifies and ignores the Illusion${coordinate}${appearance}.`,
+      sourcePlacementId: mode.actorPlacementId,
+      createdAt: input.map.updatedAt ?? input.now,
+    })]
+  }).slice(0, 16)
+}
+
 const title = (actionId: string): string => actionId.split('-')
   .map(part => part ? `${part[0]!.toUpperCase()}${part.slice(1)}` : '')
   .join(' ')
@@ -734,7 +782,7 @@ export const buildCapabilityClientCapabilityBundle = (
       if (!instance.effective) continue
       const runtime = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require(instance.canonicalId)
       for (const action of runtime.spec.actions) {
-        if (independentActionBlocked) continue
+        if (independentActionBlocked || action.actionId === 'ready-light-shield') continue
         const context = action.contextPredicateId.slice(action.contextPredicateId.lastIndexOf('.') + 1)
         if (!contextSatisfied({
           context,
@@ -837,52 +885,56 @@ export const buildCapabilityClientCapabilityBundle = (
         ))
         const sourceWilling = Array.isArray(input.map.metadata?.capabilityWillingTargets)
           && input.map.metadata.capabilityWillingTargets.includes(`${sourcePlacement.id}:${placement.id}`)
-        const actionId = sourceLink?.participantPlacementIds.includes(placement.id)
-          ? 'disengage-wielder'
+        const linkedToActingPlacement = sourceLink?.participantPlacementIds.includes(placement.id) === true
+        const sourceSpecies = sourcePlacement.sheetKind === 'pokemon'
+          ? (sourceSheet as CharacterSheet).species.trim().toLocaleLowerCase('en-US') : ''
+        const actionIds = linkedToActingPlacement
+          ? ['disengage-wielder', ...(sourceSpecies === 'aegislash' ? ['ready-light-shield'] : [])]
           : sourceLink || placementDistance(sourcePlacement, placement) > 1 || !sourceWilling
-            ? null : 'engage-wielder'
-        if (!actionId) continue
-        const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require('Living Weapon').spec.actions
-          .find(candidate => candidate.actionId === actionId)
-        if (!action) continue
-        const activeModes = new Set((input.map.encounterState?.capabilityRuntime?.modes ?? [])
-          .filter(entry => entry.actorPlacementId === placement.id
-            && effectiveInstanceIds.has(entry.capabilityInstanceId)
-            && (entry.expiresAt === null || entry.expiresAt > now))
-          .map(entry => entry.mode))
-        const reasons: string[] = []
-        if (action.economy === 'standard'
-          && (activeModes.has('intangible') || activeModes.has('shadow-melded') || activeModes.has('shrunken'))) {
-          reasons.push('capability.standard-action-blocked')
+            ? [] : ['engage-wielder']
+        for (const actionId of actionIds) {
+          const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require('Living Weapon').spec.actions
+            .find(candidate => candidate.actionId === actionId)
+          if (!action) continue
+          const activeModes = new Set((input.map.encounterState?.capabilityRuntime?.modes ?? [])
+            .filter(entry => entry.actorPlacementId === placement.id
+              && effectiveInstanceIds.has(entry.capabilityInstanceId)
+              && (entry.expiresAt === null || entry.expiresAt > now))
+            .map(entry => entry.mode))
+          const reasons: string[] = []
+          if (action.economy === 'standard'
+            && (activeModes.has('intangible') || activeModes.has('shadow-melded') || activeModes.has('shrunken'))) {
+            reasons.push('capability.standard-action-blocked')
+          }
+          if (action.economy !== 'extended' && action.economy !== 'none'
+            && input.map.initiative?.activeId
+            && input.map.initiative.activeId !== placement.id) reasons.push('economy.actor-turn-required')
+          if (economySpent(input.map, placement.id, action.economy)) reasons.push(`economy.${action.economy}-spent`)
+          offers.push(Object.freeze({
+            offerId: encounterPresentationStableId(
+              'capability-offer', input.map.slug, String(input.mapRevision), placement.id,
+              sourcePlacement.id, sourceInstance.instanceId, action.actionId,
+            ),
+            mapSlug: input.map.slug,
+            mapRevision: input.mapRevision,
+            actorPlacementId: placement.id,
+            sourcePlacementId: sourcePlacement.id,
+            capabilityInstanceId: sourceInstance.instanceId,
+            canonicalId: 'Living Weapon',
+            actionId: action.actionId,
+            label: title(action.actionId),
+            economy: action.economy,
+            frequency: action.frequency,
+            mechanic: action.mechanic,
+            contextPredicateId: actionId === 'engage-wielder'
+              ? 'capability.Living Weapon.delegated-living-weapon-engage'
+              : action.contextPredicateId,
+            requiresGmConfirmation: action.requiresGmConfirmation,
+            available: reasons.length === 0,
+            unavailableReasonCodes: Object.freeze(reasons),
+            selectionOptions: Object.freeze([]),
+          }))
         }
-        if (action.economy !== 'extended' && action.economy !== 'none'
-          && input.map.initiative?.activeId
-          && input.map.initiative.activeId !== placement.id) reasons.push('economy.actor-turn-required')
-        if (economySpent(input.map, placement.id, action.economy)) reasons.push(`economy.${action.economy}-spent`)
-        offers.push(Object.freeze({
-          offerId: encounterPresentationStableId(
-            'capability-offer', input.map.slug, String(input.mapRevision), placement.id,
-            sourcePlacement.id, sourceInstance.instanceId, action.actionId,
-          ),
-          mapSlug: input.map.slug,
-          mapRevision: input.mapRevision,
-          actorPlacementId: placement.id,
-          sourcePlacementId: sourcePlacement.id,
-          capabilityInstanceId: sourceInstance.instanceId,
-          canonicalId: 'Living Weapon',
-          actionId: action.actionId,
-          label: title(action.actionId),
-          economy: action.economy,
-          frequency: action.frequency,
-          mechanic: action.mechanic,
-          contextPredicateId: actionId === 'engage-wielder'
-            ? 'capability.Living Weapon.delegated-living-weapon-engage'
-            : action.contextPredicateId,
-          requiresGmConfirmation: action.requiresGmConfirmation,
-          available: reasons.length === 0,
-          unavailableReasonCodes: Object.freeze(reasons),
-          selectionOptions: Object.freeze([]),
-        }))
       }
     }
     placements.push(Object.freeze({
@@ -895,7 +947,15 @@ export const buildCapabilityClientCapabilityBundle = (
             entry.actorPlacementId === placement.id && entry.expiresAt > now
           )).map(entry => Object.freeze({ ...entry }))
         : []),
-      privateNotices: Object.freeze(privateNoticesFor(input.map, placement.id)),
+      privateNotices: Object.freeze([
+        ...privateNoticesFor(input.map, placement.id),
+        ...illusionBypassNoticesFor({
+          map: input.map,
+          viewerPlacementId: placement.id,
+          now,
+          effectiveInstanceIdsFor,
+        }),
+      ]),
     }))
   }
   return Object.freeze({

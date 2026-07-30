@@ -14,6 +14,7 @@ import {
 } from '#shared/capabilityAutomation/campaignState'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
+import { resolveEffectiveCapabilities } from '../../server/domain/capabilityAutomation/effectiveCapabilities'
 
 const databases: RotomDatabase[] = []
 afterEach(() => { while (databases.length) databases.pop()!.close() })
@@ -255,7 +256,7 @@ describe('Capability authoritative execution use case', () => {
       items: { held: '' },
     }
     const weapon: CharacterSheet = {
-      slug: 'weapon', nickname: 'Weapon', species: 'Honedge', level: 20, revision: 2,
+      slug: 'weapon', nickname: 'Weapon', species: 'Aegislash', level: 20, revision: 2,
       capabilities: { other: ['Living Weapon'] },
     }
     const linked: TrainerSheet = {
@@ -327,11 +328,16 @@ describe('Capability authoritative execution use case', () => {
     const currentWielder = sheetRepository.getByRef('pokemon', wielder.slug)!.sheet as unknown as CharacterSheet
     const currentWeapon = sheetRepository.getByRef('pokemon', weapon.slug)!.sheet as unknown as CharacterSheet
     const currentTrainer = sheetRepository.getByRef('trainer', linked.slug)!.sheet as unknown as TrainerSheet
-    const disengageOffer = buildCapabilityClientCapabilityBundle({
+    const engagedOffers = buildCapabilityClientCapabilityBundle({
       role: 'player', playerProfile: profile, map: engagedMap, mapRevision: 6,
       pokemonSheets: [currentWielder, currentWeapon], trainerSheets: [currentTrainer], now: 1_001,
     }).placements.find(candidate => candidate.placementId === 'wielder')!.offers
-      .find(candidate => candidate.actionId === 'disengage-wielder')!
+    const readyShieldOffer = engagedOffers.find(candidate => candidate.actionId === 'ready-light-shield')!
+    expect(readyShieldOffer).toMatchObject({
+      actorPlacementId: 'wielder', sourcePlacementId: 'weapon', available: false,
+      unavailableReasonCodes: expect.arrayContaining(['economy.standard-spent']),
+    })
+    const disengageOffer = engagedOffers.find(candidate => candidate.actionId === 'disengage-wielder')!
     expect(disengageOffer).toMatchObject({
       actorPlacementId: 'wielder', sourcePlacementId: 'weapon', available: true,
     })
@@ -358,6 +364,106 @@ describe('Capability authoritative execution use case', () => {
     expect(executeCapabilityActionUseCase({
       role: 'player', playerProfile: profile, command: disengageCommand,
     }, { ...dependencies, now: () => 1_001 })).toEqual(disengaged)
+  })
+
+  it('lets the controlled wielder authoritatively ready an Aegislash Light Shield', () => {
+    const database = openRotomDatabase({ path: ':memory:' })
+    databases.push(database)
+    const mapRepository = createSqliteMapRepository<TabletopMap>(database)
+    const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const wielder: CharacterSheet = {
+      slug: 'shield-wielder', nickname: 'Shield Wielder', species: 'Pikachu', level: 20, revision: 2,
+      items: { held: '' },
+    }
+    const weapon: CharacterSheet = {
+      slug: 'aegislash', nickname: 'Aegislash', species: 'Aegislash', level: 35, revision: 2,
+      capabilities: { other: ['Living Weapon'] },
+    }
+    const linkedTrainer: TrainerSheet = {
+      slug: 'shield-trainer', name: 'Shield Trainer', level: 10, revision: 3,
+      currentTeam: [wielder.slug],
+    }
+    const placements = [
+      { id: 'shield-wielder', sheetKind: 'pokemon' as const, sheetSlug: wielder.slug, position: { x: 1, y: 1, z: 1 } },
+      { id: 'aegislash', sheetKind: 'pokemon' as const, sheetSlug: weapon.slug, position: { x: 1, y: 1, z: 1 } },
+    ]
+    const sourceMap: TabletopMap = { ...map(), placements }
+    const source = resolveEffectiveCapabilities({
+      map: sourceMap, placement: placements[1]!, sheet: weapon,
+      sheets: {
+        pokemon: new Map([[wielder.slug, wielder], [weapon.slug, weapon]]),
+        trainer: new Map([[linkedTrainer.slug, linkedTrainer]]),
+      },
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'Living Weapon')!
+    const encounter = createEmptyEncounterState()
+    const readyMap: TabletopMap = {
+      ...sourceMap,
+      initiative: { activeId: 'shield-wielder', round: 1 },
+      encounterState: {
+        ...encounter,
+        history: {
+          ...encounter.history,
+          sceneId: 'scene:light-shield', currentRound: 1,
+          currentTurn: { round: 1, turn: 1, placementId: 'shield-wielder' },
+        },
+        turnResources: {
+          'shield-wielder': createEncounterTurnResourceLedger({ placementId: 'shield-wielder', round: 1, turn: 1 }),
+          aegislash: createEncounterTurnResourceLedger({ placementId: 'aegislash', round: 1, turn: 1 }),
+        },
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'capability.link.aegislash.living-weapon', kind: 'living-weapon',
+            ownerPlacementId: 'aegislash', participantPlacementIds: ['shield-wielder'],
+            capabilityInstanceId: source.instanceId, canonicalId: 'Living Weapon', establishedAt: 1,
+            configurationId: 'small-melee-weapon-and-light-shield', sourceOperationId: 'operation:engage',
+          }],
+        },
+      },
+    }
+    mapRepository.saveSetupMap(readyMap)
+    sheetRepository.saveSetupSheet('pokemon', wielder.slug, wielder as unknown as Record<string, unknown>)
+    sheetRepository.saveSetupSheet('pokemon', weapon.slug, weapon as unknown as Record<string, unknown>)
+    sheetRepository.saveSetupSheet('trainer', linkedTrainer.slug, linkedTrainer as unknown as Record<string, unknown>)
+    const profile: PlayerProfile = {
+      ...playerProfile('shield-profile'),
+      linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: wielder.slug }],
+    }
+    const offer = buildCapabilityClientCapabilityBundle({
+      role: 'player', playerProfile: profile, map: readyMap, mapRevision: 5,
+      pokemonSheets: [wielder, weapon], trainerSheets: [linkedTrainer], now: 1_000,
+    }).placements.find(candidate => candidate.placementId === 'shield-wielder')!.offers
+      .find(candidate => candidate.actionId === 'ready-light-shield')!
+    expect(offer).toMatchObject({
+      actorPlacementId: 'shield-wielder', sourcePlacementId: 'aegislash', available: true,
+      canonicalId: 'Living Weapon', economy: 'standard', mechanic: 'toggle-mode',
+    })
+    const command = {
+      schemaVersion: 1, operationId: 'operation:ready-aegislash-light-shield', mapSlug: 'arena', baseRevision: 5,
+      offerId: offer.offerId, actorPlacementId: 'shield-wielder',
+      capabilityInstanceId: offer.capabilityInstanceId,
+      canonicalId: 'Living Weapon', actionId: 'ready-light-shield',
+      selections: {
+        targetPlacementIds: [], cells: [], optionId: null, recipientTrainerSlug: null,
+        canonicalItemId: null, description: null, gmConfirmed: false,
+      },
+    }
+    const dependencies = {
+      database, mapRepository, sheetRepository, now: () => 1_000,
+      publishPersistedRealtimeEvent: () => {},
+    }
+    const result = executeCapabilityActionUseCase({ role: 'player', playerProfile: profile, command }, dependencies)
+    expect(result).toMatchObject({
+      outcome: 'applied', reasonCode: 'capability.living-weapon.light-shield-readied', mapRevision: 6,
+    })
+    const persisted = mapRepository.getBySlug('arena')!
+    expect(persisted.encounterState?.turnResources['shield-wielder']?.actions.standard.spent).toBe(1)
+    expect(persisted.encounterState?.turnResources.aegislash?.actions.standard.spent).toBe(0)
+    expect(persisted.encounterState?.effects
+      .filter(effect => effect.tags.includes('capability.living-weapon.light-shield'))).toHaveLength(3)
+    expect(executeCapabilityActionUseCase({
+      role: 'player', playerProfile: profile, command,
+    }, dependencies)).toEqual(result)
   })
 
   it('transactionally transfers the exact mature Juicer output and replays without duplication', () => {

@@ -107,7 +107,7 @@ const TOGGLE_ACTIONS = new Set([
   'inflate', 'deflate', 'become-invisible', 'become-visible', 'become-intangible',
   'become-tangible', 'meld', 'reform', 'change-shape', 'restore-shape', 'shrink',
   'restore-size', 'assume-crowned-form', 'relinquish-crowned-form', 'enter-machine',
-  'exit-machine', 'change-zygarde-form', 'mega-evolve',
+  'exit-machine', 'change-zygarde-form', 'mega-evolve', 'ready-light-shield',
 ])
 const LINK_ACTIONS = new Set([
   'mount', 'dismount', 'engage-wielder', 'disengage-wielder', 'accept-rider',

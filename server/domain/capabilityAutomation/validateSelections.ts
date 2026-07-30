@@ -1437,6 +1437,30 @@ export const validateCapabilityActionSelections = (input: {
     }
   }
 
+  if (input.command.actionId === 'ready-light-shield') {
+    if (input.actor.sheetKind !== 'pokemon'
+      || (input.actorSheet as CharacterSheet).species.trim().toLocaleLowerCase('en-US') !== 'aegislash') {
+      fail('living-weapon-light-shield-invalid', 'Only a wielded Aegislash can be readied as a Living Weapon Light Shield.')
+    }
+    const exactLink = input.map.encounterState?.capabilityRuntime?.links.find(link => (
+      link.kind === 'living-weapon'
+      && link.ownerPlacementId === input.actor.id
+      && link.participantPlacementIds.length === 1
+      && link.participantPlacementIds[0] === actingPlacement.id
+      && link.capabilityInstanceId === input.command.capabilityInstanceId
+      && link.canonicalId === 'Living Weapon'
+    ))
+    if (!exactLink || actingPlacement.id === input.actor.id) {
+      fail('living-weapon-light-shield-link-missing', 'Light Shield readiness requires the exact engaged Living Weapon wielder.')
+    }
+    const selections = input.command.selections
+    if (selections.targetPlacementIds.length || selections.cells.length || selections.optionId !== null
+      || selections.recipientTrainerSlug !== null || selections.canonicalItemId !== null
+      || selections.description !== null || selections.gmConfirmed) {
+      fail('living-weapon-light-shield-selection-invalid', 'Ready Light Shield does not accept client-authored selections.')
+    }
+  }
+
   if (input.command.actionId === 'mount' && targets[0]) {
     const targetEffective = resolveEffectiveCapabilities({
       map: input.map,

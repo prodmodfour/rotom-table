@@ -29,8 +29,16 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
   }
 }): TabletopMap => {
   const encounter = input.map.encounterState
-  const runtime = encounter?.capabilityRuntime
-  if (!encounter || !runtime) return input.map
+  if (!encounter) return input.map
+  const runtime = encounter.capabilityRuntime
+  if (!runtime) {
+    const effects = encounter.effects.filter(effect => (
+      !effect.tags.includes('capability.living-weapon.light-shield')
+    ))
+    return effects.length === encounter.effects.length
+      ? input.map
+      : { ...input.map, encounterState: { ...encounter, effects } }
+  }
   const placementById = new Map(input.map.placements.map(placement => [placement.id, placement]))
   const sourceEffective = (entry: {
     readonly ownerPlacementId?: string
@@ -75,6 +83,14 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
     || (sourceEffective(link) && link.participantPlacementIds.every(id => placementById.has(id)))
   ))
   const tasks = runtime.tasks.filter(task => sourceEffective(task))
+  const effects = encounter.effects.filter(effect => (
+    !effect.tags.includes('capability.living-weapon.light-shield')
+    || links.some(link => (
+      link.kind === 'living-weapon'
+      && link.ownerPlacementId === effect.source.placementId
+      && effect.affected.placementIds.some(id => link.participantPlacementIds.includes(id))
+    ))
+  ))
   let pouchStateChanged = false
   const capabilityMarsupialPouches = Array.isArray(input.map.metadata?.capabilityMarsupialPouches)
     ? input.map.metadata.capabilityMarsupialPouches.filter((raw) => {
@@ -116,7 +132,8 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
         return { ...object, attachedToPlacementId: null, attachedCapabilityInstanceId: null }
       }) : null
   if (modes.length === runtime.modes.length && links.length === runtime.links.length
-    && tasks.length === runtime.tasks.length && !attachmentSourceRemoved && !pouchStateChanged) return input.map
+    && tasks.length === runtime.tasks.length && effects.length === encounter.effects.length
+    && !attachmentSourceRemoved && !pouchStateChanged) return input.map
   const retainedModeIds = new Set(modes.map(mode => mode.id))
   const removedModes = runtime.modes.filter(mode => !retainedModeIds.has(mode.id))
   const removedModeIds = new Set(removedModes.map(mode => mode.id))
@@ -161,7 +178,7 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
     } : {}),
     encounterState: {
       ...encounter,
-      effects: encounter.effects.filter(effect => !removedModeIds.has(effect.id)),
+      effects: effects.filter(effect => !removedModeIds.has(effect.id)),
       capabilityRuntime: parseCapabilityRuntimeState({ ...runtime, modes, links, tasks }),
     },
   }

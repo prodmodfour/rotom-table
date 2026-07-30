@@ -115,6 +115,7 @@ ACTIONS: dict[str, list[dict[str, Any]]] = {
     "Living Weapon": [
         {"id": "engage-wielder", "action": "standard", "frequency": "at-will", "context": "adjacent-willing-wielder"},
         {"id": "disengage-wielder", "action": "swift", "frequency": "at-will", "context": "adjacent-release-cell"},
+        {"id": "ready-light-shield", "action": "standard", "frequency": "at-will", "context": "wielded-aegislash"},
     ],
     "Magnetic": [{"id": "manipulate-metal", "action": "standard", "frequency": "at-will", "context": "iron-or-steel-object"}],
     "Milk Collection": [{"id": "produce-moomoo-milk", "action": "extended", "frequency": "daily", "context": "collection-jar"}],
@@ -193,8 +194,8 @@ LEVEL_REQUIREMENTS = {
 PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
     "Illusionist": {
         "given": "an exact effective Illusionist source maintains one bounded visual Illusion",
-        "when": "authoritative movement makes physical contact with its cell or the exact source is lost",
-        "then": "contact marks the Illusion noticeably disrupted without destroying its maintained action, while exact source loss removes its mode and private authority",
+        "when": "it is projected, contacted along authoritative movement, viewed under an active Foresight-family bypass, or loses its exact source",
+        "then": "ordinary viewers receive only the life-like appearance, the bypass owner privately identifies and ignores it, contact marks it noticeably disrupted without destroying maintenance, and source loss removes its authority",
     },
     "Living Weapon": {
         "given": "an exact effective Honedge-line Living Weapon source is engaged with a willing wielder",
@@ -243,6 +244,11 @@ ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
         "given": "an exact source-effective Living Weapon link exists",
         "when": "either controlled party initiates disengagement as a Swift Action during that acting party's turn and selects a legal separation cell",
         "then": "the server spends the initiating party's action, removes only that exact link, and authoritatively separates the Living Weapon without duplicating movement",
+    },
+    ("Living Weapon", "ready-light-shield"): {
+        "given": "an exact effective Aegislash Living Weapon source is engaged with the acting wielder",
+        "when": "the controlled wielder readies its Living Weapon Light Shield as a Standard Action",
+        "then": "the server grants +4 total Evasion, 10 Damage Reduction, and Slowed through the end of the wielder's next turn, with exact-link and source-loss cleanup",
     },
 }
 

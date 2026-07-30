@@ -105,6 +105,8 @@ export interface ExecuteCapabilityMechanicInput {
   readonly map: TabletopMap
   readonly actorPlacement: SheetPlacement
   readonly actorSheet: CharacterSheet | TrainerSheet
+  /** Authorization/economy owner when a source-owned action is canonically delegated. */
+  readonly actingPlacement?: SheetPlacement
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
   readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
   readonly linkedTrainerSlugs: ReadonlySet<string>
@@ -236,6 +238,62 @@ const numericModeEffect = (input: {
 const runtimeFor = (map: TabletopMap): CapabilityRuntimeState => parseCapabilityRuntimeState(
   map.encounterState?.capabilityRuntime ?? createEmptyCapabilityRuntimeState(),
 )
+
+const readyLivingWeaponLightShield = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
+  const wielder = input.actingPlacement ?? input.actorPlacement
+  const encounter = parseEncounterState(input.map.encounterState ?? createEmptyEncounterState())
+  const effectKey = `${input.actorPlacement.id}:${wielder.id}`.replace(/[^A-Za-z0-9._:/-]/g, '-')
+  const tag = 'capability.living-weapon.light-shield'
+  const createdRound = Math.max(1, encounter.history.currentRound ?? input.map.initiative?.round ?? 1)
+  const createdTurn = Math.max(0, encounter.history.currentTurn?.turn ?? 0)
+  const duration = { kind: 'turns' as const, subject: 'target' as const, boundary: 'end' as const, remaining: 2 }
+  const base = {
+    source: {
+      operationId: input.command.operationId,
+      moveId: 'capability.living-weapon.light-shield',
+      placementId: input.actorPlacement.id,
+    },
+    affected: { placementIds: [wielder.id], sideIds: [], cells: [] },
+    createdRound,
+    createdTurn,
+    duration,
+    stacks: 1,
+    charges: null,
+    stackPolicy: { kind: 'replace' as const, maxStacks: null },
+    chargePolicy: { kind: 'none' as const, amount: null },
+    tags: ['capability', tag],
+    dispel: { policy: 'none' as const, tags: [] },
+    transferPolicy: 'expire' as const,
+    suppression: { sources: [] },
+  }
+  const effects: EncounterEffect[] = [
+    {
+      ...base,
+      id: `capability.living-weapon.light-shield.evasion:${effectKey}`,
+      kind: 'numeric-modifier',
+      payload: { attribute: 'evasion', operation: 'add', value: 2, rounding: 'none' },
+    },
+    {
+      ...base,
+      id: `capability.living-weapon.light-shield.dr:${effectKey}`,
+      kind: 'numeric-modifier',
+      payload: { attribute: 'damage-reduction', operation: 'add', value: 10, rounding: 'none' },
+    },
+    {
+      ...base,
+      id: `capability.living-weapon.light-shield.slowed:${effectKey}`,
+      kind: 'condition',
+      payload: { conditionId: 'slowed', action: 'apply', saveTiming: null },
+    },
+  ]
+  return mapWithRuntimeAndEffects(
+    input.map,
+    runtimeFor(input.map),
+    [...encounter.effects.filter(effect => !effect.tags.includes(tag)
+      || effect.source.placementId !== input.actorPlacement.id
+      || !effect.affected.placementIds.includes(wielder.id)), ...effects],
+  )
+}
 
 const mapWithCapabilityLinkedMovement = (
   input: ExecuteCapabilityMechanicInput,
@@ -916,7 +974,14 @@ const applyLink = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
     const stationaryId = actorMoves ? participantId : input.actorPlacement.id
     const destination = input.command.selections.cells[0]
     if (!destination) throw new Error('Capability link release requires one adjacent destination cell.')
-    const map = mapWithRuntimeAndEffects(input.map, runtime, input.map.encounterState?.effects ?? [])
+    const retainedEffects = removeKind === 'living-weapon'
+      ? (input.map.encounterState?.effects ?? []).filter(effect => (
+          !effect.tags.includes('capability.living-weapon.light-shield')
+          || effect.source.placementId !== input.actorPlacement.id
+          || !existing.participantPlacementIds.some(id => effect.affected.placementIds.includes(id))
+        ))
+      : input.map.encounterState?.effects ?? []
+    const map = mapWithRuntimeAndEffects(input.map, runtime, retainedEffects)
     const relocation = resolveAuthoritativeRelocation({
       map,
       sheets: { pokemon: input.pokemonSheets, trainer: input.trainerSheets },
@@ -2758,10 +2823,15 @@ const executeCampaignTask = (input: ExecuteCapabilityMechanicInput): CapabilityM
 export const executeCapabilityMechanic = (
   input: ExecuteCapabilityMechanicInput,
 ): CapabilityMechanicExecution => {
-  if (input.action.mechanic === 'toggle-mode') return {
-    map: applyToggle(input), sheetMutations: [], rolls: [], produced: [], outcome: 'applied',
-    reasonCode: 'capability.mode-changed', adjudicationNote: null,
-  }
+  if (input.action.mechanic === 'toggle-mode') return input.command.actionId === 'ready-light-shield'
+    ? {
+        map: readyLivingWeaponLightShield(input), sheetMutations: [], rolls: [], produced: [], outcome: 'applied',
+        reasonCode: 'capability.living-weapon.light-shield-readied', adjudicationNote: null,
+      }
+    : {
+        map: applyToggle(input), sheetMutations: [], rolls: [], produced: [], outcome: 'applied',
+        reasonCode: 'capability.mode-changed', adjudicationNote: null,
+      }
   if (input.action.mechanic === 'link-actors') {
     if (input.command.actionId === 'combine-unown') return executeLetterPress(input)
     if (input.command.actionId === 'assemble-zygarde' || input.command.actionId === 'disassemble-zygarde') {

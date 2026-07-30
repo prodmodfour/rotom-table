@@ -14,12 +14,14 @@ import { executeCapabilityMechanic } from '../../server/domain/capabilityAutomat
 import { buildEncounterPresentationProjection } from '../../server/domain/encounterPresentation/buildProjection'
 import { CAPABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/capabilityAutomation/registry'
 import { resolveEffectiveCapabilities } from '../../server/domain/capabilityAutomation/effectiveCapabilities'
+import { reconcileCapabilityRuntimeSourceLoss } from '../../server/domain/capabilityAutomation/sourceLoss'
 import { validateCapabilityActionSelections } from '../../server/domain/capabilityAutomation/validateSelections'
 import { capabilityCoupledPresenceIds, removeCapabilityPresenceGroup } from '../../server/domain/capabilityAutomation/presenceLifecycle'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { defaultTargetResolutionState } from '~/utils/moveAutomationTargetResolution'
+import { applyEncounterEffectLifecycleEvent } from '../../server/domain/moveAutomation/effectLifecycle'
 
 const actor: SheetPlacement = {
   id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor-sheet', position: { x: 1, y: 0, z: 1 }, sideId: 'red',
@@ -349,6 +351,139 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
         }),
       }),
     }))
+  })
+
+  it('readies an exact Aegislash Living Weapon Light Shield with linked and source-loss-safe effects', () => {
+    const wielder = pokemon(actor.sheetSlug, {
+      species: 'Pikachu', skills: { combat: '6d6' }, items: { held: '' },
+    })
+    const aegislash = pokemon(target.sheetSlug, {
+      species: 'Aegislash', capabilities: { other: ['Living Weapon'] },
+      movelist: [{ name: 'Tackle' }],
+    })
+    const sheets = {
+      pokemon: new Map([[wielder.slug, wielder], [aegislash.slug, aegislash]]),
+      trainer: new Map<string, TrainerSheet>(),
+    }
+    const unlinkedMap = baseMap()
+    const source = resolveEffectiveCapabilities({
+      map: unlinkedMap, placement: target, sheet: aegislash, sheets,
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'Living Weapon')!
+    const encounter = createEmptyEncounterState()
+    const linkedMap = baseMap({
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'capability.link.aegislash', kind: 'living-weapon', ownerPlacementId: target.id,
+            participantPlacementIds: [actor.id], capabilityInstanceId: source.instanceId,
+            canonicalId: 'Living Weapon', establishedAt: 1,
+            configurationId: 'small-melee-weapon-and-light-shield', sourceOperationId: 'operation:engage',
+          }],
+        },
+      },
+    })
+    const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require('Living Weapon').spec.actions
+      .find(entry => entry.actionId === 'ready-light-shield')!
+    const readyCommand = {
+      ...command('Living Weapon', 'ready-light-shield'),
+      capabilityInstanceId: source.instanceId,
+    }
+    expect(() => validateCapabilityActionSelections({
+      map: linkedMap, actor: target, actorSheet: aegislash,
+      actingPlacement: actor, actingSheet: wielder,
+      pokemonSheets: sheets.pokemon, trainerSheets: sheets.trainer,
+      command: readyCommand, action, now: 1_000,
+    })).not.toThrow()
+    const readied = executeCapabilityMechanic({
+      map: linkedMap, actorPlacement: target, actorSheet: aegislash, actingPlacement: actor,
+      pokemonSheets: sheets.pokemon, trainerSheets: sheets.trainer,
+      linkedTrainerSlugs: new Set(), command: readyCommand, action, now: 1_000,
+      rollDie: () => { throw new Error('Ready Light Shield does not roll.') },
+    })
+    expect(readied.reasonCode).toBe('capability.living-weapon.light-shield-readied')
+    expect(readied.map.encounterState?.effects).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'numeric-modifier', affected: expect.objectContaining({ placementIds: [actor.id] }),
+        payload: { attribute: 'evasion', operation: 'add', value: 2, rounding: 'none' },
+        duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 2 },
+      }),
+      expect.objectContaining({
+        kind: 'numeric-modifier',
+        payload: { attribute: 'damage-reduction', operation: 'add', value: 10, rounding: 'none' },
+      }),
+      expect.objectContaining({ kind: 'condition', payload: expect.objectContaining({ conditionId: 'slowed' }) }),
+    ]))
+
+    const attackContext = (map: TabletopMap) => buildAuthoritativeMoveRulesContext({
+      map, pokemonSheets: sheets.pokemon, trainerSheets: sheets.trainer,
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: target.id, moveName: 'Tackle',
+        selection: { kind: 'single-target', targetPlacementId: actor.id },
+      },
+      candidatePlacementIds: [actor.id], selectedPlacementIds: [actor.id], random: () => 0, time: 1_000,
+    })
+    const baselineContext = attackContext(linkedMap)
+    const readiedContext = attackContext(readied.map)
+    expect(readiedContext.queries.tokens.get(actor.id)?.conditions).toContain('Slowed')
+    const script = readiedContext.queries.resolveActorMoveEntry('Tackle')
+    if (!script.ok) throw new Error('Expected Tackle fixture for Light Shield damage.')
+    const operation = parseMoveEffectOperation({
+      id: 'light-shield.damage', kind: 'damage', source: { kind: 'move', id: 'move.tackle' },
+      recipients: { kind: 'hit-targets' }, phase: 'damage', reasonCode: 'light-shield.damage',
+      payload: {
+        damageClass: 'physical', damageBase: 6, moveType: 'normal',
+        accuracyRollId: null, criticalRollId: null,
+      },
+    })
+    if (operation.kind !== 'damage') throw new Error('Expected Light Shield damage operation.')
+    const resolution = {
+      ...defaultTargetResolutionState(script.entry.script), hit: true,
+      damageRoll: { formula: 'flat' as const, count: 0, sides: 0, rolls: [], mod: 50, total: 50 },
+    }
+    const baselineDamage = resolveMoveSpecDamageCalculation({
+      context: baselineContext, operation, script: script.entry.script,
+      recipient: baselineContext.queries.tokens.get(actor.id)!, resolution,
+    })
+    const readiedDamage = resolveMoveSpecDamageCalculation({
+      context: readiedContext, operation, script: script.entry.script,
+      recipient: readiedContext.queries.tokens.get(actor.id)!, resolution,
+    })
+    expect(readiedDamage.breakdown.hpLoss).toBe(baselineDamage.breakdown.hpLoss - 10)
+    expect(readiedDamage.damagePipeline?.stages.flatMap(stage => stage.modifiers)).toContainEqual(
+      expect.objectContaining({
+        reasonCode: 'capability.living-weapon.light-shield.damage-reduction',
+        operation: 'subtract', value: 10,
+      }),
+    )
+
+    const firstTurnEnd = applyEncounterEffectLifecycleEvent(
+      { effects: readied.map.encounterState!.effects },
+      { kind: 'turn-end', placementId: actor.id },
+    )
+    expect(firstTurnEnd.effects.filter(effect => effect.tags.includes('capability.living-weapon.light-shield')))
+      .toHaveLength(3)
+    const nextTurnEnd = applyEncounterEffectLifecycleEvent(
+      { effects: firstTurnEnd.effects },
+      { kind: 'turn-end', placementId: actor.id },
+    )
+    expect(nextTurnEnd.effects.filter(effect => effect.tags.includes('capability.living-weapon.light-shield')))
+      .toEqual([])
+
+    const sourceLost = reconcileCapabilityRuntimeSourceLoss({
+      map: readied.map,
+      sheets: {
+        pokemon: new Map([[wielder.slug, wielder], [aegislash.slug, {
+          ...aegislash, species: 'Pikachu', capabilities: { other: [] },
+        }]]),
+        trainer: new Map(),
+      },
+    })
+    expect(sourceLost.encounterState?.capabilityRuntime?.links).toEqual([])
+    expect(sourceLost.encounterState?.effects
+      .filter(effect => effect.tags.includes('capability.living-weapon.light-shield'))).toEqual([])
   })
 
   it('classifies numeric and template ranges as ranged for Blender and Stealth', () => {

@@ -168,6 +168,94 @@ describe('Capability passive context providers', () => {
     expect(JSON.stringify(projected)).not.toContain('private-contact-placement')
   })
 
+  it('conceals maintained Illusion authority while privately honoring Foresight-family bypass', () => {
+    const encounter = createEmptyEncounterState()
+    const illusionist: CharacterSheet = {
+      slug: 'illusionist', nickname: 'Illusionist', species: 'Zorua', level: 20,
+      capabilities: { other: ['Illusionist'] },
+    }
+    const viewer: CharacterSheet = {
+      slug: 'viewer', nickname: 'Viewer', species: 'Pikachu', level: 20,
+    }
+    const illusionistPlacement = {
+      id: 'illusionist', sheetKind: 'pokemon' as const, sheetSlug: illusionist.slug,
+      position: { x: 3, y: 0, z: 3 },
+    }
+    const viewerPlacement = {
+      id: 'viewer', sheetKind: 'pokemon' as const, sheetSlug: viewer.slug,
+      position: { x: 1, y: 0, z: 1 },
+    }
+    const sheets = {
+      pokemon: new Map([[illusionist.slug, illusionist], [viewer.slug, viewer]]),
+      trainer: new Map(),
+    }
+    const sourceMap = {
+      schemaVersion: 2 as const, slug: 'illusion-bypass', name: 'Illusion Bypass', revision: 1,
+      dimensions: { x: 5, y: 2, z: 5 }, voxels: [], placements: [illusionistPlacement, viewerPlacement],
+    }
+    const source = resolveEffectiveCapabilities({
+      map: sourceMap, placement: illusionistPlacement, sheet: illusionist, sheets,
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'Illusionist')!
+    const map = {
+      ...sourceMap,
+      updatedAt: 100,
+      metadata: {
+        capabilityIllusions: [{
+          id: 'private-illusion', ownerPlacementId: illusionistPlacement.id,
+          position: { x: 2, y: 0, z: 2 }, description: 'a second Pikachu',
+          sourceOperationId: 'operation:create-illusion',
+        }],
+      },
+      encounterState: {
+        ...encounter,
+        effects: [{
+          id: 'foresight.immunity-and-illusion-bypass', kind: 'condition' as const,
+          source: { operationId: 'operation:foresight', moveId: 'foresight', placementId: viewerPlacement.id },
+          affected: { placementIds: [viewerPlacement.id], sideIds: [], cells: [] },
+          createdRound: 1, createdTurn: 1,
+          duration: { kind: 'turns' as const, subject: 'source' as const, boundary: 'end' as const, remaining: 1 },
+          stacks: 1, charges: null,
+          stackPolicy: { kind: 'replace' as const, maxStacks: null },
+          chargePolicy: { kind: 'none' as const, amount: null },
+          tags: ['foresight', 'immunity-and-illusion-bypass'],
+          payload: { conditionId: 'immunity-and-illusion-bypass', action: 'apply' as const, saveTiming: null },
+          dispel: { policy: 'matching-tags' as const, tags: ['foresight'] },
+          transferPolicy: 'expire' as const, suppression: { sources: [] },
+        }],
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'private-mode', actorPlacementId: illusionistPlacement.id,
+            capabilityInstanceId: source.instanceId, canonicalId: 'Illusionist', mode: 'illusion',
+            description: 'a second Pikachu', configurationId: 'motion:minor', activatedAt: 50,
+            expiresAt: null, sourceOperationId: 'operation:create-illusion',
+          }],
+        },
+      },
+    } as TabletopMap
+
+    const projected = projectCapabilityAutomationMapForPlayer(map, sheets)
+    expect(projected.metadata?.automationPresentationStates).toContainEqual(expect.objectContaining({
+      placementId: illusionistPlacement.id, state: 'visual-effect',
+      label: 'a second Pikachu', description: 'a second Pikachu', position: { x: 2, y: 0, z: 2 },
+    }))
+    expect(JSON.stringify(projected)).not.toContain('Maintaining an Illusion')
+    expect(projected.metadata?.capabilityIllusions).toBeUndefined()
+
+    const bundle = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map, mapRevision: 1,
+      pokemonSheets: [illusionist, viewer], trainerSheets: [], now: 100,
+    })
+    expect(bundle.placements.find(entry => entry.placementId === viewerPlacement.id)?.privateNotices)
+      .toContainEqual(expect.objectContaining({
+        canonicalId: 'Illusionist', actionId: 'see-through-illusion',
+        label: 'Illusion Bypassed', sourcePlacementId: illusionistPlacement.id,
+        summary: expect.stringContaining('(2, 0, 2)'),
+      }))
+    expect(bundle.placements.find(entry => entry.placementId === illusionistPlacement.id)?.privateNotices)
+      .toEqual([])
+  })
+
   it('projects only source-effective bounded physical modes and omits unverifiable realtime state', () => {
     const encounter = createEmptyEncounterState()
     const sheet: CharacterSheet = {

@@ -66,11 +66,14 @@ const publicCapabilityPresentationStates = (
       && Number.isSafeInteger(illusionPosition?.y) && Number.isSafeInteger(illusionPosition?.z)
       ? { x: illusionPosition!.x, y: illusionPosition!.y, z: illusionPosition!.z } : null
     const illusionDisrupted = mode.mode === 'illusion' && illusion?.disrupted === true
-    latest.set(`${mode.actorPlacementId}:${mode.mode}`, {
-      id: `public-rule-state:${mode.actorPlacementId}:${mode.mode}`,
+    const publicState = mode.mode === 'illusion' && !illusionDisrupted ? 'visual-effect' : mode.mode
+    latest.set(`${mode.actorPlacementId}:${publicState}`, {
+      id: `public-rule-state:${mode.actorPlacementId}:${publicState}`,
       placementId: mode.actorPlacementId,
-      state: mode.mode,
-      label: illusionDisrupted ? 'Disrupted Illusion' : label,
+      state: publicState,
+      label: mode.mode === 'illusion'
+        ? illusionDisrupted ? 'Disrupted Illusion' : visibleDescription ?? 'Visual Effect'
+        : label,
       description: visibleDescription,
       ...(publicPosition ? { position: publicPosition } : {}),
       ...(illusionDisrupted ? { disrupted: true } : {}),

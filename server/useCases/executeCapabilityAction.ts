@@ -351,7 +351,7 @@ export const executeCapabilityActionUseCase = (
     ?? fail(409, 'Capability source sheet is unavailable.')
   const delegated = actorPlacement.id !== actingPlacement.id
   if (delegated && (command.canonicalId !== 'Living Weapon'
-    || (command.actionId !== 'engage-wielder' && command.actionId !== 'disengage-wielder'))) {
+    || !['engage-wielder', 'disengage-wielder', 'ready-light-shield'].includes(command.actionId))) {
     fail(409, 'This Capability action cannot be delegated to another placement.')
   }
   if (delegated && command.selections.targetPlacementIds.length > 0) {
@@ -558,6 +558,7 @@ export const executeCapabilityActionUseCase = (
     map: mapAfterCost,
     actorPlacement,
     actorSheet,
+    actingPlacement,
     pokemonSheets: pokemonBySlug,
     trainerSheets: trainerBySlug,
     linkedTrainerSlugs,

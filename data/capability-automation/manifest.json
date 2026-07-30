@@ -878,6 +878,12 @@
           "action": "swift",
           "frequency": "at-will",
           "context": "adjacent-release-cell"
+        },
+        {
+          "id": "ready-light-shield",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "wielded-aegislash"
         }
       ],
       "passiveProjection": true,

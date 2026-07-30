@@ -537,6 +537,26 @@ export const resolveMoveSpecDamageCalculation = (
           : effect.payload.value,
     }]
   })
+  const encounterDamageReductionModifiers: readonly MoveDamageModifier[] = encounterNumericModifierEffects({
+    map: options.context.map,
+    placementId: options.recipient.id,
+    attribute: 'damage-reduction',
+  }).flatMap((effect, index): readonly MoveDamageModifier[] => {
+    if (effect.payload.operation !== 'add') return []
+    const effectHash = createHash('sha256').update(effect.id).digest('hex').slice(0, 24)
+    return [{
+      id: `encounter.damage-reduction.${effectHash}`,
+      stage: 'post-damage-modifiers',
+      priority: 60 + index,
+      source: { kind: 'encounter-effect', id: effect.id },
+      stackingGroup: `encounter-damage-reduction:${effectHash}`,
+      reasonCode: effect.tags.includes('capability.living-weapon.light-shield')
+        ? 'capability.living-weapon.light-shield.damage-reduction'
+        : 'encounter.damage-reduction',
+      operation: 'subtract',
+      value: effect.payload.value * Math.max(1, effect.stacks),
+    }]
+  })
   const faintedLivingWeapon = faintedLivingWeaponRollPenalty({
     context: options.context,
     script: options.script,
@@ -710,6 +730,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...(options.responseDamageModifiers ?? []),
         ...faintedLivingWeaponModifiers,
         ...encounterDamageModifiers,
+        ...encounterDamageReductionModifiers,
         ...helpingHandModifiers,
         ...weather.modifiers,
         ...terrain.modifiers,
