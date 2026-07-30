@@ -24,6 +24,9 @@ export const redactSheetRecordForPlayer = <TSheet extends Record<string, unknown
   // projected through authorized facts/offers rather than raw sheet state.
   delete projected.capabilityUsage
   delete projected.capabilityCampaignState
+  // Loyalty decisions are GM adjudication. Player mechanics receive only
+  // server-derived outcomes (for example Return/Frustration damage), never rank.
+  if (kind === 'pokemon') delete projected.loyalty
   return projected as TSheet
 }
 

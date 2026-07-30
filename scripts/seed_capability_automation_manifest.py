@@ -197,6 +197,11 @@ PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
         "when": "the combined participant's Ability field and move rules are projected",
         "then": "the chosen Basic Ability enters the owner's ordinary Ability projection before suppression while the carried participant has no independent Ability field",
     },
+    "Volatile Bomb": {
+        "given": "Explosion or Self-Destruct is declared by a Pokémon with or without one exact effective Volatile Bomb source",
+        "when": "the unavoidable negative-half-Max-HP self-KO and optional Loyalty consequence are resolved",
+        "then": "the Move damage and self-HP remain deferred atomically behind a bounded GM-only Loyalty choice unless effective Volatile Bomb suppresses both the choice and Loyalty mutation",
+    },
     "Blindsense": {
         "given": "authoritative map or placement context marks deep or total darkness or attempts to impose Blindness",
         "when": "sight-independent combat legality and condition immunity are resolved",

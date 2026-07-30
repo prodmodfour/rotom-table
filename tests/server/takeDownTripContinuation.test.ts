@@ -172,6 +172,7 @@ describe('Take Down opposed Trip continuation interpreter', () => {
     if (offered.kind !== 'pending-request') return
     expect(offered.request).toEqual({
       kind: 'branch-choice',
+      responseAuthority: 'recipients',
       operationId: TAKE_DOWN_TRIP_OPERATION_IDS.offer,
       phase: 'after-damage',
       reasonCode: 'take-down.optional-free-action-trip',

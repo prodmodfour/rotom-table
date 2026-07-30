@@ -540,6 +540,8 @@ export interface MoveSpecPendingChoiceRequest extends MoveSpecPendingRequestBase
 
 export interface MoveSpecPendingBranchChoiceRequest extends MoveSpecPendingRequestBase {
   readonly kind: 'branch-choice'
+  /** Mechanics subjects remain recipientIds; response authority may be GM-only. */
+  readonly responseAuthority: 'recipients' | 'gm'
   readonly selectionId: string
   readonly scope: 'resolution' | 'recipient'
 }
@@ -1709,6 +1711,7 @@ const pendingBranchRequest = (
     recipientIds: frozenIds(
       operation.payload.owner === 'actor' ? [actorPlacementId] : recipientIds,
     ),
+    responseAuthority: operation.payload.owner === 'gm' ? 'gm' : 'recipients',
     requestId: requestId ?? operation.payload.requestId,
     promptKey: operation.payload.promptKey,
     options: Object.freeze(options.map(option => Object.freeze({ ...option }))),

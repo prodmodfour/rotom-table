@@ -9,6 +9,8 @@ import { projectCapabilityAutomationMapForPlayer } from '../../server/domain/cap
 import { resolveEffectiveCapabilities } from '../../server/domain/capabilityAutomation/effectiveCapabilities'
 import { buildCapabilityClientCapabilityBundle } from '../../server/domain/capabilityAutomation/clientCapabilities'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
+import { redactResolveMovePatchesForObserver } from '../../server/utils/moveResultPrivacy'
 import { redactSheetRecordForPlayer, redactSheetUpdateForPlayer } from '../../server/utils/sheetPrivacy'
 import { redactRealtimeEventForPrincipal } from '../../server/realtime/realtimeEventRedaction'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -432,7 +434,7 @@ describe('Capability passive context providers', () => {
     expect(projected.encounterState?.capabilityRuntime).toEqual(createEmptyEncounterState().capabilityRuntime)
   })
 
-  it('redacts Pokémon and Trainer Capability ledgers from sheet and realtime projections', () => {
+  it('redacts Capability ledgers and GM-only Pokémon Loyalty from sheet and realtime projections', () => {
     const authority = {
       slug: 'trainer', name: 'Trainer', level: 10,
       capabilityUsage: { schemaVersion: 1, entries: [{ private: true }] },
@@ -445,6 +447,37 @@ describe('Capability passive context providers', () => {
     }, { role: 'player' }) as Record<string, unknown>
     expect(JSON.stringify(event)).not.toContain('capabilityUsage')
     expect(JSON.stringify(event)).not.toContain('capabilityCampaignState')
+
+    const pokemonAuthority = {
+      slug: 'pokemon', nickname: 'Pokemon', species: 'Pikachu', level: 10, loyalty: 4,
+    }
+    expect(redactSheetRecordForPlayer('pokemon', pokemonAuthority)).not.toHaveProperty('loyalty')
+    const pokemonEvent = redactRealtimeEventForPrincipal({
+      type: 'updated', data: { kind: 'pokemon', slug: 'pokemon', sheet: pokemonAuthority },
+    }, { role: 'player' })
+    expect(JSON.stringify(pokemonEvent)).not.toContain('loyalty')
+  })
+
+  it('redacts Loyalty change scope and private move evidence from player observer patches', () => {
+    const projected = redactResolveMovePatchesForObserver([{
+      type: LIVE_PLAY_PATCH_TYPES.MOVE_STATE,
+      revision: 5,
+      payload: {
+        command: 'resolveMove',
+        sheets: [{
+          kind: 'pokemon', slug: 'pokemon', expectedRevision: 3, revision: 4,
+          placementIds: ['actor'], changedFields: ['hp', 'loyalty'],
+        }],
+        move: {
+          selectedTargetIds: [], area: { candidateTargetIds: [], excludedTargetIds: [] },
+          auditTrace: { private: true }, nativeV2: { private: true }, sheetReads: [{ private: true }],
+        },
+      },
+    }] as never)
+    const serialized = JSON.stringify(projected)
+    expect(serialized).not.toContain('loyalty')
+    expect(serialized).not.toContain('auditTrace')
+    expect(serialized).not.toContain('nativeV2')
   })
 
   it('reconciles stale source-owned state with authoritative sheets before realtime projection', () => {

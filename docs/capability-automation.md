@@ -40,7 +40,7 @@ Those values adapt into the generic Encounter Presentation contract. A consequen
 
 World facts that cannot be inferred from token geometry must be authored by the GM as bounded map metadata. Supported keys are:
 
-- `capabilityContexts: string[]` — context identities such as `city-or-town`, `abundant-plant-life`, `scent-trail`, or an exact `suitable-mount:<rider>:<mount>` approval;
+- `capabilityContexts: string[]` — context identities such as `city-or-town`, `abundant-plant-life`, `scent-trail`, map-wide `deep-darkness` / `total-darkness`, placement-scoped `deep-darkness:<placementId>` / `total-darkness:<placementId>`, or an exact `suitable-mount:<rider>:<mount>` approval;
 - `capabilityWillingTargets: string[]` — exact `<actorPlacementId>:<targetPlacementId>` consent identities;
 - `capabilityEggs: { id, hatchHours }[]` — Egg Warmer resources;
 - `capabilityKeystones: { id, position, synchronizedPlacementIds }[]` — synchronized Odd Keystones;
@@ -75,12 +75,14 @@ Canonical judgement is represented by a durable request, not a manual fallback:
 
 Low-Loyalty Fortune uses this same path conditionally. A retained `returns` result awards the server roll; `runs-away` removes the participant from play without awarding money.
 
+Explosion and Self-Destruct use the durable Move-response pipeline because their ordinary damage, unavoidable `-50%` full-Max-HP result, and optional Loyalty consequence belong to one Move transaction. Unless the user has effective Volatile Bomb, the Move suspends behind one GM-only choice to lower Loyalty by exactly one rank or keep it. Resume revalidates every retained revision and atomically commits target damage, self-HP, usage, and the chosen bounded Loyalty change. Effective Volatile Bomb omits both the prompt and Loyalty mutation. Raw Loyalty and the Loyalty changed-field scope are removed from player sheet/realtime projections.
+
 ## Mechanical integration
 
 Capability providers extend existing systems rather than bypassing them:
 
 - movement and pathfinding: valued speeds, Jump, Teleporter, Burrow upkeep, Wallclimber, Phasing, Naturewalk, mounts/fusion, size modes, Threaded, and Keystone Warp;
-- Move automation: Reach, Groundsource immunity, Stealth targeting, Invisibility/Phasing targetability, Blender/Shadow Meld Evasion, Mindlock, Blindsense, Soulless, forms, move and Ability grants;
+- Move automation: Reach, Groundsource immunity, Stealth targeting, Invisibility/Phasing targetability, Blender/Shadow Meld Evasion, Mindlock, Darkvision/Blindsense darkness handling, Soulless, self-KO Loyalty adjudication, forms, move and Ability grants;
 - Struggle automation: Firestarter, Fountain, Freezer, Guster, Materializer, Zapper, and Telekinetic variants;
 - inventory/campaign operations: Collection Jars, daily/weekly products, Mushroom rolls, Fortune, Egg Warmer, Juicer, Planter, and Zygarde Cube tutoring;
 - links: shared movement, carried target restrictions, As One shared fainting, Living Weapon No Guard suppression and granted Moves, and Viral Fusion substitutions.

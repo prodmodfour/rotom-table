@@ -2,6 +2,7 @@ import type {
   MoveBranchEffectOperation,
   MoveConditionEffectOperation,
   MoveEffectOperation,
+  MoveLoyaltyEffectOperation,
   MoveUsageEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type {
@@ -233,6 +234,50 @@ const pollenPuffUsage = (
   return [usage]
 }
 
+const selfKoLoyaltyAdjudication = (
+  context: RegisteredMoveHandlerContext,
+): readonly MoveEffectOperation[] => {
+  if (context.queries.creatureRules.hasCapability(
+    context.actor.placement.id,
+    'Volatile Bomb',
+  )) return []
+
+  const slug = context.intent.moveName === 'Explosion' ? 'explosion' : 'self-destruct'
+  const mutationId = `${slug}.loyalty-decrease`
+  const choice: MoveBranchEffectOperation = {
+    id: `${slug}.loyalty-adjudication`,
+    kind: 'branch',
+    source: { kind: 'move', id: `move.${slug}` },
+    recipients: { kind: 'actor' },
+    phase: 'cleanup',
+    reasonCode: `${slug}.optional-loyalty-loss`,
+    payload: {
+      kind: 'choice',
+      selectionId: `${slug}.loyalty-adjudication`,
+      scope: 'resolution',
+      owner: 'gm',
+      requestId: `${slug}.loyalty-adjudication`,
+      promptKey: `move.${slug}.adjudicate-loyalty`,
+      options: [{
+        id: `${slug}.lower-loyalty`,
+        labelKey: 'move.self-ko.lower-loyalty-by-one',
+        operationIds: [mutationId],
+      }],
+      pass: { id: `${slug}.keep-loyalty`, operationIds: [] },
+    },
+  }
+  const mutation: MoveLoyaltyEffectOperation = {
+    id: mutationId,
+    kind: 'loyalty',
+    source: { kind: 'operation', id: choice.id },
+    recipients: { kind: 'actor' },
+    phase: 'cleanup',
+    reasonCode: `${slug}.loyalty-decrease`,
+    payload: { action: 'decrease-rank', amount: 1, minimum: 0 },
+  }
+  return [choice, mutation]
+}
+
 const purify = (context: RegisteredMoveHandlerContext): readonly MoveEffectOperation[] => {
   const target = context.selectedPlacements[0]
   if (!target) throw new Error('Purify requires one authoritative target.')
@@ -282,6 +327,9 @@ const run = (context: RegisteredMoveHandlerContext) => {
   else if (context.intent.moveName === 'Strength Sap') operations = strengthSap(context)
   else if (context.intent.moveName === 'Purify') operations = purify(context)
   else if (context.intent.moveName === 'Pollen Puff') operations = pollenPuffUsage(context)
+  else if (context.intent.moveName === 'Explosion' || context.intent.moveName === 'Self-Destruct') {
+    operations = selfKoLoyaltyAdjudication(context)
+  }
   else throw new Error(`HP cohort handler cannot execute ${context.intent.moveName}.`)
   return {
     operations,
@@ -297,4 +345,4 @@ const run = (context: RegisteredMoveHandlerContext) => {
 }
 
 export const HP_COHORTS_211_217_HANDLER_REGISTRATION: RegisteredMoveHandlerRegistration =
-  Object.freeze({ id: HP_COHORTS_211_217_HANDLER_ID, version: 1, run })
+  Object.freeze({ id: HP_COHORTS_211_217_HANDLER_ID, version: 2, run })

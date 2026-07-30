@@ -2193,14 +2193,16 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     : fail('not-found', 'move-absent', 'Move entry resolution failed.')
   const priorityOrInterrupt = /\b(?:Priority|Interrupt)\b/i.test(entry.script.range)
     || entry.script.keywords.some(keyword => /\b(?:Priority|Interrupt)\b/i.test(keyword))
-  if (priorityOrInterrupt && capabilityTotalDarknessBlocksPriority({
-    condition: capabilityLightConditionForPlacement({
-      map: context.map,
-      placementId: actorPlacement.id,
-    }),
-    hasDarkvision: context.queries.creatureRules.hasCapability(actorPlacement.id, 'Darkvision'),
-    hasBlindsense: context.queries.creatureRules.hasCapability(actorPlacement.id, 'Blindsense'),
-  })) {
+  const lightCondition = capabilityLightConditionForPlacement({
+    map: context.map,
+    placementId: actorPlacement.id,
+  })
+  if (priorityOrInterrupt && lightCondition === 'total-darkness'
+    && capabilityTotalDarknessBlocksPriority({
+      condition: lightCondition,
+      hasDarkvision: context.queries.creatureRules.hasCapability(actorPlacement.id, 'Darkvision'),
+      hasBlindsense: context.queries.creatureRules.hasCapability(actorPlacement.id, 'Blindsense'),
+    })) {
     fail(
       'unauthorized-state',
       'move-creature-rule-blocked',

@@ -1202,9 +1202,9 @@
       "id": "capability:Volatile Bomb:passive",
       "canonicalId": "Volatile Bomb",
       "kind": "passive-projection",
-      "given": "the actor owns an effective canonical capability instance",
-      "when": "the authoritative encounter presentation is projected",
-      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+      "given": "Explosion or Self-Destruct is declared by a Pokémon with or without one exact effective Volatile Bomb source",
+      "when": "the unavoidable negative-half-Max-HP self-KO and optional Loyalty consequence are resolved",
+      "then": "the Move damage and self-HP remain deferred atomically behind a bounded GM-only Loyalty choice unless effective Volatile Bomb suppresses both the choice and Loyalty mutation"
     },
     {
       "id": "capability:Wallclimber:passive",

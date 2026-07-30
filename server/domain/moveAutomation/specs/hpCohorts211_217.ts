@@ -198,6 +198,7 @@ const selfKoAttack = (input: {
   damageClass: 'physical',
   moveType: 'normal',
   area: true,
+  handler: true,
   operations: [reviewedDirectHp({
     slug: input.slug,
     id: 'self-ko',
@@ -207,7 +208,7 @@ const selfKoAttack = (input: {
     sourceOperationId: `${input.slug}.damage`,
     hitPointMarkers: 'apply-after-operation',
   })],
-  tags: ['self-ko', input.areaSizeTag],
+  tags: ['self-ko', 'gm-loyalty-adjudication', input.areaSizeTag],
 })
 
 export const BELLY_DRUM_MOVE_SPEC = createReviewedMoveSpec({

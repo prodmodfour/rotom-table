@@ -177,6 +177,7 @@ describe('Take Down native MoveSpec v2', () => {
     if (hit.kind !== 'pending-request') return
     expect(hit.request).toEqual({
       kind: 'branch-choice',
+      responseAuthority: 'recipients',
       operationId: 'take-down.trip-offer',
       phase: 'after-damage',
       reasonCode: 'take-down.optional-free-action-trip',

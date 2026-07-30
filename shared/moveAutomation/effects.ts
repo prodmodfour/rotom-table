@@ -103,6 +103,7 @@ export const MOVE_EFFECT_OPERATION_KINDS = [
   'damage',
   'multi-hit',
   'direct-hp',
+  'loyalty',
   'heal',
   'condition',
   'combat-stage',
@@ -192,7 +193,7 @@ export const MOVE_EFFECT_BRANCH_KINDS = [
   'choice',
 ] as const
 export const MOVE_EFFECT_BRANCH_SCOPES = ['resolution', 'recipient'] as const
-export const MOVE_EFFECT_BRANCH_CHOICE_OWNERS = ['recipients', 'actor'] as const
+export const MOVE_EFFECT_BRANCH_CHOICE_OWNERS = ['recipients', 'actor', 'gm'] as const
 
 export const MOVE_EFFECT_DAMAGE_CLASSES = ['physical', 'special'] as const
 export const MOVE_DAMAGE_CLASS_SELECTION_KINDS = ['compare-stats'] as const
@@ -1201,6 +1202,13 @@ export interface MoveDirectHpEffectPayload {
   readonly injury: MoveHpInjuryPolicy
 }
 
+export interface MoveLoyaltyEffectPayload {
+  /** The only reviewed Loyalty mutation: one optional rank decrease, clamped at zero. */
+  readonly action: 'decrease-rank'
+  readonly amount: 1
+  readonly minimum: 0
+}
+
 export interface MoveHealEffectPayload {
   readonly mode: MoveEffectHealMode
   readonly pool: MoveEffectHpPool
@@ -1792,6 +1800,7 @@ export type MoveBranchEffectOperation = MoveEffectOperationEnvelope<'branch', Mo
 export type MoveDamageEffectOperation = MoveEffectOperationEnvelope<'damage', MoveDamageEffectPayload>
 export type MoveMultiHitEffectOperation = MoveEffectOperationEnvelope<'multi-hit', MoveMultiHitEffectPayload>
 export type MoveDirectHpEffectOperation = MoveEffectOperationEnvelope<'direct-hp', MoveDirectHpEffectPayload>
+export type MoveLoyaltyEffectOperation = MoveEffectOperationEnvelope<'loyalty', MoveLoyaltyEffectPayload>
 export type MoveHealEffectOperation = MoveEffectOperationEnvelope<'heal', MoveHealEffectPayload>
 export type MoveConditionEffectOperation = MoveEffectOperationEnvelope<'condition', MoveConditionEffectPayload>
 export type MoveCombatStageEffectOperation = MoveEffectOperationEnvelope<'combat-stage', MoveCombatStageEffectPayload>
@@ -1819,6 +1828,7 @@ export type MoveEffectOperation =
   | MoveDamageEffectOperation
   | MoveMultiHitEffectOperation
   | MoveDirectHpEffectOperation
+  | MoveLoyaltyEffectOperation
   | MoveHealEffectOperation
   | MoveConditionEffectOperation
   | MoveCombatStageEffectOperation
@@ -2251,6 +2261,7 @@ const NESTED_MOVE_FRESH_TARGETING_FIELDS = [
 const USAGE_REQUIRED_FIELDS = ['action', 'resourceId', 'amount'] as const
 const USAGE_OPTIONAL_FIELDS = ['resource'] as const
 const USAGE_RESOURCE_FIELDS = ['moveName', 'moveKey', 'frequency'] as const
+const LOYALTY_FIELDS = ['action', 'amount', 'minimum'] as const
 const HISTORY_FIELDS = ['event', 'detailCode'] as const
 const LOG_FIELDS = ['messageKey', 'arguments'] as const
 const LOG_ARGUMENT_FIELDS = ['key', 'value'] as const
@@ -3453,6 +3464,20 @@ const parseNullableHpCostPolicy = (
   value: unknown,
   path: string,
 ): MoveHpCostPolicy | null => value === null ? null : parseHpCostPolicy(value, path)
+
+const parseLoyaltyPayload = (value: unknown, path: string): MoveLoyaltyEffectPayload => {
+  const input = parseExactRecord(value, LOYALTY_FIELDS, path)
+  if (ownValue(input, 'action', path) !== 'decrease-rank') {
+    fail('invalid-effect-operation', `${path}.action`, 'must be decrease-rank.')
+  }
+  if (ownValue(input, 'amount', path) !== 1) {
+    fail('invalid-effect-operation', `${path}.amount`, 'must be exactly 1.')
+  }
+  if (ownValue(input, 'minimum', path) !== 0) {
+    fail('invalid-effect-operation', `${path}.minimum`, 'must be exactly 0.')
+  }
+  return { action: 'decrease-rank', amount: 1, minimum: 0 }
+}
 
 const parseEffectSelector = (value: unknown, path: string): MoveSelector => {
   try {
@@ -6012,7 +6037,7 @@ const parseChoiceBranchPayload = (
           ownValue(input, 'owner', path),
           BRANCH_CHOICE_OWNER_SET,
           `${path}.owner`,
-          'recipients or actor',
+          'recipients, actor, or gm',
         )
       : 'recipients',
     requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
@@ -6667,6 +6692,11 @@ const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperati
       validateHpOperationEnvelope({ common, payload: parsedPayload, path })
       return { ...common, kind, payload: parsedPayload }
     }
+    case 'loyalty':
+      if (common.recipients.kind !== 'actor') {
+        fail('invalid-effect-operation', `${path}.recipients.kind`, 'Loyalty mutations must address the authoritative actor.')
+      }
+      return { ...common, kind, payload: parseLoyaltyPayload(payload, payloadPath) }
     case 'heal': {
       const parsedPayload = parseHealPayload(payload, payloadPath)
       validateHpOperationEnvelope({ common, payload: parsedPayload, path })

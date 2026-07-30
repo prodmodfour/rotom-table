@@ -259,7 +259,13 @@ describe('resolveAuthoritativeMove', () => {
     })
 
     expect(resolution.selectedTargetIds).toEqual([])
-    expect(resolution.sheetReads).toEqual([{ kind: 'pokemon', slug: 'actor', revision: 0 }])
+    expect(resolution.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 0 },
+      { kind: 'pokemon', slug: 'target-a', revision: 0 },
+      { kind: 'pokemon', slug: 'target-b', revision: 0 },
+      { kind: 'pokemon', slug: 'target-c', revision: 0 },
+      { kind: 'pokemon', slug: 'far-target', revision: 0 },
+    ])
     expect(resolution.rollLedger).toEqual([])
     expect(resolution.transaction.attackedTargetIds).toEqual([])
     expect(resolution.transaction.hitTargetIds).toEqual([])
@@ -475,6 +481,9 @@ describe('resolveAuthoritativeMove', () => {
     expect(miss.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'actor', revision: 0 },
       { kind: 'pokemon', slug: 'target-a', revision: 0 },
+      { kind: 'pokemon', slug: 'target-b', revision: 0 },
+      { kind: 'pokemon', slug: 'target-c', revision: 0 },
+      { kind: 'pokemon', slug: 'far-target', revision: 0 },
     ])
     expect(structuredClone(miss.transaction)).toMatchObject({ attackedTargetIds: ['target-a'], hitTargetIds: [] })
     expect(JSON.parse(JSON.stringify(miss.transaction))).toMatchObject({ attackedTargetIds: ['target-a'], hitTargetIds: [] })
@@ -1004,6 +1013,7 @@ describe('resolveAuthoritativeMove', () => {
     expect(resolution.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'actor', revision: 2 },
       { kind: 'pokemon', slug: 'target-a', revision: 0 },
+      { kind: 'pokemon', slug: 'enemy-aura', revision: 7 },
     ])
   })
 

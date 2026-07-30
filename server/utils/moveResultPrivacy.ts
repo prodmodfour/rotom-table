@@ -58,10 +58,20 @@ export const redactResolveMovePatchesForObserver = (
   }
   if (patch.payload.command !== 'resolveMove') return patch
 
+  const sheets = Array.isArray(patch.payload.sheets)
+    ? patch.payload.sheets.map((sheet) => {
+        if (!isRecord(sheet) || !Array.isArray(sheet.changedFields)) return sheet
+        return {
+          ...sheet,
+          changedFields: sheet.changedFields.filter(field => field !== 'loyalty'),
+        }
+      })
+    : patch.payload.sheets
   return {
     ...patch,
     payload: {
       ...patch.payload,
+      sheets,
       move: redactResolvedMoveAreaForObserver(patch.payload.move),
     },
   }

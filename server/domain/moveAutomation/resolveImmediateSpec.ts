@@ -974,6 +974,7 @@ const assertSupportedImmediateOperations = (
     'damage',
     'multi-hit',
     'direct-hp',
+    'loyalty',
     'heal',
     'condition',
     'combat-stage',

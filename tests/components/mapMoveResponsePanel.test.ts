@@ -72,6 +72,32 @@ describe('MapMoveResponsePanel', () => {
     expect(wrapper.emitted('cancel')).toEqual([['resolution-pending-1']])
   })
 
+  it('renders the bounded self-KO Loyalty choice and an explicit keep option', () => {
+    const base = choiceWindow()
+    const wrapper = mount(MapMoveResponsePanel, {
+      props: {
+        windows: [{
+          ...base,
+          resolution: { ...base.resolution, canonicalMoveId: 'Explosion', phase: 'cleanup' },
+          window: {
+            ...base.window,
+            windowId: 'explosion.loyalty-adjudication',
+            phase: 'cleanup',
+            promptKey: 'move.explosion.adjudicate-loyalty',
+            options: [{
+              id: 'explosion.lower-loyalty',
+              labelKey: 'move.self-ko.lower-loyalty-by-one',
+            }],
+          },
+        }],
+        eligibleOwnerLabel: 'Game Master',
+      },
+    })
+    expect(wrapper.text()).toContain('Should using Explosion lower the user’s Loyalty by 1?')
+    expect(wrapper.text()).toContain('Lower Loyalty by 1')
+    expect(wrapper.get('.move-response-card__pass').text()).toBe('Keep Loyalty')
+  })
+
   it('renders server-issued movement coordinates without putting them in command intent', async () => {
     const view: PendingMoveResponseWindowView = {
       ...choiceWindow(),

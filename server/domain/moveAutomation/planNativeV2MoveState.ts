@@ -722,6 +722,67 @@ interface TriggeredAbilityPaymentResult {
   readonly sheetStateChanges: MoveStateChangePlan
 }
 
+const planSelfKoLoyaltyMutation = (input: {
+  readonly context: ReturnType<typeof buildAuthoritativeMoveRulesContext>
+  readonly resolution: AuthoritativeMoveResolution
+}): MoveStateChangePlan => {
+  const native = input.resolution.nativeV2
+    ?? fail('native-projection-missing', 'Native resolution projection is missing.')
+  const loyaltyOperations = native.operations.filter(emission => (
+    emission.operation.kind === 'loyalty'
+  ))
+  if (loyaltyOperations.length === 0) return createMoveStateChangePlan([])
+  if (loyaltyOperations.length !== 1
+    || !['Explosion', 'Self-Destruct'].includes(input.resolution.canonicalMoveName)) {
+    return fail('state-change-conflict', 'Only one reviewed self-KO Move may mutate Loyalty.')
+  }
+
+  const emission = loyaltyOperations[0]!
+  const actorId = input.context.actor.placement.id
+  if (emission.recipientIds.length !== 1 || emission.recipientIds[0] !== actorId) {
+    return fail('state-change-conflict', 'Self-KO Loyalty adjudication lost its exact actor subject.')
+  }
+  if (input.context.queries.creatureRules.hasCapability(actorId, 'Volatile Bomb')) {
+    return fail('state-change-conflict', 'Effective Volatile Bomb prevents self-KO Loyalty loss.')
+  }
+  const placement = input.context.queries.placements.get(actorId)
+    ?? fail('actor-placement-missing', `Actor placement ${actorId} was not found.`)
+  const resolved = input.context.queries.sheets.forPlacement(placement)
+    ?? fail('state-change-conflict', 'Self-KO Loyalty actor sheet is unavailable.')
+  if (resolved.kind !== 'pokemon') {
+    return fail('state-change-conflict', 'Only a Pokémon actor can lose Loyalty from a self-KO Move.')
+  }
+  const previous = deepCloneJson(resolved.sheet as CharacterSheet)
+  const loyalty = previous.loyalty ?? 3
+  if (!Number.isSafeInteger(loyalty) || loyalty < 0 || loyalty > 6) {
+    return fail('state-change-conflict', 'Self-KO Loyalty must be an authoritative rank from 0 through 6.')
+  }
+  if (loyalty === 0) return createMoveStateChangePlan([])
+  const operation = emission.operation
+  if (operation.kind !== 'loyalty') {
+    return fail('state-change-conflict', 'Self-KO Loyalty operation changed kind before planning.')
+  }
+  return createMoveStateChangePlan([{
+    kind: 'sheet-state',
+    scope: {
+      kind: 'sheet',
+      sheetKind: placement.sheetKind,
+      sheetSlug: placement.sheetSlug,
+    },
+    expectedRevision: normalizeRevision(previous.revision),
+    sourceOperationId: emission.operation.id,
+    reasonCode: 'self-ko-gm-loyalty-decrease',
+    previous,
+    current: {
+      ...deepCloneJson(previous),
+      loyalty: Math.max(0, loyalty - operation.payload.amount),
+      revision: nextRevision(normalizeRevision(previous.revision)),
+    },
+    changedFields: ['loyalty'],
+    compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+  }])
+}
+
 const applyTriggeredAbilityPayments = (input: {
   readonly map: TabletopMap
   readonly context: ReturnType<typeof buildAuthoritativeMoveRulesContext>
@@ -1412,6 +1473,10 @@ export const planNativeV2MoveState = (options: {
         }]
       : [],
   )
+  const loyaltyPlan = planSelfKoLoyaltyMutation({
+    context,
+    resolution: options.resolution,
+  })
   const triggeredAbilityPayments = applyTriggeredAbilityPayments({
     map: regeneratorRecall.map,
     context,
@@ -1731,6 +1796,7 @@ export const planNativeV2MoveState = (options: {
     ...native.coreStateChanges.changes,
     ...native.permanentMoveListStateChanges.changes,
     ...triggeredAbilityPayments.sheetStateChanges.changes,
+    ...loyaltyPlan.changes,
     ...naturalCureRecallPlan.changes,
     ...itemPlan.stateChanges.changes,
     ...mapReduction.stateChanges.changes,
@@ -1750,6 +1816,7 @@ export const planNativeV2MoveState = (options: {
     itemPlan,
     triggeredAbilityPlan: createMoveStateChangePlan([
       ...triggeredAbilityPayments.sheetStateChanges.changes.map(stripPlanIdentity),
+      ...loyaltyPlan.changes.map(stripPlanIdentity),
       ...naturalCureRecallPlan.changes.map(stripPlanIdentity),
     ]),
     placements,

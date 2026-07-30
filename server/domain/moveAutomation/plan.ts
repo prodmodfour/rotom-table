@@ -35,6 +35,8 @@ export const MOVE_SHEET_STATE_FIELDS = [
   'moveUsage',
   'movelist',
   'hp',
+  /** GM-adjudicated Pokémon Loyalty rank. Never projected raw to players. */
+  'loyalty',
   'combatStages',
   'conditions',
   'items',

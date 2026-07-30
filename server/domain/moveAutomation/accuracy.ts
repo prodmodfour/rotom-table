@@ -171,11 +171,12 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     reason: 'Actor Accuracy',
     value: actorAccuracy,
   }]
-  const darknessPenalty = capabilityDarknessAccuracyPenalty({
-    condition: capabilityLightConditionForPlacement({
-      map: context.map,
-      placementId: context.actor.placement.id,
-    }),
+  const darknessCondition = capabilityLightConditionForPlacement({
+    map: context.map,
+    placementId: context.actor.placement.id,
+  })
+  const darknessPenalty = darknessCondition === 'normal' ? 0 : capabilityDarknessAccuracyPenalty({
+    condition: darknessCondition,
     hasDarkvision: context.queries.creatureRules.hasCapability(context.actor.placement.id, 'Darkvision'),
     hasBlindsense: context.queries.creatureRules.hasCapability(context.actor.placement.id, 'Blindsense'),
     hasKeenEye: keenEye,

@@ -18,7 +18,7 @@ Treating every Capability as a button would be incorrect. Treating narrative or 
 5. Activated clauses appear only as source-owned contextual offers through the accepted Encounter Presentation contract. The client supplies bounded selections; the server owns legality, costs, rolls, and writes.
 6. Consequential execution is idempotent and atomic in SQLite. Exact retries replay the stored result; operation-ID drift, stale revisions, and stale offers fail closed.
 7. Temporary modes and links are encounter state. Lasting usage and campaign transformations are sheet state. Pending GM decisions and operation audits have dedicated SQLite tables.
-8. Genuine source-delegated judgement uses a hash-bound, expiring, GM-only adjudication request and exact resume path. Accepted choices are retained as state; there is no legacy/manual execution fallback.
+8. Genuine source-delegated judgement uses a hash-bound, expiring, GM-only adjudication request and exact resume path. When the judgement is part of an in-flight Move (Explosion/Self-Destruct Loyalty), the existing durable Move-response window keeps all Move consequences in one deferred transaction. Accepted choices are retained as state; there is no legacy/manual execution fallback.
 9. Ambiguous world resources are explicit map metadata (`capabilityContexts`, willing-target identities, eggs, synchronized Keystones, and devices), never inferred from browser text.
 10. Existing movement, Struggle, form, item, realtime, and atomic mutation infrastructure is reused rather than forked.
 

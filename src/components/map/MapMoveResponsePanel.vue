@@ -50,6 +50,12 @@ const optionLabel = (option: PendingMoveResponsePublicOption): string => pending
 const responseKindLabel = (view: PendingMoveResponseWindowView): string => (
   view.window.kind === 'reaction' ? 'Durable reaction' : 'Durable choice'
 )
+const passLabel = (view: PendingMoveResponseWindowView): string => (
+  view.window.promptKey === 'move.explosion.adjudicate-loyalty'
+    || view.window.promptKey === 'move.self-destruct.adjudicate-loyalty'
+    ? 'Keep Loyalty'
+    : 'Pass'
+)
 const isHazardCellSelection = (view: PendingMoveResponseWindowView): boolean => (
   view.window.kind === 'choice' && view.window.hazardCellSelection !== undefined
 )
@@ -179,7 +185,7 @@ const retry = (view: PendingMoveResponseWindowView): void => {
           :disabled="isBusy(view)"
           @click="pass(view)"
         >
-          Pass
+          {{ passLabel(view) }}
         </button>
       </div>
 

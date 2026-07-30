@@ -30,6 +30,7 @@ export const LIVE_PLAY_MOVE_SHEET_CHANGED_FIELDS = [
   'moveUsage',
   'movelist',
   'hp',
+  'loyalty',
   'combatStages',
   'conditions',
   'items',

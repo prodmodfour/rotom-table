@@ -262,6 +262,10 @@ const responseOwnership = (
   execution: MoveSpecExecutionPendingResult,
   actorPlacementId: string,
 ): PendingMoveResponseWindow['ownership'] => {
+  if (execution.request.kind === 'branch-choice'
+    && execution.request.responseAuthority === 'gm') {
+    return [{ kind: 'gm', id: null }]
+  }
   const owners = [] as Array<PendingMoveResponseWindow['ownership'][number]>
   const seen = new Set<string>()
   for (const placementId of execution.request.recipientIds) {

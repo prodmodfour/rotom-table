@@ -4,7 +4,15 @@ import type { PendingMoveResponsePublicOption } from '#shared/moveAutomation/res
 
 export { ATTACK_OF_OPPORTUNITY_CANONICAL_ID } from '#shared/moveAutomation/attackOfOpportunity'
 
+const REVIEWED_PENDING_MOVE_LABELS: Readonly<Record<string, string>> = Object.freeze({
+  'move.explosion.adjudicate-loyalty': 'Should using Explosion lower the user’s Loyalty by 1?',
+  'move.self-destruct.adjudicate-loyalty': 'Should using Self-Destruct lower the user’s Loyalty by 1?',
+  'move.self-ko.lower-loyalty-by-one': 'Lower Loyalty by 1',
+})
+
 export const pendingMoveResponseLookupLabel = (key: string): string => {
+  const reviewed = REVIEWED_PENDING_MOVE_LABELS[key]
+  if (reviewed) return reviewed
   const leaf = key.split('.').at(-1) ?? key
   const words = leaf.replace(/[-_]+/g, ' ').trim()
   return words.length > 0

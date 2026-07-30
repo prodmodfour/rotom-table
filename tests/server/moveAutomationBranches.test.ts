@@ -538,6 +538,7 @@ describe('MoveSpec optional and exclusive branches', () => {
     if (result.kind !== 'pending-request') return
     expect(result.request).toEqual({
       kind: 'branch-choice',
+      responseAuthority: 'recipients',
       operationId: 'operation.choose-stat',
       phase: 'hit',
       reasonCode: 'move.pollen-puff.choose-stat',

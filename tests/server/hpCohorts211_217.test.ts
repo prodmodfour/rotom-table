@@ -179,10 +179,16 @@ describe('MA-211 through MA-217 HP and direct-loss move cohorts', () => {
         },
       },
     }
-    const run = (moveName: string) => HP_COHORTS_211_217_HANDLER_REGISTRATION.run({
-      ...baseContext,
-      intent: { moveName },
-    } as never) as { readonly operations: readonly ReturnType<typeof parseMoveEffectOperation>[] }
+    const run = (moveName: string, hasCapability = (_id: string, _capability: string) => false) => (
+      HP_COHORTS_211_217_HANDLER_REGISTRATION.run({
+        ...baseContext,
+        intent: { moveName },
+        queries: {
+          ...baseContext.queries,
+          creatureRules: { hasCapability },
+        },
+      } as never) as { readonly operations: readonly ReturnType<typeof parseMoveEffectOperation>[] }
+    )
 
     expect(run('Brine').operations[0]).toMatchObject({
       kind: 'damage', payload: { damageBase: 13 },
@@ -206,6 +212,19 @@ describe('MA-211 through MA-217 HP and direct-loss move cohorts', () => {
     expect(run('Pollen Puff').operations).toEqual([
       expect.objectContaining({ id: 'pollen-puff.ally-usage', kind: 'usage' }),
     ])
+    expect(run('Explosion').operations).toEqual([
+      expect.objectContaining({
+        id: 'explosion.loyalty-adjudication',
+        kind: 'branch',
+        payload: expect.objectContaining({ owner: 'gm', pass: expect.objectContaining({ operationIds: [] }) }),
+      }),
+      expect.objectContaining({
+        id: 'explosion.loyalty-decrease',
+        kind: 'loyalty',
+        payload: { action: 'decrease-rank', amount: 1, minimum: 0 },
+      }),
+    ])
+    expect(run('Self-Destruct', (_id, capability) => capability === 'Volatile Bomb').operations).toEqual([])
   })
 
   it('deduplicates Static grapple passives and rounds dominance loss down', () => {
