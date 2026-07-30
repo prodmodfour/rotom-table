@@ -333,6 +333,50 @@ describe('Capability source-loss durability', () => {
     ])
   })
 
+  it('removes an in-progress Alluring task when its exact source is lost', () => {
+    const alluringActor: CharacterSheet = {
+      ...actorWithSources(),
+      capabilities: { other: [...(actorWithSources().capabilities?.other ?? []), 'Alluring'] },
+    }
+    const initial = baseMap()
+    const { id } = sourceInstances(initial, alluringActor)
+    const encounter = createEmptyEncounterState()
+    const runtimeMap = baseMap({
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          tasks: [{
+            id: 'capability.task.actor-token.alluring-lure',
+            kind: 'alluring-lure',
+            actorPlacementId: actorPlacement.id,
+            capabilityInstanceId: id('Alluring'),
+            canonicalId: 'Alluring',
+            encounterSpecies: 'Pidgey',
+            encounterLevel: 20,
+            encounterCell: { x: 4, y: 0, z: 4 },
+            originCell: actorPlacement.position,
+            failedChecks: 1,
+            startedAt: 1_000,
+            completesAt: 901_000,
+            sourceOperationId: 'operation:alluring-lure',
+          }],
+        },
+      },
+    })
+    const reconciled = reconcileCapabilityRuntimeSourceLoss({
+      map: runtimeMap,
+      sheets: {
+        pokemon: new Map([
+          [actorPlacement.sheetSlug, actorWithoutSources()],
+          [partnerPlacement.sheetSlug, partnerSheet],
+        ]),
+        trainer: new Map(),
+      },
+    })
+    expect(reconciled.encounterState?.capabilityRuntime?.tasks).toEqual([])
+  })
+
   it('durably closes source loss on load so regaining the same source cannot resurrect old state', () => {
     const database = db()
     const maps = createSqliteMapRepository<TabletopMap>(database)

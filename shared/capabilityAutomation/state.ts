@@ -62,21 +62,36 @@ export interface CapabilityLinkState {
   readonly sourceOperationId: string
 }
 
-export const CAPABILITY_TASK_KINDS = ['juicer', 'planter'] as const
+export const CAPABILITY_TASK_KINDS = ['juicer', 'planter', 'alluring-lure'] as const
 export type CapabilityTaskKind = typeof CAPABILITY_TASK_KINDS[number]
 
-export interface CapabilityCampaignTaskState {
+interface CapabilityCampaignTaskBase {
   readonly id: string
-  readonly kind: CapabilityTaskKind
   readonly actorPlacementId: string
   readonly capabilityInstanceId: string
   readonly canonicalId: string
-  readonly inputCanonicalItemId: string | null
-  readonly outputCanonicalItemId: string | null
   readonly startedAt: number
+  /** The next authoritative task boundary, not an inferred browser timer. */
   readonly completesAt: number
   readonly sourceOperationId: string
 }
+
+export interface CapabilityProductionTaskState extends CapabilityCampaignTaskBase {
+  readonly kind: 'juicer' | 'planter'
+  readonly inputCanonicalItemId: string | null
+  readonly outputCanonicalItemId: string | null
+}
+
+export interface CapabilityAlluringLureTaskState extends CapabilityCampaignTaskBase {
+  readonly kind: 'alluring-lure'
+  readonly encounterSpecies: string
+  readonly encounterLevel: number
+  readonly encounterCell: { readonly x: number; readonly y: number; readonly z: number }
+  readonly originCell: { readonly x: number; readonly y: number; readonly z: number }
+  readonly failedChecks: number
+}
+
+export type CapabilityCampaignTaskState = CapabilityProductionTaskState | CapabilityAlluringLureTaskState
 
 export interface CapabilityPendingAdjudicationState {
   readonly requestId: string
@@ -274,22 +289,63 @@ export const parseCapabilityRuntimeState = (
   const tasks = boundedList(root.tasks, `${path}.tasks`, CAPABILITY_STATE_LIMITS.tasks).map((candidate, index): CapabilityCampaignTaskState => {
     const itemPath = `${path}.tasks[${index}]`
     const entry = record(candidate, itemPath)
-    exact(entry, ['id', 'kind', 'actorPlacementId', 'capabilityInstanceId', 'canonicalId', 'inputCanonicalItemId', 'outputCanonicalItemId', 'startedAt', 'completesAt', 'sourceOperationId'], itemPath)
+    const kind = member(CAPABILITY_TASK_KINDS, entry.kind, `${itemPath}.kind`)
     const startedAt = timestamp(entry.startedAt, `${itemPath}.startedAt`)
     const completesAt = timestamp(entry.completesAt, `${itemPath}.completesAt`)
     if (completesAt <= startedAt) fail('invalid-capability-state', `${itemPath}.completesAt`, 'must be after startedAt.')
-    const nullableId = (candidateValue: unknown, candidatePath: string): string | null => candidateValue === null ? null : boundedText(candidateValue, candidatePath)
-    return Object.freeze({
+    const base = {
       id: boundedText(entry.id, `${itemPath}.id`),
-      kind: member(CAPABILITY_TASK_KINDS, entry.kind, `${itemPath}.kind`),
       actorPlacementId: boundedText(entry.actorPlacementId, `${itemPath}.actorPlacementId`),
       capabilityInstanceId: boundedText(entry.capabilityInstanceId, `${itemPath}.capabilityInstanceId`),
       canonicalId: boundedText(entry.canonicalId, `${itemPath}.canonicalId`, CAPABILITY_STATE_LIMITS.canonicalChars),
-      inputCanonicalItemId: nullableId(entry.inputCanonicalItemId, `${itemPath}.inputCanonicalItemId`),
-      outputCanonicalItemId: nullableId(entry.outputCanonicalItemId, `${itemPath}.outputCanonicalItemId`),
       startedAt,
       completesAt,
       sourceOperationId: boundedText(entry.sourceOperationId, `${itemPath}.sourceOperationId`),
+    }
+    if (kind === 'alluring-lure') {
+      exact(entry, [
+        'id', 'kind', 'actorPlacementId', 'capabilityInstanceId', 'canonicalId',
+        'encounterSpecies', 'encounterLevel', 'encounterCell', 'originCell', 'failedChecks',
+        'startedAt', 'completesAt', 'sourceOperationId',
+      ], itemPath)
+      const taskCell = (value: unknown, cellPath: string) => {
+        const cell = record(value, cellPath)
+        exact(cell, ['x', 'y', 'z'], cellPath)
+        const coordinate = (candidateValue: unknown, coordinatePath: string): number => {
+          if (!Number.isSafeInteger(candidateValue) || Math.abs(candidateValue as number) > 1_000_000) {
+            fail('invalid-capability-state', coordinatePath, 'must be a bounded integer coordinate.')
+          }
+          return candidateValue as number
+        }
+        return Object.freeze({
+          x: coordinate(cell.x, `${cellPath}.x`),
+          y: coordinate(cell.y, `${cellPath}.y`),
+          z: coordinate(cell.z, `${cellPath}.z`),
+        })
+      }
+      if (!Number.isSafeInteger(entry.encounterLevel) || (entry.encounterLevel as number) < 1 || (entry.encounterLevel as number) > 100) {
+        fail('invalid-capability-state', `${itemPath}.encounterLevel`, 'must be a Level from 1 to 100.')
+      }
+      if (!Number.isSafeInteger(entry.failedChecks) || (entry.failedChecks as number) < 0 || (entry.failedChecks as number) > 2) {
+        fail('invalid-capability-state', `${itemPath}.failedChecks`, 'must be an integer from 0 to 2.')
+      }
+      return Object.freeze({
+        ...base,
+        kind,
+        encounterSpecies: boundedText(entry.encounterSpecies, `${itemPath}.encounterSpecies`, 80),
+        encounterLevel: entry.encounterLevel as number,
+        encounterCell: taskCell(entry.encounterCell, `${itemPath}.encounterCell`),
+        originCell: taskCell(entry.originCell, `${itemPath}.originCell`),
+        failedChecks: entry.failedChecks as number,
+      })
+    }
+    exact(entry, ['id', 'kind', 'actorPlacementId', 'capabilityInstanceId', 'canonicalId', 'inputCanonicalItemId', 'outputCanonicalItemId', 'startedAt', 'completesAt', 'sourceOperationId'], itemPath)
+    const nullableId = (candidateValue: unknown, candidatePath: string): string | null => candidateValue === null ? null : boundedText(candidateValue, candidatePath)
+    return Object.freeze({
+      ...base,
+      kind,
+      inputCanonicalItemId: nullableId(entry.inputCanonicalItemId, `${itemPath}.inputCanonicalItemId`),
+      outputCanonicalItemId: nullableId(entry.outputCanonicalItemId, `${itemPath}.outputCanonicalItemId`),
     })
   })
   const pendingAdjudications = boundedList(root.pendingAdjudications, `${path}.pendingAdjudications`, CAPABILITY_STATE_LIMITS.pendingAdjudications).map((candidate, index): CapabilityPendingAdjudicationState => {

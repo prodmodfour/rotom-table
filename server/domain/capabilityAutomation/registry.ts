@@ -123,7 +123,7 @@ const CAMPAIGN_TIME_ACTIONS = new Set([
 ])
 const ROLL_ACTIONS = new Set([
   'warm-egg', 'roam-for-fortune', 'gather-unown', 'harvest-mushroom',
-  'lure-with-alluring', 'oppose-examination',
+  'lure-with-alluring', 'resolve-alluring-lure-check', 'abandon-alluring-lure', 'oppose-examination',
 ])
 const GM_CONFIRMED_ACTIONS = new Set([
   'lure-with-alluring', 'read-aura', 'read-dream',

@@ -96,6 +96,19 @@ export const applyAuthoritativeMovementMapTransition = (input: {
   // oracle. Never rediscover them from raw persisted links at transition time.
   const linkedCompanionIds = new Set(input.linkedCompanionPlacementIds ?? [])
   const movingPlacementIds = new Set([placement.id, ...linkedCompanionIds])
+  if (moved && encounterState.capabilityRuntime?.tasks.some(task => (
+    task.kind === 'alluring-lure' && movingPlacementIds.has(task.actorPlacementId)
+  ))) {
+    encounterState = parseEncounterState({
+      ...encounterState,
+      capabilityRuntime: {
+        ...encounterState.capabilityRuntime,
+        tasks: encounterState.capabilityRuntime.tasks.filter(task => (
+          task.kind !== 'alluring-lure' || !movingPlacementIds.has(task.actorPlacementId)
+        )),
+      },
+    })
+  }
   let metadata = moved
     ? appendMovementLogEntry(input.map.metadata, {
         userId: placement.id,

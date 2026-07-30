@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "rulesetId": "ptu-1.05-capability-automation",
-  "requirementCount": 155,
+  "requirementCount": 157,
   "requirements": [
     {
       "id": "capability:Alluring:passive",
@@ -16,18 +16,36 @@
       "canonicalId": "Alluring",
       "kind": "contextual-action",
       "actionId": "lure-with-alluring",
-      "given": "the actor owns the capability and authoritative context satisfies alluring-lure-cell",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "the exact effective Alluring source has no active lure and its shared daily Bait use is available",
+      "when": "an authorised GM retains a canonical species, bounded level, and legal appearance cell",
+      "then": "the server spends the shared daily use and persists a source-owned lure task whose first check is due exactly 15 minutes later without rolling early"
+    },
+    {
+      "id": "capability:Alluring:action:resolve-alluring-lure-check",
+      "canonicalId": "Alluring",
+      "kind": "contextual-action",
+      "actionId": "resolve-alluring-lure-check",
+      "given": "the exact source-owned lure remains active and one or more 15-minute check boundaries have elapsed",
+      "when": "the authoritative lifecycle check is resolved",
+      "then": "the server rolls only elapsed checks with server randomness, retains failures and the next boundary, expires after the third failure, or atomically creates the retained GM-selected encounter on success"
+    },
+    {
+      "id": "capability:Alluring:action:abandon-alluring-lure",
+      "canonicalId": "Alluring",
+      "kind": "contextual-action",
+      "actionId": "abandon-alluring-lure",
+      "given": "the exact source-owned Alluring lure is active",
+      "when": "the lure is abandoned, its actor moves, is removed, or loses that exact source",
+      "then": "the durable lure task is removed without refunding or duplicating the shared daily use"
     },
     {
       "id": "capability:Alluring:action:distract-with-alluring",
       "canonicalId": "Alluring",
       "kind": "contextual-action",
       "actionId": "distract-with-alluring",
-      "given": "the actor owns the capability and authoritative context satisfies wild-target",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "the exact effective Alluring source targets an authoritative Wild Pokémon and its shared daily Bait use is available",
+      "when": "the Standard Action distraction is declared",
+      "then": "the target makes a server-owned Focus check against DC 12 and a failure durably spends its next Standard Action"
     },
     {
       "id": "capability:Amorphous:passive",

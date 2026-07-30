@@ -22,6 +22,18 @@
           "context": "alluring-lure-cell"
         },
         {
+          "id": "resolve-alluring-lure-check",
+          "action": "none",
+          "frequency": "at-will",
+          "context": "alluring-lure-due"
+        },
+        {
+          "id": "abandon-alluring-lure",
+          "action": "none",
+          "frequency": "at-will",
+          "context": "alluring-lure-active"
+        },
+        {
           "id": "distract-with-alluring",
           "action": "standard",
           "frequency": "daily",

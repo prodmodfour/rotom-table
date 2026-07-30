@@ -163,6 +163,86 @@ describe('Capability authoritative execution use case', () => {
     expect((actorAfterFirst.sheet as unknown as CharacterSheet).capabilityUsage?.entries).toContainEqual(expect.objectContaining({ period: 'daily' }))
   })
 
+  it('persists and resumes separately timed Alluring checks despite shared daily usage', () => {
+    const database = openRotomDatabase({ path: ':memory:' })
+    databases.push(database)
+    const mapRepository = createSqliteMapRepository<TabletopMap>(database)
+    const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const alluring: CharacterSheet = {
+      slug: 'alluring', nickname: 'Alluring', species: 'Spritzee', level: 20, revision: 2,
+      capabilities: { other: ['Alluring'] },
+    }
+    const linked: TrainerSheet = {
+      slug: 'trainer', name: 'Trainer', level: 10, revision: 3, currentTeam: ['alluring'],
+    }
+    const lureMap: TabletopMap = {
+      ...map(),
+      placements: [{ id: 'actor', sheetKind: 'pokemon', sheetSlug: alluring.slug, position: { x: 1, y: 1, z: 1 } }],
+    }
+    mapRepository.saveSetupMap(lureMap)
+    sheetRepository.saveSetupSheet('pokemon', alluring.slug, alluring as unknown as Record<string, unknown>)
+    sheetRepository.saveSetupSheet('trainer', linked.slug, linked as unknown as Record<string, unknown>)
+    let now = 1_000
+    const dependencies = {
+      database, mapRepository, sheetRepository, now: () => now,
+      randomInt: () => 15,
+      publishPersistedRealtimeEvent: () => {},
+    }
+    const startOffer = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map: lureMap, mapRevision: 5,
+      pokemonSheets: [alluring], trainerSheets: [linked], now,
+    }).placements[0]!.offers.find(candidate => candidate.actionId === 'lure-with-alluring')!
+    const startCommand = {
+      schemaVersion: 1, operationId: 'alluring-lure-start', mapSlug: 'arena', baseRevision: 5,
+      offerId: startOffer.offerId, actorPlacementId: 'actor',
+      capabilityInstanceId: startOffer.capabilityInstanceId,
+      canonicalId: 'Alluring', actionId: 'lure-with-alluring',
+      selections: {
+        targetPlacementIds: [], cells: [{ x: 4, y: 1, z: 4 }],
+        optionId: 'species:Pidgey;level:20', recipientTrainerSlug: null,
+        canonicalItemId: null, description: null, gmConfirmed: true,
+      },
+    }
+    const started = executeCapabilityActionUseCase({ role: 'gm', command: startCommand }, dependencies)
+    expect(started).toMatchObject({
+      outcome: 'applied', reasonCode: 'capability.alluring.lure-started', mapRevision: 6,
+    })
+    expect(mapRepository.getBySlug('arena')?.encounterState?.capabilityRuntime?.tasks)
+      .toContainEqual(expect.objectContaining({ kind: 'alluring-lure', completesAt: 901_000 }))
+    expect((sheetRepository.getByRef('pokemon', alluring.slug)?.sheet as unknown as CharacterSheet)
+      .capabilityUsage?.entries).toContainEqual(expect.objectContaining({ actionId: 'act-as-bait', period: 'daily' }))
+
+    now = 901_000
+    const currentMap = mapRepository.getBySlug('arena')!
+    const currentAlluring = sheetRepository.getByRef('pokemon', alluring.slug)!.sheet as unknown as CharacterSheet
+    const currentTrainer = sheetRepository.getByRef('trainer', linked.slug)!.sheet as unknown as TrainerSheet
+    const offers = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map: currentMap, mapRevision: 6,
+      pokemonSheets: [currentAlluring], trainerSheets: [currentTrainer], now,
+    }).placements[0]!.offers
+    expect(offers.find(candidate => candidate.actionId === 'resolve-alluring-lure-check'))
+      .toMatchObject({ available: true })
+    expect(offers.find(candidate => candidate.actionId === 'lure-with-alluring')).toBeUndefined()
+    const resolveOffer = offers.find(candidate => candidate.actionId === 'resolve-alluring-lure-check')!
+    const resolveCommand = {
+      schemaVersion: 1, operationId: 'alluring-lure-check-one', mapSlug: 'arena', baseRevision: 6,
+      offerId: resolveOffer.offerId, actorPlacementId: 'actor',
+      capabilityInstanceId: resolveOffer.capabilityInstanceId,
+      canonicalId: 'Alluring', actionId: 'resolve-alluring-lure-check',
+      selections: {
+        targetPlacementIds: [], cells: [], optionId: null, recipientTrainerSlug: null,
+        canonicalItemId: null, description: null, gmConfirmed: false,
+      },
+    }
+    const resolved = executeCapabilityActionUseCase({ role: 'gm', command: resolveCommand }, dependencies)
+    expect(resolved).toMatchObject({
+      outcome: 'applied', reasonCode: 'capability.roll-resolved', mapRevision: 7,
+      produced: [expect.objectContaining({ canonicalId: 'Pidgey' })],
+    })
+    expect(mapRepository.getBySlug('arena')?.encounterState?.capabilityRuntime?.tasks).toEqual([])
+    expect(executeCapabilityActionUseCase({ role: 'gm', command: resolveCommand }, dependencies)).toEqual(resolved)
+  })
+
   it('transactionally transfers the exact mature Juicer output and replays without duplication', () => {
     const { command, dependencies, sheetRepository } = setupJuicer()
     const first = executeCapabilityActionUseCase({ role: 'gm', command }, dependencies)

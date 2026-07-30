@@ -63,6 +63,8 @@ INTEGRATED = {"Chilled", "Heater", "Soulless", "Underdog", "Volatile Bomb"}
 ACTIONS: dict[str, list[dict[str, Any]]] = {
     "Alluring": [
         {"id": "lure-with-alluring", "action": "extended", "frequency": "daily", "context": "alluring-lure-cell"},
+        {"id": "resolve-alluring-lure-check", "action": "none", "frequency": "at-will", "context": "alluring-lure-due"},
+        {"id": "abandon-alluring-lure", "action": "none", "frequency": "at-will", "context": "alluring-lure-active"},
         {"id": "distract-with-alluring", "action": "standard", "frequency": "daily", "context": "wild-target"},
     ],
     "As One": [
@@ -188,6 +190,29 @@ LEVEL_REQUIREMENTS = {
     "Dream Mist": 20, "Fortune": 20, "Gather Unown": 20, "Heart Gift": 30,
     "Herb Growth": 20, "Milk Collection": 20, "Mushroom Harvest": 20,
 }
+ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
+    ("Alluring", "lure-with-alluring"): {
+        "given": "the exact effective Alluring source has no active lure and its shared daily Bait use is available",
+        "when": "an authorised GM retains a canonical species, bounded level, and legal appearance cell",
+        "then": "the server spends the shared daily use and persists a source-owned lure task whose first check is due exactly 15 minutes later without rolling early",
+    },
+    ("Alluring", "resolve-alluring-lure-check"): {
+        "given": "the exact source-owned lure remains active and one or more 15-minute check boundaries have elapsed",
+        "when": "the authoritative lifecycle check is resolved",
+        "then": "the server rolls only elapsed checks with server randomness, retains failures and the next boundary, expires after the third failure, or atomically creates the retained GM-selected encounter on success",
+    },
+    ("Alluring", "abandon-alluring-lure"): {
+        "given": "the exact source-owned Alluring lure is active",
+        "when": "the lure is abandoned, its actor moves, is removed, or loses that exact source",
+        "then": "the durable lure task is removed without refunding or duplicating the shared daily use",
+    },
+    ("Alluring", "distract-with-alluring"): {
+        "given": "the exact effective Alluring source targets an authoritative Wild Pokémon and its shared daily Bait use is available",
+        "when": "the Standard Action distraction is declared",
+        "then": "the target makes a server-owned Focus check against DC 12 and a failure durably spends its next Standard Action",
+    },
+}
+
 ITEM_OUTPUTS = {
     "Dream Mist": ["Dream Mist"], "Heart Gift": ["Heart Scale"],
     "Herb Growth": ["Revival Herb"], "Honey Gather": ["Honey"],
@@ -447,14 +472,17 @@ def main() -> None:
             "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied",
         })
         for action in entry["actions"]:
+            requirement = ACTION_REQUIREMENT_OVERRIDES.get((name, action["id"]), {
+                "given": f"the actor owns the capability and authoritative context satisfies {action['context']}",
+                "when": "the capability action is offered and declared",
+                "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output",
+            })
             requirements.append({
                 "id": f"capability:{name}:action:{action['id']}",
                 "canonicalId": name,
                 "kind": "contextual-action",
                 "actionId": action["id"],
-                "given": f"the actor owns the capability and authoritative context satisfies {action['context']}",
-                "when": "the capability action is offered and declared",
-                "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output",
+                **requirement,
             })
     write_json("scenario-requirements.json", {
         "schemaVersion": 1,

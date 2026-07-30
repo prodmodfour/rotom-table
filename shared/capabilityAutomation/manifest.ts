@@ -17,7 +17,7 @@ export const CAPABILITY_AUTOMATION_PRESENTATION_POLICIES = [
   'contextual-offer', 'passive-fact-only',
 ] as const
 export const CAPABILITY_ACTION_ECONOMY_KINDS = [
-  'free', 'swift', 'shift', 'standard', 'extended',
+  'none', 'free', 'swift', 'shift', 'standard', 'extended',
 ] as const
 export const CAPABILITY_FREQUENCIES = [
   'at-will', 'hourly', 'daily', 'weekly', 'cooldown',

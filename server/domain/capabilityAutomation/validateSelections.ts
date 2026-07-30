@@ -430,7 +430,8 @@ export const validateCapabilityActionSelections = (input: {
   if (activePlacementId && input.action.economy === 'extended') {
     fail('extended-action-during-initiative', 'Extended Capability actions are unavailable while initiative has an active participant.')
   }
-  if (activePlacementId && input.action.economy !== 'extended' && activePlacementId !== input.actor.id) {
+  if (activePlacementId && input.action.economy !== 'extended' && input.action.economy !== 'none'
+    && activePlacementId !== input.actor.id) {
     fail('capability-actor-turn-required', 'This Capability action must be used during the actor’s authoritative initiative turn.')
   }
   const actorConditions = conditionsFor(
@@ -697,7 +698,32 @@ export const validateCapabilityActionSelections = (input: {
     else fail('sprouter-branch-invalid', 'Sprouter requires growth or a bounded canonical Berry yield branch.')
   }
 
-  if (input.command.actionId === 'lure-with-alluring') {
+  if (input.command.actionId === 'lure-with-alluring'
+    || input.command.actionId === 'resolve-alluring-lure-check'
+    || input.command.actionId === 'abandon-alluring-lure') {
+    const task = input.map.encounterState?.capabilityRuntime?.tasks.find(candidate => (
+      candidate.kind === 'alluring-lure'
+      && candidate.actorPlacementId === input.actor.id
+      && candidate.capabilityInstanceId === input.command.capabilityInstanceId
+      && candidate.canonicalId === 'Alluring'
+    ))
+    if (input.command.actionId !== 'lure-with-alluring') {
+      if (!task) return fail('alluring-lure-task-missing', 'The exact source-owned Alluring lure is no longer active.')
+      if (input.command.actionId === 'resolve-alluring-lure-check' && input.now < task.completesAt) {
+        fail('alluring-lure-check-not-due', 'The next Alluring lure check is not due yet.')
+      }
+      if (input.command.selections.cells.length > 0
+        || input.command.selections.targetPlacementIds.length > 0
+        || input.command.selections.optionId !== null
+        || input.command.selections.recipientTrainerSlug !== null
+        || input.command.selections.canonicalItemId !== null
+        || input.command.selections.description !== null
+        || input.command.selections.gmConfirmed) {
+        fail('alluring-lure-continuation-selection-invalid', 'Alluring lure continuation actions do not accept new client choices.')
+      }
+      return
+    }
+    if (task) fail('alluring-lure-already-active', 'This exact Alluring source already has an active lure.')
     if (input.command.selections.cells.length !== 1) {
       fail('alluring-lure-cell-required', 'Alluring lure use requires one authoritative encounter placement cell.')
     }

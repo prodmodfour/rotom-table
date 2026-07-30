@@ -74,6 +74,7 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
     link.kind === 'letter-press'
     || (sourceEffective(link) && link.participantPlacementIds.every(id => placementById.has(id)))
   ))
+  const tasks = runtime.tasks.filter(task => sourceEffective(task))
   let pouchStateChanged = false
   const capabilityMarsupialPouches = Array.isArray(input.map.metadata?.capabilityMarsupialPouches)
     ? input.map.metadata.capabilityMarsupialPouches.filter((raw) => {
@@ -115,7 +116,7 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
         return { ...object, attachedToPlacementId: null, attachedCapabilityInstanceId: null }
       }) : null
   if (modes.length === runtime.modes.length && links.length === runtime.links.length
-    && !attachmentSourceRemoved && !pouchStateChanged) return input.map
+    && tasks.length === runtime.tasks.length && !attachmentSourceRemoved && !pouchStateChanged) return input.map
   const retainedModeIds = new Set(modes.map(mode => mode.id))
   const removedModes = runtime.modes.filter(mode => !retainedModeIds.has(mode.id))
   const removedModeIds = new Set(removedModes.map(mode => mode.id))
@@ -161,7 +162,7 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
     encounterState: {
       ...encounter,
       effects: encounter.effects.filter(effect => !removedModeIds.has(effect.id)),
-      capabilityRuntime: parseCapabilityRuntimeState({ ...runtime, modes, links }),
+      capabilityRuntime: parseCapabilityRuntimeState({ ...runtime, modes, links, tasks }),
     },
   }
 }

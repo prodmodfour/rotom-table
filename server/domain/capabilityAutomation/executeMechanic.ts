@@ -8,6 +8,7 @@ import type {
 import {
   createEmptyCapabilityRuntimeState,
   parseCapabilityRuntimeState,
+  type CapabilityAlluringLureTaskState,
   type CapabilityLinkKind,
   type CapabilityLinkState,
   type CapabilityModeKind,
@@ -1617,14 +1618,93 @@ const executeRoll = (input: ExecuteCapabilityMechanicInput): CapabilityMechanicE
     }
   }
   if (input.command.actionId === 'lure-with-alluring') {
-    let successfulAttempt: number | null = null
+    const match = /^species:([^;]{1,80});level:(\d{1,3})$/.exec(input.command.selections.optionId ?? '')
+    const species = match
+      ? (pokedexData as readonly PokedexRecord[]).find(record => (
+          record.species.trim().toLocaleLowerCase('en-US') === match[1]!.trim().toLocaleLowerCase('en-US')
+        )) : null
+    const level = Number(match?.[2])
+    const position = input.command.selections.cells[0]
+    if (!species || !position || !Number.isSafeInteger(level) || level < 1 || level > 100) {
+      throw new Error('Alluring lure encounter parameters are unavailable.')
+    }
+    const runtime = runtimeFor(input.map)
+    const task: CapabilityAlluringLureTaskState = {
+      id: `capability.task.${input.actorPlacement.id}.alluring-lure`,
+      kind: 'alluring-lure',
+      actorPlacementId: input.actorPlacement.id,
+      capabilityInstanceId: input.command.capabilityInstanceId,
+      canonicalId: 'Alluring',
+      encounterSpecies: species.species,
+      encounterLevel: level,
+      encounterCell: { ...position },
+      originCell: { ...input.actorPlacement.position },
+      failedChecks: 0,
+      startedAt: input.now,
+      completesAt: input.now + 15 * 60_000,
+      sourceOperationId: input.command.operationId,
+    }
+    const nextRuntime = parseCapabilityRuntimeState({
+      ...runtime,
+      tasks: [
+        ...runtime.tasks.filter(candidate => candidate.id !== task.id),
+        task,
+      ],
+    })
+    return {
+      map: mapWithRuntimeAndEffects(input.map, nextRuntime, input.map.encounterState?.effects ?? []),
+      sheetMutations: [], rolls: [], produced: [], outcome: 'applied',
+      reasonCode: 'capability.alluring.lure-started',
+      adjudicationNote: 'The first authoritative Alluring lure check is due in 15 minutes.',
+    }
+  }
+  if (input.command.actionId === 'abandon-alluring-lure') {
+    const runtime = runtimeFor(input.map)
+    const task = runtime.tasks.find(candidate => (
+      candidate.kind === 'alluring-lure'
+      && candidate.actorPlacementId === input.actorPlacement.id
+      && candidate.capabilityInstanceId === input.command.capabilityInstanceId
+      && candidate.canonicalId === 'Alluring'
+    ))
+    if (!task) throw new Error('The exact source-owned Alluring lure is no longer active.')
+    const nextRuntime = parseCapabilityRuntimeState({
+      ...runtime,
+      tasks: runtime.tasks.filter(candidate => candidate.id !== task.id),
+    })
+    return {
+      map: mapWithRuntimeAndEffects(input.map, nextRuntime, input.map.encounterState?.effects ?? []),
+      sheetMutations: [], rolls: [], produced: [], outcome: 'applied',
+      reasonCode: 'capability.alluring.lure-abandoned',
+      adjudicationNote: 'The active Alluring lure was abandoned before resolution.',
+    }
+  }
+  if (input.command.actionId === 'resolve-alluring-lure-check') {
+    const runtime = runtimeFor(input.map)
+    const task = runtime.tasks.find((candidate): candidate is CapabilityAlluringLureTaskState => (
+      candidate.kind === 'alluring-lure'
+      && candidate.actorPlacementId === input.actorPlacement.id
+      && candidate.capabilityInstanceId === input.command.capabilityInstanceId
+      && candidate.canonicalId === 'Alluring'
+    ))
+    if (!task || input.now < task.completesAt) throw new Error('The next Alluring lure check is not due.')
+    if (input.actorPlacement.position.x !== task.originCell.x
+      || input.actorPlacement.position.y !== task.originCell.y
+      || input.actorPlacement.position.z !== task.originCell.z) {
+      throw new Error('The Alluring lure actor left its retained route position.')
+    }
+    const dueChecks = Math.min(
+      3 - task.failedChecks,
+      Math.floor((input.now - task.completesAt) / (15 * 60_000)) + 1,
+    )
     const enticingBaitBonus = input.actorPlacement.sheetKind === 'pokemon'
       && hasPokemonCapabilityEdge(input.actorSheet as CharacterSheet, 'Enticing Bait')
       ? Math.max(
           skillExpression(input.actorSheet, input.actorPlacement.sheetKind, 'athletics').count,
           skillExpression(input.actorSheet, input.actorPlacement.sheetKind, 'focus').count,
         ) : 0
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
+    let successfulAttempt: number | null = null
+    for (let offset = 0; offset < dueChecks; offset += 1) {
+      const attempt = task.failedChecks + offset + 1
       const raw = input.rollDie(`alluring-lure-${attempt}`, 20)
       const roll: CapabilityServerRoll = enticingBaitBonus > 0 ? Object.freeze({
         ...raw,
@@ -1638,25 +1718,45 @@ const executeRoll = (input: ExecuteCapabilityMechanicInput): CapabilityMechanicE
         break
       }
     }
+    const completedChecks = rolls.length
+    const failedChecks = task.failedChecks + completedChecks
+    const withoutTask = parseCapabilityRuntimeState({
+      ...runtime,
+      tasks: runtime.tasks.filter(candidate => candidate.id !== task.id),
+    })
+    if (successfulAttempt === null && failedChecks < 3) {
+      const continued = parseCapabilityRuntimeState({
+        ...runtime,
+        tasks: runtime.tasks.map(candidate => candidate.id === task.id ? {
+          ...task,
+          failedChecks,
+          completesAt: task.completesAt + completedChecks * 15 * 60_000,
+        } : candidate),
+      })
+      return {
+        map: mapWithRuntimeAndEffects(input.map, continued, input.map.encounterState?.effects ?? []),
+        sheetMutations: [], rolls, produced: [], outcome: 'applied',
+        reasonCode: 'capability.alluring.lure-check-failed',
+        adjudicationNote: `Alluring lure check ${failedChecks} failed; the next check is due in 15 minutes.`,
+      }
+    }
+    const resolvedMap = mapWithRuntimeAndEffects(input.map, withoutTask, input.map.encounterState?.effects ?? [])
     if (successfulAttempt === null) return {
-      map: input.map, sheetMutations: [], rolls, produced: [], outcome: 'no-op',
+      map: resolvedMap, sheetMutations: [], rolls, produced: [], outcome: 'no-op',
       reasonCode: 'capability.alluring.lure-expired',
-      adjudicationNote: 'Three 15-minute lure checks failed; the daily Alluring bait effect lost its potency.',
+      adjudicationNote: 'Three separately timed lure checks failed; the daily Alluring bait effect lost its potency.',
     }
-    const match = /^species:([^;]{1,80});level:(\d{1,3})$/.exec(input.command.selections.optionId ?? '')
-    const species = match
-      ? (pokedexData as readonly PokedexRecord[]).find(record => (
-          record.species.trim().toLocaleLowerCase('en-US') === match[1]!.trim().toLocaleLowerCase('en-US')
-        )) : null
-    const level = Number(match?.[2])
-    const position = input.command.selections.cells[0]
-    if (!species || !position || !Number.isSafeInteger(level) || level < 1 || level > 100) {
-      throw new Error('Alluring lure encounter parameters are unavailable.')
-    }
-    const stableSuffix = input.command.operationId.toLocaleLowerCase('en-US').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(-80)
+    const species = (pokedexData as readonly PokedexRecord[]).find(record => (
+      record.species.trim().toLocaleLowerCase('en-US') === task.encounterSpecies.trim().toLocaleLowerCase('en-US')
+    ))
+    if (!species) throw new Error('The retained Alluring encounter species is unavailable.')
+    const level = task.encounterLevel
+    const position = task.encounterCell
+    const stableSuffix = task.sourceOperationId.toLocaleLowerCase('en-US')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(-80)
     const slug = `alluring-${species.species.toLocaleLowerCase('en-US').replace(/[^a-z0-9]+/g, '-')}-${stableSuffix}`.slice(0, 120)
-    const placementId = `capability-alluring:${input.command.operationId}`.slice(0, 200)
-    if (input.pokemonSheets.has(slug) || input.map.placements.some(placement => placement.id === placementId)) {
+    const placementId = `capability-alluring:${task.sourceOperationId}`.slice(0, 200)
+    if (input.pokemonSheets.has(slug) || resolvedMap.placements.some(placement => placement.id === placementId)) {
       throw new Error('Alluring deterministic encounter identity already exists.')
     }
     const summoned: CharacterSheet = { slug, nickname: species.species, species: species.species, level }
@@ -1664,33 +1764,34 @@ const executeRoll = (input: ExecuteCapabilityMechanicInput): CapabilityMechanicE
     const pokemon = new Map(input.pokemonSheets)
     pokemon.set(slug, summoned)
     const sheets = { pokemon, trainer: new Map(input.trainerSheets) }
-    const token = placementToSpawned(placement, sheets, input.map)
-    const existing = input.map.placements.flatMap(candidate => {
-      const resolved = placementToSpawned(candidate, sheets, input.map)
+    const token = placementToSpawned(placement, sheets, resolvedMap)
+    const existing = resolvedMap.placements.flatMap(candidate => {
+      const resolved = placementToSpawned(candidate, sheets, resolvedMap)
       return resolved ? [resolved] : []
     })
-    if (!token || !canPlacePokemon(token, position, existing, input.map.dimensions, null, buildVoxelOccupancy(input.map.voxels))) {
+    if (!token || !canPlacePokemon(token, position, existing, resolvedMap.dimensions, null, buildVoxelOccupancy(resolvedMap.voxels))) {
       throw new Error('The GM-selected Alluring encounter cell cannot contain the generated Pokémon.')
     }
-    const generated = Array.isArray(input.map.metadata?.capabilityGeneratedCreatures)
-      ? input.map.metadata.capabilityGeneratedCreatures as unknown[] : []
-    const wildIds = Array.isArray(input.map.metadata?.capabilityWildPlacementIds)
-      ? input.map.metadata.capabilityWildPlacementIds.filter((id): id is string => typeof id === 'string') : []
+    const generated = Array.isArray(resolvedMap.metadata?.capabilityGeneratedCreatures)
+      ? resolvedMap.metadata.capabilityGeneratedCreatures as unknown[] : []
+    const wildIds = Array.isArray(resolvedMap.metadata?.capabilityWildPlacementIds)
+      ? resolvedMap.metadata.capabilityWildPlacementIds.filter((id): id is string => typeof id === 'string') : []
     map = {
-      ...input.map,
-      placements: [...input.map.placements, placement],
+      ...resolvedMap,
+      placements: [...resolvedMap.placements, placement],
       metadata: {
-        ...(input.map.metadata ?? {}),
+        ...(resolvedMap.metadata ?? {}),
         capabilityWildPlacementIds: [...new Set([...wildIds, placementId])],
         capabilityGeneratedCreatures: [...generated, {
           id: placementId, sheetSlug: slug, species: species.species, level,
           position: { ...position }, disposition: 'wild', sourceOperationId: input.command.operationId,
+          lureSourceOperationId: task.sourceOperationId,
         }],
       },
     }
     mutations.push({ kind: 'pokemon', slug, previous: null, current: summoned })
     produced.push({ kind: 'summoned-creature', canonicalId: species.species, quantity: 1, recipientSheetSlug: slug })
-    note = `Alluring succeeded on 15-minute check ${successfulAttempt}; a GM-selected Level ${level} ${species.species} appeared.`
+    note = `Alluring succeeded on separately timed check ${successfulAttempt}; a GM-selected Level ${level} ${species.species} appeared.`
   }
   else if (input.command.actionId === 'warm-egg') {
     const roll = input.rollDie('egg-warmer', 10)

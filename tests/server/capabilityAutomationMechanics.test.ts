@@ -52,13 +52,14 @@ const execute = (
   selections: Parameters<typeof command>[2] = {},
   sourceMap = map(),
   authoritativeRollDie: typeof rollDie = rollDie,
+  now = 1_000,
 ) => {
   const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require(canonicalId).spec.actions.find(entry => entry.actionId === actionId)!
   return executeCapabilityMechanic({
     map: sourceMap, actorPlacement, actorSheet,
     pokemonSheets: new Map([[actorSheet.slug, actorSheet]]), trainerSheets: new Map([[trainer.slug, trainer]]),
     linkedTrainerSlugs: new Set([trainer.slug]), command: command(canonicalId, actionId, selections), action,
-    now: 1_000, rollDie: authoritativeRollDie,
+    now, rollDie: authoritativeRollDie,
   })
 }
 
@@ -256,43 +257,98 @@ describe('native Capability mechanics', () => {
     expect(actions).not.toContain('store-berry')
   })
 
-  it('resolves Alluring lure checks at exact 15-minute boundaries until success or three failures', () => {
-    const failedRoll: typeof rollDie = rollId => ({
-      rollId: `roll-${rollId}`, expression: '1d20', dice: [1], modifier: 0, total: 1,
-    })
-    const failed = execute('Alluring', 'lure-with-alluring', {
+  it('persists Alluring lure progress across exact 15-minute boundaries, abandonment, and success', () => {
+    const start = execute('Alluring', 'lure-with-alluring', {
       cells: [{ x: 4, y: 1, z: 4 }],
       optionId: 'species:Pidgey;level:20',
       gmConfirmed: true,
-    }, map(), failedRoll)
-    expect(failed.rolls.map(roll => roll.total)).toEqual([1, 1, 1])
-    expect(failed).toMatchObject({
-      outcome: 'no-op', reasonCode: 'capability.alluring.lure-expired',
-      adjudicationNote: expect.stringContaining('Three 15-minute lure checks failed'),
+    })
+    expect(start).toMatchObject({
+      rolls: [], outcome: 'applied', reasonCode: 'capability.alluring.lure-started',
+    })
+    expect(start.map.encounterState?.capabilityRuntime?.tasks).toContainEqual(expect.objectContaining({
+      kind: 'alluring-lure', failedChecks: 0, startedAt: 1_000, completesAt: 901_000,
+      encounterSpecies: 'Pidgey', encounterLevel: 20,
+    }))
+
+    const failedRoll: typeof rollDie = rollId => ({
+      rollId: `roll-${rollId}`, expression: '1d20', dice: [14], modifier: 0, total: 14,
+    })
+    expect(() => execute(
+      'Alluring', 'resolve-alluring-lure-check', {}, start.map, failedRoll, 900_999,
+    )).toThrow(/not due/)
+    const firstFailure = execute(
+      'Alluring', 'resolve-alluring-lure-check', {}, start.map, failedRoll, 901_000,
+    )
+    expect(firstFailure).toMatchObject({
+      outcome: 'applied', reasonCode: 'capability.alluring.lure-check-failed',
+      rolls: [expect.objectContaining({ total: 14 })],
+    })
+    expect(firstFailure.map.encounterState?.capabilityRuntime?.tasks[0]).toMatchObject({
+      failedChecks: 1, completesAt: 1_801_000,
     })
 
+    const abandoned = execute(
+      'Alluring', 'abandon-alluring-lure', {}, firstFailure.map, rollDie, 1_100_000,
+    )
+    expect(abandoned.reasonCode).toBe('capability.alluring.lure-abandoned')
+    expect(abandoned.map.encounterState?.capabilityRuntime?.tasks).toEqual([])
+
+    const restarted = execute('Alluring', 'lure-with-alluring', {
+      cells: [{ x: 4, y: 1, z: 4 }],
+      optionId: 'species:Pidgey;level:20',
+      gmConfirmed: true,
+    }, map(), rollDie, 2_000_000)
     let attempt = 0
     const succeedsSecond: typeof rollDie = rollId => {
       attempt += 1
       const total = attempt === 1 ? 14 : 15
       return { rollId: `roll-${rollId}`, expression: '1d20', dice: [total], modifier: 0, total }
     }
-    const succeeded = execute('Alluring', 'lure-with-alluring', {
-      cells: [{ x: 4, y: 1, z: 4 }],
-      optionId: 'species:Pidgey;level:20',
-      gmConfirmed: true,
-    }, map(), succeedsSecond)
+    const succeeded = execute(
+      'Alluring', 'resolve-alluring-lure-check', {}, restarted.map, succeedsSecond, 3_800_000,
+    )
     expect(succeeded.rolls.map(roll => roll.total)).toEqual([14, 15])
     expect(succeeded).toMatchObject({
       outcome: 'applied', reasonCode: 'capability.roll-resolved',
-      adjudicationNote: expect.stringContaining('15-minute check 2'),
+      adjudicationNote: expect.stringContaining('separately timed check 2'),
     })
+    expect(succeeded.map.encounterState?.capabilityRuntime?.tasks).toEqual([])
     expect(succeeded.map.placements).toContainEqual(expect.objectContaining({
       sheetKind: 'pokemon', position: { x: 4, y: 1, z: 4 },
     }))
     expect(succeeded.produced).toEqual([expect.objectContaining({
       kind: 'summoned-creature', canonicalId: 'Pidgey', quantity: 1,
     })])
+  })
+
+  it('expires Alluring only after three elapsed failed checks and movement interrupts the lure', () => {
+    const failedRoll: typeof rollDie = rollId => ({
+      rollId: `roll-${rollId}`, expression: '1d20', dice: [1], modifier: 0, total: 1,
+    })
+    const start = execute('Alluring', 'lure-with-alluring', {
+      cells: [{ x: 4, y: 1, z: 4 }], optionId: 'species:Pidgey;level:20', gmConfirmed: true,
+    })
+    const expired = execute(
+      'Alluring', 'resolve-alluring-lure-check', {}, start.map, failedRoll, 2_701_000,
+    )
+    expect(expired.rolls.map(roll => roll.total)).toEqual([1, 1, 1])
+    expect(expired).toMatchObject({
+      outcome: 'no-op', reasonCode: 'capability.alluring.lure-expired',
+      adjudicationNote: expect.stringContaining('separately timed'),
+    })
+    expect(expired.map.encounterState?.capabilityRuntime?.tasks).toEqual([])
+
+    const moved = applyAuthoritativeMovementMapTransition({
+      map: start.map,
+      placementId: actorPlacement.id,
+      destination: { x: 3, y: 1, z: 2 },
+      distance: 1,
+      encounterState: start.map.encounterState!,
+      timestamp: 2_000,
+      userName: 'Actor',
+    }).nextMap
+    expect(moved.encounterState?.capabilityRuntime?.tasks).toEqual([])
   })
 
   it('uses server rolls for the full Mushroom table and commits the output to linked inventory', () => {

@@ -186,6 +186,12 @@ const contextSatisfied = (input: {
   const mode = (modes: readonly string[]) => modeFor(map, placement.id, modes, input.now, input.effectiveInstanceIds)
   const link = (kinds: readonly string[]) => linkFor(map, placement.id, kinds, input.effectiveInstanceIds)
   const contextual = explicitContext(input.contexts, context)
+  const alluringLureTask = (map.encounterState?.capabilityRuntime?.tasks ?? []).find(task => (
+    task.kind === 'alluring-lure'
+    && task.actorPlacementId === placement.id
+    && task.canonicalId === 'Alluring'
+    && input.effectiveInstanceIds.has(task.capabilityInstanceId)
+  ))
   const synchronizedKeystoneIds = placement.sheetKind === 'pokemon'
     ? new Set(parseCapabilityCampaignState((input.sheet as CharacterSheet).capabilityCampaignState)
         .keystoneSynchronizations.map(entry => entry.keystoneId))
@@ -418,8 +424,12 @@ const contextSatisfied = (input: {
           && (typeof evidence.expiresAt !== 'number' || evidence.expiresAt > input.now)
       }))
     case 'open-space': return contextual && map.dimensions.x * map.dimensions.y * map.dimensions.z > map.placements.length
-    case 'alluring-lure-cell': return (!activeScene || contextual)
+    case 'alluring-lure-cell': return alluringLureTask === undefined
+      && (!activeScene || contextual)
       && map.dimensions.x * map.dimensions.y * map.dimensions.z > map.placements.length
+    case 'alluring-lure-due': return alluringLureTask !== undefined
+      && input.now >= alluringLureTask.completesAt
+    case 'alluring-lure-active': return alluringLureTask !== undefined
     case 'electronic-device': return contextual && Array.isArray(map.metadata?.capabilityDevices)
       && map.metadata.capabilityDevices.length > 0
     case 'unsynchronized-keystone-and-2tp': return placement.sheetKind === 'pokemon'
@@ -755,7 +765,8 @@ export const buildCapabilityClientCapabilityBundle = (
         }
         if (action.economy === 'swift' && illusionReservesSwift) reasons.push('capability.swift-action-reserved')
         if (action.economy === 'extended' && input.map.initiative?.activeId) reasons.push('economy.extended-unavailable-during-initiative')
-        if (action.economy !== 'extended' && input.map.initiative?.activeId
+        if (action.economy !== 'extended' && action.economy !== 'none'
+          && input.map.initiative?.activeId
           && input.map.initiative.activeId !== placement.id) reasons.push('economy.actor-turn-required')
         if (action.levelRequirement !== null && (sheet.level ?? 0) < action.levelRequirement) reasons.push('source.level-required')
         if (economySpent(input.map, placement.id, action.economy)) reasons.push(`economy.${action.economy}-spent`)
