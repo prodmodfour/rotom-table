@@ -58,6 +58,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
 
       - name: Upload Playwright report on failure
         if: failure()
