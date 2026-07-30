@@ -80,6 +80,11 @@ test('duplicate accepted delivery and reload keep one deterministic history row'
 })
 
 test('login and core reference/library routes have no serious accessibility violations', async ({ page }) => {
+  // Four full-page axe scans routinely approach Playwright's 30-second default
+  // on constrained CI runners. This is an accessibility assertion, not a page-
+  // performance budget, so retain a bounded allowance for both browser projects.
+  test.setTimeout(90_000)
+
   const seriousViolations = async () => (await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
     .analyze()).violations.filter(violation => ['serious', 'critical'].includes(violation.impact ?? ''))
