@@ -44,6 +44,7 @@ const context = {
     },
     rules: { legacyScriptFor: () => null },
     abilities: { has: () => false },
+    creatureRules: { hasCapability: () => false },
     relationships: { resolve: () => ({ relationship: 'ally' }) },
   },
 }
@@ -121,6 +122,35 @@ describe('MA-234 through MA-241 persistent and delayed-effect cohorts', () => {
     expect(substitute).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'substitute.hp-cost', kind: 'direct-hp' }),
       expect.objectContaining({ id: 'substitute.temporary-hp', kind: 'heal' }),
+    ]))
+  })
+
+  it('makes Mind Reader automatically miss an effective Mindlock target', () => {
+    const ordinary = run('Mind Reader')
+    expect(ordinary.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'mind-reader.read', kind: 'temporary-effect' }),
+    ]))
+
+    const blocked = validateRegisteredMoveHandlerOutput(
+      PERSISTENT_234_241_HANDLER_REGISTRATION.run({
+        ...context,
+        intent: { moveName: 'Mind Reader' },
+        queries: {
+          ...context.queries,
+          creatureRules: { hasCapability: (placementId: string, canonicalId: string) => (
+            placementId === 'target' && canonicalId === 'Mindlock'
+          ) },
+        },
+      } as never),
+    )
+    expect(blocked.operations).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'mind-reader.read' }),
+    ]))
+    expect(blocked.traceEntries).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        outcome: false,
+        reasonCode: 'capability.mindlock.mind-reader-auto-miss',
+      }),
     ]))
   })
 

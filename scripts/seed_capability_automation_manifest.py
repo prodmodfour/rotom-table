@@ -197,6 +197,11 @@ PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
         "when": "it is projected, contacted along authoritative movement, viewed under an active Foresight-family bypass, or loses its exact source",
         "then": "ordinary viewers receive only the life-like appearance, the bypass owner privately identifies and ignores it, contact marks it noticeably disrupted without destroying maintenance, and source loss removes its authority",
     },
+    "Mindlock": {
+        "given": "an effective Mindlock source is consulted by telepathy, Dream Reader, Gentle Vibe, Mind Reader, or Telepathic Warning authority",
+        "when": "the protected participant is targeted or originates the protected attack",
+        "then": "mind and dream reads are rejected, Gentle Vibe excludes the participant, Mind Reader automatically misses without applying its read marker, and Telepathic Warning cannot trigger from that attack",
+    },
     "Living Weapon": {
         "given": "an exact effective Honedge-line Living Weapon source is engaged with a willing wielder",
         "when": "equipment, movement, Ability, weapon Move, Accuracy, and Damage rules are projected",

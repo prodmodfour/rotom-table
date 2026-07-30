@@ -485,7 +485,17 @@ const statusMove = (context: RegisteredMoveHandlerContext): readonly MoveEffectO
   if (name === 'Laser Focus') return [markerEffect({ slug, id: 'next-critical', recipients: 'actor', duration: { kind: 'scene', remaining: null }, charges: 1 }), ...standardTerminalOperations(slug)]
   if (name === 'Leech Seed') return [standardAccuracy(slug), markerEffect({ slug, id: 'seeded', recipients: 'hit-targets', duration: { kind: 'scene', remaining: null } }), ...standardTerminalOperations(slug)]
   if (name === 'Mean Look') return [condition({ slug, id: 'trapped', conditionId: 'trapped', recipients: 'selected-targets', phase: 'hit', duration: { kind: 'scene', remaining: null } }), condition({ slug, id: 'slowed', conditionId: 'slowed', recipients: 'selected-targets', phase: 'hit', duration: { kind: 'scene', remaining: null } }), ...standardTerminalOperations(slug)]
-  if (name === 'Mind Reader') return [markerEffect({ slug, id: 'read', recipients: 'selected-targets', duration: { kind: 'turns', subject: 'source', boundary: 'end', remaining: 1 }, charges: 1 }), ...standardTerminalOperations(slug)]
+  if (name === 'Mind Reader') {
+    const target = context.selectedPlacements[0]
+    const blockedByMindlock = target !== undefined
+      && context.queries.creatureRules.hasCapability(target.id, 'Mindlock')
+    return [
+      ...(!blockedByMindlock
+        ? [markerEffect({ slug, id: 'read', recipients: 'selected-targets', duration: { kind: 'turns', subject: 'source', boundary: 'end', remaining: 1 }, charges: 1 })]
+        : []),
+      ...standardTerminalOperations(slug),
+    ]
+  }
   if (name === 'Nightmare') return [standardAccuracy(slug), condition({ slug, id: 'bad-sleep', conditionId: 'bad-sleep', sourceOperationId: `${slug}.accuracy`, phase: 'hit', duration: { kind: 'scene', remaining: null } }), ...standardTerminalOperations(slug)]
   if (name === 'Octolock') return [condition({ slug, id: 'trapped', conditionId: 'trapped', recipients: 'selected-targets', phase: 'hit', duration: { kind: 'scene', remaining: null } }), reviewedStage({ slug, id: 'lower-defense', recipients: 'selected-targets', stage: 'def', value: -1, phase: 'hit' }), reviewedStage({ slug, id: 'lower-special-defense', recipients: 'selected-targets', stage: 'sdef', value: -1, phase: 'hit' }), ...standardTerminalOperations(slug)]
   if (name === 'Perish Song') return [condition({ slug, id: 'perish-count', conditionId: 'perish-count-3', recipients: 'area-targets', phase: 'hit', duration: { kind: 'turns', subject: 'target', boundary: 'start', remaining: 3 } }), ...standardTerminalOperations(slug)]
@@ -547,15 +557,24 @@ const run = (context: RegisteredMoveHandlerContext) => {
     if (name === 'Spirit Shackle' || name === 'Thousand Waves') operations = [...operations, condition({ slug, id: 'trapped', conditionId: 'trapped', sourceOperationId: `${slug}.damage`, duration: { kind: 'rounds', boundary: 'end', remaining: 2 } })]
     operations = [...operations, ...standardTerminalOperations(slug)]
   }
+  const mindReaderTarget = name === 'Mind Reader' ? context.selectedPlacements[0] : undefined
+  const blockedByMindlock = mindReaderTarget !== undefined
+    && context.queries.creatureRules.hasCapability(mindReaderTarget.id, 'Mindlock')
   return {
     operations: ordered(operations),
     traceEntries: [{
       kind: 'predicate' as const, phase: 'declare' as const,
-      predicateId: `persistent.${slug}`, outcome: true,
-      reasonCode: 'persistent.authoritative-context-resolved', input: { operationCount: operations.length },
+      predicateId: `persistent.${slug}`, outcome: !blockedByMindlock,
+      reasonCode: blockedByMindlock
+        ? 'capability.mindlock.mind-reader-auto-miss'
+        : 'persistent.authoritative-context-resolved',
+      input: {
+        operationCount: operations.length,
+        ...(mindReaderTarget ? { targetPlacementId: mindReaderTarget.id } : {}),
+      },
     }],
   }
 }
 
 export const PERSISTENT_234_241_HANDLER_REGISTRATION: RegisteredMoveHandlerRegistration =
-  Object.freeze({ id: PERSISTENT_234_241_HANDLER_ID, version: 2, run })
+  Object.freeze({ id: PERSISTENT_234_241_HANDLER_ID, version: 3, run })

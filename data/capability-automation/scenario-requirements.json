@@ -728,9 +728,9 @@
       "id": "capability:Mindlock:passive",
       "canonicalId": "Mindlock",
       "kind": "passive-projection",
-      "given": "the actor owns an effective canonical capability instance",
-      "when": "the authoritative encounter presentation is projected",
-      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+      "given": "an effective Mindlock source is consulted by telepathy, Dream Reader, Gentle Vibe, Mind Reader, or Telepathic Warning authority",
+      "when": "the protected participant is targeted or originates the protected attack",
+      "then": "mind and dream reads are rejected, Gentle Vibe excludes the participant, Mind Reader automatically misses without applying its read marker, and Telepathic Warning cannot trigger from that attack"
     },
     {
       "id": "capability:Mountable X:passive",
