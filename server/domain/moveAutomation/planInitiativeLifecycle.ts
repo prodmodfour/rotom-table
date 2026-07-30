@@ -139,6 +139,14 @@ import {
   createAa085To100LifecycleHandler,
 } from '../abilityAutomation/mechanics/aa085to100LifecycleIntegration'
 import { reduceAbilityTransformationLifecycle } from '../abilityAutomation/transformations'
+import {
+  applyPhysicalPowerLoadRoundCheck,
+  physicalPowerSourceValues,
+  resolvePhysicalPowerLoad,
+} from '../capabilityAutomation/physicalPower'
+import { resolveSkills } from '~/utils/sheets/pokemonDerived'
+import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
+import { parseSkillDiceValue } from '~/utils/skillRanks'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -1392,6 +1400,55 @@ export const planEncounterLifecycle = (
     map: nextMap,
     sheets: { pokemon: sourceLossSheets.pokemonSheets, trainer: sourceLossSheets.trainerSheets },
   })
+  const physicalLoadRounds = [...new Set(plannedEvents.flatMap(event => (
+    event.kind === 'round-start' ? [event.round] : []
+  )))]
+  if (physicalLoadRounds.length > 0) {
+    const snapshots = loadSheets()
+    for (const round of physicalLoadRounds) {
+      for (const placement of nextMap.placements) {
+        const sheet = placement.sheetKind === 'pokemon'
+          ? snapshots.pokemonSheets.get(placement.sheetSlug)
+          : snapshots.trainerSheets.get(placement.sheetSlug)
+        if (!sheet) continue
+        const effective = resolveEffectiveCapabilities({
+          map: nextMap,
+          placement,
+          sheet,
+          sheets: { pokemon: snapshots.pokemonSheets, trainer: snapshots.trainerSheets },
+        }).instances.filter(instance => instance.effective)
+        const load = resolvePhysicalPowerLoad({
+          map: nextMap,
+          placementId: placement.id,
+          powerByCapabilityInstanceId: physicalPowerSourceValues(effective),
+        })
+        if (load?.loadClass !== 'staggering' || load.lastCheckRound === round) continue
+        const skillValue = placement.sheetKind === 'pokemon'
+          ? resolveSkills(sheet as CharacterSheet).find(skill => skill.key === 'athletics')?.value
+          : resolveTrainerSkills(sheet as TrainerSheet).find(skill => skill.key === 'athletics')?.dice
+        const athletics = parseSkillDiceValue(skillValue)
+          ?? fail('operation-sheet-unavailable', `Physical Power Athletics for ${placement.id} is malformed.`)
+        const check = random.roll({
+          rollId: `physical-power-staggering:${round}:${placement.id}`,
+          parentEffectId: `capability.power.staggering:${placement.id}`,
+          reason: `Power Staggering Weight Athletics DC ${load.athleticsCheckDc ?? 4}`,
+          formula: {
+            kind: 'dice',
+            count: Math.min(6, athletics.dice),
+            sides: 6,
+            modifier: athletics.modifier,
+          },
+        })
+        nextMap = applyPhysicalPowerLoadRoundCheck({
+          map: nextMap,
+          placementId: placement.id,
+          capabilityInstanceId: load.capabilityInstanceId,
+          round,
+          passed: check.modifiedResult >= (load.athleticsCheckDc ?? 4),
+        })
+      }
+    }
+  }
   currentEncounterState = reconcileLivingWeaponRoundMovementResources({
     map: nextMap,
     previous: previousEncounterState,

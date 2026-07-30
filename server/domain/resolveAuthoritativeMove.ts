@@ -2191,6 +2191,13 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
   const entry = moveEntryResult.ok
     ? moveEntryResult.entry
     : fail('not-found', 'move-absent', 'Move entry resolution failed.')
+  if (context.actor.token.physicalPowerLoad?.standardActionsAllowed === false) {
+    fail(
+      'unauthorized-state',
+      'move-condition-blocked',
+      'Staggering Weight prevents the actor from taking the Standard Action required to use a Move.',
+    )
+  }
   const priorityOrInterrupt = /\b(?:Priority|Interrupt)\b/i.test(entry.script.range)
     || entry.script.keywords.some(keyword => /\b(?:Priority|Interrupt)\b/i.test(keyword))
   const lightCondition = capabilityLightConditionForPlacement({

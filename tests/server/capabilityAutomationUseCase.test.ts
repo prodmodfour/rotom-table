@@ -166,6 +166,87 @@ describe('Capability authoritative execution use case', () => {
     expect((actorAfterFirst.sheet as unknown as CharacterSheet).capabilityUsage?.entries).toContainEqual(expect.objectContaining({ period: 'daily' }))
   })
 
+  it('atomically spends actions, attaches exact Power objects, replays, and releases the load', () => {
+    const database = openRotomDatabase({ path: ':memory:' })
+    databases.push(database)
+    const mapRepository = createSqliteMapRepository<TabletopMap>(database)
+    const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const lifter: CharacterSheet = {
+      slug: 'lifter', nickname: 'Lifter', species: 'Machop', level: 20, revision: 2,
+      skills: { athletics: '3d6' }, capabilities: { power: 4 },
+    }
+    const encounter = createEmptyEncounterState()
+    const powerMap: TabletopMap = {
+      ...map(),
+      placements: [{ id: 'actor', sheetKind: 'pokemon', sheetSlug: lifter.slug, position: { x: 1, y: 1, z: 1 } }],
+      initiative: { activeId: 'actor', round: 1, manualOrderIds: ['actor'] },
+      encounterState: {
+        ...encounter,
+        history: {
+          ...encounter.history,
+          currentRound: 1,
+          currentTurn: { round: 1, turn: 1, placementId: 'actor' },
+        },
+        turnResources: {
+          actor: createEncounterTurnResourceLedger({ placementId: 'actor', round: 1, turn: 1 }),
+        },
+      },
+      metadata: { capabilityObjects: [{
+        id: 'crate', name: 'Crate', pounds: 45, position: { x: 2, y: 1, z: 1 },
+      }] },
+    }
+    mapRepository.saveSetupMap(powerMap)
+    sheetRepository.saveSetupSheet('pokemon', lifter.slug, lifter as unknown as Record<string, unknown>)
+    const dependencies = {
+      database, mapRepository, sheetRepository, now: () => 1_000,
+      publishPersistedRealtimeEvent: () => {},
+    }
+    const liftOffer = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map: powerMap, mapRevision: 5,
+      pokemonSheets: [lifter], trainerSheets: [], now: 1_000,
+    }).placements[0]!.offers.find(candidate => candidate.actionId === 'lift-load')!
+    const liftCommand = {
+      schemaVersion: 1, operationId: 'power-lift-operation', mapSlug: 'arena', baseRevision: 5,
+      offerId: liftOffer.offerId, actorPlacementId: 'actor', capabilityInstanceId: liftOffer.capabilityInstanceId,
+      canonicalId: 'Power', actionId: 'lift-load',
+      selections: {
+        targetPlacementIds: [], cells: [], optionId: 'objects:crate', recipientTrainerSlug: null,
+        canonicalItemId: null, description: null, gmConfirmed: false,
+      },
+    }
+    const lifted = executeCapabilityActionUseCase({ role: 'gm', command: liftCommand }, dependencies)
+    const persistedLift = mapRepository.getBySlug('arena')!
+    expect(lifted).toMatchObject({ outcome: 'applied', reasonCode: 'capability.power.heavy-load-attached', mapRevision: 6 })
+    expect(persistedLift.encounterState?.turnResources.actor?.actions.standard.spent).toBe(1)
+    expect(persistedLift.metadata?.capabilityObjects).toContainEqual(expect.objectContaining({
+      id: 'crate', attachmentKind: 'physical-power-load', attachedToPlacementId: 'actor',
+      attachedCapabilityInstanceId: liftOffer.capabilityInstanceId, position: { x: 1, y: 1, z: 1 },
+    }))
+    expect(executeCapabilityActionUseCase({ role: 'gm', command: liftCommand }, dependencies)).toEqual(lifted)
+    expect(mapRepository.getBySlug('arena')?.revision).toBe(6)
+
+    const releaseOffer = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map: persistedLift, mapRevision: 6,
+      pokemonSheets: [lifter], trainerSheets: [], now: 1_000,
+    }).placements[0]!.offers.find(candidate => candidate.actionId === 'release-load')!
+    const released = executeCapabilityActionUseCase({
+      role: 'gm',
+      command: {
+        ...liftCommand,
+        operationId: 'power-release-operation', baseRevision: 6,
+        offerId: releaseOffer.offerId, actionId: 'release-load',
+        selections: { ...liftCommand.selections, optionId: null },
+      },
+    }, dependencies)
+    const persistedRelease = mapRepository.getBySlug('arena')!
+    expect(released).toMatchObject({ outcome: 'applied', reasonCode: 'capability.power.load-released', mapRevision: 7 })
+    expect(persistedRelease.encounterState?.turnResources.actor?.actions.shift.spent).toBe(1)
+    expect((persistedRelease.metadata?.capabilityObjects?.[0] as Record<string, unknown>).attachmentKind).toBeUndefined()
+    expect(persistedRelease.metadata?.capabilityObjects?.[0]).toMatchObject({
+      id: 'crate', position: { x: 1, y: 1, z: 1 },
+    })
+  })
+
   it('persists and resumes separately timed Alluring checks despite shared daily usage', () => {
     const database = openRotomDatabase({ path: ':memory:' })
     databases.push(database)

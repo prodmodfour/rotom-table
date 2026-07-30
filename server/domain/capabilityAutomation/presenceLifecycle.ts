@@ -1,4 +1,5 @@
 import type { TabletopMap } from '~/types/map'
+import { clearPhysicalPowerLoadsForPlacements } from './physicalPower'
 
 /**
  * Capabilities that canonically remove a participant from separate play keep
@@ -108,14 +109,15 @@ export const removeCapabilityPresenceGroup = <TMap extends TabletopMap>(input: {
       manualOrderIds: input.map.initiative.manualOrderIds.filter(id => !removedPlacementIds.has(id)),
     } : {}),
   } : undefined
+  const withoutPresence = {
+    ...input.map,
+    placements: input.map.placements.filter(placement => !removedPlacementIds.has(placement.id)),
+    metadata,
+    ...(encounterState === undefined ? {} : { encounterState }),
+    ...(initiative === undefined ? {} : { initiative }),
+  } as TMap
   return {
     removedPlacementIds,
-    map: {
-      ...input.map,
-      placements: input.map.placements.filter(placement => !removedPlacementIds.has(placement.id)),
-      metadata,
-      ...(encounterState === undefined ? {} : { encounterState }),
-      ...(initiative === undefined ? {} : { initiative }),
-    } as TMap,
+    map: clearPhysicalPowerLoadsForPlacements(withoutPresence, removedPlacementIds) as TMap,
   }
 }

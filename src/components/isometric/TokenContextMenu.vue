@@ -102,6 +102,7 @@ const moveCanBeUsed = (move: TokenMoveMenuOption): boolean =>
   && move.hasAutomationScript
   && !move.disabledByMoveList
   && !move.conditionUseBlock
+  && !move.disabledByPhysicalLoad
   && !move.disabledByUsage
 
 const moveAutomationBadgeLabel = (move: TokenMoveMenuOption): string =>
@@ -120,6 +121,7 @@ const moveAvailabilityTitle = (move: TokenMoveMenuOption): string | undefined =>
       : `${move.name} is outside the active encounter move restriction.`
   }
   if (move.conditionUseBlock) return move.conditionUseBlock.reason
+  if (move.physicalLoadUseBlock) return move.physicalLoadUseBlock
   if (move.disabledByUsage && move.usage) return move.usage.title
   if (!move.hasAutomationScript) return `${move.name} has no available reviewed automation runtime.`
   if (move.automation.baseStatus === 'assisted') {
@@ -556,6 +558,7 @@ watch(orders, (nextOrders) => {
                   {{ move.moveList.blockReason === 'move-list-disabled' ? 'Disabled' : 'Restricted' }}
                 </span>
                 <span v-if="move.conditionUseBlock" class="action-submenu__badge action-submenu__badge--disabled">{{ move.conditionUseBlock.label }}</span>
+                <span v-if="move.disabledByPhysicalLoad" class="action-submenu__badge action-submenu__badge--disabled">Staggering Weight</span>
               </span>
               <span
                 v-if="move.automation.baseStatus !== 'complete' && move.automation.details.length"

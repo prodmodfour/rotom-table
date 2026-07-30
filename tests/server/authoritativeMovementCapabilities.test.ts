@@ -235,6 +235,108 @@ describe('authoritative movement capabilities', () => {
       .toEqual({ x: 1, y: 0, z: 0 })
   })
 
+  it('applies Heavy and Staggering Power movement limits and moves exact attached objects', () => {
+    const sheet = pokemonSheet({ overland: 6, power: 4 })
+    const capabilityInstanceId = 'capability:actor:Power:value-4'
+    const physicalObject = (pounds: number) => ({
+      id: 'crate', pounds, position: { x: 0, y: 0, z: 0 },
+      attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+      attachedCapabilityInstanceId: capabilityInstanceId, attachedToPlacementId: 'actor',
+      physicalLoadOperationId: 'power-load-operation', physicalLoadLastMovedRound: null,
+      physicalLoadLastCheckRound: pounds === 71 ? 1 : null,
+    })
+    const heavyMap = map({
+      dimensions: { x: 8, y: 4, z: 4 },
+      initiative: { activeId: 'actor', round: 1 },
+      metadata: { capabilityObjects: [physicalObject(45)] },
+    })
+    expect(resolve(heavyMap, sheet, { x: 5, y: 0, z: 0 })).toMatchObject({
+      ok: true, capabilityLimit: 5,
+    })
+    expect(resolve(heavyMap, sheet, { x: 6, y: 0, z: 0 })).toMatchObject({
+      ok: false, reasonCode: 'movement-cost-exceeds-limit', capabilityLimit: 5,
+    })
+
+    const staggeringMap = map({
+      initiative: { activeId: 'actor', round: 1 },
+      metadata: { capabilityObjects: [physicalObject(71)] },
+    })
+    const first = resolve(staggeringMap, sheet, { x: 1, y: 0, z: 0 })
+    expect(first).toMatchObject({ ok: true, capabilityLimit: 1 })
+    if (!first.ok) throw new Error(first.message)
+    const transition = applyAuthoritativeMovementMapTransition({
+      map: staggeringMap,
+      placementId: 'actor',
+      destination: first.destination,
+      distance: first.cost,
+      encounterState: createEmptyEncounterState(),
+      timestamp: 10,
+      userName: 'Actor',
+    })
+    expect(transition.nextMap.metadata?.capabilityObjects).toContainEqual(expect.objectContaining({
+      id: 'crate', position: { x: 1, y: 0, z: 0 }, physicalLoadLastMovedRound: 1,
+    }))
+  })
+
+  it('caps Teleporter and Pass movement at the active physical load limit', () => {
+    const sheet = pokemonSheet({ overland: 6, teleporter: 6, power: 4 })
+    const arena = map({
+      dimensions: { x: 10, y: 4, z: 4 },
+      initiative: { activeId: 'actor', round: 2 },
+      metadata: { capabilityObjects: [{
+        id: 'crate', pounds: 71, position: { x: 0, y: 0, z: 0 },
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: 'capability:actor:Power:value-4', attachedToPlacementId: 'actor',
+        physicalLoadOperationId: 'power-load-operation', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: 2,
+      }] },
+    })
+    expect(resolveMovement({
+      map: arena,
+      sheets: sheets(sheet),
+      placementId: 'actor',
+      mode: 'teleport',
+      destination: { x: 2, y: 0, z: 0 },
+      policy: { kind: 'standard', allowSamePosition: false, maximumCost: 6 },
+    })).toMatchObject({ ok: false, reasonCode: 'movement-cost-exceeds-limit', capabilityLimit: 1 })
+    expect(resolveMovement({
+      map: arena,
+      sheets: sheets(sheet),
+      placementId: 'actor',
+      mode: 'pass',
+      direction: 'east',
+      maximumDistance: 5,
+    })).toMatchObject({ ok: true, destination: { x: 1, y: 0, z: 0 }, capabilityLimit: 1 })
+  })
+
+  it('allows Drag Weight only one metre in the entire authoritative round', () => {
+    const sheet = pokemonSheet({ overland: 6, power: 4 })
+    const arena = map({
+      initiative: { activeId: 'actor', round: 3 },
+      metadata: { capabilityObjects: [{
+        id: 'sled', pounds: 279, position: { x: 0, y: 0, z: 0 },
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: 'capability:actor:Power:value-4', attachedToPlacementId: 'actor',
+        physicalLoadOperationId: 'power-load-operation', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: null,
+      }] },
+    })
+    const first = resolve(arena, sheet, { x: 1, y: 0, z: 0 })
+    expect(first).toMatchObject({ ok: true, capabilityLimit: 1 })
+    if (!first.ok) throw new Error(first.message)
+    const moved = applyAuthoritativeMovementMapTransition({
+      map: arena, placementId: 'actor', destination: first.destination,
+      distance: first.cost, encounterState: createEmptyEncounterState(), timestamp: 10, userName: 'Actor',
+    }).nextMap
+    expect(resolve(moved, sheet, { x: 2, y: 0, z: 0 })).toMatchObject({
+      ok: false, reasonCode: 'movement-cost-exceeds-limit', capabilityLimit: 0,
+    })
+    const nextRound = { ...moved, initiative: { activeId: 'actor', round: 4 } }
+    expect(resolve(nextRound, sheet, { x: 2, y: 0, z: 0 })).toMatchObject({
+      ok: true, capabilityLimit: 1,
+    })
+  })
+
   it('marks physical contact as a noticeable Illusion disruption without destroying source authority', () => {
     const encounter = createEmptyEncounterState()
     const arena = map({

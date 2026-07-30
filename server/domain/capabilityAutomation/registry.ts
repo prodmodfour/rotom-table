@@ -115,6 +115,7 @@ const LINK_ACTIONS = new Set([
   'disassemble-zygarde', 'ride-shadow', 'leave-shadow', 'shelter-baby',
 ])
 const MOVEMENT_ACTIONS = new Set(['keystone-warp', 'threaded-shift', 'teleport', 'jump', 'reposition-illusion'])
+const PHYSICAL_LOAD_ACTIONS = new Set(['lift-load', 'release-load'])
 const COMMUNICATION_ACTIONS = new Set(['communicate', 'project-thought'])
 const SKILL_ACTIONS = new Set(['read-aura', 'read-dream', 'read-mind', 'manipulate-object', 'telekinetic-maneuver', 'track-scent', 'distract-with-alluring'])
 const CAMPAIGN_TIME_ACTIONS = new Set([
@@ -142,6 +143,7 @@ const mechanicFor = (
   if (TOGGLE_ACTIONS.has(actionId)) return 'toggle-mode'
   if (LINK_ACTIONS.has(actionId)) return 'link-actors'
   if (MOVEMENT_ACTIONS.has(actionId)) return 'movement-request'
+  if (PHYSICAL_LOAD_ACTIONS.has(actionId)) return 'physical-load'
   if (COMMUNICATION_ACTIONS.has(actionId)) return 'communication'
   if (SKILL_ACTIONS.has(actionId)) return 'skill-challenge'
   if (ROLL_ACTIONS.has(actionId)) return 'resolve-roll'

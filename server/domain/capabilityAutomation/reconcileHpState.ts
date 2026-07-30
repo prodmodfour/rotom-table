@@ -23,6 +23,7 @@ import {
   expandSourceEffectiveAsOneFaintedPlacements,
   removeCrownedCapabilityModesForFaintedPlacements,
 } from './hpInvariants'
+import { clearPhysicalPowerLoadsForPlacements } from './physicalPower'
 
 export interface CapabilityHpStateSheet {
   readonly kind: SheetKind
@@ -331,6 +332,8 @@ export const reconcileCapabilityHpState = (
       { effectiveSoulless },
     ))
   }
+
+  nextMap = clearPhysicalPowerLoadsForPlacements(nextMap, fainted)
 
   const crownedTerminationPlacements = new Set(fainted)
   for (const placementId of related) {

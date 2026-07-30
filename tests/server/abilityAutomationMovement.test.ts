@@ -136,6 +136,31 @@ describe('authoritative ability movement and displacement planning', () => {
     expect(result.plan.changes.some(value => value.kind === 'map-metadata')).toBe(true)
   })
 
+  it('relocates attached objects and records Drag movement when Ability movement commits', () => {
+    const loadedMap = map([], placements)
+    loadedMap.initiative = { activeId: 'actor', round: 3 }
+    loadedMap.metadata = { capabilityObjects: [{
+      id: 'crate', pounds: 45, position: { x: 0, y: 0, z: 1 },
+      attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+      attachedCapabilityInstanceId: 'capability:actor:Power:value-4', attachedToPlacementId: 'actor',
+      physicalLoadOperationId: 'operation.load', physicalLoadLastMovedRound: null,
+      physicalLoadLastCheckRound: null,
+    }] }
+    const result = planAbilityMovement({
+      context: context({ map: loadedMap }),
+      command: {
+        operationId: 'operation.loaded-shift', kind: 'shift', placementId: 'actor',
+        destination: { x: 1, y: 0, z: 1 }, maximumCost: 2,
+      },
+    })
+    const metadata = result.plan.changes.find(change => change.kind === 'map-metadata')
+    expect(metadata?.kind === 'map-metadata' ? metadata.current : null).toMatchObject({
+      capabilityObjects: [{
+        id: 'crate', position: { x: 1, y: 0, z: 1 }, physicalLoadLastMovedRound: 3,
+      }],
+    })
+  })
+
   it('stops before committing when an exact pre-step lifecycle checkpoint opens', () => {
     const result = planAbilityMovement({
       context: context(),

@@ -194,6 +194,44 @@ afterEach(() => {
 })
 
 describe('Capability source-loss durability', () => {
+  it('detaches physical Power loads on exact source loss even without encounter runtime state', () => {
+    const powerActor: CharacterSheet = {
+      ...actorWithSources(), capabilities: { power: 4, other: [] },
+    }
+    const initial = baseMap({ encounterState: undefined })
+    const powerSheets = {
+      pokemon: new Map([[powerActor.slug, powerActor], [partnerSheet.slug, partnerSheet]]),
+      trainer: new Map(),
+    }
+    const powerInstance = resolveEffectiveCapabilities({
+      map: initial, placement: actorPlacement, sheet: powerActor, sheets: powerSheets,
+    }).instances.find(instance => instance.canonicalId === 'Power')!
+    const loaded = baseMap({
+      encounterState: undefined,
+      metadata: { capabilityObjects: [{
+        id: 'crate', pounds: 45, position: actorPlacement.position,
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: powerInstance.instanceId, attachedToPlacementId: actorPlacement.id,
+        physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: null,
+      }] },
+    })
+    const withoutPower: CharacterSheet = { ...powerActor, capabilities: { other: [] } }
+    const reconciled = reconcileCapabilityRuntimeSourceLoss({
+      map: loaded,
+      sheets: {
+        pokemon: new Map([[withoutPower.slug, withoutPower], [partnerSheet.slug, partnerSheet]]),
+        trainer: new Map(),
+      },
+    })
+    const object = reconciled.metadata?.capabilityObjects?.[0] as Record<string, unknown>
+    expect(reconciled.encounterState).toBeUndefined()
+    expect(object).toMatchObject({ id: 'crate', pounds: 45, position: actorPlacement.position })
+    expect(object.attachmentKind).toBeUndefined()
+    expect(object.attachedCapabilityInstanceId).toBeUndefined()
+    expect(object.physicalLoadOperationId).toBeUndefined()
+  })
+
   it('removes only missing exact source instances and preserves unrelated exact authority', () => {
     const map = baseMap()
     const { sheets, id } = sourceInstances(map)

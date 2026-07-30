@@ -5,6 +5,7 @@ import {
 } from '#shared/capabilityAutomation/catalog'
 import { CAPABILITY_AUTOMATION_MANIFEST } from '#shared/capabilityAutomation/manifest'
 import {
+  CAPABILITY_POWER_LIMITS,
   capabilityPowerLimits,
   resolveCapabilityJump,
   resolveCapabilityPowerLoad,
@@ -50,6 +51,16 @@ describe('canonical Capability automation catalog', () => {
     expect(resolveCapabilityPowerLoad(4, 279).loadClass).toBe('drag')
     expect(resolveCapabilityPowerLoad(4, 280).loadClass).toBe('too-heavy')
     expect(resolveCapabilityPowerLoad(4, 281).loadClass).toBe('too-heavy')
+    for (const limits of CAPABILITY_POWER_LIMITS) {
+      expect(resolveCapabilityPowerLoad(limits.power, limits.heavyMinimum - 1).loadClass).toBe('unburdened')
+      expect(resolveCapabilityPowerLoad(limits.power, limits.heavyMinimum).loadClass).toBe('heavy')
+      expect(resolveCapabilityPowerLoad(limits.power, limits.heavyMaximum).loadClass).toBe('heavy')
+      expect(resolveCapabilityPowerLoad(limits.power, limits.heavyMaximum + 1).loadClass).toBe('staggering')
+      expect(resolveCapabilityPowerLoad(limits.power, limits.staggeringMaximum).loadClass).toBe('staggering')
+      expect(resolveCapabilityPowerLoad(limits.power, limits.staggeringMaximum + 1).loadClass).toBe('drag')
+      expect(resolveCapabilityPowerLoad(limits.power, limits.dragMaximum - 1).loadClass).toBe('drag')
+      expect(resolveCapabilityPowerLoad(limits.power, limits.dragMaximum).loadClass).toBe('too-heavy')
+    }
     expect(resolveCapabilityJump({ long: 3, high: 1, kind: 'long', acrobaticsCheckTotal: 16 })).toBe(4)
     expect(resolveCapabilityJump({ long: 3, high: 1, kind: 'high', runningStart: true })).toBe(2)
   })

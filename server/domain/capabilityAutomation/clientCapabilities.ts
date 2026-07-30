@@ -14,7 +14,7 @@ import type { PlayerProfile } from '#shared/playerProfiles'
 import { encounterPresentationStableId } from '#shared/encounterPresentation'
 import pokedexData from '~~/data/reference/pokedex.json'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { PokedexRecord } from '~/types/pokemon'
+import type { PokedexRecord, SpawnedPokemon } from '~/types/pokemon'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet, TrainerInventory } from '~/types/trainerSheet'
 import {
@@ -45,6 +45,14 @@ import {
   teleporterRoundUseSpent,
 } from './teleporterRoundUse'
 import { zygardeAssemblyRecordForPlacement } from './zygardeAssembly'
+import {
+  physicalPowerMovementLimit,
+  physicalPowerObjectIsAdjacent,
+  physicalPowerSourceValues,
+  projectPhysicalPowerFootprint,
+  resolvePhysicalPowerLoad,
+} from './physicalPower'
+import { placementToSpawned } from '~/utils/placement'
 
 const pokedexBySpecies = new Map((pokedexData as readonly PokedexRecord[]).map(record => [
   record.species.trim().toLocaleLowerCase('en-US'), record,
@@ -69,19 +77,58 @@ export interface BuildCapabilityClientCapabilityBundleInput {
   readonly now?: number
 }
 
+const physicalPowerActorToken = (input: {
+  readonly map: TabletopMap
+  readonly placement: SheetPlacement
+  readonly pokemonBySlug: ReadonlyMap<string, CharacterSheet>
+  readonly trainerBySlug: ReadonlyMap<string, TrainerSheet>
+  readonly effectiveInstanceIds: ReadonlySet<string>
+  readonly now: number
+}): SpawnedPokemon | null => {
+  const token = placementToSpawned(input.placement, {
+    pokemon: new Map(input.pokemonBySlug), trainer: new Map(input.trainerBySlug),
+  }, input.map)
+  return token ? projectPhysicalPowerFootprint({
+    token,
+    map: input.map,
+    placementId: input.placement.id,
+    effectiveCapabilityInstanceIds: input.effectiveInstanceIds,
+    now: input.now,
+  }) : null
+}
+
+const capabilityObjectHasAttachment = (object: Readonly<Record<string, unknown>>): boolean => (
+  (object.attachedToPlacementId !== undefined && object.attachedToPlacementId !== null)
+  || (object.attachedCapabilityInstanceId !== undefined && object.attachedCapabilityInstanceId !== null)
+  || (object.attachedCapabilityCanonicalId !== undefined && object.attachedCapabilityCanonicalId !== null)
+  || (object.attachmentKind !== undefined && object.attachmentKind !== null)
+)
+
+const isExactOwnedMagneticAttachment = (
+  object: Readonly<Record<string, unknown>>,
+  placementId: string,
+  capabilityInstanceId: string,
+): boolean => object.attachedToPlacementId === placementId
+  && object.attachedCapabilityInstanceId === capabilityInstanceId
+  && object.attachedCapabilityCanonicalId === 'Magnetic'
+  && object.attachmentKind === 'magnetic'
+
 const capabilitySelectionOptions = (
   map: TabletopMap,
   actionId: string,
   placement: SheetPlacement,
   actorLinkedTrainers: readonly TrainerSheet[],
   contexts: ReadonlySet<string>,
+  actorToken: SpawnedPokemon | null,
+  capabilityInstanceId: string,
 ): CapabilityClientActionOffer['selectionOptions'] => {
   if (actionId === 'collect-juicer-output') {
     return Object.freeze(actorLinkedTrainers
       .map(trainer => Object.freeze({ kind: 'trainer' as const, value: trainer.slug, label: trainer.name || trainer.slug }))
       .sort((left, right) => left.label.localeCompare(right.label)))
   }
-  const source = actionId === 'manipulate-object' || actionId === 'manipulate-metal' || actionId === 'threaded-shift'
+  const source = actionId === 'manipulate-object' || actionId === 'manipulate-metal'
+    || actionId === 'threaded-shift' || actionId === 'lift-load'
     ? { key: 'capabilityObjects', kind: 'object' as const }
     : actionId === 'enter-machine' || actionId === 'exit-machine'
       ? { key: 'capabilityDevices', kind: 'device' as const }
@@ -94,6 +141,27 @@ const capabilitySelectionOptions = (
   return Object.freeze(values.flatMap((raw) => {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return []
     const resource = raw as Record<string, unknown>
+    const hasAttachment = capabilityObjectHasAttachment(resource)
+    const exactOwnedMagneticAttachment = actionId === 'manipulate-metal'
+      && isExactOwnedMagneticAttachment(resource, placement.id, capabilityInstanceId)
+    if (source.kind === 'object' && actionId !== 'lift-load'
+      && hasAttachment && !exactOwnedMagneticAttachment) return []
+    if (source.kind === 'object' && actionId === 'lift-load') {
+      const position = resource.position as Record<string, unknown> | null
+      if (!position || !Number.isSafeInteger(position.x) || !Number.isSafeInteger(position.y)
+        || !Number.isSafeInteger(position.z)
+        || (position.x as number) < 0 || (position.y as number) < 0 || (position.z as number) < 0
+        || (position.x as number) >= map.dimensions.x
+        || (position.y as number) >= map.dimensions.y
+        || (position.z as number) >= map.dimensions.z
+        || typeof resource.pounds !== 'number' || !Number.isFinite(resource.pounds)
+        || resource.pounds <= 0 || resource.pounds > 1_000_000_000
+        || hasAttachment
+        || !actorToken
+        || !physicalPowerObjectIsAdjacent(actorToken, {
+          x: position.x as number, y: position.y as number, z: position.z as number,
+        })) return []
+    }
     if (source.kind === 'keystone') {
       const ownerTrainerSlug = typeof resource.ownerTrainerSlug === 'string' ? resource.ownerTrainerSlug : null
       if (ownerTrainerSlug !== null ? !linkedTrainerSlugs.has(ownerTrainerSlug)
@@ -103,10 +171,12 @@ const capabilitySelectionOptions = (
     const descriptor = typeof resource.name === 'string' && resource.name.trim()
       ? resource.name.trim() : typeof resource.material === 'string' && resource.material.trim()
         ? resource.material.trim() : source.kind[0]!.toUpperCase() + source.kind.slice(1)
+    const weight = source.kind === 'object' && actionId === 'lift-load'
+      ? ` — ${String(resource.pounds)} lb.` : ''
     return [Object.freeze({
       kind: source.kind,
       value: resource.id,
-      label: `${descriptor.slice(0, 80)} (${resource.id})`.slice(0, 120),
+      label: `${descriptor.slice(0, 80)} (${resource.id})${weight}`.slice(0, 120),
     })]
   }).slice(0, 64))
 }
@@ -186,6 +256,7 @@ const explicitContext = (contexts: ReadonlySet<string>, context: string): boolea
 const contextSatisfied = (input: {
   readonly context: string
   readonly canonicalId: string
+  readonly capabilityInstanceId: string
   readonly map: TabletopMap
   readonly placement: SheetPlacement
   readonly sheet: CharacterSheet | TrainerSheet
@@ -195,6 +266,7 @@ const contextSatisfied = (input: {
   readonly contexts: ReadonlySet<string>
   readonly now: number
   readonly effectiveInstanceIds: ReadonlySet<string>
+  readonly physicalPowerLoad: ReturnType<typeof resolvePhysicalPowerLoad>
 }): boolean => {
   const { context, map, placement } = input
   const activeScene = Boolean(map.activeScene)
@@ -279,9 +351,27 @@ const contextSatisfied = (input: {
           && typeof examination.examinerPlacementId === 'string'
           && otherPlacements.some(candidate => candidate.id === examination.examinerPlacementId)
       })
-    case 'not-glowing': return !mode(['glowing'])
-    case 'glowing': return mode(['glowing'])
-    case 'glowing-nearby-wilds': return mode(['glowing']) && contextual
+    case 'not-glowing': return !(map.encounterState?.capabilityRuntime?.modes ?? []).some(entry => (
+      entry.actorPlacementId === placement.id
+      && entry.mode === 'glowing'
+      && entry.capabilityInstanceId === input.capabilityInstanceId
+      && (entry.expiresAt === null || entry.expiresAt > input.now)
+    ))
+    case 'glowing': return (map.encounterState?.capabilityRuntime?.modes ?? []).some(entry => (
+      entry.actorPlacementId === placement.id
+      && entry.mode === 'glowing'
+      && entry.capabilityInstanceId === input.capabilityInstanceId
+      && input.effectiveInstanceIds.has(entry.capabilityInstanceId)
+      && (entry.expiresAt === null || entry.expiresAt > input.now)
+    ))
+    case 'glowing-nearby-wilds': return contextual
+      && (map.encounterState?.capabilityRuntime?.modes ?? []).some(entry => (
+        entry.actorPlacementId === placement.id
+        && entry.mode === 'glowing'
+        && entry.capabilityInstanceId === input.capabilityInstanceId
+        && input.effectiveInstanceIds.has(entry.capabilityInstanceId)
+        && (entry.expiresAt === null || entry.expiresAt > input.now)
+      ))
     case 'owned-illusion': return mode(['illusion'])
     case 'moving-illusion': return (map.encounterState?.capabilityRuntime?.modes ?? []).some(entry => (
       entry.actorPlacementId === placement.id
@@ -354,8 +444,12 @@ const contextSatisfied = (input: {
         })
       ))
     }
-    case 'jump-destination-cell': return true
+    case 'jump-destination-cell': return physicalPowerMovementLimit(
+      input.physicalPowerLoad,
+      map.initiative?.round,
+    ) !== 0
     case 'teleport-destination-cell': {
+      if (physicalPowerMovementLimit(input.physicalPowerLoad, map.initiative?.round) === 0) return false
       try {
         const identity = teleporterRoundIdentity(map)
         return identity === null || !teleporterRoundUseSpent({
@@ -379,8 +473,10 @@ const contextSatisfied = (input: {
       ) <= range) || otherPlacements.some(candidate => placementDistance(placement, candidate) <= range)
       || (Array.isArray(map.metadata?.capabilityObjects) && map.metadata.capabilityObjects.some(raw => {
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
-        const position = (raw as Record<string, unknown>).position as Record<string, unknown> | undefined
-        return Number.isSafeInteger(position?.x) && Number.isSafeInteger(position?.y) && Number.isSafeInteger(position?.z)
+        const object = raw as Record<string, unknown>
+        const position = object.position as Record<string, unknown> | undefined
+        return !capabilityObjectHasAttachment(object)
+          && Number.isSafeInteger(position?.x) && Number.isSafeInteger(position?.y) && Number.isSafeInteger(position?.z)
           && Math.max(
             Math.abs((position!.x as number) - placement.position.x),
             Math.abs((position!.y as number) - placement.position.y),
@@ -410,11 +506,61 @@ const contextSatisfied = (input: {
     }
     case 'visible-cell':
     case 'valid-shape-description': return activeScene || contextual
+    case 'adjacent-power-object': {
+      if (!Array.isArray(map.metadata?.capabilityObjects)) return false
+      const ownedSourceIds = new Set(map.metadata.capabilityObjects.flatMap((raw): readonly string[] => {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return []
+        const object = raw as Record<string, unknown>
+        return object.attachmentKind === 'physical-power-load'
+          && object.attachedCapabilityCanonicalId === 'Power'
+          && object.attachedToPlacementId === placement.id
+          && typeof object.attachedCapabilityInstanceId === 'string'
+          ? [object.attachedCapabilityInstanceId] : []
+      }))
+      if (ownedSourceIds.size > 0 && !ownedSourceIds.has(input.capabilityInstanceId)) return false
+      const actorToken = physicalPowerActorToken({
+        map,
+        placement,
+        pokemonBySlug: input.pokemonBySlug,
+        trainerBySlug: input.trainerBySlug,
+        effectiveInstanceIds: input.effectiveInstanceIds,
+        now: input.now,
+      })
+      return Boolean(actorToken) && map.metadata.capabilityObjects.some(raw => {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
+        const object = raw as Record<string, unknown>
+        const position = object.position as Record<string, unknown> | null
+        return position !== null && Number.isSafeInteger(position?.x)
+          && Number.isSafeInteger(position?.y) && Number.isSafeInteger(position?.z)
+          && (position!.x as number) >= 0 && (position!.y as number) >= 0 && (position!.z as number) >= 0
+          && (position!.x as number) < map.dimensions.x
+          && (position!.y as number) < map.dimensions.y
+          && (position!.z as number) < map.dimensions.z
+          && typeof object.pounds === 'number' && Number.isFinite(object.pounds)
+          && object.pounds > 0 && object.pounds <= 1_000_000_000
+          && !capabilityObjectHasAttachment(object)
+          && physicalPowerObjectIsAdjacent(actorToken!, {
+            x: position!.x as number, y: position!.y as number, z: position!.z as number,
+          })
+      })
+    }
+    case 'physical-load-active': return Array.isArray(map.metadata?.capabilityObjects)
+      && map.metadata.capabilityObjects.some(raw => {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
+        const object = raw as Record<string, unknown>
+        return object.attachmentKind === 'physical-power-load'
+          && object.attachedCapabilityCanonicalId === 'Power'
+          && object.attachedToPlacementId === placement.id
+          && object.attachedCapabilityInstanceId === input.capabilityInstanceId
+          && input.effectiveInstanceIds.has(input.capabilityInstanceId)
+      })
     case 'object-in-8m': return Array.isArray(map.metadata?.capabilityObjects)
       && map.metadata.capabilityObjects.some(raw => {
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
-        const position = (raw as Record<string, unknown>).position as Record<string, unknown> | undefined
-        return Number.isSafeInteger(position?.x) && Number.isSafeInteger(position?.y) && Number.isSafeInteger(position?.z)
+        const object = raw as Record<string, unknown>
+        const position = object.position as Record<string, unknown> | undefined
+        return !capabilityObjectHasAttachment(object)
+          && Number.isSafeInteger(position?.x) && Number.isSafeInteger(position?.y) && Number.isSafeInteger(position?.z)
           && Math.max(
             Math.abs((position!.x as number) - placement.position.x),
             Math.abs((position!.y as number) - placement.position.y),
@@ -424,8 +570,11 @@ const contextSatisfied = (input: {
     case 'iron-or-steel-object': return contextual && Array.isArray(map.metadata?.capabilityObjects)
       && map.metadata.capabilityObjects.some(raw => {
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
-        const material = (raw as Record<string, unknown>).material
-        return typeof material === 'string' && /^(?:iron|steel)$/i.test(material.trim())
+        const object = raw as Record<string, unknown>
+        const material = object.material
+        const available = !capabilityObjectHasAttachment(object)
+          || isExactOwnedMagneticAttachment(object, placement.id, input.capabilityInstanceId)
+        return available && typeof material === 'string' && /^(?:iron|steel)$/i.test(material.trim())
       })
     case 'eligible-unown': return contextual && otherPlacements.some(candidate => (
       candidate.sheetKind === 'pokemon'
@@ -755,7 +904,13 @@ export const buildCapabilityClientCapabilityBundle = (
       sheets: { pokemon: pokemonBySlug, trainer: trainerBySlug },
     })
     const actorTrainers = linkedTrainers(placement, sheet, input.trainerSheets)
-    const effectiveInstanceIds = new Set(effective.instances.filter(instance => instance.effective).map(instance => instance.instanceId))
+    const effectiveInstances = effective.instances.filter(instance => instance.effective)
+    const effectiveInstanceIds = new Set(effectiveInstances.map(instance => instance.instanceId))
+    const physicalPowerLoad = resolvePhysicalPowerLoad({
+      map: input.map,
+      placementId: placement.id,
+      powerByCapabilityInstanceId: physicalPowerSourceValues(effectiveInstances),
+    })
     effectiveInstanceIdsByPlacement.set(placement.id, effectiveInstanceIds)
     const facts: CapabilityClientFact[] = effective.instances.map(instance => {
       const runtime = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require(instance.canonicalId)
@@ -805,6 +960,7 @@ export const buildCapabilityClientCapabilityBundle = (
         if (!contextSatisfied({
           context,
           canonicalId: instance.canonicalId,
+          capabilityInstanceId: instance.instanceId,
           map: input.map,
           placement,
           sheet,
@@ -814,9 +970,13 @@ export const buildCapabilityClientCapabilityBundle = (
           contexts,
           now,
           effectiveInstanceIds,
+          physicalPowerLoad,
         })) continue
         const reasons: string[] = []
         if (!capabilityActorCanTakeAction(sheet, action.economy)) reasons.push('actor.fainted')
+        if (action.economy === 'standard' && physicalPowerLoad?.standardActionsAllowed === false) {
+          reasons.push('capability.physical-power-standard-action-blocked')
+        }
         const activeModeEntries = (input.map.encounterState?.capabilityRuntime?.modes ?? [])
           .filter(entry => entry.actorPlacementId === placement.id
             && effectiveInstanceIds.has(entry.capabilityInstanceId)
@@ -873,7 +1033,22 @@ export const buildCapabilityClientCapabilityBundle = (
           requiresGmConfirmation: action.requiresGmConfirmation,
           available: reasons.length === 0,
           unavailableReasonCodes: Object.freeze(reasons),
-          selectionOptions: capabilitySelectionOptions(input.map, action.actionId, placement, actorTrainers, contexts),
+          selectionOptions: capabilitySelectionOptions(
+            input.map,
+            action.actionId,
+            placement,
+            actorTrainers,
+            contexts,
+            action.actionId === 'lift-load' ? physicalPowerActorToken({
+              map: input.map,
+              placement,
+              pokemonBySlug,
+              trainerBySlug,
+              effectiveInstanceIds,
+              now,
+            }) : null,
+            instance.instanceId,
+          ),
         }))
       }
     }

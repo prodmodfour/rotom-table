@@ -30,10 +30,12 @@ const commandFor = (input: {
   map: TabletopMap
   actor: SheetPlacement
   selections?: Record<string, unknown>
+  capabilityInstanceId?: string
 }) => parseExecuteCapabilityActionCommand({
   schemaVersion: 1, operationId: `operation-${input.actionId}`, mapSlug: input.map.slug,
   baseRevision: input.map.revision ?? 0, offerId: 'offer', actorPlacementId: input.actor.id,
-  capabilityInstanceId: `capability:${input.actor.id}:${input.canonicalId.replaceAll(' ', '_')}:base`,
+  capabilityInstanceId: input.capabilityInstanceId
+    ?? `capability:${input.actor.id}:${input.canonicalId.replaceAll(' ', '_')}:base`,
   canonicalId: input.canonicalId, actionId: input.actionId,
   selections: selections(input.selections),
 })
@@ -47,6 +49,7 @@ const run = (input: {
   trainers?: readonly TrainerSheet[]
   linkedTrainerSlugs?: readonly string[]
   selections?: Record<string, unknown>
+  capabilityInstanceId?: string
   rollDie?: (rollId: string, sides: number, count?: number) => CapabilityServerRoll
 }) => {
   const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require(input.canonicalId).spec.actions
@@ -70,6 +73,7 @@ const validateAction = (input: {
   sheets: readonly CharacterSheet[]
   trainers?: readonly TrainerSheet[]
   selections?: Record<string, unknown>
+  capabilityInstanceId?: string
 }): void => {
   const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require(input.canonicalId).spec.actions
     .find(candidate => candidate.actionId === input.actionId)!
@@ -108,6 +112,181 @@ describe('advanced Capability mechanics', () => {
       id: 'crate', position: { x: 4, y: 1, z: 1 }, lastCapabilityOperationId: 'operation-manipulate-object',
     }))
     expect(result.map.metadata?.capabilityPsychicResidue).toContainEqual(expect.objectContaining({ kind: 'telekinetic-drag' }))
+  })
+
+  it('rejects independent Telekinetic and Threaded movement of attached physical load objects', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 },
+    }
+    const sheet: CharacterSheet = {
+      slug: 'actor', nickname: 'Manipulator', species: 'Spinarak', level: 20,
+      skills: { focus: '3d6' }, capabilities: { other: ['Telekinetic', 'Threaded'] },
+    }
+    const map = {
+      ...baseMap([actor]),
+      metadata: { capabilityObjects: [{
+        id: 'crate', pounds: 45, position: actor.position,
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: 'capability:actor:Power:value-4', attachedToPlacementId: actor.id,
+        physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: null,
+      }] },
+    } as TabletopMap
+    expect(() => validateAction({
+      canonicalId: 'Telekinetic', actionId: 'manipulate-object', actor, map, sheets: [sheet],
+      selections: { optionId: 'objects:crate', cells: [{ x: 2, y: 0, z: 1 }] },
+    })).toThrow(/cannot move an object attached/i)
+    expect(() => validateAction({
+      canonicalId: 'Threaded', actionId: 'threaded-shift', actor, map, sheets: [sheet],
+      selections: { optionId: 'object', canonicalItemId: 'crate', cells: [actor.position] },
+    })).toThrow(/cannot independently move an object attached/i)
+  })
+
+  it('attaches and releases exact Power loads while rejecting the printed Drag Weight boundary', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 1, z: 1 },
+    }
+    const sheet: CharacterSheet = {
+      slug: 'actor', nickname: 'Lifter', species: 'Machop', level: 20,
+      skills: { athletics: '3d6' }, capabilities: { power: 4 },
+    }
+    const capabilityInstanceId = 'capability:actor:Power:value-4'
+    const map = {
+      ...baseMap([actor]),
+      initiative: { activeId: 'actor', round: 2, manualOrderIds: ['actor'] },
+      metadata: {
+        capabilityObjects: [
+          { id: 'crate', position: { x: 2, y: 1, z: 1 }, pounds: 45, material: 'wood' },
+          { id: 'anvil', position: { x: 1, y: 1, z: 2 }, pounds: 280, material: 'iron' },
+        ],
+      },
+    } as TabletopMap
+    validateAction({
+      canonicalId: 'Power', actionId: 'lift-load', actor, map, sheets: [sheet],
+      capabilityInstanceId, selections: { optionId: 'objects:crate' },
+    })
+    const lifted = run({
+      canonicalId: 'Power', actionId: 'lift-load', actor, map, sheets: [sheet],
+      capabilityInstanceId, selections: { optionId: 'objects:crate' },
+    })
+    expect(lifted.reasonCode).toBe('capability.power.heavy-load-attached')
+    expect(lifted.map.metadata?.capabilityObjects).toContainEqual(expect.objectContaining({
+      id: 'crate',
+      attachmentKind: 'physical-power-load',
+      attachedToPlacementId: 'actor',
+      attachedCapabilityInstanceId: capabilityInstanceId,
+      position: actor.position,
+    }))
+
+    expect(() => validateAction({
+      canonicalId: 'Power', actionId: 'lift-load', actor, map, sheets: [sheet],
+      capabilityInstanceId, selections: { optionId: 'objects:anvil' },
+    })).toThrow(/strictly lighter than the printed Drag Weight limit/i)
+
+    validateAction({
+      canonicalId: 'Power', actionId: 'release-load', actor, map: lifted.map, sheets: [sheet],
+      capabilityInstanceId,
+    })
+    const released = run({
+      canonicalId: 'Power', actionId: 'release-load', actor, map: lifted.map, sheets: [sheet],
+      capabilityInstanceId,
+    })
+    expect(released.reasonCode).toBe('capability.power.load-released')
+    expect(released.map.metadata?.capabilityObjects).toContainEqual(expect.objectContaining({ id: 'crate' }))
+    expect((released.map.metadata?.capabilityObjects?.[0] as Record<string, unknown>).attachmentKind).toBeUndefined()
+  })
+
+  it('uses the current exact-source physical form footprint for Power adjacency', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 },
+    }
+    const sheet: CharacterSheet = {
+      slug: 'actor', nickname: 'Inflated Lifter', species: 'Machop', level: 20,
+      capabilities: { power: 4, other: ['Inflatable'] },
+    }
+    const encounter = createEmptyEncounterState()
+    const map = {
+      ...baseMap([actor]),
+      initiative: { activeId: 'actor', round: 1, manualOrderIds: ['actor'] },
+      metadata: { capabilityObjects: [{ id: 'crate', position: { x: 3, y: 0, z: 1 }, pounds: 45 }] },
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'inflated-mode', actorPlacementId: actor.id,
+            capabilityInstanceId: 'capability:actor:Inflatable:base', canonicalId: 'Inflatable',
+            mode: 'inflated', description: null, configurationId: null,
+            activatedAt: 100, expiresAt: null, sourceOperationId: 'inflate-operation',
+          }],
+        },
+      },
+    } as TabletopMap
+    expect(() => validateAction({
+      canonicalId: 'Power', actionId: 'lift-load', actor, map, sheets: [sheet],
+      capabilityInstanceId: 'capability:actor:Power:value-4',
+      selections: { optionId: 'objects:crate' },
+    })).not.toThrow()
+  })
+
+  it('rolls Athletics before attaching Staggering Weight and leaves the load behind on failure', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 1, z: 1 },
+    }
+    const sheet: CharacterSheet = {
+      slug: 'actor', nickname: 'Lifter', species: 'Machop', level: 20,
+      skills: { athletics: '1d6' }, capabilities: { power: 4 },
+    }
+    const map = {
+      ...baseMap([actor]),
+      initiative: { activeId: 'actor', round: 1, manualOrderIds: ['actor'] },
+      metadata: { capabilityObjects: [{ id: 'crate', position: { x: 2, y: 1, z: 1 }, pounds: 71 }] },
+    } as TabletopMap
+    const failed = run({
+      canonicalId: 'Power', actionId: 'lift-load', actor, map, sheets: [sheet],
+      capabilityInstanceId: 'capability:actor:Power:value-4',
+      selections: { optionId: 'objects:crate' },
+      rollDie: (rollId, sides, count = 1) => ({
+        rollId, expression: `${count}d${sides}`, dice: Array.from({ length: count }, () => 1),
+        modifier: 0, total: count,
+      }),
+    })
+    expect(failed.reasonCode).toBe('capability.power.staggering-check-failed')
+    expect(failed.rolls[0]?.total).toBe(1)
+    expect(failed.map.metadata?.capabilityObjects).toContainEqual(expect.objectContaining({
+      id: 'crate', position: { x: 2, y: 1, z: 1 },
+    }))
+    expect((failed.map.metadata?.capabilityObjects?.[0] as Record<string, unknown>).attachmentKind).toBeUndefined()
+  })
+
+  it('limits self-pulling Threaded movement by the actor’s exact physical Power load', () => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 },
+    }
+    const threader: CharacterSheet = {
+      slug: 'actor', nickname: 'Threader', species: 'Spinarak', level: 20,
+      capabilities: { power: 4, other: ['Threaded'] },
+    }
+    const map = {
+      ...baseMap([actor]),
+      initiative: { activeId: 'actor', round: 2, manualOrderIds: ['actor'] },
+      metadata: { capabilityObjects: [{
+        id: 'crate', pounds: 71, position: actor.position,
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: 'capability:actor:Power:value-4', attachedToPlacementId: 'actor',
+        physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: 2,
+      }] },
+    } as TabletopMap
+    const result = run({
+      canonicalId: 'Threaded', actionId: 'threaded-shift', actor, map, sheets: [threader],
+      selections: { optionId: 'anchor', cells: [{ x: 5, y: 0, z: 1 }] },
+    })
+    expect(result.reasonCode).toBe('capability.threaded.shift-applied')
+    expect(result.map.placements[0]?.position).toEqual({ x: 2, y: 0, z: 1 })
+    expect(result.map.metadata?.capabilityObjects).toContainEqual(expect.objectContaining({
+      id: 'crate', position: { x: 2, y: 0, z: 1 }, physicalLoadLastMovedRound: 2,
+    }))
   })
 
   it('resolves Telekinetic maneuver Accuracy before opposed Focus and drops disarmed items on the map', () => {
@@ -176,6 +355,44 @@ describe('advanced Capability mechanics', () => {
     })
     expect(threadedResult.reasonCode).toBe('capability.threaded.accuracy-missed')
     expect(threadedResult.rolls).toHaveLength(1)
+  })
+
+  it.each([
+    ['Telekinetic', 'telekinetic-maneuver', 'disarm'],
+    ['Threaded', 'threaded-shift', 'unwilling-target'],
+  ] as const)('applies Heavy Weight to %s Capability-authored Accuracy', (canonicalId, actionId, optionId) => {
+    const actor: SheetPlacement = {
+      id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 },
+    }
+    const target: SheetPlacement = {
+      id: 'target', sheetKind: 'pokemon', sheetSlug: 'target', position: { x: 2, y: 0, z: 1 },
+    }
+    const attacker: CharacterSheet = {
+      slug: 'actor', nickname: 'Attacker', species: canonicalId === 'Telekinetic' ? 'Abra' : 'Spinarak', level: 20,
+      skills: { focus: '4d6' }, capabilities: { power: 4, other: [canonicalId] },
+    }
+    const defender: CharacterSheet = {
+      slug: 'target', nickname: 'Target', species: 'Pichu', level: 5,
+      skills: { combat: '1d6', stealth: '1d6' }, items: { held: 'Potion' },
+    }
+    const arena = baseMap([actor, target])
+    const selections = { targetPlacementIds: ['target'], optionId }
+    const unloaded = run({ canonicalId, actionId, actor, map: arena, sheets: [attacker, defender], selections })
+    const loaded = run({
+      canonicalId, actionId, actor,
+      map: {
+        ...arena,
+        metadata: { capabilityObjects: [{
+          id: 'crate', pounds: 45, position: actor.position,
+          attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+          attachedCapabilityInstanceId: 'capability:actor:Power:value-4', attachedToPlacementId: 'actor',
+          physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+          physicalLoadLastCheckRound: null,
+        }] },
+      },
+      sheets: [attacker, defender], selections,
+    })
+    expect(loaded.rolls[0]?.modifier).toBe((unloaded.rolls[0]?.modifier ?? 0) - 2)
   })
 
   it.each([

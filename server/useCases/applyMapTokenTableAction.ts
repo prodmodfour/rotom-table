@@ -67,6 +67,11 @@ import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
+import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
+import {
+  physicalPowerSourceValues,
+  resolvePhysicalPowerLoad,
+} from '../domain/capabilityAutomation/physicalPower'
 
 export class MapTokenTableActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409 | 410> {}
 
@@ -501,6 +506,27 @@ const currentOrderTimeline = (map: TabletopMap): { activeId: string | null; roun
   }
 }
 
+const physicalPowerLoadForActionContext = (context: ResolvedActionContext) => {
+  const pokemonSheets = new Map<string, CharacterSheet>()
+  const trainerSheets = new Map<string, TrainerSheet>()
+  for (const stored of context.mapSheets.values()) {
+    if (stored.kind === 'pokemon') pokemonSheets.set(stored.slug, stored.sheet as unknown as CharacterSheet)
+    else trainerSheets.set(stored.slug, stored.sheet as unknown as TrainerSheet)
+  }
+  const sheet = context.actorSheet.sheet as unknown as CharacterSheet | TrainerSheet
+  const effective = resolveEffectiveCapabilities({
+    map: context.map,
+    placement: context.actorPlacement,
+    sheet,
+    sheets: { pokemon: pokemonSheets, trainer: trainerSheets },
+  }).instances.filter(instance => instance.effective)
+  return resolvePhysicalPowerLoad({
+    map: context.map,
+    placementId: context.actorPlacement.id,
+    powerByCapabilityInstanceId: physicalPowerSourceValues(effective),
+  })
+}
+
 const orderTargetLabel = (order: TokenOrderMenuOption): string | null => {
   const explicit = order.target?.trim()
   if (explicit) return explicit
@@ -556,6 +582,10 @@ const spendDisarmStandardAction = (
   }
 }
 
+const requiresStandardAction = (value: string | null | undefined): boolean => (
+  /\b(?:Standard|Full)(?:\s+Action)?\b/i.test(value ?? '')
+)
+
 const applyManeuverCommand = (
   command: LivePlayTableActionCommand,
   context: ResolvedActionContext,
@@ -573,6 +603,10 @@ const applyManeuverCommand = (
       404,
       `Maneuver ${payload.maneuverName} is not available to token ${payload.placementId}`,
     )
+  }
+  if (requiresStandardAction(maneuver.action)
+    && physicalPowerLoadForActionContext(context)?.standardActionsAllowed === false) {
+    rejectLivePlayCommand('invalid', 'Staggering Weight prevents the actor from taking this Standard Action.')
   }
   if (maneuver.name === 'Disengage' && !aa077HasAuthoritativeDisengageWindow({
     map: context.map,
@@ -599,6 +633,7 @@ const applyManeuverCommand = (
       if (sheet.kind === 'pokemon') pokemonSheets.set(sheet.slug, sheet.sheet as unknown as CharacterSheet)
       else trainerSheets.set(sheet.slug, sheet.sheet as unknown as TrainerSheet)
     }
+    for (const mapSheet of context.mapSheets.values()) addSheet(mapSheet)
     addSheet(context.actorSheet)
     addSheet(targetSheet)
     try {
@@ -765,6 +800,10 @@ const applyOrderCommand = (
         ? `Order ${payload.orderName} is not available to token ${payload.placementId}`
         : `Order ${payload.orderName} can only be used by trainer tokens`,
     )
+  }
+  if (requiresStandardAction(order.frequency)
+    && physicalPowerLoadForActionContext(context)?.standardActionsAllowed === false) {
+    rejectLivePlayCommand('invalid', 'Staggering Weight prevents the actor from taking this Standard Action.')
   }
   if (orderTargetLabel(order) !== null && !target) {
     throw new MapTokenTableActionUseCaseError(400, `Order ${order.name} requires a target token`)

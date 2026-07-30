@@ -71,6 +71,14 @@ import { reduceAbilityOwnedStateCommand } from '../abilityAutomation/ownedState'
 import type { AbilityAutomationRuntimeRegistry } from '../abilityAutomation/registry'
 import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { Aa060AnchoredMovementError, assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
+import {
+  capabilityGlowLightId,
+  relocateCapabilityGlowLights,
+} from '../capabilityAutomation/glow'
+import {
+  clearPhysicalPowerLoadsForPlacements,
+  relocateCapabilityAttachedObjects,
+} from '../capabilityAutomation/physicalPower'
 import { aa061AquaBulletStateIdsForMove, aa061BatteryStateIdsForMove } from '../abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa077LeafRushStateIdsForMove } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import { aa078StateIdsForMove } from '../abilityAutomation/mechanics/aa078StaticIntegration'
@@ -141,7 +149,9 @@ export const applyNativeCoreMapChanges = (
   map: TabletopMap,
   plan: MoveStateChangePlan,
 ): TabletopMap => {
-  const next = deepCloneJson(map)
+  let next = deepCloneJson(map)
+  const movedDestinations = new Map<string, SheetPlacement['position']>()
+  const removedPlacementIds = new Set<string>()
   for (const change of plan.changes) {
     if (change.kind === 'map-temporary-hit-points') {
       if (change.current === undefined) delete next.temporaryHitPoints
@@ -172,11 +182,18 @@ export const applyNativeCoreMapChanges = (
     }
     if (change.kind === 'placement-state') {
       const index = next.placements.findIndex(placement => placement.id === change.scope.placementId)
+      const previous = index >= 0 ? next.placements[index] : null
       if (change.current === null) {
         if (index >= 0) next.placements.splice(index, 1)
+        removedPlacementIds.add(change.scope.placementId)
       }
-      else if (index >= 0) next.placements[index] = deepCloneJson(change.current)
-      else next.placements.push(deepCloneJson(change.current))
+      else {
+        if (previous && !sameAnchor(previous.position, change.current.position)) {
+          movedDestinations.set(change.scope.placementId, deepCloneJson(change.current.position))
+        }
+        if (index >= 0) next.placements[index] = deepCloneJson(change.current)
+        else next.placements.push(deepCloneJson(change.current))
+      }
       continue
     }
     if (change.kind === 'map-metadata') {
@@ -189,6 +206,25 @@ export const applyNativeCoreMapChanges = (
         'unsupported-core-map-change',
         `Native core reduction unexpectedly emitted ${change.kind}.`,
       )
+    }
+  }
+  next = relocateCapabilityAttachedObjects(next, movedDestinations)
+  for (const [placementId, destination] of movedDestinations) {
+    next = {
+      ...next,
+      lights: relocateCapabilityGlowLights({
+        lights: next.lights,
+        placementIds: new Set([placementId]),
+        destination,
+      }),
+    }
+  }
+  if (removedPlacementIds.size > 0) {
+    next = clearPhysicalPowerLoadsForPlacements(next, removedPlacementIds)
+    next = {
+      ...next,
+      lights: next.lights?.filter(light => ![...removedPlacementIds]
+        .some(placementId => light.id === capabilityGlowLightId(placementId))),
     }
   }
   return next
@@ -239,6 +275,14 @@ export const applyNativeSpatialMovements = (
       ...placement,
       position: deepCloneJson(movement.destination),
     }
+    const destinationByPlacement = new Map([[movement.recipientPlacementId, movement.destination]])
+    const relocated = relocateCapabilityAttachedObjects(next, destinationByPlacement)
+    next.metadata = deepCloneJson(relocated.metadata)
+    next.lights = relocateCapabilityGlowLights({
+      lights: next.lights,
+      placementIds: new Set([movement.recipientPlacementId]),
+      destination: movement.destination,
+    })
   }
   return next
 }
@@ -1004,6 +1048,13 @@ const applyTriggeredAbilityPayments = (input: {
               : canonicalId === 'Vicious'
                 ? ([] as const)
                 : (['free'] as const)
+    if ((actionResources as readonly string[]).includes('standard')) {
+      const ownerToken = input.context.queries.tokens.get(ownerId)
+        ?? fail('state-change-conflict', `Selected ${canonicalId} response lost its authoritative owner token.`)
+      if (ownerToken.physicalPowerLoad?.standardActionsAllowed === false) {
+        fail('state-change-conflict', `Staggering Weight prevents ${canonicalId} from spending its required Standard Action.`)
+      }
+    }
     const action = planEncounterMoveResourceCosts({
       map,
       placementId: ownerId,

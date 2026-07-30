@@ -16,6 +16,10 @@ import { resolveSkills } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
+import {
+  physicalPowerSourceValues,
+  projectPhysicalPowerLoadToken,
+} from '../capabilityAutomation/physicalPower'
 
 export interface AuthoritativeManeuverRoll {
   readonly id: string
@@ -129,9 +133,26 @@ export const resolveAuthoritativeDisarm = (
     pokemon: new Map(input.pokemonSheets),
     trainer: new Map(input.trainerSheets),
   }
-  const actorToken = placementToSpawned(input.actorPlacement, sheets, input.map)
-  const targetToken = placementToSpawned(input.targetPlacement, sheets, input.map)
-  if (!actorToken || !targetToken) throw new Error('Disarm participants are unavailable.')
+  const actorBaseToken = placementToSpawned(input.actorPlacement, sheets, input.map)
+  const targetBaseToken = placementToSpawned(input.targetPlacement, sheets, input.map)
+  if (!actorBaseToken || !targetBaseToken) throw new Error('Disarm participants are unavailable.')
+  const withPhysicalLoad = (
+    token: typeof actorBaseToken,
+    placement: SheetPlacement,
+    sheet: CharacterSheet | TrainerSheet,
+  ) => {
+    const effective = resolveEffectiveCapabilities({
+      map: input.map, placement, sheet, sheets,
+    }).instances.filter(instance => instance.effective)
+    return projectPhysicalPowerLoadToken({
+      token,
+      map: input.map,
+      placementId: placement.id,
+      powerByCapabilityInstanceId: physicalPowerSourceValues(effective),
+    })
+  }
+  const actorToken = withPhysicalLoad(actorBaseToken, input.actorPlacement, input.actorSheet)
+  const targetToken = withPhysicalLoad(targetBaseToken, input.targetPlacement, input.targetSheet)
   if (ptuGridDistanceBetweenFootprints(actorToken, targetToken) > 1) {
     throw new Error('Disarm requires an adjacent target.')
   }

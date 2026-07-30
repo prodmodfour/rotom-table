@@ -16,6 +16,7 @@ export const CAPABILITY_ACTION_MECHANIC_KINDS = [
   'movement-request',
   'skill-challenge',
   'campaign-time',
+  'physical-load',
 ] as const
 export type CapabilityActionMechanicKind = typeof CAPABILITY_ACTION_MECHANIC_KINDS[number]
 

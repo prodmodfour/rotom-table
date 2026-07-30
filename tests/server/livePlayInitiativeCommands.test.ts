@@ -1422,6 +1422,90 @@ describe('live-play initiative commands', () => {
     })
   })
 
+  it('uses physical Power Speed CS penalties in the authoritative initiative order', async () => {
+    const harness = createHarness(baseMap({
+      placements: [
+        { id: 'token-alpha', sheetKind: 'pokemon', sheetSlug: 'alpha', position: { x: 1, y: 0, z: 1 } },
+        { id: 'token-bravo', sheetKind: 'pokemon', sheetSlug: 'bravo', position: { x: 2, y: 0, z: 1 } },
+        { id: 'token-zulu', sheetKind: 'pokemon', sheetSlug: 'zulu', position: { x: 3, y: 0, z: 1 } },
+      ],
+      initiative: { activeId: 'token-alpha', round: 1 },
+      metadata: { capabilityObjects: [{
+        id: 'crate', pounds: 45, position: { x: 1, y: 0, z: 1 },
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: 'capability:token-alpha:Power:value-4', attachedToPlacementId: 'token-alpha',
+        physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: null,
+      }] },
+    }))
+    harness.deps.readSheet.mockImplementation((_kind, slug) => ({
+      path: `/tmp/${slug}.json`,
+      sheet: pokemonInitiativeSheet(slug, slug === 'alpha' ? 21 : slug === 'bravo' ? 20 : 10, {
+        ...(slug === 'alpha' ? { capabilities: { power: 4 } } : {}),
+      }),
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      payload: {
+        orderIds: ['token-bravo', 'token-alpha', 'token-zulu'],
+        activeId: 'token-alpha',
+        round: 1,
+      },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-zulu', round: 1 })
+  })
+
+  it('uses a Viral Fusion-derived exact Power source for authoritative load initiative penalties', async () => {
+    const encounter = createEmptyEncounterState()
+    const harness = createHarness(baseMap({
+      placements: [
+        { id: 'token-alpha', sheetKind: 'pokemon', sheetSlug: 'alpha', position: { x: 1, y: 0, z: 1 } },
+        { id: 'token-bravo', sheetKind: 'pokemon', sheetSlug: 'bravo', position: { x: 2, y: 0, z: 1 } },
+        { id: 'token-zulu', sheetKind: 'pokemon', sheetSlug: 'zulu', position: { x: 3, y: 0, z: 1 } },
+      ],
+      initiative: { activeId: 'token-alpha', round: 1 },
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'viral-fusion-link', kind: 'viral-fusion', ownerPlacementId: 'token-alpha',
+            participantPlacementIds: ['token-zulu'],
+            capabilityInstanceId: 'capability:token-alpha:Viral_20Fusion:base', canonicalId: 'Viral Fusion',
+            establishedAt: 10, configurationId: 'Tackle', sourceOperationId: 'operation.viral-fusion',
+          }],
+        },
+      },
+      metadata: { capabilityObjects: [{
+        id: 'crate', pounds: 45, position: { x: 1, y: 0, z: 1 },
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: 'capability:token-alpha:Power:value-4', attachedToPlacementId: 'token-alpha',
+        physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: null,
+      }] },
+    }))
+    harness.deps.readSheet.mockImplementation((_kind, slug) => ({
+      path: `/tmp/${slug}.json`,
+      sheet: pokemonInitiativeSheet(slug, slug === 'alpha' ? 21 : slug === 'bravo' ? 20 : 10, {
+        ...(slug === 'alpha' ? { capabilities: { power: 1, other: ['Viral Fusion'] } } : {}),
+        ...(slug === 'zulu' ? { capabilities: { power: 4 } } : {}),
+      }),
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      payload: {
+        orderIds: ['token-bravo', 'token-alpha', 'token-zulu'],
+        activeId: 'token-alpha',
+        round: 1,
+      },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-zulu', round: 1 })
+  })
+
   it('uses effective Light Metal Base Speed in the authoritative initiative order', async () => {
     const harness = createHarness(baseMap({
       placements: [

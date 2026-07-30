@@ -4,6 +4,11 @@ import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
 import { capabilityGlowLightId } from './glow'
+import {
+  clearPhysicalPowerLoadAttachment,
+  isPhysicalPowerLoadObject,
+} from './physicalPower'
+import { capabilityActorIsFainted } from './actionEligibility'
 
 const sheetForPlacement = (
   placement: TabletopMap['placements'][number],
@@ -28,38 +33,84 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
     readonly trainer: ReadonlyMap<string, TrainerSheet>
   }
 }): TabletopMap => {
-  const encounter = input.map.encounterState
-  if (!encounter) return input.map
-  const runtime = encounter.capabilityRuntime
-  if (!runtime) {
-    const effects = encounter.effects.filter(effect => (
-      !effect.tags.includes('capability.living-weapon.light-shield')
-    ))
-    return effects.length === encounter.effects.length
-      ? input.map
-      : { ...input.map, encounterState: { ...encounter, effects } }
-  }
   const placementById = new Map(input.map.placements.map(placement => [placement.id, placement]))
   const sourceEffective = (entry: {
     readonly ownerPlacementId?: string
     readonly actorPlacementId?: string
     readonly capabilityInstanceId: string
     readonly canonicalId: string
+    readonly acquisitionSourceIds?: readonly string[]
   }): boolean => {
     const placementId = entry.actorPlacementId ?? entry.ownerPlacementId
     const placement = placementId ? placementById.get(placementId) : null
     const sheet = placement ? sheetForPlacement(placement, input.sheets) : null
     if (!placement || !sheet) return false
-    return resolveEffectiveCapabilities({
+    const instance = resolveEffectiveCapabilities({
       map: input.map,
       placement,
       sheet,
       sheets: input.sheets,
-    }).instances.some(instance => (
+    }).instances.find(instance => (
       instance.instanceId === entry.capabilityInstanceId
       && instance.canonicalId === entry.canonicalId
       && instance.effective
     ))
+    if (!instance) return false
+    const acquisitionSourceIds = entry.acquisitionSourceIds ?? []
+    return acquisitionSourceIds.length === 0 || acquisitionSourceIds.some(sourceId => (
+      instance.sources.some(source => source.sourceId === sourceId)
+    ))
+  }
+  let attachmentSourceRemoved = false
+  const capabilityObjects = Array.isArray(input.map.metadata?.capabilityObjects)
+    ? input.map.metadata.capabilityObjects.map((raw) => {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
+        const object = raw as Record<string, unknown>
+        if (typeof object.attachedToPlacementId !== 'string'
+          || typeof object.attachedCapabilityInstanceId !== 'string') return raw
+        const canonicalId = typeof object.attachedCapabilityCanonicalId === 'string'
+          ? object.attachedCapabilityCanonicalId
+          : 'Magnetic'
+        const physicalLoad = isPhysicalPowerLoadObject(object)
+        const ownerPlacement = placementById.get(object.attachedToPlacementId)
+        const ownerSheet = ownerPlacement ? sheetForPlacement(ownerPlacement, input.sheets) : null
+        const physicalActorFainted = physicalLoad && ownerSheet !== null
+          && capabilityActorIsFainted(ownerSheet)
+        if (!physicalActorFainted && sourceEffective({
+          actorPlacementId: object.attachedToPlacementId,
+          capabilityInstanceId: object.attachedCapabilityInstanceId,
+          canonicalId,
+        })) return raw
+        attachmentSourceRemoved = true
+        return physicalLoad
+          ? clearPhysicalPowerLoadAttachment(object)
+          : {
+              ...object,
+              attachedToPlacementId: null,
+              attachedCapabilityInstanceId: null,
+              attachedCapabilityCanonicalId: null,
+              attachmentKind: null,
+            }
+      }) : null
+  const metadataWithAttachments = (): TabletopMap['metadata'] => ({
+    ...(input.map.metadata ?? {}),
+    ...(capabilityObjects ? { capabilityObjects } : {}),
+  })
+  const encounter = input.map.encounterState
+  if (!encounter) return attachmentSourceRemoved
+    ? { ...input.map, metadata: metadataWithAttachments() }
+    : input.map
+  const runtime = encounter.capabilityRuntime
+  if (!runtime) {
+    const effects = encounter.effects.filter(effect => (
+      !effect.tags.includes('capability.living-weapon.light-shield')
+    ))
+    if (effects.length === encounter.effects.length && !attachmentSourceRemoved) return input.map
+    return {
+      ...input.map,
+      ...(attachmentSourceRemoved ? { metadata: metadataWithAttachments() } : {}),
+      encounterState: { ...encounter, effects },
+    }
   }
   const modes = runtime.modes.filter(entry => (
     sourceEffective(entry)
@@ -115,21 +166,6 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
           && pouchLink)
         if (!retained) pouchStateChanged = true
         return retained
-      }) : null
-  let attachmentSourceRemoved = false
-  const capabilityObjects = Array.isArray(input.map.metadata?.capabilityObjects)
-    ? input.map.metadata.capabilityObjects.map((raw) => {
-        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
-        const object = raw as Record<string, unknown>
-        if (typeof object.attachedToPlacementId !== 'string'
-          || typeof object.attachedCapabilityInstanceId !== 'string') return raw
-        if (sourceEffective({
-          actorPlacementId: object.attachedToPlacementId,
-          capabilityInstanceId: object.attachedCapabilityInstanceId,
-          canonicalId: 'Magnetic',
-        })) return raw
-        attachmentSourceRemoved = true
-        return { ...object, attachedToPlacementId: null, attachedCapabilityInstanceId: null }
       }) : null
   if (modes.length === runtime.modes.length && links.length === runtime.links.length
     && tasks.length === runtime.tasks.length && effects.length === encounter.effects.length

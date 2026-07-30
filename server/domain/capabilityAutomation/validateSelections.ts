@@ -45,6 +45,14 @@ import {
   TeleporterRoundIdentityError,
 } from './teleporterRoundUse'
 import { zygardeAssemblyRecordForPlacement } from './zygardeAssembly'
+import {
+  isPhysicalPowerLoadObject,
+  physicalPowerMovementLimit,
+  physicalPowerObjectIsAdjacent,
+  physicalPowerSourceValues,
+  projectPhysicalPowerFootprint,
+  resolvePhysicalPowerLoad,
+} from './physicalPower'
 
 const pokedexBySpecies = new Map((pokedexData as readonly PokedexRecord[]).map(record => [
   record.species.trim().toLocaleLowerCase('en-US'), record,
@@ -209,6 +217,7 @@ interface CapabilityWorldObject {
   readonly position: { readonly x: number; readonly y: number; readonly z: number }
   readonly pounds: number
   readonly material: string | null
+  readonly raw: Readonly<Record<string, unknown>>
 }
 const capabilityWorldObjects = (map: TabletopMap): readonly CapabilityWorldObject[] => {
   if (!Array.isArray(map.metadata?.capabilityObjects)) return []
@@ -224,9 +233,16 @@ const capabilityWorldObjects = (map: TabletopMap): readonly CapabilityWorldObjec
       position: { x: position.x as number, y: position.y as number, z: position.z as number },
       pounds: value.pounds,
       material: typeof value.material === 'string' ? value.material.trim().toLocaleLowerCase('en-US') : null,
+      raw: value,
     }]
   })
 }
+const capabilityWorldObjectHasAttachment = (object: Readonly<Record<string, unknown>>): boolean => (
+  (object.attachedToPlacementId !== undefined && object.attachedToPlacementId !== null)
+  || (object.attachedCapabilityInstanceId !== undefined && object.attachedCapabilityInstanceId !== null)
+  || (object.attachedCapabilityCanonicalId !== undefined && object.attachedCapabilityCanonicalId !== null)
+  || (object.attachmentKind !== undefined && object.attachmentKind !== null)
+)
 const worldObjectWeightClass = (pounds: number): number => pounds <= 25 ? 1
   : pounds <= 55 ? 2 : pounds <= 110 ? 3 : pounds <= 220 ? 4 : pounds <= 440 ? 5 : 6
 
@@ -373,6 +389,25 @@ export const resolveCapabilityJumpPlan = (input: {
     y: 0,
     z: destination.z - jumpOrigin.z,
   })
+  const travelDistance = ptuGridVectorDistance({
+    x: destination.x - jumpOrigin.x,
+    y: destination.y - jumpOrigin.y,
+    z: destination.z - jumpOrigin.z,
+  })
+  const runUpDistance = ptuGridVectorDistance({
+    x: jumpOrigin.x - input.actor.position.x,
+    y: jumpOrigin.y - input.actor.position.y,
+    z: jumpOrigin.z - input.actor.position.z,
+  })
+  const physicalLoad = resolvePhysicalPowerLoad({
+    map: input.map,
+    placementId: input.actor.id,
+    powerByCapabilityInstanceId: physicalPowerSourceValues(effective.instances),
+  })
+  const physicalLoadLimit = physicalPowerMovementLimit(physicalLoad, input.map.initiative?.round)
+  if (physicalLoadLimit !== null && runUpDistance + travelDistance > physicalLoadLimit) {
+    fail('jump-physical-load-limit', `The physical load limits this Jump action to ${physicalLoadLimit} metre${physicalLoadLimit === 1 ? '' : 's'}.`)
+  }
   const rise = Math.max(0, destination.y - jumpOrigin.y)
   const drop = Math.max(0, jumpOrigin.y - destination.y)
   const baseHigh = projectedJump.high + (running ? 1 : 0)
@@ -449,11 +484,7 @@ export const resolveCapabilityJumpPlan = (input: {
     trickyDc: authoredTrickyDcs[0] ?? null,
     jumpOrigin,
     horizontalDistance,
-    travelDistance: ptuGridVectorDistance({
-      x: destination.x - jumpOrigin.x,
-      y: destination.y - jumpOrigin.y,
-      z: destination.z - jumpOrigin.z,
-    }),
+    travelDistance,
     effectiveHighJump,
     linkedCompanionPlacementIds,
     trajectory: legalTrajectory.path,
@@ -495,6 +526,20 @@ export const validateCapabilityActionSelections = (input: {
     input.pokemonSheets,
     input.trainerSheets,
   )
+  const actingEffectiveCapabilities = resolveEffectiveCapabilities({
+    map: input.map,
+    placement: actingPlacement,
+    sheet: actingSheet,
+    sheets: { pokemon: input.pokemonSheets, trainer: input.trainerSheets },
+  }).instances.filter(instance => instance.effective)
+  const actingPhysicalLoad = resolvePhysicalPowerLoad({
+    map: input.map,
+    placementId: actingPlacement.id,
+    powerByCapabilityInstanceId: physicalPowerSourceValues(actingEffectiveCapabilities),
+  })
+  if (input.action.economy === 'standard' && actingPhysicalLoad?.standardActionsAllowed === false) {
+    fail('physical-power-standard-action-blocked', 'Staggering Weight prevents the actor from taking Standard Actions.')
+  }
   if ((input.command.actionId === 'jump' || input.command.actionId === 'teleport')
     && conditionBlocksShiftMovement(actorConditions)) {
     fail('shift-movement-condition-blocked', 'Stuck or Tripped prevents this movement-producing Shift action.')
@@ -622,6 +667,111 @@ export const validateCapabilityActionSelections = (input: {
       : input.trainerSheets.get(target.sheetSlug)
     return sheet ?? fail('target-sheet-missing', `Capability target sheet ${target.sheetKind}/${target.sheetSlug} is unavailable.`)
   })
+  if (input.command.actionId === 'lift-load' || input.command.actionId === 'release-load') {
+    if (input.command.canonicalId !== 'Power') {
+      fail('physical-power-action-invalid', 'Physical load actions require the exact Power Capability source.')
+    }
+    const source = actingEffectiveCapabilities.find(instance => (
+      instance.instanceId === input.command.capabilityInstanceId
+      && instance.canonicalId === 'Power'
+    ))
+    const power = typeof source?.value === 'number' && Number.isFinite(source.value)
+      ? source.value
+      : fail('physical-power-source-missing', 'The exact valued Power source is no longer effective.')
+    const rawObjects = Array.isArray(input.map.metadata?.capabilityObjects)
+      ? input.map.metadata.capabilityObjects : []
+    const baseActorToken = placementToSpawned(input.actor, {
+      pokemon: new Map(input.pokemonSheets), trainer: new Map(input.trainerSheets),
+    }, input.map) ?? fail('physical-power-actor-unresolved', 'Power requires an authoritative actor footprint.')
+    const actorToken = projectPhysicalPowerFootprint({
+      token: baseActorToken,
+      map: input.map,
+      placementId: input.actor.id,
+      effectiveCapabilityInstanceIds: new Set(actingEffectiveCapabilities.map(instance => instance.instanceId)),
+      now: input.now,
+    })
+    const ownedObjects = rawObjects.flatMap((raw): readonly Record<string, unknown>[] => (
+      raw && typeof raw === 'object' && !Array.isArray(raw)
+      && isPhysicalPowerLoadObject(raw as Record<string, unknown>)
+      && (raw as Record<string, unknown>).attachedToPlacementId === input.actor.id
+        ? [raw as Record<string, unknown>] : []
+    ))
+    if (input.command.actionId === 'release-load') {
+      if (input.command.selections.optionId !== null
+        || input.command.selections.canonicalItemId !== null
+        || input.command.selections.recipientTrainerSlug !== null
+        || input.command.selections.description !== null
+        || input.command.selections.cells.length > 0
+        || input.command.selections.targetPlacementIds.length > 0) {
+        fail('physical-power-release-selection-invalid', 'Releasing a physical load does not accept client-authored targets or options.')
+      }
+      if (!ownedObjects.some(object => object.attachedCapabilityInstanceId === input.command.capabilityInstanceId)) {
+        fail('physical-power-load-missing', 'The exact Power source owns no active physical load to release.')
+      }
+    }
+    else {
+      const objectIds = selectedWorldObjectIds(input.command.selections.optionId)
+      if (objectIds.length === 0 || new Set(objectIds).size !== objectIds.length) {
+        fail('physical-power-object-selection-invalid', 'Power requires 1–16 unique authoritative object IDs.')
+      }
+      if (input.command.selections.canonicalItemId !== null
+        || input.command.selections.recipientTrainerSlug !== null
+        || input.command.selections.description !== null
+        || input.command.selections.cells.length > 0
+        || input.command.selections.targetPlacementIds.length > 0) {
+        fail('physical-power-object-selection-invalid', 'Power load selection accepts only authoritative object IDs.')
+      }
+      const selected = objectIds.map((id) => {
+        const matches = rawObjects.filter(raw => (
+          raw && typeof raw === 'object' && !Array.isArray(raw)
+          && (raw as Record<string, unknown>).id === id
+        ))
+        if (matches.length !== 1) {
+          return fail(
+            matches.length === 0 ? 'physical-power-object-missing' : 'physical-power-object-ambiguous',
+            `Physical load object ${id} must resolve to exactly one authoritative object.`,
+          )
+        }
+        return matches[0]
+      }).map((raw, index) => {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+          return fail('physical-power-object-missing', `Physical load object ${objectIds[index]} is unavailable.`)
+        }
+        const object = raw as Record<string, unknown>
+        const position = object.position as Record<string, unknown> | null
+        if (typeof object.pounds !== 'number' || !Number.isFinite(object.pounds)
+          || object.pounds <= 0 || object.pounds > 1_000_000_000
+          || !position || !Number.isSafeInteger(position.x)
+          || !Number.isSafeInteger(position.y) || !Number.isSafeInteger(position.z)
+          || (position.x as number) < 0 || (position.y as number) < 0 || (position.z as number) < 0
+          || (position.x as number) >= input.map.dimensions.x
+          || (position.y as number) >= input.map.dimensions.y
+          || (position.z as number) >= input.map.dimensions.z) {
+          return fail('physical-power-object-invalid', `Physical load object ${objectIds[index]} lacks bounded exact pounds or position.`)
+        }
+        if (!physicalPowerObjectIsAdjacent(actorToken, {
+          x: position.x as number, y: position.y as number, z: position.z as number,
+        })) {
+          return fail('physical-power-object-not-adjacent', `Physical load object ${objectIds[index]} is not adjacent to the actor.`)
+        }
+        if (capabilityWorldObjectHasAttachment(object)) {
+          return fail('physical-power-object-attached', `Physical load object ${objectIds[index]} is already attached to an authoritative source.`)
+        }
+        return object
+      })
+      if (ownedObjects.some(object => object.attachedCapabilityInstanceId !== input.command.capabilityInstanceId)) {
+        fail('physical-power-source-conflict', 'One actor cannot carry physical loads from contradictory Power sources.')
+      }
+      if (ownedObjects.length + selected.length > 16) {
+        fail('physical-power-object-limit', 'One physical Power load may bind at most sixteen authoritative objects.')
+      }
+      const pounds = [...ownedObjects, ...selected].reduce((total, object) => total + (object.pounds as number), 0)
+      if (resolveCapabilityPowerLoad(power, pounds).loadClass === 'too-heavy') {
+        fail('physical-power-load-too-heavy', 'The combined load must be strictly lighter than the printed Drag Weight limit.')
+      }
+    }
+  }
+
   if (input.command.actionId === 'shelter-baby') {
     if (input.actor.sheetKind !== 'pokemon'
       || (input.actorSheet as CharacterSheet).species.trim().toLocaleLowerCase('en-US') !== 'kangaskhan'
@@ -937,7 +1087,9 @@ export const validateCapabilityActionSelections = (input: {
         clearance: actorToken ? getClearanceValue(actorToken) : 1,
       },
     })
-    const limit = teleporter ? movement.speeds.teleporter ?? 0 : 0
+    const capabilityLimit = teleporter ? movement.speeds.teleporter ?? 0 : 0
+    const loadLimit = physicalPowerMovementLimit(actingPhysicalLoad, input.map.initiative?.round)
+    const limit = loadLimit === null ? capabilityLimit : Math.min(capabilityLimit, loadLimit)
     const travel = ptuGridVectorDistance({
       x: destination.x - input.actor.position.x,
       y: destination.y - input.actor.position.y,
@@ -1064,6 +1216,16 @@ export const validateCapabilityActionSelections = (input: {
     const allObjects = capabilityWorldObjects(input.map)
     const objects = ids.map(id => allObjects.find(candidate => candidate.id === id)
       ?? fail('capability-object-missing', `Capability world object ${id} is unavailable.`))
+    if (objects.some((object) => {
+      if (!capabilityWorldObjectHasAttachment(object.raw)) return false
+      return !(input.command.actionId === 'manipulate-metal'
+        && object.raw.attachedToPlacementId === input.actor.id
+        && object.raw.attachedCapabilityInstanceId === input.command.capabilityInstanceId
+        && object.raw.attachedCapabilityCanonicalId === 'Magnetic'
+        && object.raw.attachmentKind === 'magnetic')
+    })) {
+      fail('capability-object-attached', 'Object manipulation cannot move an object attached to another authoritative source.')
+    }
     const destination = input.command.selections.cells.length === 1
       ? input.command.selections.cells[0]!
       : fail('capability-object-destination-required', 'Object manipulation requires one authoritative destination cell.')
@@ -1223,6 +1385,9 @@ export const validateCapabilityActionSelections = (input: {
       }
       const object = capabilityWorldObjects(input.map).find(candidate => candidate.id === input.command.selections.canonicalItemId)
         ?? fail('threaded-object-missing', 'The selected authoritative Threaded object is unavailable.')
+      if (capabilityWorldObjectHasAttachment(object.raw)) {
+        fail('threaded-object-attached', 'Threaded cannot independently move an object attached to another authoritative source.')
+      }
       const cell = cells[0]!
       if (object.position.x !== cell.x || object.position.y !== cell.y || object.position.z !== cell.z) {
         fail('threaded-object-cell-mismatch', 'The selected Threaded cell must match the authoritative object position.')

@@ -95,6 +95,11 @@ import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/ran
 import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { toPersistedMap } from './saveMap'
+import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
+import {
+  physicalPowerSourceValues,
+  resolvePhysicalPowerLoad,
+} from '../domain/capabilityAutomation/physicalPower'
 
 export class LivePlayInitiativeCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -655,6 +660,16 @@ const initiativeOrder = (
     return result
   }
   const placementById = new Map(map.placements.map(placement => [placement.id, placement]))
+  const pokemonSheets = new Map<string, CharacterSheet>()
+  const trainerSheets = new Map<string, TrainerSheet>()
+  for (const placement of map.placements) {
+    const resolved = trackedReader(placement.sheetKind, placement.sheetSlug)
+    if (!resolved) continue
+    if (placement.sheetKind === 'pokemon') {
+      pokemonSheets.set(placement.sheetSlug, resolved.sheet as unknown as CharacterSheet)
+    }
+    else trainerSheets.set(placement.sheetSlug, resolved.sheet as unknown as TrainerSheet)
+  }
   const rooms = createMoveAutomationRoomResolver(map)
   const globalFields = createMoveAutomationRemainingGlobalFieldResolver(map, rooms)
   const itemEffects = createMoveAutomationItemEffectResolver({
@@ -695,6 +710,17 @@ const initiativeOrder = (
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           })
         : null
+      const effectiveCapabilities = resolved ? resolveEffectiveCapabilities({
+        map,
+        placement,
+        sheet: resolved.sheet as unknown as CharacterSheet | TrainerSheet,
+        sheets: { pokemon: pokemonSheets, trainer: trainerSheets },
+      }).instances.filter(instance => instance.effective) : []
+      const physicalPowerLoad = resolvePhysicalPowerLoad({
+        map,
+        placementId: placement.id,
+        powerByCapabilityInstanceId: physicalPowerSourceValues(effectiveCapabilities),
+      })
       const conditionAbilityNames = [...effectiveAbilityIds]
       return {
         itemEffectsSuppressed: itemEffects.resolve({
@@ -719,8 +745,9 @@ const initiativeOrder = (
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           }) + (remainingProjection?.baseSpeedOffset ?? 0),
           baseSpeedMultiplier: remainingProjection?.baseSpeedMultiplier ?? 1,
-          speedCombatStageOffset: remainingProjection?.speedCombatStageOffset ?? 0,
         } : {}),
+        speedCombatStageOffset: (remainingProjection?.speedCombatStageOffset ?? 0)
+          + (physicalPowerLoad?.speedCombatStagePenalty ?? 0),
         earlyBirdSpeedBonus: resolved ? aa068EarlyBirdInitiativeActive({
           map,
           placement,

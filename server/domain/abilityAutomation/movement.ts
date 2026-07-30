@@ -2,7 +2,7 @@ import { normalizeRevision } from '#shared/sessionRevisions'
 import { createEmptyEncounterState, parseEncounterState, type EncounterState } from '#shared/moveAutomation/encounterState'
 import { cloneStrictJson, isPlainJsonObject } from '#shared/automation/strictJson'
 import type { EncounterEventMovementMode } from '#shared/moveAutomation/events'
-import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
+import type { GridAnchor, SheetPlacement } from '~/types/map'
 import { footprintsOverlap } from '~/utils/gridGeometry'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { appendMovementLogEntry } from '~/utils/mapMovementLog'
@@ -26,6 +26,7 @@ import {
   type MoveStateChangeInput,
   type MoveStateChangePlan,
 } from '../moveAutomation/plan'
+import { relocateCapabilityAttachedObjects } from '../capabilityAutomation/physicalPower'
 import type { AuthoritativeAbilityContext } from './context'
 
 export const ABILITY_MOVEMENT_COMMAND_KINDS = ['shift', 'displacement', 'teleport', 'swap'] as const
@@ -413,6 +414,10 @@ const buildStatePlan = (input: {
   let metadata = deepCloneJson(input.context.map.metadata)
   for (const movement of input.movements) {
     if (sameJsonValue(movement.origin, movement.destination)) continue
+    metadata = deepCloneJson(relocateCapabilityAttachedObjects(
+      { ...input.context.map, metadata },
+      new Map([[movement.placementId, movement.destination]]),
+    ).metadata)
     metadata = appendMovementLogEntry(metadata, {
       userId: movement.placementId,
       userName: input.userName,

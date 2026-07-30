@@ -125,6 +125,9 @@ export interface TokenMoveMenuOption {
   disabledByAutomation: boolean
   conditionUseBlock: MoveConditionUseBlock | null
   disabledByCondition: boolean
+  /** Public Power-load projection; the server independently revalidates this restriction. */
+  physicalLoadUseBlock?: string | null
+  disabledByPhysicalLoad?: boolean
   usage: TokenMoveUsageMenuState | null
   disabledByUsage: boolean
 }
@@ -442,6 +445,8 @@ const optionForMoveRow = (
     range,
     frequency,
   }, token.conditions)
+  const physicalLoadUseBlock = token.physicalPowerLoad?.standardActionsAllowed === false
+    ? 'Staggering Weight prevents the Standard Action required to use a Move.' : null
 
   return {
     name,
@@ -475,6 +480,8 @@ const optionForMoveRow = (
     disabledByAutomation: automation.baseStatus === 'blocked',
     conditionUseBlock,
     disabledByCondition: conditionUseBlock != null,
+    physicalLoadUseBlock,
+    disabledByPhysicalLoad: physicalLoadUseBlock !== null,
     usage,
     disabledByUsage: usage?.available === false,
   }

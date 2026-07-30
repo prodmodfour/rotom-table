@@ -38,6 +38,9 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import type { CapabilityPhysicalPowerLoadPublicProjection } from '#shared/capabilityAutomation/power'
+import { clampCombatStage } from '~/utils/combatStages'
+import { speedCombatStageMovementDelta } from '~/utils/combatStageMovement'
 
 export interface SheetLookup {
   pokemon: Map<string, CharacterSheet>
@@ -48,6 +51,59 @@ type PlacementConditionMap = Pick<
   TabletopMap,
   'activeScene' | 'temporaryHitPoints' | 'encounterState' | 'metadata'
 >
+
+const PUBLIC_PHYSICAL_POWER_LOADS: Readonly<Record<string, CapabilityPhysicalPowerLoadPublicProjection>> = Object.freeze({
+  unburdened: Object.freeze({
+    loadClass: 'unburdened', movementMetersPerShift: null, speedCombatStagePenalty: 0,
+    accuracyPenalty: 0, evasionPenalty: 0, standardActionsAllowed: true, athleticsCheckDc: null,
+  }),
+  heavy: Object.freeze({
+    loadClass: 'heavy', movementMetersPerShift: null, speedCombatStagePenalty: -2,
+    accuracyPenalty: -2, evasionPenalty: -2, standardActionsAllowed: true, athleticsCheckDc: null,
+  }),
+  staggering: Object.freeze({
+    loadClass: 'staggering', movementMetersPerShift: 1, speedCombatStagePenalty: -4,
+    accuracyPenalty: -4, evasionPenalty: -4, standardActionsAllowed: false, athleticsCheckDc: 4,
+  }),
+  drag: Object.freeze({
+    loadClass: 'drag', movementMetersPerShift: 1, speedCombatStagePenalty: 0,
+    accuracyPenalty: 0, evasionPenalty: 0, standardActionsAllowed: true, athleticsCheckDc: null,
+  }),
+  'too-heavy': Object.freeze({
+    loadClass: 'too-heavy', movementMetersPerShift: 0, speedCombatStagePenalty: 0,
+    accuracyPenalty: 0, evasionPenalty: 0, standardActionsAllowed: false, athleticsCheckDc: null,
+  }),
+})
+
+const publicPhysicalPowerLoadForPlacement = (
+  map: PlacementConditionMap | null | undefined,
+  placementId: string,
+): CapabilityPhysicalPowerLoadPublicProjection | null => {
+  const states = Array.isArray(map?.metadata?.automationPresentationStates)
+    ? map.metadata.automationPresentationStates : []
+  const state = states.find(raw => raw && typeof raw === 'object' && !Array.isArray(raw)
+    && (raw as Record<string, unknown>).placementId === placementId
+    && (raw as Record<string, unknown>).state === 'physical-power-load') as Record<string, unknown> | undefined
+  return typeof state?.loadClass === 'string'
+    ? PUBLIC_PHYSICAL_POWER_LOADS[state.loadClass] ?? null
+    : null
+}
+
+const physicalPowerAdjustedMovement = (
+  speeds: NonNullable<SpawnedPokemon['movementCapabilities']>,
+  authoredSpeedStage: number,
+  load: CapabilityPhysicalPowerLoadPublicProjection | null,
+): NonNullable<SpawnedPokemon['movementCapabilities']> => {
+  if (!load?.speedCombatStagePenalty) return speeds
+  const authored = clampCombatStage(authoredSpeedStage)
+  const loaded = clampCombatStage(authored + load.speedCombatStagePenalty)
+  const delta = speedCombatStageMovementDelta(loaded) - speedCombatStageMovementDelta(authored)
+  if (delta === 0) return speeds
+  return Object.fromEntries(Object.entries(speeds).map(([key, value]) => [
+    key,
+    value === undefined || value <= 0 ? value : Math.max(value < 2 ? value : 2, value + delta),
+  ])) as NonNullable<SpawnedPokemon['movementCapabilities']>
+}
 
 const projectCapabilityPresentationToken = (
   token: SpawnedPokemon,
@@ -240,10 +296,14 @@ export const placementToSpawned = (
       map,
     )
     const hp = pokemonHpSnapshot(sheet, { conditions })
+    const physicalPowerLoad = publicPhysicalPowerLoadForPlacement(map, placement.id)
+    const loadedSpeedStage = clampCombatStage(
+      hp.combatStages.spd + (physicalPowerLoad?.speedCombatStagePenalty ?? 0),
+    )
     const movement = effectiveMovementForPlacement(
       placement,
       catalog,
-      hp.movementCapabilities,
+      physicalPowerAdjustedMovement(hp.movementCapabilities, hp.combatStages.spd, physicalPowerLoad),
       hp.movementTraits,
       hp.conditions,
       map,
@@ -296,7 +356,8 @@ export const placementToSpawned = (
       ...(abilityNames.length ? { abilityNames } : {}),
       combatSkillRankValue: hp.combatSkillRankValue,
       focusSkillRankValue: hp.focusSkillRankValue,
-      combatStages: hp.combatStages,
+      combatStages: { ...hp.combatStages, spd: loadedSpeedStage },
+      ...(physicalPowerLoad ? { physicalPowerLoad } : {}),
       sheetConditions,
       conditions: hp.conditions,
       tokenItems: pokemonHeldItemNames(sheet),
@@ -327,10 +388,14 @@ export const placementToSpawned = (
     map,
   )
   const hp = trainerHpSnapshot(sheet, { conditions })
+  const physicalPowerLoad = publicPhysicalPowerLoadForPlacement(map, placement.id)
+  const loadedSpeedStage = clampCombatStage(
+    hp.combatStages.spd + (physicalPowerLoad?.speedCombatStagePenalty ?? 0),
+  )
   const movement = effectiveMovementForPlacement(
     placement,
     catalog,
-    hp.movementCapabilities,
+    physicalPowerAdjustedMovement(hp.movementCapabilities, hp.combatStages.spd, physicalPowerLoad),
     hp.movementTraits,
     hp.conditions,
     map,
@@ -370,7 +435,8 @@ export const placementToSpawned = (
     ...(abilityNames.length ? { abilityNames } : {}),
     combatSkillRankValue: hp.combatSkillRankValue,
     focusSkillRankValue: hp.focusSkillRankValue,
-    combatStages: hp.combatStages,
+    combatStages: { ...hp.combatStages, spd: loadedSpeedStage },
+    ...(physicalPowerLoad ? { physicalPowerLoad } : {}),
     sheetConditions,
     conditions: hp.conditions,
     tokenItems: trainerEquippedItemNames(sheet),

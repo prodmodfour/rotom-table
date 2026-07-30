@@ -48,6 +48,14 @@ World facts that cannot be inferred from token geometry must be authored by the 
 
 Accepted bounded world changes, generated Unown summaries, and operation IDs are retained in metadata and the SQLite operation ledger. These are authoritative campaign records, not browser decisions.
 
+## Physical Power loads
+
+Ordinary lifting, carrying, pushing, and pulling use exact GM-authored `metadata.capabilityObjects` entries with a unique `id`, in-bounds `position`, and positive finite `pounds`. A contextual **lift-load** offer selects 1–16 adjacent objects and spends a Standard Action; **release-load** detaches the exact source-owned load and spends a Shift Action. The server combines authoritative pounds and classifies them against the frozen Power 1–16 chart. Drag Weight is exclusive: a load equal to the printed limit is too heavy.
+
+Physical attachments retain the exact Power instance. Heavy and Staggering penalties are projected into Speed CS, movement, Initiative, Accuracy, and Evasion consumers, including Moves, Abilities, maneuvers, Capability attacks, and Poké Ball throws. Staggering permits only one metre per Shift, prevents Standard Actions, and requires an authoritative Athletics DC 4 check on attachment and at each round start. Drag permits one total metre in the authoritative round. Attached objects follow successful movement. A failed Staggering check, fainting, suppression, source replacement/removal, recall, or placement loss detaches the load without deleting or relocating its object identity.
+
+Raw object attachments, pounds, operation IDs, and round ledgers are removed from player map projection. Authorized action offers expose only the bounded object label and exact weight needed to make the selection.
+
 ## Runtime state and time
 
 Temporary state lives in `encounterState.capabilityRuntime`:

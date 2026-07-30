@@ -4,6 +4,10 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
 import { createMoveAutomationWeatherResolver } from '../moveAutomation/weather'
+import {
+  physicalPowerSourceValues,
+  resolvePhysicalPowerLoad,
+} from './physicalPower'
 
 export interface CapabilityPresentationSheets {
   readonly pokemon: ReadonlyMap<string, CharacterSheet>
@@ -37,22 +41,67 @@ const publicCapabilityPresentationStates = (
   if (!sheets) return []
   const latest = new Map<string, Record<string, unknown>>()
   const effectiveSources = new Map<string, ReadonlySet<string>>()
+  const effectiveAcquisitionSources = new Map<string, ReadonlySet<string>>()
   for (const placement of map.placements) {
     const sheet = placement.sheetKind === 'pokemon'
       ? sheets.pokemon.get(placement.sheetSlug)
       : sheets.trainer.get(placement.sheetSlug)
     if (!sheet) continue
-    effectiveSources.set(placement.id, new Set(resolveEffectiveCapabilities({ map, placement, sheet, sheets })
-      .instances.filter(instance => instance.effective)
+    const effective = resolveEffectiveCapabilities({ map, placement, sheet, sheets }).instances
+    const effectiveInstances = effective.filter(instance => instance.effective)
+    effectiveSources.set(placement.id, new Set(effectiveInstances
       .map(instance => `${instance.instanceId}\u0000${instance.canonicalId}`)))
+    for (const instance of effectiveInstances) {
+      effectiveAcquisitionSources.set(
+        `${placement.id}\u0000${instance.instanceId}\u0000${instance.canonicalId}`,
+        new Set(instance.sources.map(source => source.sourceId)),
+      )
+    }
+    const physicalLoad = resolvePhysicalPowerLoad({
+      map,
+      placementId: placement.id,
+      powerByCapabilityInstanceId: physicalPowerSourceValues(effective),
+    })
+    if (physicalLoad) {
+      const loadLabel = physicalLoad.loadClass === 'heavy' ? 'Heavy Weight'
+        : physicalLoad.loadClass === 'staggering' ? 'Staggering Weight'
+          : physicalLoad.loadClass === 'drag' ? 'Drag Weight'
+            : physicalLoad.loadClass === 'too-heavy' ? 'Too-Heavy Load' : 'Carrying Load'
+      latest.set(`${placement.id}:physical-power-load`, {
+        id: `public-rule-state:${placement.id}:physical-power-load`,
+        placementId: placement.id,
+        state: 'physical-power-load',
+        label: loadLabel,
+        description: loadLabel,
+        loadClass: physicalLoad.loadClass,
+        movementMetersPerShift: physicalLoad.movementMetersPerShift,
+        speedCombatStagePenalty: physicalLoad.speedCombatStagePenalty,
+        accuracyPenalty: physicalLoad.accuracyPenalty,
+        evasionPenalty: physicalLoad.evasionPenalty,
+        standardActionsAllowed: physicalLoad.standardActionsAllowed,
+        athleticsCheckDc: physicalLoad.athleticsCheckDc,
+        expiresAt: null,
+      })
+    }
   }
-  const sourceIsEffective = (placementId: string, capabilityInstanceId: string, canonicalId: string): boolean => (
-    effectiveSources.get(placementId)?.has(`${capabilityInstanceId}\u0000${canonicalId}`) === true
-  )
+  const sourceIsEffective = (
+    placementId: string,
+    capabilityInstanceId: string,
+    canonicalId: string,
+    acquisitionSourceIds: readonly string[] | undefined,
+  ): boolean => effectiveSources.get(placementId)?.has(`${capabilityInstanceId}\u0000${canonicalId}`) === true
+    && (!acquisitionSourceIds?.length || acquisitionSourceIds.some(sourceId => (
+      effectiveAcquisitionSources.get(`${placementId}\u0000${capabilityInstanceId}\u0000${canonicalId}`)?.has(sourceId)
+    )))
   for (const mode of map.encounterState?.capabilityRuntime?.modes ?? []) {
     const label = PUBLIC_CAPABILITY_MODE_LABELS[mode.mode]
     if (!label || (mode.expiresAt !== null && mode.expiresAt <= now)
-      || !sourceIsEffective(mode.actorPlacementId, mode.capabilityInstanceId, mode.canonicalId)) continue
+      || !sourceIsEffective(
+        mode.actorPlacementId,
+        mode.capabilityInstanceId,
+        mode.canonicalId,
+        mode.acquisitionSourceIds,
+      )) continue
     const visibleDescription = (mode.mode === 'illusion' || mode.mode === 'shapechanged' || mode.mode === 'zygarde-form')
       && mode.description?.trim() && mode.description.trim().length <= 240
       ? mode.description.trim() : null
@@ -107,7 +156,7 @@ const publicCapabilityPresentationStates = (
     }
   }
   for (const link of map.encounterState?.capabilityRuntime?.links ?? []) {
-    if (!sourceIsEffective(link.ownerPlacementId, link.capabilityInstanceId, link.canonicalId)) continue
+    if (!sourceIsEffective(link.ownerPlacementId, link.capabilityInstanceId, link.canonicalId, undefined)) continue
     const add = (
       placementId: string,
       state: string,

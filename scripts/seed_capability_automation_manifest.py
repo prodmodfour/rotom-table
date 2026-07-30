@@ -133,6 +133,10 @@ ACTIONS: dict[str, list[dict[str, Any]]] = {
         {"id": "plant", "action": "extended", "frequency": "at-will", "context": "empty-planter-and-seed"},
         {"id": "harvest", "action": "extended", "frequency": "at-will", "context": "yielding-planter"},
     ],
+    "Power": [
+        {"id": "lift-load", "action": "standard", "frequency": "at-will", "context": "adjacent-power-object"},
+        {"id": "release-load", "action": "shift", "frequency": "at-will", "context": "physical-load-active"},
+    ],
     "Shadow Meld": [
         {"id": "meld", "action": "standard", "frequency": "at-will", "context": "lit-surface-shadow"},
         {"id": "reform", "action": "shift", "frequency": "at-will", "context": "shadow-melded"},
@@ -269,6 +273,16 @@ ACTION_REQUIREMENT_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
         "given": "the exact effective Alluring source targets an authoritative Wild Pokémon and its shared daily Bait use is available",
         "when": "the Standard Action distraction is declared",
         "then": "the target makes a server-owned Focus check against DC 12 and a failure durably spends its next Standard Action",
+    },
+    ("Power", "lift-load"): {
+        "given": "an effective valued Power source is adjacent to one or more authoritative world objects with exact pounds",
+        "when": "the actor spends a Standard Action to lift, carry, push, or pull the selected combined load",
+        "then": "the server binds the exact objects to that Power instance, derives Heavy, Staggering, Drag, or too-heavy limits, and rejects equality with Drag Weight",
+    },
+    ("Power", "release-load"): {
+        "given": "one exact effective Power source owns an active physical load binding",
+        "when": "the actor spends a Shift Action to release the load",
+        "then": "the server detaches only that source-owned load while preserving each object's authoritative location and identity",
     },
     ("Living Weapon", "engage-wielder"): {
         "given": "an exact effective Honedge-line source and an adjacent willing participant satisfy authoritative hand or Held Item occupancy",

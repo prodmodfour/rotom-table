@@ -145,6 +145,43 @@ describe('central Capability HP state reconciliation', () => {
     }
   })
 
+  it('drops exact physical Power loads atomically when their carrier faints', () => {
+    const token = placement('lifter-token', 'lifter', 0)
+    const healthyBase = pokemon({ slug: 'lifter', hp: 20 })
+    const faintedBase = pokemon({ slug: 'lifter', hp: 0 })
+    const healthy: CapabilityHpStateSheet = {
+      ...healthyBase, sheet: { ...healthyBase.sheet, capabilities: { power: 4 } } as CharacterSheet,
+    }
+    const fainted: CapabilityHpStateSheet = {
+      ...faintedBase, sheet: { ...faintedBase.sheet, capabilities: { power: 4 } } as CharacterSheet,
+    }
+    const base = mapDocument({ placements: [token] })
+    const source = resolveEffectiveCapabilities({
+      map: base, placement: token, sheet: healthy.sheet,
+    }).instances.find(instance => instance.canonicalId === 'Power')!
+    const loaded = {
+      ...base,
+      metadata: { capabilityObjects: [{
+        id: 'crate', pounds: 45, position: token.position,
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: source.instanceId, attachedToPlacementId: token.id,
+        physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: null,
+      }] },
+    } as TabletopMap
+    const result = reconcileCapabilityHpState({
+      previousMap: loaded,
+      nextMap: loaded,
+      previousSheets: sheetMap(healthy),
+      sheets: sheetMap(fainted),
+      touchedPlacementIds: new Set([token.id]),
+    })
+    const object = result.nextMap.metadata?.capabilityObjects?.[0] as Record<string, unknown>
+    expect(object).toMatchObject({ id: 'crate', pounds: 45, position: token.position })
+    expect(object.attachmentKind).toBeUndefined()
+    expect(object.attachedCapabilityInstanceId).toBeUndefined()
+  })
+
   it('rejects new Temporary HP and cleans legacy injuries and Temporary HP for effective Soulless', () => {
     const token = placement('shedinja-token', 'shedinja', 0)
     const soulless = pokemon({ slug: 'shedinja', species: 'Shedinja', hp: 1, injuries: 4 })

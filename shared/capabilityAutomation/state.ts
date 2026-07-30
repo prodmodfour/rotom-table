@@ -38,6 +38,8 @@ export interface CapabilityModeState {
   readonly description: string | null
   /** Retained non-prose branch parameters for this mode. */
   readonly configurationId: string | null
+  /** Exact effective acquisition sources that owned this mode when activated. */
+  readonly acquisitionSourceIds?: readonly string[]
   readonly activatedAt: number
   readonly expiresAt: number | null
   readonly sourceOperationId: string
@@ -250,7 +252,19 @@ export const parseCapabilityRuntimeState = (
     const itemPath = `${path}.modes[${index}]`
     const entry = record(candidate, itemPath)
     const normalizedEntry: UnknownRecord = Object.hasOwn(entry, 'configurationId') ? entry : { ...entry, configurationId: null }
-    exact(normalizedEntry, ['id', 'actorPlacementId', 'capabilityInstanceId', 'canonicalId', 'mode', 'description', 'configurationId', 'activatedAt', 'expiresAt', 'sourceOperationId'], itemPath)
+    const hasAcquisitionSources = Object.hasOwn(normalizedEntry, 'acquisitionSourceIds')
+    exact(normalizedEntry, [
+      'id', 'actorPlacementId', 'capabilityInstanceId', 'canonicalId', 'mode', 'description', 'configurationId',
+      ...(hasAcquisitionSources ? ['acquisitionSourceIds'] : []),
+      'activatedAt', 'expiresAt', 'sourceOperationId',
+    ], itemPath)
+    const acquisitionSourceIds = hasAcquisitionSources
+      ? boundedList(normalizedEntry.acquisitionSourceIds, `${itemPath}.acquisitionSourceIds`, 32)
+          .map((sourceId, sourceIndex) => boundedText(sourceId, `${itemPath}.acquisitionSourceIds[${sourceIndex}]`))
+      : null
+    if (acquisitionSourceIds && new Set(acquisitionSourceIds).size !== acquisitionSourceIds.length) {
+      fail('invalid-capability-state', `${itemPath}.acquisitionSourceIds`, 'must contain unique source identities.')
+    }
     return Object.freeze({
       id: boundedText(normalizedEntry.id, `${itemPath}.id`),
       actorPlacementId: boundedText(entry.actorPlacementId, `${itemPath}.actorPlacementId`),
@@ -259,6 +273,7 @@ export const parseCapabilityRuntimeState = (
       mode: member(CAPABILITY_MODE_KINDS, entry.mode, `${itemPath}.mode`),
       description: normalizedEntry.description === null ? null : boundedText(normalizedEntry.description, `${itemPath}.description`, CAPABILITY_STATE_LIMITS.descriptionChars),
       configurationId: normalizedEntry.configurationId === null ? null : boundedText(normalizedEntry.configurationId, `${itemPath}.configurationId`, CAPABILITY_STATE_LIMITS.descriptionChars),
+      ...(acquisitionSourceIds === null ? {} : { acquisitionSourceIds: Object.freeze(acquisitionSourceIds) }),
       activatedAt: timestamp(normalizedEntry.activatedAt, `${itemPath}.activatedAt`),
       expiresAt: nullableTimestamp(entry.expiresAt, `${itemPath}.expiresAt`),
       sourceOperationId: boundedText(entry.sourceOperationId, `${itemPath}.sourceOperationId`),

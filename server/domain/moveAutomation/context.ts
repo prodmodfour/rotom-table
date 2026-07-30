@@ -52,6 +52,10 @@ import { resolveWielderWeaponProfile } from '../capabilityAutomation/wielder'
 import { resolveCapabilityWeaponMoveGrants } from '../capabilityAutomation/weaponMoveGrants'
 import { CAPABILITY_WEAPON_MOVE_RUNTIMES } from '../capabilityAutomation/weaponMoveRuntime'
 import { reconcileCapabilityRuntimeSourceLoss } from '../capabilityAutomation/sourceLoss'
+import {
+  physicalPowerSourceValues,
+  projectPhysicalPowerLoadToken,
+} from '../capabilityAutomation/physicalPower'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   resolveCanonicalMoveEntryForPlacement,
@@ -1423,6 +1427,12 @@ export const buildAuthoritativeMoveRulesContext = (
           },
         } : {}),
       })
+      capabilityFormToken = detachedFrozenJson(projectPhysicalPowerLoadToken({
+        token: capabilityFormToken,
+        map,
+        placementId: token.id,
+        powerByCapabilityInstanceId: physicalPowerSourceValues(effectiveCapabilitySet.instances),
+      }))
     }
     const activeProjection = activeProjectedAbilities.get(token.id) ?? []
     const legacyIncompleteBaseNames = resolveSheetAbilityInstances(

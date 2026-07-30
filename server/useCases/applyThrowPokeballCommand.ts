@@ -64,6 +64,11 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
 import { resolveMarsupialRelationship } from '../domain/capabilityAutomation/marsupialRelationship'
+import {
+  clearPhysicalPowerLoadsForPlacements,
+  physicalPowerSourceValues,
+  projectPhysicalPowerLoadToken,
+} from '../domain/capabilityAutomation/physicalPower'
 
 export class ThrowPokeballCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -137,7 +142,6 @@ const COMMAND_STRING_MAX_LENGTH = 120
 const TRAINER_ROSTER_SHEET_FIELD = 'pokemonRoster'
 const TRAINER_INVENTORY_SHEET_FIELD = 'inventory'
 const TARGET_CAUGHT_BALL_SHEET_FIELD = 'caughtBall'
-const CAPTURE_METADATA_PATCH_FIELD = 'captureLog'
 
 const defaultNow = (): number => Date.now()
 
@@ -760,6 +764,37 @@ const applyThrowPokeballCommand = (
   const payload = commandPayload(command)
   const trainerSheet = persistedSheetToTrainerSheet(context.trainerSheet)
   const targetSheet = persistedSheetToPokemonSheet(context.targetSheet)
+  const capabilitySheets = {
+    pokemon: context.sheetLookup.pokemon ?? new Map(),
+    trainer: context.sheetLookup.trainer ?? new Map(),
+  }
+  const actorEffective = resolveEffectiveCapabilities({
+    map: context.map,
+    placement: context.trainerPlacement,
+    sheet: trainerSheet,
+    sheets: capabilitySheets,
+  }).instances.filter(instance => instance.effective)
+  const targetEffective = resolveEffectiveCapabilities({
+    map: context.map,
+    placement: context.targetPlacement,
+    sheet: targetSheet,
+    sheets: capabilitySheets,
+  }).instances.filter(instance => instance.effective)
+  const loadedUserToken = projectPhysicalPowerLoadToken({
+    token: context.userToken,
+    map: context.map,
+    placementId: context.trainerPlacement.id,
+    powerByCapabilityInstanceId: physicalPowerSourceValues(actorEffective),
+  })
+  const loadedTargetToken = projectPhysicalPowerLoadToken({
+    token: context.targetToken,
+    map: context.map,
+    placementId: context.targetPlacement.id,
+    powerByCapabilityInstanceId: physicalPowerSourceValues(targetEffective),
+  })
+  if (loadedUserToken.physicalPowerLoad?.standardActionsAllowed === false) {
+    rejectLivePlayCommand('invalid', 'Staggering Weight prevents the Trainer from taking the Standard Action required to throw a Poké Ball.')
+  }
   const pokeball = optionForPayload(trainerSheet, payload)
   rejectCombinedParticipantCapture(context)
   rejectProtectedMarsupialBabyCapture(context)
@@ -774,8 +809,8 @@ const applyThrowPokeballCommand = (
 
   const capture = resolvePokeballCaptureAttempt({
     trainer: trainerSheet,
-    user: context.userToken,
-    target: context.targetToken,
+    user: loadedUserToken,
+    target: loadedTargetToken,
     targetSheet,
     pokeball,
     pokemonBySlug: context.pokemonBySlug,
@@ -813,23 +848,26 @@ const applyThrowPokeballCommand = (
   if (nextTarget) applyPokeballCaptureOutcomeToPokemonSheet(nextTarget, event)
 
   const timestamp = dependencies.now()
-  const nextMetadata = appendPokeballCaptureLogEntry(context.map.metadata, event, {
-    now: () => timestamp,
-    maxLogEntries: dependencies.maxLogEntries,
-  })
   const removedCapturePlacementIds = new Set([
     context.targetPlacement.id,
     ...captureCompanions.map(companion => companion.placementId),
   ])
-  const nextInitiative = event.result.success && context.map.initiative?.activeId
-    && removedCapturePlacementIds.has(context.map.initiative.activeId)
-    ? { ...context.map.initiative, activeId: null }
-    : context.map.initiative
+  const captureBaseMap = event.result.success
+    ? clearPhysicalPowerLoadsForPlacements(context.map, removedCapturePlacementIds)
+    : context.map
+  const nextMetadata = appendPokeballCaptureLogEntry(captureBaseMap.metadata, event, {
+    now: () => timestamp,
+    maxLogEntries: dependencies.maxLogEntries,
+  })
+  const nextInitiative = event.result.success && captureBaseMap.initiative?.activeId
+    && removedCapturePlacementIds.has(captureBaseMap.initiative.activeId)
+    ? { ...captureBaseMap.initiative, activeId: null }
+    : captureBaseMap.initiative
   const revision = nextRevision(currentRevision)
-  const capabilityRuntime = context.map.encounterState?.capabilityRuntime
+  const capabilityRuntime = captureBaseMap.encounterState?.capabilityRuntime
   const nextEncounterState = event.result.success && capabilityRuntime ? {
-    ...context.map.encounterState!,
-    effects: context.map.encounterState!.effects.filter(effect => (
+    ...captureBaseMap.encounterState!,
+    effects: captureBaseMap.encounterState!.effects.filter(effect => (
       !effect.affected.placementIds.some(placementId => removedCapturePlacementIds.has(placementId))
     )),
     capabilityRuntime: {
@@ -840,9 +878,9 @@ const applyThrowPokeballCommand = (
         && !link.participantPlacementIds.some(placementId => removedCapturePlacementIds.has(placementId))
       )),
     },
-  } : context.map.encounterState
+  } : captureBaseMap.encounterState
   const nextMap: TabletopMap = {
-    ...context.map,
+    ...captureBaseMap,
     revision,
     updatedAt: timestamp,
     metadata: marsupialPair ? {
@@ -855,8 +893,8 @@ const applyThrowPokeballCommand = (
       }),
     } : nextMetadata,
     placements: event.result.success
-      ? context.map.placements.filter((placement) => !removedCapturePlacementIds.has(placement.id))
-      : context.map.placements,
+      ? captureBaseMap.placements.filter((placement) => !removedCapturePlacementIds.has(placement.id))
+      : captureBaseMap.placements,
     ...(nextEncounterState === undefined ? {} : { encounterState: nextEncounterState }),
     ...(nextInitiative === undefined ? {} : { initiative: nextInitiative }),
   }

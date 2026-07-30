@@ -1194,11 +1194,24 @@
       "category": "numeric",
       "automationStatus": "native",
       "runtimeKind": "numeric",
-      "presentationPolicy": "passive-fact-only",
+      "presentationPolicy": "contextual-offer",
       "adjudicationPolicy": "deterministic",
       "levelRequirement": null,
       "itemOutputs": [],
-      "actions": [],
+      "actions": [
+        {
+          "id": "lift-load",
+          "action": "standard",
+          "frequency": "at-will",
+          "context": "adjacent-power-object"
+        },
+        {
+          "id": "release-load",
+          "action": "shift",
+          "frequency": "at-will",
+          "context": "physical-load-active"
+        }
+      ],
       "passiveProjection": true,
       "serverAuthoritative": true,
       "legacyExecutionAllowed": false,

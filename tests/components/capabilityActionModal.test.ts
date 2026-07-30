@@ -83,6 +83,25 @@ describe('CapabilityActionModal typed serialization', () => {
     })
   })
 
+  it('serializes only server-issued adjacent objects for a physical Power load', async () => {
+    const wrapper = mountModal('lift-load', offer([], [
+      { kind: 'object', value: 'crate', label: 'Crate (crate) — 45 lb.' },
+      { kind: 'object', value: 'barrel', label: 'Barrel (barrel) — 20 lb.' },
+    ]))
+    const checkboxes = wrapper.findAll('fieldset input[type="checkbox"]')
+    expect(checkboxes).toHaveLength(2)
+    await checkboxes[0]!.setValue(true)
+    await checkboxes[1]!.setValue(true)
+    await wrapper.get('form').trigger('submit')
+
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
+      targetPlacementIds: [],
+      cells: [],
+      optionId: 'objects:crate,barrel',
+      canonicalItemId: null,
+    })
+  })
+
   it('requires and serializes an explicit linked Trainer for Juicer collection', async () => {
     const wrapper = mountModal('collect-juicer-output', offer([], [
       { kind: 'trainer', value: 'linked-trainer', label: 'Linked Trainer' },

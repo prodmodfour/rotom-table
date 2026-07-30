@@ -32,6 +32,19 @@ export interface CapabilityPowerLoadResolution {
   readonly athleticsCheckDc: number | null
 }
 
+/** Bounded load consequence safe for public token projection. */
+export type CapabilityPhysicalPowerLoadPublicProjection = CapabilityPowerLoadResolution
+
+/** Server-derived exact active load retained only on authoritative roll tokens. */
+export interface CapabilityPhysicalPowerLoadProjection extends CapabilityPhysicalPowerLoadPublicProjection {
+  readonly power: number
+  readonly pounds: number
+  readonly objectIds: readonly string[]
+  readonly capabilityInstanceId: string
+  readonly lastMovedRound: number | null
+  readonly lastCheckRound: number | null
+}
+
 export const resolveCapabilityPowerLoad = (
   power: number,
   pounds: number,

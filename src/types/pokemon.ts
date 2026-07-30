@@ -1,5 +1,6 @@
 import type { CombatStageMap } from '~/types/combatStages'
 import type { EffectiveEncounterCreatureRules } from '#shared/moveAutomation/creatureRuleOverlays'
+import type { CapabilityPhysicalPowerLoadPublicProjection } from '#shared/capabilityAutomation/power'
 import type { EncounterTransformationCapabilitySnapshot } from '#shared/moveAutomation/transformationSnapshots'
 import type {
   EffectiveMovementProfile,
@@ -263,6 +264,8 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   defenderTypes: string[]
   /** Current authoritative Weight Class after any reversible form projection. */
   weightClass?: number
+  /** Bounded physical Power load consequences; exact attachment authority stays server-owned. */
+  physicalPowerLoad?: CapabilityPhysicalPowerLoadPublicProjection
   /** Complete copied-capability base used by Transform and future creature overlays. */
   ruleCapabilities?: EncounterTransformationCapabilitySnapshot
   /** Active reversible form provenance; identity and persistent state remain sheet-owned. */

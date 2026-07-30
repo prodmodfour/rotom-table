@@ -190,6 +190,29 @@ describe('throwPokeball live-play command', () => {
     expect(env.published.at(-1)).toMatchObject({ type: 'live-play-command-accepted', opId: 'op_capture001' })
   })
 
+  it('releases a captured target’s physical load atomically while preserving object identity and location', async () => {
+    const loadedMap = baseMap({
+      metadata: { capabilityObjects: [{
+        id: 'target-crate', pounds: 45, position: { x: 1, y: 0, z: 0 },
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: 'capability:target-1:Power:value-4', attachedToPlacementId: 'target-1',
+        physicalLoadOperationId: 'operation.target-load', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: null,
+      }] },
+    })
+    const env = setup({ map: loadedMap, target: targetSheet({ capabilities: { power: 4 } }) })
+    const response = await execute({
+      ...env,
+      command: commandFor(loadedMap, 'op_capture_loaded_target'),
+      random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
+    })
+    expect(response.capture?.result.success).toBe(true)
+    const object = env.maps.getBySlug('arena')?.metadata?.capabilityObjects?.[0] as Record<string, unknown>
+    expect(object).toMatchObject({ id: 'target-crate', pounds: 45, position: { x: 1, y: 0, z: 0 } })
+    expect(object.attachmentKind).toBeUndefined()
+    expect(object.attachedToPlacementId).toBeUndefined()
+  })
+
   it('captures an effective As One mount into the same Ball roster transaction and removes the coupled placements', async () => {
     const mountedMap = baseMap({
       placements: [
@@ -239,6 +262,52 @@ describe('throwPokeball live-play command', () => {
     const trainer = env.sheets.getByRef('trainer', 'ash')!
     expect(trainer.sheet.currentTeam).toEqual(['a', 'b', 'c', 'd', 'e', 'f'])
     expect(trainer.sheet.boxedPokemon).toEqual(['pidgey'])
+  })
+
+  it('rejects Poké Ball Standard Actions while the Trainer carries Staggering Weight', async () => {
+    const map = baseMap({
+      metadata: { capabilityObjects: [{
+        id: 'crate', pounds: 71, position: { x: 0, y: 0, z: 0 },
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: 'capability:trainer-1:Power:value-4', attachedToPlacementId: 'trainer-1',
+        physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: 1,
+      }] },
+    })
+    const env = setup({ map, trainer: trainerSheet({ capabilities: { power: 4, throwingRange: 10 } }) })
+    const random = vi.fn(() => 0.99)
+    const response = await execute({ ...env, command: commandFor(map, 'op_staggering_capture'), random })
+    expect(response.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 0 })
+    expect(random).not.toHaveBeenCalled()
+  })
+
+  it('applies a target’s Heavy Weight Evasion penalty to Poké Ball Accuracy', async () => {
+    const unloadedEnv = setup()
+    const unloaded = await execute({
+      ...unloadedEnv,
+      command: commandFor(unloadedEnv.map, 'op_unloaded_target_capture'),
+      random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
+    })
+    const loadedMap = baseMap({
+      metadata: { capabilityObjects: [{
+        id: 'crate', pounds: 45, position: { x: 1, y: 0, z: 0 },
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: 'capability:target-1:Power:value-4', attachedToPlacementId: 'target-1',
+        physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+        physicalLoadLastCheckRound: null,
+      }] },
+    })
+    const loadedEnv = setup({
+      map: loadedMap,
+      target: targetSheet({ capabilities: { power: 4 } }),
+    })
+    const loaded = await execute({
+      ...loadedEnv,
+      command: commandFor(loadedMap, 'op_loaded_target_capture'),
+      random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
+    })
+    expect(loaded.capture?.result.targetEvasion)
+      .toBeLessThan(unloaded.capture?.result.targetEvasion ?? Number.NEGATIVE_INFINITY)
   })
 
   it('persists misses without altering roster, target sheet, or placement', async () => {

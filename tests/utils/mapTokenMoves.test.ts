@@ -87,6 +87,19 @@ describe('map token move menu options', () => {
     expect(move.disabledByAutomation).toBe(false)
   })
 
+  it('marks Moves unavailable from the bounded public Staggering Weight projection', () => {
+    const [move] = buildTokenMoveMenuOptions(token({
+      physicalPowerLoad: {
+        loadClass: 'staggering', movementMetersPerShift: 1, speedCombatStagePenalty: -4,
+        accuracyPenalty: -4, evasionPenalty: -4, standardActionsAllowed: false, athleticsCheckDc: 4,
+      },
+    }), [{ move: { name: 'Tackle' }, automatic: false }])
+    expect(move).toMatchObject({
+      disabledByPhysicalLoad: true,
+      physicalLoadUseBlock: expect.stringContaining('Staggering Weight'),
+    })
+  })
+
   it('uses token Loyalty for Return and Frustration menu Damage Bases', () => {
     const moves = buildTokenMoveMenuOptions(token({ loyalty: 4, defenderTypes: [] }), [
       { move: { name: 'Return' }, automatic: false },

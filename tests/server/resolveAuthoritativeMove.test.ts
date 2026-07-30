@@ -603,6 +603,31 @@ describe('resolveAuthoritativeMove', () => {
     ]))
   })
 
+  it('rejects Move declarations while the actor carries Staggering Weight', () => {
+    const map = mapFixture()
+    map.metadata = { capabilityObjects: [{
+      id: 'crate', pounds: 71, position: { x: 0, y: 0, z: 0 },
+      attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+      attachedCapabilityInstanceId: 'capability:actor-token:Power:value-4',
+      attachedToPlacementId: 'actor-token', physicalLoadOperationId: 'power-load-operation',
+      physicalLoadLastMovedRound: null, physicalLoadLastCheckRound: 1,
+    }] }
+    const error = expectFailure(() => resolveAuthoritativeMove({
+      map,
+      pokemonSheets: sheetMap([{ name: 'Pound' }], {
+        actor: pokemonSheet('actor', [{ name: 'Pound' }], {
+          capabilities: { power: 4 }, skills: { athletics: '3d6' },
+        }),
+      }),
+      trainerSheets: new Map(),
+      intent: moveIntent({
+        placementId: 'actor-token', moveName: 'Pound',
+        selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+      }),
+    }), 'move-condition-blocked')
+    expect(error.message).toMatch(/Staggering Weight/)
+  })
+
   it('resolves no-roll Helping Hand through its native source-linked effect operation', () => {
     const resolution = resolveAuthoritativeMove({
       map: mapFixture(),

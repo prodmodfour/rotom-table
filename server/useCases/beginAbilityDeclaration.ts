@@ -75,6 +75,7 @@ import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
 } from '../policies/playerProfileTokenControlPolicy'
+import { abilityMechanicRequiresStandardAction } from '../domain/abilityAutomation/actionTiming'
 import { buildAuthoritativeAbilityContext } from '../domain/abilityAutomation/context'
 import { MOVE_AUTOMATION_RUNTIME_REGISTRY } from '../domain/moveAutomation/registry'
 import {
@@ -791,6 +792,13 @@ export const beginAbilityDeclarationUseCase = (
     && (ability.definitionHash === null || ability.definitionHash === runtime.definitionHash)
   ))
   if (!activeAbility) fail(409, 'Ability instance is not currently effective.')
+  const selectedOperations = runtime.definition.spec.phases
+    .filter(phase => phase.modeId === command.modeId)
+    .flatMap(phase => phase.operations)
+  if (selectedOperations.some(operation => abilityMechanicRequiresStandardAction(operation, command.modeId))
+    && context.actor.token.physicalPowerLoad?.standardActionsAllowed === false) {
+    fail(409, 'Staggering Weight prevents the actor from taking this Standard Action.')
+  }
   if (mode.kind === 'configuration'
     && command.canonicalId === 'Honey Paws'
     && command.modeId === 'prepare-leftovers'

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "rulesetId": "ptu-1.05-capability-automation",
-  "requirementCount": 158,
+  "requirementCount": 160,
   "requirements": [
     {
       "id": "capability:Alluring:passive",
@@ -866,6 +866,24 @@
       "given": "the actor owns an effective canonical capability instance",
       "when": "the authoritative encounter presentation is projected",
       "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+    },
+    {
+      "id": "capability:Power:action:lift-load",
+      "canonicalId": "Power",
+      "kind": "contextual-action",
+      "actionId": "lift-load",
+      "given": "an effective valued Power source is adjacent to one or more authoritative world objects with exact pounds",
+      "when": "the actor spends a Standard Action to lift, carry, push, or pull the selected combined load",
+      "then": "the server binds the exact objects to that Power instance, derives Heavy, Staggering, Drag, or too-heavy limits, and rejects equality with Drag Weight"
+    },
+    {
+      "id": "capability:Power:action:release-load",
+      "canonicalId": "Power",
+      "kind": "contextual-action",
+      "actionId": "release-load",
+      "given": "one exact effective Power source owns an active physical load binding",
+      "when": "the actor spends a Shift Action to release the load",
+      "then": "the server detaches only that source-owned load while preserving each object's authoritative location and identity"
     },
     {
       "id": "capability:Premonition:passive",

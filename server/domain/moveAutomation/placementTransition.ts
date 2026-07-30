@@ -7,6 +7,8 @@ import {
 } from '~/utils/tokenFacing'
 import { deepCloneJson } from '~/utils/serialization'
 import { Aa060AnchoredMovementError, assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
+import { relocateCapabilityGlowLights } from '../capabilityAutomation/glow'
+import { relocateCapabilityAttachedObjects } from '../capabilityAutomation/physicalPower'
 
 export interface ImmediatePassPlacementTransition {
   readonly kind: 'pass'
@@ -127,7 +129,19 @@ export const applyAuthoritativeMovePlacementTransition = (options: {
       options.actorPlacement.id,
       placement => ({ ...placement, position: deepCloneJson(destination) }),
     )
-    return applyFacing(moved, options.actorPlacement.id, options.desiredFacing)
+    const withAttachments = relocateCapabilityAttachedObjects(
+      moved,
+      new Map([[options.actorPlacement.id, destination]]),
+    )
+    const withAttachedPresence = {
+      ...withAttachments,
+      lights: relocateCapabilityGlowLights({
+        lights: withAttachments.lights,
+        placementIds: new Set([options.actorPlacement.id]),
+        destination,
+      }),
+    }
+    return applyFacing(withAttachedPresence, options.actorPlacement.id, options.desiredFacing)
   }
 
   return applyFacing(options.map, options.actorPlacement.id, options.desiredFacing)

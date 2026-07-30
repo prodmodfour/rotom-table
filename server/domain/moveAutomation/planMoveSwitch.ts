@@ -26,6 +26,7 @@ import {
   activelyCommandingTrainerPlacementId,
   recordActivelyCommandedPokemon,
 } from './activePokemonCommands'
+import { clearPhysicalPowerLoadsForPlacements } from '../capabilityAutomation/physicalPower'
 
 export type MoveSwitchPlanningErrorCode =
   | 'switch-source-missing'
@@ -290,7 +291,11 @@ export const planAuthoritativeMoveSwitch = (input: {
       entryEffect,
     ],
   }) : lifecycle.state
-  let nextMap = mapWithTemporaryHpForPlacement(previousMap, recalled.id, 0)
+  let nextMap = mapWithTemporaryHpForPlacement(
+    clearPhysicalPowerLoadsForPlacements(previousMap, new Set([recalled.id])),
+    recalled.id,
+    0,
+  )
   nextMap = {
     ...nextMap,
     placements,

@@ -17,6 +17,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { TabletopMap } from '~/types/map'
 import type { RealtimeEventAccessDependencies } from '../../server/realtime/realtimeEventAccessPolicy'
+import { placementToSpawned } from '~/utils/placement'
 
 describe('Capability passive context providers', () => {
   it('resolves every Pack Mon relationship boundary deterministically', () => {
@@ -138,6 +139,77 @@ describe('Capability passive context providers', () => {
     expect(offer?.unavailableReasonCodes).toContain('actor.fainted')
   })
 
+  it('offers contextual Power load controls and marks Standard actions unavailable under Staggering Weight', () => {
+    const lifter: CharacterSheet = {
+      slug: 'lifter', nickname: 'Lifter', species: 'Machop', level: 20,
+      skills: { athletics: '3d6' }, capabilities: { power: 4 },
+    }
+    const placement = {
+      id: 'lifter', sheetKind: 'pokemon' as const, sheetSlug: lifter.slug, position: { x: 1, y: 0, z: 1 },
+    }
+    const map = {
+      schemaVersion: 2, id: 'power-map', slug: 'power-map', name: 'Power', revision: 1, updatedAt: 200,
+      dimensions: { x: 6, y: 3, z: 6 }, groundLevelY: 0, voxels: [], placements: [placement],
+      metadata: {
+        capabilityObjects: [
+          { id: 'crate', name: 'Crate', pounds: 45, position: { x: 2, y: 0, z: 1 } },
+          { id: 'far', name: 'Far Crate', pounds: 20, position: { x: 5, y: 0, z: 5 } },
+        ],
+      },
+    } as TabletopMap
+    const initial = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map, mapRevision: 1, pokemonSheets: [lifter], trainerSheets: [], now: 200,
+    }).placements[0]!.offers.filter(offer => offer.canonicalId === 'Power')
+    expect(initial).toHaveLength(1)
+    expect(initial[0]).toMatchObject({ actionId: 'lift-load', available: true })
+    expect(initial[0]?.selectionOptions).toEqual([
+      expect.objectContaining({ kind: 'object', value: 'crate', label: expect.stringContaining('45 lb.') }),
+    ])
+
+    const carrying = {
+      ...map,
+      metadata: { capabilityObjects: [
+        {
+          id: 'burden', pounds: 71, position: placement.position,
+          attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+          attachedCapabilityInstanceId: 'capability:lifter:Power:value-4', attachedToPlacementId: 'lifter',
+          physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+          physicalLoadLastCheckRound: 1,
+        },
+        { id: 'crate', name: 'Crate', pounds: 45, position: { x: 2, y: 0, z: 1 } },
+      ] },
+    } as TabletopMap
+    const loaded = buildCapabilityClientCapabilityBundle({
+      role: 'gm', map: carrying, mapRevision: 1, pokemonSheets: [lifter], trainerSheets: [], now: 200,
+    }).placements[0]!.offers.filter(offer => offer.canonicalId === 'Power')
+    expect(loaded.find(offer => offer.actionId === 'release-load')).toMatchObject({ available: true, economy: 'shift' })
+    expect(loaded.find(offer => offer.actionId === 'lift-load')).toMatchObject({
+      available: false,
+      unavailableReasonCodes: expect.arrayContaining(['capability.physical-power-standard-action-blocked']),
+    })
+
+    const projected = projectCapabilityAutomationMapForPlayer(carrying, {
+      pokemon: new Map([[lifter.slug, lifter]]), trainer: new Map(),
+    })
+    expect(projected.metadata?.capabilityObjects).toBeUndefined()
+    expect(projected.metadata?.automationPresentationStates).toContainEqual(expect.objectContaining({
+      placementId: placement.id, state: 'physical-power-load', loadClass: 'staggering',
+      speedCombatStagePenalty: -4, accuracyPenalty: -4, evasionPenalty: -4,
+      standardActionsAllowed: false,
+    }))
+    const token = placementToSpawned(placement, {
+      pokemon: new Map([[lifter.slug, lifter]]), trainer: new Map(),
+    }, projected)!
+    expect(token.combatStages.spd).toBe(-4)
+    expect(token.physicalPowerLoad).toMatchObject({
+      loadClass: 'staggering', speedCombatStagePenalty: -4, standardActionsAllowed: false,
+    })
+    expect(token.physicalPowerLoad).not.toHaveProperty('pounds')
+    expect(token.physicalPowerLoad).not.toHaveProperty('objectIds')
+    expect(JSON.stringify(projected)).not.toContain('load-operation')
+    expect(JSON.stringify(projected)).not.toContain('capability:lifter:Power:value-4')
+  })
+
   it('removes private sensory and retry authority from player map documents', () => {
     const map = {
       schemaVersion: 2, id: 'map', slug: 'map', name: 'Map', revision: 1, updatedAt: 100,
@@ -149,6 +221,10 @@ describe('Capability passive context providers', () => {
         capabilityIllusions: [{ id: 'public-illusion' }],
         capabilityTeleportRoundUses: [{ placementId: 'a', round: 1 }],
         capabilityMegaEvolutionUses: [{ trainerSlug: 'secret-trainer', sceneStartedAt: 10 }],
+        capabilityObjects: [{
+          id: 'load', attachmentKind: 'physical-power-load',
+          attachedCapabilityInstanceId: 'private-source', physicalLoadOperationId: 'private-operation',
+        }],
       },
       encounterState: {
         ...createEmptyEncounterState(),
@@ -168,6 +244,7 @@ describe('Capability passive context providers', () => {
     expect(projected.metadata?.capabilityIllusions).toBeUndefined()
     expect(projected.metadata?.capabilityTeleportRoundUses).toBeUndefined()
     expect(projected.metadata?.capabilityMegaEvolutionUses).toBeUndefined()
+    expect(projected.metadata?.capabilityObjects).toBeUndefined()
     expect(projected.encounterState?.capabilityRuntime).toEqual(createEmptyEncounterState().capabilityRuntime)
   })
 

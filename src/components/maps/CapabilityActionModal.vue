@@ -323,7 +323,7 @@ const submit = (): void => {
     validationError.value = 'Select the authoritative item or resource identity.'
     return
   }
-  if ((action.value === 'manipulate-object' || action.value === 'manipulate-metal')
+  if ((action.value === 'manipulate-object' || action.value === 'manipulate-metal' || action.value === 'lift-load')
     && (selectedResourceIds.value.length < 1 || selectedResourceIds.value.length > 16)) {
     validationError.value = 'Select 1–16 authoritative world objects.'
     return
@@ -375,7 +375,7 @@ const submit = (): void => {
       return `${key}=${groundChoiceByCell.value[key] ?? 'unchanged'}`
     }).join(';')}`
   }
-  if (action.value === 'manipulate-object' || action.value === 'manipulate-metal') {
+  if (action.value === 'manipulate-object' || action.value === 'manipulate-metal' || action.value === 'lift-load') {
     retainedOption = `objects:${selectedResourceIds.value.join(',')}`
   }
   if (action.value === 'jump' && trickyDc.value !== null) retainedOption += `;tricky-dc:${trickyDc.value}`
@@ -476,8 +476,8 @@ const submit = (): void => {
           <select v-model="optionId" disabled><option value="">No authoritative options available</option></select>
         </label>
 
-        <fieldset v-if="actionId === 'manipulate-object' || actionId === 'manipulate-metal'" class="capability-modal__group">
-          <legend>Authoritative world objects</legend>
+        <fieldset v-if="actionId === 'manipulate-object' || actionId === 'manipulate-metal' || actionId === 'lift-load'" class="capability-modal__group">
+          <legend>{{ actionId === 'lift-load' ? 'Adjacent objects and exact combined weight' : 'Authoritative world objects' }}</legend>
           <label v-for="resource in (offer.selectionOptions ?? []).filter(candidate => candidate.kind === 'object')" :key="resource.value" class="capability-modal__check">
             <input v-model="selectedResourceIds" type="checkbox" :value="resource.value">
             <span>{{ resource.label }}</span>

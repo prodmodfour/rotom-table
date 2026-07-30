@@ -73,12 +73,25 @@ import {
   materializeJuicerSheetAtTime,
   withJuicerShellJuiceSnack,
 } from './juicer'
-import { mapWithCapabilityGlowLight } from './glow'
+import {
+  mapWithCapabilityGlowLight,
+  relocateCapabilityGlowLights,
+} from './glow'
 import { parseTrackerScentSelection } from '#shared/capabilityAutomation/tracker'
 import {
   zygardeAssemblyMatchesPlacement,
   zygardeAssemblyRecordForPlacement,
 } from './zygardeAssembly'
+import {
+  clearPhysicalPowerLoadAttachment,
+  clearPhysicalPowerLoadsForPlacements,
+  isPhysicalPowerLoadObject,
+  physicalPowerLoadAttachment,
+  physicalPowerMovementLimit,
+  physicalPowerSourceValues,
+  projectPhysicalPowerLoadToken,
+  relocateCapabilityAttachedObjects,
+} from './physicalPower'
 
 const canonicalCapabilityItemName = (value: string): string | null => (
   findItem(value)?.name ?? canonicalPtuBerryName(value)
@@ -169,6 +182,17 @@ const removeLinkByAction: Readonly<Record<string, CapabilityLinkKind>> = Object.
 const modeEffectId = (actorPlacementId: string, mode: CapabilityModeKind): string => (
   `capability.mode.${actorPlacementId}.${mode}`.replace(/[^A-Za-z0-9._:/-]/g, '-')
 )
+
+const modeStateId = (
+  actorPlacementId: string,
+  mode: CapabilityModeKind,
+  capabilityInstanceId: string,
+): string => mode === 'glowing'
+  ? `${modeEffectId(actorPlacementId, mode)}.${createHash('sha256')
+      .update(capabilityInstanceId)
+      .digest('hex')
+      .slice(0, 24)}`
+  : modeEffectId(actorPlacementId, mode)
 
 const numericModeModifier: Readonly<Partial<Record<CapabilityModeKind, number>>> = Object.freeze({
   blended: 2,
@@ -306,15 +330,27 @@ const mapWithCapabilityLinkedMovement = (
   movedPlacementId: string,
   destination: { readonly x: number; readonly y: number; readonly z: number },
 ): TabletopMap => {
-  const companionIds = new Set(capabilityLinkedMovementPlacementIds(input, movedPlacementId))
-  return {
+  const movingPlacementIds = new Set([
+    movedPlacementId,
+    ...capabilityLinkedMovementPlacementIds(input, movedPlacementId),
+  ])
+  let relocated = relocateCapabilityAttachedObjects({
     ...map,
     placements: map.placements.map(placement => (
-      placement.id === movedPlacementId || companionIds.has(placement.id)
+      movingPlacementIds.has(placement.id)
         ? { ...placement, position: { ...destination } }
         : placement
     )),
+  }, new Map([...movingPlacementIds].map(placementId => [placementId, destination])))
+  relocated = {
+    ...relocated,
+    lights: relocateCapabilityGlowLights({
+      lights: relocated.lights,
+      placementIds: movingPlacementIds,
+      destination,
+    }),
   }
+  return relocated
 }
 
 const mapWithPrivateNotice = (input: {
@@ -433,12 +469,31 @@ const applyToggle = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
   if (!addedMode && !removedMode) throw new Error(`Unsupported toggle action ${input.command.actionId}.`)
   if (addedMode) {
     const description = descriptionForMode(input, addedMode)
-    const id = modeEffectId(input.actorPlacement.id, addedMode)
+    const id = modeStateId(
+      input.actorPlacement.id,
+      addedMode,
+      input.command.capabilityInstanceId,
+    )
     const extendedInvisibility = addedMode === 'invisible'
       && input.actorPlacement.sheetKind === 'pokemon'
       && hasPokemonCapabilityEdge(input.actorSheet as CharacterSheet, 'Extended Invisibility')
     const expiresAt = addedMode === 'invisible'
       ? input.now + (extendedInvisibility ? 8 : 4) * 60_000 : null
+    const acquisitionSourceIds = addedMode === 'glowing'
+      ? resolveEffectiveCapabilities({
+          map: input.map,
+          placement: input.actorPlacement,
+          sheet: input.actorSheet,
+          sheets: { pokemon: input.pokemonSheets, trainer: input.trainerSheets },
+        }).instances.find(instance => (
+          instance.instanceId === input.command.capabilityInstanceId
+          && instance.canonicalId === input.command.canonicalId
+          && instance.effective
+        ))?.sources.map(source => source.sourceId)
+      : undefined
+    if (addedMode === 'glowing' && (!acquisitionSourceIds || acquisitionSourceIds.length === 0)) {
+      throw new Error('Glow has no exact effective acquisition source.')
+    }
     const mode: CapabilityModeState = {
       id,
       actorPlacementId: input.actorPlacement.id,
@@ -449,13 +504,22 @@ const applyToggle = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
       configurationId: addedMode === 'mega-evolved'
         ? `trainer:${input.command.selections.recipientTrainerSlug};ability:${input.command.selections.optionId ?? 'Run Away'}`
         : input.command.selections.optionId,
+      ...(acquisitionSourceIds ? { acquisitionSourceIds } : {}),
       activatedAt: input.now,
       expiresAt,
       sourceOperationId: input.command.operationId,
     }
     runtime = parseCapabilityRuntimeState({
       ...runtime,
-      modes: [...runtime.modes.filter(entry => !(entry.actorPlacementId === input.actorPlacement.id && entry.mode === addedMode)), mode],
+      modes: [
+        ...runtime.modes.filter(entry => !(
+          entry.actorPlacementId === input.actorPlacement.id
+          && entry.mode === addedMode
+          && (addedMode !== 'glowing'
+            || entry.capabilityInstanceId === input.command.capabilityInstanceId)
+        )),
+        mode,
+      ],
     })
     const numeric = numericModeModifier[addedMode]
     if (addedMode === 'intangible') {
@@ -483,7 +547,12 @@ const applyToggle = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
   if (removedMode) {
     runtime = parseCapabilityRuntimeState({
       ...runtime,
-      modes: runtime.modes.filter(entry => !(entry.actorPlacementId === input.actorPlacement.id && entry.mode === removedMode)),
+      modes: runtime.modes.filter(entry => !(
+        entry.actorPlacementId === input.actorPlacement.id
+        && entry.mode === removedMode
+        && (removedMode !== 'glowing'
+          || entry.capabilityInstanceId === input.command.capabilityInstanceId)
+      )),
     })
     effects = effects.filter(effect => effect.id !== modeEffectId(input.actorPlacement.id, removedMode))
   }
@@ -522,7 +591,9 @@ const applyToggle = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
     nextMap = mapWithCapabilityGlowLight({
       map: nextMap,
       placementId: input.actorPlacement.id,
-      active: false,
+      active: runtime.modes.some(entry => (
+        entry.actorPlacementId === input.actorPlacement.id && entry.mode === 'glowing'
+      )),
     })
   }
   if (addedMode === 'illusion') {
@@ -739,9 +810,10 @@ const executeLetterPress = (input: ExecuteCapabilityMechanicInput): CapabilityMe
     payload: { capabilityId: 'underdog', action: 'suppress' },
     dispel: { policy: 'none', tags: [] }, transferPolicy: 'retain', suppression: { sources: [] },
   })
+  const withoutCombinedLoads = clearPhysicalPowerLoadsForPlacements(input.map, new Set(targetIds))
   const map = mapWithRuntimeAndEffects({
-    ...input.map,
-    placements: input.map.placements.filter(placement => !targetIds.includes(placement.id)),
+    ...withoutCombinedLoads,
+    placements: withoutCombinedLoads.placements.filter(placement => !targetIds.includes(placement.id)),
   }, nextRuntime, effects)
   const participantMutations: CapabilityMechanicSheetMutation[] = targets.map(target => ({
     kind: 'pokemon',
@@ -1055,15 +1127,22 @@ const applyLink = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
   if (addKind === 'marsupial-pouch') {
     const babyPlacementId = input.command.selections.targetPlacementIds[0]!
     const share = input.command.selections.optionId === 'experience-share:20' ? 20 : 0
-    const previousPouches = Array.isArray(linkedMap.metadata?.capabilityMarsupialPouches)
-      ? linkedMap.metadata.capabilityMarsupialPouches as unknown[] : []
-    return {
-      ...linkedMap,
-      placements: linkedMap.placements.map(placement => placement.id === babyPlacementId
+    // A sheltered baby no longer moves independently, so its exact physical
+    // load is released at the pre-shelter cell rather than being teleported
+    // into the mother's carried presence.
+    const unburdenedMap = clearPhysicalPowerLoadsForPlacements(
+      linkedMap,
+      new Set([babyPlacementId]),
+    )
+    const previousPouches = Array.isArray(unburdenedMap.metadata?.capabilityMarsupialPouches)
+      ? unburdenedMap.metadata.capabilityMarsupialPouches as unknown[] : []
+    const shelteredMap: TabletopMap = {
+      ...unburdenedMap,
+      placements: unburdenedMap.placements.map(placement => placement.id === babyPlacementId
         ? { ...placement, position: { ...input.actorPlacement.position } }
         : placement),
       metadata: {
-        ...(linkedMap.metadata ?? {}),
+        ...(unburdenedMap.metadata ?? {}),
         capabilityMarsupialPouches: [
           ...previousPouches.filter(raw => {
             const pouch = raw as Record<string, unknown>
@@ -1074,22 +1153,30 @@ const applyLink = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
             motherPlacementId: input.actorPlacement.id,
             babyPlacementId,
             motherSheetSlug: input.actorPlacement.sheetSlug,
-            babySheetSlug: linkedMap.placements.find(placement => placement.id === babyPlacementId)!.sheetSlug,
+            babySheetSlug: unburdenedMap.placements.find(placement => placement.id === babyPlacementId)!.sheetSlug,
             experienceSharePercent: share,
             capabilityInstanceId: input.command.capabilityInstanceId,
             sourceOperationId: input.command.operationId,
           },
         ],
       },
-      ...(linkedMap.initiative ? {
+      ...(unburdenedMap.initiative ? {
         initiative: {
-          ...linkedMap.initiative,
-          ...(linkedMap.initiative.activeId === babyPlacementId ? { activeId: null } : {}),
-          ...(linkedMap.initiative.manualOrderIds ? {
-            manualOrderIds: linkedMap.initiative.manualOrderIds.filter(id => id !== babyPlacementId),
+          ...unburdenedMap.initiative,
+          ...(unburdenedMap.initiative.activeId === babyPlacementId ? { activeId: null } : {}),
+          ...(unburdenedMap.initiative.manualOrderIds ? {
+            manualOrderIds: unburdenedMap.initiative.manualOrderIds.filter(id => id !== babyPlacementId),
           } : {}),
         },
       } : {}),
+    }
+    return {
+      ...shelteredMap,
+      lights: relocateCapabilityGlowLights({
+        lights: shelteredMap.lights,
+        placementIds: new Set([babyPlacementId]),
+        destination: input.actorPlacement.position,
+      }),
     }
   }
   if (addKind !== 'living-weapon') return linkedMap
@@ -1373,6 +1460,25 @@ const participantWeightClass = (
   ? pokemonWeightClass(sheet as CharacterSheet)
   : trainerWeightClass(sheet as TrainerSheet)
 
+const physicalLoadProjectedToken = (
+  input: ExecuteCapabilityMechanicInput,
+  placement: SheetPlacement,
+  sheet: CharacterSheet | TrainerSheet,
+) => {
+  const sheets = { pokemon: new Map(input.pokemonSheets), trainer: new Map(input.trainerSheets) }
+  const token = placementToSpawned(placement, sheets, input.map)
+  if (!token) throw new Error(`Capability participant ${placement.id} is unavailable.`)
+  const effective = resolveEffectiveCapabilities({
+    map: input.map, placement, sheet, sheets,
+  }).instances.filter(instance => instance.effective)
+  return projectPhysicalPowerLoadToken({
+    token,
+    map: input.map,
+    placementId: placement.id,
+    powerByCapabilityInstanceId: physicalPowerSourceValues(effective),
+  })
+}
+
 const accuracyRollHits = (roll: CapabilityServerRoll, accuracyCheck: number): boolean => {
   const natural = roll.dice[0]
   return natural === 20 || (natural !== 1 && roll.total >= accuracyCheck)
@@ -1414,10 +1520,12 @@ const executeThreadedShift = (input: ExecuteCapabilityMechanicInput): Capability
   const rolls: CapabilityServerRoll[] = []
   if (option === 'unwilling-target') {
     if (!target) throw new Error('Unwilling Threaded requires one target.')
-    const sheets = { pokemon: new Map(input.pokemonSheets), trainer: new Map(input.trainerSheets) }
-    const actorToken = placementToSpawned(input.actorPlacement, sheets, input.map)
-    const targetToken = placementToSpawned(target, sheets, input.map)
-    if (!actorToken || !targetToken) throw new Error('Threaded Accuracy participants are unavailable.')
+    const targetSheet = target.sheetKind === 'pokemon'
+      ? input.pokemonSheets.get(target.sheetSlug)
+      : input.trainerSheets.get(target.sheetSlug)
+    if (!targetSheet) throw new Error('Threaded target sheet is unavailable.')
+    const actorToken = physicalLoadProjectedToken(input, input.actorPlacement, input.actorSheet)
+    const targetToken = physicalLoadProjectedToken(input, target, targetSheet)
     const accuracyModifier = moveAutomationUserAccuracy(actorToken, { fieldEffects: input.map.fieldEffects })
       - resolveMoveAutomationTargetEvasion({ ...THREADED_STATUS_SCRIPT, ac: threadedAc }, targetToken, {
         attacker: actorToken, fieldEffects: input.map.fieldEffects,
@@ -1544,10 +1652,17 @@ const executeThreadedShift = (input: ExecuteCapabilityMechanicInput): Capability
     Math.abs(destinationReference.y - start.y),
     Math.abs(destinationReference.z - start.z),
   )
-  const requestedDistance = Math.min(threadedRange, separation - (target ? 1 : 0))
+  let requestedDistance = Math.min(threadedRange, separation - (target ? 1 : 0))
+  if (movedPlacementId === input.actorPlacement.id) {
+    const loadedActor = physicalLoadProjectedToken(input, input.actorPlacement, input.actorSheet)
+    const load = loadedActor.physicalPowerLoad
+    const loadLimit = physicalPowerMovementLimit(load ?? null, input.map.initiative?.round)
+    if (loadLimit !== null) requestedDistance = Math.min(requestedDistance, loadLimit)
+  }
   if (requestedDistance < 1) return {
     map: input.map, sheetMutations: [], rolls, produced: [], outcome: 'no-op',
-    reasonCode: 'capability.threaded.already-adjacent', adjudicationNote: 'Threaded has no remaining distance to retract.',
+    reasonCode: 'capability.threaded.already-adjacent',
+    adjudicationNote: 'Threaded has no remaining distance under adjacency and physical load limits.',
   }
   const displacement = resolveAuthoritativeDisplacement({
     map: input.map,
@@ -2071,6 +2186,144 @@ const rollSkill = (
   })
 }
 
+const executePhysicalPowerLoad = (
+  input: ExecuteCapabilityMechanicInput,
+): CapabilityMechanicExecution => {
+  const rawObjects = Array.isArray(input.map.metadata?.capabilityObjects)
+    ? input.map.metadata.capabilityObjects as unknown[] : []
+  const ownedByExactSource = (raw: unknown): boolean => (
+    Boolean(raw && typeof raw === 'object' && !Array.isArray(raw))
+    && isPhysicalPowerLoadObject(raw as Record<string, unknown>)
+    && (raw as Record<string, unknown>).attachedToPlacementId === input.actorPlacement.id
+    && (raw as Record<string, unknown>).attachedCapabilityInstanceId === input.command.capabilityInstanceId
+  )
+  if (input.command.actionId === 'release-load') {
+    let released = 0
+    const capabilityObjects = rawObjects.map((raw) => {
+      if (!ownedByExactSource(raw)) return raw
+      released += 1
+      return clearPhysicalPowerLoadAttachment(raw as Record<string, unknown>)
+    })
+    if (released === 0) throw new Error('The exact Power source owns no active physical load.')
+    return {
+      map: {
+        ...input.map,
+        metadata: { ...(input.map.metadata ?? {}), capabilityObjects },
+      },
+      sheetMutations: [], rolls: [], produced: [], outcome: 'applied',
+      reasonCode: 'capability.power.load-released',
+      adjudicationNote: `${released} physical load object${released === 1 ? '' : 's'} released.`,
+    }
+  }
+
+  const match = /^objects:([A-Za-z0-9._:/-]+(?:,[A-Za-z0-9._:/-]+){0,15})$/.exec(
+    input.command.selections.optionId ?? '',
+  )
+  const objectIds = match?.[1]?.split(',') ?? []
+  if (objectIds.length === 0 || new Set(objectIds).size !== objectIds.length) {
+    throw new Error('Power requires unique authoritative physical load objects.')
+  }
+  const selectedIds = new Set(objectIds)
+  const selected = objectIds.map((id) => {
+    const matches = rawObjects.filter(raw => (
+      raw && typeof raw === 'object' && !Array.isArray(raw)
+      && (raw as Record<string, unknown>).id === id
+    ))
+    if (matches.length !== 1) {
+      throw new Error(`Physical load object ${id} no longer resolves to exactly one authoritative object.`)
+    }
+    return matches[0] as Record<string, unknown>
+  })
+  const existing = rawObjects.filter(ownedByExactSource) as Record<string, unknown>[]
+  const pounds = [...existing, ...selected]
+    .reduce((total, object) => total + Number(object.pounds), 0)
+  const effective = resolveEffectiveCapabilities({
+    map: input.map,
+    placement: input.actorPlacement,
+    sheet: input.actorSheet,
+    sheets: { pokemon: input.pokemonSheets, trainer: input.trainerSheets },
+  }).instances.find(instance => (
+    instance.effective
+    && instance.instanceId === input.command.capabilityInstanceId
+    && instance.canonicalId === 'Power'
+  ))
+  if (typeof effective?.value !== 'number' || !Number.isFinite(effective.value)) {
+    throw new Error('The exact valued Power source is no longer effective.')
+  }
+  const load = resolveCapabilityPowerLoad(effective.value, pounds)
+  if (load.loadClass === 'too-heavy') {
+    throw new Error('The combined physical load must be strictly lighter than Drag Weight.')
+  }
+  const rolls: CapabilityServerRoll[] = []
+  const currentRound = input.map.initiative?.round
+  const round = Number.isSafeInteger(currentRound) && (currentRound as number) > 0
+    ? currentRound as number : null
+  if (load.loadClass === 'staggering') {
+    const check = rollSkill(
+      input,
+      input.actorSheet,
+      input.actorPlacement.sheetKind,
+      'athletics',
+      'physical-power-staggering-load',
+    )
+    rolls.push(check)
+    if (check.total < (load.athleticsCheckDc ?? 4)) {
+      const capabilityObjects = rawObjects.map(raw => ownedByExactSource(raw)
+        ? clearPhysicalPowerLoadAttachment(raw as Record<string, unknown>) : raw)
+      return {
+        map: {
+          ...input.map,
+          metadata: { ...(input.map.metadata ?? {}), capabilityObjects },
+        },
+        sheetMutations: [], rolls, produced: [], outcome: 'no-op',
+        reasonCode: 'capability.power.staggering-check-failed',
+        adjudicationNote: `Athletics ${check.total} did not meet DC ${load.athleticsCheckDc ?? 4}; the load was not carried.`,
+      }
+    }
+  }
+  const retainedLastMovedRound = existing.reduce<number | null>((latest, object) => {
+    const value = object.physicalLoadLastMovedRound
+    return Number.isSafeInteger(value) && (value as number) > 0
+      && (latest === null || (value as number) > latest) ? value as number : latest
+  }, null)
+  const retainedLastCheckRound = load.loadClass === 'staggering' ? round : null
+  const attachment = physicalPowerLoadAttachment({
+    placementId: input.actorPlacement.id,
+    capabilityInstanceId: input.command.capabilityInstanceId,
+    operationId: input.command.operationId,
+    lastMovedRound: retainedLastMovedRound,
+    lastCheckRound: retainedLastCheckRound,
+  })
+  const capabilityObjects = rawObjects.map((raw) => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
+    const object = raw as Record<string, unknown>
+    if (ownedByExactSource(object)) return {
+      ...object,
+      physicalLoadLastMovedRound: retainedLastMovedRound,
+      physicalLoadLastCheckRound: retainedLastCheckRound,
+    }
+    if (!selectedIds.has(String(object.id))) return raw
+    if (typeof object.attachedToPlacementId === 'string') {
+      throw new Error(`Physical load object ${String(object.id)} is already attached.`)
+    }
+    return {
+      ...object,
+      ...attachment,
+      position: { ...input.actorPlacement.position },
+      lastCapabilityOperationId: input.command.operationId,
+    }
+  })
+  return {
+    map: {
+      ...input.map,
+      metadata: { ...(input.map.metadata ?? {}), capabilityObjects },
+    },
+    sheetMutations: [], rolls, produced: [], outcome: 'applied',
+    reasonCode: `capability.power.${load.loadClass}-load-attached`,
+    adjudicationNote: `${objectIds.length} object${objectIds.length === 1 ? '' : 's'} added; ${pounds} lb. resolves as ${load.loadClass} weight at Power ${Math.floor(effective.value)}.`,
+  }
+}
+
 const bestOpposedSkill = (
   sheet: CharacterSheet | TrainerSheet,
   kind: 'pokemon' | 'trainer',
@@ -2368,10 +2621,8 @@ const executeSkillChallenge = (input: ExecuteCapabilityMechanicInput): Capabilit
     : maneuverId === 'disarm' || maneuverId === 'trip' ? 6 : null
   const maneuverAccuracyRolls: CapabilityServerRoll[] = []
   if (maneuverAc !== null) {
-    const sheets = { pokemon: new Map(input.pokemonSheets), trainer: new Map(input.trainerSheets) }
-    const actorToken = placementToSpawned(input.actorPlacement, sheets, input.map)
-    const targetToken = placementToSpawned(target.placement, sheets, input.map)
-    if (!actorToken || !targetToken) throw new Error('Telekinetic maneuver Accuracy participants are unavailable.')
+    const actorToken = physicalLoadProjectedToken(input, input.actorPlacement, input.actorSheet)
+    const targetToken = physicalLoadProjectedToken(input, target.placement, target.sheet)
     const statusScript: MoveAutomationScript = {
       ...THREADED_STATUS_SCRIPT,
       moveName: `Telekinetic ${maneuverId}`,
@@ -2645,8 +2896,15 @@ const executeAdjudication = (input: ExecuteCapabilityMechanicInput): CapabilityM
             ? {
                 attachedToPlacementId: input.actorPlacement.id,
                 attachedCapabilityInstanceId: input.command.capabilityInstanceId,
+                attachedCapabilityCanonicalId: 'Magnetic',
+                attachmentKind: 'magnetic',
               }
-            : { attachedToPlacementId: null, attachedCapabilityInstanceId: null }),
+            : {
+                attachedToPlacementId: null,
+                attachedCapabilityInstanceId: null,
+                attachedCapabilityCanonicalId: null,
+                attachmentKind: null,
+              }),
           lastCapabilityOperationId: input.command.operationId,
         }
       }),
@@ -2956,6 +3214,7 @@ export const executeCapabilityMechanic = (
       reasonCode: 'capability.movement-resolved', adjudicationNote: null,
     }
   }
+  if (input.action.mechanic === 'physical-load') return executePhysicalPowerLoad(input)
   if (input.action.mechanic === 'produce-item') return executeProduction(input)
   if (input.action.mechanic === 'resolve-roll') return executeRoll(input)
   if (input.action.mechanic === 'skill-challenge') return executeSkillChallenge(input)

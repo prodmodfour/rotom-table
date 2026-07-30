@@ -14,7 +14,6 @@ import type {
   MovementCapabilityKey,
   MovementCapabilitySpeeds,
   MovementCapabilityTraits,
-  ShiftMovementCapabilityKey,
 } from '~/types/movement'
 import type { MoveAutomationAreaDirection } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -71,6 +70,13 @@ import { aa085to100ShadowTagPathViolation } from '../abilityAutomation/mechanics
 import { authoritativeEquippedItemReferences } from '../moveAutomation/itemResources'
 import { getVoxelMaterialDefinition } from '~/utils/mapMaterials'
 import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
+import {
+  physicalPowerMovementLimit,
+  physicalPowerSourceValues,
+  resolvePhysicalPowerLoad,
+} from '../capabilityAutomation/physicalPower'
+import { clampCombatStage } from '~/utils/combatStages'
+import { speedCombatStageMovementDelta } from '~/utils/combatStageMovement'
 
 const NATUREWALK_TERRAIN_TAGS: Readonly<Record<string, readonly string[]>> = Object.freeze({
   arctic: ['arctic', 'ice', 'snow', 'tundra'], tundra: ['arctic', 'ice', 'snow', 'tundra'],
@@ -558,6 +564,7 @@ interface MovementPlacementSnapshot extends PositionedGridFootprint {
   readonly effectiveCapabilityInstanceIds: readonly string[]
   readonly equippedItemIds: readonly string[]
   readonly naturewalkTerrains: readonly string[]
+  readonly physicalPowerLoad: ReturnType<typeof resolvePhysicalPowerLoad>
   /** Amorphous may use a 1m traversal shape, but must reform at endpoints. */
   readonly amorphousTraversal: boolean
   readonly movementCapabilities: MovementCapabilitySpeeds
@@ -1006,6 +1013,13 @@ const buildMovementSnapshots = (
       sheet,
       sheets: { pokemon: sheets.pokemon, trainer: sheets.trainer },
     })
+    const effectiveInstances = effectiveCapabilities.instances.filter(instance => instance.effective)
+    const effectiveCapabilityInstanceIds = new Set(effectiveInstances.map(instance => instance.instanceId))
+    const physicalPowerLoad = resolvePhysicalPowerLoad({
+      map,
+      placementId: placement.id,
+      powerByCapabilityInstanceId: physicalPowerSourceValues(effectiveInstances),
+    })
     const activeModes = (map.encounterState?.capabilityRuntime?.modes ?? []).filter(mode => (
       mode.actorPlacementId === placement.id
       && (mode.expiresAt === null || mode.expiresAt > now)
@@ -1025,6 +1039,22 @@ const buildMovementSnapshots = (
       ? 1
       : Math.max(1, Math.ceil(getClearanceValue(token) * sizeScale))
     let movementBaseSpeeds = { ...(token.movementCapabilities ?? {}) }
+    if (physicalPowerLoad?.speedCombatStagePenalty) {
+      const authoredSpeedStage = clampCombatStage(token.combatStages.spd)
+      const loadedSpeedStage = clampCombatStage(
+        authoredSpeedStage + physicalPowerLoad.speedCombatStagePenalty,
+      )
+      const movementDelta = speedCombatStageMovementDelta(loadedSpeedStage)
+        - speedCombatStageMovementDelta(authoredSpeedStage)
+      if (movementDelta !== 0) {
+        movementBaseSpeeds = Object.fromEntries(Object.entries(movementBaseSpeeds).map(([key, value]) => [
+          key,
+          value === undefined || value <= 0
+            ? value
+            : Math.max(value < 2 ? value : 2, value + movementDelta),
+        ])) as MovementCapabilitySpeeds
+      }
+    }
     // AA-projected Slowed is introduced after the spawn base. Apply that new
     // condition once before generic encounter movement overlays.
     if (conditionSlowsMovement(token.conditions)
@@ -1081,13 +1111,14 @@ const buildMovementSnapshots = (
       speciesId: token.species.trim().toLowerCase(),
       currentHp: token.currentHp,
       effectiveAbilityIds,
-      effectiveCapabilityIds: effectiveCapabilities.instances.filter(instance => instance.effective).map(instance => instance.canonicalId),
-      effectiveCapabilityInstanceIds: effectiveCapabilities.instances.filter(instance => instance.effective).map(instance => instance.instanceId),
+      effectiveCapabilityIds: effectiveInstances.map(instance => instance.canonicalId),
+      effectiveCapabilityInstanceIds: [...effectiveCapabilityInstanceIds],
       equippedItemIds: authoritativeEquippedItemReferences(placement, sheet).map(reference => reference.canonicalItemId),
-      naturewalkTerrains: effectiveCapabilities.instances.flatMap(instance => (
-        instance.effective && instance.canonicalId === 'Naturewalk' && instance.parameters.kind === 'terrains'
+      naturewalkTerrains: effectiveInstances.flatMap(instance => (
+        instance.canonicalId === 'Naturewalk' && instance.parameters.kind === 'terrains'
           ? [...instance.parameters.terrains] : []
       )),
+      physicalPowerLoad,
       amorphousTraversal: amorphous,
       position: cloneAnchor(placement.position),
       base,
@@ -1380,6 +1411,17 @@ const effectiveLimit = (
     : Math.min(capabilityLimit, policy.maximumCost)
 }
 
+const loadAdjustedCapabilityLimit = (
+  capabilityLimit: number | null,
+  mover: MovementPlacementSnapshot,
+  round: number | null | undefined,
+): number | null => {
+  const loadLimit = physicalPowerMovementLimit(mover.physicalPowerLoad, round)
+  if (loadLimit === null) return capabilityLimit
+  if (capabilityLimit === null) return loadLimit
+  return Math.min(capabilityLimit, loadLimit)
+}
+
 const footprintsAdjacentAt = (
   mover: MovementPlacementSnapshot,
   anchor: GridAnchor,
@@ -1495,10 +1537,27 @@ const resolvePreparedPassMovement = (
     })
   }
 
+  const loadLimit = physicalPowerMovementLimit(input.mover.physicalPowerLoad, input.map.initiative?.round)
+  if (loadLimit === 0) {
+    return failure({
+      reasonCode: 'movement-cost-exceeds-limit',
+      message: 'Drag Weight movement is limited to 1 metre in the authoritative round.',
+      placementId: input.placementId,
+      mode: 'pass',
+      policy: input.policy,
+      origin: input.origin,
+      footprint: input.footprint,
+      capabilities: resolvedCapabilities(input.mover, []),
+      consultedPlacementIds: input.consultedPlacementIds,
+      sheetReads: input.sheetReads,
+    })
+  }
   const candidates = buildMoveAutomationPassDirectionSteps({
     origin: input.origin,
     direction: input.policy.direction,
-    maximumDistance: input.policy.maximumCost,
+    maximumDistance: loadLimit === null
+      ? input.policy.maximumCost
+      : Math.min(input.policy.maximumCost, loadLimit),
   })
   let failureEvidence: PassMovementFailureEvidence | null = null
 
@@ -1563,7 +1622,11 @@ const resolvePreparedPassMovement = (
       allowedDirections: [direction],
     })
     const capabilities = resolvedCapabilities(input.mover, pathResult.capabilityKeys)
-    const capabilityLimit = pathResult.movementLimit
+    const capabilityLimit = loadAdjustedCapabilityLimit(
+      pathResult.movementLimit,
+      input.mover,
+      input.map.initiative?.round,
+    )
     const resolvedEffectiveLimit = capabilityLimit === null
       ? null
       : effectiveLimit(capabilityLimit, input.policy)
@@ -2016,7 +2079,10 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       y: destination.y - origin.y,
       z: destination.z - origin.z,
     })
-    const limit = policy.maximumCost ?? 0
+    const policyLimit = policy.maximumCost ?? 0
+    const limit = policy.kind === 'gm-override'
+      ? policyLimit
+      : loadAdjustedCapabilityLimit(policyLimit, mover, input.map.initiative?.round) ?? policyLimit
     if (cost > limit) return failure({
       reasonCode: 'movement-cost-exceeds-limit',
       message: `The server-derived teleport distance ${cost} exceeds the reviewed limit ${limit}.`,
@@ -2097,9 +2163,12 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       return [...(voxel.tags ?? []), ...(material.tags ?? []), voxel.materialId]
         .some(tag => /^(?:ice|snow|deep[- ]snow)$/i.test(tag.trim()))
     }))
-  const capabilityLimit = pathResult.movementLimit === null
+  const terrainCapabilityLimit = pathResult.movementLimit === null
     ? null
     : Math.max(0, pathResult.movementLimit - (snowBootsPenalty ? 1 : 0))
+  const capabilityLimit = policy.kind === 'gm-override'
+    ? terrainCapabilityLimit
+    : loadAdjustedCapabilityLimit(terrainCapabilityLimit, mover, input.map.initiative?.round)
   const resolvedEffectiveLimit = capabilityLimit === null
     ? null
     : effectiveLimit(capabilityLimit, policy)

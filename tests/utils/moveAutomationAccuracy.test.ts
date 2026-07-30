@@ -195,6 +195,43 @@ describe('move automation accuracy helpers', () => {
     })
   })
 
+  it('applies active physical Power load penalties to Accuracy, Evasion, and loaded Speed stages', () => {
+    const heavyLoad = {
+      loadClass: 'heavy' as const,
+      movementMetersPerShift: null,
+      speedCombatStagePenalty: -2,
+      accuracyPenalty: -2,
+      evasionPenalty: -2,
+      standardActionsAllowed: true,
+      athleticsCheckDc: null,
+      power: 4,
+      pounds: 45,
+      objectIds: ['crate'],
+      capabilityInstanceId: 'capability:actor:Power:value-4',
+      lastMovedRound: null,
+      lastCheckRound: null,
+    }
+    expect(moveAutomationUserAccuracy(token({
+      combatStages: { ...stages, acc: 2, spd: -2 },
+      physicalPowerLoad: heavyLoad,
+    }))).toBe(0)
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), token({
+      combatStages: { ...stages, spd: -2 },
+      physicalPowerLoad: heavyLoad,
+    }))).toMatchObject({ value: 2, label: 'Speed Evasion' })
+
+    const keenEyeAttacker = token({ id: 'user', abilityNames: ['Keen Eye'] })
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), token({
+      def: 10, spd: 0,
+      evasion: { physical: 4, special: 4, speed: 4 },
+      combatStages: { ...stages, spd: -2 },
+      physicalPowerLoad: heavyLoad,
+    }), { attacker: keenEyeAttacker })).toMatchObject({
+      value: 0,
+      label: 'Physical Evasion',
+    })
+  })
+
   it('applies Compound Eyes to outgoing Accuracy Rolls', () => {
     expect(moveAutomationUserAccuracy(token({ abilityNames: ['Compound Eyes'] }))).toBe(3)
     expect(moveAutomationUserAccuracy(token({ abilityNames: ['compound-eyes'], combatStages: { ...stages, acc: 6 } }))).toBe(9)

@@ -170,7 +170,8 @@ const physicalEvasion = (
       'physical',
       wondered ? target.sdef : target.def,
       stage,
-      attackerAdjustedEvasionBonus(target.evasion?.physical, context),
+      attackerAdjustedEvasionBonus(target.evasion?.physical, context)
+        + (target.physicalPowerLoad?.evasionPenalty ?? 0),
     ),
   }
 }
@@ -189,7 +190,8 @@ const specialEvasion = (
       'special',
       wondered ? target.def : target.sdef,
       wondered ? target.combatStages.def : target.combatStages.sdef,
-      attackerAdjustedEvasionBonus(target.evasion?.special, context),
+      attackerAdjustedEvasionBonus(target.evasion?.special, context)
+        + (target.physicalPowerLoad?.evasionPenalty ?? 0),
     ),
   }
 }
@@ -200,7 +202,15 @@ const speedEvasion = (
 ): MoveAutomationEvasionCandidate => ({
   kind: 'speed',
   label: 'Speed Evasion',
-  value: evasionForStat(target, 'spd', 'speed', target.spd ?? 0, target.combatStages.spd, attackerAdjustedEvasionBonus(target.evasion?.speed, context)),
+  value: evasionForStat(
+    target,
+    'spd',
+    'speed',
+    target.spd ?? 0,
+    target.combatStages.spd,
+    attackerAdjustedEvasionBonus(target.evasion?.speed, context)
+      + (target.physicalPowerLoad?.evasionPenalty ?? 0),
+  ),
 })
 
 export const moveAutomationEvasionCandidates = (
@@ -302,6 +312,7 @@ export const moveAutomationUserAccuracy = (
   + sheetAbilityAccuracyRollBonus(user.abilityNames)
   + (user.accuracyRollBonus ?? pokemonTrainingFeatureAccuracyRollBonus(user.activeTrainingFeature))
   + moveAutomationFieldAccuracyBonus(context)
+  + (user.physicalPowerLoad?.accuracyPenalty ?? 0)
 
 export const moveAutomationHitChanceTone = (percent: number): MoveAutomationHitChanceTone => {
   if (percent < 50) return 'low'

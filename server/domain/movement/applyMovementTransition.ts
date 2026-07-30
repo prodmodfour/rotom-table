@@ -14,6 +14,7 @@ import { deepCloneJson } from '~/utils/serialization'
 import { assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
 import { recordAa085to100MovementEvidence } from '../abilityAutomation/mechanics/aa085to100MovementIntegration'
 import { relocateCapabilityGlowLights } from '../capabilityAutomation/glow'
+import { relocateCapabilityAttachedObjects } from '../capabilityAutomation/physicalPower'
 
 export interface AuthoritativeMovementMapTransition {
   readonly nextMap: TabletopMap
@@ -146,15 +147,11 @@ export const applyAuthoritativeMovementMapTransition = (input: {
     })
     if (contacted) metadata = { ...(metadata ?? {}), capabilityIllusions: illusions }
   }
-  if (moved && Array.isArray(metadata?.capabilityObjects)) {
-    metadata = {
-      ...(metadata ?? {}),
-      capabilityObjects: metadata.capabilityObjects.map((raw) => {
-        if (!raw || typeof raw !== 'object' || Array.isArray(raw)
-          || !movingPlacementIds.has(String((raw as Record<string, unknown>).attachedToPlacementId))) return raw
-        return { ...(raw as Record<string, unknown>), position: { ...to } }
-      }),
-    }
+  if (moved) {
+    metadata = relocateCapabilityAttachedObjects(
+      { ...input.map, metadata },
+      new Map([...movingPlacementIds].map(placementId => [placementId, to])),
+    ).metadata
   }
 
   return {

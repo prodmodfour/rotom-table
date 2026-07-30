@@ -50,13 +50,25 @@ const battleMap = (slug: string): TabletopMap => {
 }
 let databases: RotomDatabase[] = []
 afterEach(() => databases.splice(0).forEach(database => database.close()))
-const setup = (slug: string, canonicalId: string, hp = 100) => {
+const setup = (slug: string, canonicalId: string, hp = 100, physicalLoadPounds?: number) => {
   const database = openRotomDatabase({ path: ':memory:' })
   databases.push(database)
   const mapRepository = createSqliteMapRepository<TabletopMap>(database)
   const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
-  mapRepository.saveSetupMap(battleMap(slug))
-  for (const entry of [sheet('actor', canonicalId, hp), sheet('ally'), sheet('far-ally'), sheet('enemy')]) {
+  const arena = battleMap(slug)
+  const actorSheet = sheet('actor', canonicalId, hp)
+  if (physicalLoadPounds !== undefined) {
+    actorSheet.capabilities = { power: 4 }
+    arena.metadata = { capabilityObjects: [{
+      id: 'crate', pounds: physicalLoadPounds, position: { x: 1, y: 0, z: 1 },
+      attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+      attachedCapabilityInstanceId: 'capability:actor:Power:value-4', attachedToPlacementId: 'actor',
+      physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+      physicalLoadLastCheckRound: 1,
+    }] }
+  }
+  mapRepository.saveSetupMap(arena)
+  for (const entry of [actorSheet, sheet('ally'), sheet('far-ally'), sheet('enemy')]) {
     sheetRepository.saveSetupSheet('pokemon', entry.slug, entry as unknown as Record<string, unknown>)
   }
   return { database, mapRepository, sheetRepository, now: () => 1_000 }
@@ -89,6 +101,15 @@ describe('AA-064 activated abilities', () => {
     expect(persisted(dependencies, 'actor').combat?.currentHp).toBeGreaterThan(10)
     expect(dependencies.mapRepository.getBySlug('aa064-comatose')?.encounterState
       ?.turnResources.actor?.actions.standard.spent).toBe(1)
+  })
+
+  it('blocks Comatose’s Standard Move Action while the actor carries Staggering Weight', () => {
+    const dependencies = setup('aa064-comatose-staggering', 'Comatose', 10, 71)
+    expect(() => begin(dependencies, 'aa064-comatose-staggering', 'Comatose'))
+      .toThrow(/Staggering Weight/)
+    expect(persisted(dependencies, 'actor').combat?.conditions).not.toContain('Sleep')
+    expect(dependencies.mapRepository.getBySlug('aa064-comatose-staggering')?.encounterState
+      ?.turnResources.actor?.actions.standard.spent).toBe(0)
   })
 
   it('aa064.confidence.reviewed offers only Combat Stats and raises nearby allies with Scene payment', () => {

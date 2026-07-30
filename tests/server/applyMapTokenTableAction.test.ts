@@ -379,6 +379,39 @@ describe('live-play map token table action commands', () => {
     expect(events[0]).toMatchObject({ channel: 'map:arena', type: 'live-play-command-accepted' })
   })
 
+  it('rejects canonical Standard maneuvers while carrying Staggering Weight', async () => {
+    const map = baseMap({
+      initiative: { activeId: 'actor', round: 2 },
+      metadata: {
+        owner: 'gm',
+        capabilityObjects: [{
+          id: 'crate', pounds: 71, position: { x: 0, y: 0, z: 0 },
+          attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+          attachedCapabilityInstanceId: 'capability:actor:Power:value-4', attachedToPlacementId: 'actor',
+          physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: null,
+          physicalLoadLastCheckRound: 2,
+        }],
+      },
+    })
+    const sheets = {
+      'pokemon:sandile': pokemonSheet({ capabilities: { power: 4 } }),
+      'pokemon:target': pokemonSheet({ slug: 'target', nickname: 'Target', species: 'Pikachu' }),
+      'trainer:lenora': trainerSheet(),
+    }
+    const { deps } = createDeps({ map, sheets, now: 1111 })
+    const response = await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      command: command(
+        LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+        'op_staggering_trip',
+        { placementId: 'actor', maneuverName: 'Trip', targetPlacementId: 'target' },
+        [tokenActionScope('actor'), metadataScope],
+      ),
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
+    }, deps)
+    expect(response.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 7 })
+  })
+
   it('resolves Wielder Disarm rolls, action spend, item custody, and ground placement atomically', async () => {
     const encounter = createEmptyEncounterState()
     const map = baseMap({
@@ -445,6 +478,85 @@ describe('live-play map token table action commands', () => {
       expect.stringContaining('Wielder +2'),
       expect.stringContaining('Honed Claws fell'),
     ]))
+  })
+
+  it('uses complete map sheets for Viral Fusion-derived Power penalties on Disarm', async () => {
+    const encounter = createEmptyEncounterState()
+    const map = baseMap({
+      placements: [
+        { id: 'actor', sheetKind: 'pokemon', sheetSlug: 'sandile', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target', sheetKind: 'pokemon', sheetSlug: 'target', position: { x: 1, y: 0, z: 0 } },
+        { id: 'donor', sheetKind: 'pokemon', sheetSlug: 'donor', position: { x: 3, y: 0, z: 0 } },
+      ],
+      initiative: { activeId: 'actor', round: 2 },
+      encounterState: {
+        ...encounter,
+        history: {
+          ...encounter.history,
+          currentRound: 2,
+          currentTurn: { round: 2, turn: 1, placementId: 'actor' },
+        },
+        turnResources: {
+          actor: createEncounterTurnResourceLedger({ placementId: 'actor', round: 2, turn: 1 }),
+        },
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'viral-fusion-link', kind: 'viral-fusion', ownerPlacementId: 'actor',
+            participantPlacementIds: ['donor'],
+            capabilityInstanceId: 'capability:actor:Viral_20Fusion:base', canonicalId: 'Viral Fusion',
+            establishedAt: 10, configurationId: 'Tackle', sourceOperationId: 'operation.viral-fusion',
+          }],
+        },
+      },
+      metadata: {
+        owner: 'gm',
+        capabilityObjects: [{
+          id: 'crate', pounds: 45, position: { x: 0, y: 0, z: 0 },
+          attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+          attachedCapabilityInstanceId: 'capability:actor:Power:value-4', attachedToPlacementId: 'actor',
+          physicalLoadOperationId: 'operation.load', physicalLoadLastMovedRound: null,
+          physicalLoadLastCheckRound: null,
+        }],
+      },
+    })
+    const { deps, mapRepository, sheetRepository } = createDeps({
+      map,
+      sheets: {
+        'pokemon:sandile': pokemonSheet({
+          capabilities: { power: 1, other: ['Viral Fusion'] },
+          skills: { combat: '4d6', stealth: '2d6' },
+        }),
+        'pokemon:target': pokemonSheet({
+          slug: 'target', nickname: 'Target', species: 'Pikachu', abilities: [],
+          skills: { combat: '2d6', stealth: '2d6' }, items: { held: 'Honed Claws' },
+        }),
+        'pokemon:donor': pokemonSheet({
+          slug: 'donor', nickname: 'Donor', species: 'Machop', capabilities: { power: 4 }, abilities: [],
+        }),
+      },
+      now: 2112,
+      rollDie: () => 6,
+    })
+    const response = await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
+      command: command(
+        LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+        'op_disarm_viral_power',
+        { placementId: 'actor', maneuverName: 'Disarm', targetPlacementId: 'target' },
+        [tokenActionScope('actor'), metadataScope, {
+          kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'target', field: 'equipment',
+        }],
+      ),
+    }, deps)
+
+    expect(response.result).toMatchObject({ ok: true, revision: 8 })
+    expect((await sheetRepository.getByRef('pokemon', 'target'))?.sheet).toMatchObject({
+      items: { held: 'Honed Claws' },
+    })
+    expect((await mapRepository.getBySlug('arena'))?.metadata?.maneuverLog?.[0]?.lines)
+      .toEqual(expect.arrayContaining(['Disarm missed AC 6.']))
   })
 
   it('rejects the retired legacy ability command before reading or writing authoritative resources', async () => {

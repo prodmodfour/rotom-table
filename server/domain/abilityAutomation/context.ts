@@ -85,6 +85,11 @@ import {
 import { projectAa081NeutralizingGasAbilities } from './mechanics/aa081NeutralizingGasIntegration'
 import { authoritativeAbilityOwnerIsConscious } from './effectiveRuntimeAbilities'
 import { projectAbilityCapabilityHpToken } from './capabilityHpInvariants'
+import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
+import {
+  physicalPowerSourceValues,
+  projectPhysicalPowerLoadToken,
+} from '../capabilityAutomation/physicalPower'
 
 export const AUTHORITATIVE_ABILITY_CONTEXT_LIMITS = Object.freeze({
   targets: 64,
@@ -434,12 +439,20 @@ const resolveTokens = (
     const sheet = placement.sheetKind === 'pokemon'
       ? lookup.pokemon.get(placement.sheetSlug)
       : lookup.trainer.get(placement.sheetSlug)
-    if (token && sheet) byId.set(placement.id, detachedFrozen(projectAbilityCapabilityHpToken({
-      map,
-      placement,
-      sheet,
-      token,
-    })))
+    if (token && sheet) {
+      const effective = resolveEffectiveCapabilities({
+        map,
+        placement,
+        sheet,
+        sheets: { pokemon: lookup.pokemon, trainer: lookup.trainer },
+      }).instances.filter(instance => instance.effective)
+      byId.set(placement.id, detachedFrozen(projectPhysicalPowerLoadToken({
+        token: projectAbilityCapabilityHpToken({ map, placement, sheet, token }),
+        map,
+        placementId: placement.id,
+        powerByCapabilityInstanceId: physicalPowerSourceValues(effective),
+      })))
+    }
   }
   return byId
 }

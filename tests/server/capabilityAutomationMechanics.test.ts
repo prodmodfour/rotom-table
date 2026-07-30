@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { parseExecuteCapabilityActionCommand, type CapabilityServerRoll } from '#shared/capabilityAutomation/clientCommands'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
 import { executeCapabilityMechanic } from '../../server/domain/capabilityAutomation/executeMechanic'
 import { CAPABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/capabilityAutomation/registry'
 import { createCapabilityLifecycleHandler } from '../../server/domain/moveAutomation/capabilityLifecycle'
 import { applyAuthoritativeMovementMapTransition } from '../../server/domain/movement/applyMovementTransition'
+import { reconcileCapabilityRuntimeSourceLoss } from '../../server/domain/capabilityAutomation/sourceLoss'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -16,6 +18,7 @@ const actorPlacement: SheetPlacement = {
 const actorSheet: CharacterSheet = {
   slug: 'actor-sheet', nickname: 'Actor', species: 'Shuckle', level: 30, revision: 1,
   items: { held: 'Oran Berry' },
+  capabilities: { other: ['Glow'] },
 }
 const trainer: TrainerSheet = {
   slug: 'trainer', name: 'Trainer', level: 10, currentTeam: [actorSheet.slug],
@@ -114,6 +117,51 @@ describe('native Capability mechanics', () => {
     const stopped = execute('Glow', 'stop-light', {}, moved)
     expect(stopped.map.lights).toEqual([])
     expect(stopped.map.encounterState?.capabilityRuntime?.modes).toEqual([])
+  })
+
+  it('binds Glow activation to its exact acquisition sources without one retained source extinguishing another', () => {
+    const first = execute('Glow', 'emit-light')
+    const firstMode = first.map.encounterState?.capabilityRuntime?.modes[0]
+    expect(firstMode?.acquisitionSourceIds).toEqual([
+      'sheet:pokemon:actor-sheet:capabilities.other:Glow:Glow',
+    ])
+    const grantedGlow = parseEncounterEffect({
+      id: 'effect.second-glow-source',
+      kind: 'capability',
+      source: { operationId: 'operation.second-glow-source', moveId: 'test', placementId: actorPlacement.id },
+      affected: { placementIds: [actorPlacement.id], sideIds: [], cells: [] },
+      createdRound: 1, createdTurn: 0,
+      duration: { kind: 'permanent', remaining: null },
+      stacks: 1, charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null },
+      tags: ['test-glow-source'],
+      payload: { capabilityId: 'glow', action: 'grant' },
+      dispel: { policy: 'none', tags: [] }, transferPolicy: 'retain', suppression: { sources: [] },
+    })
+    const withLaterSource: TabletopMap = {
+      ...first.map,
+      encounterState: {
+        ...first.map.encounterState!,
+        effects: [...first.map.encounterState!.effects, grantedGlow],
+      },
+    }
+    const withoutSheetGlow: CharacterSheet = { ...actorSheet, capabilities: { other: [] } }
+    const lateReplacement = reconcileCapabilityRuntimeSourceLoss({
+      map: withLaterSource,
+      sheets: { pokemon: new Map([[actorSheet.slug, withoutSheetGlow]]), trainer: new Map([[trainer.slug, trainer]]) },
+    })
+    expect(lateReplacement.encounterState?.capabilityRuntime?.modes).toEqual([])
+    expect(lateReplacement.lights).toEqual([])
+
+    const jointlyActivated = execute('Glow', 'emit-light', {}, withLaterSource)
+    expect(jointlyActivated.map.encounterState?.capabilityRuntime?.modes[0]?.acquisitionSourceIds).toHaveLength(2)
+    const oneOwnerRetained = reconcileCapabilityRuntimeSourceLoss({
+      map: jointlyActivated.map,
+      sheets: { pokemon: new Map([[actorSheet.slug, withoutSheetGlow]]), trainer: new Map([[trainer.slug, trainer]]) },
+    })
+    expect(oneOwnerRetained.encounterState?.capabilityRuntime?.modes).toHaveLength(1)
+    expect(oneOwnerRetained.lights).toEqual([expect.objectContaining({ id: 'capability.glow:actor' })])
   })
 
   it('separates a released linked participant into an adjacent legal cell', () => {

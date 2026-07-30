@@ -99,19 +99,35 @@ describe('authoritative Capability movement actions', () => {
       capabilities: { other: ['Teleporter 4'] },
     }
     const scene = { name: 'Battle', startedAt: 500 }
-    const base = mapFixture(actor, { activeScene: scene, initiative: { round: 2 } as TabletopMap['initiative'] })
+    const encounter = createEmptyEncounterState()
+    const base = mapFixture(actor, {
+      activeScene: scene,
+      initiative: { round: 2 } as TabletopMap['initiative'],
+      encounterState: {
+        ...encounter,
+        history: { ...encounter.history, sceneId: 'scene:battle:500', currentRound: 2 },
+      },
+    })
     const legal = actionInput({ map: base, actor, actorSheet: sheet, canonicalId: 'Teleporter', actionId: 'teleport', cells: [{ x: 4, y: 0, z: 1 }] })
     expect(() => validate(legal)).not.toThrow()
     const applied = execute(legal, 1)
     expect(applied.map.placements[0]?.position).toEqual({ x: 4, y: 0, z: 1 })
     expect(applied.map.metadata?.capabilityTeleportRoundUses).toContainEqual(expect.objectContaining({
-      placementId: 'actor', round: 2, sceneStartedAt: 500, sceneName: 'Battle',
+      placementId: 'actor', round: 2, sceneId: 'scene:battle:500',
     }))
 
     const spent = actionInput({ map: { ...base, metadata: applied.map.metadata }, actor, actorSheet: sheet, canonicalId: 'Teleporter', actionId: 'teleport', cells: [{ x: 3, y: 0, z: 1 }] })
     expect(() => validate(spent)).toThrowError(CapabilitySelectionValidationError)
     const nextRound = actionInput({
-      map: { ...base, initiative: { round: 3 } as TabletopMap['initiative'], metadata: applied.map.metadata },
+      map: {
+        ...base,
+        initiative: { round: 3 } as TabletopMap['initiative'],
+        encounterState: {
+          ...base.encounterState!,
+          history: { ...base.encounterState!.history, currentRound: 3 },
+        },
+        metadata: applied.map.metadata,
+      },
       actor, actorSheet: sheet, canonicalId: 'Teleporter', actionId: 'teleport', cells: [{ x: 3, y: 0, z: 1 }],
     })
     expect(() => validate(nextRound)).not.toThrow()
@@ -134,6 +150,52 @@ describe('authoritative Capability movement actions', () => {
       map: mapFixture(actor), actor, actorSheet: levitatingSheet,
       canonicalId: 'Teleporter', actionId: 'teleport', cells: [{ x: 2, y: 2, z: 1 }],
     }))).not.toThrow()
+  })
+
+  it('limits Jump and Teleporter Shift movement with the exact active physical load', () => {
+    const actor = placement()
+    const sheet: CharacterSheet = {
+      slug: actor.sheetSlug, nickname: 'Loaded Mover', species: 'Abra', level: 20,
+      capabilities: { power: 4, jump: '3/1', other: ['Teleporter 4'] },
+    }
+    const loadedMap = (pounds: number, lastMovedRound: number | null): TabletopMap => mapFixture(actor, {
+      activeScene: { name: 'Battle', startedAt: 500 },
+      initiative: { round: 2 } as TabletopMap['initiative'],
+      metadata: { capabilityObjects: [{
+        id: 'crate', pounds, position: actor.position,
+        attachmentKind: 'physical-power-load', attachedCapabilityCanonicalId: 'Power',
+        attachedCapabilityInstanceId: 'capability:actor:Power:value-4', attachedToPlacementId: actor.id,
+        physicalLoadOperationId: 'load-operation', physicalLoadLastMovedRound: lastMovedRound,
+        physicalLoadLastCheckRound: pounds <= 140 ? 2 : null,
+      }] },
+    })
+    const staggering = loadedMap(71, null)
+    expect(() => validate(actionInput({
+      map: staggering, actor, actorSheet: sheet, canonicalId: 'Teleporter', actionId: 'teleport',
+      cells: [{ x: 3, y: 0, z: 1 }],
+    }))).toThrow(/within 1 metres/i)
+    expect(() => validate(actionInput({
+      map: staggering, actor, actorSheet: sheet, canonicalId: 'Jump', actionId: 'jump',
+      cells: [{ x: 3, y: 0, z: 1 }], optionId: 'normal',
+    }))).toThrow(/physical load limits this Jump action to 1 metre/i)
+    expect(() => validate(actionInput({
+      map: staggering, actor, actorSheet: sheet, canonicalId: 'Teleporter', actionId: 'teleport',
+      cells: [{ x: 2, y: 0, z: 1 }],
+    }))).not.toThrow()
+    expect(() => validate(actionInput({
+      map: staggering, actor, actorSheet: sheet, canonicalId: 'Jump', actionId: 'jump',
+      cells: [{ x: 2, y: 0, z: 1 }], optionId: 'normal',
+    }))).not.toThrow()
+
+    const spentDrag = loadedMap(141, 2)
+    expect(() => validate(actionInput({
+      map: spentDrag, actor, actorSheet: sheet, canonicalId: 'Teleporter', actionId: 'teleport',
+      cells: [{ x: 2, y: 0, z: 1 }],
+    }))).toThrow(/within 0 metres/i)
+    expect(() => validate(actionInput({
+      map: spentDrag, actor, actorSheet: sheet, canonicalId: 'Jump', actionId: 'jump',
+      cells: [{ x: 2, y: 0, z: 1 }], optionId: 'normal',
+    }))).toThrow(/limits this Jump action to 0 metres/i)
   })
 
   it('relocates an exact source-effective As One companion with Teleporter', () => {
@@ -244,6 +306,6 @@ describe('authoritative Capability movement actions', () => {
       actor, actorSheet: sheet, canonicalId: 'Jump', actionId: 'jump',
       cells: [{ x: 4, y: 0, z: 1 }], optionId: 'normal',
     })
-    expect(() => validate(request)).toThrow(/collision-free trajectory/i)
+    expect(() => validate(request)).toThrow(/DC 16 High Jump extension/i)
   })
 })
