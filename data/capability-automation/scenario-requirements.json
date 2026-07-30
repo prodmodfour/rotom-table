@@ -445,9 +445,9 @@
       "id": "capability:Illusionist:passive",
       "canonicalId": "Illusionist",
       "kind": "passive-projection",
-      "given": "the actor owns an effective canonical capability instance",
-      "when": "the authoritative encounter presentation is projected",
-      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+      "given": "an exact effective Illusionist source maintains one bounded visual Illusion",
+      "when": "authoritative movement makes physical contact with its cell or the exact source is lost",
+      "then": "contact marks the Illusion noticeably disrupted without destroying its maintained action, while exact source loss removes its mode and private authority"
     },
     {
       "id": "capability:Illusionist:action:create-illusion",

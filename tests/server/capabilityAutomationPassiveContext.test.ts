@@ -118,6 +118,56 @@ describe('Capability passive context providers', () => {
     expect(projected.encounterState?.capabilityRuntime).toEqual(createEmptyEncounterState().capabilityRuntime)
   })
 
+  it('projects noticeable Illusion disruption without exposing raw contact authority', () => {
+    const encounter = createEmptyEncounterState()
+    const sheet: CharacterSheet = {
+      slug: 'illusionist-sheet', nickname: 'Illusionist', species: 'Zorua', level: 20,
+      capabilities: { other: ['Illusionist'] },
+    }
+    const placement = {
+      id: 'illusionist', sheetKind: 'pokemon' as const, sheetSlug: sheet.slug,
+      position: { x: 2, y: 0, z: 2 },
+    }
+    const sheets = { pokemon: new Map([[sheet.slug, sheet]]), trainer: new Map() }
+    const sourceMap = {
+      schemaVersion: 2 as const, slug: 'source', name: 'Source', revision: 1,
+      dimensions: { x: 4, y: 2, z: 4 }, voxels: [], placements: [placement],
+    }
+    const source = resolveEffectiveCapabilities({
+      map: sourceMap, placement, sheet, sheets,
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'Illusionist')!
+    const map = {
+      ...sourceMap,
+      metadata: {
+        capabilityIllusions: [{
+          id: 'capability-illusion:illusionist', ownerPlacementId: placement.id,
+          position: { x: 1, y: 0, z: 1 }, description: 'a candle flame', disrupted: true,
+          disruptedAt: 42, disruptedByPlacementId: 'private-contact-placement',
+        }],
+      },
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'capability.mode.illusionist.illusion', actorPlacementId: placement.id,
+            capabilityInstanceId: source.instanceId, canonicalId: 'Illusionist', mode: 'illusion',
+            description: 'a candle flame', configurationId: 'motion:minor', activatedAt: 1,
+            expiresAt: null, sourceOperationId: 'private-operation',
+          }],
+        },
+      },
+    } as TabletopMap
+
+    const projected = projectCapabilityAutomationMapForPlayer(map, sheets)
+    expect(projected.metadata?.automationPresentationStates).toContainEqual(expect.objectContaining({
+      placementId: placement.id, state: 'illusion', label: 'Disrupted Illusion',
+      description: 'a candle flame', position: { x: 1, y: 0, z: 1 }, disrupted: true,
+    }))
+    expect(projected.metadata?.capabilityIllusions).toBeUndefined()
+    expect(JSON.stringify(projected)).not.toContain('private-contact-placement')
+  })
+
   it('projects only source-effective bounded physical modes and omits unverifiable realtime state', () => {
     const encounter = createEmptyEncounterState()
     const sheet: CharacterSheet = {

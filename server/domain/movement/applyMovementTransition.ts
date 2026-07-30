@@ -122,35 +122,27 @@ export const applyAuthoritativeMovementMapTransition = (input: {
       })
     : deepCloneJson(input.map.metadata)
   if (moved && Array.isArray(input.map.metadata?.capabilityIllusions)) {
-    const contactedOwnerIds = new Set(input.map.metadata.capabilityIllusions.flatMap((raw): readonly string[] => {
-      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return []
+    let contacted = false
+    const illusions = input.map.metadata.capabilityIllusions.map((raw) => {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
       const illusion = raw as Record<string, unknown>
       const position = illusion.position as Record<string, unknown> | undefined
-      return illusion.ownerPlacementId !== placement.id
-        && position?.x === to.x && position.y === to.y && position.z === to.z
-        && typeof illusion.ownerPlacementId === 'string'
-        ? [illusion.ownerPlacementId] : []
-    }))
-    if (contactedOwnerIds.size > 0) {
-      metadata = {
-        ...(metadata ?? {}),
-        capabilityIllusions: input.map.metadata.capabilityIllusions.filter(raw => (
-          !contactedOwnerIds.has(String((raw as Record<string, unknown>)?.ownerPlacementId))
-        )),
+      const contactPlacementId = [...movingPlacementIds]
+        .find(placementId => placementId !== illusion.ownerPlacementId)
+      if (!contactPlacementId
+        || position?.x !== to.x || position.y !== to.y || position.z !== to.z) return raw
+      contacted = true
+      // Physical contact exposes an Illusion, but canonical Illusionist text
+      // does not destroy it or release the source's maintained action. Keep
+      // exact source ownership and record bounded disruption evidence instead.
+      return {
+        ...illusion,
+        disrupted: true,
+        disruptedAt: input.timestamp,
+        disruptedByPlacementId: contactPlacementId,
       }
-      encounterState = parseEncounterState({
-        ...encounterState,
-        capabilityRuntime: encounterState.capabilityRuntime ? {
-          ...encounterState.capabilityRuntime,
-          modes: encounterState.capabilityRuntime.modes.filter(mode => (
-            mode.mode !== 'illusion' || !contactedOwnerIds.has(mode.actorPlacementId)
-          )),
-        } : encounterState.capabilityRuntime,
-        effects: encounterState.effects.filter(effect => (
-          ![...contactedOwnerIds].some(ownerId => effect.id === `capability.mode.${ownerId}.illusion`)
-        )),
-      })
-    }
+    })
+    if (contacted) metadata = { ...(metadata ?? {}), capabilityIllusions: illusions }
   }
   if (moved && Array.isArray(metadata?.capabilityObjects)) {
     metadata = {

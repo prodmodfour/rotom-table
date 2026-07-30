@@ -191,6 +191,11 @@ LEVEL_REQUIREMENTS = {
     "Herb Growth": 20, "Milk Collection": 20, "Mushroom Harvest": 20,
 }
 PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
+    "Illusionist": {
+        "given": "an exact effective Illusionist source maintains one bounded visual Illusion",
+        "when": "authoritative movement makes physical contact with its cell or the exact source is lost",
+        "then": "contact marks the Illusion noticeably disrupted without destroying its maintained action, while exact source loss removes its mode and private authority",
+    },
     "Living Weapon": {
         "given": "an exact effective Honedge-line Living Weapon source is engaged with a willing wielder",
         "when": "equipment, movement, Ability, weapon Move, Accuracy, and Damage rules are projected",

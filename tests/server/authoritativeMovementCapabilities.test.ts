@@ -235,6 +235,48 @@ describe('authoritative movement capabilities', () => {
       .toEqual({ x: 1, y: 0, z: 0 })
   })
 
+  it('marks physical contact as a noticeable Illusion disruption without destroying source authority', () => {
+    const encounter = createEmptyEncounterState()
+    const arena = map({
+      placements: [
+        placement(),
+        { id: 'illusionist', sheetKind: 'pokemon', sheetSlug: 'illusionist', position: { x: 3, y: 0, z: 0 } },
+      ],
+      metadata: {
+        capabilityIllusions: [{
+          id: 'capability-illusion:illusionist', ownerPlacementId: 'illusionist',
+          position: { x: 1, y: 0, z: 0 }, description: 'a candle flame',
+          sourceOperationId: 'operation:create-illusion',
+        }],
+      },
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'capability.mode.illusionist.illusion', actorPlacementId: 'illusionist',
+            capabilityInstanceId: 'capability:illusionist:Illusionist:base', canonicalId: 'Illusionist',
+            mode: 'illusion', description: 'a candle flame', configurationId: 'motion:minor',
+            activatedAt: 1, expiresAt: null, sourceOperationId: 'operation:create-illusion',
+          }],
+        },
+      },
+    })
+    const transition = applyAuthoritativeMovementMapTransition({
+      map: arena, placementId: 'actor', destination: { x: 1, y: 0, z: 0 }, distance: 1,
+      encounterState: arena.encounterState!, timestamp: 42, userName: 'Actor',
+    })
+
+    expect(transition.nextMap.metadata?.capabilityIllusions).toContainEqual(expect.objectContaining({
+      ownerPlacementId: 'illusionist', disrupted: true, disruptedAt: 42,
+      disruptedByPlacementId: 'actor',
+    }))
+    expect(transition.nextMap.encounterState?.capabilityRuntime?.modes).toContainEqual(expect.objectContaining({
+      actorPlacementId: 'illusionist', mode: 'illusion',
+      capabilityInstanceId: 'capability:illusionist:Illusionist:base',
+    }))
+  })
+
   it('does not let a source-lost link hide collisions or move stale companions', () => {
     const actorSheet = pokemonSheet({ overland: 5, other: [] })
     const mountSheet: CharacterSheet = {
