@@ -727,9 +727,9 @@
       "id": "capability:Mountable X:passive",
       "canonicalId": "Mountable X",
       "kind": "passive-projection",
-      "given": "the actor owns an effective canonical capability instance",
-      "when": "the authoritative encounter presentation is projected",
-      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+      "given": "an effective valued Mountable source has adjacent willing riders and any bounded campaign guideline override",
+      "when": "rider type, significant extra weight, and rider capacity are validated",
+      "then": "the canonical average-Trainer capacity is the default guideline while one exact GM-authored override may approve riders, adjust capacity from 0 through 16, or allow significant extra weight"
     },
     {
       "id": "capability:Mountable X:action:accept-rider",

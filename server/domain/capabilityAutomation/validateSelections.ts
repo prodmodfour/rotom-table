@@ -94,6 +94,48 @@ const hasContext = (map: TabletopMap, value: string): boolean => {
   const normalized = value.toLocaleLowerCase('en-US')
   return contexts.has(normalized) || contexts.has(`capability.${normalized}`)
 }
+
+interface MountableGuidelineOverride {
+  readonly riderCapacity: number | null
+  readonly allowSignificantExtraWeight: boolean
+  readonly approvedRiderPlacementIds: ReadonlySet<string>
+}
+
+/** Parse one bounded GM-authored campaign adjustment to the explicitly non-rigid Mountable guideline. */
+const mountableGuidelineOverride = (
+  map: TabletopMap,
+  mountPlacementId: string,
+): MountableGuidelineOverride | null => {
+  const matching = Array.isArray(map.metadata?.capabilityMountableOverrides)
+    ? map.metadata.capabilityMountableOverrides.filter((raw) => (
+        raw && typeof raw === 'object' && !Array.isArray(raw)
+        && (raw as Record<string, unknown>).mountPlacementId === mountPlacementId
+      ))
+    : []
+  if (matching.length === 0) return null
+  if (matching.length !== 1) {
+    fail('mountable-guideline-override-ambiguous', 'Mountable requires at most one exact campaign guideline override per placement.')
+  }
+  const override = matching[0] as Record<string, unknown>
+  const capacity = override.riderCapacity
+  if (capacity !== undefined && (!Number.isSafeInteger(capacity) || (capacity as number) < 0 || (capacity as number) > 16)) {
+    fail('mountable-guideline-override-invalid', 'Mountable campaign rider capacity must be a whole number from 0 through 16.')
+  }
+  if (override.allowSignificantExtraWeight !== undefined && typeof override.allowSignificantExtraWeight !== 'boolean') {
+    fail('mountable-guideline-override-invalid', 'Mountable extra-weight authority must be a bounded boolean choice.')
+  }
+  const approved = override.approvedRiderPlacementIds
+  if (approved !== undefined && (!Array.isArray(approved) || approved.length > 16
+    || approved.some(id => typeof id !== 'string' || !map.placements.some(placement => placement.id === id))
+    || new Set(approved).size !== approved.length)) {
+    fail('mountable-guideline-override-invalid', 'Mountable approved riders must be at most 16 unique authoritative placements.')
+  }
+  return {
+    riderCapacity: capacity === undefined ? null : capacity as number,
+    allowSignificantExtraWeight: override.allowSignificantExtraWeight === true,
+    approvedRiderPlacementIds: new Set((approved ?? []) as string[]),
+  }
+}
 const targetIsWilling = (map: TabletopMap, actorPlacementId: string, targetPlacementId: string): boolean => (
   Array.isArray(map.metadata?.capabilityWillingTargets)
   && map.metadata.capabilityWillingTargets.some(value => value === `${actorPlacementId}:${targetPlacementId}`)
@@ -1342,12 +1384,15 @@ export const validateCapabilityActionSelections = (input: {
   }
 
   if (input.command.canonicalId === 'Mountable X' && input.command.actionId === 'accept-rider') {
+    const guidelineOverride = mountableGuidelineOverride(input.map, input.actor.id)
     if (targets.some(target => target.sheetKind !== 'trainer'
-      && !hasContext(input.map, `suitable-rider:${input.actor.id}:${target.id}`))) {
+      && !hasContext(input.map, `suitable-rider:${input.actor.id}:${target.id}`)
+      && !guidelineOverride?.approvedRiderPlacementIds.has(target.id))) {
       fail('mountable-rider-invalid', 'Mountable capacity accepts average Trainers unless an exact GM-approved rider context says otherwise.')
     }
-    if (hasContext(input.map, `significant-extra-weight:${input.actor.id}`)) {
-      fail('mountable-extra-weight', 'Mountable capacity fails while exact authoritative significant extra-weight context is present.')
+    if (hasContext(input.map, `significant-extra-weight:${input.actor.id}`)
+      && !guidelineOverride?.allowSignificantExtraWeight) {
+      fail('mountable-extra-weight', 'Mountable capacity fails under significant extra weight unless the campaign guideline explicitly allows it.')
     }
     const instance = resolveEffectiveCapabilities({
       map: input.map,
@@ -1355,7 +1400,8 @@ export const validateCapabilityActionSelections = (input: {
       sheet: input.actorSheet,
       sheets: { pokemon: input.pokemonSheets, trainer: input.trainerSheets },
     }).instances.find(candidate => candidate.instanceId === input.command.capabilityInstanceId)
-    const capacity = instance?.parameters.kind === 'rider-capacity' ? instance.parameters.riders : 0
+    const canonicalCapacity = instance?.parameters.kind === 'rider-capacity' ? instance.parameters.riders : 0
+    const capacity = guidelineOverride?.riderCapacity ?? canonicalCapacity
     const existingRiders = input.map.encounterState?.capabilityRuntime?.links.find(link => (
       link.ownerPlacementId === input.actor.id && link.kind === 'mount-rider'
     ))?.participantPlacementIds ?? []

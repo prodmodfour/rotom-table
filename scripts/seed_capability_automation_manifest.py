@@ -201,6 +201,11 @@ PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
         "when": "equipment, movement, Ability, weapon Move, Accuracy, and Damage rules are projected",
         "then": "the exact source supplies its species profile and rank-gated Moves, shares the wielder movement budget, suppresses No Guard, forces Aegislash Blade Forme, and applies -2 to every automated weapon roll made with it (Accuracy and Damage) while fainted",
     },
+    "Mountable X": {
+        "given": "an effective valued Mountable source has adjacent willing riders and any bounded campaign guideline override",
+        "when": "rider type, significant extra weight, and rider capacity are validated",
+        "then": "the canonical average-Trainer capacity is the default guideline while one exact GM-authored override may approve riders, adjust capacity from 0 through 16, or allow significant extra weight",
+    },
     "Wielder": {
         "given": "an effective Wielder holds a size-legal man-made Small or Large Melee Weapon",
         "when": "equipment, Disarm, Struggle, Reach, Accuracy, Damage Base, and weapon Move rules are projected",

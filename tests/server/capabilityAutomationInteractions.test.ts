@@ -415,6 +415,47 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
     })).not.toThrow()
   })
 
+  it('supports bounded campaign adjustments to the non-rigid Mountable guideline', () => {
+    const mount = pokemon(actor.sheetSlug, { capabilities: { other: ['Mountable 1'] } })
+    const rider = pokemon(target.sheetSlug, { species: 'Pikachu' })
+    const secondRiderPlacement: SheetPlacement = {
+      id: 'second-rider', sheetKind: 'pokemon', sheetSlug: 'second-rider-sheet',
+      position: { x: 1, y: 0, z: 2 },
+    }
+    const secondRider = pokemon(secondRiderPlacement.sheetSlug, { species: 'Eevee' })
+    const action = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require('Mountable X').spec.actions
+      .find(entry => entry.actionId === 'accept-rider')!
+    const map = baseMap({
+      placements: [actor, target, secondRiderPlacement],
+      metadata: {
+        capabilityWillingTargets: [
+          `${actor.id}:${target.id}`, `${actor.id}:${secondRiderPlacement.id}`,
+        ],
+        capabilityContexts: [`significant-extra-weight:${actor.id}`],
+        capabilityMountableOverrides: [{
+          mountPlacementId: actor.id,
+          riderCapacity: 2,
+          allowSignificantExtraWeight: true,
+          approvedRiderPlacementIds: [target.id, secondRiderPlacement.id],
+        }],
+      },
+    })
+    expect(() => validateCapabilityActionSelections({
+      map, actor, actorSheet: mount,
+      pokemonSheets: new Map([
+        [mount.slug, mount], [rider.slug, rider], [secondRider.slug, secondRider],
+      ]),
+      trainerSheets: new Map<string, TrainerSheet>(),
+      command: {
+        ...command('Mountable X', 'accept-rider', {
+          targetPlacementIds: [target.id, secondRiderPlacement.id],
+        }),
+        capabilityInstanceId: 'capability:actor:Mountable_20X:riders-1',
+      },
+      action, now: 1_000,
+    })).not.toThrow()
+  })
+
   it('treats coupled links as undirected physical presence groups', () => {
     const encounter = createEmptyEncounterState()
     const linked = baseMap({
