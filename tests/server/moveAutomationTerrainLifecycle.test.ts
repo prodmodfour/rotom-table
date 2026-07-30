@@ -9,6 +9,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { pokemonHpSnapshot } from '~/utils/sheetSpawn'
+import { resolveEffectiveCapabilities } from '~~/server/domain/capabilityAutomation/effectiveCapabilities'
 
 interface TerrainLifecycleFixture {
   readonly id: string
@@ -142,6 +143,57 @@ describe('Capability terrain turn lifecycle', () => {
     })
 
     expect(result.currentEncounterState.turnResources.actor?.actions.standard.spent).toBe(1)
+  })
+})
+
+describe('Living Weapon initiative lifecycle', () => {
+  it('does not reset the shared round movement spend between linked participants\' turns', () => {
+    const sourceSheet: CharacterSheet = {
+      ...sheet({ id: 'actor', x: 0 }), species: 'Honedge', capabilities: { other: ['Living Weapon'] },
+    }
+    const wielderSheet = sheet({ id: 'target', x: 2 })
+    const map = mapFixture({ target: { id: 'target', x: 2 } })
+    map.fieldEffects = { weather: [], terrains: [], rooms: [] }
+    const source = resolveEffectiveCapabilities({
+      map,
+      placement: map.placements[0]!,
+      sheet: sourceSheet,
+      sheets: {
+        pokemon: new Map([[sourceSheet.slug, sourceSheet], [wielderSheet.slug, wielderSheet]]),
+        trainer: new Map(),
+      },
+    }).instances.find(instance => instance.effective && instance.canonicalId === 'Living Weapon')!
+    const encounter = createEmptyEncounterState()
+    const spentLedger = (placementId: string) => ({
+      ...createEncounterTurnResourceLedger({ placementId, round: 1, turn: 1 }),
+      movement: { budget: 5, spent: 3, resetOn: ['turn-start'] as const },
+    })
+    map.encounterState = {
+      ...encounter,
+      turnResources: { actor: spentLedger('actor'), target: spentLedger('target') },
+      capabilityRuntime: {
+        ...encounter.capabilityRuntime!,
+        links: [{
+          id: 'capability.link.shared-movement', kind: 'living-weapon', ownerPlacementId: 'actor',
+          participantPlacementIds: ['target'], capabilityInstanceId: source.instanceId,
+          canonicalId: 'Living Weapon', establishedAt: 1, configurationId: 'small-melee-weapon',
+          sourceOperationId: 'operation:engage',
+        }],
+      },
+    }
+    const result = planInitiativeLifecycle({
+      map,
+      previous: { activeId: 'actor', round: 1 },
+      current: { activeId: 'target', round: 1 },
+      orderIds: ['actor', 'target'], operationId: 'operation:next-linked-turn', time: 3_000,
+      loadSheets: () => ({
+        pokemonSheets: new Map([[sourceSheet.slug, sourceSheet], [wielderSheet.slug, wielderSheet]]),
+        trainerSheets: new Map<string, TrainerSheet>(),
+      }),
+    })
+
+    expect(result.currentEncounterState.turnResources.actor?.movement.spent).toBe(3)
+    expect(result.currentEncounterState.turnResources.target?.movement.spent).toBe(3)
   })
 })
 

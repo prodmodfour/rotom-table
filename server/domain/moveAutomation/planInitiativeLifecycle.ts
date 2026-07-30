@@ -74,6 +74,7 @@ import {
 import { CAPABILITY_BURROW_NEXT_TURN_STANDARD_FLAG_ID } from './reduceEncounterResources'
 import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
 import { reconcileCapabilityRuntimeSourceLoss } from '../capabilityAutomation/sourceLoss'
+import { reconcileLivingWeaponRoundMovementResources } from '../capabilityAutomation/livingWeaponMovement'
 import {
   createAuthoritativeMoveRandom,
   type AuthoritativeMoveRandomSource,
@@ -1391,7 +1392,13 @@ export const planEncounterLifecycle = (
     map: nextMap,
     sheets: { pokemon: sourceLossSheets.pokemonSheets, trainer: sourceLossSheets.trainerSheets },
   })
-  currentEncounterState = parseEncounterState(nextMap.encounterState ?? currentEncounterState)
+  currentEncounterState = reconcileLivingWeaponRoundMovementResources({
+    map: nextMap,
+    previous: previousEncounterState,
+    current: parseEncounterState(nextMap.encounterState ?? currentEncounterState),
+    events: plannedEvents,
+  })
+  nextMap = { ...nextMap, encounterState: deepCloneJson(currentEncounterState) }
   nextMap = reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
     previousMap: input.map,
     nextMap,

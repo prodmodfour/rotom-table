@@ -200,7 +200,7 @@ PASSIVE_REQUIREMENT_OVERRIDES: dict[str, dict[str, str]] = {
     "Living Weapon": {
         "given": "an exact effective Honedge-line Living Weapon source is engaged with a willing wielder",
         "when": "equipment, movement, Ability, weapon Move, Accuracy, and Damage rules are projected",
-        "then": "the exact source supplies its species profile and rank-gated Moves, shares the wielder movement budget, suppresses No Guard, forces Aegislash Blade Forme, and applies -2 to every automated weapon roll made with it (Accuracy and Damage) while fainted",
+        "then": "the exact source supplies its species profile and rank-gated Moves, preserves one wielder-speed movement budget across both participants' turns until the round resets, suppresses No Guard, forces Aegislash Blade Forme, and applies -2 to every automated weapon roll made with it (Accuracy and Damage) while fainted",
     },
     "Mountable X": {
         "given": "an effective valued Mountable source has adjacent willing riders and any bounded campaign guideline override",

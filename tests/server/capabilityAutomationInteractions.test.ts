@@ -22,6 +22,9 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { defaultTargetResolutionState } from '~/utils/moveAutomationTargetResolution'
 import { applyEncounterEffectLifecycleEvent } from '../../server/domain/moveAutomation/effectLifecycle'
+import { reconcileLivingWeaponRoundMovementResources } from '../../server/domain/capabilityAutomation/livingWeaponMovement'
+import { ENCOUNTER_EVENT_SCHEMA_VERSION } from '#shared/moveAutomation/events'
+import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 
 const actor: SheetPlacement = {
   id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor-sheet', position: { x: 1, y: 0, z: 1 }, sideId: 'red',
@@ -351,6 +354,62 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
         }),
       }),
     }))
+  })
+
+  it('retains one Living Weapon movement budget across both turns and resets it only next round', () => {
+    const encounter = createEmptyEncounterState()
+    const spentLedger = (placementId: string, spent: number) => ({
+      ...createEncounterTurnResourceLedger({ placementId, round: 1, turn: 1 }),
+      movement: { budget: 6, spent, resetOn: ['turn-start'] as const },
+    })
+    const linkedMap = baseMap({
+      encounterState: {
+        ...encounter,
+        turnResources: { actor: spentLedger('actor', 3), target: spentLedger('target', 3) },
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'capability.link.round-budget', kind: 'living-weapon', ownerPlacementId: target.id,
+            participantPlacementIds: [actor.id], capabilityInstanceId: 'effective-source',
+            canonicalId: 'Living Weapon', establishedAt: 1, configurationId: null,
+            sourceOperationId: 'operation:engage',
+          }],
+        },
+      },
+    })
+    const afterGenericTurnReset = {
+      ...linkedMap.encounterState!,
+      turnResources: { actor: spentLedger('actor', 0), target: spentLedger('target', 3) },
+    }
+    const turnStart = {
+      schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
+      eventId: 'event:turn-start', kind: 'turn-start' as const,
+      sourceOperationId: 'operation:turn', causalParentEventId: null,
+      reasonCode: 'turn-start', round: 1, turn: 2, placementId: actor.id, sideId: null,
+    }
+    const preserved = reconcileLivingWeaponRoundMovementResources({
+      map: linkedMap,
+      previous: linkedMap.encounterState!,
+      current: afterGenericTurnReset,
+      events: [turnStart],
+    })
+    expect(preserved.turnResources.actor?.movement.spent).toBe(3)
+    expect(preserved.turnResources.target?.movement.spent).toBe(3)
+
+    const roundStart = {
+      schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
+      eventId: 'event:round-start', kind: 'round-start' as const,
+      sourceOperationId: 'operation:round', causalParentEventId: null,
+      reasonCode: 'round-start', round: 2,
+    }
+    const reset = reconcileLivingWeaponRoundMovementResources({
+      map: linkedMap,
+      previous: preserved,
+      current: preserved,
+      events: [roundStart],
+    })
+    expect(reset.turnResources.actor?.movement.spent).toBe(0)
+    expect(reset.turnResources.target?.movement.spent).toBe(0)
   })
 
   it('readies an exact Aegislash Living Weapon Light Shield with linked and source-loss-safe effects', () => {
