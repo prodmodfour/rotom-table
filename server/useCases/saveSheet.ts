@@ -56,6 +56,7 @@ import {
 } from '../storage/mapInteractionModeRepository'
 import { listRepositorySheets } from './listSheets'
 import { applyHpToSheet } from '~/utils/sheetMutations'
+import { preservePlayerHiddenAutomationFieldsForSave } from '~/utils/sheets/pokemonGmFields'
 import {
   defaultPersistedSetupSaveRealtimeEventPublisher,
   defaultSetupSaveRealtimePublicationFailureReporter,
@@ -280,8 +281,16 @@ export const saveSheetUseCase = (
     )
   }
 
+  // Player sheet documents omit private automation ledgers. Restore those
+  // authoritative inputs before any server-owned lifecycle calculation so a
+  // forged value cannot influence it, while allowing that calculation to emit
+  // a legitimate replacement state later in this transaction.
+  const playerAuthorityPreservedSheet = input.role === 'player'
+    ? preservePlayerHiddenAutomationFieldsForSave(input.sheet, current.sheet)
+    : input.sheet
+
   let currentMarsupialRelationship: MarsupialRelationshipResolution | undefined
-  let capabilityAdjustedSheet = input.sheet
+  let capabilityAdjustedSheet = playerAuthorityPreservedSheet
   if (input.kind === 'pokemon') {
     try {
       currentMarsupialRelationship = resolveCurrentMarsupialRelationship(sheetRepository, input.slug)
@@ -293,7 +302,7 @@ export const saveSheetUseCase = (
       }
       const serverOwnedStatePreserved = preserveServerOwnedMarsupialPouchState(
         current.sheet as unknown as CharacterSheet,
-        input.sheet as unknown as CharacterSheet,
+        playerAuthorityPreservedSheet as unknown as CharacterSheet,
       )
       capabilityAdjustedSheet = applyCapabilityEvolutionTransition(
         current.sheet as unknown as CharacterSheet,

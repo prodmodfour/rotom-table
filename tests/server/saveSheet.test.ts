@@ -259,7 +259,19 @@ describe('save sheet use case', () => {
     const database = db()
     const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
     const realtime = createSqliteRealtimeEventRepository({ database })
-    sheets.saveSetupSheet('trainer', 'brock', trainerSheet({ player: false, revision: 1 }))
+    sheets.saveSetupSheet('trainer', 'brock', trainerSheet({
+      player: false,
+      revision: 1,
+      capabilityUsage: {
+        schemaVersion: 1,
+        entries: [{
+          id: 'trainer-private-use', canonicalId: 'Tracker', actionId: 'follow-scent',
+          capabilityInstanceId: 'capability:brock:Tracker:base', period: 'hourly',
+          usedAt: 100, availableAt: 3_700_000, remainingDayAdvances: null,
+          sourceOperationId: 'operation:trainer-private-use',
+        }],
+      },
+    }))
 
     const result = saveSheetUseCase({
       role: 'player',
@@ -267,11 +279,20 @@ describe('save sheet use case', () => {
       kind: 'trainer',
       slug: 'brock',
       expectedRevision: 1,
-      sheet: { slug: 'brock', name: 'Brock Prime', level: 4, player: true },
+      sheet: {
+        slug: 'brock', name: 'Brock Prime', level: 4, player: true,
+        capabilityUsage: { schemaVersion: 1, entries: [] },
+      },
       playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'brock' }]),
     }, { database, sheetRepository: sheets, realtimeEventRepository: realtime })
 
     expect(result.sheet).toMatchObject({ slug: 'brock', name: 'Brock Prime', player: false, revision: 2 })
+    expect(result.sheet).not.toHaveProperty('capabilityUsage')
+    expect(sheets.getByRef('trainer', 'brock')?.sheet).toMatchObject({
+      capabilityUsage: {
+        entries: [expect.objectContaining({ id: 'trainer-private-use' })],
+      },
+    })
     expect(result.realtimeEvents).toHaveLength(2)
     expect(result.realtimeEvents.every((event) => event.access.kind === 'sheet-access')).toBe(true)
   })
@@ -284,6 +305,16 @@ describe('save sheet use case', () => {
       player: true,
       revision: 1,
       gm: { notes: 'secret capture twist' },
+      loyalty: 4,
+      capabilityUsage: {
+        schemaVersion: 1,
+        entries: [{
+          id: 'private-use', canonicalId: 'Glow', actionId: 'emit-light',
+          capabilityInstanceId: 'capability:pika:Glow:base', period: 'daily',
+          usedAt: 100, availableAt: null, remainingDayAdvances: null,
+          sourceOperationId: 'operation:private-use',
+        }],
+      },
       serverPrivate: { abilityItemEvidence: [{ stateId: 'state-1', canonicalItemId: 'cheri-berry' }] },
     }))
 
@@ -296,6 +327,8 @@ describe('save sheet use case', () => {
       sheet: {
         slug: 'pika', nickname: 'Pika Prime', species: 'Pikachu', level: 5,
         gm: { notes: 'player should not write this' },
+        loyalty: 0,
+        capabilityUsage: { schemaVersion: 1, entries: [] },
         serverPrivate: { abilityItemEvidence: [{ stateId: 'forged', canonicalItemId: 'potion' }] },
       },
     }, { database, sheetRepository: sheets, realtimeEventRepository: realtime })
@@ -303,11 +336,59 @@ describe('save sheet use case', () => {
     expect(result.sheet).toMatchObject({ slug: 'pika', nickname: 'Pika Prime', revision: 2 })
     expect(result.sheet).not.toHaveProperty('gm')
     expect(result.sheet).not.toHaveProperty('serverPrivate')
+    expect(result.sheet).not.toHaveProperty('loyalty')
+    expect(result.sheet).not.toHaveProperty('capabilityUsage')
     expect(sheets.getByRef('pokemon', 'pika')?.sheet).toMatchObject({
       nickname: 'Pika Prime',
       gm: { notes: 'secret capture twist' },
+      loyalty: 4,
+      capabilityUsage: {
+        entries: [expect.objectContaining({ id: 'private-use', sourceOperationId: 'operation:private-use' })],
+      },
       serverPrivate: { abilityItemEvidence: [{ stateId: 'state-1', canonicalItemId: 'cheri-berry' }] },
       revision: 2,
+    })
+  })
+
+  it('ignores player campaign-state forgery but persists server-derived Juicer custody', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    sheets.saveSetupSheet('pokemon', 'shuckle', pokemonSheet({
+      slug: 'shuckle', nickname: 'Shuckle', species: 'Shuckle', level: 20,
+      player: true, revision: 1, items: { held: 'Potion' },
+    }))
+
+    const result = saveSheetUseCase({
+      role: 'player',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon',
+      slug: 'shuckle',
+      expectedRevision: 1,
+      sheet: {
+        slug: 'shuckle', nickname: 'Shuckle', species: 'Shuckle', level: 20,
+        items: { held: 'Oran Berry' },
+        capabilityCampaignState: {
+          ...createEmptyCapabilityCampaignState(),
+          planter: {
+            id: 'forged-planter', inputCanonicalItemId: 'oran-berry', plantedCanonicalId: 'apricorn-red',
+            plantedAt: 1, sourceOperationId: 'forged-operation',
+          },
+        },
+      },
+    }, { database, sheetRepository: sheets, realtimeEventRepository: realtime, now: () => 500 })
+
+    expect(result.sheet).not.toHaveProperty('capabilityCampaignState')
+    expect(sheets.getByRef('pokemon', 'shuckle')?.sheet).toMatchObject({
+      items: { held: 'Oran Berry' },
+      capabilityCampaignState: {
+        planter: null,
+        storedItems: [expect.objectContaining({
+          canonicalItemId: 'oran-berry',
+          stage: 'berry',
+          custodyStartedAt: 500,
+        })],
+      },
     })
   })
 

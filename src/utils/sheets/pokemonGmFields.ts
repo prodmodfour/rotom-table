@@ -34,13 +34,40 @@ export const redactPokemonGmFields = <TSheet extends Record<string, unknown>>(sh
   return redacted as TSheet
 }
 
+const POKEMON_PLAYER_HIDDEN_AUTHORITY_FIELDS = Object.freeze([
+  POKEMON_GM_FIELD,
+  'loyalty',
+] as const)
+
+const PLAYER_HIDDEN_AUTOMATION_FIELDS = Object.freeze([
+  'capabilityUsage',
+  'capabilityCampaignState',
+] as const)
+
+export const preservePlayerHiddenAutomationFieldsForSave = <TSheet extends Record<string, unknown>>(
+  candidate: TSheet,
+  current: Record<string, unknown>,
+): TSheet => {
+  const preserved: Record<string, unknown> = { ...candidate }
+  for (const field of PLAYER_HIDDEN_AUTOMATION_FIELDS) {
+    if (hasOwn(current, field)) preserved[field] = current[field]
+    else delete preserved[field]
+  }
+  return preserved as TSheet
+}
+
 export const preservePokemonGmFieldsForPlayerSave = <TSheet extends Record<string, unknown>>(
   candidate: TSheet,
   current: Record<string, unknown>,
 ): TSheet => {
   const preserved: Record<string, unknown> = { ...candidate }
-  if (hasOwn(current, POKEMON_GM_FIELD)) preserved[POKEMON_GM_FIELD] = current[POKEMON_GM_FIELD]
-  else delete preserved[POKEMON_GM_FIELD]
+  // A whole-sheet setup save starts from the player-redacted document. Preserve
+  // every omitted Pokémon authority field so that save cannot erase it, and
+  // ignore a forged value if an old or modified client submits one anyway.
+  for (const field of POKEMON_PLAYER_HIDDEN_AUTHORITY_FIELDS) {
+    if (hasOwn(current, field)) preserved[field] = current[field]
+    else delete preserved[field]
+  }
   return preserved as TSheet
 }
 
