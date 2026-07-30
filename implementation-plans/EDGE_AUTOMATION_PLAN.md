@@ -1,10 +1,10 @@
 # Edge Automation Implementation Plan
 
-`PLAN_STATUS: QUEUED`
+`PLAN_STATUS: IN_PROGRESS`
 
 `CURRENT_TICKET: EA-001`
 
-`BLOCKED_BY: CAPABILITY_AUTOMATION_PLAN.md — PLAN_STATUS: DONE`
+`BLOCKED_BY: done/CAPABILITY_AUTOMATION_PLAN.md — PLAN_STATUS: DONE`
 
 ## Goal
 
@@ -165,13 +165,13 @@ State ownership:
 - Blocked/unimplemented rows: **pending frozen inventory**
 - Interaction status: **unassessed**
 - Production runtime: **partial sheet helpers only**
-- Blocking dependency: **Capability automation final acceptance**
+- Blocking dependency: **none; Capability automation final acceptance is complete**
 
 ## Tickets
 
 ### Phase 1 — Catalog governance, provenance, and source repair
 
-- [ ] **EA-001 — Freeze the canonical Trainer Edge inventory and SHA-256** — `TODO`
+- [ ] **EA-001 — Freeze the canonical Trainer Edge inventory and SHA-256** — `IN_PROGRESS`
 - [ ] **EA-002 — Discover and freeze the complete canonical Poké Edge inventory** — `TODO`
   - Identify all core, supplement, and errata sources; define inclusion, naming, and variant policy.
 - [ ] **EA-003 — Add a dedicated Poké Edge parser and app-owned catalog** — `TODO`

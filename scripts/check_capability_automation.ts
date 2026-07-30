@@ -120,7 +120,7 @@ for (const path of [
 }
 
 if (process.argv.includes('--check-plan')) {
-  const plan = readFileSync(resolve(ROOT, 'implementation-plans/CAPABILITY_AUTOMATION_PLAN.md'), 'utf8')
+  const plan = readFileSync(resolve(ROOT, 'implementation-plans/done/CAPABILITY_AUTOMATION_PLAN.md'), 'utf8')
   assert(plan.includes('PLAN_STATUS: DONE'), 'capability plan is not marked DONE')
   assert(!/- \[ \] \*\*CA-/.test(plan), 'capability plan still contains unfinished tickets')
 }

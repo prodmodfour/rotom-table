@@ -1,6 +1,6 @@
 This is a Nuxt 3 and three.js project.
 
-Current plan: implementation-plans/CAPABILITY_AUTOMATION_PLAN.md
+Current plan: implementation-plans/EDGE_AUTOMATION_PLAN.md
 Don't stop until you've finished this.
 
 ## Validation and resource discipline
