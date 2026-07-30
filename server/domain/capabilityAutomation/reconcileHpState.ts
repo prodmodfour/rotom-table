@@ -24,6 +24,7 @@ import {
   removeCrownedCapabilityModesForFaintedPlacements,
 } from './hpInvariants'
 import { clearPhysicalPowerLoadsForPlacements } from './physicalPower'
+import { capabilityActorIsFainted } from './actionEligibility'
 
 export interface CapabilityHpStateSheet {
   readonly kind: SheetKind
@@ -293,9 +294,7 @@ export const reconcileCapabilityHpState = (
   const fainted = new Set<string>()
   for (const placementId of related) {
     const snapshot = sheetForPlacement(placementId)
-    if (hpForSheet(snapshot.kind, snapshot.sheet, hasCapability(placementId, 'Soulless')) <= 0) {
-      fainted.add(placementId)
-    }
+    if (capabilityActorIsFainted(snapshot.sheet)) fainted.add(placementId)
   }
   let faintExpanded = true
   while (faintExpanded) {
@@ -342,9 +341,7 @@ export const reconcileCapabilityHpState = (
     const key = capabilityHpSheetKey(placement.sheetKind, placement.sheetSlug)
     const original = originalSheets.get(key)
     if (!original) continue
-    if (hpForSheet(placement.sheetKind, original, hasCapability(placementId, 'Soulless')) <= 0) {
-      crownedTerminationPlacements.add(placementId)
-    }
+    if (capabilityActorIsFainted(original)) crownedTerminationPlacements.add(placementId)
   }
   const encounter = parseEncounterState(nextMap.encounterState ?? createEmptyEncounterState())
   const reconciledEncounter = removeCrownedCapabilityModesForFaintedPlacements(

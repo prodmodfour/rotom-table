@@ -548,7 +548,107 @@ describe('live-play sheet commands', () => {
     }
   })
 
-  it('publishes a map-only Temporary HP cleanup for a linked Soulless counterpart', async () => {
+  it('closes shared-sheet aliases before applying exact As One faint and Crowned cleanup', async () => {
+    const fixture = asOneFixture()
+    const aliasPlacement = {
+      ...fixture.ownerPlacement,
+      id: 'alias-token',
+      position: { x: 2, y: 0, z: 1 },
+    }
+    const encounter = createEmptyEncounterState()
+    const unlinkedMap = baseMap({
+      placements: [fixture.ownerPlacement, aliasPlacement, fixture.mountPlacement],
+      encounterState: encounter,
+    })
+    const asOne = resolveEffectiveCapabilities({
+      map: unlinkedMap,
+      placement: aliasPlacement,
+      sheet: fixture.ownerSheet.sheet as unknown as CharacterSheet,
+    }).instances.find(instance => instance.canonicalId === 'As One' && instance.effective)!
+    const map = baseMap({
+      placements: unlinkedMap.placements,
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'alias-as-one-link', kind: 'as-one-mount', ownerPlacementId: aliasPlacement.id,
+            participantPlacementIds: [fixture.mountPlacement.id], capabilityInstanceId: asOne.instanceId,
+            canonicalId: 'As One', establishedAt: 100, configurationId: 'Chilling Neigh',
+            sourceOperationId: 'operation.alias-as-one',
+          }],
+          modes: [{
+            id: 'alias-crowned-mode', actorPlacementId: aliasPlacement.id,
+            capabilityInstanceId: 'capability:alias-token:Weapon_20Bond:base', canonicalId: 'Weapon Bond',
+            mode: 'crowned', description: null, configurationId: null,
+            activatedAt: 100, expiresAt: null, sourceOperationId: 'operation.alias-crowned',
+          }],
+        },
+      },
+    })
+    const harness = createHarness(map)
+    harness.sheets.set('pokemon:pikachu', fixture.ownerSheet)
+    harness.sheets.set('pokemon:glastrier', fixture.mountSheet)
+
+    const response = await execute(harness, hpCommand({
+      opId: 'op_alias_as_one_faint',
+      payload: { placementId: 'linked-token', currentHp: 0 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, revision: 5 })
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet).toMatchObject({ combat: { currentHp: 0 } })
+    expect(harness.sheets.get('pokemon:glastrier')?.sheet).toMatchObject({ combat: { currentHp: 0 } })
+    expect(harness.storedMap.encounterState?.capabilityRuntime?.modes).toEqual([])
+    expect(harness.sheetWrites.map(write => write.slug).sort()).toEqual(['glastrier', 'pikachu'])
+  })
+
+  it('treats an added Fainted condition as an atomic As One faint event and permanently ends Crowned', async () => {
+    const fixture = asOneFixture()
+    const runtime = fixture.map.encounterState!.capabilityRuntime!
+    const harness = createHarness({
+      ...fixture.map,
+      encounterState: {
+        ...fixture.map.encounterState!,
+        capabilityRuntime: {
+          ...runtime,
+          modes: [{
+            id: 'condition-crowned-mode', actorPlacementId: fixture.ownerPlacement.id,
+            capabilityInstanceId: 'capability:linked-token:Weapon_20Bond:base', canonicalId: 'Weapon Bond',
+            mode: 'crowned', description: null, configurationId: null,
+            activatedAt: 100, expiresAt: null, sourceOperationId: 'operation.condition-crowned',
+          }],
+        },
+      },
+    })
+    harness.sheets.set('pokemon:pikachu', fixture.ownerSheet)
+    harness.sheets.set('pokemon:glastrier', fixture.mountSheet)
+
+    const response = await execute(harness, conditionsCommand({
+      opId: 'op_condition_as_one_faint',
+      payload: { placementId: 'linked-token', action: 'add', conditions: ['Fainted'] },
+    }))
+
+    expect(response.result).toMatchObject({
+      ok: true,
+      patches: expect.arrayContaining([
+        expect.objectContaining({
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+          payload: expect.objectContaining({ placementId: 'linked-token', current: expect.objectContaining({ currentHp: 0 }) }),
+        }),
+        expect.objectContaining({
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+          payload: expect.objectContaining({ placementId: 'mount-token', current: expect.objectContaining({ currentHp: 0 }) }),
+        }),
+      ]),
+    })
+    expect(harness.sheets.get('pokemon:pikachu')?.sheet).toMatchObject({
+      combat: { currentHp: 0, conditions: ['Fainted'] },
+    })
+    expect(harness.sheets.get('pokemon:glastrier')?.sheet).toMatchObject({ combat: { currentHp: 0 } })
+    expect(harness.storedMap.encounterState?.capabilityRuntime?.modes).toEqual([])
+  })
+
+  it('publishes Temporary HP cleanup and normalizes a linked Soulless counterpart sheet', async () => {
     const fixture = asOneFixture()
     const activeScene = { name: 'Battle', startedAt: 100 }
     const harness = createHarness({
@@ -577,8 +677,12 @@ describe('live-play sheet commands', () => {
       ]),
     })
     expect(harness.storedMap.temporaryHitPoints).toBeUndefined()
-    expect(harness.sheetWrites).toEqual([])
-    expect(response.sheetUpdates).toBeUndefined()
+    expect(harness.sheetWrites).toEqual([
+      expect.objectContaining({ kind: 'pokemon', slug: 'glastrier', sheet: expect.objectContaining({
+        combat: expect.objectContaining({ currentHp: 1, injuries: 0 }),
+      }) }),
+    ])
+    expect(response.sheetUpdates?.map(update => update.slug)).toEqual(['glastrier'])
   })
 
   it('redacts a derived As One sheet consequence from unauthorized player responses and replays', async () => {
