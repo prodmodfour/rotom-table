@@ -122,6 +122,7 @@ export const applyAuthoritativeMovementMapTransition = (input: {
       })
     : deepCloneJson(input.map.metadata)
   if (moved && Array.isArray(input.map.metadata?.capabilityIllusions)) {
+    const contactedCells = [...(input.movementEvidence?.path ?? []), to]
     let contacted = false
     const illusions = input.map.metadata.capabilityIllusions.map((raw) => {
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
@@ -129,8 +130,9 @@ export const applyAuthoritativeMovementMapTransition = (input: {
       const position = illusion.position as Record<string, unknown> | undefined
       const contactPlacementId = [...movingPlacementIds]
         .find(placementId => placementId !== illusion.ownerPlacementId)
-      if (!contactPlacementId
-        || position?.x !== to.x || position.y !== to.y || position.z !== to.z) return raw
+      if (!contactPlacementId || !contactedCells.some(cell => (
+        position?.x === cell.x && position.y === cell.y && position.z === cell.z
+      ))) return raw
       contacted = true
       // Physical contact exposes an Illusion, but canonical Illusionist text
       // does not destroy it or release the source's maintained action. Keep

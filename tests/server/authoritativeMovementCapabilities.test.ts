@@ -263,8 +263,12 @@ describe('authoritative movement capabilities', () => {
       },
     })
     const transition = applyAuthoritativeMovementMapTransition({
-      map: arena, placementId: 'actor', destination: { x: 1, y: 0, z: 0 }, distance: 1,
+      map: arena, placementId: 'actor', destination: { x: 2, y: 0, z: 0 }, distance: 2,
       encounterState: arena.encounterState!, timestamp: 42, userName: 'Actor',
+      movementEvidence: {
+        operationId: 'operation:move-through-illusion', mode: 'voluntary',
+        path: [{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }],
+      },
     })
 
     expect(transition.nextMap.metadata?.capabilityIllusions).toContainEqual(expect.objectContaining({
