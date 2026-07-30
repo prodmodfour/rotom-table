@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import { deepCloneJson } from '~/utils/serialization'
@@ -7,6 +8,7 @@ import {
   type AcceptedMoveAvailableCompensationOperation,
 } from '~~/server/domain/moveAutomation/acceptedMoveCompensation'
 import { createAcceptedMoveCompensationResult } from '~~/server/domain/moveAutomation/planAcceptedMoveCompensation'
+import { resolveEffectiveCapabilities } from '~~/server/domain/capabilityAutomation/effectiveCapabilities'
 import {
   AcceptedMoveCorrectionPlanError,
   planAcceptedMoveCorrection,
@@ -249,6 +251,139 @@ describe('pure accepted move correction planning', () => {
     const driftedSheetBefore = deepCloneJson(driftedSheet.sheets.get('pokemon:target'))
     expectPlanError(driftedSheet, 'current-value-conflict')
     expect(driftedSheet.sheets.get('pokemon:target')).toEqual(driftedSheetBefore)
+  })
+
+  it('derives exact-source As One counterpart fainting and records every consulted revision', () => {
+    const ownerPlacement = mapDocument().placements[0]!
+    const mountPlacement = {
+      id: 'mount-token',
+      sheetKind: 'pokemon' as const,
+      sheetSlug: 'mount',
+      position: { x: 1, y: 0, z: 0 },
+    }
+    const owner = {
+      ...acceptedSheet(),
+      capabilities: { other: ['As One'] },
+      combat: { currentHp: 40, injuries: 0, conditions: [] },
+    }
+    const mount = {
+      ...acceptedSheet(),
+      slug: 'mount',
+      species: 'Glastrier',
+      revision: 3,
+      combat: { currentHp: 40, injuries: 0, conditions: [] },
+    }
+    const unlinkedMap = {
+      ...mapDocument(),
+      placements: [ownerPlacement, mountPlacement],
+      encounterState: createEmptyEncounterState(),
+    }
+    const source = resolveEffectiveCapabilities({
+      map: unlinkedMap,
+      placement: ownerPlacement,
+      sheet: owner,
+    }).instances.find(instance => instance.canonicalId === 'As One' && instance.effective)
+    if (!source) throw new Error('missing As One fixture source')
+    const encounter = createEmptyEncounterState()
+    const map = {
+      ...unlinkedMap,
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'as-one-correction-link',
+            kind: 'as-one-mount' as const,
+            ownerPlacementId: ownerPlacement.id,
+            participantPlacementIds: [mountPlacement.id],
+            capabilityInstanceId: source.instanceId,
+            canonicalId: 'As One',
+            configurationId: 'Chilling Neigh',
+            establishedAt: 100,
+            sourceOperationId: 'as-one-link-operation',
+          }],
+        },
+      },
+    }
+    const hpInverse: AcceptedMoveAvailableCompensationOperation = {
+      operationId: 'inverse.restore-owner-faint.hp',
+      stateChangeId: 'restore-owner-faint',
+      sourceOperationId: 'move.heal-owner',
+      stateChangeKind: 'sheet-state',
+      scope: { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'target' },
+      resource: {
+        kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'target',
+        beforeRevision: 4, afterRevision: 5,
+      },
+      reasonCode: 'undo-healing',
+      availability: 'available',
+      inverse: {
+        kind: 'restore-sheet-hp',
+        scope: { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'target' },
+        expectedCurrent: { currentHp: 40, injuries: 0 },
+        restore: { currentHp: 0, injuries: 0 },
+      },
+    }
+
+    const plan = planAcceptedMoveCorrection({
+      map,
+      sheets: new Map([
+        ['pokemon:target', { kind: 'pokemon', slug: 'target', revision: 5, sheet: owner }],
+        ['pokemon:mount', { kind: 'pokemon', slug: 'mount', revision: 3, sheet: mount }],
+      ]),
+      operations: [hpInverse],
+      updatedAt: 1_000,
+    })
+
+    expect(plan.sheetWrites).toEqual(expect.arrayContaining([
+      expect.objectContaining({ slug: 'target', expectedRevision: 5, nextSheet: expect.objectContaining({ combat: expect.objectContaining({ currentHp: 0 }) }) }),
+      expect.objectContaining({ slug: 'mount', expectedRevision: 3, nextSheet: expect.objectContaining({ combat: expect.objectContaining({ currentHp: 0 }) }) }),
+    ]))
+    expect(plan.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'mount', revision: 3 },
+      { kind: 'pokemon', slug: 'target', revision: 5 },
+    ])
+    expect(plan.resourceChanges).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'sheet', sheetSlug: 'target', expectedRevision: 5, revision: 6 }),
+      expect.objectContaining({ kind: 'sheet', sheetSlug: 'mount', expectedRevision: 3, revision: 4 }),
+    ]))
+  })
+
+  it('rejects a correction that would restore Temporary HP to effective Soulless', () => {
+    const soulless = {
+      ...acceptedSheet(),
+      species: 'Shedinja',
+      combat: { currentHp: 1, injuries: 0, conditions: [] },
+    }
+    const restoreTemporaryHp: AcceptedMoveAvailableCompensationOperation = {
+      operationId: 'inverse.restore-soulless-temporary-hp',
+      stateChangeId: 'clear-temporary-hp',
+      sourceOperationId: 'move.clear-temporary-hp',
+      stateChangeKind: 'map-temporary-hit-points',
+      scope: { kind: 'map', mapSlug: 'arena' },
+      resource: { kind: 'map', mapSlug: 'arena', beforeRevision: 7, afterRevision: 8 },
+      reasonCode: 'undo-temporary-hp-clear',
+      availability: 'available',
+      inverse: {
+        kind: 'restore-map-temporary-hit-points',
+        scope: { kind: 'map', mapSlug: 'arena' },
+        expectedCurrent: null,
+        restore: {
+          scene: { name: 'Battle', startedAt: 100 },
+          byPlacementId: { 'target-token': 5 },
+        },
+      },
+    }
+    const map = { ...mapDocument(), activeScene: { name: 'Battle', startedAt: 100 } }
+
+    expectPlanError({
+      map,
+      sheets: new Map([['pokemon:target', {
+        kind: 'pokemon', slug: 'target', revision: 5, sheet: soulless,
+      }]]),
+      operations: [restoreTemporaryHp],
+      updatedAt: 1_000,
+    }, 'capability-invariant-conflict')
   })
 
   it('rejects duplicate inverse targets and planner inputs beyond the durable operation bound', () => {

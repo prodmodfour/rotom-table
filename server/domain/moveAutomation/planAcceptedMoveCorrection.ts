@@ -28,6 +28,11 @@ import {
 } from '~/utils/sheetMutations'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import {
+  CapabilityHpStateReconciliationError,
+  capabilityHpSheetKey,
+  reconcileCapabilityHpState,
+} from '../capabilityAutomation/reconcileHpState'
+import {
   ACCEPTED_MOVE_COMPENSATION_MAX_OPERATIONS,
   type AcceptedMoveAvailableCompensationOperation,
   type AcceptedMoveSheetHpValue,
@@ -41,6 +46,7 @@ export type AcceptedMoveCorrectionPlanErrorCode =
   | 'resource-revision-conflict'
   | 'current-value-conflict'
   | 'invalid-restored-value'
+  | 'capability-invariant-conflict'
 
 export class AcceptedMoveCorrectionPlanError extends Error {
   readonly code: AcceptedMoveCorrectionPlanErrorCode
@@ -57,6 +63,12 @@ export interface AcceptedMoveCorrectionSheetSnapshot {
   readonly slug: string
   readonly revision: number
   readonly sheet: Readonly<Record<string, unknown>>
+}
+
+export interface AcceptedMoveCorrectionSheetRead {
+  readonly kind: SheetKind
+  readonly slug: string
+  readonly revision: number
 }
 
 export interface AcceptedMoveCorrectionSheetWrite {
@@ -76,6 +88,8 @@ export interface AcceptedMoveCorrectionPlan {
   readonly revision: number
   readonly operationIds: readonly string[]
   readonly mapChanges: LivePlayMoveStatePatchChanges
+  /** Every sheet whose revision contributed to Capability HP reconciliation. */
+  readonly sheetReads: readonly AcceptedMoveCorrectionSheetRead[]
   readonly sheetWrites: readonly AcceptedMoveCorrectionSheetWrite[]
   readonly sheetRefs: readonly LivePlayMoveSheetChangeRef[]
   readonly resourceChanges: readonly LivePlayMoveCorrectionResourceChange[]
@@ -101,7 +115,7 @@ const fail = (
   throw new AcceptedMoveCorrectionPlanError(code, message)
 }
 
-const sheetKey = (kind: SheetKind, slug: string): string => `${kind}:${slug}`
+const sheetKey = capabilityHpSheetKey
 
 const encounterStateForMap = (map: TabletopMap): EncounterState => parseEncounterState(
   map.encounterState ?? createEmptyEncounterState(),
@@ -364,11 +378,14 @@ const applySheetInverse = (
     return fail('invalid-operation', `Correction inverse ${inverse.kind} is not a sheet operation.`)
   }
   if (inverse.kind === 'restore-sheet-hp') {
+    // Encounter-effective Soulless authority is applied by the centralized
+    // reconciliation pass after every selected inverse has been projected.
     working.current = applyHpToSheet(
       working.source.kind,
       working.current,
       inverse.restore.currentHp,
       inverse.restore.injuries,
+      { effectiveSoulless: false },
     )
   }
   else if (inverse.kind === 'restore-sheet-combat-stages') {
@@ -418,11 +435,9 @@ const nullable = <Value>(value: Value | undefined): Value | null => (
 const mapChangesFor = (
   previous: TabletopMap,
   current: TabletopMap,
-  operations: readonly AcceptedMoveAvailableCompensationOperation[],
 ): LivePlayMoveStatePatchChanges => {
-  const kinds = new Set(operations.map(operation => operation.inverse.kind))
   const changes: LivePlayMoveStatePatchChanges = {}
-  if (kinds.has('restore-placement-state')) {
+  if (!sameJsonValue(previous.placements, current.placements)) {
     Object.assign(changes, {
       placements: {
         previous: deepCloneJson(previous.placements),
@@ -430,7 +445,7 @@ const mapChangesFor = (
       },
     })
   }
-  if (kinds.has('restore-map-temporary-hit-points')) {
+  if (!sameJsonValue(previous.temporaryHitPoints ?? null, current.temporaryHitPoints ?? null)) {
     Object.assign(changes, {
       temporaryHitPoints: {
         previous: nullable(previous.temporaryHitPoints),
@@ -438,7 +453,7 @@ const mapChangesFor = (
       },
     })
   }
-  if (kinds.has('restore-map-move-usage')) {
+  if (!sameJsonValue(previous.moveUsage ?? null, current.moveUsage ?? null)) {
     Object.assign(changes, {
       moveUsage: {
         previous: nullable(previous.moveUsage),
@@ -446,7 +461,7 @@ const mapChangesFor = (
       },
     })
   }
-  if (kinds.has('restore-map-hazards')) {
+  if (!sameJsonValue(previous.hazards ?? [], current.hazards ?? [])) {
     Object.assign(changes, {
       hazards: {
         previous: deepCloneJson(previous.hazards ?? []),
@@ -454,7 +469,7 @@ const mapChangesFor = (
       },
     })
   }
-  if (kinds.has('restore-map-field-effects')) {
+  if (!sameJsonValue(previous.fieldEffects ?? {}, current.fieldEffects ?? {})) {
     Object.assign(changes, {
       fieldEffects: {
         previous: deepCloneJson(previous.fieldEffects ?? {}),
@@ -462,7 +477,7 @@ const mapChangesFor = (
       },
     })
   }
-  if ([...kinds].some(kind => kind.startsWith('restore-encounter-'))) {
+  if (!sameJsonValue(encounterStateForMap(previous), encounterStateForMap(current))) {
     Object.assign(changes, {
       encounterState: {
         previous: encounterStateForMap(previous),
@@ -501,7 +516,7 @@ export const planAcceptedMoveCorrection = (
 ): AcceptedMoveCorrectionPlan => {
   assertOperationsAgainstSnapshot(input)
   const previousMap = deepCloneJson(input.map)
-  const nextMap = deepCloneJson(input.map)
+  let nextMap = deepCloneJson(input.map)
   const workingSheets = new Map<string, SheetWorkingState>()
 
   for (const operation of input.operations) {
@@ -527,10 +542,117 @@ export const planAcceptedMoveCorrection = (
     workingSheets.set(key, working)
   }
 
+  const touchedPlacementIds = new Set<string>()
+  for (const operation of input.operations) {
+    const inverse = operation.inverse
+    if (inverse.kind === 'restore-sheet-hp' && inverse.scope.kind === 'sheet') {
+      for (const placementId of placementIdsForSheet(
+        previousMap,
+        nextMap,
+        inverse.scope.sheetKind,
+        inverse.scope.sheetSlug,
+      )) touchedPlacementIds.add(placementId)
+    }
+    else if (inverse.kind === 'restore-map-temporary-hit-points') {
+      for (const placementId of [
+        ...Object.keys(previousMap.temporaryHitPoints?.byPlacementId ?? {}),
+        ...Object.keys(nextMap.temporaryHitPoints?.byPlacementId ?? {}),
+      ]) touchedPlacementIds.add(placementId)
+    }
+    else if (inverse.kind === 'restore-placement-state') {
+      touchedPlacementIds.add(inverse.scope.placementId)
+    }
+    else if (inverse.kind.startsWith('restore-encounter-')) {
+      for (const placement of [...previousMap.placements, ...nextMap.placements]) {
+        touchedPlacementIds.add(placement.id)
+      }
+    }
+  }
+
+  const projectedSheets = new Map([...input.sheets].map(([key, source]) => [key, {
+    kind: source.kind,
+    slug: source.slug,
+    revision: source.revision,
+    sheet: deepCloneJson(source.sheet) as unknown as CharacterSheet | TrainerSheet,
+  }]))
+  for (const [key, working] of workingSheets) {
+    projectedSheets.set(key, {
+      kind: working.source.kind,
+      slug: working.source.slug,
+      revision: working.source.revision,
+      sheet: deepCloneJson(working.current) as CharacterSheet | TrainerSheet,
+    })
+  }
+
+  let reconciliation: ReturnType<typeof reconcileCapabilityHpState>
+  try {
+    reconciliation = reconcileCapabilityHpState({
+      previousMap,
+      nextMap,
+      sheets: projectedSheets,
+      previousSheets: new Map([...input.sheets].map(([key, source]) => [key, {
+        kind: source.kind,
+        slug: source.slug,
+        revision: source.revision,
+        sheet: deepCloneJson(source.sheet) as unknown as CharacterSheet | TrainerSheet,
+      }])),
+      touchedPlacementIds,
+    })
+  }
+  catch (error) {
+    if (!(error instanceof CapabilityHpStateReconciliationError)) throw error
+    return fail('capability-invariant-conflict', error.message)
+  }
+  nextMap = deepCloneJson(reconciliation.nextMap)
+
+  for (const [key, working] of workingSheets) {
+    const reconciled = reconciliation.sheets.get(key)
+    if (!reconciled) continue
+    if (!sameJsonValue(working.current, reconciled.sheet)) working.changedFields.add('hp')
+    working.current = deepCloneJson(reconciled.sheet) as AnyLiveSheet
+  }
+  for (const key of reconciliation.changedSheetKeys) {
+    if (workingSheets.has(key)) continue
+    const source = input.sheets.get(key)
+    const reconciled = reconciliation.sheets.get(key)
+    if (!source || !reconciled) {
+      return fail('missing-resource', `Capability-derived correction sheet ${key} is unavailable.`)
+    }
+    workingSheets.set(key, {
+      source,
+      current: deepCloneJson(reconciled.sheet) as AnyLiveSheet,
+      changedFields: new Set<LivePlayMoveSheetChangedField>(['hp']),
+    })
+  }
+
+  const finalSheets = new Map([...reconciliation.sheets].map(([key, snapshot]) => [key, {
+    kind: snapshot.kind,
+    slug: snapshot.slug,
+    revision: snapshot.revision,
+    sheet: deepCloneJson(snapshot.sheet) as unknown as Readonly<Record<string, unknown>>,
+  }]))
+  for (const operation of input.operations) {
+    const current = currentInverseValue({ inverse: operation.inverse, map: nextMap, sheets: finalSheets })
+    if (!sameJsonValue(current, operation.inverse.restore)) {
+      return fail(
+        'invalid-restored-value',
+        `Correction inverse ${operation.inverse.kind} conflicts with Capability HP invariants.`,
+      )
+    }
+  }
+
   const previousRevision = normalizeRevision(previousMap.revision)
   const revision = nextRevision(previousRevision)
   nextMap.revision = revision
   nextMap.updatedAt = input.updatedAt
+
+  const sheetReads: AcceptedMoveCorrectionSheetRead[] = [...reconciliation.consultedSheetKeys]
+    .map((key) => {
+      const source = input.sheets.get(key)
+      if (!source) return fail('missing-resource', `Consulted correction sheet ${key} is unavailable.`)
+      return { kind: source.kind, slug: source.slug, revision: source.revision }
+    })
+    .sort((left, right) => sheetKey(left.kind, left.slug).localeCompare(sheetKey(right.kind, right.slug)))
 
   const sheetWrites: AcceptedMoveCorrectionSheetWrite[] = []
   for (const working of workingSheets.values()) {
@@ -587,7 +709,8 @@ export const planAcceptedMoveCorrection = (
     previousRevision,
     revision,
     operationIds: Object.freeze(input.operations.map(operation => operation.operationId)),
-    mapChanges: deepCloneJson(mapChangesFor(previousMap, nextMap, input.operations)),
+    mapChanges: deepCloneJson(mapChangesFor(previousMap, nextMap)),
+    sheetReads: Object.freeze(sheetReads.map(read => Object.freeze({ ...read }))),
     sheetWrites: Object.freeze(sheetWrites.map(write => Object.freeze({ ...write }))),
     sheetRefs: Object.freeze(sheetRefs.map(ref => Object.freeze({ ...ref }))),
     resourceChanges: Object.freeze(resourceChanges.map(resource => Object.freeze({ ...resource }))),

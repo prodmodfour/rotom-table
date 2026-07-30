@@ -61,6 +61,7 @@ import {
   type RealtimeEventRepository,
 } from '../storage/realtimeEventRepository'
 import {
+  SheetRevisionConflictError,
   createSqliteSheetRepository,
   type PersistedSheet,
   type SheetRepository,
@@ -97,6 +98,7 @@ export interface ApplyGmMoveCorrectionDependencies {
   readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly modeRepository?: Pick<MapInteractionModeRepository, 'get'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
+    & Partial<Pick<SheetRepository<Record<string, unknown>>, 'assertRevisions'>>
   readonly opRepository?: Pick<
     LivePlayOpRepository,
     'getStoredOpRecord' | 'saveCommandResult'
@@ -138,22 +140,29 @@ const sheetKey = (kind: SheetKind, slug: string): string => `${kind}:${slug}`
 
 const loadAffectedSheets = (
   parsed: ParsedMoveCorrectionCommand,
+  map: TabletopMap,
   dependencies: Dependencies,
 ): ReadonlyMap<string, AcceptedMoveCorrectionSheetSnapshot> => {
-  const sheets = new Map<string, AcceptedMoveCorrectionSheetSnapshot>()
+  const refs = new Map<string, { readonly kind: SheetKind, readonly slug: string }>()
+  const addRef = (kind: SheetKind, slug: string): void => {
+    refs.set(sheetKey(kind, slug), { kind, slug })
+  }
+  for (const placement of map.placements) addRef(placement.sheetKind, placement.sheetSlug)
   for (const operation of parsed.operations) {
     const resource = operation.resource
-    if (resource.kind !== 'sheet') continue
-    const key = sheetKey(resource.sheetKind, resource.sheetSlug)
-    if (sheets.has(key)) continue
-    const stored = dependencies.sheetRepository.getByRef(
-      resource.sheetKind,
-      resource.sheetSlug,
-    )
+    if (resource.kind === 'sheet') addRef(resource.sheetKind, resource.sheetSlug)
+    if (operation.inverse.kind === 'restore-placement-state' && operation.inverse.restore) {
+      addRef(operation.inverse.restore.sheetKind, operation.inverse.restore.sheetSlug)
+    }
+  }
+
+  const sheets = new Map<string, AcceptedMoveCorrectionSheetSnapshot>()
+  for (const [key, ref] of refs) {
+    const stored = dependencies.sheetRepository.getByRef(ref.kind, ref.slug)
     if (!stored) {
       throw new AcceptedMoveCorrectionPlanError(
         'missing-resource',
-        `Affected ${resource.sheetKind} sheet ${resource.sheetSlug} is unavailable.`,
+        `Affected ${ref.kind} sheet ${ref.slug} is unavailable.`,
       )
     }
     sheets.set(key, {
@@ -170,7 +179,6 @@ const scopeKey = (scope: LivePlayScope): string => JSON.stringify(scope)
 
 const correctionScopes = (
   plan: AcceptedMoveCorrectionPlan,
-  parsed: ParsedMoveCorrectionCommand,
 ): readonly LivePlayScope[] => {
   const scopes: LivePlayScope[] = [{ kind: 'map', lane: 'metadata' }]
   const seen = new Set(scopes.map(scopeKey))
@@ -181,25 +189,22 @@ const correctionScopes = (
     scopes.push(scope)
   }
 
-  for (const operation of parsed.operations) {
-    const inverse = operation.inverse
-    if (inverse.kind === 'restore-map-hazards') push({ kind: 'map', lane: 'hazards' })
-    else if (inverse.kind === 'restore-map-field-effects') push({ kind: 'map', lane: 'fieldEffects' })
-    else if (inverse.kind === 'restore-placement-state') push({ kind: 'map', lane: 'placements' })
-    else if (inverse.kind === 'restore-map-temporary-hit-points') {
-      const ids = new Set([
-        ...Object.keys(plan.previousMap.temporaryHitPoints?.byPlacementId ?? {}),
-        ...Object.keys(plan.nextMap.temporaryHitPoints?.byPlacementId ?? {}),
-      ])
-      for (const placementId of ids) push({ kind: 'token', placementId, field: 'hp' })
-    }
-    else if (inverse.kind === 'restore-map-move-usage') {
-      const ids = new Set([
-        ...Object.keys(plan.previousMap.moveUsage?.byPlacementId ?? {}),
-        ...Object.keys(plan.nextMap.moveUsage?.byPlacementId ?? {}),
-      ])
-      for (const placementId of ids) push({ kind: 'token', placementId, field: 'moveUsage' })
-    }
+  if (plan.mapChanges.hazards) push({ kind: 'map', lane: 'hazards' })
+  if (plan.mapChanges.fieldEffects) push({ kind: 'map', lane: 'fieldEffects' })
+  if (plan.mapChanges.placements) push({ kind: 'map', lane: 'placements' })
+  if (plan.mapChanges.temporaryHitPoints) {
+    const ids = new Set([
+      ...Object.keys(plan.previousMap.temporaryHitPoints?.byPlacementId ?? {}),
+      ...Object.keys(plan.nextMap.temporaryHitPoints?.byPlacementId ?? {}),
+    ])
+    for (const placementId of ids) push({ kind: 'token', placementId, field: 'hp' })
+  }
+  if (plan.mapChanges.moveUsage) {
+    const ids = new Set([
+      ...Object.keys(plan.previousMap.moveUsage?.byPlacementId ?? {}),
+      ...Object.keys(plan.nextMap.moveUsage?.byPlacementId ?? {}),
+    ])
+    for (const placementId of ids) push({ kind: 'token', placementId, field: 'moveUsage' })
   }
 
   for (const sheet of plan.sheetRefs) {
@@ -441,7 +446,9 @@ export const applyGmMoveCorrectionUseCase = (
   if (replay) return replay
 
   let persistedEvents: ReturnType<Dependencies['realtimeEventRepository']['appendMany']> = []
-  const response = dependencies.database.withTransaction((): GmMoveCorrectionResponse => {
+  let response: GmMoveCorrectionResponse
+  try {
+    response = dependencies.database.withTransaction((): GmMoveCorrectionResponse => {
     const duplicate = existingCorrection(command, commandHash, dependencies)
     if (duplicate) return duplicate
     const currentParsed = parseMoveCorrectionCommand(command, {
@@ -483,7 +490,7 @@ export const applyGmMoveCorrectionUseCase = (
     try {
       plan = planAcceptedMoveCorrection({
         map,
-        sheets: loadAffectedSheets(currentParsed, dependencies),
+        sheets: loadAffectedSheets(currentParsed, map, dependencies),
         operations: currentParsed.operations,
         updatedAt: dependencies.now(),
       })
@@ -502,7 +509,7 @@ export const applyGmMoveCorrectionUseCase = (
       }), dependencies)
     }
 
-    const scopes = correctionScopes(plan, currentParsed)
+    const scopes = correctionScopes(plan)
     const patch = correctionPatch({ command: currentParsed.command, plan, scopes })
     const wireCommand = wireCorrectionCommand(currentParsed.command, scopes)
     const result = withAcceptedEncounterPresentation({
@@ -516,6 +523,19 @@ export const applyGmMoveCorrectionUseCase = (
       }),
       occurredAt: plan.nextMap.updatedAt ?? plan.revision,
     })
+    const assertRevisions = dependencies.sheetRepository.assertRevisions
+    if (assertRevisions) assertRevisions(plan.sheetReads)
+    else {
+      for (const read of plan.sheetReads) {
+        const current = dependencies.sheetRepository.getByRef(read.kind, read.slug)
+        if (!current || current.revision !== read.revision) {
+          throw new AcceptedMoveCorrectionPlanError(
+            'resource-revision-conflict',
+            `${read.kind} sheet ${read.slug} changed before the correction could commit.`,
+          )
+        }
+      }
+    }
     const authoritativeMap = applyMapWrite(plan, dependencies)
     const sheetUpdates = applySheetWrites(plan, dependencies)
     dependencies.opRepository.saveCommandResult({
@@ -538,13 +558,20 @@ export const applyGmMoveCorrectionUseCase = (
         clientId: input.clientId,
       }),
     ])
-    return {
-      result,
-      path: logicalMapResourcePath(authoritativeMap),
-      map: authoritativeMap,
-      ...(sheetUpdates.length > 0 ? { sheetUpdates } : {}),
+      return {
+        result,
+        path: logicalMapResourcePath(authoritativeMap),
+        map: authoritativeMap,
+        ...(sheetUpdates.length > 0 ? { sheetUpdates } : {}),
+      }
+    })
+  }
+  catch (error) {
+    if (error instanceof SheetRevisionConflictError || error instanceof AcceptedMoveCorrectionPlanError) {
+      throw new GmMoveCorrectionUseCaseError(409, error.message)
     }
-  })
+    throw error
+  }
 
   publishPersistedRealtimeEventsAfterCommit({
     events: persistedEvents,
