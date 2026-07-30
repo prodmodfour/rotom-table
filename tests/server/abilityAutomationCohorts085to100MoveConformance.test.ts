@@ -947,6 +947,69 @@ describe('AA-085 through AA-100 move conformance', () => {
     )
   })
 
+  it('uses suppression-aware Soulless authority for Regenerator healing', () => {
+    const run = (state: ReturnType<typeof fixture>, operationId: string) => (
+      applyAa085to100RegeneratorTrigger({
+        map: state.map,
+        placement: state.map.placements.find(candidate => candidate.id === 'actor')!,
+        sheet: state.pokemonSheets.get('actor')!,
+        operationId,
+        trigger: 'take-a-breather',
+        maximumHp: 150,
+        abilityRuntimeRegistry: REMAINING_ABILITY_TEST_REGISTRY,
+      })
+    )
+    const effective = fixture({
+      actorAbilities: ['Regenerator'],
+      actorSpecies: 'Shedinja',
+      actorCurrentHp: 1,
+      actorInjuries: 0,
+    })
+    expect(run(effective, 'op_regenerator_soulless').applied).toBe(false)
+
+    const suppressed = fixture({
+      actorAbilities: ['Regenerator'],
+      actorSpecies: 'Shedinja',
+      actorCurrentHp: 10,
+      actorInjuries: 2,
+    })
+    const encounter = suppressed.map.encounterState!
+    suppressed.map = {
+      ...suppressed.map,
+      encounterState: {
+        ...encounter,
+        effects: [...encounter.effects, parseEncounterEffect({
+          id: 'suppress-soulless-regenerator',
+          kind: 'capability',
+          source: {
+            operationId: 'suppress-soulless-operation',
+            moveId: 'test.suppress-soulless',
+            placementId: 'actor',
+          },
+          affected: { placementIds: ['actor'], sideIds: [], cells: [] },
+          createdRound: 1,
+          createdTurn: 1,
+          duration: { kind: 'scene', remaining: null },
+          stacks: 1,
+          charges: null,
+          stackPolicy: { kind: 'replace', maxStacks: null },
+          chargePolicy: { kind: 'none', amount: null },
+          tags: ['capability-suppression'],
+          payload: { capabilityId: 'soulless', action: 'suppress' },
+          dispel: { policy: 'none', tags: [] },
+          transferPolicy: 'expire',
+          suppression: { sources: [] },
+        })],
+      },
+    }
+    const healed = run(suppressed, 'op_regenerator_suppressed_soulless')
+    expect(healed.applied).toBe(true)
+    expect((healed.sheet as CharacterSheet).combat).toMatchObject({
+      currentHp: 60,
+      injuries: 2,
+    })
+  })
+
   it('Defense Curl directly applies its complete reviewed state and action payment', () => {
     const result = complete({
       state: fixture({ actorMoves: ['Defense Curl'] }),

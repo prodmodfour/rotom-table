@@ -10,10 +10,10 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { AnyLiveSheet } from '~/utils/sheetMutations'
 import { applyHpToSheet } from '~/utils/sheetMutations'
-import { computeTickValue } from '~/utils/ptuHp'
 import {
   effectiveRuntimeAbilities,
   effectiveRuntimeAbilityIds,
+  hasEffectiveSoullessCapability,
 } from '../effectiveRuntimeAbilities'
 import type { AbilityAutomationRuntimeRegistry } from '../registry'
 import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveResources'
@@ -390,7 +390,12 @@ export const applyAa085to100RegeneratorTrigger = (input: {
   }
   const combat = 'combat' in input.sheet ? input.sheet.combat : null
   const currentHp = combat?.currentHp ?? 0
-  const maximumHp = Math.max(1, input.maximumHp)
+  const effectiveSoulless = hasEffectiveSoullessCapability({
+    map: input.map,
+    placementId: input.placement.id,
+    sheet: input.sheet,
+  })
+  const maximumHp = effectiveSoulless ? 1 : Math.max(1, input.maximumHp)
   if (currentHp >= maximumHp) return { map: input.map, sheet: input.sheet, applied: false }
   const abilityInstance = effectiveRuntimeAbilities({
     map: input.map,
@@ -463,6 +468,7 @@ export const applyAa085to100RegeneratorTrigger = (input: {
     input.sheet,
     Math.min(maximumHp, currentHp + Math.floor(maximumHp / 3)),
     combat?.injuries ?? 0,
+    { effectiveSoulless },
   )
   return {
     map: { ...action.nextMap, encounterState: nextEncounter },

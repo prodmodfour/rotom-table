@@ -1,10 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { JUICER_BERRY_ELAPSED_MS } from '#shared/capabilityAutomation/campaignState'
 import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
 import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
+import { createSqliteMapRepository } from '../../server/storage/mapRepository'
+import { createSqliteMapInteractionModeRepository } from '../../server/storage/mapInteractionModeRepository'
 import { createSqliteRealtimeEventRepository } from '../../server/storage/realtimeEventRepository'
 import { advanceCampaignDayUseCase } from '../../server/useCases/advanceCampaignDay'
+import { resolveEffectiveCapabilities } from '../../server/domain/capabilityAutomation/effectiveCapabilities'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TabletopMap } from '~/types/map'
+import { computePokemonHealingVitals } from '~/utils/sheets/healing'
 
 let databases: RotomDatabase[] = []
 const db = () => {
@@ -328,6 +337,226 @@ describe('advanceCampaignDayUseCase', () => {
     const current = sheets.getByRef('pokemon', 'shuckle')?.sheet as Record<string, unknown>
     expect(current.items).toEqual({ held: 'Potion' })
     expect(current).not.toHaveProperty('capabilityCampaignState')
+  })
+
+  it('does not heal only one endpoint of an exact-source As One pair', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const maps = createSqliteMapRepository<TabletopMap>(database)
+    const modes = createSqliteMapInteractionModeRepository(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const owner: CharacterSheet = {
+      slug: 'calyrex', nickname: 'Calyrex', species: 'Calyrex', level: 20, revision: 1,
+      stats: { hp: { added: 20 } }, capabilities: { other: ['As One'] },
+      combat: { currentHp: 0, injuries: 0, conditions: [] }, movelist: [],
+    }
+    const mount: CharacterSheet = {
+      slug: 'glastrier', nickname: 'Glastrier', species: 'Glastrier', level: 20, revision: 1,
+      stats: { hp: { added: 20 } }, combat: { currentHp: 0, injuries: 6, conditions: [] }, movelist: [],
+    }
+    const ownerPlacement = {
+      id: 'owner-token', sheetKind: 'pokemon' as const, sheetSlug: owner.slug,
+      position: { x: 0, y: 0, z: 0 },
+    }
+    const mountPlacement = {
+      id: 'mount-token', sheetKind: 'pokemon' as const, sheetSlug: mount.slug,
+      position: { x: 1, y: 0, z: 0 },
+    }
+    const encounter = createEmptyEncounterState()
+    const unlinkedMap: TabletopMap = {
+      schemaVersion: 2, slug: 'arena', name: 'Arena', folder: '', revision: 4,
+      dimensions: { x: 6, y: 2, z: 6 }, playerVisible: true, voxels: [],
+      placements: [ownerPlacement, mountPlacement], lights: [],
+      initiative: { activeId: null, round: 1 }, encounterState: encounter,
+    }
+    const asOne = resolveEffectiveCapabilities({
+      map: unlinkedMap,
+      placement: ownerPlacement,
+      sheet: owner,
+    }).instances.find(instance => instance.canonicalId === 'As One' && instance.effective)
+    if (!asOne) throw new Error('missing As One campaign-day fixture source')
+    const map: TabletopMap = {
+      ...unlinkedMap,
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          links: [{
+            id: 'as-one-campaign-day-link', kind: 'as-one-mount',
+            ownerPlacementId: ownerPlacement.id, participantPlacementIds: [mountPlacement.id],
+            capabilityInstanceId: asOne.instanceId, canonicalId: 'As One',
+            configurationId: 'Chilling Neigh', establishedAt: 100,
+            sourceOperationId: 'as-one-operation',
+          }],
+        },
+      },
+    }
+    sheets.saveSetupSheet('pokemon', owner.slug, owner as unknown as Record<string, unknown>)
+    sheets.saveSetupSheet('pokemon', mount.slug, mount as unknown as Record<string, unknown>)
+    maps.saveSetupMap(map)
+    modes.set({ slug: map.slug, interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 100 })
+
+    const result = advanceCampaignDayUseCase({}, {
+      database, sheetRepository: sheets, mapRepository: maps, modeRepository: modes,
+      realtimeEventRepository: realtime, now: () => 750,
+      publishPersistedRealtimeEvent: () => {},
+    })
+
+    expect(sheets.getByRef('pokemon', owner.slug)).toMatchObject({
+      revision: 1,
+      sheet: { combat: { currentHp: 0, injuries: 0 } },
+    })
+    expect(sheets.getByRef('pokemon', mount.slug)).toMatchObject({
+      revision: 2,
+      sheet: { combat: { currentHp: 0, injuries: 5 } },
+    })
+    expect(result.hitPointsRestored).toBe(0)
+    expect(result.injuriesHealed).toBe(1)
+  })
+
+  it('atomically heals a fainted Crowned owner while permanently ending Crowned mode', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const maps = createSqliteMapRepository<TabletopMap>(database)
+    const modes = createSqliteMapInteractionModeRepository(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const zacian: CharacterSheet = {
+      slug: 'zacian', nickname: 'Zacian', species: 'Zacian', level: 20, revision: 1,
+      stats: { hp: { added: 20 } }, capabilities: { other: ['Weapon Bond'] },
+      combat: { currentHp: 0, injuries: 0, conditions: [] }, movelist: [],
+    }
+    const placement = {
+      id: 'zacian-token', sheetKind: 'pokemon' as const, sheetSlug: 'zacian',
+      position: { x: 0, y: 0, z: 0 },
+    }
+    const encounter = createEmptyEncounterState()
+    const baseMap: TabletopMap = {
+      schemaVersion: 2, slug: 'arena', name: 'Arena', folder: '', revision: 4,
+      dimensions: { x: 6, y: 2, z: 6 }, playerVisible: true, voxels: [],
+      placements: [placement], lights: [], initiative: { activeId: null, round: 1 },
+      encounterState: encounter,
+    }
+    const weaponBond = resolveEffectiveCapabilities({
+      map: baseMap,
+      placement,
+      sheet: zacian,
+    }).instances.find(instance => instance.canonicalId === 'Weapon Bond' && instance.effective)
+    if (!weaponBond) throw new Error('missing Weapon Bond campaign-day fixture source')
+    const map: TabletopMap = {
+      ...baseMap,
+      encounterState: {
+        ...encounter,
+        capabilityRuntime: {
+          ...encounter.capabilityRuntime!,
+          modes: [{
+            id: 'crowned-mode', actorPlacementId: placement.id,
+            capabilityInstanceId: weaponBond.instanceId, canonicalId: 'Weapon Bond', mode: 'crowned',
+            description: null, configurationId: null, activatedAt: 100, expiresAt: null,
+            sourceOperationId: 'crowned-operation',
+          }],
+        },
+      },
+    }
+    sheets.saveSetupSheet('pokemon', 'zacian', zacian as unknown as Record<string, unknown>)
+    maps.saveSetupMap(map)
+    modes.set({ slug: map.slug, interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 100 })
+
+    expect(() => advanceCampaignDayUseCase({}, {
+      database, sheetRepository: sheets, mapRepository: maps, modeRepository: modes,
+      realtimeEventRepository: {
+        database,
+        appendMany: () => { throw new Error('campaign invariant event failure') },
+      },
+      now: () => 800,
+    })).toThrow('campaign invariant event failure')
+    expect(sheets.getByRef('pokemon', 'zacian')).toMatchObject({
+      revision: 1,
+      sheet: { combat: { currentHp: 0 } },
+    })
+    expect(maps.getBySlug('arena')).toMatchObject({
+      revision: 4,
+      encounterState: { capabilityRuntime: { modes: [{ id: 'crowned-mode' }] } },
+    })
+
+    const result = advanceCampaignDayUseCase({}, {
+      database, sheetRepository: sheets, mapRepository: maps, modeRepository: modes,
+      realtimeEventRepository: realtime, now: () => 801,
+      publishPersistedRealtimeEvent: () => {},
+    })
+    expect(result).toMatchObject({ updatedSheets: 1, hitPointsRestored: expect.any(Number) })
+    expect((sheets.getByRef('pokemon', 'zacian')?.sheet as unknown as CharacterSheet)
+      .combat?.currentHp).toBeGreaterThan(0)
+    expect(maps.getBySlug('arena')).toMatchObject({
+      revision: 5,
+      updatedAt: 801,
+      encounterState: { capabilityRuntime: { modes: [] } },
+    })
+    expect(result.realtimeEvents.map(event => event.event.channel)).toEqual([
+      'sheet:pokemon:zacian', 'sheets', 'map:arena', 'maps',
+    ])
+  })
+
+  it('applies suppression-aware Soulless healing and clears map-owned Temporary HP', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const maps = createSqliteMapRepository<TabletopMap>(database)
+    const modes = createSqliteMapInteractionModeRepository(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const effective: CharacterSheet = {
+      slug: 'effective-shedinja', nickname: 'Effective', species: 'Shedinja', level: 20, revision: 1,
+      stats: { hp: { added: 20 } }, combat: { currentHp: 1, injuries: 3, conditions: [] }, movelist: [],
+    }
+    const suppressed: CharacterSheet = {
+      slug: 'suppressed-shedinja', nickname: 'Suppressed', species: 'Shedinja', level: 20, revision: 1,
+      stats: { hp: { added: 20 } }, combat: { currentHp: 10, injuries: 2, conditions: [] }, movelist: [],
+    }
+    const effectivePlacement = {
+      id: 'effective-token', sheetKind: 'pokemon' as const, sheetSlug: effective.slug,
+      position: { x: 0, y: 0, z: 0 },
+    }
+    const suppressedPlacement = {
+      id: 'suppressed-token', sheetKind: 'pokemon' as const, sheetSlug: suppressed.slug,
+      position: { x: 1, y: 0, z: 0 },
+    }
+    const encounter = createEmptyEncounterState()
+    const suppression = parseEncounterEffect({
+      id: 'suppress-soulless-campaign-day', kind: 'capability',
+      source: { operationId: 'suppression-operation', moveId: 'test.suppression', placementId: suppressedPlacement.id },
+      affected: { placementIds: [suppressedPlacement.id], sideIds: [], cells: [] },
+      createdRound: 1, createdTurn: 0, duration: { kind: 'scene', remaining: null },
+      stacks: 1, charges: null, stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null }, tags: ['capability-suppression'],
+      payload: { capabilityId: 'soulless', action: 'suppress' },
+      dispel: { policy: 'none', tags: [] }, transferPolicy: 'expire', suppression: { sources: [] },
+    })
+    const activeScene = { name: 'Battle', startedAt: 100 }
+    const map: TabletopMap = {
+      schemaVersion: 2, slug: 'arena', name: 'Arena', folder: '', revision: 4,
+      dimensions: { x: 6, y: 2, z: 6 }, playerVisible: true, voxels: [],
+      placements: [effectivePlacement, suppressedPlacement], lights: [],
+      initiative: { activeId: null, round: 1 }, activeScene,
+      temporaryHitPoints: { scene: activeScene, byPlacementId: { [effectivePlacement.id]: 8 } },
+      encounterState: { ...encounter, effects: [suppression] },
+    }
+    expect(computePokemonHealingVitals(suppressed, { effectiveSoulless: false }).maxHp).toBeGreaterThan(10)
+    sheets.saveSetupSheet('pokemon', effective.slug, effective as unknown as Record<string, unknown>)
+    sheets.saveSetupSheet('pokemon', suppressed.slug, suppressed as unknown as Record<string, unknown>)
+    maps.saveSetupMap(map)
+    modes.set({ slug: map.slug, interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 100 })
+
+    advanceCampaignDayUseCase({}, {
+      database, sheetRepository: sheets, mapRepository: maps, modeRepository: modes,
+      realtimeEventRepository: realtime, now: () => 900,
+      publishPersistedRealtimeEvent: () => {},
+    })
+
+    const effectiveAfter = sheets.getByRef('pokemon', effective.slug)?.sheet as unknown as CharacterSheet
+    const suppressedAfter = sheets.getByRef('pokemon', suppressed.slug)?.sheet as unknown as CharacterSheet
+    expect(effectiveAfter.combat).toMatchObject({ currentHp: 1, injuries: 0 })
+    expect(suppressedAfter.combat?.injuries).toBe(1)
+    expect(suppressedAfter.combat?.currentHp).toBeGreaterThan(10)
+    expect(maps.getBySlug('arena')).toMatchObject({ revision: 5 })
+    expect(maps.getBySlug('arena')?.temporaryHitPoints).toBeUndefined()
   })
 
   it('does nothing durable for a no-op campaign day', () => {

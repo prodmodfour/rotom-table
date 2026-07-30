@@ -50,7 +50,12 @@ import {
   type ValidMarsupialRelationship,
 } from '../domain/capabilityAutomation/marsupialRelationship'
 import { createSqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import {
+  createSqliteMapInteractionModeRepository,
+  type MapInteractionModeRepository,
+} from '../storage/mapInteractionModeRepository'
 import { listRepositorySheets } from './listSheets'
+import { applyHpToSheet } from '~/utils/sheetMutations'
 import {
   defaultPersistedSetupSaveRealtimeEventPublisher,
   defaultSetupSaveRealtimePublicationFailureReporter,
@@ -85,6 +90,7 @@ export interface SaveSheetDependencies {
   database?: RotomDatabase
   sheetRepository?: SaveSheetRepository
   mapRepository?: Pick<MapRepository<TabletopMap>, 'list' | 'getBySlug' | 'applyLivePlayUpdate'> & { readonly database?: RotomDatabase }
+  modeRepository?: Pick<MapInteractionModeRepository, 'get'> & { readonly database?: RotomDatabase }
   realtimeEventRepository?: SaveSheetRealtimeEventRepository
   publishPersistedRealtimeEvent?: PersistedSetupSaveRealtimeEventPublisher
   reportAfterCommitPublicationFailure?: SetupSaveRealtimePublicationFailureReporter
@@ -107,14 +113,23 @@ const persistedToTrainerSheet = (sheet: PersistedSheet): TrainerSheet => sheet.s
 const databaseFromDependencies = (dependencies: SaveSheetDependencies): RotomDatabase => {
   const sheetDatabase = dependencies.sheetRepository?.database
   const mapDatabase = dependencies.mapRepository?.database
+  const modeDatabase = dependencies.modeRepository?.database
   const realtimeDatabase = dependencies.realtimeEventRepository?.database
-  const database = dependencies.database ?? sheetDatabase ?? mapDatabase ?? realtimeDatabase ?? getRotomDatabase()
+  const database = dependencies.database
+    ?? sheetDatabase
+    ?? mapDatabase
+    ?? modeDatabase
+    ?? realtimeDatabase
+    ?? getRotomDatabase()
 
   if (sheetDatabase && sheetDatabase !== database) {
     throw new Error('Sheet setup save sheet repository must use the same RotomDatabase as the save transaction')
   }
   if (mapDatabase && mapDatabase !== database) {
     throw new Error('Sheet setup save map repository must use the same RotomDatabase as the save transaction')
+  }
+  if (modeDatabase && modeDatabase !== database) {
+    throw new Error('Sheet setup save mode repository must use the same RotomDatabase as the save transaction')
   }
   if (realtimeDatabase && realtimeDatabase !== database) {
     throw new Error('Sheet setup save realtime event repository must use the same RotomDatabase as the save transaction')
@@ -219,6 +234,7 @@ export const saveSheetUseCase = (
   const database = databaseFromDependencies(dependencies)
   const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(database)
   const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository<TabletopMap>(database)
+  const modeRepository = dependencies.modeRepository ?? createSqliteMapInteractionModeRepository(database)
   const realtimeEventRepository = dependencies.realtimeEventRepository
     ?? createSqliteRealtimeEventRepository({ database })
   const now = dependencies.now ?? Date.now
@@ -351,6 +367,19 @@ export const saveSheetUseCase = (
     }
   }
 
+  if (input.kind === 'pokemon') {
+    const pokemon = authoritativeSheet as unknown as CharacterSheet
+    if (pokemonHasResolvedCapability(pokemon, 'Soulless')) {
+      authoritativeSheet = applyHpToSheet(
+        'pokemon',
+        pokemon,
+        1,
+        0,
+        { effectiveSoulless: true },
+      ) as unknown as Record<string, unknown>
+    }
+  }
+
   let marsupialLifecycleExit: PlannedMarsupialLifecycleExit | null = null
   if (input.kind === 'pokemon' && currentMarsupialRelationship) {
     const candidate = { ...authoritativeSheet, slug: input.slug } as unknown as CharacterSheet
@@ -388,6 +417,19 @@ export const saveSheetUseCase = (
   const authoritativeInput: SaveSheetInput = { ...input, sheet: authoritativeSheet }
 
   const transactionResult = database.withTransaction(() => {
+    for (const stored of mapRepository.list()) {
+      const map = mapRepository.getBySlug(stored.slug)
+      if (!map || !map.placements.some(placement => (
+        placement.sheetKind === input.kind && placement.sheetSlug === input.slug
+      ))) continue
+      if (modeRepository.get(map.slug).interactionMode === MAP_INTERACTION_MODES.LIVE_PLAY) {
+        throw new SaveSheetUseCaseError(
+          409,
+          'Whole-sheet save rejected because the sheet is present on a live map; use an authoritative map-scoped command',
+        )
+      }
+    }
+
     const saved = replaceSheetOrThrow(sheetRepository, authoritativeInput, timestamp)
     if (!saved) throw new SaveSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
 

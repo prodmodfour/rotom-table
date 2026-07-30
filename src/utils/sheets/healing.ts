@@ -1,8 +1,13 @@
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
 import type { TrainerApPool, TrainerSheet } from '~/types/trainerSheet'
-import { clampHpValue, computeInjuryAdjustedMaxHp, normalizeInjuryCount } from '~/utils/ptuHp'
-import { computeFullMaxHp, pokemonHasResolvedCapability, resolveStats } from '~/utils/sheets/pokemonDerived'
+import {
+  clampHpValue,
+  computeInjuryAdjustedMaxHp,
+  computePokemonFormulaMaxHp,
+  normalizeInjuryCount,
+} from '~/utils/ptuHp'
+import { pokemonHasResolvedCapability, resolveStats } from '~/utils/sheets/pokemonDerived'
 import { computeTrainerFullMaxHp, computeTrainerMaxAp, computeTrainerMaxHp } from '~/utils/sheets/trainerDerived'
 import { resolvedStatTotal } from '~/utils/sheets/resolvedStatRows'
 
@@ -112,12 +117,19 @@ const pokemonHpTotal = (sheet: CharacterSheet): number => {
   return resolvedStatTotal(stats, 'hp')
 }
 
-export const computePokemonHealingVitals = (sheet: CharacterSheet): SheetHealingVitals => {
+export const computePokemonHealingVitals = (
+  sheet: CharacterSheet,
+  options: Pick<InjuryRemovalOptions, 'effectiveSoulless'> = {},
+): SheetHealingVitals => {
   const hpTotal = pokemonHpTotal(sheet)
-  const fullMaxHp = computeFullMaxHp(sheet, hpTotal)
-  const injuries = normalizeInjuryCount(sheet.combat?.injuries)
+  const effectiveSoulless = options.effectiveSoulless
+    ?? pokemonHasResolvedCapability(sheet, 'Soulless')
+  const fullMaxHp = effectiveSoulless
+    ? 1
+    : computePokemonFormulaMaxHp(sheet.level ?? 1, hpTotal)
+  const injuries = effectiveSoulless ? 0 : normalizeInjuryCount(sheet.combat?.injuries)
   const injuriesHealedToday = dailyInjuryHealCount(sheet.combat?.injuriesHealedToday)
-  const maxHp = computeInjuryAdjustedMaxHp(fullMaxHp, injuries)
+  const maxHp = effectiveSoulless ? 1 : computeInjuryAdjustedMaxHp(fullMaxHp, injuries)
   const daily = countSheetDailyMoveUsage(sheet.moveUsage)
   return {
     fullMaxHp,
@@ -286,7 +298,7 @@ export const removePokemonInjuries = (
   amount: unknown,
   options: InjuryRemovalOptions = {},
 ): number => {
-  const before = computePokemonHealingVitals(sheet).injuries
+  const before = computePokemonHealingVitals(sheet, options).injuries
   const requestedNext = Math.max(0, before - positiveHealingAmount(amount))
   const next = setPokemonInjuries(sheet, requestedNext, options)
   return before - next
@@ -411,18 +423,21 @@ export const applyTrainerFullRecovery = (sheet: TrainerSheet): SheetHealingMutat
   return summary
 }
 
-export const applyPokemonNextDay = (sheet: CharacterSheet): SheetHealingMutationSummary => {
+export const applyPokemonNextDay = (
+  sheet: CharacterSheet,
+  options: Pick<InjuryRemovalOptions, 'effectiveSoulless'> = {},
+): SheetHealingMutationSummary => {
   const summary = emptyHealingMutationSummary()
-  const before = computePokemonHealingVitals(sheet)
+  const before = computePokemonHealingVitals(sheet, options)
 
   resetPokemonDailyInjuryHeals(sheet)
   const daily = clearSheetDailyMoveUsage(sheet)
   summary.dailyMoveUsesCleared += daily.uses
   summary.dailyMoveEntriesCleared += daily.entries
   summary.conditionsCleared += clearPokemonConditions(sheet)
-  summary.injuriesHealed += removePokemonInjuries(sheet, 1)
+  summary.injuriesHealed += removePokemonInjuries(sheet, 1, options)
 
-  const afterInjuries = computePokemonHealingVitals(sheet)
+  const afterInjuries = computePokemonHealingVitals(sheet, options)
   if (afterInjuries.injuries < 5) {
     setPokemonCurrentHp(sheet, afterInjuries.maxHp, afterInjuries.maxHp)
     summary.hitPointsRestored += Math.max(0, afterInjuries.maxHp - before.currentHp)

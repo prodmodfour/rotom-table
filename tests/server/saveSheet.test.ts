@@ -4,6 +4,7 @@ import { PLAYER_PROFILE_SCHEMA_VERSION, type PlayerProfile, type PlayerProfileDi
 import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
 import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
 import { createSqliteMapRepository } from '../../server/storage/mapRepository'
+import { createSqliteMapInteractionModeRepository } from '../../server/storage/mapInteractionModeRepository'
 import { createEmptyCapabilityCampaignState } from '../../shared/capabilityAutomation/campaignState'
 import { createEmptyEncounterState } from '../../shared/moveAutomation/encounterState'
 import type { TabletopMap } from '~/types/map'
@@ -440,6 +441,7 @@ describe('save sheet use case', () => {
     const database = db()
     const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
     const maps = createSqliteMapRepository<TabletopMap>(database)
+    const modes = createSqliteMapInteractionModeRepository(database)
     const realtime = createSqliteRealtimeEventRepository({ database })
     const pouch = {
       motherSheetSlug: 'kangaskhan-mother', babySheetSlug: 'kangaskhan-baby', experienceSharePercent: 20 as const,
@@ -475,6 +477,7 @@ describe('save sheet use case', () => {
         },
       },
     } as TabletopMap)
+    modes.set({ slug: 'arena', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT, updatedAt: 100 })
     const input = {
       role: 'gm' as const, interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon' as const, slug: 'kangaskhan-baby', expectedRevision: 1,
@@ -505,6 +508,65 @@ describe('save sheet use case', () => {
       metadata: { capabilityMarsupialPouches: [] },
       encounterState: { capabilityRuntime: { links: [] } },
     })
+  })
+
+  it('rejects a forged setup save while the sheet is present on a live map', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const maps = createSqliteMapRepository<TabletopMap>(database)
+    const modes = createSqliteMapInteractionModeRepository(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    sheets.saveSetupSheet('pokemon', 'pika', pokemonSheet())
+    maps.saveSetupMap({
+      schemaVersion: 2, slug: 'arena', name: 'Arena', folder: '', revision: 4,
+      dimensions: { x: 4, y: 2, z: 4 }, voxels: [], lights: [],
+      placements: [{
+        id: 'pika-token', sheetKind: 'pokemon', sheetSlug: 'pika',
+        position: { x: 0, y: 0, z: 0 },
+      }],
+      initiative: { activeId: null, round: 1 },
+    })
+    modes.set({ slug: 'arena', interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 100 })
+
+    expect(() => saveSheetUseCase({
+      role: 'gm', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon', slug: 'pika', expectedRevision: 4,
+      sheet: pokemonSheet({ combat: { currentHp: 0, injuries: 3 } }),
+    }, {
+      database, sheetRepository: sheets, mapRepository: maps, modeRepository: modes,
+      realtimeEventRepository: realtime, now: () => 200,
+    })).toThrow(expect.objectContaining({
+      statusCode: 409,
+      message: expect.stringContaining('present on a live map'),
+    }))
+    expect(sheets.getByRef('pokemon', 'pika')).toMatchObject({ revision: 4 })
+    expect(maps.getBySlug('arena')).toMatchObject({ revision: 4 })
+    expect(realtime.readAfter({ afterSequence: 0 }).events).toEqual([])
+  })
+
+  it('normalizes off-map Soulless HP and Injuries during a setup save', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    sheets.saveSetupSheet('pokemon', 'shedinja', {
+      slug: 'shedinja', nickname: 'Shedinja', species: 'Shedinja', level: 20,
+      combat: { currentHp: 1, injuries: 0, conditions: [] }, revision: 1,
+    })
+
+    const result = saveSheetUseCase({
+      role: 'gm', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon', slug: 'shedinja', expectedRevision: 1,
+      sheet: {
+        slug: 'shedinja', nickname: 'Shedinja', species: 'Shedinja', level: 20,
+        combat: { currentHp: 50, injuries: 4, conditions: [] }, revision: 1,
+      },
+    }, {
+      database, sheetRepository: sheets, realtimeEventRepository: realtime, now: () => 200,
+    })
+
+    expect(result.sheet).toMatchObject({ combat: { currentHp: 1, injuries: 0 } })
+    expect(sheets.getByRef('pokemon', 'shedinja')?.sheet)
+      .toMatchObject({ combat: { currentHp: 1, injuries: 0 } })
   })
 
   it('blocks live-play whole-sheet saves and inaccessible player saves', () => {
