@@ -84,14 +84,16 @@
   },
   "Medic": {
     "name": "Medic",
-    "tags": [],
+    "tags": [
+      "Class"
+    ],
     "prerequisites": "Novice Medicine Education",
     "frequency": "Static",
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You are always considered to have access to a First Aid Manual and a Combat Medic’s Primer, and are always considered to be Binding their Rank 1 Effects without actually using any AP.",
-    "className": "Cheerleader"
+    "className": "Medic"
   },
   "Front Line Healer": {
     "name": "Front Line Healer",
@@ -102,7 +104,7 @@
     "target": null,
     "condition": null,
     "effect": "When you apply a Restorative, you gain +5 Damage Reduction for 1 full round. Whenever you use Combat Medic’s Primer’s Rank 2 effect, you may apply the same effect on yourself. Damage Reduction from this Feature does not stack with itself.",
-    "className": "Cheerleader"
+    "className": "Medic"
   },
   "Medical Techniques": {
     "name": "Medical Techniques",
@@ -113,7 +115,7 @@
     "target": null,
     "condition": null,
     "effect": "The target of the triggering action gains a Tick of Hit Points, plus an additional amount of Hit Points equal to your Medicine Education Rank.",
-    "className": "Cheerleader"
+    "className": "Medic"
   },
   "I’m a Doctor": {
     "name": "I’m a Doctor",
@@ -127,7 +129,7 @@
     "target": null,
     "condition": null,
     "effect": "Each Rank, you gain one of Field Clinic or Medic Training and one of Nurse or First Aid Expertise.",
-    "className": "Cheerleader"
+    "className": "Medic"
   },
   "Proper Care": {
     "name": "Proper Care",
@@ -138,7 +140,7 @@
     "target": null,
     "condition": null,
     "effect": "You gain additional bonuses to using Restoratives and Features while in a Field Clinic, Poke Center, Hospital, or other dedicated healing space that lets you access supplies. »» When you trigger First Aid Expertise here, the injury that is Removed does not count towards the total number of Injuries that may be removed each day. »» When you trigger Nurse here, Bandages cure 1 Injury after three hours, in addition the injury healed after 6 hours. »» All Restoratives heal an additional 5 Hit Points. This stacks with the bonus granted by Field Clinic.",
-    "className": "Cheerleader"
+    "className": "Medic"
   },
   "Stay With Us!": {
     "name": "Stay With Us!",
@@ -149,7 +151,7 @@
     "target": null,
     "condition": null,
     "effect": "You must be able to Shift to your target to use this Feature. If you can, you immediately do so, and may apply a Potion, Super Potion, Hyper Potion, Energy Powder, or Energy Root. Though damage, injuries, and all other effects of the triggering attack are finalized before this Feature is applied, do not determine if the target has been Fainted, Killed, or gained Injuries from Hit Point Markers until after the effects of the action chosen through use of this Feature has been resolved.",
-    "className": "Cheerleader"
+    "className": "Medic"
   },
   "Field Clinic": {
     "name": "Field Clinic",
@@ -159,8 +161,7 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "Whenever your party Sets Up Camp, you may spend $200 worth of Medical Scrap to set up a Field Clinic. While using the Field Clinic, all members gain the following benefits; »» You may spend $300 of Medical Scrap to create and apply a Bandage or use a First Aid Kit »» If you have the Nurse Feature, you may spend $300 to activate it without Draining AP. »» Potions, Super Potions, Hyper Potions, Full Restores, Revives, Energy Powders, and Energy Roots used in this area heal their target an additional 5 Hit Points. (Setting Up Camp is just as it sounds; any time you prepare a safe area to rest as an Extended Action, that counts for the purposes of Field Clinic.) New General Feature:",
-    "className": "Cheerleader"
+    "effect": "When the party Sets Up Camp, spend $200 of Medical Scrap to establish a Field Clinic. Members may spend $300 of Medical Scrap to create and apply a Bandage or use a First Aid Kit; Nurse may be activated for $300 without Draining AP; and listed Restoratives used there heal 5 additional Hit Points."
   },
   "Nurse": {
     "name": "Nurse",
@@ -170,8 +171,7 @@
     "trigger": "You take an Extended Rest",
     "target": null,
     "condition": null,
-    "effect": "During this Extended Rest, Pokémon and Trainers in your care gain the benefits listed below. The AP Drain cost from triggering this Feature is applied after the Extended Rest is completed and AP Drain has otherwise been restored. »» They heal 1/8th of their Max Hit Points per half hour of rest instead of 1/16th (does not stack with Bandages). »» If the Extended Rest lasts at least 6 hours, they may remove 1 Injury. New Apothecary Talent: Remove Medical Techniques and replace with:",
-    "className": "Cheerleader"
+    "effect": "During this Extended Rest, Pokémon and Trainers in your care gain the benefits listed below. The AP Drain cost from triggering this Feature is applied after the Extended Rest is completed and AP Drain has otherwise been restored. »» They heal 1/8th of their Max Hit Points per half hour of rest instead of 1/16th (does not stack with Bandages). »» If the Extended Rest lasts at least 6 hours, they may remove 1 Injury. New Apothecary Talent: Remove Medical Techniques and replace with:"
   },
   "Affliction Techniques": {
     "name": "Affliction Techniques",
@@ -182,7 +182,7 @@
     "target": null,
     "condition": null,
     "effect": "If the target successfully cures the target of its linked Status Affliction, the item has additional effects. »» Antidote: The target gains +1 Special Defense Com- bat Stage. »» Burn Heal: The target gains +1 Defense Combat Stage. »» Ice Heal: The target gains +1 Attack or Special At- tack Combat Stage »» Paralyze Heal: The target gains +1 Speed Combat Stage.",
-    "className": "Cheerleader"
+    "className": "Researcher"
   },
   "Gotta Catch ‘Em All": {
     "name": "Gotta Catch ‘Em All",
@@ -193,18 +193,18 @@
     "target": null,
     "condition": null,
     "effect": "Every time you Capture a Wild Pokémon that is a member of an evolutionary family of which you own no other Pokémon, you gain 1 Collector Stack. Whenever you make a Capture Roll, you may spend up to three Collector Stacks to gain an equal bonus to your Capture Roll, or you may spend three Collector Stacks to re-roll entirely.",
-    "className": "Cheerleader"
+    "className": "Capture Specialist"
   },
   "Mixed Power": {
     "name": "Mixed Power",
     "tags": [],
-    "prerequisites": "Level 10, Invested at least 5 Level-Up Stat Points into both Attack and Special Attack Cost: 2 Tutor Points",
+    "prerequisites": "Level 10; at least 5 Level-Up Stat Points invested in both Attack and Special Attack",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "The user gains the Twisted Power Ability. Fire Ace’s Incadescence is adjusted as follows:",
-    "className": "Cheerleader"
+    "effect": "The user gains the Twisted Power Ability.",
+    "cost": "2 Tutor Points"
   },
   "Incandescence": {
     "name": "Incandescence",
@@ -217,8 +217,8 @@
     "trigger": "Your Fire-Type Pokémon",
     "target": null,
     "condition": null,
-    "effect": "While this Feature is Bound, the target gains the Mixed Power Poké Edge effect when using damag- ing Fire-Type Attacks. If the target already has Mixed Power, they instead add their entire Attack and Special Attack Stats to all damaging Fire-Type Attacks, instead of one or the other. This does not stack with Twisted Power. The following Pokémon which naturally gain Twisted Power instead gain the Abilities below in that slot: Tynamo Line: Sequence Cacnea Line: Needles (Rough Skin becomes a Basic Ability, Needles is an Advanced Ability in its place) Exeggcute Line: Eggscellence Carvanha: Pack Hunt Sharpedo: Bully Murkrow: Magician Hydreigon: Bully New and Adjusted Abilities: Ability: Needles Static Effect: Connection – Needle Arm. Whenever the user hits a target with a Physical Melee attack, that target loses a Tick of Hit Points. Ability: Sequence At-Will – Free Action Trigger: The user uses an Electric Attack Effect: For every allied Electric-Type Pokémon adjacent to the user, the triggering Attack deals an additional +3 Damage. Ability: Eggscellence Static Effect: Connection – Barrage. The user receives STAB when using Barrage and Egg Bomb. These Moves deal Damage as if one step more effective on 16+. Tutor and Inheritance Move Changes All Moves taught through Tutoring Features (Ex: Mentor’s Move Tutor and Egg Tutor, Chronicler’s Archive Tutor) now have prerequisites: »» Pokémon under Level 20 may only learn Moves of an At-Will or EOT Frequency with a max Damage Base of 7. »» Pokémon from Level 20 to 29 may only learn Moves with up to a Scene Frequency and max Damage Base of 9. »» Pokémonn at Level 30 and above have no restrictions when being taught Moves through Tutors. This applies to Inheritance Moves as well. If a Pokémon were to have Heal Pulse as its only Inheritance Move, that Move would be gained at Level 30 despite the Level 20 slot for Inheritance Moves being empty.",
-    "className": "Cheerleader"
+    "effect": "While this Feature is Bound, the target gains the Mixed Power Poké Edge effect when using damaging Fire-Type attacks. If it already has Mixed Power, it adds its entire Attack and Special Attack Stats instead of one or the other. This does not stack with Twisted Power.",
+    "className": "Type Ace"
   },
   "Ace Trainer": {
     "name": "Ace Trainer",
@@ -336,10 +336,10 @@
     ],
     "prerequisites": "Advanced Capture Techniques Rank 2",
     "frequency": "At-Will – Free Action",
-    "trigger": "You successfully Capture a Pokémon Choose One Effect: »» You or your Pokémon gain a +2 bonus to their next Accuracy Roll during this combat. »» You subtract your highest Skill Rank out of Acrobat- ics, Athletics, Stealth, Survival, Guile, or Perception from your next Capture Roll during this combat. »» You gain 1 Temporary Action Point that disappears after one full round. Gotta Catch ‘Em All [+Speed]",
+    "trigger": "You successfully Capture a Pokémon",
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Choose one: you or your Pokémon gains +2 to its next Accuracy Roll during this combat; subtract your highest Acrobatics, Athletics, Stealth, Survival, Guile, or Perception Rank from your next Capture Roll during this combat; or gain 1 Temporary AP that expires after one full round.",
     "className": "Capture Specialist"
   },
   "Catch Combo": {
@@ -1220,10 +1220,10 @@
     "tags": [],
     "prerequisites": "3 Trickster Features, Expert Guile",
     "frequency": "Daily x3 – Free Action",
-    "trigger": "Your Pokémon uses a Status-Class Move that does not target foes. Choose One Effect: Your Pokémon gains +1 Combat Stage in any Stat in which they haven’t gained a Combat Stage this turn; or gains a second Standard Action this round that must be used to make an At-Will action that does not trigger Encore Peformance; or, if they are placing Hazards, they may place an additional two units; or, if they are activating a Weather Effect, it lasts an additional two turns; or, if they are activating a Blessing, it gains an additional use.. Sleight",
+    "trigger": "Your Pokémon uses a Status-Class Move that does not target foes.",
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Choose one: the Pokémon gains +1 Combat Stage in a Stat it has not raised this turn; gains a second Standard Action this round limited to an At-Will action that cannot trigger Encore Performance; places two additional Hazard units; extends triggering Weather by two turns; or gives the triggering Blessing one additional use.",
     "className": "Trickster"
   },
   "Sleight": {
@@ -1240,15 +1240,15 @@
   "Stat Ace": {
     "name": "Stat Ace",
     "tags": [
-      "Branch",
-      "Class"
+      "Class",
+      "Branch"
     ],
-    "prerequisites": "Ace Trainer or Style Expert, 1 Pokémon with the chosen stat of 15 or more, Novice Command or Focus",
-    "frequency": null,
+    "prerequisites": "Ace Trainer or Style Expert; either 1 Pokémon with the chosen Stat at 15 or more, or 3 Pokémon with it at 20 or more; Novice Command or Focus",
+    "frequency": "Static",
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Your Pokémon have their Chosen Base Stat increased by +1, and by +1 more for every 10 Levels they have. They may ignore Base Relations while adding to that Stat and need not correct Stats due to this increase.",
     "className": "Stat Ace"
   },
   "Focus": {
@@ -1349,10 +1349,10 @@
     ],
     "prerequisites": "3 Style Expert Features",
     "frequency": "1 AP – Free Action",
-    "trigger": "Your Pokémon uses a Move of your Chosen Type Contest Effect: Re-Roll all dice that result in 1s. This effect may only be used once per Contest. Battle Effect: The target gains +1 CS in the Stat corresponding to your chosen Contest Type, after the Move and all effects have been resolved. This may only affect a target once per Scene. Note: As a reminder, Beauty corresponds to Special Attack, Cool corresponds to Attack, Cute corresponds to Speed, Smart corresponds to Special Defense, and Tough corresponds to Defense. Style Entrainment [Branch]",
+    "trigger": "Your Pokémon uses a Move of your Chosen Type.",
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Contest: re-roll all dice that result in 1, once per Contest. Battle: after the Move resolves, the target gains +1 Combat Stage in the Stat corresponding to your chosen Contest Type; a target can be affected only once per Scene.",
     "className": "Stat Ace"
   },
   "Style Entrainment": {
@@ -1365,7 +1365,7 @@
     "trigger": null,
     "target": "Your Pokémon",
     "condition": null,
-    "effect": "Your Pokémon gains one of the following Abilities corresponding to your chosen Contest Stat for the rest of the Scene, even if it is switched out. Style Entrainment may only grant one Ability to a Pokémon at a time. If it is used a second time on the same target, it replaces the first granted Ability. »» Beauty gives Gentle Vibe or Serene Grace »» Cool gives Defiant or Sniper »» Cute gives Cute Charm or Cute Tears »» Smart gives Analytic or Anticipation »» Tough gives Sturdy or Intimidate Cast: When reading the following Features, keep in mind that Beautiful Ballet and the equivalents for the other Contest Stats are intended to be usable not only in battle but in Contests as well! Beauty Expert Features",
+    "effect": "Your Pokémon gains one of the following Abilities corresponding to your chosen Contest Stat for the rest of the Scene, even if it is switched out. Style Entrainment may only grant one Ability to a Pokémon at a time. If it is used a second time on the same target, it replaces the first granted Ability. »» Beauty gives Gentle Vibe or Serene Grace »» Cool gives Defiant or Sniper »» Cute gives Cute Charm or Cute Tears »» Smart gives Analytic or Anticipation »» Tough gives Sturdy or Intimidate Cast: When reading the following Features, keep in mind that Beautiful Ballet and the equivalents for the other Contest Stats are intended to be usable not only in battle but in Contests as well!.",
     "className": "Stat Ace"
   },
   "Beautiful Ballet": {
@@ -1386,10 +1386,10 @@
     "tags": [],
     "prerequisites": "Beautiful Ballet Rank 1",
     "frequency": "At-Will – Free Action",
-    "trigger": "Your Pokémon uses a Beauty-Type Move Contest Effect: Treat the Move as if it were one step more aligned with the Contest Type. If the Move would be opposing the Contest Type, it is instead neutral. If it is neutral, it is instead matching. You may activate this effect only once per Contest. Battle Effect: The move gains the keyword Burst 1 if Melee, or Blast 2 if ranged. If the move is already a Burst, Blast, or Cone, increase the size of the Move’s Range by 1. This does not cause a target to be hit multiple times. You may activate Fabulous Max only once per Pokémon per Scene. Enticing Beauty",
+    "trigger": "Your Pokémon uses a Beauty-Type Move.",
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Contest: improve the Move's Contest alignment by one step, once per Contest. Battle: a Melee Move gains Burst 1, a ranged Move gains Blast 2, or an existing Burst, Blast, or Cone increases its size by 1; once per Pokémon per Scene.",
     "className": "Stat Ace"
   },
   "Enticing Beauty": {
@@ -1406,15 +1406,15 @@
   "Style Expert": {
     "name": "Style Expert",
     "tags": [
-      "Branch",
-      "Class"
+      "Class",
+      "Branch"
     ],
-    "prerequisites": "3 Pokémon with 3d6 in a specific certain Contest Stat from Poffins",
-    "frequency": null,
+    "prerequisites": "Either 3 Pokémon with 3d6 in the chosen Contest Stat from Poffins, or Coordinator and 1 such Pokémon",
+    "frequency": "Static",
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Your Pokémon gain +2d6 to your chosen Contest Stat, counted as dice from Poffins.",
     "className": "Style Expert"
   },
   "Cool Conduct": {
@@ -1435,10 +1435,10 @@
     "tags": [],
     "prerequisites": "Cool Conduct Rank 1",
     "frequency": "At-Will – Free Action",
-    "trigger": "Your Pokémon uses a Cool-Type Move Contest Effect: Treat the Move as if it were one step more aligned with the Contest Type. If the Move would be opposing the Contest Type, it is instead neutral. If it is neutral, it is instead matching. You may activate this effect only once per Contest. Battle Effect: The triggering Move’s Crit Range is increased by 3, and the Moves with the Interrupt Keyword may not be activated in reaction to this Move. You may activate Rule of Cool only once per Pokémon per Scene. Action Hero Stunt",
+    "trigger": "Your Pokémon uses a Cool-Type Move.",
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Contest: improve the Move's Contest alignment by one step, once per Contest. Battle: increase the triggering Move's critical range by 3 and prevent Interrupt-keyword Moves from being activated in reaction; once per Pokémon per Scene.",
     "className": "Style Expert"
   },
   "Action Hero Stunt": {
@@ -1449,7 +1449,7 @@
     "trigger": "Your Pokémon makes a Skill Check for a dramatic, high risk action",
     "target": null,
     "condition": null,
-    "effect": "Instead of using a Skill for this Check, your Pokémon rolls their Cool Dice from Poffins and adds their number of Cool Dice from Stats as a modifier. For example, a Pokémon with 5d6 Cool from Poffins and 2d6 from Attack rolls 5d6+2. Skill Checks invoked by Intercepting attacks, Combat Maneuvers, Moves, and Abilities don’t trigger this Feature. Example Trigger: Charging into a burning building for a heroic rescue. Cast: To decide whether an action triggers Action Hero Stunt, ask yourself if there are dramatic consequences for the outcome and if the player chose a risky and cool option over safer alternatives. Cute Expert Features",
+    "effect": "Instead of using a Skill for this Check, your Pokémon rolls their Cool Dice from Poffins and adds their number of Cool Dice from Stats as a modifier. For example, a Pokémon with 5d6 Cool from Poffins and 2d6 from Attack rolls 5d6+2. Skill Checks invoked by Intercepting attacks, Combat Maneuvers, Moves, and Abilities don’t trigger this Feature. Example Trigger: Charging into a burning building for a heroic rescue. Cast: To decide whether an action triggers Action Hero Stunt, ask yourself if there are dramatic consequences for the outcome and if the player chose a risky and cool option over safer alternatives.",
     "className": "Style Expert"
   },
   "Cute Cuddle": {
@@ -1470,10 +1470,10 @@
     "tags": [],
     "prerequisites": "Cute Cuddle Rank 1",
     "frequency": "At-Will – Free Action",
-    "trigger": "Your Pokémon uses a Cute-Type Move Contest Effect: Treat the Move as if it were one step more aligned with the Contest Type. If the Move would be opposing the Contest Type, it is instead neutral. If it is neutral, it is instead matching. You may activate this effect only once per Contest. Battle Effect: The triggering Pokémon may immediately shift up to half their Movement speed in meters in any direction after their attack is resolved. You may activate Gleeful Steps only once per Pokémon per Scene. Let’s Be Friends!",
+    "trigger": "Your Pokémon uses a Cute-Type Move.",
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Contest: improve the Move's Contest alignment by one step, once per Contest. Battle: after the attack resolves, the triggering Pokémon may Shift up to half its Movement speed; once per Pokémon per Scene.",
     "className": "Style Expert"
   },
   "Let’s Be Friends!": {
@@ -1505,10 +1505,10 @@
     "tags": [],
     "prerequisites": "Smart Scheme Rank 1",
     "frequency": "At-Will – Free Action",
-    "trigger": "Your Pokémon uses a Smart-Type Move Contest Effect: Treat the Move as if it were one step more aligned with the Contest Type. If the Move would be opposing the Contest Type, it is instead neutral. If it is neutral, it is instead matching. You may activate this effect only once per Contest. Battle Effect: Choose one: The triggering Pokémon gains a +1 bonus on its Accuracy Roll for each ally that hit a target of its Move this round, or all allies get a +1 bonus to their Accuracy Rolls against targets of the triggering Pokémon’s Move until the end of your Pokémon’s next turn. You may activate Calculated Assault only once per Pokémon per Scene. Learn From Your Mistakes",
+    "trigger": "Your Pokémon uses a Smart-Type Move.",
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Contest: improve the Move's Contest alignment by one step, once per Contest. Battle: either the triggering Pokémon gains +1 Accuracy per ally that hit one of its targets this round, or allies gain +1 Accuracy against its targets until the end of its next turn; once per Pokémon per Scene.",
     "className": "Style Expert"
   },
   "Learn From Your Mistakes": {
@@ -1519,7 +1519,7 @@
     "trigger": "Your Pokémon fails a Skill Check.",
     "target": null,
     "condition": null,
-    "effect": "Your Pokémon may re-roll the Skill Check with a Bonus equal to its number of Smart Dice from Poffins. Tough Expert Features",
+    "effect": "Your Pokémon may re-roll the Skill Check with a Bonus equal to its number of Smart Dice from Poffins.",
     "className": "Style Expert"
   },
   "Tough Tumble": {
@@ -1540,10 +1540,10 @@
     "tags": [],
     "prerequisites": "Tough Tumble Rank 1",
     "frequency": "At-Will – Free Action",
-    "trigger": "Your Pokémon uses a Tough-Type Move Contest Effect: Treat the Move as if it were one step more aligned with the Contest Type. If the Move would be opposing the Contest Type, it is instead neutral. If it is neutral, it is instead matching. You may activate this effect only once per Contest. Battle Effect: All targets hit by the Move are pushed away from the triggering Pokémon by 3 meters. You may activate Macho Charge only once per Pokémon per Scene. Endurance",
+    "trigger": "Your Pokémon uses a Tough-Type Move.",
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Contest: improve the Move's Contest alignment by one step, once per Contest. Battle: push all targets hit by the Move 3 meters away from the triggering Pokémon; once per Pokémon per Scene.",
     "className": "Style Expert"
   },
   "Endurance": {
@@ -1560,15 +1560,15 @@
   "Type Ace": {
     "name": "Type Ace",
     "tags": [
-      "Branch",
-      "Class"
+      "Class",
+      "Branch"
     ],
-    "prerequisites": "2 Different Pokémon of the Chosen Type, Type-Linked Skill* at Novice",
-    "frequency": null,
+    "prerequisites": "Either 2 different Pokémon of the Chosen Type, or Elemental Connection and 1 Pokémon of that Type; Novice Type-Linked Skill",
+    "frequency": "At-Will – Extended Action",
     "trigger": null,
-    "target": null,
+    "target": "Your Pokémon with at least 2 Tutor Points remaining.",
     "condition": null,
-    "effect": null,
+    "effect": "The target loses 2 Tutor Points and learns the Last Chance or Type Strategist Ability for your Chosen Type. A Pokémon may be targeted only once by Type Ace.",
     "className": "Type Ace"
   },
   "Type Refresh": {
@@ -1642,7 +1642,7 @@
     "trigger": "Your Pokémon hits with a Bug-Type Move",
     "target": null,
     "condition": null,
-    "effect": "Until the end of user’s next turn, all targets hit by the Move are Slowed, suffer a -X to Accuracy Rolls, and are Flinched by Damaging Attacks on 16+. Dark Ace Features",
+    "effect": "Until the end of user’s next turn, all targets hit by the Move are Slowed, suffer a -X to Accuracy Rolls, and are Flinched by Damaging Attacks on 16+.",
     "className": "Type Ace"
   },
   "Clever Ruse": {
@@ -1736,7 +1736,7 @@
     "trigger": "Your Dragon-Type Pokémon takes a Critical Hit or Massive Damage",
     "target": null,
     "condition": null,
-    "effect": "Your Pokémon gains +1 Combat Stage in each of Attack, Special Attack, and Speed. This Will Not Stand may trigger only once per Scene per Pokémon. Electric Ace Features",
+    "effect": "Your Pokémon gains +1 Combat Stage in each of Attack, Special Attack, and Speed. This Will Not Stand may trigger only once per Scene per Pokémon.",
     "className": "Type Ace"
   },
   "Lockdown": {
@@ -1830,7 +1830,7 @@
     "trigger": "Your Pokémon creates Fairy Lights as a Standard Action",
     "target": null,
     "condition": null,
-    "effect": "Your Fairy-Type Pokémon may activate Fairy Rite as a Standard Action to lose any number of Hit Points, up to a maximum equal to your Pokémon’s Level, and heal an adjacent Ally by that many Hit Points. Then, if your Fairy-Type Pokémon has any Fairy Lights, they may immediately expend any Fairy Lights to gain a Tick of Hit Points, or cause an ally within 6 meters to gain a Tick of Hit Points. Fighting Ace Features",
+    "effect": "Your Fairy-Type Pokémon may activate Fairy Rite as a Standard Action to lose any number of Hit Points, up to a maximum equal to your Pokémon’s Level, and heal an adjacent Ally by that many Hit Points. Then, if your Fairy-Type Pokémon has any Fairy Lights, they may immediately expend any Fairy Lights to gain a Tick of Hit Points, or cause an ally within 6 meters to gain a Tick of Hit Points.",
     "className": "Type Ace"
   },
   "Close Quarters Mastery": {
@@ -1910,7 +1910,7 @@
     "trigger": "Your Pokémon uses a 1-Target Fire-Type Move",
     "target": null,
     "condition": null,
-    "effect": "Instead of its usual range, the attack may be performed as if it had a range of Burst 1 if melee, or Cone 2 if ranged. Flying Ace Features",
+    "effect": "Instead of its usual range, the attack may be performed as if it had a range of Burst 1 if melee, or Cone 2 if ranged.",
     "className": "Type Ace"
   },
   "Celerity": {
@@ -2004,7 +2004,7 @@
     "trigger": "Your Pokémon reappears after using Ghost Step, or the set-up phase of Phantom Force or Shadow Force",
     "target": null,
     "condition": null,
-    "effect": "The next Ghost-Type attack the target makes that turn gains the Smite keyword and can’t be Intercepted or avoided in any way (Dodge, Parry, Shield Moves, etc). Grass Ace Features",
+    "effect": "The next Ghost-Type attack the target makes that turn gains the Smite keyword and can’t be Intercepted or avoided in any way (Dodge, Parry, Shield Moves, etc).",
     "className": "Type Ace"
   },
   "Foiling Foliage": {
@@ -2098,7 +2098,7 @@
     "trigger": "Your Pokémon uses the Groundshaper Capability, or a Move with the Groundsource keyword",
     "target": null,
     "condition": null,
-    "effect": "Your Pokémon may make a Trip Attempt as a Free Action against any Pokémon targeted by the Move, or standing on a square changed by the Groundshaper capability. Your Pokémon gains a bonus to their Combat Roll equal to half of your Type-Linked Skill Rank. Ice Ace Features",
+    "effect": "Your Pokémon may make a Trip Attempt as a Free Action against any Pokémon targeted by the Move, or standing on a square changed by the Groundshaper capability. Your Pokémon gains a bonus to their Combat Roll equal to half of your Type-Linked Skill Rank.",
     "className": "Type Ace"
   },
   "Glacial Ice": {
@@ -2192,7 +2192,7 @@
     "trigger": "Your Normal-Type Pokémon gains Initiative",
     "target": null,
     "condition": null,
-    "effect": "Add your Type-Linked Skill Rank to all of your Pokémon’s rolls this turn. Your Pokémon gains Temporary Hit Points equal to twice your Type-Linked Skill Rank. Simple Improvements may only be used once per Scene per Pokémon. Poison Ace Features",
+    "effect": "Add your Type-Linked Skill Rank to all of your Pokémon’s rolls this turn. Your Pokémon gains Temporary Hit Points equal to twice your Type-Linked Skill Rank. Simple Improvements may only be used once per Scene per Pokémon.",
     "className": "Type Ace"
   },
   "Potent Venom": {
@@ -2286,7 +2286,7 @@
     "trigger": "Your Pokémon uses a Psychic-Type Status Move with a range of Blessing, Field, Hazard, or Self.",
     "target": null,
     "condition": null,
-    "effect": "Your Pokémon may immediately use another Psychic-Type Status Move from its Move List with a range of Blessing, Field, Hazard, or Self. Rock Ace Features",
+    "effect": "Your Pokémon may immediately use another Psychic-Type Status Move from its Move List with a range of Blessing, Field, Hazard, or Self.",
     "className": "Type Ace"
   },
   "Gravel Before Me": {
@@ -2380,7 +2380,7 @@
     "trigger": "Your Steel-Type Pokémon is hit by a damaging attack",
     "target": null,
     "condition": null,
-    "effect": "Your Pokémon gains Damage Reduction against the attack equal to your Type-Linked Skill Rank. Additionally, calculate Type Effectiveness with this attack as if your Pokémon has no Typings besides Steel. Water Ace Features",
+    "effect": "Your Pokémon gains Damage Reduction against the attack equal to your Type-Linked Skill Rank. Additionally, calculate Type Effectiveness with this attack as if your Pokémon has no Typings besides Steel.",
     "className": "Type Ace"
   },
   "Flood!": {
@@ -2502,23 +2502,28 @@
     "name": "Dumplings",
     "tags": [],
     "prerequisites": "4 Chef Features, Master Intuition",
-    "frequency": "At-Will – Extended Action Ingredient 1: Leftovers, Preserves, or a Snack made with Chef Ingredient 2: Leftovers or Preserves",
+    "frequency": "At-Will – Extended Action",
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You mix the two ingredients into one Snack that has the same effect as its ingredients. The two ingredients must be different items.",
-    "className": "Chef"
+    "className": "Chef",
+    "ingredients": [
+      "Leftovers, Preserves, or a Snack made with Chef",
+      "Leftovers or Preserves"
+    ]
   },
   "Tasty Snacks": {
     "name": "Tasty Snacks",
     "tags": [],
-    "prerequisites": "Chef Cost: $100",
+    "prerequisites": "Chef",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You create a Salty Surprise, Spicy Wrap, Sour Candy, Dry Wafer, Bitter Treat, or Sweet Confection. Salty Surprise Effect: The user may trade in this Snack’s Digestion Buff when being hit by an attack to gain 5 Temporary Hit Points. If the user likes Salty Flavors, they gain 10 Temporary Hit Points Instead. If the user dislikes Salty Food, they become Enraged. Spicy Wrap Effect: The user may trade in this Snack’s Digestion Buff when making a Physical attack to deal +5 additional Damage. If the user prefers Spicy Food, it deals +10 additional Damage instead. If the user dislikes Spicy Food, they become Enraged. Sour Candy Effect: The user may trade in this Snack’s Digestion Buff when being hit by a Physical Attack to increase their Damage Reduction by +5 against that attack. If the user prefers Sour Food, they gain +10 Damage Reduction instead. If the user dislikes Sour Food, they become Enraged. Dry Wafer Effect: The user may trade in this Snack’s Digestion Buff when making a Special attack to deal +5 additional Damage. If the user prefers Dry Food, it deals +10 additional Damage instead. If the user dislikes Dry Food, they become Enraged. Bitter Treat Effect: The user may trade in this Snack’s Digestion Buff when being hit by a Special Attack to increase their Damage Reduction by +5 against that attack. If the user prefers Bitter Food, they gain +10 Damage Reduction instead. If the user dislikes Bitter Food, they become Enraged. Sweet Confection Effect: The user may trade in this Snack’s Digestion Buff to gain +4 Evasion until the end of their next turn. If the user prefers Sweet Food, they gain +4 Accuracy as well. If the user dislikes Sweet Food, they become Enraged.",
-    "className": "Chef"
+    "className": "Chef",
+    "cost": "$100"
   },
   "Meal Planner": {
     "name": "Meal Planner",
@@ -2534,46 +2539,50 @@
   "Hearty Meal": {
     "name": "Hearty Meal",
     "tags": [],
-    "prerequisites": "Hits the Spot Ingredients: x2 Tiny Mushrooms; or x1 Big Mushroom; or x1 Balm Mushroom, or x2 Power Herbs, White Herbs, or Mental Herbs",
+    "prerequisites": "Hits the Spot",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You create up to five Hearty Meals, which may be consumed by Trainers as an Extended Action. When consumed, that Trainer gains +2 to their Max AP until the end of their next extended rest. A Trainer may only be under the effect of one Hearty Meal at a time. Hearty Meals not consumed within 20 minutes of being created lose all flavor and all effect.",
-    "className": "Chef"
+    "className": "Chef",
+    "ingredients": "x2 Tiny Mushrooms; or x1 Big Mushroom; or x1 Balm Mushroom, or x2 Power Herbs, White Herbs, or Mental Herbs"
   },
   "Bait Mixer": {
     "name": "Bait Mixer",
     "tags": [],
-    "prerequisites": "Culinary Appreciation Cost: $150 or Honey.",
+    "prerequisites": "Culinary Appreciation",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You may create Bait. For $50 more, you may create Bait as Super Bait or Vile Bait instead. Super Bait works like regular Bait, but you may add your Intuition Rank to 1d20 Rolls made to attract Pokémon. Vile Bait works like regular Bait, but Pokémon that eat it are Poisoned.",
-    "className": "Chef"
+    "className": "Chef",
+    "cost": "$150 or Honey."
   },
   "Preserves": {
     "name": "Preserves",
     "tags": [],
-    "prerequisites": "Accentuated Taste Ingredients: $50, any Berry, Herb, or Mushroom",
+    "prerequisites": "Accentuated Taste",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "The user creates x2 Units of Preserves from the Berry, Herb, or Mushroom. Preserves have the same effect as the consumable from which they were made.",
-    "className": "Chef"
+    "className": "Chef",
+    "ingredients": "$50, any Berry, Herb, or Mushroom"
   },
   "Leftovers": {
     "name": "Leftovers",
     "tags": [],
-    "prerequisites": "Complex Aftertaste Cost: $100",
+    "prerequisites": "Complex Aftertaste",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You create Leftovers.",
-    "className": "Chef"
+    "className": "Chef",
+    "cost": "$100"
   },
   "Vitamins": {
     "name": "Vitamins",
@@ -2583,7 +2592,7 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "You create an HP Up, Protein, Iron, Calcium, Zinc, or Carbos for $2450, or Stat Suppressants for $200. Chef Recipes",
+    "effect": "You create an HP Up, Protein, Iron, Calcium, Zinc, or Carbos for $2450, or Stat Suppressants for $200.",
     "className": "Chef"
   },
   "Chronicler": {
@@ -2753,13 +2762,14 @@
   "Basic Fashion": {
     "name": "Basic Fashion",
     "tags": [],
-    "prerequisites": "Fashionista Cost: $500",
+    "prerequisites": "Fashionista",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You create one of the Basic Fashion Items below for which you have the chosen Fashionista Skill. These are Accessory Slot Items and may be used as Held Items by Pokémon. Adorable Fashion Fashionista Skill: Charm Effect: The holder may activate this item once a Scene as a Free Action to gain +2 Evasion for one full round. Elegant Fashion Fashionista Skill: Intuition Effect: The holder may activate this item once a Scene as a Free Action when losing Combat Stages from a foe’s effect to instead not lose those Combat Stages. Rad Fashion Fashionista Skill: Command Effect: The holder may activate this item once a Scene as a Free Action to gain a +4 bonus to a single Save Check. Rough Fashion Fashionista Skill: Intimidate Effect: The holder may activate this item once a Scene as a Free Action to cause a foe within 5 meters to take a -2 penalty to all rolls for one full round. Slick Fashion Fashionista Skill: Guile Effect: The holder may activate this item once a Scene as a Free Action when provoking an Attack of Opportunity to instead not provoke one.",
-    "className": "Fashionista"
+    "className": "Fashionista",
+    "cost": "$500"
   },
   "Practical Fashion": {
     "name": "Practical Fashion",
@@ -2791,7 +2801,7 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "You can create Lax Incense for $1000, Luck Incense for $900, and Full Incense for $450. Fashionista Recipes",
+    "effect": "You can create Lax Incense for $1000, Luck Incense for $900, and Full Incense for $450.",
     "className": "Fashionista"
   },
   "Researcher": {
@@ -2855,24 +2865,26 @@
   "Restorative Science": {
     "name": "Restorative Science",
     "tags": [],
-    "prerequisites": "Apothecary Cost: $100",
+    "prerequisites": "Apothecary",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You create an Antidote, Paralyze Heal, Awakening, Burn Heal, Ice Heal, or Potion.",
-    "className": "Researcher"
+    "className": "Researcher",
+    "cost": "$100"
   },
   "Super Cures": {
     "name": "Super Cures",
     "tags": [],
-    "prerequisites": "Patch Cure Cost: $200",
+    "prerequisites": "Patch Cure",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You can create Revives and Super Potions.",
-    "className": "Researcher"
+    "className": "Researcher",
+    "cost": "$200"
   },
   "Hyper Cures": {
     "name": "Hyper Cures",
@@ -2888,23 +2900,24 @@
   "Performance Enhancers": {
     "name": "Performance Enhancers",
     "tags": [],
-    "prerequisites": "Medicinal Blend Cost: $4900",
+    "prerequisites": "Medicinal Blend",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "You create a PP Up or Heart Booster. If you have a Heart Scale, you may destroy the Heart Scale to create a Heart Booster without paying the monetary cost. Apothecary Research Field",
-    "className": "Researcher"
+    "effect": "You create a PP Up or Heart Booster. If you have a Heart Scale, you may destroy the Heart Scale to create a Heart Booster without paying the monetary cost.",
+    "className": "Researcher",
+    "cost": "$4900"
   },
   "Apothecary": {
     "name": "Apothecary",
     "tags": [],
     "prerequisites": "Novice Medicine Education",
-    "frequency": "At-Will – Extended Action Effects: You gain use any Apothecary Recipe for which you qualify. Patch Cure",
+    "frequency": "At-Will – Extended Action",
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "You may use any Apothecary Recipe for which you qualify.",
     "className": "Researcher"
   },
   "Patch Cure": {
@@ -2922,22 +2935,23 @@
     "name": "Medicinal Blend",
     "tags": [],
     "prerequisites": "Apothecary, Master Medicine Education",
-    "frequency": "At-Will – Extended Action Ingredients: Two Restoratives, or a Restorative and an X-Item",
+    "frequency": "At-Will – Extended Action",
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You fuse the two Ingredients, creating an Item that has the properties of both. If you choose two Restoratives, they cannot be Restoratives with the same effect (you could not for example, mix a Potion and a Super Potion). If a Restorative Patch is used as an Ingredient, the resulting item can only be used as an Extended Action.",
-    "className": "Researcher"
+    "className": "Researcher",
+    "ingredients": "Two Restoratives, or a Restorative and an X-Item"
   },
   "Crystal Artificer": {
     "name": "Crystal Artificer",
     "tags": [],
     "prerequisites": "Gem Lore",
-    "frequency": "At-Will – Extended Action Effects: You may use any Crystal Artificer Recipe for which you qualify. Crystal Resonance",
+    "frequency": "At-Will – Extended Action",
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "You may use any Crystal Artificer Recipe for which you qualify.",
     "className": "Researcher"
   },
   "Crystal Resonance": {
@@ -2958,8 +2972,8 @@
     "frequency": "2 AP – Standard Action",
     "trigger": null,
     "target": null,
-    "condition": "You are wearing a Rainbow Gem Effects: You create a Rainbow lasting one full round. While this Rainbow persists, the Effect Range of all Allies is increased by +3. Fistful of Force",
-    "effect": null,
+    "condition": "You are wearing a Rainbow Gem.",
+    "effect": "Create a Rainbow lasting one full round. While it persists, all Allies increase their Effect Range by 3.",
     "className": "Researcher"
   },
   "Fistful of Force": {
@@ -2970,74 +2984,80 @@
     "trigger": null,
     "target": null,
     "condition": "You must have a Shard in your Main Hand or Off-Hand to use Fistful of Force.",
-    "effect": "You may destroy the Shard to use the Move Judgment. Judgment’s Type must be one of the Types associated with the used Shard. Instead of adding your Special Attack when using this attack, you may choose to add your Occult Education Rank tripled. Artificer Recipes",
+    "effect": "You may destroy the Shard to use the Move Judgment. Judgment’s Type must be one of the Types associated with the used Shard. Instead of adding your Special Attack when using this attack, you may choose to add your Occult Education Rank tripled.",
     "className": "Researcher"
   },
   "Type Booster": {
     "name": "Type Booster",
     "tags": [],
-    "prerequisites": "Crystal Artificer Ingredients: x4 Shards of the same Color Effects: You create a Type Booster. The Type chosen must be one of the Types associated with the color of the shards used. Type Brace",
+    "prerequisites": "Crystal Artificer",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": null,
-    "className": "Researcher"
+    "effect": "Create a Type Booster of a Type associated with the Shards' color.",
+    "className": "Researcher",
+    "ingredients": "4 Shards of the same color"
   },
   "Type Brace": {
     "name": "Type Brace",
     "tags": [],
-    "prerequisites": "Crystal Artificer Ingredients: x4 Shards of the same Color Effects: You create a Type Brace. The Type chosen must be one of the Types associated with the color of the shards used. Focus Gem",
+    "prerequisites": "Crystal Artificer",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": null,
-    "className": "Researcher"
+    "effect": "Create a Type Brace of a Type associated with the Shards' color.",
+    "className": "Researcher",
+    "ingredients": "4 Shards of the same color"
   },
   "Focus Gem": {
     "name": "Focus Gem",
     "tags": [],
-    "prerequisites": "Crystal Resonance Ingredients: Any Six Shards.",
+    "prerequisites": "Crystal Resonance",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You create a Focus that may crafted to be worn as your choice of an Accessory Item, Head Slot Item, or Hand or Off-Hand Item.",
-    "className": "Researcher"
+    "className": "Researcher",
+    "ingredients": "Any Six Shards."
   },
   "Chakra Crystal": {
     "name": "Chakra Crystal",
     "tags": [],
-    "prerequisites": "Crystal Resonance Ingredients: Any Six Shards",
+    "prerequisites": "Crystal Resonance",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You create a Stat Booster.",
-    "className": "Researcher"
+    "className": "Researcher",
+    "ingredients": "Any Six Shards"
   },
   "Rainbow Gem": {
     "name": "Rainbow Gem",
     "tags": [],
-    "prerequisites": "Rainbow Light, Expert Occult Education Ingredients: Two Shards of each Color.",
+    "prerequisites": "Rainbow Light, Expert Occult Education",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You create a Rainbow Gem that may crafted to be worn as your choice of an Accessory Item, Head Slot Item, or Hand or Off-Hand Item. This item has the same effect as a Focus, except that as an Extended Action, any Trainer with Expert Occult Education Rank or higher may change which Stat the Rainbow Amulet is attuned to.",
-    "className": "Researcher"
+    "className": "Researcher",
+    "ingredients": "Two Shards of each Color."
   },
   "Plate Crafter": {
     "name": "Plate Crafter",
     "tags": [],
-    "prerequisites": "Rainbow Light, Expert Occult Education Ingredients: A Type Booster and a Type Brace of the same Type. Effects: You create a Type Plate matching the Type Booster and Brace used.",
+    "prerequisites": "Rainbow Light, Expert Occult Education",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": null,
-    "className": "Researcher"
+    "effect": "Create a Type Plate matching the Type Booster and Type Brace used.",
+    "className": "Researcher",
+    "ingredients": "A Type Booster and Type Brace of the same Type"
   },
   "Seed Bag": {
     "name": "Seed Bag",
@@ -3115,19 +3135,20 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "Choose Castform, Grimer, Koffing, Magnemite, Porygon, Solosis, Trubbish, or Voltorb. Using your chemistry set, you create an artificial Egg of the Chosen Pokémon, that hatches within a day. The resulting Pokemon is born at level 5, with the Nature and Ability of your choice (Abilities chosen from its species’ Basic Abilities). Additionally, you may enhance the Pokemon in several ways. Choose a number of upgrades below equal to your Technology Education Rank. »» The Pokémon is of an unusual coloration, gaining a +2d6 Bonus to the Introduction Stage of a Contest toward a single Contest Stat. »» The Pokémon adds a Move from its Egg Move or Move Tutor List to its Inheritance List. This may be performed up to 3 times. »» Increase one of the Pokémon’s Base Stats by +1. This counts as use of a Vitamin. This may be performed up to 5 times. Chemistry Recipes",
+    "effect": "Choose Castform, Grimer, Koffing, Magnemite, Porygon, Solosis, Trubbish, or Voltorb. Using your chemistry set, you create an artificial Egg of the Chosen Pokémon, that hatches within a day. The resulting Pokemon is born at level 5, with the Nature and Ability of your choice (Abilities chosen from its species’ Basic Abilities). Additionally, you may enhance the Pokemon in several ways. Choose a number of upgrades below equal to your Technology Education Rank. »» The Pokémon is of an unusual coloration, gaining a +2d6 Bonus to the Introduction Stage of a Contest toward a single Contest Stat. »» The Pokémon adds a Move from its Egg Move or Move Tutor List to its Inheritance List. This may be performed up to 3 times. »» Increase one of the Pokémon’s Base Stats by +1. This counts as use of a Vitamin. This may be performed up to 5 times.",
     "className": "Researcher"
   },
   "Enhancers": {
     "name": "Enhancers",
     "tags": [],
-    "prerequisites": "Chemist Cost: $100",
+    "prerequisites": "Chemist",
     "frequency": null,
     "trigger": null,
     "target": null,
     "condition": null,
     "effect": "You can create any X-Item, Dire Hit, or Guard Spec.",
-    "className": "Researcher"
+    "className": "Researcher",
+    "cost": "$100"
   },
   "Climatology": {
     "name": "Climatology",
@@ -3170,7 +3191,7 @@
     "trigger": "You or your Pokémon create a Weather Condition",
     "target": null,
     "condition": null,
-    "effect": "The Weather is particularly intense and has additional effects. »» Hail: All Trainers and Pokémon that take Hail Damage take a -5 Penalty to all Damage Rolls. »» Rain: All Trainers and Pokémon that are not Water or Grass typed are Slowed. »» Sandstorm: All Trainers and Pokémon that take Sandstorm damage take a -2 Penalty to Accuracy Rolls. »» Sun: Trainers and Pokémon that are not Fire or Grass Typed are Suppressed. Occultism Research Field",
+    "effect": "The Weather is particularly intense and has additional effects. »» Hail: All Trainers and Pokémon that take Hail Damage take a -5 Penalty to all Damage Rolls. »» Rain: All Trainers and Pokémon that are not Water or Grass typed are Slowed. »» Sandstorm: All Trainers and Pokémon that take Sandstorm damage take a -2 Penalty to Accuracy Rolls. »» Sun: Trainers and Pokémon that are not Fire or Grass Typed are Suppressed.",
     "className": "Researcher"
   },
   "Witch Hunter": {
@@ -4358,9 +4379,9 @@
     "prerequisites": "Channeler, Adept Intuition",
     "frequency": "2 AP – Swift Action",
     "trigger": null,
-    "target": "Channeled Pokémon Choose One Effect: »» Trade all Combat Stages for a single Stat between two Channeled Pokémon »» Transfer a Coat from one Channeled Pokémon to another. »» Give up a use of Scene or Daily Move from one willing Channeled Pokémon to regain use of a Scene Move which another Channeled Pokémon has used. This effect may only refresh a Move for each Pokémon once per Scene. Pain Dampening",
+    "target": "Channeled Pokémon",
     "condition": null,
-    "effect": null,
+    "effect": "Choose one: trade all Combat Stages for one Stat between two Channeled Pokémon; transfer a Coat between them; or give up one willing Channeled Pokémon's Scene or Daily Move use to refresh another's used Scene Move, once per Pokémon per Scene.",
     "className": "Channeler"
   },
   "Pain Dampening": {
@@ -4972,10 +4993,10 @@
     ],
     "prerequisites": "Space Distortion, Expert Guile",
     "frequency": "Daily x3 – Free Action",
-    "trigger": "You use the Move Teleport or activate the Teleporter Capability Choose One Effect: You activate Teleporter as if your Teleporter value were three times its normal value or you may take one willing Pokémon or Trainer along with you as you teleport so long as you are touching them when you activate Farcast. You may expend two uses of Farcast at once to choose both effects. Warped Transmission [+Speed]",
+    "trigger": "You use Teleport or activate the Teleporter Capability.",
     "target": null,
     "condition": null,
-    "effect": null,
+    "effect": "Choose one: use Teleporter at three times its normal value, or bring one willing touching Pokémon or Trainer. Spend two uses to choose both.",
     "className": "Warper"
   },
   "Warped Transmission": {

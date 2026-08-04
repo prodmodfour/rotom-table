@@ -12,7 +12,8 @@ import {
   normalizePokemonTrainingFeatureName,
 } from '~/utils/sheets/pokemonTrainingFeatures'
 import type { PtuFeature } from '~/types/ptuReference'
-import type { TrainerFeatureEntry } from '~/types/trainerSheet'
+import type { TrainerFeatureEntry, TrainerSheet } from '~/types/trainerSheet'
+import { resolveFeatureInstance, type FeatureInstanceParameterStatus } from '#shared/featureAutomation/instances'
 
 export const TRAINER_FEATURE_DATA_FIELDS = [
   'name',
@@ -78,6 +79,31 @@ export const trainerFreeTrainingFeatureEntry = (trainingFeature: unknown): Train
         choices: { [TRAINER_TRAINING_FEATURE_CHOICE_KEY]: selectedFeature },
       }
     : { name: TRAINER_FREE_TRAINING_FEATURE_NAME }
+}
+
+/** Rebuild typed Feature authority from setup-editor compatibility choices. */
+export const syncTrainerFeatureAutomation = (sheet: TrainerSheet, feature: TrainerFeatureEntry, index: number): void => {
+  const resolved = resolveFeatureInstance({ entry: { ...feature, automation: undefined }, ownerId: sheet.slug, index, acquisitionKind: 'sheet' })
+  if (resolved.status === 'ready' && resolved.data) {
+    if (JSON.stringify(feature.automation) !== JSON.stringify(resolved.data)) feature.automation = { ...resolved.data }
+  }
+  else delete feature.automation
+}
+
+export interface TrainerFeatureInspectorStatus {
+  readonly status: FeatureInstanceParameterStatus
+  readonly label: string
+  readonly diagnostics: readonly string[]
+}
+export const trainerFeatureInspectorStatus = (sheet: TrainerSheet, feature: TrainerFeatureEntry, index: number): TrainerFeatureInspectorStatus => {
+  const resolved = resolveFeatureInstance({ entry: feature, ownerId: sheet.slug, index, acquisitionKind: 'sheet' })
+  const labels: Readonly<Record<FeatureInstanceParameterStatus, string>> = {
+    ready: 'Automated',
+    'missing-required-data': 'Choice required',
+    'unresolved-identity': 'No canonical identity',
+    malformed: 'Invalid automation data',
+  }
+  return Object.freeze({ status: resolved.status, label: labels[resolved.status], diagnostics: resolved.diagnostics })
 }
 
 export const resolveTrainerFeatureReference = (feature: Pick<TrainerFeatureEntry, 'name' | 'choices'>): PtuFeature | null => {

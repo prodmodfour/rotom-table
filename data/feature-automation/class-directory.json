@@ -1,0 +1,694 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-feature-automation-v1",
+  "classCount": 40,
+  "classAnchorCount": 40,
+  "classes": [
+    {
+      "className": "Ace Trainer",
+      "anchorCanonicalId": "Ace Trainer",
+      "canonicalIds": [
+        "Ace Trainer",
+        "Champ in the Making",
+        "Critical Moment",
+        "Elite Trainer",
+        "Perseverance",
+        "Signature Technique",
+        "Top Percentage"
+      ]
+    },
+    {
+      "className": "Athlete",
+      "anchorCanonicalId": "Athlete",
+      "canonicalIds": [
+        "Adrenaline Rush",
+        "Athlete",
+        "Athletic Moves",
+        "Coaching",
+        "Training Regime"
+      ]
+    },
+    {
+      "className": "Aura Guardian",
+      "anchorCanonicalId": "Aura Guardian",
+      "canonicalIds": [
+        "Ambient Aura",
+        "Aura Guardian",
+        "Aura Mastery",
+        "Aura Reader",
+        "Sword of Body and Soul",
+        "The Power of Aura"
+      ]
+    },
+    {
+      "className": "Capture Specialist",
+      "anchorCanonicalId": "Capture Specialist",
+      "canonicalIds": [
+        "Advanced Capture Techniques",
+        "Capture Specialist",
+        "Captured Momentum",
+        "Catch Combo",
+        "False Strike",
+        "Gotta Catch ‘Em All",
+        "Relentless Pursuit"
+      ]
+    },
+    {
+      "className": "Channeler",
+      "anchorCanonicalId": "Channeler",
+      "canonicalIds": [
+        "Battle Synchronization",
+        "Channeler",
+        "Pain Dampening",
+        "Power Conduit",
+        "Shared Senses",
+        "Soothing Connection",
+        "Spirit Boost"
+      ]
+    },
+    {
+      "className": "Cheerleader",
+      "anchorCanonicalId": "Cheerleader",
+      "canonicalIds": [
+        "Bring It On!",
+        "Cheer Brigade",
+        "Cheerleader",
+        "Cheers",
+        "Gleeful Interference",
+        "Go, Fight, Win!",
+        "Inspirational Support",
+        "Keep Fighting!",
+        "Moment of Action"
+      ]
+    },
+    {
+      "className": "Chef",
+      "anchorCanonicalId": "Chef",
+      "canonicalIds": [
+        "Accentuated Taste",
+        "Bait Mixer",
+        "Chef",
+        "Complex Aftertaste",
+        "Culinary Appreciation",
+        "Dietician",
+        "Dumplings",
+        "Hearty Meal",
+        "Hits the Spot",
+        "Leftovers",
+        "Meal Planner",
+        "Preserves",
+        "Tasty Snacks",
+        "Vitamins"
+      ]
+    },
+    {
+      "className": "Chronicler",
+      "anchorCanonicalId": "Chronicler",
+      "canonicalIds": [
+        "Archival Training",
+        "Archive Tutor",
+        "Chronicler",
+        "Cinematic Analysis",
+        "Observation Party",
+        "Targeted Profiling"
+      ]
+    },
+    {
+      "className": "Commander",
+      "anchorCanonicalId": "Commander",
+      "canonicalIds": [
+        "Battle Conductor",
+        "Commander",
+        "Complex Orders",
+        "Leadership",
+        "Mobilize",
+        "Scheme Twist",
+        "Tip the Scales"
+      ]
+    },
+    {
+      "className": "Coordinator",
+      "anchorCanonicalId": "Coordinator",
+      "canonicalIds": [
+        "Adaptable Performance",
+        "Coordinator",
+        "Decisive Director",
+        "Flexible Preparations",
+        "Innovation",
+        "Nuanced Performance",
+        "Reliable Performance"
+      ]
+    },
+    {
+      "className": "Dancer",
+      "anchorCanonicalId": "Dancer",
+      "canonicalIds": [
+        "Beguiling Dance",
+        "Choreographer",
+        "Dance Form",
+        "Dance Practice",
+        "Dancer",
+        "Passing Waltz",
+        "Power Pirouette"
+      ]
+    },
+    {
+      "className": "Duelist",
+      "anchorCanonicalId": "Duelist",
+      "canonicalIds": [
+        "Directed Focus",
+        "Duelist",
+        "Duelist’s Manual",
+        "Effective Methods",
+        "Expend Momentum",
+        "Seize The Moment",
+        "Type Methodology"
+      ]
+    },
+    {
+      "className": "Enduring Soul",
+      "anchorCanonicalId": "Enduring Soul",
+      "canonicalIds": [
+        "Awareness",
+        "Enduring Soul",
+        "Not Yet!",
+        "Resilience",
+        "Shrug Off",
+        "Staying Power",
+        "Vim and Vigor"
+      ]
+    },
+    {
+      "className": "Fashionista",
+      "anchorCanonicalId": "Fashionista",
+      "canonicalIds": [
+        "Accessorize",
+        "Basic Fashion",
+        "Contest Trends",
+        "Dashing Makeover",
+        "Dress to Impress",
+        "Fashionista",
+        "Focused Fashion",
+        "Incense Maker",
+        "Parfumier",
+        "Practical Fashion",
+        "Style is Eternal",
+        "Versatile Wardrobe"
+      ]
+    },
+    {
+      "className": "Hex Maniac",
+      "anchorCanonicalId": "Hex Maniac",
+      "canonicalIds": [
+        "Diffuse Pain",
+        "Grand Hex",
+        "Hex Maniac",
+        "Hex Maniac Studies",
+        "Malediction"
+      ]
+    },
+    {
+      "className": "Hobbyist",
+      "anchorCanonicalId": "Hobbyist",
+      "canonicalIds": [
+        "Dabbler",
+        "Dilettante",
+        "Hobbyist",
+        "Look and Learn"
+      ]
+    },
+    {
+      "className": "Hunter",
+      "anchorCanonicalId": "Hunter",
+      "canonicalIds": [
+        "Don’t Look Away",
+        "Finisher",
+        "Hunter",
+        "Hunter’s Reflexes",
+        "Pack Master",
+        "Pack Tactics",
+        "Surprise!"
+      ]
+    },
+    {
+      "className": "Juggler",
+      "anchorCanonicalId": "Juggler",
+      "canonicalIds": [
+        "Bounce Shot",
+        "Emergency Release",
+        "First Blood",
+        "Juggler",
+        "Juggling Show",
+        "Round Trip",
+        "Tag In"
+      ]
+    },
+    {
+      "className": "Martial Artist",
+      "anchorCanonicalId": "Martial Artist",
+      "canonicalIds": [
+        "Bend Like the Willow",
+        "Heightened Intensity",
+        "Martial Achievement",
+        "Martial Artist",
+        "Martial Training",
+        "My Kung-Fu is Stronger",
+        "Pummeling Momentum",
+        "Second Strike",
+        "Soft Landing",
+        "Whirlwind Strikes",
+        "Wrestlemania"
+      ]
+    },
+    {
+      "className": "Medic",
+      "anchorCanonicalId": "Medic",
+      "canonicalIds": [
+        "Front Line Healer",
+        "I’m a Doctor",
+        "Medic",
+        "Medical Techniques",
+        "Proper Care",
+        "Stay With Us!"
+      ]
+    },
+    {
+      "className": "Mentor",
+      "anchorCanonicalId": "Mentor",
+      "canonicalIds": [
+        "Changing Viewpoints",
+        "Corrective Learning",
+        "Egg Tutor",
+        "Empowered Development",
+        "Expand Horizons",
+        "Guidance",
+        "Lessons",
+        "Lifelong Learning",
+        "Mentor",
+        "Move Tutor",
+        "Versatile Teachings"
+      ]
+    },
+    {
+      "className": "Musician",
+      "anchorCanonicalId": "Musician",
+      "canonicalIds": [
+        "Cacophony",
+        "Mt. Moon Blues",
+        "Musical Ability",
+        "Musician",
+        "Noise Complaint",
+        "Power Chord",
+        "Voice Lessons"
+      ]
+    },
+    {
+      "className": "Ninja",
+      "anchorCanonicalId": "Ninja",
+      "canonicalIds": [
+        "Genjutsu",
+        "Kinjutsu",
+        "Ninja",
+        "Ninja’s Arsenal",
+        "Poison Weapons",
+        "Utility Drop",
+        "Weightless Step"
+      ]
+    },
+    {
+      "className": "Oracle",
+      "anchorCanonicalId": "Oracle",
+      "canonicalIds": [
+        "Divination",
+        "Mark of Vision",
+        "Oracle",
+        "Prescience",
+        "Small Prophecies",
+        "Two-Second Preview",
+        "Unveiled Sight"
+      ]
+    },
+    {
+      "className": "Provocateur",
+      "anchorCanonicalId": "Provocateur",
+      "canonicalIds": [
+        "Enchanting Gaze",
+        "Mixed Messages",
+        "Play Them Like a Fiddle",
+        "Powerful Motivator",
+        "Provocateur",
+        "Push Buttons",
+        "Quick Wit"
+      ]
+    },
+    {
+      "className": "Researcher",
+      "anchorCanonicalId": "Researcher",
+      "canonicalIds": [
+        "Affliction Techniques",
+        "Ancient Heritage",
+        "Apothecary",
+        "Breadth of Knowledge",
+        "Caustic Chemistry",
+        "Chakra Crystal",
+        "Chemical Warfare",
+        "Chemist",
+        "Climate Control",
+        "Climatology",
+        "Crystal Artificer",
+        "Crystal Resonance",
+        "Echoes of the Future",
+        "Enhancers",
+        "Extreme Weather",
+        "Fistful of Force",
+        "Focus Gem",
+        "Fossil Restoration",
+        "Genetic Memory",
+        "Herb Lore",
+        "Hyper Cures",
+        "Immutable Mind",
+        "Instant Analysis",
+        "Live and Learn",
+        "Medicinal Blend",
+        "Mental Resistance",
+        "Patch Cure",
+        "Performance Enhancers",
+        "Plate Crafter",
+        "Playing God",
+        "Prehistoric Bond",
+        "Psionic Analysis",
+        "Pusher",
+        "Rainbow Gem",
+        "Rainbow Light",
+        "Re-Balancing",
+        "Researcher",
+        "Restorative Science",
+        "Seed Bag",
+        "Skill Trainer",
+        "Super Cures",
+        "This One’s Special, I Know It",
+        "Top Tier Berries",
+        "Type Booster",
+        "Type Brace",
+        "Weather Systems",
+        "Witch Hunter"
+      ]
+    },
+    {
+      "className": "Rider",
+      "anchorCanonicalId": "Rider",
+      "canonicalIds": [
+        "Cavalier’s Reprisal",
+        "Conqueror’s March",
+        "Lean In",
+        "Overrun",
+        "Ramming Speed",
+        "Ride as One",
+        "Rider"
+      ]
+    },
+    {
+      "className": "Rogue",
+      "anchorCanonicalId": "Rogue",
+      "canonicalIds": [
+        "Cutthroat",
+        "Dirty Fighting",
+        "Rogue",
+        "Scoundrel’s Strike",
+        "Street Fighter",
+        "Underhanded Tactics",
+        "Unexpected Attacks"
+      ]
+    },
+    {
+      "className": "Roughneck",
+      "anchorCanonicalId": "Roughneck",
+      "canonicalIds": [
+        "Cruel Gaze",
+        "Fearsome Display",
+        "Malice",
+        "Menace",
+        "Mettle",
+        "Roughneck",
+        "Tough as Nails"
+      ]
+    },
+    {
+      "className": "Sage",
+      "anchorCanonicalId": "Sage",
+      "canonicalIds": [
+        "Divine Wind",
+        "Highly Responsive to Prayers",
+        "Lay on Hands",
+        "Mystic Defense",
+        "Sacred Shield",
+        "Sage",
+        "Sage’s Benediction"
+      ]
+    },
+    {
+      "className": "Stat Ace",
+      "anchorCanonicalId": "Stat Ace",
+      "canonicalIds": [
+        "Beautiful Ballet",
+        "Enticing Beauty",
+        "Fabulous Max",
+        "Focus",
+        "Stat Ace",
+        "Stat Embodiment",
+        "Stat Link",
+        "Stat Maneuver",
+        "Stat Mastery",
+        "Stat Stratagem",
+        "Stat Training",
+        "Style Entrainment",
+        "Style Flourish"
+      ]
+    },
+    {
+      "className": "Style Expert",
+      "anchorCanonicalId": "Style Expert",
+      "canonicalIds": [
+        "Action Hero Stunt",
+        "Calculated Assault",
+        "Cool Conduct",
+        "Cute Cuddle",
+        "Endurance",
+        "Gleeful Steps",
+        "Learn From Your Mistakes",
+        "Let’s Be Friends!",
+        "Macho Charge",
+        "Rule of Cool",
+        "Smart Scheme",
+        "Style Expert",
+        "Tough Tumble"
+      ]
+    },
+    {
+      "className": "Survivalist",
+      "anchorCanonicalId": "Survivalist",
+      "canonicalIds": [
+        "Adaptive Geography",
+        "Natural Fighter",
+        "Survivalist",
+        "Terrain Talent",
+        "Trapper",
+        "Wilderness Guide"
+      ]
+    },
+    {
+      "className": "Taskmaster",
+      "anchorCanonicalId": "Taskmaster",
+      "canonicalIds": [
+        "Deadly Gambit",
+        "Desperate Strike",
+        "Pain Resistance",
+        "Press On!",
+        "Quick Healing",
+        "Savage Strike",
+        "Strike of the Whip",
+        "Taskmaster"
+      ]
+    },
+    {
+      "className": "Telekinetic",
+      "anchorCanonicalId": "Telekinetic",
+      "canonicalIds": [
+        "PK Alpha",
+        "PK Combat",
+        "PK Omega",
+        "Power of the Mind",
+        "Psionic Overload",
+        "Telekinetic",
+        "Telekinetic Burst"
+      ]
+    },
+    {
+      "className": "Telepath",
+      "anchorCanonicalId": "Telepath",
+      "canonicalIds": [
+        "Honed Mind",
+        "Mental Assault",
+        "Suggestion",
+        "Telepath",
+        "Telepathic Awareness",
+        "Telepathic Warning",
+        "Thought Detection"
+      ]
+    },
+    {
+      "className": "Trickster",
+      "anchorCanonicalId": "Trickster",
+      "canonicalIds": [
+        "Bag of Tricks",
+        "Encore Performance",
+        "Flourish",
+        "Sleight",
+        "Stacked Deck",
+        "Trickster"
+      ]
+    },
+    {
+      "className": "Tumbler",
+      "anchorCanonicalId": "Tumbler",
+      "canonicalIds": [
+        "Aerialist",
+        "Burst of Speed",
+        "Death From Above",
+        "Flip Out",
+        "Quick Gymnastics",
+        "Quick Reflexes",
+        "Tumbler"
+      ]
+    },
+    {
+      "className": "Type Ace",
+      "anchorCanonicalId": "Type Ace",
+      "canonicalIds": [
+        "Aqua Vortex",
+        "Arcane Favor",
+        "Arctic Zeal",
+        "Assault Armor",
+        "Bigger and Boulder",
+        "Black-Out Strike",
+        "Boo!",
+        "Brawler",
+        "Brightest Flame",
+        "Celerity",
+        "Chain Lightning",
+        "Chitin Shield",
+        "Clever Ruse",
+        "Close Quarters Mastery",
+        "Corrosive Blight",
+        "Cross-Pollinate",
+        "Debilitate",
+        "Deep Cold",
+        "Desert Heart",
+        "Devious",
+        "Disruption Order",
+        "Earthroil",
+        "Enduring Bloom",
+        "Extra Ordinary",
+        "Face Me Whelp",
+        "Fairy Lights",
+        "Fairy Rite",
+        "Fan The Flames",
+        "Fey Trance",
+        "Fishbowl Technique",
+        "Flood!",
+        "Foiling Foliage",
+        "Force of Will",
+        "Fountain of Life",
+        "Gale Strike",
+        "Ghost Step",
+        "Glacial Ice",
+        "Gneiss Aim",
+        "Gravel Before Me",
+        "Haunting Curse",
+        "Highlander",
+        "Incandescence",
+        "Insectoid Utility",
+        "Iron Grit",
+        "Iterative Evolution",
+        "Lockdown",
+        "Miasma",
+        "Mindbreak",
+        "Mold the Earth",
+        "Move Sync",
+        "New Normal",
+        "Overload",
+        "Plainly Perfect",
+        "Polar Vortex",
+        "Polished Shine",
+        "Potent Venom",
+        "Psionic Sponge",
+        "Psychic Resonance",
+        "Shocking Speed",
+        "Simple Improvements",
+        "Smashing Punishment",
+        "Sneak Attack",
+        "Sunlight Within",
+        "This Will Not Stand",
+        "Tornado Charge",
+        "Tough as Schist",
+        "Trail Blazer",
+        "True Steel",
+        "Type Ace",
+        "Type Refresh",
+        "Tyrant’s Roar",
+        "Unconquerable",
+        "Upheaval",
+        "Vampirism",
+        "Zephyr Shield"
+      ]
+    },
+    {
+      "className": "Warper",
+      "anchorCanonicalId": "Warper",
+      "canonicalIds": [
+        "Farcast",
+        "Reality Bender",
+        "Space Distortion",
+        "Strange Energy",
+        "Warped Transmission",
+        "Warper",
+        "Warping Ground"
+      ]
+    }
+  ],
+  "unownedCanonicalIds": [
+    "Agility Training",
+    "Blur",
+    "Brutal Training",
+    "Command Versatility",
+    "Commander’s Voice",
+    "Defender",
+    "Dive",
+    "Field Clinic",
+    "Fighter’s Versatility",
+    "First Aid Expertise",
+    "Focused Command",
+    "Focused Training",
+    "Guardian Orders",
+    "Inspired Training",
+    "Let Me Help You With That",
+    "Marksman Orders",
+    "Mixed Power",
+    "Multi-Tasking",
+    "Nurse",
+    "Poké Ball Crafter",
+    "PokéManiac",
+    "Precision Orders",
+    "Press",
+    "Psionic Sight",
+    "Quick Switch",
+    "Ravager Orders",
+    "Signature Move",
+    "Skill Monkey",
+    "Species Savant",
+    "Trickster Orders",
+    "Tutoring",
+    "Type Expertise",
+    "Walk It Off"
+  ]
+}

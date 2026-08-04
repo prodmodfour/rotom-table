@@ -174,9 +174,7 @@ const createTrainerSheet = (overrides: Partial<TrainerSheet> = {}): TrainerSheet
   maneuvers: [],
   orders: [
     {
-      name: 'Rallying Cry',
-      tags: ['Orders'],
-      effect: 'All allies gain courage until the end of your next turn.',
+      name: 'Go, Fight, Win!',
     },
   ],
   stats: {},
@@ -272,7 +270,7 @@ const createUseOrderCommand = (overrides: Partial<UseOrderCommand> = {}): UseOrd
   ],
   payload: {
     tokenId: 'token-brock',
-    orderName: 'Rallying Cry',
+    orderName: 'Go, Fight, Win!',
   },
   ...overrides,
 })
@@ -366,20 +364,20 @@ describe('applyUseTableActionCommandUseCase', () => {
       eventType: USE_ORDER_PATCH_EVENT_TYPE,
       payload: {
         tokenId: 'token-brock',
-        orderName: 'Rallying Cry',
+        orderName: 'Go, Fight, Win!',
         activeEffect: expect.objectContaining({
           id: 'ord-op_useactord001',
-          orderName: 'Rallying Cry',
+          orderName: 'Go, Fight, Win!',
           userId: 'token-brock',
         }),
       },
     })
     const storedMap = getSessionMapState(result.state, 'arena-map')
     expect(storedMap?.document.metadata?.orderLog).toEqual([
-      expect.objectContaining({ userId: 'token-brock', orderName: 'Rallying Cry' }),
+      expect.objectContaining({ userId: 'token-brock', orderName: 'Go, Fight, Win!' }),
     ])
     expect(storedMap?.document.metadata?.activeOrderEffects).toEqual([
-      expect.objectContaining({ id: 'ord-op_useactord001', orderName: 'Rallying Cry' }),
+      expect.objectContaining({ id: 'ord-op_useactord001', orderName: 'Go, Fight, Win!' }),
     ])
     expect(snapshotCalls).toHaveLength(1)
   })

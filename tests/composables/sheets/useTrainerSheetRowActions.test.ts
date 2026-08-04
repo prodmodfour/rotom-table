@@ -47,7 +47,7 @@ describe('useTrainerSheetRowActions', () => {
     expect(sheet.value?.abilities?.[0]).toMatchObject({ name: '' })
     expect(sheet.value?.maneuvers?.[0]).toMatchObject({ name: 'New Maneuver' })
     expect(sheet.value?.orders?.[0]).toMatchObject({ name: 'New Order' })
-    expect(sheet.value?.features?.[0]).toMatchObject({ name: 'New Feature' })
+    expect(sheet.value?.features?.[0]).toEqual({ name: '', choices: {} })
     expect(sheet.value?.edges?.[0]).toEqual({ name: '', choices: {} })
     expect(sheet.value?.inventory?.keyItems?.[0]).toMatchObject({ name: '' })
 

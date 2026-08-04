@@ -1,0 +1,3117 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-feature-automation-v1",
+  "entryCount": 444,
+  "canonicalIds": [
+    "Accentuated Taste",
+    "Accessorize",
+    "Ace Trainer",
+    "Action Hero Stunt",
+    "Adaptable Performance",
+    "Adaptive Geography",
+    "Adrenaline Rush",
+    "Advanced Capture Techniques",
+    "Aerialist",
+    "Affliction Techniques",
+    "Agility Training",
+    "Ambient Aura",
+    "Ancient Heritage",
+    "Apothecary",
+    "Aqua Vortex",
+    "Arcane Favor",
+    "Archival Training",
+    "Archive Tutor",
+    "Arctic Zeal",
+    "Assault Armor",
+    "Athlete",
+    "Athletic Moves",
+    "Aura Guardian",
+    "Aura Mastery",
+    "Aura Reader",
+    "Awareness",
+    "Bag of Tricks",
+    "Bait Mixer",
+    "Basic Fashion",
+    "Battle Conductor",
+    "Battle Synchronization",
+    "Beautiful Ballet",
+    "Beguiling Dance",
+    "Bend Like the Willow",
+    "Bigger and Boulder",
+    "Black-Out Strike",
+    "Blur",
+    "Boo!",
+    "Bounce Shot",
+    "Brawler",
+    "Breadth of Knowledge",
+    "Brightest Flame",
+    "Bring It On!",
+    "Brutal Training",
+    "Burst of Speed",
+    "Cacophony",
+    "Calculated Assault",
+    "Capture Specialist",
+    "Captured Momentum",
+    "Catch Combo",
+    "Caustic Chemistry",
+    "Cavalier’s Reprisal",
+    "Celerity",
+    "Chain Lightning",
+    "Chakra Crystal",
+    "Champ in the Making",
+    "Changing Viewpoints",
+    "Channeler",
+    "Cheer Brigade",
+    "Cheerleader",
+    "Cheers",
+    "Chef",
+    "Chemical Warfare",
+    "Chemist",
+    "Chitin Shield",
+    "Choreographer",
+    "Chronicler",
+    "Cinematic Analysis",
+    "Clever Ruse",
+    "Climate Control",
+    "Climatology",
+    "Close Quarters Mastery",
+    "Coaching",
+    "Command Versatility",
+    "Commander",
+    "Commander’s Voice",
+    "Complex Aftertaste",
+    "Complex Orders",
+    "Conqueror’s March",
+    "Contest Trends",
+    "Cool Conduct",
+    "Coordinator",
+    "Corrective Learning",
+    "Corrosive Blight",
+    "Critical Moment",
+    "Cross-Pollinate",
+    "Cruel Gaze",
+    "Crystal Artificer",
+    "Crystal Resonance",
+    "Culinary Appreciation",
+    "Cute Cuddle",
+    "Cutthroat",
+    "Dabbler",
+    "Dance Form",
+    "Dance Practice",
+    "Dancer",
+    "Dashing Makeover",
+    "Deadly Gambit",
+    "Death From Above",
+    "Debilitate",
+    "Decisive Director",
+    "Deep Cold",
+    "Defender",
+    "Desert Heart",
+    "Desperate Strike",
+    "Devious",
+    "Dietician",
+    "Diffuse Pain",
+    "Dilettante",
+    "Directed Focus",
+    "Dirty Fighting",
+    "Disruption Order",
+    "Dive",
+    "Divination",
+    "Divine Wind",
+    "Don’t Look Away",
+    "Dress to Impress",
+    "Duelist",
+    "Duelist’s Manual",
+    "Dumplings",
+    "Earthroil",
+    "Echoes of the Future",
+    "Effective Methods",
+    "Egg Tutor",
+    "Elite Trainer",
+    "Emergency Release",
+    "Empowered Development",
+    "Enchanting Gaze",
+    "Encore Performance",
+    "Endurance",
+    "Enduring Bloom",
+    "Enduring Soul",
+    "Enhancers",
+    "Enticing Beauty",
+    "Expand Horizons",
+    "Expend Momentum",
+    "Extra Ordinary",
+    "Extreme Weather",
+    "Fabulous Max",
+    "Face Me Whelp",
+    "Fairy Lights",
+    "Fairy Rite",
+    "False Strike",
+    "Fan The Flames",
+    "Farcast",
+    "Fashionista",
+    "Fearsome Display",
+    "Fey Trance",
+    "Field Clinic",
+    "Fighter’s Versatility",
+    "Finisher",
+    "First Aid Expertise",
+    "First Blood",
+    "Fishbowl Technique",
+    "Fistful of Force",
+    "Flexible Preparations",
+    "Flip Out",
+    "Flood!",
+    "Flourish",
+    "Focus",
+    "Focus Gem",
+    "Focused Command",
+    "Focused Fashion",
+    "Focused Training",
+    "Foiling Foliage",
+    "Force of Will",
+    "Fossil Restoration",
+    "Fountain of Life",
+    "Front Line Healer",
+    "Gale Strike",
+    "Genetic Memory",
+    "Genjutsu",
+    "Ghost Step",
+    "Glacial Ice",
+    "Gleeful Interference",
+    "Gleeful Steps",
+    "Gneiss Aim",
+    "Go, Fight, Win!",
+    "Gotta Catch ‘Em All",
+    "Grand Hex",
+    "Gravel Before Me",
+    "Guardian Orders",
+    "Guidance",
+    "Haunting Curse",
+    "Hearty Meal",
+    "Heightened Intensity",
+    "Herb Lore",
+    "Hex Maniac",
+    "Hex Maniac Studies",
+    "Highlander",
+    "Highly Responsive to Prayers",
+    "Hits the Spot",
+    "Hobbyist",
+    "Honed Mind",
+    "Hunter",
+    "Hunter’s Reflexes",
+    "Hyper Cures",
+    "Immutable Mind",
+    "Incandescence",
+    "Incense Maker",
+    "Innovation",
+    "Insectoid Utility",
+    "Inspirational Support",
+    "Inspired Training",
+    "Instant Analysis",
+    "Iron Grit",
+    "Iterative Evolution",
+    "I’m a Doctor",
+    "Juggler",
+    "Juggling Show",
+    "Keep Fighting!",
+    "Kinjutsu",
+    "Lay on Hands",
+    "Leadership",
+    "Lean In",
+    "Learn From Your Mistakes",
+    "Leftovers",
+    "Lessons",
+    "Let Me Help You With That",
+    "Let’s Be Friends!",
+    "Lifelong Learning",
+    "Live and Learn",
+    "Lockdown",
+    "Look and Learn",
+    "Macho Charge",
+    "Malediction",
+    "Malice",
+    "Mark of Vision",
+    "Marksman Orders",
+    "Martial Achievement",
+    "Martial Artist",
+    "Martial Training",
+    "Meal Planner",
+    "Medic",
+    "Medical Techniques",
+    "Medicinal Blend",
+    "Menace",
+    "Mental Assault",
+    "Mental Resistance",
+    "Mentor",
+    "Mettle",
+    "Miasma",
+    "Mindbreak",
+    "Mixed Messages",
+    "Mixed Power",
+    "Mobilize",
+    "Mold the Earth",
+    "Moment of Action",
+    "Move Sync",
+    "Move Tutor",
+    "Mt. Moon Blues",
+    "Multi-Tasking",
+    "Musical Ability",
+    "Musician",
+    "My Kung-Fu is Stronger",
+    "Mystic Defense",
+    "Natural Fighter",
+    "New Normal",
+    "Ninja",
+    "Ninja’s Arsenal",
+    "Noise Complaint",
+    "Not Yet!",
+    "Nuanced Performance",
+    "Nurse",
+    "Observation Party",
+    "Oracle",
+    "Overload",
+    "Overrun",
+    "PK Alpha",
+    "PK Combat",
+    "PK Omega",
+    "Pack Master",
+    "Pack Tactics",
+    "Pain Dampening",
+    "Pain Resistance",
+    "Parfumier",
+    "Passing Waltz",
+    "Patch Cure",
+    "Performance Enhancers",
+    "Perseverance",
+    "Plainly Perfect",
+    "Plate Crafter",
+    "Play Them Like a Fiddle",
+    "Playing God",
+    "Poison Weapons",
+    "Poké Ball Crafter",
+    "PokéManiac",
+    "Polar Vortex",
+    "Polished Shine",
+    "Potent Venom",
+    "Power Chord",
+    "Power Conduit",
+    "Power Pirouette",
+    "Power of the Mind",
+    "Powerful Motivator",
+    "Practical Fashion",
+    "Precision Orders",
+    "Prehistoric Bond",
+    "Prescience",
+    "Preserves",
+    "Press",
+    "Press On!",
+    "Proper Care",
+    "Provocateur",
+    "Psionic Analysis",
+    "Psionic Overload",
+    "Psionic Sight",
+    "Psionic Sponge",
+    "Psychic Resonance",
+    "Pummeling Momentum",
+    "Push Buttons",
+    "Pusher",
+    "Quick Gymnastics",
+    "Quick Healing",
+    "Quick Reflexes",
+    "Quick Switch",
+    "Quick Wit",
+    "Rainbow Gem",
+    "Rainbow Light",
+    "Ramming Speed",
+    "Ravager Orders",
+    "Re-Balancing",
+    "Reality Bender",
+    "Relentless Pursuit",
+    "Reliable Performance",
+    "Researcher",
+    "Resilience",
+    "Restorative Science",
+    "Ride as One",
+    "Rider",
+    "Rogue",
+    "Roughneck",
+    "Round Trip",
+    "Rule of Cool",
+    "Sacred Shield",
+    "Sage",
+    "Sage’s Benediction",
+    "Savage Strike",
+    "Scheme Twist",
+    "Scoundrel’s Strike",
+    "Second Strike",
+    "Seed Bag",
+    "Seize The Moment",
+    "Shared Senses",
+    "Shocking Speed",
+    "Shrug Off",
+    "Signature Move",
+    "Signature Technique",
+    "Simple Improvements",
+    "Skill Monkey",
+    "Skill Trainer",
+    "Sleight",
+    "Small Prophecies",
+    "Smart Scheme",
+    "Smashing Punishment",
+    "Sneak Attack",
+    "Soft Landing",
+    "Soothing Connection",
+    "Space Distortion",
+    "Species Savant",
+    "Spirit Boost",
+    "Stacked Deck",
+    "Stat Ace",
+    "Stat Embodiment",
+    "Stat Link",
+    "Stat Maneuver",
+    "Stat Mastery",
+    "Stat Stratagem",
+    "Stat Training",
+    "Stay With Us!",
+    "Staying Power",
+    "Strange Energy",
+    "Street Fighter",
+    "Strike of the Whip",
+    "Style Entrainment",
+    "Style Expert",
+    "Style Flourish",
+    "Style is Eternal",
+    "Suggestion",
+    "Sunlight Within",
+    "Super Cures",
+    "Surprise!",
+    "Survivalist",
+    "Sword of Body and Soul",
+    "Tag In",
+    "Targeted Profiling",
+    "Taskmaster",
+    "Tasty Snacks",
+    "Telekinetic",
+    "Telekinetic Burst",
+    "Telepath",
+    "Telepathic Awareness",
+    "Telepathic Warning",
+    "Terrain Talent",
+    "The Power of Aura",
+    "This One’s Special, I Know It",
+    "This Will Not Stand",
+    "Thought Detection",
+    "Tip the Scales",
+    "Top Percentage",
+    "Top Tier Berries",
+    "Tornado Charge",
+    "Tough Tumble",
+    "Tough as Nails",
+    "Tough as Schist",
+    "Trail Blazer",
+    "Training Regime",
+    "Trapper",
+    "Trickster",
+    "Trickster Orders",
+    "True Steel",
+    "Tumbler",
+    "Tutoring",
+    "Two-Second Preview",
+    "Type Ace",
+    "Type Booster",
+    "Type Brace",
+    "Type Expertise",
+    "Type Methodology",
+    "Type Refresh",
+    "Tyrant’s Roar",
+    "Unconquerable",
+    "Underhanded Tactics",
+    "Unexpected Attacks",
+    "Unveiled Sight",
+    "Upheaval",
+    "Utility Drop",
+    "Vampirism",
+    "Versatile Teachings",
+    "Versatile Wardrobe",
+    "Vim and Vigor",
+    "Vitamins",
+    "Voice Lessons",
+    "Walk It Off",
+    "Warped Transmission",
+    "Warper",
+    "Warping Ground",
+    "Weather Systems",
+    "Weightless Step",
+    "Whirlwind Strikes",
+    "Wilderness Guide",
+    "Witch Hunter",
+    "Wrestlemania",
+    "Zephyr Shield"
+  ],
+  "records": [
+    {
+      "index": 0,
+      "canonicalId": "Accentuated Taste",
+      "recordSha256": "6b8577b4b7c9bd9fbb578c3f2a69fcbeca6b18124fffd63803c561f9dfbd99e4",
+      "effectSha256": "1e1fbb3a67434a5384a0022528f7f32b68a15e9df530ab93e0889cf44aeb1811"
+    },
+    {
+      "index": 1,
+      "canonicalId": "Accessorize",
+      "recordSha256": "980d64f6a79846a02a6f0f4197692e17eb20fb85508bb30dba6de6bad5ab5585",
+      "effectSha256": "a5154c457aee267312d66d76a2a92a839be793df53cd926c05e3494c9ca5c80a"
+    },
+    {
+      "index": 2,
+      "canonicalId": "Ace Trainer",
+      "recordSha256": "37de8e0cddd487a336871287b20abbf7aae3fa35fabc0d61a514861555676aee",
+      "effectSha256": "c718af0ae44496e2b0bbe91c7a868f468cef9abf93a737fe70b35efd71084c6f"
+    },
+    {
+      "index": 3,
+      "canonicalId": "Action Hero Stunt",
+      "recordSha256": "c51014147a99c1c9389a4e14be76ebde6c457de29b80c1e9127e90baf8762897",
+      "effectSha256": "038538351126aa969a11080b67c52127f492665cee00d8316fd575cb1cbbd045"
+    },
+    {
+      "index": 4,
+      "canonicalId": "Adaptable Performance",
+      "recordSha256": "2e6532d15fe8ba5d471537756e1dfa42d3a23f918c83d8e958b019ec88ed23d9",
+      "effectSha256": "4d840c7bb17513ed3cbb2b566f253d7ab7cc0f525284a4f311a49269bc59da2d"
+    },
+    {
+      "index": 5,
+      "canonicalId": "Adaptive Geography",
+      "recordSha256": "ff5fc92fa0363676c8434bbb53a759aff4bc690c98e61faf75570e01762aaa90",
+      "effectSha256": "8f4526edffb879ec00ff25a86b3bd24b78039df090a28a6c57f1d4cd47472bcf"
+    },
+    {
+      "index": 6,
+      "canonicalId": "Adrenaline Rush",
+      "recordSha256": "5eec17e7bbcf46de24ce8ffe3300a84814fbe5234042916ba37ea3a80e020965",
+      "effectSha256": "1de7edcf537bf3edaa1e5094e80abc1c9ae670532022094e3b5c977e51b4924b"
+    },
+    {
+      "index": 7,
+      "canonicalId": "Advanced Capture Techniques",
+      "recordSha256": "b19639a2d86a6e00164562e7c6bb75902fa38b6792d69d22b9d8c8c08bb0a727",
+      "effectSha256": "142f00aecc885dc92ec099309e6559dc67d8a503b8f161941241249e3e9e071e"
+    },
+    {
+      "index": 8,
+      "canonicalId": "Aerialist",
+      "recordSha256": "c82b14021abcca4e3a552b720e56c7a64662bc31b56628c0164aabae2cee4569",
+      "effectSha256": "a606934b27abb97dec69926a97d24bb1cbb0ffc1241244302bbd2419696f03b6"
+    },
+    {
+      "index": 9,
+      "canonicalId": "Affliction Techniques",
+      "recordSha256": "8bd3ec77cc35f432cb0f5bb25e0f50275950881386871f08d3ff883306be895a",
+      "effectSha256": "94f21017e555a5aab22e2d3acf53e2281fa6139d2e5772dab45ca2215dd742c8"
+    },
+    {
+      "index": 10,
+      "canonicalId": "Agility Training",
+      "recordSha256": "71915c64a6c302332d37cf2b10ea71cfca953b98dfefdbe52fbeee6437817baf",
+      "effectSha256": "6206bbbf48e3bb9d0ab3bf74a637cea598be2727e33cae2e4144305f6983f1ad"
+    },
+    {
+      "index": 11,
+      "canonicalId": "Ambient Aura",
+      "recordSha256": "958f2a216babd772d953bb068c4484e6e30a82fc01c53b11c97fe62da2a5ead9",
+      "effectSha256": "bffb87d92273f0a8f197a05f2d7132e2a7289e80f3ee51ba674caad01a4133b5"
+    },
+    {
+      "index": 12,
+      "canonicalId": "Ancient Heritage",
+      "recordSha256": "80b65e011e776eb2d313b41fd586fbe33c9d13f712fda0f1f287863516522cb4",
+      "effectSha256": "b969aa487328aa3bc32bc093cd7d04da90a56714771c8bf69e9edd44d97e6deb"
+    },
+    {
+      "index": 13,
+      "canonicalId": "Apothecary",
+      "recordSha256": "f2a1b5ef327b5f9eaff533731c364af23db19e0e6b38b9fea402de0a469f3122",
+      "effectSha256": "0610d5ad7bf0075f1f81ca9ec1ea56ab5631f88816b0861265757e0104c631cb"
+    },
+    {
+      "index": 14,
+      "canonicalId": "Aqua Vortex",
+      "recordSha256": "4b434a599f71f5d7c2c97c5d07a144596103b15d4d3d9b8457b04bc950842e96",
+      "effectSha256": "45e60b3aeb521cfdcb5259d680426132b4041b51369592a0f2e8be8b00b5e3e2"
+    },
+    {
+      "index": 15,
+      "canonicalId": "Arcane Favor",
+      "recordSha256": "7ca96213700456dce8834770b68b8e4917746a155081707b3f73e5212aad3cc7",
+      "effectSha256": "c24c25b3cc247e4957d24af7ef6e48e3e7a43c4e0f30af430c383761f7164dc2"
+    },
+    {
+      "index": 16,
+      "canonicalId": "Archival Training",
+      "recordSha256": "70b9f960f1f0ffbf96828f810444ad2069ef9665205b1b9edb0b34fb69c849c0",
+      "effectSha256": "4dd57c0a126699889dab6a2671e232614d835daadf67e0289f85c26bc73c38a6"
+    },
+    {
+      "index": 17,
+      "canonicalId": "Archive Tutor",
+      "recordSha256": "410469fc3300c0746521a2aa4e5d4b08020dac7205b3a753bf7340c7ea7725a7",
+      "effectSha256": "c68bafce22200ff5f90b603c20cbb2700ec1f89d16a71eafe100ad7b0fcae9ad"
+    },
+    {
+      "index": 18,
+      "canonicalId": "Arctic Zeal",
+      "recordSha256": "94b74a5d40779dd2592ab10090bb27334425ae4d1f5d9b27701a00e195c64609",
+      "effectSha256": "95a3487fc2774a4a3430e32f0c78173cf6cba167a332aa0658368247d6920767"
+    },
+    {
+      "index": 19,
+      "canonicalId": "Assault Armor",
+      "recordSha256": "208b1f4d4bc261f71f8c8d21a2ef8c9959c275190faf45176664b6196b5a1d77",
+      "effectSha256": "c1f0fa13ba3ad1ea5be35c23d9b4c3100bd435a3be8a3ebb2fe7e91f55eb1bcc"
+    },
+    {
+      "index": 20,
+      "canonicalId": "Athlete",
+      "recordSha256": "74d87d4c35604733f14fddc352fda827ae355b980c3a7ffdff25bc637dbcab1a",
+      "effectSha256": "454c8a4fc97cd63f91068c22f8e6a072993f352601f049488cfd25c5c8a95d06"
+    },
+    {
+      "index": 21,
+      "canonicalId": "Athletic Moves",
+      "recordSha256": "c55e06ef3be1fcaaf908e7284398de8552973bf1bfaf6bd48421e9fe5cf7e440",
+      "effectSha256": "27b8ccf0c64b3e259d286795458f1ab1f1a9bd30a9cc349ded1fab4157d13fc1"
+    },
+    {
+      "index": 22,
+      "canonicalId": "Aura Guardian",
+      "recordSha256": "b10c4edf40799fafb3534c1f69170f0a9eb042b658dd662cfdf3440dc9861022",
+      "effectSha256": "3e097ad1a4ff564d45bc76a49e8baec1419e3c1e0990562fb391e9e90788391c"
+    },
+    {
+      "index": 23,
+      "canonicalId": "Aura Mastery",
+      "recordSha256": "3dbe3cab530d73cd409079c868e46b5d82b17cc029a2b8d34349be28e3ec9e5e",
+      "effectSha256": "5064106af3d1255b4e38e3b2d307a05953fa45fc961a4c1fc135be585da73ab1"
+    },
+    {
+      "index": 24,
+      "canonicalId": "Aura Reader",
+      "recordSha256": "d37017ddf2eaba4b05fded7193ac95ab908d8b43035f95808ba0050e7c48ad66",
+      "effectSha256": "0d604f91f08b8a0f35f4ac193f68efba68dc9b94fd3b171c0afd4d702492e836"
+    },
+    {
+      "index": 25,
+      "canonicalId": "Awareness",
+      "recordSha256": "99d1639270f150e5bc5dffb2f5d33744fe29af8e08ca7cde9498189fe7cc6fe8",
+      "effectSha256": "b375f64f4f22e43e3dc1b0d67e37ae7cfee278dcb1a54f52f1a5e308ec7e076d"
+    },
+    {
+      "index": 26,
+      "canonicalId": "Bag of Tricks",
+      "recordSha256": "e77ae7f502bfd29dd861f77af53e8f4198b083a5b97857b3c5b97e6927d72f77",
+      "effectSha256": "8cbad627d7d742395dafd131afb302f17b03dac607a58789b8265a098292efb8"
+    },
+    {
+      "index": 27,
+      "canonicalId": "Bait Mixer",
+      "recordSha256": "e172acf50a64c9eed40899151de8113e54567248d82e6de83121a5c99c356350",
+      "effectSha256": "a183859e7f5656b968cdb0d4e0235161c4884d0fbb2d25b12d122ec22d71d0c4"
+    },
+    {
+      "index": 28,
+      "canonicalId": "Basic Fashion",
+      "recordSha256": "5a5ddaea493d1decdb903b69551acd17f12e0c80a06780e36a6d8fced0c1d032",
+      "effectSha256": "1d80be90f3598134ffc37fe81b505cdc61b23c83cf079799d8f83ef510b8af82"
+    },
+    {
+      "index": 29,
+      "canonicalId": "Battle Conductor",
+      "recordSha256": "0f0615653fed6585abb3f6a7d247052cc589108571e880a35b8ec92035a55931",
+      "effectSha256": "c9f7ad4bf9b16d11cb5f71c37ae53259fa155cc72f205640c8992ee99cae2f16"
+    },
+    {
+      "index": 30,
+      "canonicalId": "Battle Synchronization",
+      "recordSha256": "8af8b12e13d2e20bf57e46ce5debdf89b06abcf7bfaeb64ef15024988bbfff14",
+      "effectSha256": "7ddd7641c91dcac54c57af66a801859010ed3238b9e568f519ecb32ff6747489"
+    },
+    {
+      "index": 31,
+      "canonicalId": "Beautiful Ballet",
+      "recordSha256": "22db84309eda596d7fcea04e531f8ddb38f3f244b1402e0d8895697e046dc02e",
+      "effectSha256": "a779dcc149b655a01b9312563ce815312099a1150381740831637ad04a63eab4"
+    },
+    {
+      "index": 32,
+      "canonicalId": "Beguiling Dance",
+      "recordSha256": "4d6dd5ffe2022a1143419c6e574338958e8a2a852713d6f9ee019845f54e7798",
+      "effectSha256": "ddb49057e08ce034245f5120c9f1cad16466624d88473feb55d5f56198a566b6"
+    },
+    {
+      "index": 33,
+      "canonicalId": "Bend Like the Willow",
+      "recordSha256": "33b664d7d062d576ec26606d319cb2d4fa767de4d9e463c6dbcfd500b3ee83de",
+      "effectSha256": "2d52a9403dbb65c4433a278fb10bd0ac5a34d72dc01148dd2e60e546ce290a1d"
+    },
+    {
+      "index": 34,
+      "canonicalId": "Bigger and Boulder",
+      "recordSha256": "d3e21a78b422e5aba17099b31f6f12bd4fdf47060c05e5ac89b0616cb2bd99d8",
+      "effectSha256": "b122d9e524abdac1f8d9d38c2b90fb77726cae7748b20d7116f103c2f5830517"
+    },
+    {
+      "index": 35,
+      "canonicalId": "Black-Out Strike",
+      "recordSha256": "dc10fcff8382c2bf82553d207da83058f566432b1d0a2979962b67b179bf3653",
+      "effectSha256": "484b5a967bb95ffb19185b2cdc850f262501e6b36faf8326721db3ad7a88f51a"
+    },
+    {
+      "index": 36,
+      "canonicalId": "Blur",
+      "recordSha256": "88ed0020e25393cdc830339e167fae82daa4bb72eef2d61f9ecb7b6510856463",
+      "effectSha256": "6fcc3462500065254cf9f8d6db7b7a0ac31fa554e9f56b8c513287fb9cc6baef"
+    },
+    {
+      "index": 37,
+      "canonicalId": "Boo!",
+      "recordSha256": "a87fe7fc6b06374d4ef6ba4d1e1f8f960a393d00b3f0fe3814891e05333436b0",
+      "effectSha256": "d1991bde655c374fe38d6dce48a1de1b3c88859a65dc03ec7e2a77ce6d20be1d"
+    },
+    {
+      "index": 38,
+      "canonicalId": "Bounce Shot",
+      "recordSha256": "123c2274f5da3aaace7f7e8cf851e0626d850876be0b125d22f89b6611812ca8",
+      "effectSha256": "74dba0def1f7cd4ff0f61cc83fff0f2ce8c4644f1f645a773bf81af669a67175"
+    },
+    {
+      "index": 39,
+      "canonicalId": "Brawler",
+      "recordSha256": "5fca39e2684d03b885481460c89c5f3d4479745188bd04f19b950a64c1ff1be0",
+      "effectSha256": "10e2fd204da1450b87acc39a5cc43bf9fd581cf3f1573f685c9fed361bc20021"
+    },
+    {
+      "index": 40,
+      "canonicalId": "Breadth of Knowledge",
+      "recordSha256": "6347cbf0c11b4709971c51d1fd71e2f4bbc98eeb54743d4c9df85ccd7bbaef7a",
+      "effectSha256": "cd044b95883c575bacc75173b3210ec016662cd79901c40501c4aee508ea816d"
+    },
+    {
+      "index": 41,
+      "canonicalId": "Brightest Flame",
+      "recordSha256": "f85074ae291763de279a4b8ae9aa840711b14096e4fdae4bac0431a36e19aaff",
+      "effectSha256": "f8d432a1fea6987fd0d0ed0758a8392d920fddfb962ef332b4fcf6d6f383ab4c"
+    },
+    {
+      "index": 42,
+      "canonicalId": "Bring It On!",
+      "recordSha256": "4068e774d6713332a8300a36756cda35a21d560a135c92b8d470c79f2d2010b6",
+      "effectSha256": "7ee7c665b1e7802a422f53d4be660f0a15e6a25f92a72e5528f94a137e532823"
+    },
+    {
+      "index": 43,
+      "canonicalId": "Brutal Training",
+      "recordSha256": "636e24d844eabbca4c9cfbbdb4e129d35f03d5b4d5a6f0fa319d7d935f6fbbe4",
+      "effectSha256": "650e089a5ee0fb95750d3eb3936b840df4a495b766fc373171f568fd656fa87f"
+    },
+    {
+      "index": 44,
+      "canonicalId": "Burst of Speed",
+      "recordSha256": "c0ee4fa492b362f93a09e50385fac96b105f3193acf9e1dac92049fa5727e4f6",
+      "effectSha256": "b2af4763ccf6aff04bb0c5a30ed12ba4ac0a3cb3e60484d014801a92a263683a"
+    },
+    {
+      "index": 45,
+      "canonicalId": "Cacophony",
+      "recordSha256": "4448db361c201cc153b6c667aec9652cad7c2b27fd8d7ab69911fb4a85868384",
+      "effectSha256": "e819764e3e2c488dce75109093bcfee221c2c9aa0b49f396d2ff9458a2803fa1"
+    },
+    {
+      "index": 46,
+      "canonicalId": "Calculated Assault",
+      "recordSha256": "96bc3a3ae0787e11688a69f2ee85a40e9be64a22ecf895ed3a7705a3c4963f34",
+      "effectSha256": "7a95a48a899c9c064836ed6c928541d5fa542ff336ab581ef2b511efb1cea58d"
+    },
+    {
+      "index": 47,
+      "canonicalId": "Capture Specialist",
+      "recordSha256": "130622e31dd514ede0447f52955f132382ba31e4c5d58dbb4be22021bd753933",
+      "effectSha256": "e41d1a89216206acb8bb055ef1f7eaf83a54e91327387c29a638d80bb23370f3"
+    },
+    {
+      "index": 48,
+      "canonicalId": "Captured Momentum",
+      "recordSha256": "ab10aafa16baaad481b81073c673212649e184dc70c384c8d9944509e4a86d3b",
+      "effectSha256": "aad1cc520b59aa24819fe8acb7baac584d4a47d050ddd8cba84535c8f8eba214"
+    },
+    {
+      "index": 49,
+      "canonicalId": "Catch Combo",
+      "recordSha256": "901beff9839057874f5f19a38da2dc7dd8673c3e951fa4cd192308f85393b8ac",
+      "effectSha256": "07738ddcf44d952bcbdf3779ddca564786ce1e1e42b49429bc2b0d4f1fe44820"
+    },
+    {
+      "index": 50,
+      "canonicalId": "Caustic Chemistry",
+      "recordSha256": "176c1284c55e5a4c68196735f9d71a1f950cd7476d7780dedc55f49cbacdc368",
+      "effectSha256": "6529be98f0904bac98b2c457e2da5c95a0d8e5456151821695099d85472e74a8"
+    },
+    {
+      "index": 51,
+      "canonicalId": "Cavalier’s Reprisal",
+      "recordSha256": "4eca8e74fb4d76e6481867ba37ea2a966b8f8fed8804bce4c7c72bf95e2a8551",
+      "effectSha256": "c2678c25aa8ed501d55000ebe90f313be0d4e919c171a3d360811067a9dfad39"
+    },
+    {
+      "index": 52,
+      "canonicalId": "Celerity",
+      "recordSha256": "ea895238f92e43410b2eca58d38d23aa64b9bc8465e6ab8bab7b8c2be1e707bc",
+      "effectSha256": "18d5250bb99780de1b5cefe67aafceade0374c77db983c4d56ac4d601c6685d6"
+    },
+    {
+      "index": 53,
+      "canonicalId": "Chain Lightning",
+      "recordSha256": "30dcb9adede10fffe8bc93e031e248c56798ad4cb423ab83f532837f9b5475f1",
+      "effectSha256": "8b11654a4e746a484fb0b7bf72a554fa792a1caa8c052f291dd7c90fc49f9b40"
+    },
+    {
+      "index": 54,
+      "canonicalId": "Chakra Crystal",
+      "recordSha256": "a8e8b3290e85c09e618dffefacedcd75d54235e3f4ab3afeefe686332b6ac563",
+      "effectSha256": "c8e574dc083b060427abad6cdbdee25159f3e598b8924db4cc169b444f66a532"
+    },
+    {
+      "index": 55,
+      "canonicalId": "Champ in the Making",
+      "recordSha256": "c681c9aa29b6890c32bad7b4b4dcdb2118660a5066a83fe64214d9bc41eeca7d",
+      "effectSha256": "484984a51dc71e8df0c4494f4f9bf3512384ea6268550936b428bb09e403bfef"
+    },
+    {
+      "index": 56,
+      "canonicalId": "Changing Viewpoints",
+      "recordSha256": "7f63897f9d2a00c036b36b9c83b665912d316091ba8d15bee2c935c8cde8ad50",
+      "effectSha256": "cb28317240bc277d39de9c5902ad1a7f281fb25d0cb3ab8a20ba16507f7fa745"
+    },
+    {
+      "index": 57,
+      "canonicalId": "Channeler",
+      "recordSha256": "150d5f538aa6f6b1a99cb08b7d39b7353168951511c7f4f68b7cd686bef8b849",
+      "effectSha256": "f631bb46ab6179a847a84f530bb02a3af23ab745f6c8c9e9e347a2420aad9eac"
+    },
+    {
+      "index": 58,
+      "canonicalId": "Cheer Brigade",
+      "recordSha256": "1cb7ad2ee89873771c91e5318cfd5716751ce6a6c74f93c120c125c1772c0edd",
+      "effectSha256": "a9fabdb806c70e42a33cf11ea1e24c0037488aabffdfec5c2e0345eb7452d789"
+    },
+    {
+      "index": 59,
+      "canonicalId": "Cheerleader",
+      "recordSha256": "380ce4f79d6896d8fab99b420b0bb73a240c37c069efabbdfa48b22b6782dbe2",
+      "effectSha256": "a9fabdb806c70e42a33cf11ea1e24c0037488aabffdfec5c2e0345eb7452d789"
+    },
+    {
+      "index": 60,
+      "canonicalId": "Cheers",
+      "recordSha256": "2e425b38a61a42603970b3203bd51a05c00278d5d8dcde2ec61f6a05ffc1137b",
+      "effectSha256": "3bca1a157a78315d620a61b9ccd6a73aeddcc53977670e2d2694230314a1b936"
+    },
+    {
+      "index": 61,
+      "canonicalId": "Chef",
+      "recordSha256": "4dc61c2f3c1f95ca6f89f642aa6f41bc4d558f62c1eccc6e28fa03b407036484",
+      "effectSha256": "99074b201c22e037b9996443488f946387c203c14ab35532f9871e964a9949cf"
+    },
+    {
+      "index": 62,
+      "canonicalId": "Chemical Warfare",
+      "recordSha256": "38332d057465fe45e5a52308fb57ec3297104d5e959ed42819b15f01c7e23e59",
+      "effectSha256": "d5d743473849329d1cfb8f15c3da53314ccac3b416bc34e437ab3fc7e73c3bc5"
+    },
+    {
+      "index": 63,
+      "canonicalId": "Chemist",
+      "recordSha256": "4b0199728805ee4971bc0c2f37b72f17ee0bbab02bac194255638ec05f5c60b4",
+      "effectSha256": "d8a60234805e5282b452ea2be87befb433d45727d0da996187f43043c5fcae70"
+    },
+    {
+      "index": 64,
+      "canonicalId": "Chitin Shield",
+      "recordSha256": "271329bc14cf912e9a958d014fd94af3041d563accbcd2623394a3bb3c6bbf68",
+      "effectSha256": "6a4c3bca1b23b73055edbea44eb338ef5c0fb5922e378d723392f75754ddd9d4"
+    },
+    {
+      "index": 65,
+      "canonicalId": "Choreographer",
+      "recordSha256": "73ba7421c9b0291c6b85c73aefca779875819066c3a42f36ecaa1cdc3a3a1870",
+      "effectSha256": "15a11d26f98fbbd04ed5a38b883765591da307e1f31ad129a74694a13ba06f32"
+    },
+    {
+      "index": 66,
+      "canonicalId": "Chronicler",
+      "recordSha256": "506eacf8d872d96c8c70f3ef8d8b16a0d1a1f67a0ea95e5de1a147f430b7762d",
+      "effectSha256": "7e490e1a46640ce1863e0ca03a8bcdff0616c370c7058e450ed7d6a05e2b3fc8"
+    },
+    {
+      "index": 67,
+      "canonicalId": "Cinematic Analysis",
+      "recordSha256": "77f56f3f4900fd82350798847d81cef7cf215f1df0be618612f54b2974ce245b",
+      "effectSha256": "4e30cb3d79cc42c6d3383aaa68fe7f57d3ac0ae9ccce17e420eeeaf1098d5b51"
+    },
+    {
+      "index": 68,
+      "canonicalId": "Clever Ruse",
+      "recordSha256": "a9ec86c8d566bd8203dba95fdcb0cc217bbd184c4ab6b5370b5863248ad54d70",
+      "effectSha256": "11e82f2df6c44fb98972004a6258c075d928f40ea18e9c4a947668feede56f5f"
+    },
+    {
+      "index": 69,
+      "canonicalId": "Climate Control",
+      "recordSha256": "8a7caedba26d4b7dd5cc4a3c6b24fc1e4a5542e0e9a490314f44ac8058e7e308",
+      "effectSha256": "80bfb83ea21854c71b75de075b1e307afec0f4c23f8b723db6b3e2bf6cd5f903"
+    },
+    {
+      "index": 70,
+      "canonicalId": "Climatology",
+      "recordSha256": "a6314390e917ae245f9f9b1c8219987fb9a19188f81368038cda4ae1a29eda21",
+      "effectSha256": "eb44d37cba129fee85bb039b66e9a4e455021848c47d90daf50ba560c8044e46"
+    },
+    {
+      "index": 71,
+      "canonicalId": "Close Quarters Mastery",
+      "recordSha256": "542a0974bcb66bdb14ea90d3b3d73ecc49943f1067e8457eb09af3c5e599bcf4",
+      "effectSha256": "e0e6896b28f13a9fe73bd60703f7801d8ad71ca89596715bb758e6d567ecba9d"
+    },
+    {
+      "index": 72,
+      "canonicalId": "Coaching",
+      "recordSha256": "bab16ff361939c0aeec2be2e5a7001c924a05e63c5109d83e5f3550f46e20f4a",
+      "effectSha256": "5e46c2d9812cbfcbbc04f7cea94780c82d83f80a4b3c0f260647474daef3094e"
+    },
+    {
+      "index": 73,
+      "canonicalId": "Command Versatility",
+      "recordSha256": "5ef928f81768e2ff4e34daa8863feb798442d9b44fcf83576a3920110245ad0a",
+      "effectSha256": "6153e6a97c9a2e7262b4eaec48911170f243b818551bc83b6445c433954b998e"
+    },
+    {
+      "index": 74,
+      "canonicalId": "Commander",
+      "recordSha256": "6a8688b55da63df1b0c45908a3f8f1b0e12c64f119cafaf4f88d09c549cb7467",
+      "effectSha256": "3d3d3a1ee22dc2a17dc42f530569984191a78ddf787272e8f678ec7dd3c94101"
+    },
+    {
+      "index": 75,
+      "canonicalId": "Commander’s Voice",
+      "recordSha256": "3fc564774ae14ef4695f3a04b69a57cff1e4ef7c98cb5ea1edddecd9e72bf2a7",
+      "effectSha256": "7351131707f2eda15b95eba58edb973c63e09bcb52167bdc6d1c0e498d6f7b5f"
+    },
+    {
+      "index": 76,
+      "canonicalId": "Complex Aftertaste",
+      "recordSha256": "157d5a123ba79ebbc8b938bc075234120e0599619b183d522a5d4ab6f5245584",
+      "effectSha256": "4454d48a07c3ede66d10a43db6a31d6a0a00fcc33ab7312f8f88b8d1fbd7a000"
+    },
+    {
+      "index": 77,
+      "canonicalId": "Complex Orders",
+      "recordSha256": "bec580f80c8e2f7e2fe89df473d6969d305b894a09348d45791040c683003d59",
+      "effectSha256": "748595bd6da165673e68fffb48197daedf6142d3cc1e8c1a261a40ba81ae5449"
+    },
+    {
+      "index": 78,
+      "canonicalId": "Conqueror’s March",
+      "recordSha256": "eaee9f8b15445fb032094cd08ef53a014e4798f93d644298b4ccd00aa0700659",
+      "effectSha256": "90934f446f6305b7928336bb119eec1f1668f8aecfcb4e8eb6af69b7308a3a88"
+    },
+    {
+      "index": 79,
+      "canonicalId": "Contest Trends",
+      "recordSha256": "088ce06d0b42558c3013fbb878495b7385c524712caf73fd145aada778549cc7",
+      "effectSha256": "8723d587d1cf4277a6a5507cf3bdd332a78e45ba018d52d8ec77fef3d5109a4a"
+    },
+    {
+      "index": 80,
+      "canonicalId": "Cool Conduct",
+      "recordSha256": "331ad733bf863e62f0e73cef14313ddc5a73b917b6c03c80622d9bddf38c3940",
+      "effectSha256": "ed5b611e9c505b6f2c4ec2f50642605b85dc876798152dc8db4c4b143fb3d1e1"
+    },
+    {
+      "index": 81,
+      "canonicalId": "Coordinator",
+      "recordSha256": "d72fe4dba016b10164dcf97b14d702f2b010fded411dbc22dfde4260a514caad",
+      "effectSha256": "4cf7d23dfe0aaf3bb15984dd1584e83616fd32c7737e922c1eb5a0b8b97fdceb"
+    },
+    {
+      "index": 82,
+      "canonicalId": "Corrective Learning",
+      "recordSha256": "e5d8380ff5eeaf2d29eb32d60402600f16af7a0dc0e150ca291ad74b1a9b78a5",
+      "effectSha256": "1328f7d5595124cab47621ca479681f2970cf1acd373d20ff8bd57800f1f005a"
+    },
+    {
+      "index": 83,
+      "canonicalId": "Corrosive Blight",
+      "recordSha256": "9099a79e610ac918e372cb8bc362e673b676cba392cc3e1551871d5b49001160",
+      "effectSha256": "017287d9dae7da720eaf06b3d75cea1da448dc8bdeef56124ae224b6ab08e1d7"
+    },
+    {
+      "index": 84,
+      "canonicalId": "Critical Moment",
+      "recordSha256": "bfa090721abd4e9b221808744edf47676be1f27ca986fd9817adb285376ce554",
+      "effectSha256": "03406f78692e37430a3f75dc15a4d552322707ed35d300547d462956b89b1eda"
+    },
+    {
+      "index": 85,
+      "canonicalId": "Cross-Pollinate",
+      "recordSha256": "52dc36199df13091691dabad1cfd96357bd1d17402c142804d025f7ce5240e44",
+      "effectSha256": "1eb9fc34b73d8ff063e9de11cbcfc94738f92b2eddb0c24e06cb106a4198983d"
+    },
+    {
+      "index": 86,
+      "canonicalId": "Cruel Gaze",
+      "recordSha256": "74f7e56169ea000c8f238f44e1be971f9df41a53bba57d8a48df323c075429ed",
+      "effectSha256": "d28b566e1caf4d01a968129f2c2bd32177e5b30dfb4d289abe4502c31d6853a4"
+    },
+    {
+      "index": 87,
+      "canonicalId": "Crystal Artificer",
+      "recordSha256": "0e158fa50d11c860f3e309f07b0277cee3c0c5e06418ef95a1b51af0ab970b25",
+      "effectSha256": "6e29e292ad02e1d333381b0beae54b046936d2aa3d5ec51c4a284a5b65baaf99"
+    },
+    {
+      "index": 88,
+      "canonicalId": "Crystal Resonance",
+      "recordSha256": "43cb50c2d025caaf7678d6057110732af9b1930ed358d91dfeb184a378a0644c",
+      "effectSha256": "2b680a96ea1b4819499f46779d2dc4623205dddb27834fa50204fa9893e7bf3f"
+    },
+    {
+      "index": 89,
+      "canonicalId": "Culinary Appreciation",
+      "recordSha256": "7607a9e7f26a776e891def6c8896367d4777c9802d93f409ee9f8f6c3d289416",
+      "effectSha256": "2c1e0d56eaca5744bf4e48e6063e7a6313ad0ab5fbbb21101401171f0376cff1"
+    },
+    {
+      "index": 90,
+      "canonicalId": "Cute Cuddle",
+      "recordSha256": "19ab6b329451c00777e27595133360d769e19aeb34bd37078f4b591bfc70361d",
+      "effectSha256": "1211a9f2580931b2d68f6ca3dff6d02e1d9158377bca90100c8822d92cfc9721"
+    },
+    {
+      "index": 91,
+      "canonicalId": "Cutthroat",
+      "recordSha256": "99860b3a2f6d0a65cf12f7aad7b8ffee9dd9b978378da9ecf551cb9500100232",
+      "effectSha256": "eab508393654e6745fe23bb09a25aa6aed8670e9a1f4d4eafc0a8bf5e9655b50"
+    },
+    {
+      "index": 92,
+      "canonicalId": "Dabbler",
+      "recordSha256": "4e45f4c01aaf24f9570d7c4ae2eeab6c7b2bd9b80a45b5e3355bc494fab0d504",
+      "effectSha256": "dd4936904093b32a3d64390fcfb06a27f170b4e835df41fb93072b57ae4b5b3f"
+    },
+    {
+      "index": 93,
+      "canonicalId": "Dance Form",
+      "recordSha256": "6ef4cc3217143ca7a1291054ba44c4edc988e53e19102061ef21e6ee3339e1ea",
+      "effectSha256": "92115f0a7d1e5e960e266fcb1bee42275e2f4aaa56b49fd83e6bd8ae86c48756"
+    },
+    {
+      "index": 94,
+      "canonicalId": "Dance Practice",
+      "recordSha256": "0b93e62431b36cf57607412868a839d69bb94d2cb3c0789fe52c0e5c2690edf4",
+      "effectSha256": "a2b041e373d77a16c2925e776c21c4f8898aa102f3d55e3e347554be0e74e940"
+    },
+    {
+      "index": 95,
+      "canonicalId": "Dancer",
+      "recordSha256": "7c9ecd435c5e3b9ef8cdc5028a322847610966335aaa59281c94f1287e6ea1bc",
+      "effectSha256": "5092993fd63370e268056b630a1591626ab5db556e7dcbf4851f50250a364752"
+    },
+    {
+      "index": 96,
+      "canonicalId": "Dashing Makeover",
+      "recordSha256": "4678b61746d091818a8aa23be22d6ea8ba5f253f5f92b0040aeda4f3a90938db",
+      "effectSha256": "e4d5f8e9861042ed9b6af57480d207e69860b051d766e3fe75c54114f5bed84f"
+    },
+    {
+      "index": 97,
+      "canonicalId": "Deadly Gambit",
+      "recordSha256": "0e63bbef05ce5c79214a94313a101d5d243e731173321c29ce5eb1d975e8e921",
+      "effectSha256": "4a7ce13e6f4e28962bb0085fa0cdf69b8e0ea3ae351b29ca59fe13e2bf090ffe"
+    },
+    {
+      "index": 98,
+      "canonicalId": "Death From Above",
+      "recordSha256": "e77b4550757b3ba945b71485e8d846bf00db44fd37ffd5598896814658df5abd",
+      "effectSha256": "ce6fef0465962b4761044566d36c731b204a40283c883fdc490781e9824661e5"
+    },
+    {
+      "index": 99,
+      "canonicalId": "Debilitate",
+      "recordSha256": "f6bb926747ccd6f6461c19c637c91e8c27de5495f6890ef373a60a267cb53819",
+      "effectSha256": "10efb13fcc64200e0069081d2aee71447ae13d7ab1bd2c9643f1c5185d86ff5e"
+    },
+    {
+      "index": 100,
+      "canonicalId": "Decisive Director",
+      "recordSha256": "016e9ae651f50d0d7be8d9b9ee303e9a4cc63edf1cd173bb38727ed702db74f0",
+      "effectSha256": "879ee9fd03bacfa4009f4a3605f9be151288494b2f2d8edfe5585b8d8576b2d0"
+    },
+    {
+      "index": 101,
+      "canonicalId": "Deep Cold",
+      "recordSha256": "8628265c1c2b96341bca6ae924a3aed64e8fec628b91d82d5bca2f4cc1b49d34",
+      "effectSha256": "8840cae0587e2edbbdb0427ae60d188470401065a1ec82d9f9d07789db921ff9"
+    },
+    {
+      "index": 102,
+      "canonicalId": "Defender",
+      "recordSha256": "6e3625c7669b15168a243e068c98728b6244a15e3356bfb6891277f3590be3b2",
+      "effectSha256": "13c314182b88a12ceedef9ae50eb56b5f95cc420b7bf1fb6b974e4165a026f46"
+    },
+    {
+      "index": 103,
+      "canonicalId": "Desert Heart",
+      "recordSha256": "ca507186d50d618249d64b1939e173e804f823b2ccb4e98ff572635cf9fa8a24",
+      "effectSha256": "9e51afb52cd2d9e3d5337e7a7c7c194db819343b7b322fd3e0e1518ee6481e3d"
+    },
+    {
+      "index": 104,
+      "canonicalId": "Desperate Strike",
+      "recordSha256": "86a809f44f78fb61ed7797878f4bc0c3aa395399baac2342a18c4092afb3c699",
+      "effectSha256": "e3b67ae2dac4db0a68f989171e33c9c3b190998fe0645f010360941c3f0be860"
+    },
+    {
+      "index": 105,
+      "canonicalId": "Devious",
+      "recordSha256": "22a9ba4733d340708dd7ec39a79f1dde1af296c5677fece94cc2f997f97d850d",
+      "effectSha256": "c953470ab5886bbd83f473a58209da48d7af1f79cbaae37567157887315aec95"
+    },
+    {
+      "index": 106,
+      "canonicalId": "Dietician",
+      "recordSha256": "0218637838b4efbe916767470189b9c1cc4e0a886040a29cc29c2bf3fb640f44",
+      "effectSha256": "063c79de2b8091b7189eee50d794058e5fb7ce5113a3ecef4eaefb97a0c07233"
+    },
+    {
+      "index": 107,
+      "canonicalId": "Diffuse Pain",
+      "recordSha256": "48cb5fc51f528dac1d7dd78f5e00c05acd9a02c7889ed03e44b07f291d4bd275",
+      "effectSha256": "cb7825971dd934db4b121fd2388c478ae1e3a01bbad65e476fd2ded633468809"
+    },
+    {
+      "index": 108,
+      "canonicalId": "Dilettante",
+      "recordSha256": "341cedeac4dfa84be1950ab99da571a2853751ccd0bc5888dd6445fd044becd0",
+      "effectSha256": "0f5b8b2246923d38b109d5f37f27df074f27b178f4ad4065a7d53a684c11d2f1"
+    },
+    {
+      "index": 109,
+      "canonicalId": "Directed Focus",
+      "recordSha256": "a5775d8af314133bafc5303e6b1a9b5c0ad3e88300775f648203cfe1f45f7bf9",
+      "effectSha256": "66fd63be50be69fbebb3bed9afbc1880f13e6b98fc0803d3baf00f1bf851ccf2"
+    },
+    {
+      "index": 110,
+      "canonicalId": "Dirty Fighting",
+      "recordSha256": "a92eea07788575497cdadfacbef53cd20a0492982e30fccc8db2f07ebfa2cd75",
+      "effectSha256": "c52e48df48a9248558f525862dde821d2455a090e626f0d7c2b88c9286ddfd6e"
+    },
+    {
+      "index": 111,
+      "canonicalId": "Disruption Order",
+      "recordSha256": "94c8e2bcae5d9363b0f210462351305fbc17f8b98773608def6c17b709865dc5",
+      "effectSha256": "0b0cb365428a3ef9cbd6f625bce25bab89a7871125ee848a736a015594dfdb5a"
+    },
+    {
+      "index": 112,
+      "canonicalId": "Dive",
+      "recordSha256": "7ba900ce0a15118bfb9e1c1b446b01f3a66af6473e882b1ab1aae60d3f77a57e",
+      "effectSha256": "3a239c9cea50896cd0e2b1abc343a19affe8964b64d829ed4dc5d78a2af9e1e0"
+    },
+    {
+      "index": 113,
+      "canonicalId": "Divination",
+      "recordSha256": "9ec82a8b9f74224f64da312a435812ffcacd26b527603ee64e6b40ae447ac1fc",
+      "effectSha256": "1dbe45bed935c59883a9c4c6b3fdc2dfac2e8a1f169e6c3c18317f415cc2127d"
+    },
+    {
+      "index": 114,
+      "canonicalId": "Divine Wind",
+      "recordSha256": "ca592fb5e686d45ae6ab0feb0ab50d8da683e2b043f30b8f639694f6d7244f77",
+      "effectSha256": "af41cac24e53439c68ef1e06555a06d22fc6b92c017ef907aaf22c45ae2ff740"
+    },
+    {
+      "index": 115,
+      "canonicalId": "Don’t Look Away",
+      "recordSha256": "0e0eef346f33bf7771ec817c4ba36d172e7ae0aa196baa0b6dbd73ca01ad987f",
+      "effectSha256": "b5641b7c309985e0820024006cfe727925a9b35027a143dbedacedb4771fe4c1"
+    },
+    {
+      "index": 116,
+      "canonicalId": "Dress to Impress",
+      "recordSha256": "412322c6b36fb74e19a3c63f03caaaf97daac4ad42490f0cea043d956942abb9",
+      "effectSha256": "fcacf83374582c41722369079256c0984646e1428b4b0e3e74cd1177c6df7be0"
+    },
+    {
+      "index": 117,
+      "canonicalId": "Duelist",
+      "recordSha256": "18467c99c45b8f663dad692983fa27721d9d48e0e481dd8ab1e77751b29f58f2",
+      "effectSha256": "89f19a59a4bc1af262c0b2bb5bf66ea3e105eb6b3fab064d8832b919e62ed8ed"
+    },
+    {
+      "index": 118,
+      "canonicalId": "Duelist’s Manual",
+      "recordSha256": "c697ee212c4893489eade061657d4429fd85f08fbf67cde271f78112a09a5255",
+      "effectSha256": "8a8ef853842318056394927cfa186a9aa15188c2c2f74bc3bce907df3a3144fc"
+    },
+    {
+      "index": 119,
+      "canonicalId": "Dumplings",
+      "recordSha256": "3aa7d8212f476690b4cda4cf8809ed88646715f2f0cc0d550bbdff5ef1cabed6",
+      "effectSha256": "25671b48a509d09c2872f5f49a6796e5a2926aeec353688bdc6b42aad2aa24fc"
+    },
+    {
+      "index": 120,
+      "canonicalId": "Earthroil",
+      "recordSha256": "20774d76ff521d2c4f12836e6fabd0dcd21333dbf280a70cb5f35e793e727aad",
+      "effectSha256": "b8e4b3ad6d9b7b68d71fb9fcc6f8c0e56eeec0616974590dcafe976db084b3c9"
+    },
+    {
+      "index": 121,
+      "canonicalId": "Echoes of the Future",
+      "recordSha256": "bd272feabb2adcbd7f26307c56b9cc9bb90fc1512371f5042e815a150f111190",
+      "effectSha256": "6caa91e93538fb05df13ec3af83708de49f8b0c1a587babfcfc2c32cf462764b"
+    },
+    {
+      "index": 122,
+      "canonicalId": "Effective Methods",
+      "recordSha256": "c22c1394e50e971a07491d92f302e9facf76bbf87552d609616ef91d3bf1848a",
+      "effectSha256": "53b5041995f9c22a838bd88cc7d652f0c4d5f108678085fc12cea7620551888e"
+    },
+    {
+      "index": 123,
+      "canonicalId": "Egg Tutor",
+      "recordSha256": "2e762a2cfec1b03523da58d1001f7b5b9a0ace8de03f31f81f41018400b01bf1",
+      "effectSha256": "399bab33d2e423f4e55c6c16839c0f125ff4e572ff9ea85c925911a1cdd71bc9"
+    },
+    {
+      "index": 124,
+      "canonicalId": "Elite Trainer",
+      "recordSha256": "37fa9931f1fb77c7d1e5006e106e04d1a4540ece196158229ac54eb32a6db087",
+      "effectSha256": "e0b25b8e078df724114efe437e3eb9e6f889b0af5e5a44dcd06040960e37ca78"
+    },
+    {
+      "index": 125,
+      "canonicalId": "Emergency Release",
+      "recordSha256": "94d9d4903edad5afdb527783f7ae65e281385a50bc74281b293f19e0831d4452",
+      "effectSha256": "fb5f70d3649b6ac8fd7d966bdb70c72720244dc23f350d0bfd24af77e402bc40"
+    },
+    {
+      "index": 126,
+      "canonicalId": "Empowered Development",
+      "recordSha256": "a75063d552ade8332878b0c3855b7f2d176da765833a4d19210d6e45bbd396a8",
+      "effectSha256": "19286500920caacab197bc5d86874f183df76a957bada7db9f04d36c8c2692ce"
+    },
+    {
+      "index": 127,
+      "canonicalId": "Enchanting Gaze",
+      "recordSha256": "170242dc04a3362e04f1776f015eb1e6fabf3d247cc7a4e7275f45090c22dcea",
+      "effectSha256": "c9ca9d933579cb99f8d7a8aa903f1e50493b81b1bc107f3f67a5d7695a356947"
+    },
+    {
+      "index": 128,
+      "canonicalId": "Encore Performance",
+      "recordSha256": "b59417180316fbf665c2269d15be688ced6372ab76530ccfda29517562a77aff",
+      "effectSha256": "6afbcfb25a9915a1834884a940e38d33dbe3c6b873862f0da794e262ed40efef"
+    },
+    {
+      "index": 129,
+      "canonicalId": "Endurance",
+      "recordSha256": "88e1f7c6e35073f1a2ce3cd86da2b16f536ee43355e9142a027c4ee60a3e6b51",
+      "effectSha256": "e81518a73dcb52ccaccac5933335055fbbc15f7c670ae0400c1699b182c5ab1b"
+    },
+    {
+      "index": 130,
+      "canonicalId": "Enduring Bloom",
+      "recordSha256": "397722edd88420d1ff59fe301295d5e93442ba25c091f11c9d6094cb981d95a0",
+      "effectSha256": "0bb86fd0037175ac8a0b48440b8f3161de4bf49c055e678a2e328d9610b70eb5"
+    },
+    {
+      "index": 131,
+      "canonicalId": "Enduring Soul",
+      "recordSha256": "1a2a7964300a7618ebbd5fbe4a789a2747a33a7c2f238d24982bf2f63d8b3f40",
+      "effectSha256": "9bb4d095ac27115746c437affdd5ba891de15dee77d842fb92f10b4201967c48"
+    },
+    {
+      "index": 132,
+      "canonicalId": "Enhancers",
+      "recordSha256": "5df0f35ab0a197360882239d9f20a2cbee5b864b25d8b88ec9466c599eb0d5fc",
+      "effectSha256": "2b10b5ecc51af9a83e22658e31d8b1e8e8567ef79549fccf75a89ed2240c75d1"
+    },
+    {
+      "index": 133,
+      "canonicalId": "Enticing Beauty",
+      "recordSha256": "490230ed556e4f7421dba4f7e035784c59ccbdfa65a3f883cd5e94634d6bea6a",
+      "effectSha256": "829ee2ac26986815e0d366047d21e4da3e594902b9945d0990c9bec6ba4498bd"
+    },
+    {
+      "index": 134,
+      "canonicalId": "Expand Horizons",
+      "recordSha256": "d8ae88db35ec867647f032a9d8b4180ecc4f3cc0306f08892b77fe96b6cff837",
+      "effectSha256": "2743f1c8d8fa95f984fa6748dcf7404d2430bc826814fbedc8c11a673a762bd2"
+    },
+    {
+      "index": 135,
+      "canonicalId": "Expend Momentum",
+      "recordSha256": "ed8437214a5857510ccac661432ec07788323c3bcb58f1383177fe11ef4971a0",
+      "effectSha256": "77b9e93fdcacd5ed78507c122899bf543a983b07700575555ce90130fe29c993"
+    },
+    {
+      "index": 136,
+      "canonicalId": "Extra Ordinary",
+      "recordSha256": "18a8cd7eeb0d02fd0051dce287b3b8703b20a264016deb0ac6e552aae8d29150",
+      "effectSha256": "7560284666036bfd08af44ed0d58174b948371bf67356db664fb9298e8531111"
+    },
+    {
+      "index": 137,
+      "canonicalId": "Extreme Weather",
+      "recordSha256": "02d7813cbdbc4a3805e3fae12be5f8f85370dfe270c5fa33f0b0d92f3d908304",
+      "effectSha256": "032030cc4fa6b3eb74a4ec73369b44d44f6353559a0f576f22f271b04671d08d"
+    },
+    {
+      "index": 138,
+      "canonicalId": "Fabulous Max",
+      "recordSha256": "7f1d8f752d74ca76c0d919cf96ac22044667351b0c88a1d80e9a7d12887938ac",
+      "effectSha256": "358291d3f7932f2ac2dc4ddfc0d93ad679cd3bb800cf0f4ab642346f19891226"
+    },
+    {
+      "index": 139,
+      "canonicalId": "Face Me Whelp",
+      "recordSha256": "6006bee0d99289450958e0a28bfcc59b14a3bb35f86fe25fa83a12184a354f59",
+      "effectSha256": "26654a7f3f26ce1843e99963fd08cf56158302ab1fb02ec268abe4de192e344d"
+    },
+    {
+      "index": 140,
+      "canonicalId": "Fairy Lights",
+      "recordSha256": "43303e71763ecb70108db63123d93b68819f49637170995f562b80038adfefc1",
+      "effectSha256": "80cd9a3cd5739de75c0d434989796c00184cb3c4ded672102bfc5fe5cc6c44ad"
+    },
+    {
+      "index": 141,
+      "canonicalId": "Fairy Rite",
+      "recordSha256": "1195d6841ae2ebc8b8d4c11809a3c4bd48d3813dac1ec26be32de2fdb2760aac",
+      "effectSha256": "3f7b2d3f66cf38b7b487012b333153dfbd0c3b5ea152bcbeaf7959eee0e28f22"
+    },
+    {
+      "index": 142,
+      "canonicalId": "False Strike",
+      "recordSha256": "1b426a0439a0e58ddd36065898a11a150f52c56f8980b86b0ff9ff273d153137",
+      "effectSha256": "8fd505b74df52819ea53fed3982777acdf700c9ab6d0181ca238570d62fda1d1"
+    },
+    {
+      "index": 143,
+      "canonicalId": "Fan The Flames",
+      "recordSha256": "25d6fddceb24b2cd5f573c42b14664460f36e10ea5d83bf0f4c46d94eb4ca606",
+      "effectSha256": "6ff25ae1720d304b0fbc0a482fd90666eb7fadd55fc6676a0b494a89d19551cb"
+    },
+    {
+      "index": 144,
+      "canonicalId": "Farcast",
+      "recordSha256": "3d6482e9065c1475516910df9de3d473cb60122e16bd414cb946f6cd4008ef79",
+      "effectSha256": "3dd74a15b076beff53bdbb86d5b53e626b99a6dbe1ab2228115423f0ea8c8ff0"
+    },
+    {
+      "index": 145,
+      "canonicalId": "Fashionista",
+      "recordSha256": "376574d0713113e6b263b21b62aaed6be00b4fdaa957dde0c8f9f497150e7f43",
+      "effectSha256": "100ee01bd7161442915e4889b6176a71b877ae9d8973260480a04e37b71c0cf3"
+    },
+    {
+      "index": 146,
+      "canonicalId": "Fearsome Display",
+      "recordSha256": "91a85c941525007c11b97c29b74d41942f27244058dd21dbcb3e4043c9278d29",
+      "effectSha256": "196bdb9ae1ebe0f73922d9d765ce6dd829b5b5b0d1f386bc079049742149813e"
+    },
+    {
+      "index": 147,
+      "canonicalId": "Fey Trance",
+      "recordSha256": "c0071800b73e42b192c46700e7e531252d462174e5e4b8703431d4a1ebb93f9a",
+      "effectSha256": "9faf98904a83eabaaa130ffe890a67899b39c1daa4bd4b1a82f3c57b256381ad"
+    },
+    {
+      "index": 148,
+      "canonicalId": "Field Clinic",
+      "recordSha256": "26bbd44a0485c9f77785bcb9634d34b41be8ffef5f48fe8a8dcddc1e079e6bfb",
+      "effectSha256": "679c9116fff97cb5704f9d08172129eadbc7f220e124bfe6a56da7cced2b221f"
+    },
+    {
+      "index": 149,
+      "canonicalId": "Fighter’s Versatility",
+      "recordSha256": "c372f4d371d102e9536b2b9644d4598eebda21eeb6208a4d8ddd978d561dc079",
+      "effectSha256": "4941e6abfd24e86b50969b1d838eb4cb60eaf4474e240129fb4eb1eca941bc1a"
+    },
+    {
+      "index": 150,
+      "canonicalId": "Finisher",
+      "recordSha256": "c2443bc2607966ae9e35e6cbfe0dd03d3fc4576ae58936d95e4a36f518ed8a17",
+      "effectSha256": "0ac41636abbe034e2d74f65c9d40c6449d3f45079440e4e0a74a3ace14767976"
+    },
+    {
+      "index": 151,
+      "canonicalId": "First Aid Expertise",
+      "recordSha256": "50bb24570b6802f8945a563d66254ffe11dbd6e25f978bed3985e82d76b34c5c",
+      "effectSha256": "9c8058a3757ed9ba5d2d3d5a3b2485a9174dd8d3e92a3d1748fde75dff1be5e2"
+    },
+    {
+      "index": 152,
+      "canonicalId": "First Blood",
+      "recordSha256": "83b4c00bee86d2183d4428bea008c94839985d2e0f1bb93df8858c0c24d47fd1",
+      "effectSha256": "ac99e6aede64a987c437659f6f2b8ad7f4763641da6070e843f3d78540442919"
+    },
+    {
+      "index": 153,
+      "canonicalId": "Fishbowl Technique",
+      "recordSha256": "6d087cec3245118d8c409223e3b09fea8bb156de90baba3f92147be5263563c7",
+      "effectSha256": "40e59f95282a469e8d179d45acbfec435440b21c837838251aae89c110d96461"
+    },
+    {
+      "index": 154,
+      "canonicalId": "Fistful of Force",
+      "recordSha256": "c6d6d6265a8af2a758ad771dbd5477ebb51c4bd640f33134def9eda78a070622",
+      "effectSha256": "67960ae58b37e3abbf2889fc429e7beae7c61c9bb6574bfeb25b8b74fc35c3fd"
+    },
+    {
+      "index": 155,
+      "canonicalId": "Flexible Preparations",
+      "recordSha256": "7a96754d2c395e0187a9da03028f4800af5e7ce28856f6f96b267b13c1773ba2",
+      "effectSha256": "75e15c720c48fee13117ad8faced8640b6f438503236e8bf4dc9060a4d785a72"
+    },
+    {
+      "index": 156,
+      "canonicalId": "Flip Out",
+      "recordSha256": "b564a525e3ba03d3ba0bc4b9b4e5b373633fc5d15f699bb81ddc59603bd14b96",
+      "effectSha256": "1e36a6ad7527154e90aa328bd76e4e65ae698a247ef6bb621e2e86e789edfc44"
+    },
+    {
+      "index": 157,
+      "canonicalId": "Flood!",
+      "recordSha256": "e613b2ae10e4b8e2bde5124b496d816d667fdd4542f73d85a5904e9134f6d5f1",
+      "effectSha256": "a4057ea938ebb13238bc5964dd558cf74e404c44daaecc45ecd090a1310d4d81"
+    },
+    {
+      "index": 158,
+      "canonicalId": "Flourish",
+      "recordSha256": "2e13cd16ea7a1052589267a609cb54c5ce3223f6421791debb4159869c935cb3",
+      "effectSha256": "fee36b4fabe0259bd6927bb60116e2d948d43013354ea064a82173583abff771"
+    },
+    {
+      "index": 159,
+      "canonicalId": "Focus",
+      "recordSha256": "0e07634260cee6d51b2746366461394871ba3ee414a2d1555c565e6b4ad57616",
+      "effectSha256": "999d8bbf3beb12e057fa3f52a32ac1bd0968675b9eac169defa07ee49ccf423b"
+    },
+    {
+      "index": 160,
+      "canonicalId": "Focus Gem",
+      "recordSha256": "19eea89b0a6dc016208c17fe96c7b6497c3b0e49e78be65eec20b15e8b45c749",
+      "effectSha256": "cc8a72c8324c46b3f0b91985d66c1bbb0115e85c4329368e875fd2ecbb062ebe"
+    },
+    {
+      "index": 161,
+      "canonicalId": "Focused Command",
+      "recordSha256": "75b7f766a42c779a92678d977128603e27f7aae7cad93b3ac5947fdfcdf986ad",
+      "effectSha256": "cef8db9d0fd5160be4053b3f91806cff702c4e2e561fddd5fe80120df921eeca"
+    },
+    {
+      "index": 162,
+      "canonicalId": "Focused Fashion",
+      "recordSha256": "64e83114748ee1825123e56db1e441e5cd587014228e7931081185c326072392",
+      "effectSha256": "952cef451e678dd293cbb42702e396293c7e23b1bd154ce92e695b14e70d3193"
+    },
+    {
+      "index": 163,
+      "canonicalId": "Focused Training",
+      "recordSha256": "3107915ad3feffd244a4636e35ad4b29096e61a12d85e89270fab72afdc36f10",
+      "effectSha256": "9abe2b7bba7dd0d4150c2f7a713a7248fd168c027f942be62fd223774f62f64c"
+    },
+    {
+      "index": 164,
+      "canonicalId": "Foiling Foliage",
+      "recordSha256": "d104608a17f88b6670cf7c280931a29bcbc836800aefe9cdf5654984fbc5fc71",
+      "effectSha256": "9039b4388675c59a919b1e92a70a4e3003d378cfa6b5a56eea006795e37309b0"
+    },
+    {
+      "index": 165,
+      "canonicalId": "Force of Will",
+      "recordSha256": "4c8198acdaa2c4830d41110344b1b35ec9cbdb54107dd78833f00a874f0b13e3",
+      "effectSha256": "a83b65ec3bebd3b7a4149fab130130e8bcc57e762e9e6503ce99f94a657aa004"
+    },
+    {
+      "index": 166,
+      "canonicalId": "Fossil Restoration",
+      "recordSha256": "f0512cf94e1f0bc96b6839ac04b9e4a1e18fa3ca3517a98211f981cd84ebe90a",
+      "effectSha256": "981076283322dc6129d206c92152c506697ebef6c7b8d8bdceaa3287241a038f"
+    },
+    {
+      "index": 167,
+      "canonicalId": "Fountain of Life",
+      "recordSha256": "29a416f1dde6b53a436ec99aac7e0db4e89d76b2352a6270f4bfb91b9d895828",
+      "effectSha256": "2239a3436a9de53afa74e4ad6c9d3614837c8187f2c52764426ff9c0fbde3b47"
+    },
+    {
+      "index": 168,
+      "canonicalId": "Front Line Healer",
+      "recordSha256": "da1b68ae6653d466393adad3fdafe21c40e9e11c20c7323c7cd6c85813dc3bd2",
+      "effectSha256": "a35e91deb1c152241e19ecfde92346d6aff830338557281ad6fa7e5965cbdaef"
+    },
+    {
+      "index": 169,
+      "canonicalId": "Gale Strike",
+      "recordSha256": "f33a365dafee26a811ff73c32c990029e79a9bc056552f588a2259accc7a444b",
+      "effectSha256": "a5ebffd1a51c47fd4f0ed91ffc3687ebe854b554681b9c1025ed0b6281297a65"
+    },
+    {
+      "index": 170,
+      "canonicalId": "Genetic Memory",
+      "recordSha256": "b88360adafad2785a898ea2304cf7bbdedaec3cc38e7ebf36f8aa4a5466885d1",
+      "effectSha256": "efda3773aa7d833fa55535e6302470522cbb14ad0678a93832b888295db419ae"
+    },
+    {
+      "index": 171,
+      "canonicalId": "Genjutsu",
+      "recordSha256": "c9813ca1a26a1922052533f2633da7b72bc8720be91a8063787c20ec0c0af383",
+      "effectSha256": "3c72a81e6f6eb98692d37d5ec22f951751ea8b49b4ac9b7bb728600384ef221d"
+    },
+    {
+      "index": 172,
+      "canonicalId": "Ghost Step",
+      "recordSha256": "196654d792e0b5f17827a7db2bd465b4a73ccaaa5bd2dd64031dee4ae18cd230",
+      "effectSha256": "d6518a60ac4db2f47e33b1fc1352f858f5935bd22511f0b7c92951753711ae3e"
+    },
+    {
+      "index": 173,
+      "canonicalId": "Glacial Ice",
+      "recordSha256": "857bac47ca010d0a41ec96d8cee4a0a3d04ac47af35fbc9fb9cae2b8ec0875ad",
+      "effectSha256": "be351a6fbe5c93cd02c32e759b5e304a46698d6f2430fc374d2575cfb7fecfb8"
+    },
+    {
+      "index": 174,
+      "canonicalId": "Gleeful Interference",
+      "recordSha256": "d9ec623721573ec4ce2738a2378aa826fa6f478efc4ec264f82e8d36c4eabb6b",
+      "effectSha256": "65da5918ee7727db5ee56d13b90a18d7251b985b17e5ce31b2cd82a13eca5277"
+    },
+    {
+      "index": 175,
+      "canonicalId": "Gleeful Steps",
+      "recordSha256": "80f91b367372b047b49bc157434d9550cc70f6604044fe231a4531ac7fcaecd7",
+      "effectSha256": "385473553966f59f2b1f5affbf0fdf04e45edeb5e570d3f5a6555a524233c93e"
+    },
+    {
+      "index": 176,
+      "canonicalId": "Gneiss Aim",
+      "recordSha256": "6b7064ad44e28775e1a12830ad049258f0f8be67cecb70f0ecf75c6732d2b06c",
+      "effectSha256": "ca3c2fe0e83942914a6a12ef42bf256d52fe924958663202723788c6fc1e2b48"
+    },
+    {
+      "index": 177,
+      "canonicalId": "Go, Fight, Win!",
+      "recordSha256": "85799b09c1b8bc6add789673913c4499771c919dd04386510371e7567dfc9641",
+      "effectSha256": "dfc04a00037e906d26cdbe1455eae2e190f4811090c5fa1aac0db1fd006446b7"
+    },
+    {
+      "index": 178,
+      "canonicalId": "Gotta Catch ‘Em All",
+      "recordSha256": "d06c63474ee9d1b07db4606624087d93e01b271ed9863eeb7e11612e8d5eacac",
+      "effectSha256": "3dc3ba0b3f4977f3df5c172e4f3f4bc691d4ccb97a917537b9a6a6c4b12b2d4f"
+    },
+    {
+      "index": 179,
+      "canonicalId": "Grand Hex",
+      "recordSha256": "5c9b4feac9cc0fb99dc680c51288415658af7d086fa9547fd28c5dc45a74f539",
+      "effectSha256": "d4dd8c0d1a967f2e3d5d83b3b93c14fcddd4c853f91a74f7eaf61a92d4ba0a2c"
+    },
+    {
+      "index": 180,
+      "canonicalId": "Gravel Before Me",
+      "recordSha256": "9164fc1a97b55042fffefea85ef25694c872c280440cd0709b3998c4b59e2e67",
+      "effectSha256": "ece81a178c7269fd9d60c378a1877fa9cfed4e2b20e31bb52730c64fdc6c6afc"
+    },
+    {
+      "index": 181,
+      "canonicalId": "Guardian Orders",
+      "recordSha256": "46c11f5914ae79783979d0fbf34ff734ae34f9f8ce0b55dd0dafe62fc81c999f",
+      "effectSha256": "da69e81e96c4200ca52a5f76f80872fb89e0e920220f9b9e9f1e1950cd4bd07c"
+    },
+    {
+      "index": 182,
+      "canonicalId": "Guidance",
+      "recordSha256": "4ead374530870d0de2d9ba272043b67409a2433d84013b84412e61b77e520521",
+      "effectSha256": "855c27acd24ff681adac1d52d13141f577fe3bff4829f979aaf088458005c051"
+    },
+    {
+      "index": 183,
+      "canonicalId": "Haunting Curse",
+      "recordSha256": "7dfe9983df4be18ee5f9cec3597be2b72d66ebc093cae1845a5782453a25c732",
+      "effectSha256": "1d5380cc77f8fe12ae61b5af7d0243937a3aa27dbbfdc104b112874a8357007d"
+    },
+    {
+      "index": 184,
+      "canonicalId": "Hearty Meal",
+      "recordSha256": "930474ec25d5fd312a72467ec5628f48e7abf87210851b15fcb8486589933fb4",
+      "effectSha256": "ab0e7a850f2cf8bf030c049bc62aa832aff370e634791fe9d20070e980e73cb3"
+    },
+    {
+      "index": 185,
+      "canonicalId": "Heightened Intensity",
+      "recordSha256": "526aa4a69c3ed560217f10d3a01a7a4b1c0c5820b0ed9ede121b88c9156e251d",
+      "effectSha256": "3202fdfe5cf79f0c3ddf556f54c3102983657c10708cda8b9388034634827ce0"
+    },
+    {
+      "index": 186,
+      "canonicalId": "Herb Lore",
+      "recordSha256": "ff9eb4ebe2b13b57eed3f6cc197574c6d286c90a4c52d2c3424f007047ecb156",
+      "effectSha256": "e3cc7f1f80674cd1b717b04c72db7baedb8813ce9f07387657ba7bafc07edb92"
+    },
+    {
+      "index": 187,
+      "canonicalId": "Hex Maniac",
+      "recordSha256": "f6185c1584e2207bbfbe24fbd2f501db7bd6353138ebd905ad7a36b917406317",
+      "effectSha256": "42a6a1bd9f8d8fb4a86b06b10bb223c2362930ad8945b41cdcd05894298604a0"
+    },
+    {
+      "index": 188,
+      "canonicalId": "Hex Maniac Studies",
+      "recordSha256": "963bf3d070080923a3537c8abd8e9212469d08f1f860344ae5b66b221b136831",
+      "effectSha256": "e8d441f7fca9ccd97ad3384e1f819b9538f6fa9d0b6969d79f382c503003528a"
+    },
+    {
+      "index": 189,
+      "canonicalId": "Highlander",
+      "recordSha256": "885261dcae6ebe433dee40f5916438663a571ea2e92f2dfec4425fc2f9428601",
+      "effectSha256": "ba508c967698c3a9f6bca832a30aece545c633558579b18a85bc6284346cb048"
+    },
+    {
+      "index": 190,
+      "canonicalId": "Highly Responsive to Prayers",
+      "recordSha256": "aec2ad0ece943ee9230573b40ffb20cf406f8c3dfe8c9a5df5474fc079abbc0e",
+      "effectSha256": "31858d7d94fe4840aa51cb3e5b5e8820e25892e854e7eeb70a9ddf75b9ce1b3a"
+    },
+    {
+      "index": 191,
+      "canonicalId": "Hits the Spot",
+      "recordSha256": "ca0b320b3d9c4fdc4eedd8f405e5100c373336ac522febdb2c601090a81570a3",
+      "effectSha256": "11ebe5d64dfea3f299ba853ce974d9c6b4a520d8547a8d66bc783a23d5d0db28"
+    },
+    {
+      "index": 192,
+      "canonicalId": "Hobbyist",
+      "recordSha256": "17716a31d82285862398454d9701cdbaf2fe224bea8e5cba0f2f8658d2d94ee5",
+      "effectSha256": "6b35dbdf05e9279089d1213c3f94e1da37371e8da0ff5fdf673c85137c7b9cc3"
+    },
+    {
+      "index": 193,
+      "canonicalId": "Honed Mind",
+      "recordSha256": "f5fe0f3ce104cee48f31863043b874a47e2ee114960d61bd4ebdeb6457120442",
+      "effectSha256": "cff5215938de825618acd8e25a3d1e2875641e7e80c317d31fb02dfc2fd579e2"
+    },
+    {
+      "index": 194,
+      "canonicalId": "Hunter",
+      "recordSha256": "7d2b6871d767dd3d75efac8b6f23ae1f2a5bbe9da39b158329d9eecebc48595b",
+      "effectSha256": "588b49b9313a3e74ca8100d8846e222002d3949bfc8fde24c34e126a8592d0e2"
+    },
+    {
+      "index": 195,
+      "canonicalId": "Hunter’s Reflexes",
+      "recordSha256": "3693f3a7401f787c725f93410b8ecd9caefd0f752ddda41131871b54593cc661",
+      "effectSha256": "ac294047218fc31fa3d4dbefa3f2678e96ec007e54978977e904b9834b2cc667"
+    },
+    {
+      "index": 196,
+      "canonicalId": "Hyper Cures",
+      "recordSha256": "63ae8d05a88489c4e4fc2a0555d2b436a0e022cfb3e07b505e0cfa03c76cbe59",
+      "effectSha256": "846a5fa53b9b093eba9104850cd34c8ff8441fd557d66fb47c3ca4ae336ee7d4"
+    },
+    {
+      "index": 197,
+      "canonicalId": "Immutable Mind",
+      "recordSha256": "0d9c4756cc07fe0584ba41da8fe97e5d701113b9d9e95a805e2c3c82e00daece",
+      "effectSha256": "813c1857667a8afd7c874ed041c99c6d9015f4bf7f9a3011bf2a158edeb6a5e1"
+    },
+    {
+      "index": 198,
+      "canonicalId": "Incandescence",
+      "recordSha256": "44a23118bb99b62fb7f70c44d686fc34f1c43e53e28c83952122b9dc61730c3e",
+      "effectSha256": "5533363a124863c95fa947aeb9296867ebd7bc8d5d308a601b1fad9da7eb46d0"
+    },
+    {
+      "index": 199,
+      "canonicalId": "Incense Maker",
+      "recordSha256": "e614e6286fbaa1e846b9da137bfa6712b5fd2360e1a85b4d3facc1771f5bc103",
+      "effectSha256": "0c0e92a1e96239dfbc69040800a2d30ee1864a99ddc98dd4d3dbf4160fbcd91b"
+    },
+    {
+      "index": 200,
+      "canonicalId": "Innovation",
+      "recordSha256": "4beccf910806295afa22deb7bfd5c2360d65fccd88e9e581c78788a0bb0067eb",
+      "effectSha256": "6ce36ff7b3ea220b56c8a2ca59d945fc443e9840e531260aa2de3e42b6a2082f"
+    },
+    {
+      "index": 201,
+      "canonicalId": "Insectoid Utility",
+      "recordSha256": "d05968f54cd3f60f8731f5ee65b8ffb5ba3c944f1c558ebbde054c8c92196173",
+      "effectSha256": "f8e03fc591db9af52456bb435a1795a4ee2fd92137888fa1cb8dd49bc2f1c973"
+    },
+    {
+      "index": 202,
+      "canonicalId": "Inspirational Support",
+      "recordSha256": "d40003cbb1f3d6c62db6e4d7ee1151194d5b8b82954c7063cd50b1e39483d7f5",
+      "effectSha256": "a8e923d4d3cf1eec6f10c19b9ab1ce5f4dbd911f208e9b6b3ae140973535a87e"
+    },
+    {
+      "index": 203,
+      "canonicalId": "Inspired Training",
+      "recordSha256": "316d66318e57bfb9a5baa8a0466f0d41bc30350a7c1c315f547d8108d8d40fc7",
+      "effectSha256": "ed64234d6b268a55f98012f23b498764873fc46a410ee5609e848ff81900fe42"
+    },
+    {
+      "index": 204,
+      "canonicalId": "Instant Analysis",
+      "recordSha256": "85c6bbab74709ffe0a6fac10ee9e0263e103bf19c8ca3b7cfafbe74a6cc2a44d",
+      "effectSha256": "865268e9a083e3247f8a5c71752438e0ed0d2dbd461f56ceac66b56229f2a98a"
+    },
+    {
+      "index": 205,
+      "canonicalId": "Iron Grit",
+      "recordSha256": "0de5849bd3cacac28734f4b86ea4bd0b6ae1461744e9f106a78e453c04dd2fde",
+      "effectSha256": "ac7792d4231a8f192b02efd79db139d283551d9b3388648de85e8795eda4c159"
+    },
+    {
+      "index": 206,
+      "canonicalId": "Iterative Evolution",
+      "recordSha256": "be6ce4d6bfaa53164539a34b77c69a60a46706c40e8828e9014d2ca2908c845c",
+      "effectSha256": "5130d5cfd0e728af7df65dfdd3b10f94fb708f8c71986f2bcd69141d5119beff"
+    },
+    {
+      "index": 207,
+      "canonicalId": "I’m a Doctor",
+      "recordSha256": "d0316078afca53490b125b40026f37b576a5c6feed36e0223b658b0d5df4e1ab",
+      "effectSha256": "757877ea04a0c26fca5cc29fc8f9f2b8e2ca2eb2949ba3fcf3dd71ca3efca083"
+    },
+    {
+      "index": 208,
+      "canonicalId": "Juggler",
+      "recordSha256": "4170d862383620302c565fa7be801994439c610f0fb7442a5ab627a05214f90e",
+      "effectSha256": "de2447698fe01260f201390458962ccb7bae65c2fdffc527b40bc5b753670ff2"
+    },
+    {
+      "index": 209,
+      "canonicalId": "Juggling Show",
+      "recordSha256": "76c36d54d50bcde5daff8754138b61f8919a7cb828cae00c33f22f01303313c1",
+      "effectSha256": "9ba5d79506f21c34458b45689c9359838ed348217a00190576f87c4de8f9190b"
+    },
+    {
+      "index": 210,
+      "canonicalId": "Keep Fighting!",
+      "recordSha256": "a45c4bb83679291f16d03a8299889f8cb6a1b5c1d1ab208ffff0b052742623a0",
+      "effectSha256": "4edd152cfab7e27c709dfccc3645351549bdb9c02676f8602505b81c9434f097"
+    },
+    {
+      "index": 211,
+      "canonicalId": "Kinjutsu",
+      "recordSha256": "e6e82ffbaaaa8105b4671d9d64073686cde409558875d45af704c7c9b219679c",
+      "effectSha256": "e716bd046b2f759b1f9ebe59d525ff4c88d7f23b0a324d60829349fc38e6563f"
+    },
+    {
+      "index": 212,
+      "canonicalId": "Lay on Hands",
+      "recordSha256": "fe1347a91dd65c100931ff5d0bd1cd69da5d353857a9a563e35f28ed85bd48a7",
+      "effectSha256": "fdd1ca3352a8cea08c341bc28f3a84b5e660da46635bf1c80243d5b671650c5c"
+    },
+    {
+      "index": 213,
+      "canonicalId": "Leadership",
+      "recordSha256": "c6c1236f9250ba4482e9a4bc2fbefe4f328dd0d7f355a3e54b460f2e1411f970",
+      "effectSha256": "5ff6759edce9f61c052f9d7b2f6ddebc8b3d52c6829c775ad493aa2f7c6ec423"
+    },
+    {
+      "index": 214,
+      "canonicalId": "Lean In",
+      "recordSha256": "bbc3d417ef8b60b4a892847fcc789f0f0c034e0fe9adc7a34163af3d252a119d",
+      "effectSha256": "1c3aeab9d83e799ed210311f07647839a09c325ace9bca69477f74a9b8cea540"
+    },
+    {
+      "index": 215,
+      "canonicalId": "Learn From Your Mistakes",
+      "recordSha256": "5b96325a37017c3b2dd33f15e4d3709a4aef0607b4204f05152d5759efc7123a",
+      "effectSha256": "861bb08d13de4de0638fa861dddbf13cc25a922971b2550f5788dbb9fcfef2e0"
+    },
+    {
+      "index": 216,
+      "canonicalId": "Leftovers",
+      "recordSha256": "fc66fd616382ba5577033c83f94e6482e2a810903d0745e62b2b1159210ac4b1",
+      "effectSha256": "727da4c3229b011f766c95b6bbbec87ec7a0e074e73f12f13f501c702a0992c9"
+    },
+    {
+      "index": 217,
+      "canonicalId": "Lessons",
+      "recordSha256": "95ad4a56ab00a2ba5dd14dceab24e987cb4663c419ca3b1e8ab2cbc97525da19",
+      "effectSha256": "4c70f2a171b6c32614bcf39b01b46fe7ed9770503f9a9258d88dc52ddb234067"
+    },
+    {
+      "index": 218,
+      "canonicalId": "Let Me Help You With That",
+      "recordSha256": "e72769f82b603b13242ed1aab8b86e2871d183dd4e74cf80f6731f0d914ecb75",
+      "effectSha256": "6887b77e2d9f27a7bbc90a5338973ab9ea3325692db03318e47cc1ed66482c02"
+    },
+    {
+      "index": 219,
+      "canonicalId": "Let’s Be Friends!",
+      "recordSha256": "59f192f88cb131e091eceb7dc150392af4bc59185b56e4ccec40ab08a509ce23",
+      "effectSha256": "ce071b18b8884996f35c7a3c6e5141c3b15d7e6e61971bc48c2327d1f60cf737"
+    },
+    {
+      "index": 220,
+      "canonicalId": "Lifelong Learning",
+      "recordSha256": "d6ac34f230b572e548fae5dc9788b019582b47d2a219de2a2c904ac202bb5d79",
+      "effectSha256": "1f61215abc9986e208de3f25d6a5480ad7ba8e5d0a453074ccef7f4dda3a042c"
+    },
+    {
+      "index": 221,
+      "canonicalId": "Live and Learn",
+      "recordSha256": "3e2b4fb102aecae3b7daf240b14c75d47c70bac86e81381c598608aaee6a15ac",
+      "effectSha256": "378f02be8fcd04003f19dd320dd0e305d6d897c8fbb212a84f54c2ef0de846fe"
+    },
+    {
+      "index": 222,
+      "canonicalId": "Lockdown",
+      "recordSha256": "dab0ada23658c303136853cd400a2fbd3d90d358cbd503ad542ed41ff0174202",
+      "effectSha256": "a4fabc50d6b5ede60d5c28c1ea318f44d6e9a971034b75fe99fe60436ec6f9e8"
+    },
+    {
+      "index": 223,
+      "canonicalId": "Look and Learn",
+      "recordSha256": "46a3c04297f528c014021f645b9bc75aa4a88ae33abd433b706ee9222e0e88de",
+      "effectSha256": "d6c4819ca05417674365bca571f9d241743e0c038de490a4f07e97555d9de982"
+    },
+    {
+      "index": 224,
+      "canonicalId": "Macho Charge",
+      "recordSha256": "90f565e80f0d4d55613d2e42c6447b14c88cbd7eb3cae2eb41806780b1c0f973",
+      "effectSha256": "78e9c5e559013b4c1f0fe34f5b528c8bf7106222770df36e41e943e8a11eeb3c"
+    },
+    {
+      "index": 225,
+      "canonicalId": "Malediction",
+      "recordSha256": "151574e22747ed056f11028ee1191a609feceaf4f8e6da1264945d08b9853db0",
+      "effectSha256": "d084be90088c4b75e9d98ea63076c6f8e43b735d01f007f2eec8972853eee064"
+    },
+    {
+      "index": 226,
+      "canonicalId": "Malice",
+      "recordSha256": "d4460d01913c6fed9b5c4b05987c9a92516c995df83f2327c6cc255116abce43",
+      "effectSha256": "8efca0d5982fa5ea61f79128bd1e5ec83bc6a75ea8ce125150b90676d07d0d37"
+    },
+    {
+      "index": 227,
+      "canonicalId": "Mark of Vision",
+      "recordSha256": "0cfb735a524c4ccf4a212d6c2649e87355a91381a4abaec0c260e376809e28ae",
+      "effectSha256": "7194e87aba10d80e36c2dabc8be35c9787e106eb7069c33dcf52ceb4d6f789bf"
+    },
+    {
+      "index": 228,
+      "canonicalId": "Marksman Orders",
+      "recordSha256": "9ec056f80e6a5770d99d2d0fdaddb11515cee9de9c00ba9da1407199c7aa76ad",
+      "effectSha256": "a57de58f8144113066b44186c0a0d17a7525ccdf916c9b3f7d28a35f83109e10"
+    },
+    {
+      "index": 229,
+      "canonicalId": "Martial Achievement",
+      "recordSha256": "c76c3a2d9f3c38b40da62e99ba267f4b38daac0e1e3dd717b607802fca4a4adf",
+      "effectSha256": "76bb8bfa182815ae34c9d5ef4916ab93675c590a8abd465c7d5e72d3a822408c"
+    },
+    {
+      "index": 230,
+      "canonicalId": "Martial Artist",
+      "recordSha256": "328d88d674819bb788b6782d0db3a1684232995efefb6cea756710957e02b5f7",
+      "effectSha256": "ab62285a4c8388f273a0b4a81a055265193262f836d2059f71fadcdc5a0f5874"
+    },
+    {
+      "index": 231,
+      "canonicalId": "Martial Training",
+      "recordSha256": "d406a6bfa225c561c7895023ea00dffb556202ffff964162fc5328e0a04e094f",
+      "effectSha256": "d95a87fd22921f633d397fb85e859e5cc21d678fd04423ad289432742a3cddaf"
+    },
+    {
+      "index": 232,
+      "canonicalId": "Meal Planner",
+      "recordSha256": "c8ce493c164a602ae51c86c49585e0d15e7d1c2ba65e21aaeead9a5a5bf0c5c9",
+      "effectSha256": "b4cd72c67116682781614005e86d3189dce5383835cf469eaf8e88cc4fb7b478"
+    },
+    {
+      "index": 233,
+      "canonicalId": "Medic",
+      "recordSha256": "f9519d560d32cccf3346a704058d407aeff6bc0a39a7d38792bf2eb084800a1c",
+      "effectSha256": "227fd3ee82c0c47a71416d2564745988b0aba8503fbfdcfedbcaa37c63acc781"
+    },
+    {
+      "index": 234,
+      "canonicalId": "Medical Techniques",
+      "recordSha256": "783c8689540b90c15bb5e1ec486933ecc002ca5e134953f523e11be300bfcb3a",
+      "effectSha256": "64cb1394a75d52e75a84a00bd8356be375b7afd1c150b68752532db44fedfe4d"
+    },
+    {
+      "index": 235,
+      "canonicalId": "Medicinal Blend",
+      "recordSha256": "1741af27a53ce27ee332d5c2ca2fff6225a6bc1897e7b1d59a8caa6064ded77f",
+      "effectSha256": "7f9140b0bb5feb5c7d6fbc4e532158fbc8822f25de2e4fd9627552441cb3708f"
+    },
+    {
+      "index": 236,
+      "canonicalId": "Menace",
+      "recordSha256": "e7fea12383c1306f5711d062398ef77b6b7eef90b28e68c23e0a9b4cb43ba1a7",
+      "effectSha256": "5b85dc1c930dee3474174ea657a43da4a3e543de031ac882f953847c2a24dc04"
+    },
+    {
+      "index": 237,
+      "canonicalId": "Mental Assault",
+      "recordSha256": "1326de072b119eb48671f26696bbf5c3ec48ed129a3d5f61cfeecfed13fd2514",
+      "effectSha256": "b176f6e9e08a1a6eb237fd89149fd435687eab2281d4a65033aaa4f7341cfe61"
+    },
+    {
+      "index": 238,
+      "canonicalId": "Mental Resistance",
+      "recordSha256": "10f5bdaf63a02724bb833afa4788325006705a1d919fdddc94ba899705e45f36",
+      "effectSha256": "084dda935f003c4a15b65d45feb8609a745186fdb6b9b8ec1ce0a4e4d4bc9a77"
+    },
+    {
+      "index": 239,
+      "canonicalId": "Mentor",
+      "recordSha256": "327c0a841a8d778731922e9f14ce2b96f44421d9152889d2f686bbc6c015c58b",
+      "effectSha256": "7da8f45c8699f692da590321eaf128ae07e5dcdde2d9c9e6bb5557e725b24235"
+    },
+    {
+      "index": 240,
+      "canonicalId": "Mettle",
+      "recordSha256": "bc0174fc79bbcbc44cebbcb61d0fbd105aab443181905bcfc7f351ea06fd67f2",
+      "effectSha256": "4ed251cce8c32162e2ab3831965662c36e9ec19804eb7c86817934bd7b069c5c"
+    },
+    {
+      "index": 241,
+      "canonicalId": "Miasma",
+      "recordSha256": "5c431c15e14875ccaf219e4989e56a1d549293e9f4dbc559ae10809c4b74f2f8",
+      "effectSha256": "8ded8976ef960c3b00ad3e0f56f3c25016ec2eab422f2e577bc3a4e4135f8685"
+    },
+    {
+      "index": 242,
+      "canonicalId": "Mindbreak",
+      "recordSha256": "ef3f5d32fbef4626896fa176b27d8ac909ca77f8d8c6f664896f173a3287b37a",
+      "effectSha256": "0e224f26a001cbca06c8cab829fbed0e042939ee99ae43e3b0dda6c13a512388"
+    },
+    {
+      "index": 243,
+      "canonicalId": "Mixed Messages",
+      "recordSha256": "5b3a1b93a8635094ea6e61c0d269deead882a718d6ad59d684fe876c57ce8d08",
+      "effectSha256": "eb63d0d669e74d3cbb98fe7a4cabbe0566a78fc52d1a5bf682eb22b9af2e03b1"
+    },
+    {
+      "index": 244,
+      "canonicalId": "Mixed Power",
+      "recordSha256": "c3c22dc966e86bc4b2a0f92df15e0559223b2c3a67ccf6896eaf6e169636c455",
+      "effectSha256": "47ebe831e9398a8944df5ec1065803908eb9ea9408defb2c1ee62d2bdb4824ca"
+    },
+    {
+      "index": 245,
+      "canonicalId": "Mobilize",
+      "recordSha256": "ae60775b6c16bc903edc1f331f9d744f2fdcf95cf6dbe7e9a52d78157fa91ddf",
+      "effectSha256": "4135e90b5a7e982d313807b542667a7bf70f3a52d6b8945c81d9fd3d84b06916"
+    },
+    {
+      "index": 246,
+      "canonicalId": "Mold the Earth",
+      "recordSha256": "0c3b8b0e82a4c13f3392268ef81e58bf4fbaaf4a1aa86186e827e5b703fe969f",
+      "effectSha256": "ba7c0400583c9b3d87e7f8802eadaa72ec46443ecce69eacab57e5e4db82f58d"
+    },
+    {
+      "index": 247,
+      "canonicalId": "Moment of Action",
+      "recordSha256": "96834ad8c2b43e6141bf6bcecb87c9036395d5d329e4ce0596f25c285476cf04",
+      "effectSha256": "0a7c4e3fa491f961655cb82a5c22329354049ec24cbc514ae9a4064988f36dc7"
+    },
+    {
+      "index": 248,
+      "canonicalId": "Move Sync",
+      "recordSha256": "fbc1efd2a5a6f273dda0a18fb06932fab0625161af97e05cca8f52d707209ba0",
+      "effectSha256": "37886e786ee46f3b7f90f58fdf91f00a802a669e9ef361e7af8f192025564a48"
+    },
+    {
+      "index": 249,
+      "canonicalId": "Move Tutor",
+      "recordSha256": "ed2be22068b30a16c3687001c0bd78aba0e8aa7dd426b22494592a61a3abae55",
+      "effectSha256": "8d86bfb6ac698da9654fa9bd0f476b86a661e017b237aa49c7094546e61b6adf"
+    },
+    {
+      "index": 250,
+      "canonicalId": "Mt. Moon Blues",
+      "recordSha256": "ff5929f965620fd231766f64de552ae53a4fcceba35f7a0ff8f74fc3672336fe",
+      "effectSha256": "c0cf9c95639b479371ba46a790cb7e8abedbdaeceac0f296a603afe60fcda2c9"
+    },
+    {
+      "index": 251,
+      "canonicalId": "Multi-Tasking",
+      "recordSha256": "ceb9be6dac5b8fc203539699d1d2d717981305b0f839bf997b69b314714a5a89",
+      "effectSha256": "230ab259def2410643c0e20d940ba6ea1bd221ea371c245814feef11463a096f"
+    },
+    {
+      "index": 252,
+      "canonicalId": "Musical Ability",
+      "recordSha256": "6257e3fe82f7631b94fe5f846af6b5ab963a6e39a08ead07537ccdf8da3bef9f",
+      "effectSha256": "9914a9fd93512f9a65764839a4bac807527418cccd35e81a6f282d6a5ef87435"
+    },
+    {
+      "index": 253,
+      "canonicalId": "Musician",
+      "recordSha256": "843a1b963f25b0ca6d2f9dd14434634c8925a060f8fa70fb9d04708d19aeafb8",
+      "effectSha256": "b68c7e357ae2ce6edf18acd37954e1a84bdee4afb635a81342d1e5b7f36e0144"
+    },
+    {
+      "index": 254,
+      "canonicalId": "My Kung-Fu is Stronger",
+      "recordSha256": "fee65e9a1b20686095228fca94686db9fc768cedc5f91a3132bc40e406cbc137",
+      "effectSha256": "e238ac3a4bf23f91a16fa0f55171061c76fd3ec7c970450cfe4c8cbaab1a44a8"
+    },
+    {
+      "index": 255,
+      "canonicalId": "Mystic Defense",
+      "recordSha256": "b15b7f4193264019ad339acc64c57aaba7b4bb74349ae5e1f21d6149333c2f5e",
+      "effectSha256": "5078083e68adea778037c947b02563d3376b1472c66dd048ea6fe0af8e73f938"
+    },
+    {
+      "index": 256,
+      "canonicalId": "Natural Fighter",
+      "recordSha256": "ebb94befac8a88ca482884acca4925ed9f513be47180112baf66410c73805a48",
+      "effectSha256": "f57bad99d1c65ba087f31b0d87ddbc16181441576f276e4d6f4e7332bd4b11ad"
+    },
+    {
+      "index": 257,
+      "canonicalId": "New Normal",
+      "recordSha256": "46cb888a93d32f9520d70f2ef348ec14f3412c14c8121e2e819a0cc47998a6a7",
+      "effectSha256": "d6f34ed9d62bf7d1368c7b3156504f692a6ce5ae38e00f7383d8d2a1fee253b5"
+    },
+    {
+      "index": 258,
+      "canonicalId": "Ninja",
+      "recordSha256": "20e14ea967b21ffde0e676fbcc0a76345678fecc3b8a264ff2f90d5fb90442c1",
+      "effectSha256": "eb5be4fe5e5dc40b78657dee18040c75f778b7c231169610535fa5b5cbcf92af"
+    },
+    {
+      "index": 259,
+      "canonicalId": "Ninja’s Arsenal",
+      "recordSha256": "6f69370a25248815226c1e59f7365e7029b43e82da1d75ddc463935b291ea52d",
+      "effectSha256": "a9933c70d60af39ec01112bc7e14e95effac6f624261f9059a556e277d4133f1"
+    },
+    {
+      "index": 260,
+      "canonicalId": "Noise Complaint",
+      "recordSha256": "07a1a06d703af666315e382fb92e64cda9de58841fbcdffca7afdbe6a60a9194",
+      "effectSha256": "6e7fed734487b0818a0321e53fbe3096028b64f9543a203e6e6eaf5fa1787fa0"
+    },
+    {
+      "index": 261,
+      "canonicalId": "Not Yet!",
+      "recordSha256": "3cbcceb0236a7d1bcfb55295aa9992c085a3df9497be7bfaf19ba7d94f865936",
+      "effectSha256": "b4462e21db191418597eb6130d1096badf9eae6860f4e8d3708652c2bac658a4"
+    },
+    {
+      "index": 262,
+      "canonicalId": "Nuanced Performance",
+      "recordSha256": "fd9854918ecf38c98da7d4cf7b120e7d067cd7981eddfe69b0b2004e64f1db47",
+      "effectSha256": "bbb11f775fe5271a840ec00826b5dcd56c9a89e6d21e9b58c5577fee751e2634"
+    },
+    {
+      "index": 263,
+      "canonicalId": "Nurse",
+      "recordSha256": "f71a977530420d2d8586c8f1a6eb8db40d3886418009f1c3ca45a8332f5ea550",
+      "effectSha256": "1c9bc976d9e6efdee9724969134b4c1775972e7cb9408d1a516576238d74ed59"
+    },
+    {
+      "index": 264,
+      "canonicalId": "Observation Party",
+      "recordSha256": "0b24ff5eaa1f771e10a22006b00dd33e15e74615b6e804bd5cdd638eb644f03b",
+      "effectSha256": "1d62ec103c09bc80f310184c5d7823640111d2dac113dd6b867cfa671366aca4"
+    },
+    {
+      "index": 265,
+      "canonicalId": "Oracle",
+      "recordSha256": "fb0d72e2463bc76380b0a77fd381c4d499bde5a02e4c6c07b67c8861a0097efe",
+      "effectSha256": "9c6b100cd5e9c37952e7e7dd60fdca35139f6caf19d03f352f69d4a810011ab1"
+    },
+    {
+      "index": 266,
+      "canonicalId": "Overload",
+      "recordSha256": "de91d0837c41eb0bba93c76befca3f6120d90d047bf19afd95dc87e39614ba3c",
+      "effectSha256": "e4f06232dc40a0446ee8eabc5424ac713d04c952d1e2b9d548568610456c894d"
+    },
+    {
+      "index": 267,
+      "canonicalId": "Overrun",
+      "recordSha256": "b6ad8e1e5e03b4d28e0df0760b5cc5167c44ec50a803e96943b79b46bd7c7a5b",
+      "effectSha256": "b3ebddff3f53dd4e6f1adc8fe17b199b2ddb727689c6c1c135b3a20020498942"
+    },
+    {
+      "index": 268,
+      "canonicalId": "PK Alpha",
+      "recordSha256": "922eb0ecae70957752c94e4b9a8895ac1587d96f25665b9b69c0565ebb65bf6f",
+      "effectSha256": "8c37fe30624319912c5ef60ef1ebd945f60901b8339d1455783b7852aac89736"
+    },
+    {
+      "index": 269,
+      "canonicalId": "PK Combat",
+      "recordSha256": "fe8e643998ae4cfe1804637535fae242f70d4831a72ed7834e9a5fbef5102ea8",
+      "effectSha256": "804c58224aa41aa008c3867db6dfcb1655c6947bd15536ee31f2e1c2a57ff84a"
+    },
+    {
+      "index": 270,
+      "canonicalId": "PK Omega",
+      "recordSha256": "b0a54a4b0fa4c7c704bbf712c5cb4aced19445610df4cb3263f3b5449ba51389",
+      "effectSha256": "5d69241988255555d50d9d0fae945304d4c43e1c5d8d144e824d7ce1bd0d6025"
+    },
+    {
+      "index": 271,
+      "canonicalId": "Pack Master",
+      "recordSha256": "0758ec33d75bad60c2c5f1f778ff743d5700f0985cb3dd19238e08f8880357bd",
+      "effectSha256": "4eaef080a1533d32f8475e1f2a2b8efec552136de2cee4b37fb9851afc66b6a9"
+    },
+    {
+      "index": 272,
+      "canonicalId": "Pack Tactics",
+      "recordSha256": "3db7a3c6d716180c3c06261c1a6f9bcbb8f1758930c59ad8922fd03df4febcfe",
+      "effectSha256": "30fab01dd1811a046f84c3dd593f65fbb63cc4f402f6cf5c85cf8426cbc01fa5"
+    },
+    {
+      "index": 273,
+      "canonicalId": "Pain Dampening",
+      "recordSha256": "033fa946eda73dbf00bc039939e5decf582955fdf7b47bb186cfb4fa1cb892d9",
+      "effectSha256": "29b85a01375f1339b4100e7a68ca521f16a443eaa8792e37eb1242b23fdae16f"
+    },
+    {
+      "index": 274,
+      "canonicalId": "Pain Resistance",
+      "recordSha256": "ff71856fbe081f0befafcea68924c192b08986e5ab25bb9ebecc5efc5d1caceb",
+      "effectSha256": "0a37a4e0d0e22a411f3ec578177c111f3c2cb6cedcfd59cab489ad40c0564fec"
+    },
+    {
+      "index": 275,
+      "canonicalId": "Parfumier",
+      "recordSha256": "ad1121328d1bb47f12943ef04a418658acf8431257cdb380f0cd14f8bf6985fd",
+      "effectSha256": "03499bed788f950f6dcc1ab52f9caa29a3f439c81f1e6fe917c7460b06526eba"
+    },
+    {
+      "index": 276,
+      "canonicalId": "Passing Waltz",
+      "recordSha256": "b7a7596e9934ed3f35b8b717a510f309e4500c0abf240a61f7a87b2ecf29a72d",
+      "effectSha256": "b25a965bb0d7312b88ffa263e50cc9654ac0ba2b941d80232cd2c6747b196099"
+    },
+    {
+      "index": 277,
+      "canonicalId": "Patch Cure",
+      "recordSha256": "a34fc591a77ceabde49bd547a44683b6ac7f1c7100c22e0b32c55ac079a63832",
+      "effectSha256": "62b5eaf104e1740589127244969d5528f8c65bf6a3400160086eb199a978225b"
+    },
+    {
+      "index": 278,
+      "canonicalId": "Performance Enhancers",
+      "recordSha256": "15e5e44f591372a6c5f55a0c6f4542b286f43413aed2aa0d7414d9f4b34b0fa7",
+      "effectSha256": "a220bd274deaf1aeaf2f866234a161212473082f79ce481746447b0f7c0bf383"
+    },
+    {
+      "index": 279,
+      "canonicalId": "Perseverance",
+      "recordSha256": "2a461f68c33f5ffedae3532393f46788421ff475e51d73d9fd0ab79ba0204fdb",
+      "effectSha256": "90b38b5361b55d924469f7885692dcb5ed3cd3a4f1c4375f002e1e3a6cf90d87"
+    },
+    {
+      "index": 280,
+      "canonicalId": "Plainly Perfect",
+      "recordSha256": "bb957bbdbdf12e533be79445bb8a7851df80c9948e745f11c20c99eefa2747b6",
+      "effectSha256": "6b65a96eda032d0d9282fb8c2a1c214796247caf5d841fcfca6035223ea356ed"
+    },
+    {
+      "index": 281,
+      "canonicalId": "Plate Crafter",
+      "recordSha256": "bf6f18a825d7e474f0e85d1c5e77686b3b28abee0a75b65b01b3d5fd6fd651c9",
+      "effectSha256": "8e5947075981bf9e8209fd8ab5744c3c80ae57e8acbca3e7b2900f4755ef8df8"
+    },
+    {
+      "index": 282,
+      "canonicalId": "Play Them Like a Fiddle",
+      "recordSha256": "0dc609ca15a40611eb1e09e11023443e606989d36e6dbe7e38709459a00abf2a",
+      "effectSha256": "4455a3a937f84c44ae8a934c9e2831da7ccbcca3e57674e67da93a1888ce4560"
+    },
+    {
+      "index": 283,
+      "canonicalId": "Playing God",
+      "recordSha256": "9092e6a5da982bdc353953bc9299a0d0cf2709a1d8134dfc1e4829dd64d475b2",
+      "effectSha256": "09ea01d8d4521099479f148c2d8e9495461a66b1785113a3c952e67d8c29589f"
+    },
+    {
+      "index": 284,
+      "canonicalId": "Poison Weapons",
+      "recordSha256": "896cb6011ac181a82493b0ceab1d581448507429c1c7d97fb2e77c208ac0e408",
+      "effectSha256": "7093c8e7c82c58e3f9f0e7417610152e24f4668555d2105651a1bb8c7d7e1391"
+    },
+    {
+      "index": 285,
+      "canonicalId": "Poké Ball Crafter",
+      "recordSha256": "dd813627ca6fd458ddb85e3c421e97bcb1fbd69b62d2ed934d86f83f28337446",
+      "effectSha256": "5b2cd12cd1015dea84a098be0675a9a968de281f6ed423d1da8bd9dbed2831d4"
+    },
+    {
+      "index": 286,
+      "canonicalId": "PokéManiac",
+      "recordSha256": "eb87e637a9736f95e889be11c290d250f4ce1ff61a4098376396e3599a60b975",
+      "effectSha256": "3926efb7b3b2e71ddb6465657b9fb83a5877471211e591d11f3a44b95080f540"
+    },
+    {
+      "index": 287,
+      "canonicalId": "Polar Vortex",
+      "recordSha256": "6fa7213cb46440737feb8837cc99207be761f6907a82af012a76920959e51b88",
+      "effectSha256": "c5ba71f73c2fcf375ef14651ab044d2efe5f9ba77fbdf009742ae9d813e37ea0"
+    },
+    {
+      "index": 288,
+      "canonicalId": "Polished Shine",
+      "recordSha256": "4e9fcfd914f55464cce44697c920e5473961add86f16505386a09c0ae3c1db28",
+      "effectSha256": "9876cb7a76d18b8bc410250bc50a12d8de68c58287bc75dd0c24ced845757caf"
+    },
+    {
+      "index": 289,
+      "canonicalId": "Potent Venom",
+      "recordSha256": "07585dacc9bbcd2678b45a462ff7187b2f2531c27cd0cd080cdaf547330cb29d",
+      "effectSha256": "afb9b223d84bfc7d83cb785f4338fd9934db3717622331fabf5b716fa07dc77b"
+    },
+    {
+      "index": 290,
+      "canonicalId": "Power Chord",
+      "recordSha256": "5786be7bf88cd5903b701a5661019264453db91c828a78ff50ebdf23e0a18024",
+      "effectSha256": "03d19fdb2ce2f2771b6d4f848e10caca5cb558abf045f9b1ace4de758cc898eb"
+    },
+    {
+      "index": 291,
+      "canonicalId": "Power Conduit",
+      "recordSha256": "0d1adee88d0f9dc935a7f6db91373dd632c9970073458e2ffeb013946bc9c049",
+      "effectSha256": "8875b6a3565412dbdd374ba875b447cc4f3bfc6cfa5c34dcc953db49690bdd91"
+    },
+    {
+      "index": 292,
+      "canonicalId": "Power Pirouette",
+      "recordSha256": "0c37e056536cf054cd8834b938c8eb6eeed648f376e44280ae76ecd779d948a5",
+      "effectSha256": "b3ad0fe7a6fc7365b3fb6953f0a6097b61b92987815fd3ca2cfff66e6e3e64c6"
+    },
+    {
+      "index": 293,
+      "canonicalId": "Power of the Mind",
+      "recordSha256": "2b2bdc88eeb8855c897d3f786421d85b5155300b1932974f1387288a11c1adea",
+      "effectSha256": "9512a0793cf1748913a75a7235a2979c80cdd97d5f8e8880ea1d279205377a7f"
+    },
+    {
+      "index": 294,
+      "canonicalId": "Powerful Motivator",
+      "recordSha256": "86630f14df9e179e7a46aa666c37d296f7902213bd83fb8496d04a67041c53ce",
+      "effectSha256": "4c240b8b222bcd3c83ec5fdb4a7836b01721d6dcdcb9eb4a536fb9ad64af0d54"
+    },
+    {
+      "index": 295,
+      "canonicalId": "Practical Fashion",
+      "recordSha256": "d9112696fef5628434eb0639cc9ea7e16ecd3aa0c8b7185e6e354ef4d4bbe43f",
+      "effectSha256": "5ea0156c7cd799b3614bbb43cd5d2718bff243f395001c1003fe4e38fbfe1c7d"
+    },
+    {
+      "index": 296,
+      "canonicalId": "Precision Orders",
+      "recordSha256": "16527073dc6220f9cb3a493d9ccae47ce73eb448bf20c4f277ea4273f1ca6117",
+      "effectSha256": "5d634c53cab92e8cfe7f2781e62213e30df7b4d1844c6ba5b416afbd39766aaf"
+    },
+    {
+      "index": 297,
+      "canonicalId": "Prehistoric Bond",
+      "recordSha256": "aebc6957553cf4b2858f17a75809292eeef705c4a39ed530509bbff28a2f8976",
+      "effectSha256": "7a86f0c7387fc11893d739a32d413c2eaee4177371afd10b8d40016d228ff4d8"
+    },
+    {
+      "index": 298,
+      "canonicalId": "Prescience",
+      "recordSha256": "19d2f63423589876be25bdcd4a41be8052b233f582e5afa7c710eaf841ec12c6",
+      "effectSha256": "baf96e1ff135654cc46549b67c21de6f5b212584b37b38efd0dc59219ee3e7b1"
+    },
+    {
+      "index": 299,
+      "canonicalId": "Preserves",
+      "recordSha256": "3ef549f4e29d2fdeb1801af93a8fb99ee329206081c637bf8ac00076a05ea72a",
+      "effectSha256": "9554286ea9492bcdb34b3d123c40ae2e1f660dcc6aaec944002985f887c17980"
+    },
+    {
+      "index": 300,
+      "canonicalId": "Press",
+      "recordSha256": "895bb1863289bb60df263167d32562de64e17906e0eac5c24cebe8f890fc88c4",
+      "effectSha256": "1a2357d88dea00de3415324dc52eed9a39d78c2e0ae14aa64fad53a37b6d318a"
+    },
+    {
+      "index": 301,
+      "canonicalId": "Press On!",
+      "recordSha256": "3c5a7e649c22027904682d8705933dedc23732145088239ed333fdae633621ef",
+      "effectSha256": "37286a1ac064ef7a5472a3ac6d9c5a33a8b52e28eba6e458315d03c3f31e04bb"
+    },
+    {
+      "index": 302,
+      "canonicalId": "Proper Care",
+      "recordSha256": "2dcf517ebf32db8d8684c48cb03221410231c5ffc097d3c967a98eb3ad7d89a8",
+      "effectSha256": "386421642763ccf90941472c55e96f57cc130e6b0a94fc5d7c97d94e81879e79"
+    },
+    {
+      "index": 303,
+      "canonicalId": "Provocateur",
+      "recordSha256": "f474a8bdfaa3ddde033e86823b5920953991d990827c897117333064b56a5922",
+      "effectSha256": "867b47b7960055e10c22c1d004053845a7d0402c8271a3c624c9545e501e0f88"
+    },
+    {
+      "index": 304,
+      "canonicalId": "Psionic Analysis",
+      "recordSha256": "1d5d7da4254383eb13e58492d21c32de361ccac6c8b278c54b506b3ef3274163",
+      "effectSha256": "85222414ce0b51120cfc6cfdd53d39d29980ac79bbdeec32447355535ea5a58d"
+    },
+    {
+      "index": 305,
+      "canonicalId": "Psionic Overload",
+      "recordSha256": "4a9bd4f8dc04ba44a05cbc3dc71a306731830ef8ca6b676def3064d1fc5317fc",
+      "effectSha256": "ebd93bc052786bb9dfa8c5bd4ef7490c85e0e3d47f525ab9a5f755db05e6c8b4"
+    },
+    {
+      "index": 306,
+      "canonicalId": "Psionic Sight",
+      "recordSha256": "67cf7c6167d0051fe2d66334c4ffe48a027c5281b33d89a42e8150f131606d84",
+      "effectSha256": "6349390197df2d14c24b9de2144b92626aa30aa839c97a909555fbdf09eecf30"
+    },
+    {
+      "index": 307,
+      "canonicalId": "Psionic Sponge",
+      "recordSha256": "ef5fc055447d47b33381fc41d38da74c1be716272d8223dc9d0eb1c50c5da125",
+      "effectSha256": "35701827b55a243f14a85ff25f56c2aa23d0b2fba32ec34647f1d3cfdfa385f4"
+    },
+    {
+      "index": 308,
+      "canonicalId": "Psychic Resonance",
+      "recordSha256": "56007038ec3ecbbfa97202038a460985ed0569f2f2f38c903d8150f401bbeb8e",
+      "effectSha256": "ecd35f64d4daf6504b970d2f5840d71429924f3cda04793283f4be70bb04533e"
+    },
+    {
+      "index": 309,
+      "canonicalId": "Pummeling Momentum",
+      "recordSha256": "0848c3a19c57835a558b241decf78041d626bd4e66bb777761bbb1075894d238",
+      "effectSha256": "ff86644e08981ba28d0fc2acc697b331310bf9cf3cb735c9d4c94f26b0c21f89"
+    },
+    {
+      "index": 310,
+      "canonicalId": "Push Buttons",
+      "recordSha256": "6c689e95d821d1a2a6b975e7840c28b2c481f8db8e5afe2178fe8efceb830773",
+      "effectSha256": "5a27e9874d32f3882331641b86fa1ed564fb976e4476ebd595f1d0422bd495bc"
+    },
+    {
+      "index": 311,
+      "canonicalId": "Pusher",
+      "recordSha256": "ae4721335f724dc2b18cb9f6a7b8070ff83feca52881c41bf00f65d11eb860cb",
+      "effectSha256": "52d3ad51de3de0a045265c12c2a919a34c194e4fd57bdb3c5a5a7562bb39ebdf"
+    },
+    {
+      "index": 312,
+      "canonicalId": "Quick Gymnastics",
+      "recordSha256": "14ea050ab09c11c2e54f2e1f4a2f24f024bfeb5ce139cdaebda3b141fab4f1b2",
+      "effectSha256": "33d034338103977b0d1321ce29f5e08c94085adb764fabe0dc3d323ae6f08e65"
+    },
+    {
+      "index": 313,
+      "canonicalId": "Quick Healing",
+      "recordSha256": "608b4541869c09090ea6bae2e5aef53789fb9dd51af50c6fee4368265915221b",
+      "effectSha256": "719d48b578ed2cfaef4602fb73b11d37aa3a88dbe4d960a7f136bc5209ccc933"
+    },
+    {
+      "index": 314,
+      "canonicalId": "Quick Reflexes",
+      "recordSha256": "1611e427a6e04660ba8cf282be066c8638f0ae741a9dcbe121b9d792cf7bf4a8",
+      "effectSha256": "82a5c4fa55f0f034946f493245d168598b28634bd8148b34623924e4d5f5bd42"
+    },
+    {
+      "index": 315,
+      "canonicalId": "Quick Switch",
+      "recordSha256": "b06bede1ac1cf5a9109f9e8635ab3e835d3bd70bd776f2149a038054f8358cbf",
+      "effectSha256": "82e7f934a8b699217f4bcb24676b6d8310e2012b9b85db6ed9fe5cb4d591cf78"
+    },
+    {
+      "index": 316,
+      "canonicalId": "Quick Wit",
+      "recordSha256": "079be5a2a296f113502e8e8fbb4073703e8a33f29d7ce39a731b29bbb518e033",
+      "effectSha256": "e12dee0567a6bcfa59b7bea907d487c91682b2759bfa5fc4c117bc298de457dd"
+    },
+    {
+      "index": 317,
+      "canonicalId": "Rainbow Gem",
+      "recordSha256": "b829a3741ad17f57362beb75939c765821e7a926d7df5fa5d008eedc4bf4e825",
+      "effectSha256": "e74910e29e844928a9629efa25bea099aeee3ef7bdadac289180444c7b66eded"
+    },
+    {
+      "index": 318,
+      "canonicalId": "Rainbow Light",
+      "recordSha256": "5be7c1fefef08a91a9821b6dc3dafc8270f1820a61be5c26871cf56fce7de36c",
+      "effectSha256": "74eb0b3b8e609e424d624f7d430c9b9e19f2934d235e11f3b7ede45e7e93fff1"
+    },
+    {
+      "index": 319,
+      "canonicalId": "Ramming Speed",
+      "recordSha256": "4ae3e7667c935b6d9fff72cbe35ed98d1ca221eae4a7b3db433349e7ec78fe33",
+      "effectSha256": "9c0f7031a44e1ece3cd131b3c852dfeb6a0ed1de174d63313952fd577961e32b"
+    },
+    {
+      "index": 320,
+      "canonicalId": "Ravager Orders",
+      "recordSha256": "5e0194089bb3d11d08922b75db5f8d6c76690e57dbef60ce50d4c14898d9349e",
+      "effectSha256": "a07d258b1a9682d1e9366957b470c79b83909aa5fe48d9990e3deebfe1ca2cc7"
+    },
+    {
+      "index": 321,
+      "canonicalId": "Re-Balancing",
+      "recordSha256": "dd9fefed850959cd202a613aa8c59aae3e6ff15174e71664ba74064235cf6a9e",
+      "effectSha256": "b1e966c1cb2b28535d6adff6f047d1b16762af1e4007899e4c4e726af8546ffa"
+    },
+    {
+      "index": 322,
+      "canonicalId": "Reality Bender",
+      "recordSha256": "03b5569ea04edad96ba4d78f94745a421182f571b8bdada59c58910e8e8b145e",
+      "effectSha256": "9ab83fac6cdaad5ec46bf16d90dd707e681d62789e03aa5e0a8e89f5f62c33b6"
+    },
+    {
+      "index": 323,
+      "canonicalId": "Relentless Pursuit",
+      "recordSha256": "3058e4fb331ef9ac387733f9d17c2c6919a20273b66ceb490b2e8b756ecf85e8",
+      "effectSha256": "f457aa3f50602bf8e8b565e7fe4991210c546b44a9a4fa2f410bad17b4a670b1"
+    },
+    {
+      "index": 324,
+      "canonicalId": "Reliable Performance",
+      "recordSha256": "d95ff2650c8f3c0ec7c88ee0054ec0d7dae841ae767b4436a4e7c1c2c3c96fd5",
+      "effectSha256": "8ad5ffa33edac7a70f79c48f4e2e3ad174e3cae268a7a3a93355b9bd1f4ef502"
+    },
+    {
+      "index": 325,
+      "canonicalId": "Researcher",
+      "recordSha256": "2cda6c2d73c8e03327a870e1feee44c9c2909aeaaee39d7c3c85b984572e595c",
+      "effectSha256": "ccc33227483f969a2b6b5e1fc97f79be648129ce29f783874ba3de59e07e5d9c"
+    },
+    {
+      "index": 326,
+      "canonicalId": "Resilience",
+      "recordSha256": "4ccfea122205130c911b0aa58fd5812a359ed395df49a2bb1d451051b6a6ba34",
+      "effectSha256": "f31811dae31436e89bbfc076fce39f51aec6d0fffda84d0c9ece5bdb8949cb73"
+    },
+    {
+      "index": 327,
+      "canonicalId": "Restorative Science",
+      "recordSha256": "a2522880c86aec727085193b66e0c7b98b636f1d135abb3d7409f83c7e05da37",
+      "effectSha256": "d91dd8e50dc332c87acb74602b8fdffd15ddb056a12de58659705724b79db995"
+    },
+    {
+      "index": 328,
+      "canonicalId": "Ride as One",
+      "recordSha256": "053d4610416c93d62b2edea0c9f5eee9422c2047029d9a82217289d3028fb5be",
+      "effectSha256": "26b29da6cb3d11cc5fb01178ec8e300bb43aabd126163d891e873966fe761c00"
+    },
+    {
+      "index": 329,
+      "canonicalId": "Rider",
+      "recordSha256": "589a7f0ebe1b09841dc79088707bd4456b7d2e845df3983ce17a0d023f204eae",
+      "effectSha256": "d7cfcb52f3f843b6cc8b6fb1bd94d4a96a3562000c6262e7794df7a13156a4aa"
+    },
+    {
+      "index": 330,
+      "canonicalId": "Rogue",
+      "recordSha256": "2a3f4eafb3f98a7008957104f21063d5f230cedccd406f23e487ca1752e7bc44",
+      "effectSha256": "ddd6f8dd5c309264b11fc2296fe8c6e23da457ca0e57b1e7ed11c7a0fd595cc0"
+    },
+    {
+      "index": 331,
+      "canonicalId": "Roughneck",
+      "recordSha256": "c0e2afe390f4f9e36cb9e7fc9e6fca8cca3f29dcaf070e3e30b5d822cabbddb9",
+      "effectSha256": "3b9553a93e0edcbbe7bfdec8c6eb78648fcefe736eab5730df429c3f10eb0323"
+    },
+    {
+      "index": 332,
+      "canonicalId": "Round Trip",
+      "recordSha256": "8737b41c04ac057d6f9d48e2242540ffeb10e361c257a81225b1d1715cb09e83",
+      "effectSha256": "a489f6ff7987469059a2e0cb8050f4053efb118bc9901e38949b5549d97f7969"
+    },
+    {
+      "index": 333,
+      "canonicalId": "Rule of Cool",
+      "recordSha256": "7bea677e3baec109fbc957f4689f677afc78c85ed6cdec05f13b639b1389725f",
+      "effectSha256": "91a6a7b25711f9327e33996eba5a10b04a2b185edb5357bf13d1ac42af2fecb1"
+    },
+    {
+      "index": 334,
+      "canonicalId": "Sacred Shield",
+      "recordSha256": "6c998f6f63e0367d1d16636eff7fe84bb56ea46a387be6baa5f676b98f82f74e",
+      "effectSha256": "4dc33d151c2890b43ce66243cefcd87c7ff08ff92c9f91d4e148b58eb6c69533"
+    },
+    {
+      "index": 335,
+      "canonicalId": "Sage",
+      "recordSha256": "c5ed5cc245f6128d4a99b10a5bb4f799fcf360b82f1c564b831b42b7db361fe2",
+      "effectSha256": "9bc6e9d1473c2d4a3a441add0579f5a19944445f43085f59fcecba6708138869"
+    },
+    {
+      "index": 336,
+      "canonicalId": "Sage’s Benediction",
+      "recordSha256": "78411e1305b946d574981c1c75faf02d49ca41a2d9e57a899b4efde7130e84ae",
+      "effectSha256": "2014ffe3689977cfff0af35e377660449af2b4b58df0d9cfa152e0b3d64963ba"
+    },
+    {
+      "index": 337,
+      "canonicalId": "Savage Strike",
+      "recordSha256": "986183a44e6f63ce2466d86e636cca94aba52012bd2551e3037c1dbbbf48e829",
+      "effectSha256": "8c47d3a305f08dec32c605e5379a40f17c15a8cc7d28a5804ac635965bd90994"
+    },
+    {
+      "index": 338,
+      "canonicalId": "Scheme Twist",
+      "recordSha256": "f86dc0d37f861eeef8ca95b3935f085ff7d49eec0dcf6d31c1ba5eed8647ea5f",
+      "effectSha256": "c9f7ad4bf9b16d11cb5f71c37ae53259fa155cc72f205640c8992ee99cae2f16"
+    },
+    {
+      "index": 339,
+      "canonicalId": "Scoundrel’s Strike",
+      "recordSha256": "d2fda35fa6c600333c6064767b73717ff7231b342fc7a30c0e7d6066065072ba",
+      "effectSha256": "96c2b739d5ab2ea3ecc4c885214e1c8024b7ff5fd06e4eb79c7275bc1d206503"
+    },
+    {
+      "index": 340,
+      "canonicalId": "Second Strike",
+      "recordSha256": "3a882b7265f447e58932cca4603dc6384b18e42d6c4b42bc9633e17c44b2cfbc",
+      "effectSha256": "a5309d2ee93307e6fec36622a31af6ea6648f95b5ac3e413380d7834e0925fa7"
+    },
+    {
+      "index": 341,
+      "canonicalId": "Seed Bag",
+      "recordSha256": "ba1aecd8a3606a62011e102b743531ba80abc3672d07874713b11e5fc5a9eb00",
+      "effectSha256": "3e601764efc5bc53e7801b86f95a0c3079af10cd9f11c1ac156759f87f8154c3"
+    },
+    {
+      "index": 342,
+      "canonicalId": "Seize The Moment",
+      "recordSha256": "d1ad69606f2b6cc17331465363786dabfd1b8f097a3ffc767363d11a1df8fda0",
+      "effectSha256": "c97ea2eac1e774aee088a7426a9518fdab78173b72f28ce2627a3e3ed0a8c04d"
+    },
+    {
+      "index": 343,
+      "canonicalId": "Shared Senses",
+      "recordSha256": "49e079bf5e1adcdecc74a3544fb77d9e5541bf1e32ce1be841229816e046e88c",
+      "effectSha256": "28b89cf00002346b5190458a5d49a9bb271dae735a97babb863b8be34e55ee9a"
+    },
+    {
+      "index": 344,
+      "canonicalId": "Shocking Speed",
+      "recordSha256": "363a077850abb03732ebf9897af912d1028c79fcc539a2887ed8c59530efeadf",
+      "effectSha256": "d80c60970c77199d790ae013a83d8fd76436f06fd6c1bf5a79c4c15cb1b501e9"
+    },
+    {
+      "index": 345,
+      "canonicalId": "Shrug Off",
+      "recordSha256": "3baf0635e335b0144e8b9edde6bc256b6384f4449bb0fe33af184cba12aee982",
+      "effectSha256": "c0f742565f26d22a7ff4e5dcb26b4a2208107ea4dbe6f3634e7cb08dec686915"
+    },
+    {
+      "index": 346,
+      "canonicalId": "Signature Move",
+      "recordSha256": "ed2acece143fa48077971e3474e1d878f3c5b2af0f3b72267a047f0c88025bd1",
+      "effectSha256": "64c1ed08c609ecd83994af1fc948b5f598d6f81119894d310830a9b13f876391"
+    },
+    {
+      "index": 347,
+      "canonicalId": "Signature Technique",
+      "recordSha256": "3ed04c1fe819d9d6d06c60875fc2783eabe40ef2766d4ef4acebc67eca743b97",
+      "effectSha256": "3d900b94303ee422ad2be59b4312ed70dd75d31de6ecb75b8d10c5e14a9e2f78"
+    },
+    {
+      "index": 348,
+      "canonicalId": "Simple Improvements",
+      "recordSha256": "9212879ff4efa3c022d1fadb3fd092bd4986f9317be08a05332edcfd520a588a",
+      "effectSha256": "8697a122293a0fcfa152f4f6b5a579e6bc0675d1f2d57bc653b73e4f554507de"
+    },
+    {
+      "index": 349,
+      "canonicalId": "Skill Monkey",
+      "recordSha256": "6caf6e8c3825eddf8d7cb457deccee28162ae5a60c7e85181b795523bfcb618a",
+      "effectSha256": "f7d5e276260ac119f0df79f7441e5306d1a1f08a9d357624c31c659ccbe27146"
+    },
+    {
+      "index": 350,
+      "canonicalId": "Skill Trainer",
+      "recordSha256": "2f62b646d1f9da6ce47269dbcfcb13aca08b1c2d5a7c065ff8d53757d0a2d39b",
+      "effectSha256": "ef5e65e26f19988ee2791b6159828bdff9a4d1958d4f9ac8f0818e87fe38974b"
+    },
+    {
+      "index": 351,
+      "canonicalId": "Sleight",
+      "recordSha256": "1cbd78841dc7936e89403035e67f760bba3e98ab64b6eb8803c4ba512f808722",
+      "effectSha256": "86b1ef9302d03b3b00418fa920c72f2497eb0a7b2c141df9f314afe03fe9c7d6"
+    },
+    {
+      "index": 352,
+      "canonicalId": "Small Prophecies",
+      "recordSha256": "94a8a90ef3c0144027e46758a69be312d56673287f9951e7bea6b95657af8582",
+      "effectSha256": "9b6412fd922dabe6dab2749a42b5f2970b6673a6143094c1b17f6a962f26e12a"
+    },
+    {
+      "index": 353,
+      "canonicalId": "Smart Scheme",
+      "recordSha256": "d49f8cf7e7f0cac0475f7e9244ff5eb6705110fa5a193ae4a8cb26277cfab3cf",
+      "effectSha256": "5c9ce1d38ec26e19e20bc93c2c44998d0430b30d720d33aa06cb6e2b7e9fc462"
+    },
+    {
+      "index": 354,
+      "canonicalId": "Smashing Punishment",
+      "recordSha256": "91d102266f4f67dd911fa2c0a0e0ff551e1dec5c2d7854ae0f9677ba306b88b8",
+      "effectSha256": "e80549807c186f5545ef0be43b4ae7a23780344f896df6357cc79b691f9675aa"
+    },
+    {
+      "index": 355,
+      "canonicalId": "Sneak Attack",
+      "recordSha256": "5d3cb04de130894b4fe28f12f342c1c14ee6393a067191bbaaf17391a10575d1",
+      "effectSha256": "b9852d9d423de8cf1baf92050f5a27f6446e456778c665600f37492191566656"
+    },
+    {
+      "index": 356,
+      "canonicalId": "Soft Landing",
+      "recordSha256": "600a68c243961cc2e80e09bcb493267829ce39fe4b58889e8b9e9fe53d455c96",
+      "effectSha256": "397f73672d4d220f999533d8f347f7c9a23fb97e6364f1796bed6ecb42fd4a6e"
+    },
+    {
+      "index": 357,
+      "canonicalId": "Soothing Connection",
+      "recordSha256": "1fd28285a6e0bae7555eccf9bd456ba97d8db75bcf0a5cffb14cb2ac5ceaac01",
+      "effectSha256": "ecc3368e391e7fabf33e6c86926fee9999bcb32ffa9245d0f9966be270e6f8cd"
+    },
+    {
+      "index": 358,
+      "canonicalId": "Space Distortion",
+      "recordSha256": "95d3c3fc15bddcfb03d6f9f7722a535572713c592c3aedba8a1917505b27bcd8",
+      "effectSha256": "926ae28d9729a1e7cb5a01731f89792cf89e5f87c175641665d5c7e303e39e4c"
+    },
+    {
+      "index": 359,
+      "canonicalId": "Species Savant",
+      "recordSha256": "ace908b9dde9a79a101a340c1cc01fc8764f7e356b32b0eac5a7aaa829db4079",
+      "effectSha256": "839c151c36241aff683ae6f35b89ce0c4c054e6112c96eea79126eef93e27322"
+    },
+    {
+      "index": 360,
+      "canonicalId": "Spirit Boost",
+      "recordSha256": "1ca65f07e8fb87a7e873582e0188c62a7cddfa04391d6202197bbb694fb447dd",
+      "effectSha256": "85ea3a45bd3dd8a6e8cb680da6b119455401cf17c158b9ec13c111ae9a4304e7"
+    },
+    {
+      "index": 361,
+      "canonicalId": "Stacked Deck",
+      "recordSha256": "c004df333cf5998e0a6386586f48efdf56a61ade401d88ddffbcf4c82cce739e",
+      "effectSha256": "63bf4e5b1175b4938659bcabc8097c3e7f38e9f7655e2dde3957790119990e44"
+    },
+    {
+      "index": 362,
+      "canonicalId": "Stat Ace",
+      "recordSha256": "215a01e234a95b08765e68d8f0153cacd5467b50fba841e82d34e609b110ef8d",
+      "effectSha256": "76e76510b467bc5ad87d8ae748de82355e056855be69dae642d4fdd63a3e3334"
+    },
+    {
+      "index": 363,
+      "canonicalId": "Stat Embodiment",
+      "recordSha256": "532b52e11d5f41aa19cc67851720c31a1d93cc0a65df73609e7d993fe0d31437",
+      "effectSha256": "7c517d23c35853d447b13ed1d5db81822cc46f3fbd2528bba640fae875320ec9"
+    },
+    {
+      "index": 364,
+      "canonicalId": "Stat Link",
+      "recordSha256": "f72c912431f66ef3473bb41ec6f02e4ea4d5c921dd6ae029bc4abbfb505f4d4c",
+      "effectSha256": "d8202568f6fe2b53230dab7f2e88bdd3a906e5e129f469d2281f11e8a31b272a"
+    },
+    {
+      "index": 365,
+      "canonicalId": "Stat Maneuver",
+      "recordSha256": "f29907aa511e635648f6756ded017ee35ae396701d74cee0e41da667b86939a0",
+      "effectSha256": "a81fc31ad48c364a21a386e387fcc2b53649b4b957ae4c726431f683fa391d59"
+    },
+    {
+      "index": 366,
+      "canonicalId": "Stat Mastery",
+      "recordSha256": "de1caeb88f756454abc777432f8b463cd8a1e41833312c9b87b64571b8202cbd",
+      "effectSha256": "a673e01512d96324e74e26164d5c44db001d1ad774e1897ee4a65942c55f26c4"
+    },
+    {
+      "index": 367,
+      "canonicalId": "Stat Stratagem",
+      "recordSha256": "041fa10d1764c100f9d9f895bc78e00ce8c34006ed59c40073eb0bff83ced03b",
+      "effectSha256": "7e96154abaab5f3de652780101ebfff24d49d23d612d868310125287ec621a49"
+    },
+    {
+      "index": 368,
+      "canonicalId": "Stat Training",
+      "recordSha256": "ac185d1134fc532a042c6236b6d141cb66e8b772ac746533c32d3b929941661f",
+      "effectSha256": "b3d9e4bccd7d277c7a69e8a0c645a7d4318daeba54c12f94a4e33fe172515b6f"
+    },
+    {
+      "index": 369,
+      "canonicalId": "Stay With Us!",
+      "recordSha256": "a51367e08537328f10fe89a3dc02f525492e8adf9d72a904d41719b20bb8b5e0",
+      "effectSha256": "cc8e3d845aaba8b2361614e14d1bf0ec2728a59d66380b4bdda561a671a1636b"
+    },
+    {
+      "index": 370,
+      "canonicalId": "Staying Power",
+      "recordSha256": "9c7cc5e36634ada93d5ec655b8245bf21aea77b7364788786892d1bf630701a0",
+      "effectSha256": "6b1f922befcf6ec4e742c4eed460b69333f8960c72b6d7db267d42c105be7eea"
+    },
+    {
+      "index": 371,
+      "canonicalId": "Strange Energy",
+      "recordSha256": "586c7b35a1934fbfc59fd3117092b5cf3afd6551c43e20e3b942c3945bb8b28a",
+      "effectSha256": "b9c02508e3f8942707db49102cb70a34ee361833c8771fdea2cb558faaa71477"
+    },
+    {
+      "index": 372,
+      "canonicalId": "Street Fighter",
+      "recordSha256": "ba82f27164d3ac699ac96678b89e61b2f8e891d38ec3296842c1bc669f86b3ae",
+      "effectSha256": "5e5204f91374ce3ef3912e04e6fdf2030b5136c2782583bfbafac4f72d888b3c"
+    },
+    {
+      "index": 373,
+      "canonicalId": "Strike of the Whip",
+      "recordSha256": "0cf2e456ab3e2989baca93c1e19cc9e57cf1496ee940ae826dc6d184dab951fa",
+      "effectSha256": "f460d2adf3f681d7ad70c9a7c1095c2017d5521a8355ddf107032ac081aa5af8"
+    },
+    {
+      "index": 374,
+      "canonicalId": "Style Entrainment",
+      "recordSha256": "730371365501e5f6ba2bfec9c32939042993ea9a36da7029bd68dd4af3369f8b",
+      "effectSha256": "b83540aa0f5a852e178b6c02497d1f9bd7a1bec3f454a5e37fc0bff64ef6f934"
+    },
+    {
+      "index": 375,
+      "canonicalId": "Style Expert",
+      "recordSha256": "6412c5b97b9f6be314c0d173fd54f9462b1b60b3d6018c5b718d5e02928b1916",
+      "effectSha256": "a2af645926e572d397924473f97d6a8da1c23a0ccc34ca074484326c7198d015"
+    },
+    {
+      "index": 376,
+      "canonicalId": "Style Flourish",
+      "recordSha256": "e01cd8a91b8fe974ff9fae3585e2be166facd2470efdd433eb1aadf582a2da00",
+      "effectSha256": "44ce691fd908304159a82f745a452cfb8b823e09d997638555af9ac5fcee0056"
+    },
+    {
+      "index": 377,
+      "canonicalId": "Style is Eternal",
+      "recordSha256": "a4f917a2542b1aa743a90bedc1520f4bede5328ed0d1abf379cc861a15914c94",
+      "effectSha256": "70feb86585904512c628b98e09f8916dfcf72d47b9462673625bc97eb82944b9"
+    },
+    {
+      "index": 378,
+      "canonicalId": "Suggestion",
+      "recordSha256": "19e9d7a0b3cf5b56a7290ed9f6bcd635f7b83c6ec4093d2420b5f48cd6070923",
+      "effectSha256": "39781a70f5f432e9f220c0468e92eb13b49dccec0f9945b2ffcf6efa9e3810f2"
+    },
+    {
+      "index": 379,
+      "canonicalId": "Sunlight Within",
+      "recordSha256": "ccbc882ffa5e8995999aac5bc1f9f8ca595a25449274c351eb32d53464254fbd",
+      "effectSha256": "1c229d76e0bcf04a28681309d2df9a881d84cc15b842b8d101c28caa9cf98b23"
+    },
+    {
+      "index": 380,
+      "canonicalId": "Super Cures",
+      "recordSha256": "046da32de9d13f62be20f6fa2fdb4790521749e1b32f81b212f2fc4e3c1ee473",
+      "effectSha256": "70dad6940bdbe6ea9d186e6ea7c1e3d2dacc2393ffcce4efb90c676ee110f163"
+    },
+    {
+      "index": 381,
+      "canonicalId": "Surprise!",
+      "recordSha256": "b01b33a344ecdfc7ff981ba49e67322d74b1bfe6130420d2214e3d03616723f9",
+      "effectSha256": "0f63689997e560170aed0d33773b3a14af5c4e821471bfc65a579507a330c6c7"
+    },
+    {
+      "index": 382,
+      "canonicalId": "Survivalist",
+      "recordSha256": "da3a5cc793f5c7310a71b7e7e110ea40f6d278309e04007a98f980330a532d40",
+      "effectSha256": "7740030fd4ca643548ea638c359b2c82cb1aae0d12be7eaf0f3b62f66d9e94a9"
+    },
+    {
+      "index": 383,
+      "canonicalId": "Sword of Body and Soul",
+      "recordSha256": "89d40c9b4f85f74f517195a5824772be09801eb166417208a3180b11ecd2e2fc",
+      "effectSha256": "242d227fd5e789e44b28f8829000c3699c1a424a46e46a78ee4620bc1803ff1b"
+    },
+    {
+      "index": 384,
+      "canonicalId": "Tag In",
+      "recordSha256": "444e6168527ac8239c7820503b92b53fe1b2488d34a6b4ec361a23571e8fb061",
+      "effectSha256": "e74ddc89ea8a12233e462878e3a3016c5c12a31ece724ed3fff7fe2de75e91bb"
+    },
+    {
+      "index": 385,
+      "canonicalId": "Targeted Profiling",
+      "recordSha256": "4e305917d3ba5e52e2c7ef7d338abf5835a8a217e327eed1f4757bd0afb86176",
+      "effectSha256": "bd1ffdcbbb5a098e842ad70df9b6035dbafb7dd228b6586bc37cb6e767bbf049"
+    },
+    {
+      "index": 386,
+      "canonicalId": "Taskmaster",
+      "recordSha256": "a0db03d45a3ada804a3ca181d939603699755771c58b9d6f19c5de222eba9305",
+      "effectSha256": "8eeefa3661a3e7a694bfd3451f7e5b4fe53e67e993d5e68c5c61b7cadca5cf82"
+    },
+    {
+      "index": 387,
+      "canonicalId": "Tasty Snacks",
+      "recordSha256": "1d27ab699face19158e07749bbe69fba2d6143a4cb5acde9cf3c4fb4a4264fd2",
+      "effectSha256": "87c1bad22f974c9cd9742b812db7df13dc76d6a57c733fbead9985dd872d5d4c"
+    },
+    {
+      "index": 388,
+      "canonicalId": "Telekinetic",
+      "recordSha256": "aef8231736fc979954a935f65ec4cfbeeb196edd96102451fbb3cab5e87ba375",
+      "effectSha256": "48a657293a27911eb464f92fbe53151dfd280dd256f5dbaf0b6af498bea375fa"
+    },
+    {
+      "index": 389,
+      "canonicalId": "Telekinetic Burst",
+      "recordSha256": "7b567a9b54c267325a13137094ec7d403e2cb157433fb1064ebb8417163d6ba6",
+      "effectSha256": "59b9b96df1f7aac4fb7a327cff97db404c010dd77f42870608f46b351c5449f9"
+    },
+    {
+      "index": 390,
+      "canonicalId": "Telepath",
+      "recordSha256": "c99a71c090d577ce6fdc9a39ccc472bff1b6e157f94ea4394d87e4a765bc3a59",
+      "effectSha256": "fedf5c94e15ff71bd4a842663912a6df356aeb7fd328e691b47600167eed97b1"
+    },
+    {
+      "index": 391,
+      "canonicalId": "Telepathic Awareness",
+      "recordSha256": "a4f418eb327de07504081c87d18fd62a30fb49bc7bdd99ba9398407394fae14a",
+      "effectSha256": "e5f3f42ebfcd44dc2fb082b7cdcf50c50f26c81d99092839f721f78cdf826d87"
+    },
+    {
+      "index": 392,
+      "canonicalId": "Telepathic Warning",
+      "recordSha256": "ce764e6d0b4a72797446642b403f793858631ea393821fc19c0350b5ca03d61b",
+      "effectSha256": "e23b99df335030f94efdc840bb445d2ba96ce83d728928ea9da48d5587a00efe"
+    },
+    {
+      "index": 393,
+      "canonicalId": "Terrain Talent",
+      "recordSha256": "d302305aa61c25855b7dde96bad6b2cbb1d543026f84551a4b63908683389726",
+      "effectSha256": "66a034259571026f8bf3290500ee646ff8ca4f2c9338ca495fa1e346085908a9"
+    },
+    {
+      "index": 394,
+      "canonicalId": "The Power of Aura",
+      "recordSha256": "b7cbfc4dd33e584804fb9eb28d3bc10bfde2704a1cc6dadde1360911d5584cce",
+      "effectSha256": "ed6ee321d050446013377e4e29a6ce2f475617a2a9809b4c7e160d610eaa00cf"
+    },
+    {
+      "index": 395,
+      "canonicalId": "This One’s Special, I Know It",
+      "recordSha256": "54c416646e0a7bd5724bff4e3c599b61a0809564462f381116319471ec061801",
+      "effectSha256": "b849dab29f159f72cef3195d97934a7dd239cd42f00702221d7e5db8e6a03e73"
+    },
+    {
+      "index": 396,
+      "canonicalId": "This Will Not Stand",
+      "recordSha256": "71e1b8223a5c11fe9b62814b866859661d3fccc9a86e1386c52b2f2fac6dd5fc",
+      "effectSha256": "7420b29a0ce02350f5d9bf0fa8fc5c9e56dfdc1fd6bca73dbf748e49ff742e81"
+    },
+    {
+      "index": 397,
+      "canonicalId": "Thought Detection",
+      "recordSha256": "c8af07cac34c3288a4b13d7620a5db7146a99a78c791ba0bc1c08753dbe4bdcd",
+      "effectSha256": "f8ae81ac78b4f8a8ca3dde83a7db614af27957d629ccef7ebfcce806ea8243bf"
+    },
+    {
+      "index": 398,
+      "canonicalId": "Tip the Scales",
+      "recordSha256": "c01bfbf3901f5449f80470ad979c7575f6ce3a99f72fd65b02fe69bf5cd4a15e",
+      "effectSha256": "fdf47c65806f7bcc942e3efbb1587de6d881e8e039b1b9f73b2ece23fb12f022"
+    },
+    {
+      "index": 399,
+      "canonicalId": "Top Percentage",
+      "recordSha256": "441a3485f1756558db7b23e1c077dd5520ee085f23e3a993b0211b11c801be11",
+      "effectSha256": "f99ae45526582d3c32ef788c0b4bc42daf3fd5946e135980ddb9a97dcb95a2eb"
+    },
+    {
+      "index": 400,
+      "canonicalId": "Top Tier Berries",
+      "recordSha256": "aac0932495ca22b88f4274d88f78d0e5cf71e0bddaa14c8adcfa06bb4e4a1c4d",
+      "effectSha256": "654665e5b262ec59618eaae9ce447ca55c9be0d1e717b88b24c15880ed113b42"
+    },
+    {
+      "index": 401,
+      "canonicalId": "Tornado Charge",
+      "recordSha256": "f3ab4376fc18d9acaf1bb61f4298194162127c44b5c46132a99cfc5c443ee7bb",
+      "effectSha256": "33ecc0ec3444f9fa8136e9669af1651e6c2dd65e026e34f7560c277924871420"
+    },
+    {
+      "index": 402,
+      "canonicalId": "Tough Tumble",
+      "recordSha256": "4067dd90d5bcf5c9449cbcb9b8cb1f3afcddeae1cb12c4430fdd7b72c5b44453",
+      "effectSha256": "c3d52f5653d4063506cf4e2dbd00a14eac7b5aba7c7dbd961794476bc6e9e7b4"
+    },
+    {
+      "index": 403,
+      "canonicalId": "Tough as Nails",
+      "recordSha256": "f95742a33e5f297824ccb02f3fe493338f8b657add04f7898f4afd376bd513f8",
+      "effectSha256": "e4ab4f287b7ccaf446a65246d1a17c662d7458f4c33d6e3fe623bfc581ef2294"
+    },
+    {
+      "index": 404,
+      "canonicalId": "Tough as Schist",
+      "recordSha256": "2911b76ce9ccd85e783dd3af5c6d0b244ae850e059f9594ef68d7a4d0ff9b83c",
+      "effectSha256": "657726720037fb9706cd242a22e82ed65e2da7a920c2e3fd401047e4210abf80"
+    },
+    {
+      "index": 405,
+      "canonicalId": "Trail Blazer",
+      "recordSha256": "3b5453986dcc02a9d9e1b42f70bd0c5edbf25605f026ca9dd5f5e964eed50741",
+      "effectSha256": "8c1a317fb946ed2558bc660a6319956879e005886b99b092f11df0973d236693"
+    },
+    {
+      "index": 406,
+      "canonicalId": "Training Regime",
+      "recordSha256": "c870db057f2be4b5717bbd785a983b4706c540ed51cd39d5c1a365657c97a5ca",
+      "effectSha256": "2eba5dd6df4404dc36d5bb5a74c025605b4681a87b6bab5fa0c8e3107710b036"
+    },
+    {
+      "index": 407,
+      "canonicalId": "Trapper",
+      "recordSha256": "4fbf7d15b2932a505407b899b26eb1a3cc7caaaed5815d8a4fc2d8e8e2ae6d03",
+      "effectSha256": "5468433a0fb2dbf252f4d0ebf612f5cf5b48af6fd61524a3009383678738036a"
+    },
+    {
+      "index": 408,
+      "canonicalId": "Trickster",
+      "recordSha256": "28a11cdfd13f563c741770b79df6549470600666e0e87d7f77d7eac3b3574e32",
+      "effectSha256": "a8920a4d8c574d00a294e9db9098a8fad7f3671ed0023a51610a750ae46ac2af"
+    },
+    {
+      "index": 409,
+      "canonicalId": "Trickster Orders",
+      "recordSha256": "84bf224c5da3a961bc202c82fd9591af14ece32e16aeaaff6359fa1d79e59ae9",
+      "effectSha256": "4963ada4631a37b25c130197deb8b61fb5b6a4585a563019375f668c8612579c"
+    },
+    {
+      "index": 410,
+      "canonicalId": "True Steel",
+      "recordSha256": "bbc6074fe968a94dbf6c8020de51f1f546f97cbd9cace8c520bc5a9dfe5c7669",
+      "effectSha256": "393e94c9dc639dc1babf50e5502fbf97b057fe0a4b09eab51ddb6ae1a82032c5"
+    },
+    {
+      "index": 411,
+      "canonicalId": "Tumbler",
+      "recordSha256": "cf1628d83fbe03b36ec184c224a02f0387c93f3156869fbee462384075f04442",
+      "effectSha256": "72620fe8dec40222cbdcc33a107f92a2da6ff446f18aad3c2dac95c5dd0d411a"
+    },
+    {
+      "index": 412,
+      "canonicalId": "Tutoring",
+      "recordSha256": "8a4f08ded299f11dcbcc8cb4118d6036f98853229e451eb6cf6e2867a28c169c",
+      "effectSha256": "f7300ceb463172854674438356cbbf8eff62fba463a986f826ac7c6d290400ea"
+    },
+    {
+      "index": 413,
+      "canonicalId": "Two-Second Preview",
+      "recordSha256": "f2589a37fa3ad3b588e284fe671289ffb458a85fd99f4f25bf92f7a134e9e76e",
+      "effectSha256": "bb4c7d7da2e3ba2f6cbac6379b363cf206fc6d9cb7e465ebe167a88d917165e0"
+    },
+    {
+      "index": 414,
+      "canonicalId": "Type Ace",
+      "recordSha256": "45c37c76f91c8242c2324519dcb86b6015657137d7e5ea37809665f6f577f148",
+      "effectSha256": "9712d4241d7dcbe135e6c1728fbb1af41fe9f7bd0face297a43fd5bfe543aaa5"
+    },
+    {
+      "index": 415,
+      "canonicalId": "Type Booster",
+      "recordSha256": "cbc2345c4fb164fb0cdf77baa8587612b557daa8fa79056b395a632705793aac",
+      "effectSha256": "73d8c59511fdbb279c32f4ec622321e9beda6b3b5bbb2af1f0e7a68156471502"
+    },
+    {
+      "index": 416,
+      "canonicalId": "Type Brace",
+      "recordSha256": "b2f11f84bfedcaf9d170e1f4ad4d20d143c59db8c7be99978798c3987eb1488d",
+      "effectSha256": "d5068e9085477ad15d19698a95d8b581e91ba8bdd10ed59d2558ad981da85368"
+    },
+    {
+      "index": 417,
+      "canonicalId": "Type Expertise",
+      "recordSha256": "1c025d7cc9a7ba7b53bba345fe34eb2a781e08531589b2e4f887a63daedb7822",
+      "effectSha256": "6c62a96068a15f9d7b53d214cc15373e75a135c0ff185119498acc30b410a524"
+    },
+    {
+      "index": 418,
+      "canonicalId": "Type Methodology",
+      "recordSha256": "d9a94c2156013e024e393981400c9fde64b604cb68e99443d3658de667335a00",
+      "effectSha256": "b708c7c1cbaeb4b88a49a8ac9cf1eaa4c9797dca05cc556814b8ca0d21ff4768"
+    },
+    {
+      "index": 419,
+      "canonicalId": "Type Refresh",
+      "recordSha256": "ab23ed3383cd078f23a54a70b0d19de79af3451193c8340f84efb7668a4908b4",
+      "effectSha256": "45bb6c2e3237e8cbb5a438008660a573dbbaf4a7d590d83644e5b59e7052e7d0"
+    },
+    {
+      "index": 420,
+      "canonicalId": "Tyrant’s Roar",
+      "recordSha256": "1da504d00550cbaec77bb0fed7dc0a3d4504544fbc8f2ae36b36c9421c3a1c86",
+      "effectSha256": "73fa55bfaebb6518ddd95aeeacdb03e1f01c5dbc64af31666c92cfff3dfcc161"
+    },
+    {
+      "index": 421,
+      "canonicalId": "Unconquerable",
+      "recordSha256": "fa658514f699578da31cdefbe6897ca7fdcd13c15852186eb25b48abc30ba0c9",
+      "effectSha256": "4662cff3655ea8878efa75b5218ffd7bb15e79b379ecbcc8aed77b30b4f1a07c"
+    },
+    {
+      "index": 422,
+      "canonicalId": "Underhanded Tactics",
+      "recordSha256": "2d3aa0bbbde6ce82330fec2797fbaee2271335f0a72747d7b88d441b28dde2c6",
+      "effectSha256": "25c4af9cbd42502cc646f66ffd606d7b6d0747d8c4027843dd09cdf862da7c42"
+    },
+    {
+      "index": 423,
+      "canonicalId": "Unexpected Attacks",
+      "recordSha256": "8d0b4f3e8a998b2ca9d1b6b08e3b9a27561ef7ed3edbb8315f34ba368f5203c8",
+      "effectSha256": "6032307836691c99f5ca6177e6d7c928c93950c436af6bd7aa6127b38fc34df3"
+    },
+    {
+      "index": 424,
+      "canonicalId": "Unveiled Sight",
+      "recordSha256": "0e46db52f5383c4c184c517ccdd0a7ddad9a6f4c8cc3ac9d9a4e919a0a04e86b",
+      "effectSha256": "97221850bbe89cb96d8e8c84dfc15b15054e50c4a36a59fc86d0462d05c8c0cf"
+    },
+    {
+      "index": 425,
+      "canonicalId": "Upheaval",
+      "recordSha256": "4dffe18f65be84174d65fa18317b0a20f2eddf342665b2d8e4b569de1f148655",
+      "effectSha256": "956ba3eb59e00e0c408120fc694d122903bf6e70dc88074ece9c00ce59501b1d"
+    },
+    {
+      "index": 426,
+      "canonicalId": "Utility Drop",
+      "recordSha256": "7889277125d7d57c56aa22763994f836711ebcdc0459a85022ca3aa1d7ee2480",
+      "effectSha256": "5e57aa57fcee1249056dd0f749d6cdc984b7bae16b901cf805e3a8667067bf26"
+    },
+    {
+      "index": 427,
+      "canonicalId": "Vampirism",
+      "recordSha256": "238bd8e69908951f7d451a0f6e0e652e4babcfbf0b081a3ea769d90901928c69",
+      "effectSha256": "120776bcfa061a2e0653613ae6addb6ee9ba645cf079681d61338850c91fd9dc"
+    },
+    {
+      "index": 428,
+      "canonicalId": "Versatile Teachings",
+      "recordSha256": "0aeaa9e360038d1a4754cdc24d31d2f6469d738d3d4fd818def3d57bd2dceaba",
+      "effectSha256": "ce9c3ed7184debc10ee82d3eff72a9ea83a4520952fb948ed1843dd05bc2d9de"
+    },
+    {
+      "index": 429,
+      "canonicalId": "Versatile Wardrobe",
+      "recordSha256": "3a9427e4c62b236a395c059969dd8322a1e12299ee34fc8a3bdda15dfa0eeaf0",
+      "effectSha256": "b58164df8aec878459ffdc2b7a17b7f3804d72028be9019c59aa0d1866b53ebf"
+    },
+    {
+      "index": 430,
+      "canonicalId": "Vim and Vigor",
+      "recordSha256": "9b0eb8b93ab3f491dfc77140161e30a2d87e1edbe91a90b788d7f99c50521006",
+      "effectSha256": "53e52e0be29455ec1e771abc48c77b9b938f40bcfa4e758d0439a28b50ed77ca"
+    },
+    {
+      "index": 431,
+      "canonicalId": "Vitamins",
+      "recordSha256": "5549e5e4ebad84c634cf37c07a44103aedcaf36b773740522e7f158a3b066bae",
+      "effectSha256": "c805e016e7dc181fbd5f7ea8ec36b37b9a178c3ea8b94d1ea09e4728d3388ec9"
+    },
+    {
+      "index": 432,
+      "canonicalId": "Voice Lessons",
+      "recordSha256": "ed3b10cbd36b64c09672b1bd29fc8367f27d59a4f86963481f11d23fe71da523",
+      "effectSha256": "cee7e5139d58ee4141dcbc3e029bd4bc35b07475014e73502affa37eb030fc7a"
+    },
+    {
+      "index": 433,
+      "canonicalId": "Walk It Off",
+      "recordSha256": "7ccec08bdc88ac357a07cc2e6644b524147f8a7ead6f83fcf30434a59543ef24",
+      "effectSha256": "a9ec2659aa9f692b3d07185da075c2f43b53e99e8f5cf6316dcffe37d054d95c"
+    },
+    {
+      "index": 434,
+      "canonicalId": "Warped Transmission",
+      "recordSha256": "9d3d049bd07a71c2a78dbed910d87c4704ddab111d85adec2cb46dc303ca4262",
+      "effectSha256": "b9910ae82294d39a9100b5ceab36c9754ed9f51a1343dba07b5bc55d477bc755"
+    },
+    {
+      "index": 435,
+      "canonicalId": "Warper",
+      "recordSha256": "328d9437d9ebcd7ed93ac6855ab29eed8d13cf26a3dfcf7c4759a819f5a804b0",
+      "effectSha256": "eaa20cf821e116b191170db3ed6496a38cf7ed035a0f5c57ac7059c1e53a6a2f"
+    },
+    {
+      "index": 436,
+      "canonicalId": "Warping Ground",
+      "recordSha256": "eae073b8d0489c6ebaa58133629981558cc1191dbda319ad4d22c4dd364da7fb",
+      "effectSha256": "c2d47dda1cedb30e26a7ee919aa1d9a7b8bfda3190c108cfd34f138896394379"
+    },
+    {
+      "index": 437,
+      "canonicalId": "Weather Systems",
+      "recordSha256": "55b32090cdeb9935ba0fe8bd1ad4bedaa978971aab22c23b5717ce53dd9ad4d2",
+      "effectSha256": "f47d89dd2cbe702bf8b5d7dcd81b0cd9cd79f68ce2ce85dfeccc5ec7482be8b7"
+    },
+    {
+      "index": 438,
+      "canonicalId": "Weightless Step",
+      "recordSha256": "3ceea7221fa4c384d0984cf669ae696546ef08c1d110afa7152a13b99928e90c",
+      "effectSha256": "0a69c709ae23e21ecd24e715b2dc004069410e03e4ee1db7c88f4208d270143e"
+    },
+    {
+      "index": 439,
+      "canonicalId": "Whirlwind Strikes",
+      "recordSha256": "bcc93ef46ee4a35ca1550b650aaae5b9cba2bb9013464ed4f070f812b133d8c8",
+      "effectSha256": "b6bb4495604b26d94d7378f2ae058183508d54ec225b1fb5899ca7c44cdabc90"
+    },
+    {
+      "index": 440,
+      "canonicalId": "Wilderness Guide",
+      "recordSha256": "a4b75a6d6c172d0c7e21900e18e2bc297148792280585cfca8046662ac2b0d8c",
+      "effectSha256": "d2f8015f60e76affe28304fe5b42796e59ba78769df173fb84ec1d28b7e7cef2"
+    },
+    {
+      "index": 441,
+      "canonicalId": "Witch Hunter",
+      "recordSha256": "e3d8d014c201affc41a7ce18a11042598fe5e3cfdb41146dd93b98584f72b602",
+      "effectSha256": "c515ba55cf9081e859576dd4c004ffdefa362beafc0039c20bf10ad5d66c085c"
+    },
+    {
+      "index": 442,
+      "canonicalId": "Wrestlemania",
+      "recordSha256": "327716856ee2b414bfb533ce75ccf0b101201bab79113c8474e666a755e40b01",
+      "effectSha256": "71cf9f8720dc5a69d83a46159892b83c35defcd51fb7d9949e366ac0dafa0431"
+    },
+    {
+      "index": 443,
+      "canonicalId": "Zephyr Shield",
+      "recordSha256": "a2dbe06d3954c5bb0e7c5ad35d9974fe42158ba713fad21869f2a9d6088ce70b",
+      "effectSha256": "f736434b51456fc4043421d4659cf7d7f8f015b615e4617054c228fecdd85116"
+    }
+  ]
+}

@@ -60,7 +60,7 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
     sheet.value?.orders?.splice(i, 1)
 
   const addFeature = () =>
-    sheet.value?.features?.push({ name: 'New Feature' } as TrainerFeatureEntry)
+    sheet.value?.features?.push({ name: '', choices: {} } as TrainerFeatureEntry)
   const removeFeature = (i: number) =>
     sheet.value?.features?.splice(i, 1)
 

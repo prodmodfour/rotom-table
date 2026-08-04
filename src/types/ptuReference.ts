@@ -101,6 +101,9 @@ export interface PtuFeature {
   target?: string | null
   condition?: string | null
   effect?: string | null
+  /** Typed recipe metadata repaired from parser-merged source fields. */
+  cost?: string
+  ingredients?: string | string[]
   /** For class features, the parent Trainer Class name (matches a ``Class``-
    *  tagged feature). */
   className?: string

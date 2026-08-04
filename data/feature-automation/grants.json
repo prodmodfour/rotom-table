@@ -1,0 +1,848 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-feature-automation-v1",
+  "entryCount": 63,
+  "entries": [
+    {
+      "canonicalId": "Advanced Capture Techniques",
+      "sourceEffectSha256": "142f00aecc885dc92ec099309e6559dc67d8a503b8f161941241249e3e9e071e",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "captureTechnique",
+          "kind": "feature"
+        },
+        {
+          "choiceId": "captureTechnique2",
+          "kind": "feature"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Aerialist",
+      "sourceEffectSha256": "a606934b27abb97dec69926a97d24bb1cbb0ffc1241244302bbd2419696f03b6",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Aerial Ace",
+          "Splash"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Aura Guardian",
+      "sourceEffectSha256": "3e097ad1a4ff564d45bc76a49e8baec1419e3c1e0990562fb391e9e90788391c",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "move",
+          "kind": "move"
+        },
+        {
+          "choiceId": "move2",
+          "kind": "move"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Aura Mastery",
+      "sourceEffectSha256": "5064106af3d1255b4e38e3b2d307a05953fa45fc961a4c1fc135be585da73ab1",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "move",
+          "kind": "move"
+        },
+        {
+          "choiceId": "move2",
+          "kind": "move"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Aura Reader",
+      "sourceEffectSha256": "0d604f91f08b8a0f35f4ac193f68efba68dc9b94fd3b171c0afd4d702492e836",
+      "targetPolicy": "trainer",
+      "duration": "temporary",
+      "fixed": {
+        "capability": [
+          "Aura Pulse",
+          "Aura Reader"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Cacophony",
+      "sourceEffectSha256": "e819764e3e2c488dce75109093bcfee221c2c9aa0b49f396d2ff9458a2803fa1",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Metal Sound",
+          "Screech"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Capture Specialist",
+      "sourceEffectSha256": "e41d1a89216206acb8bb055ef1f7eaf83a54e91327387c29a638d80bb23370f3",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "captureTechnique",
+          "kind": "feature"
+        },
+        {
+          "choiceId": "captureTechnique2",
+          "kind": "feature"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Climatology",
+      "sourceEffectSha256": "eb44d37cba129fee85bb039b66e9a4e455021848c47d90daf50ba560c8044e46",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "ability": [
+          "Overcoat"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Commander",
+      "sourceEffectSha256": "3d3d3a1ee22dc2a17dc42f530569984191a78ddf787272e8f678ec7dd3c94101",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "orderFeature",
+          "kind": "feature"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Cruel Gaze",
+      "sourceEffectSha256": "d28b566e1caf4d01a968129f2c2bd32177e5b30dfb4d289abe4502c31d6853a4",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Glare",
+          "Headbutt"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Dance Practice",
+      "sourceEffectSha256": "a2b041e373d77a16c2925e776c21c4f8898aa102f3d55e3e347554be0e74e940",
+      "targetPolicy": "target-pokemon",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Dancer",
+      "sourceEffectSha256": "5092993fd63370e268056b630a1591626ab5db556e7dcbf4851f50250a364752",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Death From Above",
+      "sourceEffectSha256": "ce6fef0465962b4761044566d36c731b204a40283c883fdc490781e9824661e5",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Acrobatics",
+          "Bounce"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Dilettante",
+      "sourceEffectSha256": "0f5b8b2246923d38b109d5f37f27df074f27b178f4ad4065a7d53a684c11d2f1",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "edge",
+          "kind": "edge"
+        },
+        {
+          "choiceId": "feature",
+          "kind": "feature"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Effective Methods",
+      "sourceEffectSha256": "53b5041995f9c22a838bd88cc7d652f0c4d5f108678085fc12cea7620551888e",
+      "targetPolicy": "target-pokemon",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Elite Trainer",
+      "sourceEffectSha256": "e0b25b8e078df724114efe437e3eb9e6f889b0af5e5a44dcd06040960e37ca78",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "trainingFeature",
+          "kind": "training-feature"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Hex Maniac",
+      "sourceEffectSha256": "42a6a1bd9f8d8fb4a86b06b10bb223c2362930ad8945b41cdcd05894298604a0",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Hex Maniac Studies",
+      "sourceEffectSha256": "e8d441f7fca9ccd97ad3384e1f819b9538f6fa9d0b6969d79f382c503003528a",
+      "targetPolicy": "target-pokemon",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "move",
+          "kind": "move"
+        },
+        {
+          "choiceId": "move2",
+          "kind": "move"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Honed Mind",
+      "sourceEffectSha256": "cff5215938de825618acd8e25a3d1e2875641e7e80c317d31fb02dfc2fd579e2",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Calm Mind",
+          "Mind Reader"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Hunter",
+      "sourceEffectSha256": "588b49b9313a3e74ca8100d8846e222002d3949bfc8fde24c34e126a8592d0e2",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "I’m a Doctor",
+      "sourceEffectSha256": "757877ea04a0c26fca5cc29fc8f9f2b8e2ca2eb2949ba3fcf3dd71ca3efca083",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "doctorTechnique",
+          "kind": "feature-or-edge"
+        },
+        {
+          "choiceId": "doctorSupport",
+          "kind": "feature"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Kinjutsu",
+      "sourceEffectSha256": "e716bd046b2f759b1f9ebe59d525ff4c88d7f23b0a324d60829349fc38e6563f",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Substitute",
+          "Toxic"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Lay on Hands",
+      "sourceEffectSha256": "fdd1ca3352a8cea08c341bc28f3a84b5e660da46635bf1c80243d5b671650c5c",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Malice",
+      "sourceEffectSha256": "8efca0d5982fa5ea61f79128bd1e5ec83bc6a75ea8ce125150b90676d07d0d37",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Chip Away",
+          "Mean Look"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Martial Achievement",
+      "sourceEffectSha256": "76bb8bfa182815ae34c9d5ef4916ab93675c590a8abd465c7d5e72d3a822408c",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Martial Artist",
+      "sourceEffectSha256": "ab62285a4c8388f273a0b4a81a055265193262f836d2059f71fadcdc5a0f5874",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Mental Assault",
+      "sourceEffectSha256": "b176f6e9e08a1a6eb237fd89149fd435687eab2281d4a65033aaa4f7341cfe61",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Extrasensory",
+          "Psyshock"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Mental Resistance",
+      "sourceEffectSha256": "084dda935f003c4a15b65d45feb8609a745186fdb6b9b8ec1ce0a4e4d4bc9a77",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "capability": [
+          "Mindlock"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Mixed Messages",
+      "sourceEffectSha256": "eb63d0d669e74d3cbb98fe7a4cabbe0566a78fc52d1a5bf682eb22b9af2e03b1",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Lovely Kiss",
+          "Torment"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Mixed Power",
+      "sourceEffectSha256": "47ebe831e9398a8944df5ec1065803908eb9ea9408defb2c1ee62d2bdb4824ca",
+      "targetPolicy": "target-pokemon",
+      "duration": "permanent",
+      "fixed": {
+        "ability": [
+          "Twisted Power"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Mt. Moon Blues",
+      "sourceEffectSha256": "c0cf9c95639b479371ba46a790cb7e8abedbdaeceac0f296a603afe60fcda2c9",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Sing",
+          "Supersonic"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Musical Ability",
+      "sourceEffectSha256": "9914a9fd93512f9a65764839a4bac807527418cccd35e81a6f282d6a5ef87435",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Mystic Defense",
+      "sourceEffectSha256": "5078083e68adea778037c947b02563d3376b1472c66dd048ea6fe0af8e73f938",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Light Screen",
+          "Safeguard"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Ninja",
+      "sourceEffectSha256": "eb5be4fe5e5dc40b78657dee18040c75f778b7c231169610535fa5b5cbcf92af",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Double Team",
+          "Poison Powder"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Noise Complaint",
+      "sourceEffectSha256": "6e7fed734487b0818a0321e53fbe3096028b64f9543a203e6e6eaf5fa1787fa0",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Hyper Voice",
+          "Uproar"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Oracle",
+      "sourceEffectSha256": "9c6b100cd5e9c37952e7e7dd60fdca35139f6caf19d03f352f69d4a810011ab1",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "ability": [
+          "Pickup"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "PK Alpha",
+      "sourceEffectSha256": "8c37fe30624319912c5ef60ef1ebd945f60901b8339d1455783b7852aac89736",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Barrier",
+          "Kinesis"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "PK Omega",
+      "sourceEffectSha256": "5d69241988255555d50d9d0fae945304d4c43e1c5d8d144e824d7ce1bd0d6025",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Psychic",
+          "Telekinesis"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Power of the Mind",
+      "sourceEffectSha256": "9512a0793cf1748913a75a7235a2979c80cdd97d5f8e8880ea1d279205377a7f",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Provocateur",
+      "sourceEffectSha256": "867b47b7960055e10c22c1d004053845a7d0402c8271a3c624c9545e501e0f88",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Sweet Kiss",
+          "Taunt"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Push Buttons",
+      "sourceEffectSha256": "5a27e9874d32f3882331641b86fa1ed564fb976e4476ebd595f1d0422bd495bc",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "edge": [
+          "Demoralize"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Pusher",
+      "sourceEffectSha256": "52d3ad51de3de0a045265c12c2a919a34c194e4fd57bdb3c5a5a7562bb39ebdf",
+      "targetPolicy": "target-pokemon",
+      "duration": "permanent",
+      "fixed": {
+        "edge": [
+          "Aura Pulse",
+          "Basic Ranged Attacks",
+          "Enticing Bait",
+          "Extended Invisibility",
+          "Far Reading",
+          "Precise Threadings",
+          "Seismometer",
+          "TK Mastery",
+          "Trail Sniffer"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Quick Reflexes",
+      "sourceEffectSha256": "82a5c4fa55f0f034946f493245d168598b28634bd8148b34623924e4d5f5bd42",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "ability": [
+          "Dodge"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Rogue",
+      "sourceEffectSha256": "ddd6f8dd5c309264b11fc2296fe8c6e23da457ca0e57b1e7ed11c7a0fd595cc0",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Feint Attack",
+          "Thief"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Sacred Shield",
+      "sourceEffectSha256": "4dc33d151c2890b43ce66243cefcd87c7ff08ff92c9f91d4e148b58eb6c69533",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Lucky Chant",
+          "Reflect"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Signature Move",
+      "sourceEffectSha256": "64c1ed08c609ecd83994af1fc948b5f598d6f81119894d310830a9b13f876391",
+      "targetPolicy": "target-pokemon",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "move",
+          "kind": "move"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Space Distortion",
+      "sourceEffectSha256": "926ae28d9729a1e7cb5a01731f89792cf89e5f87c175641665d5c7e303e39e4c",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Ally Switch",
+          "Teleport"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Strange Energy",
+      "sourceEffectSha256": "b9c02508e3f8942707db49102cb70a34ee361833c8771fdea2cb558faaa71477",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Heal Block",
+          "Magic Coat"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Street Fighter",
+      "sourceEffectSha256": "5e5204f91374ce3ef3912e04e6fdf2030b5136c2782583bfbafac4f72d888b3c",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Assurance",
+          "Payback"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Telekinetic",
+      "sourceEffectSha256": "48a657293a27911eb464f92fbe53151dfd280dd256f5dbaf0b6af498bea375fa",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "capability": [
+          "Telekinetic"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Telepathic Awareness",
+      "sourceEffectSha256": "e5f3f42ebfcd44dc2fb082b7cdcf50c50f26c81d99092839f721f78cdf826d87",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "The Power of Aura",
+      "sourceEffectSha256": "ed6ee321d050446013377e4e29a6ce2f475617a2a9809b4c7e160d610eaa00cf",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Tough as Nails",
+      "sourceEffectSha256": "e4ab4f287b7ccaf446a65246d1a17c662d7458f4c33d6e3fe623bfc581ef2294",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Endure",
+          "Slack Off"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Tumbler",
+      "sourceEffectSha256": "72620fe8dec40222cbdcc33a107f92a2da6ff446f18aad3c2dac95c5dd0d411a",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "ability": [
+          "Run Away"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Tutoring",
+      "sourceEffectSha256": "f7300ceb463172854674438356cbbf8eff62fba463a986f826ac7c6d290400ea",
+      "targetPolicy": "target-pokemon",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "move",
+          "kind": "move"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Two-Second Preview",
+      "sourceEffectSha256": "bb4c7d7da2e3ba2f6cbac6379b363cf206fc6d9cb7e465ebe167a88d917165e0",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "ability": [
+          "Instinct"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Underhanded Tactics",
+      "sourceEffectSha256": "25c4af9cbd42502cc646f66ffd606d7b6d0747d8c4027843dd09cdf862da7c42",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {},
+      "selected": [
+        {
+          "choiceId": "ability",
+          "kind": "ability"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Unexpected Attacks",
+      "sourceEffectSha256": "6032307836691c99f5ca6177e6d7c928c93950c436af6bd7aa6127b38fc34df3",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Pursuit",
+          "Sucker Punch"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Warper",
+      "sourceEffectSha256": "eaa20cf821e116b191170db3ed6496a38cf7ed035a0f5c57ac7059c1e53a6a2f",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "ability": [
+          "Probability Control"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Warping Ground",
+      "sourceEffectSha256": "c2d47dda1cedb30e26a7ee919aa1d9a7b8bfda3190c108cfd34f138896394379",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "move": [
+          "Gravity",
+          "Trick"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Weightless Step",
+      "sourceEffectSha256": "0a69c709ae23e21ecd24e715b2dc004069410e03e4ee1db7c88f4208d270143e",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "ability": [
+          "Infiltrator"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Wilderness Guide",
+      "sourceEffectSha256": "d2f8015f60e76affe28304fe5b42796e59ba78769df173fb84ec1d28b7e7cef2",
+      "targetPolicy": "target-pokemon",
+      "duration": "temporary",
+      "fixed": {
+        "capability": [
+          "Stealth"
+        ]
+      },
+      "selected": []
+    },
+    {
+      "canonicalId": "Witch Hunter",
+      "sourceEffectSha256": "c515ba55cf9081e859576dd4c004ffdefa362beafc0039c20bf10ad5d66c085c",
+      "targetPolicy": "trainer",
+      "duration": "permanent",
+      "fixed": {
+        "feature": [
+          "Psionic Sight"
+        ]
+      },
+      "selected": []
+    }
+  ]
+}

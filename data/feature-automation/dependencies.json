@@ -1,0 +1,4169 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-feature-automation-v1",
+  "entryCount": 444,
+  "entries": [
+    {
+      "canonicalId": "Accentuated Taste",
+      "requiredFeatureIds": [
+        "Chef"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Accessorize",
+      "requiredFeatureIds": [
+        "Dashing Makeover",
+        "Fashionista"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Ace Trainer",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Action Hero Stunt",
+      "requiredFeatureIds": [
+        "Cool Conduct"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Adaptable Performance",
+      "requiredFeatureIds": [
+        "Coordinator"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Adaptive Geography",
+      "requiredFeatureIds": [
+        "Survivalist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Adrenaline Rush",
+      "requiredFeatureIds": [
+        "Athlete"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Advanced Capture Techniques",
+      "requiredFeatureIds": [
+        "Capture Specialist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "captureTechnique",
+        "captureTechnique2"
+      ]
+    },
+    {
+      "canonicalId": "Aerialist",
+      "requiredFeatureIds": [
+        "Tumbler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Aerial Ace",
+          "Splash"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Affliction Techniques",
+      "requiredFeatureIds": [
+        "Patch Cure"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Agility Training",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Ambient Aura",
+      "requiredFeatureIds": [
+        "Aura Reader"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Ancient Heritage",
+      "requiredFeatureIds": [
+        "Fossil Restoration"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Apothecary",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Aqua Vortex",
+      "requiredFeatureIds": [
+        "Flood!"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Arcane Favor",
+      "requiredFeatureIds": [
+        "Fairy Lights"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Archival Training",
+      "requiredFeatureIds": [
+        "Chronicler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Archive Tutor",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Arctic Zeal",
+      "requiredFeatureIds": [
+        "Glacial Ice"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Assault Armor",
+      "requiredFeatureIds": [
+        "Polished Shine"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Athlete",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Mounted Prowess",
+        "Power Boost",
+        "Stamina",
+        "Swimmer"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Athletic Moves",
+      "requiredFeatureIds": [
+        "Athlete"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Aura Guardian",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Elemental Connection"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "move",
+        "move2"
+      ]
+    },
+    {
+      "canonicalId": "Aura Mastery",
+      "requiredFeatureIds": [
+        "Aura Guardian"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "move",
+        "move2"
+      ]
+    },
+    {
+      "canonicalId": "Aura Reader",
+      "requiredFeatureIds": [
+        "Aura Guardian"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "capability": [
+          "Aura Pulse",
+          "Aura Reader"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Awareness",
+      "requiredFeatureIds": [
+        "Enduring Soul"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Bag of Tricks",
+      "requiredFeatureIds": [
+        "Trickster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Bait Mixer",
+      "requiredFeatureIds": [
+        "Culinary Appreciation"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Basic Fashion",
+      "requiredFeatureIds": [
+        "Fashionista"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Battle Conductor",
+      "requiredFeatureIds": [
+        "Leadership"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Battle Synchronization",
+      "requiredFeatureIds": [
+        "Channeler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Beautiful Ballet",
+      "requiredFeatureIds": [
+        "Style Expert"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Beguiling Dance",
+      "requiredFeatureIds": [
+        "Dance Form"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Bend Like the Willow",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Bigger and Boulder",
+      "requiredFeatureIds": [
+        "Gravel Before Me"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Black-Out Strike",
+      "requiredFeatureIds": [
+        "Clever Ruse"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Blur",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Boo!",
+      "requiredFeatureIds": [
+        "Ghost Step"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Bounce Shot",
+      "requiredFeatureIds": [
+        "Juggler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Brawler",
+      "requiredFeatureIds": [
+        "Close Quarters Mastery"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Breadth of Knowledge",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Brightest Flame",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Bring It On!",
+      "requiredFeatureIds": [
+        "Cheers"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Brutal Training",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Burst of Speed",
+      "requiredFeatureIds": [
+        "Tumbler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cacophony",
+      "requiredFeatureIds": [
+        "Focus",
+        "Mt. Moon Blues"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Metal Sound",
+          "Screech"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Calculated Assault",
+      "requiredFeatureIds": [
+        "Smart Scheme"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Capture Specialist",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "captureTechnique",
+        "captureTechnique2"
+      ]
+    },
+    {
+      "canonicalId": "Captured Momentum",
+      "requiredFeatureIds": [
+        "Advanced Capture Techniques"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Catch Combo",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Caustic Chemistry",
+      "requiredFeatureIds": [
+        "Chemist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cavalier’s Reprisal",
+      "requiredFeatureIds": [
+        "Ride as One"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Celerity",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Chain Lightning",
+      "requiredFeatureIds": [
+        "Lockdown"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Chakra Crystal",
+      "requiredFeatureIds": [
+        "Crystal Resonance"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Champ in the Making",
+      "requiredFeatureIds": [
+        "Ace Trainer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Changing Viewpoints",
+      "requiredFeatureIds": [
+        "Mentor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Channeler",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Mystic Senses"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cheer Brigade",
+      "requiredFeatureIds": [
+        "Cheerleader"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cheerleader",
+      "requiredFeatureIds": [
+        "Inspired Training"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cheers",
+      "requiredFeatureIds": [
+        "Cheerleader"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Chef",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Basic Cooking"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Chemical Warfare",
+      "requiredFeatureIds": [
+        "Chemist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Chemist",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Repel Crafter"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Chitin Shield",
+      "requiredFeatureIds": [
+        "Insectoid Utility"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Choreographer",
+      "requiredFeatureIds": [
+        "Dance Form"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Chronicler",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cinematic Analysis",
+      "requiredFeatureIds": [
+        "Chronicler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Clever Ruse",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Climate Control",
+      "requiredFeatureIds": [
+        "Climatology"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Climatology",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "ability": [
+          "Overcoat"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Close Quarters Mastery",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Coaching",
+      "requiredFeatureIds": [
+        "Training Regime"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Command Versatility",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Commander",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "orderFeature"
+      ]
+    },
+    {
+      "canonicalId": "Commander’s Voice",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Complex Aftertaste",
+      "requiredFeatureIds": [
+        "Accentuated Taste"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Complex Orders",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Conqueror’s March",
+      "requiredFeatureIds": [
+        "Ramming Speed"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Contest Trends",
+      "requiredFeatureIds": [
+        "Fashionista"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cool Conduct",
+      "requiredFeatureIds": [
+        "Style Expert"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Coordinator",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Grace"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Corrective Learning",
+      "requiredFeatureIds": [
+        "Mentor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Corrosive Blight",
+      "requiredFeatureIds": [
+        "Potent Venom"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Critical Moment",
+      "requiredFeatureIds": [
+        "Elite Trainer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cross-Pollinate",
+      "requiredFeatureIds": [
+        "Foiling Foliage"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cruel Gaze",
+      "requiredFeatureIds": [
+        "Roughneck"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Glare",
+          "Headbutt"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Crystal Artificer",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Gem Lore"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Crystal Resonance",
+      "requiredFeatureIds": [
+        "Crystal Artificer"
+      ],
+      "requiredEdgeIds": [
+        "Skill Stunt"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Culinary Appreciation",
+      "requiredFeatureIds": [
+        "Chef"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cute Cuddle",
+      "requiredFeatureIds": [
+        "Style Expert"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Cutthroat",
+      "requiredFeatureIds": [
+        "Rogue"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Dabbler",
+      "requiredFeatureIds": [
+        "Hobbyist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Dance Form",
+      "requiredFeatureIds": [
+        "Dancer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Dance Practice",
+      "requiredFeatureIds": [
+        "Dancer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Dancer",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Dashing Makeover",
+      "requiredFeatureIds": [
+        "Fashionista"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Deadly Gambit",
+      "requiredFeatureIds": [
+        "Taskmaster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Death From Above",
+      "requiredFeatureIds": [
+        "Aerialist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Acrobatics",
+          "Bounce"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Debilitate",
+      "requiredFeatureIds": [
+        "Potent Venom"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Decisive Director",
+      "requiredFeatureIds": [
+        "Coordinator"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Deep Cold",
+      "requiredFeatureIds": [
+        "Glacial Ice"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Defender",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Desert Heart",
+      "requiredFeatureIds": [
+        "Mold the Earth"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Desperate Strike",
+      "requiredFeatureIds": [
+        "Savage Strike"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Devious",
+      "requiredFeatureIds": [
+        "Clever Ruse"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Dietician",
+      "requiredFeatureIds": [
+        "Chef"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Diffuse Pain",
+      "requiredFeatureIds": [
+        "Hex Maniac",
+        "Hex Maniac Studies"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Dilettante",
+      "requiredFeatureIds": [
+        "Hobbyist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "edge",
+        "feature"
+      ]
+    },
+    {
+      "canonicalId": "Directed Focus",
+      "requiredFeatureIds": [
+        "Effective Methods"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Dirty Fighting",
+      "requiredFeatureIds": [
+        "Rogue"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Disruption Order",
+      "requiredFeatureIds": [
+        "Insectoid Utility"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Dive",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Divination",
+      "requiredFeatureIds": [
+        "Oracle"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Divine Wind",
+      "requiredFeatureIds": [
+        "Sage’s Benediction"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Don’t Look Away",
+      "requiredFeatureIds": [
+        "Pack Tactics"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Dress to Impress",
+      "requiredFeatureIds": [
+        "Fashionista",
+        "Versatile Wardrobe"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Duelist",
+      "requiredFeatureIds": [
+        "Focus",
+        "Focused Training"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Duelist’s Manual",
+      "requiredFeatureIds": [
+        "Effective Methods",
+        "Expend Momentum",
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Dumplings",
+      "requiredFeatureIds": [
+        "Chef"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Earthroil",
+      "requiredFeatureIds": [
+        "Mold the Earth"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Echoes of the Future",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Effective Methods",
+      "requiredFeatureIds": [
+        "Duelist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Egg Tutor",
+      "requiredFeatureIds": [
+        "Move Tutor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Elite Trainer",
+      "requiredFeatureIds": [
+        "Ace Trainer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "trainingFeature"
+      ]
+    },
+    {
+      "canonicalId": "Emergency Release",
+      "requiredFeatureIds": [
+        "Juggler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Empowered Development",
+      "requiredFeatureIds": [
+        "Mentor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Enchanting Gaze",
+      "requiredFeatureIds": [
+        "Provocateur",
+        "Quick Wit"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Encore Performance",
+      "requiredFeatureIds": [
+        "Trickster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Endurance",
+      "requiredFeatureIds": [
+        "Tough Tumble"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Enduring Bloom",
+      "requiredFeatureIds": [
+        "Foiling Foliage"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Enduring Soul",
+      "requiredFeatureIds": [
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Enhancers",
+      "requiredFeatureIds": [
+        "Chemist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Enticing Beauty",
+      "requiredFeatureIds": [
+        "Beautiful Ballet"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Expand Horizons",
+      "requiredFeatureIds": [
+        "Mentor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Expend Momentum",
+      "requiredFeatureIds": [
+        "Duelist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Extra Ordinary",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Extreme Weather",
+      "requiredFeatureIds": [
+        "Climate Control"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fabulous Max",
+      "requiredFeatureIds": [
+        "Beautiful Ballet"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Face Me Whelp",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fairy Lights",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fairy Rite",
+      "requiredFeatureIds": [
+        "Fairy Lights"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "False Strike",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fan The Flames",
+      "requiredFeatureIds": [
+        "Brightest Flame"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Farcast",
+      "requiredFeatureIds": [
+        "Space Distortion"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fashionista",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fearsome Display",
+      "requiredFeatureIds": [
+        "Malice"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fey Trance",
+      "requiredFeatureIds": [
+        "Fairy Lights"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Field Clinic",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fighter’s Versatility",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Finisher",
+      "requiredFeatureIds": [
+        "Hunter"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "First Aid Expertise",
+      "requiredFeatureIds": [
+        "Medic"
+      ],
+      "requiredEdgeIds": [
+        "Medic Training"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "First Blood",
+      "requiredFeatureIds": [
+        "Tag In"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fishbowl Technique",
+      "requiredFeatureIds": [
+        "Flood!"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fistful of Force",
+      "requiredFeatureIds": [
+        "Crystal Artificer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Flexible Preparations",
+      "requiredFeatureIds": [
+        "Adaptable Performance"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Flip Out",
+      "requiredFeatureIds": [
+        "Aerialist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Flood!",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Flourish",
+      "requiredFeatureIds": [
+        "Trickster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Focus",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Focus Gem",
+      "requiredFeatureIds": [
+        "Crystal Resonance"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Focused Command",
+      "requiredFeatureIds": [
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Focused Fashion",
+      "requiredFeatureIds": [
+        "Style is Eternal"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Focused Training",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Foiling Foliage",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Force of Will",
+      "requiredFeatureIds": [
+        "Psionic Sponge"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fossil Restoration",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Paleontologist"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Fountain of Life",
+      "requiredFeatureIds": [
+        "Flood!"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Front Line Healer",
+      "requiredFeatureIds": [
+        "Medic"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Gale Strike",
+      "requiredFeatureIds": [
+        "Celerity"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Genetic Memory",
+      "requiredFeatureIds": [
+        "Ancient Heritage"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Genjutsu",
+      "requiredFeatureIds": [
+        "Ninja"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Ghost Step",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Glacial Ice",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Gleeful Interference",
+      "requiredFeatureIds": [
+        "Cheer Brigade"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Gleeful Steps",
+      "requiredFeatureIds": [
+        "Cute Cuddle"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Gneiss Aim",
+      "requiredFeatureIds": [
+        "Gravel Before Me"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Go, Fight, Win!",
+      "requiredFeatureIds": [
+        "Moment of Action"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Gotta Catch ‘Em All",
+      "requiredFeatureIds": [
+        "Advanced Capture Techniques"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Grand Hex",
+      "requiredFeatureIds": [
+        "Hex Maniac",
+        "Hex Maniac Studies"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Gravel Before Me",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Guardian Orders",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Guidance",
+      "requiredFeatureIds": [
+        "Mentor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Haunting Curse",
+      "requiredFeatureIds": [
+        "Ghost Step"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Hearty Meal",
+      "requiredFeatureIds": [
+        "Hits the Spot"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Heightened Intensity",
+      "requiredFeatureIds": [
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Herb Lore",
+      "requiredFeatureIds": [
+        "Seed Bag"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Hex Maniac",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Hex Maniac Studies",
+      "requiredFeatureIds": [
+        "Hex Maniac"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "move",
+        "move2"
+      ]
+    },
+    {
+      "canonicalId": "Highlander",
+      "requiredFeatureIds": [
+        "Tyrant’s Roar"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Highly Responsive to Prayers",
+      "requiredFeatureIds": [
+        "Lay on Hands"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Hits the Spot",
+      "requiredFeatureIds": [
+        "Chef"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Hobbyist",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Honed Mind",
+      "requiredFeatureIds": [
+        "Telepath"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Calm Mind",
+          "Mind Reader"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Hunter",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Hunter’s Reflexes",
+      "requiredFeatureIds": [
+        "Hunter"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Hyper Cures",
+      "requiredFeatureIds": [
+        "Medical Techniques"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Immutable Mind",
+      "requiredFeatureIds": [
+        "Mental Resistance"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Incandescence",
+      "requiredFeatureIds": [
+        "Brightest Flame"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Incense Maker",
+      "requiredFeatureIds": [
+        "Parfumier"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Innovation",
+      "requiredFeatureIds": [
+        "Adaptable Performance"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Insectoid Utility",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Inspirational Support",
+      "requiredFeatureIds": [
+        "Cheers"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Inspired Training",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Instant Analysis",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Iron Grit",
+      "requiredFeatureIds": [
+        "Polished Shine"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Iterative Evolution",
+      "requiredFeatureIds": [
+        "Insectoid Utility"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "I’m a Doctor",
+      "requiredFeatureIds": [
+        "Medic"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "doctorSupport",
+        "doctorTechnique"
+      ]
+    },
+    {
+      "canonicalId": "Juggler",
+      "requiredFeatureIds": [
+        "Quick Switch"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Juggling Show",
+      "requiredFeatureIds": [
+        "Juggler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Keep Fighting!",
+      "requiredFeatureIds": [
+        "Cheerleader"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Kinjutsu",
+      "requiredFeatureIds": [
+        "Poison Weapons"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Substitute",
+          "Toxic"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Lay on Hands",
+      "requiredFeatureIds": [
+        "Sage"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Leadership",
+      "requiredFeatureIds": [
+        "Commander"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Lean In",
+      "requiredFeatureIds": [
+        "Ride as One"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Learn From Your Mistakes",
+      "requiredFeatureIds": [
+        "Smart Scheme"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Leftovers",
+      "requiredFeatureIds": [
+        "Complex Aftertaste"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Lessons",
+      "requiredFeatureIds": [
+        "Mentor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Let Me Help You With That",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Let’s Be Friends!",
+      "requiredFeatureIds": [
+        "Cute Cuddle"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Lifelong Learning",
+      "requiredFeatureIds": [
+        "Mentor",
+        "Move Tutor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Live and Learn",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Lockdown",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Look and Learn",
+      "requiredFeatureIds": [
+        "Hobbyist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Macho Charge",
+      "requiredFeatureIds": [
+        "Tough Tumble"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Malediction",
+      "requiredFeatureIds": [
+        "Hex Maniac",
+        "Hex Maniac Studies"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Malice",
+      "requiredFeatureIds": [
+        "Roughneck"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Chip Away",
+          "Mean Look"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mark of Vision",
+      "requiredFeatureIds": [
+        "Oracle"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Marksman Orders",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Martial Achievement",
+      "requiredFeatureIds": [
+        "Martial Artist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Martial Artist",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Basic Martial Arts"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Martial Training",
+      "requiredFeatureIds": [
+        "Martial Artist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Meal Planner",
+      "requiredFeatureIds": [
+        "Chef"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Medic",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Medical Techniques",
+      "requiredFeatureIds": [
+        "Medic"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Medicinal Blend",
+      "requiredFeatureIds": [
+        "Apothecary"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Menace",
+      "requiredFeatureIds": [
+        "Roughneck"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mental Assault",
+      "requiredFeatureIds": [
+        "Focus",
+        "Telepath"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Extrasensory",
+          "Psyshock"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mental Resistance",
+      "requiredFeatureIds": [
+        "Hunter",
+        "Witch Hunter"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "capability": [
+          "Mindlock"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mentor",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mettle",
+      "requiredFeatureIds": [
+        "Roughneck"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Miasma",
+      "requiredFeatureIds": [
+        "Potent Venom"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mindbreak",
+      "requiredFeatureIds": [
+        "Psionic Sponge"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mixed Messages",
+      "requiredFeatureIds": [
+        "Provocateur"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Lovely Kiss",
+          "Torment"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mixed Power",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "ability": [
+          "Twisted Power"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mobilize",
+      "requiredFeatureIds": [
+        "Commander"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mold the Earth",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Moment of Action",
+      "requiredFeatureIds": [
+        "Cheerleader"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Move Sync",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Move Tutor",
+      "requiredFeatureIds": [
+        "Mentor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mt. Moon Blues",
+      "requiredFeatureIds": [
+        "Musician"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Sing",
+          "Supersonic"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Multi-Tasking",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Musical Ability",
+      "requiredFeatureIds": [
+        "Musician"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Musician",
+      "requiredFeatureIds": [
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "My Kung-Fu is Stronger",
+      "requiredFeatureIds": [
+        "Martial Training"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Mystic Defense",
+      "requiredFeatureIds": [
+        "Sage"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Light Screen",
+          "Safeguard"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Natural Fighter",
+      "requiredFeatureIds": [
+        "Survivalist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "New Normal",
+      "requiredFeatureIds": [
+        "Extra Ordinary"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Ninja",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Double Team",
+          "Poison Powder"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Ninja’s Arsenal",
+      "requiredFeatureIds": [
+        "Ninja"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Noise Complaint",
+      "requiredFeatureIds": [
+        "Cacophony",
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Hyper Voice",
+          "Uproar"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Not Yet!",
+      "requiredFeatureIds": [
+        "Enduring Soul",
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Nuanced Performance",
+      "requiredFeatureIds": [
+        "Coordinator"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Nurse",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Observation Party",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Oracle",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Mystic Senses"
+      ],
+      "grantedIds": {
+        "ability": [
+          "Pickup"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Overload",
+      "requiredFeatureIds": [
+        "Lockdown"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Overrun",
+      "requiredFeatureIds": [
+        "Conqueror’s March"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "PK Alpha",
+      "requiredFeatureIds": [
+        "Telekinetic"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Barrier",
+          "Kinesis"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "PK Combat",
+      "requiredFeatureIds": [
+        "Focus",
+        "Telekinetic"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "PK Omega",
+      "requiredFeatureIds": [
+        "Focus",
+        "PK Alpha"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Psychic",
+          "Telekinesis"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Pack Master",
+      "requiredFeatureIds": [
+        "Pack Tactics"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Pack Tactics",
+      "requiredFeatureIds": [
+        "Hunter"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Pain Dampening",
+      "requiredFeatureIds": [
+        "Channeler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Pain Resistance",
+      "requiredFeatureIds": [
+        "Taskmaster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Parfumier",
+      "requiredFeatureIds": [
+        "Fashionista"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Passing Waltz",
+      "requiredFeatureIds": [
+        "Dance Practice"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Patch Cure",
+      "requiredFeatureIds": [
+        "Apothecary"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Performance Enhancers",
+      "requiredFeatureIds": [
+        "Medicinal Blend"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Perseverance",
+      "requiredFeatureIds": [
+        "Ace Trainer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Plainly Perfect",
+      "requiredFeatureIds": [
+        "Extra Ordinary"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Plate Crafter",
+      "requiredFeatureIds": [
+        "Rainbow Light"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Play Them Like a Fiddle",
+      "requiredFeatureIds": [
+        "Powerful Motivator",
+        "Provocateur"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Playing God",
+      "requiredFeatureIds": [
+        "Chemist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Poison Weapons",
+      "requiredFeatureIds": [
+        "Ninja"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Poké Ball Crafter",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Basic Balls",
+        "Poké Ball Repair"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "PokéManiac",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Polar Vortex",
+      "requiredFeatureIds": [
+        "Glacial Ice"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Polished Shine",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Potent Venom",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Power Chord",
+      "requiredFeatureIds": [
+        "Focus",
+        "Noise Complaint"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Power Conduit",
+      "requiredFeatureIds": [
+        "Channeler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Power Pirouette",
+      "requiredFeatureIds": [
+        "Dance Form"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Power of the Mind",
+      "requiredFeatureIds": [
+        "Telekinetic"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Powerful Motivator",
+      "requiredFeatureIds": [
+        "Provocateur"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Practical Fashion",
+      "requiredFeatureIds": [
+        "Dashing Makeover"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Precision Orders",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Prehistoric Bond",
+      "requiredFeatureIds": [
+        "Fossil Restoration"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Prescience",
+      "requiredFeatureIds": [
+        "Unveiled Sight"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Preserves",
+      "requiredFeatureIds": [
+        "Accentuated Taste"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Press",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Press On!",
+      "requiredFeatureIds": [
+        "Taskmaster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Proper Care",
+      "requiredFeatureIds": [
+        "Field Clinic",
+        "I’m a Doctor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Provocateur",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Charmer",
+        "Confidence Artist",
+        "Intimidating Presence"
+      ],
+      "grantedIds": {
+        "move": [
+          "Sweet Kiss",
+          "Taunt"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Psionic Analysis",
+      "requiredFeatureIds": [
+        "Hunter",
+        "Witch Hunter"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Psionic Overload",
+      "requiredFeatureIds": [
+        "Focus",
+        "PK Omega"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Psionic Sight",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Elemental Connection"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Psionic Sponge",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Psychic Resonance",
+      "requiredFeatureIds": [
+        "Psionic Sponge"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Pummeling Momentum",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Push Buttons",
+      "requiredFeatureIds": [
+        "Provocateur"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "edge": [
+          "Demoralize"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Pusher",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "edge": [
+          "Aura Pulse",
+          "Basic Ranged Attacks",
+          "Enticing Bait",
+          "Extended Invisibility",
+          "Far Reading",
+          "Precise Threadings",
+          "Seismometer",
+          "TK Mastery",
+          "Trail Sniffer"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Quick Gymnastics",
+      "requiredFeatureIds": [
+        "Tumbler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Quick Healing",
+      "requiredFeatureIds": [
+        "Taskmaster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Quick Reflexes",
+      "requiredFeatureIds": [
+        "Tumbler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "ability": [
+          "Dodge"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Quick Switch",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Quick Wit",
+      "requiredFeatureIds": [
+        "Provocateur"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Rainbow Gem",
+      "requiredFeatureIds": [
+        "Rainbow Light"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Rainbow Light",
+      "requiredFeatureIds": [
+        "Crystal Artificer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Ramming Speed",
+      "requiredFeatureIds": [
+        "Rider"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Ravager Orders",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Re-Balancing",
+      "requiredFeatureIds": [
+        "Pusher"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Reality Bender",
+      "requiredFeatureIds": [
+        "Warper"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Relentless Pursuit",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Reliable Performance",
+      "requiredFeatureIds": [
+        "Nuanced Performance"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Researcher",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Resilience",
+      "requiredFeatureIds": [
+        "Awareness",
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Restorative Science",
+      "requiredFeatureIds": [
+        "Apothecary"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Ride as One",
+      "requiredFeatureIds": [
+        "Rider"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Rider",
+      "requiredFeatureIds": [
+        "Agility Training"
+      ],
+      "requiredEdgeIds": [
+        "Mounted Prowess"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Rogue",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Feint Attack",
+          "Thief"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Roughneck",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Intimidating Presence"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Round Trip",
+      "requiredFeatureIds": [
+        "Juggler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Rule of Cool",
+      "requiredFeatureIds": [
+        "Cool Conduct"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Sacred Shield",
+      "requiredFeatureIds": [
+        "Sage"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Lucky Chant",
+          "Reflect"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Sage",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Sage’s Benediction",
+      "requiredFeatureIds": [
+        "Mystic Defense",
+        "Sacred Shield"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Savage Strike",
+      "requiredFeatureIds": [
+        "Taskmaster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Scheme Twist",
+      "requiredFeatureIds": [
+        "Commander"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Scoundrel’s Strike",
+      "requiredFeatureIds": [
+        "Street Fighter",
+        "Underhanded Tactics"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Second Strike",
+      "requiredFeatureIds": [
+        "Martial Artist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Seed Bag",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Green Thumb"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Seize The Moment",
+      "requiredFeatureIds": [
+        "Duelist",
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Shared Senses",
+      "requiredFeatureIds": [
+        "Channeler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Shocking Speed",
+      "requiredFeatureIds": [
+        "Lockdown"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Shrug Off",
+      "requiredFeatureIds": [
+        "Staying Power"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Signature Move",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "move"
+      ]
+    },
+    {
+      "canonicalId": "Signature Technique",
+      "requiredFeatureIds": [
+        "Elite Trainer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Simple Improvements",
+      "requiredFeatureIds": [
+        "Extra Ordinary"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Skill Monkey",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Skill Trainer",
+      "requiredFeatureIds": [
+        "Pusher"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Sleight",
+      "requiredFeatureIds": [
+        "Trickster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Small Prophecies",
+      "requiredFeatureIds": [
+        "Divination"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Smart Scheme",
+      "requiredFeatureIds": [
+        "Style Expert"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Smashing Punishment",
+      "requiredFeatureIds": [
+        "Close Quarters Mastery"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Sneak Attack",
+      "requiredFeatureIds": [
+        "Clever Ruse"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Soft Landing",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Soothing Connection",
+      "requiredFeatureIds": [
+        "Pain Dampening"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Space Distortion",
+      "requiredFeatureIds": [
+        "Warper"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Ally Switch",
+          "Teleport"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Species Savant",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Spirit Boost",
+      "requiredFeatureIds": [
+        "Channeler"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Stacked Deck",
+      "requiredFeatureIds": [
+        "Trickster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Stat Ace",
+      "requiredFeatureIds": [
+        "Ace Trainer",
+        "Focus",
+        "Style Expert"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Stat Embodiment",
+      "requiredFeatureIds": [
+        "Focus",
+        "Stat Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Stat Link",
+      "requiredFeatureIds": [
+        "Stat Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Stat Maneuver",
+      "requiredFeatureIds": [
+        "Focus",
+        "Stat Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Stat Mastery",
+      "requiredFeatureIds": [
+        "Stat Maneuver"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Stat Stratagem",
+      "requiredFeatureIds": [
+        "Focus",
+        "Stat Link",
+        "Stat Training"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Stat Training",
+      "requiredFeatureIds": [
+        "Stat Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Stay With Us!",
+      "requiredFeatureIds": [
+        "Front Line Healer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Staying Power",
+      "requiredFeatureIds": [
+        "Enduring Soul"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Strange Energy",
+      "requiredFeatureIds": [
+        "Space Distortion",
+        "Warping Ground"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Heal Block",
+          "Magic Coat"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Street Fighter",
+      "requiredFeatureIds": [
+        "Rogue",
+        "Unexpected Attacks"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Assurance",
+          "Payback"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Strike of the Whip",
+      "requiredFeatureIds": [
+        "Press",
+        "Taskmaster"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Style Entrainment",
+      "requiredFeatureIds": [
+        "Style Expert"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Style Expert",
+      "requiredFeatureIds": [
+        "Coordinator"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Style Flourish",
+      "requiredFeatureIds": [
+        "Style Expert"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Style is Eternal",
+      "requiredFeatureIds": [
+        "Fashionista"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Suggestion",
+      "requiredFeatureIds": [
+        "Focus",
+        "Honed Mind"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Sunlight Within",
+      "requiredFeatureIds": [
+        "Foiling Foliage"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Super Cures",
+      "requiredFeatureIds": [
+        "Patch Cure"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Surprise!",
+      "requiredFeatureIds": [
+        "Hunter"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Survivalist",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Sword of Body and Soul",
+      "requiredFeatureIds": [
+        "Aura Guardian"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Tag In",
+      "requiredFeatureIds": [
+        "Round Trip"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Targeted Profiling",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Taskmaster",
+      "requiredFeatureIds": [
+        "Brutal Training"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Tasty Snacks",
+      "requiredFeatureIds": [
+        "Chef"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Telekinetic",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Elemental Connection",
+        "Iron Mind"
+      ],
+      "grantedIds": {
+        "capability": [
+          "Telekinetic"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Telekinetic Burst",
+      "requiredFeatureIds": [
+        "Focus",
+        "PK Combat"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Telepath",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Elemental Connection",
+        "Iron Mind"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Telepathic Awareness",
+      "requiredFeatureIds": [
+        "Telepath"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Telepathic Warning",
+      "requiredFeatureIds": [
+        "Awareness",
+        "Focus",
+        "Telepathic Awareness"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Terrain Talent",
+      "requiredFeatureIds": [
+        "Survivalist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "The Power of Aura",
+      "requiredFeatureIds": [
+        "Aura Guardian"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "This One’s Special, I Know It",
+      "requiredFeatureIds": [
+        "Pusher"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "This Will Not Stand",
+      "requiredFeatureIds": [
+        "Tyrant’s Roar"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Thought Detection",
+      "requiredFeatureIds": [
+        "Awareness",
+        "Telepathic Awareness"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Tip the Scales",
+      "requiredFeatureIds": [
+        "Commander"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Top Percentage",
+      "requiredFeatureIds": [
+        "Ace Trainer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Top Tier Berries",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Green Thumb"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Tornado Charge",
+      "requiredFeatureIds": [
+        "Celerity"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Tough Tumble",
+      "requiredFeatureIds": [
+        "Style Expert"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Tough as Nails",
+      "requiredFeatureIds": [
+        "Roughneck"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Endure",
+          "Slack Off"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Tough as Schist",
+      "requiredFeatureIds": [
+        "Gravel Before Me"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Trail Blazer",
+      "requiredFeatureIds": [
+        "Brightest Flame"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Training Regime",
+      "requiredFeatureIds": [
+        "Athlete"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Trapper",
+      "requiredFeatureIds": [
+        "Survivalist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Trickster",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Trickster Orders",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "True Steel",
+      "requiredFeatureIds": [
+        "Polished Shine"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Tumbler",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Acrobat"
+      ],
+      "grantedIds": {
+        "ability": [
+          "Run Away"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Tutoring",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "move"
+      ]
+    },
+    {
+      "canonicalId": "Two-Second Preview",
+      "requiredFeatureIds": [
+        "Oracle"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "ability": [
+          "Instinct"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Type Ace",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Elemental Connection"
+      ],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Type Booster",
+      "requiredFeatureIds": [
+        "Crystal Artificer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Type Brace",
+      "requiredFeatureIds": [
+        "Crystal Artificer"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Type Expertise",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Type Methodology",
+      "requiredFeatureIds": [
+        "Effective Methods",
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Type Refresh",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Tyrant’s Roar",
+      "requiredFeatureIds": [
+        "Type Ace"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Unconquerable",
+      "requiredFeatureIds": [
+        "Tyrant’s Roar"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Underhanded Tactics",
+      "requiredFeatureIds": [
+        "Rogue"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": [
+        "ability"
+      ]
+    },
+    {
+      "canonicalId": "Unexpected Attacks",
+      "requiredFeatureIds": [
+        "Rogue"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Pursuit",
+          "Sucker Punch"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Unveiled Sight",
+      "requiredFeatureIds": [
+        "Oracle"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Upheaval",
+      "requiredFeatureIds": [
+        "Mold the Earth"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Utility Drop",
+      "requiredFeatureIds": [
+        "Ninja’s Arsenal"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Vampirism",
+      "requiredFeatureIds": [
+        "Ghost Step"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Versatile Teachings",
+      "requiredFeatureIds": [
+        "Mentor"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Versatile Wardrobe",
+      "requiredFeatureIds": [
+        "Fashionista"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Vim and Vigor",
+      "requiredFeatureIds": [
+        "Focus",
+        "Shrug Off"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Vitamins",
+      "requiredFeatureIds": [
+        "Dietician"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Voice Lessons",
+      "requiredFeatureIds": [
+        "Noise Complaint"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Walk It Off",
+      "requiredFeatureIds": [
+        "Focus"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Warped Transmission",
+      "requiredFeatureIds": [
+        "Farcast"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Warper",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [
+        "Elemental Connection"
+      ],
+      "grantedIds": {
+        "ability": [
+          "Probability Control"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Warping Ground",
+      "requiredFeatureIds": [
+        "Warper"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "move": [
+          "Gravity",
+          "Trick"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Weather Systems",
+      "requiredFeatureIds": [
+        "Climatology"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Weightless Step",
+      "requiredFeatureIds": [
+        "Ninja"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "ability": [
+          "Infiltrator"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Whirlwind Strikes",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Wilderness Guide",
+      "requiredFeatureIds": [
+        "Survivalist"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "capability": [
+          "Stealth"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Witch Hunter",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {
+        "feature": [
+          "Psionic Sight"
+        ]
+      },
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Wrestlemania",
+      "requiredFeatureIds": [],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    },
+    {
+      "canonicalId": "Zephyr Shield",
+      "requiredFeatureIds": [
+        "Celerity"
+      ],
+      "requiredEdgeIds": [],
+      "grantedIds": {},
+      "selectedGrantChoiceIds": []
+    }
+  ]
+}

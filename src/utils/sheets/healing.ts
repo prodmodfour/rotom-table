@@ -10,6 +10,7 @@ import {
 import { pokemonHasResolvedCapability, resolveStats } from '~/utils/sheets/pokemonDerived'
 import { computeTrainerFullMaxHp, computeTrainerMaxAp, computeTrainerMaxHp } from '~/utils/sheets/trainerDerived'
 import { resolvedStatTotal } from '~/utils/sheets/resolvedStatRows'
+import { normalizedFeatureApState, normalizedFeatureRuntimeState, normalizedFeatureUsageLedger } from '#shared/featureAutomation/state'
 
 export const MAX_INJURIES_HEALED_PER_DAY = 3
 
@@ -334,13 +335,39 @@ export const clearTrainerConditions = (sheet: TrainerSheet): number => {
   return cleared
 }
 
+const recoverTrainerFeatureRestState = (sheet: TrainerSheet, maxAp: number): void => {
+  if (sheet.featureApState?.schemaVersion === 1) {
+    const state = normalizedFeatureApState(sheet.featureApState, maxAp)
+    sheet.featureApState = Object.freeze({
+      ...state,
+      max: nonNegativeWhole(maxAp),
+      spent: 0,
+      bindings: Object.freeze(state.bindings.filter(binding => binding.release !== 'extended-rest')),
+      drains: Object.freeze(state.drains.filter(drain => drain.recovery !== 'extended-rest')),
+      temporary: Object.freeze([]),
+    })
+  }
+  if (sheet.featureUsage) {
+    const usage = normalizedFeatureUsageLedger(sheet.featureUsage)
+    sheet.featureUsage = Object.freeze({ ...usage, entries: Object.freeze(usage.entries.filter(entry => entry.scope === 'campaign')) })
+  }
+  if (sheet.featureRuntimeState) {
+    const runtime = normalizedFeatureRuntimeState(sheet.featureRuntimeState)
+    sheet.featureRuntimeState = Object.freeze({ ...runtime, pending: Object.freeze(runtime.pending.map(workflow => workflow.status === 'pending' && workflow.kind === 'reaction' ? Object.freeze({ ...workflow, status: 'expired' as const }) : workflow)) })
+  }
+}
+
 export const restoreTrainerAp = (sheet: TrainerSheet, maxAp = computeTrainerMaxAp(sheet)): number => {
   const ap = ensureTrainerAp(sheet)
   const beforeLeft = nonNegativeWhole(ap.left ?? maxAp)
-  const bound = nonNegativeWhole(ap.bound)
-  const nextLeft = Math.max(0, nonNegativeWhole(maxAp) - bound)
+  recoverTrainerFeatureRestState(sheet, maxAp)
+  const canonical = sheet.featureApState
+  const bound = canonical?.bindings.reduce((sum, binding) => sum + nonNegativeWhole(binding.amount), 0) ?? nonNegativeWhole(ap.bound)
+  const drained = canonical?.drains.reduce((sum, drain) => sum + nonNegativeWhole(drain.amount), 0) ?? 0
+  const nextLeft = Math.max(0, nonNegativeWhole(maxAp) - bound - drained)
   ap.spent = 0
-  ap.drained = 0
+  ap.bound = bound
+  ap.drained = drained
   ap.left = nextLeft
   return Math.max(0, nextLeft - beforeLeft)
 }

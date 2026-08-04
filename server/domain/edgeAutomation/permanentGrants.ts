@@ -7,6 +7,8 @@ import { pokeEdgeAbilityGrants } from '#shared/edgeAutomation/grants'
 import { findAbility, findMove } from '~~/data/ptuReference'
 import { edgeChoiceValues } from '#shared/edgeAutomation/instances'
 import { resolveEffectiveEdges } from './effectiveEdges'
+import { resolvedSheetFeatureClosure } from '#shared/featureAutomation/sheetFeatures'
+import { resolveFeatureGrants } from '#shared/featureAutomation/grants'
 
 export interface EdgePermanentGrant {
   readonly canonicalId: string
@@ -47,13 +49,12 @@ export const resolveSheetEdgeAbilityGrants = (
 ): readonly EdgePermanentGrant[] => Object.freeze(permanentGrants(sheet, 'ability')
   .filter(grant => Boolean(findAbility(grant.canonicalId))))
 
-/** Virtual, provenance-bound Ability grants; sheet rows are never browser-manufactured. */
+/** Virtual, provenance-bound Edge/Feature Ability grants; browser rows never manufacture authority. */
 export const resolveSheetAndEdgeAbilityInstances = (
   sheet: CharacterSheet | TrainerSheet,
 ): readonly ProjectedBaseAbilityInput[] => {
   const base = resolveSheetAbilityInstances(sheet.abilities)
-  if (!('species' in sheet)) return base
-  const grants = resolvedSheetEdgeInstances(sheet, 'poke').flatMap(instance => (
+  const edgeGrants = 'species' in sheet ? resolvedSheetEdgeInstances(sheet, 'poke').flatMap(instance => (
     pokeEdgeAbilityGrants(instance).flatMap((canonicalId, index): readonly ProjectedBaseAbilityInput[] => {
       if (!findAbility(canonicalId)) return []
       return [Object.freeze({
@@ -63,8 +64,19 @@ export const resolveSheetAndEdgeAbilityInstances = (
         parameterData: null,
       })]
     })
-  ))
-  const byId = new Map([...base, ...grants].map(instance => [instance.instanceId, instance]))
+  )) : []
+  const featureGrants = 'species' in sheet ? [] : resolvedSheetFeatureClosure(sheet).flatMap(source => {
+    return resolveFeatureGrants(source).flatMap((grant, index): readonly ProjectedBaseAbilityInput[] => {
+      if (grant.kind !== 'ability' || grant.targetPolicy !== 'trainer' || grant.duration !== 'permanent' || !findAbility(grant.canonicalId)) return []
+      return [Object.freeze({
+        instanceId: `${source.instanceId}:ability:${index}`,
+        canonicalId: grant.canonicalId,
+        parameterStatus: abilityRequiresInstanceParameters(grant.canonicalId) ? 'missing-required-data' : 'not-parameterized',
+        parameterData: null,
+      })]
+    })
+  })
+  const byId = new Map([...base, ...edgeGrants, ...featureGrants].map(instance => [instance.instanceId, instance]))
   return Object.freeze([...byId.values()])
 }
 

@@ -85,6 +85,9 @@ if have npm; then
   pp_section "Edge automation metadata"
   run_cmd npm run check:edge-automation-complete
 
+  pp_section "Feature automation metadata"
+  run_cmd npm run check:feature-automation-complete
+
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation
 

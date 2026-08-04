@@ -19,6 +19,7 @@ import {
   selectedPokemonCapabilityEdges,
 } from '#shared/capabilityAutomation/pokemonEdges'
 import { sheetHasCanonicalEdge } from '#shared/edgeAutomation/sheetEdges'
+import { sheetHasCanonicalFeature } from '#shared/featureAutomation/sheetFeatures'
 import {
   computeFullMaxHp,
   resolveCapabilities as resolvePokemonCapabilities,
@@ -356,16 +357,15 @@ const trainerCandidates = (
     value: null,
     source: source('sheet-override', `sheet:trainer:${sheet.slug}:capabilities.other:${safePart(label)}`, 200, label),
   })
-  const featureNames = new Set((sheet.features ?? []).map(feature => feature.name.trim().toLocaleLowerCase('en-US')))
   if (sheetHasCanonicalEdge(sheet, 'trainer', 'Art of Stealth')) candidates.push({
     parsed: parseCapabilityLabel('Stealth'), value: null,
     source: source('edge-grant', `sheet:trainer:${sheet.slug}:edge:Art of Stealth`, 350, 'Art of Stealth'),
   })
-  if (featureNames.has('mental resistance')) candidates.push({
+  if (sheetHasCanonicalFeature(sheet, 'Mental Resistance')) candidates.push({
     parsed: parseCapabilityLabel('Mindlock'), value: null,
     source: source('feature-grant', `sheet:trainer:${sheet.slug}:feature:Mental Resistance`, 350, 'Mental Resistance'),
   })
-  if (featureNames.has('telekinetic')) candidates.push({
+  if (sheetHasCanonicalFeature(sheet, 'Telekinetic')) candidates.push({
     parsed: parseCapabilityLabel('Telekinetic'), value: null,
     source: source('feature-grant', `sheet:trainer:${sheet.slug}:feature:Telekinetic`, 350, 'Telekinetic'),
   })

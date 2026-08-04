@@ -187,6 +187,9 @@ const skillOptions: readonly EditableCellOption[] = TRAINER_SKILL_ORDER.map(([va
 const fashionistaSkillOptions: readonly EditableCellOption[] = TRAINER_SKILL_ORDER
   .filter(([value]) => ['charm', 'command', 'guile', 'intimidate', 'intuition'].includes(value))
   .map(([value, label]) => ({ value, label }))
+const mentorSkillOptions: readonly EditableCellOption[] = TRAINER_SKILL_ORDER
+  .filter(([value]) => ['charm', 'intimidate', 'intuition', 'pokeEd'].includes(value))
+  .map(([value, label]) => ({ value, label }))
 const typeOptions = options([
   'Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock',
   'Bug', 'Ghost', 'Steel', 'Fire', 'Water', 'Grass',
@@ -490,6 +493,11 @@ const featureChoiceMap = defineChoiceMap([
       options: fashionistaSkillOptions,
     },
   ]],
+  [['Mentor'], [
+    { key: 'mentorSkill', label: 'Mentor Skill 1', placeholder: 'Choose skill', options: mentorSkillOptions },
+    { key: 'mentorSkill2', label: 'Mentor Skill 2', placeholder: 'Choose skill', options: mentorSkillOptions },
+  ]],
+  [['Species Savant'], [{ key: 'species', label: 'Evolutionary Family', placeholder: 'Enter evolutionary family', inputType: 'text', options: [] }]],
   [['Parfumier'], [limitedMoveSelector('move', 'Move', ['Sweet Scent', 'Aromatic Mist'])]],
   [['Accentuated Taste'], [{
     key: 'taste',
@@ -699,7 +707,15 @@ const resolveTrainerSubchoices = (
 
 export const trainerFeatureSubchoices = (
   feature: Pick<TrainerFeatureEntry, 'name' | 'choices'>,
-): readonly TrainerSubchoiceDefinition[] => resolveTrainerSubchoices(feature, featureChoiceMap.get(entryBaseSlug(feature)) ?? [])
+): readonly TrainerSubchoiceDefinition[] => {
+  const base = [...(featureChoiceMap.get(entryBaseSlug(feature)) ?? [])]
+  const tags = new Set(findFeature(stripTrainerEntryChoiceSuffix(feature.name))?.tags ?? [])
+  if (!base.some(definition => definition.key === 'statTag' || definition.key === 'stat')) {
+    if (tags.has('+Attack or Special Attack')) base.push({ ...statSelector, key: 'statTag', options: statSelector.options.filter(option => ['atk', 'satk'].includes(String(option.value))) })
+    else if (tags.has('+Any Stat')) base.push({ ...statSelector, key: 'statTag' })
+  }
+  return resolveTrainerSubchoices(feature, base)
+}
 
 export const trainerEdgeSubchoices = (
   edge: Pick<TrainerEdgeEntry, 'name' | 'choices' | 'basicSkill'>,

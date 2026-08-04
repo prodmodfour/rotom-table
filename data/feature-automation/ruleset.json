@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-feature-automation-v1",
+  "runtimeAuthority": [
+    "data/reference/features.json"
+  ],
+  "catalog": {
+    "path": "data/reference/features.json",
+    "entryCount": 444,
+    "bytes": 257031,
+    "sha256": "27d0f2bee4db96ebfb0c431cce9ea5222fe3d2d9fe9ead32507c46b51a9d77c4",
+    "gitBlob": "855a1bf867e8ea1fa98b11728c4dcc5b4ce9adbb"
+  },
+  "maintenanceInputs": [
+    {
+      "path": "ptu-data/parse_features_edges.py",
+      "sha256": "fd5b9e5a0665f85fcc8f022b28c5322674027c02019fd808ca8221ede5ca4564",
+      "gitBlob": "ecc2db5664323b17cdc8d3302ad7c8b4cfe65737",
+      "authority": "documentary-only"
+    },
+    {
+      "path": "scripts/migrate_feature_reference_v1.py",
+      "sha256": "f8751383b0ab405fc3a19d510161a79272df16c85034ffac7d57e15aa5a18fab",
+      "gitBlob": "73f61ce1b1a1ff5ca1733b1133c0b00adc70c9d3",
+      "authority": "reviewed-one-way-migration"
+    }
+  ],
+  "identityOrder": "unicode-code-point",
+  "sourceDriftPolicy": "fail-closed",
+  "unknownIdentityPolicy": "diagnostic-only",
+  "clientAuthority": "none"
+}

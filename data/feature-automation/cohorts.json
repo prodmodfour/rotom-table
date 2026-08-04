@@ -1,0 +1,601 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-feature-automation-v1",
+  "cohortCount": 30,
+  "cohorts": [
+    {
+      "id": "FA-070",
+      "canonicalIds": [
+        "Cheerleader",
+        "Moment of Action",
+        "Cheers",
+        "Inspirational Support",
+        "Bring It On!",
+        "Go, Fight, Win!",
+        "Keep Fighting!",
+        "Medic",
+        "Front Line Healer",
+        "Medical Techniques",
+        "I’m a Doctor",
+        "Proper Care",
+        "Stay With Us!",
+        "Field Clinic",
+        "Nurse"
+      ]
+    },
+    {
+      "id": "FA-071",
+      "canonicalIds": [
+        "Affliction Techniques",
+        "Gotta Catch ‘Em All",
+        "Mixed Power",
+        "Incandescence",
+        "Ace Trainer",
+        "Perseverance",
+        "Elite Trainer",
+        "Critical Moment",
+        "Top Percentage",
+        "Signature Technique",
+        "Champ in the Making",
+        "Capture Specialist",
+        "Advanced Capture Techniques",
+        "Captured Momentum",
+        "Catch Combo"
+      ]
+    },
+    {
+      "id": "FA-072",
+      "canonicalIds": [
+        "False Strike",
+        "Relentless Pursuit",
+        "Commander",
+        "Mobilize",
+        "Leadership",
+        "Battle Conductor",
+        "Complex Orders",
+        "Tip the Scales",
+        "Scheme Twist",
+        "Coordinator",
+        "Decisive Director",
+        "Adaptable Performance",
+        "Flexible Preparations",
+        "Innovation",
+        "Nuanced Performance"
+      ]
+    },
+    {
+      "id": "FA-073",
+      "canonicalIds": [
+        "Reliable Performance",
+        "Hobbyist",
+        "Dilettante",
+        "Dabbler",
+        "Look and Learn",
+        "Mentor",
+        "Lessons",
+        "Expand Horizons",
+        "Guidance",
+        "Move Tutor",
+        "Egg Tutor",
+        "Lifelong Learning",
+        "Changing Viewpoints",
+        "Empowered Development",
+        "Corrective Learning"
+      ]
+    },
+    {
+      "id": "FA-074",
+      "canonicalIds": [
+        "Versatile Teachings",
+        "Cheer Brigade",
+        "Gleeful Interference",
+        "Duelist",
+        "Expend Momentum",
+        "Effective Methods",
+        "Directed Focus",
+        "Type Methodology",
+        "Duelist’s Manual",
+        "Seize The Moment",
+        "Enduring Soul",
+        "Staying Power",
+        "Shrug Off",
+        "Awareness",
+        "Resilience"
+      ]
+    },
+    {
+      "id": "FA-075",
+      "canonicalIds": [
+        "Not Yet!",
+        "Vim and Vigor",
+        "Juggler",
+        "Bounce Shot",
+        "Juggling Show",
+        "Round Trip",
+        "Tag In",
+        "Emergency Release",
+        "First Blood",
+        "Rider",
+        "Ramming Speed",
+        "Conqueror’s March",
+        "Ride as One",
+        "Lean In",
+        "Cavalier’s Reprisal"
+      ]
+    },
+    {
+      "id": "FA-076",
+      "canonicalIds": [
+        "Overrun",
+        "Taskmaster",
+        "Quick Healing",
+        "Savage Strike",
+        "Strike of the Whip",
+        "Pain Resistance",
+        "Press On!",
+        "Desperate Strike",
+        "Deadly Gambit",
+        "Trickster",
+        "Bag of Tricks",
+        "Stacked Deck",
+        "Flourish",
+        "Encore Performance",
+        "Sleight"
+      ]
+    },
+    {
+      "id": "FA-077",
+      "canonicalIds": [
+        "Stat Ace",
+        "Focus",
+        "Stat Link",
+        "Stat Training",
+        "Stat Maneuver",
+        "Stat Mastery",
+        "Stat Embodiment",
+        "Stat Stratagem",
+        "Style Flourish",
+        "Style Entrainment",
+        "Beautiful Ballet",
+        "Fabulous Max",
+        "Enticing Beauty",
+        "Style Expert",
+        "Cool Conduct"
+      ]
+    },
+    {
+      "id": "FA-078",
+      "canonicalIds": [
+        "Rule of Cool",
+        "Action Hero Stunt",
+        "Cute Cuddle",
+        "Gleeful Steps",
+        "Let’s Be Friends!",
+        "Smart Scheme",
+        "Calculated Assault",
+        "Learn From Your Mistakes",
+        "Tough Tumble",
+        "Macho Charge",
+        "Endurance",
+        "Type Ace",
+        "Type Refresh",
+        "Move Sync",
+        "Insectoid Utility"
+      ]
+    },
+    {
+      "id": "FA-079",
+      "canonicalIds": [
+        "Iterative Evolution",
+        "Chitin Shield",
+        "Disruption Order",
+        "Clever Ruse",
+        "Sneak Attack",
+        "Devious",
+        "Black-Out Strike",
+        "Tyrant’s Roar",
+        "Highlander",
+        "Unconquerable",
+        "This Will Not Stand",
+        "Lockdown",
+        "Overload",
+        "Shocking Speed",
+        "Chain Lightning"
+      ]
+    },
+    {
+      "id": "FA-080",
+      "canonicalIds": [
+        "Fairy Lights",
+        "Arcane Favor",
+        "Fey Trance",
+        "Fairy Rite",
+        "Close Quarters Mastery",
+        "Brawler",
+        "Face Me Whelp",
+        "Smashing Punishment",
+        "Brightest Flame",
+        "Trail Blazer",
+        "Fan The Flames",
+        "Celerity",
+        "Gale Strike",
+        "Zephyr Shield",
+        "Tornado Charge"
+      ]
+    },
+    {
+      "id": "FA-081",
+      "canonicalIds": [
+        "Ghost Step",
+        "Haunting Curse",
+        "Vampirism",
+        "Boo!",
+        "Foiling Foliage",
+        "Sunlight Within",
+        "Enduring Bloom",
+        "Cross-Pollinate",
+        "Mold the Earth",
+        "Desert Heart",
+        "Earthroil",
+        "Upheaval",
+        "Glacial Ice",
+        "Polar Vortex",
+        "Arctic Zeal"
+      ]
+    },
+    {
+      "id": "FA-082",
+      "canonicalIds": [
+        "Deep Cold",
+        "Extra Ordinary",
+        "Plainly Perfect",
+        "New Normal",
+        "Simple Improvements",
+        "Potent Venom",
+        "Debilitate",
+        "Miasma",
+        "Corrosive Blight",
+        "Psionic Sponge",
+        "Mindbreak",
+        "Psychic Resonance",
+        "Force of Will",
+        "Gravel Before Me",
+        "Bigger and Boulder"
+      ]
+    },
+    {
+      "id": "FA-083",
+      "canonicalIds": [
+        "Tough as Schist",
+        "Gneiss Aim",
+        "Polished Shine",
+        "Iron Grit",
+        "Assault Armor",
+        "True Steel",
+        "Flood!",
+        "Fishbowl Technique",
+        "Fountain of Life",
+        "Aqua Vortex",
+        "Chef",
+        "Hits the Spot",
+        "Culinary Appreciation",
+        "Accentuated Taste",
+        "Complex Aftertaste"
+      ]
+    },
+    {
+      "id": "FA-084",
+      "canonicalIds": [
+        "Dietician",
+        "Dumplings",
+        "Tasty Snacks",
+        "Meal Planner",
+        "Hearty Meal",
+        "Bait Mixer",
+        "Preserves",
+        "Leftovers",
+        "Vitamins",
+        "Chronicler",
+        "Archival Training",
+        "Archive Tutor",
+        "Targeted Profiling",
+        "Observation Party",
+        "Cinematic Analysis"
+      ]
+    },
+    {
+      "id": "FA-085",
+      "canonicalIds": [
+        "Fashionista",
+        "Dashing Makeover",
+        "Style is Eternal",
+        "Accessorize",
+        "Parfumier",
+        "Versatile Wardrobe",
+        "Dress to Impress",
+        "Contest Trends",
+        "Basic Fashion",
+        "Practical Fashion",
+        "Focused Fashion",
+        "Incense Maker",
+        "Researcher",
+        "Breadth of Knowledge",
+        "Live and Learn"
+      ]
+    },
+    {
+      "id": "FA-086",
+      "canonicalIds": [
+        "Instant Analysis",
+        "Echoes of the Future",
+        "Restorative Science",
+        "Super Cures",
+        "Hyper Cures",
+        "Performance Enhancers",
+        "Apothecary",
+        "Patch Cure",
+        "Medicinal Blend",
+        "Crystal Artificer",
+        "Crystal Resonance",
+        "Rainbow Light",
+        "Fistful of Force",
+        "Type Booster",
+        "Type Brace"
+      ]
+    },
+    {
+      "id": "FA-087",
+      "canonicalIds": [
+        "Focus Gem",
+        "Chakra Crystal",
+        "Rainbow Gem",
+        "Plate Crafter",
+        "Seed Bag",
+        "Top Tier Berries",
+        "Herb Lore",
+        "Chemist",
+        "Chemical Warfare",
+        "Caustic Chemistry",
+        "Playing God",
+        "Enhancers",
+        "Climatology",
+        "Climate Control",
+        "Weather Systems"
+      ]
+    },
+    {
+      "id": "FA-088",
+      "canonicalIds": [
+        "Extreme Weather",
+        "Witch Hunter",
+        "Psionic Analysis",
+        "Mental Resistance",
+        "Immutable Mind",
+        "Fossil Restoration",
+        "Ancient Heritage",
+        "Genetic Memory",
+        "Prehistoric Bond",
+        "Pusher",
+        "This One’s Special, I Know It",
+        "Skill Trainer",
+        "Re-Balancing",
+        "Survivalist",
+        "Natural Fighter"
+      ]
+    },
+    {
+      "id": "FA-089",
+      "canonicalIds": [
+        "Trapper",
+        "Wilderness Guide",
+        "Terrain Talent",
+        "Adaptive Geography",
+        "Athlete",
+        "Training Regime",
+        "Coaching",
+        "Adrenaline Rush",
+        "Athletic Moves",
+        "Dancer",
+        "Dance Form",
+        "Beguiling Dance",
+        "Dance Practice",
+        "Choreographer",
+        "Power Pirouette"
+      ]
+    },
+    {
+      "id": "FA-090",
+      "canonicalIds": [
+        "Passing Waltz",
+        "Hunter",
+        "Pack Tactics",
+        "Surprise!",
+        "Hunter’s Reflexes",
+        "Finisher",
+        "Don’t Look Away",
+        "Pack Master",
+        "Martial Artist",
+        "Martial Training",
+        "My Kung-Fu is Stronger",
+        "Martial Achievement",
+        "Second Strike",
+        "Wrestlemania",
+        "Heightened Intensity"
+      ]
+    },
+    {
+      "id": "FA-091",
+      "canonicalIds": [
+        "Pummeling Momentum",
+        "Bend Like the Willow",
+        "Soft Landing",
+        "Whirlwind Strikes",
+        "Musician",
+        "Musical Ability",
+        "Mt. Moon Blues",
+        "Cacophony",
+        "Noise Complaint",
+        "Voice Lessons",
+        "Power Chord",
+        "Provocateur",
+        "Push Buttons",
+        "Quick Wit",
+        "Mixed Messages"
+      ]
+    },
+    {
+      "id": "FA-092",
+      "canonicalIds": [
+        "Powerful Motivator",
+        "Play Them Like a Fiddle",
+        "Enchanting Gaze",
+        "Rogue",
+        "Cutthroat",
+        "Dirty Fighting",
+        "Unexpected Attacks",
+        "Underhanded Tactics",
+        "Street Fighter",
+        "Scoundrel’s Strike",
+        "Roughneck",
+        "Menace",
+        "Mettle",
+        "Malice",
+        "Fearsome Display"
+      ]
+    },
+    {
+      "id": "FA-093",
+      "canonicalIds": [
+        "Cruel Gaze",
+        "Tough as Nails",
+        "Tumbler",
+        "Aerialist",
+        "Quick Gymnastics",
+        "Flip Out",
+        "Death From Above",
+        "Quick Reflexes",
+        "Burst of Speed",
+        "Aura Guardian",
+        "Aura Reader",
+        "The Power of Aura",
+        "Sword of Body and Soul",
+        "Ambient Aura",
+        "Aura Mastery"
+      ]
+    },
+    {
+      "id": "FA-094",
+      "canonicalIds": [
+        "Channeler",
+        "Shared Senses",
+        "Battle Synchronization",
+        "Spirit Boost",
+        "Power Conduit",
+        "Pain Dampening",
+        "Soothing Connection",
+        "Hex Maniac",
+        "Hex Maniac Studies",
+        "Diffuse Pain",
+        "Malediction",
+        "Grand Hex",
+        "Ninja",
+        "Ninja’s Arsenal",
+        "Poison Weapons"
+      ]
+    },
+    {
+      "id": "FA-095",
+      "canonicalIds": [
+        "Genjutsu",
+        "Utility Drop",
+        "Weightless Step",
+        "Kinjutsu",
+        "Oracle",
+        "Divination",
+        "Unveiled Sight",
+        "Small Prophecies",
+        "Mark of Vision",
+        "Two-Second Preview",
+        "Prescience",
+        "Sage",
+        "Sacred Shield",
+        "Mystic Defense",
+        "Sage’s Benediction"
+      ]
+    },
+    {
+      "id": "FA-096",
+      "canonicalIds": [
+        "Lay on Hands",
+        "Highly Responsive to Prayers",
+        "Divine Wind",
+        "Telekinetic",
+        "PK Alpha",
+        "PK Omega",
+        "Power of the Mind",
+        "PK Combat",
+        "Telekinetic Burst",
+        "Psionic Overload",
+        "Telepath",
+        "Honed Mind",
+        "Telepathic Awareness",
+        "Thought Detection",
+        "Telepathic Warning"
+      ]
+    },
+    {
+      "id": "FA-097",
+      "canonicalIds": [
+        "Mental Assault",
+        "Suggestion",
+        "Warper",
+        "Space Distortion",
+        "Warping Ground",
+        "Strange Energy",
+        "Farcast",
+        "Warped Transmission",
+        "Reality Bender",
+        "Command Versatility",
+        "Press",
+        "Quick Switch",
+        "Species Savant",
+        "Tutoring",
+        "Commander’s Voice"
+      ]
+    },
+    {
+      "id": "FA-098",
+      "canonicalIds": [
+        "Focused Command",
+        "Agility Training",
+        "Brutal Training",
+        "Focused Training",
+        "Inspired Training",
+        "Ravager Orders",
+        "Marksman Orders",
+        "Trickster Orders",
+        "Guardian Orders",
+        "Precision Orders",
+        "Blur",
+        "Defender",
+        "Dive",
+        "Fighter’s Versatility",
+        "Multi-Tasking"
+      ]
+    },
+    {
+      "id": "FA-099",
+      "canonicalIds": [
+        "Signature Move",
+        "Type Expertise",
+        "Walk It Off",
+        "First Aid Expertise",
+        "Let Me Help You With That",
+        "Poké Ball Crafter",
+        "PokéManiac",
+        "Psionic Sight",
+        "Skill Monkey"
+      ]
+    }
+  ]
+}

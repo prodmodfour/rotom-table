@@ -1,5 +1,6 @@
 import { findFeature, toSlug } from '~~/data/ptuReference'
-import { trainerCombatFeatureSources } from '~/utils/sheets/trainerCombatDerivations'
+import { resolvedSheetFeatureClosure, resolvedSheetFeatureInstances } from '#shared/featureAutomation/sheetFeatures'
+import { FEATURE_GRANTED_ORDERS_BY_SOURCE } from '#shared/featureAutomation/orders'
 import type { PtuFeature } from '~/types/ptuReference'
 import type { SheetPlacement } from '~/types/map'
 import type { TrainerFeatureEntry, TrainerOrder, TrainerSheet } from '~/types/trainerSheet'
@@ -62,16 +63,17 @@ const dedupeOrderOptions = (orders: TokenOrderMenuOption[]): TokenOrderMenuOptio
   return out
 }
 
-const optionFromManualOrder = (order: TrainerOrder): TokenOrderMenuOption => {
+const optionFromManualOrder = (order: TrainerOrder): TokenOrderMenuOption | null => {
   const reference = findFeature(order.name)
+  if (!reference || !hasOrderUseTag(reference.tags)) return null
   return {
-    name: reference?.name ?? order.name,
-    tags: normalizedTags(order.tags?.length ? order.tags : reference?.tags),
-    frequency: fallback(reference?.frequency),
-    trigger: fallback(reference?.trigger),
-    target: fallback(reference?.target),
-    condition: fallback(reference?.condition),
-    effect: fallback(order.effect, reference?.effect),
+    name: reference.name,
+    tags: normalizedTags(reference.tags),
+    frequency: fallback(reference.frequency),
+    trigger: fallback(reference.trigger),
+    target: fallback(reference.target),
+    condition: fallback(reference.condition),
+    effect: fallback(reference.effect),
     source: 'sheet-order',
     sourceLabel: 'Sheet Order',
   }
@@ -105,111 +107,35 @@ const optionFromGrantedFeatureOrder = (order: FeatureOrderDefinition): TokenOrde
   sourceLabel: order.sourceFeatureName,
 })
 
-const splitGrantedOrderNames = (rawNames: string): string[] => rawNames
-  .replace(/\s+and\s+/gi, ', ')
-  .split(',')
-  .map((name) => name.trim().replace(/^the\s+/i, ''))
-  .filter(Boolean)
-
-const grantedOrderNamesFromEffect = (effect: string | null | undefined): string[] => {
-  const match = effect?.match(/^You gain\s+(?:the\s+)?(.+?)\s+Orders?\./i)
-  return match?.[1] ? splitGrantedOrderNames(match[1]) : []
-}
-
-const fieldStartIndex = (text: string): number => {
-  const starts = ['Trigger:', 'Target:', 'Condition:']
-    .map((label) => text.search(new RegExp(`\\b${label}`, 'i')))
-    .filter((index) => index >= 0)
-  return starts.length ? Math.min(...starts) : -1
-}
-
-const readDefinitionField = (text: string, label: 'Trigger' | 'Target' | 'Condition'): string | null => {
-  const match = text.match(new RegExp(`\\b${label}:\\s*([\\s\\S]*?)(?=\\b(?:Trigger|Target|Condition):|$)`, 'i'))
-  return fallback(match?.[1]?.trim())
-}
-
-const parseGrantedOrderSegment = (
-  sourceFeatureName: string,
-  name: string,
-  segment: string,
-): FeatureOrderDefinition | null => {
-  let rest = segment.slice(name.length).trim()
-  const tags: string[] = []
-  while (rest.startsWith('[')) {
-    const tagMatch = rest.match(/^\[([^\]]+)\]\s*/)
-    if (!tagMatch) break
-    tags.push(tagMatch[1]?.trim() ?? '')
-    rest = rest.slice(tagMatch[0].length).trim()
-  }
-
-  if (!hasOrderUseTag(tags)) return null
-
-  const effectMatch = rest.match(/\bEffect:\s*/i)
-  const beforeEffect = (effectMatch ? rest.slice(0, effectMatch.index) : rest).trim()
-  const effect = effectMatch ? fallback(rest.slice((effectMatch.index ?? 0) + effectMatch[0].length).trim()) : null
-  const firstFieldIndex = fieldStartIndex(beforeEffect)
-  const frequency = firstFieldIndex >= 0
-    ? fallback(beforeEffect.slice(0, firstFieldIndex).trim())
-    : fallback(beforeEffect)
-
-  return {
-    sourceFeatureName,
-    name,
-    tags: normalizedTags(tags),
-    frequency,
-    trigger: readDefinitionField(beforeEffect, 'Trigger'),
-    target: readDefinitionField(beforeEffect, 'Target'),
-    condition: readDefinitionField(beforeEffect, 'Condition'),
-    effect,
-  }
-}
-
-const grantedOrdersFromFeatureReference = (feature: OrderReference): FeatureOrderDefinition[] => {
-  const effect = feature.effect ?? ''
-  const names = grantedOrderNamesFromEffect(effect)
-  if (!names.length) return []
-
-  const starts = names
-    .map((name) => ({ name, index: effect.indexOf(`${name} [`) }))
-    .filter((entry) => entry.index >= 0)
-    .sort((left, right) => left.index - right.index)
-
-  return starts.flatMap((entry, index): FeatureOrderDefinition[] => {
-    const next = starts[index + 1]
-    const segment = effect.slice(entry.index, next?.index ?? effect.length).trim()
-    const parsed = parseGrantedOrderSegment(feature.name, entry.name, segment)
-    return parsed ? [parsed] : []
-  })
-}
+const grantedOrdersFromFeatureReference = (feature: OrderReference): FeatureOrderDefinition[] => (
+  (FEATURE_GRANTED_ORDERS_BY_SOURCE.get(feature.name) ?? []).map(order => ({ ...order, tags: [...order.tags], sourceFeatureName: feature.name }))
+)
 
 const optionsFromFeature = (feature: TrainerFeatureEntry, sourceLabel = 'Feature'): TokenOrderMenuOption[] => {
   const reference = findFeature(feature.name)
-  if (!reference) {
-    if (!hasOrderUseTag(feature.tags)) return []
-    return [optionFromFeatureOrder(feature, {
-      name: feature.name,
-      tags: normalizedTags(feature.tags),
-      frequency: feature.frequency ?? null,
-      trigger: null,
-      target: null,
-      condition: null,
-      effect: feature.notes ?? null,
-    }, sourceLabel)]
-  }
+  if (!reference) return []
 
   return [
-    ...(featureCanBeUsedAsOrder(reference) || hasOrderUseTag(feature.tags)
+    ...(featureCanBeUsedAsOrder(reference)
       ? [optionFromFeatureOrder(feature, reference, sourceLabel)]
       : []),
     ...grantedOrdersFromFeatureReference(reference).map(optionFromGrantedFeatureOrder),
   ]
 }
 
-export const trainerOrderOptionsForSheet = (sheet: TrainerSheet): TokenOrderMenuOption[] =>
-  dedupeOrderOptions([
-    ...(sheet.orders ?? []).map(optionFromManualOrder),
-    ...trainerCombatFeatureSources(sheet).flatMap((source) => optionsFromFeature(source.entry, source.sourceLabel)),
-  ])
+export const trainerOrderOptionsForSheet = (sheet: TrainerSheet): TokenOrderMenuOption[] => {
+  const directOrders = resolvedSheetFeatureInstances(sheet).flatMap(row => row.collection === 'orders' && row.data && (row.status === 'ready' || row.status === 'missing-required-data')
+    ? [optionFromManualOrder({ name: row.data.canonicalId })].filter((option): option is TokenOrderMenuOption => Boolean(option))
+    : [])
+  const resolvedRows = resolvedSheetFeatureInstances(sheet)
+  const directIds = new Set(resolvedRows.filter(row => row.collection === 'orders' && row.data).map(row => row.data!.canonicalId))
+  const training = resolvedRows.flatMap(row => row.collection === 'training' && row.data && (row.status === 'ready' || row.status === 'missing-required-data')
+    ? optionsFromFeature({ name: row.data.canonicalId }, 'Training Feature')
+    : [])
+  const trainingIds = new Set(resolvedRows.filter(row => row.collection === 'training' && row.data).map(row => row.data!.canonicalId))
+  const effective = resolvedSheetFeatureClosure(sheet).flatMap(instance => directIds.has(instance.canonicalId) || trainingIds.has(instance.canonicalId) ? [] : optionsFromFeature({ name: instance.canonicalId }, instance.canonicalId))
+  return dedupeOrderOptions([...directOrders, ...training, ...effective])
+}
 
 export const orderOptionsForPlacement = (
   placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'> | null | undefined,

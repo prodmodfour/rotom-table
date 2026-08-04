@@ -1,0 +1,1082 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-feature-automation-v1",
+  "entryCount": 98,
+  "entries": [
+    {
+      "canonicalId": "Accentuated Taste",
+      "sourceEffectSha256": "1e1fbb3a67434a5384a0022528f7f32b68a15e9df530ab93e0889cf44aeb1811",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Ace Trainer",
+      "sourceEffectSha256": "c718af0ae44496e2b0bbe91c7a868f468cef9abf93a737fe70b35efd71084c6f",
+      "kind": "rest",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Agility Training",
+      "sourceEffectSha256": "6206bbbf48e3bb9d0ab3bf74a637cea598be2727e33cae2e4144305f6983f1ad",
+      "kind": "adjudication",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Ambient Aura",
+      "sourceEffectSha256": "bffb87d92273f0a8f197a05f2d7132e2a7289e80f3ee51ba674caad01a4133b5",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Ancient Heritage",
+      "sourceEffectSha256": "b969aa487328aa3bc32bc093cd7d04da90a56714771c8bf69e9edd44d97e6deb",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Apothecary",
+      "sourceEffectSha256": "0610d5ad7bf0075f1f81ca9ec1ea56ab5631f88816b0861265757e0104c631cb",
+      "kind": "adjudication",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Archive Tutor",
+      "sourceEffectSha256": "c68bafce22200ff5f90b603c20cbb2700ec1f89d16a71eafe100ad7b0fcae9ad",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Bait Mixer",
+      "sourceEffectSha256": "a183859e7f5656b968cdb0d4e0235161c4884d0fbb2d25b12d122ec22d71d0c4",
+      "kind": "craft",
+      "baseMoneyCost": 150,
+      "ingredients": null,
+      "outputOptions": [
+        "Bait"
+      ],
+      "outputMoneyCosts": {
+        "Bait": 50
+      },
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Basic Fashion",
+      "sourceEffectSha256": "1d80be90f3598134ffc37fe81b505cdc61b23c83cf079799d8f83ef510b8af82",
+      "kind": "craft",
+      "baseMoneyCost": 500,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Beguiling Dance",
+      "sourceEffectSha256": "ddb49057e08ce034245f5120c9f1cad16466624d88473feb55d5f56198a566b6",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Bigger and Boulder",
+      "sourceEffectSha256": "b122d9e524abdac1f8d9d38c2b90fb77726cae7748b20d7116f103c2f5830517",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Brutal Training",
+      "sourceEffectSha256": "650e089a5ee0fb95750d3eb3936b840df4a495b766fc373171f568fd656fa87f",
+      "kind": "adjudication",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Captured Momentum",
+      "sourceEffectSha256": "aad1cc520b59aa24819fe8acb7baac584d4a47d050ddd8cba84535c8f8eba214",
+      "kind": "capture",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Chakra Crystal",
+      "sourceEffectSha256": "c8e574dc083b060427abad6cdbdee25159f3e598b8924db4cc169b444f66a532",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": "Any Six Shards",
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Changing Viewpoints",
+      "sourceEffectSha256": "cb28317240bc277d39de9c5902ad1a7f281fb25d0cb3ab8a20ba16507f7fa745",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Cheer Brigade",
+      "sourceEffectSha256": "a9fabdb806c70e42a33cf11ea1e24c0037488aabffdfec5c2e0345eb7452d789",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Cheerleader",
+      "sourceEffectSha256": "a9fabdb806c70e42a33cf11ea1e24c0037488aabffdfec5c2e0345eb7452d789",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Chef",
+      "sourceEffectSha256": "99074b201c22e037b9996443488f946387c203c14ab35532f9871e964a9949cf",
+      "kind": "adjudication",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Chemist",
+      "sourceEffectSha256": "d8a60234805e5282b452ea2be87befb433d45727d0da996187f43043c5fcae70",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [
+        "Chemistry Set"
+      ],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Choreographer",
+      "sourceEffectSha256": "15a11d26f98fbbd04ed5a38b883765591da307e1f31ad129a74694a13ba06f32",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Complex Aftertaste",
+      "sourceEffectSha256": "4454d48a07c3ede66d10a43db6a31d6a0a00fcc33ab7312f8f88b8d1fbd7a000",
+      "kind": "adjudication",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Contest Trends",
+      "sourceEffectSha256": "8723d587d1cf4277a6a5507cf3bdd332a78e45ba018d52d8ec77fef3d5109a4a",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [
+        "Contest Fashion",
+        "Fancy Clothes"
+      ],
+      "outputMoneyCosts": {
+        "Contest Fashion": 500,
+        "Fancy Clothes": 2500
+      },
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Corrective Learning",
+      "sourceEffectSha256": "1328f7d5595124cab47621ca479681f2970cf1acd373d20ff8bd57800f1f005a",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Crystal Artificer",
+      "sourceEffectSha256": "6e29e292ad02e1d333381b0beae54b046936d2aa3d5ec51c4a284a5b65baaf99",
+      "kind": "adjudication",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Culinary Appreciation",
+      "sourceEffectSha256": "2c1e0d56eaca5744bf4e48e6063e7a6313ad0ab5fbbb21101401171f0376cff1",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Dance Form",
+      "sourceEffectSha256": "92115f0a7d1e5e960e266fcb1bee42275e2f4aaa56b49fd83e6bd8ae86c48756",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Dance Practice",
+      "sourceEffectSha256": "a2b041e373d77a16c2925e776c21c4f8898aa102f3d55e3e347554be0e74e940",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Dilettante",
+      "sourceEffectSha256": "0f5b8b2246923d38b109d5f37f27df074f27b178f4ad4065a7d53a684c11d2f1",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Dumplings",
+      "sourceEffectSha256": "25671b48a509d09c2872f5f49a6796e5a2926aeec353688bdc6b42aad2aa24fc",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": [
+        "Leftovers, Preserves, or a Snack made with Chef",
+        "Leftovers or Preserves"
+      ],
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Effective Methods",
+      "sourceEffectSha256": "53b5041995f9c22a838bd88cc7d652f0c4d5f108678085fc12cea7620551888e",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Egg Tutor",
+      "sourceEffectSha256": "399bab33d2e423f4e55c6c16839c0f125ff4e572ff9ea85c925911a1cdd71bc9",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Empowered Development",
+      "sourceEffectSha256": "19286500920caacab197bc5d86874f183df76a957bada7db9f04d36c8c2692ce",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Enhancers",
+      "sourceEffectSha256": "2b10b5ecc51af9a83e22658e31d8b1e8e8567ef79549fccf75a89ed2240c75d1",
+      "kind": "craft",
+      "baseMoneyCost": 100,
+      "ingredients": null,
+      "outputOptions": [
+        "Dire Hit",
+        "Guard Spec"
+      ],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Expand Horizons",
+      "sourceEffectSha256": "2743f1c8d8fa95f984fa6748dcf7404d2430bc826814fbedc8c11a673a762bd2",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Extreme Weather",
+      "sourceEffectSha256": "032030cc4fa6b3eb74a4ec73369b44d44f6353559a0f576f22f271b04671d08d",
+      "kind": "adjudication",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Fairy Lights",
+      "sourceEffectSha256": "80cd9a3cd5739de75c0d434989796c00184cb3c4ded672102bfc5fe5cc6c44ad",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Fashionista",
+      "sourceEffectSha256": "100ee01bd7161442915e4889b6176a71b877ae9d8973260480a04e37b71c0cf3",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Field Clinic",
+      "sourceEffectSha256": "679c9116fff97cb5704f9d08172129eadbc7f220e124bfe6a56da7cced2b221f",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [
+        "First Aid Kit"
+      ],
+      "outputMoneyCosts": {
+        "First Aid Kit": 300
+      },
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Focus Gem",
+      "sourceEffectSha256": "cc8a72c8324c46b3f0b91985d66c1bbb0115e85c4329368e875fd2ecbb062ebe",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": "Any Six Shards.",
+      "outputOptions": [
+        "Focus"
+      ],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Focused Fashion",
+      "sourceEffectSha256": "952cef451e678dd293cbb42702e396293c7e23b1bd154ce92e695b14e70d3193",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [
+        "Focus"
+      ],
+      "outputMoneyCosts": {
+        "Focus": 2000
+      },
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Focused Training",
+      "sourceEffectSha256": "9abe2b7bba7dd0d4150c2f7a713a7248fd168c027f942be62fd223774f62f64c",
+      "kind": "adjudication",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Fossil Restoration",
+      "sourceEffectSha256": "981076283322dc6129d206c92152c506697ebef6c7b8d8bdceaa3287241a038f",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Genetic Memory",
+      "sourceEffectSha256": "efda3773aa7d833fa55535e6302470522cbb14ad0678a93832b888295db419ae",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Gotta Catch ‘Em All",
+      "sourceEffectSha256": "3dc3ba0b3f4977f3df5c172e4f3f4bc691d4ccb97a917537b9a6a6c4b12b2d4f",
+      "kind": "capture",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Gravel Before Me",
+      "sourceEffectSha256": "ece81a178c7269fd9d60c378a1877fa9cfed4e2b20e31bb52730c64fdc6c6afc",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Hearty Meal",
+      "sourceEffectSha256": "ab0e7a850f2cf8bf030c049bc62aa832aff370e634791fe9d20070e980e73cb3",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": "x2 Tiny Mushrooms; or x1 Big Mushroom; or x1 Balm Mushroom, or x2 Power Herbs, White Herbs, or Mental Herbs",
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Herb Lore",
+      "sourceEffectSha256": "e3cc7f1f80674cd1b717b04c72db7baedb8813ce9f07387657ba7bafc07edb92",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [
+        "Energy Powder",
+        "Heal Powder",
+        "Poultices"
+      ],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Hyper Cures",
+      "sourceEffectSha256": "846a5fa53b9b093eba9104850cd34c8ff8441fd557d66fb47c3ca4ae336ee7d4",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Incense Maker",
+      "sourceEffectSha256": "0c0e92a1e96239dfbc69040800a2d30ee1864a99ddc98dd4d3dbf4160fbcd91b",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [
+        "Full Incense",
+        "Lax Incense",
+        "Luck Incense"
+      ],
+      "outputMoneyCosts": {
+        "Full Incense": 450,
+        "Luck Incense": 900,
+        "Lax Incense": 1000
+      },
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Innovation",
+      "sourceEffectSha256": "6ce36ff7b3ea220b56c8a2ca59d945fc443e9840e531260aa2de3e42b6a2082f",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Inspired Training",
+      "sourceEffectSha256": "ed64234d6b268a55f98012f23b498764873fc46a410ee5609e848ff81900fe42",
+      "kind": "adjudication",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Instant Analysis",
+      "sourceEffectSha256": "865268e9a083e3247f8a5c71752438e0ed0d2dbd461f56ceac66b56229f2a98a",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Leftovers",
+      "sourceEffectSha256": "727da4c3229b011f766c95b6bbbec87ec7a0e074e73f12f13f501c702a0992c9",
+      "kind": "craft",
+      "baseMoneyCost": 100,
+      "ingredients": null,
+      "outputOptions": [
+        "Leftovers"
+      ],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Look and Learn",
+      "sourceEffectSha256": "d6c4819ca05417674365bca571f9d241743e0c038de490a4f07e97555d9de982",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Meal Planner",
+      "sourceEffectSha256": "b4cd72c67116682781614005e86d3189dce5383835cf469eaf8e88cc4fb7b478",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [
+        "Enriched Water",
+        "MooMoo Milk",
+        "Sparkling Lemonade",
+        "Super Soda Pop"
+      ],
+      "outputMoneyCosts": {
+        "Sparkling Lemonade": 125,
+        "Enriched Water": 40,
+        "Super Soda Pop": 65,
+        "MooMoo Milk": 250
+      },
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Medicinal Blend",
+      "sourceEffectSha256": "7f9140b0bb5feb5c7d6fbc4e532158fbc8822f25de2e4fd9627552441cb3708f",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": "Two Restoratives, or a Restorative and an X-Item",
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Mentor",
+      "sourceEffectSha256": "7da8f45c8699f692da590321eaf128ae07e5dcdde2d9c9e6bb5557e725b24235",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Mixed Power",
+      "sourceEffectSha256": "47ebe831e9398a8944df5ec1065803908eb9ea9408defb2c1ee62d2bdb4824ca",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Move Sync",
+      "sourceEffectSha256": "37886e786ee46f3b7f90f58fdf91f00a802a669e9ef361e7af8f192025564a48",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Move Tutor",
+      "sourceEffectSha256": "8d86bfb6ac698da9654fa9bd0f476b86a661e017b237aa49c7094546e61b6adf",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Ninja’s Arsenal",
+      "sourceEffectSha256": "a9933c70d60af39ec01112bc7e14e95effac6f624261f9059a556e277d4133f1",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [
+        "Antidote",
+        "Caltrops",
+        "Smoke Ball",
+        "Toxic Caltrops"
+      ],
+      "outputMoneyCosts": {
+        "Toxic Caltrops": 100,
+        "Smoke Ball": 100,
+        "Antidote": 100,
+        "Caltrops": 100
+      },
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Nurse",
+      "sourceEffectSha256": "1c9bc976d9e6efdee9724969134b4c1775972e7cb9408d1a516576238d74ed59",
+      "kind": "rest",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Pack Tactics",
+      "sourceEffectSha256": "30fab01dd1811a046f84c3dd593f65fbb63cc4f402f6cf5c85cf8426cbc01fa5",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Parfumier",
+      "sourceEffectSha256": "03499bed788f950f6dcc1ab52f9caa29a3f439c81f1e6fe917c7460b06526eba",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Passing Waltz",
+      "sourceEffectSha256": "b25a965bb0d7312b88ffa263e50cc9654ac0ba2b941d80232cd2c6747b196099",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Performance Enhancers",
+      "sourceEffectSha256": "a220bd274deaf1aeaf2f866234a161212473082f79ce481746447b0f7c0bf383",
+      "kind": "craft",
+      "baseMoneyCost": 4900,
+      "ingredients": null,
+      "outputOptions": [
+        "Heart Booster",
+        "PP Up"
+      ],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Plate Crafter",
+      "sourceEffectSha256": "8e5947075981bf9e8209fd8ab5744c3c80ae57e8acbca3e7b2900f4755ef8df8",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": "A Type Booster and Type Brace of the same Type",
+      "outputOptions": [
+        "Type Plate"
+      ],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Playing God",
+      "sourceEffectSha256": "09ea01d8d4521099479f148c2d8e9495461a66b1785113a3c952e67d8c29589f",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Poké Ball Crafter",
+      "sourceEffectSha256": "5b2cd12cd1015dea84a098be0675a9a968de281f6ed423d1da8bd9dbed2831d4",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Practical Fashion",
+      "sourceEffectSha256": "5ea0156c7cd799b3614bbb43cd5d2718bff243f395001c1003fe4e38fbfe1c7d",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [
+        "Go-Goggles",
+        "Safety Goggles"
+      ],
+      "outputMoneyCosts": {
+        "Safety Goggles": 750,
+        "Go-Goggles": 750
+      },
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Preserves",
+      "sourceEffectSha256": "9554286ea9492bcdb34b3d123c40ae2e1f660dcc6aaec944002985f887c17980",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": "$50, any Berry, Herb, or Mushroom",
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Pusher",
+      "sourceEffectSha256": "52d3ad51de3de0a045265c12c2a919a34c194e4fd57bdb3c5a5a7562bb39ebdf",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Rainbow Gem",
+      "sourceEffectSha256": "e74910e29e844928a9629efa25bea099aeee3ef7bdadac289180444c7b66eded",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": "Two Shards of each Color.",
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Rainbow Light",
+      "sourceEffectSha256": "74eb0b3b8e609e424d624f7d430c9b9e19f2934d235e11f3b7ede45e7e93fff1",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Ramming Speed",
+      "sourceEffectSha256": "9c0f7031a44e1ece3cd131b3c852dfeb6a0ed1de174d63313952fd577961e32b",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Re-Balancing",
+      "sourceEffectSha256": "b1e966c1cb2b28535d6adff6f047d1b16762af1e4007899e4c4e726af8546ffa",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Reality Bender",
+      "sourceEffectSha256": "9ab83fac6cdaad5ec46bf16d90dd707e681d62789e03aa5e0a8e89f5f62c33b6",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Researcher",
+      "sourceEffectSha256": "ccc33227483f969a2b6b5e1fc97f79be648129ce29f783874ba3de59e07e5d9c",
+      "kind": "adjudication",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Restorative Science",
+      "sourceEffectSha256": "d91dd8e50dc332c87acb74602b8fdffd15ddb056a12de58659705724b79db995",
+      "kind": "craft",
+      "baseMoneyCost": 100,
+      "ingredients": null,
+      "outputOptions": [
+        "Antidote",
+        "Burn Heal",
+        "Ice Heal",
+        "Paralyze Heal",
+        "Potion"
+      ],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Savage Strike",
+      "sourceEffectSha256": "8c47d3a305f08dec32c605e5379a40f17c15a8cc7d28a5804ac635965bd90994",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Signature Technique",
+      "sourceEffectSha256": "3d900b94303ee422ad2be59b4312ed70dd75d31de6ecb75b8d10c5e14a9e2f78",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Skill Trainer",
+      "sourceEffectSha256": "ef5e65e26f19988ee2791b6159828bdff9a4d1958d4f9ac8f0818e87fe38974b",
+      "kind": "rest",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Stat Training",
+      "sourceEffectSha256": "b3d9e4bccd7d277c7a69e8a0c645a7d4318daeba54c12f94a4e33fe172515b6f",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Super Cures",
+      "sourceEffectSha256": "70dad6940bdbe6ea9d186e6ea7c1e3d2dacc2393ffcce4efb90c676ee110f163",
+      "kind": "craft",
+      "baseMoneyCost": 200,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Tasty Snacks",
+      "sourceEffectSha256": "87c1bad22f974c9cd9742b812db7df13dc76d6a57c733fbead9985dd872d5d4c",
+      "kind": "craft",
+      "baseMoneyCost": 100,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Top Percentage",
+      "sourceEffectSha256": "f99ae45526582d3c32ef788c0b4bc42daf3fd5946e135980ddb9a97dcb95a2eb",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Tough as Schist",
+      "sourceEffectSha256": "657726720037fb9706cd242a22e82ed65e2da7a920c2e3fd401047e4210abf80",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Trapper",
+      "sourceEffectSha256": "5468433a0fb2dbf252f4d0ebf612f5cf5b48af6fd61524a3009383678738036a",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Tutoring",
+      "sourceEffectSha256": "f7300ceb463172854674438356cbbf8eff62fba463a986f826ac7c6d290400ea",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Type Ace",
+      "sourceEffectSha256": "9712d4241d7dcbe135e6c1728fbb1af41fe9f7bd0face297a43fd5bfe543aaa5",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Type Booster",
+      "sourceEffectSha256": "73d8c59511fdbb279c32f4ec622321e9beda6b3b5bbb2af1f0e7a68156471502",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": "4 Shards of the same color",
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Type Brace",
+      "sourceEffectSha256": "d5068e9085477ad15d19698a95d8b581e91ba8bdd10ed59d2558ad981da85368",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": "4 Shards of the same color",
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Unveiled Sight",
+      "sourceEffectSha256": "97221850bbe89cb96d8e8c84dfc15b15054e50c4a36a59fc86d0462d05c8c0cf",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": true
+    },
+    {
+      "canonicalId": "Versatile Teachings",
+      "sourceEffectSha256": "ce9c3ed7184debc10ee82d3eff72a9ea83a4520952fb948ed1843dd05bc2d9de",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Versatile Wardrobe",
+      "sourceEffectSha256": "b58164df8aec878459ffdc2b7a17b7f3804d72028be9019c59aa0d1866b53ebf",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Vim and Vigor",
+      "sourceEffectSha256": "53e52e0be29455ec1e771abc48c77b9b938f40bcfa4e758d0439a28b50ed77ca",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Vitamins",
+      "sourceEffectSha256": "c805e016e7dc181fbd5f7ea8ec36b37b9a178c3ea8b94d1ea09e4728d3388ec9",
+      "kind": "craft",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [
+        "Calcium",
+        "Carbos",
+        "HP Up",
+        "Iron",
+        "Protein",
+        "Stat Suppressants",
+        "Zinc"
+      ],
+      "outputMoneyCosts": {
+        "Stat Suppressants": 200,
+        "Protein": 2450,
+        "Calcium": 2450,
+        "Carbos": 2450,
+        "HP Up": 2450,
+        "Iron": 2450,
+        "Zinc": 2450
+      },
+      "requiresAdjudication": false
+    },
+    {
+      "canonicalId": "Weather Systems",
+      "sourceEffectSha256": "f47d89dd2cbe702bf8b5d7dcd81b0cd9cd79f68ce2ce85dfeccc5ec7482be8b7",
+      "kind": "tutor",
+      "baseMoneyCost": 0,
+      "ingredients": null,
+      "outputOptions": [],
+      "outputMoneyCosts": {},
+      "requiresAdjudication": false
+    }
+  ]
+}

@@ -10,6 +10,8 @@ import { resolveSkills, resolveCapabilities, pokemonHasResolvedCapability } from
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import { parseSkillDiceRankValue } from '~/utils/skillRanks'
 import { resolveEffectiveEdges } from './effectiveEdges'
+import { resolvedSheetFeatureClosure } from '#shared/featureAutomation/sheetFeatures'
+import { FEATURE_AUTOMATION_MANIFEST_BY_ID } from '#shared/featureAutomation/manifest'
 
 interface AbilityReferenceRow {
   readonly name: string
@@ -51,10 +53,13 @@ const effectiveEdgeFacts = (
   return { keys, choices }
 }
 
-const trainerFeatureTags = (sheet: TrainerSheet): ReadonlySet<string> => new Set([
-  ...(sheet.features ?? []).flatMap(feature => feature.tags ?? []),
-  ...(sheet.classes ?? []).map(entry => entry.name),
-])
+const trainerFeatureTags = (sheet: TrainerSheet): ReadonlySet<string> => new Set(
+  resolvedSheetFeatureClosure(sheet)
+    .flatMap(instance => {
+      const manifest = FEATURE_AUTOMATION_MANIFEST_BY_ID.get(instance.canonicalId)
+      return [...(manifest?.tags ?? []), ...(manifest?.roles.includes('class-anchor') ? [instance.canonicalId] : [])]
+    }),
+)
 
 const pokemonCapabilityIds = (sheet: CharacterSheet): ReadonlySet<string> => {
   const resolved = resolveCapabilities(sheet)

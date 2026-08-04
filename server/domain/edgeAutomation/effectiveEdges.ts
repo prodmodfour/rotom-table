@@ -13,6 +13,7 @@ import type {
 import {
   EDGE_INSTANCE_LIMIT_PER_SHEET,
   edgeChoiceValues,
+  parseEdgeInstanceData,
   resolveEdgeInstance,
   type EdgeInstanceData,
   type LegacyEdgeEntrySource,
@@ -20,6 +21,9 @@ import {
 import { EDGE_AUTOMATION_RUNTIME_REGISTRY } from './registry'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { resolvedSheetFeatureClosure } from '#shared/featureAutomation/sheetFeatures'
+import { resolveFeatureGrants } from '#shared/featureAutomation/grants'
+import { isCanonicalEdgeId } from '#shared/edgeAutomation/catalog'
 
 export interface GrantedEdgeInput {
   readonly family: EdgeFamily
@@ -130,7 +134,20 @@ export const resolveEffectiveEdges = (input: {
     diagnostics: Object.freeze([`Only the first ${EDGE_INSTANCE_LIMIT_PER_SHEET} Edge rows can enter mechanics.`]),
   }))
 
-  for (const grant of input.grants ?? []) {
+  const automaticFeatureGrants: GrantedEdgeInput[] = input.family === 'trainer'
+    ? resolvedSheetFeatureClosure(input.sheet).flatMap(source => {
+        return resolveFeatureGrants(source).flatMap((grant, index): GrantedEdgeInput[] => {
+          if (grant.kind !== 'edge' || grant.targetPolicy !== 'trainer' || grant.duration !== 'permanent' || !isCanonicalEdgeId('trainer', grant.canonicalId)) return []
+          try {
+            const instance = parseEdgeInstanceData({ schemaVersion: 1, instanceId: `${source.instanceId}:edge-grant:${index}`, family: 'trainer', canonicalId: grant.canonicalId, definitionVersion: 1, rank: 1, choices: [], acquisition: { kind: 'feature-grant', sourceId: source.instanceId }, prerequisiteOverride: null }, 'trainer', grant.canonicalId)
+            return [{ family: 'trainer', instance, source: Object.freeze({ kind: 'feature-grant', sourceId: source.instanceId, precedence: 350 }) }]
+          }
+          catch { return [] }
+        })
+      })
+    : []
+
+  for (const grant of [...automaticFeatureGrants, ...(input.grants ?? [])]) {
     if (grant.family !== input.family || projected.some(row => row.instanceId === grant.instance.instanceId)) continue
     const definition = EDGE_AUTOMATION_RUNTIME_REGISTRY.resolve(input.family, grant.instance.canonicalId)
     if (!definition || projected.length >= EDGE_INSTANCE_LIMIT_PER_SHEET) continue

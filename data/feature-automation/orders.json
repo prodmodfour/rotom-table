@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-feature-automation-v1",
+  "entryCount": 5,
+  "orderCount": 10,
+  "entries": [
+    {
+      "sourceCanonicalId": "Guardian Orders",
+      "sourceEffectSha256": "da69e81e96c4200ca52a5f76f80872fb89e0e920220f9b9e9f1e1950cd4bd07c",
+      "orders": [
+        {
+          "name": "Brace for Impact",
+          "tags": [
+            "Orders",
+            "Stratagem"
+          ],
+          "frequency": "Bind 2 AP – Standard Action",
+          "trigger": null,
+          "target": "Your Pokémon",
+          "condition": null,
+          "effect": "While this Feature is Bound, once a round, when the target uses a self-targeting Status Move, they may gain 5 Damage Reduction until the end of their next turn. They may also activate this effect as a Standard Action."
+        },
+        {
+          "name": "Sentinel Stance",
+          "tags": [
+            "Orders"
+          ],
+          "frequency": "Scene x2 – Standard Action",
+          "trigger": null,
+          "target": "Your Pokémon",
+          "condition": null,
+          "effect": "Until the end of your next turn, the target may attempt to Intercept attacks for allies as a Shift Action. If they do so, they gain 10 Damage Reduction against the attack. If the target is also under the effect of Brace for Impact, they may gain 5 Damage Reduction from it as if they had used a self-targeting Status Move."
+        }
+      ]
+    },
+    {
+      "sourceCanonicalId": "Marksman Orders",
+      "sourceEffectSha256": "a57de58f8144113066b44186c0a0d17a7525ccdf916c9b3f7d28a35f83109e10",
+      "orders": [
+        {
+          "name": "Trick Shot",
+          "tags": [
+            "Orders",
+            "Stratagem"
+          ],
+          "frequency": "Bind 2 AP – Standard Action",
+          "trigger": null,
+          "target": "Your Pokémon",
+          "condition": null,
+          "effect": "While this Feature is Bound, decrease the Accu- racy Roll of the target’s damaging ranged attacks by -2. The Critical Hit range of those attacks is increased by +3. This Feature does not affect Moves without an AC value."
+        },
+        {
+          "name": "Long Shot",
+          "tags": [
+            "Orders"
+          ],
+          "frequency": "Scene x2 – Standard Action",
+          "trigger": null,
+          "target": "Your Pokémon",
+          "condition": null,
+          "effect": "The target’s damaging ranged attacks have their range doubled until the end of their next turn, and deal X additional damage. X is equal to the distance in meters that the attack traveled. Long Shot does not increase the size of area of effect attacks. If attacks altered by Long Shot are Critical Hits, add the value of the Damage Dice Roll an additional time to the total damage. Orders, Training Features, and Trainer Classes A number of Trainer Classes have their own Orders, or Features which are reliant on Orders and Training Features to function. Because the effectiveness of using some of these Classes is often reliant on choosing other Order- related Features for them to use, we’re putting a list of all such Classes and their Features which are either Orders or somehow synergize with Orders and Training Features in one place for you to easily browse. Ace Trainer: Elite Trainer, Critical Moment Channeler: Battle Synchronization, Spirit Boost Cheerleader: Cheerleader; Moment of Action; Go, Fight, Win! Commander: The entire Class Coordinator: Decisive Director Duelist: Expend Momentum, Directed Focus, Duelist’s Manual Chronicler: Targeted Profiling Fashionista: Dress to Impress Rider: Rider, Conqueror’s March Stat Ace: Stat Stratagem Survivalist: Wilderness Guide Taskmaster: Taskmaster, Strike of the Whip Type Ace: Type Refresh, Type-Specific Stratagems"
+        }
+      ]
+    },
+    {
+      "sourceCanonicalId": "Precision Orders",
+      "sourceEffectSha256": "5d634c53cab92e8cfe7f2781e62213e30df7b4d1844c6ba5b416afbd39766aaf",
+      "orders": [
+        {
+          "name": "Pinpoint Strike",
+          "tags": [
+            "Orders",
+            "Stratagem"
+          ],
+          "frequency": "Bind 2 AP – Standard Action",
+          "trigger": null,
+          "target": "Your Pokémon",
+          "condition": null,
+          "effect": "Increase the Accuracy and Effect Range of the target’s damaging attacks by +2. These attacks deal 5 less damage, before applying weakness and resistance."
+        },
+        {
+          "name": "Perfect Aim",
+          "tags": [
+            "Orders"
+          ],
+          "frequency": "Scene x2 – Standard Action",
+          "trigger": null,
+          "target": "Your Pokémon",
+          "condition": null,
+          "effect": "The next damaging attack the target performs before the end of your next turn automatically hits and ignores Defensive Abilities but deals damage as if it were resisted one step further than normal. You may still roll to trigger any Effect Ranges or Critical Hits. All targets of the attack may not activate any Blessings in response, and the attack may not be Intercepted or avoided in any way (ex: with Dodge, Shield Moves, etc)."
+        }
+      ]
+    },
+    {
+      "sourceCanonicalId": "Ravager Orders",
+      "sourceEffectSha256": "a07d258b1a9682d1e9366957b470c79b83909aa5fe48d9990e3deebfe1ca2cc7",
+      "orders": [
+        {
+          "name": "Reckless Advance",
+          "tags": [
+            "Orders",
+            "Stratagem"
+          ],
+          "frequency": "Bind 2 AP – Standard Action",
+          "trigger": null,
+          "target": "Your Pokémon",
+          "condition": null,
+          "effect": "While this Feature is Bound, increase the damage rolls of the target’s damaging melee attacks by +8, and these attacks Trip targets on Accuracy Rolls of 18+. When the target of Reckless Advance hits with a damaging melee attack, they become Vulnerable for one full round."
+        },
+        {
+          "name": "Strike Again!",
+          "tags": [
+            "Orders"
+          ],
+          "frequency": "Scene – Standard Action",
+          "trigger": null,
+          "target": "Your Pokémon",
+          "condition": null,
+          "effect": "The target may immediately take an additional Standard Action to use an At-Will attack."
+        }
+      ]
+    },
+    {
+      "sourceCanonicalId": "Trickster Orders",
+      "sourceEffectSha256": "4963ada4631a37b25c130197deb8b61fb5b6a4585a563019375f668c8612579c",
+      "orders": [
+        {
+          "name": "Capricious Whirl",
+          "tags": [
+            "Orders",
+            "Stratagem"
+          ],
+          "frequency": "Bind 2 AP – Standard Action",
+          "trigger": null,
+          "target": "Your Pokémon",
+          "condition": null,
+          "effect": "While this Feature is Bound, the target has a +3 bonus to its Evasion but deals 5 less damage with all damaging attacks."
+        },
+        {
+          "name": "Dazzling Dervish",
+          "tags": [
+            "Orders"
+          ],
+          "frequency": "Scene x2 – Standard Action",
+          "trigger": null,
+          "target": "Your Pokémon",
+          "condition": null,
+          "effect": "Until the end of their next turn, the target adds their non-stat Evasion to their Movement Capabilities and whenever they attack a foe or Shift through a square occupied by a foe, that foe suffers a -3 penalty to all rolls until the end of their next turn. This effect may only affect a foe once per round."
+        }
+      ]
+    }
+  ]
+}

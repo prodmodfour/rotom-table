@@ -3,6 +3,8 @@ import type { AbilityDailyUsageLedger } from '#shared/abilityAutomation/resource
 import type { CapabilityUsageLedger } from '#shared/capabilityAutomation/state'
 import type { TrainerEdgeInstanceData } from '#shared/edgeAutomation/instances'
 import type { EdgeUsageLedger } from '#shared/edgeAutomation/state'
+import type { FeatureInstanceData } from '#shared/featureAutomation/instances'
+import type { FeatureApState, FeatureRuntimeState, FeatureUsageLedger } from '#shared/featureAutomation/state'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
@@ -110,6 +112,8 @@ export interface TrainerFeatureEntry {
   notes?: string
   /** Override or fill in tags (``["Class"]``, ``["Orders"]``, …). */
   tags?: string[]
+  /** Stable canonical Feature identity, rank, choices, source, and override evidence. */
+  automation?: FeatureInstanceData
 }
 
 export interface TrainerEdgeEntry {
@@ -129,6 +133,8 @@ export interface TrainerClassEntry {
   /** For [Branch] classes, the chosen specialisation (e.g. ``"Fire"``). */
   specialisation?: string
   notes?: string
+  /** Stable class-anchor Feature instance. */
+  automation?: FeatureInstanceData
 }
 
 /* ------------------------------------------------------------------ */
@@ -228,6 +234,8 @@ export interface TrainerOrder {
   name: string
   tags?: string[]
   effect?: string
+  /** Stable Orders Feature instance when this row is an acquired source. */
+  automation?: FeatureInstanceData
 }
 
 /* ------------------------------------------------------------------ */
@@ -307,6 +315,12 @@ export interface TrainerSheet {
   currentHp?: number
 
   ap?: TrainerApPool
+  /** Versioned server-owned AP Bind/Drain/temporary state for Feature automation. */
+  featureApState?: FeatureApState
+  /** Versioned per-scope Feature frequency ledger. */
+  featureUsage?: FeatureUsageLedger
+  /** Exact-retry receipts and durable Feature choice/reaction/adjudication state. */
+  featureRuntimeState?: FeatureRuntimeState
   capabilities?: TrainerCapabilities
   damageReduction?: number
   evasion?: TrainerEvasion

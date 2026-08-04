@@ -1,12 +1,9 @@
 import { findAbility, findEdge, findFeature, findMove, toSlug } from '~~/data/ptuReference'
-import {
-  trainerFeatureSubchoices,
-  trainerSubchoiceValue,
-  type TrainerSubchoiceDefinition,
-} from '~/utils/sheets/trainerSubchoices'
 import type { PtuEdge, PtuFeature } from '~/types/ptuReference'
 import { resolveEdgeInstance } from '#shared/edgeAutomation/instances'
 import { TRAINER_EDGE_MOVE_GRANTS } from '#shared/edgeAutomation/grants'
+import { resolveFeatureGrants } from '#shared/featureAutomation/grants'
+import { resolvedSheetFeatureClosure } from '#shared/featureAutomation/sheetFeatures'
 import type {
   TrainerAbilityEntry,
   TrainerClassEntry,
@@ -33,8 +30,6 @@ export interface TrainerAutomaticCombatEntry<T> {
   entry: T
   sourceLabel: string
 }
-
-const GRANTED_FEATURE_CHOICE_KEYS = new Set(['trainingFeature', 'orderFeature', 'feature'])
 
 const normalizedNameKey = (name: unknown): string => (
   typeof name === 'string' ? toSlug(name) : ''
@@ -74,31 +69,6 @@ const addEdgeSource = (
   out.push({ entry: { ...entry, name }, reference: findEdge(name), sourceLabel })
 }
 
-const choiceKeyLeaf = (key: string): string => key.split('.').at(-1) ?? key
-
-const nestedChoicesForDefinition = (
-  entry: TrainerFeatureEntry,
-  definition: TrainerSubchoiceDefinition,
-): TrainerFeatureEntry['choices'] | undefined => {
-  const prefix = `${definition.key}.`
-  const choices = Object.entries(entry.choices ?? {})
-    .filter(([key]) => key.startsWith(prefix))
-    .map(([key, value]) => [key.slice(prefix.length), value] as const)
-  return choices.length ? Object.fromEntries(choices) : undefined
-}
-
-const selectedGrantedFeatures = (feature: TrainerFeatureEntry): TrainerFeatureEntry[] => {
-  const definitions = trainerFeatureSubchoices(feature)
-  return definitions
-    .filter((definition) => GRANTED_FEATURE_CHOICE_KEYS.has(choiceKeyLeaf(definition.key)))
-    .flatMap((definition) => {
-      const name = trainerSubchoiceValue(feature, definition, definitions)
-      if (!name.trim()) return []
-      const choices = nestedChoicesForDefinition(feature, definition)
-      return choices ? [{ name, choices }] : [{ name }]
-    })
-}
-
 /**
  * Feature-like trainer combat sources, including direct Features, Class names
  * that resolve as class Features, the sheet's selected training Feature, and
@@ -111,14 +81,11 @@ export const trainerCombatFeatureSources = (sheet: TrainerSheet | null | undefin
   const out: TrainerCombatFeatureSource[] = []
   const seen = new Set<string>()
 
-  if (sheet.trainingFeature) addFeatureSource(out, seen, { name: sheet.trainingFeature, tags: ['Training', 'Orders'] }, 'Training Feature')
-  for (const feature of sheet.features ?? []) addFeatureSource(out, seen, feature, feature.name)
-  for (const trainerClass of sheet.classes ?? []) addFeatureSource(out, seen, { name: featureName(trainerClass) }, trainerClass.name)
-
-  for (const feature of sheet.features ?? []) {
-    for (const selectedFeature of selectedGrantedFeatures(feature)) {
-      addFeatureSource(out, seen, selectedFeature, feature.name)
-    }
+  for (const instance of resolvedSheetFeatureClosure(sheet)) {
+    const choices = Object.fromEntries(instance.choices.flatMap(choice => choice.values.length === 1
+      ? [[choice.choiceId, choice.values[0]!]]
+      : choice.values.map((value, index) => [`${choice.choiceId}${index + 1}`, value])))
+    addFeatureSource(out, seen, { name: instance.canonicalId, ...(Object.keys(choices).length ? { choices } : {}) }, instance.acquisition.kind === 'training' ? 'Training Feature' : instance.canonicalId)
   }
 
   return out
@@ -131,53 +98,6 @@ export const trainerCombatEdgeSources = (sheet: TrainerSheet | null | undefined)
   const seen = new Set<string>()
   for (const edge of sheet.edges ?? []) addEdgeSource(out, seen, edge, edge.name)
   return out
-}
-
-const knownChoiceValues = (
-  entry: TrainerFeatureEntry | TrainerEdgeEntry,
-  definitions: readonly TrainerSubchoiceDefinition[],
-  predicate: (definition: TrainerSubchoiceDefinition) => boolean,
-): string[] => definitions
-  .filter(predicate)
-  .map((definition) => trainerSubchoiceValue(entry, definition, definitions))
-  .filter((value): value is string => Boolean(value?.trim()))
-
-const isMoveChoice = (definition: TrainerSubchoiceDefinition): boolean =>
-  /move/i.test(definition.key)
-
-const isAbilityChoice = (definition: TrainerSubchoiceDefinition): boolean =>
-  /ability/i.test(definition.key)
-
-const effectGrantsTrainerMoveChoice = (effect: string | null | undefined): boolean => {
-  const text = effect ?? ''
-  return /\bYou learn\b/i.test(text) || /^\s*Learn\b/i.test(text)
-}
-
-const effectGrantsTrainerAbilityChoice = (effect: string | null | undefined): boolean =>
-  /\bYou gain\b/i.test(effect ?? '')
-
-const stripLeadingChoiceText = (raw: string): string => raw
-  .replace(/^your\s+choice\s+of\s+(?:the\s+)?/i, '')
-  .replace(/^one\s+of\s+(?:the\s+)?/i, '')
-  .replace(/^the\s+/i, '')
-  .trim()
-
-const splitNamedList = (raw: string): string[] => stripLeadingChoiceText(raw)
-  .replace(/\s+(?:and|or)\s+/gi, ', ')
-  .split(',')
-  .map((value) => value.trim())
-  .filter(Boolean)
-
-const learnedMoveTexts = (effect: string | null | undefined): string[] => {
-  const text = effect ?? ''
-  const matches = text.matchAll(/(?:\bYou learn|^\s*Learn)\s+(?:the\s+)?(?:Moves?\s+)?([^.]+?)(?:\.|$)/gim)
-  return [...matches].map((match) => match[1]?.trim() ?? '').filter(Boolean)
-}
-
-const gainedAbilityTexts = (effect: string | null | undefined): string[] => {
-  const text = effect ?? ''
-  const matches = text.matchAll(/\bYou gain\s+(?:the\s+)?(.+?)\s+Ability\b/gim)
-  return [...matches].map((match) => match[1]?.trim() ?? '').filter(Boolean)
 }
 
 const addAutomaticMove = (
@@ -225,16 +145,11 @@ export const deriveTrainerAutomaticMoves = (
   const seen = new Set<string>()
   const existing = existingMoveKeys(sheet)
 
-  for (const source of trainerCombatFeatureSources(sheet)) {
-    if (effectGrantsTrainerMoveChoice(source.reference?.effect)) {
-      const definitions = trainerFeatureSubchoices(source.entry)
-      for (const name of knownChoiceValues(source.entry, definitions, isMoveChoice)) {
-        addAutomaticMove(out, seen, existing, name, source.entry.name)
+  for (const source of resolvedSheetFeatureClosure(sheet)) {
+    for (const grant of resolveFeatureGrants(source)) {
+      if (grant.kind === 'move' && grant.targetPolicy === 'trainer' && grant.duration === 'permanent') {
+        addAutomaticMove(out, seen, existing, grant.canonicalId, grant.sourceCanonicalId)
       }
-    }
-
-    for (const text of learnedMoveTexts(source.reference?.effect)) {
-      for (const name of splitNamedList(text)) addAutomaticMove(out, seen, existing, name, source.entry.name)
     }
   }
 
@@ -256,16 +171,11 @@ export const deriveTrainerAutomaticAbilities = (
   const seen = new Set<string>()
   const existing = existingAbilityKeys(sheet)
 
-  for (const source of trainerCombatFeatureSources(sheet)) {
-    if (effectGrantsTrainerAbilityChoice(source.reference?.effect)) {
-      const definitions = trainerFeatureSubchoices(source.entry)
-      for (const name of knownChoiceValues(source.entry, definitions, isAbilityChoice)) {
-        addAutomaticAbility(out, seen, existing, name, source.entry.name)
+  for (const source of resolvedSheetFeatureClosure(sheet)) {
+    for (const grant of resolveFeatureGrants(source)) {
+      if (grant.kind === 'ability' && grant.targetPolicy === 'trainer' && grant.duration === 'permanent') {
+        addAutomaticAbility(out, seen, existing, grant.canonicalId, grant.sourceCanonicalId)
       }
-    }
-
-    for (const text of gainedAbilityTexts(source.reference?.effect)) {
-      for (const name of splitNamedList(text)) addAutomaticAbility(out, seen, existing, name, source.entry.name)
     }
   }
 

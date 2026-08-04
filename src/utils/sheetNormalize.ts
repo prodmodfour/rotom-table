@@ -18,6 +18,8 @@ import { setPokemonCaughtBall } from '~/utils/sheets/pokemonCaughtBall'
 import { normalizeTrainerInventoryLegacyFishingRodAutofill } from '~/utils/sheets/trainerInventoryItems'
 import { stripLegacyTrainerSheetSkillRanks } from '~/utils/sheets/trainerSkillEntries'
 import { resolveEdgeInstance } from '#shared/edgeAutomation/instances'
+import { resolveFeatureInstance } from '#shared/featureAutomation/instances'
+import { normalizedFeatureApState, normalizedFeatureRuntimeState, normalizedFeatureUsageLedger } from '#shared/featureAutomation/state'
 import {
   POKEMON_RARE_CANDY_LIMIT,
   POKEMON_VITAMIN_STAT_KEYS,
@@ -135,6 +137,9 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
   }
 
   ensureObj<NonNullable<TrainerSheet['ap']>>(sheet, 'ap')
+  if (sheet.featureApState) sheet.featureApState = normalizedFeatureApState(sheet.featureApState, Math.max(0, Math.floor(sheet.ap?.max ?? (5 + Math.floor(Math.max(1, sheet.level || 1) / 5)))))
+  if (sheet.featureUsage) sheet.featureUsage = normalizedFeatureUsageLedger(sheet.featureUsage)
+  if (sheet.featureRuntimeState) sheet.featureRuntimeState = normalizedFeatureRuntimeState(sheet.featureRuntimeState)
   const evasion = ensureObj<NonNullable<TrainerSheet['evasion']>>(sheet, 'evasion')
   if (typeof evasion.speedBonus    !== 'number') evasion.speedBonus    = 0
   if (typeof evasion.physicalBonus !== 'number') evasion.physicalBonus = 0
@@ -163,9 +168,18 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
   ensureArr(sheet, 'movelist')
   ensureArr(sheet, 'abilities')
   ensureArr(sheet, 'maneuvers')
-  ensureArr(sheet, 'orders')
-  ensureArr(sheet, 'classes')
-  ensureArr(sheet, 'features')
+  for (const [index, order] of ensureArr<NonNullable<TrainerSheet['orders']>[number]>(sheet, 'orders').entries()) {
+    const resolved = resolveFeatureInstance({ entry: order, ownerId: sheet.slug, index: 20_000 + index, acquisitionKind: 'orders' })
+    if (resolved.status === 'ready' && resolved.data) order.automation = { ...resolved.data }
+  }
+  for (const [index, trainerClass] of ensureArr<NonNullable<TrainerSheet['classes']>[number]>(sheet, 'classes').entries()) {
+    const resolved = resolveFeatureInstance({ entry: trainerClass, ownerId: sheet.slug, index: 10_000 + index, acquisitionKind: 'class' })
+    if (resolved.status === 'ready' && resolved.data) trainerClass.automation = { ...resolved.data }
+  }
+  for (const [index, feature] of ensureArr<NonNullable<TrainerSheet['features']>[number]>(sheet, 'features').entries()) {
+    const resolved = resolveFeatureInstance({ entry: feature, ownerId: sheet.slug, index, acquisitionKind: 'sheet' })
+    if (resolved.status === 'ready' && resolved.data) feature.automation = { ...resolved.data }
+  }
   for (const [index, edge] of ensureArr<NonNullable<TrainerSheet['edges']>[number]>(sheet, 'edges').entries()) {
     const resolved = resolveEdgeInstance({ family: 'trainer', entry: edge, ownerId: sheet.slug, index })
     if (resolved.status === 'ready' && resolved.data) edge.automation = { ...resolved.data, family: 'trainer' }

@@ -12,6 +12,7 @@ import {
 } from '~/utils/sheets/trainerSkillCalculation'
 import { SKILL_RANK_TO_VALUE } from '~/utils/skillRanks'
 import { sheetHasCanonicalEdge } from '#shared/edgeAutomation/sheetEdges'
+import { featureTrainerStatBonus } from '#shared/featureAutomation/providers'
 
 // ---------------------------------------------------------------------------
 // Stat resolution
@@ -59,7 +60,7 @@ export const resolveTrainerStats = (sheet: TrainerSheet): ResolvedTrainerStat[] 
   TRAINER_STAT_ORDER.map((key) => {
     const row = sheet.stats?.[key] ?? {}
     const base    = row.base    ?? DEFAULT_BASE[key]
-    const feats   = row.feats   ?? 0
+    const feats   = Math.max(row.feats ?? 0, featureTrainerStatBonus(sheet, key))
     const bonus   = row.bonus   ?? 0
     const levelUp = row.levelUp ?? 0
     const stage   = row.stage   ?? (key === 'hp' ? 0 : sheet.combatStages?.[key] ?? 0)

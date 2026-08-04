@@ -1,12 +1,12 @@
 import type { CharacterSheet, PokemonTrainedStatKey } from '~/types/characterSheet'
 import type {
   SkillRank,
-  TrainerClassEntry,
   TrainerSheet,
   TrainerSkillKey,
 } from '~/types/trainerSheet'
 import { SKILL_RANK_TO_VALUE } from '~/utils/skillRanks'
-import { trainerCombatFeatureSources } from '~/utils/sheets/trainerCombatDerivations'
+import { parseFeatureLabel } from '#shared/featureAutomation/catalog'
+import { resolvedSheetFeatureClosure, resolvedSheetFeatureInstances, sheetHasCanonicalFeature } from '#shared/featureAutomation/sheetFeatures'
 import { normalizePokemonTrainingFeatureName } from '~/utils/sheets/pokemonTrainingFeatures'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import { parseEdgeLabel } from '#shared/edgeAutomation/catalog'
@@ -33,29 +33,15 @@ export const TRAINING_SKILL_LABELS: Record<TrainerTrainingSkillKey, string> = {
   pokeEd: 'Pokémon Ed',
 }
 
-const normalizeName = (value: unknown): string => (
-  typeof value === 'string'
-    ? value
-        .trim()
-        .replace(/\s+/g, ' ')
-        .replace(/\s*\([^)]*\)\s*$/g, '')
-        .toLowerCase()
-    : ''
-)
-
-const namedEntry = <T extends { name?: string }>(entries: readonly T[] | undefined, name: string): T | null => {
-  const key = normalizeName(name)
-  return entries?.find((entry) => normalizeName(entry.name) === key) ?? null
-}
-
 export const trainerHasFeatureNamed = (sheet: TrainerSheet, name: string): boolean => {
-  const key = normalizeName(name)
-  if (!key) return false
-  return trainerCombatFeatureSources(sheet).some((source) => normalizeName(source.entry.name) === key)
+  const canonicalId = parseFeatureLabel(name).canonicalId
+  return canonicalId ? sheetHasCanonicalFeature(sheet, canonicalId) : false
 }
 
-export const trainerHasClassNamed = (sheet: TrainerSheet, name: string): boolean =>
-  Boolean(namedEntry<TrainerClassEntry>(sheet.classes, name))
+export const trainerHasClassNamed = (sheet: TrainerSheet, name: string): boolean => {
+  const canonicalId = parseFeatureLabel(name).canonicalId
+  return canonicalId ? resolvedSheetFeatureInstances(sheet).some(row => row.collection === 'classes' && row.status === 'ready' && row.data?.canonicalId === canonicalId) : false
+}
 
 export const trainerHasEdgeNamed = (sheet: TrainerSheet, name: string): boolean => {
   const canonicalId = parseEdgeLabel('trainer', name).canonicalId
@@ -77,7 +63,7 @@ export const trainerOwnedPokemonTrainingFeatures = (sheet: TrainerSheet): Readon
     if (feature) owned.add(feature)
   }
 
-  for (const source of trainerCombatFeatureSources(sheet)) add(source.entry.name)
+  for (const source of resolvedSheetFeatureClosure(sheet)) add(source.canonicalId)
   for (const order of sheet.orders ?? []) add(order.name)
   add(sheet.trainingFeature)
 

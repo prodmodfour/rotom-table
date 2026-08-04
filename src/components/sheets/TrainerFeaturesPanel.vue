@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import type { EditableCellValue } from '~/utils/editableCell'
 import type { TrainerFeatureEntry, TrainerSheet } from '~/types/trainerSheet'
@@ -8,7 +8,9 @@ import {
   TRAINER_FEATURE_NAME_COLUMN,
   TRAINER_FEATURE_NAME_OPTIONS,
   trainerFeatureFieldValue,
+  trainerFeatureInspectorStatus,
   trainerFreeTrainingFeatureEntry,
+  syncTrainerFeatureAutomation,
   type TrainerFeatureAutofillField,
 } from '~/utils/sheets/trainerFeatures'
 import {
@@ -41,9 +43,17 @@ const freeTrainingFeatureValue = computed(() => freeTrainingFeature.value.choice
 const autofillValue = (feature: TrainerFeatureEntry, field: TrainerFeatureAutofillField): string =>
   trainerFeatureFieldValue(feature, field)
 
-const setFeatureName = (feature: TrainerFeatureEntry, value: EditableCellValue) => {
+const setFeatureName = (feature: TrainerFeatureEntry, index: number, value: EditableCellValue) => {
+  delete feature.automation
   updateTrainerChoiceEntryName(feature, value, trainerFeatureSubchoices)
+  syncTrainerFeatureAutomation(props.sheet, feature, index)
 }
+
+watch(
+  () => props.sheet.features,
+  features => features?.forEach((feature, index) => syncTrainerFeatureAutomation(props.sheet, feature, index)),
+  { deep: true, immediate: true, flush: 'sync' },
+)
 
 const setFreeTrainingFeature = (value: EditableCellValue) => {
   const selectedFeature = normalizePokemonTrainingFeatureName(value)
@@ -109,12 +119,17 @@ const setFreeTrainingFeature = (value: EditableCellValue) => {
                     :model-value="stripTrainerEntryChoiceSuffix(feature.name)"
                     type="select"
                     :options="TRAINER_FEATURE_NAME_OPTIONS"
-                    @update:model-value="(value) => setFeatureName(feature, value)"
+                    @update:model-value="(value) => setFeatureName(feature, index, value)"
                   />
                   <TrainerEntrySubchoiceControls
                     :entry="feature"
                     :definitions="trainerFeatureSubchoices(feature)"
                   />
+                  <span
+                    class="feature-automation-status"
+                    :class="`feature-automation-status--${trainerFeatureInspectorStatus(sheet, feature, index).status}`"
+                    :title="trainerFeatureInspectorStatus(sheet, feature, index).diagnostics.join('\n')"
+                  >{{ trainerFeatureInspectorStatus(sheet, feature, index).label }}</span>
                 </div>
               </th>
               <td
@@ -194,4 +209,19 @@ const setFreeTrainingFeature = (value: EditableCellValue) => {
   align-items: flex-start;
   gap: 0.35rem;
 }
+
+.feature-automation-status {
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+  color: var(--ink-muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.feature-automation-status--ready { color: #78d7a5; border-color: rgba(120, 215, 165, 0.45); }
+.feature-automation-status--missing-required-data { color: #f4cc72; border-color: rgba(244, 204, 114, 0.45); }
+.feature-automation-status--malformed,
+.feature-automation-status--unresolved-identity { color: #ef8d8d; border-color: rgba(239, 141, 141, 0.45); }
 </style>

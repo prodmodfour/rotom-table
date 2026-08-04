@@ -47,6 +47,7 @@ describe('quality gate automation validation', () => {
         'run check:ability-automation-plan',
         'run check:capability-automation-complete',
         'run check:edge-automation-complete',
+        'run check:feature-automation-complete',
         'run check:encounter-presentation',
         'run check:move-automation',
         'run check:move-automation-complete',
@@ -86,6 +87,8 @@ describe('quality gate automation validation', () => {
     expect(packageJson.scripts['check:capability-automation-complete']).toContain('--check-plan')
     expect(packageJson.scripts['check:edge-automation']).toContain('scripts/check_edge_automation.ts')
     expect(packageJson.scripts['check:edge-automation-complete']).toContain('--check-plan')
+    expect(packageJson.scripts['check:feature-automation']).toContain('scripts/check_feature_automation.ts')
+    expect(packageJson.scripts['check:feature-automation-complete']).toContain('--check-plan')
     expect(packageJson.scripts['check:move-automation']).toBe(
       'python3 scripts/check_move_automation_coverage.py',
     )

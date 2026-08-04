@@ -117,13 +117,13 @@ describe('useOrderActionPanel', () => {
     ])
   })
 
-  it('logs untimed orders immediately without targeting when they have no target line', () => {
+  it('logs targetless canonical orders immediately without opening targeting', () => {
     const map = ref(mapDoc())
     const trainer = {
       slug: 'lenora',
       name: 'Lenora',
       level: 1,
-      orders: [{ name: 'Soothe', effect: 'Calm a Pokémon.' }],
+      orders: [{ name: 'Go, Fight, Win!' }],
     } as TrainerSheet
     const panel = useOrderActionPanel({
       map,
@@ -135,11 +135,11 @@ describe('useOrderActionPanel', () => {
       now: () => 100,
     })
 
-    expect(panel.useOrder({ id: 'trainer', orderName: 'Soothe' })).toBe(true)
+    expect(panel.useOrder({ id: 'trainer', orderName: 'Go, Fight, Win!' })).toBe(true)
     expect(panel.orderActionTargeting.value).toBeNull()
-    expect(map.value.metadata?.activeOrderEffects).toBeUndefined()
+    expect(map.value.metadata?.activeOrderEffects).toMatchObject([{ orderName: 'Go, Fight, Win!', userId: 'trainer' }])
     expect(map.value.metadata?.orderLog).toMatchObject([
-      { orderName: 'Soothe', lines: expect.arrayContaining(['Lenora used Soothe.']) },
+      { orderName: 'Go, Fight, Win!', lines: expect.arrayContaining(['Lenora used Go, Fight, Win!.']) },
     ])
   })
 
@@ -149,7 +149,7 @@ describe('useOrderActionPanel', () => {
       slug: 'lenora',
       name: 'Lenora',
       level: 1,
-      orders: [{ name: 'Soothe', effect: 'Calm a Pokémon.' }],
+      orders: [{ name: 'Go, Fight, Win!' }],
     } as TrainerSheet
     const dispatchOrderUse = vi.fn(async () => false)
     const panel = useOrderActionPanel({
@@ -163,9 +163,9 @@ describe('useOrderActionPanel', () => {
       now: () => 100,
     })
 
-    await expect(panel.useOrder({ id: 'trainer', orderName: 'Soothe' })).resolves.toBe(false)
+    await expect(panel.useOrder({ id: 'trainer', orderName: 'Go, Fight, Win!' })).resolves.toBe(false)
 
-    expect(dispatchOrderUse).toHaveBeenCalledWith({ userId: 'trainer', orderName: 'Soothe' })
+    expect(dispatchOrderUse).toHaveBeenCalledWith({ userId: 'trainer', orderName: 'Go, Fight, Win!' })
     expect(map.value.metadata?.activeOrderEffects).toBeUndefined()
     expect(map.value.metadata?.orderLog).toBeUndefined()
   })

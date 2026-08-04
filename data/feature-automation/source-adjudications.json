@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-feature-automation-v1",
+  "status": "reviewed-no-open-source-gaps",
+  "entries": [
+    {
+      "id": "FA-SRC-001",
+      "canonicalIds": [
+        "Apothecary",
+        "Calculated Assault",
+        "Captured Momentum",
+        "Crystal Artificer",
+        "Encore Performance",
+        "Fabulous Max",
+        "Farcast",
+        "Gleeful Steps",
+        "Macho Charge",
+        "Plate Crafter",
+        "Power Conduit",
+        "Rainbow Light",
+        "Rule of Cool",
+        "Stat Ace",
+        "Style Expert",
+        "Style Flourish",
+        "Type Ace",
+        "Type Booster",
+        "Type Brace"
+      ],
+      "decision": "Split parser-overrun Trigger, Target, Condition, Frequency, and Effect fields at reviewed source boundaries.",
+      "status": "accepted"
+    },
+    {
+      "id": "FA-SRC-002",
+      "canonicalIds": [
+        "Medic",
+        "Front Line Healer",
+        "Medical Techniques",
+        "I’m a Doctor",
+        "Proper Care",
+        "Stay With Us!",
+        "Nurse",
+        "Affliction Techniques",
+        "Gotta Catch ‘Em All",
+        "Incandescence"
+      ],
+      "decision": "Repair errata class ownership without allowing documentary class context to become runtime authority.",
+      "status": "accepted"
+    },
+    {
+      "id": "FA-SRC-003",
+      "canonicalIds": [
+        "Mixed Power",
+        "Dumplings",
+        "Tasty Snacks",
+        "Hearty Meal",
+        "Bait Mixer",
+        "Preserves",
+        "Leftovers",
+        "Basic Fashion",
+        "Restorative Science",
+        "Super Cures",
+        "Performance Enhancers",
+        "Medicinal Blend",
+        "Type Booster",
+        "Type Brace",
+        "Focus Gem",
+        "Chakra Crystal",
+        "Rainbow Gem",
+        "Plate Crafter",
+        "Enhancers"
+      ],
+      "decision": "Separate Cost and Ingredients from parser-merged prerequisites/frequencies into typed reference fields.",
+      "status": "accepted"
+    },
+    {
+      "id": "FA-SRC-004",
+      "canonicalIds": [
+        "Field Clinic",
+        "Mixed Power"
+      ],
+      "decision": "Preserve the frozen app-owned Feature identities for compatibility; cross-family source anomalies are diagnostic and cannot supplement Edge authority.",
+      "status": "accepted"
+    },
+    {
+      "id": "FA-SRC-005",
+      "canonicalIds": [
+        "Accentuated Taste",
+        "Extra Ordinary"
+      ],
+      "decision": "Suppress catalog-name false-positive grants; Accentuated Taste references Lunchbox without granting it, while Extra Ordinary resolves a target-contextual Ability alternative at declaration time.",
+      "status": "accepted"
+    }
+  ]
+}

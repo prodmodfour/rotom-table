@@ -34,7 +34,7 @@ import {
 } from '#shared/encounterPresentation'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { PendingMoveResponseWindowList } from '#shared/moveAutomation/responseViews'
-import { toSlug, findAbility, findFeature, findItem, findMove } from '~~/data/ptuReference'
+import { toSlug, findAbility, findItem, findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap, SheetPlacement } from '~/types/map'
 import type { TrainerSheet, InventoryEntry } from '~/types/trainerSheet'
@@ -51,6 +51,8 @@ import { moveAutomationSemanticStatusForMenu } from '~/utils/moveAutomationSeman
 import { moveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import { buildCapabilityClientCapabilityBundle } from '../capabilityAutomation/clientCapabilities'
 import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
+import { canonicalFeatureReference } from '#shared/featureAutomation/catalog'
+import { resolveEffectiveFeatures } from '../featureAutomation/effectiveFeatures'
 import {
   resolveCapabilityWeaponMoveGrants,
   resolveLivingWeaponAttackSources,
@@ -954,17 +956,6 @@ const capabilityPresentation = (input: {
   return { offers: [...actionOffers, ...adjudicationOffers], passives: [...passives, ...privateNoticePassives] }
 }
 
-const frequencyRoles = (
-  frequency: string | null | undefined,
-  trigger: string | null | undefined,
-): readonly EncounterInteractionRole[] => {
-  const lower = `${frequency ?? ''} ${trigger ?? ''}`.toLowerCase()
-  if (lower.includes('interrupt')) return ['interrupt-reaction']
-  if (trigger) return ['triggered-optional']
-  if (/standard|shift|swift|free|full|extended|priority|action/.test(lower)) return ['activated-action']
-  return ['passive-provider']
-}
-
 const featureAndEdgePresentation = (input: {
   readonly map: TabletopMap
   readonly mapRevision: number
@@ -974,20 +965,31 @@ const featureAndEdgePresentation = (input: {
   const offers: EncounterActionOffer[] = []
   const passives: EncounterPassiveSummary[] = []
 
-  // Feature migration remains owned by the downstream Feature plan. Edge rows
-  // below never share this prose/frequency compatibility path.
   if ('features' in input.sheet) {
-    for (const [index, feature] of (input.sheet.features ?? []).entries()) {
-      const reference = findFeature(feature.name)
-      const name = reference?.name ?? feature.name
-      const frequency = feature.frequency ?? reference?.frequency ?? null
-      const trigger = reference?.trigger ?? null
-      const source = sourceRef({ kind: 'feature', canonicalId: name })
-      const roles = frequencyRoles(frequency, trigger)
-      if (roles.includes('passive-provider')) {
-        passives.push(passiveSummary({ map: input.map, participant: input.participant, source, roles, description: frequency }))
-      }
-      else {
+    const effectiveFeatures = resolveEffectiveFeatures({ ownerId: input.sheet.slug, sheet: input.sheet })
+    for (const [index, feature] of effectiveFeatures.instances.entries()) {
+      const reference = canonicalFeatureReference(feature.canonicalId)
+      const source = sourceRef({ kind: 'feature', canonicalId: feature.canonicalId, instanceId: feature.instanceId })
+      const facts: EncounterPassiveFact[] = feature.mechanics.map((mechanic, mechanicIndex) => ({
+        factId: encounterPresentationStableId('feature-fact', feature.instanceId, mechanic.mechanicId, String(mechanicIndex)),
+        factKey: mechanic.propertyId,
+        value: textFact(mechanic.operation),
+        label: mechanic.propertyId,
+      }))
+      passives.push(passiveSummary({
+        map: input.map,
+        participant: input.participant,
+        source,
+        roles: ['passive-provider'],
+        active: feature.effective,
+        facts,
+        description: feature.effective ? reference?.effect ?? null : feature.suppressionReasonCode,
+      }))
+      for (const [actionIndex, action] of feature.actions.entries()) {
+        const roles: EncounterInteractionRole[] = action.triggered
+          ? action.frequency.modifiers.includes('interrupt') || action.frequency.modifiers.includes('reaction') ? ['interrupt-reaction'] : ['triggered-optional']
+          : ['activated-action']
+        const unavailable: EncounterAvailabilityReasonCode[] = feature.effective ? [] : ['source.suppressed']
         offers.push(makeOffer({
           map: input.map,
           mapRevision: input.mapRevision,
@@ -996,12 +998,14 @@ const featureAndEdgePresentation = (input: {
           roles,
           group: roles.includes('interrupt-reaction') ? 'reaction' : 'support',
           groupOrder: 60,
-          offerOrder: index,
-          timing: timingFromText(frequency ?? trigger),
-          usage: emptyUsage(frequency),
-          availability: availabilityFromCodes(['action.unsupported']),
-          copy: presentation(name, { description: frequency, iconKey: 'source.feature' }),
-          actionId: 'feature.declare',
+          offerOrder: index * 10 + actionIndex,
+          timing: timingFromText(action.frequency.source),
+          targeting: action.targetRequired ? [{ requirementId: 'feature-target', kind: 'participant', minSelections: 1, maxSelections: 32, rangeLabel: reference?.target ?? null, relationshipLabel: 'Server-authorized Feature targets', requiresLineOfSight: false, requiresSpatialInput: false }] : [],
+          usage: emptyUsage(action.frequency.source),
+          availability: availabilityFromCodes(unavailable),
+          copy: presentation(feature.canonicalId, { description: reference?.effect ?? null, iconKey: 'source.feature' }),
+          actionId: `feature.${feature.canonicalId}.${action.id}`,
+          intentInput: action.choices.length ? 'choices' : undefined,
         }))
       }
     }

@@ -6,8 +6,8 @@ import {
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 describe('map token order menu options', () => {
-  it('uses custom sheet orders and enriches matching PTU orders from reference data', () => {
-    const [custom, mobilize] = trainerOrderOptionsForSheet({
+  it('fails closed for custom rows and enriches canonical Orders from reference data', () => {
+    const [mobilize] = trainerOrderOptionsForSheet({
       slug: 'trainer',
       name: 'Trainer',
       level: 1,
@@ -17,12 +17,6 @@ describe('map token order menu options', () => {
       ],
     })
 
-    expect(custom).toMatchObject({
-      name: 'Soothe',
-      tags: ['Orders'],
-      effect: 'Calm a nervous Pokémon.',
-      source: 'sheet-order',
-    })
     expect(mobilize).toMatchObject({
       name: 'Mobilize',
       tags: ['Orders'],
@@ -51,7 +45,7 @@ describe('map token order menu options', () => {
       'Focused Training',
       'Inspired Training',
     ])
-    expect(options[0]).toMatchObject({ source: 'sheet-order', effect: 'Manual override.' })
+    expect(options[0]).toMatchObject({ source: 'sheet-order', effect: expect.stringContaining('Movement Capabilities') })
     expect(options[1]).toMatchObject({ sourceLabel: 'Training Feature', effect: expect.stringContaining('Focused') })
     expect(options[2]).toMatchObject({
       source: 'feature',
@@ -88,7 +82,7 @@ describe('map token order menu options', () => {
       slug: 'trainer',
       name: 'Trainer',
       level: 1,
-      orders: [{ name: 'Soothe' }],
+      orders: [{ name: 'Mobilize' }],
     } as TrainerSheet
     const lookup = {
       trainer: new Map([[trainerSheet.slug, trainerSheet]]),
@@ -96,6 +90,6 @@ describe('map token order menu options', () => {
 
     expect(orderOptionsForPlacement({ sheetKind: 'pokemon', sheetSlug: 'pikachu' }, lookup)).toEqual([])
     expect(orderOptionsForPlacement({ sheetKind: 'trainer', sheetSlug: 'trainer' }, lookup))
-      .toMatchObject([{ name: 'Soothe' }])
+      .toMatchObject([{ name: 'Mobilize' }])
   })
 })
