@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "ptu-1.05-breeding-natures-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "d95d1ab8f6065c04790824a2258d99239907348081695f18e88a500a1ac9ff4e",
+  "definition": {
+    "migrationId": "BR-NATURE-001",
+    "entries": [
+      {
+        "id": "cuddly",
+        "value": 1,
+        "label": "Cuddly",
+        "raisesStatId": "hp",
+        "lowersStatId": "atk"
+      },
+      {
+        "id": "distracted",
+        "value": 2,
+        "label": "Distracted",
+        "raisesStatId": "hp",
+        "lowersStatId": "def"
+      },
+      {
+        "id": "proud",
+        "value": 3,
+        "label": "Proud",
+        "raisesStatId": "hp",
+        "lowersStatId": "satk"
+      },
+      {
+        "id": "decisive",
+        "value": 4,
+        "label": "Decisive",
+        "raisesStatId": "hp",
+        "lowersStatId": "sdef"
+      },
+      {
+        "id": "patient",
+        "value": 5,
+        "label": "Patient",
+        "raisesStatId": "hp",
+        "lowersStatId": "spd"
+      },
+      {
+        "id": "desperate",
+        "value": 6,
+        "label": "Desperate",
+        "raisesStatId": "atk",
+        "lowersStatId": "hp"
+      },
+      {
+        "id": "lonely",
+        "value": 7,
+        "label": "Lonely",
+        "raisesStatId": "atk",
+        "lowersStatId": "def"
+      },
+      {
+        "id": "adamant",
+        "value": 8,
+        "label": "Adamant",
+        "raisesStatId": "atk",
+        "lowersStatId": "satk"
+      },
+      {
+        "id": "naughty",
+        "value": 9,
+        "label": "Naughty",
+        "raisesStatId": "atk",
+        "lowersStatId": "sdef"
+      },
+      {
+        "id": "brave",
+        "value": 10,
+        "label": "Brave",
+        "raisesStatId": "atk",
+        "lowersStatId": "spd"
+      },
+      {
+        "id": "stark",
+        "value": 11,
+        "label": "Stark",
+        "raisesStatId": "def",
+        "lowersStatId": "hp"
+      },
+      {
+        "id": "bold",
+        "value": 12,
+        "label": "Bold",
+        "raisesStatId": "def",
+        "lowersStatId": "atk"
+      },
+      {
+        "id": "impish",
+        "value": 13,
+        "label": "Impish",
+        "raisesStatId": "def",
+        "lowersStatId": "satk"
+      },
+      {
+        "id": "lax",
+        "value": 14,
+        "label": "Lax",
+        "raisesStatId": "def",
+        "lowersStatId": "sdef"
+      },
+      {
+        "id": "relaxed",
+        "value": 15,
+        "label": "Relaxed",
+        "raisesStatId": "def",
+        "lowersStatId": "spd"
+      },
+      {
+        "id": "curious",
+        "value": 16,
+        "label": "Curious",
+        "raisesStatId": "satk",
+        "lowersStatId": "hp"
+      },
+      {
+        "id": "modest",
+        "value": 17,
+        "label": "Modest",
+        "raisesStatId": "satk",
+        "lowersStatId": "atk"
+      },
+      {
+        "id": "mild",
+        "value": 18,
+        "label": "Mild",
+        "raisesStatId": "satk",
+        "lowersStatId": "def"
+      },
+      {
+        "id": "rash",
+        "value": 19,
+        "label": "Rash",
+        "raisesStatId": "satk",
+        "lowersStatId": "sdef"
+      },
+      {
+        "id": "quiet",
+        "value": 20,
+        "label": "Quiet",
+        "raisesStatId": "satk",
+        "lowersStatId": "spd"
+      },
+      {
+        "id": "dreamy",
+        "value": 21,
+        "label": "Dreamy",
+        "raisesStatId": "sdef",
+        "lowersStatId": "hp"
+      },
+      {
+        "id": "calm",
+        "value": 22,
+        "label": "Calm",
+        "raisesStatId": "sdef",
+        "lowersStatId": "atk"
+      },
+      {
+        "id": "gentle",
+        "value": 23,
+        "label": "Gentle",
+        "raisesStatId": "sdef",
+        "lowersStatId": "def"
+      },
+      {
+        "id": "careful",
+        "value": 24,
+        "label": "Careful",
+        "raisesStatId": "sdef",
+        "lowersStatId": "satk"
+      },
+      {
+        "id": "sassy",
+        "value": 25,
+        "label": "Sassy",
+        "raisesStatId": "sdef",
+        "lowersStatId": "spd"
+      },
+      {
+        "id": "skittish",
+        "value": 26,
+        "label": "Skittish",
+        "raisesStatId": "spd",
+        "lowersStatId": "hp"
+      },
+      {
+        "id": "timid",
+        "value": 27,
+        "label": "Timid",
+        "raisesStatId": "spd",
+        "lowersStatId": "atk"
+      },
+      {
+        "id": "hasty",
+        "value": 28,
+        "label": "Hasty",
+        "raisesStatId": "spd",
+        "lowersStatId": "def"
+      },
+      {
+        "id": "jolly",
+        "value": 29,
+        "label": "Jolly",
+        "raisesStatId": "spd",
+        "lowersStatId": "satk"
+      },
+      {
+        "id": "naive",
+        "value": 30,
+        "label": "Naive",
+        "raisesStatId": "spd",
+        "lowersStatId": "sdef"
+      },
+      {
+        "id": "composed",
+        "value": 31,
+        "label": "Composed",
+        "raisesStatId": "hp",
+        "lowersStatId": "hp"
+      },
+      {
+        "id": "hardy",
+        "value": 32,
+        "label": "Hardy",
+        "raisesStatId": "atk",
+        "lowersStatId": "atk"
+      },
+      {
+        "id": "docile",
+        "value": 33,
+        "label": "Docile",
+        "raisesStatId": "def",
+        "lowersStatId": "def"
+      },
+      {
+        "id": "bashful",
+        "value": 34,
+        "label": "Bashful",
+        "raisesStatId": "satk",
+        "lowersStatId": "satk"
+      },
+      {
+        "id": "quirky",
+        "value": 35,
+        "label": "Quirky",
+        "raisesStatId": "sdef",
+        "lowersStatId": "sdef"
+      },
+      {
+        "id": "serious",
+        "value": 36,
+        "label": "Serious",
+        "raisesStatId": "spd",
+        "lowersStatId": "spd"
+      }
+    ],
+    "statIds": [
+      "hp",
+      "atk",
+      "def",
+      "satk",
+      "sdef",
+      "spd"
+    ],
+    "orderedDice": {
+      "expression": "2d6-ordered",
+      "firstDieMinimum": 1,
+      "firstDieMaximum": 6,
+      "secondDieMinimum": 1,
+      "secondDieMaximum": 6,
+      "valueFormula": "(firstDie-1)*6+secondDie",
+      "sumInterpretation": "forbidden"
+    },
+    "identity": {
+      "runtimeLabelNormalization": "forbidden",
+      "comparison": "exact-id",
+      "entryOrder": "value-ascending"
+    },
+    "sourceProvenance": {
+      "path": "books/markdown/core/05-pokemon.md",
+      "sha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3",
+      "role": "maintenance-provenance-only-migrated-into-reviewed-artifact"
+    },
+    "policies": {
+      "runtimeDocumentaryRead": "forbidden",
+      "unknownNature": "reject",
+      "duplicateValueOrId": "reject",
+      "definitionChange": "reviewed-source-hash-bound-migration-only"
+    }
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "policyId": "ptu-1.05-breeding-family-graph-policy-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "taxonomyDefinitionSha256": "086633909ce7499e5946e033d596145f469e09ebb2490e7d6985b6f19394ff8d",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "ae677fe4a6d204e05a2c500e2dc5584b88ca2a10b80546c18a30b94e7541bc76",
+  "definition": {
+    "nodePolicy": {
+      "canonicalSourcePath": "data/reference/pokedex.json",
+      "identityField": "species",
+      "identityComparison": "exact-canonical-id",
+      "runtimeNameNormalization": "forbidden",
+      "unknownNode": "reject-edge-and-exclude-affected-family",
+      "duplicateNode": "reject-registry",
+      "sparseNode": "exclude-until-source-bound-adjudication"
+    },
+    "sourceEvolutionPolicy": {
+      "relationshipField": "evolutions",
+      "targetIdentityField": "species",
+      "stageField": "stage",
+      "minimumStage": 1,
+      "maximumStage": 3,
+      "acceptedTarget": "exact-existing-canonical-species-id-only",
+      "embeddedConditionInTarget": "reject-not-strip",
+      "edgeConstruction": "adjacent-increasing-stages-within-reviewed-family-sequence",
+      "sameStageEntries": "branch-siblings-not-edges",
+      "decreasingOrSkippedStage": "requires-adjudication",
+      "recordEvolutionStage": "diagnostic-cross-check-only",
+      "conditionField": "provenance-only-not-breeding-root-semantics"
+    },
+    "edgeKinds": [
+      {
+        "id": "evolves-to",
+        "directed": true,
+        "connectsReproductiveFamily": true
+      },
+      {
+        "id": "branch-evolves-to",
+        "directed": true,
+        "connectsReproductiveFamily": true
+      },
+      {
+        "id": "regional-lineage",
+        "directed": false,
+        "connectsReproductiveFamily": false
+      },
+      {
+        "id": "form-variant",
+        "directed": false,
+        "connectsReproductiveFamily": false
+      },
+      {
+        "id": "transformation",
+        "directed": false,
+        "connectsReproductiveFamily": false
+      },
+      {
+        "id": "fusion",
+        "directed": false,
+        "connectsReproductiveFamily": false
+      }
+    ],
+    "familyInvariants": [
+      "directed-evolution-subgraph-is-acyclic",
+      "exactly-one-reviewed-root-per-family",
+      "root-has-no-incoming-evolution-edge",
+      "every-non-root-node-is-reachable-from-root",
+      "every-species-node-belongs-to-at-most-one-family",
+      "branch-siblings-share-root-without-sibling-edge",
+      "all-emitted-edge-targets-exist",
+      "all-emitted-family-and-root-identities-are-canonical"
+    ],
+    "rootSelection": {
+      "candidate": "unique-node-with-zero-incoming-evolution-edges",
+      "stageTieBreaker": "none-fail-closed",
+      "multipleRoots": "exclude-family",
+      "noRoot": "exclude-family",
+      "cycle": "exclude-family",
+      "disconnectedNode": "exclude-affected-component",
+      "operationTimeTraversal": "forbidden-use-compiled-family-spec"
+    },
+    "branchPolicy": {
+      "familyIdentity": "shared-reviewed-root",
+      "offspringDefault": "family-offspring-root-species-id",
+      "branchParentDoesNotProduceBranchFormWithoutExplicitFormRoot": true,
+      "evolutionConditionsAffectRootSelection": false
+    },
+    "formPolicy": {
+      "classification": "explicit-form-kind-and-root-policy-only",
+      "speciesNamePatternInference": "forbidden",
+      "base-species": {
+        "defaultRootPolicy": "own-form-root",
+        "mayBeReproductiveRoot": true
+      },
+      "regional-form": {
+        "defaultRootPolicy": "requires-adjudication",
+        "mayBeReproductiveRoot": true
+      },
+      "size-form": {
+        "defaultRootPolicy": "requires-adjudication",
+        "mayBeReproductiveRoot": true
+      },
+      "sex-form": {
+        "defaultRootPolicy": "requires-adjudication",
+        "mayBeReproductiveRoot": true
+      },
+      "appliance-form": {
+        "defaultRootPolicy": "not-breedable-form",
+        "mayBeReproductiveRoot": false
+      },
+      "battle-form": {
+        "defaultRootPolicy": "not-breedable-form",
+        "mayBeReproductiveRoot": false
+      },
+      "transformation-form": {
+        "defaultRootPolicy": "not-breedable-form",
+        "mayBeReproductiveRoot": false
+      },
+      "fusion-form": {
+        "defaultRootPolicy": "not-breedable-form",
+        "mayBeReproductiveRoot": false
+      },
+      "mask-form": {
+        "defaultRootPolicy": "not-breedable-form",
+        "mayBeReproductiveRoot": false
+      },
+      "other-special-form": {
+        "defaultRootPolicy": "requires-adjudication",
+        "mayBeReproductiveRoot": false
+      },
+      "baseFamilyFallback": "explicit-reviewed-edge-only"
+    },
+    "compiledFamilySpecRequirements": [
+      "family-id",
+      "family-root-species-id",
+      "offspring-root-species-id",
+      "member-species-ids",
+      "directed-evolution-edges",
+      "form-policy-id-by-member",
+      "source-hashes",
+      "definition-hash"
+    ],
+    "determinism": {
+      "nodeOrder": "canonical-species-id-unicode-code-point",
+      "edgeOrder": "from-id-then-to-id-then-edge-kind",
+      "familyOrder": "family-root-id-unicode-code-point",
+      "hashSerialization": "stable-json-v1"
+    },
+    "failureReasonIds": [
+      "breeding.family.unknown-node",
+      "breeding.family.duplicate-node",
+      "breeding.family.invalid-stage",
+      "breeding.family.embedded-condition-target",
+      "breeding.family.cycle",
+      "breeding.family.multiple-roots",
+      "breeding.family.no-root",
+      "breeding.family.disconnected",
+      "breeding.family.cross-family-membership",
+      "breeding.family.form-policy-missing"
+    ],
+    "currentSourceDiagnostics": {
+      "pokedexRecordCount": 1149,
+      "recordsWithEvolutionLists": 1019,
+      "recordsWithoutEvolutionLists": 130,
+      "unknownEvolutionTargetCount": 127,
+      "unknownEvolutionReferenceCount": 254,
+      "selfStageMismatchRecordCount": 167,
+      "emittedGraphPolicy": "diagnose-and-exclude-never-repair-at-runtime"
+    },
+    "compilerAcceptance": {
+      "unknownEmittedNodes": 0,
+      "cycles": 0,
+      "multiRootFamilies": 0,
+      "disconnectedEmittedMembers": 0,
+      "crossFamilyMemberships": 0,
+      "unclassifiedForms": 0,
+      "diagnosticForEveryExcludedRecord": true
+    }
+  }
+}

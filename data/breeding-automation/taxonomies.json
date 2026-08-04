@@ -1,0 +1,456 @@
+{
+  "schemaVersion": 1,
+  "taxonomyId": "ptu-1.05-breeding-taxonomy-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "086633909ce7499e5946e033d596145f469e09ebb2490e7d6985b6f19394ff8d",
+  "definition": {
+    "eggGroups": [
+      {
+        "id": "bug",
+        "label": "Bug",
+        "sourceValues": [
+          "Bug"
+        ]
+      },
+      {
+        "id": "dragon",
+        "label": "Dragon",
+        "sourceValues": [
+          "Dragon"
+        ]
+      },
+      {
+        "id": "fairy",
+        "label": "Fairy",
+        "sourceValues": [
+          "Fairy"
+        ]
+      },
+      {
+        "id": "flying",
+        "label": "Flying",
+        "sourceValues": [
+          "Flying"
+        ]
+      },
+      {
+        "id": "ground",
+        "label": "Ground",
+        "sourceValues": [
+          "Ground",
+          "Field"
+        ]
+      },
+      {
+        "id": "humanshape",
+        "label": "Humanshape",
+        "sourceValues": [
+          "Humanshape",
+          "Human-Like"
+        ]
+      },
+      {
+        "id": "indeterminate",
+        "label": "Indeterminate",
+        "sourceValues": [
+          "Indeterminate",
+          "Amorphous"
+        ]
+      },
+      {
+        "id": "mineral",
+        "label": "Mineral",
+        "sourceValues": [
+          "Mineral"
+        ]
+      },
+      {
+        "id": "monster",
+        "label": "Monster",
+        "sourceValues": [
+          "Monster"
+        ]
+      },
+      {
+        "id": "plant",
+        "label": "Plant",
+        "sourceValues": [
+          "Plant",
+          "Grass"
+        ]
+      },
+      {
+        "id": "water-1",
+        "label": "Water 1",
+        "sourceValues": [
+          "Water 1"
+        ]
+      },
+      {
+        "id": "water-2",
+        "label": "Water 2",
+        "sourceValues": [
+          "Water 2"
+        ]
+      },
+      {
+        "id": "water-3",
+        "label": "Water 3",
+        "sourceValues": [
+          "Water 3"
+        ]
+      },
+      {
+        "id": "ditto",
+        "label": "Ditto",
+        "sourceValues": [
+          "Ditto"
+        ]
+      }
+    ],
+    "eggGroupSourceCells": [
+      {
+        "sourceValue": "Bug",
+        "eggGroupIds": [
+          "bug"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Dragon",
+        "eggGroupIds": [
+          "dragon"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Fairy",
+        "eggGroupIds": [
+          "fairy"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Flying",
+        "eggGroupIds": [
+          "flying"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Ground",
+        "eggGroupIds": [
+          "ground"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Field",
+        "eggGroupIds": [
+          "ground"
+        ],
+        "parseKind": "reviewed-alias"
+      },
+      {
+        "sourceValue": "Humanshape",
+        "eggGroupIds": [
+          "humanshape"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Human-Like",
+        "eggGroupIds": [
+          "humanshape"
+        ],
+        "parseKind": "reviewed-alias"
+      },
+      {
+        "sourceValue": "Indeterminate",
+        "eggGroupIds": [
+          "indeterminate"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Amorphous",
+        "eggGroupIds": [
+          "indeterminate"
+        ],
+        "parseKind": "reviewed-alias"
+      },
+      {
+        "sourceValue": "Mineral",
+        "eggGroupIds": [
+          "mineral"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Monster",
+        "eggGroupIds": [
+          "monster"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Plant",
+        "eggGroupIds": [
+          "plant"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Grass",
+        "eggGroupIds": [
+          "plant"
+        ],
+        "parseKind": "reviewed-alias"
+      },
+      {
+        "sourceValue": "Water 1",
+        "eggGroupIds": [
+          "water-1"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Water 2",
+        "eggGroupIds": [
+          "water-2"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Water 3",
+        "eggGroupIds": [
+          "water-3"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Ditto",
+        "eggGroupIds": [
+          "ditto"
+        ],
+        "parseKind": "exact"
+      },
+      {
+        "sourceValue": "Field, Human-Like",
+        "eggGroupIds": [
+          "ground",
+          "humanshape"
+        ],
+        "parseKind": "reviewed-composite"
+      }
+    ],
+    "genders": [
+      {
+        "id": "female",
+        "label": "Female",
+        "legacyLabels": [
+          "Female"
+        ]
+      },
+      {
+        "id": "male",
+        "label": "Male",
+        "legacyLabels": [
+          "Male"
+        ]
+      },
+      {
+        "id": "genderless",
+        "label": "Genderless",
+        "legacyLabels": [
+          "Genderless",
+          "No Gender"
+        ]
+      }
+    ],
+    "genderPolicies": [
+      {
+        "id": "ratio",
+        "requiredFields": [
+          "male_pct",
+          "female_pct"
+        ],
+        "outcomeIds": [
+          "female",
+          "male"
+        ]
+      },
+      {
+        "id": "genderless",
+        "requiredFields": [
+          "genderless"
+        ],
+        "outcomeIds": [
+          "genderless"
+        ]
+      }
+    ],
+    "parentRoles": [
+      {
+        "id": "female-parent",
+        "label": "Female parent",
+        "conventionalGenderId": "female",
+        "familyRollRange": {
+          "minimum": 5,
+          "maximum": 20
+        }
+      },
+      {
+        "id": "male-parent",
+        "label": "Male parent",
+        "conventionalGenderId": "male",
+        "familyRollRange": {
+          "minimum": 1,
+          "maximum": 4
+        }
+      }
+    ],
+    "parentRoleAssignmentKinds": [
+      {
+        "id": "conventional-gender",
+        "requiresAudit": false
+      },
+      {
+        "id": "canonical-ditto",
+        "requiresAudit": false
+      },
+      {
+        "id": "gm-override",
+        "requiresAudit": true
+      }
+    ],
+    "formKinds": [
+      {
+        "id": "base-species",
+        "mayDefineFamilyRoot": true
+      },
+      {
+        "id": "regional-form",
+        "mayDefineFamilyRoot": true
+      },
+      {
+        "id": "size-form",
+        "mayDefineFamilyRoot": true
+      },
+      {
+        "id": "sex-form",
+        "mayDefineFamilyRoot": true
+      },
+      {
+        "id": "appliance-form",
+        "mayDefineFamilyRoot": false
+      },
+      {
+        "id": "battle-form",
+        "mayDefineFamilyRoot": false
+      },
+      {
+        "id": "transformation-form",
+        "mayDefineFamilyRoot": false
+      },
+      {
+        "id": "fusion-form",
+        "mayDefineFamilyRoot": false
+      },
+      {
+        "id": "mask-form",
+        "mayDefineFamilyRoot": false
+      },
+      {
+        "id": "other-special-form",
+        "mayDefineFamilyRoot": false
+      }
+    ],
+    "formRootPolicies": [
+      {
+        "id": "own-form-root",
+        "result": "compiled-form-specific-root"
+      },
+      {
+        "id": "base-family-root",
+        "result": "compiled-base-species-root"
+      },
+      {
+        "id": "not-breedable-form",
+        "result": "no-breeding"
+      },
+      {
+        "id": "requires-adjudication",
+        "result": "source-gap"
+      }
+    ],
+    "breedingEligibility": [
+      {
+        "id": "breedable",
+        "mayBeConventionalParent": true,
+        "mayBeEggSpecies": true
+      },
+      {
+        "id": "no-breeding",
+        "mayBeConventionalParent": false,
+        "mayBeEggSpecies": false
+      },
+      {
+        "id": "special-source-only",
+        "mayBeConventionalParent": false,
+        "mayBeEggSpecies": true
+      },
+      {
+        "id": "source-gap",
+        "mayBeConventionalParent": false,
+        "mayBeEggSpecies": false
+      }
+    ],
+    "eligibilityEvidenceKinds": [
+      {
+        "id": "compiled-spec",
+        "authoritative": true
+      },
+      {
+        "id": "source-bound-species-adjudication",
+        "authoritative": true
+      },
+      {
+        "id": "typed-campaign-override",
+        "authoritative": true
+      },
+      {
+        "id": "missing-field-inference",
+        "authoritative": false
+      },
+      {
+        "id": "legacy-sheet-label",
+        "authoritative": false
+      }
+    ],
+    "unavailableReasonIds": [
+      "breeding.species-spec-missing",
+      "breeding.egg-group-unknown",
+      "breeding.eligibility-no-breeding",
+      "breeding.eligibility-special-source-only",
+      "breeding.gender-policy-invalid",
+      "breeding.parent-role-unavailable",
+      "breeding.form-root-ambiguous",
+      "breeding.family-graph-invalid",
+      "breeding.hatch-duration-missing",
+      "breeding.basic-ability-missing"
+    ],
+    "policies": {
+      "unknownEggGroup": "fail-closed",
+      "unknownGender": "fail-closed",
+      "unknownParentRole": "fail-closed",
+      "unknownFormKind": "fail-closed",
+      "missingEggGroups": "source-gap-not-no-breeding",
+      "formNameInference": "forbidden",
+      "legacyLabelAuthority": "none",
+      "canonicalIdentityComparison": "exact-id-only"
+    }
+  }
+}

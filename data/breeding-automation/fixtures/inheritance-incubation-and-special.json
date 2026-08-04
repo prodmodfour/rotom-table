@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "containsCampaignData": false,
+  "sourceTicket": "BR-008",
+  "fixtureId": "breeding-inheritance-incubation-special-v1",
+  "audiences": [
+    "owner",
+    "gm"
+  ],
+  "entities": {
+    "parents": [
+      {
+        "id": "parent-a",
+        "ownerTrainerId": "trainer-owner-c",
+        "revision": 8,
+        "sourceSpeciesName": "Bulbasaur",
+        "genderId": "female",
+        "level": 25,
+        "eggGroupSourceValues": [
+          "Monster",
+          "Plant"
+        ],
+        "effectiveKnownMoveNames": [
+          "Tackle",
+          "Giga Drain",
+          "Light Screen",
+          "Heal Pulse"
+        ]
+      },
+      {
+        "id": "parent-b",
+        "ownerTrainerId": "trainer-owner-c",
+        "revision": 9,
+        "sourceSpeciesName": "Bulbasaur",
+        "genderId": "male",
+        "level": 25,
+        "eggGroupSourceValues": [
+          "Monster",
+          "Plant"
+        ],
+        "effectiveKnownMoveNames": [
+          "Tackle",
+          "Solar Beam",
+          "Light Screen",
+          "Facade"
+        ]
+      }
+    ]
+  },
+  "scripts": [
+    {
+      "id": "inheritance-dedup-and-source-gap",
+      "requirementIds": [
+        "breeding:BR-017",
+        "breeding:BR-019",
+        "breeding:BR-061"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "build-candidates-from-effective-parent-moves",
+        "resolve-egg-and-machine-pathways",
+        "encounter-unknown-facade-identity"
+      ],
+      "expected": [
+        "canonical-dedup-retains-both-parent-sources",
+        "only-child-compatible-pathways",
+        "facade-excluded-with-diagnostic",
+        "no-documentary-supplement"
+      ]
+    },
+    {
+      "id": "empty-level-20-slot-later-level-30",
+      "requirementIds": [
+        "breeding:BR-017",
+        "breeding:BR-019",
+        "breeding:BR-060"
+      ],
+      "actorAudience": "owner",
+      "steps": [
+        "offer-only-illegal-level-20-candidate",
+        "advance-child-to-level-20",
+        "advance-child-to-level-30"
+      ],
+      "expected": [
+        "level-20-slot-empty",
+        "candidate-retained",
+        "level-30-learning-available",
+        "provenance-preserved"
+      ]
+    },
+    {
+      "id": "clock-and-egg-warmer-idempotency",
+      "requirementIds": [
+        "breeding:BR-005",
+        "breeding:BR-056",
+        "breeding:BR-062",
+        "breeding:BR-063"
+      ],
+      "actorAudience": "owner",
+      "steps": [
+        "create-fixed-average-egg",
+        "advance-clock-with-egg-warmer-item",
+        "repeat-same-clock-advance",
+        "apply-capability-egg-warmer-once",
+        "repeat-same-operation"
+      ],
+      "expected": [
+        "campaign-time-only",
+        "double-rate-segment-once",
+        "same-capability-roll",
+        "no-negative-target",
+        "one-ready-transition"
+      ]
+    },
+    {
+      "id": "special-roll-bounded-adjudication",
+      "requirementIds": [
+        "breeding:BR-018",
+        "breeding:BR-055",
+        "breeding:BR-064"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "begin-hatch-with-roll-1",
+        "reload-before-adjudication",
+        "choose-server-issued-special-outcome"
+      ],
+      "expected": [
+        "one-special-roll",
+        "not-automatically-shiny",
+        "awaiting-special-adjudication",
+        "one-bounded-outcome"
+      ]
+    }
+  ]
+}

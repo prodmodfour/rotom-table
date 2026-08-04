@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "auditId": "breeding-current-code-baseline-v1",
+  "sourceBaselineGitCommit": "2177c1d57d8d206b6da5d9f70c8180c6f8cab462",
+  "storageSchemaVersion": 21,
+  "codeInventory": [
+    {
+      "path": "src/types/pokemon.ts",
+      "finding": "PokedexRecord exposes optional raw breeding fields and permits unknown keys.",
+      "bytes": 9136,
+      "sha256": "9b523948ca781ef86e9d50eba552e6652021b114f2a6db5974a4dd0673c79eb1",
+      "gitBlob": "0dc612cbd9fcc19acd0f349196aeb6a4f4addc1d"
+    },
+    {
+      "path": "src/types/characterSheet.ts",
+      "finding": "Pokémon sheets contain editable eggGroups, eggMoves, inheritedMoves, Gender, Nature, Ability, and babyTemplate compatibility fields.",
+      "bytes": 12298,
+      "sha256": "058bac0a826f089b7c04f1d7288ed199aee9549e96fd26ad9f8f1c3777ccd61a",
+      "gitBlob": "b4db378fbc36a505fe37d6ae3769d06692a9b1c4"
+    },
+    {
+      "path": "src/types/trainerSheet.ts",
+      "finding": "Trainer sheets link only currentTeam and boxedPokemon and have no Egg roster or species-acquisition history.",
+      "bytes": 13520,
+      "sha256": "d20279a1d2146f5dd8a8146e9c9ef2a086ea65185916f463ef307035ed8ccbb4",
+      "gitBlob": "5b7dd475996a794d4ff91b873045b2bc529ca8a5"
+    },
+    {
+      "path": "src/utils/sheetNormalize.ts",
+      "finding": "Sheet normalization materializes editable inheritance and Egg Move containers but creates no provenance.",
+      "bytes": 10562,
+      "sha256": "d226b9fe3dd210dc771c728cd20df53656f326a9ed4cd524e3af527a0db531bc",
+      "gitBlob": "99fc3bbb57622897a02d63f96693368bb947f677"
+    },
+    {
+      "path": "src/utils/sheets/pokemonEggMoves.ts",
+      "finding": "Egg Move choices are derived from editable sheet rows, not parent snapshots or a compiled registry.",
+      "bytes": 1781,
+      "sha256": "99107a8966df6fa20f3f348af30c5e7ab0532235175e781673f308f5deeefc17",
+      "gitBlob": "cd3a43ddaf6a661fd6404a15a6f2d38b0fef22c5"
+    },
+    {
+      "path": "src/components/sheets/PokemonTrainingPanel.vue",
+      "finding": "Inherited Move UI exposes fixed Level 20–90 slots and omits the Level 100 checkpoint.",
+      "bytes": 6123,
+      "sha256": "1e9b208e34749863b5e6c9c82a8197905bb98025a009b28706ab06e4164bec49",
+      "gitBlob": "f79063d2f3fb37489ed28889a563e7d027c610e9"
+    },
+    {
+      "path": "src/components/sheets/PokemonKnownMovesPanel.vue",
+      "finding": "Egg Move rows remain directly editable legacy sheet data.",
+      "bytes": 8753,
+      "sha256": "a98fd887d8a37039621a0ae4e80ad0449a764b78539b7bb74cd7eb3a54326f81",
+      "gitBlob": "0b9963edef75fcf3678d5e2a6139cbe2cd213d70"
+    },
+    {
+      "path": "ptu-data/generator.py",
+      "finding": "Documentary wild generator randomly chooses zero to three species Egg Moves and uses process-local randomness without parent or operation provenance.",
+      "bytes": 22541,
+      "sha256": "d5c957298d29f5f20d9bb2688d6c9ec656bd3367dffa828505a0c5a2e331e69d",
+      "gitBlob": "e47a8594f7685c4af806bc5f333e5a77cdf2f8d2"
+    },
+    {
+      "path": "ptu-data/sheet_emitter.py",
+      "finding": "Documentary emitter copies generated Egg and inherited move rows into ordinary sheet fields.",
+      "bytes": 8242,
+      "sha256": "7a81f534d1fbbb922583aab01fc0f4b278c4cc4b18746bb68c55cb84be5d032a",
+      "gitBlob": "f4282c8ac92bc6a98640663b3c25b6757795e5ce"
+    },
+    {
+      "path": "shared/edgeAutomation/manifest.ts",
+      "finding": "Upstream Edge contract delegates canonical Breeder requests to breeding.v1.",
+      "bytes": 11225,
+      "sha256": "be5d8452743814b66ff490c2b106d2f50e57d0f1b524e2bf39f19d48d08d30e9",
+      "gitBlob": "d5da390efb0a3ed09dc3ab2d239e1fa137ed2dea"
+    },
+    {
+      "path": "server/domain/edgeAutomation/campaignOperations.ts",
+      "finding": "Upstream campaign planner checks effective Breeder and emits the closed edge.breeder.request.v1 delegation.",
+      "bytes": 12638,
+      "sha256": "c88e507e0fe62b4d7849025f3ec25f15856d760d2b32b4555c55ad29799f9ea1",
+      "gitBlob": "44a638322a3c369532b0bfad037fbd1b336518b5"
+    },
+    {
+      "path": "server/domain/capabilityAutomation/clientCapabilities.ts",
+      "finding": "Legacy Egg Warmer availability reads map.metadata.capabilityEggs and integer hatchHours.",
+      "bytes": 62298,
+      "sha256": "0f0bfdbbcdfbaab20058976a4fac4decd6e689b779f4bcfc9fb819c41409e8e5",
+      "gitBlob": "d1572780c8ed43499517f74163682bd55482b47c"
+    },
+    {
+      "path": "server/domain/capabilityAutomation/executeMechanic.ts",
+      "finding": "Legacy Egg Warmer mutates map metadata through a map-scoped capability command; this is not accepted Egg authority.",
+      "bytes": 158693,
+      "sha256": "71bb1e940d4de3518e95124a3034795ededaeb035c402cabd6988a0ef3230224",
+      "gitBlob": "315fe8f96a58dbe3560a94390bf648b6f949492a"
+    },
+    {
+      "path": "shared/capabilityAutomation/clientCommands.ts",
+      "finding": "Capability commands and results are map-scoped and cannot own Workshop Egg mutations.",
+      "bytes": 11763,
+      "sha256": "bf0e908d73efc0b74dcc629c43a0925197990629e626086e55c6e5b1940a17c4",
+      "gitBlob": "2b30edf495922da6c5255f4af33967ab00cf5d4d"
+    },
+    {
+      "path": "server/storage/migrations.ts",
+      "finding": "SQLite schema version 21 has no breeding project, Egg, consent, roll, operation, clock, or acquisition tables.",
+      "bytes": 17847,
+      "sha256": "c20cc170812a0a081ed7dd4ef67ecf0d599515532a26b612cf3c71fbcd4ca5a3",
+      "gitBlob": "4bddb9187cdc9cf9eaf08870605cd8b0b051ef41"
+    },
+    {
+      "path": "server/storage/sheetRepository.ts",
+      "finding": "Sheet repository supports only Trainer and Pokémon sheets and can be transactionally composed for complete child insertion.",
+      "bytes": 42109,
+      "sha256": "9cd5d1868e04e78cac850de3bf8f9e39386bf29f869a13c1839524ed45a7d47f",
+      "gitBlob": "f4333f20ab5b03eb805bb3023b77cd69ce5483bc"
+    }
+  ],
+  "existingAuthority": [
+    {
+      "id": "edge-breeder-delegation",
+      "status": "reusable",
+      "owner": "edge-automation",
+      "detail": "Effective Breeder permission and Pokémon Education contribution terminate at breeding.v1."
+    },
+    {
+      "id": "sheet-revision-and-transaction-pattern",
+      "status": "reusable-with-neutral-extraction",
+      "owner": "sheet-storage",
+      "detail": "Revision checks, complete document insertion, operation-ledger, and SQLite transaction patterns may be composed without adding an Egg sheet kind."
+    },
+    {
+      "id": "pokedex-app-json",
+      "status": "compile-required",
+      "owner": "app-reference",
+      "detail": "Raw optional PokedexRecord strings are canonical input but are not safe runtime breeding specs."
+    },
+    {
+      "id": "legacy-generator",
+      "status": "documentary-only",
+      "owner": "ptu-data",
+      "detail": "Wild generation cannot create projects, Eggs, parent snapshots, rolls, or lineage."
+    },
+    {
+      "id": "editable-breeding-sheet-fields",
+      "status": "compatibility-only",
+      "owner": "sheet-ui",
+      "detail": "eggGroups, eggMoves, inheritedMoves, Gender, Nature, Ability, and babyTemplate do not establish breeding provenance."
+    },
+    {
+      "id": "map-capability-eggs",
+      "status": "must-retire",
+      "owner": "capability-automation",
+      "detail": "map.metadata.capabilityEggs and hatchHours conflict with first-class campaign Eggs and Workshop ownership."
+    }
+  ],
+  "missingAuthority": [
+    "compiled-breeding-species-registry",
+    "breeding-project-aggregate",
+    "pokemon-egg-aggregate",
+    "parent-consent-records",
+    "replay-safe-breeding-roll-ledger",
+    "breeding-operation-ledger",
+    "authoritative-campaign-clock",
+    "species-acquisition-history",
+    "atomic-hatch-use-case",
+    "role-specific-breeding-projections",
+    "breeding-workshop-route-and-ui",
+    "breeding-export-restore-contract"
+  ],
+  "canonicalDataDiagnostics": {
+    "pokedexRecordCount": 1149,
+    "completeLegacyShapeRecordCount": 1020,
+    "sparseRecordCount": 129,
+    "missingEggGroupRecordCount": 248,
+    "missingHatchRateRecordCount": 598,
+    "distinctEggGroupSourceValueCount": 19,
+    "unknownEvolutionTargetCount": 127,
+    "unknownEvolutionReferenceCount": 254,
+    "selfStageMismatchRecordCount": 167,
+    "missingBasicAbilityRecordCount": 130,
+    "unknownAbilityLabelCount": 18,
+    "unknownAbilityAssignmentCount": 44,
+    "unknownMachineMoveLabels": [
+      "Facade"
+    ],
+    "unknownMachineMoveAssignmentCount": 947
+  },
+  "acceptedBoundaries": [
+    "Eggs remain dedicated campaign aggregates and never become a third sheet kind.",
+    "Normal breeding and hatching never require map, placement, scene, initiative, or interaction mode.",
+    "Only app-owned JSON and reviewed generated artifacts may feed runtime mechanics.",
+    "Current editable sheet fields remain compatibility projections until typed origin migration.",
+    "Legacy Egg Warmer capability behavior must become a contribution to breeding.v1 before map metadata authority is removed."
+  ]
+}

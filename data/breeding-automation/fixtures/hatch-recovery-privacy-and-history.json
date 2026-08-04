@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "containsCampaignData": false,
+  "sourceTicket": "BR-008",
+  "fixtureId": "breeding-hatch-recovery-privacy-history-v1",
+  "audiences": [
+    "owner",
+    "gm",
+    "public",
+    "diagnostic"
+  ],
+  "entities": {
+    "egg": {
+      "id": "egg-ready-a",
+      "revision": 12,
+      "ownerTrainerId": "trainer-owner-d",
+      "status": "ready",
+      "sourceSpeciesName": "Abra"
+    },
+    "trainer": {
+      "id": "trainer-owner-d",
+      "profileId": "profile-owner-d",
+      "currentTeamCount": 6,
+      "boxedPokemonIds": []
+    }
+  },
+  "scripts": [
+    {
+      "id": "concurrent-exactly-once-hatch",
+      "requirementIds": [
+        "breeding:BR-036",
+        "breeding:BR-045",
+        "breeding:BR-059",
+        "breeding:BR-069",
+        "breeding:BR-083"
+      ],
+      "actorAudience": "owner",
+      "steps": [
+        "submit-two-concurrent-hatch-commands",
+        "retry-winning-operation",
+        "retry-losing-operation-with-same-command"
+      ],
+      "expected": [
+        "one-child-sheet",
+        "same-child-slug",
+        "egg-hatched-once",
+        "child-boxed",
+        "one-operation-result"
+      ]
+    },
+    {
+      "id": "first-species-acquisition-once",
+      "requirementIds": [
+        "breeding:BR-037",
+        "breeding:BR-048",
+        "breeding:BR-069"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "hatch-first-abra",
+        "retry-hatch",
+        "later-acquire-another-abra"
+      ],
+      "expected": [
+        "one-acquisition-history-row",
+        "first-species-reward-once",
+        "later-acquisition-no-duplicate-reward"
+      ]
+    },
+    {
+      "id": "parent-change-does-not-drift-egg",
+      "requirementIds": [
+        "breeding:BR-022",
+        "breeding:BR-060",
+        "breeding:BR-065"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "accept-egg-blueprint",
+        "rename-evolve-trade-and-delete-parent",
+        "reload-egg"
+      ],
+      "expected": [
+        "immutable-parent-snapshot",
+        "same-offspring-blueprint",
+        "diagnostic-parent-source-loss",
+        "hatch-remains-available"
+      ]
+    },
+    {
+      "id": "reconnect-export-restore-convergence",
+      "requirementIds": [
+        "breeding:BR-038",
+        "breeding:BR-039",
+        "breeding:BR-043",
+        "breeding:BR-047",
+        "breeding:BR-078",
+        "breeding:BR-084"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "disconnect-after-commit-before-response",
+        "reload-owner-projection",
+        "export-digest-envelope",
+        "restore-to-isolated-campaign",
+        "replay-refresh-gap"
+      ],
+      "expected": [
+        "stored-operation-result",
+        "no-reroll-or-duplicate",
+        "referential-links-valid",
+        "audience-projection-converges",
+        "realtime-refresh-only"
+      ]
+    }
+  ]
+}

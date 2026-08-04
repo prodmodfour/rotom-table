@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "sourceBaselineGitCommit": "2177c1d57d8d206b6da5d9f70c8180c6f8cab462",
+  "runtimeAuthority": [
+    "data/reference/moves.json",
+    "data/reference/abilities.json",
+    "data/reference/edges.json",
+    "data/reference/poke-edges.json",
+    "data/reference/capabilities.json",
+    "data/reference/features.json",
+    "data/reference/conditions.json",
+    "data/reference/items.json",
+    "data/reference/maneuvers.json",
+    "data/reference/pokedex.json",
+    "data/reference/stat-rankings.json",
+    "data/reference/pokemonExperienceChart.json",
+    "data/reference/rules.json"
+  ],
+  "runtimeSources": [
+    {
+      "path": "data/reference/moves.json",
+      "purpose": "move identities and canonical move records used to validate inherited moves",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 286381,
+      "sha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815",
+      "gitBlob": "3d0ee4a0de93efb3835f3a38f6b895febaa58b24",
+      "entryCount": 777
+    },
+    {
+      "path": "data/reference/abilities.json",
+      "purpose": "Ability identities and canonical records used to validate offspring Ability slots",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 132190,
+      "sha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+      "gitBlob": "d91503aaa9b2bd6ebed6f2aa812a6feb2ea33dc7",
+      "entryCount": 483
+    },
+    {
+      "path": "data/reference/edges.json",
+      "purpose": "Trainer Edge identities including the canonical Breeder permission provider",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 22523,
+      "sha256": "62348f9f5e57c28a3b61bfc3f554bcad258a769b054f5531c1d07ae6853e2123",
+      "gitBlob": "c31a6338005c99de5d6e9fc9b71cb2318edabd8f",
+      "entryCount": 61
+    },
+    {
+      "path": "data/reference/poke-edges.json",
+      "purpose": "Poké Edge identities available to effective-parent and offspring projections",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 10914,
+      "sha256": "3e2dbb84a8c35e4655b62ece57a3760a2b9a6e09b917dc8a581e5e613e14e021",
+      "gitBlob": "5538a496acdfaa2559697e08421c17625945c899",
+      "entryCount": 20
+    },
+    {
+      "path": "data/reference/capabilities.json",
+      "purpose": "Capability identities available to effective modifier providers",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 42465,
+      "sha256": "8f819401d40c598ae781ae0b273fd749575e05d6997a79c64be61f4ced8f654e",
+      "gitBlob": "8d89cc293797ad9fb77d8f6f1b5840146b1e871b",
+      "entryCount": 83
+    },
+    {
+      "path": "data/reference/features.json",
+      "purpose": "Feature identities available to effective breeding, incubation, and hatch modifiers",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 257031,
+      "sha256": "27d0f2bee4db96ebfb0c431cce9ea5222fe3d2d9fe9ead32507c46b51a9d77c4",
+      "gitBlob": "855a1bf867e8ea1fa98b11728c4dcc5b4ce9adbb",
+      "entryCount": 444
+    },
+    {
+      "path": "data/reference/conditions.json",
+      "purpose": "condition identities used when validating complete child-sheet initialization",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 14182,
+      "sha256": "2203364f0ea1a1919d8cefed78546de7ad4d3a3cf6499dd88ffcfb02101ab0f3",
+      "gitBlob": "a0ed4e1a6585f6d1506a5c876b34fbb9c98857db",
+      "entryCount": 31
+    },
+    {
+      "path": "data/reference/items.json",
+      "purpose": "item and fossil identities available to production and incubation operations",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 168095,
+      "sha256": "0a101802a698403651756b19e9cc6a10b8c6e2c91cfa9b79be1bcb1e7aa60082",
+      "gitBlob": "5ee2f0ae5674256348268a461aad7310081e0280",
+      "entryCount": 348
+    },
+    {
+      "path": "data/reference/maneuvers.json",
+      "purpose": "maneuver identities used when validating complete child-sheet initialization",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 10242,
+      "sha256": "9532ec3641f6fa273a96ca7fe190252728c056aa2383109687587d93fca41b71",
+      "gitBlob": "4e11556e4d323c773237510e75afed368d622c72",
+      "entryCount": 11
+    },
+    {
+      "path": "data/reference/pokedex.json",
+      "purpose": "species, form, gender, evolution, Egg Group, hatch-rate, Ability, Egg Move, and compatibility facts",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 7048391,
+      "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696",
+      "gitBlob": "b7fe7928618f3fede5731188b4897d55c648bee9",
+      "entryCount": 1149
+    },
+    {
+      "path": "data/reference/stat-rankings.json",
+      "purpose": "species stat ranking records used by authoritative child construction",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 254326,
+      "sha256": "f5aa0b4eedfc7ad07e0db38a79023b5b38c1697a325929ad282f4285cebbaf8a",
+      "gitBlob": "76b15c24cfbb034339d139b6d31fd2991a70aabd",
+      "entryCount": 1149
+    },
+    {
+      "path": "data/reference/pokemonExperienceChart.json",
+      "purpose": "level and experience records used by authoritative child construction",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 4781,
+      "sha256": "a8b9026cd855e2c84c157e5f117454c6afe8f48549ff215fe562867208629428",
+      "gitBlob": "a05e875881b726a1e04f0a47ce6759ddd1cf0d2c",
+      "entryCount": 100
+    },
+    {
+      "path": "data/reference/rules.json",
+      "purpose": "app-owned campaign rule identities and defaults",
+      "authority": "app-owned-json-runtime-authority",
+      "bytes": 148154,
+      "sha256": "c655b862a90994b7112b8e355301c79fb18725fdb93c73638573f858279f353b",
+      "gitBlob": "bd2aa60fc3e5e30488d9c5f78f0d6711ef5f1526",
+      "entryCount": 32
+    }
+  ],
+  "reviewedAutomationContracts": [
+    {
+      "path": "data/ability-automation/manifest.json",
+      "purpose": "reviewed Ability definition and implementation hashes",
+      "authority": "reviewed-generated-contract",
+      "bytes": 1066808,
+      "sha256": "c1a27878600260f0ff6be66cd967d71af87778afa613b3a0daf32f74f72ab939",
+      "gitBlob": "259e54fd3e7133e9c57423819878c16d87e0f587"
+    },
+    {
+      "path": "data/ability-automation/ruleset.json",
+      "purpose": "reviewed Ability authority contract",
+      "authority": "reviewed-generated-contract",
+      "bytes": 1892,
+      "sha256": "a2f3ff4f45283908245e616477cc7e2407977628533e83c5e0bfaa75b5b39b5c",
+      "gitBlob": "185d6b9ff2dcd4f16e766c2c27d840aed5d4f36d"
+    },
+    {
+      "path": "data/capability-automation/manifest.json",
+      "purpose": "reviewed Capability definition and implementation hashes",
+      "authority": "reviewed-generated-contract",
+      "bytes": 59760,
+      "sha256": "ef06c9b53f3fee30fd14a9989c88d23c8685b04b7d45b5fa1914a7a8c004afce",
+      "gitBlob": "daa799c15ffe84ee40b7bf1cd63bf40ad436a427"
+    },
+    {
+      "path": "data/capability-automation/ruleset.json",
+      "purpose": "reviewed Capability authority contract",
+      "authority": "reviewed-generated-contract",
+      "bytes": 3367,
+      "sha256": "cab39819b170eed8d3b995da337759cc37dd7a48f6bc782d0788f282528b432e",
+      "gitBlob": "3a9de54b8ccf7d8a6ddd69e5667f32844cbf59ca"
+    },
+    {
+      "path": "data/edge-automation/manifest.json",
+      "purpose": "reviewed Edge definitions including breeding.v1 delegation",
+      "authority": "reviewed-generated-contract",
+      "bytes": 49173,
+      "sha256": "f403671a1e186a6ff14577564513c35832abf15ba3d7fad8fd55b34dcb7ade65",
+      "gitBlob": "937e9141c1844b744cc890951ce81472f72c8111"
+    },
+    {
+      "path": "data/edge-automation/ruleset.json",
+      "purpose": "reviewed Edge authority contract",
+      "authority": "reviewed-generated-contract",
+      "bytes": 1434,
+      "sha256": "606719e8b5069074dbfc4714fd0d90885452d3525a446ecd4252617aa54e5ad0",
+      "gitBlob": "0fbbdcbe5675e3f00eccc1b5053d9079f4b0f8b2"
+    },
+    {
+      "path": "data/feature-automation/manifest.json",
+      "purpose": "reviewed Feature definition and implementation hashes",
+      "authority": "reviewed-generated-contract",
+      "bytes": 474357,
+      "sha256": "e39084ef5f2a93aab5756fa2404b856678d38f0ebbed110d05d7a414b1370636",
+      "gitBlob": "5f62d50146915e6bd644a72238ef11955bed5f63"
+    },
+    {
+      "path": "data/feature-automation/ruleset.json",
+      "purpose": "reviewed Feature authority contract",
+      "authority": "reviewed-generated-contract",
+      "bytes": 1078,
+      "sha256": "df2af5353888438a51f1fd4e28dfd551fc3e3720fb0325fc88400bc9752234ec",
+      "gitBlob": "cf012fb1a7b47981f6649ea5e3e22f1c87d5ef22"
+    },
+    {
+      "path": "data/feature-automation/campaign-operations.json",
+      "purpose": "reviewed Feature campaign-operation definitions",
+      "authority": "reviewed-generated-contract",
+      "bytes": 33295,
+      "sha256": "eb5a6493e7bbf1e4b363038ebdd81e5a72ae7c5c06e01f6ed62a3dfe7d63a74c",
+      "gitBlob": "5cf186dbc46b868f7e547ac4c61776d752508851"
+    }
+  ],
+  "productAuthority": [
+    {
+      "path": "DESIGN.md",
+      "purpose": "Workshop product, interaction, accessibility, responsive, and privacy authority",
+      "authority": "app-owned-product-authority",
+      "bytes": 29486,
+      "sha256": "58ec063c80134df2f358c9d89eada4d2a65e1f76fe39f67c88e5abe0cab172b8",
+      "gitBlob": "8f66b36223ded5122ae152c10c48b2ab9a4e3a2e"
+    }
+  ],
+  "documentarySources": [
+    {
+      "path": "books/markdown/core/05-pokemon.md",
+      "purpose": "PTU breeding, loyalty, fossil, capture-adjacent, and Pokémon lifecycle provenance",
+      "authority": "documentary-provenance-only",
+      "bytes": 71116,
+      "sha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3",
+      "gitBlob": "4ead8eb5ac53f9eca9de8c721579d1568d6f0bdc"
+    },
+    {
+      "path": "books/markdown/pokedexes/how-to-read.md",
+      "purpose": "PTU Pokédex field, Egg Group, hatch-rate, and inheritance provenance",
+      "authority": "documentary-provenance-only",
+      "bytes": 12094,
+      "sha256": "e27cc5f5b3b7f059244f404b8037a0a50dcc575b0ec0aa765602d23023f6fb02",
+      "gitBlob": "10160c9d9a194be7215d2716c6a8ea3b398981ac"
+    },
+    {
+      "path": "books/markdown/core/03-skills-edges-and-features.md",
+      "purpose": "PTU Breeder Edge and trainer-skill provenance",
+      "authority": "documentary-provenance-only",
+      "bytes": 90475,
+      "sha256": "96a3da4eb912079b7f73025d92c9caf489b58c4993b235a25cc41364ed88a4d9",
+      "gitBlob": "660216efc2d34b70ba224a9d273e4bdeb4ee31a1"
+    },
+    {
+      "path": "books/markdown/errata-2.md",
+      "purpose": "errata provenance affecting tutoring and inheritance prerequisites",
+      "authority": "documentary-provenance-only",
+      "bytes": 19689,
+      "sha256": "1b8be900ac33dd8d621c7acda801ad535f0f8532142829c5409d907c081a1c70",
+      "gitBlob": "b322cbd41e3a7a48389d88cbb6a3237c5d2c6aca"
+    },
+    {
+      "path": "books/markdown/errata-3.md",
+      "purpose": "errata provenance affecting tutoring and inheritance prerequisites",
+      "authority": "documentary-provenance-only",
+      "bytes": 41554,
+      "sha256": "d589c68c0b12c18de4df30b5e37351297b324d7f7fa4a8cda63cda5c7ff154b8",
+      "gitBlob": "50b579bfe17c7b322941a3460f6b698c8064dac8"
+    }
+  ],
+  "parserBaselines": [
+    {
+      "path": "ptu-data/parse_pokedex.py",
+      "purpose": "legacy Pokédex parser baseline",
+      "authority": "maintenance-provenance-only",
+      "bytes": 29633,
+      "sha256": "78c9ee63b7d62c28b01bd1f266f22304d493dea8937aaf8cb5b752a70c033070",
+      "gitBlob": "18c0e88d6f8483356fa27fe1c992acba1f043ceb"
+    },
+    {
+      "path": "ptu-data/parse_features_edges.py",
+      "purpose": "legacy Feature and Edge parser baseline",
+      "authority": "maintenance-provenance-only",
+      "bytes": 14802,
+      "sha256": "fd5b9e5a0665f85fcc8f022b28c5322674027c02019fd808ca8221ede5ca4564",
+      "gitBlob": "ecc2db5664323b17cdc8d3302ad7c8b4cfe65737"
+    }
+  ],
+  "excludedSourceClasses": [
+    {
+      "pattern": "ptu-data/data/**",
+      "reason": "Legacy parser output is not runtime authority and may not supplement or override app-owned reference JSON."
+    },
+    {
+      "pattern": "books/markdown/pokedexes/{species}.md",
+      "reason": "Per-species markdown is documentary provenance only; species runtime facts are frozen in data/reference/pokedex.json."
+    },
+    {
+      "pattern": "books/**, PDFs, websites, and wikis",
+      "reason": "Documentary and external material cannot establish runtime identity, inventory, rule text, or mechanics."
+    }
+  ],
+  "policies": {
+    "sourceDrift": "fail-closed-until-reviewed-source-hash-bound-migration",
+    "unknownIdentity": "fail-closed",
+    "malformedRecord": "fail-closed",
+    "documentarySupplementation": "forbidden-at-runtime",
+    "clientAuthority": "none",
+    "identityOrder": "exact-app-owned-canonical-identity",
+    "rollAuthority": "server-only",
+    "provenance": "immutable-and-source-hash-bound"
+  }
+}

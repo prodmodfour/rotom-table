@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 1,
+  "policyId": "ptu-1.05-breeding-hatch-duration-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a",
+  "definition": {
+    "parser": {
+      "version": 1,
+      "inputField": "hatch_rate",
+      "inputGrammar": "exact-reviewed-source-value",
+      "genericRegexDiagnosticOnly": "^(0|[1-9][0-9]{0,2}) Days$",
+      "caseNormalization": "forbidden",
+      "whitespaceNormalization": "forbidden",
+      "numericUnit": "days",
+      "acceptedSourceValues": [
+        {
+          "sourceValue": "2 Days",
+          "days": 2,
+          "campaignMinutes": 2880,
+          "recordCount": 1
+        },
+        {
+          "sourceValue": "4 Days",
+          "days": 4,
+          "campaignMinutes": 5760,
+          "recordCount": 9
+        },
+        {
+          "sourceValue": "7 Days",
+          "days": 7,
+          "campaignMinutes": 10080,
+          "recordCount": 60
+        },
+        {
+          "sourceValue": "10 Days",
+          "days": 10,
+          "campaignMinutes": 14400,
+          "recordCount": 276
+        },
+        {
+          "sourceValue": "13 Days",
+          "days": 13,
+          "campaignMinutes": 18720,
+          "recordCount": 57
+        },
+        {
+          "sourceValue": "16 Days",
+          "days": 16,
+          "campaignMinutes": 23040,
+          "recordCount": 16
+        },
+        {
+          "sourceValue": "20 Days",
+          "days": 20,
+          "campaignMinutes": 28800,
+          "recordCount": 6
+        },
+        {
+          "sourceValue": "25 Days",
+          "days": 25,
+          "campaignMinutes": 36000,
+          "recordCount": 18
+        },
+        {
+          "sourceValue": "40 Days",
+          "days": 40,
+          "campaignMinutes": 57600,
+          "recordCount": 29
+        },
+        {
+          "sourceValue": "75 Days",
+          "days": 75,
+          "campaignMinutes": 108000,
+          "recordCount": 79
+        }
+      ],
+      "nullOrMissing": "unavailable",
+      "unknownWellFormed": "source-drift-unavailable",
+      "malformed": "malformed-source-unavailable"
+    },
+    "units": {
+      "authoritativeUnit": "campaign-minute",
+      "campaignMinutesPerHour": 60,
+      "campaignMinutesPerDay": 1440,
+      "minimumDurationMinutes": 1,
+      "maximumDurationMinutes": 31536000,
+      "arithmetic": "non-negative-safe-integers-only",
+      "fractionRounding": "ceil-final-target-minutes",
+      "wallClockMilliseconds": "presentation-only-never-mechanics"
+    },
+    "variationPolicies": [
+      {
+        "id": "fixed-average",
+        "roll": null,
+        "minimumPercent": 100,
+        "maximumPercent": 100,
+        "resolution": "target=average"
+      },
+      {
+        "id": "server-random-half-to-double",
+        "roll": {
+          "expression": "1d151+49",
+          "minimumTotal": 50,
+          "maximumTotal": 200,
+          "rollOnceAt": "egg-acceptance"
+        },
+        "minimumPercent": 50,
+        "maximumPercent": 200,
+        "resolution": "target=ceil(average*rollTotal/100)"
+      },
+      {
+        "id": "gm-within-half-to-double",
+        "roll": null,
+        "minimumPercent": 50,
+        "maximumPercent": 200,
+        "resolution": "server-validates-integer-target-between-ceil(average/2)-and-average*2"
+      }
+    ],
+    "campaignClock": {
+      "clockValue": "non-negative-safe-integer-campaign-minute",
+      "clockRevision": "monotonic-non-negative-safe-integer",
+      "advanceIdentity": "stable-unique-advancement-id",
+      "duplicateAdvance": "return-stored-result",
+      "reversedOrContradictoryAdvance": "reject",
+      "progressDelta": "max(0,new-clock-minute-last-applied-clock-minute)",
+      "processTimer": "forbidden",
+      "browserTimer": "forbidden",
+      "timezone": "presentation-only",
+      "calendar": "presentation-only"
+    },
+    "incubation": {
+      "durationSnapshot": "egg-acceptance",
+      "fields": [
+        "average-campaign-minutes",
+        "variation-policy-id",
+        "variation-roll-id-or-null",
+        "target-campaign-minutes",
+        "accumulated-campaign-minutes",
+        "last-clock-revision",
+        "last-clock-minute",
+        "ready-at-clock-minute-or-null"
+      ],
+      "readyWhen": "accumulated-campaign-minutes-greater-than-or-equal-target-campaign-minutes",
+      "storedProgress": "clamp-zero-to-target",
+      "overflow": "record-in-operation-result-not-future-progress",
+      "transferPolicy": "continues",
+      "storagePolicy": "continues",
+      "parentOrBreederLossPolicy": "continues",
+      "pausePolicy": "explicit-audited-operation-only",
+      "manualReadyPolicy": "audited-gm-operation-does-not-rewrite-elapsed-time"
+    },
+    "modifierCheckpoints": [
+      {
+        "id": "snapshot",
+        "definition": "resolved-once-at-egg-acceptance-and-frozen"
+      },
+      {
+        "id": "continuous",
+        "definition": "recomputed-for-each-authoritative-clock-segment-from-versioned-custody-or-facility-evidence"
+      },
+      {
+        "id": "operation",
+        "definition": "applied-once-by-a-replay-safe-operation-ledger-entry"
+      }
+    ],
+    "knownModifierSemantics": [
+      {
+        "sourceKind": "item",
+        "canonicalId": "Egg Warmer",
+        "checkpoint": "continuous",
+        "effect": "progress-rate-multiplier",
+        "numerator": 2,
+        "denominator": 1
+      },
+      {
+        "sourceKind": "capability",
+        "canonicalId": "Egg Warmer",
+        "checkpoint": "operation",
+        "effect": "target-reduction-campaign-minutes",
+        "roll": "1d10",
+        "resultOneReductionMinutes": 0,
+        "resultTwoThroughTenMultiplierMinutes": 60
+      }
+    ],
+    "sourceKinds": {
+      "breeding": "compiled-child-species-duration",
+      "fossil": "compiled-child-species-duration-unless-provider-override",
+      "gm": "typed-bounded-duration-required",
+      "feature-artificial": "authoritative-provider-duration-snapshotted"
+    },
+    "failureReasonIds": [
+      "breeding.hatch-duration.missing",
+      "breeding.hatch-duration.malformed",
+      "breeding.hatch-duration.source-drift",
+      "breeding.hatch-duration.out-of-bounds",
+      "breeding.hatch-duration.roll-missing",
+      "breeding.hatch-duration.roll-conflict",
+      "breeding.campaign-clock.stale",
+      "breeding.campaign-clock.reversed",
+      "breeding.campaign-clock.advance-collision",
+      "breeding.incubation.modifier-evidence-missing"
+    ],
+    "currentSourceDiagnostics": {
+      "recordCount": 1149,
+      "recognizedDurationRecordCount": 551,
+      "missingDurationRecordCount": 598,
+      "unknownWellFormedRecordCount": 0,
+      "malformedDurationRecordCount": 0
+    }
+  }
+}

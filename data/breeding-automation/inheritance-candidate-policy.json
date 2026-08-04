@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "policyId": "ptu-1.05-breeding-inheritance-candidate-policy-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "b30536b9757b436feac611ed64ed4a94eb1e5bd790b2e2fb7dd6d27c65f4b143",
+  "definition": {
+    "version": 1,
+    "input": {
+      "offspring": "resolved-BR-015-result-on-current-compiled-registry",
+      "parents": "exactly-two-server-authored-self-hashed-effective-move-snapshots",
+      "snapshotCheckpoint": "parent-snapshot-checkpoint",
+      "effectiveMovesPerParentMaximum": 64,
+      "evidenceRowsPerMoveMaximum": 16,
+      "candidateMaximum": 256,
+      "legacyFields": [
+        "eggMoves-forbidden",
+        "inheritedMoves-forbidden",
+        "move-labels-forbidden"
+      ]
+    },
+    "snapshot": {
+      "fields": [
+        "schemaVersion",
+        "parentRef",
+        "speciesId",
+        "sourceSheetSha256",
+        "effectiveKnownMoves",
+        "definitionSha256"
+      ],
+      "moveFields": [
+        "moveId",
+        "evidence"
+      ],
+      "evidenceFields": [
+        "evidenceId",
+        "sourceKind",
+        "sourceId",
+        "sourceDefinitionSha256"
+      ],
+      "sourceKinds": [
+        "sheet-known-move",
+        "permanent-move-grant",
+        "effective-provider"
+      ],
+      "canonicalOrder": "move-id-then-evidence-id-code-point",
+      "duplicates": "reject",
+      "selfHash": "sha256-stable-json-of-all-fields-except-definitionSha256"
+    },
+    "construction": {
+      "parentMoveSource": "effective-known-canonical-moves-only",
+      "childEligibilitySource": "compiled-resolved-child-spec",
+      "pathways": [
+        "child-egg-move",
+        "child-machine-compatible"
+      ],
+      "includeWhen": "known-by-parent-and-present-in-at-least-one-child-pathway",
+      "candidateIdentity": "canonical-move-id",
+      "candidateOrder": "move-id-code-point",
+      "sourceOrder": "parent-index-then-pathway-order",
+      "deduplication": "one-candidate-per-move-retain-every-parent-pathway-and-effective-move-evidence",
+      "emptyResult": "resolved-empty-list",
+      "namesAndNormalization": "forbidden"
+    },
+    "provenance": {
+      "candidateSourceFields": [
+        "parent-index",
+        "parent-ref",
+        "parent-species-id",
+        "pathway-id",
+        "known-move-evidence"
+      ],
+      "resultFields": [
+        "offspring-species-id",
+        "offspring-spec-definition-hash",
+        "parent-snapshot-definition-hashes",
+        "compiled-registry-hash",
+        "canonical-id-catalog-hash",
+        "ruleset-hash",
+        "policy-hash",
+        "candidate-set-hash"
+      ],
+      "parentMutationAfterSnapshot": "cannot-rewrite-candidates",
+      "privacyProjection": "deferred-to-role-specific-server-projection-never-drop-stored-provenance"
+    },
+    "reasonIds": [
+      "breeding.inheritance.offspring-unavailable",
+      "breeding.inheritance.parent-snapshot-invalid",
+      "breeding.inheritance.parent-spec-unavailable",
+      "breeding.inheritance.parent-family-inconsistent",
+      "breeding.inheritance.unknown-move-id",
+      "breeding.inheritance.limit-exceeded",
+      "breeding.inheritance.provenance-conflict",
+      "breeding.inheritance.candidate-limit-exceeded"
+    ],
+    "determinism": {
+      "mutation": "none",
+      "randomness": "none",
+      "sameInput": "sameOutput",
+      "reasonOrder": "declared"
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "sourceAdjudicationsFileSha256": "762e166f93ec3019150c9c6c36e4433c352781a51181cf3181964a45a2a5f0a7",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
+      "canonicalIdDefinitionSha256": "99e9ab4c4107086d64e2d70e7cdcaa7f9e10fd534f223f0ca053b2c1c4798d1e",
+      "offspringResolutionPolicyDefinitionSha256": "d756e1bc3afa78562481f612f0be4f4836876a2de6dd17d24e53361393c4b119"
+    }
+  }
+}

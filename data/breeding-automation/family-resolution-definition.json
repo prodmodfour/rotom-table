@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "definitionId": "ptu-1.05-breeding-family-resolution-definition-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "compilerDefinitionSha256": "f0c2adcbefb6c395ff729d110b3ae5bcaf61ac36687061f3e4b9f3d898d4814a",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "b08a95059666e22a3617f3b2dbe6267dfbec8e019191c9547deb59dc5a777a29",
+  "definition": {
+    "resolutionVersion": 1,
+    "inputs": {
+      "pokedexPath": "data/reference/pokedex.json",
+      "pokedexSha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696",
+      "canonicalIdDefinitionSha256": "99e9ab4c4107086d64e2d70e7cdcaa7f9e10fd534f223f0ca053b2c1c4798d1e",
+      "familyPolicyDefinitionSha256": "ae677fe4a6d204e05a2c500e2dc5584b88ca2a10b80546c18a30b94e7541bc76",
+      "compilerDefinitionSha256": "f0c2adcbefb6c395ff729d110b3ae5bcaf61ac36687061f3e4b9f3d898d4814a",
+      "evolutionTargetAdjudicationsDefinitionSha256": "ea4d7d65f2cb896991756e235b52d34a4ba21f7ef925f19f55d43e4523f41a6c",
+      "formAdjudicationsDefinitionSha256": "f63dfc0bb2501d6772c821fe987cc3fa149f005f5e337e27c7e3496269fa78df"
+    },
+    "algorithm": [
+      "read-only-plain-source-rows",
+      "resolve-exact-target-or-exact-reviewed-target-cell",
+      "exclude-sequence-with-unresolved-target",
+      "collect-stage-evidence-by-canonical-species-id",
+      "group-family-components-by-reviewed-sequence-co-membership",
+      "emit-only-adjacent-stage-edges-supported-by-unambiguous-sequence-or-branch-path",
+      "reject-conflicting-stage-evidence",
+      "reject-cycle-multiple-root-no-root-or-disconnected-component",
+      "exclude-form-rows-not-marked-family-eligible",
+      "assign-reviewed-root-own-form-root-and-descendant-base-family-root",
+      "emit-strict-family-spec-and-complete-species-disposition-inventory"
+    ],
+    "edgeEvidence": {
+      "one-to-one-adjacent": "emit-evolves-to",
+      "one-to-many-adjacent": "emit-branch-evolves-to",
+      "many-to-one-adjacent": "require-separate-unambiguous-path-evidence",
+      "many-to-many-adjacent": "require-separate-unambiguous-path-evidence",
+      "conditionText": "provenance-only-after-reviewed-target-resolution"
+    },
+    "formPolicy": {
+      "classificationSource": "explicit-form-adjudications-only",
+      "rootPolicy": "own-form-root",
+      "descendantPolicy": "base-family-root",
+      "notBreedableOrSourceGap": "excluded-from-family",
+      "nameInferenceAtRuntime": "forbidden"
+    },
+    "inventoryStatuses": [
+      "resolved-family",
+      "excluded-sparse-source",
+      "excluded-unresolved-target",
+      "excluded-form-policy",
+      "excluded-stage-conflict",
+      "excluded-graph-invalid",
+      "excluded-no-family-evidence"
+    ],
+    "invariants": [
+      "exactly-1149-inventory-rows",
+      "one-inventory-row-per-canonical-species",
+      "every-family-member-resolved-family",
+      "no-excluded-species-in-family",
+      "every-family-strict-schema-valid",
+      "no-cross-family-membership",
+      "family-members-and-edges-sorted",
+      "one-root-and-complete-reachability",
+      "resolution-output-byte-deterministic"
+    ],
+    "output": {
+      "resolutionSetPath": "data/breeding-automation/family-resolutions.json",
+      "inventoryPath": "data/breeding-automation/family-resolution-inventory.json",
+      "writeCommand": "npm run compile:breeding-family-resolutions",
+      "checkCommand": "npm run check:breeding-family-resolutions"
+    }
+  }
+}

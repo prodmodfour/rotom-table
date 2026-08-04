@@ -1,8 +1,8 @@
 # Breeding and Egg Lifecycle Implementation Plan
 
-`PLAN_STATUS: QUEUED`
+`PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: BR-001`
+`CURRENT_TICKET: BR-020`
 
 `BLOCKED_BY: done/ENCOUNTER_UI_UX_PLAN.md — PLAN_STATUS: DONE`
 
@@ -463,9 +463,9 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ## Progress snapshot
 
-- Plan tickets: **0 DONE / 90 total**
-- Frozen breeding source inventory: **pending BR-001**
-- Recorded ruleset/adjudications: **pending BR-002**
+- Plan tickets: **19 DONE / 90 total**
+- Frozen breeding source inventory: **30 hash-bound runtime, contract, product, documentary, and parser records**
+- Recorded ruleset/adjudications: **`ptu-1.05-breeding-v1` / 20 accepted conflict decisions / 15 typed campaign options**
 - Compiled species specs: **0**
 - Compatible-species coverage: **unassessed**
 - Durable breeding-project schema: **not created**
@@ -475,39 +475,58 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 - Feature/Edge interaction certification: **not started**
 - Workshop UI and accessibility acceptance: **not started**
 - Legacy breeding authority retired: **no**
-- Blocking dependency: **Encounter UI/UX final acceptance**
+- Blocking dependency: **none; Encounter UI/UX is complete and archived**
 
 ## Tickets
 
 ### Phase 1 — Source governance, conflicts, policy, and measurable acceptance
 
-- [ ] **BR-001 — Freeze the complete breeding, Egg, fossil, inheritance, and hatch source inventory and SHA-256 values** — `TODO`
-- [ ] **BR-002 — Record the versioned breeding ruleset ADR and adjudicate every source conflict** — `TODO`
-  - Cover parent-family selection, lowest-stage resolution, Ditto, genderless species, maturity, forms, hatch variation, special results, fossils, and Baby Template policy.
-- [ ] **BR-003 — Freeze canonical Egg Group, Gender, parent-role, form, and no-breeding taxonomies** — `TODO`
-- [ ] **BR-004 — Freeze the evolution-family and form-root graph policy** — `TODO`
-- [ ] **BR-005 — Define hatch-duration parsing, units, bounds, variation, and campaign-time semantics** — `TODO`
-- [ ] **BR-006 — Inventory every Edge, Feature, item, Ability, capability, facility, and campaign rule that can affect breeding or hatching** — `TODO`
-- [ ] **BR-007 — Define the breeding threat model, consent policy, privacy matrix, and abuse limits** — `TODO`
-- [ ] **BR-008 — Define source manifests, semantic registries, plan checks, coverage checks, and acceptance fixtures** — `TODO`
-- [ ] **BR-009 — Record the runtime ADR, ownership map, contributor guide, operator guide, and baseline audit** — `TODO`
+- [x] **BR-001 — Freeze the complete breeding, Egg, fossil, inheritance, and hatch source inventory and SHA-256 values** — `DONE`
+  - Evidence: `data/breeding-automation/source-manifest.json` freezes all 13 app-owned runtime references plus reviewed automation contracts, product authority, documentary provenance, and parser baselines by byte count, SHA-256, and Git blob. `tests/data/breedingSourceManifest.test.ts` passes with fail-closed authority and drift checks.
+- [x] **BR-002 — Record the versioned breeding ruleset ADR and adjudicate every source conflict** — `DONE`
+  - Evidence: `data/breeding-automation/ruleset.json` freezes definition SHA-256 `ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02`, 15 typed campaign options, and the default server-authoritative policy. `data/breeding-automation/source-adjudications.json`, `baseline-audit.json`, ADR 017, and `tests/data/breedingRulesetAdjudications.test.ts` close and verify 20 source/code conflicts, including the legacy map-metadata Egg path.
+  - Covered parent-family selection, lowest-stage resolution, Ditto, genderless species, maturity, forms, hatch variation, special results, fossils, and Baby Template policy.
+- [x] **BR-003 — Freeze canonical Egg Group, Gender, parent-role, form, and no-breeding taxonomies** — `DONE`
+  - Evidence: `data/breeding-automation/taxonomies.json` freezes 14 canonical Egg Groups with exact mappings for all 19 current source cells, separate Gender and parent-role vocabularies, 10 form kinds, four root policies, four eligibility states, evidence kinds, and closed unavailable reasons under definition SHA-256 `086633909ce7499e5946e033d596145f469e09ebb2490e7d6985b6f19394ff8d`. `tests/data/breedingTaxonomies.test.ts` passes.
+- [x] **BR-004 — Freeze the evolution-family and form-root graph policy** — `DONE`
+  - Evidence: `data/breeding-automation/family-graph-policy.json` freezes exact-node edge acceptance, branch and form semantics, unique-root DAG invariants, deterministic ordering, compiled family requirements, failure reasons, and zero-error compiler gates under definition SHA-256 `ae677fe4a6d204e05a2c500e2dc5584b88ca2a10b80546c18a30b94e7541bc76`. `tests/data/breedingFamilyGraphPolicy.test.ts` passes malformed-source diagnostics and graph-property cases.
+- [x] **BR-005 — Define hatch-duration parsing, units, bounds, variation, and campaign-time semantics** — `DONE`
+  - Evidence: `data/breeding-automation/hatch-duration-policy.json` freezes exact parsing for all 10 recognized source values, campaign-minute arithmetic, bounded fixed/random/GM variation, revisioned idempotent clock semantics, incubation checkpoints, and Egg Warmer item/Capability contributions under definition SHA-256 `e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a`. `tests/data/breedingHatchDurationPolicy.test.ts` passes all source histogram and boundary cases.
+- [x] **BR-006 — Inventory every Edge, Feature, item, Ability, capability, facility, and campaign rule that can affect breeding or hatching** — `DONE`
+  - Evidence: `data/breeding-automation/modifier-inventory.json` freezes 21 family-qualified canonical providers, all 15 campaign options, six reviewed keyword false positives, exact record/mechanic hashes, source gaps, zero canonical facilities, and effective-provider checkpoint policy under definition SHA-256 `24bb20a9d61003f540f6b410df3b0919ee49233012e45ec2dd14bfc9ed5c2dd9`. `tests/data/breedingModifierInventory.test.ts` proves closure over every broad canonical keyword match and provider dependency.
+- [x] **BR-007 — Define the breeding threat model, consent policy, privacy matrix, and abuse limits** — `DONE`
+  - Evidence: `data/breeding-automation/security-policy.json` and `docs/breeding/security-and-privacy.md` freeze revision-bound positive consent, five structural audience projections, 13 closed threats, privacy-safe realtime/local persistence, audit requirements, and exact payload/cardinality/rate limits under definition SHA-256 `83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5`. `tests/data/breedingSecurityPolicy.test.ts` passes.
+- [x] **BR-008 — Define source manifests, semantic registries, plan checks, coverage checks, and acceptance fixtures** — `DONE`
+  - Evidence: `data/breeding-automation/semantic-registry.json`, the 90-row `scenario-requirements.json`, six synthetic fixture files with 21 scripts, and `scripts/check_breeding_automation.ts` freeze artifact, plan, gate, coverage, privacy, and fixture checks. Package and quality-gate commands are covered by `tests/scripts/breedingAutomationChecker.test.ts` and `tests/scripts/qualityGate.test.ts`; all focused Phase 1 checks pass.
+- [x] **BR-009 — Record the runtime ADR, ownership map, contributor guide, operator guide, and baseline audit** — `DONE`
+  - Evidence: ADR 018, `data/breeding-automation/ownership-map.json`, and the architecture, contributor, operator, and baseline guides freeze 22 single-writer fact boundaries, five atomic transaction groups, module layering, recovery practice, and the pre-runtime audit. `tests/data/breedingRuntimeOwnership.test.ts` and the breeding checker pass.
 
 ### Phase 2 — Compiled reference registry and pure breeding rules
 
-- [ ] **BR-010 — Define canonical breeding species, family, Egg Group, move, Ability, and option IDs** — `TODO`
-- [ ] **BR-011 — Define strict versioned `BreedingSpeciesSpec` and `BreedingFamilySpec` schemas** — `TODO`
-- [ ] **BR-012 — Build the deterministic Pokédex-to-breeding-spec compiler and validation report** — `TODO`
-- [ ] **BR-013 — Build and validate complete family-root, branch, regional-form, and special-form resolution** — `TODO`
-- [ ] **BR-014 — Implement pure compatibility, parent-role, Ditto, genderless, maturity, and campaign-option evaluation** — `TODO`
-- [ ] **BR-015 — Implement pure offspring family and lowest-stage species resolution** — `TODO`
-- [ ] **BR-016 — Implement Nature, Basic Ability, Gender, rank-authorised choice, and random-option resolution** — `TODO`
-- [ ] **BR-017 — Implement canonical inheritance candidate construction, deduplication, and provenance** — `TODO`
-- [ ] **BR-018 — Implement hatch duration, fossil-level, Baby Template, and special-result rule helpers** — `TODO`
-- [ ] **BR-019 — Add exhaustive examples, fuzzing, graph properties, boundary rolls, and deterministic replay tests** — `TODO`
+- [x] **BR-010 — Define canonical breeding species, family, Egg Group, move, Ability, and option IDs** — `DONE`
+  - Evidence: `data/breeding-automation/canonical-ids.json` freezes 1,149 species, 777 Moves, 483 Abilities, 14 Egg Groups, 15 campaign options, family/offer identity formats, exact record hashes, a collision-failing maintenance algorithm, and runtime exact-membership policy under definition SHA-256 `99e9ab4c4107086d64e2d70e7cdcaa7f9e10fd534f223f0ca053b2c1c4798d1e`. `shared/breeding/ids.ts`, the server-only catalog, and `tests/server/breedingCanonicalIds.test.ts` enforce the boundary.
+- [x] **BR-011 — Define strict versioned `BreedingSpeciesSpec` and `BreedingFamilySpec` schemas** — `DONE`
+  - Evidence: `data/breeding-automation/spec-schemas.json` and `shared/breeding/specs.ts` freeze exact versioned Species/Family shapes, bounds, canonical membership, provenance, self-hashes, deterministic order, DAG/form closure, and privacy-safe diagnostic projections under schema definition SHA-256 `a47dbd490e0485ce1adef9a823a9d76c27c12496e56c72dbfdd2f0f7bdb6163e`. `server/domain/breeding/specSchemaContext.ts` binds app-owned catalogs; `tests/server/breedingSpecSchemas.test.ts` passes strict and adversarial cases.
+- [x] **BR-012 — Build the deterministic Pokédex-to-breeding-spec compiler and validation report** — `DONE`
+  - Evidence: the source-bound compiler definition (extended by BR-013 bindings at `f0c2adcbefb6c395ff729d110b3ae5bcaf61ac36687061f3e4b9f3d898d4814a`), strict deterministic compiler, generated registry/report, write/check command, and `tests/server/breedingCompiler.test.ts` validate all 1,149 rows. Its pre-BR-013 baseline truthfully emitted zero specs until reviewed family/form resolutions existed; unresolved machine-only `Facade` references remain warning-only and never expose raw labels.
+- [x] **BR-013 — Build and validate complete family-root, branch, regional-form, and special-form resolution** — `DONE`
+  - Evidence: 127 reviewed target adjudications, 1,149 explicit form dispositions, source-bound Family resolution definition `b08a95059666e22a3617f3b2dbe6267dfbec8e019191c9547deb59dc5a777a29`, and the deterministic builder resolve 949 Species into 480 valid Families (32 branched, 54 regional-form members) while assigning closed reasons to all 200 exclusions. The strict runtime registry admits 862 Species/407 complete Families; `tests/server/breedingFamilyResolution.test.ts`, compiler tests/checks, checker, and typecheck pass.
+- [x] **BR-014 — Implement pure compatibility, parent-role, Ditto, genderless, maturity, and campaign-option evaluation** — `DONE`
+  - Evidence: compatibility policy `6a38a2ea1cf38b4d331a638ef94be2b9d1b6fb2781c668eedc84f0a6dcd7a34f`, strict self-hashed 15-option snapshots, and pure compatibility evaluation cover conventional roles, exact Ditto bypass/fallback, genderless and same-sex audited overrides, two maturity policies, canonical groups, malformed facts, and 14 stable reasons. `tests/server/breedingCompatibility.test.ts` and typecheck pass.
+- [x] **BR-015 — Implement pure offspring family and lowest-stage species resolution** — `DONE`
+  - Evidence: policy `d756e1bc3afa78562481f612f0be4f4836876a2de6dd17d24e53361393c4b119` and `offspringResolution.ts` implement injected core d20 boundaries, maternal and bounded GM contributor-family policies, unconditional non-Ditto fallback, compiled lowest-stage roots, family-bounded audited form overrides, excess-input rejection, and immutable provenance. `tests/server/breedingOffspringResolution.test.ts` and typecheck pass.
+- [x] **BR-016 — Implement Nature, Basic Ability, Gender, rank-authorised choice, and random-option resolution** — `DONE`
+  - Evidence: reviewed Nature catalog `d95d1ab8f6065c04790824a2258d99239907348081695f18e88a500a1ac9ff4e`, trait policy `85bbd7beabffe4f1eac3fe036ca99dc05fdbcef5a16ee3a2c053ab09954dcd72`, and pure resolvers implement ordered 2d6 Nature outcomes, sorted Basic Ability rolls, exact d100 Gender thresholds, fixed genderless results, Adept/Expert/Master choices, excess-input rejection, and immutable provenance. Eight focused tests and typecheck pass.
+- [x] **BR-017 — Implement canonical inheritance candidate construction, deduplication, and provenance** — `DONE`
+  - Evidence: policy `b30536b9757b436feac611ed64ed4a94eb1e5bd790b2e2fb7dd6d27c65f4b143` and `inheritanceCandidates.ts` define strict self-hashed two-parent effective-Move snapshots, canonical Move-only child Egg/machine pathways, one candidate per Move with all parent/pathway/evidence sources retained, closed limits, stable hashes, and fail-closed stale/malformed handling. Seven focused tests and typecheck pass.
+- [x] **BR-018 — Implement hatch duration, fossil-level, Baby Template, and special-result rule helpers** — `DONE`
+  - Evidence: helper policy `20d7daa639780db9e983e72a739d81a5a60b81f00e99a4f1135b7e777dc44ec7` and `eggRuleHelpers.ts` implement source-specific duration authority, fixed/random/GM variation, fossil Level, disabled-or-audited Baby Template effects, and one injected d100 special workflow that never implies Shiny. Missing configured special tables fail closed. Nine focused tests and typecheck pass.
+- [x] **BR-019 — Add exhaustive examples, fuzzing, graph properties, boundary rolls, and deterministic replay tests** — `DONE`
+  - Evidence: conformance report `e6cb7f6c284730e213730aeaa1c3cd20297f4c612c82113c267a9c6ebffd6d77` and `breedingPureRulesConformance.test.ts` exhaust all 407 Family DAGs, 862 compiled Species identities (861 producible), Basic Ability options, d20/ordered-2d6/d100/50–200 roll domains, reviewed fixture examples, 2,048 seeded malformed inputs, and 100 equal full-pipeline replays. The corrected inheritance fixture now supplies a true dual-parent/double-pathway candidate.
 
 ### Phase 3 — Shared contracts, aggregates, commands, and projections
 
-- [ ] **BR-020 — Define strict `BreedingProjectDocument v1` and lifecycle transitions** — `TODO`
+- [ ] **BR-020 — Define strict `BreedingProjectDocument v1` and lifecycle transitions** — `IN_PROGRESS`
 - [ ] **BR-021 — Define strict `PokemonEggDocument v1` and lifecycle transitions** — `TODO`
 - [ ] **BR-022 — Define `BreedingParentSnapshot`, `PokemonBreedingOrigin`, and inheritance-learning provenance** — `TODO`
 - [ ] **BR-023 — Define versioned breeding commands, operation results, scopes, conflicts, and hashes** — `TODO`

@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "containsCampaignData": false,
+  "sourceTicket": "BR-008",
+  "fixtureIndexId": "breeding-acceptance-fixtures-v1",
+  "fixtureCount": 6,
+  "fixtures": [
+    {
+      "id": "breeding-standard-compatible-project-v1",
+      "path": "data/breeding-automation/fixtures/standard-compatible-project.json",
+      "scriptIds": [
+        "standard-success-exact-retry",
+        "standard-check-failure",
+        "rank-bounded-trait-choice"
+      ],
+      "requirementIds": [
+        "breeding:BR-014",
+        "breeding:BR-015",
+        "breeding:BR-016",
+        "breeding:BR-017",
+        "breeding:BR-026",
+        "breeding:BR-050",
+        "breeding:BR-053",
+        "breeding:BR-054",
+        "breeding:BR-057"
+      ]
+    },
+    {
+      "id": "breeding-cross-owner-consent-v1",
+      "path": "data/breeding-automation/fixtures/cross-owner-consent.json",
+      "scriptIds": [
+        "positive-revision-bound-consent",
+        "stale-or-revoked-consent",
+        "audience-privacy-matrix"
+      ],
+      "requirementIds": [
+        "breeding:BR-024",
+        "breeding:BR-025",
+        "breeding:BR-042",
+        "breeding:BR-044",
+        "breeding:BR-052",
+        "breeding:BR-057",
+        "breeding:BR-065",
+        "breeding:BR-074",
+        "breeding:BR-087"
+      ]
+    },
+    {
+      "id": "breeding-ditto-genderless-source-gaps-v1",
+      "path": "data/breeding-automation/fixtures/ditto-genderless-and-source-gaps.json",
+      "scriptIds": [
+        "canonical-ditto-fallback",
+        "ditto-identity-not-group-label",
+        "incomplete-spec-fails-closed"
+      ],
+      "requirementIds": [
+        "breeding:BR-003",
+        "breeding:BR-011",
+        "breeding:BR-012",
+        "breeding:BR-014",
+        "breeding:BR-015"
+      ]
+    },
+    {
+      "id": "breeding-inheritance-incubation-special-v1",
+      "path": "data/breeding-automation/fixtures/inheritance-incubation-and-special.json",
+      "scriptIds": [
+        "inheritance-dedup-and-source-gap",
+        "empty-level-20-slot-later-level-30",
+        "clock-and-egg-warmer-idempotency",
+        "special-roll-bounded-adjudication"
+      ],
+      "requirementIds": [
+        "breeding:BR-005",
+        "breeding:BR-017",
+        "breeding:BR-018",
+        "breeding:BR-019",
+        "breeding:BR-055",
+        "breeding:BR-056",
+        "breeding:BR-060",
+        "breeding:BR-061",
+        "breeding:BR-062",
+        "breeding:BR-063",
+        "breeding:BR-064"
+      ]
+    },
+    {
+      "id": "breeding-special-source-eggs-v1",
+      "path": "data/breeding-automation/fixtures/fossil-artificial-and-mysterious-eggs.json",
+      "scriptIds": [
+        "fossil-shared-lifecycle",
+        "playing-god-artificial-egg",
+        "gm-mysterious-egg",
+        "marsupial-special-baby-policy"
+      ],
+      "requirementIds": [
+        "breeding:BR-006",
+        "breeding:BR-018",
+        "breeding:BR-021",
+        "breeding:BR-046",
+        "breeding:BR-058",
+        "breeding:BR-066",
+        "breeding:BR-067",
+        "breeding:BR-068"
+      ]
+    },
+    {
+      "id": "breeding-hatch-recovery-privacy-history-v1",
+      "path": "data/breeding-automation/fixtures/hatch-recovery-privacy-and-history.json",
+      "scriptIds": [
+        "concurrent-exactly-once-hatch",
+        "first-species-acquisition-once",
+        "parent-change-does-not-drift-egg",
+        "reconnect-export-restore-convergence"
+      ],
+      "requirementIds": [
+        "breeding:BR-022",
+        "breeding:BR-036",
+        "breeding:BR-037",
+        "breeding:BR-038",
+        "breeding:BR-039",
+        "breeding:BR-043",
+        "breeding:BR-045",
+        "breeding:BR-047",
+        "breeding:BR-048",
+        "breeding:BR-059",
+        "breeding:BR-060",
+        "breeding:BR-065",
+        "breeding:BR-069",
+        "breeding:BR-078",
+        "breeding:BR-083",
+        "breeding:BR-084"
+      ]
+    }
+  ]
+}

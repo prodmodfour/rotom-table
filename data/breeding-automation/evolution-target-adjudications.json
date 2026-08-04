@@ -1,0 +1,1174 @@
+{
+  "schemaVersion": 1,
+  "adjudicationSetId": "ptu-1.05-breeding-evolution-target-adjudications-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "canonicalIdDefinitionSha256": "99e9ab4c4107086d64e2d70e7cdcaa7f9e10fd534f223f0ca053b2c1c4798d1e",
+  "familyPolicyDefinitionSha256": "ae677fe4a6d204e05a2c500e2dc5584b88ca2a10b80546c18a30b94e7541bc76",
+  "sourcePokedexSha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696",
+  "definitionSha256": "ea4d7d65f2cb896991756e235b52d34a4ba21f7ef925f19f55d43e4523f41a6c",
+  "definition": {
+    "sourcePath": "data/reference/pokedex.json",
+    "entries": [
+      {
+        "id": "BR-FAM-TARGET-001",
+        "sourceValue": "Accelgor Interact with Karrablast",
+        "sourceValueSha256": "ceaceb5d25ef8a17daa8304d5972e81a3fde280a3643057af0c61035d027f955",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "accelgor",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-002",
+        "sourceValue": "Alcremie; Sweet Item Keepsake",
+        "sourceValueSha256": "e72c57c4aca7d7d1431e2480583357f3182b67cdb853d560a82c8a9dced556a6",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "alcremie",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-003",
+        "sourceValue": "Ambipom Learn Double Hit",
+        "sourceValueSha256": "9b772af862019feb716ce2b5195232956b95f38f89d1fa849da0528bc2388a40",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "ambipom",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-004",
+        "sourceValue": "Appletun; Sweet Apple Keepsake",
+        "sourceValueSha256": "02a27f75020b4f6f0866609cc132a3cb89f8cfcd457dc9febe3d6af92631273a",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "appletun",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-005",
+        "sourceValue": "Arcanine (H)",
+        "sourceValueSha256": "b8fe946c8b249be69cf73606c63f62809a896bfa51eba712219aa9ded8911462",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "arcanine-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-006",
+        "sourceValue": "Articuno (G)",
+        "sourceValueSha256": "8409e64aeaf319e16be320b79aa9956ee4537e11576348050e537e6e4196c2e3",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "articuno-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-007",
+        "sourceValue": "Avalugg (H)",
+        "sourceValueSha256": "1fb63969e28e8dca3fd4c65f71e50d13356647409349a63ffa1fb356331d4af8",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "avalugg-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-008",
+        "sourceValue": "Basculegion (Female)",
+        "sourceValueSha256": "ae86417377f5e1764742e17d72c01ec1ca8be442a34881985eb02518c0131c87",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "basculegion-female",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-009",
+        "sourceValue": "Basculegion (Male)",
+        "sourceValueSha256": "03c4db4098dfe1de578b71568137f3ba27f0e61151184a629ad63d50169d293b",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "basculegion-male",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-010",
+        "sourceValue": "Braviary (H)",
+        "sourceValueSha256": "1328251551411651cac3d81b9af8692e195ae15ae9374d6f8a34a6d4cf7e2587",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "braviary-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-011",
+        "sourceValue": "Calyrex (Mounting Glastrier)",
+        "sourceValueSha256": "84a17357e74f9a6069025040fe244e60be7613685659f542b146626d3d8a23dd",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "calyrex",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-012",
+        "sourceValue": "Calyrex (Mounting Spectrier)",
+        "sourceValueSha256": "e0f5eda32fec11821d56824e7a8732440ffed4749742d1f88da3a307441eeb5b",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "calyrex",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-013",
+        "sourceValue": "Cascoon see Split Evolution",
+        "sourceValueSha256": "f77ade0c1f8db70a38d88a90def31ffbc657fbefd37035190b23475bc0f5d2fd",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "cascoon",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-014",
+        "sourceValue": "Chimecho Night",
+        "sourceValueSha256": "9e37fa6b64ac45af4de3d5d9210c2be135c2f23e8d8a6594e4b0528125358c4d",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "chimecho",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-015",
+        "sourceValue": "Corsola (G)",
+        "sourceValueSha256": "62ef6305b5ce57cfcdd44e827577c39394533d6038d9be48a555c22208d19ece",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "corsola-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-016",
+        "sourceValue": "Darmanitan (G),",
+        "sourceValueSha256": "1fa7c816cea0f89c0ca497215a07d344d7cdee6301cc607c442af2bef9b7d31b",
+        "occurrenceCount": 3,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-017",
+        "sourceValue": "Darumaka (G)",
+        "sourceValueSha256": "0faa20447ece7374534c1d2ee14047a2498ec9fca3da01696b322f6373eb19d3",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "darumaka-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-018",
+        "sourceValue": "Decidueye (H)",
+        "sourceValueSha256": "b119c3c2fe9dbf147df50275246796b80507f802346fedff0699c3eaca5575dd",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "decidueye-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-019",
+        "sourceValue": "Deoxys",
+        "sourceValueSha256": "a4338578cb7606220fa0abbf963401d85f27845e0f9d9d803a0fe13a83f4f9b9",
+        "occurrenceCount": 4,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-020",
+        "sourceValue": "Diglett (A)",
+        "sourceValueSha256": "68b096819095e5b93410f8979bc6987bb489ab4fc07984f2c711a2423bdf22a8",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "diglett-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-021",
+        "sourceValue": "Dugtrio (A)",
+        "sourceValueSha256": "0d896c1a0bfe510795ce9b01a5a35d92eb475bd8ab6afc26be8650a5f6896068",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "dugtrio-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-022",
+        "sourceValue": "Eelektross Thunderstone",
+        "sourceValueSha256": "b328ec5a355924c9dd8d521242604252371e2238f236cf803b6db560c7b01d2e",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "eelektross",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-023",
+        "sourceValue": "Eiscue",
+        "sourceValueSha256": "cc0fb0c66954ae6914b943b6153f74a8fa41d426180aadecf3ccd406cdfa6bcc",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-024",
+        "sourceValue": "Electrode (H)",
+        "sourceValueSha256": "60dd1c15f3d82b3874173cbb5ed90d14600d8a9b1339c7066f85a08b9ba09eb6",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "electrode-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-025",
+        "sourceValue": "Enamorus",
+        "sourceValueSha256": "6c09cfab5b287fad40920fdbc39445699abcb94a660f227a15aa9c41203952a8",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-026",
+        "sourceValue": "Escavalier Interact with Shelmet",
+        "sourceValueSha256": "3acc5a6d8e8ff391f14e33237f91e7adec8e8ec0714263c0fc8cf45c507cf4c8",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "escavalier",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-027",
+        "sourceValue": "Exeggutor (A)",
+        "sourceValueSha256": "996776b7ff79149ffb63528b8a6f0972a39bf6d01495553121e7c9ad050496ef",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "exeggutor-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-028",
+        "sourceValue": "Farfetch'd (G)",
+        "sourceValueSha256": "88cd6745ea808b0e23fa44d4a3aef8a374fb95469853e9d795ce52aa400b4705",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "farfetchd-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-029",
+        "sourceValue": "Flapple; Tart Apple Keepsake",
+        "sourceValueSha256": "e61f795126693370135478d445adf196f856f21cb3f6d2239d62e5e5ba4cbf7e",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "flapple",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-030",
+        "sourceValue": "Froslass Female",
+        "sourceValueSha256": "a17aa471244643bdd38bb9431743c9a54eda2b8f1b8283320be625967499a79d",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "froslass",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-031",
+        "sourceValue": "Gallade Male",
+        "sourceValueSha256": "1ab199a1a1476d20b1d8f0d463f1f778ba772ad249edb443fb7b9763c4ff8a94",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "gallade",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-032",
+        "sourceValue": "Geodude (A)",
+        "sourceValueSha256": "d7fa8037647710e5a1fcc96df2befb1e1f47bd08cf5c4919de41cbe5004a6a82",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "geodude-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-033",
+        "sourceValue": "Giratina",
+        "sourceValueSha256": "4e1170b7e18d3dc4a25835592b04237467d200fabda26ad39d24e3acaedf45c1",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-034",
+        "sourceValue": "Golem (A)",
+        "sourceValueSha256": "d39a758519da679b258ad8fa710b7416e51a0bc6b0e5f1429aeb64b720107758",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "golem-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-035",
+        "sourceValue": "Goodra (H)",
+        "sourceValueSha256": "265e5caf027902c2d95aaaf724859a58b2daa94385bb50e9b37b97eec2a34f6f",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "goodra-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-036",
+        "sourceValue": "Goodra in Rain",
+        "sourceValueSha256": "c8d4d121a795697ddb9c30a68d2e1f96111c3d1e7e063aaa148aceadbbe401ca",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "goodra",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-037",
+        "sourceValue": "Graveler (A)",
+        "sourceValueSha256": "08f21e2e04d13beee92a8ca925ecd224e3a2b4f6df600a43930b816963f410de",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "graveler-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-038",
+        "sourceValue": "Grimer (A)",
+        "sourceValueSha256": "ca0dc5a4bcbd4bf65005153b6b80865213279a6121390b68488adfdecd69d2d4",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "grimer-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-039",
+        "sourceValue": "Growlithe (H)",
+        "sourceValueSha256": "118c10846ad8a55d2bf986d763d898f740622f21ff363f8d74798cb188d848a1",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "growlithe-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-040",
+        "sourceValue": "Gurdurr  3 - Conkeldurr Mini­",
+        "sourceValueSha256": "f7f898fea4b12b1c4f9372a6c7529fb7af65e027dce8fb748c1dbdde56905b7a",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "gurdurr",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-041",
+        "sourceValue": "Hitmonchan Superior Defense",
+        "sourceValueSha256": "e86a05bd07f5fa8494f2f072183988652f42d2b75a018439c591a7f2105d3475",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "hitmonchan",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-042",
+        "sourceValue": "Hitmonlee Superior Attack",
+        "sourceValueSha256": "18275ab6ed1f7da0785edad8c4ef85f770ad11a016fd4646bc51e43c7f235701",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "hitmonlee",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-043",
+        "sourceValue": "Hitmontop Equal Attack and Defense",
+        "sourceValueSha256": "df1e34cac61f6c9d12d7a6d8f43d9e20fa1c4337d4dbdf97b993bb41b006a070",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "hitmontop",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-044",
+        "sourceValue": "Ho-oh",
+        "sourceValueSha256": "5e379c0ee94a9d53f6cdbd239687bca43676d38a32041e5b40234d7dbbf5fbe1",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "ho-oh",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-045",
+        "sourceValue": "Hoopa",
+        "sourceValueSha256": "9934f91e0997d2bee4345234eef17f7ee0f77731efd0c631a214f290f7944295",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-046",
+        "sourceValue": "Indeedee",
+        "sourceValueSha256": "abf219284120a367f7faeca853bf0fdee3d077b168e9c8f94620df70d057290a",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-047",
+        "sourceValue": "Jolteon Thunderstone",
+        "sourceValueSha256": "6481c66a7618728547da30269c25f7784d7d354f51f59f4b3d0103b75771e237",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "jolteon",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-048",
+        "sourceValue": "Landorus",
+        "sourceValueSha256": "73bbb3848255abc9e25fcc2fed5e2e1938a3b3494f25d711a8abd0e1decc61bf",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-049",
+        "sourceValue": "Lickilicky Learn Rollout",
+        "sourceValueSha256": "46b87d189037affd8d878b3e296764963ac239fc25579ef047fadecd45ca3952",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "lickilicky",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-050",
+        "sourceValue": "Lilligant (H)",
+        "sourceValueSha256": "7db1ac70bff77ae3ffb54725ef246221b5b086ab573450cf2ae8e64104267113",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "lilligant-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-051",
+        "sourceValue": "Linoone (G)",
+        "sourceValueSha256": "754ee99a0e07d5e4880b1a6e398772decf4e29b9804565d37ed5422191b75e39",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "linoone-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-052",
+        "sourceValue": "Lucario Loyalty 3",
+        "sourceValueSha256": "d85d358cd856910f75219dbff34a2f236fb6897b54ea9795ab5734401b7af1ef",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "lucario",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-053",
+        "sourceValue": "Lycanrock (Dusk)",
+        "sourceValueSha256": "fca5b183b9f66a8eace0770a338e5d20782372931bf3365cc5cca3ad53edfa0a",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "lycanroc-dusk",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-054",
+        "sourceValue": "Lycanrock (Midday)",
+        "sourceValueSha256": "e48a86834958aff893f259fcd74ae1a6774ba2cfd05fc625691b8d842b825387",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "lycanroc-midday",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-055",
+        "sourceValue": "Lycanrock (Midnight)",
+        "sourceValueSha256": "9b00dce2f8eb45d94f7c9336921a21b7d5da4d21e70ab235d001cc38bc4e84d1",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "lycanroc-midnight",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-056",
+        "sourceValue": "Magnezone.5 mi. above sea level",
+        "sourceValueSha256": "aaf1debb22f2fbbec2423c22efc363f29ad1cd8f35b3b07f5c1d90a74399e2da",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "magnezone",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-057",
+        "sourceValue": "Mamoswine Learn Ancient Power",
+        "sourceValueSha256": "4b5c08c786e3abac0a869d1c3dfef7c8f5b1e6ce18042f3cbf74ce02a34627c6",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "mamoswine",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-058",
+        "sourceValue": "Mantine, interact wiht a Remoraid, Min. 10",
+        "sourceValueSha256": "fcf9cf6ec10a285affe9759927e675e13a12f5af16f7e8084aeeef71cbb96155",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "mantine",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-059",
+        "sourceValue": "Marowak (A)",
+        "sourceValueSha256": "20bc10b55b34620c705015c438365d73f5e8294de6034f43da864abeac9ff30c",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "marowak-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-060",
+        "sourceValue": "Meloetta",
+        "sourceValueSha256": "4dc9f661ef144ffe3e715621c093a97e9045da76379d27d9e6482502f8124099",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-061",
+        "sourceValue": "Meowth (A)",
+        "sourceValueSha256": "434e2e5aa78d13d98f02f720205520bdfbaa062b15b2f9af094a1f60333151e9",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "meowth-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-062",
+        "sourceValue": "Meowth (G)",
+        "sourceValueSha256": "de31cf6399f1b2746ff49138f1801161b965306dde5af6b3aeb29162c68da01e",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "meowth-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-063",
+        "sourceValue": "Milotic 6 Beauty Dice or Minimum",
+        "sourceValueSha256": "51a19642bae157e3603073e045e2acb364dde728972770869100f1e61f6cad16",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "milotic",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-064",
+        "sourceValue": "Milotic Beauty 6 Beauty Dice or",
+        "sourceValueSha256": "c08d835e25af53a5a8adda185bfc279136422ff429171db5db90a2c04b8e1ea3",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "milotic",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-065",
+        "sourceValue": "Minior",
+        "sourceValueSha256": "478720911af7f17d024fdf3e56fb7b8012e86536ddcbf721b2c7c6a7c6f9ac7c",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-066",
+        "sourceValue": "Mismagius,",
+        "sourceValueSha256": "a83491201d8f97b67857d5dc22b6555e4055aedda75761f61a981a54a7c7c0da",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "mismagius",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-067",
+        "sourceValue": "Moltres (G)",
+        "sourceValueSha256": "7e9010f17b3f08a9b6d947f363202118bbfc874be3d801d74d8dfb91e13caeff",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "moltres-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-068",
+        "sourceValue": "Mothim Male",
+        "sourceValueSha256": "07d24fe8ca3c89cab0368393a70ca09fbe221ea225b9b3f60ce67619b179b520",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "mothim",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-069",
+        "sourceValue": "Mr. Mime (G)",
+        "sourceValueSha256": "de370e504a19126fec1a7c072591b7942282b9a77b2d66934cdac08d02155bd3",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "mr-mime-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-070",
+        "sourceValue": "Mr. Mime Learn Mimic",
+        "sourceValueSha256": "90e1bec4e541132d577aed420a2e2b47b50f1668412fcbe481ea8e373c54c9b5",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "mr-mime",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-071",
+        "sourceValue": "Muk (A)",
+        "sourceValueSha256": "30d3fff2e871d5b7ebbfd60e4aa959d1a449fd24dae67f1578899b748a8eb352",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "muk-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-072",
+        "sourceValue": "Naganadel Learn Dragon Pulse",
+        "sourceValueSha256": "d7815927062ac4344986c628342474f667f26aa53a755bfeb803f81127eb04ac",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "naganadel",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-073",
+        "sourceValue": "Nidoran F",
+        "sourceValueSha256": "6a82468dacc42b1d11f40de83bf5018b662cf0e364c843dd09d6cf89dbebce72",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "nidoran-f",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-074",
+        "sourceValue": "Nidoran M",
+        "sourceValueSha256": "99fc60e56c58294aa4fff9189f2404a9543a9763f0df3f5d772b55c28f84143c",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "nidoran-m",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-075",
+        "sourceValue": "Ninetales (A)",
+        "sourceValueSha256": "1b3add5d1304f5ff6fdcf145e92b09f9f14e1468252805749805961c7e254294",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "ninetales-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-076",
+        "sourceValue": "Palafin, Loyalty 3",
+        "sourceValueSha256": "aeecee6f0a358f85189629826a46f98316d02992d70bcd33c990e37d661563b0",
+        "occurrenceCount": 3,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-077",
+        "sourceValue": "Pangoro, exposed to Dark Type",
+        "sourceValueSha256": "8295ea2657826bec4958a9538b925ed35880bee14bc6435ae1084d2c6e31408c",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "pangoro",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-078",
+        "sourceValue": "Persian (A)",
+        "sourceValueSha256": "232d0208286d71088785c126ab3b7817336d7cb5717f8fbd8654904eca9ad38f",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "persian-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-079",
+        "sourceValue": "Polteageist; Cracked Pot Keepsake",
+        "sourceValueSha256": "6d9a85013e38e75b529514ef788d7ffd81589490d30080d8f14aae456fef65fa",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "polteageist",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-080",
+        "sourceValue": "Ponyta (G)",
+        "sourceValueSha256": "80df6bd1f0e1dbbcabf23f22479338d0ac38e9fada942c05df6462b06774b318",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "ponyta-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-081",
+        "sourceValue": "Probopass 1.5 mi. above sea level, minimum 25",
+        "sourceValueSha256": "8464a73cc5e5d01f8b6e9b1497249c2d32784ec328cf4d5d7f32842598a1537e",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "probopass",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-082",
+        "sourceValue": "Qwilfish (H)",
+        "sourceValueSha256": "84891b14ed43b97a5e26f4e9fb1b420c94365d018a76d24837356cf11bbd35b6",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "qwilfish-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-083",
+        "sourceValue": "Raichu (A) Thunderstone",
+        "sourceValueSha256": "17e04bb56d6f2e05f633166e16e600d13f934d48b533c398b0e9a05e01a173c0",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "raichu-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-084",
+        "sourceValue": "Raichu Thunderstone",
+        "sourceValueSha256": "fcbf20ae045a474bb22be61fc84560ef30f194b5d5317b7a2c8e049eb2e5cf81",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "raichu",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-085",
+        "sourceValue": "Rapidash (G)",
+        "sourceValueSha256": "18dfe635b1792cb83f75afbda43c80ae40156da4abec8252f1ff59459644c75c",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "rapidash-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-086",
+        "sourceValue": "Raticate (A)",
+        "sourceValueSha256": "56ba1203611d8723cba3da4e5bb2263098cd3d07773f10ad456b62d4db201f4b",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "raticate-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-087",
+        "sourceValue": "Rattata (A)",
+        "sourceValueSha256": "ac85d834589764ba4cc2d7da48bffec02c8d6a79047b58dcda5d7d8f8f4bc346",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "rattata-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-088",
+        "sourceValue": "Rotom",
+        "sourceValueSha256": "6789f5a69b9443d3cc662b9d68cc7c77ae5adb9996da766fbb2c928f8645ae9f",
+        "occurrenceCount": 6,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-089",
+        "sourceValue": "Salazzle Female",
+        "sourceValueSha256": "c624d1b8195722815ab48c10a2398ef82a1fd99c80573e600017bc127da0eb00",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "salazzle",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-090",
+        "sourceValue": "Samurott (H)",
+        "sourceValueSha256": "798191fddd5e0c0999fdcadeaa8a8228730841f5631ba2c93b6b653841caab69",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "samurott-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-091",
+        "sourceValue": "Sandshrew (A)",
+        "sourceValueSha256": "22cf2b95e9b55a60f51e4dd8b963e1d2e7018ec1a325c99af5a90b598d062693",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "sandshrew-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-092",
+        "sourceValue": "Sandslash (A)",
+        "sourceValueSha256": "0037c178425af896b430669665da7c983f91bdd7ed992f126db2438c1452b93f",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "sandslash-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-093",
+        "sourceValue": "Shaymin",
+        "sourceValueSha256": "12e18de54b830cb331c46d5419f2d0b72a2099516f9514e0245b2ba64933d6bc",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-094",
+        "sourceValue": "Shedinja Splits from Nincada",
+        "sourceValueSha256": "bd0eadad1beeeb7a3f26c2e7d71a1e4c3eb0264eaac74de1699993d3ab7028ba",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "shedinja",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-095",
+        "sourceValue": "Silcoon see Split Evolution",
+        "sourceValueSha256": "e3b4bdcb198e425da2b1ab04b0fc0fa57baf0f21b66498976b73e0c2b3070252",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "silcoon",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-096",
+        "sourceValue": "Sirfetch'd",
+        "sourceValueSha256": "e435c9a2240bbec7db108d30c755c06eeaa0ed9e05d7be44dba783ae78ff73e7",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "sirfetchd",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-097",
+        "sourceValue": "Sliggoo (H)",
+        "sourceValueSha256": "d6cf57617934e2603b06bf04fc600155ce6243ae0bc12c26a2ff0b60f6d31112",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "sliggoo-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-098",
+        "sourceValue": "Sligoo",
+        "sourceValueSha256": "4c824d952b85ddf966b07f680f0b730e6222621f034c47b129ce494fb2690d68",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "sliggoo",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-099",
+        "sourceValue": "Slowbro (G)",
+        "sourceValueSha256": "49c12b71b75ad3f7c827693468f77636f48addc4e150c0bb3f4d645bde7b313a",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "slowbro-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-100",
+        "sourceValue": "Slowking (G)",
+        "sourceValueSha256": "af6145bd54709e60e664d4e49cec2d5f48525d5f8d71892f9e5e58a6f087ffd9",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "slowking-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-101",
+        "sourceValue": "Slowpoke (G)",
+        "sourceValueSha256": "a69d5460885c958d1e5f9ff236daee69763908ce569fe4d866745cea518cf455",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "slowpoke-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-102",
+        "sourceValue": "Sneasel (H)",
+        "sourceValueSha256": "f8488ad50f2080db16819304a9cf22f8a5bfcdddce961ddae9754e4aaa515cbb",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "sneasel-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-103",
+        "sourceValue": "Stunfisk (G)",
+        "sourceValueSha256": "41e15661ba84d99aad0d606618c9aeefcdf92d9b16f3eccbff5a83608c731ef8",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "stunfisk-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-104",
+        "sourceValue": "Sudowoodo Minimum Learn Mimic",
+        "sourceValueSha256": "1242df39eb7c8d2d2f8738b3adf8f47afc672d9623928b38a52e7ba00cc40b3f",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "sudowoodo",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-105",
+        "sourceValue": "Sunflora MInimum 20",
+        "sourceValueSha256": "53d70aea3c8ae9b1ee978746ad3032b360afdcf93d91b0cd1439445ba7306598",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "sunflora",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-106",
+        "sourceValue": "Tangrowth Learn Ancient Power",
+        "sourceValueSha256": "4a2cd516d9376817698cd314a6960d342954838a28967ea44993234aeafbfff8",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "tangrowth",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-107",
+        "sourceValue": "Thundurus",
+        "sourceValueSha256": "eb938ea8f2802eca3f2c957d9d31aeab17e4937e1982e4dc57691f0cecd3752d",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-108",
+        "sourceValue": "Tornadus",
+        "sourceValueSha256": "520cca3801f1ad00f7d240b13f478c6ea3a74d0947d80c327833c705b180093e",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-109",
+        "sourceValue": "Tsareena Learn Stomp",
+        "sourceValueSha256": "eb4166bf308b8baa2c58b283579ddcf33f1983a385cf1e09a8a6857a426e35f7",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "tsareena",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-110",
+        "sourceValue": "Typhlosion (H)",
+        "sourceValueSha256": "8a657db4c6cdc2f85284fb8f027bf925e0090080f3c508b648baea76f5915363",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "typhlosion-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-111",
+        "sourceValue": "Urshifu (R)",
+        "sourceValueSha256": "76048f67745c686bea791048d0ce3a62120a5491cbac4a2496c7f7ebe29726c3",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "urshifu-rapid-strike-form",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-112",
+        "sourceValue": "Urshifu (S)",
+        "sourceValueSha256": "032f67fd6f84f7b10714ac25dd2759b564b639284877af9118ff1c4a85bdc125",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "urshifu-single-strike-form",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-113",
+        "sourceValue": "Vespiquen Female",
+        "sourceValueSha256": "87d830036955f07e4829c86a5f6a48c1798cbb817aa652ca3cc96f64d0c8b589",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "vespiquen",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-114",
+        "sourceValue": "Vikavolt Electrical Conditions",
+        "sourceValueSha256": "ab93f2303b8fd087d342b3f56725612dd48a98c4f7d32cb08e41094435d93bb2",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "vikavolt",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-115",
+        "sourceValue": "Voltorb (H)",
+        "sourceValueSha256": "eaa51be1947cfd5c0e8d89128051722e42802abb51e907624e15558b8e9d1bc8",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "voltorb-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-116",
+        "sourceValue": "Vulpix (A)",
+        "sourceValueSha256": "60fe374793e279f5c72b03014b56ab00bec27c1209917243aca23db18c227ed9",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "vulpix-alola",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-117",
+        "sourceValue": "Weezing (G)",
+        "sourceValueSha256": "76d97b7b5a8f1088a79b744f49eff4d91e12a38111af65046cf7fbb42427bda2",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "weezing-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-118",
+        "sourceValue": "Wishiwashi",
+        "sourceValueSha256": "f4d11203563b200588ed68c6072a62b471ec9dc29006525446aa41934ca2d4f4",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-119",
+        "sourceValue": "Wormadam Female",
+        "sourceValueSha256": "8936a344be0cde2bf2ed00e4d3b4ae0c4e9ca0c415b6c02972b7610c807529c8",
+        "occurrenceCount": 4,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-120",
+        "sourceValue": "Yamask (G)",
+        "sourceValueSha256": "b4a29ce21a79b1cf3b54f8e115aa4d6c6ae3004f1e7e7888294dbfb036d74c07",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "yamask-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-121",
+        "sourceValue": "Yanmega Learn Ancient Power",
+        "sourceValueSha256": "e9f60e49873f5ea3c89b8d858b0220540bcb71781c17d3dae5449fdf7fd4cac1",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "yanmega",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-122",
+        "sourceValue": "Zacian",
+        "sourceValueSha256": "5796226b6cdd072d0b47fe3e56884ae7d2ef2a6d7bf9fe91a52e7b0e0628bfee",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-123",
+        "sourceValue": "Zamazenta",
+        "sourceValueSha256": "eece3bc0f93c94de8f1f961be9729c932a9d87a1b22455323940b004134463c7",
+        "occurrenceCount": 2,
+        "status": "excluded-ambiguous",
+        "speciesId": null,
+        "decision": "fail-closed-no-unique-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-124",
+        "sourceValue": "Zapdos (G)",
+        "sourceValueSha256": "29bfb6315308443488d7d022169ab566361c5df81f93e3a4029b45088d7a633a",
+        "occurrenceCount": 1,
+        "status": "resolved",
+        "speciesId": "zapdos-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-125",
+        "sourceValue": "Zigzagoon (G)",
+        "sourceValueSha256": "42a861c2b89126e76dff3053f6e42e75be4ecd0b783a5aae78df6b97dbffe33c",
+        "occurrenceCount": 3,
+        "status": "resolved",
+        "speciesId": "zigzagoon-galar",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-126",
+        "sourceValue": "Zoroark (H)",
+        "sourceValueSha256": "3598a9df6b76c67524b1ef7220592450fbf330cd15018582212ede5170716a33",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "zoroark-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      },
+      {
+        "id": "BR-FAM-TARGET-127",
+        "sourceValue": "Zorua (H)",
+        "sourceValueSha256": "1f2a3a1304cef61264b608e5d3db59a6576ced1e78b9c0fbd8785506c329e521",
+        "occurrenceCount": 2,
+        "status": "resolved",
+        "speciesId": "zorua-hisuian",
+        "decision": "reviewed-exact-canonical-target"
+      }
+    ],
+    "policies": {
+      "exactSourceTargets": "accepted-without-adjudication",
+      "unknownSourceTargets": "entry-required",
+      "runtimeNormalization": "forbidden",
+      "conditionStrippingAtRuntime": "forbidden",
+      "excludedTarget": "exclude-source-sequence",
+      "rawValuePublicProjection": "forbidden"
+    },
+    "counts": {
+      "uniqueUnknownSourceTargets": 127,
+      "resolvedTargets": 108,
+      "excludedTargets": 19,
+      "unknownTargetOccurrences": 254,
+      "resolvedOccurrences": 206,
+      "excludedOccurrences": 48
+    }
+  }
+}

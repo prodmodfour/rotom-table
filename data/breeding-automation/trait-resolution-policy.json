@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "policyId": "ptu-1.05-breeding-trait-resolution-policy-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "85bbd7beabffe4f1eac3fe036ca99dc05fdbcef5a16ee3a2c053ab09954dcd72",
+  "definition": {
+    "version": 1,
+    "educationRanks": [
+      "Untrained",
+      "Novice",
+      "Adept",
+      "Expert",
+      "Master"
+    ],
+    "rankOrder": "listed-low-to-high",
+    "nature": {
+      "catalogDefinitionSha256": "d95d1ab8f6065c04790824a2258d99239907348081695f18e88a500a1ac9ff4e",
+      "random": "two-ordered-persisted-d6-map-to-values-1-through-36",
+      "choiceMinimumRank": "Adept",
+      "choice": "server-issued-canonical-nature-id",
+      "randomRequiredWithoutChoice": true
+    },
+    "ability": {
+      "source": "compiled-offspring-basic-ability-ids",
+      "optionOrder": "canonical-ability-id-code-point",
+      "random": "persisted-uniform-integer-1-through-option-count",
+      "choiceMinimumRank": "Expert",
+      "choice": "server-issued-option-for-listed-basic-ability",
+      "emptyOptions": "unavailable"
+    },
+    "gender": {
+      "source": "compiled-offspring-gender-policy",
+      "ratioRandom": "persisted-1d100",
+      "femaleWhen": "integer-roll-less-than-or-equal-to-source-femalePercent",
+      "fractionalPercent": "integer-roll-compared-directly-no-rounding-or-second-roll",
+      "choiceMinimumRank": "Master",
+      "choice": "server-issued-valid-gender-id",
+      "genderless": "fixed-no-roll-or-choice"
+    },
+    "choiceRules": {
+      "choiceOptionalAtEligibleRank": true,
+      "choiceAndRollTogether": "reject",
+      "choiceBelowRank": "reject",
+      "unknownOrStaleOption": "reject",
+      "optionMembershipReauthorized": "required"
+    },
+    "rollRules": {
+      "serverInjectedPersistedOnly": true,
+      "missingRequired": "unavailable",
+      "outOfBounds": "unavailable",
+      "extraneous": "reject",
+      "randomnessInsideReducer": "forbidden"
+    },
+    "reasonIds": [
+      "breeding.traits.offspring-unavailable",
+      "breeding.traits.invalid-education-rank",
+      "breeding.traits.nature-roll-required",
+      "breeding.traits.nature-roll-invalid",
+      "breeding.traits.nature-choice-unauthorized",
+      "breeding.traits.nature-choice-invalid",
+      "breeding.traits.ability-options-missing",
+      "breeding.traits.ability-roll-required",
+      "breeding.traits.ability-roll-invalid",
+      "breeding.traits.ability-choice-unauthorized",
+      "breeding.traits.ability-choice-invalid",
+      "breeding.traits.gender-roll-required",
+      "breeding.traits.gender-roll-invalid",
+      "breeding.traits.gender-choice-unauthorized",
+      "breeding.traits.gender-choice-invalid",
+      "breeding.traits.extraneous-roll-or-choice"
+    ],
+    "outputProvenance": [
+      "trait-id",
+      "resolution-kind",
+      "roll-components-or-null",
+      "offer-option-id-or-null",
+      "choice-evidence-id-or-null",
+      "education-rank",
+      "species-spec-definition-hash",
+      "policy-hashes"
+    ],
+    "determinism": {
+      "mutation": "none",
+      "same-input": "same-output",
+      "reasonOrder": "declared"
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "natureCatalogDefinitionSha256": "d95d1ab8f6065c04790824a2258d99239907348081695f18e88a500a1ac9ff4e",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
+      "offspringResolutionPolicyDefinitionSha256": "d756e1bc3afa78562481f612f0be4f4836876a2de6dd17d24e53361393c4b119"
+    }
+  }
+}

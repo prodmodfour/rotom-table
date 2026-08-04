@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "containsCampaignData": false,
+  "sourceTicket": "BR-008",
+  "fixtureId": "breeding-ditto-genderless-source-gaps-v1",
+  "audiences": [
+    "owner",
+    "gm"
+  ],
+  "entities": {
+    "trainers": [
+      {
+        "id": "trainer-owner-b",
+        "profileId": "profile-owner-b",
+        "pokemonEducationRank": "Master",
+        "effectiveEdgeIds": [
+          "Breeder"
+        ]
+      }
+    ],
+    "parents": [
+      {
+        "id": "parent-ditto",
+        "ownerTrainerId": "trainer-owner-b",
+        "revision": 1,
+        "sourceSpeciesName": "Ditto",
+        "genderId": "genderless",
+        "level": 30,
+        "eggGroupSourceValues": [
+          "Ditto"
+        ],
+        "effectiveKnownMoveNames": [
+          "Tackle"
+        ]
+      },
+      {
+        "id": "parent-arbok-f",
+        "ownerTrainerId": "trainer-owner-b",
+        "revision": 4,
+        "sourceSpeciesName": "Arbok",
+        "genderId": "female",
+        "level": 30,
+        "eggGroupSourceValues": [
+          "Field",
+          "Dragon"
+        ],
+        "effectiveKnownMoveNames": [
+          "Sludge Bomb"
+        ]
+      },
+      {
+        "id": "parent-mew",
+        "ownerTrainerId": "trainer-owner-b",
+        "revision": 1,
+        "sourceSpeciesName": "Mew",
+        "genderId": "genderless",
+        "level": 50,
+        "eggGroupSourceValues": [
+          "Ditto"
+        ],
+        "effectiveKnownMoveNames": [
+          "Protect"
+        ]
+      }
+    ]
+  },
+  "scripts": [
+    {
+      "id": "canonical-ditto-fallback",
+      "requirementIds": [
+        "breeding:BR-003",
+        "breeding:BR-014",
+        "breeding:BR-015"
+      ],
+      "actorAudience": "owner",
+      "steps": [
+        "preview-ditto-and-arbok",
+        "resolve-family-roll-in-ditto-range"
+      ],
+      "expected": [
+        "compatible-via-canonical-ditto",
+        "arbok-family-always-selected",
+        "ditto-never-offspring-family"
+      ]
+    },
+    {
+      "id": "ditto-identity-not-group-label",
+      "requirementIds": [
+        "breeding:BR-003",
+        "breeding:BR-014"
+      ],
+      "actorAudience": "owner",
+      "steps": [
+        "preview-mew-and-arbok",
+        "preview-ditto-and-ditto"
+      ],
+      "expected": [
+        "mew-does-not-gain-ditto-role",
+        "ditto-pair-incompatible",
+        "stable-unavailable-reasons"
+      ]
+    },
+    {
+      "id": "incomplete-spec-fails-closed",
+      "requirementIds": [
+        "breeding:BR-011",
+        "breeding:BR-012",
+        "breeding:BR-014"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "request-spec-for-sparse-source-row",
+        "submit-documentary-fill-as-client-value"
+      ],
+      "expected": [
+        "compiled-spec-unavailable",
+        "documentary-fill-rejected",
+        "source-bound-migration-required"
+      ]
+    }
+  ]
+}

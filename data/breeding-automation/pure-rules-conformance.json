@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "reportId": "ptu-1.05-breeding-pure-rules-conformance-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "e6cb7f6c284730e213730aeaa1c3cd20297f4c612c82113c267a9c6ebffd6d77",
+  "definition": {
+    "version": 1,
+    "suiteId": "breeding-pure-rules-conformance-v1",
+    "graphCoverage": {
+      "familyCount": 407,
+      "speciesCount": 862,
+      "properties": [
+        "unique-family-and-species-identities",
+        "every-family-member-has-one-matching-spec",
+        "all-evolution-edges-reference-members",
+        "evolution-dag-has-no-cycle",
+        "all-members-reachable-from-family-root",
+        "offspring-root-is-member-and-own-form-root",
+        "compiled-spec-and-family-self-hashes-valid"
+      ]
+    },
+    "exhaustiveRollDomains": [
+      {
+        "id": "offspring-family-core-d20",
+        "minimum": 1,
+        "maximum": 20,
+        "outcomes": 20
+      },
+      {
+        "id": "nature-ordered-2d6",
+        "minimum": 1,
+        "maximum": 36,
+        "outcomes": 36
+      },
+      {
+        "id": "gender-and-special-d100",
+        "minimum": 1,
+        "maximum": 100,
+        "outcomes": 100
+      },
+      {
+        "id": "hatch-duration-percent",
+        "minimum": 50,
+        "maximum": 200,
+        "outcomes": 151
+      }
+    ],
+    "boundaryExamples": [
+      "core-d20-1-4-male-and-5-20-female",
+      "gender-fractional-threshold-direct-integer-comparison",
+      "fixed-genderless-no-roll",
+      "hatch-duration-ceil-half-and-double",
+      "special-only-1-and-100",
+      "ditto-no-family-roll",
+      "empty-inheritance-valid",
+      "dual-parent-dual-pathway-dedup"
+    ],
+    "fixtureExamples": [
+      {
+        "fixtureId": "breeding-standard-compatible-project-v1",
+        "scriptIds": [
+          "standard-success-exact-retry",
+          "rank-bounded-trait-choice"
+        ]
+      },
+      {
+        "fixtureId": "breeding-inheritance-incubation-special-v1",
+        "scriptIds": [
+          "inheritance-dedup-and-source-gap",
+          "special-roll-bounded-adjudication"
+        ]
+      }
+    ],
+    "fuzzing": {
+      "generator": "deterministic-xorshift32-json-safe-values",
+      "seedUnsigned32": 3221344269,
+      "iterations": 2048,
+      "targets": [
+        "campaign-option-snapshot-parser",
+        "canonical-id-membership",
+        "effective-move-snapshot-parser",
+        "egg-rule-helper-option-validation"
+      ],
+      "oracle": "reject-malformed-or-return-closed-result-never-normalize-labels-never-throw-unclassified-errors"
+    },
+    "deterministicReplay": {
+      "iterations": 100,
+      "pipeline": [
+        "campaign-options",
+        "compatibility",
+        "offspring-family",
+        "traits",
+        "inheritance",
+        "hatch-duration",
+        "hatch-level",
+        "baby-template",
+        "special-result"
+      ],
+      "assertions": [
+        "deep-equal-results",
+        "equal-definition-hashes",
+        "no-input-mutation",
+        "no-process-or-wall-clock-input",
+        "no-internal-randomness"
+      ]
+    },
+    "runtimeBudgets": {
+      "maximumFocusedSuiteMilliseconds": 10000,
+      "maximumCandidateRows": 256,
+      "maximumEffectiveMovesPerParent": 64
+    },
+    "evidencePaths": [
+      "tests/server/breedingPureRulesConformance.test.ts"
+    ],
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
+      "compatibilityPolicyDefinitionSha256": "6a38a2ea1cf38b4d331a638ef94be2b9d1b6fb2781c668eedc84f0a6dcd7a34f",
+      "offspringResolutionPolicyDefinitionSha256": "d756e1bc3afa78562481f612f0be4f4836876a2de6dd17d24e53361393c4b119",
+      "traitResolutionPolicyDefinitionSha256": "85bbd7beabffe4f1eac3fe036ca99dc05fdbcef5a16ee3a2c053ab09954dcd72",
+      "inheritanceCandidatePolicyDefinitionSha256": "b30536b9757b436feac611ed64ed4a94eb1e5bd790b2e2fb7dd6d27c65f4b143",
+      "eggRuleHelpersPolicyDefinitionSha256": "20d7daa639780db9e983e72a739d81a5a60b81f00e99a4f1135b7e777dc44ec7"
+    }
+  }
+}

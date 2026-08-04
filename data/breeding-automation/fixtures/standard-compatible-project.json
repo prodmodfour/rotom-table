@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "containsCampaignData": false,
+  "sourceTicket": "BR-008",
+  "fixtureId": "breeding-standard-compatible-project-v1",
+  "audiences": [
+    "owner",
+    "gm"
+  ],
+  "entities": {
+    "trainers": [
+      {
+        "id": "trainer-owner-a",
+        "profileId": "profile-owner-a",
+        "pokemonEducationRank": "Expert",
+        "effectiveEdgeIds": [
+          "Breeder"
+        ]
+      }
+    ],
+    "parents": [
+      {
+        "id": "parent-bulbasaur-f",
+        "ownerTrainerId": "trainer-owner-a",
+        "revision": 3,
+        "sourceSpeciesName": "Bulbasaur",
+        "genderId": "female",
+        "level": 20,
+        "eggGroupSourceValues": [
+          "Monster",
+          "Plant"
+        ],
+        "effectiveKnownMoveNames": [
+          "Tackle",
+          "Giga Drain"
+        ]
+      },
+      {
+        "id": "parent-bulbasaur-m",
+        "ownerTrainerId": "trainer-owner-a",
+        "revision": 5,
+        "sourceSpeciesName": "Bulbasaur",
+        "genderId": "male",
+        "level": 22,
+        "eggGroupSourceValues": [
+          "Monster",
+          "Plant"
+        ],
+        "effectiveKnownMoveNames": [
+          "Tackle",
+          "Sludge Bomb"
+        ]
+      }
+    ]
+  },
+  "scripts": [
+    {
+      "id": "standard-success-exact-retry",
+      "requirementIds": [
+        "breeding:BR-014",
+        "breeding:BR-015",
+        "breeding:BR-016",
+        "breeding:BR-017",
+        "breeding:BR-050",
+        "breeding:BR-053",
+        "breeding:BR-054"
+      ],
+      "actorAudience": "owner",
+      "steps": [
+        "preview-compatible-parents",
+        "create-project",
+        "advance-240-campaign-minutes",
+        "resolve-dc12-success-once",
+        "advance-240-campaign-minutes",
+        "accept-server-issued-traits",
+        "produce-egg",
+        "repeat-identical-operations"
+      ],
+      "expected": [
+        "one-project",
+        "one-persisted-check",
+        "one-egg",
+        "same-results-on-exact-retry",
+        "no-child-sheet-before-hatch"
+      ]
+    },
+    {
+      "id": "standard-check-failure",
+      "requirementIds": [
+        "breeding:BR-050",
+        "breeding:BR-053",
+        "breeding:BR-057"
+      ],
+      "actorAudience": "owner",
+      "steps": [
+        "create-project-with-new-operation-ids",
+        "advance-240-campaign-minutes",
+        "resolve-dc12-failure",
+        "retry-same-operation"
+      ],
+      "expected": [
+        "terminal-no-egg",
+        "same-failed-check",
+        "no-reroll",
+        "new-project-required"
+      ]
+    },
+    {
+      "id": "rank-bounded-trait-choice",
+      "requirementIds": [
+        "breeding:BR-016",
+        "breeding:BR-026",
+        "breeding:BR-054"
+      ],
+      "actorAudience": "owner",
+      "steps": [
+        "request-trait-offers",
+        "choose-server-issued-nature-and-ability-options",
+        "attempt-master-only-gender-choice-as-expert"
+      ],
+      "expected": [
+        "nature-choice-accepted",
+        "ability-choice-accepted",
+        "gender-choice-unavailable",
+        "no-client-authored-trait-value"
+      ]
+    }
+  ]
+}

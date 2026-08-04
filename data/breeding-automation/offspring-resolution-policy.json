@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "policyId": "ptu-1.05-breeding-offspring-resolution-policy-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "d756e1bc3afa78562481f612f0be4f4836876a2de6dd17d24e53361393c4b119",
+  "definition": {
+    "version": 1,
+    "precondition": "compatible-BR-014-result-bound-to-same-parent-tuple-and-option-snapshot",
+    "selectionPolicies": {
+      "core-d20": {
+        "rollMinimum": 1,
+        "rollMaximum": 20,
+        "maleParentRange": [
+          1,
+          4
+        ],
+        "femaleParentRange": [
+          5,
+          20
+        ],
+        "rollRequiredWhen": "two-non-ditto-parents-even-if-same-family"
+      },
+      "maternal-family": {
+        "selectedRole": "female-parent",
+        "roll": "forbidden"
+      },
+      "gm-family-choice": {
+        "choice": "required-server-issued-contributor-family",
+        "evidence": "stable-audited-id",
+        "roll": "forbidden"
+      },
+      "canonical-ditto": {
+        "selectedParent": "only-non-ditto-family-contributor",
+        "roll": "forbidden",
+        "gmFamilyChoice": "forbidden",
+        "overridesConfiguredParentFamilyPolicy": true
+      }
+    },
+    "lowestStage": {
+      "default": "selected-family-offspring-root-species-id",
+      "operationTimeGraphTraversal": "forbidden",
+      "missingFamilyOrRoot": "unavailable"
+    },
+    "speciesOverride": {
+      "enabledBy": "breeding.form-root-policy=gm-species-override",
+      "defaultWhenEnabled": "compiled-family-root",
+      "selection": "explicit-server-issued-compiled-member-species-id",
+      "mustBelongToSelectedFamily": true,
+      "requiresStableEvidenceId": true,
+      "disabledOrExtraneous": "reject"
+    },
+    "inputExcess": {
+      "unexpectedRoll": "reject",
+      "unexpectedFamilyChoice": "reject",
+      "unexpectedSpeciesOverride": "reject"
+    },
+    "reasonIds": [
+      "breeding.offspring.compatibility-unavailable",
+      "breeding.offspring.parent-spec-unavailable",
+      "breeding.offspring.parent-family-unavailable",
+      "breeding.offspring.core-roll-required",
+      "breeding.offspring.core-roll-invalid",
+      "breeding.offspring.family-choice-required",
+      "breeding.offspring.family-choice-invalid",
+      "breeding.offspring.family-choice-not-allowed",
+      "breeding.offspring.ditto-family-invalid",
+      "breeding.offspring.selected-family-unavailable",
+      "breeding.offspring.species-override-invalid",
+      "breeding.offspring.species-override-not-allowed",
+      "breeding.offspring.result-spec-unavailable"
+    ],
+    "outputProvenance": [
+      "selection-kind",
+      "selected-parent-index-or-null",
+      "selected-role-or-null",
+      "family-roll-or-null",
+      "family-choice-evidence-or-null",
+      "selected-family-id",
+      "compiled-root-species-id",
+      "offspring-species-id",
+      "species-override-evidence-or-null",
+      "ruleset-option-and-registry-hashes"
+    ],
+    "determinism": {
+      "mutation": "none",
+      "randomness": "injected-recorded-roll-only",
+      "reasonOrder": "declared",
+      "sameInput": "sameOutput"
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "compatibilityPolicyDefinitionSha256": "6a38a2ea1cf38b4d331a638ef94be2b9d1b6fb2781c668eedc84f0a6dcd7a34f",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
+      "familyResolutionDefinitionSha256": "84f43740821f3b55bb00cfe6ad2bafeb3a525fe0a5e53515c38b7f8fb1bfdb49"
+    }
+  }
+}

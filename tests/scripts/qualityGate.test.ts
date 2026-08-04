@@ -48,6 +48,9 @@ describe('quality gate automation validation', () => {
         'run check:capability-automation-complete',
         'run check:edge-automation-complete',
         'run check:feature-automation-complete',
+        'run check:breeding-automation',
+        'run check:breeding-family-resolutions',
+        'run check:breeding-compiler',
         'run check:encounter-presentation',
         'run check:encounter-design',
         'run check:encounter-legacy',
@@ -91,6 +94,13 @@ describe('quality gate automation validation', () => {
     expect(packageJson.scripts['check:edge-automation-complete']).toContain('--check-plan')
     expect(packageJson.scripts['check:feature-automation']).toContain('scripts/check_feature_automation.ts')
     expect(packageJson.scripts['check:feature-automation-complete']).toContain('--check-plan')
+    expect(packageJson.scripts['check:breeding-automation']).toContain('scripts/check_breeding_automation.ts')
+    expect(packageJson.scripts['check:breeding-automation-plan']).toContain('--check-plan')
+    expect(packageJson.scripts['check:breeding-automation-complete']).toContain('--require-complete')
+    expect(packageJson.scripts['compile:breeding-family-resolutions']).toContain('--write')
+    expect(packageJson.scripts['check:breeding-family-resolutions']).toContain('--check')
+    expect(packageJson.scripts['compile:breeding-registry']).toContain('--write')
+    expect(packageJson.scripts['check:breeding-compiler']).toContain('--check')
     expect(packageJson.scripts['check:move-automation']).toBe(
       'python3 scripts/check_move_automation_coverage.py',
     )

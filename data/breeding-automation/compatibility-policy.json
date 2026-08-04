@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "policyId": "ptu-1.05-breeding-compatibility-policy-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "6a38a2ea1cf38b4d331a638ef94be2b9d1b6fb2781c668eedc84f0a6dcd7a34f",
+  "definition": {
+    "version": 1,
+    "parentFacts": {
+      "required": [
+        "parentRef",
+        "speciesId",
+        "genderId",
+        "level",
+        "eggGroupIds",
+        "gmMaturityConfirmed"
+      ],
+      "parentRef": "stable-authoritative-snapshot-reference",
+      "species": "exact-compiled-spec",
+      "genderIds": [
+        "female",
+        "male",
+        "genderless"
+      ],
+      "levelMinimum": 1,
+      "levelMaximum": 100,
+      "eggGroups": "effective-canonical-sorted-unique",
+      "maturityConfirmation": "authoritative-server-evidence-projected-to-boolean"
+    },
+    "compatibilityOrder": [
+      "validate-distinct-parent-snapshots",
+      "validate-compiled-spec-and-eligibility",
+      "validate-gender-against-spec",
+      "evaluate-maturity-policy",
+      "evaluate-canonical-ditto-case",
+      "evaluate-shared-egg-group",
+      "assign-conventional-or-audited-override-roles",
+      "return-all-stable-reasons-or-role-pair"
+    ],
+    "ditto": {
+      "speciesId": "ditto",
+      "dittoPair": "incompatible",
+      "eggGroupIntersection": "bypassed-for-exactly-one-canonical-ditto",
+      "roleWithGenderedParent": "opposite-conventional-parent-role",
+      "roleWithGenderlessParent": "ditto-male-parent-and-non-ditto-female-parent",
+      "offspringFamilyContribution": "never",
+      "eggGroupLabelAlone": "never-grants-ditto-semantics"
+    },
+    "maturity": {
+      "gm-confirmed-per-parent": "both-authoritative-confirmations-required",
+      "minimum-level": "both-levels-greater-than-or-equal-configured-minimum",
+      "levelOrEvolutionInferenceUnderGmConfirmation": "forbidden"
+    },
+    "roleAssignment": {
+      "conventionalPair": [
+        "female-parent",
+        "male-parent"
+      ],
+      "sameSexDefault": "incompatible",
+      "genderlessDefault": "ditto-only",
+      "overrideRequires": [
+        "enabled-campaign-option",
+        "explicit-complementary-roles",
+        "stable-override-evidence-id"
+      ],
+      "overrideAuthority": "validated-later-by-owning-use-case",
+      "unnecessaryOverride": "reject"
+    },
+    "eggGroup": {
+      "normalParents": "at-least-one-exact-shared-id",
+      "unknownOrDuplicate": "unavailable",
+      "dittoException": "exact-species-id-only"
+    },
+    "optionSnapshot": {
+      "schemaVersion": 1,
+      "allRulesetOptionsRequired": 15,
+      "partialInput": "fill-reviewed-defaults-before-hash",
+      "unknownField": "reject",
+      "inactiveDependentValue": "must-equal-reviewed-default",
+      "definitionHash": "stable-json-v1-sha256"
+    },
+    "reasonIds": [
+      "breeding.compatibility.same-parent",
+      "breeding.compatibility.spec-unavailable",
+      "breeding.compatibility.not-breedable",
+      "breeding.compatibility.gender-mismatch",
+      "breeding.compatibility.maturity-unconfirmed",
+      "breeding.compatibility.maturity-level-low",
+      "breeding.compatibility.ditto-pair",
+      "breeding.compatibility.no-shared-egg-group",
+      "breeding.compatibility.genderless-unavailable",
+      "breeding.compatibility.same-sex-unavailable",
+      "breeding.compatibility.role-override-required",
+      "breeding.compatibility.role-override-invalid",
+      "breeding.compatibility.role-override-not-allowed",
+      "breeding.compatibility.invalid-parent-facts"
+    ],
+    "determinism": {
+      "parentOrder": "input-tuple-preserved",
+      "eggGroupOrder": "canonical-id-code-point",
+      "reasonOrder": "declared-reason-order",
+      "mutation": "none",
+      "randomness": "none"
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "taxonomyDefinitionSha256": "086633909ce7499e5946e033d596145f469e09ebb2490e7d6985b6f19394ff8d",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e"
+    }
+  }
+}

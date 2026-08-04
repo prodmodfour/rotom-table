@@ -1,0 +1,481 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "status": "reviewed-no-open-runtime-conflicts",
+  "runtimeDocumentaryUse": "forbidden",
+  "entries": [
+    {
+      "id": "BR-SRC-001",
+      "conflictId": "parent-family-selection",
+      "sourceEvidence": [
+        {
+          "path": "books/markdown/core/05-pokemon.md",
+          "sha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3"
+        },
+        {
+          "path": "books/markdown/pokedexes/how-to-read.md",
+          "sha256": "e27cc5f5b3b7f059244f404b8037a0a50dcc575b0ec0aa765602d23023f6fb02"
+        }
+      ],
+      "decision": "Use the core 1d20 female-versus-male family selector first, then resolve the selected family to its reviewed lowest-stage form root. The maternal-line guide does not replace the core selector.",
+      "defaultPolicyId": "core-d20",
+      "campaignOptionIds": [
+        "breeding.parent-family-policy"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted"
+    },
+    {
+      "id": "BR-SRC-002",
+      "conflictId": "lowest-stage-and-form-root",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        },
+        {
+          "path": "books/markdown/pokedexes/how-to-read.md",
+          "sha256": "e27cc5f5b3b7f059244f404b8037a0a50dcc575b0ec0aa765602d23023f6fb02"
+        }
+      ],
+      "decision": "Resolve only through a compiled, acyclic, source-hash-bound family/form graph. A missing, cyclic, condition-suffixed, alias-only, or multi-root path is unavailable until a reviewed app-owned adjudication names the exact root.",
+      "defaultPolicyId": "reviewed-lowest-stage-form-root",
+      "campaignOptionIds": [
+        "breeding.form-root-policy"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted",
+      "canonicalDiagnostic": {
+        "unknownEvolutionTargetCount": 127,
+        "unknownEvolutionReferenceCount": 254,
+        "selfStageMismatchRecordCount": 167
+      }
+    },
+    {
+      "id": "BR-SRC-003",
+      "conflictId": "ditto-identity-and-group",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        },
+        {
+          "path": "books/markdown/pokedexes/how-to-read.md",
+          "sha256": "e27cc5f5b3b7f059244f404b8037a0a50dcc575b0ec0aa765602d23023f6fb02"
+        }
+      ],
+      "decision": "Only canonical species ID ditto receives the either-parent-role rule. An Egg Group label alone never grants Ditto behavior; Ditto never supplies the offspring family; Ditto with Ditto is incompatible. Any non-Ditto row carrying the Ditto label requires a species adjudication.",
+      "defaultPolicyId": "canonical-ditto-species-only",
+      "campaignOptionIds": [
+        "breeding.genderless-policy"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted",
+      "canonicalDiagnostic": {
+        "dittoEggGroupRows": [
+          "Ditto",
+          "Mew"
+        ]
+      }
+    },
+    {
+      "id": "BR-SRC-004",
+      "conflictId": "genderless-and-parent-roles",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        },
+        {
+          "path": "books/markdown/pokedexes/how-to-read.md",
+          "sha256": "e27cc5f5b3b7f059244f404b8037a0a50dcc575b0ec0aa765602d23023f6fb02"
+        }
+      ],
+      "decision": "Conventional breeding requires one female-role and one male-role parent. Genderless Pokémon are unavailable by default except canonical Ditto. A GM may use only the typed, audited role-override operation; free-form gender labels never authorize compatibility.",
+      "defaultPolicyId": "ditto-only",
+      "campaignOptionIds": [
+        "breeding.genderless-policy",
+        "breeding.same-sex-policy"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted",
+      "canonicalDiagnostic": {
+        "genderlessRecordCount": 160
+      }
+    },
+    {
+      "id": "BR-SRC-005",
+      "conflictId": "undefined-maturity-threshold",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        },
+        {
+          "path": "books/markdown/pokedexes/how-to-read.md",
+          "sha256": "e27cc5f5b3b7f059244f404b8037a0a50dcc575b0ec0aa765602d23023f6fb02"
+        }
+      ],
+      "decision": "The default requires an explicit bounded GM maturity confirmation for each parent at project creation. No level, evolution stage, editable note, or browser inference implies maturity. Campaigns may instead freeze a 1–100 minimum Level.",
+      "defaultPolicyId": "gm-confirmed-per-parent",
+      "campaignOptionIds": [
+        "breeding.maturity-policy",
+        "breeding.minimum-maturity-level"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted"
+    },
+    {
+      "id": "BR-SRC-006",
+      "conflictId": "egg-group-vocabulary-drift",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        },
+        {
+          "path": "books/markdown/pokedexes/how-to-read.md",
+          "sha256": "e27cc5f5b3b7f059244f404b8037a0a50dcc575b0ec0aa765602d23023f6fb02"
+        }
+      ],
+      "decision": "Compile reviewed aliases into stable Egg Group IDs; split composite source cells only through an exact adjudication. Runtime string comparison and silent synonym inference are forbidden.",
+      "defaultPolicyId": "compiled-egg-group-taxonomy",
+      "campaignOptionIds": [],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted",
+      "canonicalDiagnostic": {
+        "distinctSourceValues": 19,
+        "reviewRequiredValues": [
+          "Field",
+          "Ground",
+          "Humanshape",
+          "Human-Like",
+          "Indeterminate",
+          "Amorphous",
+          "Plant",
+          "Grass",
+          "Field, Human-Like"
+        ]
+      }
+    },
+    {
+      "id": "BR-SRC-007",
+      "conflictId": "missing-egg-group-versus-no-breeding",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        }
+      ],
+      "decision": "Absence of Egg Groups is not automatically interpreted as No Breeding. The compiled registry must classify each row as breedable, no-breeding, or excluded-source-gap through a source-bound species adjudication.",
+      "defaultPolicyId": "explicit-breeding-eligibility",
+      "campaignOptionIds": [],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted",
+      "canonicalDiagnostic": {
+        "missingEggGroupRecordCount": 248
+      }
+    },
+    {
+      "id": "BR-SRC-008",
+      "conflictId": "hatch-duration-average-and-variation",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        },
+        {
+          "path": "books/markdown/pokedexes/how-to-read.md",
+          "sha256": "e27cc5f5b3b7f059244f404b8037a0a50dcc575b0ec0aa765602d23023f6fb02"
+        }
+      ],
+      "decision": "Parse exact app-owned N Days values to campaign minutes during compilation. The default uses the fixed average. Optional variation is one persisted server roll or one bounded audited GM value between one-half and twice the average, snapshotted at Egg acceptance.",
+      "defaultPolicyId": "fixed-average",
+      "campaignOptionIds": [
+        "breeding.hatch-duration-variation"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted",
+      "canonicalDiagnostic": {
+        "recognizedSourceValues": [
+          "2 Days",
+          "4 Days",
+          "7 Days",
+          "10 Days",
+          "13 Days",
+          "16 Days",
+          "20 Days",
+          "25 Days",
+          "40 Days",
+          "75 Days"
+        ]
+      }
+    },
+    {
+      "id": "BR-SRC-009",
+      "conflictId": "missing-hatch-duration",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        }
+      ],
+      "decision": "A missing or malformed hatch duration is unavailable. A GM may provide bounded campaign minutes only through the typed source-gap override, and the Egg freezes that override and audit evidence.",
+      "defaultPolicyId": "unavailable",
+      "campaignOptionIds": [
+        "breeding.missing-hatch-duration-policy",
+        "breeding.gm-hatch-duration-minutes"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted",
+      "canonicalDiagnostic": {
+        "missingHatchRateRecordCount": 598
+      }
+    },
+    {
+      "id": "BR-SRC-010",
+      "conflictId": "special-hatch-not-automatic-shiny",
+      "sourceEvidence": [
+        {
+          "path": "books/markdown/core/05-pokemon.md",
+          "sha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3"
+        },
+        {
+          "path": "data/reference/features.json",
+          "sha256": "27d0f2bee4db96ebfb0c431cce9ea5222fe3d2d9fe9ead32507c46b51a9d77c4"
+        }
+      ],
+      "decision": "Roll 1d100 once at hatch. Results 1 and 100 open a bounded GM adjudication by default; they do not set Shiny automatically. A configured bounded table may replace the GM decision, and authoritative providers may force the same workflow without changing its authority.",
+      "defaultPolicyId": "bounded-gm-adjudication",
+      "campaignOptionIds": [
+        "breeding.hatch-special-policy"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted"
+    },
+    {
+      "id": "BR-SRC-011",
+      "conflictId": "optional-baby-template",
+      "sourceEvidence": [
+        {
+          "path": "books/markdown/core/05-pokemon.md",
+          "sha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3"
+        },
+        {
+          "path": "data/reference/stat-rankings.json",
+          "sha256": "f5aa0b4eedfc7ad07e0db38a79023b5b38c1697a325929ad282f4285cebbaf8a"
+        }
+      ],
+      "decision": "The Baby Template is disabled by default. If enabled per Egg, the server freezes a 2–4 Base Stat penalty and typed skill, capability, size, and growth effects; editable babyTemplate alone is never origin evidence.",
+      "defaultPolicyId": "disabled",
+      "campaignOptionIds": [
+        "breeding.baby-template-policy",
+        "breeding.baby-template-stat-penalty"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted"
+    },
+    {
+      "id": "BR-SRC-012",
+      "conflictId": "fossil-created-eggs",
+      "sourceEvidence": [
+        {
+          "path": "books/markdown/core/05-pokemon.md",
+          "sha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3"
+        },
+        {
+          "path": "data/reference/features.json",
+          "sha256": "27d0f2bee4db96ebfb0c431cce9ea5222fe3d2d9fe9ead32507c46b51a9d77c4"
+        },
+        {
+          "path": "data/reference/items.json",
+          "sha256": "0a101802a698403651756b19e9cc6a10b8c6e2c91cfa9b79be1bcb1e7aa60082"
+        }
+      ],
+      "decision": "Fossils create the same durable Egg aggregate with source kind fossil. Default hatch Level is 10; traits are bounded GM choices; parent inheritance is absent unless a bounded canonical list is explicitly supplied. No parallel fossil hatch path is allowed.",
+      "defaultPolicyId": "shared-egg-lifecycle",
+      "campaignOptionIds": [
+        "breeding.fossil-hatch-level",
+        "breeding.fossil-inheritance-policy"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted"
+    },
+    {
+      "id": "BR-SRC-013",
+      "conflictId": "inheritance-candidate-pathways",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        },
+        {
+          "path": "data/reference/moves.json",
+          "sha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
+        },
+        {
+          "path": "books/markdown/core/05-pokemon.md",
+          "sha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3"
+        }
+      ],
+      "decision": "At the parent snapshot checkpoint, include effectively known canonical moves that occur on the resolved child species Egg Move list or machine-compatible list. Deduplicate by canonical move ID while retaining every parent and pathway source.",
+      "defaultPolicyId": "effective-known-canonical-moves-only",
+      "campaignOptionIds": [],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted"
+    },
+    {
+      "id": "BR-SRC-014",
+      "conflictId": "inheritance-prerequisite-empty-slot",
+      "sourceEvidence": [
+        {
+          "path": "books/markdown/errata-2.md",
+          "sha256": "1b8be900ac33dd8d621c7acda801ad535f0f8532142829c5409d907c081a1c70"
+        },
+        {
+          "path": "data/reference/moves.json",
+          "sha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
+        }
+      ],
+      "decision": "Inheritance opportunities occur at Levels 20 through 100 every 10 Levels. An illegal candidate leaves that checkpoint empty and remains eligible for a later legal checkpoint; slots are never backfilled by silently ignoring errata prerequisites.",
+      "defaultPolicyId": "empty-illegal-slot-retain-candidate",
+      "campaignOptionIds": [],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted"
+    },
+    {
+      "id": "BR-SRC-015",
+      "conflictId": "unknown-machine-move-identity",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        },
+        {
+          "path": "data/reference/moves.json",
+          "sha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
+        }
+      ],
+      "decision": "Unknown machine-compatible move labels are excluded as unresolved candidates with diagnostics; they are never synthesized from documentary text. A reviewed app-owned move migration is required before execution.",
+      "defaultPolicyId": "exclude-unresolved-move-only",
+      "campaignOptionIds": [],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted",
+      "canonicalDiagnostic": {
+        "unknownCanonicalMoveLabels": [
+          "Facade"
+        ],
+        "affectedMachineCompatibilityRows": 947
+      }
+    },
+    {
+      "id": "BR-SRC-016",
+      "conflictId": "unknown-ability-identity",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        },
+        {
+          "path": "data/reference/abilities.json",
+          "sha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
+        },
+        {
+          "path": "data/ability-automation/manifest.json",
+          "sha256": "c1a27878600260f0ff6be66cd967d71af87778afa613b3a0daf32f74f72ab939"
+        }
+      ],
+      "decision": "Basic Ability options must resolve through the canonical Ability registry and reviewed parameter contracts. Unknown or prose-qualified labels are unavailable options; a species with no remaining valid Basic Ability fails closed.",
+      "defaultPolicyId": "canonical-basic-ability-only",
+      "campaignOptionIds": [],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted",
+      "canonicalDiagnostic": {
+        "unknownAbilityLabelCount": 18,
+        "unknownAbilityAssignmentCount": 44,
+        "missingBasicAbilityRecordCount": 130
+      }
+    },
+    {
+      "id": "BR-SRC-017",
+      "conflictId": "sparse-species-records",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        }
+      ],
+      "decision": "Species rows lacking the complete breeding fields are excluded from compiled breeding specs. No markdown, parser output, website, or client value may fill them at runtime; enablement requires a reviewed source-hash-bound app-owned migration.",
+      "defaultPolicyId": "exclude-incomplete-species",
+      "campaignOptionIds": [],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted",
+      "canonicalDiagnostic": {
+        "pokedexRecordCount": 1149,
+        "completeLegacyShapeRecordCount": 1020,
+        "sparseRecordCount": 129
+      }
+    },
+    {
+      "id": "BR-SRC-018",
+      "conflictId": "legacy-generator-and-sheet-fields",
+      "sourceEvidence": [
+        {
+          "path": "ptu-data/parse_pokedex.py",
+          "sha256": "78c9ee63b7d62c28b01bd1f266f22304d493dea8937aaf8cb5b752a70c033070"
+        },
+        {
+          "path": "data/reference/pokedex.json",
+          "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+        }
+      ],
+      "decision": "Legacy generation, editable eggMoves, inheritedMoves, eggGroups, gender, nature, abilities, and babyTemplate are compatibility inputs or projections only. They cannot prove parentage, rolls, consent, origin, or inheritance eligibility and cannot create an Egg.",
+      "defaultPolicyId": "typed-origin-and-egg-authority-only",
+      "campaignOptionIds": [],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted"
+    },
+    {
+      "id": "BR-SRC-019",
+      "conflictId": "breeder-project-timeline-and-failure",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/edges.json",
+          "sha256": "62348f9f5e57c28a3b61bfc3f554bcad258a769b054f5531c1d07ae6853e2123"
+        },
+        {
+          "path": "data/edge-automation/manifest.json",
+          "sha256": "f403671a1e186a6ff14577564513c35832abf15ba3d7fad8fd55b34dcb7ade65"
+        }
+      ],
+      "decision": "A Breeder project requires 240 campaign minutes, one authoritative DC 12 Pokémon Education check, and 240 additional campaign minutes after success. The default failed check produces no Egg and is terminal for that project; retries require a new stable operation/project identity.",
+      "defaultPolicyId": "terminal-no-egg",
+      "campaignOptionIds": [
+        "breeding.check-failure-policy"
+      ],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted"
+    },
+    {
+      "id": "BR-SRC-020",
+      "conflictId": "non-breeding-egg-producers",
+      "sourceEvidence": [
+        {
+          "path": "data/reference/features.json",
+          "sha256": "27d0f2bee4db96ebfb0c431cce9ea5222fe3d2d9fe9ead32507c46b51a9d77c4"
+        },
+        {
+          "path": "data/reference/items.json",
+          "sha256": "0a101802a698403651756b19e9cc6a10b8c6e2c91cfa9b79be1bcb1e7aa60082"
+        }
+      ],
+      "decision": "Fossil, GM-authored, and Feature-produced Eggs use explicit source kinds and authoritative provider contributions. Provider-specific Level, timing, trait, cost, use, and upgrade effects are snapshotted but never interpreted from prose or copied into a second Egg authority.",
+      "defaultPolicyId": "shared-typed-egg-source-provider",
+      "campaignOptionIds": [],
+      "failureMode": "unavailable-with-stable-diagnostic",
+      "status": "accepted"
+    }
+  ]
+}

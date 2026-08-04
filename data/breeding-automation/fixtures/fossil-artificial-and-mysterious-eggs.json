@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "containsCampaignData": false,
+  "sourceTicket": "BR-008",
+  "fixtureId": "breeding-special-source-eggs-v1",
+  "audiences": [
+    "owner",
+    "gm"
+  ],
+  "entities": {
+    "trainers": [
+      {
+        "id": "trainer-researcher",
+        "profileId": "profile-researcher",
+        "pokemonEducationRank": "Expert",
+        "effectiveEdgeIds": [
+          "Paleontologist"
+        ],
+        "effectiveFeatureIds": [
+          "Playing God",
+          "Fossil Restoration"
+        ]
+      }
+    ],
+    "sourceSpeciesNames": [
+      "Omanyte",
+      "Castform",
+      "Kangaskhan"
+    ]
+  },
+  "scripts": [
+    {
+      "id": "fossil-shared-lifecycle",
+      "requirementIds": [
+        "breeding:BR-018",
+        "breeding:BR-046",
+        "breeding:BR-058",
+        "breeding:BR-066"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "authorize-fossil-and-reanimation-machine",
+        "create-fossil-egg",
+        "apply-fossil-restoration-provider",
+        "incubate-and-hatch"
+      ],
+      "expected": [
+        "source-kind-fossil",
+        "starting-level-10",
+        "no-parent-snapshots",
+        "bounded-traits",
+        "same-egg-and-hatch-authority"
+      ]
+    },
+    {
+      "id": "playing-god-artificial-egg",
+      "requirementIds": [
+        "breeding:BR-006",
+        "breeding:BR-046",
+        "breeding:BR-058",
+        "breeding:BR-067"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "authorize-feature-chemistry-set-and-cost",
+        "choose-castform-server-option",
+        "choose-bounded-upgrades",
+        "create-artificial-egg",
+        "hatch"
+      ],
+      "expected": [
+        "source-kind-feature-artificial",
+        "starting-level-5",
+        "duration-at-most-one-day",
+        "basic-ability-choice",
+        "upgrade-provenance",
+        "same-hatch-transaction"
+      ]
+    },
+    {
+      "id": "gm-mysterious-egg",
+      "requirementIds": [
+        "breeding:BR-021",
+        "breeding:BR-046",
+        "breeding:BR-058"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "create-gm-egg-with-typed-reason-and-duration",
+        "attempt-arbitrary-child-patch",
+        "incubate-and-hatch"
+      ],
+      "expected": [
+        "source-kind-gm",
+        "audit-reason-retained",
+        "arbitrary-patch-rejected",
+        "compiled-child-construction"
+      ]
+    },
+    {
+      "id": "marsupial-special-baby-policy",
+      "requirementIds": [
+        "breeding:BR-006",
+        "breeding:BR-018",
+        "breeding:BR-068"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "create-kangaskhan-blueprint",
+        "apply-effective-marsupial-provider",
+        "hatch-and-link-mother",
+        "advance-child-to-level-25"
+      ],
+      "expected": [
+        "forced-minus-5-baby-template",
+        "pouch-lineage",
+        "provider-definition-hash",
+        "template-removal-at-level-25"
+      ]
+    }
+  ]
+}

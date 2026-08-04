@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "containsCampaignData": false,
+  "sourceTicket": "BR-008",
+  "fixtureId": "breeding-cross-owner-consent-v1",
+  "audiences": [
+    "owner",
+    "participating-owner",
+    "gm",
+    "public",
+    "diagnostic"
+  ],
+  "entities": {
+    "trainers": [
+      {
+        "id": "trainer-project-owner",
+        "profileId": "profile-project-owner",
+        "pokemonEducationRank": "Adept",
+        "effectiveEdgeIds": [
+          "Breeder"
+        ]
+      },
+      {
+        "id": "trainer-parent-owner",
+        "profileId": "profile-parent-owner",
+        "pokemonEducationRank": "Novice",
+        "effectiveEdgeIds": []
+      }
+    ],
+    "parents": [
+      {
+        "id": "parent-charmander-f",
+        "ownerTrainerId": "trainer-project-owner",
+        "revision": 2,
+        "sourceSpeciesName": "Charmander",
+        "genderId": "female",
+        "level": 18,
+        "eggGroupSourceValues": [
+          "Monster",
+          "Dragon"
+        ],
+        "effectiveKnownMoveNames": [
+          "Tackle"
+        ]
+      },
+      {
+        "id": "parent-charmander-m-private",
+        "ownerTrainerId": "trainer-parent-owner",
+        "revision": 7,
+        "sourceSpeciesName": "Charmander",
+        "genderId": "male",
+        "level": 19,
+        "eggGroupSourceValues": [
+          "Monster",
+          "Dragon"
+        ],
+        "effectiveKnownMoveNames": [
+          "Protect"
+        ]
+      }
+    ]
+  },
+  "scripts": [
+    {
+      "id": "positive-revision-bound-consent",
+      "requirementIds": [
+        "breeding:BR-024",
+        "breeding:BR-025",
+        "breeding:BR-042",
+        "breeding:BR-052"
+      ],
+      "actorAudience": "participating-owner",
+      "steps": [
+        "load-own-parent-consent-request",
+        "grant-project-and-parent-revision-scopes",
+        "project-owner-produces-egg"
+      ],
+      "expected": [
+        "consent-recorded",
+        "other-parent-private",
+        "production-authorized",
+        "consent-audit-retained"
+      ]
+    },
+    {
+      "id": "stale-or-revoked-consent",
+      "requirementIds": [
+        "breeding:BR-024",
+        "breeding:BR-042",
+        "breeding:BR-057",
+        "breeding:BR-065"
+      ],
+      "actorAudience": "participating-owner",
+      "steps": [
+        "grant-consent",
+        "change-parent-revision",
+        "attempt-production",
+        "grant-current-consent",
+        "revoke-before-acceptance",
+        "attempt-production"
+      ],
+      "expected": [
+        "stale-consent-rejected",
+        "revoked-consent-rejected",
+        "no-egg",
+        "safe-own-parent-context-only"
+      ]
+    },
+    {
+      "id": "audience-privacy-matrix",
+      "requirementIds": [
+        "breeding:BR-025",
+        "breeding:BR-044",
+        "breeding:BR-074",
+        "breeding:BR-087"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "load-all-five-projections",
+        "compare-field-sets",
+        "inspect-realtime-refresh-events"
+      ],
+      "expected": [
+        "public-coarse-only",
+        "participant-own-parent-only",
+        "owner-no-private-attribution",
+        "gm-full",
+        "diagnostic-hashes-only",
+        "realtime-no-private-payload"
+      ]
+    }
+  ]
+}

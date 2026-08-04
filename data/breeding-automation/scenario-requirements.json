@@ -1,0 +1,1477 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "breeding-scenario-requirements-v1",
+  "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
+  "requirementCount": 90,
+  "coverageCounts": {
+    "covered": 19,
+    "in-progress": 1,
+    "planned": 70,
+    "blocked": 0
+  },
+  "requirements": [
+    {
+      "id": "breeding:BR-001",
+      "ticketId": "BR-001",
+      "phase": 1,
+      "title": "Freeze the complete breeding, Egg, fossil, inheritance, and hatch source inventory and SHA-256 values",
+      "verificationKind": "governance",
+      "requiredEvidenceKinds": [
+        "data",
+        "focused-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/source-manifest.json",
+        "tests/data/breedingSourceManifest.test.ts"
+      ],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-002",
+      "ticketId": "BR-002",
+      "phase": 1,
+      "title": "Record the versioned breeding ruleset ADR and adjudicate every source conflict",
+      "verificationKind": "governance",
+      "requiredEvidenceKinds": [
+        "data",
+        "focused-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/ruleset.json",
+        "data/breeding-automation/source-adjudications.json",
+        "data/breeding-automation/baseline-audit.json",
+        "docs/adrs/017-versioned-breeding-ruleset-and-source-adjudications.md",
+        "tests/data/breedingRulesetAdjudications.test.ts"
+      ],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-003",
+      "ticketId": "BR-003",
+      "phase": 1,
+      "title": "Freeze canonical Egg Group, Gender, parent-role, form, and no-breeding taxonomies",
+      "verificationKind": "governance",
+      "requiredEvidenceKinds": [
+        "data",
+        "focused-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/taxonomies.json",
+        "tests/data/breedingTaxonomies.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-ditto-genderless-source-gaps-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-004",
+      "ticketId": "BR-004",
+      "phase": 1,
+      "title": "Freeze the evolution-family and form-root graph policy",
+      "verificationKind": "governance",
+      "requiredEvidenceKinds": [
+        "data",
+        "focused-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/family-graph-policy.json",
+        "tests/data/breedingFamilyGraphPolicy.test.ts"
+      ],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-005",
+      "ticketId": "BR-005",
+      "phase": 1,
+      "title": "Define hatch-duration parsing, units, bounds, variation, and campaign-time semantics",
+      "verificationKind": "governance",
+      "requiredEvidenceKinds": [
+        "data",
+        "focused-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/hatch-duration-policy.json",
+        "tests/data/breedingHatchDurationPolicy.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-006",
+      "ticketId": "BR-006",
+      "phase": 1,
+      "title": "Inventory every Edge, Feature, item, Ability, capability, facility, and campaign rule that can affect breeding or hatching",
+      "verificationKind": "governance",
+      "requiredEvidenceKinds": [
+        "data",
+        "focused-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/modifier-inventory.json",
+        "tests/data/breedingModifierInventory.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-special-source-eggs-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-007",
+      "ticketId": "BR-007",
+      "phase": 1,
+      "title": "Define the breeding threat model, consent policy, privacy matrix, and abuse limits",
+      "verificationKind": "governance",
+      "requiredEvidenceKinds": [
+        "data",
+        "focused-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/security-policy.json",
+        "docs/breeding/security-and-privacy.md",
+        "tests/data/breedingSecurityPolicy.test.ts"
+      ],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-008",
+      "ticketId": "BR-008",
+      "phase": 1,
+      "title": "Define source manifests, semantic registries, plan checks, coverage checks, and acceptance fixtures",
+      "verificationKind": "governance",
+      "requiredEvidenceKinds": [
+        "data",
+        "focused-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/semantic-registry.json",
+        "data/breeding-automation/scenario-requirements.json",
+        "data/breeding-automation/fixtures/index.json",
+        "scripts/check_breeding_automation.ts",
+        "tests/scripts/breedingAutomationChecker.test.ts"
+      ],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-009",
+      "ticketId": "BR-009",
+      "phase": 1,
+      "title": "Record the runtime ADR, ownership map, contributor guide, operator guide, and baseline audit",
+      "verificationKind": "governance",
+      "requiredEvidenceKinds": [
+        "data",
+        "focused-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/ownership-map.json",
+        "docs/adrs/018-authoritative-breeding-and-egg-runtime.md",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/contributor-guide.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/baseline-audit.md",
+        "tests/data/breedingRuntimeOwnership.test.ts"
+      ],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-010",
+      "ticketId": "BR-010",
+      "phase": 2,
+      "title": "Define canonical breeding species, family, Egg Group, move, Ability, and option IDs",
+      "verificationKind": "pure-rules",
+      "requiredEvidenceKinds": [
+        "unit-test",
+        "property-or-boundary-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/canonical-ids.json",
+        "shared/breeding/ids.ts",
+        "server/domain/breeding/canonicalIds.ts",
+        "tests/server/breedingCanonicalIds.test.ts"
+      ],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-011",
+      "ticketId": "BR-011",
+      "phase": 2,
+      "title": "Define strict versioned `BreedingSpeciesSpec` and `BreedingFamilySpec` schemas",
+      "verificationKind": "pure-rules",
+      "requiredEvidenceKinds": [
+        "unit-test",
+        "property-or-boundary-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/spec-schemas.json",
+        "shared/breeding/specs.ts",
+        "server/domain/breeding/specSchemaContext.ts",
+        "tests/server/breedingSpecSchemas.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-ditto-genderless-source-gaps-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-012",
+      "ticketId": "BR-012",
+      "phase": 2,
+      "title": "Build the deterministic Pokédex-to-breeding-spec compiler and validation report",
+      "verificationKind": "pure-rules",
+      "requiredEvidenceKinds": [
+        "unit-test",
+        "property-or-boundary-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/compiler-definition.json",
+        "data/breeding-automation/family-resolutions.json",
+        "data/breeding-automation/compiled-registry.json",
+        "data/breeding-automation/compiler-validation-report.json",
+        "server/domain/breeding/compiler.ts",
+        "scripts/compile_breeding_registry.ts",
+        "tests/server/breedingCompiler.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-ditto-genderless-source-gaps-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-013",
+      "ticketId": "BR-013",
+      "phase": 2,
+      "title": "Build and validate complete family-root, branch, regional-form, and special-form resolution",
+      "verificationKind": "pure-rules",
+      "requiredEvidenceKinds": [
+        "unit-test",
+        "property-or-boundary-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/evolution-target-adjudications.json",
+        "data/breeding-automation/form-adjudications.json",
+        "data/breeding-automation/family-resolution-definition.json",
+        "data/breeding-automation/family-resolutions.json",
+        "data/breeding-automation/family-resolution-inventory.json",
+        "data/breeding-automation/compiled-registry.json",
+        "server/domain/breeding/familyResolutionBuilder.ts",
+        "server/domain/breeding/registry.ts",
+        "scripts/build_breeding_family_resolutions.ts",
+        "tests/server/breedingFamilyResolution.test.ts"
+      ],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-014",
+      "ticketId": "BR-014",
+      "phase": 2,
+      "title": "Implement pure compatibility, parent-role, Ditto, genderless, maturity, and campaign-option evaluation",
+      "verificationKind": "pure-rules",
+      "requiredEvidenceKinds": [
+        "unit-test",
+        "property-or-boundary-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/compatibility-policy.json",
+        "server/domain/breeding/campaignOptions.ts",
+        "server/domain/breeding/compatibility.ts",
+        "tests/server/breedingCompatibility.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-ditto-genderless-source-gaps-v1",
+        "breeding-standard-compatible-project-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-015",
+      "ticketId": "BR-015",
+      "phase": 2,
+      "title": "Implement pure offspring family and lowest-stage species resolution",
+      "verificationKind": "pure-rules",
+      "requiredEvidenceKinds": [
+        "unit-test",
+        "property-or-boundary-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/offspring-resolution-policy.json",
+        "server/domain/breeding/offspringResolution.ts",
+        "tests/server/breedingOffspringResolution.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-ditto-genderless-source-gaps-v1",
+        "breeding-standard-compatible-project-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-016",
+      "ticketId": "BR-016",
+      "phase": 2,
+      "title": "Implement Nature, Basic Ability, Gender, rank-authorised choice, and random-option resolution",
+      "verificationKind": "pure-rules",
+      "requiredEvidenceKinds": [
+        "unit-test",
+        "property-or-boundary-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/natures.json",
+        "data/breeding-automation/trait-resolution-policy.json",
+        "server/domain/breeding/natures.ts",
+        "server/domain/breeding/traitResolution.ts",
+        "tests/server/breedingTraitResolution.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-standard-compatible-project-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-017",
+      "ticketId": "BR-017",
+      "phase": 2,
+      "title": "Implement canonical inheritance candidate construction, deduplication, and provenance",
+      "verificationKind": "pure-rules",
+      "requiredEvidenceKinds": [
+        "unit-test",
+        "property-or-boundary-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/inheritance-candidate-policy.json",
+        "server/domain/breeding/inheritanceCandidates.ts",
+        "tests/server/breedingInheritanceCandidates.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1",
+        "breeding-standard-compatible-project-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-018",
+      "ticketId": "BR-018",
+      "phase": 2,
+      "title": "Implement hatch duration, fossil-level, Baby Template, and special-result rule helpers",
+      "verificationKind": "pure-rules",
+      "requiredEvidenceKinds": [
+        "unit-test",
+        "property-or-boundary-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/egg-rule-helpers-policy.json",
+        "server/domain/breeding/eggRuleHelpers.ts",
+        "tests/server/breedingEggRuleHelpers.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1",
+        "breeding-special-source-eggs-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-019",
+      "ticketId": "BR-019",
+      "phase": 2,
+      "title": "Add exhaustive examples, fuzzing, graph properties, boundary rolls, and deterministic replay tests",
+      "verificationKind": "pure-rules",
+      "requiredEvidenceKinds": [
+        "unit-test",
+        "property-or-boundary-test"
+      ],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/pure-rules-conformance.json",
+        "tests/server/breedingPureRulesConformance.test.ts"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-020",
+      "ticketId": "BR-020",
+      "phase": 3,
+      "title": "Define strict `BreedingProjectDocument v1` and lifecycle transitions",
+      "verificationKind": "contract",
+      "requiredEvidenceKinds": [
+        "contract-test",
+        "privacy-or-transition-test"
+      ],
+      "coverageStatus": "in-progress",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-021",
+      "ticketId": "BR-021",
+      "phase": 3,
+      "title": "Define strict `PokemonEggDocument v1` and lifecycle transitions",
+      "verificationKind": "contract",
+      "requiredEvidenceKinds": [
+        "contract-test",
+        "privacy-or-transition-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-special-source-eggs-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-022",
+      "ticketId": "BR-022",
+      "phase": 3,
+      "title": "Define `BreedingParentSnapshot`, `PokemonBreedingOrigin`, and inheritance-learning provenance",
+      "verificationKind": "contract",
+      "requiredEvidenceKinds": [
+        "contract-test",
+        "privacy-or-transition-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-023",
+      "ticketId": "BR-023",
+      "phase": 3,
+      "title": "Define versioned breeding commands, operation results, scopes, conflicts, and hashes",
+      "verificationKind": "contract",
+      "requiredEvidenceKinds": [
+        "contract-test",
+        "privacy-or-transition-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-024",
+      "ticketId": "BR-024",
+      "phase": 3,
+      "title": "Define replay-safe check, roll, option, consent, and GM-adjudication ledgers",
+      "verificationKind": "contract",
+      "requiredEvidenceKinds": [
+        "contract-test",
+        "privacy-or-transition-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-cross-owner-consent-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-025",
+      "ticketId": "BR-025",
+      "phase": 3,
+      "title": "Define complete read sets, revision expectations, reference versions, and dependency evidence",
+      "verificationKind": "contract",
+      "requiredEvidenceKinds": [
+        "contract-test",
+        "privacy-or-transition-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-cross-owner-consent-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-026",
+      "ticketId": "BR-026",
+      "phase": 3,
+      "title": "Define actor, owner, breeder, parent-control, cross-owner consent, and GM-override contracts",
+      "verificationKind": "contract",
+      "requiredEvidenceKinds": [
+        "contract-test",
+        "privacy-or-transition-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-standard-compatible-project-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-027",
+      "ticketId": "BR-027",
+      "phase": 3,
+      "title": "Define public, owner, participating-owner, GM, and diagnostic presentation projections",
+      "verificationKind": "contract",
+      "requiredEvidenceKinds": [
+        "contract-test",
+        "privacy-or-transition-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-028",
+      "ticketId": "BR-028",
+      "phase": 3,
+      "title": "Define export, import, backup, restore, migration, and legacy-lineage schemas",
+      "verificationKind": "contract",
+      "requiredEvidenceKinds": [
+        "contract-test",
+        "privacy-or-transition-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-029",
+      "ticketId": "BR-029",
+      "phase": 3,
+      "title": "Add malformed, oversized, unknown-version, unsafe-text, privacy, and round-trip contract tests",
+      "verificationKind": "contract",
+      "requiredEvidenceKinds": [
+        "contract-test",
+        "privacy-or-transition-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-030",
+      "ticketId": "BR-030",
+      "phase": 4,
+      "title": "Add breeding-project, Egg, consent, acquisition-history, and supporting SQLite migrations",
+      "verificationKind": "repository",
+      "requiredEvidenceKinds": [
+        "repository-test",
+        "migration-or-restart-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-031",
+      "ticketId": "BR-031",
+      "phase": 4,
+      "title": "Add project, Egg, consent, and acquisition repositories with strict parsing and optimistic revisions",
+      "verificationKind": "repository",
+      "requiredEvidenceKinds": [
+        "repository-test",
+        "migration-or-restart-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-032",
+      "ticketId": "BR-032",
+      "phase": 4,
+      "title": "Add atomic fully-initialised Pokémon sheet creation with collision-safe slug allocation",
+      "verificationKind": "repository",
+      "requiredEvidenceKinds": [
+        "repository-test",
+        "migration-or-restart-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-033",
+      "ticketId": "BR-033",
+      "phase": 4,
+      "title": "Add shared historical Trainer species-acquisition storage and reward service",
+      "verificationKind": "repository",
+      "requiredEvidenceKinds": [
+        "repository-test",
+        "migration-or-restart-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-034",
+      "ticketId": "BR-034",
+      "phase": 4,
+      "title": "Add the generic campaign-operation idempotency and terminal-result ledger integration",
+      "verificationKind": "repository",
+      "requiredEvidenceKinds": [
+        "repository-test",
+        "migration-or-restart-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-035",
+      "ticketId": "BR-035",
+      "phase": 4,
+      "title": "Add the authoritative campaign clock and idempotent time-advancement contract required by breeding",
+      "verificationKind": "repository",
+      "requiredEvidenceKinds": [
+        "repository-test",
+        "migration-or-restart-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-036",
+      "ticketId": "BR-036",
+      "phase": 4,
+      "title": "Add breeding and Egg realtime events, access descriptors, snapshots, and replay adoption",
+      "verificationKind": "repository",
+      "requiredEvidenceKinds": [
+        "repository-test",
+        "migration-or-restart-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-037",
+      "ticketId": "BR-037",
+      "phase": 4,
+      "title": "Add one transaction coordinator for project, Egg, sheet, Trainer, history, operation, and event writes",
+      "verificationKind": "repository",
+      "requiredEvidenceKinds": [
+        "repository-test",
+        "migration-or-restart-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-038",
+      "ticketId": "BR-038",
+      "phase": 4,
+      "title": "Add export, backup, restore, integrity validation, and orphan-link diagnostics",
+      "verificationKind": "repository",
+      "requiredEvidenceKinds": [
+        "repository-test",
+        "migration-or-restart-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-039",
+      "ticketId": "BR-039",
+      "phase": 4,
+      "title": "Add repository, migration, stale-revision, exact-retry, concurrency, and rollback tests",
+      "verificationKind": "repository",
+      "requiredEvidenceKinds": [
+        "repository-test",
+        "migration-or-restart-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-040",
+      "ticketId": "BR-040",
+      "phase": 5,
+      "title": "Project Breeder and GM campaign-operation offers through the generic contract",
+      "verificationKind": "authorization",
+      "requiredEvidenceKinds": [
+        "authorization-test",
+        "privacy-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-041",
+      "ticketId": "BR-041",
+      "phase": 5,
+      "title": "Implement authorised parent discovery, filtering, selection, and safe compatibility previews",
+      "verificationKind": "authorization",
+      "requiredEvidenceKinds": [
+        "authorization-test",
+        "privacy-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-042",
+      "ticketId": "BR-042",
+      "phase": 5,
+      "title": "Implement maturity, ownership, consent, location/facility, and compatibility validation",
+      "verificationKind": "authorization",
+      "requiredEvidenceKinds": [
+        "authorization-test",
+        "privacy-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-cross-owner-consent-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-043",
+      "ticketId": "BR-043",
+      "phase": 5,
+      "title": "Implement durable initial four-hour project progress and interruption policy",
+      "verificationKind": "authorization",
+      "requiredEvidenceKinds": [
+        "authorization-test",
+        "privacy-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-044",
+      "ticketId": "BR-044",
+      "phase": 5,
+      "title": "Implement the authoritative Breeder Pokémon Education check and exact retry",
+      "verificationKind": "authorization",
+      "requiredEvidenceKinds": [
+        "authorization-test",
+        "privacy-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-cross-owner-consent-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-045",
+      "ticketId": "BR-045",
+      "phase": 5,
+      "title": "Implement durable additional four-hour completion progress and project readiness",
+      "verificationKind": "authorization",
+      "requiredEvidenceKinds": [
+        "authorization-test",
+        "privacy-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-046",
+      "ticketId": "BR-046",
+      "phase": 5,
+      "title": "Freeze parent, breeder, provider, reference, and campaign-option snapshots at reviewed checkpoints",
+      "verificationKind": "authorization",
+      "requiredEvidenceKinds": [
+        "authorization-test",
+        "privacy-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-special-source-eggs-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-047",
+      "ticketId": "BR-047",
+      "phase": 5,
+      "title": "Resolve and persist offspring species, trait choices/rolls, inheritance, and source evidence",
+      "verificationKind": "authorization",
+      "requiredEvidenceKinds": [
+        "authorization-test",
+        "privacy-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-048",
+      "ticketId": "BR-048",
+      "phase": 5,
+      "title": "Produce the Egg atomically and terminally settle the breeding project",
+      "verificationKind": "authorization",
+      "requiredEvidenceKinds": [
+        "authorization-test",
+        "privacy-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-049",
+      "ticketId": "BR-049",
+      "phase": 5,
+      "title": "Add cancellation, consent revocation, expiry, abandonment, reconnect, and GM recovery",
+      "verificationKind": "authorization",
+      "requiredEvidenceKinds": [
+        "authorization-test",
+        "privacy-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-050",
+      "ticketId": "BR-050",
+      "phase": 6,
+      "title": "Implement authoritative Egg incubation totals, modifiers, pause policy, and progress queries",
+      "verificationKind": "workflow",
+      "requiredEvidenceKinds": [
+        "use-case-test",
+        "exact-retry-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-standard-compatible-project-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-051",
+      "ticketId": "BR-051",
+      "phase": 6,
+      "title": "Add audited GM `mark ready` and correction operations without direct field editing",
+      "verificationKind": "workflow",
+      "requiredEvidenceKinds": [
+        "use-case-test",
+        "exact-retry-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-052",
+      "ticketId": "BR-052",
+      "phase": 6,
+      "title": "Integrate campaign-clock advancement, downtime skips, dedupe, and multi-Egg batching",
+      "verificationKind": "workflow",
+      "requiredEvidenceKinds": [
+        "use-case-test",
+        "exact-retry-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-cross-owner-consent-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-053",
+      "ticketId": "BR-053",
+      "phase": 6,
+      "title": "Implement Egg readiness, transfer, storage, facility, and source-loss lifecycle rules",
+      "verificationKind": "workflow",
+      "requiredEvidenceKinds": [
+        "use-case-test",
+        "exact-retry-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-standard-compatible-project-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-054",
+      "ticketId": "BR-054",
+      "phase": 6,
+      "title": "Project authorised hatch offers, blockers, choices, and owner destinations",
+      "verificationKind": "workflow",
+      "requiredEvidenceKinds": [
+        "use-case-test",
+        "exact-retry-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-standard-compatible-project-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-055",
+      "ticketId": "BR-055",
+      "phase": 6,
+      "title": "Implement the single persisted hatch-special roll and bounded GM outcome adjudication",
+      "verificationKind": "workflow",
+      "requiredEvidenceKinds": [
+        "use-case-test",
+        "exact-retry-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-056",
+      "ticketId": "BR-056",
+      "phase": 6,
+      "title": "Build the complete child sheet from the frozen Egg blueprint and current schema contracts",
+      "verificationKind": "workflow",
+      "requiredEvidenceKinds": [
+        "use-case-test",
+        "exact-retry-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-057",
+      "ticketId": "BR-057",
+      "phase": 6,
+      "title": "Commit child creation, Trainer linkage, Egg settlement, lineage, operation result, and events atomically",
+      "verificationKind": "workflow",
+      "requiredEvidenceKinds": [
+        "use-case-test",
+        "exact-retry-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-cross-owner-consent-v1",
+        "breeding-standard-compatible-project-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-058",
+      "ticketId": "BR-058",
+      "phase": 6,
+      "title": "Grant historical first-species acquisition and Trainer Experience exactly once",
+      "verificationKind": "workflow",
+      "requiredEvidenceKinds": [
+        "use-case-test",
+        "exact-retry-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-special-source-eggs-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-059",
+      "ticketId": "BR-059",
+      "phase": 6,
+      "title": "Add duplicate hatch, concurrent hatch, failure injection, restart, replay-gap, and recovery tests",
+      "verificationKind": "workflow",
+      "requiredEvidenceKinds": [
+        "use-case-test",
+        "exact-retry-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-060",
+      "ticketId": "BR-060",
+      "phase": 7,
+      "title": "Integrate the Edge automation `Breeder` permission and contribution handoff",
+      "verificationKind": "integration",
+      "requiredEvidenceKinds": [
+        "integration-test",
+        "failure-injection-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1",
+        "breeding-inheritance-incubation-special-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-061",
+      "ticketId": "BR-061",
+      "phase": 7,
+      "title": "Integrate Feature automation modifiers, facilities, tutoring, research, and campaign-operation providers",
+      "verificationKind": "integration",
+      "requiredEvidenceKinds": [
+        "integration-test",
+        "failure-injection-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-062",
+      "ticketId": "BR-062",
+      "phase": 7,
+      "title": "Integrate item, Ability, capability, move, Nature, form, and campaign override contributions",
+      "verificationKind": "integration",
+      "requiredEvidenceKinds": [
+        "integration-test",
+        "failure-injection-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-063",
+      "ticketId": "BR-063",
+      "phase": 7,
+      "title": "Define parent evolution, trade, rename, folder move, deletion, retraining, and source-update behaviour after project and Egg checkpoints",
+      "verificationKind": "integration",
+      "requiredEvidenceKinds": [
+        "integration-test",
+        "failure-injection-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-064",
+      "ticketId": "BR-064",
+      "phase": 7,
+      "title": "Implement Egg ownership transfer, gifting, storage, consent, and privacy lifecycle",
+      "verificationKind": "integration",
+      "requiredEvidenceKinds": [
+        "integration-test",
+        "failure-injection-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-065",
+      "ticketId": "BR-065",
+      "phase": 7,
+      "title": "Implement fossil-created Eggs through the shared Egg and hatch pipeline",
+      "verificationKind": "integration",
+      "requiredEvidenceKinds": [
+        "integration-test",
+        "failure-injection-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-cross-owner-consent-v1",
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-066",
+      "ticketId": "BR-066",
+      "phase": 7,
+      "title": "Implement GM-created, mysterious, gifted, and imported Eggs with typed provenance",
+      "verificationKind": "integration",
+      "requiredEvidenceKinds": [
+        "integration-test",
+        "failure-injection-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-special-source-eggs-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-067",
+      "ticketId": "BR-067",
+      "phase": 7,
+      "title": "Implement the optional Baby Template and staged recovery without mutating species reference data",
+      "verificationKind": "integration",
+      "requiredEvidenceKinds": [
+        "integration-test",
+        "failure-injection-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-special-source-eggs-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-068",
+      "ticketId": "BR-068",
+      "phase": 7,
+      "title": "Integrate frozen inheritance candidates with level-up learning, errata prerequisites, move slots, and permanent-move provenance",
+      "verificationKind": "integration",
+      "requiredEvidenceKinds": [
+        "integration-test",
+        "failure-injection-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-special-source-eggs-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-069",
+      "ticketId": "BR-069",
+      "phase": 7,
+      "title": "Reuse acquisition history across capture, hatch, evolution, trade, release, and migration",
+      "verificationKind": "integration",
+      "requiredEvidenceKinds": [
+        "integration-test",
+        "failure-injection-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-070",
+      "ticketId": "BR-070",
+      "phase": 8,
+      "title": "Add the Breeding Workshop route, navigation, ownership context, and empty/error states",
+      "verificationKind": "presentation",
+      "requiredEvidenceKinds": [
+        "component-or-nuxt-test",
+        "accessibility-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-071",
+      "ticketId": "BR-071",
+      "phase": 8,
+      "title": "Implement the project wizard for breeder, parents, destination, consent, and timeline",
+      "verificationKind": "presentation",
+      "requiredEvidenceKinds": [
+        "component-or-nuxt-test",
+        "accessibility-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-072",
+      "ticketId": "BR-072",
+      "phase": 8,
+      "title": "Implement compatibility explanations, unavailable reasons, source contributions, and GM diagnostics",
+      "verificationKind": "presentation",
+      "requiredEvidenceKinds": [
+        "component-or-nuxt-test",
+        "accessibility-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-073",
+      "ticketId": "BR-073",
+      "phase": 8,
+      "title": "Implement rank-authorised Nature, Ability, Gender, campaign-option, and confirmation choices",
+      "verificationKind": "presentation",
+      "requiredEvidenceKinds": [
+        "component-or-nuxt-test",
+        "accessibility-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-074",
+      "ticketId": "BR-074",
+      "phase": 8,
+      "title": "Implement project and Egg cards with progress, status, history, recovery, and transfer actions",
+      "verificationKind": "presentation",
+      "requiredEvidenceKinds": [
+        "component-or-nuxt-test",
+        "accessibility-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-cross-owner-consent-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-075",
+      "ticketId": "BR-075",
+      "phase": 8,
+      "title": "Implement the hatch decision flow, special adjudication, child reveal, and accepted presentation choreography",
+      "verificationKind": "presentation",
+      "requiredEvidenceKinds": [
+        "component-or-nuxt-test",
+        "accessibility-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-076",
+      "ticketId": "BR-076",
+      "phase": 8,
+      "title": "Integrate child destination, team-limit explanations, box linkage, Trainer pages, and sheet navigation",
+      "verificationKind": "presentation",
+      "requiredEvidenceKinds": [
+        "component-or-nuxt-test",
+        "accessibility-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-077",
+      "ticketId": "BR-077",
+      "phase": 8,
+      "title": "Implement cross-owner consent, revocation, notifications, private views, and GM override UX",
+      "verificationKind": "presentation",
+      "requiredEvidenceKinds": [
+        "component-or-nuxt-test",
+        "accessibility-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-078",
+      "ticketId": "BR-078",
+      "phase": 8,
+      "title": "Complete responsive, keyboard, screen-reader, touch, zoom, reduced-motion, and table-distance acceptance",
+      "verificationKind": "presentation",
+      "requiredEvidenceKinds": [
+        "component-or-nuxt-test",
+        "accessibility-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-079",
+      "ticketId": "BR-079",
+      "phase": 8,
+      "title": "Add Nuxt, Playwright, axe, multi-context, reconnect, visual-regression, and privacy browser suites",
+      "verificationKind": "presentation",
+      "requiredEvidenceKinds": [
+        "component-or-nuxt-test",
+        "accessibility-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-080",
+      "ticketId": "BR-080",
+      "phase": 9,
+      "title": "Enforce strict breeding-spec, project, Egg, operation, projection, and interaction manifest closure",
+      "verificationKind": "acceptance",
+      "requiredEvidenceKinds": [
+        "acceptance-test",
+        "recovery-or-concurrency-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-081",
+      "ticketId": "BR-081",
+      "phase": 9,
+      "title": "Run whole-species compatibility, family, trait, inheritance, hatch, and ruleset conformance suites",
+      "verificationKind": "acceptance",
+      "requiredEvidenceKinds": [
+        "acceptance-test",
+        "recovery-or-concurrency-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-082",
+      "ticketId": "BR-082",
+      "phase": 9,
+      "title": "Certify Edge, Feature, item, Ability, capability, move, form, fossil, Baby Template, and campaign-clock interactions",
+      "verificationKind": "acceptance",
+      "requiredEvidenceKinds": [
+        "acceptance-test",
+        "recovery-or-concurrency-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-083",
+      "ticketId": "BR-083",
+      "phase": 9,
+      "title": "Complete transaction failure injection, concurrency, idempotency, correction, abandonment, and disaster-recovery validation",
+      "verificationKind": "acceptance",
+      "requiredEvidenceKinds": [
+        "acceptance-test",
+        "recovery-or-concurrency-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-084",
+      "ticketId": "BR-084",
+      "phase": 9,
+      "title": "Complete authorization, consent, privacy, information-flow, malformed-input, and abuse testing",
+      "verificationKind": "acceptance",
+      "requiredEvidenceKinds": [
+        "acceptance-test",
+        "recovery-or-concurrency-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-085",
+      "ticketId": "BR-085",
+      "phase": 9,
+      "title": "Complete legacy migration, export/import, backup/restore, reference-version, and orphan-repair acceptance",
+      "verificationKind": "acceptance",
+      "requiredEvidenceKinds": [
+        "acceptance-test",
+        "recovery-or-concurrency-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-086",
+      "ticketId": "BR-086",
+      "phase": 9,
+      "title": "Enforce registry, preview, batch-clock, projection, and Workshop performance budgets",
+      "verificationKind": "acceptance",
+      "requiredEvidenceKinds": [
+        "acceptance-test",
+        "recovery-or-concurrency-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-087",
+      "ticketId": "BR-087",
+      "phase": 9,
+      "title": "Run production-like GM/player multi-client, long-timeskip, restart, transfer, and concurrent-hatch acceptance",
+      "verificationKind": "acceptance",
+      "requiredEvidenceKinds": [
+        "acceptance-test",
+        "recovery-or-concurrency-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": [
+        "breeding-cross-owner-consent-v1"
+      ]
+    },
+    {
+      "id": "breeding:BR-088",
+      "ticketId": "BR-088",
+      "phase": 9,
+      "title": "Complete contributor, operator, GM, player, API, data-model, campaign-clock, and QA documentation",
+      "verificationKind": "acceptance",
+      "requiredEvidenceKinds": [
+        "acceptance-test",
+        "recovery-or-concurrency-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-089",
+      "ticketId": "BR-089",
+      "phase": 9,
+      "title": "Retire manual breeding authority, placeholder child creation, and legacy inheritance mutation paths",
+      "verificationKind": "acceptance",
+      "requiredEvidenceKinds": [
+        "acceptance-test",
+        "recovery-or-concurrency-test"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    },
+    {
+      "id": "breeding:BR-090",
+      "ticketId": "BR-090",
+      "phase": 9,
+      "title": "Record final acceptance and mark the breeding and Egg lifecycle production-authoritative",
+      "verificationKind": "closure",
+      "requiredEvidenceKinds": [
+        "quality-gate",
+        "production-like-acceptance"
+      ],
+      "coverageStatus": "planned",
+      "evidencePaths": [],
+      "acceptanceFixtureIds": []
+    }
+  ]
+}

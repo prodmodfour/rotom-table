@@ -1,0 +1,574 @@
+{
+  "schemaVersion": 1,
+  "mapId": "breeding-runtime-ownership-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "securityDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "68a72c5077651ab406a18bb9d8826102194328eb75423002ff90d7d351073e5e",
+  "definition": {
+    "facts": [
+      {
+        "id": "canonical-reference-bytes",
+        "authority": "data/reference/*.json",
+        "writeOwner": "reviewed-source-migration",
+        "ownerTicket": "BR-001",
+        "readers": [
+          "breeding-compiler",
+          "maintenance-checker"
+        ],
+        "prohibitedWriters": [
+          "runtime-prose-parser",
+          "browser",
+          "ptu-data-output"
+        ],
+        "existingAuthority": true
+      },
+      {
+        "id": "breeding-ruleset-and-adjudications",
+        "authority": "data/breeding-automation/*.json",
+        "writeOwner": "reviewed-breeding-migration",
+        "ownerTicket": "BR-002",
+        "readers": [
+          "compiler",
+          "breeding-use-cases",
+          "checker"
+        ],
+        "prohibitedWriters": [
+          "browser",
+          "sheet-editor",
+          "documentary-parser"
+        ],
+        "existingAuthority": true
+      },
+      {
+        "id": "compiled-species-and-family-facts",
+        "authority": "reviewed-compiled-breeding-registry",
+        "writeOwner": "breeding-reference-compiler",
+        "ownerTicket": "BR-012",
+        "readers": [
+          "compatibility",
+          "offspring-resolution",
+          "hatch-construction"
+        ],
+        "prohibitedWriters": [
+          "operation-time-pokedex-string-parser",
+          "browser",
+          "legacy-generator"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "effective-breeder-permission",
+        "authority": "edge-automation",
+        "writeOwner": "server/domain/edgeAutomation",
+        "ownerTicket": "BR-040",
+        "readers": [
+          "breeding-authorization"
+        ],
+        "prohibitedWriters": [
+          "breeding-sheet-label-copy",
+          "browser"
+        ],
+        "existingAuthority": true
+      },
+      {
+        "id": "effective-modifier-contributions",
+        "authority": "owning-ability-capability-edge-feature-item-providers",
+        "writeOwner": "server/domain/breeding/providers",
+        "ownerTicket": "BR-041",
+        "readers": [
+          "project-and-egg-snapshot-planner"
+        ],
+        "prohibitedWriters": [
+          "browser",
+          "free-form-facility",
+          "legacy-map-metadata"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "breeding-project",
+        "authority": "breeding-project-repository",
+        "writeOwner": "server/useCases/breedingProjects",
+        "ownerTicket": "BR-050",
+        "readers": [
+          "audience-projection",
+          "egg-production",
+          "recovery"
+        ],
+        "prohibitedWriters": [
+          "sheet-repository",
+          "map-command-executor",
+          "browser"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "parent-consent",
+        "authority": "breeding-consent-repository",
+        "writeOwner": "server/useCases/breedingConsent",
+        "ownerTicket": "BR-052",
+        "readers": [
+          "project-authorization",
+          "audience-projection",
+          "audit"
+        ],
+        "prohibitedWriters": [
+          "browser-local-state",
+          "public-profile-flag",
+          "sheet-note"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "parent-snapshot",
+        "authority": "accepted-project-and-egg-documents",
+        "writeOwner": "server/domain/breeding/snapshots",
+        "ownerTicket": "BR-022",
+        "readers": [
+          "offspring-resolution",
+          "lineage",
+          "gm-projection"
+        ],
+        "prohibitedWriters": [
+          "live-parent-reconciliation",
+          "sheet-editor",
+          "browser"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "server-rolls-and-checks",
+        "authority": "breeding-roll-repository",
+        "writeOwner": "server/domain/breeding/random",
+        "ownerTicket": "BR-034",
+        "readers": [
+          "project-resolution",
+          "egg-production",
+          "hatch"
+        ],
+        "prohibitedWriters": [
+          "math-random-in-use-case",
+          "browser",
+          "legacy-generator"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "pokemon-egg",
+        "authority": "pokemon-egg-repository",
+        "writeOwner": "server/useCases/pokemonEggs",
+        "ownerTicket": "BR-058",
+        "readers": [
+          "incubation",
+          "hatch",
+          "audience-projection",
+          "export"
+        ],
+        "prohibitedWriters": [
+          "pokemon-sheet-repository-before-hatch",
+          "map-metadata",
+          "inventory-row",
+          "browser"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "campaign-minute-and-revision",
+        "authority": "campaign-clock-repository",
+        "writeOwner": "server/useCases/campaignClock",
+        "ownerTicket": "BR-031",
+        "readers": [
+          "project-time",
+          "incubation",
+          "capability-campaign-state"
+        ],
+        "prohibitedWriters": [
+          "wall-clock-timer",
+          "browser",
+          "map-scene-time"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "incubation-progress",
+        "authority": "pokemon-egg-repository",
+        "writeOwner": "server/useCases/advanceEggIncubation",
+        "ownerTicket": "BR-056",
+        "readers": [
+          "egg-projection",
+          "hatch-readiness"
+        ],
+        "prohibitedWriters": [
+          "process-timer",
+          "browser-timer",
+          "map-metadata"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "hatch-operation-result",
+        "authority": "breeding-operation-repository",
+        "writeOwner": "server/useCases/completeEggHatch",
+        "ownerTicket": "BR-059",
+        "readers": [
+          "exact-retry",
+          "recovery",
+          "audit"
+        ],
+        "prohibitedWriters": [
+          "browser",
+          "second-child-creator",
+          "setup-sheet-save"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "child-pokemon-sheet",
+        "authority": "sheet-repository-pokemon-kind",
+        "writeOwner": "server/useCases/completeEggHatch",
+        "ownerTicket": "BR-059",
+        "readers": [
+          "sheet-ui",
+          "trainer-roster",
+          "live-play"
+        ],
+        "prohibitedWriters": [
+          "blank-sheet-then-save",
+          "egg-repository-after-hatch",
+          "browser"
+        ],
+        "existingAuthority": true
+      },
+      {
+        "id": "trainer-child-link",
+        "authority": "trainer-sheet-currentTeam-or-boxedPokemon",
+        "writeOwner": "server/useCases/completeEggHatch",
+        "ownerTicket": "BR-059",
+        "readers": [
+          "trainer-sheet-ui",
+          "authorization"
+        ],
+        "prohibitedWriters": [
+          "egg-roster",
+          "browser",
+          "nontransactional-followup-save"
+        ],
+        "existingAuthority": true
+      },
+      {
+        "id": "pokemon-breeding-origin",
+        "authority": "child-pokemon-sheet-typed-origin",
+        "writeOwner": "server/useCases/completeEggHatch",
+        "ownerTicket": "BR-022",
+        "readers": [
+          "lineage-ui",
+          "move-learning",
+          "gm-audit"
+        ],
+        "prohibitedWriters": [
+          "legacy-eggMoves",
+          "legacy-inheritedMoves",
+          "browser"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "species-acquisition-history",
+        "authority": "trainer-species-acquisition-repository",
+        "writeOwner": "server/useCases/recordSpeciesAcquisition",
+        "ownerTicket": "BR-037",
+        "readers": [
+          "capture",
+          "hatch",
+          "evolution",
+          "reward-planner"
+        ],
+        "prohibitedWriters": [
+          "dexExp-total",
+          "sheet-deletion-inference",
+          "browser"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "breeding-realtime-event",
+        "authority": "realtime-event-log",
+        "writeOwner": "server/realtime/breedingRealtime",
+        "ownerTicket": "BR-043",
+        "readers": [
+          "authorized-refresh-subscribers"
+        ],
+        "prohibitedWriters": [
+          "component-payload",
+          "private-snapshot-publisher",
+          "precommit-publisher"
+        ],
+        "existingAuthority": true
+      },
+      {
+        "id": "audience-projection",
+        "authority": "server-breeding-projection",
+        "writeOwner": "server/domain/breeding/projection",
+        "ownerTicket": "BR-025",
+        "readers": [
+          "api-routes",
+          "workshop-loader"
+        ],
+        "prohibitedWriters": [
+          "vue-css",
+          "client-filter",
+          "shared-overbroad-payload"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "workshop-presentation",
+        "authority": "vue-workshop-components",
+        "writeOwner": "src/pages/breeding",
+        "ownerTicket": "BR-070",
+        "readers": [
+          "authorized-human-users"
+        ],
+        "prohibitedWriters": [
+          "mechanics-reducer",
+          "authority-cache",
+          "local-project-store"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "legacy-breeding-fields",
+        "authority": "compatibility-adapter-only",
+        "writeOwner": "server/domain/breeding/legacyAdapters",
+        "ownerTicket": "BR-060",
+        "readers": [
+          "sheet-ui",
+          "migration-tool"
+        ],
+        "prohibitedWriters": [
+          "egg-production",
+          "lineage-proof",
+          "consent-proof"
+        ],
+        "existingAuthority": false
+      },
+      {
+        "id": "map-and-encounter-state",
+        "authority": "map-and-encounter-authorities",
+        "writeOwner": "none",
+        "ownerTicket": "BR-076",
+        "readers": [
+          "tactical-runtime"
+        ],
+        "prohibitedWriters": [
+          "breeding-project",
+          "pokemon-egg",
+          "incubation",
+          "hatch"
+        ],
+        "existingAuthority": false
+      }
+    ],
+    "aggregateRepositories": [
+      {
+        "aggregate": "breeding-project",
+        "plannedPath": "server/storage/breedingProjectRepository.ts",
+        "ownerTicket": "BR-032"
+      },
+      {
+        "aggregate": "pokemon-egg",
+        "plannedPath": "server/storage/pokemonEggRepository.ts",
+        "ownerTicket": "BR-033"
+      },
+      {
+        "aggregate": "campaign-clock",
+        "plannedPath": "server/storage/campaignClockRepository.ts",
+        "ownerTicket": "BR-031"
+      },
+      {
+        "aggregate": "breeding-operation",
+        "plannedPath": "server/storage/breedingOperationRepository.ts",
+        "ownerTicket": "BR-034"
+      },
+      {
+        "aggregate": "parent-consent",
+        "plannedPath": "server/storage/breedingConsentRepository.ts",
+        "ownerTicket": "BR-035"
+      },
+      {
+        "aggregate": "species-acquisition",
+        "plannedPath": "server/storage/trainerSpeciesAcquisitionRepository.ts",
+        "ownerTicket": "BR-037"
+      },
+      {
+        "aggregate": "pokemon-sheet",
+        "existingPath": "server/storage/sheetRepository.ts",
+        "ownerTicket": "BR-059"
+      },
+      {
+        "aggregate": "trainer-sheet",
+        "existingPath": "server/storage/sheetRepository.ts",
+        "ownerTicket": "BR-059"
+      }
+    ],
+    "transactionBoundaries": [
+      {
+        "id": "project-mutation",
+        "members": [
+          "project",
+          "consents",
+          "rolls",
+          "operation-result",
+          "audit-event"
+        ],
+        "commit": "single-sqlite-transaction"
+      },
+      {
+        "id": "egg-production",
+        "members": [
+          "project",
+          "parent-snapshots",
+          "provider-snapshots",
+          "rolls",
+          "egg",
+          "operation-result",
+          "audit-event"
+        ],
+        "commit": "single-sqlite-transaction"
+      },
+      {
+        "id": "clock-advance",
+        "members": [
+          "clock",
+          "affected-projects",
+          "affected-eggs",
+          "operation-result",
+          "audit-events"
+        ],
+        "commit": "single-sqlite-transaction"
+      },
+      {
+        "id": "hatch",
+        "members": [
+          "egg",
+          "child-sheet",
+          "trainer-link",
+          "species-acquisition",
+          "first-species-reward",
+          "operation-result",
+          "audit-events"
+        ],
+        "commit": "single-sqlite-transaction"
+      },
+      {
+        "id": "export-restore",
+        "members": [
+          "projects",
+          "eggs",
+          "consents",
+          "rolls",
+          "operations",
+          "acquisitions",
+          "reference-metadata"
+        ],
+        "commit": "validated-all-or-nothing-import"
+      }
+    ],
+    "apiBoundaries": {
+      "routePrefix": "/api/breeding",
+      "workshopPrefix": "/breeding",
+      "mapRouteDependency": "none",
+      "commandParsing": "exact-closed-versioned",
+      "resultProjection": "audience-specific-server-schema",
+      "realtime": "refresh-signal-after-commit"
+    },
+    "moduleLayers": [
+      {
+        "id": "shared-contracts",
+        "plannedRoot": "shared/breeding",
+        "mayImport": [
+          "shared-automation-primitives"
+        ],
+        "mustNotImport": [
+          "server",
+          "src"
+        ]
+      },
+      {
+        "id": "pure-domain",
+        "plannedRoot": "server/domain/breeding",
+        "mayImport": [
+          "shared/breeding",
+          "app-owned-reference-registry"
+        ],
+        "mustNotImport": [
+          "vue",
+          "http-route-state"
+        ]
+      },
+      {
+        "id": "storage",
+        "plannedRoot": "server/storage",
+        "mayImport": [
+          "shared/breeding",
+          "node:sqlite"
+        ],
+        "mustNotImport": [
+          "vue",
+          "map-command-executor"
+        ]
+      },
+      {
+        "id": "use-cases",
+        "plannedRoot": "server/useCases",
+        "mayImport": [
+          "server/domain/breeding",
+          "server/storage",
+          "upstream-effective-providers"
+        ],
+        "mustNotImport": [
+          "vue",
+          "browser-state"
+        ]
+      },
+      {
+        "id": "api",
+        "plannedRoot": "server/api/breeding",
+        "mayImport": [
+          "server/useCases",
+          "server-http-utils"
+        ],
+        "mustNotImport": [
+          "raw-sql",
+          "mechanics-prose"
+        ]
+      },
+      {
+        "id": "presentation",
+        "plannedRoot": "src",
+        "mayImport": [
+          "public-breeding-contracts",
+          "api-client",
+          "encounter-design-system"
+        ],
+        "mustNotImport": [
+          "server-domain",
+          "data/reference",
+          "mechanics-inference"
+        ]
+      }
+    ],
+    "singleAuthorityRules": [
+      "no-third-sheet-kind-for-eggs",
+      "no-map-scoped-breeding-command",
+      "no-inventory-row-egg",
+      "no-legacy-field-lineage-proof",
+      "no-second-child-construction-path",
+      "no-precommit-realtime-publication",
+      "no-client-mechanics-or-privacy-filter",
+      "no-runtime-documentary-source"
+    ]
+  }
+}

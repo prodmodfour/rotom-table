@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "schemaId": "ptu-1.05-breeding-spec-schemas-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "taxonomyDefinitionSha256": "086633909ce7499e5946e033d596145f469e09ebb2490e7d6985b6f19394ff8d",
+  "canonicalIdDefinitionSha256": "99e9ab4c4107086d64e2d70e7cdcaa7f9e10fd534f223f0ca053b2c1c4798d1e",
+  "familyPolicyDefinitionSha256": "ae677fe4a6d204e05a2c500e2dc5584b88ca2a10b80546c18a30b94e7541bc76",
+  "hatchPolicyDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "a47dbd490e0485ce1adef9a823a9d76c27c12496e56c72dbfdd2f0f7bdb6163e",
+  "definition": {
+    "specVersion": 1,
+    "limits": {
+      "speciesPerFamily": 128,
+      "evolutionEdgesPerFamily": 256,
+      "eggGroupsPerSpecies": 2,
+      "basicAbilitiesPerSpecies": 8,
+      "eggMovesPerSpecies": 256,
+      "machineMovesPerSpecies": 256,
+      "sourceHashesPerSpec": 16,
+      "adjudicationsPerSpecies": 32,
+      "sourcePathChars": 240,
+      "hatchCampaignMinutesMaximum": 31536000
+    },
+    "speciesSpec": {
+      "name": "BreedingSpeciesSpecV1",
+      "exactFields": [
+        "schemaVersion",
+        "speciesId",
+        "familyId",
+        "familyRootSpeciesId",
+        "formKindId",
+        "formPolicyId",
+        "eligibilityId",
+        "eligibilityEvidenceId",
+        "eggGroupIds",
+        "genderPolicy",
+        "basicAbilityIds",
+        "hatchCampaignMinutes",
+        "eggMoveIds",
+        "machineCompatibleMoveIds",
+        "provenance",
+        "sourceHashes",
+        "definitionSha256"
+      ],
+      "genderPolicyVariants": [
+        {
+          "kind": "ratio",
+          "exactFields": [
+            "kind",
+            "femalePercent"
+          ],
+          "femalePercentMinimum": 0,
+          "femalePercentMaximum": 100,
+          "femalePercentIncrement": 0.1
+        },
+        {
+          "kind": "genderless",
+          "exactFields": [
+            "kind"
+          ]
+        }
+      ],
+      "provenanceExactFields": [
+        "sourcePath",
+        "sourceIndex",
+        "sourceRecordSha256",
+        "canonicalIdDefinitionSha256",
+        "taxonomyDefinitionSha256",
+        "familyPolicyDefinitionSha256",
+        "hatchPolicyDefinitionSha256",
+        "compilerDefinitionSha256",
+        "adjudicationIds"
+      ],
+      "emittedEligibilityIds": [
+        "breedable",
+        "no-breeding",
+        "special-source-only"
+      ],
+      "arrayOrder": "canonical-id-unicode-code-point",
+      "arraysUnique": true
+    },
+    "familySpec": {
+      "name": "BreedingFamilySpecV1",
+      "exactFields": [
+        "schemaVersion",
+        "familyId",
+        "familyRootSpeciesId",
+        "offspringRootSpeciesId",
+        "memberSpeciesIds",
+        "evolutionEdges",
+        "formPolicies",
+        "sourceHashes",
+        "definitionSha256"
+      ],
+      "evolutionEdgeExactFields": [
+        "fromSpeciesId",
+        "toSpeciesId",
+        "kind"
+      ],
+      "evolutionEdgeKinds": [
+        "evolves-to",
+        "branch-evolves-to"
+      ],
+      "formPolicyExactFields": [
+        "speciesId",
+        "formKindId",
+        "formPolicyId"
+      ],
+      "memberOrder": "canonical-species-id-unicode-code-point",
+      "edgeOrder": "from-id-then-to-id-then-kind",
+      "formPolicyOrder": "species-id",
+      "sourceHashOrder": "hex-code-point"
+    },
+    "invariants": [
+      "all-records-plain-enumerable-data-only",
+      "exact-fields-no-symbols",
+      "all-identities-exact-catalog-members",
+      "family-id-matches-family-root",
+      "family-and-offspring-roots-are-members",
+      "species-family-fields-match-family-spec",
+      "all-arrays-bounded-sorted-and-unique",
+      "all-edge-endpoints-are-members",
+      "no-self-edges",
+      "directed-evolution-subgraph-acyclic",
+      "root-has-zero-incoming-edges",
+      "every-non-root-member-reachable-from-root",
+      "one-form-policy-per-member",
+      "breedable-species-has-at-least-one-egg-group",
+      "source-gap-specs-are-never-emitted",
+      "all-hashes-lowercase-sha256",
+      "definition-hash-covers-all-fields-except-definitionSha256"
+    ],
+    "validationCodes": [
+      "breeding.spec.not-object",
+      "breeding.spec.unknown-field",
+      "breeding.spec.invalid-version",
+      "breeding.spec.invalid-id",
+      "breeding.spec.unknown-id",
+      "breeding.spec.invalid-enum",
+      "breeding.spec.invalid-number",
+      "breeding.spec.invalid-array",
+      "breeding.spec.duplicate-id",
+      "breeding.spec.invalid-order",
+      "breeding.spec.invalid-hash",
+      "breeding.spec.limit-exceeded",
+      "breeding.spec.invariant"
+    ],
+    "diagnosticContract": {
+      "stableCode": "required",
+      "jsonPath": "required-bounded-no-input-value",
+      "message": "bounded-static-template-no-raw-input",
+      "publicProjection": [
+        "code"
+      ],
+      "gmProjection": [
+        "code",
+        "path"
+      ],
+      "maintenanceProjection": [
+        "code",
+        "path",
+        "message"
+      ],
+      "rawValue": "never"
+    },
+    "definitionHash": {
+      "algorithm": "sha256",
+      "serialization": "stable-json-v1",
+      "input": "parsed-spec-without-definitionSha256",
+      "mismatch": "reject"
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "taxonomyDefinitionSha256": "086633909ce7499e5946e033d596145f469e09ebb2490e7d6985b6f19394ff8d",
+      "canonicalIdDefinitionSha256": "99e9ab4c4107086d64e2d70e7cdcaa7f9e10fd534f223f0ca053b2c1c4798d1e",
+      "familyPolicyDefinitionSha256": "ae677fe4a6d204e05a2c500e2dc5584b88ca2a10b80546c18a30b94e7541bc76",
+      "hatchPolicyDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a"
+    }
+  }
+}

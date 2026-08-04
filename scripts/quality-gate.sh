@@ -88,6 +88,15 @@ if have npm; then
   pp_section "Feature automation metadata"
   run_cmd npm run check:feature-automation-complete
 
+  pp_section "Breeding automation metadata"
+  run_cmd npm run check:breeding-automation
+
+  pp_section "Breeding Family resolutions"
+  run_cmd npm run check:breeding-family-resolutions
+
+  pp_section "Breeding compiled registry"
+  run_cmd npm run check:breeding-compiler
+
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation
 

@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "compilerId": "ptu-1.05-breeding-spec-compiler-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "f0c2adcbefb6c395ff729d110b3ae5bcaf61ac36687061f3e4b9f3d898d4814a",
+  "definition": {
+    "compilerVersion": 1,
+    "source": {
+      "path": "data/reference/pokedex.json",
+      "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696",
+      "expectedRows": 1149,
+      "exactKnownFields": [
+        "species",
+        "types",
+        "base_stats",
+        "abilities",
+        "evolutions",
+        "evolution_stage",
+        "evolutions_remaining",
+        "size",
+        "weight",
+        "genderless",
+        "male_pct",
+        "female_pct",
+        "egg_groups",
+        "hatch_rate",
+        "diet",
+        "habitat",
+        "capabilities",
+        "skills",
+        "level_up_moves",
+        "tm_hm_moves",
+        "egg_moves",
+        "tutor_moves",
+        "source_gen",
+        "width",
+        "height",
+        "base",
+        "clearance"
+      ],
+      "requiredBreedingFields": [
+        "species",
+        "abilities",
+        "evolutions",
+        "evolution_stage",
+        "genderless",
+        "male_pct",
+        "female_pct",
+        "egg_groups",
+        "hatch_rate",
+        "egg_moves",
+        "tm_hm_moves"
+      ]
+    },
+    "pipeline": [
+      "verify-catalog-and-source-record-provenance",
+      "parse-exact-known-source-shape",
+      "resolve-reviewed-egg-group-cells",
+      "resolve-exact-gender-policy",
+      "resolve-exact-basic-ability-identities",
+      "resolve-family-offspring-root-hatch-duration",
+      "resolve-egg-and-machine-move-identities",
+      "resolve-reviewed-evolution-target-adjudications",
+      "validate-evolution-references",
+      "join-explicit-form-and-family-resolution",
+      "validate-family-resolution-artifact-provenance",
+      "emit-strict-self-hashed-family-and-species-records",
+      "emit-stable-validation-report"
+    ],
+    "familyResolution": {
+      "input": "strict-BreedingFamilySpecV1-records",
+      "missing": "exclude-source-valid-species-with-diagnostic",
+      "crossFamilyMembership": "reject-resolution-set",
+      "sourceStageMismatch": "exclude-family-and-members",
+      "operationTimeTraversal": "forbidden"
+    },
+    "diagnostics": [
+      {
+        "code": "breeding.compiler.sparse-record",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.unknown-source-field",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.source-identity-drift",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.invalid-egg-groups",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.non-ditto-ditto-group",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.invalid-gender",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.invalid-basic-ability",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.missing-hatch-duration",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.invalid-hatch-duration",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.invalid-egg-move",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.unresolved-machine-move",
+        "severity": "warning"
+      },
+      {
+        "code": "breeding.compiler.invalid-evolution-source",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.unknown-evolution-target",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.family-resolution-missing",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.family-resolution-source-mismatch",
+        "severity": "error"
+      },
+      {
+        "code": "breeding.compiler.spec-validation-failed",
+        "severity": "error"
+      }
+    ],
+    "diagnosticOrder": "source-index-then-code-then-path",
+    "diagnosticPayload": {
+      "exactFields": [
+        "code",
+        "severity",
+        "speciesId",
+        "sourceIndex",
+        "path"
+      ],
+      "rawSourceValue": "forbidden",
+      "maximumPathChars": 160
+    },
+    "output": {
+      "registrySchemaVersion": 1,
+      "reportSchemaVersion": 1,
+      "speciesOrder": "species-id-code-point",
+      "familyOrder": "family-id-code-point",
+      "diagnosticOrder": "source-index-then-code-then-path",
+      "serialization": "stable-pretty-json-two-spaces-trailing-newline",
+      "definitionHash": "stable-json-v1-sha256"
+    },
+    "policies": {
+      "sourceLabelRuntimeFallback": "forbidden",
+      "documentarySupplementation": "forbidden",
+      "unknownMachineMove": "warning-and-exclude-move-only",
+      "unknownEggMove": "exclude-species",
+      "unknownBasicAbility": "exclude-species",
+      "missingFamilyResolution": "exclude-species",
+      "partialFamilyEmission": "forbidden",
+      "nondeterministicInput": "forbidden",
+      "compilerMutationOfSource": "forbidden",
+      "reviewedEvolutionTargetAdjudication": "exact-raw-cell-only",
+      "formClassification": "explicit-app-owned-row-only"
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "taxonomyDefinitionSha256": "086633909ce7499e5946e033d596145f469e09ebb2490e7d6985b6f19394ff8d",
+      "idsDefinitionSha256": "99e9ab4c4107086d64e2d70e7cdcaa7f9e10fd534f223f0ca053b2c1c4798d1e",
+      "schemasDefinitionSha256": "a47dbd490e0485ce1adef9a823a9d76c27c12496e56c72dbfdd2f0f7bdb6163e",
+      "familyDefinitionSha256": "ae677fe4a6d204e05a2c500e2dc5584b88ca2a10b80546c18a30b94e7541bc76",
+      "hatchDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a",
+      "evolutionTargetAdjudicationsDefinitionSha256": "ea4d7d65f2cb896991756e235b52d34a4ba21f7ef925f19f55d43e4523f41a6c",
+      "formAdjudicationsDefinitionSha256": "f63dfc0bb2501d6772c821fe987cc3fa149f005f5e337e27c7e3496269fa78df"
+    }
+  }
+}

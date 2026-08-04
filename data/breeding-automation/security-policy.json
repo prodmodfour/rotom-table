@@ -1,0 +1,485 @@
+{
+  "schemaVersion": 1,
+  "policyId": "breeding-security-privacy-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+  "definition": {
+    "audiences": [
+      {
+        "id": "public",
+        "requiresAuthentication": false,
+        "authority": "none"
+      },
+      {
+        "id": "owner",
+        "requiresAuthentication": true,
+        "authority": "controlled-owner-trainer-only"
+      },
+      {
+        "id": "participating-owner",
+        "requiresAuthentication": true,
+        "authority": "controlled-consented-parent-only"
+      },
+      {
+        "id": "gm",
+        "requiresAuthentication": true,
+        "authority": "campaign-gm"
+      },
+      {
+        "id": "diagnostic",
+        "requiresAuthentication": true,
+        "authority": "authorized-operator"
+      }
+    ],
+    "consent": {
+      "crossOwnerPolicy": "positive-current-project-and-parent-revision-consent-required",
+      "sameOwnerPolicy": "current-control-authorization-required",
+      "browserSelectionIsConsent": false,
+      "publicSheetVisibilityIsConsent": false,
+      "legacySessionGrantIsConsent": false,
+      "blanketConsent": "forbidden",
+      "consentScopes": [
+        "project-participation",
+        "own-parent-safe-summary",
+        "own-parent-contribution-attribution"
+      ],
+      "requiredRecordFields": [
+        "consent-id",
+        "project-id",
+        "parent-sheet-slug",
+        "parent-sheet-revision",
+        "owner-trainer-slug",
+        "consenting-profile-id",
+        "scopes",
+        "granted-at-campaign-minute",
+        "expires-at-campaign-minute-or-null",
+        "revoked-at-campaign-minute-or-null",
+        "source-operation-id",
+        "command-hash"
+      ],
+      "grantAuthorization": "profile-controls-owner-trainer-and-current-parent-link",
+      "executionAuthorization": "recheck-profile-control-parent-link-revision-expiry-and-revocation",
+      "parentRevisionChangeBeforeSnapshot": "invalidate-consent-and-return-awaiting-consent",
+      "revocationBeforeEggAcceptance": "blocks-production-and-preserves-audit",
+      "revocationAfterEggAcceptance": "does-not-rewrite-egg-or-parent-snapshot",
+      "projectCancellation": "does-not-delete-consent-audit",
+      "gmOverride": "typed-reason-id-and-audited-operation-only"
+    },
+    "privacyFields": [
+      {
+        "id": "public-summary",
+        "audiences": [
+          "public",
+          "owner",
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "campaign-configured-bounded-summary-only"
+      },
+      {
+        "id": "coarse-lifecycle-status",
+        "audiences": [
+          "public",
+          "owner",
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "public-safe-enum-only"
+      },
+      {
+        "id": "project-id",
+        "audiences": [
+          "owner",
+          "participating-owner",
+          "gm",
+          "diagnostic"
+        ],
+        "rule": "diagnostic-may-see-hash-only"
+      },
+      {
+        "id": "egg-id",
+        "audiences": [
+          "owner",
+          "gm",
+          "diagnostic"
+        ],
+        "rule": "diagnostic-may-see-hash-only"
+      },
+      {
+        "id": "owner-trainer-identity",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "never-implied-by-public-summary"
+      },
+      {
+        "id": "breeder-identity",
+        "audiences": [
+          "owner",
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "only-when-required-for-consent-or-owned-workflow"
+      },
+      {
+        "id": "own-parent-safe-summary",
+        "audiences": [
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "participant-receives-only-their-controlled-parent"
+      },
+      {
+        "id": "other-parent-identity",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "never-in-participant-projection-without-separate-authorized-reveal"
+      },
+      {
+        "id": "full-parent-snapshots",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "immutable-private-mechanics"
+      },
+      {
+        "id": "consent-request",
+        "audiences": [
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "project-purpose-own-parent-revision-scopes-and-expiry-only"
+      },
+      {
+        "id": "consenting-profile-identity",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "not-shared-across-participants"
+      },
+      {
+        "id": "exact-project-timeline",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "campaign-minute-values"
+      },
+      {
+        "id": "exact-incubation-progress",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "participant-and-public-receive-coarse-status-only"
+      },
+      {
+        "id": "trait-choice-offers",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "server-issued-options-for-authorized-chooser-only"
+      },
+      {
+        "id": "resolved-offspring-traits",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "other-views-require-separate-sheet-or-campaign-reveal-authority"
+      },
+      {
+        "id": "inheritance-candidates",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "owner-sees-candidates-without-private-other-parent-attribution"
+      },
+      {
+        "id": "own-inheritance-attribution",
+        "audiences": [
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "participant-sees-only-own-parent-contributions"
+      },
+      {
+        "id": "full-inheritance-provenance",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "includes-all-parent-and-pathway-evidence"
+      },
+      {
+        "id": "raw-rolls-and-checks",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "owner-receives-bounded-explanation-not-private-inputs"
+      },
+      {
+        "id": "gm-overrides-and-notes",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "never-public-or-player-projected"
+      },
+      {
+        "id": "definition-hashes-and-traces",
+        "audiences": [
+          "gm",
+          "diagnostic"
+        ],
+        "rule": "diagnostic-has-no-sheet-command-choice-or-note-payload"
+      },
+      {
+        "id": "recovery-state",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "owner-receives-safe-actionable-status-only"
+      }
+    ],
+    "projectionRules": {
+      "schemaPerAudience": "required-no-shared-overbroad-payload",
+      "visibilityBeforeControl": "required",
+      "controlCannotExceedVisibleAuthorizedIdentity": "required",
+      "deepLinkAdoption": "only-identities-in-current-authorized-projection",
+      "unknownAudience": "deny",
+      "unknownField": "omit-and-diagnose",
+      "clientCssPrivacy": "forbidden",
+      "localPersistence": "presentation-preferences-only",
+      "realtime": "privacy-safe-refresh-signal-only",
+      "realtimePayloadAllowedFields": [
+        "schema-version",
+        "sequence",
+        "aggregate-kind",
+        "aggregate-id-hash",
+        "revision",
+        "operation-kind",
+        "audience-refresh-scope"
+      ]
+    },
+    "threats": [
+      {
+        "id": "breeding.threat.idor",
+        "assets": [
+          "projects",
+          "eggs",
+          "parents",
+          "consents",
+          "children"
+        ],
+        "mitigations": [
+          "audience-projected-repository-queries",
+          "control-and-visibility-recheck",
+          "opaque-stable-ids"
+        ]
+      },
+      {
+        "id": "breeding.threat.cross-owner-without-consent",
+        "assets": [
+          "parents",
+          "lineage"
+        ],
+        "mitigations": [
+          "positive-revision-bound-consent",
+          "transactional-consent-recheck",
+          "audited-gm-override"
+        ]
+      },
+      {
+        "id": "breeding.threat.hidden-parent-leak",
+        "assets": [
+          "private-sheets",
+          "moves",
+          "providers",
+          "ownership"
+        ],
+        "mitigations": [
+          "separate-audience-schemas",
+          "own-parent-only-projection",
+          "redacted-inheritance-attribution"
+        ]
+      },
+      {
+        "id": "breeding.threat.client-mechanics-injection",
+        "assets": [
+          "traits",
+          "species",
+          "moves",
+          "time",
+          "rewards"
+        ],
+        "mitigations": [
+          "exact-command-parsers",
+          "server-issued-option-ids",
+          "server-owned-state-plans"
+        ]
+      },
+      {
+        "id": "breeding.threat.reroll-or-replay",
+        "assets": [
+          "checks",
+          "rolls",
+          "choices",
+          "spends"
+        ],
+        "mitigations": [
+          "operation-command-hash",
+          "persisted-roll-ledger",
+          "exact-retry-result"
+        ]
+      },
+      {
+        "id": "breeding.threat.operation-id-collision",
+        "assets": [
+          "operation-ledger"
+        ],
+        "mitigations": [
+          "reject-different-command-hash",
+          "bounded-stable-operation-id"
+        ]
+      },
+      {
+        "id": "breeding.threat.concurrent-double-hatch",
+        "assets": [
+          "egg",
+          "child-sheet",
+          "trainer-reward"
+        ],
+        "mitigations": [
+          "expected-revision",
+          "single-sqlite-transaction",
+          "unique-egg-child-link",
+          "stored-terminal-result"
+        ]
+      },
+      {
+        "id": "breeding.threat.stale-consent-toctou",
+        "assets": [
+          "consent",
+          "parents"
+        ],
+        "mitigations": [
+          "parent-revision-snapshot",
+          "transactional-read-set",
+          "recheck-before-egg-acceptance"
+        ]
+      },
+      {
+        "id": "breeding.threat.realtime-or-export-leak",
+        "assets": [
+          "private-mechanics",
+          "profile-identities"
+        ],
+        "mitigations": [
+          "refresh-signals-only",
+          "audience-filter-before-persist-or-send",
+          "gm-only-private-export"
+        ]
+      },
+      {
+        "id": "breeding.threat.restore-tampering",
+        "assets": [
+          "lineage",
+          "rolls",
+          "operations",
+          "rewards"
+        ],
+        "mitigations": [
+          "digest-envelope",
+          "referential-validation",
+          "duplicate-identity-rejection",
+          "ruleset-availability-check"
+        ]
+      },
+      {
+        "id": "breeding.threat.legacy-authority-confusion",
+        "assets": [
+          "egg-authority",
+          "lineage"
+        ],
+        "mitigations": [
+          "reject-map-metadata-eggs",
+          "legacy-fields-projection-only",
+          "one-egg-repository"
+        ]
+      },
+      {
+        "id": "breeding.threat.resource-exhaustion",
+        "assets": [
+          "server-memory",
+          "sqlite",
+          "realtime"
+        ],
+        "mitigations": [
+          "closed-bounds",
+          "pagination",
+          "single-worker-maintenance-checks",
+          "rate-limits"
+        ]
+      },
+      {
+        "id": "breeding.threat.parent-change-after-acceptance",
+        "assets": [
+          "accepted-egg-blueprint"
+        ],
+        "mitigations": [
+          "immutable-parent-snapshots",
+          "definition-hashes",
+          "no-retroactive-reconciliation"
+        ]
+      }
+    ],
+    "abuseLimits": {
+      "commandJsonBytes": 32768,
+      "realtimeEventJsonBytes": 4096,
+      "exportEnvelopeBytes": 67108864,
+      "stableIdCharacters": 160,
+      "boundedNarrativeCharacters": 500,
+      "parentsPerBreedingProject": 2,
+      "consentsPerBreedingProject": 2,
+      "activeProjectsPerParent": 1,
+      "serverIssuedOptionsPerChoice": 64,
+      "effectiveMovesPerParent": 64,
+      "inheritanceCandidatesPerEgg": 256,
+      "definitionHashesPerAggregate": 256,
+      "operationRolls": 32,
+      "pageSizeDefault": 25,
+      "pageSizeMaximum": 100,
+      "writeCommandsPerProfilePerMinute": 30,
+      "gmWriteCommandsPerSessionPerMinute": 120,
+      "consentMaximumCampaignMinutes": 525600,
+      "exactRetryRetention": "permanent-with-campaign-data",
+      "negativeOrUnsafeInteger": "reject",
+      "unknownObjectField": "reject",
+      "duplicateListIdentity": "reject"
+    },
+    "auditRequirements": [
+      "operation-id-and-command-hash",
+      "actor-profile-and-role",
+      "aggregate-id-and-revisions",
+      "authorization-and-consent-evidence",
+      "ruleset-source-and-provider-hashes",
+      "roll-and-choice-identities",
+      "gm-override-reason-id",
+      "terminal-result-and-event-identities"
+    ],
+    "failures": {
+      "authorization": "not-found-or-forbidden-without-existence-oracle",
+      "consent": "stable-unavailable-reason-with-own-parent-only-context",
+      "staleRevision": "safe-current-projection-only",
+      "rateLimit": "retry-after-without-private-state",
+      "projectionContradiction": "fail-closed-and-refresh",
+      "replayGap": "replace-from-authoritative-audience-projection"
+    }
+  }
+}

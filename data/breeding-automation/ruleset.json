@@ -1,0 +1,346 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "status": "reviewed",
+  "definitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "definition": {
+    "definitionVersion": 1,
+    "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+    "authority": {
+      "mechanics": "server-only",
+      "randomness": "persisted-replay-safe-roll-ledger",
+      "campaignTime": "authoritative-versioned-clock-or-audited-gm-advance",
+      "runtimeSources": "app-owned-json-and-reviewed-compiled-artifacts-only",
+      "documentaryRuntimeUse": "forbidden",
+      "unknownOrAmbiguous": "fail-closed"
+    },
+    "project": {
+      "initialCampaignMinutes": 240,
+      "check": {
+        "skillId": "pokemon-education",
+        "dc": 12,
+        "roll": "1d20-plus-authoritative-skill-total",
+        "attemptsPerProject": 1
+      },
+      "additionalCampaignMinutesOnSuccess": 240,
+      "checkFailurePolicy": "terminal-no-egg",
+      "parentSnapshotCheckpoint": "project-check-ready",
+      "providerSnapshotCheckpoint": "project-check-ready",
+      "eggBlueprintCheckpoint": "egg-acceptance"
+    },
+    "compatibility": {
+      "requiredSharedEggGroupCount": 1,
+      "conventionalRolePair": [
+        "female",
+        "male"
+      ],
+      "dittoSpeciesId": "ditto",
+      "dittoMayFillEitherRole": true,
+      "dittoMaySupplyOffspringFamily": false,
+      "dittoDittoCompatible": false,
+      "genderlessDefaultPolicy": "ditto-only",
+      "sameSexDefaultPolicy": "incompatible",
+      "maturityDefaultPolicy": "gm-confirmed-per-parent",
+      "missingOrAmbiguousSpecPolicy": "unavailable"
+    },
+    "offspring": {
+      "familySelection": {
+        "kind": "core-d20",
+        "die": "1d20",
+        "femaleFamilyRange": {
+          "minimum": 5,
+          "maximum": 20
+        },
+        "maleFamilyRange": {
+          "minimum": 1,
+          "maximum": 4
+        },
+        "dittoFallback": "non-ditto-parent-family"
+      },
+      "speciesResolution": "reviewed-lowest-stage-form-root",
+      "ambiguousRootPolicy": "unavailable",
+      "nature": {
+        "roll": "2d6",
+        "choiceMinimumPokemonEducationRank": "Adept",
+        "optionAuthority": "server-issued-canonical-nature-id"
+      },
+      "ability": {
+        "sourceTier": "basic",
+        "roll": "uniform-canonical-option",
+        "choiceMinimumPokemonEducationRank": "Expert",
+        "optionAuthority": "server-issued-canonical-ability-id"
+      },
+      "gender": {
+        "roll": "1d100",
+        "femaleWhen": "roll-less-than-or-equal-female-percent",
+        "choiceMinimumPokemonEducationRank": "Master",
+        "genderlessResult": "genderless",
+        "optionAuthority": "server-issued-canonical-gender-id"
+      }
+    },
+    "inheritance": {
+      "candidateParentMoveSource": "effective-known-moves-at-snapshot",
+      "allowedPathways": [
+        "child-egg-move",
+        "child-machine-compatible"
+      ],
+      "deduplicateBy": "canonical-move-id-retain-all-provenance",
+      "slotLevels": {
+        "first": 20,
+        "interval": 10,
+        "last": 100
+      },
+      "illegalSlotPolicy": "leave-slot-empty-and-retain-candidate-for-later-legal-slot",
+      "prerequisites": [
+        {
+          "minimumLevel": 1,
+          "maximumLevel": 19,
+          "maximumFrequency": "EOT",
+          "maximumDamageBase": 7
+        },
+        {
+          "minimumLevel": 20,
+          "maximumLevel": 29,
+          "maximumFrequency": "Scene",
+          "maximumDamageBase": 9
+        },
+        {
+          "minimumLevel": 30,
+          "maximumLevel": 100,
+          "maximumFrequency": null,
+          "maximumDamageBase": null
+        }
+      ]
+    },
+    "incubation": {
+      "durationSource": "resolved-child-species-average-hatch-rate",
+      "sourceUnit": "days",
+      "campaignMinutesPerDay": 1440,
+      "defaultVariationPolicy": "fixed-average",
+      "allowedVariationBounds": {
+        "minimumMultiplierNumerator": 1,
+        "minimumMultiplierDenominator": 2,
+        "maximumMultiplierNumerator": 2,
+        "maximumMultiplierDenominator": 1
+      },
+      "missingDurationPolicy": "unavailable-with-stable-reason",
+      "browserOrProcessTimerAuthority": "none"
+    },
+    "hatch": {
+      "normalStartingLevel": 1,
+      "fossilStartingLevel": 10,
+      "specialRoll": {
+        "die": "1d100",
+        "triggerValues": [
+          1,
+          100
+        ],
+        "defaultOutcomePolicy": "bounded-gm-adjudication",
+        "automaticShiny": false
+      },
+      "babyTemplateDefault": "disabled",
+      "normalTutorPointsAtLevelOne": 1,
+      "atomicExactlyOnce": true
+    },
+    "sourceKinds": {
+      "breeding": {
+        "parentsRequired": 2,
+        "inheritsFromParents": true
+      },
+      "fossil": {
+        "parentsRequired": 0,
+        "inheritsFromParents": false,
+        "gmMaySupplyBoundedInheritance": true
+      },
+      "gm": {
+        "parentsRequired": 0,
+        "inheritsFromParents": false,
+        "requiresAuditedReasonId": true
+      },
+      "feature-artificial": {
+        "parentsRequired": 0,
+        "inheritsFromParents": false,
+        "requiresAuthoritativeProvider": true
+      }
+    },
+    "consent": {
+      "sameOwner": "authoritative-control-required",
+      "crossOwner": "positive-consent-for-each-parent-current-revision",
+      "gmOverride": "audited-explicit-operation-only",
+      "browserSelectionIsConsent": false
+    },
+    "campaignOptions": [
+      {
+        "id": "breeding.parent-family-policy",
+        "kind": "enum",
+        "default": "core-d20",
+        "allowed": [
+          "core-d20",
+          "maternal-family",
+          "gm-family-choice"
+        ],
+        "snapshot": "egg-acceptance",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.maturity-policy",
+        "kind": "enum",
+        "default": "gm-confirmed-per-parent",
+        "allowed": [
+          "gm-confirmed-per-parent",
+          "minimum-level"
+        ],
+        "snapshot": "project-creation",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.minimum-maturity-level",
+        "kind": "integer",
+        "default": 20,
+        "minimum": 1,
+        "maximum": 100,
+        "activeWhen": {
+          "optionId": "breeding.maturity-policy",
+          "equals": "minimum-level"
+        },
+        "snapshot": "project-creation",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.genderless-policy",
+        "kind": "enum",
+        "default": "ditto-only",
+        "allowed": [
+          "ditto-only",
+          "gm-role-override"
+        ],
+        "snapshot": "project-creation",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.same-sex-policy",
+        "kind": "enum",
+        "default": "incompatible",
+        "allowed": [
+          "incompatible",
+          "gm-role-override"
+        ],
+        "snapshot": "project-creation",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.form-root-policy",
+        "kind": "enum",
+        "default": "compiled-form-root-only",
+        "allowed": [
+          "compiled-form-root-only",
+          "gm-species-override"
+        ],
+        "snapshot": "egg-acceptance",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.hatch-duration-variation",
+        "kind": "enum",
+        "default": "fixed-average",
+        "allowed": [
+          "fixed-average",
+          "server-random-half-to-double",
+          "gm-within-half-to-double"
+        ],
+        "snapshot": "egg-acceptance",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.missing-hatch-duration-policy",
+        "kind": "enum",
+        "default": "unavailable",
+        "allowed": [
+          "unavailable",
+          "gm-explicit-minutes"
+        ],
+        "snapshot": "egg-acceptance",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.gm-hatch-duration-minutes",
+        "kind": "integer",
+        "default": 1440,
+        "minimum": 1,
+        "maximum": 31536000,
+        "activeWhen": {
+          "optionId": "breeding.missing-hatch-duration-policy",
+          "equals": "gm-explicit-minutes"
+        },
+        "snapshot": "egg-acceptance",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.hatch-special-policy",
+        "kind": "enum",
+        "default": "bounded-gm-adjudication",
+        "allowed": [
+          "bounded-gm-adjudication",
+          "configured-bounded-table"
+        ],
+        "snapshot": "egg-acceptance",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.baby-template-policy",
+        "kind": "enum",
+        "default": "disabled",
+        "allowed": [
+          "disabled",
+          "per-egg-gm-choice"
+        ],
+        "snapshot": "egg-acceptance",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.baby-template-stat-penalty",
+        "kind": "integer",
+        "default": 2,
+        "minimum": 2,
+        "maximum": 4,
+        "activeWhen": {
+          "optionId": "breeding.baby-template-policy",
+          "equals": "per-egg-gm-choice"
+        },
+        "snapshot": "egg-acceptance",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.fossil-inheritance-policy",
+        "kind": "enum",
+        "default": "none",
+        "allowed": [
+          "none",
+          "gm-bounded-canonical-list"
+        ],
+        "snapshot": "egg-acceptance",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.fossil-hatch-level",
+        "kind": "integer",
+        "default": 10,
+        "minimum": 1,
+        "maximum": 100,
+        "snapshot": "egg-acceptance",
+        "gmOnly": true
+      },
+      {
+        "id": "breeding.check-failure-policy",
+        "kind": "enum",
+        "default": "terminal-no-egg",
+        "allowed": [
+          "terminal-no-egg",
+          "new-project-required"
+        ],
+        "snapshot": "project-creation",
+        "gmOnly": true
+      }
+    ]
+  }
+}
