@@ -41,7 +41,7 @@ describe('usePokemonSheetRowActions', () => {
     expect(sheet.value?.eggMoves?.[0]).toEqual({ name: '' })
     expect(sheet.value?.appliedMoves?.[0]).toEqual({ name: '', source: 'tm' })
     expect(sheet.value?.abilities?.[0]).toEqual({ name: '' })
-    expect(sheet.value?.edges?.[0]).toEqual({ name: 'New Edge' })
+    expect(sheet.value?.edges?.[0]).toEqual({ name: '', choices: {} })
 
     actions.removeMove(null)
     expect(sheet.value?.movelist).toHaveLength(1)

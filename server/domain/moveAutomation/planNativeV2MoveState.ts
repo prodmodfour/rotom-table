@@ -100,7 +100,7 @@ import { applyAa082ParentalBondFaintTrigger } from '../abilityAutomation/mechani
 import { clearAa083PerishCount } from '../abilityAutomation/mechanics/aa083LifecycleIntegration'
 import { clearAa084PowerOfAlchemyForKnockouts } from '../abilityAutomation/mechanics/aa084LifecycleIntegration'
 import { recordAa066DeadlyPoisonTriggers } from '../abilityAutomation/mechanics/aa066ConditionIntegration'
-import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../edgeAutomation/permanentGrants'
 import { applyAa067DelayedReactionDebts } from '../abilityAutomation/mechanics/aa067LifecycleIntegration'
 import { aa067DiamondDefenseMoveFrequency } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../abilityAutomation/mechanics/aa075TemporaryHpIntegration'
@@ -1142,7 +1142,7 @@ const applyTriggeredAbilityPayments = (input: {
         sourceOperationId: selection.operationId,
         changedFields: new Set<MoveSheetStateField>(),
       }
-      const baseInstance = resolveSheetAbilityInstances(work.current.abilities).find(candidate => (
+      const baseInstance = resolveSheetAndEdgeAbilityInstances(work.current).find(candidate => (
         candidate.instanceId === ability.instanceId && candidate.canonicalId === canonicalId
       ))
       const previous = parseAbilityDailyUsageLedger(

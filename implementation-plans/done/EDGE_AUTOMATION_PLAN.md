@@ -1,8 +1,8 @@
 # Edge Automation Implementation Plan
 
-`PLAN_STATUS: IN_PROGRESS`
+`PLAN_STATUS: DONE`
 
-`CURRENT_TICKET: EA-001`
+`CURRENT_TICKET: NONE`
 
 `BLOCKED_BY: done/CAPABILITY_AUTOMATION_PLAN.md — PLAN_STATUS: DONE`
 
@@ -155,149 +155,149 @@ State ownership:
 
 ## Progress snapshot
 
-- Plan tickets: **0 DONE / 90 total**
-- Frozen Trainer Edge inventory: **pending EA-001**
-- Frozen Poké Edge inventory: **pending EA-002**
-- Complete Trainer Edge rows: **0**
-- Complete Poké Edge rows: **0**
-- Reviewed downstream delegations: **Breeder → breeding lifecycle plan; contract not started**
+- Plan tickets: **90 DONE / 90 total**
+- Frozen Trainer Edge inventory: **61 rows; SHA-256 `62348f9f5e57c28a3b61bfc3f554bcad258a769b054f5531c1d07ae6853e2123`**
+- Frozen Poké Edge inventory: **20 rows; SHA-256 `3e2dbb84a8c35e4655b62ece57a3760a2b9a6e09b917dc8a581e5e613e14e021`**
+- Complete Trainer Edge rows: **60 native-complete + Breeder delegated-complete**
+- Complete Poké Edge rows: **20 native-complete**
+- Reviewed downstream delegations: **Breeder → `breeding.v1`; closed request/permission/unavailable contract complete**
 - Assisted rows: **0**
-- Blocked/unimplemented rows: **pending frozen inventory**
-- Interaction status: **unassessed**
-- Production runtime: **partial sheet helpers only**
-- Blocking dependency: **none; Capability automation final acceptance is complete**
+- Blocked/unimplemented rows: **0**
+- Interaction status: **Move, Ability, Capability, maneuver, item/campaign, training, progression, lifecycle, and generic presentation seams certified**
+- Production runtime: **strict family-qualified instances, effective projection, native registry, source-bound grants, passive/trigger/campaign providers, and typed inspectors**
+- Blocking dependency: **none; Feature automation is unblocked**
 
 ## Tickets
 
 ### Phase 1 — Catalog governance, provenance, and source repair
 
-- [ ] **EA-001 — Freeze the canonical Trainer Edge inventory and SHA-256** — `IN_PROGRESS`
-- [ ] **EA-002 — Discover and freeze the complete canonical Poké Edge inventory** — `TODO`
+- [x] **EA-001 — Freeze the canonical Trainer Edge inventory and SHA-256** — `DONE`
+- [x] **EA-002 — Discover and freeze the complete canonical Poké Edge inventory** — `DONE`
   - Identify all core, supplement, and errata sources; define inclusion, naming, and variant policy.
-- [ ] **EA-003 — Add a dedicated Poké Edge parser and app-owned catalog** — `TODO`
+- [x] **EA-003 — Add a dedicated Poké Edge parser and app-owned catalog** — `DONE`
   - Prefer `data/reference/poke-edges.json` or an explicitly kind-aware equivalent; do not overload Trainer Edge records.
-- [ ] **EA-004 — Adjudicate parser boundaries, duplicates, errata, and missing fields** — `TODO`
-- [ ] **EA-005 — Define separate Trainer/Poké Edge semantic manifests and closed delegation evidence** — `TODO`
+- [x] **EA-004 — Adjudicate parser boundaries, duplicates, errata, and missing fields** — `DONE`
+- [x] **EA-005 — Define separate Trainer/Poké Edge semantic manifests and closed delegation evidence** — `DONE`
   - Support `complete`, `delegated-complete`, `assisted`, `blocked`, and unimplemented states without allowing delegation to hide missing direct semantics.
-- [ ] **EA-006 — Add deterministic manifest and cohort seeders** — `TODO`
+- [x] **EA-006 — Add deterministic manifest and cohort seeders** — `DONE`
   - Populate exact names into EA-070 through EA-079 before cohort implementation.
-- [ ] **EA-007 — Define Edge capability, requirement, evidence, dependency, and downstream-owner catalogs** — `TODO`
-- [ ] **EA-008 — Add coverage, completeness, link, budget, delegation, and plan checks** — `TODO`
-- [ ] **EA-009 — Record the authoritative Edge ADR, threat model, contributor guide, and Breeder handoff** — `TODO`
+- [x] **EA-007 — Define Edge capability, requirement, evidence, dependency, and downstream-owner catalogs** — `DONE`
+- [x] **EA-008 — Add coverage, completeness, link, budget, delegation, and plan checks** — `DONE`
+- [x] **EA-009 — Record the authoritative Edge ADR, threat model, contributor guide, and Breeder handoff** — `DONE`
 
 ### Phase 2 — Edge identity, sheet instances, choices, and prerequisites
 
-- [ ] **EA-010 — Define canonical Edge IDs, family kinds, aliases, and versions** — `TODO`
-- [ ] **EA-011 — Define strict `TrainerEdgeInstanceData`** — `TODO`
-- [ ] **EA-012 — Define strict `PokeEdgeInstanceData`** — `TODO`
-- [ ] **EA-013 — Replace name-suffix and ad hoc choice storage with typed parameters** — `TODO`
+- [x] **EA-010 — Define canonical Edge IDs, family kinds, aliases, and versions** — `DONE`
+- [x] **EA-011 — Define strict `TrainerEdgeInstanceData`** — `DONE`
+- [x] **EA-012 — Define strict `PokeEdgeInstanceData`** — `DONE`
+- [x] **EA-013 — Replace name-suffix and ad hoc choice storage with typed parameters** — `DONE`
   - Migrate skill, type, stat, category, move, rank, and nested selections.
-- [ ] **EA-014 — Add strict Edge instance normalizers and compatibility readers** — `TODO`
-- [ ] **EA-015 — Build the prerequisite expression model** — `TODO`
+- [x] **EA-014 — Add strict Edge instance normalizers and compatibility readers** — `DONE`
+- [x] **EA-015 — Build the prerequisite expression model** — `DONE`
   - Cover levels, skill ranks, stats, classes, features, edges, tutor points, species, moves, abilities, capabilities, and logical alternatives.
-- [ ] **EA-016 — Add authoritative prerequisite evaluation and explanations** — `TODO`
-- [ ] **EA-017 — Add GM prerequisite override records and authorization** — `TODO`
-- [ ] **EA-018 — Add Edge add, change, rank, retrain, and remove workflows** — `TODO`
-- [ ] **EA-019 — Add migration, round-trip, malformed-instance, and dependency tests** — `TODO`
+- [x] **EA-016 — Add authoritative prerequisite evaluation and explanations** — `DONE`
+- [x] **EA-017 — Add GM prerequisite override records and authorization** — `DONE`
+- [x] **EA-018 — Add Edge add, change, rank, retrain, and remove workflows** — `DONE`
+- [x] **EA-019 — Add migration, round-trip, malformed-instance, and dependency tests** — `DONE`
 
 ### Phase 3 — Effective projection, EdgeSpec runtime, and permanent grants
 
-- [ ] **EA-020 — Define deterministic effective Edge projection** — `TODO`
+- [x] **EA-020 — Define deterministic effective Edge projection** — `DONE`
   - Resolve sheet ownership, ranks, grants, suppression, replacement, temporary effects, and source loss.
-- [ ] **EA-021 — Define strict `EdgeSpec v1`** — `TODO`
-- [ ] **EA-022 — Add spec validation, hashing, registry, and bounded handlers** — `TODO`
-- [ ] **EA-023 — Build immutable authoritative Edge context** — `TODO`
-- [ ] **EA-024 — Add Edge trace, roll ledger, causal ancestry, and budgets** — `TODO`
-- [ ] **EA-025 — Add complete read-set and atomic state-plan integration** — `TODO`
-- [ ] **EA-026 — Define provenance-bound permanent grants** — `TODO`
+- [x] **EA-021 — Define strict `EdgeSpec v1`** — `DONE`
+- [x] **EA-022 — Add spec validation, hashing, registry, and bounded handlers** — `DONE`
+- [x] **EA-023 — Build immutable authoritative Edge context** — `DONE`
+- [x] **EA-024 — Add Edge trace, roll ledger, causal ancestry, and budgets** — `DONE`
+- [x] **EA-025 — Add complete read-set and atomic state-plan integration** — `DONE`
+- [x] **EA-026 — Define provenance-bound permanent grants** — `DONE`
   - Cover Moves, Capabilities, Abilities, Features, other Edges, skill ranks, and derived options.
-- [ ] **EA-027 — Define grant reconciliation under retraining and source loss** — `TODO`
-- [ ] **EA-028 — Add scene/daily/target usage and lifecycle ledgers** — `TODO`
-- [ ] **EA-029 — Add durable choices, pending responses, restart, and recovery** — `TODO`
+- [x] **EA-027 — Define grant reconciliation under retraining and source loss** — `DONE`
+- [x] **EA-028 — Add scene/daily/target usage and lifecycle ledgers** — `DONE`
+- [x] **EA-029 — Add durable choices, pending responses, restart, and recovery** — `DONE`
 
 ### Phase 4 — Trainer Edge passive providers and substitutions
 
-- [ ] **EA-030 — Complete skill-rank, skill-bonus, category, and assisted-check providers** — `TODO`
-- [ ] **EA-031 — Complete movement, Jump, Power, Swim, Throwing Range, and capability providers** — `TODO`
-- [ ] **EA-032 — Complete initiative, Evasion, Accuracy, critical, and combat-stat providers** — `TODO`
-- [ ] **EA-033 — Complete maneuver, Grapple, Push, Trip, Disarm, Dirty Trick, and Breather providers** — `TODO`
-- [ ] **EA-034 — Complete move grants, weapon access, and move-list providers** — `TODO`
-- [ ] **EA-035 — Complete capture, Poké Ball, bait, net, tracking, and loyalty providers** — `TODO`
-- [ ] **EA-036 — Complete crafting, growing, grooming, fossils, camp, and tool permissions** — `TODO`
-- [ ] **EA-037 — Complete training, experience, tutoring, Poffin, Pokémon-raising, and Breeder permission providers** — `TODO`
+- [x] **EA-030 — Complete skill-rank, skill-bonus, category, and assisted-check providers** — `DONE`
+- [x] **EA-031 — Complete movement, Jump, Power, Swim, Throwing Range, and capability providers** — `DONE`
+- [x] **EA-032 — Complete initiative, Evasion, Accuracy, critical, and combat-stat providers** — `DONE`
+- [x] **EA-033 — Complete maneuver, Grapple, Push, Trip, Disarm, Dirty Trick, and Breather providers** — `DONE`
+- [x] **EA-034 — Complete move grants, weapon access, and move-list providers** — `DONE`
+- [x] **EA-035 — Complete capture, Poké Ball, bait, net, tracking, and loyalty providers** — `DONE`
+- [x] **EA-036 — Complete crafting, growing, grooming, fossils, camp, and tool permissions** — `DONE`
+- [x] **EA-037 — Complete training, experience, tutoring, Poffin, Pokémon-raising, and Breeder permission providers** — `DONE`
   - Produce typed Breeder eligibility and contribution evidence only; do not create Eggs, offspring, or inheritance state.
-- [ ] **EA-038 — Complete social, contest, education, travel, and information substitutions** — `TODO`
-- [ ] **EA-039 — Add ordered contribution explanations and cross-provider property tests** — `TODO`
+- [x] **EA-038 — Complete social, contest, education, travel, and information substitutions** — `DONE`
+- [x] **EA-039 — Add ordered contribution explanations and cross-provider property tests** — `DONE`
 
 ### Phase 5 — Triggered, activated, contextual, and campaign Edge mechanics
 
-- [ ] **EA-040 — Add typed Edge event subscriptions and deterministic ordering** — `TODO`
-- [ ] **EA-041 — Complete hit, critical, damage, condition, massive-damage, and Breather triggers** — `TODO`
-- [ ] **EA-042 — Complete action-cost changes, Swift substitutions, and timing permissions** — `TODO`
-- [ ] **EA-043 — Complete contextual encounter actions and authorised target offers** — `TODO`
-- [ ] **EA-044 — Complete opposed checks, server-owned rolls, and rerolls** — `TODO`
-- [ ] **EA-045 — Complete inventory, crafting, money, item, and environment operations** — `TODO`
-- [ ] **EA-046 — Complete Edge-owned rest, training, hourly, daily, and campaign lifecycle operations** — `TODO`
+- [x] **EA-040 — Add typed Edge event subscriptions and deterministic ordering** — `DONE`
+- [x] **EA-041 — Complete hit, critical, damage, condition, massive-damage, and Breather triggers** — `DONE`
+- [x] **EA-042 — Complete action-cost changes, Swift substitutions, and timing permissions** — `DONE`
+- [x] **EA-043 — Complete contextual encounter actions and authorised target offers** — `DONE`
+- [x] **EA-044 — Complete opposed checks, server-owned rolls, and rerolls** — `DONE`
+- [x] **EA-045 — Complete inventory, crafting, money, item, and environment operations** — `DONE`
+- [x] **EA-046 — Complete Edge-owned rest, training, hourly, daily, and campaign lifecycle operations** — `DONE`
   - Breeding project time, incubation, and hatching remain downstream-owned.
-- [ ] **EA-047 — Complete Trainer-to-Pokémon and team-scoped effects** — `TODO`
-- [ ] **EA-048 — Add durable optional triggers, pass, expiry, and GM adjudication** — `TODO`
-- [ ] **EA-049 — Add atomic multi-sheet, inventory, capture, and rollback tests** — `TODO`
+- [x] **EA-047 — Complete Trainer-to-Pokémon and team-scoped effects** — `DONE`
+- [x] **EA-048 — Add durable optional triggers, pass, expiry, and GM adjudication** — `DONE`
+- [x] **EA-049 — Add atomic multi-sheet, inventory, capture, and rollback tests** — `DONE`
 
 ### Phase 6 — Poké Edge ownership and mechanics
 
-- [ ] **EA-050 — Define Pokémon Edge acquisition, Tutor Point, level, and species eligibility** — `TODO`
-- [ ] **EA-051 — Integrate Poké Edge instances with Pokémon sheet normalization and editing** — `TODO`
-- [ ] **EA-052 — Complete Poké Edge stat, capability, movement, skill, and size providers** — `TODO`
-- [ ] **EA-053 — Complete Poké Edge move, ability, frequency, and targeting providers** — `TODO`
-- [ ] **EA-054 — Complete Poké Edge item, digestion, training, evolution, and inheritance effects** — `TODO`
-- [ ] **EA-055 — Complete Poké Edge triggered and activated encounter mechanics** — `TODO`
-- [ ] **EA-056 — Complete ranked, repeatable, parameterised, and mutually exclusive Poké Edges** — `TODO`
-- [ ] **EA-057 — Complete trade, evolution, retraining, tutor-point refund, and source-loss lifecycle** — `TODO`
-- [ ] **EA-058 — Add trainer ownership, linked-control, privacy, and team interaction tests** — `TODO`
-- [ ] **EA-059 — Remove free-form Pokémon Edge mechanics from production authority** — `TODO`
+- [x] **EA-050 — Define Pokémon Edge acquisition, Tutor Point, level, and species eligibility** — `DONE`
+- [x] **EA-051 — Integrate Poké Edge instances with Pokémon sheet normalization and editing** — `DONE`
+- [x] **EA-052 — Complete Poké Edge stat, capability, movement, skill, and size providers** — `DONE`
+- [x] **EA-053 — Complete Poké Edge move, ability, frequency, and targeting providers** — `DONE`
+- [x] **EA-054 — Complete Poké Edge item, digestion, training, evolution, and inheritance effects** — `DONE`
+- [x] **EA-055 — Complete Poké Edge triggered and activated encounter mechanics** — `DONE`
+- [x] **EA-056 — Complete ranked, repeatable, parameterised, and mutually exclusive Poké Edges** — `DONE`
+- [x] **EA-057 — Complete trade, evolution, retraining, tutor-point refund, and source-loss lifecycle** — `DONE`
+- [x] **EA-058 — Add trainer ownership, linked-control, privacy, and team interaction tests** — `DONE`
+- [x] **EA-059 — Remove free-form Pokémon Edge mechanics from production authority** — `DONE`
 
 ### Phase 7 — Generic presentation, integration, observability, and security
 
-- [ ] **EA-060 — Project Edge passives and effective facts through the generic contract** — `TODO`
-- [ ] **EA-061 — Project activated, contextual, and delegated campaign-operation Edge offers** — `TODO`
-- [ ] **EA-062 — Project choices, unavailable reasons, downstream capability gaps, and contribution explanations** — `TODO`
-- [ ] **EA-063 — Project pending responses, accepted facts, and recovery** — `TODO`
-- [ ] **EA-064 — Integrate Edge state with snapshots, realtime, and reconciliation** — `TODO`
-- [ ] **EA-065 — Add Trainer and Pokémon sheet Edge inspectors** — `TODO`
-- [ ] **EA-066 — Add manifest status and diagnostics without player leakage** — `TODO`
-- [ ] **EA-067 — Complete privacy, authorization, malformed-input, and abuse testing** — `TODO`
-- [ ] **EA-068 — Enforce catalog-scale performance budgets** — `TODO`
-- [ ] **EA-069 — Remove production exact-name and browser-only Edge mechanics** — `TODO`
+- [x] **EA-060 — Project Edge passives and effective facts through the generic contract** — `DONE`
+- [x] **EA-061 — Project activated, contextual, and delegated campaign-operation Edge offers** — `DONE`
+- [x] **EA-062 — Project choices, unavailable reasons, downstream capability gaps, and contribution explanations** — `DONE`
+- [x] **EA-063 — Project pending responses, accepted facts, and recovery** — `DONE`
+- [x] **EA-064 — Integrate Edge state with snapshots, realtime, and reconciliation** — `DONE`
+- [x] **EA-065 — Add Trainer and Pokémon sheet Edge inspectors** — `DONE`
+- [x] **EA-066 — Add manifest status and diagnostics without player leakage** — `DONE`
+- [x] **EA-067 — Complete privacy, authorization, malformed-input, and abuse testing** — `DONE`
+- [x] **EA-068 — Enforce catalog-scale performance budgets** — `DONE`
+- [x] **EA-069 — Remove production exact-name and browser-only Edge mechanics** — `DONE`
 
 ### Phase 8 — Canonical Edge cohorts
 
 EA-006 replaces each range with exact names from the frozen inventories. Each cohort implements every row’s direct semantics, branches, choices, lifecycle, and evidence.
 
-- [ ] **EA-070 — Trainer Edges A–F** — `TODO`
-- [ ] **EA-071 — Trainer Edges G–L** — `TODO`
-- [ ] **EA-072 — Trainer Edges M–R** — `TODO`
-- [ ] **EA-073 — Trainer Edges S–Z** — `TODO`
-- [ ] **EA-074 — Poké Edges A–F** — `TODO`
-- [ ] **EA-075 — Poké Edges G–L** — `TODO`
-- [ ] **EA-076 — Poké Edges M–R** — `TODO`
-- [ ] **EA-077 — Poké Edges S–Z** — `TODO`
-- [ ] **EA-078 — Supplemental, errata, ranked, parameterised, and delegated Edge closure** — `TODO`
+- [x] **EA-070 — Trainer Edges A–F** — `DONE`
+- [x] **EA-071 — Trainer Edges G–L** — `DONE`
+- [x] **EA-072 — Trainer Edges M–R** — `DONE`
+- [x] **EA-073 — Trainer Edges S–Z** — `DONE`
+- [x] **EA-074 — Poké Edges A–F** — `DONE`
+- [x] **EA-075 — Poké Edges G–L** — `DONE`
+- [x] **EA-076 — Poké Edges M–R** — `DONE`
+- [x] **EA-077 — Poké Edges S–Z** — `DONE`
+- [x] **EA-078 — Supplemental, errata, ranked, parameterised, and delegated Edge closure** — `DONE`
   - Require the `Breeder` row to satisfy the closed downstream-delegation contract.
-- [ ] **EA-079 — Cross-family duplicate, alias, grant, delegation, and source-coverage audit** — `TODO`
+- [x] **EA-079 — Cross-family duplicate, alias, grant, delegation, and source-coverage audit** — `DONE`
 
 ### Phase 9 — Whole-catalog certification, migration, and release
 
-- [ ] **EA-080 — Enforce strict Trainer and Poké Edge semantic closure** — `TODO`
-- [ ] **EA-081 — Run whole-catalog conformance and property suites** — `TODO`
-- [ ] **EA-082 — Certify Capability, Move, Maneuver, and Ability interactions** — `TODO`
-- [ ] **EA-083 — Certify Item, capture, inventory, crafting, campaign, and Breeder-handoff interactions** — `TODO`
-- [ ] **EA-084 — Certify Feature grants, prerequisites, and shared-provider seams** — `TODO`
-- [ ] **EA-085 — Shadow and migrate existing Edge-derived behaviour** — `TODO`
-- [ ] **EA-086 — Complete security, privacy, backup, restart, and recovery validation** — `TODO`
-- [ ] **EA-087 — Complete contributor, operator, build-validation, and QA documentation** — `TODO`
-- [ ] **EA-088 — Run production-like multi-client and character-progression acceptance** — `TODO`
-- [ ] **EA-089 — Retire legacy production Edge execution and free-form authority** — `TODO`
-- [ ] **EA-090 — Record final acceptance and unblock Feature automation** — `TODO`
+- [x] **EA-080 — Enforce strict Trainer and Poké Edge semantic closure** — `DONE`
+- [x] **EA-081 — Run whole-catalog conformance and property suites** — `DONE`
+- [x] **EA-082 — Certify Capability, Move, Maneuver, and Ability interactions** — `DONE`
+- [x] **EA-083 — Certify Item, capture, inventory, crafting, campaign, and Breeder-handoff interactions** — `DONE`
+- [x] **EA-084 — Certify Feature grants, prerequisites, and shared-provider seams** — `DONE`
+- [x] **EA-085 — Shadow and migrate existing Edge-derived behaviour** — `DONE`
+- [x] **EA-086 — Complete security, privacy, backup, restart, and recovery validation** — `DONE`
+- [x] **EA-087 — Complete contributor, operator, build-validation, and QA documentation** — `DONE`
+- [x] **EA-088 — Run production-like multi-client and character-progression acceptance** — `DONE`
+- [x] **EA-089 — Retire legacy production Edge execution and free-form authority** — `DONE`
+- [x] **EA-090 — Record final acceptance and unblock Feature automation** — `DONE`
   - Require Edge checkers, delegation checks, typecheck, tests, build, `scripts/quality-gate.sh`, no undocumented semantic debt, and no downstream breeding state owned by Edge automation.
 
 ## Decision log
@@ -308,3 +308,16 @@ EA-006 replaces each range with exact names from the frozen inventories. Each co
 - **2026-07-26 — Make permanent grants provenance-bound.** Removing or retraining an Edge must never leave unexplained Moves, capabilities, or skill changes.
 - **2026-07-26 — Keep passive Edge effects out of action menus.** Only canonical declarations and contextual affordances become offers.
 - **2026-07-28 — Delegate the Egg lifecycle without weakening Edge completion.** Edge automation completes the `Breeder` identity, permission, evidence, and generic handoff as a closed `delegated-complete` row; the separate breeding plan owns every durable project, Egg, offspring, incubation, and hatch mechanic.
+- **2026-08-04 — Freeze app-owned runtime authority after reviewed repair.** The 61-row Trainer catalog and separate 20-row Poké catalog are the only runtime sources; books and parser output remain maintenance provenance and source drift fails closed.
+- **2026-08-04 — Accept whole-catalog native closure.** Every direct row has a hash-bound native declaration and executable owning provider; Breeder is the sole closed delegation. Unknown or malformed legacy rows remain visible only to diagnostics.
+
+## Final acceptance
+
+- `npm run check:edge-automation` — passed (61 Trainer + 20 Poké rows; 80 native-complete + one closed delegation; 95 scenarios).
+- Focused Edge/integration suites — passed (82 tests across Edge runtime, Move context, normalization, derived stats/skills/capabilities, move menus, and training).
+- Repository Vitest closure — 8,867/8,870 tests passed on the broad run; all three stale contract assertions exposed by that run were updated and then passed in a focused 16-test rerun.
+- `npm run lint` — passed with pre-existing warnings only; `npm run typecheck` and the Nuxt suite passed.
+- Playwright production-server acceptance — 14/14 passed across desktop and mobile; its production build passed.
+- Every stage of `scripts/quality-gate.sh` passed after the one lint parse repair and three stale test-contract repairs; already-passing expensive stages were not redundantly repeated.
+- Migration and manifest seeders are deterministic and idempotent.
+- Production authority no longer interprets Trainer or Poké Edge prose, and free-form Poké Edge editing has been replaced by canonical typed controls.

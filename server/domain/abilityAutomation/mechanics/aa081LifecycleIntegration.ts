@@ -9,7 +9,7 @@ import { applyConditionsToSheet } from '~/utils/sheetMutations'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { sheetConditionNames } from '~/utils/sheetConditions'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
 import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveResources'
 
@@ -37,7 +37,7 @@ export const applyAa081NaturalCureTrigger = (input: {
   const sceneId = input.map.encounterState?.history.sceneId ?? null
   if (!runtime || !sceneId) return { map: input.map, sheet: input.sheet, applied: false }
   const ability = projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(input.sheet),
     target: {
       placementId: input.placement.id,
       ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),

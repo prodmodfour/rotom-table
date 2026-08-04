@@ -76,8 +76,8 @@ import {
 import {
   RUNTIME_ABILITY_PARAMETER_DEFINITIONS,
   abilityRequiresInstanceParameters,
-  resolveSheetAbilityInstances,
 } from './instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../edgeAutomation/permanentGrants'
 import {
   createAbilityExecutionBudget,
   type AbilityExecutionBudget,
@@ -467,7 +467,7 @@ const defaultEffectiveAbilities = (
   for (const placement of placements) {
     const sheet = sheetsByKey.get(sheetKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
     result.set(placement.id, projectAuthoritativeEffectiveAbilities({
-      baseAbilities: resolveSheetAbilityInstances(sheet?.sheet.abilities),
+      baseAbilities: sheet ? resolveSheetAndEdgeAbilityInstances(sheet.sheet) : [],
       species: sheet?.kind === 'pokemon' ? (sheet.sheet as CharacterSheet).species : null,
       effects,
       transformationSnapshots,

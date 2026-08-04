@@ -15,7 +15,7 @@ import { getVoxelMaterialDefinition } from '~/utils/mapMaterials'
 import { moveUsageKey } from '~/utils/moveUsage'
 import { planMoveUsageTransition } from '../../planMoveUsageTransition'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { aa067MoveIgnoresAvoidanceAbilities } from './aa067StaticIntegration'
 
 const shortHash = (...values: readonly string[]): string => createHash('sha256')
@@ -64,7 +64,7 @@ const dailyUseAvailable = (input: {
   const ledger = parseAbilityDailyUsageLedger(
     resolved.sheet.abilityUsage ?? createEmptyAbilityDailyUsageLedger(),
   )
-  const isBase = resolveSheetAbilityInstances(resolved.sheet.abilities).some(ability => (
+  const isBase = resolveSheetAndEdgeAbilityInstances(resolved.sheet).some(ability => (
     ability.instanceId === instance.instanceId && ability.canonicalId === input.canonicalId
   ))
   const lastingId = isBase ? `base:${input.canonicalId}` : instance.instanceId

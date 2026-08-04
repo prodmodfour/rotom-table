@@ -7,7 +7,7 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { MoveDamageModifier } from '~/utils/moveAutomationDamagePipeline'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 import { AA069_FIERY_CRASH_REASON } from './aa069MoveIntegration'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
 
@@ -20,7 +20,7 @@ const effective = (input: {
   const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve(input.canonicalId)
   if (!runtime) return false
   return projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(input.sheet),
     target: {
       placementId: input.placement.id,
       ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),

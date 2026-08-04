@@ -10,6 +10,7 @@ import {
   SKILL_RANK_TO_DICE,
   SKILL_RANK_TO_VALUE,
 } from '~/utils/skillRanks'
+import { edgeChoiceValues, resolveEdgeInstance } from '#shared/edgeAutomation/instances'
 
 export type TrainerSkillRankSourceKind = 'base' | 'background' | 'edge' | 'misc'
 export type TrainerSkillModifierSourceKind = 'edge'
@@ -103,14 +104,6 @@ const trailingChoiceMatch = (name: string): RegExpMatchArray | null =>
 const stripEntryChoiceSuffix = (name: string): string =>
   trailingChoiceMatch(name)?.[1]?.trim() ?? name.trim()
 
-const trailingChoiceText = (name: string): string =>
-  trailingChoiceMatch(name)?.[2]?.trim() ?? ''
-
-const splitChoiceTokens = (raw: string): string[] => raw
-  .split(/\s*(?:,|\/|;|\band\b|&)\s*/i)
-  .map((token) => token.trim())
-  .filter(Boolean)
-
 const coerceSkillKey = (value: unknown): TrainerSkillKey | undefined => {
   if (typeof value !== 'string') return undefined
   return trainerSkillKeyFromInput(value)
@@ -127,29 +120,9 @@ const asSkillKeyArray = (value: unknown): TrainerSkillKey[] => {
 }
 
 const edgeBaseName = (edge: TrainerEdgeEntry): string => stripEntryChoiceSuffix(edge.name ?? '')
-const edgeKindToken = (edge: TrainerEdgeEntry): string => normalizeChoiceToken(edgeBaseName(edge))
 
 const edgeLabel = (edge: TrainerEdgeEntry, index: number): string =>
   `Edge #${index + 1}: ${edgeBaseName(edge) || 'Unnamed Edge'}`
-
-const parentheticalChoice = (
-  edge: TrainerEdgeEntry,
-  choiceIndex: number,
-): TrainerSkillKey | undefined => {
-  const tokens = splitChoiceTokens(trailingChoiceText(edge.name ?? ''))
-  return coerceSkillKey(tokens[choiceIndex])
-}
-
-const edgeSkillChoice = (
-  edge: TrainerEdgeEntry,
-  choiceKey: 'skill' | 'skill2',
-  choiceIndex: number,
-): TrainerSkillKey | undefined => {
-  const legacyBasicSkill = choiceKey === 'skill' ? coerceSkillKey(edge.basicSkill) : undefined
-  return legacyBasicSkill
-    ?? coerceSkillKey(edge.choices?.[choiceKey])
-    ?? parentheticalChoice(edge, choiceIndex)
-}
 
 const rankChangeDetail = (
   fromRank: SkillRank,
@@ -256,6 +229,35 @@ const applyBasicSkillsEdge = (
   })
 }
 
+const TRAINER_SKILL_CATEGORIES: Readonly<Record<'Body' | 'Mind' | 'Spirit', ReadonlySet<TrainerSkillKey>>> = {
+  Body: new Set(['acrobatics', 'athletics', 'combat', 'intimidate', 'stealth', 'survival']),
+  Mind: new Set(['generalEd', 'medicineEd', 'occultEd', 'pokeEd', 'techEd', 'guile', 'perception']),
+  Spirit: new Set(['charm', 'command', 'focus', 'intuition']),
+}
+
+const SCHOLAR_SKILLS: ReadonlySet<TrainerSkillKey> = new Set([
+  'generalEd', 'medicineEd', 'occultEd', 'pokeEd', 'techEd', 'survival',
+])
+
+const applyFlatEdgeModifier = (
+  row: MutableSkillCalculation,
+  edge: TrainerEdgeEntry,
+  index: number,
+  modifier: number,
+  detail: string,
+  sourceId: string,
+): void => {
+  row.edgeModifier += modifier
+  row.modifierSources.push({
+    id: `${row.key}:edge:${index}:${sourceId}`,
+    kind: 'edge',
+    label: edgeLabel(edge, index),
+    detail,
+    modifier,
+    applied: true,
+  })
+}
+
 const TARGET_RANK_EDGES: Record<string, SkillRank> = {
   adeptskills: 'Adept',
   expertskills: 'Expert',
@@ -300,13 +302,9 @@ const applySkillEnhancementEdge = (
   enhancedSkills: Set<TrainerSkillKey>,
   edge: TrainerEdgeEntry,
   index: number,
+  selectedSkills: readonly TrainerSkillKey[],
 ): void => {
-  const skills = [
-    edgeSkillChoice(edge, 'skill', 0),
-    edgeSkillChoice(edge, 'skill2', 1),
-  ].filter((key): key is TrainerSkillKey => Boolean(key))
-
-  const uniqueSkills = [...new Set(skills)]
+  const uniqueSkills = [...new Set(selectedSkills)]
   for (const key of uniqueSkills) {
     const row = rows.get(key)
     if (!row) continue
@@ -336,14 +334,39 @@ const applySkillEdges = (
   const enhancedSkills = new Set<TrainerSkillKey>()
 
   for (const [index, edge] of (sheet.edges ?? []).entries()) {
-    const kind = edgeKindToken(edge)
+    const resolved = resolveEdgeInstance({ family: 'trainer', entry: edge, ownerId: sheet.slug, index })
+    if (resolved.status !== 'ready' || !resolved.data) continue
+    const kind = normalizeChoiceToken(resolved.data.canonicalId)
+    const selectedSkills = [
+      ...edgeChoiceValues(resolved.data, 'skill'),
+      ...edgeChoiceValues(resolved.data, 'skills'),
+    ].map(coerceSkillKey).filter((key): key is TrainerSkillKey => Boolean(key))
 
-    if (kind === 'skillenhancement') {
-      applySkillEnhancementEdge(rows, enhancedSkills, edge, index)
+    if (kind === 'scholar') {
+      for (const key of SCHOLAR_SKILLS) {
+        const row = rows.get(key)
+        if (row) applyFlatEdgeModifier(row, edge, index, 1, '+1 from Scholar', 'scholar')
+      }
       continue
     }
 
-    const skill = edgeSkillChoice(edge, 'skill', 0)
+    if (kind === 'categoricinclination') {
+      const category = edgeChoiceValues(resolved.data, 'category')[0] as 'Body' | 'Mind' | 'Spirit' | undefined
+      if (category && TRAINER_SKILL_CATEGORIES[category]) {
+        for (const key of TRAINER_SKILL_CATEGORIES[category]) {
+          const row = rows.get(key)
+          if (row) applyFlatEdgeModifier(row, edge, index, 1, `+1 to ${category} Skills`, 'categoric-inclination')
+        }
+      }
+      continue
+    }
+
+    if (kind === 'skillenhancement') {
+      applySkillEnhancementEdge(rows, enhancedSkills, edge, index, selectedSkills)
+      continue
+    }
+
+    const skill = selectedSkills[0]
     if (!skill) continue
     const row = rows.get(skill)
     if (!row) continue
@@ -359,9 +382,7 @@ const applySkillEdges = (
       continue
     }
 
-    if (kind === 'virtuoso') {
-      applyVirtuosoEdge(row, edge, index)
-    }
+    if (kind === 'virtuoso') applyVirtuosoEdge(row, edge, index)
   }
 }
 

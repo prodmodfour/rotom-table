@@ -1,0 +1,1796 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-edge-automation-v1",
+  "entryCount": 81,
+  "entries": [
+    {
+      "family": "trainer",
+      "canonicalId": "Acrobat",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "2a60d5e182c6d61255f89d17efe2e1aac6eb5c7494998eb83e89b2e7cac157ec",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Adept Skills",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "skill",
+          "kind": "skill",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "26f2fc67677296770cbd36bd035447d15038a4f7a39abc1e45c403d28f95ae05",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Apricorn Balls",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "craft-apricorn-ball",
+          "timing": "extended",
+          "context": "apricorn-and-ball-toolbox",
+          "operation": "craft"
+        }
+      ],
+      "sourceEffectSha256": "ac482952434ca8aa9dad07ab9dd5a369e8c157c576d1f326886b2d8da51a7a91",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "campaign"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Art of Stealth",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "98262b4f567d75f2309d6f1f8545a4a04e6a5034a2352e4099a900a16308b0b6",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Athletic Initiative",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "9a64e7aa334332f7cd92d7c7909b2187ddc632811c43df0063b98f73de83bb93",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Bad Mood",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider",
+        "triggered-effect"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "1adab0edd79c45c65d56fbf7d9ca63876fbacfdc4f7a094dda9c2f59dd231aa8",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Basic Balls",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "craft-basic-ball",
+          "timing": "extended",
+          "context": "money-and-ball-toolbox",
+          "operation": "craft"
+        }
+      ],
+      "sourceEffectSha256": "d75fbb6cd9d6bfbde611ad0f9030d96f449b2f344848e19727bb320279e7fcb9",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "campaign"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Basic Cooking",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "cook-basic-food",
+          "timing": "extended",
+          "context": "ingredients",
+          "operation": "craft"
+        }
+      ],
+      "sourceEffectSha256": "892d0a1ce2f264110350ab4f1cad2af18af757b83b6af30e68d5ffd18c15692f",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "campaign"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Basic Martial Arts",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "d297867f23f801ad1e90c5d8e7ff4f72bc60e292ddb13a8fe772bc98b7610a9d",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Basic Psionics",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "18438bc1cc2ad9ba5213a1a136cfd7edd60f69ad4931c3e6d68db79813c37b87",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Basic Skills",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "skill",
+          "kind": "skill",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "16f36a1bba1f994496f61013612125b94da7b48cf41c0ec3e2538811d935f968",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Beast Master",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "c4f8b558ecf0a60a4573fd0f6ab9332b3f51c03c4fb80d635b731f6c907530da",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "training"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Breeder",
+      "ticketId": "EA-070",
+      "status": "delegated-complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action",
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "begin-breeding",
+          "timing": "extended",
+          "context": "breeding-subsystem",
+          "operation": "delegated-campaign"
+        }
+      ],
+      "sourceEffectSha256": "5d6d96630ea0d15492a4bfda68720612bb98c9b29f5da6b9ee0e085e985d6bd8",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": {
+        "capabilityId": "breeding.v1",
+        "plan": "BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
+        "requestContract": "edge.breeder.request.v1",
+        "unavailableReason": "downstream-capability-unavailable"
+      },
+      "interactionDomains": [
+        "campaign",
+        "training"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Categoric Inclination",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "category",
+          "kind": "skill-category",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "3609a35ba384ac7e67858520bab1b0c9a061e94296cd62e9c1f473d860e641c8",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Charmer",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "19af01154e3b4bce2e9083e3878e9f7358b6c09483f36508d9fd6c493b338bb0",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Confidence Artist",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "8ad0bfb5179d05328c66cd1887db92b9b6617adfce6d5e60d7b6187d797ad68a",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Demoralize",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider",
+        "triggered-effect"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "efe4cb6009c1491439ce8448ed6e6b4ae776b7a9832bf1e067887d07f380e68c",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Dynamism",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "b5635e43d9621c83ee49cf33204922f441482ced173c473a819518a02eeadb7f",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Elemental Connection",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "type",
+          "kind": "type",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "f72ea6639d7fbabeff8f37610bc8ff49c9010b92f19c42366c314b011bc53ce3",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Expert Manipulator",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "7d4f189b651cbda0e0f5a519b70ace61af8bf99377599ea4d67b9452e4f502c9",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Expert Skills",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "skill",
+          "kind": "skill",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "bf55ec6f04a1e95ae293dfde061e9015c2333f11143c24c65ba34e4f44a39d6f",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Expert Trickster",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "dc3e6e87132ceb4bd803137287a60ecc34fd5ed1d1170b96999e32330e3ec107",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Flustering Charisma",
+      "ticketId": "EA-070",
+      "status": "complete",
+      "roles": [
+        "passive-provider",
+        "triggered-effect"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "06721a056eb3662f683e5a0da7142d99699562f2f45dc2863d4b7881d80e03e1",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Gem Lore",
+      "ticketId": "EA-071",
+      "status": "complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "craft-gem",
+          "timing": "extended",
+          "context": "typed-shard",
+          "operation": "craft"
+        },
+        {
+          "id": "transmute-evolution-stone",
+          "timing": "extended",
+          "context": "four-matching-shards-or-stone",
+          "operation": "craft"
+        }
+      ],
+      "sourceEffectSha256": "61d81c7996a886dc547b091beb6a5d6de1d3c9baefa2e91a0855fe6652792fbf",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "campaign"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Grace",
+      "ticketId": "EA-071",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "88324a3dddfeaa54cc4038536a6ade21ab3f1537bc522adfeff02d7b702b31b0",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "training"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Green Thumb",
+      "ticketId": "EA-071",
+      "status": "complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "plant-apricorn-or-tier-1-berry",
+          "timing": "extended",
+          "context": "grower-or-fertilized-soil",
+          "operation": "campaign"
+        }
+      ],
+      "sourceEffectSha256": "951078fe503a216d8c2ed981d5d0fe5cf2dce715583435e66168a4289e0721cc",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "campaign"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Groomer",
+      "ticketId": "EA-071",
+      "status": "complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action",
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "groom-team",
+          "timing": "extended",
+          "context": "groomers-kit-and-team",
+          "operation": "training"
+        }
+      ],
+      "sourceEffectSha256": "eab14facaab926974e336103f3368d1fbe700d85c3e656bf69ce4de7b8848ddb",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "campaign",
+        "training"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Instinctive Aptitude",
+      "ticketId": "EA-071",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "5a489288962053c94cf092758d9512854bbf8585a282b96e2b58333733353e5e",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Instruction",
+      "ticketId": "EA-071",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "dc064d5a60d9488e5585628809fffa63ff1a6433f4359d3a6b964dbb92c91998",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Intimidating Presence",
+      "ticketId": "EA-071",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "bcf16a4af715e5ff1c7857bc91f5624f2b12d15ac915c5063204c090458276ee",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Iron Mind",
+      "ticketId": "EA-071",
+      "status": "complete",
+      "roles": [
+        "passive-provider",
+        "triggered-effect"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "68f67f7aee5c4bf939118a2f7bc8c0598717d2ea5973fbb37e6c8e768965d834",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Kip Up",
+      "ticketId": "EA-071",
+      "status": "complete",
+      "roles": [
+        "contextual-action",
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "stand-from-tripped",
+          "timing": "swift",
+          "context": "tripped",
+          "operation": "encounter"
+        }
+      ],
+      "sourceEffectSha256": "bd558a77dc61f37b53e52784845b0adc7762e896babd189041cfaf22552d88a2",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Leader",
+      "ticketId": "EA-071",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "61a02918dcf364ccc74db8bc99a39c1d3f96d84ba052b9d17b99283f8674cdfc",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Master Skills",
+      "ticketId": "EA-072",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "skill",
+          "kind": "skill",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "bcd76aa91877d634ce89dd5d6d429b2b21d0e6c467c2203a6cf4e5a9285fc33e",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Medic Training",
+      "ticketId": "EA-072",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "97b19963ccee75ca69228caa784c1c79ba28d9fba893a7fe9bf7f3307850db0f",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Mounted Prowess",
+      "ticketId": "EA-072",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "a7e2f01bc4cbf701342694a9be9adc0b7955eb6189398e5db472b22c024bd090",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Mystic Senses",
+      "ticketId": "EA-072",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "d7366954034e87b1050e7fad907c00e1f24e7538f79e61b107b45f00799fcbf2",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Nimble Movement",
+      "ticketId": "EA-072",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "c9c6e528fdea1bad60dcb45c03157c4cb53bdfba945d40c9a6bff0ecf3f79042",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Paleontologist",
+      "ticketId": "EA-072",
+      "status": "complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "identify-fossil",
+          "timing": "extended",
+          "context": "fossil",
+          "operation": "skill-check"
+        },
+        {
+          "id": "reanimate-fossil",
+          "timing": "extended",
+          "context": "fossil-and-reanimation-machine",
+          "operation": "delegated-campaign"
+        }
+      ],
+      "sourceEffectSha256": "79f0e796452f8c8a23f3cd756740b6bb57ab89c6355a7c21d2d1303c9e8ad3ea",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "campaign"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Poké Ball Repair",
+      "ticketId": "EA-072",
+      "status": "complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "repair-broken-ball",
+          "timing": "extended",
+          "context": "broken-ball-and-ball-toolbox",
+          "operation": "skill-check"
+        }
+      ],
+      "sourceEffectSha256": "1ae02f1608d684417eb113c3bb6eb87384adee438765ed77c021f152ec120803",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "campaign"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "PokéPsychologist",
+      "ticketId": "EA-072",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "3a36011df832c4538e0dc24b59201ce9b91bce8b425f5433606f39d89a2493ec",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Power Boost",
+      "ticketId": "EA-072",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "4409cd9a9875c8d7d693fdbb2d55b42233cb3f771f57679a5744064fb747031f",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Repel Crafter",
+      "ticketId": "EA-072",
+      "status": "complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "craft-repel",
+          "timing": "extended",
+          "context": "money-and-chemistry-set",
+          "operation": "craft"
+        }
+      ],
+      "sourceEffectSha256": "66f41776ec655553f919cdff1a79633766ae83786c81196972d7ab85d19da686",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "campaign"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Scholar",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "2a92f4b3bfb995a27988e40c139a8e09880aa940c91a7aeb530ba990cd395ae1",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Skill Enhancement",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "skills",
+          "kind": "skill",
+          "minimum": 2,
+          "maximum": 2
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "194e9d9ea4a58ebc1b46525c83ebabc706d0c101dae3a2aaffedfe89f14f0976",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Skill Stunt",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "skill",
+          "kind": "skill",
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "id": "circumstance",
+          "kind": "bounded-text",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "73dc3e3e0037ef35ef39d8c2a8959ad30ec9e8498dc7cde83d6d8253c50b8a1f",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Slippery",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "fc3fe6afe2ac1b81d0374c24468ba1602cd0682d06e15c349efb15f0a01554e6",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Smooth",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "6d5e00f43745636c0fb98d40b43ae70ed879324248b213ebda2011fcd7d2bfc5",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Sneak’s Tricks",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "307630260bbf845c0fe34399d09a240f67f82f67cbf35caf62bcd0f053820940",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Stamina",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider",
+        "triggered-effect"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "da3f30ce68ad492aefa7ae248ea62fb556aa66522e6a320bf54d7c2e5db5a188",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Survival Drive",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "b10dba4e6f1608cc79911d280936122388180413ec0b4639a9c80c5e7c9ed52e",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Swimmer",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "a75fca3a311465c61a74ea1599ff27c745f1d957289ca97f796fbd7f3caa7572",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Tag Scribe",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "campaign-operation",
+        "contextual-action"
+      ],
+      "choices": [],
+      "actions": [
+        {
+          "id": "scribe-cleanse-tag",
+          "timing": "extended",
+          "context": "campaign",
+          "operation": "craft"
+        }
+      ],
+      "sourceEffectSha256": "95ff9acc39bac31b77f05f48c2bd813ddd63074228e935409c0795ff071a32b7",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "campaign"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Throwing Masteries",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "a514187c195b36284c8e0748327b40829826321811fffb29a8d8d2bdb5bee498",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Train the Reserves",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "0d0b007591ac2516810e95952070977a4d1ea3af273be18823ace1572a7ca9be",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "training"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Trainer of Champions",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "896eb465d114c2275fb99400d4e439b86bb50ff30ada1b841bfce2247d7682d0",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "training"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Traveler",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "ec61b657bea3150a3ea5bd7d631434c254d8697e9736ff1cf83fd284e3953f22",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Virtuoso",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "skill",
+          "kind": "skill",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "99d1104fec52753476e61116340c853674eefea16de7ea784afed0b132f4e54e",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Wallrunner",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "36645ddd3877d2afb581a6ef50208633fd8412a2527e6c41d81618b8d2ed493a",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability"
+      ]
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Weapon of Choice",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "passive-provider",
+        "triggered-effect"
+      ],
+      "choices": [
+        {
+          "id": "weapon",
+          "kind": "weapon",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "6f152e680429bc8dce4a579e01d2292165836b96ba99e52df91d8bc786b0c95b",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": []
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Work Up",
+      "ticketId": "EA-073",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "9de082136836be0621926aaf4e192ad400eb7928a939d5b9e5b8b29a4b5e506d",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Ability Mastery",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [
+        {
+          "id": "choice-1",
+          "kind": "ability",
+          "minimum": 1,
+          "maximum": 1,
+          "sameAcrossRanks": false
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "c699022b2b39cc6ce952e7acf00b9fabf49d24ec90651137032d90b5e2612029",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "ability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Accuracy Training",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [
+        {
+          "id": "choice-1",
+          "kind": "move",
+          "minimum": 1,
+          "maximum": 1,
+          "sameAcrossRanks": false
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "c87ac221345720af413147c0e183cb00b31964b65d500fc228c5aaa302663635",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Advanced Connection",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "permanent-grant"
+      ],
+      "choices": [
+        {
+          "id": "choice-1",
+          "kind": "ability",
+          "minimum": 1,
+          "maximum": 1,
+          "sameAcrossRanks": false
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "26d3b489df2360cd83ad9b00b8ff97b0281a67fa0133b348cb80581d3f2cd587",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "ability",
+        "move",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Advanced Mobility",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "choice-1",
+          "kind": "movement-capability",
+          "minimum": 1,
+          "maximum": 1,
+          "sameAcrossRanks": false
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "e6c7e93e6ac0c5a62d34f1bdd8d8ea20545fa2c06d92d554318e036fc4571e41",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Attack Conflict",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "choice-1",
+          "kind": "attack-stat",
+          "minimum": 1,
+          "maximum": 1,
+          "sameAcrossRanks": false
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "d6c4f0cf009855d829875c324b1c7f32457337ac2738a3c9cfca291162e1a47c",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Aura Pulse",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "72e44b6d68b5104f4d33c93fa3b7c82151a5a2ef6ddd837aff633500cce26390",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Basic Ranged Attacks",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "choice-1",
+          "kind": "elemental-struggle-capability",
+          "minimum": 1,
+          "maximum": 1,
+          "sameAcrossRanks": false
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "0384d60f0953d8e6c34c14258f8e82a5fbecc58a077f879802612190f487a489",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Capability Training",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "choice-1",
+          "kind": "power-or-jump-capability",
+          "minimum": 1,
+          "maximum": 1,
+          "sameAcrossRanks": false
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "d1ccafd8955b719f41370e6dfd6ed6c3fd19ef49c384e100fcbbf92a7f3ea6fb",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Enticing Bait",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "af1943afdc27a855802986892554d2fcae49b321ef548f62798f13c59cdaff5b",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Extended Invisibility",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "aa19f300bd4f75a5d7326578aa3c42d064a636dc815ae26573cc537ccf476319",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Far Reading",
+      "ticketId": "EA-074",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "8e00db148a2d78a448603c5959e2bbfb0d36c41fe9c21e4f153c991a20141b97",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Mixed Power",
+      "ticketId": "EA-076",
+      "status": "complete",
+      "roles": [
+        "passive-provider",
+        "permanent-grant"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "47ebe831e9398a8944df5ec1065803908eb9ea9408defb2c1ee62d2bdb4824ca",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "ability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Precise Threadings",
+      "ticketId": "EA-076",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "24cf3e88b416b2ac6e9e6f9929c21b8747076f7126b02f29c9647197b7d7e826",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Realized Potential",
+      "ticketId": "EA-076",
+      "status": "complete",
+      "roles": [
+        "lifecycle-provider",
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "aea9eafdba0ad7b96b3bd03c6618fecfa66be08a320ed09cd38fd2a8ecb82d45",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Seismometer",
+      "ticketId": "EA-077",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "bcb5a13222d9f528162c0a9f511b9c52dabb2aa3c5cebcfcbc012d98513472ea",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Skill Improvement",
+      "ticketId": "EA-077",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [
+        {
+          "id": "choice-1",
+          "kind": "skill",
+          "minimum": 1,
+          "maximum": 1,
+          "sameAcrossRanks": false
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "f3e931988f7cab79f276bea814106a79d8d4921e8762b067dfff583e5f13c857",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "TK Mastery",
+      "ticketId": "EA-077",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "e820dfeb65966b1a8b7066b90b001a07b1320b6dc9059461d6c3cc00ad4241cf",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Trail Sniffer",
+      "ticketId": "EA-077",
+      "status": "complete",
+      "roles": [
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "b50df089820318b410e72e52233e39b56ffeb26d5db13ef69e87981dcba4054a",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "capability",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Underdog’s Lessons",
+      "ticketId": "EA-077",
+      "status": "complete",
+      "roles": [
+        "lifecycle-provider",
+        "permanent-grant"
+      ],
+      "choices": [
+        {
+          "id": "choice-1",
+          "kind": "final-evolution",
+          "minimum": 1,
+          "maximum": 1,
+          "sameAcrossRanks": true
+        },
+        {
+          "id": "choice-2",
+          "kind": "move",
+          "minimum": 1,
+          "maximum": 1,
+          "sameAcrossRanks": false
+        }
+      ],
+      "actions": [],
+      "sourceEffectSha256": "1fc9e4d8c345afb97ac9ec3af5fe48592ddd0f74758d82f1eaa829e594868cd8",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "move",
+        "pokemon-progression"
+      ]
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Underdog’s Strength",
+      "ticketId": "EA-077",
+      "status": "complete",
+      "roles": [
+        "lifecycle-provider",
+        "passive-provider"
+      ],
+      "choices": [],
+      "actions": [],
+      "sourceEffectSha256": "33395292e5e8eb0c1c67aff2e19998cc314bb0696f48095fa4acb500d0eda29a",
+      "runtimeHandlerId": "edge.native.v1",
+      "serverAuthoritative": true,
+      "legacyExecutionAllowed": false,
+      "delegation": null,
+      "interactionDomains": [
+        "pokemon-progression"
+      ]
+    }
+  ],
+  "certification": {
+    "complete": 80,
+    "delegatedComplete": 1,
+    "assisted": 0,
+    "blocked": 0,
+    "unimplemented": 0,
+    "legacyExecutable": 0,
+    "reviewedAt": "2026-08-04"
+  }
+}

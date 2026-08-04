@@ -5,7 +5,8 @@ import {
   trainerSubchoiceDescriptionLines,
 } from '~/utils/sheets/trainerSubchoices'
 import type { PtuEdge } from '~/types/ptuReference'
-import type { TrainerEdgeEntry, TrainerSkillKey } from '~/types/trainerSheet'
+import type { TrainerEdgeEntry, TrainerSheet, TrainerSkillKey } from '~/types/trainerSheet'
+import { resolveEdgeInstance, type EdgeInstanceParameterStatus } from '#shared/edgeAutomation/instances'
 
 export const TRAINER_EDGE_DATA_FIELDS = [
   'name',
@@ -64,6 +65,42 @@ export const resolveTrainerEdgeReference = (edge: Pick<TrainerEdgeEntry, 'name'>
 
 export const isBasicSkillsEdge = (edge: Pick<TrainerEdgeEntry, 'name'>): boolean =>
   resolveTrainerEdgeReference(edge)?.name === BASIC_SKILLS_EDGE_NAME
+
+/** Rebuild typed authority from setup-editor compatibility choices. */
+export const syncTrainerEdgeAutomation = (
+  sheet: TrainerSheet,
+  edge: TrainerEdgeEntry,
+  index: number,
+): void => {
+  const source = { ...edge, automation: undefined }
+  const resolved = resolveEdgeInstance({ family: 'trainer', entry: source, ownerId: sheet.slug, index })
+  if (resolved.status === 'ready' && resolved.data) {
+    const next = { ...resolved.data, family: 'trainer' as const }
+    if (JSON.stringify(edge.automation) !== JSON.stringify(next)) edge.automation = next
+  }
+  else delete edge.automation
+}
+
+export interface TrainerEdgeInspectorStatus {
+  readonly status: EdgeInstanceParameterStatus
+  readonly label: string
+  readonly diagnostics: readonly string[]
+}
+
+export const trainerEdgeInspectorStatus = (
+  sheet: TrainerSheet,
+  edge: TrainerEdgeEntry,
+  index: number,
+): TrainerEdgeInspectorStatus => {
+  const resolved = resolveEdgeInstance({ family: 'trainer', entry: edge, ownerId: sheet.slug, index })
+  const labels: Readonly<Record<EdgeInstanceParameterStatus, string>> = {
+    ready: 'Automated',
+    'missing-required-data': 'Choice required',
+    'unresolved-identity': 'No canonical identity',
+    malformed: 'Invalid automation data',
+  }
+  return Object.freeze({ status: resolved.status, label: labels[resolved.status], diagnostics: resolved.diagnostics })
+}
 
 const formatEdgeDataValue = (value: PtuEdge[TrainerEdgeDataField] | undefined): string => {
   if (Array.isArray(value)) return value.join(', ')

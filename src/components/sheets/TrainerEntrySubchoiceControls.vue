@@ -34,7 +34,7 @@ const formatSelection = (definition: TrainerSubchoiceDefinition) => (value: Edit
       <span class="trainer-subchoice-label">{{ definition.label }}</span>
       <EditableCell
         :model-value="selectionValue(definition)"
-        type="select"
+        :type="definition.inputType ?? 'select'"
         :options="definition.options"
         :placeholder="definition.placeholder ?? definition.label"
         :format="formatSelection(definition)"

@@ -1,7 +1,7 @@
 import { AA068_DUST_CLOUD_BURST_BRANCH_ID } from '#shared/abilityAutomation/mechanics'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 import type { MoveDamageTypeResolution } from '../../moveAutomation/damageTypes'
 import type { MoveAutomationScript, MoveAutomationTargetBranch } from '~/types/moveAutomation'
@@ -195,7 +195,7 @@ const earlyBirdEffective = (input: {
   const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve('Early Bird')
   if (!runtime) return false
   return projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(input.sheet),
     target: {
       placementId: input.placement.id,
       ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),

@@ -116,6 +116,8 @@ import {
 } from '~/utils/sheets/persistence'
 import { readRuntimeSheet, writeRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { trainerStaminaTemporaryHp } from '../domain/edgeAutomation/trainerCombat'
+import { mapWithTemporaryHpForPlacement, temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 
 export class ApplyUseTableActionCommandUseCaseError<
   TStatusCode extends number = number,
@@ -1092,12 +1094,18 @@ const useManeuverPlan = (
   })
 
   const mapWithMetadata = { ...target.mapState.document, metadata }
+  const staminaAmount = maneuver.name === 'Take a Breather' && target.placement.sheetKind === 'trainer'
+    ? trainerStaminaTemporaryHp(userSheet.sheet as TrainerSheet)
+    : 0
+  const mapWithStamina = staminaAmount > temporaryHpForPlacement(mapWithMetadata, target.placement.id)
+    ? mapWithTemporaryHpForPlacement(mapWithMetadata, target.placement.id, staminaAmount)
+    : mapWithMetadata
   const mapAfterBreather = maneuver.name === 'Take a Breather'
     ? cleanupAa065CrueltyHealingBlockForBreather({
-        map: mapWithMetadata,
+        map: mapWithStamina,
         placementId: target.placement.id,
       })
-    : mapWithMetadata
+    : mapWithStamina
   const mapAfterPerishCount = maneuver.name === 'Take a Breather'
     ? clearAa083PerishCountForBreather(mapAfterBreather, target.placement.id)
     : mapAfterBreather

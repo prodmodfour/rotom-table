@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-edge-automation-v1",
+  "status": "reviewed-no-open-source-gaps",
+  "entries": [
+    {
+      "id": "EA-SRC-001",
+      "family": "trainer",
+      "canonicalIds": [
+        "Confidence Artist",
+        "Groomer",
+        "Survival Drive",
+        "Trainer of Champions"
+      ],
+      "decision": "Remove parser-overrun Skill essays while retaining the complete Edge clauses.",
+      "status": "accepted"
+    },
+    {
+      "id": "EA-SRC-002",
+      "family": "poke",
+      "canonicalIds": [
+        "Ability Mastery",
+        "Accuracy Training",
+        "Advanced Connection",
+        "Advanced Mobility",
+        "Attack Conflict",
+        "Aura Pulse",
+        "Basic Ranged Attacks",
+        "Capability Training",
+        "Enticing Bait",
+        "Extended Invisibility",
+        "Far Reading",
+        "Mixed Power",
+        "Precise Threadings",
+        "Realized Potential",
+        "Seismometer",
+        "Skill Improvement",
+        "TK Mastery",
+        "Trail Sniffer",
+        "Underdog’s Lessons",
+        "Underdog’s Strength"
+      ],
+      "decision": "Keep Poké Edges in their own app-owned catalog; Mixed Sweeper is replaced by Mixed Power and Basic Ranged Attacks has no Level prerequisite.",
+      "status": "accepted"
+    },
+    {
+      "id": "EA-SRC-003",
+      "family": "poke",
+      "canonicalIds": [
+        "Mixed Power"
+      ],
+      "decision": "Mixed Power grants the canonical Twisted Power Ability; the malformed Feature extraction is not Poké Edge runtime authority.",
+      "status": "accepted"
+    },
+    {
+      "id": "EA-SRC-004",
+      "family": "trainer",
+      "canonicalIds": [
+        "Breeder"
+      ],
+      "decision": "Edge authority ends at permission and contribution evidence; breeding.v1 owns projects, Eggs, offspring, incubation, and hatching.",
+      "status": "accepted"
+    }
+  ]
+}

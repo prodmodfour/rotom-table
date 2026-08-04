@@ -3,11 +3,30 @@ import { PhPlus, PhX } from '@phosphor-icons/vue'
 import { SHEET_ABILITY_NAME_OPTIONS, setLookupAbilityName, type AbilityLookupRow } from '~/utils/sheetAbilityLookup'
 import { formatLookupValue } from '~/utils/sheetMoveLookup'
 import type { CharacterSheet, CharacterSheetAbility } from '~/types/characterSheet'
+import type { EditableCellValue } from '~/utils/editableCell'
+import {
+  POKE_EDGE_NAME_OPTIONS,
+  pokemonEdgeChoiceDefinitions,
+  pokemonEdgeChoiceOptions,
+  pokemonEdgeInspectorStatus,
+  setPokemonEdgeChoice,
+  setPokemonEdgeName,
+} from '~/utils/sheets/pokemonEdges'
 
-defineProps<{
+const props = defineProps<{
   sheet: CharacterSheet
   abilityRows: readonly AbilityLookupRow<CharacterSheetAbility>[]
 }>()
+
+const updateEdgeName = (index: number, value: EditableCellValue) => {
+  const edge = props.sheet.edges?.[index]
+  if (edge) setPokemonEdgeName(props.sheet, edge, index, value)
+}
+
+const updateEdgeChoice = (index: number, choiceId: string, value: EditableCellValue) => {
+  const edge = props.sheet.edges?.[index]
+  if (edge) setPokemonEdgeChoice(props.sheet, edge, index, choiceId, value)
+}
 
 const emit = defineEmits<{
   addAbility: []
@@ -78,19 +97,39 @@ const emit = defineEmits<{
           <tr><th>Name</th><th>Cost</th><th>Effect</th><th aria-label="Row actions"></th></tr>
         </thead>
         <tbody>
-          <tr v-for="(edge, i) in sheet.edges" :key="i">
+          <tr v-for="(edge, i) in sheet.edges" :key="edge.automation?.instanceId ?? i">
             <td class="kv-name">
-              <EditableCell v-model="edge.name" placeholder="Edge" />
+              <div class="edge-editor-stack">
+                <EditableCell
+                  :model-value="edge.name"
+                  type="select"
+                  placeholder="Choose Poké Edge"
+                  :options="POKE_EDGE_NAME_OPTIONS"
+                  @update:model-value="(value) => updateEdgeName(i, value)"
+                />
+                <label
+                  v-for="definition in pokemonEdgeChoiceDefinitions(edge)"
+                  :key="definition.id"
+                  class="edge-choice"
+                >
+                  <span>{{ definition.kind.replaceAll('-', ' ') }}</span>
+                  <EditableCell
+                    :model-value="edge.choices?.[definition.id]"
+                    type="select"
+                    :placeholder="`Choose ${definition.kind.replaceAll('-', ' ')}`"
+                    :options="pokemonEdgeChoiceOptions(sheet, edge, definition)"
+                    @update:model-value="(value) => updateEdgeChoice(i, definition.id, value)"
+                  />
+                </label>
+                <span
+                  class="edge-automation-status"
+                  :class="`edge-automation-status--${pokemonEdgeInspectorStatus(sheet, edge, i).status}`"
+                  :title="pokemonEdgeInspectorStatus(sheet, edge, i).diagnostics.join('\n')"
+                >{{ pokemonEdgeInspectorStatus(sheet, edge, i).label }}</span>
+              </div>
             </td>
-            <td><EditableCell v-model="edge.cost" placeholder="—" /></td>
-            <td>
-              <EditableCell
-                v-model="edge.effect"
-                type="textarea"
-                placeholder="—"
-                multiline
-              />
-            </td>
+            <td>{{ edge.cost ?? '—' }}</td>
+            <td class="move-effect">{{ edge.effect || '—' }}</td>
             <td class="row-actions">
               <button
                 type="button"
@@ -119,6 +158,37 @@ const emit = defineEmits<{
 }
 
 .row.two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.edge-editor-stack {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 12rem;
+}
+
+.edge-choice {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.edge-choice > span {
+  color: var(--ink-muted);
+  font-size: 0.67rem;
+  letter-spacing: 0.06em;
+  text-transform: capitalize;
+}
+
+.edge-automation-status {
+  width: fit-content;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  color: var(--ink-muted);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+}
+
+.edge-automation-status--ready { border-color: var(--accent); color: var(--accent); }
+.edge-automation-status--malformed,
+.edge-automation-status--unresolved-identity { color: var(--danger, #c95f5f); }
 
 @media (max-width: 980px) {
   .row.two-col { grid-template-columns: 1fr; }

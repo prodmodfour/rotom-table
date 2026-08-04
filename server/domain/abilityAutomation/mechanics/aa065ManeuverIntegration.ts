@@ -5,7 +5,7 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { reduceAbilityOwnedStateCommand } from '../ownedState'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY, type AbilityAutomationRuntimeRegistry } from '../registry'
 
@@ -43,7 +43,7 @@ export const applyAa065CrushTrapGrappleTrigger = (input: {
     || input.actorToken.id === input.targetToken.id
     || ptuGridDistanceBetweenFootprints(input.actorToken, input.targetToken) > 1) return input.map
   const source = projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.actorSheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(input.actorSheet),
     target: {
       placementId: input.actorPlacement.id,
       ...(input.actorPlacement.sideId ? { sideId: input.actorPlacement.sideId } : {}),

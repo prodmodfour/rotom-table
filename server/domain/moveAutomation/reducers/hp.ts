@@ -23,6 +23,8 @@ import { aa083PoisonHealActive } from '../../abilityAutomation/mechanics/aa083Li
 import { aa084PowerConstructBlocksTemporaryHp } from '../../abilityAutomation/mechanics/aa084StaticIntegration'
 import { AA073_GULP_MISSILE_HP_REASON } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
 import { AA076_IRON_BARBS_HP_REASON } from '../../abilityAutomation/mechanics/aa076MoveIntegration'
+import { trainerStaminaTemporaryHp } from '../../edgeAutomation/trainerCombat'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   evaluateMoveExpression,
   evaluateMoveSelector,
@@ -752,6 +754,18 @@ export const reduceDamageEffectForRecipient = (options: {
     'damage',
     { bypassTemporaryHp },
   )
+  const damageDetails = resolution.details && typeof resolution.details === 'object'
+    ? resolution.details as Record<string, unknown> : null
+  const criticalDetails = damageDetails?.criticalHit && typeof damageDetails.criticalHit === 'object'
+    ? damageDetails.criticalHit as Record<string, unknown> : null
+  if (recipient.placement.sheetKind === 'trainer'
+    && (applied.injuryResult.massiveDamageInjuries > 0 || criticalDetails?.critical === true)) {
+    const trainer = options.context.queries.sheets.forPlacement(recipient.placement)?.sheet as TrainerSheet | undefined
+    const stamina = trainer ? trainerStaminaTemporaryHp(trainer) : 0
+    if (stamina > accumulator.getTemporaryHp(recipient.token)) {
+      accumulator.setTemporaryHp(recipient.token, stamina)
+    }
+  }
   const current = hpSnapshot(accumulator, recipient)
   if (snapshotsEqual(previous, current)) {
     return noOpHpResult(

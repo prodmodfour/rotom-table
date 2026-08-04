@@ -17,6 +17,7 @@ import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 import { setPokemonCaughtBall } from '~/utils/sheets/pokemonCaughtBall'
 import { normalizeTrainerInventoryLegacyFishingRodAutofill } from '~/utils/sheets/trainerInventoryItems'
 import { stripLegacyTrainerSheetSkillRanks } from '~/utils/sheets/trainerSkillEntries'
+import { resolveEdgeInstance } from '#shared/edgeAutomation/instances'
 import {
   POKEMON_RARE_CANDY_LIMIT,
   POKEMON_VITAMIN_STAT_KEYS,
@@ -102,7 +103,10 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
     move.source = source === 'tutor' || source === 'tutoring' ? 'tutor' : 'tm'
   }
   ensureArr(sheet, 'abilities')
-  ensureArr(sheet, 'edges')
+  for (const [index, edge] of ensureArr<NonNullable<CharacterSheet['edges']>[number]>(sheet, 'edges').entries()) {
+    const resolved = resolveEdgeInstance({ family: 'poke', entry: edge, ownerId: sheet.slug, index })
+    if (resolved.status === 'ready' && resolved.data) edge.automation = { ...resolved.data, family: 'poke' }
+  }
 
   ensureObj<NonNullable<CharacterSheet['capabilities']>>(sheet, 'capabilities')
   ensureArr<string>(sheet.capabilities as Record<string, unknown>, 'other')
@@ -162,7 +166,10 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
   ensureArr(sheet, 'orders')
   ensureArr(sheet, 'classes')
   ensureArr(sheet, 'features')
-  ensureArr(sheet, 'edges')
+  for (const [index, edge] of ensureArr<NonNullable<TrainerSheet['edges']>[number]>(sheet, 'edges').entries()) {
+    const resolved = resolveEdgeInstance({ family: 'trainer', entry: edge, ownerId: sheet.slug, index })
+    if (resolved.status === 'ready' && resolved.data) edge.automation = { ...resolved.data, family: 'trainer' }
+  }
   ensureArr(sheet, 'advancement')
   ensureArr<string>(sheet, 'currentTeam')
   ensureArr<string>(sheet, 'boxedPokemon')

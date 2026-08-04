@@ -4,7 +4,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { parseCapabilityLabel } from '#shared/capabilityAutomation/catalog'
 import { projectAuthoritativeEffectiveAbilities } from './effectiveAbilities'
 import type { AuthoritativeEffectiveAbility } from './context'
-import { resolveSheetAbilityInstances } from './instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../edgeAutomation/permanentGrants'
 import { pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
 import {
   ABILITY_AUTOMATION_RUNTIME_REGISTRY,
@@ -52,7 +52,7 @@ export const effectiveRuntimeAbilities = (
   input: EffectiveRuntimeAbilitiesInput,
 ): readonly AuthoritativeEffectiveAbility[] => {
   if (!authoritativeAbilityOwnerIsConscious(input.sheet)) return Object.freeze([])
-  const sheetAbilityInstances = resolveSheetAbilityInstances(input.sheet.abilities)
+  const sheetAbilityInstances = resolveSheetAndEdgeAbilityInstances(input.sheet)
   const soullessWonderGuard = hasEffectiveSoullessCapability({
     map: input.map,
     placementId: input.placement.id,

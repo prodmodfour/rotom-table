@@ -22,6 +22,7 @@ Treat only these app-owned JSON files as the canonical runtime reference sources
 - `data/reference/moves.json`
 - `data/reference/abilities.json`
 - `data/reference/edges.json`
+- `data/reference/poke-edges.json`
 - `data/reference/capabilities.json`
 - `data/reference/features.json`
 - `data/reference/conditions.json`

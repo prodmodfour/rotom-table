@@ -10,7 +10,7 @@ import { AA076_IRON_FIST_MOVE_IDS } from '#shared/abilityAutomation/aa076'
 import type { MoveDamageTypeResolution } from '../../moveAutomation/damageTypes'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
 
 const initiativeProtected = (input: {
@@ -21,7 +21,7 @@ const initiativeProtected = (input: {
   const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve('Inner Focus')
   if (!runtime) return false
   return projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(input.sheet),
     target: {
       placementId: input.placement.id,
       ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),

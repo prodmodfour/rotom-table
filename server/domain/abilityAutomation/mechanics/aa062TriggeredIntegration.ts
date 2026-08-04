@@ -5,7 +5,7 @@ import type { MoveAutomationConditionUpdate, MoveAutomationHpUpdate } from '~/ty
 import type { TabletopMap } from '~/types/map'
 import type { AnyLiveSheet } from '~/utils/sheetMutations'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 import { reduceAbilityOwnedStateCommand } from '../ownedState'
@@ -29,7 +29,7 @@ export const resolveAa062BerserkDirectTrigger = (input: {
   const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve('Berserk')
   if (!runtime) return { triggered: false, map: input.map }
   const ability = projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(input.sheet),
     target: {
       placementId: input.placement.id,
       ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),

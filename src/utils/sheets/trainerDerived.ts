@@ -11,6 +11,7 @@ import {
   type TrainerSkillCalculation,
 } from '~/utils/sheets/trainerSkillCalculation'
 import { SKILL_RANK_TO_VALUE } from '~/utils/skillRanks'
+import { sheetHasCanonicalEdge } from '#shared/edgeAutomation/sheetEdges'
 
 // ---------------------------------------------------------------------------
 // Stat resolution
@@ -148,7 +149,7 @@ export const computeDefaultTrainerCapabilities = (sheet: TrainerSheet): DefaultT
   const acrobatics = trainerSkillRankValue(skills, 'acrobatics')
   const survival = trainerSkillRankValue(skills, 'survival')
   const combat = trainerSkillRankValue(skills, 'combat')
-  const traveler = (sheet.edges ?? []).some(edge => edge.name.trim().toLocaleLowerCase('en-US') === 'traveler')
+  const traveler = sheetHasCanonicalEdge(sheet, 'trainer', 'Traveler')
   const powerAthletics = traveler ? survival : athletics
   const jumpAcrobatics = traveler ? survival : acrobatics
   const overlandRanks = traveler
@@ -174,13 +175,17 @@ export const resolveTrainerCapabilities = (sheet: TrainerSheet): {
 } => {
   const c = sheet.capabilities ?? {}
   const defaults = computeDefaultTrainerCapabilities(sheet)
+  const acrobat = sheetHasCanonicalEdge(sheet, 'trainer', 'Acrobat') ? 1 : 0
+  const throwingMasteries = sheetHasCanonicalEdge(sheet, 'trainer', 'Throwing Masteries') ? 2 : 0
+  const swimmer = sheetHasCanonicalEdge(sheet, 'trainer', 'Swimmer') ? 2 : 0
+  const powerBoost = sheetHasCanonicalEdge(sheet, 'trainer', 'Power Boost') ? 2 : 0
   const rows: TrainerCapabilityRow[] = [
     { label: 'Overland',       value: c.overland       ?? defaults.overland },
-    { label: 'Throwing Range', value: c.throwingRange  ?? defaults.throwingRange },
-    { label: 'High Jump',      value: c.highJump       ?? defaults.highJump },
-    { label: 'Long Jump',      value: c.longJump       ?? defaults.longJump },
-    { label: 'Swim',           value: c.swim           ?? defaults.swim },
-    { label: 'Power',          value: c.power          ?? defaults.power },
+    { label: 'Throwing Range', value: (c.throwingRange ?? defaults.throwingRange) + throwingMasteries },
+    { label: 'High Jump',      value: (c.highJump       ?? defaults.highJump) + acrobat },
+    { label: 'Long Jump',      value: (c.longJump       ?? defaults.longJump) + acrobat },
+    { label: 'Swim',           value: (c.swim           ?? defaults.swim) + swimmer },
+    { label: 'Power',          value: (c.power          ?? defaults.power) + powerBoost },
   ]
   if (c.sky      != null) rows.splice(2, 0, { label: 'Sky',      value: c.sky })
   if (c.levitate != null) rows.push({ label: 'Levitate', value: c.levitate })

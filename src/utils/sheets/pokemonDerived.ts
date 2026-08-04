@@ -14,6 +14,8 @@ import {
 } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 import { resolvePokemonVitaminSummary } from '~/utils/sheets/pokemonVitamins'
 import { parseCapabilityLabel } from '#shared/capabilityAutomation/catalog'
+import { sheetEdgeChoiceValues, sheetHasCanonicalEdge } from '#shared/edgeAutomation/sheetEdges'
+import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 
 const pokedexBySpecies = new Map<string, PokedexRecord>(
   (pokedexData as PokedexRecord[]).map((entry) => [entry.species, entry]),
@@ -67,7 +69,9 @@ export interface ResolvedStat {
   vitaminAdjustment: number
   /** Permanent Base Stat adjustment from Capability state such as Letter Press. */
   capabilityAdjustment: number
-  /** Nature-, Vitamin-, and Capability-adjusted Base Stat. */
+  /** Permanent Base Stat adjustment from effective Poké Edges. */
+  edgeAdjustment: number
+  /** Nature-, Vitamin-, Capability-, and Edge-adjusted Base Stat. */
   base: number
   /** Stat points earned on level-up. */
   added: number
@@ -92,13 +96,16 @@ export interface BaseRelationViolation {
   lower: ResolvedStat
 }
 
-export const validateBaseRelations = (stats: ResolvedStat[]): BaseRelationViolation[] => {
+export const validateBaseRelations = (
+  stats: ResolvedStat[],
+  waivedHigherStats: ReadonlySet<StatKey> = new Set(),
+): BaseRelationViolation[] => {
   const violations: BaseRelationViolation[] = []
   const knownStats = stats.filter((row) => row.base > 0)
 
   for (const higher of knownStats) {
     for (const lower of knownStats) {
-      if (higher.key === lower.key) continue
+      if (higher.key === lower.key || waivedHigherStats.has(higher.key)) continue
       if (higher.base <= lower.base) continue
       if (higher.baseTotal > lower.baseTotal) continue
       violations.push({ higher, lower })
@@ -112,6 +119,18 @@ export const validateBaseRelations = (stats: ResolvedStat[]): BaseRelationViolat
       || a.lower.label.localeCompare(b.lower.label),
   )
 }
+
+export const realizedPotentialBonusStatPoints = (sheet: CharacterSheet): number => {
+  if (!sheetHasCanonicalEdge(sheet, 'poke', 'Realized Potential')) return 0
+  const baseStats = getPokedexEntry(sheet.species)?.base_stats
+  if (!baseStats) return 0
+  const total = baseStats.hp + baseStats.atk + baseStats.def + baseStats.spatk + baseStats.spdef + baseStats.spd
+  return Math.max(0, 45 - total)
+}
+
+export const pokemonAddedStatPointBudget = (sheet: CharacterSheet): number => (
+  computePokemonLevelUpStatPointBudget(sheet.level) + realizedPotentialBonusStatPoints(sheet)
+)
 
 export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
   const species = getPokedexEntry(sheet.species)
@@ -144,7 +163,8 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
     const vitaminAdjustment = vitaminSummary.statNetAdjustments[key]
     const capabilityBaseStatBonus = (sheet.capabilityCampaignState?.letterPress?.statBonuses[key] ?? 0)
       - (sheet.babyTemplate === true ? 5 : 0)
-    const rawBase = speciesValue + mod + vitaminAdjustment + capabilityBaseStatBonus
+    const edgeAdjustment = sheetHasCanonicalEdge(sheet, 'poke', 'Underdog’s Strength') ? 1 : 0
+    const rawBase = speciesValue + mod + vitaminAdjustment + capabilityBaseStatBonus + edgeAdjustment
     const base = speciesValue > 0 ? Math.max(1, rawBase) : Math.max(0, rawBase)
     const added = personal.added ?? 0
     const stage = personal.stage ?? 0
@@ -156,6 +176,7 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
       mod,
       vitaminAdjustment,
       capabilityAdjustment: capabilityBaseStatBonus,
+      edgeAdjustment,
       base,
       added,
       stage,
@@ -240,6 +261,19 @@ const EDU_KEYS = new Set(['generalEd', 'medicineEd', 'occultEd', 'pokeEd', 'tech
 const DEFAULT_SKILL = '2d6'
 const DEFAULT_EDU_SKILL = '1d6'
 
+const rankUpPokemonSkill = (value: string, steps: number): string => {
+  const match = /^\s*(\d+)d6(?:\s*([+-])\s*(\d+))?\s*$/i.exec(value)
+  if (!match || steps <= 0) return value
+  const dice = Math.min(6, Number.parseInt(match[1] ?? '0', 10) + steps)
+  const modifier = match[2] && match[3] ? `${match[2]}${match[3]}` : ''
+  return `${dice}d6${modifier}`
+}
+
+export const pokemonBaseRelationWaivers = (sheet: CharacterSheet): ReadonlySet<StatKey> => {
+  const choices = sheetEdgeChoiceValues({ sheet, family: 'poke', canonicalId: 'Attack Conflict', choiceId: 'choice-1' })
+  return new Set(choices.flatMap(value => value === 'Attack' ? ['atk' as const] : value === 'Special Attack' ? ['satk' as const] : []))
+}
+
 export const resolveSkills = (sheet: CharacterSheet): ResolvedSkill[] => {
   const species = getPokedexEntry(sheet.species)
   const speciesSkills = species?.skills ?? {}
@@ -254,9 +288,12 @@ export const resolveSkills = (sheet: CharacterSheet): ResolvedSkill[] => {
   return SHEET_SKILL_ORDER.map(([key, label]) => {
     const override = sheet.skills?.[key]
     const speciesValue = speciesByKey.get(key)
-    const value = override
+    const baseValue = override
       ?? speciesValue
       ?? (EDU_KEYS.has(key) ? DEFAULT_EDU_SKILL : DEFAULT_SKILL)
+    const improvementCount = sheetEdgeChoiceValues({ sheet, family: 'poke', canonicalId: 'Skill Improvement', choiceId: 'choice-1' })
+      .filter(selected => selected === key).length
+    const value = rankUpPokemonSkill(baseValue, improvementCount)
     return {
       key,
       label,
@@ -285,32 +322,48 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
   // the authoritative token boundary; this value remains native/species/sheet/Move-only.
   const nativeLevitate = baseLevitate
 
+  const advancedMobility = new Set(sheetEdgeChoiceValues({ sheet, family: 'poke', canonicalId: 'Advanced Mobility', choiceId: 'choice-1' }))
+  const capabilityTraining = new Set(sheetEdgeChoiceValues({ sheet, family: 'poke', canonicalId: 'Capability Training', choiceId: 'choice-1' }))
+  const edgeNumberBonus = (label: string): number => (advancedMobility.has(label) ? 2 : 0)
+    + (capabilityTraining.has(label) ? 1 : 0)
+  const withEdgeBonus = (value: number | undefined, bonus: number): number | undefined => (
+    value === undefined && bonus === 0 ? undefined : (value ?? 0) + bonus
+  )
+  const edgeJump = (value: string | number | undefined): string | number | undefined => {
+    if (typeof value !== 'string') return value
+    const match = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(value)
+    if (!match) return value
+    const long = Number.parseInt(match[1] ?? '0', 10) + edgeNumberBonus('Long Jump')
+    const high = Number.parseInt(match[2] ?? '0', 10) + edgeNumberBonus('High Jump')
+    return `${long}/${high}`
+  }
+
   const numbered: Array<[string, number | string | undefined]> = [
-    ['Overland', applyNumberedCapabilityBonus(
+    ['Overland', withEdgeBonus(applyNumberedCapabilityBonus(
       sheetCaps.overland ?? speciesCaps.overland,
       moveGrantedCapabilities.numberedBonuses.overland,
-    )],
-    ['Sky',      applyNumberedCapabilityBonus(
+    ), edgeNumberBonus('Overland'))],
+    ['Sky',      withEdgeBonus(applyNumberedCapabilityBonus(
       sheetCaps.sky      ?? speciesCaps.sky,
       moveGrantedCapabilities.numberedBonuses.sky,
-    )],
-    ['Swim',     applyNumberedCapabilityBonus(
+    ), edgeNumberBonus('Sky'))],
+    ['Swim',     withEdgeBonus(applyNumberedCapabilityBonus(
       sheetCaps.swim     ?? speciesCaps.swim,
       moveGrantedCapabilities.numberedBonuses.swim,
-    )],
-    ['Levitate', nativeLevitate],
-    ['Burrow',   applyNumberedCapabilityBonus(
+    ), edgeNumberBonus('Swim'))],
+    ['Levitate', withEdgeBonus(nativeLevitate, edgeNumberBonus('Levitate'))],
+    ['Burrow',   withEdgeBonus(applyNumberedCapabilityBonus(
       sheetCaps.burrow   ?? speciesCaps.burrow,
       moveGrantedCapabilities.numberedBonuses.burrow,
-    )],
-    ['Jump',     applyJumpCapabilityBonuses(
+    ), edgeNumberBonus('Burrow'))],
+    ['Jump',     edgeJump(applyJumpCapabilityBonuses(
       sheetCaps.jump     ?? speciesCaps.jump,
       moveGrantedCapabilities.jumpBonuses,
-    )],
-    ['Power',    applyNumberedCapabilityBonus(
+    ))],
+    ['Power',    withEdgeBonus(applyNumberedCapabilityBonus(
       sheetCaps.power    ?? speciesCaps.power,
       moveGrantedCapabilities.numberedBonuses.power,
-    )],
+    ), edgeNumberBonus('Power'))],
     ['Weight',   sheetCaps.weight   ?? species?.weight],
     ['Size',     sheetCaps.size     ?? species?.size],
   ]
@@ -323,7 +376,10 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
 
   const naturewalk = resolvePokemonNaturewalk(species, sheetCaps)
   const other = resolvePokemonOtherCapabilities(species, sheetCaps, {
-    other: moveGrantedCapabilities.other,
+    other: [
+      ...moveGrantedCapabilities.other,
+      ...(sheetHasCanonicalEdge(sheet, 'poke', 'Aura Pulse') ? ['Aura Pulse'] : []),
+    ],
     valuedBonuses: moveGrantedCapabilities.valuedOtherBonuses,
   })
   return { rows, naturewalk, other }

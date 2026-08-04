@@ -1,0 +1,876 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-edge-automation-v1",
+  "requirementCount": 95,
+  "requirements": [
+    {
+      "id": "edge:trainer:Acrobat:projection",
+      "family": "trainer",
+      "canonicalId": "Acrobat",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Adept Skills:projection",
+      "family": "trainer",
+      "canonicalId": "Adept Skills",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Apricorn Balls:projection",
+      "family": "trainer",
+      "canonicalId": "Apricorn Balls",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Apricorn Balls:action:craft-apricorn-ball",
+      "family": "trainer",
+      "canonicalId": "Apricorn Balls",
+      "kind": "contextual-action",
+      "actionId": "craft-apricorn-ball",
+      "given": "the effective Edge source satisfies authoritative context apricorn-and-ball-toolbox",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Art of Stealth:projection",
+      "family": "trainer",
+      "canonicalId": "Art of Stealth",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Athletic Initiative:projection",
+      "family": "trainer",
+      "canonicalId": "Athletic Initiative",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Bad Mood:projection",
+      "family": "trainer",
+      "canonicalId": "Bad Mood",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Basic Balls:projection",
+      "family": "trainer",
+      "canonicalId": "Basic Balls",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Basic Balls:action:craft-basic-ball",
+      "family": "trainer",
+      "canonicalId": "Basic Balls",
+      "kind": "contextual-action",
+      "actionId": "craft-basic-ball",
+      "given": "the effective Edge source satisfies authoritative context money-and-ball-toolbox",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Basic Cooking:projection",
+      "family": "trainer",
+      "canonicalId": "Basic Cooking",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Basic Cooking:action:cook-basic-food",
+      "family": "trainer",
+      "canonicalId": "Basic Cooking",
+      "kind": "contextual-action",
+      "actionId": "cook-basic-food",
+      "given": "the effective Edge source satisfies authoritative context ingredients",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Basic Martial Arts:projection",
+      "family": "trainer",
+      "canonicalId": "Basic Martial Arts",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Basic Psionics:projection",
+      "family": "trainer",
+      "canonicalId": "Basic Psionics",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Basic Skills:projection",
+      "family": "trainer",
+      "canonicalId": "Basic Skills",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Beast Master:projection",
+      "family": "trainer",
+      "canonicalId": "Beast Master",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Breeder:projection",
+      "family": "trainer",
+      "canonicalId": "Breeder",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Breeder:action:begin-breeding",
+      "family": "trainer",
+      "canonicalId": "Breeder",
+      "kind": "contextual-action",
+      "actionId": "begin-breeding",
+      "given": "the effective Edge source satisfies authoritative context breeding-subsystem",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Categoric Inclination:projection",
+      "family": "trainer",
+      "canonicalId": "Categoric Inclination",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Charmer:projection",
+      "family": "trainer",
+      "canonicalId": "Charmer",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Confidence Artist:projection",
+      "family": "trainer",
+      "canonicalId": "Confidence Artist",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Demoralize:projection",
+      "family": "trainer",
+      "canonicalId": "Demoralize",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Dynamism:projection",
+      "family": "trainer",
+      "canonicalId": "Dynamism",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Elemental Connection:projection",
+      "family": "trainer",
+      "canonicalId": "Elemental Connection",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Expert Manipulator:projection",
+      "family": "trainer",
+      "canonicalId": "Expert Manipulator",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Expert Skills:projection",
+      "family": "trainer",
+      "canonicalId": "Expert Skills",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Expert Trickster:projection",
+      "family": "trainer",
+      "canonicalId": "Expert Trickster",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Flustering Charisma:projection",
+      "family": "trainer",
+      "canonicalId": "Flustering Charisma",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Gem Lore:projection",
+      "family": "trainer",
+      "canonicalId": "Gem Lore",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Gem Lore:action:craft-gem",
+      "family": "trainer",
+      "canonicalId": "Gem Lore",
+      "kind": "contextual-action",
+      "actionId": "craft-gem",
+      "given": "the effective Edge source satisfies authoritative context typed-shard",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Gem Lore:action:transmute-evolution-stone",
+      "family": "trainer",
+      "canonicalId": "Gem Lore",
+      "kind": "contextual-action",
+      "actionId": "transmute-evolution-stone",
+      "given": "the effective Edge source satisfies authoritative context four-matching-shards-or-stone",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Grace:projection",
+      "family": "trainer",
+      "canonicalId": "Grace",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Green Thumb:projection",
+      "family": "trainer",
+      "canonicalId": "Green Thumb",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Green Thumb:action:plant-apricorn-or-tier-1-berry",
+      "family": "trainer",
+      "canonicalId": "Green Thumb",
+      "kind": "contextual-action",
+      "actionId": "plant-apricorn-or-tier-1-berry",
+      "given": "the effective Edge source satisfies authoritative context grower-or-fertilized-soil",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Groomer:projection",
+      "family": "trainer",
+      "canonicalId": "Groomer",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Groomer:action:groom-team",
+      "family": "trainer",
+      "canonicalId": "Groomer",
+      "kind": "contextual-action",
+      "actionId": "groom-team",
+      "given": "the effective Edge source satisfies authoritative context groomers-kit-and-team",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Instinctive Aptitude:projection",
+      "family": "trainer",
+      "canonicalId": "Instinctive Aptitude",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Instruction:projection",
+      "family": "trainer",
+      "canonicalId": "Instruction",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Intimidating Presence:projection",
+      "family": "trainer",
+      "canonicalId": "Intimidating Presence",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Iron Mind:projection",
+      "family": "trainer",
+      "canonicalId": "Iron Mind",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Kip Up:projection",
+      "family": "trainer",
+      "canonicalId": "Kip Up",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Kip Up:action:stand-from-tripped",
+      "family": "trainer",
+      "canonicalId": "Kip Up",
+      "kind": "contextual-action",
+      "actionId": "stand-from-tripped",
+      "given": "the effective Edge source satisfies authoritative context tripped",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Leader:projection",
+      "family": "trainer",
+      "canonicalId": "Leader",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Master Skills:projection",
+      "family": "trainer",
+      "canonicalId": "Master Skills",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Medic Training:projection",
+      "family": "trainer",
+      "canonicalId": "Medic Training",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Mounted Prowess:projection",
+      "family": "trainer",
+      "canonicalId": "Mounted Prowess",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Mystic Senses:projection",
+      "family": "trainer",
+      "canonicalId": "Mystic Senses",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Nimble Movement:projection",
+      "family": "trainer",
+      "canonicalId": "Nimble Movement",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Paleontologist:projection",
+      "family": "trainer",
+      "canonicalId": "Paleontologist",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Paleontologist:action:identify-fossil",
+      "family": "trainer",
+      "canonicalId": "Paleontologist",
+      "kind": "contextual-action",
+      "actionId": "identify-fossil",
+      "given": "the effective Edge source satisfies authoritative context fossil",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Paleontologist:action:reanimate-fossil",
+      "family": "trainer",
+      "canonicalId": "Paleontologist",
+      "kind": "contextual-action",
+      "actionId": "reanimate-fossil",
+      "given": "the effective Edge source satisfies authoritative context fossil-and-reanimation-machine",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Poké Ball Repair:projection",
+      "family": "trainer",
+      "canonicalId": "Poké Ball Repair",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Poké Ball Repair:action:repair-broken-ball",
+      "family": "trainer",
+      "canonicalId": "Poké Ball Repair",
+      "kind": "contextual-action",
+      "actionId": "repair-broken-ball",
+      "given": "the effective Edge source satisfies authoritative context broken-ball-and-ball-toolbox",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:PokéPsychologist:projection",
+      "family": "trainer",
+      "canonicalId": "PokéPsychologist",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Power Boost:projection",
+      "family": "trainer",
+      "canonicalId": "Power Boost",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Repel Crafter:projection",
+      "family": "trainer",
+      "canonicalId": "Repel Crafter",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Repel Crafter:action:craft-repel",
+      "family": "trainer",
+      "canonicalId": "Repel Crafter",
+      "kind": "contextual-action",
+      "actionId": "craft-repel",
+      "given": "the effective Edge source satisfies authoritative context money-and-chemistry-set",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Scholar:projection",
+      "family": "trainer",
+      "canonicalId": "Scholar",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Skill Enhancement:projection",
+      "family": "trainer",
+      "canonicalId": "Skill Enhancement",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Skill Stunt:projection",
+      "family": "trainer",
+      "canonicalId": "Skill Stunt",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Slippery:projection",
+      "family": "trainer",
+      "canonicalId": "Slippery",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Smooth:projection",
+      "family": "trainer",
+      "canonicalId": "Smooth",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Sneak’s Tricks:projection",
+      "family": "trainer",
+      "canonicalId": "Sneak’s Tricks",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Stamina:projection",
+      "family": "trainer",
+      "canonicalId": "Stamina",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Survival Drive:projection",
+      "family": "trainer",
+      "canonicalId": "Survival Drive",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Swimmer:projection",
+      "family": "trainer",
+      "canonicalId": "Swimmer",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Tag Scribe:projection",
+      "family": "trainer",
+      "canonicalId": "Tag Scribe",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Tag Scribe:action:scribe-cleanse-tag",
+      "family": "trainer",
+      "canonicalId": "Tag Scribe",
+      "kind": "contextual-action",
+      "actionId": "scribe-cleanse-tag",
+      "given": "the effective Edge source satisfies authoritative context campaign",
+      "when": "the server-issued action is declared or resumed",
+      "then": "authority, resources, read set, exact retry, bounded choices, and atomic settlement are revalidated"
+    },
+    {
+      "id": "edge:trainer:Throwing Masteries:projection",
+      "family": "trainer",
+      "canonicalId": "Throwing Masteries",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Train the Reserves:projection",
+      "family": "trainer",
+      "canonicalId": "Train the Reserves",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Trainer of Champions:projection",
+      "family": "trainer",
+      "canonicalId": "Trainer of Champions",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Traveler:projection",
+      "family": "trainer",
+      "canonicalId": "Traveler",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Virtuoso:projection",
+      "family": "trainer",
+      "canonicalId": "Virtuoso",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Wallrunner:projection",
+      "family": "trainer",
+      "canonicalId": "Wallrunner",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Weapon of Choice:projection",
+      "family": "trainer",
+      "canonicalId": "Weapon of Choice",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:trainer:Work Up:projection",
+      "family": "trainer",
+      "canonicalId": "Work Up",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Ability Mastery:projection",
+      "family": "poke",
+      "canonicalId": "Ability Mastery",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Accuracy Training:projection",
+      "family": "poke",
+      "canonicalId": "Accuracy Training",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Advanced Connection:projection",
+      "family": "poke",
+      "canonicalId": "Advanced Connection",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Advanced Mobility:projection",
+      "family": "poke",
+      "canonicalId": "Advanced Mobility",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Attack Conflict:projection",
+      "family": "poke",
+      "canonicalId": "Attack Conflict",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Aura Pulse:projection",
+      "family": "poke",
+      "canonicalId": "Aura Pulse",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Basic Ranged Attacks:projection",
+      "family": "poke",
+      "canonicalId": "Basic Ranged Attacks",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Capability Training:projection",
+      "family": "poke",
+      "canonicalId": "Capability Training",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Enticing Bait:projection",
+      "family": "poke",
+      "canonicalId": "Enticing Bait",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Extended Invisibility:projection",
+      "family": "poke",
+      "canonicalId": "Extended Invisibility",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Far Reading:projection",
+      "family": "poke",
+      "canonicalId": "Far Reading",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Mixed Power:projection",
+      "family": "poke",
+      "canonicalId": "Mixed Power",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Precise Threadings:projection",
+      "family": "poke",
+      "canonicalId": "Precise Threadings",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Realized Potential:projection",
+      "family": "poke",
+      "canonicalId": "Realized Potential",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Seismometer:projection",
+      "family": "poke",
+      "canonicalId": "Seismometer",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Skill Improvement:projection",
+      "family": "poke",
+      "canonicalId": "Skill Improvement",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:TK Mastery:projection",
+      "family": "poke",
+      "canonicalId": "TK Mastery",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Trail Sniffer:projection",
+      "family": "poke",
+      "canonicalId": "Trail Sniffer",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Underdog’s Lessons:projection",
+      "family": "poke",
+      "canonicalId": "Underdog’s Lessons",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    },
+    {
+      "id": "edge:poke:Underdog’s Strength:projection",
+      "family": "poke",
+      "canonicalId": "Underdog’s Strength",
+      "kind": "effective-projection",
+      "given": "a canonical typed Edge instance with current ownership and lifecycle evidence",
+      "when": "an authoritative owning query is evaluated",
+      "then": "the reviewed Edge effects and ordered contribution evidence apply without prose interpretation"
+    }
+  ]
+}

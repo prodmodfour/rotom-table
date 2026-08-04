@@ -1,0 +1,667 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-edge-automation-v1",
+  "catalogs": {
+    "trainer": {
+      "entryCount": 61,
+      "canonicalIds": [
+        "Acrobat",
+        "Adept Skills",
+        "Apricorn Balls",
+        "Art of Stealth",
+        "Athletic Initiative",
+        "Bad Mood",
+        "Basic Balls",
+        "Basic Cooking",
+        "Basic Martial Arts",
+        "Basic Psionics",
+        "Basic Skills",
+        "Beast Master",
+        "Breeder",
+        "Categoric Inclination",
+        "Charmer",
+        "Confidence Artist",
+        "Demoralize",
+        "Dynamism",
+        "Elemental Connection",
+        "Expert Manipulator",
+        "Expert Skills",
+        "Expert Trickster",
+        "Flustering Charisma",
+        "Gem Lore",
+        "Grace",
+        "Green Thumb",
+        "Groomer",
+        "Instinctive Aptitude",
+        "Instruction",
+        "Intimidating Presence",
+        "Iron Mind",
+        "Kip Up",
+        "Leader",
+        "Master Skills",
+        "Medic Training",
+        "Mounted Prowess",
+        "Mystic Senses",
+        "Nimble Movement",
+        "Paleontologist",
+        "Poké Ball Repair",
+        "PokéPsychologist",
+        "Power Boost",
+        "Repel Crafter",
+        "Scholar",
+        "Skill Enhancement",
+        "Skill Stunt",
+        "Slippery",
+        "Smooth",
+        "Sneak’s Tricks",
+        "Stamina",
+        "Survival Drive",
+        "Swimmer",
+        "Tag Scribe",
+        "Throwing Masteries",
+        "Train the Reserves",
+        "Trainer of Champions",
+        "Traveler",
+        "Virtuoso",
+        "Wallrunner",
+        "Weapon of Choice",
+        "Work Up"
+      ]
+    },
+    "poke": {
+      "entryCount": 20,
+      "canonicalIds": [
+        "Ability Mastery",
+        "Accuracy Training",
+        "Advanced Connection",
+        "Advanced Mobility",
+        "Attack Conflict",
+        "Aura Pulse",
+        "Basic Ranged Attacks",
+        "Capability Training",
+        "Enticing Bait",
+        "Extended Invisibility",
+        "Far Reading",
+        "Mixed Power",
+        "Precise Threadings",
+        "Realized Potential",
+        "Seismometer",
+        "Skill Improvement",
+        "TK Mastery",
+        "Trail Sniffer",
+        "Underdog’s Lessons",
+        "Underdog’s Strength"
+      ]
+    }
+  },
+  "recordCount": 81,
+  "records": [
+    {
+      "family": "trainer",
+      "index": 0,
+      "canonicalId": "Acrobat",
+      "effectSha256": "2a60d5e182c6d61255f89d17efe2e1aac6eb5c7494998eb83e89b2e7cac157ec",
+      "recordSha256": "682b707c7894a1239a0a59d6727cf0cd1f783de8a5319b119fc877b1a38c00d1"
+    },
+    {
+      "family": "trainer",
+      "index": 1,
+      "canonicalId": "Adept Skills",
+      "effectSha256": "26f2fc67677296770cbd36bd035447d15038a4f7a39abc1e45c403d28f95ae05",
+      "recordSha256": "6a44b90f0effa135e9d663f198d06b07ef2ebd2106e498ca5feb989cd58fead8"
+    },
+    {
+      "family": "trainer",
+      "index": 2,
+      "canonicalId": "Apricorn Balls",
+      "effectSha256": "ac482952434ca8aa9dad07ab9dd5a369e8c157c576d1f326886b2d8da51a7a91",
+      "recordSha256": "4ecb26d8f7e33520a09cc2352c962b68f4854ad790955b616a9d3e86ca94b483"
+    },
+    {
+      "family": "trainer",
+      "index": 3,
+      "canonicalId": "Art of Stealth",
+      "effectSha256": "98262b4f567d75f2309d6f1f8545a4a04e6a5034a2352e4099a900a16308b0b6",
+      "recordSha256": "a578640b63683c516f66aa2a10822d5870f54573011dd0f456133a36ddbf5113"
+    },
+    {
+      "family": "trainer",
+      "index": 4,
+      "canonicalId": "Athletic Initiative",
+      "effectSha256": "9a64e7aa334332f7cd92d7c7909b2187ddc632811c43df0063b98f73de83bb93",
+      "recordSha256": "b1495fb6db6e9f35befb62e7cf483ea492ad8e68e3c6534acc045fc09f4154e2"
+    },
+    {
+      "family": "trainer",
+      "index": 5,
+      "canonicalId": "Bad Mood",
+      "effectSha256": "1adab0edd79c45c65d56fbf7d9ca63876fbacfdc4f7a094dda9c2f59dd231aa8",
+      "recordSha256": "d33734a95bc5cd48c93d14822c242da606229a35fce127483b622e22f591e0f2"
+    },
+    {
+      "family": "trainer",
+      "index": 6,
+      "canonicalId": "Basic Balls",
+      "effectSha256": "d75fbb6cd9d6bfbde611ad0f9030d96f449b2f344848e19727bb320279e7fcb9",
+      "recordSha256": "212fcbaddc97690cad0b186fef6e597bb3aefb6477d494bf03381c57751ef504"
+    },
+    {
+      "family": "trainer",
+      "index": 7,
+      "canonicalId": "Basic Cooking",
+      "effectSha256": "892d0a1ce2f264110350ab4f1cad2af18af757b83b6af30e68d5ffd18c15692f",
+      "recordSha256": "5ad6932101436cec7d638226e895ddc08116b7f62506efee774ce0fde2bd2c29"
+    },
+    {
+      "family": "trainer",
+      "index": 8,
+      "canonicalId": "Basic Martial Arts",
+      "effectSha256": "d297867f23f801ad1e90c5d8e7ff4f72bc60e292ddb13a8fe772bc98b7610a9d",
+      "recordSha256": "d307f93d544f6d155862aca1509133ada551ea382aeb11be32e6558ef5a6e375"
+    },
+    {
+      "family": "trainer",
+      "index": 9,
+      "canonicalId": "Basic Psionics",
+      "effectSha256": "18438bc1cc2ad9ba5213a1a136cfd7edd60f69ad4931c3e6d68db79813c37b87",
+      "recordSha256": "f1b9848b1c6a5b941e0c5758d9e0026b5b47e9bbe5be27579defa79ec9e77beb"
+    },
+    {
+      "family": "trainer",
+      "index": 10,
+      "canonicalId": "Basic Skills",
+      "effectSha256": "16f36a1bba1f994496f61013612125b94da7b48cf41c0ec3e2538811d935f968",
+      "recordSha256": "f58797dd2f414e49d5459f76170dac6546932bf81c18023b7d5f9381e58e870a"
+    },
+    {
+      "family": "trainer",
+      "index": 11,
+      "canonicalId": "Beast Master",
+      "effectSha256": "c4f8b558ecf0a60a4573fd0f6ab9332b3f51c03c4fb80d635b731f6c907530da",
+      "recordSha256": "329b1c547ce0f7cde1682229504df57550a1f3034774901e20df707c14c36097"
+    },
+    {
+      "family": "trainer",
+      "index": 12,
+      "canonicalId": "Breeder",
+      "effectSha256": "5d6d96630ea0d15492a4bfda68720612bb98c9b29f5da6b9ee0e085e985d6bd8",
+      "recordSha256": "d303cbe8c377ec9bb2a305ee5626e3c80f9c1ebd77975623c985bce741a321f4"
+    },
+    {
+      "family": "trainer",
+      "index": 13,
+      "canonicalId": "Categoric Inclination",
+      "effectSha256": "3609a35ba384ac7e67858520bab1b0c9a061e94296cd62e9c1f473d860e641c8",
+      "recordSha256": "d88c9f050c3cbd3a2fc13c6a240ea2f131bd74eb1ffd86cd7ec0947fc358f0f5"
+    },
+    {
+      "family": "trainer",
+      "index": 14,
+      "canonicalId": "Charmer",
+      "effectSha256": "19af01154e3b4bce2e9083e3878e9f7358b6c09483f36508d9fd6c493b338bb0",
+      "recordSha256": "c4289cad9dc4faf3728cac49df898031f0d5cacd56162eda9f8d251b3af03bbe"
+    },
+    {
+      "family": "trainer",
+      "index": 15,
+      "canonicalId": "Confidence Artist",
+      "effectSha256": "8ad0bfb5179d05328c66cd1887db92b9b6617adfce6d5e60d7b6187d797ad68a",
+      "recordSha256": "b65fde5812c3b0a66f8b5344c91d1640c91dff1b72e580ab0053c7eea3998347"
+    },
+    {
+      "family": "trainer",
+      "index": 16,
+      "canonicalId": "Demoralize",
+      "effectSha256": "efe4cb6009c1491439ce8448ed6e6b4ae776b7a9832bf1e067887d07f380e68c",
+      "recordSha256": "8f90605390d16a649d6c252ca187770e2c9b4506c58145873fc223d24423a107"
+    },
+    {
+      "family": "trainer",
+      "index": 17,
+      "canonicalId": "Dynamism",
+      "effectSha256": "b5635e43d9621c83ee49cf33204922f441482ced173c473a819518a02eeadb7f",
+      "recordSha256": "57be495e9a0ed069b65c3bf17c667993301cf8807c43eb695698b540b003a14d"
+    },
+    {
+      "family": "trainer",
+      "index": 18,
+      "canonicalId": "Elemental Connection",
+      "effectSha256": "f72ea6639d7fbabeff8f37610bc8ff49c9010b92f19c42366c314b011bc53ce3",
+      "recordSha256": "66ff7a2286a4f223bed39e5ea77107467823b9e5d1625f99672650afe187f977"
+    },
+    {
+      "family": "trainer",
+      "index": 19,
+      "canonicalId": "Expert Manipulator",
+      "effectSha256": "7d4f189b651cbda0e0f5a519b70ace61af8bf99377599ea4d67b9452e4f502c9",
+      "recordSha256": "82dbe2163fc227fc2f380417096725850a299fe1a33afe45cd0125dfe3b24e73"
+    },
+    {
+      "family": "trainer",
+      "index": 20,
+      "canonicalId": "Expert Skills",
+      "effectSha256": "bf55ec6f04a1e95ae293dfde061e9015c2333f11143c24c65ba34e4f44a39d6f",
+      "recordSha256": "4cab77149f28f2c741dc53ded7ac035924a22494a6c9f2172c56d42c190b5c98"
+    },
+    {
+      "family": "trainer",
+      "index": 21,
+      "canonicalId": "Expert Trickster",
+      "effectSha256": "dc3e6e87132ceb4bd803137287a60ecc34fd5ed1d1170b96999e32330e3ec107",
+      "recordSha256": "38e51cd2cb286d195521beb92473fed81f60beb95731c31c84dc988ec80fc8e6"
+    },
+    {
+      "family": "trainer",
+      "index": 22,
+      "canonicalId": "Flustering Charisma",
+      "effectSha256": "06721a056eb3662f683e5a0da7142d99699562f2f45dc2863d4b7881d80e03e1",
+      "recordSha256": "50d31f45051d5b1dd926a3071b90e7d1a930404e48fc6a498eec5636acbc83b2"
+    },
+    {
+      "family": "trainer",
+      "index": 23,
+      "canonicalId": "Gem Lore",
+      "effectSha256": "61d81c7996a886dc547b091beb6a5d6de1d3c9baefa2e91a0855fe6652792fbf",
+      "recordSha256": "7630503f04bb0309554686411ca4e3af9eed16a255ff5a46a8899906a7498694"
+    },
+    {
+      "family": "trainer",
+      "index": 24,
+      "canonicalId": "Grace",
+      "effectSha256": "88324a3dddfeaa54cc4038536a6ade21ab3f1537bc522adfeff02d7b702b31b0",
+      "recordSha256": "ee961f5a21c91e87d8c62b390003fcd552c446b8a7c197da52985a2187fdc653"
+    },
+    {
+      "family": "trainer",
+      "index": 25,
+      "canonicalId": "Green Thumb",
+      "effectSha256": "951078fe503a216d8c2ed981d5d0fe5cf2dce715583435e66168a4289e0721cc",
+      "recordSha256": "4315ad1f723bdc5c991b590cf47e62169ed2c408f29dac86b73361004cfbd3cd"
+    },
+    {
+      "family": "trainer",
+      "index": 26,
+      "canonicalId": "Groomer",
+      "effectSha256": "eab14facaab926974e336103f3368d1fbe700d85c3e656bf69ce4de7b8848ddb",
+      "recordSha256": "9baa9abb720d9373a648160e5c66e54b7c5d82f107ddd56688725050f43707d1"
+    },
+    {
+      "family": "trainer",
+      "index": 27,
+      "canonicalId": "Instinctive Aptitude",
+      "effectSha256": "5a489288962053c94cf092758d9512854bbf8585a282b96e2b58333733353e5e",
+      "recordSha256": "d0d2bb7cb65324302485d486aefe977c2cd7a842a98c9e59438c17099ac1d824"
+    },
+    {
+      "family": "trainer",
+      "index": 28,
+      "canonicalId": "Instruction",
+      "effectSha256": "dc064d5a60d9488e5585628809fffa63ff1a6433f4359d3a6b964dbb92c91998",
+      "recordSha256": "4867aa57ba7e6b1a75600cbfe722a4b7a8c21b5b86bbb69f9862a09e4d5cb77f"
+    },
+    {
+      "family": "trainer",
+      "index": 29,
+      "canonicalId": "Intimidating Presence",
+      "effectSha256": "bcf16a4af715e5ff1c7857bc91f5624f2b12d15ac915c5063204c090458276ee",
+      "recordSha256": "2928c443770e52a4ae3172af55b1e8f9e32cc274e07372cf321ee6f0e979048f"
+    },
+    {
+      "family": "trainer",
+      "index": 30,
+      "canonicalId": "Iron Mind",
+      "effectSha256": "68f67f7aee5c4bf939118a2f7bc8c0598717d2ea5973fbb37e6c8e768965d834",
+      "recordSha256": "cbc24f1a667856f5f9b42f1613123c8783382a2f2c24ac92a76f3802b15d87f0"
+    },
+    {
+      "family": "trainer",
+      "index": 31,
+      "canonicalId": "Kip Up",
+      "effectSha256": "bd558a77dc61f37b53e52784845b0adc7762e896babd189041cfaf22552d88a2",
+      "recordSha256": "4f6528269341aa1e1ba3906ed4bf52a821f8f79702a64cb2cb08aa2ced269ba5"
+    },
+    {
+      "family": "trainer",
+      "index": 32,
+      "canonicalId": "Leader",
+      "effectSha256": "61a02918dcf364ccc74db8bc99a39c1d3f96d84ba052b9d17b99283f8674cdfc",
+      "recordSha256": "904b4530bab212a7125a8802c1b0284baa70ea97409bc6e1edd4d96f0027c4b8"
+    },
+    {
+      "family": "trainer",
+      "index": 33,
+      "canonicalId": "Master Skills",
+      "effectSha256": "bcd76aa91877d634ce89dd5d6d429b2b21d0e6c467c2203a6cf4e5a9285fc33e",
+      "recordSha256": "85d32beae1243fb28b3d15b5c3aed01f1f357265119e104c5b67e74c14c338ff"
+    },
+    {
+      "family": "trainer",
+      "index": 34,
+      "canonicalId": "Medic Training",
+      "effectSha256": "97b19963ccee75ca69228caa784c1c79ba28d9fba893a7fe9bf7f3307850db0f",
+      "recordSha256": "d78f6c0819f966664cb4d9fc400d326ef46a0ea9c70709e0c0379747c1efd6d1"
+    },
+    {
+      "family": "trainer",
+      "index": 35,
+      "canonicalId": "Mounted Prowess",
+      "effectSha256": "a7e2f01bc4cbf701342694a9be9adc0b7955eb6189398e5db472b22c024bd090",
+      "recordSha256": "c8b81dc121a5beca99cf41f0643fa4b31ee65c52c56d453c85343a0146f85f99"
+    },
+    {
+      "family": "trainer",
+      "index": 36,
+      "canonicalId": "Mystic Senses",
+      "effectSha256": "d7366954034e87b1050e7fad907c00e1f24e7538f79e61b107b45f00799fcbf2",
+      "recordSha256": "fca458ce76c254a1ac28f14e40c8115cf0e45894b233b14c5da1083f9e2b2eff"
+    },
+    {
+      "family": "trainer",
+      "index": 37,
+      "canonicalId": "Nimble Movement",
+      "effectSha256": "c9c6e528fdea1bad60dcb45c03157c4cb53bdfba945d40c9a6bff0ecf3f79042",
+      "recordSha256": "047b50efc4eddafff1aa1129c4ef16bd6837f22f5e86ff2ea602e216112bce1e"
+    },
+    {
+      "family": "trainer",
+      "index": 38,
+      "canonicalId": "Paleontologist",
+      "effectSha256": "79f0e796452f8c8a23f3cd756740b6bb57ab89c6355a7c21d2d1303c9e8ad3ea",
+      "recordSha256": "f20a7622032e7ffc001afcf64877127ecf45788ca438de6002859225d58b8a51"
+    },
+    {
+      "family": "trainer",
+      "index": 39,
+      "canonicalId": "Poké Ball Repair",
+      "effectSha256": "1ae02f1608d684417eb113c3bb6eb87384adee438765ed77c021f152ec120803",
+      "recordSha256": "9617b729407323cb0202969d1e934c207edfb143bd4bb7adc5e1842e031aaf15"
+    },
+    {
+      "family": "trainer",
+      "index": 40,
+      "canonicalId": "PokéPsychologist",
+      "effectSha256": "3a36011df832c4538e0dc24b59201ce9b91bce8b425f5433606f39d89a2493ec",
+      "recordSha256": "f545db29d550be4dc2e0b85a803c912dbb839a3b82728b3c9cb5185221963ed5"
+    },
+    {
+      "family": "trainer",
+      "index": 41,
+      "canonicalId": "Power Boost",
+      "effectSha256": "4409cd9a9875c8d7d693fdbb2d55b42233cb3f771f57679a5744064fb747031f",
+      "recordSha256": "94f334319bf988526c95b5cc4318198831cb26bd550693266550c825d5e9df8e"
+    },
+    {
+      "family": "trainer",
+      "index": 42,
+      "canonicalId": "Repel Crafter",
+      "effectSha256": "66f41776ec655553f919cdff1a79633766ae83786c81196972d7ab85d19da686",
+      "recordSha256": "39c01f703f97c52a34867c8d6ed552bc4cb331464660164ff7e53fa6e7b634fe"
+    },
+    {
+      "family": "trainer",
+      "index": 43,
+      "canonicalId": "Scholar",
+      "effectSha256": "2a92f4b3bfb995a27988e40c139a8e09880aa940c91a7aeb530ba990cd395ae1",
+      "recordSha256": "5dda03441d39f7477a1af6e1ed441a299a0e6e84fa3442d4ecd28df8eba7a869"
+    },
+    {
+      "family": "trainer",
+      "index": 44,
+      "canonicalId": "Skill Enhancement",
+      "effectSha256": "194e9d9ea4a58ebc1b46525c83ebabc706d0c101dae3a2aaffedfe89f14f0976",
+      "recordSha256": "1b840d3c21f8ee0b0735772bf4fd309043d983bb0d5a2afcd65186d4da26db25"
+    },
+    {
+      "family": "trainer",
+      "index": 45,
+      "canonicalId": "Skill Stunt",
+      "effectSha256": "73dc3e3e0037ef35ef39d8c2a8959ad30ec9e8498dc7cde83d6d8253c50b8a1f",
+      "recordSha256": "8c678c47097b257fd9a321a853bc7eec7290597e11ccc1d01008b7727b0e70ca"
+    },
+    {
+      "family": "trainer",
+      "index": 46,
+      "canonicalId": "Slippery",
+      "effectSha256": "fc3fe6afe2ac1b81d0374c24468ba1602cd0682d06e15c349efb15f0a01554e6",
+      "recordSha256": "f728a0a926802c6a78235a940a67a8aef1d36e8c0d0c87b4ba1bc943d4103cf8"
+    },
+    {
+      "family": "trainer",
+      "index": 47,
+      "canonicalId": "Smooth",
+      "effectSha256": "6d5e00f43745636c0fb98d40b43ae70ed879324248b213ebda2011fcd7d2bfc5",
+      "recordSha256": "12dff26bdb39d3acd66422c9b60b0f5b9264ea842f77ac3762e17e403be03a58"
+    },
+    {
+      "family": "trainer",
+      "index": 48,
+      "canonicalId": "Sneak’s Tricks",
+      "effectSha256": "307630260bbf845c0fe34399d09a240f67f82f67cbf35caf62bcd0f053820940",
+      "recordSha256": "746104dfd77041436551363a653385726e822425c58ac98bcdfbc0b2316e0537"
+    },
+    {
+      "family": "trainer",
+      "index": 49,
+      "canonicalId": "Stamina",
+      "effectSha256": "da3f30ce68ad492aefa7ae248ea62fb556aa66522e6a320bf54d7c2e5db5a188",
+      "recordSha256": "f40bb2478493d050c21cb822517b0dcfc855b829dd72a65e8c8d66626f6cc62a"
+    },
+    {
+      "family": "trainer",
+      "index": 50,
+      "canonicalId": "Survival Drive",
+      "effectSha256": "b10dba4e6f1608cc79911d280936122388180413ec0b4639a9c80c5e7c9ed52e",
+      "recordSha256": "6cb2a463a7e75827cd7e75f605d10e6da70902cbe55b6241805fedd8f64d4b69"
+    },
+    {
+      "family": "trainer",
+      "index": 51,
+      "canonicalId": "Swimmer",
+      "effectSha256": "a75fca3a311465c61a74ea1599ff27c745f1d957289ca97f796fbd7f3caa7572",
+      "recordSha256": "318c127cbda9eddc27d36f264dd022b573f0708a761b82cd87d7089519bb8fef"
+    },
+    {
+      "family": "trainer",
+      "index": 52,
+      "canonicalId": "Tag Scribe",
+      "effectSha256": "95ff9acc39bac31b77f05f48c2bd813ddd63074228e935409c0795ff071a32b7",
+      "recordSha256": "983e5158d1e94de29498a78f1bc49b8813038167806768973992d4709dbccc1a"
+    },
+    {
+      "family": "trainer",
+      "index": 53,
+      "canonicalId": "Throwing Masteries",
+      "effectSha256": "a514187c195b36284c8e0748327b40829826321811fffb29a8d8d2bdb5bee498",
+      "recordSha256": "7078bf8d82df86f4228eac6fd560a065bdae5e538ab859cd49936db24fc2e033"
+    },
+    {
+      "family": "trainer",
+      "index": 54,
+      "canonicalId": "Train the Reserves",
+      "effectSha256": "0d0b007591ac2516810e95952070977a4d1ea3af273be18823ace1572a7ca9be",
+      "recordSha256": "5591ba7207481d06b6142ad197f4450849bb08f84ba72bd007048fc1fb91a15f"
+    },
+    {
+      "family": "trainer",
+      "index": 55,
+      "canonicalId": "Trainer of Champions",
+      "effectSha256": "896eb465d114c2275fb99400d4e439b86bb50ff30ada1b841bfce2247d7682d0",
+      "recordSha256": "dc114e6bb4cdbb204cabc06bed6b262015bccf918fb6f5a9e161496c3afcd14e"
+    },
+    {
+      "family": "trainer",
+      "index": 56,
+      "canonicalId": "Traveler",
+      "effectSha256": "ec61b657bea3150a3ea5bd7d631434c254d8697e9736ff1cf83fd284e3953f22",
+      "recordSha256": "e83b1bd7f0c9c0757e23d80c7154ba67922882862e70a12eebe1b5a668bece58"
+    },
+    {
+      "family": "trainer",
+      "index": 57,
+      "canonicalId": "Virtuoso",
+      "effectSha256": "99d1104fec52753476e61116340c853674eefea16de7ea784afed0b132f4e54e",
+      "recordSha256": "cb53935a57313772e50ac751dc20a3286d12b75245ff18526c21e17bf0e3b819"
+    },
+    {
+      "family": "trainer",
+      "index": 58,
+      "canonicalId": "Wallrunner",
+      "effectSha256": "36645ddd3877d2afb581a6ef50208633fd8412a2527e6c41d81618b8d2ed493a",
+      "recordSha256": "1931e28e9efc1985f05fac7a82e1e906b675a79fd47a5d70263b639afe694780"
+    },
+    {
+      "family": "trainer",
+      "index": 59,
+      "canonicalId": "Weapon of Choice",
+      "effectSha256": "6f152e680429bc8dce4a579e01d2292165836b96ba99e52df91d8bc786b0c95b",
+      "recordSha256": "b5e3bb35302507b8d71deec5f6559ddc3fca3a825b67ecf1300cf878748fa622"
+    },
+    {
+      "family": "trainer",
+      "index": 60,
+      "canonicalId": "Work Up",
+      "effectSha256": "9de082136836be0621926aaf4e192ad400eb7928a939d5b9e5b8b29a4b5e506d",
+      "recordSha256": "60e4e13d86057efba79d88e6aa82a91a87f8fc2ec95f50554c0a31ce30198541"
+    },
+    {
+      "family": "poke",
+      "index": 0,
+      "canonicalId": "Ability Mastery",
+      "effectSha256": "c699022b2b39cc6ce952e7acf00b9fabf49d24ec90651137032d90b5e2612029",
+      "recordSha256": "177e7532471c97f0e3e27b80866f6f7116d1e354a9f872cbc1ec7af58b0f4ff2"
+    },
+    {
+      "family": "poke",
+      "index": 1,
+      "canonicalId": "Accuracy Training",
+      "effectSha256": "c87ac221345720af413147c0e183cb00b31964b65d500fc228c5aaa302663635",
+      "recordSha256": "72e8f19ea991970c73e4a6ae40613a4bf879be562ebbfa4b0b4ab155fd495596"
+    },
+    {
+      "family": "poke",
+      "index": 2,
+      "canonicalId": "Advanced Connection",
+      "effectSha256": "26d3b489df2360cd83ad9b00b8ff97b0281a67fa0133b348cb80581d3f2cd587",
+      "recordSha256": "01d98ada3ca79a0a479cb43672df3772b8bdfe4239f6d98d46ac02a5a45430c7"
+    },
+    {
+      "family": "poke",
+      "index": 3,
+      "canonicalId": "Advanced Mobility",
+      "effectSha256": "e6c7e93e6ac0c5a62d34f1bdd8d8ea20545fa2c06d92d554318e036fc4571e41",
+      "recordSha256": "4497e4420d0fd3974d33dbcf44344cbe220d1634f2e3ebd50a99b9952d1363d2"
+    },
+    {
+      "family": "poke",
+      "index": 4,
+      "canonicalId": "Attack Conflict",
+      "effectSha256": "d6c4f0cf009855d829875c324b1c7f32457337ac2738a3c9cfca291162e1a47c",
+      "recordSha256": "bef16812a4f427ada46503bd0474d813d7f4ed192a51450a6e795b4adf31e035"
+    },
+    {
+      "family": "poke",
+      "index": 5,
+      "canonicalId": "Aura Pulse",
+      "effectSha256": "72e44b6d68b5104f4d33c93fa3b7c82151a5a2ef6ddd837aff633500cce26390",
+      "recordSha256": "a223467cfc67ebfc154e42e287acfdbd5f4a91eedee4ba66403d74acce9697f3"
+    },
+    {
+      "family": "poke",
+      "index": 6,
+      "canonicalId": "Basic Ranged Attacks",
+      "effectSha256": "0384d60f0953d8e6c34c14258f8e82a5fbecc58a077f879802612190f487a489",
+      "recordSha256": "8abc748b3da5d065e1709793bdf6f44258a9acdcb9088f1be111d74f436891ce"
+    },
+    {
+      "family": "poke",
+      "index": 7,
+      "canonicalId": "Capability Training",
+      "effectSha256": "d1ccafd8955b719f41370e6dfd6ed6c3fd19ef49c384e100fcbbf92a7f3ea6fb",
+      "recordSha256": "29929fb5378a4e9d4b01e8684736462661df0ffe57aefbc6cbf47d3cf319d837"
+    },
+    {
+      "family": "poke",
+      "index": 8,
+      "canonicalId": "Enticing Bait",
+      "effectSha256": "af1943afdc27a855802986892554d2fcae49b321ef548f62798f13c59cdaff5b",
+      "recordSha256": "849bfb2bd441b97c14d6926af19c336f4355b8e8c342bd2bdcd2c594aeaf5ca0"
+    },
+    {
+      "family": "poke",
+      "index": 9,
+      "canonicalId": "Extended Invisibility",
+      "effectSha256": "aa19f300bd4f75a5d7326578aa3c42d064a636dc815ae26573cc537ccf476319",
+      "recordSha256": "eb3822491b14591fea370e946f958539ee4681eda6a16cc4ce220829ddd830e0"
+    },
+    {
+      "family": "poke",
+      "index": 10,
+      "canonicalId": "Far Reading",
+      "effectSha256": "8e00db148a2d78a448603c5959e2bbfb0d36c41fe9c21e4f153c991a20141b97",
+      "recordSha256": "a6b79a6e64baffe27503efefef7aa61f3261228ea724b1af6bf65eed58007475"
+    },
+    {
+      "family": "poke",
+      "index": 11,
+      "canonicalId": "Mixed Power",
+      "effectSha256": "47ebe831e9398a8944df5ec1065803908eb9ea9408defb2c1ee62d2bdb4824ca",
+      "recordSha256": "2cf98b611f82e2018bdcc07e772d86632461f7357865684ce1a864f382b03698"
+    },
+    {
+      "family": "poke",
+      "index": 12,
+      "canonicalId": "Precise Threadings",
+      "effectSha256": "24cf3e88b416b2ac6e9e6f9929c21b8747076f7126b02f29c9647197b7d7e826",
+      "recordSha256": "1d934731e1dcb0056ad7d303891fdb2d322645a91cd2555e8abf536e0455ba49"
+    },
+    {
+      "family": "poke",
+      "index": 13,
+      "canonicalId": "Realized Potential",
+      "effectSha256": "aea9eafdba0ad7b96b3bd03c6618fecfa66be08a320ed09cd38fd2a8ecb82d45",
+      "recordSha256": "c1d0fdb1ec2ba90eb42191ada1e38ffb4defc07989581da1cab8070136b5190d"
+    },
+    {
+      "family": "poke",
+      "index": 14,
+      "canonicalId": "Seismometer",
+      "effectSha256": "bcb5a13222d9f528162c0a9f511b9c52dabb2aa3c5cebcfcbc012d98513472ea",
+      "recordSha256": "77f0ea78e63edd2b661caac463f56aa5d46c062863dc682cba9b41ad93704b91"
+    },
+    {
+      "family": "poke",
+      "index": 15,
+      "canonicalId": "Skill Improvement",
+      "effectSha256": "f3e931988f7cab79f276bea814106a79d8d4921e8762b067dfff583e5f13c857",
+      "recordSha256": "f6be9d8abb54ba778bc95709a40469b541d50dfe909ff52f97b6ee8d2aff6dbb"
+    },
+    {
+      "family": "poke",
+      "index": 16,
+      "canonicalId": "TK Mastery",
+      "effectSha256": "e820dfeb65966b1a8b7066b90b001a07b1320b6dc9059461d6c3cc00ad4241cf",
+      "recordSha256": "6289e6ec6d5ea7329583a44502a7410b63cf5a880cc77fc075bb2552c520e80b"
+    },
+    {
+      "family": "poke",
+      "index": 17,
+      "canonicalId": "Trail Sniffer",
+      "effectSha256": "b50df089820318b410e72e52233e39b56ffeb26d5db13ef69e87981dcba4054a",
+      "recordSha256": "7fa242b1376bb1123d378e0d5a47a0154a3256a2d5ce0cba16d2c165c197f38f"
+    },
+    {
+      "family": "poke",
+      "index": 18,
+      "canonicalId": "Underdog’s Lessons",
+      "effectSha256": "1fc9e4d8c345afb97ac9ec3af5fe48592ddd0f74758d82f1eaa829e594868cd8",
+      "recordSha256": "066cd8d618b238072139cc0d20a87772c1874eefdd56b16445758ea9cf8b3225"
+    },
+    {
+      "family": "poke",
+      "index": 19,
+      "canonicalId": "Underdog’s Strength",
+      "effectSha256": "33395292e5e8eb0c1c67aff2e19998cc314bb0696f48095fa4acb500d0eda29a",
+      "recordSha256": "e2acfd77b50e943d48c19f5003de3e36f74f009772e7216af81e8acd0963f543"
+    }
+  ]
+}

@@ -39,7 +39,7 @@ import {
   AA072_GLUTTONY_FOOD_BUFF_USES_PER_SCENE,
 } from '#shared/abilityAutomation/aa072'
 import { projectAuthoritativeEffectiveAbilities } from '../../abilityAutomation/effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../../abilityAutomation/instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../../abilityAutomation/registry'
 import {
   AA074_HONEY_PAWS_PREPARED_CAPABILITY_PREFIX,
@@ -512,7 +512,7 @@ const storeBerryStorageBuffs = (input: {
   ))
   if (!runtime || !sheet || !placement) return null
   const ability = projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(sheet),
     species: sheet.species,
     target: {
       placementId: placement.id,
@@ -1366,7 +1366,7 @@ const effectiveAbilityInstanceId = (
     : ownerPlacements.find(candidate => candidate.id === placementId)
   const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve(canonicalId)
   const effective = sheet && placement && runtime ? projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(sheet),
     species: owner.sheetKind === 'pokemon' ? (sheet as CharacterSheet).species : null,
     target: {
       placementId: placement.id,

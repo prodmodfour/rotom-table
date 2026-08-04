@@ -1,0 +1,397 @@
+{
+  "Ability Mastery": {
+    "name": "Ability Mastery",
+    "tags": [
+      "Ability"
+    ],
+    "prerequisites": "Level 60",
+    "cost": 3,
+    "choices": [
+      {
+        "kind": "ability",
+        "minimum": 1,
+        "maximum": 1,
+        "sameAcrossRanks": false
+      }
+    ],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "The Pokémon gains an additional Ability, picked from any Ability it could naturally qualify for.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Accuracy Training": {
+    "name": "Accuracy Training",
+    "tags": [
+      "Move"
+    ],
+    "prerequisites": "Level 20",
+    "cost": 1,
+    "choices": [
+      {
+        "kind": "move",
+        "minimum": 1,
+        "maximum": 1,
+        "sameAcrossRanks": false
+      }
+    ],
+    "repeatability": {
+      "kind": "different-choice",
+      "maximum": 3
+    },
+    "effect": "Pick a Move with an AC of 3 or higher; the AC of the target Move is permanently lowered by 1. This Poké Edge may be taken up to three times, each time selecting a different Move.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Advanced Connection": {
+    "name": "Advanced Connection",
+    "tags": [
+      "Ability",
+      "Move"
+    ],
+    "prerequisites": "An Ability with the Connection Keyword",
+    "cost": 1,
+    "choices": [
+      {
+        "kind": "ability",
+        "minimum": 1,
+        "maximum": 1,
+        "sameAcrossRanks": false
+      }
+    ],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "Choose an Ability with the Connection Keyword that the target has; the Connected Move no longer takes up a Move Slot for the user.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Advanced Mobility": {
+    "name": "Advanced Mobility",
+    "tags": [
+      "Capability"
+    ],
+    "prerequisites": "Level 20",
+    "cost": 1,
+    "choices": [
+      {
+        "kind": "movement-capability",
+        "minimum": 1,
+        "maximum": 1,
+        "sameAcrossRanks": false
+      }
+    ],
+    "repeatability": {
+      "kind": "different-choice",
+      "maximum": null
+    },
+    "effect": "Increase one Movement Capability by 2. This Edge may be taken multiple times, but may not be applied more than once to the same Movement Capability.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Attack Conflict": {
+    "name": "Attack Conflict",
+    "tags": [
+      "Stat"
+    ],
+    "prerequisites": "None",
+    "cost": 1,
+    "choices": [
+      {
+        "kind": "attack-stat",
+        "minimum": 1,
+        "maximum": 1,
+        "sameAcrossRanks": false
+      }
+    ],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "Select Attack or Special Attack. From now on, that Stat does not need to remain higher than Stats it surpasses in Base Relations, and similarly all other Stats surpassed by it do not need to remain lower.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Aura Pulse": {
+    "name": "Aura Pulse",
+    "tags": [
+      "Capability"
+    ],
+    "prerequisites": "Level 30, Aura Reader, owned by a Trainer with Aura Pulse",
+    "cost": 2,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "The Pokémon gains the Aura Pulse Capability.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Basic Ranged Attacks": {
+    "name": "Basic Ranged Attacks",
+    "tags": [
+      "Capability",
+      "Struggle"
+    ],
+    "prerequisites": "One of Firestarter, Fountain, Freezer, Guster, Materializer, or Zapper",
+    "cost": 1,
+    "choices": [
+      {
+        "kind": "elemental-struggle-capability",
+        "minimum": 1,
+        "maximum": 1,
+        "sameAcrossRanks": false
+      }
+    ],
+    "repeatability": {
+      "kind": "different-choice",
+      "maximum": 6
+    },
+    "effect": "Choose one of the Capabilities listed in the prerequisites for this Poké Edge. Struggle Attacks modified by that Capability may now be made at a range of up to 6 meters. This Poké Edge may be taken multiple times, selecting a different Capability each time.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Capability Training": {
+    "name": "Capability Training",
+    "tags": [
+      "Capability"
+    ],
+    "prerequisites": "Level 20",
+    "cost": 1,
+    "choices": [
+      {
+        "kind": "power-or-jump-capability",
+        "minimum": 1,
+        "maximum": 1,
+        "sameAcrossRanks": false
+      }
+    ],
+    "repeatability": {
+      "kind": "different-choice",
+      "maximum": 3
+    },
+    "effect": "Increase Power or a Jump Capability by 1. Capability Training may be taken multiple times, each time increasing a different Capability.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Enticing Bait": {
+    "name": "Enticing Bait",
+    "tags": [
+      "Capability"
+    ],
+    "prerequisites": "Level 20, Alluring Capability",
+    "cost": 1,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "When activating the Alluring Capability, the user adds the higher of its Athletics or Focus Ranks to its d20 roll.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Extended Invisibility": {
+    "name": "Extended Invisibility",
+    "tags": [
+      "Capability"
+    ],
+    "prerequisites": "Level 20, Invisibility Capability",
+    "cost": 1,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "The user may remain Invisible for up to 8 minutes.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Far Reading": {
+    "name": "Far Reading",
+    "tags": [
+      "Capability"
+    ],
+    "prerequisites": "Level 20, Telepath Capability",
+    "cost": 1,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "The user treats their Focus Rank as 2 higher for the purposes of determining the range of Telepath.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Mixed Power": {
+    "name": "Mixed Power",
+    "tags": [
+      "Ability",
+      "Stat"
+    ],
+    "prerequisites": "Level 10, invested at least 5 Level-Up Stat Points into both Attack and Special Attack",
+    "cost": 2,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "The user gains the Twisted Power Ability.",
+    "replaces": "Mixed Sweeper",
+    "catalogVersion": 1
+  },
+  "Precise Threadings": {
+    "name": "Precise Threadings",
+    "tags": [
+      "Capability"
+    ],
+    "prerequisites": "Level 20, Threaded Capability",
+    "cost": 1,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "The user may use their Threaded Capability at a range of 6 meters and with an AC of 3 rather than 6.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Realized Potential": {
+    "name": "Realized Potential",
+    "tags": [
+      "Stat",
+      "Evolution"
+    ],
+    "prerequisites": "Level 30, user is an Underdog Pokémon",
+    "cost": 2,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "Subtract the user’s Species Base Stat Total from 45. The user gains Bonus Stat Points equal to the remainder. These Stat Points must follow Base Stat Relations as normal. If the user evolves to a species with a Base Stat Total 45 or higher, Realized Potential is removed and the Tutor Points refunded.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Seismometer": {
+    "name": "Seismometer",
+    "tags": [
+      "Capability"
+    ],
+    "prerequisites": "Level 20, Tremorsense Capability",
+    "cost": 1,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "The user’s Tremorsense range is increased by a number of meters equal to their Perception Rank.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Skill Improvement": {
+    "name": "Skill Improvement",
+    "tags": [
+      "Skill"
+    ],
+    "prerequisites": "None",
+    "cost": 1,
+    "choices": [
+      {
+        "kind": "skill",
+        "minimum": 1,
+        "maximum": 1,
+        "sameAcrossRanks": false
+      }
+    ],
+    "repeatability": {
+      "kind": "different-choice",
+      "maximum": null
+    },
+    "effect": "Rank up one Skill that is currently at or below its default level for the species. This Edge may be taken multiple times, each time selecting a different Skill. If Evolution or another permanent effect would cause the Skill Rank to go beyond 6, this Poké Edge is refunded.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "TK Mastery": {
+    "name": "TK Mastery",
+    "tags": [
+      "Capability"
+    ],
+    "prerequisites": "Level 20, Telekinetic Capability",
+    "cost": 1,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "The user treats their Focus Rank as 2 higher for the purposes of the Telekinetic Capability.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Trail Sniffer": {
+    "name": "Trail Sniffer",
+    "tags": [
+      "Capability"
+    ],
+    "prerequisites": "Level 20, Tracker Capability",
+    "cost": 1,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "The user gets a bonus to all Perception Rolls to use the Tracker Capability equal to their Focus Rank.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Underdog’s Lessons": {
+    "name": "Underdog’s Lessons",
+    "tags": [
+      "Move",
+      "Evolution"
+    ],
+    "prerequisites": "Underdog’s Strength",
+    "cost": 1,
+    "choices": [
+      {
+        "kind": "final-evolution",
+        "minimum": 1,
+        "maximum": 1,
+        "sameAcrossRanks": true
+      },
+      {
+        "kind": "move",
+        "minimum": 1,
+        "maximum": 1,
+        "sameAcrossRanks": false
+      }
+    ],
+    "repeatability": {
+      "kind": "ranked",
+      "maximum": 3
+    },
+    "effect": "Choose a Level-Up Move from one of the user’s Final Evolutions that it can learn at or below its current Level. The user learns that Move as if it were a Level-Up Move and can now learn Moves from TMs, HMs, and Tutoring from the lists of that Final Evolution. Underdog’s Lessons may be taken up to three times but must use the same Final Evolution each time in the case of Pokémon with multiple Final Evolutions.",
+    "replaces": null,
+    "catalogVersion": 1
+  },
+  "Underdog’s Strength": {
+    "name": "Underdog’s Strength",
+    "tags": [
+      "Stat",
+      "Evolution"
+    ],
+    "prerequisites": "Level 15, user is an Underdog Pokémon",
+    "cost": 1,
+    "choices": [],
+    "repeatability": {
+      "kind": "once",
+      "maximum": 1
+    },
+    "effect": "The user has each of their Base Stats increased by +1. The user may no longer undergo Evolution.",
+    "replaces": null,
+    "catalogVersion": 1
+  }
+}

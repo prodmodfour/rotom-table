@@ -90,7 +90,7 @@ import {
   type AbilityAutomationRuntimeRegistry,
 } from '../abilityAutomation/registry'
 import { projectAuthoritativeEffectiveAbilities } from '../abilityAutomation/effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../edgeAutomation/permanentGrants'
 import { aa060AnchoredEntityCreateCommand } from '../abilityAutomation/mechanics/aa060Activated'
 import {
   aa065CorrosiveToxinsLifecycleRecipientIds,
@@ -594,7 +594,7 @@ const reconcileAnchoredEntities = (input: {
       ? snapshots.pokemonSheets.get(placement.sheetSlug)
       : snapshots.trainerSheets.get(placement.sheetSlug)
     const projected = projectAuthoritativeEffectiveAbilities({
-      baseAbilities: resolveSheetAbilityInstances(sheet?.abilities),
+      baseAbilities: sheet ? resolveSheetAndEdgeAbilityInstances(sheet) : [],
       species: placement.sheetKind === 'pokemon'
         ? (sheet as CharacterSheet | undefined)?.species ?? null
         : null,
@@ -653,7 +653,7 @@ const effectiveAbilityPlacementIds = (input: {
       : input.snapshots.trainerSheets.get(placement.sheetSlug)
     if (!sheet || !authoritativeAbilityOwnerIsConscious(sheet)) return []
     const effective = projectAuthoritativeEffectiveAbilities({
-      baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+      baseAbilities: resolveSheetAndEdgeAbilityInstances(sheet),
       species: placement.sheetKind === 'pokemon' ? (sheet as CharacterSheet).species : null,
       target: {
         placementId: placement.id,

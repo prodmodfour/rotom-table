@@ -19,7 +19,7 @@ import {
 } from '../../policies/playerProfileTokenControlPolicy'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY, type AbilityAutomationRuntimeRegistry } from './registry'
 import { projectAuthoritativeEffectiveAbilities } from './effectiveAbilities'
-import { resolveSheetAbilityInstances } from './instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../edgeAutomation/permanentGrants'
 import { aa071ForecastTypeResolution } from './mechanics/aa071StaticIntegration'
 import { aa074HoneyPawsPreparationForPlacement } from '#shared/abilityAutomation/aa074'
 import { splitSheetItemNames } from '~/utils/sheetItemNames'
@@ -85,7 +85,7 @@ export const buildAbilityClientCapabilityBundle = (
       : trainerBySlug.get(placement.sheetSlug)
     if (!sheet) return []
     const projected = projectAuthoritativeEffectiveAbilities({
-      baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+      baseAbilities: resolveSheetAndEdgeAbilityInstances(sheet),
       effects: encounterState?.effects ?? [],
       transformationSnapshots: encounterState?.abilityTransformations,
       target: {

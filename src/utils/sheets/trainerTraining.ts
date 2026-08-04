@@ -2,7 +2,6 @@ import type { CharacterSheet, PokemonTrainedStatKey } from '~/types/characterShe
 import type {
   SkillRank,
   TrainerClassEntry,
-  TrainerEdgeEntry,
   TrainerSheet,
   TrainerSkillKey,
 } from '~/types/trainerSheet'
@@ -10,6 +9,9 @@ import { SKILL_RANK_TO_VALUE } from '~/utils/skillRanks'
 import { trainerCombatFeatureSources } from '~/utils/sheets/trainerCombatDerivations'
 import { normalizePokemonTrainingFeatureName } from '~/utils/sheets/pokemonTrainingFeatures'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
+import { parseEdgeLabel } from '#shared/edgeAutomation/catalog'
+import { edgeChoiceValues, resolveEdgeInstance } from '#shared/edgeAutomation/instances'
+import { sheetHasCanonicalEdge } from '#shared/edgeAutomation/sheetEdges'
 
 export type TrainerTrainingSkillKey = Extract<TrainerSkillKey, 'command' | 'intimidate' | 'generalEd' | 'pokeEd'>
 export type AceTrainerStatKey = PokemonTrainedStatKey
@@ -41,10 +43,6 @@ const normalizeName = (value: unknown): string => (
     : ''
 )
 
-const normalizeLooseText = (value: unknown): string => (
-  typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').toLowerCase() : ''
-)
-
 const namedEntry = <T extends { name?: string }>(entries: readonly T[] | undefined, name: string): T | null => {
   const key = normalizeName(name)
   return entries?.find((entry) => normalizeName(entry.name) === key) ?? null
@@ -59,8 +57,10 @@ export const trainerHasFeatureNamed = (sheet: TrainerSheet, name: string): boole
 export const trainerHasClassNamed = (sheet: TrainerSheet, name: string): boolean =>
   Boolean(namedEntry<TrainerClassEntry>(sheet.classes, name))
 
-export const trainerHasEdgeNamed = (sheet: TrainerSheet, name: string): boolean =>
-  Boolean(namedEntry<TrainerEdgeEntry>(sheet.edges, name))
+export const trainerHasEdgeNamed = (sheet: TrainerSheet, name: string): boolean => {
+  const canonicalId = parseEdgeLabel('trainer', name).canonicalId
+  return canonicalId ? sheetHasCanonicalEdge(sheet, 'trainer', canonicalId) : false
+}
 
 /** Ace Trainer permits selecting a Trained Stat during a training session. */
 export const trainerCanApplyAceTrainerTraining = (sheet: TrainerSheet): boolean =>
@@ -160,39 +160,14 @@ export const applyAceTrainerTrainedStat = (
   return trainedStat
 }
 
-const skillAliases = (skillKey: TrainerTrainingSkillKey): readonly string[] => {
-  switch (skillKey) {
-    case 'command': return ['command']
-    case 'intimidate': return ['intimidate']
-    case 'generalEd': return ['general ed', 'general education', 'generaled']
-    case 'pokeEd': return ['pokémon ed', 'pokemon ed', 'pokémon education', 'pokemon education', 'poke ed', 'pokeed']
-  }
-}
-
-const entrySpecializesSkill = (
-  entry: TrainerEdgeEntry,
-  skillKey: TrainerTrainingSkillKey,
-): boolean => {
-  if (entry.basicSkill === skillKey) return true
-
-  const name = normalizeLooseText(entry.name)
-  const parenthetical = normalizeLooseText(entry.name.match(/\(([^)]*)\)/)?.[1])
-  const notes = normalizeLooseText(entry.notes)
-  const choices = Object.values(entry.choices ?? {}).map(normalizeLooseText)
-  return skillAliases(skillKey).some((alias) => (
-    parenthetical === alias ||
-    choices.includes(alias) ||
-    name.includes(` ${alias}`) ||
-    notes.includes(alias)
-  ))
-}
-
 const trainerHasVirtuosoForSkill = (
   sheet: TrainerSheet,
   skillKey: TrainerTrainingSkillKey,
-): boolean => Boolean(
-  sheet.edges?.some((edge) => normalizeName(edge.name) === 'virtuoso' && entrySpecializesSkill(edge, skillKey)),
-)
+): boolean => (sheet.edges ?? []).some((edge, index) => {
+  const resolved = resolveEdgeInstance({ family: 'trainer', entry: edge, ownerId: sheet.slug, index })
+  return resolved.status === 'ready' && resolved.data?.canonicalId === 'Virtuoso'
+    && edgeChoiceValues(resolved.data, 'skill').includes(skillKey)
+})
 
 export const trainerSkillRankValueForTraining = (
   sheet: TrainerSheet,

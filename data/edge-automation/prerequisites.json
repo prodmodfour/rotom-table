@@ -1,0 +1,1072 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-edge-automation-v1",
+  "entryCount": 81,
+  "entries": [
+    {
+      "family": "trainer",
+      "canonicalId": "Acrobat",
+      "expression": {
+        "kind": "skill",
+        "skillId": "acrobatics",
+        "minimumRank": 3
+      },
+      "expressionSha256": "95947f18cc4f6b9163c17c9f844058e377fa0de37d1643ac2f55713a6fee0a47"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Adept Skills",
+      "expression": {
+        "kind": "level",
+        "minimum": 2
+      },
+      "expressionSha256": "164cf6c67a930f362286790a22780de08253294916487e9b85844c2bc19e9b22"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Apricorn Balls",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "survival",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "techEd",
+            "minimumRank": 4
+          }
+        ]
+      },
+      "expressionSha256": "ba78626198f1427faed6a7b52ae53cb8493a8ddf3784416142c58c6161b9fe1f"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Art of Stealth",
+      "expression": {
+        "kind": "skill",
+        "skillId": "stealth",
+        "minimumRank": 5
+      },
+      "expressionSha256": "a20b8a027b0ef3d2ead4faf6127015d1cf61b05cc27f42792b4de5b7eea3d691"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Athletic Initiative",
+      "expression": {
+        "kind": "skill",
+        "skillId": "athletics",
+        "minimumRank": 4
+      },
+      "expressionSha256": "c978825a3ac853b842eb9194e33dacf087d2a13ea356248d59fb1ddb190cb843"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Bad Mood",
+      "expression": {
+        "kind": "skill",
+        "skillId": "intimidate",
+        "minimumRank": 5
+      },
+      "expressionSha256": "b50a17c9a6916db7fae5f0325fa868c54e193fe1cfe551ad03b76864450277c1"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Basic Balls",
+      "expression": {
+        "kind": "skill",
+        "skillId": "techEd",
+        "minimumRank": 3
+      },
+      "expressionSha256": "15622c0c709aefceb665476de875a18be041e921f7cdd026220d9dbe8cb79caa"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Basic Cooking",
+      "expression": {
+        "kind": "skill",
+        "skillId": "intuition",
+        "minimumRank": 3
+      },
+      "expressionSha256": "115a9a4220e3cece6aea489e70e37209efd0bec1715506041b05e5e2bf17487f"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Basic Martial Arts",
+      "expression": {
+        "kind": "skill",
+        "skillId": "combat",
+        "minimumRank": 3
+      },
+      "expressionSha256": "f84e324e0dcb7e90cc27abfa20e5e51da52ee96ae299eff41f3b1dc9085b7fae"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Basic Psionics",
+      "expression": {
+        "kind": "edge-choice",
+        "family": "trainer",
+        "canonicalId": "Elemental Connection",
+        "choiceId": "type",
+        "value": "Psychic"
+      },
+      "expressionSha256": "5249bd94c6610e52f6af5de300c8c0ea83b60bd63ed3e5af3cdc4cc2421cacf0"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Basic Skills",
+      "expression": {
+        "kind": "true"
+      },
+      "expressionSha256": "f398e74aaf7245bf7184b72778b032807d2bf55dbcde4c93e23077ea2fa3ad25"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Beast Master",
+      "expression": {
+        "kind": "skill",
+        "skillId": "intimidate",
+        "minimumRank": 3
+      },
+      "expressionSha256": "10b6e3714a02005e23a2cfccbf426e049161b92437cdbbdf7352b66063a5dac6"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Breeder",
+      "expression": {
+        "kind": "skill",
+        "skillId": "pokeEd",
+        "minimumRank": 3
+      },
+      "expressionSha256": "18ffdc273dd4da4b4ec240a64891b8ae0839f75b2173409db6c26569a3f08874"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Categoric Inclination",
+      "expression": {
+        "kind": "true"
+      },
+      "expressionSha256": "f398e74aaf7245bf7184b72778b032807d2bf55dbcde4c93e23077ea2fa3ad25"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Charmer",
+      "expression": {
+        "kind": "skill",
+        "skillId": "charm",
+        "minimumRank": 3
+      },
+      "expressionSha256": "f73c4d058a7eed33353121f5d50153b9c8462abe0a749d64d26ced2fc31e8f9f"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Confidence Artist",
+      "expression": {
+        "kind": "skill",
+        "skillId": "guile",
+        "minimumRank": 3
+      },
+      "expressionSha256": "3e1b8e07bc66a0be7ce6e342b8e646a511a9e6ec5060fed4c59cc720984bbc9f"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Demoralize",
+      "expression": {
+        "kind": "skill",
+        "skillId": "intimidate",
+        "minimumRank": 4
+      },
+      "expressionSha256": "d12c9eebf28c9793d4d3c5d3392c19783b5357f02d4e5637df0db112cca39541"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Dynamism",
+      "expression": {
+        "kind": "skill",
+        "skillId": "guile",
+        "minimumRank": 3
+      },
+      "expressionSha256": "3e1b8e07bc66a0be7ce6e342b8e646a511a9e6ec5060fed4c59cc720984bbc9f"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Elemental Connection",
+      "expression": {
+        "kind": "true"
+      },
+      "expressionSha256": "f398e74aaf7245bf7184b72778b032807d2bf55dbcde4c93e23077ea2fa3ad25"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Expert Manipulator",
+      "expression": {
+        "kind": "skill",
+        "skillId": "guile",
+        "minimumRank": 4
+      },
+      "expressionSha256": "4ab62e71fcb103d0d56098dcdffa927a8a5866e56bfd430e8a6f7cdd14ebbcf7"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Expert Skills",
+      "expression": {
+        "kind": "level",
+        "minimum": 6
+      },
+      "expressionSha256": "29d49f5af110c3b3ddb555402cda0f86df161f482683f5036d6472af481e0c60"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Expert Trickster",
+      "expression": {
+        "kind": "skill",
+        "skillId": "stealth",
+        "minimumRank": 4
+      },
+      "expressionSha256": "170f98f81d8b429cc0ea4567a7503205249113dff19f749fc7f85e0635216c02"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Flustering Charisma",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "charm",
+            "minimumRank": 4
+          },
+          {
+            "kind": "skill",
+            "skillId": "guile",
+            "minimumRank": 4
+          }
+        ]
+      },
+      "expressionSha256": "9e35f48740040486b99f0f3ebeca843e515edd96cef78e31b555a12b9cb64e6e"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Gem Lore",
+      "expression": {
+        "kind": "skill",
+        "skillId": "occultEd",
+        "minimumRank": 3
+      },
+      "expressionSha256": "0b99a38526deeba17a086cde2bcd4be2da92b254ddcd91e303876398e240135d"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Grace",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "charm",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "command",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "guile",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "intimidate",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "intuition",
+            "minimumRank": 3
+          }
+        ]
+      },
+      "expressionSha256": "6fa2a219708eaec089c66d1a7708586f2c0b995547fee176bbcfd4c837fb9147"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Green Thumb",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "generalEd",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "survival",
+            "minimumRank": 3
+          }
+        ]
+      },
+      "expressionSha256": "5c7cae78842b02fab8d7797c66460296b98cfaf14b250cdae1b7e0b51fbc0aa8"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Groomer",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "pokeEd",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "generalEd",
+            "minimumRank": 3
+          }
+        ]
+      },
+      "expressionSha256": "5b04d29615e40b46751c0465d30f52563c5b0eb14c94c87b7f13d2c23edf455a"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Instinctive Aptitude",
+      "expression": {
+        "kind": "skill",
+        "skillId": "intuition",
+        "minimumRank": 4
+      },
+      "expressionSha256": "74fe4b31d32567f2117fc92b3ef294a0c40077ee91033e08180812912bfced49"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Instruction",
+      "expression": {
+        "kind": "skill",
+        "skillId": "generalEd",
+        "minimumRank": 3
+      },
+      "expressionSha256": "7dabdb86e6cd1eb964fa026b867d530c957a68ffc8fddd150478a2999848cc6c"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Intimidating Presence",
+      "expression": {
+        "kind": "skill",
+        "skillId": "intimidate",
+        "minimumRank": 3
+      },
+      "expressionSha256": "10b6e3714a02005e23a2cfccbf426e049161b92437cdbbdf7352b66063a5dac6"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Iron Mind",
+      "expression": {
+        "kind": "skill",
+        "skillId": "focus",
+        "minimumRank": 3
+      },
+      "expressionSha256": "00aac53b0cf08bf3cb059caaea8e496f2e091eb697e391984b54a64997dd6604"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Kip Up",
+      "expression": {
+        "kind": "skill",
+        "skillId": "acrobatics",
+        "minimumRank": 5
+      },
+      "expressionSha256": "1eff26c6216550eaee90b8381188fe9084f8cb57d494151b1e7ce54bc8732bd4"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Leader",
+      "expression": {
+        "kind": "skill",
+        "skillId": "command",
+        "minimumRank": 4
+      },
+      "expressionSha256": "8a921ab944df94512172e6ae80880271a3b5610504d4c53556833fd6cb09cd47"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Master Skills",
+      "expression": {
+        "kind": "level",
+        "minimum": 12
+      },
+      "expressionSha256": "d43697aca0738bd5a368847abe1835c611cdffbc6aba00583170acf071ae600a"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Medic Training",
+      "expression": {
+        "kind": "skill",
+        "skillId": "medicineEd",
+        "minimumRank": 3
+      },
+      "expressionSha256": "abf3b50a11b7fdcd5d8c7ee239cee625aa4f0665c8407a4d49afea420c70bc8e"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Mounted Prowess",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "acrobatics",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "athletics",
+            "minimumRank": 3
+          }
+        ]
+      },
+      "expressionSha256": "ad3eeccb2ff1c7f46aad26f7a6f00b6c03fed695f088ee52f59d0a132684960d"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Mystic Senses",
+      "expression": {
+        "kind": "skill",
+        "skillId": "intuition",
+        "minimumRank": 3
+      },
+      "expressionSha256": "115a9a4220e3cece6aea489e70e37209efd0bec1715506041b05e5e2bf17487f"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Nimble Movement",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "acrobatics",
+            "minimumRank": 4
+          },
+          {
+            "kind": "skill",
+            "skillId": "stealth",
+            "minimumRank": 4
+          }
+        ]
+      },
+      "expressionSha256": "d80392fcf0e391b19d4ac55c8a91941e3969459917315228acf9369f76e835ae"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Paleontologist",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "pokeEd",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "survival",
+            "minimumRank": 3
+          }
+        ]
+      },
+      "expressionSha256": "71750e721652ea8d636da61e254ac1304ded177ee31a779c05a5a12b428974d6"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Poké Ball Repair",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "edge",
+            "family": "trainer",
+            "canonicalId": "Basic Balls"
+          },
+          {
+            "kind": "edge",
+            "family": "trainer",
+            "canonicalId": "Apricorn Balls"
+          }
+        ]
+      },
+      "expressionSha256": "142f3aff39e446b219fc5453bf9722ca8395c589541ec9e7ef293f814b765c6b"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "PokéPsychologist",
+      "expression": {
+        "kind": "skill",
+        "skillId": "pokeEd",
+        "minimumRank": 3
+      },
+      "expressionSha256": "18ffdc273dd4da4b4ec240a64891b8ae0839f75b2173409db6c26569a3f08874"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Power Boost",
+      "expression": {
+        "kind": "skill",
+        "skillId": "athletics",
+        "minimumRank": 5
+      },
+      "expressionSha256": "58b576f9a3b40ef03b0fbf10236745ea164768530553977826bee8c77a138e67"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Repel Crafter",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "medicineEd",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "techEd",
+            "minimumRank": 3
+          }
+        ]
+      },
+      "expressionSha256": "b31c2cabc04eb5b58e808e74cde91c7b7a9bfd5b395a3fb025b31a02690423f1"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Scholar",
+      "expression": {
+        "kind": "skill",
+        "skillId": "generalEd",
+        "minimumRank": 5
+      },
+      "expressionSha256": "fff00bd3eefbdd39ae21086b03e86d8a1e3365dd3a38a66a9632a0e348bec7e6"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Skill Enhancement",
+      "expression": {
+        "kind": "true"
+      },
+      "expressionSha256": "f398e74aaf7245bf7184b72778b032807d2bf55dbcde4c93e23077ea2fa3ad25"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Skill Stunt",
+      "expression": {
+        "kind": "any-skill",
+        "minimumRank": 3
+      },
+      "expressionSha256": "d082f3a9b29cc75c87c82d6b317506d8366b4e3a69c0308d4f965d29e7b110ee"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Slippery",
+      "expression": {
+        "kind": "skill",
+        "skillId": "stealth",
+        "minimumRank": 3
+      },
+      "expressionSha256": "470d9c6ccc64d1ecc35f8db69ab91c9511a40f6e98571589e7405416e4a661f1"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Smooth",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "charm",
+            "minimumRank": 5
+          },
+          {
+            "kind": "skill",
+            "skillId": "focus",
+            "minimumRank": 5
+          }
+        ]
+      },
+      "expressionSha256": "1346e006f8ce342341bf532958db2e891b6c1de90021aac1ec4c7d8ebaa5967b"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Sneak’s Tricks",
+      "expression": {
+        "kind": "skill",
+        "skillId": "stealth",
+        "minimumRank": 4
+      },
+      "expressionSha256": "170f98f81d8b429cc0ea4567a7503205249113dff19f749fc7f85e0635216c02"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Stamina",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "athletics",
+            "minimumRank": 5
+          },
+          {
+            "kind": "skill",
+            "skillId": "combat",
+            "minimumRank": 5
+          }
+        ]
+      },
+      "expressionSha256": "593bee96dc946f3652011c202e4497486c7257e5b2fac13fffdc0d163b0bfc62"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Survival Drive",
+      "expression": {
+        "kind": "skill",
+        "skillId": "survival",
+        "minimumRank": 4
+      },
+      "expressionSha256": "411e014e7c2dcae5d404bcfff9466084bd03e4135cd861746bac79978cca886b"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Swimmer",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "skill",
+            "skillId": "athletics",
+            "minimumRank": 3
+          },
+          {
+            "kind": "skill",
+            "skillId": "survival",
+            "minimumRank": 3
+          }
+        ]
+      },
+      "expressionSha256": "08e8ed6b8c82488933c1970c0e5d9ea3107b50086b7cd076944c9ba0326fb309"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Tag Scribe",
+      "expression": {
+        "kind": "skill",
+        "skillId": "occultEd",
+        "minimumRank": 3
+      },
+      "expressionSha256": "0b99a38526deeba17a086cde2bcd4be2da92b254ddcd91e303876398e240135d"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Throwing Masteries",
+      "expression": {
+        "kind": "skill",
+        "skillId": "acrobatics",
+        "minimumRank": 4
+      },
+      "expressionSha256": "7d6e506bd972560f4e05ae9931bfe54da951318e1bd52628b9f13a69def5ea37"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Train the Reserves",
+      "expression": {
+        "kind": "skill",
+        "skillId": "command",
+        "minimumRank": 3
+      },
+      "expressionSha256": "f5c85f1047f1817ba421de1ce323e680530e03f8e603621190025d071e3586bb"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Trainer of Champions",
+      "expression": {
+        "kind": "skill",
+        "skillId": "command",
+        "minimumRank": 5
+      },
+      "expressionSha256": "d63716d78161e30aa3e6282aa0f407e31f7876b6f29eb3605343b61823fbc2b5"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Traveler",
+      "expression": {
+        "kind": "skill",
+        "skillId": "survival",
+        "minimumRank": 3
+      },
+      "expressionSha256": "37d0031bd6e998b90c0a3c9667e6bb144c1356c099b2c96f9076ce0ef7c997e3"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Virtuoso",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "any-skill",
+            "minimumRank": 6
+          },
+          {
+            "kind": "level",
+            "minimum": 20
+          }
+        ]
+      },
+      "expressionSha256": "cfffd4b3cb42c18e0d5444c3e006f04a33e607dbca7ee07ac7b9e88d8449d772"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Wallrunner",
+      "expression": {
+        "kind": "skill",
+        "skillId": "acrobatics",
+        "minimumRank": 5
+      },
+      "expressionSha256": "1eff26c6216550eaee90b8381188fe9084f8cb57d494151b1e7ce54bc8732bd4"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Weapon of Choice",
+      "expression": {
+        "kind": "feature-tag",
+        "tag": "Weapon"
+      },
+      "expressionSha256": "050ce51c46243f0a895a7e1b725c665a841ab72b72a6da182583dcac1aa229ee"
+    },
+    {
+      "family": "trainer",
+      "canonicalId": "Work Up",
+      "expression": {
+        "kind": "skill",
+        "skillId": "focus",
+        "minimumRank": 4
+      },
+      "expressionSha256": "0cdb8d1ae08cc77e50f0c42353b4bb16d8df7d4e28264bf605f66dcb2244e9ac"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Ability Mastery",
+      "expression": {
+        "kind": "level",
+        "minimum": 60
+      },
+      "expressionSha256": "13e6da565f51f3b64bf1f8f9d20db41128f79b865143a733abb52de289b5f701"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Accuracy Training",
+      "expression": {
+        "kind": "level",
+        "minimum": 20
+      },
+      "expressionSha256": "3d73d20f9dc95f0ded8d3439ea706630a6369bbbd2bc272901b8b8477ffd6759"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Advanced Connection",
+      "expression": {
+        "kind": "ability-keyword",
+        "keyword": "Connection"
+      },
+      "expressionSha256": "dea2c250861f9edda76c6b179f14acd74b65a2e8bd7d6f9d99a084c796542324"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Advanced Mobility",
+      "expression": {
+        "kind": "level",
+        "minimum": 20
+      },
+      "expressionSha256": "3d73d20f9dc95f0ded8d3439ea706630a6369bbbd2bc272901b8b8477ffd6759"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Attack Conflict",
+      "expression": {
+        "kind": "true"
+      },
+      "expressionSha256": "f398e74aaf7245bf7184b72778b032807d2bf55dbcde4c93e23077ea2fa3ad25"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Aura Pulse",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 30
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Aura Reader"
+          },
+          {
+            "kind": "owner-provider",
+            "providerId": "trainer.aura-pulse"
+          }
+        ]
+      },
+      "expressionSha256": "158681f4738f25c6e7d35160436d2b1b5dfe298010f091d55e0861356be05e3a"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Basic Ranged Attacks",
+      "expression": {
+        "kind": "any",
+        "requirements": [
+          {
+            "kind": "capability",
+            "canonicalId": "Firestarter"
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Fountain"
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Freezer"
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Guster"
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Materializer"
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Zapper"
+          }
+        ]
+      },
+      "expressionSha256": "af1486be07ea601d9de52b4086bf2aaba251f7f1784eed165a83cf148a6d9f31"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Capability Training",
+      "expression": {
+        "kind": "level",
+        "minimum": 20
+      },
+      "expressionSha256": "3d73d20f9dc95f0ded8d3439ea706630a6369bbbd2bc272901b8b8477ffd6759"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Enticing Bait",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 20
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Alluring"
+          }
+        ]
+      },
+      "expressionSha256": "9457a46c3fad159fcc31e684691a3178bcfc168cb2ac2e739d6125e71cf4084d"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Extended Invisibility",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 20
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Invisibility"
+          }
+        ]
+      },
+      "expressionSha256": "852c1df77bcd0bb038e118167d94f39a4c847d399f0902871b128fbb2ed301b8"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Far Reading",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 20
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Telepath"
+          }
+        ]
+      },
+      "expressionSha256": "9fc83e5a114f0e75cbf0fb2c1fe92d6024daf2407b3e45afc12f96557b5ebafd"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Mixed Power",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 10
+          },
+          {
+            "kind": "stat-points",
+            "statId": "atk",
+            "minimum": 5
+          },
+          {
+            "kind": "stat-points",
+            "statId": "satk",
+            "minimum": 5
+          }
+        ]
+      },
+      "expressionSha256": "23eceaf25ad9e6db941c29fb8548e16d91bc4b832974eaef9a8f32a7f20951ae"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Precise Threadings",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 20
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Threaded"
+          }
+        ]
+      },
+      "expressionSha256": "a3c01010b4c2f0ce4cb8b5b3ed1cbde4ada7091666e4852baa8f91e1556a1c10"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Realized Potential",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 30
+          },
+          {
+            "kind": "pokemon-classification",
+            "classificationId": "underdog"
+          }
+        ]
+      },
+      "expressionSha256": "6976f8bac530f5be8dfb05bdae5880d186ba524bb71b8c0d51778a750c3dbecb"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Seismometer",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 20
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Tremorsense"
+          }
+        ]
+      },
+      "expressionSha256": "d9f1e0d84f29d583c8c8bf8c7ae6f73ff763544841349467c0e89cdc5f43f47d"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Skill Improvement",
+      "expression": {
+        "kind": "true"
+      },
+      "expressionSha256": "f398e74aaf7245bf7184b72778b032807d2bf55dbcde4c93e23077ea2fa3ad25"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "TK Mastery",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 20
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Telekinetic"
+          }
+        ]
+      },
+      "expressionSha256": "432914bdbfc0ed12aba178018c8e8046dad1eba093152339348e31849f91caff"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Trail Sniffer",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 20
+          },
+          {
+            "kind": "capability",
+            "canonicalId": "Tracker"
+          }
+        ]
+      },
+      "expressionSha256": "299eb8930d7ebc122ac1ef542862e4dc7c70bdd25b2b44934b5e390dfc2d96d1"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Underdog’s Lessons",
+      "expression": {
+        "kind": "edge",
+        "family": "poke",
+        "canonicalId": "Underdog’s Strength"
+      },
+      "expressionSha256": "29c259c23ce1dd896acbf39c13620cda5f4f2287e32e936738910ab9ffd12f26"
+    },
+    {
+      "family": "poke",
+      "canonicalId": "Underdog’s Strength",
+      "expression": {
+        "kind": "all",
+        "requirements": [
+          {
+            "kind": "level",
+            "minimum": 15
+          },
+          {
+            "kind": "pokemon-classification",
+            "classificationId": "underdog"
+          }
+        ]
+      },
+      "expressionSha256": "b84d9f94992f8a39803b1d0a5ca32ad6839f8d1dbeaa05786ab57352205757f9"
+    }
+  ]
+}

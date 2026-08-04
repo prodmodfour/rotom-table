@@ -6,7 +6,7 @@ import { computeFullMaxHp, resolveStats } from '~/utils/sheets/pokemonDerived'
 import { gridFootprintCells } from '~/utils/gridGeometry'
 import { getVoxelMaterialDefinition } from '~/utils/mapMaterials'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { authoritativeAbilityOwnerIsConscious } from '../effectiveRuntimeAbilities'
 import {
   ABILITY_AUTOMATION_RUNTIME_REGISTRY,
@@ -41,7 +41,7 @@ interface InitiativeAbilityInput {
 const effectiveAbilityIds = (input: InitiativeAbilityInput): ReadonlySet<string> => {
   if (!authoritativeAbilityOwnerIsConscious(input.sheet)) return new Set<string>()
   return new Set(projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(input.sheet),
     target: {
       placementId: input.placement.id,
       ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),

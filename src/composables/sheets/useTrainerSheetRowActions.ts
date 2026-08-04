@@ -65,7 +65,7 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
     sheet.value?.features?.splice(i, 1)
 
   const addEdge = () =>
-    sheet.value?.edges?.push({ name: 'New Edge' } as TrainerEdgeEntry)
+    sheet.value?.edges?.push({ name: '', choices: {} } as TrainerEdgeEntry)
   const removeEdge = (i: number) =>
     sheet.value?.edges?.splice(i, 1)
 

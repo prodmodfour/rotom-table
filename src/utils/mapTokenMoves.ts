@@ -41,6 +41,8 @@ import {
 } from '~/utils/moveUsage'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import { sheetAbilityNames } from '~/utils/sheetAbilities'
+import { resolvedSheetEdgeInstances, sheetEdgeChoiceValues } from '#shared/edgeAutomation/sheetEdges'
+import { pokeEdgeMoveGrants } from '#shared/edgeAutomation/grants'
 import type { MapMoveUsageState, SheetMoveUsageState } from '~/types/moveUsage'
 import type { SheetPlacement } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -58,6 +60,8 @@ export interface TokenSheetMoveEntry {
   attackSourceLabel?: string
   /** Presentation-only DB adjustment; authoritative rules recompute it from the exact source. */
   presentationDamageBaseBonus?: number
+  /** Presentation-only AC adjustment; authoritative rules recompute it from the exact source. */
+  presentationAccuracyCheckModifier?: number
   /** Shared encounter-local projection consumed by both menu and server legality. */
   moveListProjection?: EncounterMoveListProjectionEntry
 }
@@ -187,11 +191,19 @@ export const pokemonMoveEntriesForSheet = (
   const poltergeistMove = poltergeistForm && (sheet.level ?? 0) >= 40
     ? AA083_POLTERGEIST_FORMS[poltergeistForm].moveId
     : null
-  return [
+  const edgeMoveNames = resolvedSheetEdgeInstances(sheet, 'poke').flatMap(pokeEdgeMoveGrants)
+  const accuracyTrainedMoves = new Set(sheetEdgeChoiceValues({
+    sheet,
+    family: 'poke',
+    canonicalId: 'Accuracy Training',
+    choiceId: 'choice-1',
+  }).map(name => name.trim().toLocaleLowerCase('en-US')))
+  const entries: TokenSheetMoveEntry[] = [
     ...makeAutomaticStruggleMoves(capabilities, movelist)
       .map((move) => ({ move, automatic: true })),
     ...[...new Set([
       ...connectionMoves,
+      ...edgeMoveNames,
       ...additionalMoveNames,
       ...(poltergeistMove ? [poltergeistMove] : []),
     ])]
@@ -199,6 +211,9 @@ export const pokemonMoveEntriesForSheet = (
       .map(name => ({ move: { name }, automatic: true })),
     ...movelist.map((move) => ({ move, automatic: false })),
   ]
+  return entries.map(entry => accuracyTrainedMoves.has(entry.move.name.trim().toLocaleLowerCase('en-US'))
+    ? { ...entry, presentationAccuracyCheckModifier: -1 }
+    : entry)
 }
 
 export const trainerMoveEntriesForSheet = (sheet: TrainerSheet): TokenSheetMoveEntry[] => {
@@ -476,6 +491,10 @@ const optionForMoveRow = (
   const damageBase = row.damageBase === null
     ? null
     : row.damageBase + (entry.presentationDamageBaseBonus ?? 0)
+  const rawAc = fallback(row.ac, row.reference?.ac, row.move.ac)
+  const ac = typeof rawAc === 'number'
+    ? Math.max(1, rawAc + (entry.presentationAccuracyCheckModifier ?? 0))
+    : rawAc
   const attackStat = row.attackStat ?? 0
   const damage = damageBase === null ? null : findMoveDamageBase(damageBase)
   const signed = (value: number): string => value === 0 ? '' : value > 0 ? `+${value}` : String(value)
@@ -498,7 +517,7 @@ const optionForMoveRow = (
     type: fallback(row.reference?.type, row.move.type),
     damageClass,
     frequency,
-    ac: fallback(row.ac, row.reference?.ac, row.move.ac),
+    ac,
     range,
     effect: fallback(row.reference?.effect, row.move.effect),
     special: fallback(row.reference?.special, row.move.special),

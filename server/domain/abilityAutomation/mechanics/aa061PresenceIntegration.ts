@@ -3,7 +3,7 @@ import { parseEncounterState, createEmptyEncounterState } from '#shared/moveAuto
 import type { TabletopMap } from '~/types/map'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { reduceAbilityOwnedStateCommand } from '../ownedState'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY, type AbilityAutomationRuntimeRegistry } from '../registry'
 
@@ -45,7 +45,7 @@ export const applyAa061BallFetchSendOutTriggers = (input: {
     const sheet = input.readPokemonSheet(placement.sheetSlug)
     if (!sheet) continue
     const abilities = projectAuthoritativeEffectiveAbilities({
-      baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+      baseAbilities: resolveSheetAndEdgeAbilityInstances(sheet),
       target: {
         placementId: placement.id,
         ...(placement.sideId ? { sideId: placement.sideId } : {}),

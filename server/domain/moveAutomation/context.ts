@@ -21,6 +21,7 @@ import {
   capabilityWeaponMoveName,
 } from '#shared/capabilityAutomation/weaponMoves'
 import type { CharacterSheet } from '~/types/characterSheet'
+import { sheetEdgeChoiceValues } from '#shared/edgeAutomation/sheetEdges'
 import { AA070_FLUTTER_NO_FLANK_CAPABILITY } from '#shared/abilityAutomation/aa070'
 import { aa079HasMimitreeRearm } from '#shared/abilityAutomation/aa079'
 import {
@@ -201,7 +202,7 @@ import {
   aa068DustCloudSelectedScript,
 } from '../abilityAutomation/mechanics/aa068StaticIntegration'
 import { AA063_CLAY_CANNONS_CAPABILITY_ID } from '../abilityAutomation/mechanics/aa063MoveIntegration'
-import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../edgeAutomation/permanentGrants'
 import { aa080MoldBreakerSuppressesAbility } from '../abilityAutomation/mechanics/aa080StaticIntegration'
 import { projectAa081NeutralizingGasAbilities } from '../abilityAutomation/mechanics/aa081NeutralizingGasIntegration'
 import {
@@ -666,7 +667,7 @@ export const buildAuthoritativeMoveRulesContext = (
   const projectedAbilitiesByPlacement = new Map<string, readonly AuthoritativeEffectiveAbility[]>()
   for (const placement of basePlacementSnapshot.placements) {
     const sheet = sheetByRef.get(sheetReadKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
-    const sheetAbilityInstances = resolveSheetAbilityInstances(sheet?.sheet.abilities)
+    const sheetAbilityInstances = sheet ? resolveSheetAndEdgeAbilityInstances(sheet.sheet) : []
     const soullessWonderGuard = sheet?.kind === 'pokemon'
       && hasEffectiveSoullessCapability({ map, placementId: placement.id, sheet: sheet.sheet as CharacterSheet })
       && !sheetAbilityInstances.some(ability => ability.canonicalId === 'Wonder Guard')
@@ -686,7 +687,7 @@ export const buildAuthoritativeMoveRulesContext = (
         : null
       if (!participant || participantSheet?.kind !== 'pokemon') return []
       const species = (participantSheet.sheet as CharacterSheet).species.trim().toLowerCase()
-      const participantAbilities = resolveSheetAbilityInstances(participantSheet.sheet.abilities)
+      const participantAbilities = resolveSheetAndEdgeAbilityInstances(participantSheet.sheet)
       const selected = link.configurationId
       const selectedBasic = selected && basicAbilitiesBySpecies.get(species)?.has(selected) === true
         ? selected
@@ -1452,9 +1453,9 @@ export const buildAuthoritativeMoveRulesContext = (
       }))
     }
     const activeProjection = activeProjectedAbilities.get(token.id) ?? []
-    const legacyIncompleteBaseNames = resolveSheetAbilityInstances(
-      resolvedSheet?.sheet.abilities,
-    ).flatMap((entry) => {
+    const legacyIncompleteBaseNames = (resolvedSheet
+      ? resolveSheetAndEdgeAbilityInstances(resolvedSheet.sheet)
+      : []).flatMap((entry) => {
       if (abilityRuntimeRegistry.resolve(entry.canonicalId)) return []
       const projected = activeProjection.find(ability => (
         ability.instanceId === entry.instanceId && ability.canonicalId === entry.canonicalId
@@ -2219,6 +2220,31 @@ export const buildAuthoritativeMoveRulesContext = (
             entry: {
               ...resolved.entry,
               script: { ...resolved.entry.script, damageBase, ac, range },
+            },
+          }
+        }
+      }
+      if (resolved.ok && actorSheet.kind === 'pokemon') {
+        const pokemon = actorSheet.sheet as CharacterSheet
+        const trainedMoves = sheetEdgeChoiceValues({
+          sheet: pokemon,
+          family: 'poke',
+          canonicalId: 'Accuracy Training',
+          choiceId: 'choice-1',
+        })
+        const entry = resolved.entry
+        if (entry.script.ac !== null && trainedMoves.some(name => (
+          name.trim().toLocaleLowerCase('en-US')
+            === entry.canonicalMoveName.trim().toLocaleLowerCase('en-US')
+        ))) {
+          resolved = {
+            ...resolved,
+            entry: {
+              ...entry,
+              script: {
+                ...entry.script,
+                ac: Math.max(1, Number(entry.script.ac) - 1),
+              },
             },
           }
         }

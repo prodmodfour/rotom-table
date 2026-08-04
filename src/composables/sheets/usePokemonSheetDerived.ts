@@ -6,13 +6,14 @@ import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { buildSheetAccuracySummary } from '~/utils/sheetAccuracy'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
-import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 import {
   computeFullMaxHp,
   computeMaxHp,
   resolveCapabilities,
   resolveSkills,
   resolveStats,
+  pokemonAddedStatPointBudget,
+  pokemonBaseRelationWaivers,
   validateBaseRelations,
 } from '~/utils/sheets/pokemonDerived'
 import { heldItemInitiativeBonus, heldItemSpeedEvasionBonus } from '~/utils/sheetHeldItemEffects'
@@ -177,9 +178,12 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const statPointsSpent = computed(() =>
     stats.value.reduce((sum, row) => sum + (Number.isFinite(row.added) ? row.added : 0), 0),
   )
-  const statPointsBudget = computed(() => computePokemonLevelUpStatPointBudget(sheet.value?.level ?? 1))
+  const statPointsBudget = computed(() => sheet.value ? pokemonAddedStatPointBudget(sheet.value) : 0)
   const statPointsLeft = computed(() => statPointsBudget.value - statPointsSpent.value)
-  const baseRelationViolations = computed(() => validateBaseRelations(stats.value))
+  const baseRelationViolations = computed(() => validateBaseRelations(
+    stats.value,
+    sheet.value ? pokemonBaseRelationWaivers(sheet.value) : new Set(),
+  ))
   const visibleBaseRelationViolations = computed(() =>
     baseRelationViolations.value.slice(0, BASE_RELATION_VISIBLE_LIMIT),
   )

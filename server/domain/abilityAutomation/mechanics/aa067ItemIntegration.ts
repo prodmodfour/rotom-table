@@ -9,7 +9,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
 
 const EXTRA_HELD_ITEM_ABILITIES = Object.freeze(['Delivery Bird', 'Handyman'] as const)
@@ -27,7 +27,7 @@ export const aa067PokemonHeldItemCapacity = (input: {
   const effective = input.map.placements.some(placement => {
     if (placement.sheetKind !== 'pokemon' || placement.sheetSlug !== input.sheet.slug) return false
     return projectAuthoritativeEffectiveAbilities({
-      baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+      baseAbilities: resolveSheetAndEdgeAbilityInstances(input.sheet),
       target: {
         placementId: placement.id,
         ...(placement.sideId ? { sideId: placement.sideId } : {}),

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import type { EditableCellValue } from '~/utils/editableCell'
 import type { TrainerEdgeEntry, TrainerSheet } from '~/types/trainerSheet'
@@ -7,6 +8,8 @@ import {
   TRAINER_EDGE_NAME_COLUMN,
   TRAINER_EDGE_NAME_OPTIONS,
   trainerEdgeFieldValue,
+  syncTrainerEdgeAutomation,
+  trainerEdgeInspectorStatus,
   type TrainerEdgeAutofillField,
 } from '~/utils/sheets/trainerEdges'
 import {
@@ -15,7 +18,7 @@ import {
   updateTrainerChoiceEntryName,
 } from '~/utils/sheets/trainerSubchoices'
 
-defineProps<{
+const props = defineProps<{
   sheet: TrainerSheet
 }>()
 
@@ -27,9 +30,17 @@ const emit = defineEmits<{
 const autofillValue = (edge: TrainerEdgeEntry, field: TrainerEdgeAutofillField): string =>
   trainerEdgeFieldValue(edge, field)
 
-const setEdgeName = (edge: TrainerEdgeEntry, value: EditableCellValue) => {
+const setEdgeName = (edge: TrainerEdgeEntry, index: number, value: EditableCellValue) => {
+  delete edge.automation
   updateTrainerChoiceEntryName(edge, value, trainerEdgeSubchoices)
+  syncTrainerEdgeAutomation(props.sheet, edge, index)
 }
+
+watch(
+  () => props.sheet.edges,
+  (edges) => edges?.forEach((edge, index) => syncTrainerEdgeAutomation(props.sheet, edge, index)),
+  { deep: true, immediate: true, flush: 'sync' },
+)
 </script>
 
 <template>
@@ -61,12 +72,17 @@ const setEdgeName = (edge: TrainerEdgeEntry, value: EditableCellValue) => {
                     :model-value="stripTrainerEntryChoiceSuffix(edge.name)"
                     type="select"
                     :options="TRAINER_EDGE_NAME_OPTIONS"
-                    @update:model-value="(value) => setEdgeName(edge, value)"
+                    @update:model-value="(value) => setEdgeName(edge, index, value)"
                   />
                   <TrainerEntrySubchoiceControls
                     :entry="edge"
                     :definitions="trainerEdgeSubchoices(edge)"
                   />
+                  <span
+                    class="edge-automation-status"
+                    :class="`edge-automation-status--${trainerEdgeInspectorStatus(sheet, edge, index).status}`"
+                    :title="trainerEdgeInspectorStatus(sheet, edge, index).diagnostics.join('\n')"
+                  >{{ trainerEdgeInspectorStatus(sheet, edge, index).label }}</span>
                 </div>
               </th>
               <td
@@ -207,6 +223,18 @@ const setEdgeName = (edge: TrainerEdgeEntry, value: EditableCellValue) => {
   align-items: flex-start;
   gap: 0.35rem;
 }
+
+.edge-automation-status {
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  color: var(--ink-muted);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+}
+
+.edge-automation-status--ready { border-color: var(--accent); color: var(--accent); }
+.edge-automation-status--malformed,
+.edge-automation-status--unresolved-identity { color: var(--danger, #c95f5f); }
 
 .auto-fill-col {
   min-width: 9rem;

@@ -1,11 +1,12 @@
 import { findAbility, findEdge, findFeature, findMove, toSlug } from '~~/data/ptuReference'
 import {
-  trainerEdgeSubchoices,
   trainerFeatureSubchoices,
   trainerSubchoiceValue,
   type TrainerSubchoiceDefinition,
 } from '~/utils/sheets/trainerSubchoices'
 import type { PtuEdge, PtuFeature } from '~/types/ptuReference'
+import { resolveEdgeInstance } from '#shared/edgeAutomation/instances'
+import { TRAINER_EDGE_MOVE_GRANTS } from '#shared/edgeAutomation/grants'
 import type {
   TrainerAbilityEntry,
   TrainerClassEntry,
@@ -237,14 +238,11 @@ export const deriveTrainerAutomaticMoves = (
     }
   }
 
-  for (const source of trainerCombatEdgeSources(sheet)) {
-    const definitions = trainerEdgeSubchoices(source.entry)
-    for (const name of knownChoiceValues(source.entry, definitions, isMoveChoice)) {
-      addAutomaticMove(out, seen, existing, name, source.entry.name)
-    }
-
-    for (const text of learnedMoveTexts(source.reference?.effect)) {
-      for (const name of splitNamedList(text)) addAutomaticMove(out, seen, existing, name, source.entry.name)
+  for (const [index, edge] of (sheet?.edges ?? []).entries()) {
+    const resolved = resolveEdgeInstance({ family: 'trainer', entry: edge, ownerId: sheet?.slug ?? 'unknown', index })
+    if (resolved.status !== 'ready' || !resolved.data) continue
+    for (const name of TRAINER_EDGE_MOVE_GRANTS[resolved.data.canonicalId] ?? []) {
+      addAutomaticMove(out, seen, existing, name, resolved.data.canonicalId)
     }
   }
 
@@ -264,17 +262,6 @@ export const deriveTrainerAutomaticAbilities = (
       for (const name of knownChoiceValues(source.entry, definitions, isAbilityChoice)) {
         addAutomaticAbility(out, seen, existing, name, source.entry.name)
       }
-    }
-
-    for (const text of gainedAbilityTexts(source.reference?.effect)) {
-      for (const name of splitNamedList(text)) addAutomaticAbility(out, seen, existing, name, source.entry.name)
-    }
-  }
-
-  for (const source of trainerCombatEdgeSources(sheet)) {
-    const definitions = trainerEdgeSubchoices(source.entry)
-    for (const name of knownChoiceValues(source.entry, definitions, isAbilityChoice)) {
-      addAutomaticAbility(out, seen, existing, name, source.entry.name)
     }
 
     for (const text of gainedAbilityTexts(source.reference?.effect)) {

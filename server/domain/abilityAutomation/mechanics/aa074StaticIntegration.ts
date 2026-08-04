@@ -6,7 +6,7 @@ import type { MoveDamageModifier } from '~/utils/moveAutomationDamagePipeline'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
 import {
   AA074_HUNGER_FULL_BELLY_MODE,
@@ -65,7 +65,7 @@ export const aa074HeavyMetalInitiativeSpeedOffset = (input: {
   const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve(AA074_HEAVY_METAL_ABILITY)
   if (!runtime) return 0
   const effective = projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(input.sheet),
     target: {
       placementId: input.placement.id,
       ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),

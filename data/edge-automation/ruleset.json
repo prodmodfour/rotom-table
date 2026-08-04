@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "ptu-1.05-edge-automation-v1",
+  "runtimeAuthority": [
+    "data/reference/edges.json",
+    "data/reference/poke-edges.json"
+  ],
+  "catalogs": {
+    "trainer": {
+      "path": "data/reference/edges.json",
+      "entryCount": 61,
+      "bytes": 22523,
+      "sha256": "62348f9f5e57c28a3b61bfc3f554bcad258a769b054f5531c1d07ae6853e2123",
+      "gitBlob": "c31a6338005c99de5d6e9fc9b71cb2318edabd8f"
+    },
+    "poke": {
+      "path": "data/reference/poke-edges.json",
+      "entryCount": 20,
+      "bytes": 10914,
+      "sha256": "3e2dbb84a8c35e4655b62ece57a3760a2b9a6e09b917dc8a581e5e613e14e021",
+      "gitBlob": "5538a496acdfaa2559697e08421c17625945c899"
+    }
+  },
+  "maintenanceInputs": [
+    {
+      "path": "ptu-data/parse_features_edges.py",
+      "sha256": "fd5b9e5a0665f85fcc8f022b28c5322674027c02019fd808ca8221ede5ca4564",
+      "gitBlob": "ecc2db5664323b17cdc8d3302ad7c8b4cfe65737",
+      "authority": "documentary-only"
+    },
+    {
+      "path": "scripts/migrate_edge_reference_v1.py",
+      "sha256": "63232d8c4d1aae966fd139241c97133bfedf1f4465e87cb34158d6537d759e59",
+      "gitBlob": "c35f4d147de39d32c76f2cc554be7e29491b6adf",
+      "authority": "reviewed-one-way-migration"
+    }
+  ],
+  "identityOrder": "family-then-unicode-code-point",
+  "unknownIdentityPolicy": "preserve-for-maintenance-but-never-execute",
+  "sourceDriftPolicy": "fail-closed",
+  "clientAuthority": "none"
+}

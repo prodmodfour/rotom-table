@@ -7,6 +7,8 @@ import type { AuthoritativeMoveRulesContext } from './context'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import { aa077LancerCriticalRangeBonus } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import { aa079MercilessForcesCritical } from '../abilityAutomation/mechanics/aa079StaticIntegration'
+import { trainerBadMoodCriticalRangeBonus } from '../edgeAutomation/trainerCombat'
+import type { TrainerSheet } from '~/types/trainerSheet'
 
 export const CRITICAL_HIT_PREVENTING_ABILITIES = Object.freeze([
   'Battle Armor',
@@ -184,13 +186,19 @@ export const resolveMoveCriticalHit = (options: {
     && effect.suppression.sources.length === 0
     && (effect.duration.remaining === null || effect.duration.remaining > 0)
   )) ? 2 : 0
+  const badMoodBonus = options.context.actor.placement.sheetKind === 'trainer'
+    ? trainerBadMoodCriticalRangeBonus(
+        options.context.actor.sheet.sheet as TrainerSheet,
+        options.context.actor.token.conditions ?? [],
+      )
+    : 0
   const trigger: MoveCriticalHitTrigger = baseTrigger.kind === 'range'
     ? {
         ...baseTrigger,
         minimum: Math.max(
           1,
           baseTrigger.minimum - (beamCannon ? 3 : 0) - lancerBonus - rareLeekBonus
-            - razorEdgeBonus - superLuckBonus - viciousBonus,
+            - razorEdgeBonus - superLuckBonus - viciousBonus - badMoodBonus,
         ),
       }
     : baseTrigger

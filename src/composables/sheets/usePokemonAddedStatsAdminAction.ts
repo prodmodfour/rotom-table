@@ -2,7 +2,7 @@ import { computed, ref, type ComputedRef } from 'vue'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { randomizePokemonAddedStats } from '~/utils/sheets/pokemonAddedStatRandomizer'
-import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
+import { pokemonAddedStatPointBudget } from '~/utils/sheets/pokemonDerived'
 
 export interface UsePokemonAddedStatsAdminActionOptions {
   readonly sheet: ComputedRef<CharacterSheet | null>
@@ -16,7 +16,7 @@ export const usePokemonAddedStatsAdminAction = ({
   const statusMessage = ref<string | null>(null)
   const errorMessage = ref<string | null>(null)
   const statPointsBudget = computed(() => (
-    sheet.value ? computePokemonLevelUpStatPointBudget(sheet.value.level) : null
+    sheet.value ? pokemonAddedStatPointBudget(sheet.value) : null
   ))
 
   const clearMessages = () => {

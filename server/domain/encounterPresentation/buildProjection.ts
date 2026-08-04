@@ -34,7 +34,7 @@ import {
 } from '#shared/encounterPresentation'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { PendingMoveResponseWindowList } from '#shared/moveAutomation/responseViews'
-import { toSlug, findAbility, findEdge, findFeature, findItem, findMove } from '~~/data/ptuReference'
+import { toSlug, findAbility, findFeature, findItem, findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap, SheetPlacement } from '~/types/map'
 import type { TrainerSheet, InventoryEntry } from '~/types/trainerSheet'
@@ -59,6 +59,9 @@ import { capabilityWeaponMoveName } from '#shared/capabilityAutomation/weaponMov
 import { placementToSpawned } from '~/utils/placement'
 import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
 import { pendingEncounterInteractionsFromMoveResponses } from './pendingAdapters'
+import { resolveEffectiveEdges } from '../edgeAutomation/effectiveEdges'
+import { canonicalEdgeReference } from '#shared/edgeAutomation/catalog'
+import { edgeChoiceValues } from '#shared/edgeAutomation/instances'
 
 export interface BuildEncounterPresentationProjectionInput {
   readonly role: AuthRole
@@ -968,79 +971,105 @@ const featureAndEdgePresentation = (input: {
   readonly participant: EncounterParticipantPresentationRef
   readonly sheet: CharacterSheet | TrainerSheet
 }): { readonly offers: EncounterActionOffer[]; readonly passives: EncounterPassiveSummary[] } => {
-  const rows: Array<{
-    readonly kind: 'feature' | 'edge'
-    readonly name: string
-    readonly frequency: string | null
-    readonly trigger: string | null
-    readonly description: string | null
-  }> = []
-  if ('features' in input.sheet) {
-    for (const feature of input.sheet.features ?? []) {
-      const reference = findFeature(feature.name)
-      rows.push({
-        kind: 'feature',
-        name: reference?.name ?? feature.name,
-        frequency: feature.frequency ?? reference?.frequency ?? null,
-        trigger: reference?.trigger ?? null,
-        description: reference?.effect ?? feature.notes ?? null,
-      })
-    }
-    for (const edge of input.sheet.edges ?? []) {
-      const reference = findEdge(edge.name)
-      rows.push({
-        kind: 'edge',
-        name: reference?.name ?? edge.name,
-        frequency: reference?.frequency ?? null,
-        trigger: reference?.trigger ?? null,
-        description: reference?.effect ?? edge.notes ?? null,
-      })
-    }
-  }
-  else {
-    for (const edge of (input.sheet as CharacterSheet).edges ?? []) {
-      const reference = findEdge(edge.name)
-      rows.push({
-        kind: 'edge',
-        name: reference?.name ?? edge.name,
-        frequency: reference?.frequency ?? null,
-        trigger: reference?.trigger ?? null,
-        description: reference?.effect ?? edge.effect ?? null,
-      })
-    }
-  }
   const offers: EncounterActionOffer[] = []
   const passives: EncounterPassiveSummary[] = []
-  rows.forEach((row, index) => {
-    const source = sourceRef({ kind: row.kind, canonicalId: row.name })
-    const roles = frequencyRoles(row.frequency, row.trigger)
-    if (roles.includes('passive-provider')) {
-      passives.push(passiveSummary({
-        map: input.map,
-        participant: input.participant,
-        source,
-        roles,
-        description: row.frequency,
-      }))
-      return
+
+  // Feature migration remains owned by the downstream Feature plan. Edge rows
+  // below never share this prose/frequency compatibility path.
+  if ('features' in input.sheet) {
+    for (const [index, feature] of (input.sheet.features ?? []).entries()) {
+      const reference = findFeature(feature.name)
+      const name = reference?.name ?? feature.name
+      const frequency = feature.frequency ?? reference?.frequency ?? null
+      const trigger = reference?.trigger ?? null
+      const source = sourceRef({ kind: 'feature', canonicalId: name })
+      const roles = frequencyRoles(frequency, trigger)
+      if (roles.includes('passive-provider')) {
+        passives.push(passiveSummary({ map: input.map, participant: input.participant, source, roles, description: frequency }))
+      }
+      else {
+        offers.push(makeOffer({
+          map: input.map,
+          mapRevision: input.mapRevision,
+          actor: input.participant,
+          source,
+          roles,
+          group: roles.includes('interrupt-reaction') ? 'reaction' : 'support',
+          groupOrder: 60,
+          offerOrder: index,
+          timing: timingFromText(frequency ?? trigger),
+          usage: emptyUsage(frequency),
+          availability: availabilityFromCodes(['action.unsupported']),
+          copy: presentation(name, { description: frequency, iconKey: 'source.feature' }),
+          actionId: 'feature.declare',
+        }))
+      }
     }
-    offers.push(makeOffer({
+  }
+
+  const family = 'species' in input.sheet ? 'poke' as const : 'trainer' as const
+  const effective = resolveEffectiveEdges({ ownerId: input.sheet.slug, family, sheet: input.sheet })
+  for (const [index, edge] of effective.instances.entries()) {
+    const reference = canonicalEdgeReference(family, edge.canonicalId)
+    const source = sourceRef({
+      kind: 'edge',
+      canonicalId: edge.canonicalId,
+      instanceId: edge.instanceId,
+    })
+    const facts: EncounterPassiveFact[] = edge.mechanics.map((mechanic, mechanicIndex) => {
+      const selected = mechanic.choiceId ? edgeChoiceValues(edge.instance, mechanic.choiceId) : []
+      const value = selected.length > 0
+        ? textFact(selected.join(', '))
+        : typeof mechanic.value === 'number'
+          ? numberFact(mechanic.value)
+          : typeof mechanic.value === 'boolean'
+            ? booleanFact(mechanic.value)
+            : textFact(typeof mechanic.value === 'string'
+              ? mechanic.value
+              : mechanic.valueSource ?? mechanic.operation)
+      return {
+        factId: encounterPresentationStableId('edge-fact', edge.instanceId, mechanic.mechanicId, String(mechanicIndex)),
+        factKey: mechanic.propertyId,
+        value,
+        label: mechanic.propertyId,
+      }
+    })
+    passives.push(passiveSummary({
       map: input.map,
-      mapRevision: input.mapRevision,
-      actor: input.participant,
+      participant: input.participant,
       source,
-      roles,
-      group: roles.includes('interrupt-reaction') ? 'reaction' : 'support',
-      groupOrder: 60,
-      offerOrder: index,
-      timing: timingFromText(row.frequency ?? row.trigger),
-      targeting: [],
-      usage: emptyUsage(row.frequency),
-      availability: availabilityFromCodes(['action.unsupported']),
-      copy: presentation(row.name, { description: row.frequency, iconKey: `source.${row.kind}` }),
-      actionId: `${row.kind}.declare`,
+      roles: ['passive-provider'],
+      active: edge.effective,
+      facts,
+      description: edge.effective ? reference?.effect ?? null : edge.suppressionReasonCode,
     }))
-  })
+
+    for (const [actionIndex, action] of edge.actions.entries()) {
+      const timing: EncounterActionTiming = action.timing === 'extended'
+        ? { kind: 'extended', label: 'Extended Action', triggerLabel: null, priority: null }
+        : { kind: action.timing, label: `${action.timing[0]?.toUpperCase()}${action.timing.slice(1)} Action`, triggerLabel: null, priority: null }
+      const unavailable: EncounterAvailabilityReasonCode[] = []
+      if (!edge.effective) unavailable.push('source.suppressed')
+      if (edge.canonicalId === 'Breeder') unavailable.push('action.unsupported')
+      if (action.id === 'stand-from-tripped'
+        && !input.participant.statusLabels.some(label => /tripped/i.test(label))) unavailable.push('timing.trigger-not-met')
+      offers.push(makeOffer({
+        map: input.map,
+        mapRevision: input.mapRevision,
+        actor: input.participant,
+        source,
+        roles: ['activated-action', 'contextual-affordance'],
+        group: action.operation === 'encounter' ? 'movement' : 'support',
+        groupOrder: 60,
+        offerOrder: index * 10 + actionIndex,
+        timing,
+        usage: emptyUsage(),
+        availability: availabilityFromCodes(unavailable),
+        copy: presentation(edge.canonicalId, { description: reference?.effect ?? null, iconKey: 'source.edge' }),
+        actionId: `edge.${family}.${edge.canonicalId}.${action.id}`,
+      }))
+    }
+  }
   return { offers, passives }
 }
 

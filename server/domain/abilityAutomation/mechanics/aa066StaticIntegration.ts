@@ -10,7 +10,7 @@ import { computeFullMaxHp, resolveStats } from '~/utils/sheets/pokemonDerived'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 import { aa061AuraBonusMultiplier } from './aa061MoveIntegration'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
 
 export const AA066_DAZZLING_CAPABILITY_ID = 'aa066.dazzling.priority-and-initiative-block' as const
@@ -166,7 +166,7 @@ export const aa066DefeatistInitiativeBonus = (input: {
   const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve('Defeatist')
   if (!runtime) return 0
   const active = projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(input.sheet),
     target: {
       placementId: input.placement.id,
       ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),

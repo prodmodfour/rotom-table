@@ -2,7 +2,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import { computeFullMaxHp, resolveStats } from '~/utils/sheets/pokemonDerived'
 import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
+import { resolveSheetAndEdgeAbilityInstances } from '../../edgeAutomation/permanentGrants'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
 import { createMoveAutomationWeatherResolver } from '../../moveAutomation/weather'
 
@@ -15,7 +15,7 @@ export const aa063ChlorophyllInitiativeMultiplier = (input: {
   const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve('Chlorophyll')
   if (!runtime) return 1
   const active = projectAuthoritativeEffectiveAbilities({
-    baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+    baseAbilities: resolveSheetAndEdgeAbilityInstances(input.sheet),
     target: {
       placementId: input.placement.id,
       ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),

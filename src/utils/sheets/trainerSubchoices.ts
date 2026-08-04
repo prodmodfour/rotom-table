@@ -15,6 +15,7 @@ export interface TrainerSubchoiceDefinition {
   key: string
   label: string
   options: readonly EditableCellOption[]
+  inputType?: 'select' | 'text'
   placeholder?: string
   legacyField?: 'basicSkill'
   legacyKeys?: readonly string[]
@@ -256,6 +257,13 @@ const secondSkillSelector: TrainerSubchoiceDefinition = {
 const basicSkillSelector: TrainerSubchoiceDefinition = {
   ...skillSelector,
   legacyField: 'basicSkill',
+}
+const circumstanceSelector: TrainerSubchoiceDefinition = {
+  key: 'circumstance',
+  label: 'Circumstance',
+  placeholder: 'Describe the specific use',
+  options: [],
+  inputType: 'text',
 }
 const moveSelector: TrainerSubchoiceDefinition = {
   key: 'move',
@@ -534,7 +542,7 @@ const featureChoiceMap = defineChoiceMap([
 const edgeChoiceMap = defineChoiceMap([
   [['Basic Skills'], [basicSkillSelector]],
   [['Adept Skills', 'Expert Skills', 'Master Skills', 'Virtuoso'], [skillSelector]],
-  [['Skill Stunt'], [skillSelector]],
+  [['Skill Stunt'], [skillSelector, circumstanceSelector]],
   [['Categoric Inclination'], [{
     key: 'category',
     label: 'Category',

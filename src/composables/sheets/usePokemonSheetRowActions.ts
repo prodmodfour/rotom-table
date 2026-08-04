@@ -88,7 +88,7 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
   }
 
   const addEdge = () => {
-    sheet.value?.edges?.push({ name: 'New Edge' } as CharacterSheetEdge)
+    sheet.value?.edges?.push({ name: '', choices: {} } as CharacterSheetEdge)
   }
 
   const removeEdge = (i: number) => {

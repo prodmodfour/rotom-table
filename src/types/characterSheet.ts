@@ -2,6 +2,8 @@ import type { AbilityInstanceData } from '#shared/abilityAutomation/parameters'
 import type { AbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
 import type { CapabilityUsageLedger } from '#shared/capabilityAutomation/state'
 import type { CapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
+import type { PokeEdgeInstanceData } from '#shared/edgeAutomation/instances'
+import type { EdgeUsageLedger } from '#shared/edgeAutomation/state'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
@@ -68,6 +70,10 @@ export interface CharacterSheetEdge {
   name: string
   cost?: number | string
   effect?: string
+  /** Setup-editor compatibility storage; accepted rows normalize into automation choices. */
+  choices?: Record<string, string>
+  /** Stable canonical Poké Edge identity and typed lasting choices. */
+  automation?: PokeEdgeInstanceData
 }
 
 export interface CharacterSheetWeapon {
@@ -292,6 +298,8 @@ export interface CharacterSheet {
   abilityUsage?: AbilityDailyUsageLedger
   /** Server-owned Daily/Weekly/hourly Capability resources. */
   capabilityUsage?: CapabilityUsageLedger
+  /** Server-owned Poké Edge scene/day/target resources. */
+  edgeUsage?: EdgeUsageLedger
   /** Durable Capability-owned shell/planter state advanced only by the authoritative campaign clock. */
   capabilityCampaignState?: CapabilityCampaignState
   /** Extended-Rest-bound Berry Storage digestion buffs. */

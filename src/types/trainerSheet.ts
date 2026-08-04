@@ -1,6 +1,8 @@
 import type { AbilityInstanceData } from '#shared/abilityAutomation/parameters'
 import type { AbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
 import type { CapabilityUsageLedger } from '#shared/capabilityAutomation/state'
+import type { TrainerEdgeInstanceData } from '#shared/edgeAutomation/instances'
+import type { EdgeUsageLedger } from '#shared/edgeAutomation/state'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
@@ -117,6 +119,8 @@ export interface TrainerEdgeEntry {
   /** For the Basic Skills Edge, the skill being raised. */
   basicSkill?: TrainerSkillKey
   notes?: string
+  /** Stable canonical Trainer Edge identity and typed lasting choices. */
+  automation?: TrainerEdgeInstanceData
 }
 
 export interface TrainerClassEntry {
@@ -326,6 +330,8 @@ export interface TrainerSheet {
   abilityUsage?: AbilityDailyUsageLedger
   /** Server-owned Daily/Weekly/hourly Capability resources. */
   capabilityUsage?: CapabilityUsageLedger
+  /** Server-owned Trainer Edge scene/day/target resources. */
+  edgeUsage?: EdgeUsageLedger
   abilities?: TrainerAbilityEntry[]
   maneuvers?: TrainerManeuver[]
   /** Pokémon Training & Orders that the trainer can apply to their team. */

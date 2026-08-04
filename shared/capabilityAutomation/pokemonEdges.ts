@@ -1,5 +1,9 @@
+import { resolvedSheetEdgeInstances } from '../edgeAutomation/sheetEdges'
+import { edgeChoiceValues } from '../edgeAutomation/instances'
+
 export interface PokemonCapabilityEdgeSource {
-  readonly edges?: readonly { readonly name: string }[]
+  readonly slug?: string
+  readonly edges?: readonly { readonly name: string; readonly automation?: unknown }[]
 }
 
 const normalized = (value: string): string => value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US')
@@ -8,7 +12,10 @@ const normalized = (value: string): string => value.trim().replace(/\s+/g, ' ').
 export const hasPokemonCapabilityEdge = (
   source: PokemonCapabilityEdgeSource,
   edgeName: string,
-): boolean => (source.edges ?? []).some(edge => normalized(edge.name) === normalized(edgeName))
+): boolean => source.slug
+  ? resolvedSheetEdgeInstances({ slug: source.slug, edges: source.edges }, 'poke')
+      .some(instance => normalized(instance.canonicalId) === normalized(edgeName))
+  : (source.edges ?? []).some(edge => normalized(edge.name) === normalized(edgeName))
 
 /**
  * Read every reviewed selection from `Edge (Capability)` or
@@ -19,6 +26,12 @@ export const selectedPokemonCapabilityEdges = (
   source: PokemonCapabilityEdgeSource,
   edgeName: string,
 ): readonly string[] => {
+  if (source.slug) {
+    const instances = resolvedSheetEdgeInstances({ slug: source.slug, edges: source.edges }, 'poke')
+      .filter(instance => normalized(instance.canonicalId) === normalized(edgeName))
+    const selections = instances.flatMap(instance => instance.choices.flatMap(choice => edgeChoiceValues(instance, choice.choiceId)))
+    return Object.freeze([...new Map(selections.map(value => [normalized(value), value])).values()])
+  }
   const escaped = edgeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const pattern = new RegExp(`^${escaped}\\s*(?:\\(([^)]+)\\)|[:—-]\\s*([^:;]{1,80}))$`, 'i')
   const selections = (source.edges ?? []).flatMap((edge) => {

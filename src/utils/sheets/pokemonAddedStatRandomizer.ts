@@ -1,6 +1,5 @@
 import type { CharacterSheet, StatKey } from '~/types/characterSheet'
-import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
-import { POKEMON_STAT_KEYS, resolveStats } from '~/utils/sheets/pokemonDerived'
+import { POKEMON_STAT_KEYS, pokemonAddedStatPointBudget, resolveStats } from '~/utils/sheets/pokemonDerived'
 
 export type PokemonAddedStatAllocation = Record<StatKey, number>
 
@@ -76,7 +75,7 @@ export const randomizePokemonAddedStats = (
   options: RandomizePokemonAddedStatsOptions = {},
 ): RandomizePokemonAddedStatsResult => {
   const random = options.random ?? Math.random
-  const budget = computePokemonLevelUpStatPointBudget(sheet.level)
+  const budget = pokemonAddedStatPointBudget(sheet)
   const allocation = emptyAllocation()
   const baseByKey = Object.fromEntries(
     resolveStats(sheet).map((row) => [row.key, row.base]),

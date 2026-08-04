@@ -18,6 +18,7 @@ import {
   hasPokemonCapabilityEdge,
   selectedPokemonCapabilityEdges,
 } from '#shared/capabilityAutomation/pokemonEdges'
+import { sheetHasCanonicalEdge } from '#shared/edgeAutomation/sheetEdges'
 import {
   computeFullMaxHp,
   resolveCapabilities as resolvePokemonCapabilities,
@@ -124,8 +125,8 @@ const pokemonCandidates = (
       : capabilityTraining.has(descriptor.canonicalId.toLocaleLowerCase('en-US'))
         && descriptor.canonicalId === 'Power' ? 1 : 0
     if (edgeBonus > 0) candidates.push({
-      parsed: numericLabel(descriptor.canonicalId, raw + edgeBonus),
-      value: raw + edgeBonus,
+      parsed: numericLabel(descriptor.canonicalId, raw),
+      value: raw,
       source: source('edge-grant', `sheet:pokemon:${sheet.slug}:edge:${safePart(descriptor.canonicalId)}`, 350, `${edgeBonus === 2 ? 'Advanced Mobility' : 'Capability Training'} (${descriptor.canonicalId})`, edgeBonus),
     })
   }
@@ -154,7 +155,7 @@ const pokemonCandidates = (
         const longBonus = ['long jump', 'long', 'jump (long)'].some(value => capabilityTraining.has(value)) ? 1 : 0
         const highBonus = ['high jump', 'high', 'jump (high)'].some(value => capabilityTraining.has(value)) ? 1 : 0
         if (longBonus || highBonus) candidates.push({
-          parsed: jumpLabel(`${parsed.parameters.long + longBonus}/${parsed.parameters.high + highBonus}`),
+          parsed: jumpLabel(`${parsed.parameters.long}/${parsed.parameters.high}`),
           value: null,
           source: source('edge-grant', `sheet:pokemon:${sheet.slug}:edge:Capability_Training:${longBonus ? 'long' : 'high'}`, 350, `Capability Training (${longBonus ? 'Long Jump' : 'High Jump'})`, 1),
         })
@@ -355,9 +356,8 @@ const trainerCandidates = (
     value: null,
     source: source('sheet-override', `sheet:trainer:${sheet.slug}:capabilities.other:${safePart(label)}`, 200, label),
   })
-  const edgeNames = new Set((sheet.edges ?? []).map(edge => edge.name.trim().toLocaleLowerCase('en-US')))
   const featureNames = new Set((sheet.features ?? []).map(feature => feature.name.trim().toLocaleLowerCase('en-US')))
-  if (edgeNames.has('art of stealth')) candidates.push({
+  if (sheetHasCanonicalEdge(sheet, 'trainer', 'Art of Stealth')) candidates.push({
     parsed: parseCapabilityLabel('Stealth'), value: null,
     source: source('edge-grant', `sheet:trainer:${sheet.slug}:edge:Art of Stealth`, 350, 'Art of Stealth'),
   })
@@ -371,21 +371,23 @@ const trainerCandidates = (
   })
   const numericRows = new Map(resolved.rows.map(row => [row.label, typeof row.value === 'number' ? row.value : Number(row.value)]))
   const addNumericEdge = (canonicalId: string, bonus: number, edgeName: string): void => {
-    const base = numericRows.get(canonicalId)
-    if (!Number.isFinite(base)) return
+    const resolvedValue = numericRows.get(canonicalId)
+    if (!Number.isFinite(resolvedValue)) return
     candidates.push({
-      parsed: numericLabel(canonicalId, base! + bonus), value: base! + bonus,
+      parsed: numericLabel(canonicalId, resolvedValue!), value: resolvedValue!,
       source: source('edge-grant', `sheet:trainer:${sheet.slug}:edge:${safePart(edgeName)}`, 350, edgeName, bonus),
     })
   }
-  if (edgeNames.has('power boost')) addNumericEdge('Power', 2, 'Power Boost')
-  if (edgeNames.has('acrobat')) {
+  if (sheetHasCanonicalEdge(sheet, 'trainer', 'Power Boost')) addNumericEdge('Power', 2, 'Power Boost')
+  if (sheetHasCanonicalEdge(sheet, 'trainer', 'Throwing Masteries')) addNumericEdge('Throwing Range', 2, 'Throwing Masteries')
+  if (sheetHasCanonicalEdge(sheet, 'trainer', 'Swimmer')) addNumericEdge('Swim', 2, 'Swimmer')
+  if (sheetHasCanonicalEdge(sheet, 'trainer', 'Acrobat')) {
     addNumericEdge('High Jump', 1, 'Acrobat')
     addNumericEdge('Long Jump', 1, 'Acrobat')
     const high = numericRows.get('High Jump')
     const long = numericRows.get('Long Jump')
     if (Number.isFinite(high) && Number.isFinite(long)) candidates.push({
-      parsed: jumpLabel(`${long! + 1}/${high! + 1}`),
+      parsed: jumpLabel(`${long!}/${high!}`),
       value: null,
       source: source('edge-grant', `sheet:trainer:${sheet.slug}:edge:Acrobat:Jump`, 350, 'Acrobat', 1),
     })
