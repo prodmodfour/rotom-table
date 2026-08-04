@@ -1,4 +1,4 @@
-# Move-Pool Cull Rules of Thumb
+# Move-Pool Changelog
 
 ## Purpose
 
