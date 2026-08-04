@@ -183,6 +183,27 @@ describe('spawnGeneratedEncountersUseCase', () => {
     expect(published).toEqual(result.realtimeEvents)
   })
 
+  it('honors supplied reviewed replacement rows instead of rerolling the source table', async () => {
+    const runPokegenSheet = vi.fn(async (species: string, level: number, slugPrefix: string, sequence: number) => ({
+      ok: true,
+      stderr: '',
+      content: JSON.stringify(generatedSheet({
+        slug: `${slugPrefix}-${species.toLowerCase()}-lv${level}-${sequence}`,
+        nickname: species,
+        species,
+        level,
+      })),
+    }))
+    const { dependencies, maps } = createHarness({ runPokegenSheet })
+    const rolled = [{ species: 'Ivysaur', level: 8, roll: 72 }]
+
+    const result = await spawnGeneratedEncountersUseCase({ ...spawnBody, rolled }, dependencies)
+
+    expect(result.rolled).toEqual(rolled)
+    expect(runPokegenSheet).toHaveBeenCalledWith('Ivysaur', 8, 'wild-pond-1', 1)
+    expect(maps.getBySlug('pond-map')?.placements[0]?.sheetSlug).toContain('ivysaur-lv8')
+  })
+
   it('retries duplicate placement ids before failing a generated spawn', async () => {
     let placementIndex = 0
     const placementIds = ['spawn-1', 'spawn-2']
@@ -388,7 +409,10 @@ describe('spawnGeneratedEncountersUseCase', () => {
     }))
     const { dependencies, sheets, maps } = createHarness({ runPokegenSheet })
 
-    const result = await spawnGeneratedEncountersUseCase(spawnBody, dependencies)
+    const result = await spawnGeneratedEncountersUseCase({
+      ...spawnBody,
+      rolled: [{ species: 'Missingno', level: 5, roll: 1 }],
+    }, dependencies)
 
     expect(result.spawn.spawned).toBe(0)
     expect(result.spawn.failures).toBe(1)

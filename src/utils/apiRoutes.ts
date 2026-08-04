@@ -37,6 +37,16 @@ export const PLAYER_PROFILE_API_PATHS = {
   update: '/api/player-profiles/update',
 } as const
 
+export const ENCOUNTER_WORKSPACE_API_PATHS = {
+  list: '/api/encounter-workspace/list',
+  load: '/api/encounter-workspace/load',
+  metrics: '/api/encounter-workspace/metrics',
+  initialize: '/api/encounter-documents/initialize',
+  directorCommand: '/api/encounter-documents/director-command',
+  launch: '/api/encounter-documents/launch',
+  export: '/api/encounter-documents/export',
+} as const
+
 export const MAP_API_PATHS = {
   list: '/api/maps/list',
   folders: '/api/maps/folders',

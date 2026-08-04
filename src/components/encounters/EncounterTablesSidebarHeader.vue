@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ENCOUNTER_GENERATOR_PATH } from '~/utils/encounterRoutes'
+import { ENCOUNTER_BUILDER_PATH } from '~/utils/encounterRoutes'
 
 const searchTerm = defineModel<string>('searchTerm', { required: true })
 
@@ -18,8 +18,8 @@ defineProps<{
   <p class="sidebar-copy">
     Browse encounter tables from the campaign
     <code>encounter_tables/&lt;region&gt;/&lt;table&gt;.json</code>.
-    Use the <NuxtLink :to="ENCOUNTER_GENERATOR_PATH" class="inline-link">Generate</NuxtLink>
-    page to roll on a table and produce stat blocks.
+    Use the <NuxtLink :to="ENCOUNTER_BUILDER_PATH" class="inline-link">Encounter Builder</NuxtLink>
+    to review a cast, assign sides, and launch it on a battlefield.
   </p>
 
   <label class="search-field">

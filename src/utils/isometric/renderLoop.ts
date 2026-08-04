@@ -92,12 +92,14 @@ export const resolveIsometricTokenMotionContinuationSources = (
 
 export const resolveIsometricSpriteAnimationContinuationSources = (
   renderStates: Iterable<IsometricSpriteAnimationRenderState>,
+  options: { readonly reducedMotion?: boolean } = {},
 ): IsometricAnimationContinuationSource[] => {
   const sources: IsometricAnimationContinuationSource[] = []
 
   for (const renderState of renderStates) {
     if (
-      worldSpriteStateNeedsAnimationFrame(renderState.spriteState)
+      options.reducedMotion !== true
+      && worldSpriteStateNeedsAnimationFrame(renderState.spriteState)
       && !sources.includes(ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation)
     ) {
       sources.push(ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation)
@@ -118,8 +120,9 @@ export const resolveIsometricSpriteAnimationContinuationSources = (
 
 export const resolveIsometricFieldEffectAnimationContinuationSources = (
   renderer: IsometricFieldEffectAnimationRenderer | null | undefined,
+  options: { readonly reducedMotion?: boolean } = {},
 ): IsometricAnimationContinuationSource[] => (
-  renderer?.needsAnimationFrame()
+  options.reducedMotion !== true && renderer?.needsAnimationFrame()
     ? [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.fieldEffectAnimation]
     : []
 )

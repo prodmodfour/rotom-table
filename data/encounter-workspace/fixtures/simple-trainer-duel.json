@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 1,
+  "fixtureId": "simple-trainer-duel",
+  "title": "Simple Trainer duel",
+  "purpose": "Baseline two-side encounter for turn comprehension, action discovery, direct targeting, unavailable reasons, accepted outcomes, and Trainer team actions.",
+  "sourceTicket": "EUX-004",
+  "clock": 1700000000000,
+  "map": {
+    "slug": "fixture-duel-field",
+    "name": "Duel Field",
+    "revision": 12,
+    "width": 12,
+    "height": 10,
+    "groundLevel": 0,
+    "environment": {
+      "weather": [],
+      "terrain": [],
+      "rooms": [],
+      "hazards": []
+    }
+  },
+  "encounter": {
+    "sceneId": "scene-duel-1",
+    "sceneName": "Friendly League Match",
+    "round": 2,
+    "phase": "main",
+    "currentParticipantId": "participant-luxray",
+    "initiativeOrder": [
+      "participant-luxray",
+      "participant-crobat",
+      "participant-mira",
+      "participant-rowan"
+    ],
+    "sides": [
+      {
+        "id": "side-scarlet",
+        "label": "Mira's team",
+        "relationship": "ally",
+        "accent": "#d94b5b",
+        "symbol": "sun",
+        "status": "active"
+      },
+      {
+        "id": "side-indigo",
+        "label": "Rowan's team",
+        "relationship": "foe",
+        "accent": "#526ed8",
+        "symbol": "moon",
+        "status": "active"
+      }
+    ],
+    "objectives": [
+      {
+        "id": "objective-duel",
+        "label": "Win the friendly match",
+        "visibility": "public",
+        "status": "active",
+        "progress": null,
+        "maximum": null
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "participant-mira",
+      "kind": "trainer",
+      "displayName": "Mira",
+      "subtitle": "Player Trainer",
+      "sideId": "side-scarlet",
+      "controllerIds": ["player-mira", "gm"],
+      "sheetSlug": "fixture-trainer-mira",
+      "portraitUrl": null,
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 2, "y": 0, "z": 5 },
+      "hp": { "current": 46, "maximum": 46, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": [
+        { "id": "ap", "label": "AP", "current": 4, "maximum": 5 }
+      ]
+    },
+    {
+      "id": "participant-luxray",
+      "kind": "pokemon",
+      "displayName": "Luxray",
+      "subtitle": "Mira's active Pokémon",
+      "sideId": "side-scarlet",
+      "controllerIds": ["player-mira", "gm"],
+      "sheetSlug": "fixture-pokemon-luxray",
+      "portraitUrl": "/sprites/luxray.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 4, "y": 0, "z": 5 },
+      "hp": { "current": 58, "maximum": 68, "temporary": 5 },
+      "injuries": 1,
+      "conditions": ["Focused"],
+      "resources": [
+        { "id": "standard-action", "label": "Standard", "current": 1, "maximum": 1 },
+        { "id": "shift-action", "label": "Shift", "current": 1, "maximum": 1 }
+      ]
+    },
+    {
+      "id": "participant-talonflame",
+      "kind": "pokemon",
+      "displayName": "Talonflame",
+      "subtitle": "Mira's reserve",
+      "sideId": "side-scarlet",
+      "controllerIds": ["player-mira", "gm"],
+      "sheetSlug": "fixture-pokemon-talonflame",
+      "portraitUrl": "/sprites/talonflame.png",
+      "onMap": false,
+      "reserve": true,
+      "hidden": false,
+      "groupKey": null,
+      "position": null,
+      "hp": { "current": 61, "maximum": 61, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": []
+    },
+    {
+      "id": "participant-rowan",
+      "kind": "trainer",
+      "displayName": "Rowan",
+      "subtitle": "Rival Trainer",
+      "sideId": "side-indigo",
+      "controllerIds": ["player-rowan", "gm"],
+      "sheetSlug": "fixture-trainer-rowan",
+      "portraitUrl": null,
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 9, "y": 0, "z": 5 },
+      "hp": { "current": 42, "maximum": 42, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": [
+        { "id": "ap", "label": "AP", "current": 3, "maximum": 5 }
+      ]
+    },
+    {
+      "id": "participant-crobat",
+      "kind": "pokemon",
+      "displayName": "Crobat",
+      "subtitle": "Rowan's active Pokémon",
+      "sideId": "side-indigo",
+      "controllerIds": ["player-rowan", "gm"],
+      "sheetSlug": "fixture-pokemon-crobat",
+      "portraitUrl": "/sprites/crobat.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 7, "y": 0, "z": 5 },
+      "hp": { "current": 44, "maximum": 57, "temporary": 0 },
+      "injuries": 0,
+      "conditions": ["Poisoned"],
+      "resources": [
+        { "id": "standard-action", "label": "Standard", "current": 0, "maximum": 1 },
+        { "id": "shift-action", "label": "Shift", "current": 0, "maximum": 1 }
+      ]
+    },
+    {
+      "id": "participant-golem",
+      "kind": "pokemon",
+      "displayName": "Golem",
+      "subtitle": "Rowan's reserve",
+      "sideId": "side-indigo",
+      "controllerIds": ["player-rowan", "gm"],
+      "sheetSlug": "fixture-pokemon-golem",
+      "portraitUrl": "/sprites/golem.png",
+      "onMap": false,
+      "reserve": true,
+      "hidden": false,
+      "groupKey": null,
+      "position": null,
+      "hp": { "current": 72, "maximum": 72, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": []
+    }
+  ],
+  "offers": [
+    {
+      "id": "offer-thunder-fang",
+      "actorId": "participant-luxray",
+      "sourceKind": "move",
+      "label": "Thunder Fang",
+      "group": "attacks-and-moves",
+      "timing": "Standard Action",
+      "spatiality": "relationship",
+      "targetIds": ["participant-crobat", "participant-rowan"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-spark",
+      "actorId": "participant-luxray",
+      "sourceKind": "move",
+      "label": "Spark",
+      "group": "attacks-and-moves",
+      "timing": "EOT · Standard Action",
+      "spatiality": "relationship",
+      "targetIds": ["participant-crobat", "participant-rowan"],
+      "availability": "unavailable",
+      "unavailableReason": "Used on the previous turn."
+    },
+    {
+      "id": "offer-shift",
+      "actorId": "participant-luxray",
+      "sourceKind": "system",
+      "label": "Move",
+      "group": "movement-and-positioning",
+      "timing": "Shift Action",
+      "spatiality": "exact",
+      "targetIds": [],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-disengage",
+      "actorId": "participant-luxray",
+      "sourceKind": "maneuver",
+      "label": "Disengage",
+      "group": "movement-and-positioning",
+      "timing": "Shift Action",
+      "spatiality": "none",
+      "targetIds": [],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-focused-command",
+      "actorId": "participant-mira",
+      "sourceKind": "feature",
+      "label": "Focused Command",
+      "group": "trainer-commands-and-team-actions",
+      "timing": "Standard Action",
+      "spatiality": "relationship",
+      "targetIds": ["participant-luxray"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-super-potion",
+      "actorId": "participant-mira",
+      "sourceKind": "item",
+      "label": "Use Super Potion",
+      "group": "items-and-capture",
+      "timing": "Standard Action",
+      "spatiality": "relationship",
+      "targetIds": ["participant-luxray", "participant-mira"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-switch-talonflame",
+      "actorId": "participant-mira",
+      "sourceKind": "system",
+      "label": "Switch to Talonflame",
+      "group": "trainer-commands-and-team-actions",
+      "timing": "Standard Action",
+      "spatiality": "exact",
+      "targetIds": ["participant-talonflame"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-pokeball",
+      "actorId": "participant-mira",
+      "sourceKind": "item",
+      "label": "Throw Poké Ball",
+      "group": "items-and-capture",
+      "timing": "Standard Action",
+      "spatiality": "relationship",
+      "targetIds": [],
+      "availability": "unavailable",
+      "unavailableReason": "No eligible wild Pokémon is present."
+    }
+  ],
+  "pending": [],
+  "accepted": [
+    {
+      "id": "accepted-crobat-cross-poison",
+      "sequence": 1,
+      "actorId": "participant-crobat",
+      "headline": "Crobat lost 6 HP from Poison.",
+      "affectedIds": ["participant-crobat"],
+      "changes": ["HP 50 → 44"],
+      "tone": "danger"
+    },
+    {
+      "id": "accepted-turn-luxray",
+      "sequence": 2,
+      "actorId": "participant-luxray",
+      "headline": "Luxray's turn began.",
+      "affectedIds": ["participant-luxray"],
+      "changes": ["Standard and Shift actions refreshed"],
+      "tone": "neutral"
+    }
+  ],
+  "system": {
+    "connection": "ready",
+    "replayGap": false,
+    "outbox": [],
+    "blockingMessage": null
+  },
+  "audiences": [
+    {
+      "id": "audience-mira",
+      "role": "player-owner",
+      "viewerId": "player-mira",
+      "visibleParticipantIds": ["participant-mira", "participant-luxray", "participant-talonflame", "participant-rowan", "participant-crobat", "participant-golem"],
+      "controlledParticipantIds": ["participant-mira", "participant-luxray", "participant-talonflame"],
+      "authorizedPendingIds": []
+    },
+    {
+      "id": "audience-rowan",
+      "role": "player-owner",
+      "viewerId": "player-rowan",
+      "visibleParticipantIds": ["participant-mira", "participant-luxray", "participant-talonflame", "participant-rowan", "participant-crobat", "participant-golem"],
+      "controlledParticipantIds": ["participant-rowan", "participant-crobat", "participant-golem"],
+      "authorizedPendingIds": []
+    },
+    {
+      "id": "audience-gm",
+      "role": "gm",
+      "viewerId": "gm",
+      "visibleParticipantIds": ["participant-mira", "participant-luxray", "participant-talonflame", "participant-rowan", "participant-crobat", "participant-golem"],
+      "controlledParticipantIds": ["participant-mira", "participant-luxray", "participant-talonflame", "participant-rowan", "participant-crobat", "participant-golem"],
+      "authorizedPendingIds": []
+    },
+    {
+      "id": "audience-public",
+      "role": "public",
+      "viewerId": null,
+      "visibleParticipantIds": ["participant-mira", "participant-luxray", "participant-talonflame", "participant-rowan", "participant-crobat", "participant-golem"],
+      "controlledParticipantIds": [],
+      "authorizedPendingIds": []
+    }
+  ],
+  "scripts": [
+    {
+      "id": "duel-observe-and-attack",
+      "actorRole": "player-controller",
+      "taskIds": ["observe-current-turn", "select-controlled-participant", "discover-actions", "use-move", "choose-participant-targets", "view-accepted-outcome"],
+      "steps": ["Identify Luxray as current actor.", "Open Luxray's actions.", "Find and activate Thunder Fang.", "Choose Crobat without opening the full tactical lens.", "Submit and present the accepted result."],
+      "expectedTerminal": "Thunder Fang declaration reaches accepted or an authoritative pending response."
+    },
+    {
+      "id": "duel-unavailable-reason",
+      "actorRole": "player-controller",
+      "taskIds": ["discover-actions", "understand-unavailable-action"],
+      "steps": ["Open Luxray's actions.", "Locate Spark.", "Read why it cannot be used."],
+      "expectedTerminal": "Spark remains visible with the reason Used on the previous turn."
+    },
+    {
+      "id": "duel-switch-reserve",
+      "actorRole": "player-controller",
+      "taskIds": ["send-out-switch-recall", "choose-area-direction-or-placement"],
+      "steps": ["Select Mira.", "Activate Switch to Talonflame.", "Open tactical placement.", "Choose a legal destination and cancel or submit."],
+      "expectedTerminal": "Talonflame placement is validated without losing the originating switch decision."
+    },
+    {
+      "id": "duel-gm-turn-control",
+      "actorRole": "gm",
+      "taskIds": ["manage-initiative", "start-or-end-scene"],
+      "steps": ["Inspect the turn rail.", "Advance to Crobat.", "End the friendly scene."],
+      "expectedTerminal": "Initiative and scene lifecycle settle authoritatively and are visible to both players."
+    }
+  ]
+}

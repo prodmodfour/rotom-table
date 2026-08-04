@@ -167,11 +167,17 @@ describe('isometric render loop helpers', () => {
     ])).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteTextureLoading,
     ])
-    expect(resolveIsometricSpriteAnimationContinuationSources([
+    const animatedAndLoading = [
       spriteRenderState(true),
       spriteRenderState(true, null, true),
-    ])).toEqual([
+    ]
+    expect(resolveIsometricSpriteAnimationContinuationSources(animatedAndLoading)).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation,
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteTextureLoading,
+    ])
+    expect(resolveIsometricSpriteAnimationContinuationSources(animatedAndLoading, {
+      reducedMotion: true,
+    })).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteTextureLoading,
     ])
   })
@@ -181,11 +187,13 @@ describe('isometric render loop helpers', () => {
     expect(resolveIsometricFieldEffectAnimationContinuationSources({
       needsAnimationFrame: () => false,
     })).toEqual([])
-    expect(resolveIsometricFieldEffectAnimationContinuationSources({
-      needsAnimationFrame: () => true,
-    })).toEqual([
+    const animatedRenderer = { needsAnimationFrame: () => true }
+    expect(resolveIsometricFieldEffectAnimationContinuationSources(animatedRenderer)).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.fieldEffectAnimation,
     ])
+    expect(resolveIsometricFieldEffectAnimationContinuationSources(animatedRenderer, {
+      reducedMotion: true,
+    })).toEqual([])
   })
 
   it('exposes active move VFX instances as a continuation source only while needed', () => {

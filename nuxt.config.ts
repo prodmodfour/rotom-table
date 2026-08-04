@@ -39,6 +39,7 @@ export default defineNuxtConfig({
     '@fontsource/jetbrains-mono/latin-700.css',
     '~/assets/css/main.css',
     '~/assets/css/ref.css',
+    '~/assets/css/encounter-design-system.css',
   ],
   experimental: {
     appManifest: false,
@@ -48,6 +49,12 @@ export default defineNuxtConfig({
       // Browser contract fixtures are absent from normal production. The
       // production-build Playwright harness opts in explicitly.
       presentationContractPreview: false,
+      // The workspace is the default live-play route after staged acceptance;
+      // the Battlefield Workshop remains available for setup and exact geometry.
+      encounterWorkspaceEnabled: true,
+      encounterWorkspaceDefaultForLivePlay: true,
+      encounterWorkspaceMetricsEnabled: true,
+      battlefieldWorkshopEnabled: true,
     },
   },
   watchers: {

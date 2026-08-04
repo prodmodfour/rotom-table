@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { PhMoon, PhSun } from '@phosphor-icons/vue'
 import { computed, onMounted, watch } from 'vue'
+import { useEncounterWorkspaceFeaturePolicy } from '~/composables/encounter/useEncounterWorkspaceFeaturePolicy'
 import {
   PRIMARY_APP_NAV_ITEMS,
   REFERENCE_APP_NAV_ITEMS,
@@ -8,6 +9,7 @@ import {
   isAppNavItemActive,
 } from '~/utils/appNavigation'
 import { LOGIN_PATH } from '~/utils/appRoutes'
+import { ENCOUNTER_LIBRARY_PATH } from '#shared/encounterWorkspace/routes'
 import {
   playerProfileNavStatusText,
   playerProfileSwitchRoute,
@@ -37,7 +39,9 @@ const {
   clearSelectedProfile,
 } = usePlayerProfiles()
 
-const primaryItems = computed(() => filterAppNavItems(PRIMARY_APP_NAV_ITEMS, isGm.value, isPlayer.value))
+const encounterWorkspacePolicy = useEncounterWorkspaceFeaturePolicy()
+const primaryItems = computed(() => filterAppNavItems(PRIMARY_APP_NAV_ITEMS, isGm.value, isPlayer.value)
+  .filter(item => item.path !== ENCOUNTER_LIBRARY_PATH || encounterWorkspacePolicy.value.enabled))
 const referenceItems = computed(() => filterAppNavItems(REFERENCE_APP_NAV_ITEMS, isGm.value, isPlayer.value))
 const playerProfileStatusText = computed(() => playerProfileNavStatusText(selectedProfileDisplayName.value))
 const playerNameRoleBadge = computed(() => selectedProfileDisplayName.value?.trim() ?? '')

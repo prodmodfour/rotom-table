@@ -4,7 +4,7 @@
 
 `LAST_REVIEWED: 2026-07-26`
 
-`IMPLEMENTATION_PLAN: implementation-plans/ENCOUNTER_UI_UX_PLAN.md`
+`IMPLEMENTATION_PLAN: implementation-plans/done/ENCOUNTER_UI_UX_PLAN.md`
 
 ## Purpose
 
@@ -581,7 +581,7 @@ The following require redesign before merge:
 
 The UI/UX plan establishes central tokens, primitives, accessible states, role projections, design-system fixtures, and visual regression before broad migration. Domain components may extend the system for genuine needs but cannot silently redefine semantic meanings.
 
-`DESIGN.md` is normative. `implementation-plans/ENCOUNTER_UI_UX_PLAN.md` is the implementation ledger. Automation plans own mechanics and authority.
+`DESIGN.md` is normative. `implementation-plans/done/ENCOUNTER_UI_UX_PLAN.md` is the archived implementation ledger. Automation plans own mechanics and authority.
 
 A material change to semantic colours, component anatomy, encounter choreography, product contexts, progressive spatiality, privacy presentation, accessibility requirements, or action organisation updates this document and the decision log.
 

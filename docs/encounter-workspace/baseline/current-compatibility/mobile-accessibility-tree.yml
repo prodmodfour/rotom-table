@@ -1,0 +1,202 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - main [ref=e5]:
+      - generic [ref=e15]:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: Mira
+                  - generic: ·
+                  - generic:
+                    - generic: Lv
+                    - generic: "12"
+              - generic:
+                - generic: ⌄
+                - generic:
+                  - generic:
+                    - generic: Luxray
+                  - generic: ·
+                  - generic:
+                    - generic: Lv
+                    - generic: "18"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: Rowan
+                  - generic: ·
+                  - generic:
+                    - generic: Lv
+                    - generic: "11"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: Crobat
+                  - generic: ·
+                  - generic:
+                    - generic: Lv
+                    - generic: "17"
+      - complementary "Initiative turn order":
+        - list "Turns already taken":
+          - listitem:
+            - button "Center map on Rowan; initiative 10" [ref=e17] [cursor=pointer]:
+              - generic [ref=e19]: "10"
+        - generic:
+          - generic:
+            - button "Previous turn" [ref=e20] [cursor=pointer]: <
+            - button "Center map on Luxray; initiative 18" [ref=e21] [cursor=pointer]:
+              - generic [ref=e23]: "18"
+            - button "Next turn" [ref=e24] [cursor=pointer]: ">"
+          - generic: Round 2
+        - list "Upcoming turns":
+          - listitem:
+            - button "Center map on Crobat; initiative 16" [ref=e25] [cursor=pointer]:
+              - generic [ref=e27]: "16"
+          - listitem:
+            - button "Center map on Mira; initiative 12" [ref=e28] [cursor=pointer]:
+              - generic [ref=e30]: "12"
+      - button "End scene Friendly League Match" [ref=e31] [cursor=pointer]: End Scene
+      - status:
+        - generic: Scene
+        - generic: Friendly League Match
+    - complementary "Encounter actions and outcomes" [ref=e7]:
+      - button "Encounter 23" [expanded] [active] [ref=e32] [cursor=pointer]:
+        - generic [ref=e9]: Encounter
+        - generic [ref=e10]: "23"
+      - generic [ref=e58]:
+        - region "Available actions" [ref=e59]:
+          - heading "Actions" [level=2] [ref=e60]
+          - generic [ref=e61]:
+            - heading "attack" [level=3] [ref=e62]
+            - button "Struggle At-Will At-Will" [ref=e63] [cursor=pointer]:
+              - generic [ref=e64]: Struggle
+              - generic [ref=e65]: At-Will
+              - generic [ref=e66]: At-Will
+          - generic [ref=e67]:
+            - heading "movement" [level=3] [ref=e68]
+            - button "Jump shift action at-will A required Capability is missing" [disabled] [ref=e69]:
+              - generic [ref=e70]: Jump
+              - generic [ref=e71]: shift action
+              - generic [ref=e72]: at-will
+              - generic [ref=e73]: A required Capability is missing
+            - button "Shift Shift Action" [ref=e74] [cursor=pointer]:
+              - generic [ref=e75]: Shift
+              - generic [ref=e76]: Shift Action
+          - generic [ref=e77]:
+            - heading "reaction" [level=3] [ref=e78]
+            - button "Attack of Opportunity Free Free" [ref=e79] [cursor=pointer]:
+              - generic [ref=e80]: Attack of Opportunity
+              - generic [ref=e81]: Free
+              - generic [ref=e82]: Free
+            - button "Intercept Melee Full Action, Interrupt Full Action, Interrupt" [ref=e83] [cursor=pointer]:
+              - generic [ref=e84]: Intercept Melee
+              - generic [ref=e85]: Full Action, Interrupt
+              - generic [ref=e86]: Full Action, Interrupt
+            - button "Intercept Ranged Full Action, Interrupt Full Action, Interrupt" [ref=e87] [cursor=pointer]:
+              - generic [ref=e88]: Intercept Ranged
+              - generic [ref=e89]: Full Action, Interrupt
+              - generic [ref=e90]: Full Action, Interrupt
+          - generic [ref=e91]:
+            - heading "support" [level=3] [ref=e92]
+            - button "Dirty Trick Standard Standard" [ref=e93] [cursor=pointer]:
+              - generic [ref=e94]: Dirty Trick
+              - generic [ref=e95]: Standard
+              - generic [ref=e96]: Standard
+            - button "Disarm Standard Standard" [ref=e97] [cursor=pointer]:
+              - generic [ref=e98]: Disarm
+              - generic [ref=e99]: Standard
+              - generic [ref=e100]: Standard
+            - button "Disengage Shift Shift" [ref=e101] [cursor=pointer]:
+              - generic [ref=e102]: Disengage
+              - generic [ref=e103]: Shift
+              - generic [ref=e104]: Shift
+            - button "Grapple Standard Standard" [ref=e105] [cursor=pointer]:
+              - generic [ref=e106]: Grapple
+              - generic [ref=e107]: Standard
+              - generic [ref=e108]: Standard
+            - button "Manipulate Standard Standard" [ref=e109] [cursor=pointer]:
+              - generic [ref=e110]: Manipulate
+              - generic [ref=e111]: Standard
+              - generic [ref=e112]: Standard
+            - button "Push Standard Standard" [ref=e113] [cursor=pointer]:
+              - generic [ref=e114]: Push
+              - generic [ref=e115]: Standard
+              - generic [ref=e116]: Standard
+            - button "Sprint Standard Standard" [ref=e117] [cursor=pointer]:
+              - generic [ref=e118]: Sprint
+              - generic [ref=e119]: Standard
+              - generic [ref=e120]: Standard
+            - button "Take a Breather Full Action Full Action" [ref=e121] [cursor=pointer]:
+              - generic [ref=e122]: Take a Breather
+              - generic [ref=e123]: Full Action
+              - generic [ref=e124]: Full Action
+            - button "Trip Standard Standard" [ref=e125] [cursor=pointer]:
+              - generic [ref=e126]: Trip
+              - generic [ref=e127]: Standard
+              - generic [ref=e128]: Standard
+          - generic [ref=e129]:
+            - heading "capture" [level=3] [ref=e130]
+            - button "Throw Poké Ball Standard Action A required item is missing" [disabled] [ref=e131]:
+              - generic [ref=e132]: Throw Poké Ball
+              - generic [ref=e133]: Standard Action
+              - generic [ref=e134]: A required item is missing
+          - generic [ref=e135]:
+            - heading "participant" [level=3] [ref=e136]
+            - button "Send Out Pokémon Standard Action The source is no longer present" [disabled] [ref=e137]:
+              - generic [ref=e138]: Send Out Pokémon
+              - generic [ref=e139]: Standard Action
+              - generic [ref=e140]: The source is no longer present
+          - generic [ref=e141]:
+            - heading "initiative" [level=3] [ref=e142]
+            - button "Advance Initiative GM table action" [ref=e143] [cursor=pointer]:
+              - generic [ref=e144]: Advance Initiative
+              - generic [ref=e145]: GM table action
+          - generic [ref=e146]:
+            - heading "scene" [level=3] [ref=e147]
+            - button "Manage Scene GM table action" [ref=e148] [cursor=pointer]:
+              - generic [ref=e149]: Manage Scene
+              - generic [ref=e150]: GM table action
+          - generic [ref=e151]:
+            - heading "field" [level=3] [ref=e152]
+            - button "Manage Field Effects GM table action" [ref=e153] [cursor=pointer]:
+              - generic [ref=e154]: Manage Field Effects
+              - generic [ref=e155]: GM table action
+            - button "Manage Hazards GM table action" [ref=e156] [cursor=pointer]:
+              - generic [ref=e157]: Manage Hazards
+              - generic [ref=e158]: GM table action
+            - button "Edit Terrain GM table action" [ref=e159] [cursor=pointer]:
+              - generic [ref=e160]: Edit Terrain
+              - generic [ref=e161]: GM table action
+          - generic [ref=e162]:
+            - heading "administration" [level=3] [ref=e163]
+            - button "Manage Participant GM table action" [ref=e164] [cursor=pointer]:
+              - generic [ref=e165]: Manage Participant
+              - generic [ref=e166]: GM table action
+        - group [ref=e167]:
+          - generic "Passives (7)" [ref=e168]
+        - group [ref=e169]:
+          - generic "Recent outcomes (1)" [ref=e170]
+    - paragraph [ref=e11]: updateStartTurnModal resolved
+    - group "At table" [ref=e33]:
+      - generic "At table 3 here" [ref=e34] [cursor=pointer]:
+        - strong [ref=e36]: At table
+        - generic [ref=e37]: 3 here
+      - generic [ref=e38]:
+        - list "Connected table participants" [ref=e39]:
+          - listitem [ref=e40]:
+            - strong [ref=e43]: GM
+            - generic [ref=e44]: At table
+          - listitem [ref=e45]:
+            - strong [ref=e48]: GM
+            - generic [ref=e49]: At table
+          - listitem [ref=e50]:
+            - strong [ref=e53]: GM
+            - generic [ref=e54]: At table
+        - region "GM attention tools" [ref=e55]:
+          - button "Select a token to call focus" [disabled] [ref=e56]
+          - generic [ref=e57]: Shift+Alt-click a visible map cell to request focus there.
+  - complementary "Map navigation" [ref=e12]:
+    - button "Expand map navigation" [ref=e13] [cursor=pointer]:
+      - generic [ref=e14]: ‹

@@ -61,6 +61,8 @@ import {
 } from '../realtime/persistedBatchPublication'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { runtimeSheetNameSlug } from '../utils/sheetDocuments'
+import { initiativeOrderIdsForPlacements } from '~/utils/initiativeOrderEntries'
+import { interactionModeRealtimeAppendInputs } from '../realtime/libraryMutationRealtime'
 
 export class SpawnGeneratedEncountersUseCaseError extends UseCaseHttpError<number> {}
 
@@ -99,7 +101,7 @@ type SpawnSheetRepository = Pick<SheetRepository<Record<string, unknown>>, 'list
   readonly database?: RotomDatabase
 }
 
-type SpawnModeRepository = Pick<MapInteractionModeRepository, 'get'> & {
+type SpawnModeRepository = Pick<MapInteractionModeRepository, 'get' | 'set'> & {
   readonly database?: RotomDatabase
 }
 
@@ -117,6 +119,17 @@ export interface SpawnGeneratedEncountersDependencies extends GenerateEncounters
   createPlacementId?: () => string
   publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
   reportAfterCommitPublicationFailure?: PersistedRealtimePublicationFailureReporter
+  /** Launch-only option that starts the authoritative calculated initiative order at round one. */
+  startInitiativeAfterSpawn?: boolean
+  /** Launch-only transition from Prepare Map authority into live-play authority after every write validates. */
+  activateLivePlayAfterSpawn?: boolean
+  /** Launch-only side assignment resolved from the reviewed cast row at this index. */
+  spawnSideIdForIndex?: (index: number) => string | null
+  /** Synchronous extension point inside the same map/sheet/realtime transaction. */
+  afterPersistInTransaction?: (input: {
+    readonly map: TabletopMap
+    readonly placements: readonly SpawnGeneratedEncounterPlacement[]
+  }) => readonly AppendRealtimeEventInput[] | void
 }
 
 const GENERATED_SHEET_ROOT = 'data/sheets'
@@ -200,6 +213,16 @@ const parseGeneratedPokemonSheet = (content: string): CharacterSheet => {
   return parsed as CharacterSheet
 }
 
+const assertGeneratedSheetMatchesReviewedRoll = (
+  sheet: CharacterSheet,
+  encounter: { readonly species: string, readonly level: number },
+): void => {
+  const generatedSpecies = typeof sheet.species === 'string' ? sheet.species.trim().toLocaleLowerCase() : ''
+  if (generatedSpecies !== encounter.species.trim().toLocaleLowerCase() || Number(sheet.level) !== encounter.level) {
+    throw new Error(`generated sheet does not match reviewed ${encounter.species} Lv ${encounter.level}`)
+  }
+}
+
 const generatedSheetCatalogError = (sheet: CharacterSheet): string | null => {
   if (!catalogEntryForPokemonSheet(sheet)) return `No Pokémon catalog entry for ${sheet.species || sheet.slug}`
   return null
@@ -280,19 +303,21 @@ const appendPlacementsForGeneratedSheets = ({
   lookup,
   random,
   createPlacementId,
+  resolveSideId,
 }: {
   map: TabletopMap
   generatedSheets: readonly GeneratedSheetRecord[]
   lookup: SheetLookup
   random: () => number
   createPlacementId: () => string
+  resolveSideId?: (index: number) => string | null
 }): SpawnGeneratedEncounterPlacement[] => {
   const placed = occupiedFootprintsForMapPlacements(map, lookup)
   const placementIds = new Set((map.placements ?? []).map((placement) => placement.id))
   const results: SpawnGeneratedEncounterPlacement[] = []
   const groundLevelY = normalizeMapGroundLevelY(map.groundLevelY, map.dimensions.y)
 
-  for (const generated of generatedSheets) {
+  for (const [generatedIndex, generated] of generatedSheets.entries()) {
     if (!generated.sheet) {
       results.push({ file: generated.file, slug: generated.slug, error: generated.error ?? 'Could not read generated sheet' })
       continue
@@ -330,11 +355,16 @@ const appendPlacementsForGeneratedSheets = ({
       continue
     }
 
+    const sideId = resolveSideId?.(generatedIndex) ?? null
+    if (sideId !== null && !map.encounterState?.sides[sideId]) {
+      throw new SpawnGeneratedEncountersUseCaseError(409, `Encounter side ${sideId} is not available on map ${map.slug}`)
+    }
     const placement: SheetPlacement = {
       id: placementId,
       sheetKind: 'pokemon',
       sheetSlug: generated.sheet.slug,
       position,
+      ...(sideId ? { sideId } : {}),
       facing: DEFAULT_TOKEN_FACING_DIRECTION,
       turned: false,
     }
@@ -405,8 +435,12 @@ const generateEncounterSheetsInMemory = async (
     pathExists: runtime.pathExists,
     readTextFile: runtime.readTextFile,
   })
-  const count = randomEncounterGenerateCount(request.countRange, runtime.random)
-  const rolled = Array.from({ length: count }, () => rollEncounterTable(table, runtime.random))
+  const count = request.rolled === undefined
+    ? randomEncounterGenerateCount(request.countRange, runtime.random)
+    : request.countRange.min === request.countRange.max
+      ? request.countRange.min
+      : Math.max(request.countRange.min, request.rolled.length)
+  const rolled = request.rolled ?? Array.from({ length: count }, () => rollEncounterTable(table, runtime.random))
     .filter((encounter): encounter is NonNullable<typeof encounter> => Boolean(encounter))
   const output = createSpawnOutputPlan(request, count, runtime)
   const files = [] as GenerateEncountersResult['files']
@@ -417,15 +451,16 @@ const generateEncounterSheetsInMemory = async (
     const run = await runtime.runPokegenSheet(encounter.species, encounter.level, output.slugPrefix, index + 1)
     if (!run.ok || !run.content) {
       failures += 1
-      files.push({
-        name: encounterLabel(encounter.species, encounter.level),
-        error: run.stderr.trim() || 'pokegen failed',
-      })
+      const name = encounterLabel(encounter.species, encounter.level)
+      const error = run.stderr.trim() || 'pokegen failed'
+      files.push({ name, error })
+      generatedSheets.push({ file: name, slug: slugifyEncounterOutputPath(name), error })
       continue
     }
 
     try {
       const sheet = decorateGeneratedPokemonSheet(parseGeneratedPokemonSheet(run.content), runtime.random)
+      assertGeneratedSheetMatchesReviewedRoll(sheet, encounter)
       const name = run.fileName ?? `${String(sheet.slug || encounterLabel(encounter.species, encounter.level))}.json`
       files.push({ name })
       generatedSheets.push({
@@ -637,8 +672,24 @@ const persistEncounterSpawn = ({
     lookup,
     random: dependencies.random ?? Math.random,
     createPlacementId: dependencies.createPlacementId ?? defaultCreatePlacementId,
+    resolveSideId: dependencies.spawnSideIdForIndex,
   })
   const spawned = placements.filter((placement) => !placement.error)
+  if (dependencies.startInitiativeAfterSpawn && spawned.length > 0) {
+    if (nextMap.initiative?.activeId) {
+      throw new SpawnGeneratedEncountersUseCaseError(409, `Initiative is already active on map ${mapSlug}`)
+    }
+    const order = initiativeOrderIdsForPlacements(nextMap.placements, (kind, slug) => {
+      const sheet = lookup[kind].get(slug)
+      return sheet ? { sheet: sheet as unknown as Record<string, unknown> } : null
+    }, nextMap.initiative?.manualOrderIds)
+    if (order.length === 0) throw new SpawnGeneratedEncountersUseCaseError(409, `Map ${mapSlug} has no initiative participants`)
+    nextMap.initiative = {
+      ...(nextMap.initiative ?? {}),
+      activeId: order[0]!,
+      round: 1,
+    }
+  }
 
   let authoritativeMap = currentMap
   let mapChanged = false
@@ -672,9 +723,19 @@ const persistEncounterSpawn = ({
     persistedSheets.push(persisted)
   }
 
+  const extensionAppendInputs = dependencies.afterPersistInTransaction?.({ map: authoritativeMap, placements }) ?? []
+  const interactionModeAppendInputs = dependencies.activateLivePlayAfterSpawn
+    ? interactionModeRealtimeAppendInputs({
+        ...modeRepository.set({ slug: mapSlug, interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: timestamp }),
+        clientId,
+      })
+    : []
+
   const appendInputs: AppendRealtimeEventInput[] = []
   for (const sheet of persistedSheets) appendInputs.push(...sheetAppendInputs(sheet, clientId, timestamp))
   if (mapChanged) appendInputs.push(...mapAppendInputs(authoritativeMap, clientId, timestamp))
+  appendInputs.push(...extensionAppendInputs)
+  appendInputs.push(...interactionModeAppendInputs)
   const realtimeEvents = realtimeEventRepository.appendMany(appendInputs)
 
   // Product behavior: generated sheets that cannot be placed still remain in

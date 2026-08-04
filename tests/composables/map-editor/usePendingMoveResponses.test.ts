@@ -483,6 +483,47 @@ describe('usePendingMoveResponses', () => {
     await expect(outbox.get(uncertain.opId!)).resolves.toBeNull()
   })
 
+  it('abandons an uncertain response only with the exact journaled command and a matching terminal receipt', async () => {
+    apiMocks.getJson
+      .mockResolvedValueOnce(responseList())
+      .mockResolvedValueOnce(responseList([]))
+    apiMocks.postJson.mockRejectedValueOnce(new Error('connection lost'))
+    const { actions, outbox } = createHarness({ leaseOwner: 'abandon-tab' })
+    await actions.refresh()
+    const uncertain = await actions.pass({
+      resolutionId: 'resolution-pending-1',
+      windowId: 'window.branch',
+    })
+    const entry = await outbox.get(uncertain.opId!)
+    expect(entry).toMatchObject({ state: 'uncertain' })
+
+    apiMocks.postJson.mockResolvedValueOnce({
+      schemaVersion: 1,
+      disposition: 'abandoned',
+      mapSlug: entry!.mapSlug,
+      opId: entry!.opId,
+      result: {
+        ok: false,
+        opId: entry!.opId,
+        mapSlug: entry!.mapSlug,
+        reason: 'abandoned',
+        message: 'This live-play operation was abandoned before execution.',
+        currentRevision: 12,
+      },
+    })
+    await expect(actions.abandon(entry!.opId)).resolves.toMatchObject({
+      dispatched: true,
+      abandoned: true,
+      accepted: false,
+      opId: entry!.opId,
+    })
+    expect(apiMocks.postJson.mock.calls[1]).toEqual([
+      MAP_API_PATHS.operationAbandon,
+      { command: entry!.body },
+    ])
+    await expect(outbox.get(entry!.opId)).resolves.toBeNull()
+  })
+
   it('sends GM force-pass and cancel controls through their dedicated exact command routes', async () => {
     apiMocks.getJson.mockResolvedValue(responseList())
     apiMocks.postJson.mockImplementation((_path: string, body: Record<string, unknown>) => (

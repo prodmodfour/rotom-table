@@ -6,6 +6,7 @@ import {
   isSafeInternalRedirect,
 } from '~/utils/loginRedirect'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
+import { ENCOUNTER_LIBRARY_PATH } from '#shared/encounterWorkspace/routes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
 import { PLAYER_TRAINER_PORTAL_PATH } from '~/utils/playerTrainerPortalRoutes'
 import { REFERENCE_PATH_BY_KIND } from '~/utils/reference/routes'
@@ -22,6 +23,7 @@ export const PLAYER_PROFILE_OPTIONAL_EXACT_PATHS = [
   HOME_PATH,
   LOGIN_PATH,
   MAP_LIBRARY_PATH,
+  ENCOUNTER_LIBRARY_PATH,
   GROUP_INVENTORY_PATH,
   PLAYER_TRAINER_PORTAL_PATH,
   SHOP_LIBRARY_PATH,
@@ -37,6 +39,7 @@ export const PLAYER_PROFILE_OPTIONAL_PATH_PREFIXES = [
 
 export const PLAYER_PROFILE_REQUIRED_PATH_PREFIXES = [
   MAP_LIBRARY_PATH,
+  ENCOUNTER_LIBRARY_PATH,
   SHEET_LIBRARY_PATH,
 ] as const
 

@@ -91,6 +91,10 @@ if have npm; then
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation
 
+  pp_section "Encounter design system"
+  run_cmd npm run check:encounter-design
+  run_cmd npm run check:encounter-legacy
+
   pp_section "Move automation metadata"
   run_cmd npm run check:move-automation
   run_cmd npm run check:move-automation-complete
@@ -102,7 +106,7 @@ if have npm; then
   run_cmd npm run typecheck --if-present
   run_cmd npm test --if-present
   run_cmd npm run test:nuxt --if-present
-  run_cmd npm run test:e2e --if-present
+  run_cmd npm run test:e2e --if-present -- --workers=1
   run_cmd npm run build --if-present
 else
   warn "npm not installed; skipping Node checks"

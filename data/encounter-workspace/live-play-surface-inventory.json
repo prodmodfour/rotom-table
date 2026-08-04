@@ -1,0 +1,822 @@
+{
+  "schemaVersion": 1,
+  "auditId": "encounter-ui-baseline-v1",
+  "auditDate": "2026-08-04",
+  "baselineCommit": "164b510d",
+  "auditedRoute": "/maps/:slug",
+  "designAuthority": "DESIGN.md",
+  "layers": [
+    "world",
+    "persistent-controls",
+    "decision",
+    "system-recovery",
+    "inspector-director"
+  ],
+  "surfaces": [
+    {
+      "id": "battlefield-renderer",
+      "currentOwners": [
+        "src/components/map/MapSceneRenderer.vue",
+        "src/components/IsometricGrid.client.vue"
+      ],
+      "audience": "all-authorized-map-viewers",
+      "activation": "persistent",
+      "currentLayer": "world",
+      "capabilities": [
+        "three.js battlefield",
+        "voxels and terrain",
+        "token sprites and facing",
+        "hazards and field effects",
+        "ground items",
+        "camera and exact geometry"
+      ],
+      "concerns": [
+        "The tactical canvas is the mandatory route root even when no action needs geometry.",
+        "Workshop authoring and live encounter interactions share the same scene owner."
+      ],
+      "futureContext": "tactical-lens",
+      "futureHome": "EncounterTacticalLens",
+      "migrationTicket": "EUX-063",
+      "compatibility": "preserve-renderer-and-embed"
+    },
+    {
+      "id": "token-selection-and-world-controls",
+      "currentOwners": [
+        "src/components/IsometricGrid.client.vue"
+      ],
+      "audience": "role-and-control-projected",
+      "activation": "pointer-keyboard-and-spatial-input",
+      "currentLayer": "world",
+      "capabilities": [
+        "select and focus token",
+        "move and rotate token",
+        "delete token",
+        "open token context menu",
+        "inspect sheet and Pokédex"
+      ],
+      "concerns": [
+        "Selection, action ownership, inspection, correction, and destructive tools originate from one spatial gesture surface.",
+        "Right-click remains the primary discovery path for many important actions."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterBattleStage and EncounterTacticalLens",
+      "migrationTicket": "EUX-064",
+      "compatibility": "preserve-spatial-selection"
+    },
+    {
+      "id": "movement-preview-hud",
+      "currentOwners": [
+        "src/components/IsometricGrid.client.vue"
+      ],
+      "audience": "controlling-user",
+      "activation": "movement-preview-or-authoritative-movement-intent",
+      "currentLayer": "world",
+      "capabilities": [
+        "distance and capability summary",
+        "reachability reason",
+        "submitting and awaiting-reaction state",
+        "route preview"
+      ],
+      "concerns": [
+        "Useful exact-geometry feedback is coupled to the full map.",
+        "Pending movement copy competes with response overlays and system banners."
+      ],
+      "futureContext": "tactical-lens",
+      "futureHome": "EncounterTacticalLens movement HUD",
+      "migrationTicket": "EUX-065",
+      "compatibility": "preserve"
+    },
+    {
+      "id": "move-targeting-hud",
+      "currentOwners": [
+        "src/components/IsometricGrid.client.vue"
+      ],
+      "audience": "controlling-user",
+      "activation": "move-targeting",
+      "currentLayer": "decision",
+      "capabilities": [
+        "targeting branch choice",
+        "single and multiple target choice",
+        "area template choice",
+        "area direction choice",
+        "free aim",
+        "hit-chance reticles",
+        "confirm and cancel"
+      ],
+      "concerns": [
+        "Several bounded non-spatial choices are rendered as battlefield HUDs.",
+        "The HUD, reticles, map response overlays, and generic decision panel can all be active together."
+      ],
+      "futureContext": "progressive-spatiality",
+      "futureHome": "EncounterDecisionLayer with compact or full tactical choice",
+      "migrationTicket": "EUX-062",
+      "compatibility": "preserve-exact-area-input"
+    },
+    {
+      "id": "pending-spatial-response-overlays",
+      "currentOwners": [
+        "src/components/isometric/PendingMoveMovementOverlay.vue",
+        "src/components/isometric/PendingMoveHazardCellOverlay.vue"
+      ],
+      "audience": "authorized-responder",
+      "activation": "pending-movement-or-hazard-choice",
+      "currentLayer": "decision",
+      "capabilities": [
+        "choose movement checkpoint",
+        "select and confirm hazard cells"
+      ],
+      "concerns": [
+        "Spatial responses do not share a visible parent with the ordered response stack.",
+        "Public waiting state is owned by different panels."
+      ],
+      "futureContext": "tactical-lens",
+      "futureHome": "EncounterResolutionStack to EncounterTacticalLens handoff",
+      "migrationTicket": "EUX-064",
+      "compatibility": "preserve"
+    },
+    {
+      "id": "attack-of-opportunity-world-attention",
+      "currentOwners": [
+        "src/components/isometric/AttackOfOpportunityAttentionOverlay.vue"
+      ],
+      "audience": "all-authorized-map-viewers",
+      "activation": "pending-attack-of-opportunity",
+      "currentLayer": "world",
+      "capabilities": [
+        "world-space responder attention markers"
+      ],
+      "concerns": [
+        "Attention markers are useful, but response ownership and options are rendered elsewhere."
+      ],
+      "futureContext": "tactical-lens",
+      "futureHome": "EncounterTacticalLens response attention",
+      "migrationTicket": "EUX-066",
+      "compatibility": "preserve"
+    },
+    {
+      "id": "presence-pings-and-intents",
+      "currentOwners": [
+        "src/components/map/MapSceneRenderer.vue",
+        "src/components/IsometricGrid.client.vue"
+      ],
+      "audience": "session-participants",
+      "activation": "remote-hover-ping-intent-or-attention",
+      "currentLayer": "world",
+      "capabilities": [
+        "remote token attention",
+        "cell pings",
+        "intent overlays",
+        "GM attention request"
+      ],
+      "concerns": [
+        "Presence has both world overlays and a separate floating panel.",
+        "Intent cues must remain presentation-only during cockpit migration."
+      ],
+      "futureContext": "tactical-lens",
+      "futureHome": "EncounterTacticalLens presence layer",
+      "migrationTicket": "EUX-066",
+      "compatibility": "preserve"
+    },
+    {
+      "id": "accepted-vfx-and-action-splash",
+      "currentOwners": [
+        "src/components/map/EncounterVfxOverlay.vue",
+        "src/components/map/MapActionSplash.vue"
+      ],
+      "audience": "all-authorized-viewers",
+      "activation": "accepted-presentation-event",
+      "currentLayer": "world",
+      "capabilities": [
+        "accepted VFX presentations",
+        "move animation and feedback",
+        "action splash",
+        "reduced-motion variants"
+      ],
+      "concerns": [
+        "Two accepted-presentation paths can dramatize the same causal sequence.",
+        "The new workspace needs one queue before either world effect runs."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterBattleStage accepted presentation queue",
+      "migrationTicket": "EUX-057",
+      "compatibility": "preserve-vfx-assets"
+    },
+    {
+      "id": "ground-item-selection-hud",
+      "currentOwners": [
+        "src/components/IsometricGrid.client.vue"
+      ],
+      "audience": "controlling-user",
+      "activation": "ground-item-selection",
+      "currentLayer": "world",
+      "capabilities": [
+        "selected item identity",
+        "quantity",
+        "clear selection"
+      ],
+      "concerns": [
+        "The selection is isolated from item actions and event history."
+      ],
+      "futureContext": "tactical-lens",
+      "futureHome": "EncounterTacticalLens selection HUD",
+      "migrationTicket": "EUX-065",
+      "compatibility": "preserve"
+    },
+    {
+      "id": "map-navigation-rail",
+      "currentOwners": [
+        "src/components/map/MapNavigationRail.vue"
+      ],
+      "audience": "all",
+      "activation": "hover-focus-or-toggle",
+      "currentLayer": "persistent-controls",
+      "capabilities": [
+        "global application navigation"
+      ],
+      "concerns": [
+        "Hover expansion can cover live controls and is not encounter-task-oriented.",
+        "The collapsed circular control uses battlefield styling for ordinary navigation."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "Encounter workspace navigation",
+      "migrationTicket": "EUX-033",
+      "compatibility": "replace-in-workspace"
+    },
+    {
+      "id": "initiative-info-bar",
+      "currentOwners": [
+        "src/components/map/InitiativeInfoBar.vue"
+      ],
+      "audience": "all-authorized-map-viewers",
+      "activation": "persistent-when-map-visible",
+      "currentLayer": "persistent-controls",
+      "capabilities": [
+        "past current and upcoming initiative portraits",
+        "round",
+        "focus participant",
+        "GM previous and next"
+      ],
+      "concerns": [
+        "This is the closest existing turn spine but remains an overlay on the map.",
+        "It omits waiting decisions and richer participant state."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterTurnRail",
+      "migrationTicket": "EUX-040",
+      "compatibility": "replace-after-parity"
+    },
+    {
+      "id": "scene-lifecycle-and-banner",
+      "currentOwners": [
+        "src/components/map/MapScenePanel.vue"
+      ],
+      "audience": "all-with-gm-controls-projected",
+      "activation": "persistent-when-map-visible",
+      "currentLayer": "persistent-controls",
+      "capabilities": [
+        "start or end scene",
+        "active scene name"
+      ],
+      "concerns": [
+        "GM lifecycle control and public scene summary share two floating pills.",
+        "Scene status competes with initiative and connection overlays."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterSceneHeader and EncounterDirectorPanel",
+      "migrationTicket": "EUX-034",
+      "compatibility": "replace-after-parity"
+    },
+    {
+      "id": "encounter-presentation-panel",
+      "currentOwners": [
+        "src/components/map/EncounterPresentationPanel.vue"
+      ],
+      "audience": "role-projected",
+      "activation": "collapsed-persistent-panel-auto-expands-for-pending",
+      "currentLayer": "persistent-controls",
+      "capabilities": [
+        "generic action offers",
+        "generic pending choices",
+        "passives",
+        "contextual affordances",
+        "diagnostics",
+        "recent accepted outcomes",
+        "screen-reader focus on pending"
+      ],
+      "concerns": [
+        "Action dock, resolution stack, inspector, and history are compressed into one floating panel.",
+        "It duplicates context-menu actions and move-specific response panels.",
+        "Glass, badge counts, and internal grouping labels conflict with the target anatomy."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterActionDock, EncounterResolutionStack, EncounterInspector, and EncounterEventFeed",
+      "migrationTicket": "EUX-050",
+      "compatibility": "keep-behind-compatibility-route"
+    },
+    {
+      "id": "encounter-live-announcement",
+      "currentOwners": [
+        "src/pages/maps/[slug].vue"
+      ],
+      "audience": "screen-reader-users",
+      "activation": "accepted-or-pending-presentation-announcement",
+      "currentLayer": "persistent-controls",
+      "capabilities": [
+        "polite or assertive live announcement"
+      ],
+      "concerns": [
+        "A single region must eventually distinguish actor, response, result, error, and correction priorities."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "Encounter workspace announcement service",
+      "migrationTicket": "EUX-083",
+      "compatibility": "preserve-semantics"
+    },
+    {
+      "id": "map-combat-log",
+      "currentOwners": [
+        "src/components/map/MapCombatLog.vue"
+      ],
+      "audience": "all-with-gm-inspection-projected",
+      "activation": "persistent-when-map-visible",
+      "currentLayer": "persistent-controls",
+      "capabilities": [
+        "latest prose-derived combat messages",
+        "actor attribution",
+        "GM move-operation inspection"
+      ],
+      "concerns": [
+        "The current feed is derived from combat-log prose instead of accepted presentation facts.",
+        "Inspection is mixed into public history."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterEventFeed and EncounterInspector",
+      "migrationTicket": "EUX-057",
+      "compatibility": "replace-with-structured-history"
+    },
+    {
+      "id": "map-presence-panel",
+      "currentOwners": [
+        "src/components/map/MapPresencePanel.vue"
+      ],
+      "audience": "session-participants",
+      "activation": "persistent-when-map-visible",
+      "currentLayer": "persistent-controls",
+      "capabilities": [
+        "connected participant list",
+        "presence status",
+        "GM attention request and focus"
+      ],
+      "concerns": [
+        "A dedicated overlay competes with encounter state while most presence needs are contextual."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterSystemStatus and participant control cues",
+      "migrationTicket": "EUX-034",
+      "compatibility": "replace-after-parity"
+    },
+    {
+      "id": "token-context-menu",
+      "currentOwners": [
+        "src/components/isometric/TokenContextMenu.vue"
+      ],
+      "audience": "role-and-control-projected",
+      "activation": "token-context-menu",
+      "currentLayer": "decision",
+      "capabilities": [
+        "Move submenu",
+        "Maneuver submenu",
+        "Ability submenu",
+        "Order submenu",
+        "send-out submenu",
+        "Poké Ball submenu",
+        "sheet and Pokédex inspection",
+        "XP HP temp HP combat stages conditions and damage mutations",
+        "rotate and delete"
+      ],
+      "concerns": [
+        "Primary actions depend on right-click and source-chapter submenus.",
+        "Automation diagnostics and badge floods appear in ordinary action choice.",
+        "Player actions, GM corrections, inspection, and destructive controls share one unprioritized menu."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterActionDock, EncounterInspector, and EncounterDirectorPanel",
+      "migrationTicket": "EUX-087",
+      "compatibility": "retain-only-tactical-secondary-actions-until-retirement"
+    },
+    {
+      "id": "token-state-action-dialogs",
+      "currentOwners": [
+        "src/components/isometric/TokenActionDialogs.vue",
+        "src/components/isometric/TokenHpDialog.vue",
+        "src/components/isometric/TokenTempHpDialog.vue",
+        "src/components/isometric/TokenCombatStagesDialog.vue",
+        "src/components/isometric/TokenConditionsDialog.vue",
+        "src/components/isometric/TokenExperienceDialog.vue",
+        "src/components/isometric/TokenDamageDialog.vue"
+      ],
+      "audience": "role-and-control-projected",
+      "activation": "token-context-menu-state-action",
+      "currentLayer": "decision",
+      "capabilities": [
+        "modify HP with injury preview",
+        "add temporary HP",
+        "modify combat stages",
+        "apply or remove conditions",
+        "grant experience",
+        "calculate and apply damage"
+      ],
+      "concerns": [
+        "Six bespoke dialogs are opened from the tactical context menu.",
+        "GM correction and ordinary character actions are visually indistinguishable."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterDirectorPanel correction workflow and generic decision layer",
+      "migrationTicket": "EUX-088",
+      "compatibility": "preserve-commands-not-dialog-anatomy"
+    },
+    {
+      "id": "ability-automation-panel",
+      "currentOwners": [
+        "src/components/map/MapAbilityAutomationPanel.vue"
+      ],
+      "audience": "authorized-actor",
+      "activation": "ability-mode-or-declaration",
+      "currentLayer": "decision",
+      "capabilities": [
+        "choose Ability mode",
+        "choose declaration options",
+        "submit retry and cancel"
+      ],
+      "concerns": [
+        "Ability-specific decision chrome duplicates the generic decision contract."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterDecisionLayer",
+      "migrationTicket": "EUX-054",
+      "compatibility": "replace-after-generic-choice-parity"
+    },
+    {
+      "id": "capability-action-modal",
+      "currentOwners": [
+        "src/components/maps/CapabilityActionModal.vue"
+      ],
+      "audience": "authorized-actor-or-gm",
+      "activation": "capability-action-offer",
+      "currentLayer": "decision",
+      "capabilities": [
+        "participant choice",
+        "trainer choice",
+        "GM confirmation",
+        "submit and cancel"
+      ],
+      "concerns": [
+        "A source-specific modal handles choices already represented by the generic contract."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterDecisionLayer",
+      "migrationTicket": "EUX-054",
+      "compatibility": "replace-after-generic-choice-parity"
+    },
+    {
+      "id": "capability-adjudication-modal",
+      "currentOwners": [
+        "src/components/maps/CapabilityAdjudicationModal.vue"
+      ],
+      "audience": "authorized-responder",
+      "activation": "capability-adjudication-offer",
+      "currentLayer": "decision",
+      "capabilities": [
+        "participant choice",
+        "bounded adjudication",
+        "submit and cancel"
+      ],
+      "concerns": [
+        "A source-specific adjudication modal is separate from pending response ordering."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterResolutionStack and EncounterDecisionLayer",
+      "migrationTicket": "EUX-056",
+      "compatibility": "replace-after-generic-choice-parity"
+    },
+    {
+      "id": "move-response-panels",
+      "currentOwners": [
+        "src/components/map/MapMoveResponsePanel.vue",
+        "src/components/map/MapAttackOfOpportunityOverlay.vue"
+      ],
+      "audience": "public-and-authorized-views",
+      "activation": "pending-move-resolution",
+      "currentLayer": "decision",
+      "capabilities": [
+        "public waiting summary",
+        "authorized response options",
+        "pass and force-pass",
+        "cancel retry and refresh",
+        "attack-of-opportunity focus"
+      ],
+      "concerns": [
+        "Normal move responses and Attack of Opportunity use separate panels.",
+        "These panels duplicate generic pending interactions and can stack over targeting HUDs."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterResolutionStack",
+      "migrationTicket": "EUX-056",
+      "compatibility": "replace-after-pending-contract-parity"
+    },
+    {
+      "id": "start-turn-modal",
+      "currentOwners": [
+        "src/components/map/StartTurnModal.vue"
+      ],
+      "audience": "current-controller-with-gm-recovery",
+      "activation": "initiative-turn-start-with-conditions",
+      "currentLayer": "decision",
+      "capabilities": [
+        "current actor portrait and round",
+        "roll skip or remove start-turn conditions"
+      ],
+      "concerns": [
+        "A blocking modal is detached from the turn spine and resolution stack."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterResolutionStack",
+      "migrationTicket": "EUX-056",
+      "compatibility": "replace-after-parity"
+    },
+    {
+      "id": "pokeball-capture-result-modal",
+      "currentOwners": [
+        "src/components/map/PokeballCaptureResultModal.vue"
+      ],
+      "audience": "all-authorized-viewers",
+      "activation": "accepted-capture-result",
+      "currentLayer": "decision",
+      "capabilities": [
+        "capture result presentation",
+        "dismissal"
+      ],
+      "concerns": [
+        "An accepted outcome occupies the blocking modal layer instead of entering common choreography and history."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterBattleStage choreography and EncounterEventFeed",
+      "migrationTicket": "EUX-057",
+      "compatibility": "preserve-result-facts"
+    },
+    {
+      "id": "field-effects-menu",
+      "currentOwners": [
+        "src/components/map/FieldEffectsMenuModal.vue",
+        "src/components/map/FieldEffectsPanel.vue"
+      ],
+      "audience": "all-for-summary-gm-for-edit",
+      "activation": "ctrl-f",
+      "currentLayer": "decision",
+      "capabilities": [
+        "weather terrain and room state",
+        "duration editing and ticking",
+        "hazard palette and clear",
+        "field clear-all"
+      ],
+      "concerns": [
+        "Public field inspection, live GM state control, and battlefield hazard authoring share one modal.",
+        "The primary access path is an undocumented keyboard shortcut."
+      ],
+      "futureContext": "split-live-and-workshop",
+      "futureHome": "EncounterSceneHeader, EncounterDirectorPanel, and Battlefield Workshop",
+      "migrationTicket": "EUX-073",
+      "compatibility": "split-by-authority"
+    },
+    {
+      "id": "sheets-spawn-menu",
+      "currentOwners": [
+        "src/components/map/SheetsMenuModal.vue"
+      ],
+      "audience": "gm",
+      "activation": "ctrl-s-in-setup-edit",
+      "currentLayer": "decision",
+      "capabilities": [
+        "browse sheets",
+        "spawn placement"
+      ],
+      "concerns": [
+        "Spawning is hidden behind a shortcut and coupled to raw map preparation."
+      ],
+      "futureContext": "split-live-and-workshop",
+      "futureHome": "EncounterDirectorPanel reserves and Battlefield Workshop placements",
+      "migrationTicket": "EUX-071",
+      "compatibility": "split-by-intent"
+    },
+    {
+      "id": "initiative-menu",
+      "currentOwners": [
+        "src/components/map/InitiativeMenuModal.vue",
+        "src/components/map/InitiativeTracker.vue"
+      ],
+      "audience": "all-for-inspection-gm-for-edit",
+      "activation": "ctrl-i",
+      "currentLayer": "decision",
+      "capabilities": [
+        "initiative list and vitals",
+        "round editing",
+        "previous next and active actor",
+        "speed fill",
+        "manual ordering",
+        "clear state"
+      ],
+      "concerns": [
+        "Persistent turn inspection and GM correction are combined in a modal separate from the top info bar."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterTurnRail and EncounterDirectorPanel",
+      "migrationTicket": "EUX-073",
+      "compatibility": "replace-after-parity"
+    },
+    {
+      "id": "move-correction-panel",
+      "currentOwners": [
+        "src/components/map/MapMoveCorrectionPanel.vue"
+      ],
+      "audience": "gm",
+      "activation": "inspect-move-operation",
+      "currentLayer": "system-recovery",
+      "capabilities": [
+        "inspect operation details",
+        "apply correction",
+        "refresh and close"
+      ],
+      "concerns": [
+        "Correction is floated over the world and entered through the prose combat log."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterDirectorPanel correction workflow",
+      "migrationTicket": "EUX-058",
+      "compatibility": "preserve-authoritative-command"
+    },
+    {
+      "id": "live-play-command-recovery",
+      "currentOwners": [
+        "src/components/map/LivePlayCommandRecoveryPanel.vue"
+      ],
+      "audience": "command-owner-and-gm-as-authorized",
+      "activation": "uncertain-or-recoverable-outbox-entry",
+      "currentLayer": "system-recovery",
+      "capabilities": [
+        "refresh outbox",
+        "exact retry",
+        "terminal status check",
+        "abandon confirmation",
+        "resolution notice"
+      ],
+      "concerns": [
+        "The underlying recovery model is strong but appears as one more map overlay.",
+        "It must preempt rules decisions without looking like a Reaction."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterSystemStatus blocking recovery card",
+      "migrationTicket": "EUX-058",
+      "compatibility": "preserve-exact-retry-semantics"
+    },
+    {
+      "id": "live-play-state-banners",
+      "currentOwners": [
+        "src/components/map/MapScenePanel.vue"
+      ],
+      "audience": "all-authorized-map-viewers",
+      "activation": "saving-reconnecting-reconciling-stale-error-or-control-notice",
+      "currentLayer": "system-recovery",
+      "capabilities": [
+        "saving icon",
+        "connection and stale banner",
+        "token control notice",
+        "authoritative correction notice",
+        "move usage error"
+      ],
+      "concerns": [
+        "Five independent absolute overlays communicate system and rules state.",
+        "Saving uses continuous decorative pulsing contrary to the target finite-motion rule."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterSystemStatus",
+      "migrationTicket": "EUX-034",
+      "compatibility": "replace-with-prioritized-region"
+    },
+    {
+      "id": "map-admin-panel",
+      "currentOwners": [
+        "src/components/map/MapAdminPanel.vue"
+      ],
+      "audience": "gm",
+      "activation": "ctrl-shift-a",
+      "currentLayer": "inspector-director",
+      "capabilities": [
+        "interaction mode",
+        "encounter side creation status and assignment",
+        "player visibility",
+        "combat-log clearing",
+        "shop interface authoring",
+        "ground level editing",
+        "vertical bounds summary"
+      ],
+      "concerns": [
+        "Director, recovery, and Workshop concerns share one hidden modal.",
+        "There is no visible Director-mode entry point.",
+        "Map visibility, shop interfaces, and ground level belong to battlefield maintenance, not live play."
+      ],
+      "futureContext": "split-director-and-workshop",
+      "futureHome": "EncounterDirectorPanel and Battlefield Workshop",
+      "migrationTicket": "EUX-070",
+      "compatibility": "split-by-state-owner"
+    },
+    {
+      "id": "live-play-latency-debug",
+      "currentOwners": [
+        "src/components/map/LivePlayLatencyDebugPanel.vue"
+      ],
+      "audience": "diagnostic",
+      "activation": "debug-query-or-setting",
+      "currentLayer": "inspector-director",
+      "capabilities": [
+        "command traces",
+        "presence metrics",
+        "token motion metrics"
+      ],
+      "concerns": [
+        "Diagnostics must remain structurally absent from ordinary player projections."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterInspector diagnostic mode",
+      "migrationTicket": "EUX-022",
+      "compatibility": "preserve-diagnostic-only"
+    },
+    {
+      "id": "move-vfx-debug",
+      "currentOwners": [
+        "src/components/map/MoveVfxDebugPanel.vue"
+      ],
+      "audience": "diagnostic",
+      "activation": "move-vfx-debug-harness",
+      "currentLayer": "inspector-director",
+      "capabilities": [
+        "preview one or all VFX",
+        "clear active VFX"
+      ],
+      "concerns": [
+        "Debug controls occupy the world layer and need explicit diagnostic elevation."
+      ],
+      "futureContext": "live-encounter",
+      "futureHome": "EncounterInspector diagnostic mode",
+      "migrationTicket": "EUX-022",
+      "compatibility": "preserve-diagnostic-only"
+    },
+    {
+      "id": "renderer-metrics-debug",
+      "currentOwners": [
+        "src/components/isometric/RenderMetricsOverlay.vue"
+      ],
+      "audience": "diagnostic",
+      "activation": "render-metrics-flag",
+      "currentLayer": "inspector-director",
+      "capabilities": [
+        "renderer timing and load metrics"
+      ],
+      "concerns": [
+        "Metrics need a stable budget harness rather than an ordinary world overlay."
+      ],
+      "futureContext": "tactical-lens",
+      "futureHome": "EncounterInspector performance mode",
+      "migrationTicket": "EUX-068",
+      "compatibility": "preserve-diagnostic-only"
+    },
+    {
+      "id": "battlefield-workshop-authoring",
+      "currentOwners": [
+        "src/pages/maps/[slug].vue",
+        "src/composables/map-editor/useTerrainBuilder.ts",
+        "src/composables/map-editor/useHazardBuilder.ts",
+        "src/composables/map-editor/useMapDimensions.ts",
+        "src/composables/map-editor/useMapShopInterfaces.ts"
+      ],
+      "audience": "gm",
+      "activation": "setup-edit-build-or-hazard-mode",
+      "currentLayer": "inspector-director",
+      "capabilities": [
+        "voxel placement and removal",
+        "terrain material and colour",
+        "hazard placement and removal",
+        "map dimensions and ground level",
+        "shop interface placement",
+        "map player visibility"
+      ],
+      "concerns": [
+        "Preparation state is interleaved with encounter state in the same 3415-line route.",
+        "The redesign must not regress this reliable authoring path."
+      ],
+      "futureContext": "battlefield-workshop",
+      "futureHome": "/maps/:slug compatibility workshop",
+      "migrationTicket": "EUX-038",
+      "compatibility": "preserve-throughout-migration"
+    }
+  ]
+}

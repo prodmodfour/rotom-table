@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "recipes": [
+    {
+      "recipeId": "trainer-duel",
+      "label": "Trainer duel",
+      "description": "Two Trainer-led sides with active Pokémon, reserves, switching, and Orders.",
+      "defaultCount": { "minimum": 1, "maximum": 2 },
+      "defaultRole": "standard",
+      "hideNewCast": false,
+      "stage": "standard",
+      "tactical": "on-demand",
+      "documentDefaults": {
+        "objective": { "label": "Win the match", "visibility": "public" },
+        "clocks": [],
+        "phases": [],
+        "activePhaseKey": null
+      }
+    },
+    {
+      "recipeId": "wild-pack",
+      "label": "Wild pack",
+      "description": "A visible wild group with an optional leader and capture or retreat stakes.",
+      "defaultCount": { "minimum": 3, "maximum": 6 },
+      "defaultRole": "standard",
+      "hideNewCast": false,
+      "stage": "standard",
+      "tactical": "on-demand",
+      "documentDefaults": {
+        "objective": { "label": "Calm, capture, or drive off the pack", "visibility": "public" },
+        "clocks": [],
+        "phases": [],
+        "activePhaseKey": null
+      }
+    },
+    {
+      "recipeId": "ambush",
+      "label": "Ambush",
+      "description": "Pre-staged hidden opposition revealed as a prepared opening wave.",
+      "defaultCount": { "minimum": 2, "maximum": 4 },
+      "defaultRole": "minion",
+      "hideNewCast": true,
+      "stage": "standard",
+      "tactical": "on-demand",
+      "documentDefaults": {
+        "objective": { "label": "Survive or turn the ambush", "visibility": "public" },
+        "clocks": [],
+        "phases": [],
+        "activePhaseKey": null
+      }
+    },
+    {
+      "recipeId": "swarm",
+      "label": "Swarm",
+      "description": "A large grouped cast of minions with compact roster treatment.",
+      "defaultCount": { "minimum": 6, "maximum": 10 },
+      "defaultRole": "minion",
+      "hideNewCast": false,
+      "stage": "standard",
+      "tactical": "on-demand",
+      "documentDefaults": {
+        "objective": { "label": "Break through the swarm", "visibility": "public" },
+        "clocks": [],
+        "phases": [],
+        "activePhaseKey": null
+      }
+    },
+    {
+      "recipeId": "boss",
+      "label": "Boss",
+      "description": "One dominant leader with phases, clocks, objectives, and optional support.",
+      "defaultCount": { "minimum": 1, "maximum": 3 },
+      "defaultRole": "boss",
+      "hideNewCast": false,
+      "stage": "boss",
+      "tactical": "on-demand",
+      "documentDefaults": {
+        "objective": { "label": "Overcome the boss before escalation", "visibility": "public" },
+        "clocks": [
+          { "key": "escalation", "label": "Escalation", "visibility": "public", "maximum": 6 }
+        ],
+        "phases": [
+          { "key": "opening", "label": "Opening phase", "visibility": "public", "status": "active" },
+          { "key": "finale", "label": "Final phase", "visibility": "public", "status": "upcoming" }
+        ],
+        "activePhaseKey": "opening"
+      }
+    },
+    {
+      "recipeId": "hunt-capture",
+      "label": "Hunt or capture",
+      "description": "A target-led scene with pursuit, disposition, and capture stakes.",
+      "defaultCount": { "minimum": 1, "maximum": 3 },
+      "defaultRole": "leader",
+      "hideNewCast": true,
+      "stage": "standard",
+      "tactical": "on-demand",
+      "documentDefaults": {
+        "objective": { "label": "Find and capture the target", "visibility": "public" },
+        "clocks": [
+          { "key": "trail", "label": "Trail goes cold", "visibility": "gm", "maximum": 6 }
+        ],
+        "phases": [],
+        "activePhaseKey": null
+      }
+    },
+    {
+      "recipeId": "chase-ready",
+      "label": "Chase-ready",
+      "description": "Relative-position play with a ready escape clock and tactical expansion on demand.",
+      "defaultCount": { "minimum": 1, "maximum": 3 },
+      "defaultRole": "leader",
+      "hideNewCast": false,
+      "stage": "chase",
+      "tactical": "split",
+      "documentDefaults": {
+        "objective": { "label": "Catch the target before it escapes", "visibility": "public" },
+        "clocks": [
+          { "key": "escape", "label": "Escape", "visibility": "public", "maximum": 6 }
+        ],
+        "phases": [
+          { "key": "pursuit", "label": "Pursuit", "visibility": "public", "status": "active" },
+          { "key": "finish", "label": "Final approach", "visibility": "public", "status": "upcoming" }
+        ],
+        "activePhaseKey": "pursuit"
+      }
+    },
+    {
+      "recipeId": "blank",
+      "label": "Blank encounter",
+      "description": "Start with no recipe assumptions and author every story beat explicitly.",
+      "defaultCount": { "minimum": 1, "maximum": 1 },
+      "defaultRole": "standard",
+      "hideNewCast": false,
+      "stage": "standard",
+      "tactical": "on-demand",
+      "documentDefaults": {
+        "objective": null,
+        "clocks": [],
+        "phases": [],
+        "activePhaseKey": null
+      }
+    }
+  ]
+}

@@ -49,6 +49,8 @@ describe('quality gate automation validation', () => {
         'run check:edge-automation-complete',
         'run check:feature-automation-complete',
         'run check:encounter-presentation',
+        'run check:encounter-design',
+        'run check:encounter-legacy',
         'run check:move-automation',
         'run check:move-automation-complete',
         'run check:move-automation-budgets',
@@ -58,7 +60,7 @@ describe('quality gate automation validation', () => {
         'run typecheck --if-present',
         'test --if-present',
         'run test:nuxt --if-present',
-        'run test:e2e --if-present',
+        'run test:e2e --if-present -- --workers=1',
         'run build --if-present',
       ])
     }
@@ -105,6 +107,13 @@ describe('quality gate automation validation', () => {
     expect(packageJson.scripts['check:move-automation-legacy-links']).toContain('--check')
     expect(packageJson.scripts['check:encounter-presentation']).toContain(
       'check-encounter-presentation-contract.mjs',
+    )
+    expect(packageJson.scripts['check:encounter-design']).toContain(
+      'scripts/check_encounter_design_system.ts',
+    )
+    expect(packageJson.scripts['check:encounter-design-complete']).toContain('--check-plan')
+    expect(packageJson.scripts['check:encounter-legacy']).toContain(
+      'scripts/check_encounter_legacy_dependencies.ts',
     )
     expect(packageJson.scripts['test:nuxt']).toContain('vitest.nuxt.config.ts')
     expect(packageJson.scripts['test:e2e']).toContain('playwright test')

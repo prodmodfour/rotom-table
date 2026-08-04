@@ -74,6 +74,8 @@ interface MapSceneRendererHandle {
 const props = defineProps<{
   map: TabletopMap | null
   canViewMap: boolean
+  /** Legacy map-first overlays are retained only for explicit compatibility tests. */
+  legacyLivePlayChrome?: boolean
   status: MapSaveStatus
   error: string | null
   slug: string
@@ -104,6 +106,7 @@ const props = defineProps<{
   hazardTool: BuildTool
   hazardKind: MapHazardKind
   canDeleteTokens: boolean
+  contextMenuSecondaryOnly?: boolean
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
@@ -319,6 +322,7 @@ defineExpose({ focusPokemon, focusCell })
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
         :can-delete-tokens="canDeleteTokens"
+        :context-menu-secondary-only="contextMenuSecondaryOnly"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-maneuver-options-by-id="tokenManeuverOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
@@ -386,7 +390,7 @@ defineExpose({ focusPokemon, focusCell })
       <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />
 
       <InitiativeInfoBar
-        v-if="props.map && canViewMap"
+        v-if="props.legacyLivePlayChrome !== false && props.map && canViewMap"
         :rows="initiativeRows ?? []"
         :active-id="activeInitiativeId"
         :round="initiativeRound ?? 1"
@@ -397,7 +401,7 @@ defineExpose({ focusPokemon, focusCell })
       />
 
       <button
-        v-if="props.map && canViewMap && props.canManageScene"
+        v-if="props.legacyLivePlayChrome !== false && props.map && canViewMap && props.canManageScene"
         type="button"
         class="scene-control-button"
         :class="{ 'scene-control-button--ending': hasActiveScene }"
@@ -409,7 +413,7 @@ defineExpose({ focusPokemon, focusCell })
       </button>
 
       <div
-        v-if="props.map && canViewMap && hasActiveScene"
+        v-if="props.legacyLivePlayChrome !== false && props.map && canViewMap && hasActiveScene"
         class="active-scene-banner"
         role="status"
         aria-live="polite"
@@ -419,7 +423,7 @@ defineExpose({ focusPokemon, focusCell })
       </div>
 
       <div
-        v-if="props.map && canViewMap && showLivePlaySavingIcon"
+        v-if="props.legacyLivePlayChrome !== false && props.map && canViewMap && showLivePlaySavingIcon"
         class="live-play-saving-icon"
         role="status"
         aria-live="polite"
@@ -429,7 +433,7 @@ defineExpose({ focusPokemon, focusCell })
       </div>
 
       <div
-        v-if="props.map && canViewMap && showLivePlayStateBanner && !showLivePlaySavingIcon"
+        v-if="props.legacyLivePlayChrome !== false && props.map && canViewMap && showLivePlayStateBanner && !showLivePlaySavingIcon"
         class="live-play-state-banner"
         :class="`live-play-state-banner--${props.livePlayState ?? 'ready'}`"
         role="status"
@@ -440,7 +444,7 @@ defineExpose({ focusPokemon, focusCell })
       </div>
 
       <div
-        v-if="props.map && canViewMap && props.tokenControlNotice"
+        v-if="props.legacyLivePlayChrome !== false && props.map && canViewMap && props.tokenControlNotice"
         class="token-control-notice"
         role="status"
         aria-live="polite"
@@ -449,7 +453,7 @@ defineExpose({ focusPokemon, focusCell })
       </div>
 
       <div
-        v-if="props.map && canViewMap && props.livePlayTokenCorrectionNotice"
+        v-if="props.legacyLivePlayChrome !== false && props.map && canViewMap && props.livePlayTokenCorrectionNotice"
         class="live-play-token-correction-notice"
         role="status"
         aria-live="polite"
@@ -459,14 +463,14 @@ defineExpose({ focusPokemon, focusCell })
       </div>
 
       <MapCombatLog
-        v-if="props.map && canViewMap"
+        v-if="props.legacyLivePlayChrome !== false && props.map && canViewMap"
         :messages="combatLogMessages"
         :can-inspect-move-operations="props.canManageMoveCorrections === true"
         @inspect-move-operation="emit('inspect-move-operation', $event)"
       />
 
       <MapMoveCorrectionPanel
-        v-if="props.canManageMoveCorrections"
+        v-if="props.legacyLivePlayChrome !== false && props.canManageMoveCorrections"
         :details="props.moveCorrectionDetails ?? null"
         :status="props.moveCorrectionStatus ?? 'idle'"
         :message="props.moveCorrectionMessage ?? null"
@@ -476,6 +480,7 @@ defineExpose({ focusPokemon, focusCell })
       />
 
       <MapActionSplash
+        v-if="props.legacyLivePlayChrome !== false"
         :splash="props.actionSplash ?? null"
         :speed-lines-duration-ms="props.actionSplashSpeedLinesDurationMs"
       />
@@ -485,7 +490,7 @@ defineExpose({ focusPokemon, focusCell })
       </div>
 
       <MoveVfxDebugPanel
-        v-if="props.map && canViewMap && props.moveVfxDebugHarnessEnabled"
+        v-if="props.legacyLivePlayChrome !== false && props.map && canViewMap && props.moveVfxDebugHarnessEnabled"
         :selected-id="selectedId"
         :spawned-pokemon="spawnedPokemon"
         :controllable-placement-ids="controllablePlacementIds"
@@ -496,6 +501,7 @@ defineExpose({ focusPokemon, focusCell })
       />
 
       <MapAttackOfOpportunityOverlay
+        v-if="props.legacyLivePlayChrome !== false"
         :summaries="pendingAttackOfOpportunitySummaries"
         :windows="pendingAttackOfOpportunityWindows"
         :state-by-window="props.pendingMoveResponseStateByWindow ?? {}"
@@ -514,6 +520,7 @@ defineExpose({ focusPokemon, focusCell })
       />
 
       <MapMoveResponsePanel
+        v-if="props.legacyLivePlayChrome !== false"
         :windows="standardPendingMoveResponseWindows"
         :state-by-window="props.pendingMoveResponseStateByWindow ?? {}"
         :actor-labels="props.pendingMoveResponseActorLabels ?? {}"

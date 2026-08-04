@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "budgetId": "encounter-cockpit-performance-v1",
+  "designAuthority": "DESIGN.md",
+  "criteriaSource": "data/encounter-workspace/ux-success-criteria.json",
+  "runtime": {
+    "adapterP95Ms": 16,
+    "interactionP95Ms": 100,
+    "acceptedPresentationP95Ms": 250,
+    "tacticalStartupP95Ms": 2000,
+    "tacticalWarmP95Ms": 1000,
+    "largeEncounterP10Fps": 30,
+    "maximumAnimationMs": 800,
+    "maximumWorkspaceDomNodes": 5000,
+    "maximumRenderedActionOffers": 80,
+    "maximumRenderedHistoryEntries": 80,
+    "maximumProjectionBytes": 1048576,
+    "maximumHeapGrowthBytes": 134217728
+  },
+  "measurement": {
+    "profile": "4 logical CPU threads, 8 GiB memory, integrated graphics or Chromium software fallback",
+    "network": "production build on loopback; network time excluded from pure adapter and local interaction budgets",
+    "warmupRuns": 5,
+    "measuredRuns": 30,
+    "fixtures": [
+      "crowded-wild-pack",
+      "boss-phases-environment",
+      "capability-movement-feature"
+    ]
+  },
+  "resourcePolicy": {
+    "actionRendering": "Render at most one 80-offer batch; reveal later batches on explicit request.",
+    "historyRendering": "Render at most one 80-result batch; preserve an explicitly deep-linked result.",
+    "animation": "Every cockpit animation is finite and reduced motion replaces travel with a direct settle.",
+    "tacticalRenderer": "The three.js renderer is lazy and exists only while the tactical lens is open.",
+    "projection": "Server projection arrays are bounded before serialization and viewer privacy is applied before delivery."
+  }
+}

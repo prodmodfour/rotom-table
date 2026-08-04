@@ -248,6 +248,7 @@ const props = defineProps<{
   hazardTool?: BuildTool
   hazardKind?: MapHazardKind
   canDeleteTokens?: boolean
+  contextMenuSecondaryOnly?: boolean
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenManeuverOptionsById?: Record<string, TokenManeuverMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
@@ -2481,9 +2482,13 @@ const updateMoveAutomationOverlays = (): boolean => {
 function resolveSceneAnimationContinuation() {
   return createIsometricAnimationContinuation([
     ...resolveIsometricTokenMotionContinuationSources(renderObjects.values()),
-    ...resolveIsometricSpriteAnimationContinuationSources(renderObjects.values()),
+    ...resolveIsometricSpriteAnimationContinuationSources(renderObjects.values(), {
+      reducedMotion: props.moveAnimationsReducedMotion === true,
+    }),
     ...resolveIsometricMovementPreviewAnimationContinuationSources(tokenMovePreviewRenderer),
-    ...resolveIsometricFieldEffectAnimationContinuationSources(fieldEffectRenderer),
+    ...resolveIsometricFieldEffectAnimationContinuationSources(fieldEffectRenderer, {
+      reducedMotion: props.moveAnimationsReducedMotion === true,
+    }),
     ...resolveIsometricMoveVfxAnimationContinuationSources(moveVfxRenderer),
   ])
 }
@@ -3043,6 +3048,7 @@ watch(
       v-if="contextMenu"
       :menu="contextMenu"
       :can-delete-tokens="props.canDeleteTokens"
+      :secondary-only="props.contextMenuSecondaryOnly"
       :moves="props.tokenMoveOptionsById?.[contextMenu.id] ?? []"
       :maneuvers="props.tokenManeuverOptionsById?.[contextMenu.id] ?? []"
       :abilities="props.tokenAbilityOptionsById?.[contextMenu.id] ?? []"

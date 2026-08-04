@@ -72,6 +72,7 @@ defineProps<{
   hazardTool: BuildTool
   hazardKind: MapHazardKind
   canDeleteTokens: boolean
+  contextMenuSecondaryOnly?: boolean
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenManeuverOptionsById?: Record<string, TokenManeuverMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
@@ -175,6 +176,7 @@ defineExpose({ focusPokemon, focusCell })
     :hazard-tool="hazardTool"
     :hazard-kind="hazardKind"
     :can-delete-tokens="canDeleteTokens"
+    :context-menu-secondary-only="contextMenuSecondaryOnly"
     :token-move-options-by-id="tokenMoveOptionsById"
     :token-maneuver-options-by-id="tokenManeuverOptionsById"
     :token-ability-options-by-id="tokenAbilityOptionsById"

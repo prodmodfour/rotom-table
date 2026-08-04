@@ -1,0 +1,369 @@
+{
+  "schemaVersion": 1,
+  "fixtureId": "capability-movement-feature",
+  "title": "Capability movement and Trainer Feature interaction",
+  "purpose": "Cross-source fixture for Mountable/Overland movement, Rider Features, exact routes, elevation, Attack of Opportunity checkpoints, nested Feature response, and source-agnostic action organization.",
+  "sourceTicket": "EUX-008",
+  "clock": 1700000400000,
+  "map": {
+    "slug": "fixture-canyon-run",
+    "name": "Red Canyon Crossing",
+    "revision": 68,
+    "width": 26,
+    "height": 12,
+    "groundLevel": 0,
+    "environment": {
+      "weather": ["Strong Winds"],
+      "terrain": ["Rough", "Elevated Ledges"],
+      "rooms": [],
+      "hazards": [
+        { "id": "hazard-canyon-gap", "kind": "gap", "cells": 10 },
+        { "id": "hazard-loose-gravel", "kind": "rough", "cells": 14 }
+      ]
+    }
+  },
+  "encounter": {
+    "sceneId": "scene-canyon-run",
+    "sceneName": "Break Through the Canyon",
+    "round": 2,
+    "phase": "escape",
+    "currentParticipantId": "participant-rapidash-mount",
+    "initiativeOrder": [
+      "participant-rapidash-mount",
+      "participant-machoke-interceptor",
+      "participant-kai-rider",
+      "participant-vera-rival"
+    ],
+    "sides": [
+      {
+        "id": "side-canyon-riders",
+        "label": "Canyon riders",
+        "relationship": "ally",
+        "accent": "#e0643d",
+        "symbol": "hoof",
+        "status": "active"
+      },
+      {
+        "id": "side-canyon-blockade",
+        "label": "Blockade",
+        "relationship": "foe",
+        "accent": "#4c718c",
+        "symbol": "barrier",
+        "status": "active"
+      }
+    ],
+    "objectives": [
+      {
+        "id": "objective-cross-canyon",
+        "label": "Reach the eastern marker before round 5",
+        "visibility": "public",
+        "status": "active",
+        "progress": 11,
+        "maximum": 24
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "participant-kai-rider",
+      "kind": "trainer",
+      "displayName": "Kai",
+      "subtitle": "Rider · mounted",
+      "sideId": "side-canyon-riders",
+      "controllerIds": ["player-kai", "gm"],
+      "sheetSlug": "fixture-trainer-kai-rider",
+      "portraitUrl": null,
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 8, "y": 1, "z": 6 },
+      "hp": { "current": 45, "maximum": 48, "temporary": 0 },
+      "injuries": 0,
+      "conditions": ["Mounted"],
+      "resources": [
+        { "id": "ap", "label": "AP", "current": 3, "maximum": 5 },
+        { "id": "momentum", "label": "Momentum", "current": 2, "maximum": 3 }
+      ]
+    },
+    {
+      "id": "participant-rapidash-mount",
+      "kind": "pokemon",
+      "displayName": "Rapidash",
+      "subtitle": "Kai's mount · Overland 10",
+      "sideId": "side-canyon-riders",
+      "controllerIds": ["player-kai", "gm"],
+      "sheetSlug": "fixture-pokemon-rapidash-mount",
+      "portraitUrl": "/sprites/rapidash.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 8, "y": 1, "z": 6 },
+      "hp": { "current": 69, "maximum": 75, "temporary": 0 },
+      "injuries": 0,
+      "conditions": ["Mounted", "Sprint"],
+      "resources": [
+        { "id": "standard-action", "label": "Standard", "current": 1, "maximum": 1 },
+        { "id": "shift-action", "label": "Shift", "current": 1, "maximum": 1 },
+        { "id": "overland", "label": "Overland", "current": 10, "maximum": 10 }
+      ]
+    },
+    {
+      "id": "participant-vera-rival",
+      "kind": "trainer",
+      "displayName": "Vera",
+      "subtitle": "Blockade leader",
+      "sideId": "side-canyon-blockade",
+      "controllerIds": ["gm"],
+      "sheetSlug": "fixture-trainer-vera-rival",
+      "portraitUrl": null,
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 21, "y": 0, "z": 6 },
+      "hp": { "current": 43, "maximum": 43, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": [
+        { "id": "ap", "label": "AP", "current": 4, "maximum": 5 }
+      ]
+    },
+    {
+      "id": "participant-machoke-interceptor",
+      "kind": "pokemon",
+      "displayName": "Machoke",
+      "subtitle": "Blockade interceptor",
+      "sideId": "side-canyon-blockade",
+      "controllerIds": ["gm"],
+      "sheetSlug": "fixture-pokemon-machoke-interceptor",
+      "portraitUrl": "/sprites/machoke.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 12, "y": 1, "z": 6 },
+      "hp": { "current": 58, "maximum": 70, "temporary": 0 },
+      "injuries": 0,
+      "conditions": ["Braced"],
+      "resources": [
+        { "id": "attack-of-opportunity", "label": "AoO", "current": 1, "maximum": 1 }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "relationship-mounted-kai-rapidash",
+      "kind": "mounted",
+      "sourceId": "participant-kai-rider",
+      "targetId": "participant-rapidash-mount",
+      "distance": 0,
+      "public": true
+    },
+    {
+      "id": "relationship-machoke-threatens-route",
+      "kind": "threatens",
+      "sourceId": "participant-machoke-interceptor",
+      "targetId": "participant-rapidash-mount",
+      "distance": 1,
+      "public": true
+    }
+  ],
+  "offers": [
+    {
+      "id": "offer-rapidash-overland-shift",
+      "actorId": "participant-rapidash-mount",
+      "sourceKind": "capability",
+      "label": "Ride",
+      "group": "movement-and-positioning",
+      "timing": "Shift Action · Overland 10",
+      "spatiality": "exact",
+      "targetIds": [],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-kai-ramming-speed",
+      "actorId": "participant-kai-rider",
+      "sourceKind": "feature",
+      "label": "Ramming Speed",
+      "group": "current-context",
+      "timing": "Free Action · while mounted",
+      "spatiality": "exact",
+      "targetIds": ["participant-machoke-interceptor"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-kai-lean-in",
+      "actorId": "participant-kai-rider",
+      "sourceKind": "feature",
+      "label": "Lean In",
+      "group": "support-and-control",
+      "timing": "1 AP · Free Action",
+      "spatiality": "relationship",
+      "targetIds": ["participant-rapidash-mount"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-kai-cavalier-reprisal",
+      "actorId": "participant-kai-rider",
+      "sourceKind": "feature",
+      "label": "Cavalier's Reprisal",
+      "group": "support-and-control",
+      "timing": "Reaction",
+      "spatiality": "relationship",
+      "targetIds": ["participant-machoke-interceptor"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-rapidash-flame-charge",
+      "actorId": "participant-rapidash-mount",
+      "sourceKind": "move",
+      "label": "Flame Charge",
+      "group": "attacks-and-moves",
+      "timing": "At-Will · Standard Action",
+      "spatiality": "relationship",
+      "targetIds": ["participant-machoke-interceptor"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-rapidash-jump-gap",
+      "actorId": "participant-rapidash-mount",
+      "sourceKind": "capability",
+      "label": "Jump the canyon gap",
+      "group": "environment-and-context",
+      "timing": "Shift Action",
+      "spatiality": "exact",
+      "targetIds": [],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-kai-dismount",
+      "actorId": "participant-kai-rider",
+      "sourceKind": "system",
+      "label": "Dismount",
+      "group": "movement-and-positioning",
+      "timing": "Shift Action",
+      "spatiality": "exact",
+      "targetIds": ["participant-rapidash-mount"],
+      "availability": "unavailable",
+      "unavailableReason": "Resolve the interrupted route first."
+    }
+  ],
+  "pending": [
+    {
+      "id": "pending-canyon-attack-of-opportunity",
+      "parentId": null,
+      "actorId": "participant-rapidash-mount",
+      "kind": "interrupt",
+      "sourceLabel": "Attack of Opportunity",
+      "responderIds": ["gm"],
+      "publicPrompt": "Rapidash's route paused beside Machoke.",
+      "privatePrompt": "Use Machoke's Attack of Opportunity at the 12,1,6 checkpoint?",
+      "optionLabels": ["Use Low Sweep", "Use Push", "Pass"],
+      "spatiality": "exact",
+      "status": "pending"
+    },
+    {
+      "id": "pending-cavalier-reprisal",
+      "parentId": "pending-canyon-attack-of-opportunity",
+      "actorId": "participant-kai-rider",
+      "kind": "reaction",
+      "sourceLabel": "Cavalier's Reprisal",
+      "responderIds": ["player-kai", "gm"],
+      "publicPrompt": "Kai may respond after the interception.",
+      "privatePrompt": "If Machoke attacks, spend 1 AP to use Cavalier's Reprisal?",
+      "optionLabels": ["Use Cavalier's Reprisal", "Pass"],
+      "spatiality": "relationship",
+      "status": "queued"
+    }
+  ],
+  "accepted": [
+    {
+      "id": "accepted-canyon-route-intent",
+      "sequence": 201,
+      "actorId": "participant-rapidash-mount",
+      "headline": "Rapidash began a mounted 9m route.",
+      "affectedIds": ["participant-kai-rider", "participant-rapidash-mount"],
+      "changes": ["Intended route retained", "Paused before leaving Machoke's reach"],
+      "tone": "pending"
+    },
+    {
+      "id": "accepted-ramming-speed-armed",
+      "sequence": 202,
+      "actorId": "participant-kai-rider",
+      "headline": "Kai committed Ramming Speed to the mounted route.",
+      "affectedIds": ["participant-kai-rider", "participant-rapidash-mount", "participant-machoke-interceptor"],
+      "changes": ["Momentum 1 → 2", "Machoke marked as route target"],
+      "tone": "neutral"
+    }
+  ],
+  "system": {
+    "connection": "ready",
+    "replayGap": false,
+    "outbox": [],
+    "blockingMessage": null
+  },
+  "audiences": [
+    {
+      "id": "audience-kai-rider",
+      "role": "player-owner",
+      "viewerId": "player-kai",
+      "visibleParticipantIds": ["participant-kai-rider", "participant-rapidash-mount", "participant-vera-rival", "participant-machoke-interceptor"],
+      "controlledParticipantIds": ["participant-kai-rider", "participant-rapidash-mount"],
+      "authorizedPendingIds": ["pending-cavalier-reprisal"]
+    },
+    {
+      "id": "audience-gm-canyon",
+      "role": "gm",
+      "viewerId": "gm",
+      "visibleParticipantIds": ["participant-kai-rider", "participant-rapidash-mount", "participant-vera-rival", "participant-machoke-interceptor"],
+      "controlledParticipantIds": ["participant-kai-rider", "participant-rapidash-mount", "participant-vera-rival", "participant-machoke-interceptor"],
+      "authorizedPendingIds": ["pending-canyon-attack-of-opportunity", "pending-cavalier-reprisal"]
+    },
+    {
+      "id": "audience-public-canyon",
+      "role": "public",
+      "viewerId": null,
+      "visibleParticipantIds": ["participant-kai-rider", "participant-rapidash-mount", "participant-vera-rival", "participant-machoke-interceptor"],
+      "controlledParticipantIds": [],
+      "authorizedPendingIds": []
+    }
+  ],
+  "scripts": [
+    {
+      "id": "capability-mounted-route",
+      "actorRole": "player-controller",
+      "taskIds": ["discover-actions", "move-participant", "choose-area-direction-or-placement"],
+      "steps": ["Select Rapidash and activate Ride.", "Open the tactical lens.", "Preview the 9m route across elevation and rough terrain.", "Confirm the path with Kai retained as rider.", "Pause at Machoke's authoritative interruption checkpoint."],
+      "expectedTerminal": "The exact route, mount relationship, movement budget, and checkpoint remain visible while waiting."
+    },
+    {
+      "id": "feature-modifies-capability-movement",
+      "actorRole": "player-controller",
+      "taskIds": ["discover-actions", "use-capability-action", "respond-to-optional-trigger"],
+      "steps": ["Find Ramming Speed in Current context rather than a Feature chapter.", "Commit it to Rapidash's route.", "After Machoke responds, promote Cavalier's Reprisal to Kai.", "Choose or pass and resume the same route."],
+      "expectedTerminal": "Capability, Feature, movement, and response facts settle once in causal order without source-specific panels."
+    },
+    {
+      "id": "capability-relationship-view",
+      "actorRole": "player-controller",
+      "taskIds": ["choose-participant-targets", "inspect-participant"],
+      "steps": ["Inspect the mounted Kai–Rapidash relationship.", "Inspect Machoke's threatened checkpoint and 1m distance.", "Return to the route without camera movement."],
+      "expectedTerminal": "Relationship facts are readable outside the full tactical lens and remain geometry-derived."
+    },
+    {
+      "id": "capability-reduced-motion-handoff",
+      "actorRole": "diagnostic-operator",
+      "taskIds": ["move-participant", "view-accepted-outcome", "inspect-runtime-diagnostics"],
+      "steps": ["Enable reduced motion.", "Open and close the tactical lens.", "Resolve the interruption and route.", "Verify direct focus/position transitions preserve causal sequence."],
+      "expectedTerminal": "No travel animation is required to understand checkpoint, response, resumed route, and settlement."
+    }
+  ]
+}

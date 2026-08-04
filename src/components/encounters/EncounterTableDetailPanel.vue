@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { encounterGeneratorTablePath } from '~/utils/encounterRoutes'
+import { encounterBuilderTablePath } from '~/utils/encounterRoutes'
 import type { DisplayedEncounterRow } from '~/utils/encounterTables'
 import type { EncounterTable, EncounterTableEntry } from '~/types/encounterTable'
 
@@ -61,7 +61,7 @@ const saveEditedTable = async (table: EncounterTable) => {
             Edit table
           </button>
           <NuxtLink
-            :to="encounterGeneratorTablePath(selectedEntry.region, selectedEntry.key)"
+            :to="encounterBuilderTablePath(selectedEntry.region, selectedEntry.key)"
             class="cta-link"
           >
             Roll on this table →

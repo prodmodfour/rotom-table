@@ -14,6 +14,7 @@ import {
   type LivePlayCommandResult,
 } from '#shared/livePlayCommands'
 import { validateTerminalLivePlayCommandResponse } from '#shared/livePlayCommandResults'
+import { validateLivePlayOperationAbandonmentResponse } from '#shared/livePlayOperationAbandonment'
 import {
   MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
   MOVE_RESPONSE_COMMAND_TYPES,
@@ -87,6 +88,7 @@ export interface PendingMoveResponseDispatchResult {
   readonly dispatched: boolean
   readonly opId?: string
   readonly accepted?: boolean
+  readonly abandoned?: boolean
   readonly uncertain?: boolean
   readonly message?: string
 }
@@ -129,6 +131,7 @@ export interface UsePendingMoveResponsesReturn {
   readonly forcePass: (input: PendingMoveResponseReference) => Promise<PendingMoveResponseDispatchResult>
   readonly cancel: (resolutionId: string) => Promise<PendingMoveResponseDispatchResult>
   readonly retry: (opId: string) => Promise<PendingMoveResponseDispatchResult>
+  readonly abandon: (opId: string) => Promise<PendingMoveResponseDispatchResult>
 }
 
 type MoveResponseRouteEnvelope = {
@@ -737,6 +740,62 @@ export const usePendingMoveResponses = (
     return dispatchEntry(entry)
   }
 
+  const abandon: UsePendingMoveResponsesReturn['abandon'] = async (opId) => {
+    const authContext = currentAuthContext()
+    if (!authContext) return localFailure('A current GM or selected player profile is required to abandon this response.', opId)
+    let entry
+    try {
+      entry = await outbox.get(opId)
+    }
+    catch (error) {
+      return localFailure(getErrorMessage(error, { fallback: 'The stored move response could not be loaded.' }), opId)
+    }
+    if (!entry || !isMoveResponseCommandOutboxEntry(entry)) {
+      return localFailure('The stored move response is no longer available.', opId)
+    }
+    if (!responseEntryMatchesContext(entry, options.slug, authContext)) {
+      return localFailure('The stored move response belongs to another map or participant.', opId)
+    }
+    if (entry.state === 'sending') return localFailure('This move response is currently being sent and cannot be abandoned.', opId)
+
+    let rawResponse: unknown
+    try {
+      rawResponse = await api.postJson<unknown>(MAP_API_PATHS.operationAbandon, { command: entry.body })
+    }
+    catch (error) {
+      return localFailure(
+        `The abandonment request failed; the exact response remains journaled. ${getErrorMessage(error, { fallback: 'The HTTP request failed.' })}`,
+        opId,
+      )
+    }
+    const validation = validateLivePlayOperationAbandonmentResponse(rawResponse)
+    if (!validation.valid
+      || validation.response.opId !== entry.opId
+      || validation.response.mapSlug !== entry.mapSlug) {
+      return localFailure('The server abandonment response did not match the journaled operation; it was retained.', opId)
+    }
+    try {
+      await outbox.acknowledgeTerminal(opId)
+      await refreshOutboxEntries()
+      await refresh()
+    }
+    catch (error) {
+      return localFailure(
+        `The server settled this operation, but its local journal could not be cleared. ${getErrorMessage(error, { fallback: 'Durable storage failed.' })}`,
+        opId,
+      )
+    }
+    return {
+      dispatched: true,
+      opId,
+      accepted: validation.response.disposition === 'already-terminal' && validation.response.result.ok,
+      abandoned: validation.response.disposition === 'abandoned',
+      message: validation.response.disposition === 'abandoned'
+        ? 'The uncertain response was abandoned server-side and removed from this browser.'
+        : 'The response had already settled on the server; the authoritative encounter will be reconciled.',
+    }
+  }
+
   if (getCurrentScope()) {
     onMounted(() => {
       mounted = true
@@ -780,5 +839,6 @@ export const usePendingMoveResponses = (
     forcePass,
     cancel,
     retry,
+    abandon,
   }
 }

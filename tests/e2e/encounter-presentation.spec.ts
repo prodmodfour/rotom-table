@@ -205,19 +205,39 @@ test('real GM/player login, map realtime, reconnect, and IndexedDB use the produ
     }))
     expect(spawned.ok).toBe(true)
 
+    const initiativeOpId = `op_${key}_initiative`
+    const initiativeSet = await parseOk(await gm.request.post('/api/maps/initiative/set', {
+      data: {
+        schemaVersion: 1,
+        opId: initiativeOpId,
+        mapSlug,
+        baseRevision: spawned.revision,
+        type: 'setInitiative',
+        scopes: [{ kind: 'map', lane: 'initiative' }],
+        payload: {
+          tokenId: placementId,
+          initiative: 12,
+          activeId: placementId,
+        },
+      },
+    }))
+    expect(initiativeSet.ok).toBe(true)
+
     await player.goto('/login')
     await player.getByRole('button', { name: /Player Login/ }).click()
     await player.getByRole('button', { name: new RegExp(profileName) }).click()
     await expect(player).toHaveURL(/\/maps(?:\?|$)/)
 
     await Promise.all([
-      gm.goto(`/maps/${mapSlug}`),
-      player.goto(`/maps/${mapSlug}`),
+      gm.goto(`/play/${mapSlug}`),
+      player.goto(`/play/${mapSlug}`),
     ])
     await Promise.all([
-      expect(gm.locator('.scene-root canvas')).toBeVisible({ timeout: 30_000 }),
-      expect(player.locator('.scene-root canvas')).toBeVisible({ timeout: 30_000 }),
+      expect(gm.getByRole('navigation', { name: 'Encounter workspace' })).toBeVisible(),
+      expect(player.getByRole('navigation', { name: 'Encounter workspace' })).toBeVisible(),
     ])
+    await gm.getByRole('button', { name: 'Tactical focus' }).click()
+    await expect(gm.getByText(/Tactical renderer ready in \d+ ms/)).toBeVisible({ timeout: 30_000 })
     expect(await gm.evaluate(() => new Promise<boolean>((resolve) => {
       const socket = new WebSocket(`ws://${location.host}/api/sessions/socket`)
       const timeout = window.setTimeout(() => { socket.close(); resolve(false) }, 5_000)
@@ -231,11 +251,6 @@ test('real GM/player login, map realtime, reconnect, and IndexedDB use the produ
         resolve(false)
       }, { once: true })
     }))).toBe(true)
-    await Promise.all([
-      gm.getByRole('button', { name: /Encounter/ }).click(),
-      player.getByRole('button', { name: /Encounter/ }).click(),
-    ])
-
     await expect.poll(async () => gm.evaluate(async () => (
       await indexedDB.databases()
     ).map(database => database.name))).toContain('rotom-table-client')
@@ -246,7 +261,7 @@ test('real GM/player login, map realtime, reconnect, and IndexedDB use the produ
         schemaVersion: 1,
         opId: moveOpId,
         mapSlug,
-        baseRevision: spawned.revision,
+        baseRevision: initiativeSet.revision,
         type: 'moveToken',
         scopes: [{ kind: 'token', placementId, field: 'position' }],
         payload: { placementId, position: { x: 3, y: 0, z: 2 } },
@@ -266,8 +281,7 @@ test('real GM/player login, map realtime, reconnect, and IndexedDB use the produ
     await player.waitForTimeout(250)
     await playerContext.setOffline(false)
     await player.reload()
-    await expect(player.locator('.scene-root canvas')).toBeVisible({ timeout: 30_000 })
-    await player.getByRole('button', { name: /Encounter/ }).click()
+    await expect(player.getByRole('navigation', { name: 'Encounter workspace' })).toBeVisible()
     await expect(player.locator(acceptedSelector)).toHaveCount(1)
     expect(await player.evaluate(() => localStorage.getItem('rotom:player-profile:selection'))).toContain(profileName)
 

@@ -18,6 +18,7 @@ import {
 describe('app navigation helpers', () => {
   it('filters GM-only nav items while keeping normal player navigation available', () => {
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
+      '/play',
       '/maps',
       GROUP_INVENTORY_PATH,
       SHOP_LIBRARY_PATH,
@@ -27,6 +28,7 @@ describe('app navigation helpers', () => {
     ])
     expect(PRIMARY_APP_NAV_ITEMS.some((item) => item.path === '/sessions')).toBe(false)
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).map((item) => item.path)).toEqual([
+      '/play',
       '/maps',
       CAMPAIGN_PATH,
       GROUP_INVENTORY_PATH,
@@ -35,7 +37,7 @@ describe('app navigation helpers', () => {
       '/sheets',
       SETTINGS_PATH,
       PLAYER_PROFILE_MANAGEMENT_PATH,
-      '/generate',
+      '/encounters/new',
     ])
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).some((item) => item.path === '/sessions')).toBe(false)
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).find((item) => item.path === GROUP_INVENTORY_PATH)?.label).toBe('Group Inventory')
@@ -60,11 +62,15 @@ describe('app navigation helpers', () => {
     expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, true).some((item) => item.path === ENCOUNTER_TABLES_PATH)).toBe(true)
   })
 
-  it('keeps legacy map/grid routes active under the Maps nav item', () => {
+  it('keeps encounter and legacy map/grid routes in distinct active navigation groups', () => {
+    expect(isAppNavItemActive('/play', '/play')).toBe(true)
+    expect(isAppNavItemActive('/play/viridian', '/play')).toBe(true)
+    expect(isAppNavItemActive('/maps/viridian', '/play')).toBe(false)
     expect(isAppNavItemActive('/', '/maps')).toBe(true)
     expect(isAppNavItemActive('/maps/airship', '/maps')).toBe(true)
     expect(isAppNavItemActive('/grids/legacy', '/maps')).toBe(true)
     expect(isAppNavItemActive('/sheets', '/maps')).toBe(false)
+    expect(isAppNavItemActive('/encounters/new', '/encounters/new')).toBe(true)
     expect(isAppNavItemActive('/group-inventory', GROUP_INVENTORY_PATH)).toBe(true)
     expect(isAppNavItemActive('/group-inventory/history', GROUP_INVENTORY_PATH)).toBe(true)
     expect(isAppNavItemActive('/group-inventory-tools', GROUP_INVENTORY_PATH)).toBe(false)

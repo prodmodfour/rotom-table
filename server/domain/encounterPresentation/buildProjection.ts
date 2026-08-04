@@ -196,6 +196,32 @@ const participantForPlacement = (
   }
 }
 
+const currentParticipantIdentity = (
+  participant: EncounterParticipantPresentationRef | null,
+  participants: ReadonlyMap<string, EncounterParticipantPresentationRef>,
+): EncounterParticipantPresentationRef | null => {
+  if (!participant) return null
+  const current = participants.get(participant.participantId)
+  if (!current) return participant
+  return {
+    ...current,
+    // Keep the accepted fact's historical state labels while adopting the
+    // role-projected current identity for this stable participant.
+    statusLabels: participant.statusLabels,
+  }
+}
+
+const currentAcceptedParticipantIdentities = (
+  accepted: AcceptedEncounterPresentation,
+  participants: ReadonlyMap<string, EncounterParticipantPresentationRef>,
+): AcceptedEncounterPresentation => ({
+  ...accepted,
+  actor: currentParticipantIdentity(accepted.actor, participants),
+  affectedParticipants: accepted.affectedParticipants.map(participant => (
+    currentParticipantIdentity(participant, participants) ?? participant
+  )),
+})
+
 const timingFromText = (value: string | null | undefined): EncounterActionTiming => {
   const normalized = value?.trim() ?? ''
   const lower = normalized.toLowerCase()
@@ -1382,6 +1408,7 @@ export const buildEncounterPresentationProjection = (
     pending,
     accepted: [...(dependencies.acceptedPresentations ?? [])]
       .filter(accepted => accepted.mapSlug === input.map.slug && accepted.revision <= input.mapRevision)
+      .map(accepted => currentAcceptedParticipantIdentities(accepted, participants))
       .sort((left, right) => left.revision - right.revision || left.presentationId.localeCompare(right.presentationId))
       .slice(-100),
     diagnostics: [],

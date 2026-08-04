@@ -31,6 +31,15 @@ export const mapsChannel = 'maps'
 export const sheetsChannel = 'sheets'
 export const shopsChannel = 'shops'
 export const groupInventoryChannel = (slug: string): `group-inventory:${string}` => `group-inventory:${slug}`
+export const encountersChannel = 'encounters'
+export const encounterChannel = (encounterId: string): `encounter:${string}` => `encounter:${encounterId}`
+
+export const ENCOUNTER_DOCUMENT_REALTIME_EVENT_TYPES = {
+  CREATED: 'encounter-document-created',
+  UPDATED: 'encounter-document-updated',
+} as const
+
+export type EncounterDocumentRealtimeEventType = typeof ENCOUNTER_DOCUMENT_REALTIME_EVENT_TYPES[keyof typeof ENCOUNTER_DOCUMENT_REALTIME_EVENT_TYPES]
 
 export const LIVE_PLAY_REALTIME_EVENT_TYPES = {
   COMMAND_ACCEPTED: 'live-play-command-accepted',

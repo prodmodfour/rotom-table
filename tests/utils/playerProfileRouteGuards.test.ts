@@ -3,6 +3,7 @@ import { CAMPAIGN_PATH, GROUP_INVENTORY_PATH, LOGIN_PATH, SESSION_LOBBY_PATH, SE
 import { ENCOUNTER_GENERATOR_PATH } from '~/utils/encounterRoutes'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
+import { ENCOUNTER_LIBRARY_PATH } from '#shared/encounterWorkspace/routes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
 import { referenceDetailPath, referenceIndexPath } from '~/utils/reference/routes'
 import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
@@ -30,6 +31,7 @@ describe('player profile-aware route guards', () => {
     expect(isPlayerProfileOptionalPath(referenceDetailPath('rule', 'combat-stages'))).toBe(true)
     expect(isPlayerProfileOptionalPath(MAP_LIBRARY_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(`${MAP_LIBRARY_PATH}?folder=routes`)).toBe(true)
+    expect(isPlayerProfileOptionalPath(ENCOUNTER_LIBRARY_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(GROUP_INVENTORY_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(`${GROUP_INVENTORY_PATH}?tab=medicalKit`)).toBe(true)
     expect(isPlayerProfileOptionalPath(PLAYER_TRAINER_PORTAL_PATH)).toBe(true)
@@ -43,10 +45,12 @@ describe('player profile-aware route guards', () => {
   it('requires a selected profile before player map-control and sheet-editor routes', () => {
     expect(isPlayerProfileRequiredPath('/maps/viridian-forest')).toBe(true)
     expect(isPlayerProfileRequiredPath('/maps/viridian-forest?floor=1')).toBe(true)
+    expect(isPlayerProfileRequiredPath('/play/viridian-forest')).toBe(true)
     expect(isPlayerProfileRequiredPath('/sheets/pikachu')).toBe(true)
     expect(isPlayerProfileRequiredPath('/sheets/trainers/brock')).toBe(true)
 
     expect(isPlayerProfileRequiredPath('/maps')).toBe(false)
+    expect(isPlayerProfileRequiredPath('/play')).toBe(false)
     expect(isPlayerProfileRequiredPath('/sheets')).toBe(false)
     expect(isPlayerProfileRequiredPath('/pokedex/pikachu')).toBe(false)
     expect(isPlayerProfileRequiredPath('/moves/tackle')).toBe(false)
@@ -97,6 +101,17 @@ describe('player profile-aware route guards', () => {
     })
 
     expect(resolveProfileAwareRouteGuard({
+      path: '/play/viridian',
+      fullPath: '/play/viridian?participant=actor%3Aone',
+      hasRole: true,
+      isPlayer: true,
+      hasSelectedPlayerProfile: false,
+    })).toEqual({
+      type: 'login',
+      location: playerProfileRequiredLoginRoute('/play/viridian?participant=actor%3Aone'),
+    })
+
+    expect(resolveProfileAwareRouteGuard({
       path: '/sheets/trainers/brock',
       fullPath: '/sheets/trainers/brock',
       hasRole: true,
@@ -111,6 +126,7 @@ describe('player profile-aware route guards', () => {
   it('does not over-restrict players without profiles from browsing allowed app routes', () => {
     for (const path of [
       '/maps',
+      '/play',
       GROUP_INVENTORY_PATH,
       PLAYER_TRAINER_PORTAL_PATH,
       SHOP_LIBRARY_PATH,

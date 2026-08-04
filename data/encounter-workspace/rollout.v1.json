@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "rolloutId": "encounter-workspace-live-play-v1",
+  "designAuthority": "DESIGN.md",
+  "featureFlags": {
+    "workspaceAvailability": "encounterWorkspaceEnabled",
+    "workspaceDefault": "encounterWorkspaceDefaultForLivePlay",
+    "workshopAvailability": "battlefieldWorkshopEnabled",
+    "aggregateMetrics": "encounterWorkspaceMetricsEnabled"
+  },
+  "invariants": [
+    "Map documents, sheets, command use cases, pending interactions, receipts, and accepted mechanics keep their existing authority.",
+    "Changing a presentation feature flag never migrates or rewrites campaign authority data.",
+    "The Battlefield Workshop remains the source-owned exact-geometry and battlefield-authoring fallback.",
+    "Public and player projections remain server-sanitized in every stage."
+  ],
+  "stages": [
+    {
+      "stage": 0,
+      "id": "internal-disabled-default",
+      "audience": "maintainers",
+      "flags": {
+        "encounterWorkspaceEnabled": true,
+        "encounterWorkspaceDefaultForLivePlay": false,
+        "battlefieldWorkshopEnabled": true,
+        "encounterWorkspaceMetricsEnabled": true
+      },
+      "entryGates": ["focused-unit-integration-e2e-pass", "privacy-projection-pass"],
+      "exitGates": ["canonical-synthetic-acceptance-pass", "rollback-drill-pass"]
+    },
+    {
+      "stage": 1,
+      "id": "gm-opt-in",
+      "audience": "selected-gm-campaigns",
+      "flags": {
+        "encounterWorkspaceEnabled": true,
+        "encounterWorkspaceDefaultForLivePlay": false,
+        "battlefieldWorkshopEnabled": true,
+        "encounterWorkspaceMetricsEnabled": true
+      },
+      "entryGates": ["stage-0-exit-gates", "operator-briefing-complete"],
+      "exitGates": ["no-release-gate-regression", "no-private-choice-leak", "no-duplicate-mutation"]
+    },
+    {
+      "stage": 2,
+      "id": "workspace-default-with-workshop-fallback",
+      "audience": "all-campaigns",
+      "flags": {
+        "encounterWorkspaceEnabled": true,
+        "encounterWorkspaceDefaultForLivePlay": true,
+        "battlefieldWorkshopEnabled": true,
+        "encounterWorkspaceMetricsEnabled": true
+      },
+      "entryGates": ["stage-1-exit-gates", "aggregate-targets-pass"],
+      "exitGates": ["two-release-observation-window", "zero-critical-rollback-triggers"]
+    }
+  ],
+  "flowMigrationOrder": [
+    { "order": 1, "flow": "encounter-discovery", "from": "/maps", "to": "/play", "fallback": "/maps" },
+    { "order": 2, "flow": "turn-observation-and-participant-selection", "from": "map overlays", "to": "cockpit turn rail and roster", "fallback": "Battlefield Workshop" },
+    { "order": 3, "flow": "action-discovery-and-declaration", "from": "token context menu", "to": "Action Dock and decision layer", "fallback": "source-owned Workshop command UI" },
+    { "order": 4, "flow": "pending-response-and-recovery", "from": "map response overlays", "to": "resolution stack and system status", "fallback": "source-owned replay-safe recovery" },
+    { "order": 5, "flow": "exact-spatial-input", "from": "map-first session", "to": "cockpit tactical lens", "fallback": "Battlefield Workshop" },
+    { "order": 6, "flow": "director-live-state", "from": "map admin overlays", "to": "Director panel", "fallback": "Battlefield Workshop authoring controls" }
+  ],
+  "rollbackTriggers": [
+    { "severity": "critical", "id": "private-projection-leak", "threshold": 1 },
+    { "severity": "critical", "id": "duplicate-authoritative-mutation", "threshold": 1 },
+    { "severity": "critical", "id": "command-authority-bypass", "threshold": 1 },
+    { "severity": "high", "id": "canonical-task-completion-percent", "operator": "<", "threshold": 95 },
+    { "severity": "high", "id": "serious-accessibility-violations", "operator": ">", "threshold": 0 },
+    { "severity": "high", "id": "tactical-startup-p95-ms", "operator": ">", "threshold": 2000 }
+  ],
+  "rollbackActions": [
+    "Set encounterWorkspaceDefaultForLivePlay to false.",
+    "Keep encounterWorkspaceEnabled true for diagnosis unless the workspace itself leaks projected data.",
+    "Keep battlefieldWorkshopEnabled true.",
+    "Do not revert SQLite schema or delete Encounter Documents, receipts, events, sheets, maps, or aggregate metric rows.",
+    "Preserve the exact failed request and authoritative operation receipt; retry only through the owning replay-safe use case.",
+    "Run the canonical privacy, replay, migration, and compatibility-route suites before re-entry."
+  ]
+}

@@ -254,7 +254,7 @@ describe('map page route authority', () => {
 
     expect(mapPage).toContain("import LivePlayLatencyDebugPanel from '~/components/map/LivePlayLatencyDebugPanel.vue'")
     expect(mapPage).toContain("const livePlayLatencyDebugEnabled = computed(() => route.query.debugLivePlayLatency === '1')")
-    expect(mapPage).toContain('<LivePlayLatencyDebugPanel\n        v-if="livePlayLatencyDebugEnabled"\n        :traces="livePlayCommands.commandTraces.value"\n        :presence-metrics="mapPresenceDebugMetrics"\n        :token-motion-metrics="livePlayTokenMotionDebugMetrics"\n      />')
+    expect(mapPage).toContain('<LivePlayLatencyDebugPanel\n        v-if="encounterLensMode && livePlayLatencyDebugEnabled"\n        :traces="livePlayCommands.commandTraces.value"\n        :presence-metrics="mapPresenceDebugMetrics"\n        :token-motion-metrics="livePlayTokenMotionDebugMetrics"\n      />')
     expect(panel).toContain('Pred → SSE')
     expect(panel).toContain('Pred → HTTP')
     expect(panel).toContain('HTTP → adopt')
@@ -459,7 +459,7 @@ describe('map page route authority', () => {
     expect(mapPage).toContain('@inspect-move-operation="inspectMoveOperation"')
     expect(mapPage).toContain('@apply-move-correction="applyMoveCorrection"')
     expect(scenePanel).toContain(':can-inspect-move-operations="props.canManageMoveCorrections === true"')
-    expect(scenePanel).toContain("v-if=\"props.canManageMoveCorrections\"")
+    expect(scenePanel).toContain("v-if=\"props.legacyLivePlayChrome !== false && props.canManageMoveCorrections\"")
     expect(combatLog).toContain('Operation details')
     expect(correctionPanel).toContain('Non-reversible warnings')
     expect(correctionPanel).toContain('Corrects original')

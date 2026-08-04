@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "encounter-map-first-retirement-v1",
+  "designAuthority": "DESIGN.md",
+  "workspaceRoute": "src/pages/play/[encounterId].vue",
+  "workshopRoute": "src/pages/maps/[slug].vue",
+  "tacticalBoundary": "src/components/encounter/workspace/EncounterTacticalLens.vue",
+  "rows": [
+    {
+      "ticket": "EUX-086",
+      "capability": "initiative-combat-history-actions-responses-system-status",
+      "workspaceOwners": [
+        "EncounterTurnRail",
+        "EncounterEventFeed",
+        "EncounterActionDock",
+        "EncounterResolutionStack",
+        "EncounterWorkspaceSystemStatus"
+      ],
+      "legacyOwners": [
+        "InitiativeInfoBar",
+        "MapCombatLog",
+        "EncounterPresentationPanel",
+        "MapMoveResponsePanel",
+        "MapScenePanel"
+      ],
+      "productionBoundary": "workspace",
+      "status": "migrated"
+    },
+    {
+      "ticket": "EUX-087",
+      "capability": "primary-token-actions",
+      "workspaceOwners": ["EncounterActionDock", "EncounterDecisionLayer"],
+      "legacyOwners": ["TokenContextMenu"],
+      "productionBoundary": "dock-origin-with-authoritative-tactical-handoff",
+      "status": "migrated"
+    },
+    {
+      "ticket": "EUX-088",
+      "capability": "gm-live-controls-and-workshop-authoring",
+      "workspaceOwners": ["EncounterDirectorPanel", "Battlefield Workshop"],
+      "legacyOwners": ["MapAdminPanel", "TokenActionDialogs", "InitiativeMenuModal", "FieldEffectsMenuModal"],
+      "productionBoundary": "director-for-live-state-workshop-for-battlefield-state",
+      "status": "migrated"
+    },
+    {
+      "ticket": "EUX-089",
+      "capability": "visual-deduplication",
+      "workspaceOwners": ["EncounterWorkspaceShell", "EncounterTacticalLens"],
+      "legacyOwners": ["map-first-overlay-stack"],
+      "productionBoundary": "legacy-chrome-disabled-map-renderer-retained",
+      "status": "migrated"
+    }
+  ],
+  "allowedTacticalDependencies": [
+    "MapSceneRenderer",
+    "IsometricGrid",
+    "MapAbilityAutomationPanel",
+    "CapabilityActionModal",
+    "CapabilityAdjudicationModal",
+    "EncounterVfxOverlay",
+    "MapPresencePanel",
+    "LivePlayCommandRecoveryPanel"
+  ],
+  "forbiddenWorkspaceDependencies": [
+    "EncounterPresentationPanel",
+    "InitiativeInfoBar",
+    "MapCombatLog",
+    "MapMoveResponsePanel",
+    "MapAttackOfOpportunityOverlay",
+    "TokenContextMenu",
+    "TokenActionDialogs",
+    "MapAdminPanel",
+    "InitiativeMenuModal",
+    "FieldEffectsMenuModal",
+    "StartTurnModal",
+    "PokeballCaptureResultModal"
+  ]
+}

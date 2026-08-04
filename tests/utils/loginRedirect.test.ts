@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CAMPAIGN_PATH, GROUP_INVENTORY_PATH, LOGIN_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
 import {
+  ENCOUNTER_BUILDER_PATH,
   ENCOUNTER_GENERATOR_PATH,
   ENCOUNTER_TABLES_PATH,
 } from '~/utils/encounterRoutes'
@@ -22,6 +23,7 @@ describe('loginRedirect', () => {
     expect(PLAYER_BLOCKED_REDIRECT_PREFIXES).toEqual([
       CAMPAIGN_PATH,
       ENCOUNTER_GENERATOR_PATH,
+      ENCOUNTER_BUILDER_PATH,
       ENCOUNTER_TABLES_PATH,
       PLAYER_PROFILE_MANAGEMENT_PATH,
     ])
@@ -44,6 +46,7 @@ describe('loginRedirect', () => {
     expect(isPlayerBlockedRedirectPath(`${GROUP_INVENTORY_PATH}/history`)).toBe(false)
     expect(isPlayerBlockedRedirectPath(ENCOUNTER_GENERATOR_PATH)).toBe(true)
     expect(isPlayerBlockedRedirectPath(`${ENCOUNTER_GENERATOR_PATH}/history`)).toBe(true)
+    expect(isPlayerBlockedRedirectPath(ENCOUNTER_BUILDER_PATH)).toBe(true)
     expect(isPlayerBlockedRedirectPath(ENCOUNTER_TABLES_PATH)).toBe(true)
     expect(isPlayerBlockedRedirectPath(`${ENCOUNTER_TABLES_PATH}/kanto`)).toBe(true)
     expect(isPlayerBlockedRedirectPath(PLAYER_PROFILE_MANAGEMENT_PATH)).toBe(true)
@@ -64,6 +67,7 @@ describe('loginRedirect', () => {
     expect(resolveLoginRedirectTarget(GROUP_INVENTORY_PATH, 'player')).toBe(GROUP_INVENTORY_PATH)
     expect(resolveLoginRedirectTarget(SETTINGS_PATH, 'player')).toBe(SETTINGS_PATH)
     expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
+    expect(resolveLoginRedirectTarget(ENCOUNTER_BUILDER_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(`${ENCOUNTER_TABLES_PATH}/kanto`, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(PLAYER_PROFILE_MANAGEMENT_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(shopEditorPath('viridian-mart'), 'player')).toBe(DEFAULT_LOGIN_REDIRECT)

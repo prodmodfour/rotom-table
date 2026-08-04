@@ -33,6 +33,7 @@ import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 const props = defineProps<{
   menu: TokenContextMenuState
   canDeleteTokens?: boolean
+  secondaryOnly?: boolean
   moves?: TokenMoveMenuOption[]
   maneuvers?: TokenManeuverMenuOption[]
   abilities?: TokenAbilityMenuOption[]
@@ -349,7 +350,9 @@ watch(orders, (nextOrders) => {
       @pointerdown.stop
     >
       <template v-if="activePanel === 'main'">
+        <p v-if="props.secondaryOnly" class="context-menu__guidance">Use the encounter action dock for actions and the Director for corrections.</p>
         <button
+          v-if="!props.secondaryOnly"
           type="button"
           class="context-menu__button context-menu__button--submenu"
           aria-haspopup="menu"
@@ -360,6 +363,7 @@ watch(orders, (nextOrders) => {
         </button>
 
         <button
+          v-if="!props.secondaryOnly"
           type="button"
           class="context-menu__button context-menu__button--submenu"
           aria-haspopup="menu"
@@ -370,6 +374,7 @@ watch(orders, (nextOrders) => {
         </button>
 
         <button
+          v-if="!props.secondaryOnly"
           type="button"
           class="context-menu__button context-menu__button--submenu"
           aria-haspopup="menu"
@@ -380,7 +385,7 @@ watch(orders, (nextOrders) => {
         </button>
 
         <button
-          v-if="props.menu.canUseOrders"
+          v-if="!props.secondaryOnly && props.menu.canUseOrders"
           type="button"
           class="context-menu__button context-menu__button--submenu"
           aria-haspopup="menu"
@@ -391,7 +396,7 @@ watch(orders, (nextOrders) => {
         </button>
 
         <button
-          v-if="props.menu.canSendOut"
+          v-if="!props.secondaryOnly && props.menu.canSendOut"
           type="button"
           class="context-menu__button context-menu__button--submenu"
           aria-haspopup="menu"
@@ -402,7 +407,7 @@ watch(orders, (nextOrders) => {
         </button>
 
         <button
-          v-if="props.menu.canThrowPokeball"
+          v-if="!props.secondaryOnly && props.menu.canThrowPokeball"
           type="button"
           class="context-menu__button context-menu__button--submenu"
           aria-haspopup="menu"
@@ -428,7 +433,7 @@ watch(orders, (nextOrders) => {
           View in Pokédex
         </button>
         <button
-          v-if="props.menu.canGrantExperience"
+          v-if="!props.secondaryOnly && props.menu.canGrantExperience"
           type="button"
           class="context-menu__button"
           @click.stop="emit('grant-experience')"
@@ -444,6 +449,7 @@ watch(orders, (nextOrders) => {
           Rotate sprite
         </button>
         <button
+          v-if="!props.secondaryOnly"
           type="button"
           class="context-menu__button"
           @click.stop="emit('modify-hp')"
@@ -451,6 +457,7 @@ watch(orders, (nextOrders) => {
           Modify HP
         </button>
         <button
+          v-if="!props.secondaryOnly"
           type="button"
           class="context-menu__button"
           @click.stop="emit('add-temp-hp')"
@@ -458,6 +465,7 @@ watch(orders, (nextOrders) => {
           Add Temp HP
         </button>
         <button
+          v-if="!props.secondaryOnly"
           type="button"
           class="context-menu__button"
           @click.stop="emit('modify-combat-stages')"
@@ -465,6 +473,7 @@ watch(orders, (nextOrders) => {
           Change combat stages
         </button>
         <button
+          v-if="!props.secondaryOnly"
           type="button"
           class="context-menu__button"
           @click.stop="emit('apply-remove-conditions')"
@@ -473,6 +482,7 @@ watch(orders, (nextOrders) => {
         </button>
 
         <button
+          v-if="!props.secondaryOnly"
           type="button"
           class="context-menu__button"
           @click.stop="emit('deal-damage')"
@@ -480,7 +490,7 @@ watch(orders, (nextOrders) => {
           Deal damage
         </button>
         <button
-          v-if="props.canDeleteTokens"
+          v-if="!props.secondaryOnly && props.canDeleteTokens"
           type="button"
           class="context-menu__button"
           @click.stop="emit('delete')"
@@ -898,6 +908,15 @@ watch(orders, (nextOrders) => {
 .context-menu--move-panel {
   width: max-content;
   max-width: none;
+}
+
+.context-menu__guidance {
+  margin: 0 0 .4rem;
+  padding: .55rem;
+  border-left: 3px solid var(--rt-info, var(--accent));
+  color: var(--ink-soft);
+  font-size: .8rem;
+  line-height: 1.35;
 }
 
 .context-menu__button {

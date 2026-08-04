@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "fixtureId": "private-reactions-reconnect",
+  "title": "Nested private reactions and reconnect",
+  "purpose": "Privacy, ordered-resolution, exact-retry, reconnect, replay-gap, duplicate-delivery, and focus-restoration fixture with different authorized responders.",
+  "sourceTicket": "EUX-007",
+  "clock": 1700000300000,
+  "map": {
+    "slug": "fixture-signal-tower",
+    "name": "Signal Tower Roof",
+    "revision": 57,
+    "width": 14,
+    "height": 14,
+    "groundLevel": 6,
+    "environment": {
+      "weather": ["Rain"],
+      "terrain": [],
+      "rooms": [],
+      "hazards": []
+    }
+  },
+  "encounter": {
+    "sceneId": "scene-private-reaction",
+    "sceneName": "Signal in the Rain",
+    "round": 4,
+    "phase": "main",
+    "currentParticipantId": "participant-gengar-private",
+    "initiativeOrder": [
+      "participant-gengar-private",
+      "participant-lucario-private",
+      "participant-nia-private",
+      "participant-sol-private"
+    ],
+    "sides": [
+      {
+        "id": "side-nia-private",
+        "label": "Nia's team",
+        "relationship": "ally",
+        "accent": "#8857c7",
+        "symbol": "eye",
+        "status": "active"
+      },
+      {
+        "id": "side-sol-private",
+        "label": "Sol's team",
+        "relationship": "foe",
+        "accent": "#d8a342",
+        "symbol": "shield",
+        "status": "active"
+      }
+    ],
+    "objectives": [
+      {
+        "id": "objective-private-duel",
+        "label": "Hold the signal tower",
+        "visibility": "public",
+        "status": "active",
+        "progress": 2,
+        "maximum": 5
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "participant-nia-private",
+      "kind": "trainer",
+      "displayName": "Nia",
+      "subtitle": "Telepath Trainer",
+      "sideId": "side-nia-private",
+      "controllerIds": ["player-nia", "gm"],
+      "sheetSlug": "fixture-trainer-nia",
+      "portraitUrl": null,
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 2, "y": 6, "z": 7 },
+      "hp": { "current": 39, "maximum": 43, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": [
+        { "id": "ap", "label": "AP", "current": 2, "maximum": 5 }
+      ]
+    },
+    {
+      "id": "participant-gengar-private",
+      "kind": "pokemon",
+      "displayName": "Gengar",
+      "subtitle": "Nia's active Pokémon",
+      "sideId": "side-nia-private",
+      "controllerIds": ["player-nia", "gm"],
+      "sheetSlug": "fixture-pokemon-gengar-private",
+      "portraitUrl": "/sprites/gengar.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 6, "y": 6, "z": 7 },
+      "hp": { "current": 42, "maximum": 62, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": [
+        { "id": "standard-action", "label": "Standard", "current": 0, "maximum": 1 },
+        { "id": "shift-action", "label": "Shift", "current": 1, "maximum": 1 }
+      ]
+    },
+    {
+      "id": "participant-sol-private",
+      "kind": "trainer",
+      "displayName": "Sol",
+      "subtitle": "Commander",
+      "sideId": "side-sol-private",
+      "controllerIds": ["player-sol", "gm"],
+      "sheetSlug": "fixture-trainer-sol-private",
+      "portraitUrl": null,
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 12, "y": 6, "z": 7 },
+      "hp": { "current": 41, "maximum": 41, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": [
+        { "id": "ap", "label": "AP", "current": 1, "maximum": 5 }
+      ]
+    },
+    {
+      "id": "participant-lucario-private",
+      "kind": "pokemon",
+      "displayName": "Lucario",
+      "subtitle": "Sol's active Pokémon",
+      "sideId": "side-sol-private",
+      "controllerIds": ["player-sol", "gm"],
+      "sheetSlug": "fixture-pokemon-lucario-private",
+      "portraitUrl": "/sprites/lucario.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 8, "y": 6, "z": 7 },
+      "hp": { "current": 27, "maximum": 67, "temporary": 0 },
+      "injuries": 2,
+      "conditions": ["Vulnerable"],
+      "resources": [
+        { "id": "standard-action", "label": "Standard", "current": 1, "maximum": 1 },
+        { "id": "shift-action", "label": "Shift", "current": 1, "maximum": 1 }
+      ]
+    }
+  ],
+  "offers": [
+    {
+      "id": "offer-gengar-shadow-ball",
+      "actorId": "participant-gengar-private",
+      "sourceKind": "move",
+      "label": "Shadow Ball",
+      "group": "attacks-and-moves",
+      "timing": "At-Will · Standard Action",
+      "spatiality": "relationship",
+      "targetIds": ["participant-lucario-private", "participant-sol-private"],
+      "availability": "unavailable",
+      "unavailableReason": "The declaration is waiting for responses."
+    },
+    {
+      "id": "offer-gengar-shift",
+      "actorId": "participant-gengar-private",
+      "sourceKind": "system",
+      "label": "Move",
+      "group": "movement-and-positioning",
+      "timing": "Shift Action",
+      "spatiality": "exact",
+      "targetIds": [],
+      "availability": "unavailable",
+      "unavailableReason": "Resolve the current response first."
+    },
+    {
+      "id": "offer-sol-guardian-orders",
+      "actorId": "participant-sol-private",
+      "sourceKind": "feature",
+      "label": "Guardian Orders",
+      "group": "trainer-commands-and-team-actions",
+      "timing": "Interrupt",
+      "spatiality": "relationship",
+      "targetIds": ["participant-lucario-private"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-nia-telepathic-warning",
+      "actorId": "participant-nia-private",
+      "sourceKind": "feature",
+      "label": "Telepathic Warning",
+      "group": "support-and-control",
+      "timing": "Reaction",
+      "spatiality": "relationship",
+      "targetIds": ["participant-gengar-private"],
+      "availability": "available",
+      "unavailableReason": null
+    }
+  ],
+  "pending": [
+    {
+      "id": "pending-guardian-orders",
+      "parentId": null,
+      "actorId": "participant-gengar-private",
+      "kind": "interrupt",
+      "sourceLabel": "Shadow Ball",
+      "responderIds": ["player-sol", "gm"],
+      "publicPrompt": "A defender may respond to Shadow Ball.",
+      "privatePrompt": "Use Guardian Orders to protect Lucario?",
+      "optionLabels": ["Interpose Sol", "Brace Lucario", "Pass"],
+      "spatiality": "relationship",
+      "status": "pending"
+    },
+    {
+      "id": "pending-telepathic-warning",
+      "parentId": "pending-guardian-orders",
+      "actorId": "participant-nia-private",
+      "kind": "reaction",
+      "sourceLabel": "Telepathic Warning",
+      "responderIds": ["player-nia", "gm"],
+      "publicPrompt": "Another response is queued.",
+      "privatePrompt": "If Guardian Orders changes the target, warn Gengar and shift one metre?",
+      "optionLabels": ["Warn and step north", "Warn and step south", "Decline"],
+      "spatiality": "exact",
+      "status": "queued"
+    }
+  ],
+  "accepted": [
+    {
+      "id": "accepted-shadow-ball-declared",
+      "sequence": 101,
+      "actorId": "participant-gengar-private",
+      "headline": "Gengar declared Shadow Ball against Lucario.",
+      "affectedIds": ["participant-gengar-private", "participant-lucario-private"],
+      "changes": ["Standard Action reserved", "Resolution paused for responses"],
+      "tone": "pending"
+    },
+    {
+      "id": "accepted-reconnect-snapshot",
+      "sequence": 102,
+      "actorId": null,
+      "headline": "The encounter snapshot was restored through sequence 102.",
+      "affectedIds": [],
+      "changes": ["Pending response stack restored", "No action was applied twice"],
+      "tone": "neutral"
+    }
+  ],
+  "system": {
+    "connection": "reconnecting",
+    "replayGap": true,
+    "outbox": [
+      {
+        "id": "outbox-shadow-ball",
+        "requestId": "request-shadow-ball-101",
+        "commandType": "use-move",
+        "status": "uncertain",
+        "exactRetryAllowed": true,
+        "terminalStatus": null
+      }
+    ],
+    "blockingMessage": "Reconnecting. Check Shadow Ball's terminal status before retrying."
+  },
+  "audiences": [
+    {
+      "id": "audience-nia-private",
+      "role": "player-owner",
+      "viewerId": "player-nia",
+      "visibleParticipantIds": ["participant-nia-private", "participant-gengar-private", "participant-sol-private", "participant-lucario-private"],
+      "controlledParticipantIds": ["participant-nia-private", "participant-gengar-private"],
+      "authorizedPendingIds": ["pending-telepathic-warning"]
+    },
+    {
+      "id": "audience-sol-private",
+      "role": "player-owner",
+      "viewerId": "player-sol",
+      "visibleParticipantIds": ["participant-nia-private", "participant-gengar-private", "participant-sol-private", "participant-lucario-private"],
+      "controlledParticipantIds": ["participant-sol-private", "participant-lucario-private"],
+      "authorizedPendingIds": ["pending-guardian-orders"]
+    },
+    {
+      "id": "audience-gm-private",
+      "role": "gm",
+      "viewerId": "gm",
+      "visibleParticipantIds": ["participant-nia-private", "participant-gengar-private", "participant-sol-private", "participant-lucario-private"],
+      "controlledParticipantIds": ["participant-nia-private", "participant-gengar-private", "participant-sol-private", "participant-lucario-private"],
+      "authorizedPendingIds": ["pending-guardian-orders", "pending-telepathic-warning"]
+    },
+    {
+      "id": "audience-public-private",
+      "role": "public",
+      "viewerId": null,
+      "visibleParticipantIds": ["participant-nia-private", "participant-gengar-private", "participant-sol-private", "participant-lucario-private"],
+      "controlledParticipantIds": [],
+      "authorizedPendingIds": []
+    }
+  ],
+  "scripts": [
+    {
+      "id": "private-nested-response-order",
+      "actorRole": "authorized-responder",
+      "taskIds": ["respond-to-optional-trigger", "pass-cancel-or-force-response"],
+      "steps": ["Project Guardian Orders privately to Sol and public waiting copy to everyone else.", "Keep Telepathic Warning queued and private to Nia.", "Resolve or pass Guardian Orders.", "Promote Telepathic Warning and move focus to Nia's prompt.", "Settle the declaration in causal order."],
+      "expectedTerminal": "Each responder sees only authorized options and the child never becomes primary before its parent settles."
+    },
+    {
+      "id": "private-reconnect-active-responder",
+      "actorRole": "player-controller",
+      "taskIds": ["recover-uncertain-command", "handle-reconnect-stale-or-correction", "respond-to-optional-trigger"],
+      "steps": ["Disconnect Sol while Guardian Orders is primary.", "Reconnect and adopt the latest snapshot.", "Restore the same primary response and focus without exposing Nia's queued options.", "Check Shadow Ball terminal status before exact retry."],
+      "expectedTerminal": "Sol resumes Guardian Orders within five seconds and the uncertain declaration is not duplicated."
+    },
+    {
+      "id": "private-public-redaction",
+      "actorRole": "public-observer",
+      "taskIds": ["observe-current-turn", "respond-to-optional-trigger"],
+      "steps": ["Inspect public DOM, accessibility tree, events, and screenshot.", "Confirm only bounded waiting summaries are present.", "Confirm responder option labels and private prompts are absent."],
+      "expectedTerminal": "No private prompt, option, build detail, hidden identifier, or diagnostic data is disclosed."
+    },
+    {
+      "id": "private-duplicate-accepted-delivery",
+      "actorRole": "diagnostic-operator",
+      "taskIds": ["view-accepted-outcome", "recover-uncertain-command", "inspect-runtime-diagnostics"],
+      "steps": ["Deliver accepted sequence 101 twice.", "Reload with snapshot through 102.", "Replay overlapping events.", "Inspect presentation history and durable state."],
+      "expectedTerminal": "One Shadow Ball declaration row and one reserved action remain after duplicate delivery and reload."
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "baselineId": "current-compatibility-164b510d",
+  "sourceCommit": "164b510d",
+  "sourceRoute": "/maps/:slug",
+  "captureTicket": "EUX-009",
+  "captureDate": "2026-08-04",
+  "fixture": {
+    "kind": "isolated-synthetic-campaign",
+    "referenceFixtureId": "simple-trainer-duel",
+    "mapName": "Encounter UX Baseline",
+    "participants": [
+      "Mira",
+      "Luxray",
+      "Rowan",
+      "Crobat"
+    ],
+    "containsPrivateCampaignData": false
+  },
+  "browser": {
+    "name": "Chrome",
+    "engine": "Chromium",
+    "version": "150",
+    "devicePixelRatio": 1
+  },
+  "artifacts": [
+    {
+      "path": "desktop-map.png",
+      "kind": "screenshot",
+      "viewport": "desktop",
+      "state": "map with compatibility chrome closed",
+      "bytes": 637419,
+      "sha256": "fa8e0d70344ee4961f835d2ff849a9a511e38aaaecc8eb75071b915aaf148353",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "path": "desktop-encounter-actions.png",
+      "kind": "screenshot",
+      "viewport": "desktop",
+      "state": "legacy encounter action drawer open",
+      "bytes": 543863,
+      "sha256": "85eeb63b06296295c9772f79fa6b4dc1ae910f61ddf1a4f5bdd6fd10d5c10fba",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "path": "desktop-navigation-and-actions.png",
+      "kind": "screenshot",
+      "viewport": "desktop",
+      "state": "legacy encounter and navigation drawers open",
+      "bytes": 559081,
+      "sha256": "f0ef9de84b4883d6a3ed03ebbc575ff1e9fc6f434dee89b9c38b97fd97b03667",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "path": "mobile-map.png",
+      "kind": "screenshot",
+      "viewport": "mobile",
+      "state": "narrow map with compatibility chrome closed",
+      "bytes": 280001,
+      "sha256": "4138336db0e1ca12cac0497881ae902efa204074ac2cb44c5ae332db77e98b43",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "path": "mobile-encounter-actions.png",
+      "kind": "screenshot",
+      "viewport": "mobile",
+      "state": "narrow legacy encounter action drawer open",
+      "bytes": 171479,
+      "sha256": "fa0d59ea15e467162c51b58627b5f03ccdf361e7fc04eee70fbbeac9dbfb14a6",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "path": "desktop-workflow.webm",
+      "kind": "video",
+      "viewport": "desktop",
+      "state": "map load, encounter drawer, and navigation drawer workflow",
+      "bytes": 2458257,
+      "sha256": "c68a04758093cc8d58f6b5f8d90d96d1636d857e97b5391d4465bd0813692018",
+      "width": 800,
+      "height": 450,
+      "durationMs": 20640
+    },
+    {
+      "path": "mobile-workflow.webm",
+      "kind": "video",
+      "viewport": "mobile",
+      "state": "narrow map load and encounter drawer workflow",
+      "bytes": 920864,
+      "sha256": "f0ea91d8324f33892346001de1a67d99bae905cd0a4b1d327575dc60f347f8a9",
+      "width": 800,
+      "height": 450,
+      "durationMs": 12720
+    },
+    {
+      "path": "desktop-accessibility-tree.yml",
+      "kind": "accessibility-tree",
+      "viewport": "desktop",
+      "state": "Playwright ARIA snapshot with drawers open",
+      "bytes": 11991,
+      "sha256": "ee80a3b97f0b43c694ed847a7f5cf1f97fe4289c930e45e4c2e499c15336c2cc"
+    },
+    {
+      "path": "mobile-accessibility-tree.yml",
+      "kind": "accessibility-tree",
+      "viewport": "mobile",
+      "state": "Playwright ARIA snapshot with encounter drawer open",
+      "bytes": 9640,
+      "sha256": "5897ae4277e59d10de3af0076a942d8f07301fc9edfb663df39e10813e4a7334"
+    },
+    {
+      "path": "desktop-performance-trace.json",
+      "kind": "performance-trace",
+      "viewport": "desktop",
+      "state": "Navigation Timing, paint, LCP, CLS, long-task, resource, and CDP metrics",
+      "bytes": 8752,
+      "sha256": "b37cb5b2085508e9b5ce476e14b13e15dab6cfbf23a66c135a04b35c4d27f732",
+      "settleWindowMs": 3000
+    },
+    {
+      "path": "mobile-performance-trace.json",
+      "kind": "performance-trace",
+      "viewport": "mobile",
+      "state": "Navigation Timing, paint, LCP, CLS, long-task, resource, and CDP metrics",
+      "bytes": 8886,
+      "sha256": "d6b3a1cb662757fcae5e914382c296d112f56879959b8cd7c057d8f9966243e6",
+      "settleWindowMs": 3000
+    }
+  ],
+  "privacyReview": {
+    "status": "passed",
+    "containsCredentials": false,
+    "containsJoinCodes": false,
+    "containsPrivateCampaignData": false,
+    "notes": "All names, map state, sheets, and runtime identifiers were created in an isolated synthetic campaign. The saved ARIA tree replaces the ephemeral browser tab suffix with a synthetic label."
+  }
+}

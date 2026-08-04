@@ -46,6 +46,50 @@ describe('server encounter presentation projection', () => {
     expect(projection.audience).toBe('gm')
   })
 
+  it('adopts current role-projected identities for accepted participant references', () => {
+    const map = createItemChoiceMap()
+    const command = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: 'op_identity1',
+      mapSlug: map.slug,
+      baseRevision: 3,
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [{ kind: 'token', placementId: ITEM_CHOICE_ACTOR_ID, field: 'position' }],
+      payload: { placementId: ITEM_CHOICE_ACTOR_ID, position: { x: 2, y: 0, z: 1 } },
+    } as LivePlayCommandEnvelope
+    const accepted = acceptedEncounterPresentationFromLivePlayCommand({
+      command,
+      result: createLivePlayAcceptedResult({
+        opId: command.opId,
+        mapSlug: map.slug,
+        previousRevision: 3,
+        revision: 4,
+        patches: [],
+      }),
+    })
+    expect(accepted.actor).toMatchObject({
+      participantId: ITEM_CHOICE_ACTOR_ID,
+      displayName: ITEM_CHOICE_ACTOR_ID,
+      sheetKind: null,
+    })
+
+    const projection = buildEncounterPresentationProjection({
+      role: 'gm',
+      map,
+      mapRevision: 4,
+      pokemonSheets: [createItemChoiceTargetSheet()],
+      trainerSheets: [createItemChoiceTrainerSheet()],
+      generatedAt: 100,
+    }, { acceptedPresentations: [accepted] })
+
+    expect(projection.accepted[0]?.actor).toMatchObject({
+      participantId: ITEM_CHOICE_ACTOR_ID,
+      displayName: 'Item Choice Trainer',
+      sheetKind: 'trainer',
+      sideId: 'heroes',
+    })
+  })
+
   it('adapts every accepted live-play command type without source-specific presentation parsing', () => {
     for (const [index, type] of LIVE_PLAY_MAP_COMMAND_TYPE_VALUES.entries()) {
       const command = {

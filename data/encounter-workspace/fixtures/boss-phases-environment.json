@@ -1,0 +1,445 @@
+{
+  "schemaVersion": 1,
+  "fixtureId": "boss-phases-environment",
+  "title": "Boss phases and environment",
+  "purpose": "Director and stage fixture for a dominant boss, phase transition, objectives, clocks, weather, terrain, rooms, hazards, hidden reinforcements, and accepted environmental choreography.",
+  "sourceTicket": "EUX-006",
+  "clock": 1700000200000,
+  "map": {
+    "slug": "fixture-ancient-engine",
+    "name": "Ancient Engine Chamber",
+    "revision": 44,
+    "width": 20,
+    "height": 20,
+    "groundLevel": -1,
+    "environment": {
+      "weather": ["Sandstorm"],
+      "terrain": ["Rocky", "Electric"],
+      "rooms": ["Gravity"],
+      "hazards": [
+        { "id": "hazard-gear-teeth", "kind": "rough", "cells": 12 },
+        { "id": "hazard-static-coils", "kind": "electric", "cells": 6 }
+      ]
+    }
+  },
+  "encounter": {
+    "sceneId": "scene-engine-boss",
+    "sceneName": "Wake the Colossus",
+    "round": 5,
+    "phase": "phase-2-overclock",
+    "currentParticipantId": "participant-regigigas",
+    "initiativeOrder": [
+      "participant-regigigas",
+      "participant-gardevoir",
+      "participant-solrock-east",
+      "participant-blastoise",
+      "participant-solrock-west",
+      "participant-ada",
+      "participant-ivo"
+    ],
+    "sides": [
+      {
+        "id": "side-expedition-boss",
+        "label": "Engine expedition",
+        "relationship": "ally",
+        "accent": "#39a6a2",
+        "symbol": "compass",
+        "status": "active"
+      },
+      {
+        "id": "side-ancient-engine",
+        "label": "Ancient engine",
+        "relationship": "foe",
+        "accent": "#b9823e",
+        "symbol": "gear",
+        "status": "active"
+      }
+    ],
+    "objectives": [
+      {
+        "id": "objective-disable-coils",
+        "label": "Disable the four power coils",
+        "visibility": "public",
+        "status": "active",
+        "progress": 2,
+        "maximum": 4
+      },
+      {
+        "id": "objective-survive-overclock",
+        "label": "Survive Overclock",
+        "visibility": "public",
+        "status": "active",
+        "progress": 1,
+        "maximum": 3
+      },
+      {
+        "id": "objective-hidden-awaken-guardians",
+        "label": "Awaken the buried guardians when two coils fail",
+        "visibility": "gm",
+        "status": "ready",
+        "progress": 2,
+        "maximum": 2
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "participant-ada",
+      "kind": "trainer",
+      "displayName": "Ada",
+      "subtitle": "Expedition leader",
+      "sideId": "side-expedition-boss",
+      "controllerIds": ["player-ada", "gm"],
+      "sheetSlug": "fixture-trainer-ada",
+      "portraitUrl": null,
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 3, "y": 0, "z": 10 },
+      "hp": { "current": 29, "maximum": 47, "temporary": 0 },
+      "injuries": 1,
+      "conditions": ["Slowed"],
+      "resources": [
+        { "id": "ap", "label": "AP", "current": 1, "maximum": 5 }
+      ]
+    },
+    {
+      "id": "participant-blastoise",
+      "kind": "pokemon",
+      "displayName": "Blastoise",
+      "subtitle": "Ada's active Pokémon",
+      "sideId": "side-expedition-boss",
+      "controllerIds": ["player-ada", "gm"],
+      "sheetSlug": "fixture-pokemon-blastoise",
+      "portraitUrl": "/sprites/blastoise.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 7, "y": 0, "z": 11 },
+      "hp": { "current": 63, "maximum": 91, "temporary": 8 },
+      "injuries": 1,
+      "conditions": ["Confused"],
+      "resources": [
+        { "id": "standard-action", "label": "Standard", "current": 1, "maximum": 1 },
+        { "id": "shift-action", "label": "Shift", "current": 0, "maximum": 1 }
+      ]
+    },
+    {
+      "id": "participant-ivo",
+      "kind": "trainer",
+      "displayName": "Ivo",
+      "subtitle": "Relic researcher",
+      "sideId": "side-expedition-boss",
+      "controllerIds": ["player-ivo", "gm"],
+      "sheetSlug": "fixture-trainer-ivo",
+      "portraitUrl": null,
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 4, "y": 0, "z": 14 },
+      "hp": { "current": 36, "maximum": 40, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": [
+        { "id": "ap", "label": "AP", "current": 3, "maximum": 5 },
+        { "id": "coil-progress", "label": "Coil analysis", "current": 2, "maximum": 4 }
+      ]
+    },
+    {
+      "id": "participant-gardevoir",
+      "kind": "pokemon",
+      "displayName": "Gardevoir",
+      "subtitle": "Ivo's active Pokémon",
+      "sideId": "side-expedition-boss",
+      "controllerIds": ["player-ivo", "gm"],
+      "sheetSlug": "fixture-pokemon-gardevoir",
+      "portraitUrl": "/sprites/gardevoir.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 8, "y": 0, "z": 15 },
+      "hp": { "current": 41, "maximum": 65, "temporary": 0 },
+      "injuries": 0,
+      "conditions": ["Vulnerable"],
+      "resources": [
+        { "id": "standard-action", "label": "Standard", "current": 1, "maximum": 1 },
+        { "id": "shift-action", "label": "Shift", "current": 1, "maximum": 1 }
+      ]
+    },
+    {
+      "id": "participant-regigigas",
+      "kind": "boss",
+      "displayName": "The Engine Colossus",
+      "subtitle": "Regigigas · Phase 2 of 3",
+      "sideId": "side-ancient-engine",
+      "controllerIds": ["gm"],
+      "sheetSlug": "fixture-boss-regigigas",
+      "portraitUrl": "/sprites/regigigas.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": null,
+      "position": { "x": 12, "y": 0, "z": 10 },
+      "hp": { "current": 188, "maximum": 260, "temporary": 20 },
+      "injuries": 2,
+      "conditions": ["Overclocked", "Enraged"],
+      "resources": [
+        { "id": "phase", "label": "Phase", "current": 2, "maximum": 3 },
+        { "id": "overclock", "label": "Overclock", "current": 1, "maximum": 3 },
+        { "id": "legendary-actions", "label": "Reactions", "current": 2, "maximum": 3 }
+      ]
+    },
+    {
+      "id": "participant-solrock-east",
+      "kind": "pokemon",
+      "displayName": "Eastern Solrock",
+      "subtitle": "Engine guardian",
+      "sideId": "side-ancient-engine",
+      "controllerIds": ["gm"],
+      "sheetSlug": "fixture-guardian-solrock-east",
+      "portraitUrl": "/sprites/solrock.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": "engine-guardians",
+      "position": { "x": 15, "y": 2, "z": 6 },
+      "hp": { "current": 38, "maximum": 58, "temporary": 0 },
+      "injuries": 1,
+      "conditions": [],
+      "resources": []
+    },
+    {
+      "id": "participant-solrock-west",
+      "kind": "pokemon",
+      "displayName": "Western Solrock",
+      "subtitle": "Engine guardian",
+      "sideId": "side-ancient-engine",
+      "controllerIds": ["gm"],
+      "sheetSlug": "fixture-guardian-solrock-west",
+      "portraitUrl": "/sprites/solrock.png",
+      "onMap": true,
+      "reserve": false,
+      "hidden": false,
+      "groupKey": "engine-guardians",
+      "position": { "x": 15, "y": 2, "z": 14 },
+      "hp": { "current": 46, "maximum": 58, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": []
+    },
+    {
+      "id": "participant-claydol-hidden",
+      "kind": "pokemon",
+      "displayName": "Buried Claydol",
+      "subtitle": "Hidden phase reinforcement",
+      "sideId": "side-ancient-engine",
+      "controllerIds": ["gm"],
+      "sheetSlug": "fixture-hidden-claydol",
+      "portraitUrl": "/sprites/claydol.png",
+      "onMap": false,
+      "reserve": true,
+      "hidden": true,
+      "groupKey": "engine-guardians",
+      "position": null,
+      "hp": { "current": 79, "maximum": 79, "temporary": 0 },
+      "injuries": 0,
+      "conditions": [],
+      "resources": []
+    }
+  ],
+  "offers": [
+    {
+      "id": "offer-colossus-hammer-arm",
+      "actorId": "participant-regigigas",
+      "sourceKind": "move",
+      "label": "Hammer Arm",
+      "group": "attacks-and-moves",
+      "timing": "At-Will · Standard Action",
+      "spatiality": "relationship",
+      "targetIds": ["participant-blastoise"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-colossus-earthquake",
+      "actorId": "participant-regigigas",
+      "sourceKind": "move",
+      "label": "Earthquake",
+      "group": "attacks-and-moves",
+      "timing": "Scene · Standard Action",
+      "spatiality": "exact",
+      "targetIds": ["participant-ada", "participant-blastoise", "participant-ivo", "participant-gardevoir"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-colossus-overclock-pulse",
+      "actorId": "participant-regigigas",
+      "sourceKind": "feature",
+      "label": "Overclock Pulse",
+      "group": "environment-and-context",
+      "timing": "Phase Action",
+      "spatiality": "none",
+      "targetIds": ["participant-regigigas", "participant-solrock-east", "participant-solrock-west"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-colossus-final-drive",
+      "actorId": "participant-regigigas",
+      "sourceKind": "feature",
+      "label": "Final Drive",
+      "group": "environment-and-context",
+      "timing": "Phase 3",
+      "spatiality": "none",
+      "targetIds": [],
+      "availability": "unavailable",
+      "unavailableReason": "Available when the Colossus enters Phase 3."
+    },
+    {
+      "id": "offer-blastoise-water-pulse",
+      "actorId": "participant-blastoise",
+      "sourceKind": "move",
+      "label": "Water Pulse",
+      "group": "attacks-and-moves",
+      "timing": "At-Will · Standard Action",
+      "spatiality": "relationship",
+      "targetIds": ["participant-regigigas", "participant-solrock-east", "participant-solrock-west"],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-ivo-disable-coil",
+      "actorId": "participant-ivo",
+      "sourceKind": "feature",
+      "label": "Disable Power Coil",
+      "group": "environment-and-context",
+      "timing": "Extended Action",
+      "spatiality": "exact",
+      "targetIds": [],
+      "availability": "available",
+      "unavailableReason": null
+    },
+    {
+      "id": "offer-gardevoir-teleport",
+      "actorId": "participant-gardevoir",
+      "sourceKind": "capability",
+      "label": "Teleport",
+      "group": "movement-and-positioning",
+      "timing": "Shift Action",
+      "spatiality": "exact",
+      "targetIds": [],
+      "availability": "available",
+      "unavailableReason": null
+    }
+  ],
+  "pending": [
+    {
+      "id": "pending-overclock-environment",
+      "parentId": null,
+      "actorId": "participant-regigigas",
+      "kind": "gm-adjudication",
+      "sourceLabel": "Overclock Pulse",
+      "responderIds": ["gm"],
+      "publicPrompt": "The Engine Colossus is redirecting power.",
+      "privatePrompt": "Choose which active environmental system Overclock Pulse intensifies.",
+      "optionLabels": ["Sandstorm", "Electric Terrain", "Gravity Room"],
+      "spatiality": "none",
+      "status": "pending"
+    }
+  ],
+  "accepted": [
+    {
+      "id": "accepted-phase-two",
+      "sequence": 1,
+      "actorId": "participant-regigigas",
+      "headline": "The Engine Colossus entered Overclock.",
+      "affectedIds": ["participant-regigigas"],
+      "changes": ["Phase 1 → Phase 2", "Temporary HP +20", "Overclock clock 0 → 1"],
+      "tone": "pending"
+    },
+    {
+      "id": "accepted-electric-terrain",
+      "sequence": 2,
+      "actorId": "participant-regigigas",
+      "headline": "The chamber floor crackled with Electric Terrain.",
+      "affectedIds": ["participant-ada", "participant-blastoise", "participant-ivo", "participant-gardevoir", "participant-regigigas", "participant-solrock-east", "participant-solrock-west"],
+      "changes": ["Electric Terrain activated for 5 rounds"],
+      "tone": "neutral"
+    }
+  ],
+  "system": {
+    "connection": "ready",
+    "replayGap": false,
+    "outbox": [],
+    "blockingMessage": null
+  },
+  "audiences": [
+    {
+      "id": "audience-ada-boss",
+      "role": "player-owner",
+      "viewerId": "player-ada",
+      "visibleParticipantIds": ["participant-ada", "participant-blastoise", "participant-ivo", "participant-gardevoir", "participant-regigigas", "participant-solrock-east", "participant-solrock-west"],
+      "controlledParticipantIds": ["participant-ada", "participant-blastoise"],
+      "authorizedPendingIds": []
+    },
+    {
+      "id": "audience-ivo-boss",
+      "role": "player-owner",
+      "viewerId": "player-ivo",
+      "visibleParticipantIds": ["participant-ada", "participant-blastoise", "participant-ivo", "participant-gardevoir", "participant-regigigas", "participant-solrock-east", "participant-solrock-west"],
+      "controlledParticipantIds": ["participant-ivo", "participant-gardevoir"],
+      "authorizedPendingIds": []
+    },
+    {
+      "id": "audience-gm-boss",
+      "role": "gm",
+      "viewerId": "gm",
+      "visibleParticipantIds": ["participant-ada", "participant-blastoise", "participant-ivo", "participant-gardevoir", "participant-regigigas", "participant-solrock-east", "participant-solrock-west", "participant-claydol-hidden"],
+      "controlledParticipantIds": ["participant-ada", "participant-blastoise", "participant-ivo", "participant-gardevoir", "participant-regigigas", "participant-solrock-east", "participant-solrock-west", "participant-claydol-hidden"],
+      "authorizedPendingIds": ["pending-overclock-environment"]
+    },
+    {
+      "id": "audience-public-boss",
+      "role": "public",
+      "viewerId": null,
+      "visibleParticipantIds": ["participant-ada", "participant-blastoise", "participant-ivo", "participant-gardevoir", "participant-regigigas", "participant-solrock-east", "participant-solrock-west"],
+      "controlledParticipantIds": [],
+      "authorizedPendingIds": []
+    }
+  ],
+  "scripts": [
+    {
+      "id": "boss-phase-transition",
+      "actorRole": "gm",
+      "taskIds": ["manage-objectives-phases-and-waves", "view-accepted-outcome"],
+      "steps": ["Advance the boss from Phase 1 to Overclock.", "Present the phase sweep and changed resources.", "Update public objectives without revealing the hidden guardian trigger."],
+      "expectedTerminal": "Phase 2 state and accepted chronology converge for every audience with GM-only trigger details retained."
+    },
+    {
+      "id": "boss-environment-choice",
+      "actorRole": "gm",
+      "taskIds": ["manage-field-state", "respond-to-optional-trigger"],
+      "steps": ["Open the pending Overclock Pulse decision.", "Verify players see only public waiting copy.", "Choose Electric Terrain as GM.", "Settle environment and resume initiative."],
+      "expectedTerminal": "Only the GM option set is exposed and the chosen environment appears in scene summary and history."
+    },
+    {
+      "id": "boss-hidden-reinforcement",
+      "actorRole": "gm",
+      "taskIds": ["add-or-remove-participants", "manage-objectives-phases-and-waves"],
+      "steps": ["Inspect the ready hidden objective.", "Reveal Buried Claydol.", "Choose an exact legal placement.", "Insert it into initiative without disclosing prior hidden state."],
+      "expectedTerminal": "Claydol changes from GM-only reserve to public active participant through one accepted reveal."
+    },
+    {
+      "id": "boss-stage-readability",
+      "actorRole": "public-observer",
+      "taskIds": ["observe-current-turn", "view-accepted-outcome"],
+      "steps": ["View the table-display layout from three metres.", "Identify boss, phase, current turn, public objectives, environment, and blocking wait."],
+      "expectedTerminal": "All required public facts are identified within five seconds without opening an inspector."
+    }
+  ]
+}

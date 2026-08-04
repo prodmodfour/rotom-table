@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 18
+export const LATEST_STORAGE_SCHEMA_VERSION = 21
 
 export interface StorageMigration {
   readonly version: number
@@ -300,6 +300,76 @@ const createCapabilityResolutionOperationTable = (connection: DatabaseSync): voi
   `)
 }
 
+const createEncounterDocumentTables = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS encounter_documents (
+      encounter_id TEXT PRIMARY KEY,
+      linked_map_slug TEXT NOT NULL,
+      document_json TEXT NOT NULL,
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= 0)
+    );
+
+    CREATE INDEX IF NOT EXISTS encounter_documents_map_updated_idx
+      ON encounter_documents (linked_map_slug, updated_at DESC, encounter_id);
+
+    CREATE TABLE IF NOT EXISTS encounter_director_ops (
+      command_id TEXT PRIMARY KEY,
+      encounter_id TEXT NOT NULL,
+      command_sha256 TEXT NOT NULL,
+      command_json TEXT NOT NULL,
+      result_json TEXT NOT NULL,
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      FOREIGN KEY (encounter_id) REFERENCES encounter_documents (encounter_id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS encounter_director_ops_encounter_revision_idx
+      ON encounter_director_ops (encounter_id, result_revision, command_id);
+  `)
+}
+
+const createEncounterLaunchOperationTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS encounter_launch_ops (
+      launch_id TEXT PRIMARY KEY,
+      encounter_id TEXT NOT NULL,
+      request_sha256 TEXT NOT NULL,
+      request_json TEXT NOT NULL,
+      result_json TEXT NOT NULL,
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      FOREIGN KEY (encounter_id) REFERENCES encounter_documents (encounter_id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS encounter_launch_ops_encounter_idx
+      ON encounter_launch_ops (encounter_id, created_at, launch_id);
+  `)
+}
+
+const createEncounterUxMetricAggregateTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS encounter_ux_metric_aggregates (
+      event TEXT NOT NULL,
+      role_kind TEXT NOT NULL,
+      viewport_class TEXT NOT NULL,
+      input_kind TEXT NOT NULL,
+      motion_preference TEXT NOT NULL,
+      fixture_id TEXT NOT NULL,
+      spatiality_level TEXT NOT NULL,
+      terminal_status TEXT NOT NULL,
+      sample_count INTEGER NOT NULL CHECK (sample_count > 0),
+      value_sum REAL NOT NULL CHECK (value_sum >= 0),
+      value_min REAL NOT NULL CHECK (value_min >= 0),
+      value_max REAL NOT NULL CHECK (value_max >= value_min),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= 0),
+      PRIMARY KEY (
+        event, role_kind, viewport_class, input_kind, motion_preference,
+        fixture_id, spatiality_level, terminal_status
+      )
+    );
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -390,6 +460,21 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 18,
     name: 'retain terminal capability adjudication map revisions',
     up: addCapabilityAdjudicationResolutionRevision,
+  },
+  {
+    version: 19,
+    name: 'store first-class encounter documents and replay-safe Director commands',
+    up: createEncounterDocumentTables,
+  },
+  {
+    version: 20,
+    name: 'store replay-safe atomic Encounter Builder launches',
+    up: createEncounterLaunchOperationTable,
+  },
+  {
+    version: 21,
+    name: 'store privacy-safe aggregate encounter UX metrics',
+    up: createEncounterUxMetricAggregateTable,
   },
 ]
 

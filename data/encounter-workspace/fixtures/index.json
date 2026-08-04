@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "encounter-workspace-canonical-v1",
+  "fixtures": [
+    {
+      "fixtureId": "simple-trainer-duel",
+      "sourceTicket": "EUX-004",
+      "path": "data/encounter-workspace/fixtures/simple-trainer-duel.json",
+      "status": "complete"
+    },
+    {
+      "fixtureId": "crowded-wild-pack",
+      "sourceTicket": "EUX-005",
+      "path": "data/encounter-workspace/fixtures/crowded-wild-pack.json",
+      "status": "complete"
+    },
+    {
+      "fixtureId": "boss-phases-environment",
+      "sourceTicket": "EUX-006",
+      "path": "data/encounter-workspace/fixtures/boss-phases-environment.json",
+      "status": "complete"
+    },
+    {
+      "fixtureId": "private-reactions-reconnect",
+      "sourceTicket": "EUX-007",
+      "path": "data/encounter-workspace/fixtures/private-reactions-reconnect.json",
+      "status": "complete"
+    },
+    {
+      "fixtureId": "capability-movement-feature",
+      "sourceTicket": "EUX-008",
+      "path": "data/encounter-workspace/fixtures/capability-movement-feature.json",
+      "status": "complete"
+    }
+  ]
+}

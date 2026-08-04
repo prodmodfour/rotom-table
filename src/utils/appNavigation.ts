@@ -8,7 +8,8 @@ import {
   isHomePath,
   isSettingsPath,
 } from '~/utils/appRoutes'
-import { ENCOUNTER_GENERATOR_PATH, ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
+import { ENCOUNTER_BUILDER_PATH, ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
+import { ENCOUNTER_LIBRARY_PATH } from '#shared/encounterWorkspace/routes'
 import { isLegacyGridPath } from '~/utils/legacyGridRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
@@ -26,7 +27,8 @@ export interface AppNavItem {
 }
 
 export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
-  { path: MAP_LIBRARY_PATH, label: 'Maps' },
+  { path: ENCOUNTER_LIBRARY_PATH, label: 'Play' },
+  { path: MAP_LIBRARY_PATH, label: 'Workshop' },
   { path: CAMPAIGN_PATH, label: 'Campaign', gmOnly: true },
   { path: GROUP_INVENTORY_PATH, label: 'Group Inventory' },
   { path: SHOP_LIBRARY_PATH, label: 'Shops' },
@@ -35,7 +37,7 @@ export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: SHEET_LIBRARY_PATH, label: 'Sheets', gmOnly: true },
   { path: SETTINGS_PATH, label: 'Settings' },
   { path: PLAYER_PROFILE_MANAGEMENT_PATH, label: 'Players', gmOnly: true },
-  { path: ENCOUNTER_GENERATOR_PATH, label: 'Generate', gmOnly: true },
+  { path: ENCOUNTER_BUILDER_PATH, label: 'Build', gmOnly: true },
 ]
 
 export const REFERENCE_APP_NAV_ITEMS: AppNavItem[] = [
@@ -61,6 +63,10 @@ export const filterAppNavItems = (
 ))
 
 export const isAppNavItemActive = (currentPath: string, itemPath: string): boolean => {
+  if (itemPath === ENCOUNTER_LIBRARY_PATH) {
+    return currentPath === ENCOUNTER_LIBRARY_PATH || currentPath.startsWith(`${ENCOUNTER_LIBRARY_PATH}/`)
+  }
+
   if (itemPath === MAP_LIBRARY_PATH) {
     return (
       isHomePath(currentPath)

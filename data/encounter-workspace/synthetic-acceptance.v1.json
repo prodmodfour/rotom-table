@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "runId": "encounter-workspace-synthetic-acceptance-2026-08-04",
+  "runAt": "2026-08-04T15:17:57Z",
+  "scope": "synthetic-release-gate",
+  "disclaimer": "Results exercise canonical scripted fixtures and production-like browser acceptance. Synthetic reviewer values are not a substitute for post-rollout field observation.",
+  "sourceHashes": {
+    "criteriaSha256": "84555363225a6d0d73194cb45b6c51fa7b7bf3bca7921b796500035acb9da2f5",
+    "fixtureIndexSha256": "c0994ff87b9d3cc816b58731e2c33fb6f0934e88c5a68ec225e447602cdae99e",
+    "performanceBudgetsSha256": "8e4b1ea7e91ec2081da8f52d0b40b1e740e055afe659872e233243a0ef788273",
+    "rolloutSha256": "acb1bb4f84c54d9e5d3d0f2b77bb1025a3c025b5d97f3a913bb2998e5f66b57b"
+  },
+  "fixtureRuns": [
+    {
+      "fixtureId": "simple-trainer-duel",
+      "scriptIds": ["duel-observe-and-attack", "duel-unavailable-reason", "duel-switch-reserve", "duel-gm-turn-control"],
+      "completed": 4,
+      "attempted": 4,
+      "facilitatorRescues": 0
+    },
+    {
+      "fixtureId": "crowded-wild-pack",
+      "scriptIds": ["pack-group-and-expand", "pack-area-targeting", "pack-capture", "pack-large-layout"],
+      "completed": 4,
+      "attempted": 4,
+      "facilitatorRescues": 0
+    },
+    {
+      "fixtureId": "boss-phases-environment",
+      "scriptIds": ["boss-phase-transition", "boss-environment-choice", "boss-hidden-reinforcement", "boss-stage-readability"],
+      "completed": 4,
+      "attempted": 4,
+      "facilitatorRescues": 0
+    },
+    {
+      "fixtureId": "private-reactions-reconnect",
+      "scriptIds": ["private-nested-response-order", "private-reconnect-active-responder", "private-public-redaction", "private-duplicate-accepted-delivery"],
+      "completed": 4,
+      "attempted": 4,
+      "facilitatorRescues": 0
+    },
+    {
+      "fixtureId": "capability-movement-feature",
+      "scriptIds": ["capability-mounted-route", "feature-modifies-capability-movement", "capability-relationship-view", "capability-reduced-motion-handoff"],
+      "completed": 4,
+      "attempted": 4,
+      "facilitatorRescues": 0
+    }
+  ],
+  "results": [
+    { "criterionId": "task-completion-critical", "value": 100, "measurementKind": "canonical-script", "status": "pass", "evidence": ["tests/data/encounterWorkspaceFixtures.test.ts", "tests/e2e/encounter-workspace-shell.spec.ts"] },
+    { "criterionId": "action-discovery-time", "value": 1200, "measurementKind": "synthetic-timing", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts"] },
+    { "criterionId": "action-activation-input-count", "value": 2, "measurementKind": "canonical-script", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts"] },
+    { "criterionId": "keyboard-action-activation", "value": 7, "measurementKind": "production-browser", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts"] },
+    { "criterionId": "response-completion-time", "value": 4000, "measurementKind": "synthetic-timing", "status": "pass", "evidence": ["tests/components/encounterWorkspaceActions.test.ts"] },
+    { "criterionId": "response-unintended-abandonment", "value": 0, "measurementKind": "canonical-script", "status": "pass", "evidence": ["tests/shared/encounterWorkspaceActions.test.ts"] },
+    { "criterionId": "non-spatial-forced-lens-rate", "value": 0, "measurementKind": "canonical-script", "status": "pass", "evidence": ["tests/shared/encounterWorkspaceSpatiality.test.ts"] },
+    { "criterionId": "exact-spatial-lens-coverage", "value": 100, "measurementKind": "production-browser", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts", "tests/shared/encounterWorkspaceTacticalProtocol.test.ts"] },
+    { "criterionId": "tactical-lens-invocation-observation", "value": 100, "measurementKind": "aggregate-review", "status": "reviewed", "evidence": ["shared/encounterWorkspace/metrics.ts", "tests/server/encounterUxMetrics.test.ts"] },
+    { "criterionId": "safe-recovery-time", "value": 2000, "measurementKind": "synthetic-timing", "status": "pass", "evidence": ["tests/shared/encounterWorkspaceArchitecture.test.ts"] },
+    { "criterionId": "unsafe-duplicate-mutations", "value": 0, "measurementKind": "automated-replay", "status": "pass", "evidence": ["tests/server/launchEncounterBuilder.test.ts", "tests/shared/encounterWorkspaceArchitecture.test.ts"] },
+    { "criterionId": "reconnect-convergence-time", "value": 1000, "measurementKind": "synthetic-timing", "status": "pass", "evidence": ["tests/shared/encounterWorkspaceArchitecture.test.ts"] },
+    { "criterionId": "private-choice-leaks", "value": 0, "measurementKind": "automated-projection", "status": "pass", "evidence": ["tests/server/encounterWorkspaceProjection.test.ts", "tests/e2e/encounter-builder.spec.ts"] },
+    { "criterionId": "serious-accessibility-violations", "value": 0, "measurementKind": "production-browser-axe", "status": "pass", "evidence": ["tests/e2e/encounter-design-system.spec.ts", "tests/e2e/encounter-workspace-shell.spec.ts", "tests/e2e/encounter-builder.spec.ts"] },
+    { "criterionId": "keyboard-task-coverage", "value": 100, "measurementKind": "production-browser", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts", "tests/components/encounterWorkspaceAccessibility.test.ts"] },
+    { "criterionId": "touch-target-conformance", "value": 100, "measurementKind": "production-browser", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts"] },
+    { "criterionId": "table-distance-readability", "value": 100, "measurementKind": "five-synthetic-reviewers", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts-snapshots/encounter-workspace-table-display-chromium-linux.png"] },
+    { "criterionId": "zoom-reflow-completion", "value": 100, "measurementKind": "responsive-browser-and-component", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts", "tests/components/encounterWorkspaceAccessibility.test.ts"] },
+    { "criterionId": "workspace-adapter-budget", "value": 16, "measurementKind": "automated-upper-bound", "status": "pass", "evidence": ["tests/server/encounterWorkspaceProjection.test.ts"] },
+    { "criterionId": "workspace-interaction-latency", "value": 100, "measurementKind": "automated-upper-bound", "status": "pass", "evidence": ["tests/shared/encounterWorkspaceActions.test.ts"] },
+    { "criterionId": "accepted-presentation-latency", "value": 250, "measurementKind": "automated-upper-bound", "status": "pass", "evidence": ["tests/components/encounterWorkspaceAccessibility.test.ts"] },
+    { "criterionId": "tactical-lens-startup", "value": 1200, "measurementKind": "production-browser-aggregate", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts", "server/storage/encounterUxMetricRepository.ts"] },
+    { "criterionId": "large-encounter-frame-rate", "value": 30, "measurementKind": "production-browser-lower-bound", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts"] },
+    { "criterionId": "overlay-collision-count", "value": 0, "measurementKind": "reviewed-snapshots", "status": "pass", "evidence": ["tests/e2e/encounter-workspace-shell.spec.ts-snapshots", "tests/e2e/encounter-design-system.spec.ts-snapshots"] },
+    { "criterionId": "expected-action-visibility", "value": 100, "measurementKind": "canonical-script", "status": "pass", "evidence": ["tests/shared/encounterWorkspaceActions.test.ts", "tests/e2e/encounter-workspace-shell.spec.ts"] }
+  ]
+}

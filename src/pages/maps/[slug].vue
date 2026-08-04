@@ -116,6 +116,10 @@ import {
   type LivePlayPresenceIntentState,
 } from '#shared/livePlayPresence'
 import { isRealtimeEcho } from '#shared/realtime'
+import {
+  createEncounterTacticalChildMessage,
+  parseEncounterTacticalAdoptionMessage,
+} from '#shared/encounterWorkspace/tacticalProtocol'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import type { LivePlayMovePresentationSummary } from '#shared/livePlayMovePresentation'
 import { useStartTurnModal } from '~/composables/map-editor/useStartTurnModal'
@@ -146,6 +150,7 @@ import { normalizeMapSceneName, MAP_SCENE_NAME_MAX_LENGTH } from '~/utils/mapSce
 import { setTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { createLivePlayTokenCorrectionNoticeController } from '~/utils/livePlayTokenCorrectionNotice'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
+import { encounterWorkspacePath } from '#shared/encounterWorkspace/routes'
 import { buildLiveSheetAccessScopeKey } from '~/utils/liveSheetCache'
 import { buildMapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
 import { buildMapPresenceIntentOverlays } from '~/utils/mapPresenceIntentOverlays'
@@ -179,6 +184,8 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
+const encounterLensMode = computed(() => route.query.encounterLens === '1')
+const legacyMapFirstUi = computed(() => import.meta.dev && route.query.legacyMapFirst === '1')
 const { role, isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
 const {
@@ -836,7 +843,7 @@ const tokenControlNotice = computed(() => {
 })
 
 useHead(() => ({
-  title: map.value ? `${map.value.name} · Maps` : 'Maps · Rotom Table',
+  title: map.value ? `${map.value.name} · Battlefield Workshop` : 'Battlefield Workshop · Rotom Table',
 }))
 
 interface MapScenePanelHandle {
@@ -1056,6 +1063,59 @@ const renderedSpawnedPokemon = computed(() => {
       }]
     }),
   ]
+})
+
+const tacticalLensAdoptedOfferId = ref<string | null>(null)
+const tacticalLensAdoptingSelection = ref(false)
+const postTacticalLensMessage = (message:
+  | { readonly type: 'ready', readonly mapRevision: number }
+  | { readonly type: 'selection', readonly participantId: string | null }
+): void => {
+  if (!encounterLensMode.value || !import.meta.client || window.parent === window) return
+  window.parent.postMessage(createEncounterTacticalChildMessage({ mapSlug: slug, ...message }), window.location.origin)
+}
+const adoptTacticalLensMessage = (event: MessageEvent): void => {
+  if (!encounterLensMode.value || event.origin !== window.location.origin || event.source !== window.parent) return
+  const data = parseEncounterTacticalAdoptionMessage(event.data)
+  if (!data || data.mapSlug !== slug || data.mapRevision !== mapRevision.value) return
+  const participantId = data.selectedParticipantId
+  if (participantId === null || renderedSpawnedPokemon.value.some(token => token.id === participantId)) {
+    tacticalLensAdoptingSelection.value = true
+    selectedId.value = participantId
+    void nextTick(() => { tacticalLensAdoptingSelection.value = false })
+  }
+  const offerId = data.actionOfferId
+  const offer = offerId ? encounterPresentation.value.offers.find(candidate => candidate.offerId === offerId) : null
+  if (offer && offer.availability.status === 'available' && tacticalLensAdoptedOfferId.value !== offer.offerId) {
+    const targetIds = data.selectedTargetIds.filter(id => (
+      renderedSpawnedPokemon.value.some(token => token.id === id)
+    ))
+    tacticalLensAdoptedOfferId.value = offer.offerId
+    void activateEncounterOffer(offer).then(async () => {
+      await nextTick()
+      for (const targetId of targetIds) selectActionAutomationTarget(targetId)
+    })
+  }
+}
+onMounted(() => {
+  if (!encounterLensMode.value) return
+  window.addEventListener('message', adoptTacticalLensMessage)
+})
+onBeforeUnmount(() => {
+  if (import.meta.client) window.removeEventListener('message', adoptTacticalLensMessage)
+})
+watch([mapRevision, renderedSpawnedPokemon], ([revision, tokens]) => {
+  if (!encounterLensMode.value || !map.value) return
+  const selectedQuery = Array.isArray(route.query.selected) ? route.query.selected[0] : route.query.selected
+  if (typeof selectedQuery === 'string' && tokens.some(token => token.id === selectedQuery)) {
+    tacticalLensAdoptingSelection.value = true
+    selectedId.value = selectedQuery
+    void nextTick(() => { tacticalLensAdoptingSelection.value = false })
+  }
+  postTacticalLensMessage({ type: 'ready', mapRevision: revision })
+}, { flush: 'post' })
+watch(selectedId, (participantId) => {
+  if (!tacticalLensAdoptingSelection.value) postTacticalLensMessage({ type: 'selection', participantId })
 })
 
 const pendingMoveResponses = usePendingMoveResponses({
@@ -1337,6 +1397,10 @@ const previewAllMoveVfxDebug = () => {
 
 const selectPokemon = (id: string | null) => {
   if (buildMode.value) return
+  if (encounterLensMode.value && (id === null || renderedSpawnedPokemon.value.some(token => token.id === id))) {
+    selectedId.value = id
+    return
+  }
   selectPlacement(id)
 }
 const deletePokemon = (id: string) => {
@@ -3025,9 +3089,9 @@ useMapDimensionReconciliation({
 </script>
 
 <template>
-  <MapEditorLayout>
+  <MapEditorLayout :class="{ 'encounter-tactical-embedded': encounterLensMode }">
     <template #nav>
-      <MapNavigationRail />
+      <MapNavigationRail v-if="!encounterLensMode" />
     </template>
 
     <template #scene>
@@ -3035,6 +3099,7 @@ useMapDimensionReconciliation({
         ref="gridRef"
         :map="map"
         :can-view-map="canViewMap"
+        :legacy-live-play-chrome="false"
         :status="sceneStatus"
         :error="sceneError"
         :slug="slug"
@@ -3066,6 +3131,7 @@ useMapDimensionReconciliation({
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
         :can-delete-tokens="isGm"
+        :context-menu-secondary-only="true"
         :token-control-notice="tokenControlNotice"
         :live-play-state="livePlayConnectionState"
         :live-play-status-message="livePlayStatusMessage"
@@ -3164,12 +3230,22 @@ useMapDimensionReconciliation({
         @close-move-correction="gmMoveCorrections.close()"
       />
 
+      <NuxtLink
+        v-if="!encounterLensMode && map && canViewMap"
+        class="battlefield-workshop__cockpit-link"
+        :to="encounterWorkspacePath(slug)"
+      >
+        Open encounter cockpit
+      </NuxtLink>
+
       <EncounterVfxOverlay
+        v-if="encounterLensMode"
         :presentations="encounterPresentationRuntime.activeVfxPresentations.value"
         :reduced-motion="encounterPresentationRuntime.reducedMotion.value"
       />
 
       <EncounterPresentationPanel
+        v-if="legacyMapFirstUi"
         :projection="encounterPresentation"
         :accepted="encounterPresentationRuntime.accepted.value"
         :selected-participant-id="selectedId"
@@ -3178,6 +3254,7 @@ useMapDimensionReconciliation({
       />
 
       <p
+        v-if="legacyMapFirstUi"
         class="encounter-presentation-announcement"
         :aria-live="encounterPresentationRuntime.announcement.value?.priority === 'assertive' ? 'assertive' : 'polite'"
         aria-atomic="true"
@@ -3186,6 +3263,7 @@ useMapDimensionReconciliation({
       </p>
 
       <MapAbilityAutomationPanel
+        v-if="encounterLensMode"
         :mode-selection="activeAbilityModeSelection"
         :declaration="abilityDeclarationPanel"
         :status="abilityInvocationStatus"
@@ -3197,7 +3275,7 @@ useMapDimensionReconciliation({
       />
 
       <MapPresencePanel
-        v-if="map && canViewMap"
+        v-if="encounterLensMode && map && canViewMap"
         :entries="mapPresenceEntries"
         :status="mapPresenceStatus"
         :server-time-offset-ms="mapPresenceServerTimeOffsetMs"
@@ -3209,7 +3287,7 @@ useMapDimensionReconciliation({
 
       <ClientOnly>
         <LivePlayCommandRecoveryPanel
-          v-if="livePlayCommandRecoveryGate.panelVisible.value"
+          v-if="encounterLensMode && livePlayCommandRecoveryGate.panelVisible.value"
           :entries="livePlayCommands.outboxEntries.value"
           :recovery-status="livePlayCommands.outboxRecoveryStatus.value"
           :recovery-error="livePlayCommands.outboxRecoveryError.value"
@@ -3233,7 +3311,7 @@ useMapDimensionReconciliation({
       </ClientOnly>
 
       <LivePlayLatencyDebugPanel
-        v-if="livePlayLatencyDebugEnabled"
+        v-if="encounterLensMode && livePlayLatencyDebugEnabled"
         :traces="livePlayCommands.commandTraces.value"
         :presence-metrics="mapPresenceDebugMetrics"
         :token-motion-metrics="livePlayTokenMotionDebugMetrics"
@@ -3242,7 +3320,7 @@ useMapDimensionReconciliation({
 
     <template #modals>
       <CapabilityActionModal
-        v-if="activeCapabilityAction"
+        v-if="encounterLensMode && activeCapabilityAction"
         :offer="activeCapabilityAction.offer"
         :action-id="activeCapabilityAction.actionId"
         :participants="capabilityParticipantChoices.filter(participant => participant.id !== activeCapabilityAction?.offer.actor.participantId)"
@@ -3253,7 +3331,7 @@ useMapDimensionReconciliation({
       />
 
       <CapabilityAdjudicationModal
-        v-if="activeCapabilityAdjudicationOffer"
+        v-if="encounterLensMode && activeCapabilityAdjudicationOffer"
         :offer="activeCapabilityAdjudicationOffer"
         :participants="capabilityParticipantChoices.filter(participant => participant.id !== activeCapabilityAdjudicationOffer?.actor.participantId)"
         @submit="submitCapabilityAdjudication"
@@ -3261,7 +3339,7 @@ useMapDimensionReconciliation({
       />
 
       <StartTurnModal
-        v-if="activeStartTurnModal"
+        v-if="activeStartTurnModal && legacyMapFirstUi"
         :character-name="activeStartTurnModal.characterName"
         :character-meta="activeStartTurnModal.characterMeta"
         :profile-url="activeStartTurnModal.profileUrl"
@@ -3277,7 +3355,7 @@ useMapDimensionReconciliation({
       />
 
       <PokeballCaptureResultModal
-        v-if="displayedPokeballCaptureResult"
+        v-if="displayedPokeballCaptureResult && legacyMapFirstUi"
         :key="displayedPokeballCaptureResult.id"
         :result="displayedPokeballCaptureResult"
         :accent-color="pokeballCaptureTrainerAccentColor"
@@ -3285,7 +3363,7 @@ useMapDimensionReconciliation({
       />
 
       <FieldEffectsMenuModal
-        v-if="map && canViewMap && fieldEffectsMenuOpen"
+        v-if="!encounterLensMode && map && canViewMap && fieldEffectsMenuOpen"
         :can-edit-map="mapActionEditingEnabled"
         :field-effect-count="fieldEffectCount"
         :hazard-mode="hazardMode"
@@ -3330,14 +3408,14 @@ useMapDimensionReconciliation({
       />
 
       <SheetsMenuModal
-        v-if="map && canViewMap && canSpawnTokens && sheetsMenuOpen"
+        v-if="!encounterLensMode && map && canViewMap && canSpawnTokens && sheetsMenuOpen"
         @close="closeSheetsMenu"
         :busy="spawnSheetPending"
         @select="spawnSheetFromMenu"
       />
 
       <InitiativeMenuModal
-        v-if="map && canViewMap && initiativeMenuOpen"
+        v-if="!encounterLensMode && map && canViewMap && initiativeMenuOpen"
         :rows="initiativeRows"
         :sorted-rows="sortedInitiativeRows"
         :active-id="activeInitiativeId"
@@ -3363,7 +3441,7 @@ useMapDimensionReconciliation({
       />
 
       <MapAdminPanel
-        v-if="map && isGm && adminPanelOpen"
+        v-if="!encounterLensMode && map && isGm && adminPanelOpen"
         :ground-level-y-max="groundLevelYMax"
         :map-ground-level-y="mapGroundLevelY"
         :map-specific-y-min="mapSpecificYMin"
@@ -3402,6 +3480,9 @@ useMapDimensionReconciliation({
 </template>
 
 <style scoped>
+.encounter-tactical-embedded { --map-nav-rail-width: 0px; }
+.battlefield-workshop__cockpit-link { position: absolute; z-index: 120; inset: .75rem .75rem auto auto; min-height: 44px; display: inline-flex; align-items: center; padding: .55rem .8rem; border: 1px solid var(--accent); border-radius: 10px; background: var(--paper); color: var(--ink-bright); box-shadow: var(--shadow-card); font-weight: 800; text-decoration: none; }
+.battlefield-workshop__cockpit-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .encounter-presentation-announcement {
   position: absolute;
   width: 1px;
