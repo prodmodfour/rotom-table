@@ -29,7 +29,7 @@ export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
 export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
 export const DEFAULT_MIGRATION_BACKUP_DIRNAME = 'backups'
 export const SQLITE_MIGRATION_BACKUP_PREFIX = 'rotom-sqlite-migration-'
-export const STORAGE_SCHEMA_VERSION = 26
+export const STORAGE_SCHEMA_VERSION = 27
 
 const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
@@ -618,7 +618,7 @@ const applyStorageMigrations = (connection) => {
   }
 
   const foreignKeysBefore = connection.prepare('PRAGMA foreign_keys').get()?.foreign_keys
-  const suspendForeignKeyActions = fromVersion < 26 && foreignKeysBefore === 1
+  const suspendForeignKeyActions = fromVersion < 27 && foreignKeysBefore === 1
   if (suspendForeignKeyActions) connection.exec('PRAGMA foreign_keys = OFF')
   connection.exec('BEGIN IMMEDIATE')
   try {
@@ -1477,11 +1477,69 @@ const applyStorageMigrations = (connection) => {
   `)
       setUserVersion(connection, 26)
     }
+    if (fromVersion < 27) {
+      const acquisitionRow = connection.prepare(`
+    SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'trainer_species_acquisitions'
+  `).get()
+      const acquisitionSql = acquisitionRow?.sql
+      if (typeof acquisitionSql !== 'string' || !acquisitionSql.includes('REFERENCES breeding_operations (operation_id)')) {
+        throw new Error('Storage migration v27 requires the exact row-preserving v26 Species acquisition definition')
+      }
+      const foreignKeys = connection.prepare('PRAGMA foreign_keys').get()?.foreign_keys
+      if (foreignKeys !== 0) throw new Error('Storage migration v27 requires the migration runner to suspend foreign-key actions during the acquisition-table rebuild')
+      connection.exec(`
+    CREATE TABLE trainer_species_acquisitions_v27 (
+      trainer_sheet_slug TEXT NOT NULL,
+      species_id TEXT NOT NULL,
+      first_acquired_at_campaign_minute INTEGER NOT NULL CHECK (first_acquired_at_campaign_minute >= 0),
+      source_egg_id TEXT,
+      operation_id TEXT NOT NULL,
+      record_json TEXT NOT NULL CHECK (json_valid(record_json)),
+      definition_sha256 TEXT NOT NULL CHECK (length(definition_sha256) = 64),
+      PRIMARY KEY (trainer_sheet_slug, species_id),
+      FOREIGN KEY (source_egg_id) REFERENCES pokemon_eggs (egg_id) DEFERRABLE INITIALLY DEFERRED
+    );
+    INSERT INTO trainer_species_acquisitions_v27 (
+      trainer_sheet_slug, species_id, first_acquired_at_campaign_minute, source_egg_id,
+      operation_id, record_json, definition_sha256
+    ) SELECT
+      trainer_sheet_slug, species_id, first_acquired_at_campaign_minute, source_egg_id,
+      operation_id, record_json, definition_sha256
+    FROM trainer_species_acquisitions;
+    DROP TABLE trainer_species_acquisitions;
+    ALTER TABLE trainer_species_acquisitions_v27 RENAME TO trainer_species_acquisitions;
+    CREATE INDEX trainer_species_acquisitions_species_idx
+      ON trainer_species_acquisitions (species_id, first_acquired_at_campaign_minute, trainer_sheet_slug);
+
+    CREATE TABLE trainer_species_acquisition_source_operations (
+      operation_id TEXT PRIMARY KEY,
+      source_kind TEXT NOT NULL CHECK (source_kind IN ('capture', 'evolution', 'trade', 'migration', 'gm-reviewed')),
+      source_event_id TEXT NOT NULL,
+      trainer_sheet_slug TEXT NOT NULL,
+      species_id TEXT NOT NULL,
+      settled_at_campaign_minute INTEGER NOT NULL CHECK (settled_at_campaign_minute >= 0),
+      outcome TEXT NOT NULL CHECK (outcome IN ('first-acquisition-rewarded', 'already-acquired')),
+      applied_reward_amount INTEGER NOT NULL CHECK (applied_reward_amount IN (0, 1)),
+      record_json TEXT NOT NULL CHECK (json_valid(record_json) AND length(CAST(record_json AS BLOB)) <= 32768),
+      definition_sha256 TEXT NOT NULL CHECK (length(definition_sha256) = 64),
+      UNIQUE (source_kind, source_event_id),
+      CHECK ((outcome = 'first-acquisition-rewarded') = (applied_reward_amount = 1)),
+      FOREIGN KEY (trainer_sheet_slug, species_id)
+        REFERENCES trainer_species_acquisitions (trainer_sheet_slug, species_id)
+        DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX trainer_species_acquisition_source_operations_trainer_idx
+      ON trainer_species_acquisition_source_operations (
+        trainer_sheet_slug, settled_at_campaign_minute, operation_id
+      );
+  `)
+      setUserVersion(connection, 27)
+    }
     connection.exec('COMMIT')
     if (suspendForeignKeyActions) {
       connection.exec('PRAGMA foreign_keys = ON')
       if (connection.prepare('PRAGMA foreign_key_check').all().length !== 0) {
-        throw new Error('Storage migration v25/v26 produced foreign-key violations')
+        throw new Error('Storage migration v25/v26/v27 produced foreign-key violations')
       }
     }
   } catch (error) {

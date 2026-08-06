@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-species-acquisition-integration-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "c2678af9b6299bc58605832a7e4ae17ad90b66dda774bb549afe299665ec35e2",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-069",
+    "sharedRewardContractDefinitionSha256": "a3323f91d56eb8ced5428250c3bc2756140c1048fac794aaff1c0805aaed64ae",
+    "runtimePolicy": {
+      "path": "server/domain/breeding/speciesAcquisitionIntegration.ts",
+      "definitionSha256": "99098376839dd2a1b4c7d0b28851d5498f48dce3e06ba21f47b371de319a5fdd",
+      "clientAuthority": "none",
+      "campaignTime": "authoritative-campaign-clock-only"
+    },
+    "integrationPaths": {
+      "capture": "server/useCases/settleCaptureSpeciesAcquisitions.ts",
+      "hatch": "server/useCases/completePokemonEggHatch.ts",
+      "evolutionAndTrade": "server/useCases/settleSetupSheetSpeciesAcquisitions.ts",
+      "migrationAndGmReview": "server/useCases/settleReviewedSpeciesAcquisition.ts",
+      "sharedSettlement": "server/useCases/recordTrainerSpeciesAcquisition.ts"
+    },
+    "sourceMatrix": {
+      "capture": {
+        "authority": "accepted-live-play-Poke-Ball-operation-current-map-and-sheet-commit",
+        "acquisitions": "successful-target-and-every-authoritative-companion-roster-addition",
+        "failure": "no-history-or-source-settlement",
+        "transaction": "map-sheet-capture-history-reward-source-settlement-and-realtime-log-atomic"
+      },
+      "hatch": {
+        "authority": "immutable-complete-hatch-operation-and-source-Egg",
+        "owner": "existing-BR-058-hatch-transaction",
+        "sourceEggId": "required"
+      },
+      "evolution": {
+        "authority": "exact-setup-save-before-and-after-Pokemon-documents-plus-unique-current-owner",
+        "trigger": "canonical-Species-identity-change",
+        "unowned": "no-Trainer-acquisition"
+      },
+      "trade": {
+        "authority": "exact-setup-save-destination-roster-addition-plus-unique-current-ownership",
+        "trigger": "each-added-Pokemon-link",
+        "duplicateOwnership": "reject-and-roll-back"
+      },
+      "release": {
+        "trigger": "roster-removal",
+        "historyMutation": "none",
+        "sourceSettlementMutation": "none",
+        "reacquisitionReward": 0
+      },
+      "migration": {
+        "authority": "current-server-reviewed-source-artifact-and-reviewer-hashes",
+        "entryPoint": "server-only-no-browser-route",
+        "legacyInference": "forbidden"
+      },
+      "gm-reviewed": {
+        "authority": "current-server-reviewed-source-artifact-and-reviewer-hashes",
+        "entryPoint": "server-only-no-browser-route",
+        "freeTextSource": "forbidden"
+      }
+    },
+    "externalEvidence": {
+      "schema": "BreedingSpeciesAcquisitionSourceEvidenceV1",
+      "selfHash": "definitionSha256",
+      "policyHash": "required-current-exact",
+      "operationId": "deterministic-hash-of-exact-source-evidence",
+      "logicalEventIdentity": [
+        "sourceKind",
+        "sourceEventId"
+      ],
+      "pokemonRevision": "required-exactly-for-capture-evolution-and-trade",
+      "sourceEggId": "forbidden-external-sources",
+      "currentVerifier": "synchronous-exact-true",
+      "promiseLikeAuthority": "reject"
+    },
+    "historyAndReward": {
+      "identity": [
+        "trainerSheetSlug",
+        "speciesId"
+      ],
+      "firstFacts": "immutable",
+      "firstHistoricalAcquisitionDexExp": 1,
+      "repeatAcquisitionDexExp": 0,
+      "exactRetryDexExp": 0,
+      "releaseRetention": true,
+      "rosterDexExpAndLegacyInference": "forbidden",
+      "overflow": "reject-and-roll-back"
+    },
+    "sourceSettlement": {
+      "repository": "server/storage/trainerSpeciesAcquisitionSourceOperationRepository.ts",
+      "storageSchemaDefinitionSha256": "3c742cbb35c36a0928708319840f9802520b2bed8b490fda0d1956ca835947c3",
+      "terminalOutcomes": [
+        "first-acquisition-rewarded",
+        "already-acquired"
+      ],
+      "operationAndLogicalEventCollision": "reject",
+      "acquisitionDefinitionHashBound": true,
+      "trainerRevisionDelta": "equal-applied-reward-amount",
+      "externalBreedingOperationForgery": "forbidden",
+      "exactRetry": "return-persisted-settlement-with-zero-new-reward-and-no-publication"
+    },
+    "transactions": {
+      "owner": "caller-owned-synchronous-SQLite-transaction",
+      "nestedIsolation": "unique-savepoint",
+      "rollback": "source-history-Trainer-reward-and-publication-all-or-nothing",
+      "randomness": "none"
+    },
+    "privacy": {
+      "historyAndEvidence": "campaign-private",
+      "realtime": "sheet-refreshes-only-no-source-evidence",
+      "playerProjection": "no-acquisition-ledger-payload",
+      "localPersistence": "none"
+    },
+    "validation": {
+      "unknownEnrichedAccessorSymbolSparseOrNonPlainInput": "reject",
+      "unknownSpecies": "reject",
+      "staleTrainerPokemonClockOrReview": "reject",
+      "duplicateOwnership": "reject",
+      "repositoryCorruption": "reject"
+    },
+    "evidence": [
+      "tests/server/speciesAcquisitionIntegration.test.ts",
+      "tests/server/trainerSpeciesAcquisitionReward.test.ts",
+      "tests/server/throwPokeballCommand.test.ts",
+      "tests/server/throwPokeballRoute.test.ts",
+      "tests/server/saveSheet.test.ts",
+      "tests/server/breedingStorageMigrations.test.ts",
+      "tests/scripts/migrateCampaignToSqlite.test.ts"
+    ]
+  }
+}

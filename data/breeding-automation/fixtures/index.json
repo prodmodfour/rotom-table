@@ -112,6 +112,7 @@
       "scriptIds": [
         "concurrent-exactly-once-hatch",
         "first-species-acquisition-once",
+        "external-acquisition-history-reuse",
         "parent-change-does-not-drift-egg",
         "reconnect-export-restore-convergence"
       ],

@@ -1014,6 +1014,16 @@ describe('live-play sheet commands', () => {
       sheet: {
         slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 24,
         totalExp: 740, ...marsupialBabyAuthorityFields, babyTemplate: false, revision: 1, updatedAt: 30,
+        movelist: [{ name: 'Tackle', permanentMoveSource: {
+          schemaVersion: 1, kind: 'breeding-inheritance',
+          originId: 'pokemon-breeding-origin:v1:96969696969696969696969696969696',
+          eggId: 'pokemon-egg:v1:96969696969696969696969696969696',
+          learningRecordId: 'inheritance-learning:v1:96969696969696969696969696969696',
+          checkpointLevel: 20, moveId: 'tackle',
+          operationId: 'breeding-operation:v1:96969696969696969696969696969696',
+          candidateDefinitionSha256: '9'.repeat(64),
+        } }],
+        inheritedMoves: { 20: 'Tackle' }, inheritedRemaining: 1,
         capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
       },
     })
@@ -1027,6 +1037,9 @@ describe('live-play sheet commands', () => {
     expect(harness.sheets.get('pokemon:kangaskhan-baby')?.sheet).toMatchObject({
       level: 25,
       babyTemplate: false,
+      inheritedMoves: { 20: 'Tackle' },
+      inheritedRemaining: 1,
+      movelist: [{ name: 'Tackle', permanentMoveSource: { kind: 'breeding-inheritance', checkpointLevel: 20 } }],
     })
     expect(harness.sheets.get('pokemon:kangaskhan-baby')?.sheet.capabilityCampaignState?.marsupialPouch ?? null).toBeNull()
     expect(harness.sheets.get('pokemon:pikachu')?.sheet.capabilityCampaignState?.marsupialPouch ?? null).toBeNull()

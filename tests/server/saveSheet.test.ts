@@ -15,6 +15,7 @@ import {
 } from '../../server/storage/realtimeEventRepository'
 import { setupSheetSaveRealtimeDedupeKey } from '../../server/realtime/setupDocumentRealtime'
 import { SaveSheetUseCaseError, saveSheetUseCase } from '../../server/useCases/saveSheet'
+import { redactSheetRecordForPlayer } from '../../server/utils/sheetPrivacy'
 import {
   createBreedingBabyTemplateAuthorityV1,
   createBreedingMarsupialProviderTraitV1,
@@ -76,6 +77,50 @@ afterEach(() => {
 })
 
 describe('save sheet use case', () => {
+  it('redacts private breeding Move provenance while retaining owner-safe inheritance projections', () => {
+    const projected = redactSheetRecordForPlayer('pokemon', pokemonSheet({
+      inheritedMoves: { 20: 'Tackle' },
+      movelist: [{ name: 'Tackle', permanentMoveSource: {
+        schemaVersion: 1, kind: 'breeding-inheritance',
+        originId: 'pokemon-breeding-origin:v1:11111111111111111111111111111111',
+        eggId: 'pokemon-egg:v1:11111111111111111111111111111111',
+        learningRecordId: 'inheritance-learning:v1:11111111111111111111111111111111',
+        checkpointLevel: 20, moveId: 'tackle',
+        operationId: 'breeding-operation:v1:11111111111111111111111111111111',
+        candidateDefinitionSha256: '1'.repeat(64),
+      } }],
+    }))
+    expect(projected).toMatchObject({ inheritedMoves: { 20: 'Tackle' }, movelist: [{ name: 'Tackle' }] })
+    expect((projected.movelist as any[])[0]).not.toHaveProperty('permanentMoveSource')
+  })
+
+  it('preserves existing permanent-Move provenance and strips browser-forged provenance', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const source = {
+      schemaVersion: 1, kind: 'breeding-inheritance',
+      originId: 'pokemon-breeding-origin:v1:11111111111111111111111111111111',
+      eggId: 'pokemon-egg:v1:11111111111111111111111111111111',
+      learningRecordId: 'inheritance-learning:v1:11111111111111111111111111111111',
+      checkpointLevel: 20, moveId: 'tackle',
+      operationId: 'breeding-operation:v1:11111111111111111111111111111111',
+      candidateDefinitionSha256: '1'.repeat(64),
+    }
+    sheets.saveSetupSheet('pokemon', 'pika', pokemonSheet({ movelist: [{ name: 'Tackle', permanentMoveSource: source }] }))
+    const result = saveSheetUseCase({
+      role: 'gm', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon', slug: 'pika', expectedRevision: 4,
+      sheet: { ...pokemonSheet(), movelist: [
+        { name: 'Tackle', permanentMoveSource: { kind: 'forged' } },
+        { name: 'Growl', permanentMoveSource: { ...source, moveId: 'growl' } },
+      ] },
+    }, { database, sheetRepository: sheets, now: () => 200 })
+    expect(result.sheet.movelist).toEqual([
+      { name: 'Tackle', permanentMoveSource: source },
+      { name: 'Growl' },
+    ])
+  })
+
   it('commits a changed Pokémon sheet and two durable sheet-access events', () => {
     const database = db()
     const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)

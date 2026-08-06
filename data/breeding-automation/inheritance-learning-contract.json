@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-inheritance-learning-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "068e407457fe1b0ce5ace96a9d594caa402db3c27709ff3b862d1e9d621a8d0d",
+  "definition": {
+    "version": 1,
+    "domainPath": "server/domain/breeding/inheritanceLearning.ts",
+    "useCasePath": "server/useCases/recordPokemonInheritanceLearning.ts",
+    "lineageRepositoryPath": "server/storage/breedingLineageRepository.ts",
+    "offerRepositoryPath": "server/storage/breedingOptionOfferRepository.ts",
+    "input": {
+      "commandKind": "record-inheritance-learning",
+      "exactUseCaseFields": [
+        "command",
+        "readSet",
+        "authorizationReceipt",
+        "actorAuthority",
+        "trainerControl",
+        "gmOverrides",
+        "referenceVersions",
+        "audience"
+      ],
+      "clientAuthority": "server-issued-option-IDs-only; use case loads persisted offers and accepts no canonical Move, slot row, prerequisite, provenance, lineage, or offer payload",
+      "currentServerReads": [
+        "campaign-clock",
+        "terminal-source-Egg",
+        "current-child-sheet",
+        "unique-owner-Trainer-roster-link",
+        "hydrated-origin-and-learning-prefix",
+        "selected-active-offers",
+        "current-reference-snapshot"
+      ],
+      "audience": "player-owner-or-gm-exactly-matches-actor-role"
+    },
+    "checkpoints": {
+      "levels": [
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        80,
+        90,
+        100
+      ],
+      "batch": "next-gap-free-contiguous-prefix-at-or-below-current-server-owned-Level",
+      "skippedLevels": "processed-in-canonical-order-with-one-record-per-reached-checkpoint",
+      "illegal": "empty-illegal-record-and-candidate-remains-unlearned-for-later-checkpoint",
+      "noCandidate": "empty-no-candidate-record-only-after-no-unlearned-frozen-candidate-remains"
+    },
+    "prerequisites": {
+      "levels1Through19": {
+        "maximumFrequency": "EOT",
+        "maximumDamageBase": 7
+      },
+      "levels20Through29": {
+        "maximumFrequency": "Scene",
+        "maximumDamageBase": 9
+      },
+      "levels30Through100": {
+        "maximumFrequency": null,
+        "maximumDamageBase": null
+      },
+      "unknownMalformedOrUnprovableMoveData": "breeding.inheritance.move-data-unavailable",
+      "authority": "data/reference/moves.json-bound-by-current-source-manifest-and-canonical-ID-record-hash"
+    },
+    "choices": {
+      "candidateAuthority": "immutable-PokemonBreedingOrigin-offspring-inheritanceCandidates",
+      "offerAuthority": "active-revision-zero-command-target-revision-expiry-and-candidate-hash-bound",
+      "openSlot": "auto-only",
+      "alreadyKnown": "auto-only-and-rebind-exact-existing-natural-slot-to-inheritance-provenance",
+      "fullSixSlots": "one-server-issued-replace-0-through-replace-5-option-for-an-occupied-slot",
+      "illegalCandidate": "auto-only-with-no-Move-list-mutation",
+      "extraneousExpiredModifiedOrAmbiguousOffer": "reject"
+    },
+    "moveClassification": {
+      "naturalMoveSlots": 6,
+      "inheritanceDestination": "movelist",
+      "separateAppliedTmTutorLimit": 3,
+      "reclassification": "inherited-Move-remains-natural-even-when-candidate-pathway-was-machine-compatible",
+      "duplicateCanonicalMoveIds": "forbidden"
+    },
+    "provenance": {
+      "kind": "breeding-inheritance",
+      "fields": [
+        "schemaVersion",
+        "kind",
+        "originId",
+        "eggId",
+        "learningRecordId",
+        "checkpointLevel",
+        "moveId",
+        "operationId",
+        "candidateDefinitionSha256"
+      ],
+      "candidateSources": "retained-unchanged-on-the-frozen-origin-candidate",
+      "recordHash": "stable-json-of-all-fields-except-definitionSha256",
+      "compatibilityFields": [
+        "inheritedMoves",
+        "inheritedRemaining"
+      ],
+      "legacyAuthority": "eggMoves-and-inheritedMoves-are-projections-only",
+      "wholeSheetSave": "existing-server-source-preserved-by-unique-Move-name; submitted-new-or-rewritten-source-stripped-for-GM-and-player"
+    },
+    "hatchConstruction": {
+      "startingLevelAtLeast20": "same-prerequisite-checkpoint-provenance-and-six-slot-policy-before-revision-zero-insert",
+      "selection": "first-unlearned-frozen-candidate-in-canonical-order",
+      "fullSlots": "oldest-round-robin-replacement",
+      "recordOwnership": "initial-records-embedded-in-immutable-origin-by-complete-hatch-operation"
+    },
+    "authorization": {
+      "player": "current-exact-owner-Trainer-control-and-unique-roster-link",
+      "gm": "current-authenticated-GM-plus-one-targeted-owner-control-override",
+      "dependency": "exact-hydrated-origin-state-hash-at-current-child-revision",
+      "privacy": "lineage-candidate-parent-pathway-read-set-receipt-and-hashes-never-broadcast"
+    },
+    "transaction": {
+      "boundary": "one-caller-owned-top-level-synchronous-SQLite-transaction",
+      "writes": [
+        "consume-selected-offers",
+        "advance-child-sheet-exactly-one-revision",
+        "insert-gap-free-learning-records",
+        "append-two-sheet-refresh-events",
+        "settle-operation-result"
+      ],
+      "rollback": "all-phase-writes-absent-and-pending-reservation-remains-recoverable",
+      "retry": "terminal-exact-retry-is-publication-silent-and-survives-later-child-revisions",
+      "randomness": "none"
+    },
+    "bindings": {
+      "runtimePolicyDefinitionSha256": "0ae30cde6f2bcd70b4db6a60c9af6e7cf784a4522a1dd363b733adeb8aa85bb8",
+      "lineageContractDefinitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "storageSchemaV25DefinitionSha256": "9fdd70e8026120bab453c74b608230edb52aec071ff59c3b0c76d32284e3a235",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "childSheetConstructionContractDefinitionSha256": "de128d78ecbe881ac1cf97333fef08d34c97f7db123586692398161d1bdea531",
+      "hatchCompletionContractDefinitionSha256": "0a1d03867ff10ae647a00a17db06770f4928e063adb7de103f7f8384c8e9a635"
+    },
+    "tests": {
+      "domain": "tests/server/breedingInheritanceLearning.test.ts",
+      "transaction": "tests/server/recordPokemonInheritanceLearning.test.ts",
+      "levelAndBabyInteraction": "tests/server/livePlaySheetCommands.test.ts",
+      "wholeSheetSave": "tests/server/saveSheet.test.ts"
+    },
+    "privacy": {
+      "ownerResult": "redacted-child-with-owner-safe-inheritedMoves; no permanent source, records, plan, lineage, operation evidence, or hashes",
+      "gmResult": "authorized-full-child-learning-records-and-plan",
+      "realtime": "stored-sheet-events-use-sheet-access-and-player-delivery-redacts-breeding-permanent-source"
+    }
+  }
+}

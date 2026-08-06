@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { stableJsonStringify } from '../../shared/automation/stableJson'
 import storageSchemaV25Json from '../../data/breeding-automation/storage-schema-v25.json'
 import storageSchemaV26Json from '../../data/breeding-automation/storage-schema-v26.json'
+import storageSchemaV27Json from '../../data/breeding-automation/storage-schema-v27.json'
 import { LATEST_STORAGE_SCHEMA_VERSION, STORAGE_MIGRATIONS, applyStorageMigrations, getStorageSchemaVersion } from '../../server/storage/migrations'
 
 const connections: DatabaseSync[] = []
@@ -25,9 +26,18 @@ const tables = (connection: DatabaseSync): string[] => connection.prepare(`
 const indexes = (connection: DatabaseSync, table: string): string[] => connection.prepare(`PRAGMA index_list(${JSON.stringify(table)})`).all().map(row => String(row.name)).sort()
 const columns = (connection: DatabaseSync, table: string): string[] => connection.prepare(`PRAGMA table_info(${JSON.stringify(table)})`).all().map(row => String(row.name))
 const applyThrough = (connection: DatabaseSync, version: number): void => {
+  const suspendForeignKeys = version >= 25
+    && connection.prepare('PRAGMA foreign_keys').get()?.foreign_keys === 1
+  if (suspendForeignKeys) connection.exec('PRAGMA foreign_keys = OFF')
   for (const migration of STORAGE_MIGRATIONS.filter(candidate => candidate.version <= version)) {
     migration.up(connection)
     connection.exec(`PRAGMA user_version = ${migration.version}`)
+  }
+  if (suspendForeignKeys) {
+    connection.exec('PRAGMA foreign_keys = ON')
+    if (connection.prepare('PRAGMA foreign_key_check').all().length !== 0) {
+      throw new Error('Test migration helper produced foreign-key violations')
+    }
   }
 }
 const operationId = (value: number): string => `breeding-operation:v1:${value.toString(16).padStart(32, '0')}`
@@ -72,7 +82,7 @@ describe('breeding SQLite schema migration', () => {
   it('adds every dedicated aggregate and evidence table at contiguous schema version 22', () => {
     const connection = open()
     applyThrough(connection, 22)
-    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(26)
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(27)
     expect(getStorageSchemaVersion(connection)).toBe(22)
     expect(tables(connection).filter(name => breedingTables.includes(name))).toEqual(breedingTables)
     expect(connection.prepare('SELECT * FROM campaign_clock').all()).toEqual([{ singleton: 1, revision: 0, campaign_minute: 0, last_operation_id: null }])
@@ -91,7 +101,7 @@ describe('breeding SQLite schema migration', () => {
     )
     connection.prepare(`INSERT INTO sheets (kind, slug, document_json, revision, updated_at) VALUES ('pokemon', 'legacy-child', '{}', 3, 100)`).run()
 
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 21, toVersion: 26, appliedVersions: [22, 23, 24, 25, 26] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 21, toVersion: 27, appliedVersions: [22, 23, 24, 25, 26, 27] })
     expect(connection.prepare('SELECT slug, revision FROM maps').get()).toEqual({ slug: 'legacy-map', revision: 7 })
     expect(connection.prepare('SELECT kind, slug, revision FROM sheets').get()).toEqual({ kind: 'pokemon', slug: 'legacy-child', revision: 3 })
     expect(connection.prepare('SELECT COUNT(*) AS count FROM breeding_projects').get()).toEqual({ count: 0 })
@@ -103,7 +113,7 @@ describe('breeding SQLite schema migration', () => {
     const connection = open()
     applyThrough(connection, 22)
     expect(tables(connection).filter(name => archiveTables.includes(name))).toEqual([])
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 22, toVersion: 26, appliedVersions: [23, 24, 25, 26] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 22, toVersion: 27, appliedVersions: [23, 24, 25, 26, 27] })
     expect(tables(connection).filter(name => archiveTables.includes(name))).toEqual(archiveTables)
     expect(indexes(connection, 'breeding_archives')).toContain('breeding_archives_campaign_created_idx')
     expect(() => connection.prepare(`
@@ -118,7 +128,7 @@ describe('breeding SQLite schema migration', () => {
     const connection = open()
     applyThrough(connection, 23)
     expect(tables(connection).filter(name => incubationTables.includes(name))).toEqual([])
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 23, toVersion: 26, appliedVersions: [24, 25, 26] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 23, toVersion: 27, appliedVersions: [24, 25, 26, 27] })
     expect(tables(connection).filter(name => incubationTables.includes(name))).toEqual(incubationTables)
     expect(indexes(connection, 'breeding_incubation_segments')).toContain('breeding_incubation_segments_egg_revision_idx')
     expect(columns(connection, 'breeding_incubation_segments')).toEqual([
@@ -134,7 +144,7 @@ describe('breeding SQLite schema migration', () => {
     applyThrough(connection, 24)
     const operation = insertPendingOperation(connection, 91)
     connection.prepare(`INSERT INTO breeding_operation_scopes (operation_id, scope_key, scope_kind, scope_json) VALUES (?, '2:test', 'pokemon-egg', '{}')`).run(operation)
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 24, toVersion: 26, appliedVersions: [25, 26] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 24, toVersion: 27, appliedVersions: [25, 26, 27] })
     expect(connection.prepare('SELECT operation_id, command_kind, status FROM breeding_operations').all()).toEqual([{ operation_id: operation, command_kind: 'create-breeding-project', status: 'pending' }])
     expect(connection.prepare('SELECT operation_id, scope_key FROM breeding_operation_scopes').all()).toEqual([{ operation_id: operation, scope_key: '2:test' }])
     expect(connection.prepare('PRAGMA foreign_key_check').all()).toEqual([])
@@ -164,6 +174,72 @@ describe('breeding SQLite schema migration', () => {
     ])
     expect(indexes(connection, 'pokemon_egg_transfer_consents')).toContain('pokemon_egg_transfer_consents_active_role_idx')
     expect(connection.prepare("SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'breeding_operation_scopes'").get()?.sql).toContain('egg-transfer-consent')
+  })
+
+  it('adds immutable external acquisition settlements and preserves v26 history at v27', () => {
+    const root = resolve(import.meta.dirname, '../..')
+    const application = readFileSync(resolve(root, 'server/storage/migrations.ts'), 'utf8')
+    const offline = readFileSync(resolve(root, 'scripts/migrate-campaign-to-sqlite.mjs'), 'utf8')
+    const applicationSql = /function createTrainerSpeciesAcquisitionSourceOperationTable[\s\S]*?connection\.exec\(`([\s\S]*?)`\)\n}/.exec(application)?.[1]
+    const offlineSql = /if \(fromVersion < 27\) \{[\s\S]*?connection\.exec\(`([\s\S]*?)`\)\n\s+setUserVersion\(connection, 27\)/.exec(offline)?.[1]
+    const digest = (value: string): string => createHash('sha256').update(value).digest('hex')
+    expect(applicationSql).toBeTruthy()
+    expect(offlineSql).toBe(applicationSql)
+    expect(storageSchemaV27Json.definitionSha256).toBe(digest(stableJsonStringify(storageSchemaV27Json.definition)))
+    expect(storageSchemaV27Json.definition.applicationMigrationSqlSha256).toBe(digest(applicationSql!))
+    expect(storageSchemaV27Json.definition.offlineMigrationSqlSha256).toBe(digest(offlineSql!))
+
+    const connection = open()
+    applyThrough(connection, 26)
+    const operation = insertPendingOperation(connection, 127)
+    connection.prepare(`
+      INSERT INTO trainer_species_acquisitions (
+        trainer_sheet_slug, species_id, first_acquired_at_campaign_minute, source_egg_id,
+        operation_id, record_json, definition_sha256
+      ) VALUES ('trainer-owner', 'bulbasaur', 100, NULL, ?, '{}', ?)
+    `).run(operation, hash('f'))
+    expect(applyStorageMigrations(connection)).toEqual({
+      fromVersion: 26,
+      toVersion: 27,
+      appliedVersions: [27],
+    })
+    expect(connection.prepare(`
+      SELECT trainer_sheet_slug, species_id, operation_id
+      FROM trainer_species_acquisitions
+    `).get()).toEqual({
+      trainer_sheet_slug: 'trainer-owner',
+      species_id: 'bulbasaur',
+      operation_id: operation,
+    })
+    expect(connection.prepare('PRAGMA foreign_key_list(trainer_species_acquisitions)').all()
+      .map(row => String(row.table))).toEqual(['pokemon_eggs'])
+    expect(columns(connection, 'trainer_species_acquisition_source_operations')).toEqual([
+      'operation_id', 'source_kind', 'source_event_id', 'trainer_sheet_slug', 'species_id',
+      'settled_at_campaign_minute', 'outcome', 'applied_reward_amount', 'record_json',
+      'definition_sha256',
+    ])
+    const insertSource = connection.prepare(`
+      INSERT INTO trainer_species_acquisition_source_operations (
+        operation_id, source_kind, source_event_id, trainer_sheet_slug, species_id,
+        settled_at_campaign_minute, outcome, applied_reward_amount, record_json,
+        definition_sha256
+      ) VALUES (?, 'migration', 'review:one', 'trainer-owner', 'bulbasaur', 100,
+        'already-acquired', 0, '{}', ?)
+    `)
+    insertSource.run(operationId(200), hash('a'))
+    expect(() => insertSource.run(operationId(201), hash('b'))).toThrow()
+    expect(connection.prepare(`
+      SELECT DISTINCT "table" AS referenced_table
+      FROM pragma_foreign_key_list('trainer_species_acquisition_source_operations')
+    `).all()).toEqual([{ referenced_table: 'trainer_species_acquisitions' }])
+    expect(() => connection.prepare(`
+      INSERT INTO trainer_species_acquisition_source_operations (
+        operation_id, source_kind, source_event_id, trainer_sheet_slug, species_id,
+        settled_at_campaign_minute, outcome, applied_reward_amount, record_json,
+        definition_sha256
+      ) VALUES (?, 'migration', 'review:missing-history', 'trainer-owner', 'ivysaur',
+        100, 'already-acquired', 0, '{}', ?)
+    `).run(operationId(202), hash('c'))).toThrow()
   })
 
   it('supports one deferred project/Egg transaction while enforcing lifecycle, identity, and JSON constraints', () => {
@@ -264,7 +340,7 @@ describe('breeding SQLite schema migration', () => {
     const offlineSql = /if \(fromVersion < 22\) \{\n\s+connection\.exec\(`([\s\S]*?)`\)\n\s+setUserVersion\(connection, 22\)/.exec(offline)?.[1]
     expect(applicationSql).toBeTruthy()
     expect(offlineSql).toBe(applicationSql)
-    expect(offline).toContain('export const STORAGE_SCHEMA_VERSION = 26')
+    expect(offline).toContain('export const STORAGE_SCHEMA_VERSION = 27')
     const artifact = JSON.parse(readFileSync(resolve(root, 'data/breeding-automation/storage-schema-v22.json'), 'utf8'))
     const digest = (value: string): string => createHash('sha256').update(value).digest('hex')
     expect(artifact.definitionSha256).toBe(digest(stableJsonStringify(artifact.definition)))

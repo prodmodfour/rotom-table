@@ -59,6 +59,8 @@ import { applyHpToSheet } from '~/utils/sheetMutations'
 import { preservePlayerHiddenAutomationFieldsForSave } from '~/utils/sheets/pokemonGmFields'
 import { reconcileServerOwnedBreedingBabyTemplate } from '~/utils/sheets/pokemonBabyTemplate'
 import { parseAuthoritativeBreedingBabyTemplateAuthorityV1 } from '../domain/breeding/babyTemplate'
+import { preserveServerOwnedPermanentMoveProvenance } from '../domain/breeding/permanentMoveProvenance'
+import { settleSetupSheetSpeciesAcquisitions } from './settleSetupSheetSpeciesAcquisitions'
 import {
   defaultPersistedSetupSaveRealtimeEventPublisher,
   defaultSetupSaveRealtimePublicationFailureReporter,
@@ -293,6 +295,10 @@ export const saveSheetUseCase = (
   if (input.kind === 'pokemon') {
     try {
       const currentPokemon = current.sheet as unknown as CharacterSheet
+      playerAuthorityPreservedSheet = preserveServerOwnedPermanentMoveProvenance(
+        currentPokemon,
+        playerAuthorityPreservedSheet as unknown as CharacterSheet,
+      ) as unknown as Record<string, unknown>
       if (currentPokemon.serverPrivate !== undefined
         && Object.hasOwn(currentPokemon.serverPrivate, 'breedingBabyTemplate')) {
         parseAuthoritativeBreedingBabyTemplateAuthorityV1(
@@ -462,8 +468,31 @@ export const saveSheetUseCase = (
     const saved = replaceSheetOrThrow(sheetRepository, authoritativeInput, timestamp)
     if (!saved) throw new SaveSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
 
-    const authoritativeSheet = readAuthoritativeSheetOrThrow(sheetRepository, input.kind, input.slug, saved.sheet)
+    const savedSheet = readAuthoritativeSheetOrThrow(sheetRepository, input.kind, input.slug, saved.sheet)
+    const acquisitionSettlement = saved.changed
+      ? settleSetupSheetSpeciesAcquisitions({
+          database,
+          role: input.role,
+          actorProfileId: input.playerProfile?.id ?? null,
+          previousSheet: current,
+          savedSheet,
+          sheetUpdatedAt: timestamp,
+        })
+      : {
+          primarySheet: savedSheet,
+          additionalUpdatedTrainerSheets: [] as const,
+          sourceOperationDefinitionSha256s: [] as const,
+        }
+    const authoritativeSheet = acquisitionSettlement.primarySheet
     const additionalEventInputs: Array<ReturnType<typeof setupSheetSaveRealtimeAppendInputs>[number]> = []
+    for (const trainer of acquisitionSettlement.additionalUpdatedTrainerSheets) {
+      additionalEventInputs.push(...setupSheetSaveRealtimeAppendInputs({
+        kind: 'trainer',
+        slug: trainer.slug,
+        sheet: trainer.sheet,
+        clientId: input.clientId,
+      }))
+    }
     if (marsupialLifecycleExit) {
       const counterpartResult = sheetRepository.applyLivePlayUpdate({
         kind: 'pokemon',

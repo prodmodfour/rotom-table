@@ -42,6 +42,11 @@ import {
   BREEDING_READINESS_CORRECTION_POLICY_DEFINITION_SHA256,
   BREEDING_READINESS_CORRECTION_PROVIDER_ID,
 } from './readinessCorrection'
+import {
+  BREEDING_INHERITANCE_LEARNING_POLICY_DEFINITION_SHA256,
+  breedingInheritanceLearningOriginStateSha256,
+} from './inheritanceLearning'
+import { parseAuthoritativePokemonBreedingOriginV1 } from './lineage'
 
 export type BreedingActorAuthorityDefinitionV1 = Omit<BreedingActorAuthorityV1, 'schemaVersion' | 'definitionSha256'>
 export type BreedingTrainerControlEvidenceDefinitionV1 = Omit<BreedingTrainerControlEvidenceV1, 'schemaVersion' | 'definitionSha256'>
@@ -619,6 +624,87 @@ export const authorizeBreedingCampaignClockBatchV1 = (input: {
   })) {
     return deny(context, 'breeding.authorization.gm-override-invalid')
   }
+  return receipt({ ...context, authorized: true, reasonId: 'breeding.authorization.authorized' })
+}
+
+export const authorizeBreedingInheritanceLearningV1 = (input: {
+  readonly command: unknown
+  readonly readSet: unknown
+  readonly actorAuthority: unknown
+  readonly trainerControl: unknown | null
+  readonly ownerTrainer: {
+    readonly slug: string
+    readonly revision: number
+    readonly definitionSha256: string
+    readonly currentTeam: readonly unknown[]
+    readonly boxedPokemon: readonly unknown[]
+  }
+  readonly childSheet: { readonly slug: string, readonly revision: number, readonly definitionSha256: string }
+  readonly origin: unknown
+  readonly gmOverrides: readonly unknown[]
+  readonly securityPolicyDefinitionSha256: string
+}): BreedingAuthorizationReceiptV1 => {
+  const command = parseBreedingOperationCommandV1(input.command)
+  if (command.commandKind !== 'record-inheritance-learning') {
+    fail('breeding.authorization.unsupported-command', 'command.commandKind', 'inheritance learning authorization accepts record-inheritance-learning only.')
+  }
+  const readSet = validateBreedingOperationReadSetCompleteness(command, input.readSet)
+  const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
+  const origin = parseAuthoritativePokemonBreedingOriginV1(input.origin)
+  const evidence: BreedingAuthorizationEvidenceV1[] = [actor]
+  const emptyOverrides: readonly BreedingGmOverrideEvidenceV1[] = []
+  const common = { command, actor, readSet, evidence, overrides: emptyOverrides, securityPolicyDefinitionSha256: input.securityPolicyDefinitionSha256 }
+  if (actor.commandActorProfileId !== command.actor.profileId
+    || actor.selectedTrainerSlug !== command.actor.selectedTrainerSlug
+    || actor.evaluatedAtCampaignMinute !== readSet.capturedAtCampaignMinute) {
+    return deny(common, 'breeding.authorization.actor-mismatch')
+  }
+  const scope = command.scopes[0]
+  const childRead = readSet.resources.find(value => value.resourceKind === 'pokemon-sheet' && value.resourceId === input.childSheet.slug)
+  const trainerRead = readSet.resources.find(value => value.resourceKind === 'trainer-sheet' && value.resourceId === input.ownerTrainer.slug)
+  const childLinks = [...input.ownerTrainer.currentTeam, ...input.ownerTrainer.boxedPokemon]
+    .filter(value => value === input.childSheet.slug).length
+  const lineageDependencies = readSet.dependencyEvidence.filter(value => (
+    value.providerKind === 'system'
+    && value.providerId === 'breeding.inheritance-learning'
+    && value.subjectKind === 'pokemon-sheet'
+    && value.subjectId === input.childSheet.slug
+    && value.subjectRevision === input.childSheet.revision
+    && value.checkpoint === 'inheritance-learning'
+    && value.providerDefinitionSha256 === BREEDING_INHERITANCE_LEARNING_POLICY_DEFINITION_SHA256
+    && value.effectiveEvidenceSha256 === breedingInheritanceLearningOriginStateSha256(origin)
+  ))
+  if (command.payload.originId !== origin.originId || command.payload.eggId !== origin.eggId
+    || command.payload.childSheetSlug !== origin.childSheetSlug || input.childSheet.slug !== origin.childSheetSlug
+    || scope?.kind !== 'pokemon-sheet' || scope.sheetSlug !== input.childSheet.slug || scope.expectedRevision !== input.childSheet.revision
+    || command.ruleset.rulesetId !== origin.ruleset.rulesetId || command.ruleset.definitionSha256 !== origin.ruleset.definitionSha256
+    || childLinks !== 1
+    || childRead?.existence !== 'present' || childRead.revision !== input.childSheet.revision
+    || childRead.definitionSha256 !== input.childSheet.definitionSha256
+    || !childRead.purposes.includes('mechanics') || !childRead.purposes.includes('conflict')
+    || trainerRead?.existence !== 'present' || trainerRead.revision !== input.ownerTrainer.revision
+    || trainerRead.definitionSha256 !== input.ownerTrainer.definitionSha256 || !trainerRead.purposes.includes('authorization')
+    || lineageDependencies.length !== 1) {
+    return deny(common, 'breeding.authorization.owner-control-required')
+  }
+  const control = input.trainerControl === null ? null : parseAuthoritativeBreedingTrainerControlEvidenceV1(input.trainerControl)
+  if (control) evidence.push(control)
+  const overrides = validateOverrides(input.gmOverrides, command, actor, readSet.capturedAtCampaignMinute, input.securityPolicyDefinitionSha256)
+  const context = { ...common, overrides }
+  if (actor.role === 'player') {
+    if (overrides.length !== 0 || !control || actor.authenticatedProfileId !== control.profileId
+      || actor.profileDefinitionSha256 !== control.profileDefinitionSha256
+      || actor.selectedTrainerSlug !== input.ownerTrainer.slug || control.trainerSheetSlug !== input.ownerTrainer.slug
+      || control.trainerSheetRevision !== input.ownerTrainer.revision
+      || control.trainerSheetDefinitionSha256 !== input.ownerTrainer.definitionSha256
+      || control.evaluatedAtCampaignMinute !== readSet.capturedAtCampaignMinute) {
+      return deny(context, 'breeding.authorization.owner-control-required')
+    }
+    return receipt({ ...context, authorized: true, reasonId: 'breeding.authorization.authorized' })
+  }
+  if (control !== null || overrides.length !== 1 || !overrideMatches(overrides[0]!, 'owner-control', {
+    kind: 'trainer-sheet', trainerSheetSlug: input.ownerTrainer.slug,
+  })) return deny(context, 'breeding.authorization.gm-override-invalid')
   return receipt({ ...context, authorized: true, reasonId: 'breeding.authorization.authorized' })
 }
 

@@ -69,6 +69,20 @@ Never use `Math.random` in an owning use case. Never create a blank child and pa
 
 For parentless source Eggs, adapt into `PokemonEggDocumentV1` rather than adding another lifecycle. Bind the future Egg ID, exact source custody or typed provenance, actor, campaign checkpoint, current provider/tool/import evidence, options, offers, and any persisted roll before settlement. Consume source resources when applicable and insert the Egg under the caller-owned transaction. GM, mysterious, campaign-gift, and imported creation all use the closed self-hashed GM provenance shape; legacy three-field GM sources are read-only. Source-specific reducers may freeze blueprint traits, but they may not fork incubation, hatch-special, child construction, lineage, acquisition rewards, or completion.
 
+## Species acquisition integrations
+
+Route every new capture, hatch, evolution, trade, migration, or GM-reviewed Species fact through `recordTrainerSpeciesAcquisition.ts`. Never query a roster, `dexExp`, a client Pokédex, or legacy fields to decide whether it is first. Never delete history on release. External sources must create strict self-hashed `BreedingSpeciesAcquisitionSourceEvidenceV1` with a deterministic operation ID, current campaign minute, exact Trainer revision, canonical app-owned Species, and—only for capture/evolution/trade—the exact Pokémon slug and revision. Do not add external events to the breeding command union.
+
+Use `settleCaptureSpeciesAcquisitions.ts` only from the accepted Poké Ball commit, `settleSetupSheetSpeciesAcquisitions.ts` only from the setup-save transaction, and `settleReviewedSpeciesAcquisition.ts` only from server-owned review tooling. A review resolver and the generic current-source verifier must synchronously return current exact authority; Promise-like, stale, enriched, accessor-backed, duplicate-owner, unknown-Species, or hash-drifted values fail closed. Keep migration and GM review off browser routes.
+
+Insert the history/reward and terminal source settlement in the caller's synchronous transaction. The source ledger is unique by operation and logical event, hash-binds the acquisition definition and reward result, and must reference an existing Trainer/Species history row. Exact retries return the persisted terminal record and apply zero. Test new integrations for release/reacquisition, companion capture, duplicate ownership, overflow, operation/event collision, corruption, nested rollback, restart/migration parity, and absence of private evidence in realtime.
+
+## Inheritance learning
+
+Treat frozen origin candidates as immutable authority. Resolve only canonical app-owned Move records at checkpoints 20, 30, …, 100; never infer eligibility from editable `eggMoves`, `inheritedMoves`, parent sheets, or documentary text. Keep inherited Moves in the six-slot natural `movelist`, leaving the separate three applied TM/Tutor slots unchanged. A full natural list requires a server-issued occupied replacement option. Persist one self-hashed lineage record and typed permanent provenance, and leave an illegal candidate eligible after its empty checkpoint.
+
+The learning writer must use the caller-owned transaction. Consume selected offers, advance the child once, insert the contiguous record batch, settle the operation, and append restricted refreshes atomically. Exact retry is silent and remains valid after later child revisions. Add tests for skipped Levels, illegal-to-legal progression, exhausted candidates, open/full/already-known slots, rollback/recovery, stale authority, and accessor-backed rows.
+
 ## Privacy
 
 Implement separate public, owner, participating-owner, GM, and diagnostic parsers/projections. Do not serialize private fields and hide them in Vue. Control cannot exceed visible authorized identity. Realtime remains a refresh signal.

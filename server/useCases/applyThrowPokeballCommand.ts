@@ -103,11 +103,23 @@ export interface LivePlayPokeballCommandResponse {
   readonly capture?: PokeballCaptureOutcomeEvent
 }
 
+export interface CaptureSpeciesAcquisitionSettlementInput {
+  readonly database: RotomDatabase
+  readonly livePlayOperationId: string
+  readonly actorProfileId: string | null
+  readonly mapSlug: string
+  readonly acceptedMapRevision: number
+  readonly trainerSheetBefore: PersistedSheet
+  readonly captureTargetSheetSlug: string
+  readonly captureSucceeded: boolean
+}
+
 export interface ThrowPokeballCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'list' | 'applyLivePlayUpdate'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'> & Partial<RotomDatabase>
+  readonly settleCaptureSpeciesAcquisitions?: (input: CaptureSpeciesAcquisitionSettlementInput) => PersistedSheet
   readonly random?: () => number
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
@@ -170,6 +182,7 @@ const actionDependencies = (dependencies: ThrowPokeballCommandDependencies) => {
     mapRepository,
     sheetRepository,
     commandExecutor,
+    settleCaptureSpeciesAcquisitions: dependencies.settleCaptureSpeciesAcquisitions,
     random: dependencies.random,
     now: dependencies.now ?? defaultNow,
     relativePath: dependencies.relativePath ?? ((path: string) => path),
@@ -1185,8 +1198,20 @@ export const executeThrowPokeballCommandUseCase = async (
           }
         }
 
-        const authoritativeTrainerSheet = deps.sheetRepository.getByRef('trainer', nextMap.trainerSheet.slug)
-        if (!authoritativeTrainerSheet) throw new ThrowPokeballCommandUseCaseError(404, `Trainer sheet ${nextMap.trainerSheet.slug} not found after Poké Ball command`)
+        if (!('connection' in deps.database)) throw new ThrowPokeballCommandUseCaseError(409, 'Poké Ball acquisition integration requires the authoritative SQLite database')
+        const settleSpeciesAcquisitions = deps.settleCaptureSpeciesAcquisitions
+        if (!settleSpeciesAcquisitions) throw new ThrowPokeballCommandUseCaseError(409, 'Poké Ball acquisition integration is unavailable')
+        const authoritativeTrainerSheet = settleSpeciesAcquisitions({
+          database: deps.database as RotomDatabase,
+          livePlayOperationId: command.opId,
+          actorProfileId: actor.playerProfile?.id
+            ?? (actor.role === 'gm' ? 'system:gm-live-play' : null),
+          mapSlug: command.mapSlug,
+          acceptedMapRevision: result.revision,
+          trainerSheetBefore: nextMap.trainerSheet,
+          captureTargetSheetSlug: nextMap.targetSheet.slug,
+          captureSucceeded: nextMap.capture?.result.success === true,
+        })
         const updates = [sheetUpdateFromPersisted(authoritativeTrainerSheet)]
         if (nextMap.nextTargetSheet) {
           const authoritativeTargetSheet = deps.sheetRepository.getByRef('pokemon', nextMap.targetSheet.slug)

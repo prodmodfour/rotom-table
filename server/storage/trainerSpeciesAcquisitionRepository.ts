@@ -1,9 +1,9 @@
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import { parseBreedingSpeciesIdSyntax, type BreedingSpeciesId } from '#shared/breeding/ids'
-import { type BreedingSpeciesAcquisitionArchiveRecordV1 } from '#shared/breeding/archives'
+import { type BreedingSpeciesAcquisitionArchiveRecordV1 } from '#shared/speciesAcquisitionHistory'
 import { isSlug } from '#shared/paths'
 import { isCanonicalBreedingSpeciesId } from '../domain/breeding/canonicalIds'
-import { parseAuthoritativeBreedingSpeciesAcquisitionArchiveRecordV1 } from '../domain/breeding/archives'
+import { parseAuthoritativeBreedingSpeciesAcquisitionArchiveRecordV1 } from '../domain/breeding/speciesAcquisitionHistory'
 import { getRotomDatabase, type RotomDatabase } from './database'
 import {
   BreedingRepositoryCorruptionError,

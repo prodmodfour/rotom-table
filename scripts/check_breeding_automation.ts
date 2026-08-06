@@ -206,6 +206,7 @@ for (const path of [
   'data/breeding-automation/repository-contract.json',
   'data/breeding-automation/initialized-pokemon-sheet-contract.json',
   'data/breeding-automation/species-acquisition-reward-contract.json',
+  'data/breeding-automation/species-acquisition-integration-contract.json',
   'data/breeding-automation/campaign-operation-ledger-contract.json',
   'data/breeding-automation/campaign-clock-contract.json',
   'data/breeding-automation/realtime-contract.json',
@@ -238,6 +239,7 @@ for (const path of [
   'data/breeding-automation/storage-schema-v25.json',
   'data/breeding-automation/parent-source-change-contract.json',
   'data/breeding-automation/storage-schema-v26.json',
+  'data/breeding-automation/storage-schema-v27.json',
   'data/breeding-automation/egg-transfer-contract.json',
   'data/breeding-automation/fossil-egg-contract.json',
   'data/breeding-automation/gm-egg-contract.json',
@@ -293,6 +295,26 @@ assert(storageSchemaV26.schemaId === 'rotom-breeding-storage-v26'
 assert(storageSchemaV26.definition?.newScopeKind === 'egg-transfer-consent'
   && storageSchemaV26.definition?.invariants?.offlineParity === true
   && storageSchemaV26.definition?.invariants?.noMapEncounterColumns === true, 'storage schema v26 transfer-consent policy drifted')
+const storageSchemaV27 = json<Record<string, any>>('data/breeding-automation/storage-schema-v27.json')
+assert(storageSchemaV27.schemaId === 'rotom-breeding-storage-v27'
+  && storageSchemaV27.definition?.fromVersion === 26
+  && storageSchemaV27.definition?.toVersion === 27, 'storage schema v27 identity drifted')
+assert(storageSchemaV27.definition?.newTable === 'trainer_species_acquisition_source_operations'
+  && storageSchemaV27.definition?.rebuiltTable === 'trainer_species_acquisitions'
+  && storageSchemaV27.definition?.invariants?.existingHistoryRowsPreserved === true
+  && storageSchemaV27.definition?.invariants?.externalSourcesDoNotForgeBreedingOperations === true
+  && storageSchemaV27.definition?.invariants?.sourceSettlementRequiresHistory === true
+  && storageSchemaV27.definition?.invariants?.offlineParity === true, 'storage schema v27 acquisition policy drifted')
+const acquisitionIntegrationContract = json<Record<string, any>>('data/breeding-automation/species-acquisition-integration-contract.json')
+assert(acquisitionIntegrationContract.contractId === 'rotom-breeding-species-acquisition-integration-v1'
+  && acquisitionIntegrationContract.definition?.ticket === 'BR-069'
+  && acquisitionIntegrationContract.definition?.runtimePolicy?.clientAuthority === 'none', 'Species acquisition integration contract identity or authority drifted')
+assert(acquisitionIntegrationContract.definition?.sourceMatrix?.release?.historyMutation === 'none'
+  && acquisitionIntegrationContract.definition?.sourceMatrix?.migration?.legacyInference === 'forbidden'
+  && acquisitionIntegrationContract.definition?.historyAndReward?.firstHistoricalAcquisitionDexExp === 1
+  && acquisitionIntegrationContract.definition?.historyAndReward?.repeatAcquisitionDexExp === 0
+  && acquisitionIntegrationContract.definition?.sourceSettlement?.storageSchemaDefinitionSha256 === storageSchemaV27.definitionSha256
+  && acquisitionIntegrationContract.definition?.sourceSettlement?.externalBreedingOperationForgery === 'forbidden', 'Species acquisition integration history or settlement policy drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
   && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')
@@ -366,8 +388,19 @@ assert(childSheetContract.definition?.storage?.insertRevision === 0
   && childSheetContract.definition?.storage?.placeholderOrFollowupSave?.includes('Marsupial-pouch-link'), 'child-sheet initialized storage policy drifted')
 assert(childSheetContract.definition?.construction?.babyTemplate?.includes('server-private-authority')
   && childSheetContract.definition?.construction?.playingGod?.includes('BR-068')
+  && childSheetContract.definition?.construction?.inheritanceCheckpoints?.includes('Levels-20-through-100')
+  && childSheetContract.definition?.construction?.permanentMoveProvenance?.includes('typed breeding-inheritance')
   && childSheetContract.definition?.unsupported?.babyTemplateApplied === undefined
-  && childSheetContract.definition?.unsupported?.startingLevelAtLeast20 === 'unavailable-until-BR-068-hatch-construction-checkpoints', 'child-sheet BR-067/BR-068 ownership policy drifted')
+  && childSheetContract.definition?.unsupported?.startingLevelAtLeast20 === undefined, 'child-sheet BR-067/BR-068 ownership policy drifted')
+const inheritanceLearningContract = json<Record<string, any>>('data/breeding-automation/inheritance-learning-contract.json')
+assert(inheritanceLearningContract.contractId === 'rotom-breeding-inheritance-learning-v1', 'inheritance-learning contract identity drifted')
+assert(JSON.stringify(inheritanceLearningContract.definition?.checkpoints?.levels) === JSON.stringify([20, 30, 40, 50, 60, 70, 80, 90, 100])
+  && inheritanceLearningContract.definition?.checkpoints?.illegal?.includes('remains-unlearned'), 'inheritance-learning checkpoint policy drifted')
+assert(inheritanceLearningContract.definition?.moveClassification?.naturalMoveSlots === 6
+  && inheritanceLearningContract.definition?.moveClassification?.separateAppliedTmTutorLimit === 3
+  && inheritanceLearningContract.definition?.input?.clientAuthority?.includes('no canonical Move'), 'inheritance-learning Move authority drifted')
+assert(inheritanceLearningContract.definition?.transaction?.boundary?.includes('caller-owned')
+  && inheritanceLearningContract.definition?.transaction?.retry?.includes('survives-later-child-revisions'), 'inheritance-learning transaction/retry policy drifted')
 const hatchCompletionContract = json<Record<string, any>>('data/breeding-automation/hatch-completion-contract.json')
 assert(hatchCompletionContract.contractId === 'rotom-breeding-hatch-completion-v1', 'hatch-completion contract identity drifted')
 assert(hatchCompletionContract.definition?.transaction?.phase2 === 'one-BR-037-top-level-synchronous-SQLite-transaction', 'hatch-completion transaction boundary drifted')
@@ -748,6 +781,16 @@ for (const path of [
   'tests/server/breedingEggTransfer.test.ts',
   'data/breeding-automation/storage-schema-v26.json',
   'data/breeding-automation/egg-transfer-contract.json',
+  'shared/speciesAcquisitionHistory.ts',
+  'server/domain/breeding/speciesAcquisitionHistory.ts',
+  'server/domain/breeding/speciesAcquisitionIntegration.ts',
+  'server/storage/trainerSpeciesAcquisitionSourceOperationRepository.ts',
+  'server/useCases/settleCaptureSpeciesAcquisitions.ts',
+  'server/useCases/settleSetupSheetSpeciesAcquisitions.ts',
+  'server/useCases/settleReviewedSpeciesAcquisition.ts',
+  'tests/server/speciesAcquisitionIntegration.test.ts',
+  'data/breeding-automation/storage-schema-v27.json',
+  'data/breeding-automation/species-acquisition-integration-contract.json',
   'shared/breeding/fossilEgg.ts',
   'server/domain/breeding/fossilEgg.ts',
   'server/useCases/createBreedingFossilEgg.ts',

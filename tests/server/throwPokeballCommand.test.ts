@@ -12,10 +12,13 @@ import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository
 import { createSqliteMapInteractionModeRepository } from '~~/server/storage/mapInteractionModeRepository'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteSheetRepository, type SheetRepository } from '~~/server/storage/sheetRepository'
+import { createSqliteTrainerSpeciesAcquisitionRepository } from '~~/server/storage/trainerSpeciesAcquisitionRepository'
+import { createSqliteTrainerSpeciesAcquisitionSourceOperationRepository } from '~~/server/storage/trainerSpeciesAcquisitionSourceOperationRepository'
 import {
   buildThrowPokeballCommandEnvelope,
   executeThrowPokeballCommandUseCase,
 } from '~~/server/useCases/applyThrowPokeballCommand'
+import { settleCaptureSpeciesAcquisitions } from '~~/server/useCases/settleCaptureSpeciesAcquisitions'
 import { parsePlayerProfileId, sanitizePlayerProfileDisplayName, type PlayerProfile } from '#shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -163,6 +166,7 @@ const execute = async (input: ReturnType<typeof setup> & {
   mapRepository: input.maps,
   sheetRepository: input.sheetRepository ?? input.sheets,
   commandExecutor: input.executor,
+  settleCaptureSpeciesAcquisitions,
   random: input.random,
   now: () => 1_700_000_002_000,
 })
@@ -233,10 +237,20 @@ describe('throwPokeball live-play command', () => {
     expect(map.metadata?.captureLog).toMatchObject([{ success: true, hit: true, targetId: 'target-1' }])
 
     const trainer = env.sheets.getByRef('trainer', 'ash')!
-    expect(trainer.revision).toBe(1)
+    expect(trainer.revision).toBe(2)
+    expect(trainer.sheet.dexExp).toBe(1)
     expect(trainer.sheet.inventory).toMatchObject({ pokeBalls: [{ name: 'Basic Ball', qty: 1 }] })
     expect(trainer.sheet.currentTeam).toEqual(['pidgey'])
     expect(trainer.sheet.boxedPokemon).toEqual([])
+    expect(createSqliteTrainerSpeciesAcquisitionRepository(env.database).get('ash', 'pidgey')).toMatchObject({
+      sourceKind: 'capture',
+      speciesId: 'pidgey',
+      trainerRevisionBeforeReward: 1,
+      firstAcquiredAtCampaignMinute: 0,
+    })
+    expect(createSqliteTrainerSpeciesAcquisitionSourceOperationRepository(env.database).listByTrainer('ash')).toMatchObject([
+      { outcome: 'first-acquisition-rewarded', appliedRewardAmount: 1, evidence: { sourceKind: 'capture' } },
+    ])
 
     const target = env.sheets.getByRef('pokemon', 'pidgey')!
     expect(target.revision).toBe(1)
@@ -244,12 +258,35 @@ describe('throwPokeball live-play command', () => {
 
     expect(response.map?.revision).toBe(1)
     expect(response.sheetUpdates?.map((update) => `${update.kind}:${update.slug}:${update.sheet.revision}`)).toEqual([
-      'trainer:ash:1',
+      'trainer:ash:2',
       'pokemon:pidgey:1',
     ])
     expect(env.ops.getStoredOpRecord('arena', 'op_capture001')).toMatchObject({ result: response.result })
     expect(env.published).toHaveLength(5)
     expect(env.published.at(-1)).toMatchObject({ type: 'live-play-command-accepted', opId: 'op_capture001' })
+  })
+
+  it('rolls the entire capture back when a first-Species reward would overflow', async () => {
+    const env = setup({ trainer: trainerSheet({ dexExp: Number.MAX_SAFE_INTEGER }) })
+    const response = await execute({
+      ...env,
+      command: commandFor(env.map, 'op_capture_reward_overflow'),
+      random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
+    })
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'persistence-failed', currentRevision: 0 })
+    expect(env.maps.getBySlug('arena')).toMatchObject({ revision: 0, placements: expect.arrayContaining([
+      expect.objectContaining({ id: 'target-1' }),
+    ]) })
+    expect(env.sheets.getByRef('trainer', 'ash')).toMatchObject({
+      revision: 0,
+      sheet: { dexExp: Number.MAX_SAFE_INTEGER, currentTeam: [] },
+    })
+    expect(env.sheets.getByRef('pokemon', 'pidgey')).toMatchObject({ revision: 0 })
+    expect(createSqliteTrainerSpeciesAcquisitionRepository(env.database).get('ash', 'pidgey')).toBeNull()
+    expect(createSqliteTrainerSpeciesAcquisitionSourceOperationRepository(env.database).listByTrainer('ash')).toEqual([])
+    expect(env.ops.getStoredOpRecord('arena', 'op_capture_reward_overflow')).toBeNull()
+    expect(env.published).toEqual([])
   })
 
   it('releases a captured target’s physical load atomically while preserving object identity and location', async () => {
@@ -307,7 +344,11 @@ describe('throwPokeball live-play command', () => {
     expect(response.capture?.result.success).toBe(true)
     expect(env.maps.getBySlug('arena')?.placements.map(placement => placement.id)).toEqual(['trainer-1'])
     expect(env.maps.getBySlug('arena')?.encounterState?.capabilityRuntime?.links).toEqual([])
-    expect(env.sheets.getByRef('trainer', 'ash')?.sheet.currentTeam).toEqual(['pidgey', 'ponyta'])
+    expect(env.sheets.getByRef('trainer', 'ash')).toMatchObject({
+      revision: 3,
+      sheet: { currentTeam: ['pidgey', 'ponyta'], dexExp: 2 },
+    })
+    expect(createSqliteTrainerSpeciesAcquisitionSourceOperationRepository(env.database).listByTrainer('ash')).toHaveLength(2)
   })
 
   it('puts a captured Pokémon in the box when the trainer team is full', async () => {
@@ -676,7 +717,8 @@ describe('throwPokeball live-play command', () => {
     expect(first.capture).toEqual(second.capture)
     expect(random).toHaveBeenCalledTimes(2)
     expect(env.maps.getBySlug('arena')?.revision).toBe(1)
-    expect(env.sheets.getByRef('trainer', 'ash')?.revision).toBe(1)
+    expect(env.sheets.getByRef('trainer', 'ash')?.revision).toBe(2)
+    expect(env.sheets.getByRef('trainer', 'ash')?.sheet.dexExp).toBe(1)
     expect(env.sheets.getByRef('pokemon', 'pidgey')?.revision).toBe(1)
     expect(env.sheets.getByRef('trainer', 'ash')?.sheet.inventory).toMatchObject({ pokeBalls: [{ qty: 1 }] })
     expect(env.ops.getStoredOpRecord('arena', 'op_capture001')?.result).toEqual(first.result)

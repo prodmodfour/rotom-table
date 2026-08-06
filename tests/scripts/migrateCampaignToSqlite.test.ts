@@ -166,7 +166,7 @@ describe('SQLite campaign migration script', () => {
     expect(existsSync(join(backupPath, 'campaign/data/player-profiles/profile_ash00000.json'))).toBe(true)
 
     const migratedConnection = new DatabaseSync(join(campaignRoot, 'rotom-table.sqlite'))
-    expect(migratedConnection.prepare('PRAGMA user_version').get()).toEqual({ user_version: 26 })
+    expect(migratedConnection.prepare('PRAGMA user_version').get()).toEqual({ user_version: 27 })
     for (const table of [
       'pending_move_resolutions',
       'encounter_documents',
@@ -174,6 +174,7 @@ describe('SQLite campaign migration script', () => {
       'encounter_launch_ops',
       'encounter_ux_metric_aggregates',
       'breeding_incubation_segments',
+      'trainer_species_acquisition_source_operations',
     ]) {
       expect(migratedConnection.prepare(`
         SELECT name FROM sqlite_master

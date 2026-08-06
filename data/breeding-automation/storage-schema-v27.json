@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "definitionSha256": "3c742cbb35c36a0928708319840f9802520b2bed8b490fda0d1956ca835947c3",
+  "definition": {
+    "fromVersion": 26,
+    "toVersion": 27,
+    "applicationMigrationSqlSha256": "b83c5d73e5ef2caa29130d7da01f9aba397ff06a51d72f8ca613c553c57e79b1",
+    "offlineMigrationSqlSha256": "b83c5d73e5ef2caa29130d7da01f9aba397ff06a51d72f8ca613c553c57e79b1",
+    "newTable": "trainer_species_acquisition_source_operations",
+    "rebuiltTable": "trainer_species_acquisitions",
+    "rowPolicy": "byte-equivalent-existing-species-acquisition-row-preservation",
+    "historyPolicy": {
+      "identity": [
+        "trainer_sheet_slug",
+        "species_id"
+      ],
+      "breedingOperationForeignKeyRemoved": true,
+      "sourceEggForeignKeyRetained": true,
+      "operationIdRetainedAsImmutableEvidence": true,
+      "deletionAuthority": "none"
+    },
+    "sourceOperationPolicy": {
+      "operationIdentity": "operation_id",
+      "logicalEventIdentity": [
+        "source_kind",
+        "source_event_id"
+      ],
+      "sourceKinds": [
+        "capture",
+        "evolution",
+        "trade",
+        "migration",
+        "gm-reviewed"
+      ],
+      "terminalOutcomes": [
+        "first-acquisition-rewarded",
+        "already-acquired"
+      ],
+      "rewardAmounts": [
+        0,
+        1
+      ],
+      "acquisitionCompositeForeignKey": true,
+      "recordJsonMaximumBytes": 32768,
+      "recordsAreCampaignPrivate": true
+    },
+    "invariants": {
+      "existingHistoryRowsPreserved": true,
+      "externalSourcesDoNotForgeBreedingOperations": true,
+      "sourceSettlementRequiresHistory": true,
+      "outcomeMatchesRewardAmount": true,
+      "offlineParity": true,
+      "noMapEncounterColumns": true
+    },
+    "version": 27,
+    "migrationName": "store external Species acquisition source settlements without forging breeding commands"
+  },
+  "schemaId": "rotom-breeding-storage-v27",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7"
+}

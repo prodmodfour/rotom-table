@@ -70,6 +70,30 @@
       ]
     },
     {
+      "id": "external-acquisition-history-reuse",
+      "requirementIds": [
+        "breeding:BR-069"
+      ],
+      "actorAudience": "gm",
+      "steps": [
+        "capture-species-with-authoritative-companion",
+        "evolve-owned-pokemon",
+        "trade-pokemon-to-new-trainer",
+        "release-and-reacquire-same-species",
+        "settle-reviewed-migration-and-gm-acquisition",
+        "retry-each-terminal-source-operation"
+      ],
+      "expected": [
+        "one-history-row-per-trainer-and-species",
+        "one-dex-exp-per-new-history-identity",
+        "release-retains-history",
+        "reacquisition-grants-zero",
+        "source-evidence-and-settlement-hash-bound",
+        "exact-retries-grant-zero-and-do-not-republish",
+        "no-external-source-forges-breeding-operation"
+      ]
+    },
+    {
       "id": "parent-change-does-not-drift-egg",
       "requirementIds": [
         "breeding:BR-022",

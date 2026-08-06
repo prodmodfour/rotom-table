@@ -5,6 +5,7 @@ import type { CapabilityCampaignState } from '#shared/capabilityAutomation/campa
 import type { PokeEdgeInstanceData } from '#shared/edgeAutomation/instances'
 import type { EdgeUsageLedger } from '#shared/edgeAutomation/state'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
+import type { BreedingInheritancePermanentMoveProvenanceV1 } from '#shared/breeding/lineage'
 import type { BreedingBabyTemplateAuthorityV1, BreedingBabyTemplateMechanicsV1 } from '#shared/breeding/babyTemplate'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
@@ -45,8 +46,8 @@ export interface CharacterSheetMove {
   effect?: string
   special?: string
   contestStats?: string
-  /** Server-authored origin for a move learned through permanent move automation. */
-  permanentMoveSource?: PermanentMoveListEntryProvenance
+  /** Server-authored origin for a move learned through permanent move or breeding automation. */
+  permanentMoveSource?: PermanentMoveListEntryProvenance | BreedingInheritancePermanentMoveProvenanceV1
 }
 
 export type CharacterSheetAppliedMoveSource = 'tm' | 'tutor'

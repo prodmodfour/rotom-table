@@ -6,6 +6,7 @@ import type { EdgeUsageLedger } from '#shared/edgeAutomation/state'
 import type { FeatureInstanceData } from '#shared/featureAutomation/instances'
 import type { FeatureApState, FeatureRuntimeState, FeatureUsageLedger } from '#shared/featureAutomation/state'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
+import type { BreedingInheritancePermanentMoveProvenanceV1 } from '#shared/breeding/lineage'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
 
@@ -207,7 +208,7 @@ export interface TrainerMove {
    *  ``"Adept"`` / ``"Master"``. Used to colour-tag the movelist row. */
   weaponSlot?: 'MH' | 'OH' | 'EW' | 'Adept' | 'Master' | 'Natural'
   /** Server-authored origin for a move learned through permanent move automation. */
-  permanentMoveSource?: PermanentMoveListEntryProvenance
+  permanentMoveSource?: PermanentMoveListEntryProvenance | BreedingInheritancePermanentMoveProvenanceV1
 }
 
 export interface TrainerAbilityEntry {

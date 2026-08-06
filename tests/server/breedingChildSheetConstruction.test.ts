@@ -223,7 +223,7 @@ describe('complete frozen-Egg child sheet construction', () => {
     expect(() => plan(stale, completeCommand(stale))).toThrowError(expect.objectContaining({ code: 'breeding.child-sheet.stale-authority' }))
   })
 
-  it('constructs server-owned Baby Template mechanics while retaining the BR-068 starting-Level gate', () => {
+  it('constructs server-owned Baby Template mechanics and routes starting-Level checkpoints through BR-068', () => {
     const baby = hatchingEgg({ babyTemplate: true })
     const result = plan(baby, completeCommand(baby))
     expect(result.document).toMatchObject({
@@ -243,7 +243,11 @@ describe('complete frozen-Egg child sheet construction', () => {
     const hp = result.document.stats?.hp
     expect(hp).toBeDefined()
     const highLevel = hatchingEgg({ level: 20 })
-    expect(() => plan(highLevel, completeCommand(highLevel))).toThrowError(expect.objectContaining({ code: 'breeding.child-sheet.unavailable' }))
+    expect(plan(highLevel, completeCommand(highLevel)).document).toMatchObject({
+      level: 20,
+      inheritedMoves: {},
+      inheritedRemaining: 0,
+    })
   })
 
   it('rejects a modified or enriched retained plan instead of accepting partial replay', () => {

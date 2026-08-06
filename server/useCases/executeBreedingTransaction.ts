@@ -411,6 +411,7 @@ export const createBreedingTransactionCoordinator = (
             get: guarded('repositories.optionOffers.get', optionOffers.get.bind(optionOffers)),
             listByProject: guarded('repositories.optionOffers.listByProject', optionOffers.listByProject.bind(optionOffers)),
             findByProjectOptionIds: guarded('repositories.optionOffers.findByProjectOptionIds', optionOffers.findByProjectOptionIds.bind(optionOffers)),
+            findByTargetOptionIds: guarded('repositories.optionOffers.findByTargetOptionIds', optionOffers.findByTargetOptionIds.bind(optionOffers)),
             insert: guarded('repositories.optionOffers.insert', optionOffers.insert.bind(optionOffers)),
             replace: guarded('repositories.optionOffers.replace', optionOffers.replace.bind(optionOffers)),
           }),

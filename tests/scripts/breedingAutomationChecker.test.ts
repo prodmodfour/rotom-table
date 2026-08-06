@@ -21,7 +21,7 @@ describe('breeding automation checker', () => {
     expect(result.stdout).toContain(`Breeding automation check passed: ${completedTickets}/90 tickets`)
     expect(result.stdout).toContain('30 frozen sources')
     expect(result.stdout).toContain('20 adjudications')
-    expect(result.stdout).toContain('6 fixtures, 21 scripts')
+    expect(result.stdout).toContain('6 fixtures, 22 scripts')
   })
 
   it('refuses complete certification while the plan is active', () => {

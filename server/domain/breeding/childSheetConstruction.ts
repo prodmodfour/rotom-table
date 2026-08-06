@@ -35,6 +35,10 @@ import {
   breedingBabyTemplateMechanicsV1,
   createBreedingBabyTemplateAuthorityV1,
 } from './babyTemplate'
+import {
+  applyBreedingHatchConstructionInheritanceV1,
+  BREEDING_INHERITANCE_LEARNING_POLICY_DEFINITION_SHA256,
+} from './inheritanceLearning'
 
 export type InitializedHatchedPokemonDocumentV1 = Omit<CharacterSheet,
   'slug' | 'revision' | 'folder' | 'updatedAt' | 'createdAt'> & {
@@ -146,14 +150,14 @@ export const BREEDING_CHILD_SHEET_CONSTRUCTION_POLICY_DEFINITION = deepFreeze({
   speciesPresentation: 'canonical-source-name' as const,
   nickname: 'canonical-species-name' as const,
   startingExperience: 'exact-level-threshold' as const,
-  levelMoves: 'all-unique-app-owned-level-up-moves-at-or-below-starting-level-in-source-order' as const,
+  levelMoves: 'latest-six-unique-app-owned-level-up-moves-at-or-below-starting-level-in-source-order' as const,
   ability: 'exact-frozen-basic-ability' as const,
   compatibilityInheritance: 'frozen-candidates-as-egg-moves-with-at-most-nine-remaining-checkpoints' as const,
   providerInheritance: 'frozen-serpents-mark-pattern-in-server-private-child-evidence' as const,
   fossilProviders: 'frozen-fossil-restoration-and-prehistoric-bond-authority' as const,
   babyTemplate: 'server-private-authority-owner-safe-mechanics-and-level-staged-recovery' as const,
   artificialProviders: 'frozen-playing-god-upgrade-provenance-and-vitamin-accounting' as const,
-  inheritanceAtOrAboveLevel20: 'reserved-for-BR-068' as const,
+  inheritanceAtOrAboveLevel20: 'deterministic-hatch-construction-checkpoint-records-owned-by-BR-068' as const,
   defaults: Object.freeze({ loyalty: 3, startingTutorPoints: 1, spentTutorPoints: 0, fossilRestorationSpentTutorPoints: 2, tmAndTutorMoveLimit: 3, shiny: false, caughtBall: 'Basic Ball', player: false }),
   storageAuthorityFields: Object.freeze(['slug', 'folder', 'revision', 'createdAt', 'updatedAt'] as const),
   placeholderWrite: 'forbidden' as const,
@@ -284,7 +288,7 @@ const completeDocument = (input: {
     inheritedRemaining: Math.min(9, input.inheritanceMoveNames.length),
     inheritedMoves: {},
     ...(prehistoricBond ? { items: { held: prehistoricBond.heldItemName, itemDescription: prehistoricBond.heldItemEffect } } : {}),
-    movelist,
+    movelist: movelist.slice(-6),
     eggMoves,
     appliedMoves: [],
     ...(playingGod ? { vitamins: { statBoosts: { ...playingGod.baseStatIncreases } } } : {}),
@@ -380,9 +384,6 @@ export const planPokemonEggChildSheetConstructionV1 = (value: unknown): PokemonE
     || command.payload.destination.trainerSheetSlug !== egg.ownerTrainerSlug) {
     return fail('breeding.child-sheet.stale-authority', 'Command, Egg revision/ruleset, and owner destination must match exactly.')
   }
-  if (egg.offspring.startingLevel >= 20) {
-    return fail('breeding.child-sheet.unavailable', 'Starting-Level inheritance checkpoints require the BR-068 reducer before child construction.')
-  }
   const babyTemplateAuthority = egg.offspring.babyTemplate.applied
     ? createBreedingBabyTemplateAuthorityV1({
         sourceEggId: egg.eggId,
@@ -416,22 +417,27 @@ export const planPokemonEggChildSheetConstructionV1 = (value: unknown): PokemonE
     egg,
     capturedAtCampaignMinute: egg.updatedAtCampaignMinute,
   })
-  const document = completeDocument({
-    species,
-    natureLabel: nature.label,
-    ability,
-    gender: genderLabel(egg.offspring.gender.valueId),
-    startingLevel: egg.offspring.startingLevel,
-    babyTemplateAuthority,
-    inheritanceMoveNames,
-    sourceEggId: egg.eggId,
-    providerTraits: egg.offspring.providerTraits,
-    coreRuleHandoff,
+  const document = applyBreedingHatchConstructionInheritanceV1({
+    egg,
+    command,
+    document: completeDocument({
+      species,
+      natureLabel: nature.label,
+      ability,
+      gender: genderLabel(egg.offspring.gender.valueId),
+      startingLevel: egg.offspring.startingLevel,
+      babyTemplateAuthority,
+      inheritanceMoveNames,
+      sourceEggId: egg.eggId,
+      providerTraits: egg.offspring.providerTraits,
+      coreRuleHandoff,
+    }),
   })
   const commandHash = createBreedingOperationCommandHash(command)
   const sourceDefinitionHashes = [
     ...BREEDING_CHILD_SHEET_CONSTRUCTION_POLICY_DEFINITION.sourceDefinitionHashes,
     BREEDING_CHILD_SHEET_CONSTRUCTION_POLICY_DEFINITION_SHA256,
+    BREEDING_INHERITANCE_LEARNING_POLICY_DEFINITION_SHA256,
     BREEDING_CANONICAL_ID_DEFINITION_SHA256,
     BREEDING_NATURE_DEFINITION_SHA256,
     COMPILED_BREEDING_REGISTRY_DEFINITION_SHA256,

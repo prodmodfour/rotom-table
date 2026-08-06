@@ -35,6 +35,7 @@ export interface BreedingOptionOfferRepository {
   get(offerId: BreedingOfferId | string): BreedingOptionOfferRecordV1 | null
   listByProject(projectId: BreedingProjectId | string, limit?: number): readonly BreedingOptionOfferRecordV1[]
   findByProjectOptionIds(input: { readonly projectId: BreedingProjectId | string, readonly optionIds: readonly (BreedingOfferOptionId | string)[] }): readonly BreedingOptionOfferRecordV1[]
+  findByTargetOptionIds(input: { readonly targetKind: 'pokemon-egg' | 'pokemon-sheet' | 'trainer-sheet', readonly targetId: string, readonly optionIds: readonly (BreedingOfferOptionId | string)[] }): readonly BreedingOptionOfferRecordV1[]
   insert(record: BreedingOptionOfferRecordV1): BreedingOptionOfferRecordV1
   replace(input: { readonly expectedRevision: number, readonly record: BreedingOptionOfferRecordV1 }): BreedingRepositoryReplaceResult<BreedingOptionOfferRecordV1>
 }
@@ -125,6 +126,31 @@ export const createSqliteBreedingOptionOfferRepository = (
     if (rows.length > 12) throw new Error('Selected offer-option lookup exceeded the closed ambiguity bound.')
     return Object.freeze(rows.map(rowToOffer))
   }
+  const findByTargetOptionIds: BreedingOptionOfferRepository['findByTargetOptionIds'] = input => {
+    if (!['pokemon-egg', 'pokemon-sheet', 'trainer-sheet'].includes(input.targetKind)
+      || typeof input.targetId !== 'string' || input.targetId.length < 1 || input.targetId.length > 160
+      || !Array.isArray(input.optionIds) || Object.getPrototypeOf(input.optionIds) !== Array.prototype
+      || input.optionIds.length > 9 || Object.getOwnPropertySymbols(input.optionIds).length > 0
+      || Object.getOwnPropertyNames(input.optionIds).length !== input.optionIds.length + 1) {
+      throw new Error('Target option lookup must use one bounded target and at most nine plain option IDs.')
+    }
+    const optionIds = input.optionIds.map(optionId)
+    if (new Set(optionIds).size !== optionIds.length) throw new Error('optionIds must be unique.')
+    if (optionIds.length === 0) return Object.freeze([])
+    const placeholders = optionIds.map(() => '?').join(', ')
+    const rows = database.connection.prepare(`
+      ${SELECT}
+      WHERE target_kind = ? AND target_id = ?
+        AND EXISTS (
+          SELECT 1 FROM json_each(breeding_option_offers.document_json, '$.options') AS option
+          WHERE json_extract(option.value, '$.optionId') IN (${placeholders})
+        )
+      ORDER BY choice_kind, offer_id
+      LIMIT 19
+    `).all(input.targetKind, input.targetId, ...optionIds) as unknown as OfferRow[]
+    if (rows.length > 18) throw new Error('Selected target offer-option lookup exceeded the closed ambiguity bound.')
+    return Object.freeze(rows.map(rowToOffer))
+  }
   const insert = (input: BreedingOptionOfferRecordV1): BreedingOptionOfferRecordV1 => {
     if (!database.connection.isTransaction) throw new BreedingOptionOfferRepositoryTransactionError()
     const record = parseAuthoritativeBreedingOptionOfferRecordV1(input)
@@ -175,5 +201,5 @@ export const createSqliteBreedingOptionOfferRepository = (
     const raced = get(record.offerId)
     return raced ? Object.freeze({ kind: 'stale', expectedRevision, currentRevision: raced.revision }) : Object.freeze({ kind: 'missing', expectedRevision, currentRevision: null })
   }
-  return Object.freeze({ database, get, listByProject, findByProjectOptionIds, insert, replace })
+  return Object.freeze({ database, get, listByProject, findByProjectOptionIds, findByTargetOptionIds, insert, replace })
 }

@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 67,
+    "covered": 69,
     "in-progress": 1,
-    "planned": 22,
+    "planned": 20,
     "blocked": 0
   },
   "requirements": [
@@ -1614,8 +1614,18 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/inheritance-learning-contract.json",
+        "server/domain/breeding/inheritanceLearning.ts",
+        "server/domain/breeding/permanentMoveProvenance.ts",
+        "server/useCases/recordPokemonInheritanceLearning.ts",
+        "server/useCases/saveSheet.ts",
+        "tests/server/breedingInheritanceLearning.test.ts",
+        "tests/server/recordPokemonInheritanceLearning.test.ts",
+        "tests/server/livePlaySheetCommands.test.ts",
+        "tests/server/saveSheet.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-special-source-eggs-v1"
       ]
@@ -1630,8 +1640,23 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/species-acquisition-integration-contract.json",
+        "data/breeding-automation/storage-schema-v27.json",
+        "server/domain/breeding/speciesAcquisitionIntegration.ts",
+        "server/storage/trainerSpeciesAcquisitionSourceOperationRepository.ts",
+        "server/useCases/recordTrainerSpeciesAcquisition.ts",
+        "server/useCases/settleCaptureSpeciesAcquisitions.ts",
+        "server/useCases/settleSetupSheetSpeciesAcquisitions.ts",
+        "server/useCases/settleReviewedSpeciesAcquisition.ts",
+        "server/useCases/applyThrowPokeballCommand.ts",
+        "server/useCases/saveSheet.ts",
+        "tests/server/speciesAcquisitionIntegration.test.ts",
+        "tests/server/throwPokeballCommand.test.ts",
+        "tests/server/saveSheet.test.ts",
+        "tests/server/breedingStorageMigrations.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -1646,7 +1671,7 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

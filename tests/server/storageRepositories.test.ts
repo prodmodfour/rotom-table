@@ -155,6 +155,7 @@ describe('SQLite storage foundation', () => {
       'sheets',
       'shop_checkout_ops',
       'shop_tables',
+      'trainer_species_acquisition_source_operations',
       'trainer_species_acquisitions',
     ])
 
@@ -202,6 +203,7 @@ describe('SQLite storage foundation', () => {
       'sheets',
       'shop_checkout_ops',
       'shop_tables',
+      'trainer_species_acquisition_source_operations',
       'trainer_species_acquisitions',
     ])
   })

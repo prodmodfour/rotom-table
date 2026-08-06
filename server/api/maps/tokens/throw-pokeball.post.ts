@@ -9,6 +9,7 @@ import {
   executeThrowPokeballCommandUseCase,
   type LivePlayPokeballCommandResponse,
 } from '../../../useCases/applyThrowPokeballCommand'
+import { settleCaptureSpeciesAcquisitions } from '../../../useCases/settleCaptureSpeciesAcquisitions'
 
 type ThrowPokeballBody = Record<string, unknown>
 
@@ -41,6 +42,8 @@ export default defineEventHandler(async (event) => {
       clientId: normalizeRealtimeClientId(bodyField(body, 'clientId')),
       playerProfile,
       expectedType: LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
+    }, {
+      settleCaptureSpeciesAcquisitions,
     })
     return routeResponse(response)
   } catch (err) {

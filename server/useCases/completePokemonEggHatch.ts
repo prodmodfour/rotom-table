@@ -30,6 +30,7 @@ import {
 import { createPokemonEggHatchOwnerTrainerFactV1 } from '../domain/breeding/hatchOffers'
 import { validatePokemonHatchSpeciesAcquisitionSettlementV1 } from '../domain/breeding/hatchSpeciesAcquisition'
 import { createPokemonBreedingOriginFromHatchedEgg } from '../domain/breeding/lineage'
+import { createBreedingHatchConstructionLearningRecordsV1 } from '../domain/breeding/inheritanceLearning'
 import {
   createBreedingMarsupialHandoffV1,
   createBreedingParentalBondHandoffV1,
@@ -571,7 +572,17 @@ export const completePokemonEggHatch = (inputValue: unknown, options: CompletePo
       const hatched = planPokemonEggHatchSettlementV1({ egg: currentEgg, command: canonical, childSheetSlug: child.slug, atCampaignMinute: currentClock.campaignMinute })
       const eggReplacement = context.repositories.eggs.replace({ expectedRevision: currentEgg.revision, document: hatched })
       if (eggReplacement.kind !== 'applied') throw new Error('Atomic hatch Egg settlement unexpectedly conflicted.')
-      const origin = createPokemonBreedingOriginFromHatchedEgg({ originId: canonical.payload.originId, egg: hatched })
+      const initialInheritanceLearningRecords = createBreedingHatchConstructionLearningRecordsV1({
+        egg: hatched,
+        command: canonical,
+        childSheetSlug: child.slug,
+        recordedAtCampaignMinute: currentClock.campaignMinute,
+      })
+      const origin = createPokemonBreedingOriginFromHatchedEgg({
+        originId: canonical.payload.originId,
+        egg: hatched,
+        initialInheritanceLearningRecords,
+      })
       context.repositories.lineage.insertOrigin(origin)
       context.appendRealtime(breedingRealtimeRefreshAppendInputs({
         aggregateKind: 'pokemon-egg', aggregateId: hatched.eggId, revision: hatched.revision,

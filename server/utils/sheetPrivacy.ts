@@ -15,11 +15,28 @@ export interface SheetUpdateRecord<TSheet extends Record<string, unknown> = Reco
   readonly sheet: TSheet
 }
 
+const withoutPrivateBreedingMoveProvenance = <TSheet extends Record<string, unknown>>(sheet: TSheet): TSheet => {
+  if (!Array.isArray(sheet.movelist)) return sheet
+  let changed = false
+  const movelist = sheet.movelist.map((value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return value
+    const row = value as Record<string, unknown>
+    const source = row.permanentMoveSource
+    if (!source || typeof source !== 'object' || Array.isArray(source)
+      || (source as Record<string, unknown>).kind !== 'breeding-inheritance') return value
+    const projected = { ...row }
+    delete projected.permanentMoveSource
+    changed = true
+    return projected
+  })
+  return changed ? { ...sheet, movelist } : sheet
+}
+
 export const redactSheetRecordForPlayer = <TSheet extends Record<string, unknown>>(
   kind: SheetKind,
   sheet: TSheet,
 ): TSheet => {
-  const projected = { ...(kind === 'pokemon' ? redactPokemonGmFields(sheet) : sheet) }
+  const projected = { ...withoutPrivateBreedingMoveProvenance(kind === 'pokemon' ? redactPokemonGmFields(sheet) : sheet) }
   // Capability operation IDs, retry clocks, and campaign internals are
   // projected through authorized facts/offers rather than raw sheet state.
   delete projected.capabilityUsage

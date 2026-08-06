@@ -100,6 +100,8 @@ describe('throw-pokeball API route', () => {
       clientId: 'gm-client',
       playerProfile: null,
       expectedType: LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
+    }, {
+      settleCaptureSpeciesAcquisitions: expect.any(Function),
     })
   })
 
@@ -131,6 +133,8 @@ describe('throw-pokeball API route', () => {
       clientId: 'player-client',
       playerProfile: profile,
       expectedType: LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
+    }, {
+      settleCaptureSpeciesAcquisitions: expect.any(Function),
     })
   })
 })
