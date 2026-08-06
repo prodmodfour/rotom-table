@@ -10,6 +10,7 @@ import {
 } from '~/utils/appRoutes'
 import { ENCOUNTER_BUILDER_PATH, ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { ENCOUNTER_LIBRARY_PATH } from '#shared/encounterWorkspace/routes'
+import { BREEDING_WORKSHOP_PATH } from '#shared/breeding/workshop'
 import { isLegacyGridPath } from '~/utils/legacyGridRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
@@ -29,6 +30,7 @@ export interface AppNavItem {
 export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: ENCOUNTER_LIBRARY_PATH, label: 'Play' },
   { path: MAP_LIBRARY_PATH, label: 'Workshop' },
+  { path: BREEDING_WORKSHOP_PATH, label: 'Breeding' },
   { path: CAMPAIGN_PATH, label: 'Campaign', gmOnly: true },
   { path: GROUP_INVENTORY_PATH, label: 'Group Inventory' },
   { path: SHOP_LIBRARY_PATH, label: 'Shops' },

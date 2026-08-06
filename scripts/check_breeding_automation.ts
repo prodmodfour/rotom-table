@@ -207,6 +207,7 @@ for (const path of [
   'data/breeding-automation/initialized-pokemon-sheet-contract.json',
   'data/breeding-automation/species-acquisition-reward-contract.json',
   'data/breeding-automation/species-acquisition-integration-contract.json',
+  'data/breeding-automation/workshop-presentation-contract.json',
   'data/breeding-automation/campaign-operation-ledger-contract.json',
   'data/breeding-automation/campaign-clock-contract.json',
   'data/breeding-automation/realtime-contract.json',
@@ -315,6 +316,30 @@ assert(acquisitionIntegrationContract.definition?.sourceMatrix?.release?.history
   && acquisitionIntegrationContract.definition?.historyAndReward?.repeatAcquisitionDexExp === 0
   && acquisitionIntegrationContract.definition?.sourceSettlement?.storageSchemaDefinitionSha256 === storageSchemaV27.definitionSha256
   && acquisitionIntegrationContract.definition?.sourceSettlement?.externalBreedingOperationForgery === 'forbidden', 'Species acquisition integration history or settlement policy drifted')
+const workshopPresentationContract = json<Record<string, any>>('data/breeding-automation/workshop-presentation-contract.json')
+assert(workshopPresentationContract.contractId === 'rotom-breeding-workshop-presentation-v1'
+  && workshopPresentationContract.definition?.ticket === 'BR-070', 'Workshop presentation contract identity drifted')
+assert(workshopPresentationContract.definition?.scope?.route === '/breeding'
+  && workshopPresentationContract.definition?.scope?.apiRoute === '/api/breeding/workshop'
+  && workshopPresentationContract.definition?.scope?.mapDependency === 'none'
+  && workshopPresentationContract.definition?.scope?.encounterDependency === 'none'
+  && workshopPresentationContract.definition?.scope?.clientMechanicsAuthority === 'none', 'Workshop campaign boundary drifted')
+assert(workshopPresentationContract.definition?.authorization?.playerContexts === 'only-selected-Profile-linked-Trainer-sheets'
+  && workshopPresentationContract.definition?.authorization?.missingPlayerProfile === 'profile-required-state-with-zero-ownership-facts'
+  && workshopPresentationContract.definition?.authorization?.foreignPlayerSelection === 'reject-403'
+  && workshopPresentationContract.definition?.authorization?.cursorAuthority === 'none', 'Workshop ownership authority drifted')
+assert(workshopPresentationContract.definition?.projection?.maximumOwnershipContextsPerPage === 100
+  && workshopPresentationContract.definition?.projection?.activity === 'booleans-only-hasProjects-and-hasEggs'
+  && workshopPresentationContract.definition?.projection?.unknownFields === 'reject'
+  && workshopPresentationContract.definition?.projection?.accessorsSymbolsSparseOrEnrichedValues === 'reject', 'Workshop projection bounds drifted')
+assert(workshopPresentationContract.definition?.privacy?.serverProjection === 'mandatory'
+  && workshopPresentationContract.definition?.privacy?.localPersistence === 'none'
+  && workshopPresentationContract.definition?.privacy?.forbiddenProjectionFacts?.includes('Egg-ids')
+  && workshopPresentationContract.definition?.privacy?.forbiddenProjectionFacts?.includes('private-mechanics'), 'Workshop privacy boundary drifted')
+assert(workshopPresentationContract.definition?.presentation?.keyboardOperable === true
+  && workshopPresentationContract.definition?.presentation?.minimumControlHeightPx === 44
+  && workshopPresentationContract.definition?.presentation?.statusAndErrorAnnouncements === true
+  && workshopPresentationContract.definition?.presentation?.reducedMotion === 'honored', 'Workshop accessibility contract drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
   && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')
@@ -791,6 +816,19 @@ for (const path of [
   'tests/server/speciesAcquisitionIntegration.test.ts',
   'data/breeding-automation/storage-schema-v27.json',
   'data/breeding-automation/species-acquisition-integration-contract.json',
+  'shared/breeding/workshop.ts',
+  'server/domain/breeding/workshop.ts',
+  'server/useCases/loadBreedingWorkshop.ts',
+  'server/api/breeding/workshop.get.ts',
+  'src/composables/breeding/useBreedingWorkshop.ts',
+  'src/components/breeding/BreedingWorkshopShell.vue',
+  'src/pages/breeding/index.vue',
+  'tests/shared/breedingWorkshopContract.test.ts',
+  'tests/server/breedingWorkshop.test.ts',
+  'tests/server/breedingWorkshopRoute.test.ts',
+  'tests/components/breedingWorkshopShell.test.ts',
+  'data/breeding-automation/workshop-presentation-contract.json',
+  'docs/breeding/workshop.md',
   'shared/breeding/fossilEgg.ts',
   'server/domain/breeding/fossilEgg.ts',
   'server/useCases/createBreedingFossilEgg.ts',

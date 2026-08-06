@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-workshop-presentation-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "64ef9869977653c06cd7229dfc7a27f38f8db9a9a1e1adf4877a241c15314cc4",
+  "definition": {
+    "ticket": "BR-070",
+    "scope": {
+      "kind": "campaign-workshop",
+      "route": "/breeding",
+      "apiRoute": "/api/breeding/workshop",
+      "mapDependency": "none",
+      "encounterDependency": "none",
+      "clientMechanicsAuthority": "none"
+    },
+    "implementation": {
+      "sharedContractPath": "shared/breeding/workshop.ts",
+      "serverPolicyPath": "server/domain/breeding/workshop.ts",
+      "useCasePath": "server/useCases/loadBreedingWorkshop.ts",
+      "apiPath": "server/api/breeding/workshop.get.ts",
+      "composablePath": "src/composables/breeding/useBreedingWorkshop.ts",
+      "componentPath": "src/components/breeding/BreedingWorkshopShell.vue",
+      "pagePath": "src/pages/breeding/index.vue",
+      "presentationPolicyDefinitionSha256": "19f65d7105a3983525a9b3fbcfa635a8d7357d54194a93fb7c50656140f19ea4"
+    },
+    "authorization": {
+      "authentication": "required",
+      "gmContexts": "all-current-campaign-Trainer-sheets",
+      "playerContexts": "only-selected-Profile-linked-Trainer-sheets",
+      "missingPlayerProfile": "profile-required-state-with-zero-ownership-facts",
+      "foreignPlayerSelection": "reject-403",
+      "cursorAuthority": "none",
+      "requestedTrainerAuthority": "none-without-current-role-and-Profile-revalidation",
+      "repositoryConnection": "exact-shared-database-required"
+    },
+    "projection": {
+      "schemaVersion": 1,
+      "maximumOwnershipContextsPerPage": 100,
+      "ordering": "trainerSheetSlug-code-unit-ascending",
+      "selectedContext": "must-be-authorized-even-when-outside-current-page",
+      "activity": "booleans-only-hasProjects-and-hasEggs",
+      "campaignTime": "authoritative-campaign-minute",
+      "hash": "sha256-stable-json-projection-excluding-projectionDefinitionSha256",
+      "plainJsonOnly": true,
+      "unknownFields": "reject",
+      "accessorsSymbolsSparseOrEnrichedValues": "reject"
+    },
+    "emptyAndErrorStates": [
+      "loading",
+      "profile-required",
+      "no-authorized-trainers",
+      "selected-context-empty",
+      "selected-context-unavailable",
+      "request-failure-with-retry",
+      "pagination-loading"
+    ],
+    "privacy": {
+      "forbiddenProjectionFacts": [
+        "project-ids",
+        "Egg-ids",
+        "Species",
+        "parents",
+        "lineage",
+        "consent",
+        "rolls",
+        "offers",
+        "private-mechanics",
+        "operation-evidence",
+        "diagnostics",
+        "Profile-ids"
+      ],
+      "unavailableContext": "slug-display-fallback-and-bounded-reason-id-only",
+      "localPersistence": "none",
+      "browserInference": "forbidden",
+      "serverProjection": "mandatory"
+    },
+    "presentation": {
+      "navigation": "primary-GM-and-player-navigation",
+      "rootProfileRequirement": "optional-so-page-can-render-safe-profile-required-state",
+      "nestedProfileRequirement": "required-for-future-mutation-routes",
+      "designAuthority": "DESIGN.md-and-existing-rt-design-system-tokens",
+      "minimumControlHeightPx": 44,
+      "keyboardOperable": true,
+      "visibleFocus": true,
+      "statusAndErrorAnnouncements": true,
+      "responsive": "single-column-at-narrow-widths",
+      "reducedMotion": "honored"
+    },
+    "recovery": {
+      "profileChange": "clear-pagination-and-reload-authority",
+      "trainerChange": "clear-pagination-and-reload-authority",
+      "retry": "fresh-server-load",
+      "pagination": "append-only-after-strict-projection-parse-and-authority-hash-validation"
+    },
+    "bindings": {
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "ownershipMapDefinitionSha256": "68a72c5077651ab406a18bb9d8826102194328eb75423002ff90d7d351073e5e"
+    },
+    "verification": {
+      "sharedContractTest": "tests/shared/breedingWorkshopContract.test.ts",
+      "serverProjectionTest": "tests/server/breedingWorkshop.test.ts",
+      "routeTest": "tests/server/breedingWorkshopRoute.test.ts",
+      "componentAndAccessibilityTest": "tests/components/breedingWorkshopShell.test.ts",
+      "navigationTest": "tests/utils/appNavigation.test.ts",
+      "profileGuardTest": "tests/utils/playerProfileRouteGuards.test.ts",
+      "composableTest": "tests/composables/breeding/useBreedingWorkshop.test.ts"
+    }
+  }
+}

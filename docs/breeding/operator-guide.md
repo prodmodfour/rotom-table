@@ -2,7 +2,7 @@
 
 ## Current rollout state
 
-The breeding source governance and runtime architecture are defined, but the Workshop and durable breeding runtime are not operational until the implementation ledger is complete. Do not represent edits to `eggMoves`, `inheritedMoves`, Gender, Nature, Abilities, `babyTemplate`, inventory, or map metadata as a completed breeding or hatch operation.
+The read-only Breeding Workshop shell is available at `/breeding`, and the durable server runtime through BR-069 is operational. Project and Egg controls are introduced incrementally by BR-071 through BR-078; do not describe the shell as the complete workflow until the implementation ledger is complete. Never represent edits to `eggMoves`, `inheritedMoves`, Gender, Nature, Abilities, `babyTemplate`, inventory, or map metadata as a completed breeding or hatch operation.
 
 The authoritative readiness command is:
 
@@ -18,6 +18,12 @@ scripts/quality-gate.sh
 ```
 
 both pass from the current source/build and the plan is archived with all 90 requirements covered.
+
+## Workshop shell triage
+
+The `/breeding` shell requires a role and reads `/api/breeding/workshop`. A player without a selected Profile should see the Profile-required state rather than a Trainer list. A selected player sees only Profile-linked Trainers; a GM sees current campaign Trainers. Stale player links are marked unavailable without exposing any replacement owner or lifecycle facts.
+
+For a load or integrity error, verify authentication, Profile existence and links, campaign-clock availability, and the active campaign database, then use Retry. Do not bypass a projection hash or security-policy mismatch. Trainer selection and pagination are presentation inputs only; the server must re-authorize them on every request. See [workshop.md](workshop.md) for the state and privacy matrix.
 
 ## Governance health
 

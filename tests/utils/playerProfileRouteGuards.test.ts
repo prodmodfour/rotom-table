@@ -4,6 +4,7 @@ import { ENCOUNTER_GENERATOR_PATH } from '~/utils/encounterRoutes'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { ENCOUNTER_LIBRARY_PATH } from '#shared/encounterWorkspace/routes'
+import { BREEDING_WORKSHOP_PATH } from '#shared/breeding/workshop'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
 import { referenceDetailPath, referenceIndexPath } from '~/utils/reference/routes'
 import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
@@ -32,6 +33,7 @@ describe('player profile-aware route guards', () => {
     expect(isPlayerProfileOptionalPath(MAP_LIBRARY_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(`${MAP_LIBRARY_PATH}?folder=routes`)).toBe(true)
     expect(isPlayerProfileOptionalPath(ENCOUNTER_LIBRARY_PATH)).toBe(true)
+    expect(isPlayerProfileOptionalPath(BREEDING_WORKSHOP_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(GROUP_INVENTORY_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(`${GROUP_INVENTORY_PATH}?tab=medicalKit`)).toBe(true)
     expect(isPlayerProfileOptionalPath(PLAYER_TRAINER_PORTAL_PATH)).toBe(true)
@@ -48,8 +50,10 @@ describe('player profile-aware route guards', () => {
     expect(isPlayerProfileRequiredPath('/play/viridian-forest')).toBe(true)
     expect(isPlayerProfileRequiredPath('/sheets/pikachu')).toBe(true)
     expect(isPlayerProfileRequiredPath('/sheets/trainers/brock')).toBe(true)
+    expect(isPlayerProfileRequiredPath(`${BREEDING_WORKSHOP_PATH}/project/example`)).toBe(true)
 
     expect(isPlayerProfileRequiredPath('/maps')).toBe(false)
+    expect(isPlayerProfileRequiredPath(BREEDING_WORKSHOP_PATH)).toBe(false)
     expect(isPlayerProfileRequiredPath('/play')).toBe(false)
     expect(isPlayerProfileRequiredPath('/sheets')).toBe(false)
     expect(isPlayerProfileRequiredPath('/pokedex/pikachu')).toBe(false)
@@ -127,6 +131,7 @@ describe('player profile-aware route guards', () => {
     for (const path of [
       '/maps',
       '/play',
+      BREEDING_WORKSHOP_PATH,
       GROUP_INVENTORY_PATH,
       PLAYER_TRAINER_PORTAL_PATH,
       SHOP_LIBRARY_PATH,

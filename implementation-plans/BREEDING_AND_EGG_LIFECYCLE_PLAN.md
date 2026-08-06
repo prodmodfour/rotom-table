@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: BR-070`
+`CURRENT_TICKET: BR-071`
 
 `BLOCKED_BY: done/ENCOUNTER_UI_UX_PLAN.md — PLAN_STATUS: DONE`
 
@@ -463,7 +463,7 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ## Progress snapshot
 
-- Plan tickets: **69 DONE / 90 total**
+- Plan tickets: **70 DONE / 90 total**
 - Frozen breeding source inventory: **30 hash-bound runtime, contract, product, documentary, and parser records**
 - Recorded ruleset/adjudications: **`ptu-1.05-breeding-v1` / 20 accepted conflict decisions / 15 typed campaign options**
 - Compiled species specs: **862 runtime Species / 407 complete Families**
@@ -491,7 +491,7 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 - Successful exactly-once hatch scenarios: **2 focused box/team destination scenarios**
 - Feature/Edge interaction certification: **direct and current Dilettante-granted `Breeder` handoffs active; nine Feature providers emit strict typed checkpoint evidence; facilities remain fail-closed**
 - Fossil-created Eggs: **current GM source designation, Paleontologist/Skill/Reanimation Machine authority, bounded Level-10 blueprint traits, Restoration/Bond child effects, atomic source consumption, and shared incubation/hatch pipeline active**
-- Workshop UI and accessibility acceptance: **not started**
+- Workshop UI and accessibility acceptance: **campaign route, role-projected ownership directory, navigation, verified pagination, and accessible empty/error shell active; project wizard pending**
 - Legacy breeding authority retired: **no**
 - Blocking dependency: **none; Encounter UI/UX is complete and archived**
 
@@ -515,7 +515,7 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 - [x] **BR-007 — Define the breeding threat model, consent policy, privacy matrix, and abuse limits** — `DONE`
   - Evidence: `data/breeding-automation/security-policy.json` and `docs/breeding/security-and-privacy.md` freeze revision-bound positive consent, five structural audience projections, 13 closed threats, privacy-safe realtime/local persistence, audit requirements, and exact payload/cardinality/rate limits under definition SHA-256 `83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5`. `tests/data/breedingSecurityPolicy.test.ts` passes.
 - [x] **BR-008 — Define source manifests, semantic registries, plan checks, coverage checks, and acceptance fixtures** — `DONE`
-  - Evidence: `data/breeding-automation/semantic-registry.json`, the 90-row `scenario-requirements.json`, six synthetic fixture files with 21 scripts, and `scripts/check_breeding_automation.ts` freeze artifact, plan, gate, coverage, privacy, and fixture checks. Package and quality-gate commands are covered by `tests/scripts/breedingAutomationChecker.test.ts` and `tests/scripts/qualityGate.test.ts`; all focused Phase 1 checks pass.
+  - Evidence: `data/breeding-automation/semantic-registry.json`, the 90-row `scenario-requirements.json`, six synthetic fixture files with 22 scripts, and `scripts/check_breeding_automation.ts` freeze artifact, plan, gate, coverage, privacy, and fixture checks. Package and quality-gate commands are covered by `tests/scripts/breedingAutomationChecker.test.ts` and `tests/scripts/qualityGate.test.ts`; all focused Phase 1 checks pass.
 - [x] **BR-009 — Record the runtime ADR, ownership map, contributor guide, operator guide, and baseline audit** — `DONE`
   - Evidence: ADR 018, `data/breeding-automation/ownership-map.json`, and the architecture, contributor, operator, and baseline guides freeze 22 single-writer fact boundaries, five atomic transaction groups, module layering, recovery practice, and the pre-runtime audit. `tests/data/breedingRuntimeOwnership.test.ts` and the breeding checker pass.
 
@@ -659,8 +659,9 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ### Phase 8 — Breeding Workshop, presentation, consent UX, and accessibility
 
-- [ ] **BR-070 — Add the Breeding Workshop route, navigation, ownership context, and empty/error states** — `IN_PROGRESS`
-- [ ] **BR-071 — Implement the project wizard for breeder, parents, destination, consent, and timeline** — `TODO`
+- [x] **BR-070 — Add the Breeding Workshop route, navigation, ownership context, and empty/error states** — `DONE`
+  - Evidence: Workshop presentation contract `64ef9869977653c06cd7229dfc7a27f38f8db9a9a1e1adf4877a241c15314cc4` and runtime policy `19f65d7105a3983525a9b3fbcfa635a8d7357d54194a93fb7c50656140f19ea4` establish `/breeding` and `/api/breeding/workshop` as a campaign-only shell. The server rebuilds current GM Trainer or selected-Profile-linked player contexts, rejects foreign/enriched/asynchronous authority, pages at 100, and projects only bounded display, revision, availability, and project/Egg activity booleans under the current security policy and exact self-hash. The responsive shell covers loading, Profile-required, no-Trainer, empty, stale-link, pagination, error, and retry states with semantic headings, status/alert announcements, labelled keyboard controls, visible focus, touch targets, and reduced-motion handling. Navigation and Profile guards keep the root available for the safe Profile-required state while reserving nested mutation paths for selected Profiles. Thirty-seven focused contract/server/route/composable/component/navigation checks, 102 refreshed authority-fixture checks, four Nuxt checks, checker, targeted lint, and typecheck pass.
+- [ ] **BR-071 — Implement the project wizard for breeder, parents, destination, consent, and timeline** — `IN_PROGRESS`
 - [ ] **BR-072 — Implement compatibility explanations, unavailable reasons, source contributions, and GM diagnostics** — `TODO`
 - [ ] **BR-073 — Implement rank-authorised Nature, Ability, Gender, campaign-option, and confirmation choices** — `TODO`
 - [ ] **BR-074 — Implement project and Egg cards with progress, status, history, recovery, and transfer actions** — `TODO`

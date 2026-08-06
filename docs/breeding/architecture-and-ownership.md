@@ -81,6 +81,8 @@ Campaign endpoints live under `/api/breeding`; Workshop routes live under `/bree
 
 The Workshop may reuse Encounter design-system primitives, not Encounter authority. Its local state contains only view preferences and transient form selection that is revalidated against current server offers.
 
+BR-070 establishes `/breeding` and `/api/breeding/workshop` as the role-projected shell. GM ownership contexts come from current campaign Trainer sheets; player contexts come only from the selected current Profile's Trainer links. The strict, self-hashed projection exposes bounded display facts and project/Egg activity booleans, never aggregate identities or private mechanics. Profile-required, no-Trainer, empty, stale-link, loading, pagination, and retry states are described in [workshop.md](workshop.md).
+
 ### Campaign-operation offer boundary
 
 `shared/campaignOperationOffers.ts` is the source-neutral presentation contract. Breeding projects use it only through the server authority envelope in `shared/breeding/projectOffers.ts`: an owner offer is bound to current Profile control of the owner and Breeder Trainers plus effective `Breeder` Edge evidence; a GM offer is a bounded `breeding.v1` system entry point. Missing effective Breeder authority may produce only the safe unavailable reason `breeding.offer.breeder-edge-required`; malformed or stale evidence is rejected.

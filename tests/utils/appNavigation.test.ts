@@ -7,6 +7,7 @@ import {
 } from '~/utils/appNavigation'
 import { CAMPAIGN_PATH, GROUP_INVENTORY_PATH, LOGIN_PATH, SETTINGS_PATH, USEFUL_CHARTS_PATH } from '~/utils/appRoutes'
 import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
+import { BREEDING_WORKSHOP_PATH } from '#shared/breeding/workshop'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import { SHOP_LIBRARY_PATH } from '~/utils/shopRoutes'
 import {
@@ -20,6 +21,7 @@ describe('app navigation helpers', () => {
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
       '/play',
       '/maps',
+      BREEDING_WORKSHOP_PATH,
       GROUP_INVENTORY_PATH,
       SHOP_LIBRARY_PATH,
       '/pokedex',
@@ -30,6 +32,7 @@ describe('app navigation helpers', () => {
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).map((item) => item.path)).toEqual([
       '/play',
       '/maps',
+      BREEDING_WORKSHOP_PATH,
       CAMPAIGN_PATH,
       GROUP_INVENTORY_PATH,
       SHOP_LIBRARY_PATH,
@@ -70,6 +73,9 @@ describe('app navigation helpers', () => {
     expect(isAppNavItemActive('/maps/airship', '/maps')).toBe(true)
     expect(isAppNavItemActive('/grids/legacy', '/maps')).toBe(true)
     expect(isAppNavItemActive('/sheets', '/maps')).toBe(false)
+    expect(isAppNavItemActive(BREEDING_WORKSHOP_PATH, BREEDING_WORKSHOP_PATH)).toBe(true)
+    expect(isAppNavItemActive(`${BREEDING_WORKSHOP_PATH}/project/example`, BREEDING_WORKSHOP_PATH)).toBe(true)
+    expect(isAppNavItemActive('/maps', BREEDING_WORKSHOP_PATH)).toBe(false)
     expect(isAppNavItemActive('/encounters/new', '/encounters/new')).toBe(true)
     expect(isAppNavItemActive('/group-inventory', GROUP_INVENTORY_PATH)).toBe(true)
     expect(isAppNavItemActive('/group-inventory/history', GROUP_INVENTORY_PATH)).toBe(true)

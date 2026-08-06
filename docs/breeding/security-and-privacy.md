@@ -110,6 +110,8 @@ Realtime retention is not mechanics recovery. A gap response carries cursor meta
 
 Control never exceeds visibility. A deep link may adopt only an identity present in the current authorized projection. Unknown or contradictory projection data is discarded and refreshed from the server.
 
+The BR-070 Workshop directory applies this rule before any project UI exists. A GM directory is rebuilt from current campaign Trainer rows; a player directory is rebuilt only from the selected current Profile's Trainer links. The page receives at most 100 sorted contexts per response and only display name, Trainer revision, availability, a closed unavailable reason, and project/Egg activity booleans. Profile IDs, project and Egg IDs, Species, parents, lineage, consent, offers, rolls, evidence, and diagnostics are forbidden. Profile-required responses contain zero ownership facts. The browser verifies the security-policy binding and self-hash before adopting or appending a projection, but that check never authorises mechanics.
+
 ## Realtime and local persistence
 
 Realtime events are refresh signals containing only bounded schema, sequence, aggregate-kind, hashed aggregate identity, revision, operation-kind, and audience-refresh scope fields. They do not carry parents, traits, rolls, consent payloads, commands, choices, sheets, lineage, notes, or authority.

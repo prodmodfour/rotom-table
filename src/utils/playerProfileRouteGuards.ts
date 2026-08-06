@@ -7,6 +7,7 @@ import {
 } from '~/utils/loginRedirect'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { ENCOUNTER_LIBRARY_PATH } from '#shared/encounterWorkspace/routes'
+import { BREEDING_WORKSHOP_PATH } from '#shared/breeding/workshop'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
 import { PLAYER_TRAINER_PORTAL_PATH } from '~/utils/playerTrainerPortalRoutes'
 import { REFERENCE_PATH_BY_KIND } from '~/utils/reference/routes'
@@ -26,6 +27,7 @@ export const PLAYER_PROFILE_OPTIONAL_EXACT_PATHS = [
   ENCOUNTER_LIBRARY_PATH,
   GROUP_INVENTORY_PATH,
   PLAYER_TRAINER_PORTAL_PATH,
+  BREEDING_WORKSHOP_PATH,
   SHOP_LIBRARY_PATH,
   SESSION_LOBBY_PATH,
   SETTINGS_PATH,
@@ -40,6 +42,7 @@ export const PLAYER_PROFILE_OPTIONAL_PATH_PREFIXES = [
 export const PLAYER_PROFILE_REQUIRED_PATH_PREFIXES = [
   MAP_LIBRARY_PATH,
   ENCOUNTER_LIBRARY_PATH,
+  BREEDING_WORKSHOP_PATH,
   SHEET_LIBRARY_PATH,
 ] as const
 
