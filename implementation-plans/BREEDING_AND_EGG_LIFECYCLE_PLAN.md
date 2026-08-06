@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: BR-071`
+`CURRENT_TICKET: BR-072`
 
 `BLOCKED_BY: done/ENCOUNTER_UI_UX_PLAN.md — PLAN_STATUS: DONE`
 
@@ -463,7 +463,7 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ## Progress snapshot
 
-- Plan tickets: **70 DONE / 90 total**
+- Plan tickets: **71 DONE / 90 total**
 - Frozen breeding source inventory: **30 hash-bound runtime, contract, product, documentary, and parser records**
 - Recorded ruleset/adjudications: **`ptu-1.05-breeding-v1` / 20 accepted conflict decisions / 15 typed campaign options**
 - Compiled species specs: **862 runtime Species / 407 complete Families**
@@ -661,8 +661,9 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 - [x] **BR-070 — Add the Breeding Workshop route, navigation, ownership context, and empty/error states** — `DONE`
   - Evidence: Workshop presentation contract `64ef9869977653c06cd7229dfc7a27f38f8db9a9a1e1adf4877a241c15314cc4` and runtime policy `19f65d7105a3983525a9b3fbcfa635a8d7357d54194a93fb7c50656140f19ea4` establish `/breeding` and `/api/breeding/workshop` as a campaign-only shell. The server rebuilds current GM Trainer or selected-Profile-linked player contexts, rejects foreign/enriched/asynchronous authority, pages at 100, and projects only bounded display, revision, availability, and project/Egg activity booleans under the current security policy and exact self-hash. The responsive shell covers loading, Profile-required, no-Trainer, empty, stale-link, pagination, error, and retry states with semantic headings, status/alert announcements, labelled keyboard controls, visible focus, touch targets, and reduced-motion handling. Navigation and Profile guards keep the root available for the safe Profile-required state while reserving nested mutation paths for selected Profiles. Thirty-seven focused contract/server/route/composable/component/navigation checks, 102 refreshed authority-fixture checks, four Nuxt checks, checker, targeted lint, and typecheck pass.
-- [ ] **BR-071 — Implement the project wizard for breeder, parents, destination, consent, and timeline** — `IN_PROGRESS`
-- [ ] **BR-072 — Implement compatibility explanations, unavailable reasons, source contributions, and GM diagnostics** — `TODO`
+- [x] **BR-071 — Implement the project wizard for breeder, parents, destination, consent, and timeline** — `DONE`
+  - Evidence: Project-wizard presentation contract `f7f12c4069c5afccc4c3d16f5263239aac7dbeeccc5fd693fa56ce7903c34849` and runtime policy `acd52811cf25b325ca38a3c5a39b4af3faf4b0a711227b31ee29c6f535e7cdc4` bind the four-step destination, Breeder, parent, and review flow to `POST /api/breeding/projects/wizard`. The server rebuilds selected-Profile or GM Trainer authority, current campaign time and options, actor authority, roster ownership, exact Pokémon revisions, and BR-020 parent discovery; requests carry selectors only and cannot claim mechanics, consent, facilities, time, or creation authority. Strict self-hashed projections expose bounded Trainer and safe parent presentation, same-owner or review-required consent status, and the 240-minute / DC 12 / 240-minute campaign-only timeline. The responsive keyboard and touch UI covers loading, retry, empty and unavailable parents, selection count, Profile resets, visible focus, reduced motion, and an explicit non-mutating review whose final creation action remains disabled pending current server choices, consent, validation, and confirmation. Focused shared/server/route/composable/component tests and refreshed authority-fixture regressions pass with checker, lint, typecheck, and production build.
+- [ ] **BR-072 — Implement compatibility explanations, unavailable reasons, source contributions, and GM diagnostics** — `IN_PROGRESS`
 - [ ] **BR-073 — Implement rank-authorised Nature, Ability, Gender, campaign-option, and confirmation choices** — `TODO`
 - [ ] **BR-074 — Implement project and Egg cards with progress, status, history, recovery, and transfer actions** — `TODO`
 - [ ] **BR-075 — Implement the hatch decision flow, special adjudication, child reveal, and accepted presentation choreography** — `TODO`

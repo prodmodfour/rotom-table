@@ -20,6 +20,7 @@ const emit = defineEmits<{
   retry: []
   selectOwnership: [trainerSheetSlug: string]
   loadMore: []
+  startProject: [trainerSheetSlug: string]
 }>()
 
 const handleOwnershipChange = (event: Event): void => {
@@ -172,6 +173,13 @@ const activityLabel = computed(() => {
               <h2 id="breeding-projects-title">Breeding projects</h2>
               <p v-if="selected.hasProjects">Current project activity is available for this Trainer.</p>
               <p v-else>No breeding projects yet.</p>
+              <button
+                type="button"
+                class="breeding-workshop-button breeding-workshop-button--panel"
+                @click="emit('startProject', selected.trainerSheetSlug)"
+              >
+                Start a project
+              </button>
             </div>
           </section>
 
@@ -401,6 +409,10 @@ const activityLabel = computed(() => {
   border-color: var(--rt-rule);
   background: var(--rt-surface-2);
   color: var(--rt-text-strong);
+}
+
+.breeding-workshop-button--panel {
+  margin-top: 0.8rem;
 }
 
 .breeding-workshop-button:disabled {

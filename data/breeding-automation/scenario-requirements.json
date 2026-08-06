@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 70,
+    "covered": 71,
     "in-progress": 1,
-    "planned": 19,
+    "planned": 18,
     "blocked": 0
   },
   "requirements": [
@@ -1704,8 +1704,25 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/project-wizard-presentation-contract.json",
+        "shared/breeding/projectWizard.ts",
+        "server/domain/breeding/projectWizard.ts",
+        "server/useCases/loadBreedingProjectWizard.ts",
+        "server/api/breeding/projects/wizard.post.ts",
+        "src/composables/breeding/useBreedingProjectWizard.ts",
+        "src/components/breeding/BreedingProjectWizard.vue",
+        "src/components/breeding/BreedingWorkshopShell.vue",
+        "src/pages/breeding/index.vue",
+        "tests/shared/breedingProjectWizardContract.test.ts",
+        "tests/server/breedingProjectWizard.test.ts",
+        "tests/server/breedingProjectWizardRoute.test.ts",
+        "tests/composables/breeding/useBreedingProjectWizard.test.ts",
+        "tests/components/breedingProjectWizard.test.ts",
+        "tests/components/breedingWorkshopShell.test.ts",
+        "docs/breeding/workshop.md"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -1718,7 +1735,7 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

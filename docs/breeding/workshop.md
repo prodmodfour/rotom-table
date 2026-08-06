@@ -1,8 +1,8 @@
 # Breeding Workshop
 
-The Breeding Workshop is the campaign-scoped presentation entry point for breeding and Egg lifecycle work. Its route is `/breeding`; the read API is `/api/breeding/workshop`. It is not a map, encounter, placement, scene, or initiative surface.
+The Breeding Workshop is the campaign-scoped presentation entry point for breeding and Egg lifecycle work. Its route is `/breeding`; the shell read API is `/api/breeding/workshop`, and the non-mutating Project-wizard projection API is `POST /api/breeding/projects/wizard`. It is not a map, encounter, placement, scene, or initiative surface.
 
-BR-070 establishes only the Workshop shell, ownership context, navigation, and safe loading/empty/error states. Project creation, explanations, choices, Egg cards, incubation controls, hatch controls, and later GM tools remain owned by BR-071 through BR-078.
+BR-070 establishes the Workshop shell, ownership context, navigation, and safe loading/empty/error states. BR-071 adds the transient Project wizard for destination, Breeder, parents, consent status, and campaign timeline. The wizard does not create or mutate a Project: final server validation, rank-authorised choices, consent evidence, and confirmation remain downstream work. Explanations, project and Egg cards, incubation controls, hatch controls, and later GM tools remain owned by BR-072 through BR-078.
 
 ## Authority and ownership
 
@@ -25,6 +25,25 @@ The projection never includes project IDs, Egg IDs, Species, parents, lineage, c
 
 Inputs and outputs reject unknown fields, accessors, symbols, sparse arrays, non-plain objects, unsafe integers, malformed slugs, unbounded text, and contradictory availability or empty-state combinations.
 
+## Project wizard boundary
+
+The wizard accepts selectors, never authority claims: the selected Profile ID or `null`, destination and Breeder Trainer slugs, and zero to two Pokémon sheet slug/revision pairs. The server re-resolves the Profile, both Trainer contexts, current campaign clock, current campaign options, current rosters, Pokémon revisions, and the BR-020 parent-discovery projection. A requested slug, revision, or parent pair cannot establish ownership, mechanics, consent, compatibility, or campaign time.
+
+For players, destination and Breeder must both be linked to the selected current Profile, and parent discovery is limited to the destination Trainer roster. A GM receives the bounded current campaign parent directory. Hidden, foreign, stale, duplicate, inaccessible, or ambiguous selections fail without enumerating private authority. The browser verifies the security-policy binding and exact self-hash before adopting the response.
+
+The four transient steps are:
+
+1. **Destination** — the current Trainer that will own the eventual Project and resulting Egg.
+2. **Breeder** — the current Trainer that will be subject to server-owned Breeder authority at execution.
+3. **Parents** — exactly two current visible sheet/revision selectors; unavailable entries are disabled.
+4. **Review** — a non-mutating summary of the selected contexts, pair, consent status, and timeline.
+
+Consent is intentionally shallow in BR-071. A complete same-owner pair projects `not-required`; a GM cross-owner pair projects `review-required`; incomplete selection projects `selection-incomplete`. No consent record, acceptance, private cross-owner mechanic, or browser acknowledgement is projected or persisted. BR-077 owns the actual cross-owner consent workflow.
+
+The timeline is projected from server policy and uses only campaign time: 240 initial campaign minutes, one Breeder check at DC 12, then 240 additional campaign minutes after success before Egg production can proceed. The browser has no wall-clock, scene, map, or lifecycle authority. Review explicitly states that no Project has been created, and the final creation control remains disabled until the later current server validation and confirmation flow is present.
+
+The wizard keeps no local persistent draft. Profile changes close it; destination changes clear parent selectors; Breeder and parent changes request a fresh projection; errors offer retry; policy or digest mismatch rejects the response without adopting its facts.
+
 ## Presentation states
 
 The shell has explicit paths for:
@@ -41,7 +60,7 @@ Changing Profile or Trainer clears stale pagination and asks the server for fres
 
 ## Accessibility and responsive behavior
 
-The page uses the existing Rotom design-system tokens required by `DESIGN.md`. It provides one labelled page region, semantic headings, labelled Trainer selection, visible keyboard focus, 44-pixel minimum controls, status announcements, alerts for failures and unavailable contexts, and a visible retry action. Narrow layouts become one column, and reduced-motion preferences are honored.
+The page uses the existing Rotom design-system tokens required by `DESIGN.md`. It provides labelled regions, semantic headings and ordered wizard steps, labelled Trainer selects and parent checkboxes, visible keyboard focus, 44-pixel minimum controls, selection/status announcements, alerts for failures and unavailable pairs, and visible retry and close actions. Narrow layouts wrap steps and collapse cards to one column, and reduced-motion preferences are honored.
 
 ## Operational checks
 
@@ -53,4 +72,4 @@ If the Workshop cannot load:
 4. retry to force a current server projection;
 5. treat security-policy or projection-hash mismatch as an integrity failure rather than rendering stale data.
 
-The reviewed BR-070 contract is `data/breeding-automation/workshop-presentation-contract.json`. Focused evidence lives in the Workshop shared-contract, server-projection, API-route, component/accessibility, navigation, and Profile-route-guard tests named there.
+The reviewed BR-070 shell contract is `data/breeding-automation/workshop-presentation-contract.json`. The reviewed BR-071 wizard contract is `data/breeding-automation/project-wizard-presentation-contract.json`. Focused evidence lives in the shared-contract, server-projection, API-route, composable, component/accessibility, navigation, and Profile-route-guard tests named by those contracts.

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import BreedingProjectWizard from '~/components/breeding/BreedingProjectWizard.vue'
 import BreedingWorkshopShell from '~/components/breeding/BreedingWorkshopShell.vue'
+import { useBreedingProjectWizard } from '~/composables/breeding/useBreedingProjectWizard'
 import { useBreedingWorkshop } from '~/composables/breeding/useBreedingWorkshop'
 
 useHead({
@@ -9,6 +11,7 @@ useHead({
 })
 
 const workshop = useBreedingWorkshop()
+const projectWizard = useBreedingProjectWizard()
 let initialized = false
 
 onMounted(async () => {
@@ -17,6 +20,7 @@ onMounted(async () => {
 })
 
 watch(workshop.selectedProfileId, () => {
+  projectWizard.close()
   if (initialized) void workshop.reloadForProfile()
 })
 </script>
@@ -34,6 +38,26 @@ watch(workshop.selectedProfileId, () => {
       @retry="workshop.reload"
       @select-ownership="workshop.selectOwnershipContext"
       @load-more="workshop.loadMoreOwnershipContexts"
+      @start-project="projectWizard.start"
+    />
+    <BreedingProjectWizard
+      :open="projectWizard.open.value"
+      :projection="projectWizard.projection.value"
+      :ownership-contexts="workshop.ownershipContexts.value"
+      :destination-trainer-slug="projectWizard.destinationTrainerSlug.value"
+      :breeder-trainer-slug="projectWizard.breederTrainerSlug.value"
+      :selected-parent-slugs="projectWizard.selectedParentSlugs.value"
+      :active-step="projectWizard.activeStep.value"
+      :loading="projectWizard.loading.value"
+      :error="projectWizard.error.value"
+      :can-review="projectWizard.canReview.value"
+      @close="projectWizard.close"
+      @retry="projectWizard.reload"
+      @select-destination="projectWizard.selectDestination"
+      @select-breeder="projectWizard.selectBreeder"
+      @toggle-parent="projectWizard.toggleParent"
+      @next="projectWizard.nextStep"
+      @previous="projectWizard.previousStep"
     />
   </main>
 </template>

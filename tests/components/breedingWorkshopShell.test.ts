@@ -105,6 +105,9 @@ describe('Breeding Workshop shell', () => {
     expect(wrapper.emitted('selectOwnership')).toEqual([['trainer-second']])
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('loadMore')).toEqual([[]])
+    const start = wrapper.findAll('button').find(button => button.text().includes('Start a project'))!
+    await start.trigger('click')
+    expect(wrapper.emitted('startProject')).toEqual([['trainer-owner']])
   })
 
   it('announces load errors and gives retry a visible non-hover path', async () => {

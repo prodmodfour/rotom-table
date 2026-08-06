@@ -208,6 +208,7 @@ for (const path of [
   'data/breeding-automation/species-acquisition-reward-contract.json',
   'data/breeding-automation/species-acquisition-integration-contract.json',
   'data/breeding-automation/workshop-presentation-contract.json',
+  'data/breeding-automation/project-wizard-presentation-contract.json',
   'data/breeding-automation/campaign-operation-ledger-contract.json',
   'data/breeding-automation/campaign-clock-contract.json',
   'data/breeding-automation/realtime-contract.json',
@@ -340,6 +341,43 @@ assert(workshopPresentationContract.definition?.presentation?.keyboardOperable =
   && workshopPresentationContract.definition?.presentation?.minimumControlHeightPx === 44
   && workshopPresentationContract.definition?.presentation?.statusAndErrorAnnouncements === true
   && workshopPresentationContract.definition?.presentation?.reducedMotion === 'honored', 'Workshop accessibility contract drifted')
+const projectWizardContract = json<Record<string, any>>('data/breeding-automation/project-wizard-presentation-contract.json')
+assert(projectWizardContract.contractId === 'rotom-breeding-project-wizard-presentation-v1'
+  && projectWizardContract.definition?.ticket === 'BR-071', 'Project wizard presentation contract identity drifted')
+assert(projectWizardContract.definition?.scope?.route === '/breeding'
+  && projectWizardContract.definition?.scope?.apiRoute === '/api/breeding/projects/wizard'
+  && projectWizardContract.definition?.scope?.apiMethod === 'POST'
+  && projectWizardContract.definition?.scope?.projectMutation === 'none-preview-only'
+  && projectWizardContract.definition?.scope?.clientMechanicsAuthority === 'none', 'Project wizard preview boundary drifted')
+assert(projectWizardContract.definition?.request?.mechanicsClaims === 'forbidden'
+  && projectWizardContract.definition?.request?.consentClaims === 'forbidden'
+  && projectWizardContract.definition?.request?.campaignTimeClaims === 'forbidden'
+  && projectWizardContract.definition?.request?.accessorsSymbolsSparseOrEnrichedValues === 'reject', 'Project wizard request closure drifted')
+assert(projectWizardContract.definition?.authorization?.playerParentDirectory === 'destination-Trainer-only'
+  && projectWizardContract.definition?.authorization?.foreignOrStaleSelection === 'reject-without-enumeration'
+  && projectWizardContract.definition?.authorization?.requestedSlugsAuthority === 'none'
+  && projectWizardContract.definition?.authorization?.actorAuthority === 'server-rebuilt-at-current-campaign-minute', 'Project wizard authorization drifted')
+assert(projectWizardContract.definition?.projection?.parentDirectory === 'reuse-authorized-BR-020-parent-discovery-projection'
+  && projectWizardContract.definition?.projection?.parentMaximum === 2
+  && projectWizardContract.definition?.projection?.securityPolicyBinding === 'mandatory'
+  && projectWizardContract.definition?.projection?.unknownFields === 'reject', 'Project wizard projection boundary drifted')
+assert(projectWizardContract.definition?.consent?.sameOwner === 'not-required'
+  && projectWizardContract.definition?.consent?.crossOwner === 'review-required'
+  && projectWizardContract.definition?.consent?.projectedConsentEvidence === 'none'
+  && projectWizardContract.definition?.consent?.browserConsentAuthority === 'none', 'Project wizard consent boundary drifted')
+assert(projectWizardContract.definition?.timeline?.authority === 'campaign-clock-only'
+  && projectWizardContract.definition?.timeline?.initialCampaignMinutes === 240
+  && projectWizardContract.definition?.timeline?.breederCheckDifficultyClass === 12
+  && projectWizardContract.definition?.timeline?.additionalCampaignMinutesAfterSuccess === 240
+  && projectWizardContract.definition?.timeline?.minimumCampaignMinutesBeforeEgg === 480, 'Project wizard timeline drifted')
+assert(projectWizardContract.definition?.privacy?.serverProjection === 'mandatory'
+  && projectWizardContract.definition?.privacy?.localPersistence === 'none'
+  && projectWizardContract.definition?.privacy?.forbiddenProjectionFacts?.includes('project-ids')
+  && projectWizardContract.definition?.privacy?.forbiddenProjectionFacts?.includes('consent-evidence'), 'Project wizard privacy boundary drifted')
+assert(projectWizardContract.definition?.presentation?.minimumControlHeightPx === 44
+  && projectWizardContract.definition?.presentation?.keyboardOperable === true
+  && projectWizardContract.definition?.presentation?.statusAndErrorAnnouncements === true
+  && projectWizardContract.definition?.presentation?.reducedMotion === 'honored', 'Project wizard accessibility contract drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
   && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')
@@ -828,6 +866,18 @@ for (const path of [
   'tests/server/breedingWorkshopRoute.test.ts',
   'tests/components/breedingWorkshopShell.test.ts',
   'data/breeding-automation/workshop-presentation-contract.json',
+  'shared/breeding/projectWizard.ts',
+  'server/domain/breeding/projectWizard.ts',
+  'server/useCases/loadBreedingProjectWizard.ts',
+  'server/api/breeding/projects/wizard.post.ts',
+  'src/composables/breeding/useBreedingProjectWizard.ts',
+  'src/components/breeding/BreedingProjectWizard.vue',
+  'tests/shared/breedingProjectWizardContract.test.ts',
+  'tests/server/breedingProjectWizard.test.ts',
+  'tests/server/breedingProjectWizardRoute.test.ts',
+  'tests/composables/breeding/useBreedingProjectWizard.test.ts',
+  'tests/components/breedingProjectWizard.test.ts',
+  'data/breeding-automation/project-wizard-presentation-contract.json',
   'docs/breeding/workshop.md',
   'shared/breeding/fossilEgg.ts',
   'server/domain/breeding/fossilEgg.ts',

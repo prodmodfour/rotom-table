@@ -2,7 +2,7 @@
 
 ## Current rollout state
 
-The read-only Breeding Workshop shell is available at `/breeding`, and the durable server runtime through BR-069 is operational. Project and Egg controls are introduced incrementally by BR-071 through BR-078; do not describe the shell as the complete workflow until the implementation ledger is complete. Never represent edits to `eggMoves`, `inheritedMoves`, Gender, Nature, Abilities, `babyTemplate`, inventory, or map metadata as a completed breeding or hatch operation.
+The Breeding Workshop shell and non-mutating Project wizard are available at `/breeding`, and the durable server runtime through BR-069 is operational. Remaining Project and Egg controls are introduced incrementally by BR-072 through BR-078; do not describe the Workshop as the complete workflow until the implementation ledger is complete. Do not represent edits to `eggMoves`, `inheritedMoves`, Gender, Nature, Abilities, `babyTemplate`, inventory, or map metadata as a completed breeding or hatch operation.
 
 The authoritative readiness command is:
 
@@ -24,6 +24,8 @@ both pass from the current source/build and the plan is archived with all 90 req
 The `/breeding` shell requires a role and reads `/api/breeding/workshop`. A player without a selected Profile should see the Profile-required state rather than a Trainer list. A selected player sees only Profile-linked Trainers; a GM sees current campaign Trainers. Stale player links are marked unavailable without exposing any replacement owner or lifecycle facts.
 
 For a load or integrity error, verify authentication, Profile existence and links, campaign-clock availability, and the active campaign database, then use Retry. Do not bypass a projection hash or security-policy mismatch. Trainer selection and pagination are presentation inputs only; the server must re-authorize them on every request. See [workshop.md](workshop.md) for the state and privacy matrix.
+
+The **Start a project** action opens the transient BR-071 wizard. Destination, Breeder, and parent selections trigger fresh server projections; they do not create a durable draft. A player can select only Profile-authorised contexts and destination-roster parents. A GM cross-owner pair is labelled as requiring owner review, not accepted consent. The review timeline is 240 campaign minutes, a DC 12 Breeder check, and 240 more campaign minutes after success. If a pair becomes stale or unavailable, retry or reselect it; do not edit revisions or bypass the unavailable state. The disabled final action and “No project has been created” message are intentional until the server-owned choice and confirmation flow is completed.
 
 ## Governance health
 
