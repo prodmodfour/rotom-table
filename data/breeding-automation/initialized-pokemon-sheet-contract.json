@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-initialized-pokemon-sheet-storage-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "12891b11fb06b97cdfb2add56677781ee9e3d3697733e1bb3f8bae9311e56983",
+  "definition": {
+    "version": 1,
+    "repositoryPath": "server/storage/initializedPokemonSheetRepository.ts",
+    "insert": {
+      "kind": "pokemon",
+      "revision": 0,
+      "placeholderWrite": "forbidden",
+      "writesPerChild": 1,
+      "authorityFieldsAssignedByStorage": [
+        "slug",
+        "folder",
+        "revision",
+        "createdAt",
+        "updatedAt"
+      ],
+      "completeDocumentRequiredBeforeInsert": true
+    },
+    "candidate": {
+      "plainJsonOnly": true,
+      "unknownFields": "reject",
+      "accessorsSymbolsSparseOrEnrichedValues": "reject",
+      "currentNormalization": "must-already-be-exact",
+      "requiredHeadlineFacts": [
+        "nickname",
+        "species",
+        "level",
+        "totalExp",
+        "gender",
+        "loyalty",
+        "shiny",
+        "caughtBall",
+        "player",
+        "nature",
+        "babyTemplate",
+        "combat.currentHp",
+        "abilities",
+        "inheritedRemaining",
+        "tutorPoints.earned",
+        "serverPrivate.breedingProviderTraits.coreHatchRules",
+        "serverPrivate.breedingProviderTraits.fossilRestoration",
+        "serverPrivate.breedingProviderTraits.prehistoricBond",
+        "babyTemplateMechanics-when-applied",
+        "serverPrivate.breedingBabyTemplate-when-applied",
+        "serverPrivate.breedingProviderTraits.marsupial",
+        "serverPrivate.breedingProviderTraits.playingGod"
+      ],
+      "newbornAppliedMoves": 0,
+      "newbornPokeEdges": 0,
+      "serverPrivate": "exact-core-hatch-rule-and-closed-nullable-Serpents-Mark-fossil-Marsupial-and-Playing-God-provider-traits-plus-self-hashed-Baby-Template-authority",
+      "babyTemplate": "private-authority-and-owner-safe-mechanics-must-match-exactly; editable-boolean-alone-is-never-authority"
+    },
+    "canonicalReferences": {
+      "species": "data/reference/pokedex.json exact display identity",
+      "moves": "data/reference/moves.json exact identity",
+      "abilities": "data/reference/abilities.json exact identity",
+      "natures": "data/breeding-automation/natures.json exact reviewed label",
+      "supplementaryRuntimeSources": "forbidden"
+    },
+    "slugAllocation": {
+      "scope": "pokemon-sheet-kind",
+      "strategy": "slugified-root-then-monotonic-numeric-suffix",
+      "rootMaximumCharacters": 140,
+      "maximumAttempts": 10000,
+      "conflictDetection": "primary-key-insert-then-existing-row-verification",
+      "trainerSlugCollision": "independent-kind-does-not-collide",
+      "blankFallback": "hatched-pokemon"
+    },
+    "transaction": {
+      "standalone": "BEGIN-IMMEDIATE",
+      "callerOwnedParticipation": true,
+      "independentNestedCommit": "forbidden",
+      "failedAttemptIsolation": "SQLite-savepoint",
+      "insertAndFolderIndex": "atomic",
+      "failureLeavesPlaceholder": false
+    },
+    "retry": {
+      "sameHatchOperation": "owned-by-terminal-operation-and-Egg-coordinator",
+      "repositoryCreatesSecondChildOnExactOperationReplay": "must-not-be-invoked",
+      "differentOperationsWithSameName": "allocate-distinct-slugs"
+    },
+    "privacy": {
+      "document": "server-private-unprojected",
+      "errors": "field-and-policy-only-no-payload",
+      "localPersistence": "none"
+    },
+    "authority": {
+      "mapDependency": "none",
+      "encounterDependency": "none",
+      "eggSheetKind": "none",
+      "browserWrite": "none",
+      "childKindCount": 1,
+      "trainerKindCount": 1
+    },
+    "bindings": {
+      "storageSchemaDefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89",
+      "repositoryContractDefinitionSha256": "d15c11f9f360d1ebd603feee8ec1506be9262d58f20bc9f753f5af979fa823b5",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "lineageContractDefinitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1"
+    }
+  }
+}

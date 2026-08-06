@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 19,
+    "covered": 67,
     "in-progress": 1,
-    "planned": 70,
+    "planned": 22,
     "blocked": 0
   },
   "requirements": [
@@ -406,8 +406,13 @@
         "contract-test",
         "privacy-or-transition-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/project-contract.json",
+        "shared/breeding/project.ts",
+        "server/domain/breeding/projectLifecycle.ts",
+        "tests/shared/breedingProjectContract.test.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -420,8 +425,13 @@
         "contract-test",
         "privacy-or-transition-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/egg-contract.json",
+        "shared/breeding/egg.ts",
+        "server/domain/breeding/eggLifecycle.ts",
+        "tests/shared/pokemonEggContract.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-special-source-eggs-v1"
       ]
@@ -436,8 +446,13 @@
         "contract-test",
         "privacy-or-transition-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/lineage-contract.json",
+        "shared/breeding/lineage.ts",
+        "server/domain/breeding/lineage.ts",
+        "tests/shared/breedingLineageContract.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -452,8 +467,13 @@
         "contract-test",
         "privacy-or-transition-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/operation-contract.json",
+        "shared/breeding/operations.ts",
+        "server/domain/breeding/operations.ts",
+        "tests/shared/breedingOperationContract.test.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -466,8 +486,13 @@
         "contract-test",
         "privacy-or-transition-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/ledger-contract.json",
+        "shared/breeding/ledgers.ts",
+        "server/domain/breeding/ledgers.ts",
+        "tests/shared/breedingLedgerContract.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-cross-owner-consent-v1"
       ]
@@ -482,8 +507,13 @@
         "contract-test",
         "privacy-or-transition-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/read-set-contract.json",
+        "shared/breeding/readSets.ts",
+        "server/domain/breeding/readSets.ts",
+        "tests/shared/breedingReadSetContract.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-cross-owner-consent-v1"
       ]
@@ -498,8 +528,13 @@
         "contract-test",
         "privacy-or-transition-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/authorization-contract.json",
+        "shared/breeding/authorization.ts",
+        "server/domain/breeding/authorization.ts",
+        "tests/shared/breedingAuthorizationContract.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-standard-compatible-project-v1"
       ]
@@ -514,8 +549,13 @@
         "contract-test",
         "privacy-or-transition-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/projection-contract.json",
+        "shared/breeding/projections.ts",
+        "server/domain/breeding/projections.ts",
+        "tests/shared/breedingProjectionContract.test.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -528,8 +568,13 @@
         "contract-test",
         "privacy-or-transition-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/archive-contract.json",
+        "shared/breeding/archives.ts",
+        "server/domain/breeding/archives.ts",
+        "tests/shared/breedingArchiveContract.test.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -542,8 +587,12 @@
         "contract-test",
         "privacy-or-transition-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "tests/shared/breedingArchiveContract.test.ts",
+        "shared/breeding/archives.ts",
+        "server/domain/breeding/archives.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -556,8 +605,13 @@
         "repository-test",
         "migration-or-restart-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/storage-schema-v22.json",
+        "server/storage/migrations.ts",
+        "scripts/migrate-campaign-to-sqlite.mjs",
+        "tests/server/breedingStorageMigrations.test.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -570,8 +624,15 @@
         "repository-test",
         "migration-or-restart-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/repository-contract.json",
+        "server/storage/breedingProjectRepository.ts",
+        "server/storage/pokemonEggRepository.ts",
+        "server/storage/breedingConsentRepository.ts",
+        "server/storage/trainerSpeciesAcquisitionRepository.ts",
+        "tests/server/breedingRepositories.test.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -584,8 +645,12 @@
         "repository-test",
         "migration-or-restart-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/initialized-pokemon-sheet-contract.json",
+        "server/storage/initializedPokemonSheetRepository.ts",
+        "tests/server/initializedPokemonSheetRepository.test.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -598,8 +663,14 @@
         "repository-test",
         "migration-or-restart-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/species-acquisition-reward-contract.json",
+        "shared/speciesAcquisition.ts",
+        "server/storage/trainerSpeciesAcquisitionRepository.ts",
+        "server/useCases/recordTrainerSpeciesAcquisition.ts",
+        "tests/server/trainerSpeciesAcquisitionReward.test.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -612,8 +683,14 @@
         "repository-test",
         "migration-or-restart-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/campaign-operation-ledger-contract.json",
+        "shared/campaignOperations.ts",
+        "server/storage/breedingOperationRepository.ts",
+        "server/useCases/executeCampaignOperation.ts",
+        "tests/server/breedingOperationRepository.test.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -626,8 +703,14 @@
         "repository-test",
         "migration-or-restart-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/campaign-clock-contract.json",
+        "shared/campaignClock.ts",
+        "server/storage/campaignClockRepository.ts",
+        "server/useCases/advanceBreedingCampaignClock.ts",
+        "tests/server/campaignClock.test.ts"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -640,8 +723,16 @@
         "repository-test",
         "migration-or-restart-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/realtime-contract.json",
+        "shared/breeding/realtimeAccess.ts",
+        "shared/breeding/realtime.ts",
+        "server/realtime/breedingRealtime.ts",
+        "server/realtime/realtimeEventAccessPolicy.ts",
+        "server/storage/realtimeEventRepository.ts",
+        "tests/server/breedingRealtime.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -656,8 +747,12 @@
         "repository-test",
         "migration-or-restart-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/transaction-coordinator-contract.json",
+        "server/useCases/executeBreedingTransaction.ts",
+        "tests/server/breedingTransactionCoordinator.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -672,8 +767,16 @@
         "repository-test",
         "migration-or-restart-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/archive-storage-schema-v23.json",
+        "data/breeding-automation/archive-storage-runtime-contract.json",
+        "server/storage/breedingArchiveRepository.ts",
+        "server/storage/breedingArchiveStateRepository.ts",
+        "server/useCases/manageBreedingArchives.ts",
+        "tests/server/breedingArchiveManager.test.ts",
+        "tests/server/breedingStorageMigrations.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -688,8 +791,16 @@
         "repository-test",
         "migration-or-restart-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/persistence-conformance-contract.json",
+        "tests/server/breedingPersistenceConformance.test.ts",
+        "tests/server/breedingStorageMigrations.test.ts",
+        "tests/server/breedingRepositories.test.ts",
+        "tests/server/breedingOperationRepository.test.ts",
+        "tests/server/breedingTransactionCoordinator.test.ts",
+        "tests/server/breedingArchiveManager.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -704,9 +815,19 @@
         "authorization-test",
         "privacy-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
-      "acceptanceFixtureIds": []
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/project-campaign-offer-contract.json",
+        "shared/campaignOperationOffers.ts",
+        "shared/breeding/projectOffers.ts",
+        "server/domain/campaignOperationOffers.ts",
+        "server/domain/breeding/projectOffers.ts",
+        "tests/server/breedingProjectCampaignOffers.test.ts",
+        "docs/breeding/architecture-and-ownership.md"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-standard-compatible-project-v1"
+      ]
     },
     {
       "id": "breeding:BR-041",
@@ -718,9 +839,17 @@
         "authorization-test",
         "privacy-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
-      "acceptanceFixtureIds": []
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/parent-discovery-contract.json",
+        "shared/breeding/parentDiscovery.ts",
+        "server/useCases/discoverBreedingParents.ts",
+        "tests/server/breedingParentDiscovery.test.ts",
+        "docs/breeding/architecture-and-ownership.md"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-standard-compatible-project-v1"
+      ]
     },
     {
       "id": "breeding:BR-042",
@@ -732,8 +861,16 @@
         "authorization-test",
         "privacy-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/project-setup-validation-contract.json",
+        "shared/breeding/projectSetupValidation.ts",
+        "server/domain/breeding/projectSetupValidation.ts",
+        "server/domain/breeding/authorization.ts",
+        "server/domain/breeding/compatibility.ts",
+        "tests/server/breedingProjectSetupValidation.test.ts",
+        "docs/breeding/architecture-and-ownership.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-cross-owner-consent-v1"
       ]
@@ -748,8 +885,18 @@
         "authorization-test",
         "privacy-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/project-initial-progress-contract.json",
+        "shared/breeding/projectInitialProgress.ts",
+        "server/domain/breeding/projectInitialProgress.ts",
+        "server/storage/breedingOperationEvidenceRepository.ts",
+        "server/useCases/manageBreedingProjectInitialTime.ts",
+        "server/useCases/executeBreedingTransaction.ts",
+        "tests/server/breedingProjectInitialProgress.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -764,8 +911,18 @@
         "authorization-test",
         "privacy-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/project-check-contract.json",
+        "shared/breeding/projectCheck.ts",
+        "server/domain/breeding/projectCheck.ts",
+        "server/storage/breedingCheckLedgerRepository.ts",
+        "server/useCases/resolveBreedingProjectCheck.ts",
+        "server/useCases/executeBreedingTransaction.ts",
+        "tests/server/breedingProjectCheck.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-cross-owner-consent-v1"
       ]
@@ -780,8 +937,19 @@
         "authorization-test",
         "privacy-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/project-additional-progress-contract.json",
+        "shared/breeding/projectAdditionalProgress.ts",
+        "server/domain/breeding/projectAdditionalProgress.ts",
+        "server/useCases/advanceBreedingProjectAdditionalTime.ts",
+        "server/storage/breedingOperationEvidenceRepository.ts",
+        "server/storage/breedingCheckLedgerRepository.ts",
+        "server/useCases/executeBreedingTransaction.ts",
+        "tests/server/breedingProjectAdditionalProgress.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -796,8 +964,17 @@
         "authorization-test",
         "privacy-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/production-snapshot-contract.json",
+        "shared/breeding/productionSnapshots.ts",
+        "server/domain/breeding/productionSnapshots.ts",
+        "server/domain/breeding/lineage.ts",
+        "server/domain/breeding/readSets.ts",
+        "tests/server/breedingProductionSnapshots.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-special-source-eggs-v1"
       ]
@@ -812,8 +989,17 @@
         "authorization-test",
         "privacy-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/offspring-production-contract.json",
+        "shared/breeding/offspringProduction.ts",
+        "server/domain/breeding/offspringProduction.ts",
+        "server/storage/breedingRollRepository.ts",
+        "server/storage/breedingOptionOfferRepository.ts",
+        "tests/server/breedingOffspringProduction.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -828,8 +1014,19 @@
         "authorization-test",
         "privacy-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/egg-production-contract.json",
+        "shared/breeding/eggProduction.ts",
+        "server/domain/breeding/eggProduction.ts",
+        "server/useCases/produceBreedingProjectEgg.ts",
+        "server/useCases/executeBreedingTransaction.ts",
+        "server/storage/breedingRollRepository.ts",
+        "server/storage/breedingOptionOfferRepository.ts",
+        "tests/server/breedingEggProduction.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -844,8 +1041,18 @@
         "authorization-test",
         "privacy-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/lifecycle-recovery-contract.json",
+        "shared/breeding/lifecycleRecovery.ts",
+        "server/domain/breeding/lifecycleRecovery.ts",
+        "server/domain/breeding/authorization.ts",
+        "server/useCases/manageBreedingLifecycleRecovery.ts",
+        "server/useCases/recoverBreedingOperation.ts",
+        "tests/server/breedingLifecycleRecovery.test.ts",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -858,9 +1065,22 @@
         "use-case-test",
         "exact-retry-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/incubation-contract.json",
+        "data/breeding-automation/incubation-storage-schema-v24.json",
+        "shared/breeding/incubation.ts",
+        "server/domain/breeding/incubation.ts",
+        "server/domain/breeding/authorization.ts",
+        "server/storage/breedingIncubationSegmentRepository.ts",
+        "server/useCases/managePokemonEggIncubation.ts",
+        "tests/server/breedingIncubation.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1",
         "breeding-standard-compatible-project-v1"
       ]
     },
@@ -874,9 +1094,23 @@
         "use-case-test",
         "exact-retry-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
-      "acceptanceFixtureIds": []
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/readiness-correction-contract.json",
+        "shared/breeding/readinessCorrection.ts",
+        "shared/breeding/incubation.ts",
+        "server/domain/breeding/readinessCorrection.ts",
+        "server/domain/breeding/authorization.ts",
+        "server/domain/breeding/archives.ts",
+        "server/useCases/markPokemonEggReady.ts",
+        "tests/server/breedingIncubation.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1"
+      ]
     },
     {
       "id": "breeding:BR-052",
@@ -888,10 +1122,24 @@
         "use-case-test",
         "exact-retry-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/campaign-clock-incubation-batch-contract.json",
+        "shared/breeding/campaignClockBatch.ts",
+        "server/domain/breeding/campaignClockBatch.ts",
+        "server/domain/breeding/authorization.ts",
+        "server/domain/breeding/archives.ts",
+        "server/storage/pokemonEggRepository.ts",
+        "server/useCases/advanceBreedingCampaignClock.ts",
+        "server/useCases/advanceBreedingCampaignClockBatch.ts",
+        "tests/server/breedingCampaignClockBatch.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
-        "breeding-cross-owner-consent-v1"
+        "breeding-cross-owner-consent-v1",
+        "breeding-inheritance-incubation-special-v1"
       ]
     },
     {
@@ -904,10 +1152,23 @@
         "use-case-test",
         "exact-retry-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/egg-lifecycle-policy-contract.json",
+        "shared/breeding/egg.ts",
+        "shared/breeding/eggLifecycle.ts",
+        "server/domain/breeding/eggLifecycle.ts",
+        "server/domain/breeding/eggLifecyclePolicy.ts",
+        "server/useCases/queryPokemonEggLifecycle.ts",
+        "tests/server/breedingEggLifecyclePolicy.test.ts",
+        "tests/shared/pokemonEggContract.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
-        "breeding-standard-compatible-project-v1"
+        "breeding-standard-compatible-project-v1",
+        "breeding-hatch-recovery-privacy-history-v1"
       ]
     },
     {
@@ -920,10 +1181,20 @@
         "use-case-test",
         "exact-retry-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/hatch-offer-contract.json",
+        "shared/breeding/hatchOffers.ts",
+        "server/domain/breeding/hatchOffers.ts",
+        "server/useCases/projectPokemonEggHatchOffer.ts",
+        "tests/server/breedingHatchOffers.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
-        "breeding-standard-compatible-project-v1"
+        "breeding-standard-compatible-project-v1",
+        "breeding-hatch-recovery-privacy-history-v1"
       ]
     },
     {
@@ -936,8 +1207,21 @@
         "use-case-test",
         "exact-retry-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/hatch-special-contract.json",
+        "shared/breeding/hatchSpecial.ts",
+        "server/domain/breeding/hatchSpecial.ts",
+        "server/domain/breeding/hatchSpecialAuthorization.ts",
+        "server/storage/breedingGmAdjudicationRepository.ts",
+        "server/storage/breedingRollRepository.ts",
+        "server/useCases/executeBreedingTransaction.ts",
+        "server/useCases/managePokemonEggHatchSpecial.ts",
+        "tests/server/breedingHatchSpecial.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-inheritance-incubation-special-v1"
       ]
@@ -952,8 +1236,13 @@
         "use-case-test",
         "exact-retry-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/child-sheet-construction-contract.json",
+        "server/domain/breeding/childSheetConstruction.ts",
+        "server/storage/initializedPokemonSheetRepository.ts",
+        "tests/server/breedingChildSheetConstruction.test.ts"
+      ],
       "acceptanceFixtureIds": [
         "breeding-inheritance-incubation-special-v1"
       ]
@@ -968,8 +1257,23 @@
         "use-case-test",
         "exact-retry-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/hatch-completion-contract.json",
+        "shared/breeding/hatchCompletion.ts",
+        "server/domain/breeding/hatchCompletion.ts",
+        "server/domain/breeding/childSheetConstruction.ts",
+        "server/domain/breeding/lineage.ts",
+        "server/storage/breedingLineageRepository.ts",
+        "server/storage/initializedPokemonSheetRepository.ts",
+        "server/useCases/executeBreedingTransaction.ts",
+        "server/useCases/completePokemonEggHatch.ts",
+        "tests/server/breedingHatchCompletion.test.ts",
+        "tests/server/breedingTransactionCoordinator.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-cross-owner-consent-v1",
         "breeding-standard-compatible-project-v1"
@@ -985,8 +1289,21 @@
         "use-case-test",
         "exact-retry-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/hatch-species-acquisition-contract.json",
+        "data/breeding-automation/species-acquisition-reward-contract.json",
+        "shared/speciesAcquisition.ts",
+        "server/domain/breeding/hatchSpeciesAcquisition.ts",
+        "server/storage/trainerSpeciesAcquisitionRepository.ts",
+        "server/useCases/recordTrainerSpeciesAcquisition.ts",
+        "server/useCases/completePokemonEggHatch.ts",
+        "tests/server/trainerSpeciesAcquisitionReward.test.ts",
+        "tests/server/breedingHatchCompletion.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-special-source-eggs-v1"
       ]
@@ -1001,8 +1318,21 @@
         "use-case-test",
         "exact-retry-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/hatch-resilience-contract.json",
+        "server/useCases/completePokemonEggHatch.ts",
+        "server/useCases/executeBreedingTransaction.ts",
+        "server/storage/initializedPokemonSheetRepository.ts",
+        "server/storage/realtimeEventRepository.ts",
+        "tests/server/breedingHatchCompletion.test.ts",
+        "tests/server/breedingTransactionCoordinator.test.ts",
+        "tests/server/breedingRealtime.test.ts",
+        "tests/server/realtimeEventRepository.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -1017,8 +1347,19 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/breeder-edge-handoff-contract.json",
+        "shared/breeding/breederEdgeHandoff.ts",
+        "server/domain/edgeAutomation/campaignOperations.ts",
+        "server/domain/breeding/breederEdgeHandoff.ts",
+        "server/useCases/resolveBreedingBreederEdgeHandoff.ts",
+        "tests/server/breedingBreederEdgeHandoff.test.ts",
+        "docs/edge-automation.md",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1",
         "breeding-inheritance-incubation-special-v1"
@@ -1034,8 +1375,26 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/feature-provider-handoff-contract.json",
+        "shared/breeding/featureProviderHandoff.ts",
+        "shared/breeding/breederEdgeHandoff.ts",
+        "shared/breeding/authorization.ts",
+        "server/domain/breeding/featureProviderHandoff.ts",
+        "server/domain/breeding/breederEdgeHandoff.ts",
+        "server/domain/edgeAutomation/effectiveEdges.ts",
+        "server/useCases/resolveBreedingFeatureProviderHandoff.ts",
+        "server/domain/breeding/projectCheck.ts",
+        "server/useCases/resolveBreedingProjectCheck.ts",
+        "tests/server/breedingFeatureProviderHandoff.test.ts",
+        "tests/server/breedingBreederEdgeHandoff.test.ts",
+        "tests/server/breedingProjectCheck.test.ts",
+        "docs/feature-automation.md",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-inheritance-incubation-special-v1"
       ]
@@ -1050,8 +1409,35 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/modifier-provider-handoff-contract.json",
+        "data/breeding-automation/storage-schema-v25.json",
+        "shared/breeding/modifierProviderHandoff.ts",
+        "shared/breeding/egg.ts",
+        "shared/breeding/incubation.ts",
+        "shared/breeding/operations.ts",
+        "server/domain/breeding/modifierProviderHandoff.ts",
+        "server/domain/breeding/eggWarmerCapability.ts",
+        "server/domain/breeding/incubation.ts",
+        "server/domain/breeding/offspringProduction.ts",
+        "server/domain/breeding/eggProduction.ts",
+        "server/domain/breeding/childSheetConstruction.ts",
+        "server/useCases/managePokemonEggIncubation.ts",
+        "server/useCases/applyPokemonEggWarmerCapability.ts",
+        "server/useCases/produceBreedingProjectEgg.ts",
+        "server/storage/breedingRollRepository.ts",
+        "server/storage/migrations.ts",
+        "tests/server/breedingModifierProviderHandoff.test.ts",
+        "tests/server/breedingIncubation.test.ts",
+        "tests/server/breedingOffspringProduction.test.ts",
+        "tests/server/breedingEggProduction.test.ts",
+        "tests/server/breedingChildSheetConstruction.test.ts",
+        "tests/server/breedingStorageMigrations.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-inheritance-incubation-special-v1"
       ]
@@ -1066,10 +1452,18 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/parent-source-change-contract.json",
+        "shared/breeding/parentSourceChange.ts",
+        "server/domain/breeding/parentSourceChange.ts",
+        "tests/server/breedingParentSourceChange.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
-        "breeding-inheritance-incubation-special-v1"
+        "breeding-hatch-recovery-privacy-history-v1"
       ]
     },
     {
@@ -1082,8 +1476,22 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "shared/breeding/eggTransfer.ts",
+        "server/domain/breeding/eggTransfer.ts",
+        "server/storage/pokemonEggTransferConsentRepository.ts",
+        "server/storage/migrations.ts",
+        "server/useCases/managePokemonEggTransferConsent.ts",
+        "server/useCases/transferPokemonEggOwnership.ts",
+        "data/breeding-automation/egg-transfer-contract.json",
+        "data/breeding-automation/storage-schema-v26.json",
+        "tests/server/breedingEggTransfer.test.ts",
+        "tests/server/breedingStorageMigrations.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-inheritance-incubation-special-v1"
       ]
@@ -1098,10 +1506,21 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "shared/breeding/fossilEgg.ts",
+        "server/domain/breeding/fossilEgg.ts",
+        "server/useCases/createBreedingFossilEgg.ts",
+        "tests/server/breedingFossilEgg.test.ts",
+        "data/breeding-automation/fossil-egg-contract.json",
+        "data/breeding-automation/fixtures/fossil-artificial-and-mysterious-eggs.json",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "scripts/check_breeding_automation.ts",
+        "scripts/quality-gate.sh"
+      ],
       "acceptanceFixtureIds": [
-        "breeding-cross-owner-consent-v1",
+        "breeding-special-source-eggs-v1",
         "breeding-hatch-recovery-privacy-history-v1"
       ]
     },
@@ -1115,8 +1534,19 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "shared/breeding/gmEgg.ts",
+        "server/domain/breeding/gmEgg.ts",
+        "server/useCases/createBreedingGmEgg.ts",
+        "tests/server/breedingGmEgg.test.ts",
+        "data/breeding-automation/gm-egg-contract.json",
+        "data/breeding-automation/fixtures/fossil-artificial-and-mysterious-eggs.json",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "scripts/check_breeding_automation.ts",
+        "scripts/quality-gate.sh"
+      ],
       "acceptanceFixtureIds": [
         "breeding-special-source-eggs-v1"
       ]
@@ -1131,8 +1561,45 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "planned",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "shared/breeding/babyTemplate.ts",
+        "shared/breeding/artificialEgg.ts",
+        "server/domain/breeding/babyTemplate.ts",
+        "server/domain/breeding/artificialEgg.ts",
+        "server/domain/breeding/fossilEgg.ts",
+        "server/domain/breeding/gmEgg.ts",
+        "server/domain/breeding/offspringProduction.ts",
+        "server/domain/breeding/childSheetConstruction.ts",
+        "server/domain/breeding/modifierProviderHandoff.ts",
+        "server/domain/capabilityAutomation/marsupialRelationship.ts",
+        "server/useCases/createBreedingArtificialEgg.ts",
+        "server/useCases/createBreedingFossilEgg.ts",
+        "server/useCases/createBreedingGmEgg.ts",
+        "server/useCases/completePokemonEggHatch.ts",
+        "server/useCases/applyMapTokenAction.ts",
+        "server/useCases/applyThrowPokeballCommand.ts",
+        "server/useCases/saveSheet.ts",
+        "tests/server/breedingBabyTemplate.test.ts",
+        "tests/server/breedingArtificialEgg.test.ts",
+        "tests/server/breedingFossilEgg.test.ts",
+        "tests/server/breedingGmEgg.test.ts",
+        "tests/server/breedingOffspringProduction.test.ts",
+        "tests/server/breedingChildSheetConstruction.test.ts",
+        "tests/server/breedingHatchCompletion.test.ts",
+        "tests/server/breedingModifierProviderHandoff.test.ts",
+        "tests/server/marsupialRelationship.test.ts",
+        "tests/server/livePlayMapTokenCommands.test.ts",
+        "tests/server/throwPokeballCommand.test.ts",
+        "tests/server/saveSheet.test.ts",
+        "data/breeding-automation/baby-template-contract.json",
+        "data/breeding-automation/fixtures/fossil-artificial-and-mysterious-eggs.json",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/security-and-privacy.md",
+        "scripts/check_breeding_automation.ts",
+        "scripts/quality-gate.sh"
+      ],
       "acceptanceFixtureIds": [
         "breeding-special-source-eggs-v1"
       ]
@@ -1147,7 +1614,7 @@
         "integration-test",
         "failure-injection-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": [
         "breeding-special-source-eggs-v1"

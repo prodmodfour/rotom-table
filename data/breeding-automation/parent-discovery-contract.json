@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-parent-discovery-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "ec9aaa847e2bfaf3475f61638c0b8cdda10571b0e8f6432f75af2a7c642dd438",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-041",
+    "sharedContractPath": "shared/breeding/parentDiscovery.ts",
+    "useCasePath": "server/useCases/discoverBreedingParents.ts",
+    "projection": {
+      "schema": "strict-plain-exact-fields-only",
+      "audiences": [
+        "gm",
+        "owner"
+      ],
+      "trainerLimit": 64,
+      "candidateLimit": 2048,
+      "candidateFields": [
+        "availability-and-safe-reasons",
+        "current-parent-sheet-slug-and-revision-or-null-if-missing",
+        "current-owner-Trainer-slug-and-revision",
+        "gender-id-or-null",
+        "level-or-null",
+        "roster-field",
+        "safe-label",
+        "species-id-or-null"
+      ],
+      "forbiddenFields": [
+        "Profile-identity",
+        "actor-or-control-evidence-hashes",
+        "sheet-definition-hashes",
+        "GM-private-fields",
+        "server-private-fields",
+        "moves-Abilities-Edges-Features-or-provider-details",
+        "consent-or-override-records",
+        "map-encounter-placement-scene-or-initiative-state"
+      ]
+    },
+    "ownerAuthorization": {
+      "actor": "current-self-hashed-player-actor-authority-at-exact-campaign-minute",
+      "profile": "exact-current-nonenriched-Profile-definition",
+      "trainer": "command-selected-Trainer-must-be-linked-exactly-by-current-Profile",
+      "parents": "only-current-team-or-box-links-owned-by-that-Trainer",
+      "publicSheetVisibility": "never-authority",
+      "legacySessionGrant": "never-authority",
+      "crossOwnerDiscovery": "forbidden-until-separate-current-consent-workflow",
+      "idorFailure": "one-nonenumerating-unavailable-error"
+    },
+    "gmAuthorization": {
+      "actor": "current-authenticated-GM-principal-authority",
+      "profileAdoption": "forbidden",
+      "trainerFilter": "optional-current-campaign-Trainer",
+      "effect": "discovery-only-no-owner-control-consent-or-override-inference"
+    },
+    "rosterAuthority": {
+      "sources": [
+        "Trainer.boxedPokemon",
+        "Trainer.currentTeam"
+      ],
+      "sheetSource": "SQLite-sheet-repository-current-revisions",
+      "duplicateWithinOrAcrossTrainerLinks": "fail-closed",
+      "missingPokemonSheet": "safe-unavailable-candidate-with-no-inferred-mechanics",
+      "malformedTrainerRoster": "fail-closed",
+      "malformedPokemonSheet": "safe-unavailable-candidate-or-private-corruption-error",
+      "mapPlacement": "ignored"
+    },
+    "canonicalFacts": {
+      "species": "exact-app-owned-canonical-ID-or-reference-source-name",
+      "speciesSpec": "compiled-breeding-registry-only",
+      "eggGroups": "compiled-spec-only-never-sheet-override",
+      "gender": "exact-current-sheet-enum-matched-to-compiled-spec",
+      "level": "current-sheet-safe-integer-1-through-100",
+      "eligibility": "compiled-spec-breedable-only-for-selectable-candidate",
+      "documentaryOrExternalFallback": "forbidden"
+    },
+    "filters": {
+      "authorizationOrder": "authorize-before-filter",
+      "rosterFields": [
+        "boxed-pokemon",
+        "current-team"
+      ],
+      "availability": [
+        "all",
+        "selectable",
+        "unavailable"
+      ],
+      "speciesIds": "zero-through-32-canonical-sorted-unique",
+      "hiddenIdentityInference": "forbidden"
+    },
+    "selection": {
+      "cardinality": "zero-through-two-distinct-parent-refs",
+      "binding": "current-visible-parent-sheet-slug-and-exact-revision",
+      "hiddenFilteredMissingOrStale": "same-stale-or-unavailable-error",
+      "browserSelectionAuthority": "none"
+    },
+    "compatibilityPreview": {
+      "pairOnly": true,
+      "identity": "deterministic-opaque-SHA-256-derived-preview-id",
+      "mechanics": "existing-pure-compiled-compatibility-resolver-with-no-rolls",
+      "maturity": "minimum-level-may-preview-current-failure-GM-confirmation-remains-required-validation",
+      "roleOverride": "never-browser-authored",
+      "compatibleStatus": "requires-validation-never-authorized",
+      "unavailableStatus": "bounded-safe-reason-ids-only",
+      "alwaysRequiredFinalValidations": [
+        "compatibility",
+        "consent",
+        "current-revisions",
+        "location-facility",
+        "maturity",
+        "ownership-control"
+      ],
+      "operationReadSetOrSettlement": "none"
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparse": "reject",
+      "staleActorProfileTrainerOrParentRevision": "reject",
+      "ambiguousOwnership": "reject",
+      "unresolvedSpeciesGenderOrSheet": "not-selectable",
+      "randomness": "none",
+      "localPersistenceAuthority": "none"
+    },
+    "tests": {
+      "path": "tests/server/breedingParentDiscovery.test.ts",
+      "requiredCases": [
+        "owner-controlled-roster-only-and-private-field-omission",
+        "strict-roster-availability-and-Species-filtering",
+        "bounded-structural-compatibility-preview",
+        "hidden-stale-duplicate-and-filtered-selection-rejection",
+        "GM-campaign-discovery-without-authority-inference",
+        "actor-Profile-IDOR-ambiguity-and-corruption-fail-closed",
+        "unknown-enriched-sparse-accessor-and-malformed-boundary-rejection"
+      ]
+    },
+    "bindings": {
+      "compatibilityPolicyDefinitionSha256": "6a38a2ea1cf38b4d331a638ef94be2b9d1b6fb2781c668eedc84f0a6dcd7a34f",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "projectionContractDefinitionSha256": "2177141c8935978d0066bcdeea992b8c55a167bf0b4d93b32cd981b01e9eb3ce",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "projectCampaignOfferDefinitionSha256": "f9c5f9b668aca27f072d8369080fc2ff8b5517197b4f8c2e143c503bc9a0f946"
+    }
+  }
+}

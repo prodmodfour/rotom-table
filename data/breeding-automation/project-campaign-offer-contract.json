@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-project-campaign-offer-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "f9c5f9b668aca27f072d8369080fc2ff8b5517197b4f8c2e143c503bc9a0f946",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-040",
+    "genericContract": {
+      "sharedPath": "shared/campaignOperationOffers.ts",
+      "serverPath": "server/domain/campaignOperationOffers.ts",
+      "schema": "strict-plain-exact-fields-only",
+      "audiences": [
+        "gm",
+        "owner"
+      ],
+      "sources": [
+        "edge",
+        "feature",
+        "system"
+      ],
+      "identity": "deterministic-server-SHA-256-derived-offer-id",
+      "integrity": "stable-JSON-SHA-256-self-bound",
+      "identityReplay": "exact-stable-JSON-only",
+      "availability": "available-has-no-reason-unavailable-has-one-safe-typed-reason",
+      "expiry": "issued-campaign-minute-plus-exactly-one",
+      "declaration": "offer-id-offer-definition-hash-and-command-operation-id-only",
+      "clientOutcomeAuthority": "none"
+    },
+    "breedingProjection": {
+      "sharedPath": "shared/breeding/projectOffers.ts",
+      "serverPath": "server/domain/breeding/projectOffers.ts",
+      "workspaceId": "breeding",
+      "operationFamilyId": "breeding-project",
+      "actions": [
+        "breeding.project.create",
+        "breeding.project.preview"
+      ],
+      "supportedCommands": [
+        "create-breeding-project",
+        "preview-breeding"
+      ],
+      "currentAuthority": "rebuild-from-current-server-command-actor-control-effective-edge-reference-and-campaign-minute-facts",
+      "commandBinding": "full-Breeding-command-stable-JSON-SHA-256-and-operation-id",
+      "referenceBinding": "strict-self-hashed-reference-snapshot-ruleset-and-campaign-option-snapshot",
+      "securityBinding": "app-owned-security-policy-definition-SHA-256",
+      "consumption": "rebuild-current-offer-before-matching-the-three-declaration-identities",
+      "settlement": "none-offer-consumption-precedes-full-read-set-and-authorization-mechanics"
+    },
+    "ownerOffer": {
+      "audience": "owner",
+      "actor": "current-owner-Trainer-sheet-and-revision",
+      "source": "effective-Breeder-Edge",
+      "ownerControl": "same-current-authenticated-Profile-controls-command-owner-Trainer",
+      "breederControl": "same-current-authenticated-Profile-controls-command-Breeder-Trainer",
+      "breederEvidence": "exact-current-effective-Breeder-Edge-record-and-profile-control-evidence",
+      "available": "all-current-control-and-Breeder-authority-evidence-matches",
+      "missingBreeder": "safe-unavailable-offer-with-breeding.offer.breeder-edge-required",
+      "malformedOrStaleEvidence": "reject-not-unavailable",
+      "mapOrEncounterControl": "never-authority"
+    },
+    "gmOffer": {
+      "audience": "gm",
+      "actor": "authenticated-campaign-principal",
+      "source": "breeding.v1-system",
+      "trainerControlEvidence": "forbidden-at-projection-boundary",
+      "breederEdgeEvidence": "forbidden-at-projection-boundary",
+      "availability": "workflow-entry-available",
+      "authorizationEffect": "none",
+      "ownerParentConsentOrBreederOverrideEffect": "none-full-operation-authorization-remains-required"
+    },
+    "privacy": {
+      "projectedOfferAllows": [
+        "bounded-action-and-presentation-ids",
+        "current-actor-resource-and-revision-for-owner-only",
+        "source-kind-and-canonical-source-id",
+        "availability-and-safe-reason",
+        "required-input-kinds",
+        "campaign-minute-validity"
+      ],
+      "projectedOfferForbids": [
+        "actor-authority-hashes",
+        "profile-identities",
+        "control-evidence-hashes",
+        "edge-instance-identities",
+        "effective-edge-projection-hashes",
+        "command-hash-or-payload",
+        "reference-or-security-hashes",
+        "parent-identities-or-private-compatibility",
+        "ledger-roll-check-consent-or-adjudication-payloads",
+        "map-or-encounter-state"
+      ],
+      "authorityEnvelope": "server-only-never-client-projected",
+      "viewerEnforcement": "server-projection-not-client-CSS"
+    },
+    "strictness": {
+      "unknownMalformedAccessorBackedNonPlainSparseEnriched": "reject",
+      "unknownVersionOrIdentifier": "reject",
+      "changedFactsUnderIdentity": "reject",
+      "staleCampaignMinute": "reject",
+      "staleActorControlEdgeOrReference": "reject",
+      "declarationMutation": "reject",
+      "unavailableConsumption": "reject",
+      "freeTextPresentationOrOutcome": "reject",
+      "browserAuthoredAuthority": "reject"
+    },
+    "tests": {
+      "path": "tests/server/breedingProjectCampaignOffers.test.ts",
+      "requiredCases": [
+        "deterministic-owner-projection-and-exact-replay",
+        "safe-missing-Breeder-unavailable-projection",
+        "bounded-GM-system-projection-without-override-inference",
+        "current-server-reprojection-before-consumption",
+        "declaration-identity-mutation-rejection",
+        "campaign-reference-command-and-control-staleness-rejection",
+        "malformed-unknown-accessor-hash-and-unsupported-command-rejection",
+        "privacy-and-map-independence"
+      ]
+    },
+    "bindings": {
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "projectionContractDefinitionSha256": "2177141c8935978d0066bcdeea992b8c55a167bf0b4d93b32cd981b01e9eb3ce",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "edgeBreederCanonicalId": "Breeder",
+      "edgeDelegationCapabilityId": "breeding.v1",
+      "edgeDelegationRequestContract": "edge.breeder.request.v1"
+    }
+  }
+}

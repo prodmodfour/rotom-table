@@ -6,7 +6,8 @@ import {
 } from '#shared/capabilityAutomation/campaignState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
-import { pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
+import { pokemonHasActiveMarsupialBabyTemplate, pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
+import { parseAuthoritativeBreedingBabyTemplateAuthorityV1 } from '../breeding/babyTemplate'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 
 export type MarsupialRelationshipRole = 'mother' | 'baby'
@@ -77,6 +78,16 @@ const pouchMatches = (
   left: CapabilityMarsupialPouchState,
   right: CapabilityMarsupialPouchState,
 ): boolean => sameJsonValue(left, right)
+
+const hasAuthoritativeActiveBabyTemplate = (sheet: CharacterSheet): boolean => {
+  const authority = sheet.serverPrivate?.breedingBabyTemplate
+  if (!authority) return false
+  try {
+    parseAuthoritativeBreedingBabyTemplateAuthorityV1(authority)
+    return pokemonHasActiveMarsupialBabyTemplate(sheet)
+  }
+  catch { return false }
+}
 
 const hasMarsupial = (sheet: CharacterSheet): boolean => {
   try {
@@ -189,10 +200,10 @@ export const resolveMarsupialRelationship = (input: {
   if (!hasMarsupial(mother) || !hasMarsupial(baby)) {
     return corrupt(input.subjectSlug, 'marsupial-capability-missing', 'Both Marsupial participants must retain the canonical Marsupial Capability.')
   }
-  if (mother.babyTemplate === true || (mother.level ?? 0) < 25) {
+  if (hasAuthoritativeActiveBabyTemplate(mother) || (mother.level ?? 0) < 25) {
     return corrupt(input.subjectSlug, 'marsupial-mother-lifecycle-invalid', 'The Marsupial mother must be an adult outside the Baby Template lifecycle.')
   }
-  if (baby.babyTemplate !== true || (baby.level ?? 0) >= 25) {
+  if (!hasAuthoritativeActiveBabyTemplate(baby) || (baby.level ?? 0) >= 25) {
     return corrupt(input.subjectSlug, 'marsupial-baby-lifecycle-invalid', 'The Marsupial baby must retain the Baby Template below Level 25.')
   }
 

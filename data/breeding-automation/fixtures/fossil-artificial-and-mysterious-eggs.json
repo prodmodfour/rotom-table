@@ -37,21 +37,23 @@
         "breeding:BR-018",
         "breeding:BR-046",
         "breeding:BR-058",
-        "breeding:BR-066"
+        "breeding:BR-065"
       ],
       "actorAudience": "gm",
       "steps": [
-        "authorize-fossil-and-reanimation-machine",
-        "create-fossil-egg",
-        "apply-fossil-restoration-provider",
-        "incubate-and-hatch"
+        "GM designates one exact quantity-backed fossil inventory unit for a future Egg",
+        "server revalidates current effective Paleontologist, Skill prerequisite, and distinct Reanimation Machine custody",
+        "server issues command-bound bounded Species, Nature, Ability, Gender, inheritance, provider, and duration offers",
+        "server persists any required hatch-duration roll before reduction",
+        "one transaction consumes the selected fossil unit, inserts the ordinary source.kind=fossil Egg, consumes offers, settles the operation, and appends restricted refresh rows",
+        "shared campaign-clock incubation reaches ready and the ordinary begin-hatch, special, child, lineage, reward, and completion pipeline runs"
       ],
       "expected": [
-        "source-kind-fossil",
-        "starting-level-10",
-        "no-parent-snapshots",
-        "bounded-traits",
-        "same-egg-and-hatch-authority"
+        "Egg starts at Level 10 with no parents, no Breeder, no implicit inheritance, and immutable frozen source/tool/Edge/Feature evidence",
+        "Fossil Restoration, when authoritative, spends two Tutor Points and freezes one legal extra Ability",
+        "Prehistoric Bond, when authoritative, freezes the Nature-adjusted highest-stat fossil-only Held Item and uses a bounded GM offer only for an exact tie",
+        "source consumption, Egg insertion, operation result, offers, and realtime rows are atomic and exact retries never redraw or republish",
+        "accepted fossil Egg uses the same durable incubation, hatch-special, child construction, lineage, acquisition reward, and hatch completion machinery as every other Egg"
       ]
     },
     {
@@ -84,19 +86,28 @@
       "requirementIds": [
         "breeding:BR-021",
         "breeding:BR-046",
-        "breeding:BR-058"
+        "breeding:BR-058",
+        "breeding:BR-066"
       ],
       "actorAudience": "gm",
       "steps": [
-        "create-gm-egg-with-typed-reason-and-duration",
-        "attempt-arbitrary-child-patch",
-        "incubate-and-hatch"
+        "GM selects exactly one typed gm-authored, mysterious, campaign-gift, or imported provenance kind",
+        "server rebuilds current GM, owner Trainer, campaign-option, reference, and reviewed import evidence when applicable",
+        "server issues command-bound bounded Species, Nature, Basic Ability, Gender, optional inheritance, base-duration, and variation-target offers",
+        "one transaction consumes the selected offers, inserts an ordinary source.kind=gm Egg, settles the operation, and appends restricted refresh rows",
+        "attempt arbitrary child patch and stale or legacy source replay",
+        "for campaign-gift, complete a later BR-064 dual-consent transfer without changing source provenance or blueprint",
+        "incubate and hatch through the shared hatch-special, child, lineage, acquisition-reward, and completion pipeline"
       ],
       "expected": [
-        "source-kind-gm",
-        "audit-reason-retained",
+        "source-kind-gm-with-closed-self-hashed-provenance",
+        "legacy-three-field-GM-source-is-read-only-and-cannot-authorize-new-creation",
+        "imported-Egg-requires-current-reviewed-record-and-receipt-hashes",
+        "owner-projection-and-realtime-redact-private-provenance",
+        "gift-transfer-preserves-source-and-blueprint-byte-for-byte",
         "arbitrary-patch-rejected",
-        "compiled-child-construction"
+        "compiled-child-construction-and-shared-hatch-transaction",
+        "rollback-recovery-and-exact-retry-never-redraw-or-republish"
       ]
     },
     {
@@ -104,20 +115,22 @@
       "requirementIds": [
         "breeding:BR-006",
         "breeding:BR-018",
-        "breeding:BR-068"
+        "breeding:BR-067"
       ],
       "actorAudience": "gm",
       "steps": [
         "create-kangaskhan-blueprint",
-        "apply-effective-marsupial-provider",
-        "hatch-and-link-mother",
+        "freeze-forced-Marsupial-provider-and-Baby-Template",
+        "complete-hatch-with-current-mother-and-optional-Parental-Bond-handoff",
+        "atomically-link-reciprocal-pouch",
         "advance-child-to-level-25"
       ],
       "expected": [
         "forced-minus-5-baby-template",
-        "pouch-lineage",
-        "provider-definition-hash",
-        "template-removal-at-level-25"
+        "server-private-provider-and-parent-handoff-hashes",
+        "atomic-reciprocal-pouch",
+        "template-and-pouch-removal-at-level-25",
+        "no-Species-reference-mutation"
       ]
     }
   ]

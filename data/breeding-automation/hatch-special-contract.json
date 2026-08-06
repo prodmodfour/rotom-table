@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-pokemon-egg-hatch-special-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "422c22f2359eadebb1aeb0e03eeb0001ad3bd4bf691515d135256e7e000df024",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-055",
+    "implementation": {
+      "sharedContractPath": "shared/breeding/hatchSpecial.ts",
+      "domainReducerPath": "server/domain/breeding/hatchSpecial.ts",
+      "authorizationPath": "server/domain/breeding/hatchSpecialAuthorization.ts",
+      "repositoryPaths": [
+        "server/storage/breedingRollRepository.ts",
+        "server/storage/breedingGmAdjudicationRepository.ts",
+        "server/storage/breedingOptionOfferRepository.ts",
+        "server/storage/pokemonEggRepository.ts"
+      ],
+      "transactionCoordinatorPath": "server/useCases/executeBreedingTransaction.ts",
+      "useCasePath": "server/useCases/managePokemonEggHatchSpecial.ts",
+      "testPath": "tests/server/breedingHatchSpecial.test.ts"
+    },
+    "commands": {
+      "begin": {
+        "kind": "begin-hatch",
+        "scope": "exactly-one-current-ready-Pokemon-Egg-revision",
+        "destination": "exact-current-owner-box-or-team-from-BR-054",
+        "offer": "exact-current-consumed-BR-054-authority-and-declaration",
+        "requestSpecialRoll": true
+      },
+      "resolve": {
+        "kind": "resolve-hatch-special",
+        "scope": "exactly-one-current-awaiting-special-Pokemon-Egg-revision",
+        "actor": "current-authenticated-GM-campaign-principal-only",
+        "choice": "one-option-from-the-exact-active-bounded-offer"
+      },
+      "clientAuthority": "none"
+    },
+    "authority": {
+      "begin": [
+        "exact-command-and-operation-hash",
+        "current-Egg-document-revision-and-hash",
+        "current-owner-Trainer-document-revision-and-hash",
+        "current-campaign-clock-minute-and-revision",
+        "exact-current-app-reference-snapshot",
+        "frozen-campaign-option-snapshot-hash-retained-by-Egg",
+        "current-actor-and-owner-control-or-GM-campaign-authority",
+        "exact-BR-054-hatch-offer-authority-and-declaration",
+        "security-policy",
+        "complete-read-set-and-one-complete-dependency-attestation"
+      ],
+      "resolve": [
+        "exact-command-and-operation-hash",
+        "current-awaiting-Egg-document-revision-and-hash",
+        "current-active-offer-and-pending-adjudication-revisions-and-hashes",
+        "current-campaign-clock",
+        "current-GM-campaign-authority",
+        "current-app-reference-snapshot",
+        "security-policy",
+        "complete-read-set-and-one-complete-dependency-attestation"
+      ],
+      "dependencyProviderId": "breeding-hatch-special-policy-v1",
+      "beginCheckpoint": "begin-hatch",
+      "resolveCheckpoint": "hatch-transaction",
+      "mapEncounterBrowserWallClock": "never-authority"
+    },
+    "roll": {
+      "countPerEgg": 1,
+      "purpose": "hatch-special-d100",
+      "formula": "1d100",
+      "ordinal": 0,
+      "generator": "server-rng-v1",
+      "target": "exact-ready-Egg-ID-and-revision",
+      "identity": "deterministic-begin-operation-and-Egg-bound",
+      "sourceHashes": [
+        "Egg-document",
+        "Egg-ruleset",
+        "campaign-option-snapshot",
+        "BR-054-hatch-offer-authority",
+        "hatch-special-policy",
+        "hatch-special-effective-evidence"
+      ],
+      "persistence": "phase-1-caller-owned-transaction-before-reducer",
+      "duplicatePolicy": "repository-enforces-zero-or-one-hatch-special-roll-per-Egg",
+      "recovery": "reuse-the-existing-command-bound-roll-and-never-redraw"
+    },
+    "reducer": {
+      "ordinaryTotals": "2-through-99",
+      "specialTotals": [
+        1,
+        100
+      ],
+      "ordinaryTransition": "ready-to-hatching-with-normal-special-state",
+      "specialTransition": "ready-to-awaiting-special-adjudication-with-pending-special-state",
+      "providerForce": "fail-closed-until-BR-062",
+      "configuredBoundedTable": "unavailable-until-reviewed-and-hash-bound",
+      "automaticShiny": false,
+      "missingExtraneousOrInvalidRoll": "reject"
+    },
+    "boundedAdjudication": {
+      "kind": "hatch-special-result",
+      "mode": "bounded-option",
+      "chooserPrincipalId": "campaign-gm",
+      "offerExpiry": null,
+      "outcomeIds": [
+        "breeding.hatch-special.outcome.campaign-significance",
+        "breeding.hatch-special.outcome.distinctive-appearance",
+        "breeding.hatch-special.outcome.distinctive-temperament"
+      ],
+      "outcomeMechanics": "no-automatic-mechanical-change",
+      "shinyOption": "absent",
+      "freeTextOutcome": "forbidden",
+      "identity": "deterministic-begin-operation-and-Egg-bound-offer-adjudication-and-options",
+      "settlement": "one-active-option-consumed-once-by-current-GM",
+      "actualGmAudit": "resolve-operation-authorization-receipt-retains-authenticated-principal-evidence"
+    },
+    "transactions": {
+      "phase1": "reserve-operation-then-atomically-persist-exact-read-set-receipt-and-complete-roll",
+      "beginPhase2": "Egg-successor-offer-pending-adjudication-operation-result-and-four-realtime-rows-all-commit-or-all-roll-back",
+      "resolvePhase2": "Egg-successor-consumed-offer-resolved-adjudication-operation-result-and-four-realtime-rows-all-commit-or-all-roll-back",
+      "publication": "post-commit-only",
+      "exactRetry": "no-Egg-revision-ledger-revision-roll-event-or-publication-duplication",
+      "phase2Failure": "retain-only-recoverable-pending-reservation-authority-evidence-and-single-roll"
+    },
+    "lifecycle": {
+      "normal": "ready-to-hatching",
+      "triggered": "ready-to-awaiting-special-adjudication-to-hatching",
+      "hatchOperationId": "immutable-original-begin-hatch-operation",
+      "resolutionOperation": "retained-as-last-operation-and-ledger-settlement",
+      "EggSpecialFields": "persist-roll-ID-total-triggers-and-closed-resolution-link",
+      "destination": "retained-by-the-original-command-ledger-for-BR-057"
+    },
+    "projection": {
+      "ownerAllows": [
+        "Egg-ID-revision-and-coarse-status",
+        "normal-pending-or-resolved-state",
+        "GM-decision-required-boolean",
+        "resolved-closed-outcome-ID",
+        "generated-campaign-minute"
+      ],
+      "ownerForbids": [
+        "roll-ID-and-total",
+        "trigger-IDs",
+        "offer-adjudication-identities-and-status",
+        "bounded-option-inventory",
+        "authority-hashes-commands-read-sets-receipts-provider-evidence",
+        "blueprint-lineage-Trainer-roster-and-control"
+      ],
+      "gmAllows": [
+        "owner-safe-fields",
+        "roll-ID-total-and-trigger-IDs",
+        "offer-and-adjudication-identities-and-coarse-status",
+        "bounded-option-IDs-outcome-IDs-and-presentation-message-IDs"
+      ],
+      "gmForbids": [
+        "commands-read-sets-receipts-authority-hashes",
+        "owner-roster-profile-control-consent",
+        "blueprint-parent-Breeder-and-provider-payloads"
+      ],
+      "privacyEnforcement": "server-projection-only-never-client-CSS"
+    },
+    "archiveAndStorage": {
+      "roll": "generic-breeding-rolls-table-with-Egg-singleton-repository-invariant",
+      "offer": "generic-breeding-option-offers-table",
+      "adjudication": "generic-breeding-gm-adjudications-table-with-new-strict-repository",
+      "schemaVersion": "unchanged-v24-no-new-table-or-column",
+      "backupLinks": "Egg-roll-offer-adjudication-commands-and-resolution-must-cross-link-exactly"
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparseContradictory": "reject-before-mechanics",
+      "staleEggTrainerClockReferenceOptionOfferAdjudicationActorOrReceipt": "reject",
+      "asyncFaultingOrNonTrueGmVerifier": "reject",
+      "providerContributionBeforeIntegration": "reject",
+      "randomReducerInput": "persisted-injected-roll-only",
+      "ledgerIdentity": "exact-stable-JSON-replay-only"
+    },
+    "tests": {
+      "focusedCount": 7,
+      "requiredCases": [
+        "ordinary-result-single-roll-owner-privacy-and-exact-retry",
+        "roll-1-bounded-workflow-and-no-Shiny",
+        "roll-100-bounded-workflow-and-no-Shiny",
+        "GM-option-consumption-and-atomic-settlement",
+        "phase-2-rollback-single-roll-no-redraw-recovery",
+        "invalid-random-stale-enriched-provider-and-authority-fail-closed",
+        "default-bounded-policy-and-closed-non-Shiny-outcomes"
+      ]
+    },
+    "bindings": {
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "hatchOfferContractDefinitionSha256": "d8b699d0a653651de87f1f03ffe109f33fd2fe6f03065805d0ef05d4d0818561",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "runtimePolicyDefinitionSha256": "dea894103ccc00bc4f271fbdc23c05eb937bc6f28afc95d50fc20cf6daf8305d",
+      "runtimeEvidenceDefinitionSha256": "8ae720138b142ae86979758a37ac28142456830f6318a013196b784df66eafc0"
+    }
+  }
+}

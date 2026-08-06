@@ -2,6 +2,7 @@ import type { CharacterSheet, CharacterSheetGm } from '~/types/characterSheet'
 
 export const POKEMON_GM_FIELD = 'gm'
 export const POKEMON_SERVER_PRIVATE_FIELD = 'serverPrivate'
+export const POKEMON_BABY_TEMPLATE_MECHANICS_FIELD = 'babyTemplateMechanics'
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -42,6 +43,8 @@ const POKEMON_PLAYER_HIDDEN_AUTHORITY_FIELDS = Object.freeze([
 const PLAYER_HIDDEN_AUTOMATION_FIELDS = Object.freeze([
   'capabilityUsage',
   'capabilityCampaignState',
+  POKEMON_SERVER_PRIVATE_FIELD,
+  POKEMON_BABY_TEMPLATE_MECHANICS_FIELD,
 ] as const)
 
 export const preservePlayerHiddenAutomationFieldsForSave = <TSheet extends Record<string, unknown>>(
@@ -77,9 +80,12 @@ export const preservePokemonServerPrivateFieldsForSave = <TSheet extends Record<
   current: Record<string, unknown>,
 ): TSheet => {
   const preserved: Record<string, unknown> = { ...candidate }
-  if (hasOwn(current, POKEMON_SERVER_PRIVATE_FIELD)) {
-    preserved[POKEMON_SERVER_PRIVATE_FIELD] = current[POKEMON_SERVER_PRIVATE_FIELD]
-  }
+  if (hasOwn(current, POKEMON_SERVER_PRIVATE_FIELD)) preserved[POKEMON_SERVER_PRIVATE_FIELD] = current[POKEMON_SERVER_PRIVATE_FIELD]
   else delete preserved[POKEMON_SERVER_PRIVATE_FIELD]
+  const serverPrivate = isRecord(current[POKEMON_SERVER_PRIVATE_FIELD]) ? current[POKEMON_SERVER_PRIVATE_FIELD] : null
+  if (serverPrivate && hasOwn(serverPrivate, 'breedingBabyTemplate') && hasOwn(current, POKEMON_BABY_TEMPLATE_MECHANICS_FIELD)) {
+    preserved[POKEMON_BABY_TEMPLATE_MECHANICS_FIELD] = current[POKEMON_BABY_TEMPLATE_MECHANICS_FIELD]
+  }
+  else delete preserved[POKEMON_BABY_TEMPLATE_MECHANICS_FIELD]
   return preserved as TSheet
 }

@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-repositories-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "d15c11f9f360d1ebd603feee8ec1506be9262d58f20bc9f753f5af979fa823b5",
+  "definition": {
+    "version": 1,
+    "repositories": [
+      {
+        "id": "breeding-project",
+        "path": "server/storage/breedingProjectRepository.ts",
+        "table": "breeding_projects",
+        "identity": "projectId",
+        "revisioned": true,
+        "deletable": false
+      },
+      {
+        "id": "pokemon-egg",
+        "path": "server/storage/pokemonEggRepository.ts",
+        "table": "pokemon_eggs",
+        "identity": "eggId",
+        "revisioned": true,
+        "deletable": false
+      },
+      {
+        "id": "breeding-consent",
+        "path": "server/storage/breedingConsentRepository.ts",
+        "table": "breeding_consents",
+        "identity": "consentId",
+        "revisioned": true,
+        "deletable": false
+      },
+      {
+        "id": "pokemon-egg-transfer-consent",
+        "path": "server/storage/pokemonEggTransferConsentRepository.ts",
+        "table": "pokemon_egg_transfer_consents",
+        "identity": "consentId",
+        "revisioned": true,
+        "deletable": false
+      },
+      {
+        "id": "trainer-species-acquisition",
+        "path": "server/storage/trainerSpeciesAcquisitionRepository.ts",
+        "table": "trainer_species_acquisitions",
+        "identity": [
+          "trainerSheetSlug",
+          "speciesId"
+        ],
+        "revisioned": false,
+        "deletable": false
+      }
+    ],
+    "read": {
+      "json": "JSON-parse-then-strict-authoritative-contract-then-byte-semantic-stable-JSON-match",
+      "duplicateColumns": "must-exactly-match-document",
+      "canonicalReferences": "server-app-owned-membership-required",
+      "malformedStoredRows": "bounded-corruption-error-no-payload",
+      "pageMaximum": 100,
+      "unboundedList": "forbidden"
+    },
+    "insert": {
+      "initialRevision": 0,
+      "identityCollision": "exact-stable-JSON-replay-only",
+      "changedFactCollision": "reject",
+      "writeJson": "stable-json-v1",
+      "operationForeignKey": "required"
+    },
+    "replace": {
+      "expectedRevision": "required-safe-integer",
+      "successor": "exactly-plus-one-and-domain-lifecycle-valid",
+      "compareAndSwap": "UPDATE-WHERE-identity-and-expected-revision",
+      "outcomes": [
+        "applied",
+        "missing",
+        "stale"
+      ],
+      "terminalRewrite": "forbidden"
+    },
+    "acquisition": {
+      "firstKey": [
+        "trainerSheetSlug",
+        "speciesId"
+      ],
+      "immutableFirstFacts": [
+        "trainerRevisionBeforeReward",
+        "trainerSheetUpdatedAt",
+        "sourceKind",
+        "firstAcquiredAtCampaignMinute",
+        "sourceEggId",
+        "operationId"
+      ],
+      "exactReplay": "return-existing",
+      "changedFacts": "identity-collision",
+      "speciesMembership": "all-app-owned-canonical-Species",
+      "deleteInference": "forbidden"
+    },
+    "transaction": {
+      "owner": "use-case",
+      "repositoryBeginsIndependentTransaction": false,
+      "callerOwnedSQLiteTransactionParticipation": true,
+      "multiAggregateAtomicity": "caller-coordinated",
+      "rollback": "all-participating-writes"
+    },
+    "privacy": {
+      "repositoryPayloads": "server-private",
+      "errors": "identity-and-field-only",
+      "browserAccess": "none",
+      "localPersistence": "none"
+    },
+    "authority": {
+      "mapDependency": "none",
+      "encounterDependency": "none",
+      "eggSheetKind": "none",
+      "legacyFields": "none",
+      "runtimeReferences": "app-owned-only"
+    },
+    "bindings": {
+      "storageSchemaDefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "archiveContractDefinitionSha256": "ed6e1663cc0fba166914985ad7f5aff44a752a4cc98c0b05d87a28082ce4dbd7",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "transferStorageSchemaV26DefinitionSha256": "c5426224c9448a95eb8074559c3b292c31aabaf08187012f08de9c4cd7b85c36"
+    },
+    "transferConsent": {
+      "activeRevision": 0,
+      "terminalRevision": 1,
+      "exactReplay": "return-existing",
+      "activeUniqueness": "one-role-per-Egg-revision",
+      "mutation": "caller-owned-transaction-only",
+      "consumption": "both-records-in-same-Egg-transfer-transaction"
+    }
+  }
+}

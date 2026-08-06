@@ -25,7 +25,8 @@ import { capabilityActorCanTakeAction } from './actionEligibility'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
 import { CAPABILITY_AUTOMATION_RUNTIME_REGISTRY } from './registry'
 import { computePokemonTutorPointsEarnedForSheet } from '~/utils/sheets/pokemonTutorPoints'
-import { resolveSkills } from '~/utils/sheets/pokemonDerived'
+import { pokemonMarsupialBabyActionRestricted, resolveSkills } from '~/utils/sheets/pokemonDerived'
+import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import { hasPokemonCapabilityEdge } from '#shared/capabilityAutomation/pokemonEdges'
 import {
@@ -953,13 +954,15 @@ export const buildCapabilityClientCapabilityBundle = (
       })
     })
     const offers: CapabilityClientActionOffer[] = []
+    const parentalBondActive = placement.sheetKind === 'pokemon'
+      && effectiveRuntimeAbilityIds({ map: input.map, placement, sheet }).includes('Parental Bond')
     const independentActionBlocked = (
       placement.sheetKind === 'pokemon'
-      && (Boolean((sheet as CharacterSheet).babyTemplate)
+      && (pokemonMarsupialBabyActionRestricted(sheet as CharacterSheet, parentalBondActive ? ['Parental Bond'] : [])
         || Boolean((sheet as CharacterSheet).letterPressCombinedInto)
         || Boolean((sheet as CharacterSheet).zygardeDisassembledIntoCells))
     ) || (input.map.encounterState?.capabilityRuntime?.links ?? []).some(link => (
-      (link.kind === 'as-one-mount' || link.kind === 'viral-fusion' || link.kind === 'marsupial-pouch')
+      (link.kind === 'as-one-mount' || link.kind === 'viral-fusion' || (link.kind === 'marsupial-pouch' && !parentalBondActive))
       && link.participantPlacementIds.includes(placement.id)
       && effectiveInstanceIdsFor(link.ownerPlacementId).has(link.capabilityInstanceId)
     ))

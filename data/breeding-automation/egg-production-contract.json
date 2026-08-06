@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-egg-production-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "6076ce38cc423e74f991c22c96dd41f1e5be5a903a0e528dabd5678da268814a",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-048",
+    "implementation": {
+      "sharedPath": "shared/breeding/eggProduction.ts",
+      "domainPath": "server/domain/breeding/eggProduction.ts",
+      "useCasePath": "server/useCases/produceBreedingProjectEgg.ts",
+      "coordinatorPath": "server/useCases/executeBreedingTransaction.ts",
+      "testPath": "tests/server/breedingEggProduction.test.ts"
+    },
+    "command": {
+      "kind": "produce-egg",
+      "projectPrecondition": "ready-to-produce-with-exact-successful-check",
+      "EggPrecondition": "declared-absent-revision-null",
+      "authority": [
+        "complete-current-read-set",
+        "positive-security-policy-bound-authorization-receipt",
+        "BR-046-snapshot-inputs-rebuilt-from-current-storage",
+        "current-parent-and-Breeder-sheet-revisions",
+        "current-cross-owner-consent",
+        "current-selected-offers",
+        "exact-campaign-clock"
+      ]
+    },
+    "phaseOne": {
+      "reservation": "durable-operation-before-randomness",
+      "evidence": "immutable-read-set-and-authorization-pair",
+      "rollPersistence": "one-caller-transaction-per-complete-roll-before-that-reducer",
+      "partialRandomFailure": "earlier-complete-rolls-remain-bound-to-pending-operation",
+      "rollIdentity": "deterministic-operation-and-gap-free-ordinal",
+      "recovery": "reuse-every-existing-roll-and-draw-only-the-first-missing-declared-roll",
+      "terminalRetry": "draw-nothing"
+    },
+    "phaseTwo": {
+      "owner": "one-top-level-synchronous-BR-037-coordinator-transaction",
+      "reads": [
+        "Project",
+        "successful-check",
+        "campaign-clock",
+        "parent-and-Breeder-sheets",
+        "cross-owner-consent",
+        "selected-offers",
+        "operation-evidence",
+        "persisted-rolls"
+      ],
+      "plans": [
+        "fresh-BR-046-production-snapshot",
+        "BR-047-offspring-resolution",
+        "fixed-average-incubation",
+        "Project-successor",
+        "Egg-revision-zero"
+      ],
+      "writes": [
+        "selected-offer-consumed-successors",
+        "Pokemon-Egg-insert",
+        "Project-CAS-to-egg-produced",
+        "terminal-operation-result",
+        "durable-realtime-refresh-rows"
+      ],
+      "rollback": "all-phase-two-writes-and-events-absent-while-phase-one-evidence-and-rolls-remain-recoverable"
+    },
+    "Egg": {
+      "aggregate": "dedicated-PokemonEggDocument-v1-not-a-sheet-inventory-map-or-Pokemon",
+      "revision": 0,
+      "status": "incubating",
+      "source": "breeding-Project-ID",
+      "owner": "immutable-Project-owner-Trainer",
+      "ruleset": "immutable-Project-ruleset",
+      "parentsAndBreeder": "exact-BR-046-snapshots",
+      "offspring": "exact-BR-047-blueprint",
+      "definitionHashes": "strict-sorted-unique-resolution-snapshot-roll-offer-policy-registry-duration-closure",
+      "incubation": {
+        "accumulatedCampaignMinutes": 0,
+        "clockCheckpoint": "exact-production-campaign-clock",
+        "variation": "fixed-average-only-until-BR-050",
+        "paused": false
+      },
+      "special": "not-rolled-and-never-implicitly-Shiny",
+      "child": "none-before-hatch"
+    },
+    "Project": {
+      "revision": "exactly-plus-one",
+      "transition": "ready-to-produce-to-egg-produced",
+      "producedEggId": "exact-inserted-Egg",
+      "eggProducedAtCampaignMinute": "exact-production-clock-minute",
+      "checkParentsRulesetOwnerBreeder": "immutable",
+      "secondEgg": "impossible"
+    },
+    "consentAndChoices": {
+      "sameOwner": "zero-consent-rows",
+      "crossOwner": "current-positive-record-revalidated-inside-phase-two",
+      "expiryEquality": "invalid",
+      "gmOverrideAsConsent": "forbidden",
+      "selectedOffer": "current-revision-zero-Project-actor-rank-read-set-and-receipt-bound",
+      "consumption": "same-transaction-as-Egg-and-Project-or-not-at-all"
+    },
+    "realtime": {
+      "ProjectAudiences": [
+        "diagnostic",
+        "gm",
+        "owner",
+        "participating-owner",
+        "public"
+      ],
+      "EggAudiences": [
+        "diagnostic",
+        "gm",
+        "owner",
+        "public"
+      ],
+      "participatingOwnerEggAudience": "forbidden",
+      "payload": "refresh-only-aggregate-revision-operation-and-access",
+      "publication": "post-commit-only",
+      "exactRetry": "no-new-row-or-publication"
+    },
+    "projection": {
+      "audiences": [
+        "gm",
+        "owner"
+      ],
+      "allows": [
+        "produced-status",
+        "Egg-ID-and-revision",
+        "Project-revision",
+        "production-campaign-minute",
+        "breeding-source-and-incubating-status"
+      ],
+      "forbids": [
+        "parents-Breeder-cross-owner-consent-Profiles-and-Trainers",
+        "Species-Nature-Ability-Gender-inheritance-and-private-mechanics",
+        "rolls-offers-options-read-sets-receipts-and-hashes",
+        "maps-encounters-scenes-browser-and-wall-clock-state"
+      ]
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparse": "reject",
+      "staleProjectCheckClockParentBreederConsentOfferReferenceOrPolicy": "fail-closed",
+      "clientRollValuesTotalsEffectsOrPatches": "never-authority",
+      "nonFixedDuration": "unavailable-until-BR-050",
+      "providerContribution": "unavailable-until-reviewed-BR-061-or-BR-062-reducer",
+      "runtimeAuthority": "app-owned-JSON-compiled-artifacts-current-storage-and-durable-ledgers-only"
+    },
+    "tests": {
+      "count": 11,
+      "requiredCases": [
+        "atomic-random-production-and-bounded-projection",
+        "exact-terminal-retry-without-reroll-revision-or-publication",
+        "phase-two-rollback-and-explicit-no-reroll-recovery",
+        "selected-offer-consumed-with-Egg-and-Project",
+        "offer-consumption-rollback-and-recovery",
+        "partial-random-source-failure-retains-earlier-roll",
+        "transactional-cross-owner-consent-and-private-projection",
+        "stale-parent-no-draw-rejection",
+        "stale-clock-no-draw-rejection",
+        "malformed-enriched-accessor-unauthorized-and-wrong-command-rejection",
+        "file-database-restart-durability"
+      ]
+    },
+    "bindings": {
+      "offspringProductionContractDefinitionSha256": "298b4dcc956099a4d7428df17ef80a5842ba31f91b865efeca7ed127cb265682",
+      "productionSnapshotContractDefinitionSha256": "aa6e4365b417b02dc94dcf9cae76270d4502b2c7264c92985fdef687c641e18d",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67"
+    }
+  }
+}

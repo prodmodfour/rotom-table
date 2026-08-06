@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-offspring-production-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "298b4dcc956099a4d7428df17ef80a5842ba31f91b865efeca7ed127cb265682",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-047",
+    "implementation": {
+      "sharedPath": "shared/breeding/offspringProduction.ts",
+      "domainPath": "server/domain/breeding/offspringProduction.ts",
+      "rollRepositoryPath": "server/storage/breedingRollRepository.ts",
+      "optionOfferRepositoryPath": "server/storage/breedingOptionOfferRepository.ts",
+      "testPath": "tests/server/breedingOffspringProduction.test.ts"
+    },
+    "authorityBoundary": {
+      "commandKind": "produce-egg",
+      "checkpoint": "egg-acceptance",
+      "inputAuthority": [
+        "exact-BR-046-production-snapshot",
+        "persisted-server-roll-records",
+        "active-server-issued-option-offers",
+        "current-app-owned-compiled-authorities"
+      ],
+      "clientAuthority": "selected-option-IDs-and-requested-roll-kinds-are-declarations-only",
+      "standaloneResolutionAuthority": "none-the-strict-resolution-record-and-offer-successors-must-commit-with-the-BR-048-Egg-transaction"
+    },
+    "rolls": {
+      "persistence": "caller-transaction-SQLite-breeding-roll-ledger-before-reduction",
+      "operationOrdinals": "gap-free-from-zero-and-exact-command-declared-order",
+      "closedMappings": {
+        "offspring-family": "offspring-family-d20",
+        "nature": "nature-ordered-2d6",
+        "ability": "ability-uniform-index",
+        "gender": "gender-d100"
+      },
+      "bindings": [
+        "operation-and-full-command-hash",
+        "Project-ID-and-revision",
+        "production-snapshot-and-ruleset",
+        "offspring-and-trait-policy-hashes",
+        "Nature-catalog-canonical-ID-and-compiled-registry-hashes",
+        "exact-campaign-minute"
+      ],
+      "abilityUniformity": "die-sides-equal-exact-sorted-Basic-Ability-count",
+      "missingExtraneousReorderedStaleOrBiased": "reject-without-ambient-randomness",
+      "replay": "stable-roll-ID-and-operation-ordinal-permit-exact-stable-JSON-replay-only"
+    },
+    "familyAndSpecies": {
+      "resolver": "reviewed-offspring-resolution-policy",
+      "supportedSelectionKinds": [
+        "canonical-ditto",
+        "core-d20",
+        "gm-family-choice",
+        "maternal-family"
+      ],
+      "bindings": [
+        "frozen-parent-order-and-role",
+        "compiled-Family-and-root-Species",
+        "family-roll-or-bounded-family-offer",
+        "bounded-Species-override-offer"
+      ],
+      "unresolvedAmbiguousOrStale": "fail-closed"
+    },
+    "traits": {
+      "nature": "ordered-2d6-or-Adept-bounded-choice",
+      "ability": "uniform-index-over-sorted-Basic-Abilities-or-Expert-bounded-choice",
+      "gender": "exact-d100-ratio-fixed-genderless-or-Master-bounded-choice",
+      "choiceRule": "exactly-one-current-active-unexpired-at-strict-inequality-actor-bound-rank-authorized-offer-per-selected-option",
+      "expiryEquality": "expired",
+      "simultaneousChoiceAndRollOrWrongCanonicalValue": "reject"
+    },
+    "inheritance": {
+      "inputs": "frozen-parent-effective-known-Move-snapshots-from-production-authority",
+      "pathways": [
+        "child-egg-move",
+        "child-machine-compatible"
+      ],
+      "candidateSource": "parent-index-reference-Species-pathway-and-complete-known-Move-evidence",
+      "conversion": "adds-only-the-closed-parent-source-kind-without-changing-the-resolver-candidate-set",
+      "parentlessSourceAuthority": "not-accepted-for-breeding-project-production",
+      "postAcceptanceParentDrift": "cannot-rewrite-the-blueprint"
+    },
+    "blueprint": {
+      "contains": [
+        "canonical-Species-and-Family-root",
+        "Species-spec-hash",
+        "resolved-Nature-Ability-and-Gender",
+        "frozen-inheritance-candidates",
+        "starting-Level",
+        "Baby-Template-result"
+      ],
+      "babyTemplate": "disabled-or-one-policy-bound-campaign-choice; Kangaskhan-forces-reviewed-Marsupial-minus-5",
+      "selfHash": "verified-with-every-nested-snapshot-and-canonical-authority",
+      "acceptedDefinitionClosure": "snapshot-blueprint-roll-offer-policy-registry-inheritance-starting-Level-and-template-hashes"
+    },
+    "offers": {
+      "storage": "immutable-active-revision-zero-document-and-one-monotonic-terminal-revision-one-successor",
+      "selectionLookup": "bounded-Project-and-option-ID-JSON-index-query",
+      "consumption": "planned-as-consumed-with-exact-settlement-operation-command-hash-and-campaign-minute",
+      "atomicity": "consumed-successors-are-applied-only-in-the-BR-048-Egg-settlement-transaction",
+      "identity": "exact-stable-JSON-replay-only",
+      "babyTemplateIssuance": "server-derived-Project-revision-operation-and-frozen-campaign-option-bound-decline-or-size-values",
+      "babyTemplateValueHash": "reviewed-runtime-policy-canonical-value-and-frozen-campaign-option-snapshot"
+    },
+    "resolutionRecord": {
+      "schema": "strict-plain-exact-fields-non-enriched-bounded-deeply-frozen-and-self-hashed",
+      "contains": [
+        "production-snapshot",
+        "family-resolution-evidence",
+        "offspring-blueprint",
+        "exact-roll-ID-set",
+        "selected-offer-evidence",
+        "source-evidence-hash-closure",
+        "resolution-campaign-minute"
+      ],
+      "crossChecks": [
+        "command-Project-Egg-and-revision",
+        "family-Species-and-blueprint",
+        "all-roll-references",
+        "all-bounded-option-references",
+        "current-canonical-Species-Family-Nature-and-Basic-Ability",
+        "parent-Move-evidence-and-child-pathway"
+      ]
+    },
+    "projection": {
+      "audiences": [
+        "gm",
+        "owner"
+      ],
+      "allows": [
+        "prepared-status",
+        "resolution-campaign-minute",
+        "traits-resolved-boolean",
+        "inheritance-frozen-boolean"
+      ],
+      "forbids": [
+        "Species-Family-Nature-Ability-Gender-and-Moves",
+        "parents-Breeder-Trainers-owners-and-Profiles",
+        "rolls-offers-options-evidence-commands-and-hashes",
+        "map-encounter-scene-browser-wall-clock-and-private-provider-data"
+      ]
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparseUnresolvedExtraneous": "reject",
+      "providerContributions": "only-reviewed-checkpoint-specific-contributions-execute; distinct-parent-cardinality-is-Serpents-Mark-only",
+      "runtimeAuthority": "app-owned-JSON-compiled-artifacts-durable-ledgers-and-current-server-authority-only",
+      "documentaryRuntimeRead": "forbidden"
+    },
+    "tests": {
+      "count": 15,
+      "requiredCases": [
+        "random-family-and-traits-with-complete-source-closure",
+        "inheritance-pathway-and-parent-known-Move-provenance",
+        "rank-bounded-Ability-choice-and-random-roll-removal",
+        "offer-expiry-equality-actor-and-rank-rejection",
+        "optional-Baby-Template-server-issuance-policy-hash-and-Marsupial-separation",
+        "bounded-projection-privacy",
+        "missing-extraneous-reordered-stale-and-biased-roll-rejection",
+        "unknown-accessor-enriched-and-hash-tamper-rejection",
+        "gap-free-durable-roll-ledger-and-exact-replay",
+        "immutable-offer-persistence-lookup-consumption-and-CAS",
+        "undeclared-roll-purpose-and-ordinal-gap-rejection",
+        "stable-hash-and-no-ambient-randomness",
+        "wrong-command-and-malformed-provider-failure"
+      ]
+    },
+    "bindings": {
+      "productionSnapshotContractDefinitionSha256": "aa6e4365b417b02dc94dcf9cae76270d4502b2c7264c92985fdef687c641e18d",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "lineageContractDefinitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "repositoryContractDefinitionSha256": "d15c11f9f360d1ebd603feee8ec1506be9262d58f20bc9f753f5af979fa823b5"
+    },
+    "extendedByTicket": "BR-067"
+  }
+}

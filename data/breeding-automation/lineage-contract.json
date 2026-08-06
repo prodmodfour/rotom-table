@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "contractId": "ptu-1.05-pokemon-breeding-lineage-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1",
+  "definition": {
+    "version": 1,
+    "parentSnapshot": {
+      "fields": [
+        "schemaVersion",
+        "parentIndex",
+        "pokemonSheetSlug",
+        "displayNameAtSnapshot",
+        "ownerTrainerSlug",
+        "sheetRevision",
+        "sourceSheetSha256",
+        "speciesId",
+        "familyRootSpeciesId",
+        "speciesSpecDefinitionSha256",
+        "genderId",
+        "roleId",
+        "roleEvidenceDefinitionSha256",
+        "level",
+        "maturity",
+        "eggGroupIds",
+        "effectiveKnownMoves",
+        "effectiveMoveSnapshotDefinitionSha256",
+        "controlEvidenceDefinitionSha256",
+        "capturedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "maturityFields": [
+        "policyId",
+        "minimumLevel",
+        "gmConfirmed",
+        "eligible",
+        "evidenceDefinitionSha256"
+      ],
+      "effectiveKnownMoveFields": [
+        "moveId",
+        "evidence"
+      ],
+      "effectiveKnownMoveMaximum": 64,
+      "order": "parent-index-0-then-1",
+      "roles": "complementary-female-parent-and-male-parent",
+      "acceptedMaturity": "eligible-required",
+      "selfHash": "stable-json-v1-of-all-fields-except-definitionSha256-verified-server-side",
+      "laterParentMutation": "no-effect"
+    },
+    "origin": {
+      "exactFields": [
+        "schemaVersion",
+        "originId",
+        "eggId",
+        "sourceEggRevision",
+        "sourceEggDocumentSha256",
+        "source",
+        "ruleset",
+        "definitionHashes",
+        "parents",
+        "breeder",
+        "offspring",
+        "special",
+        "ownerTrainerSlugAtHatch",
+        "childSheetSlug",
+        "hatchedAtCampaignMinute",
+        "hatchOperationId",
+        "settlementOperationId",
+        "inheritanceLearningRecords",
+        "lineageDefinitionSha256"
+      ],
+      "identity": "pokemon-breeding-origin:v1:<32-lowercase-hex>",
+      "source": "exact-frozen-Egg-source",
+      "acceptedFacts": [
+        "ruleset",
+        "definitionHashes",
+        "parents",
+        "breeder",
+        "offspring"
+      ],
+      "terminalSpecialStates": [
+        "normal",
+        "resolved"
+      ],
+      "eggBinding": [
+        "sourceEggRevision",
+        "sourceEggDocumentSha256",
+        "eggId",
+        "childSheetSlug",
+        "hatchOperationId",
+        "hatchedAtCampaignMinute",
+        "settlementOperationId"
+      ],
+      "lineageDefinitionHash": "stable-json-v1-of-all-fields-except-inheritanceLearningRecords-and-lineageDefinitionSha256",
+      "parentMutationAfterAcceptance": "no-effect",
+      "parentDeletionAfterAcceptance": "no-effect",
+      "childEvolutionTradeRenameOrMove": "origin-retained-unchanged"
+    },
+    "inheritanceLearning": {
+      "recordExactFields": [
+        "schemaVersion",
+        "learningRecordId",
+        "originId",
+        "eggId",
+        "childSheetSlug",
+        "checkpointLevel",
+        "application",
+        "outcome",
+        "recordedAtCampaignMinute",
+        "operationId",
+        "definitionSha256"
+      ],
+      "identity": "inheritance-learning:v1:<32-lowercase-hex>",
+      "checkpointLevels": [
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        80,
+        90,
+        100
+      ],
+      "oneRecordPerCheckpoint": true,
+      "appendOrder": "gap-free-prefix-of-strict-increasing-checkpoints",
+      "sheetRevision": "hatch-revision-zero-or-level-up-after-exactly-before-plus-one-with-monotonic-operation-batches",
+      "outcomes": {
+        "learned": {
+          "fields": [
+            "kind",
+            "moveId",
+            "candidateDefinitionSha256",
+            "permanentMoveProvenance"
+          ],
+          "candidate": "must-be-frozen-origin-candidate-and-not-previously-learned",
+          "permanentMoveProvenanceFields": [
+            "schemaVersion",
+            "kind",
+            "originId",
+            "eggId",
+            "learningRecordId",
+            "checkpointLevel",
+            "moveId",
+            "operationId",
+            "candidateDefinitionSha256"
+          ]
+        },
+        "empty-illegal": {
+          "fields": [
+            "kind",
+            "moveId",
+            "reasonIds",
+            "prerequisiteEvaluationDefinitionSha256"
+          ],
+          "candidate": "must-be-frozen-origin-candidate",
+          "reasonIds": [
+            "breeding.inheritance.frequency-too-high",
+            "breeding.inheritance.damage-base-too-high",
+            "breeding.inheritance.move-data-unavailable"
+          ],
+          "retention": "candidate-remains-eligible-at-later-checkpoint"
+        },
+        "empty-no-candidate": {
+          "fields": [
+            "kind",
+            "candidateSetDefinitionSha256"
+          ],
+          "allowedWhen": "no-unlearned-frozen-candidate-remains"
+        }
+      },
+      "recordDefinitionHash": "stable-json-v1-of-all-fields-except-definitionSha256",
+      "legacyEggMovesAuthority": "none",
+      "legacyInheritedMovesAuthority": "none",
+      "campaignTime": "at-or-after-hatch-and-monotonic",
+      "recordAndOperationIdentity": "record-identity-unique; operation-may-own-one-contiguous-checkpoint-batch",
+      "applications": {
+        "hatch-construction": {
+          "fields": [
+            "kind",
+            "childSheetRevision"
+          ],
+          "revision": 0,
+          "requiredFor": "all-checkpoints-at-or-below-starting-level",
+          "operation": "settlementOperationId"
+        },
+        "level-up": {
+          "fields": [
+            "kind",
+            "childSheetRevisionBefore",
+            "childSheetRevisionAfter"
+          ],
+          "revision": "after-exactly-before-plus-one",
+          "batching": "one-operation-may-own-contiguous-checkpoints-with-identical-revision-and-time-evidence"
+        }
+      }
+    },
+    "bounds": {
+      "parents": 2,
+      "effectiveKnownMovesPerParent": 64,
+      "inheritanceCandidates": 256,
+      "learningRecords": 9,
+      "definitionHashes": 256,
+      "textCharacters": 160
+    },
+    "authority": {
+      "originWriter": "atomic-hatch-use-case-only",
+      "learningWriter": "authoritative-level-up-use-case-only",
+      "serverHashVerification": "required",
+      "clientMutation": "forbidden",
+      "currentSheetFieldsAsLineageProof": "forbidden",
+      "documentaryRuntimeInference": "forbidden"
+    },
+    "bindings": {
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "inheritanceCandidatePolicyDefinitionSha256": "b30536b9757b436feac611ed64ed4a94eb1e5bd790b2e2fb7dd6d27c65f4b143",
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02"
+    }
+  }
+}

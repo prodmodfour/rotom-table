@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-authoritative-campaign-clock-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "abd4dd586f20dfcbc3b716e2bffbc7d1418853812ff9aaac127e593730215a06",
+  "definition": {
+    "version": 1,
+    "sharedContractPath": "shared/campaignClock.ts",
+    "repositoryPath": "server/storage/campaignClockRepository.ts",
+    "useCasePath": "server/useCases/advanceBreedingCampaignClock.ts",
+    "aggregate": {
+      "table": "campaign_clock",
+      "cardinality": 1,
+      "singleton": 1,
+      "initial": {
+        "revision": 0,
+        "campaignMinute": 0,
+        "lastOperationId": null
+      },
+      "revisionMaximum": 2147483647,
+      "delete": "forbidden",
+      "directSet": "forbidden"
+    },
+    "timeAuthority": {
+      "lifecycleClock": "campaignMinute-only",
+      "wallClock": "storage-metadata-only-never-read",
+      "browserClock": "forbidden",
+      "processUptime": "forbidden",
+      "timezoneOrCalendar": "forbidden",
+      "mapSceneEncounterInitiative": "no-authority"
+    },
+    "advance": {
+      "commandKind": "advance-campaign-clock",
+      "baseServiceScopes": [
+        "campaign-clock"
+      ],
+      "expectedRevision": "required-current",
+      "forwardTarget": "revision-plus-one-and-strictly-later-minute",
+      "equalTarget": "accepted-no-op-no-clock-revision",
+      "backwardTarget": "terminal-stale-revision-rejection",
+      "staleExpectedRevision": "terminal-stale-revision-rejection",
+      "lastOperationId": "changes-only-with-clock-revision",
+      "compareAndSwap": true,
+      "dependentProjectEggBatchExtensionTicket": "BR-052"
+    },
+    "idempotency": {
+      "identity": "breeding-operation:v1",
+      "reservation": "durable-before-clock-mutation",
+      "exactRetry": "stored-terminal-result-no-clock-write",
+      "differentCommandSameOperation": "identity-collision",
+      "pendingDuplicate": "no-execution-without-explicit-recovery",
+      "acceptedMutationAndTerminalResult": "one-SQLite-transaction-and-savepoint"
+    },
+    "result": {
+      "outcomeKind": "clock-advanced",
+      "aggregateRef": "campaign-clock-at-result-revision",
+      "changedScopeForForwardAdvance": true,
+      "changedScopeForEqualNoOp": false,
+      "commitMinute": "resulting-current-campaign-minute",
+      "rejectionCurrentRef": "current-clock-revision"
+    },
+    "recovery": {
+      "failureBeforeSettlement": "clock-rolls-back-operation-remains-pending",
+      "resume": "explicit-authorized-operation-recovery",
+      "restart": "pending-command-and-clock-survive"
+    },
+    "strictness": {
+      "unknownFields": "reject",
+      "plainJsonOnly": true,
+      "accessorsSymbolsSparseOrEnrichedValues": "reject",
+      "rowCardinalityAndColumns": "strict",
+      "malformedStoredClock": "bounded-corruption-error",
+      "repositoryWriteRequiresCallerTransaction": true
+    },
+    "authority": {
+      "currentRulesetBinding": "required-before-reservation",
+      "actorAuthorization": "server-authorization-receipt-required-by-command-coordinator",
+      "readSet": "exact-clock-revision-and-operation-evidence",
+      "mapDependency": "none",
+      "encounterDependency": "none",
+      "clientMutation": "none",
+      "realtime": "post-commit-refresh-only"
+    },
+    "bindings": {
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "campaignOperationLedgerDefinitionSha256": "0ddc9e1d73013c055dbc84b3b2175591db2a302efd05010dce631fc6d985894a",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "storageSchemaDefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89"
+    }
+  }
+}

@@ -3,7 +3,7 @@ import type { CapabilityRuntimeActionSpec } from '#shared/capabilityAutomation/s
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { pokemonHasResolvedCapability, resolveSkills } from '~/utils/sheets/pokemonDerived'
+import { pokemonHasActiveMarsupialBabyTemplate, pokemonHasResolvedCapability, pokemonMarsupialBabyActionRestricted, resolveSkills } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
 import { capabilityStandardActionRestriction } from './actionEligibility'
@@ -559,8 +559,13 @@ export const validateCapabilityActionSelections = (input: {
   }
   if (actingPlacement.sheetKind === 'pokemon') {
     const actor = actingSheet as CharacterSheet
-    if (actor.babyTemplate === true) {
-      fail('marsupial-baby-action-blocked', 'A Baby-Template Kangaskhan cannot be commanded or take actions.')
+    const parentalBondActive = effectiveRuntimeAbilityIds({
+      map: input.map,
+      placement: actingPlacement,
+      sheet: actor,
+    }).includes('Parental Bond')
+    if (pokemonMarsupialBabyActionRestricted(actor, parentalBondActive ? ['Parental Bond'] : [])) {
+      fail('marsupial-baby-action-blocked', 'A Marsupial Baby-Template Kangaskhan without active Parental Bond cannot be commanded or take actions.')
     }
     if (actor.letterPressCombinedInto) {
       fail('letter-press-participant-action-blocked', 'An Unown irreversibly combined into a Prime Unown cannot act separately.')
@@ -796,8 +801,9 @@ export const validateCapabilityActionSelections = (input: {
     if (!baby || baby.sheetKind !== 'pokemon' || !babySheet
       || (babySheet as CharacterSheet).species.trim().toLocaleLowerCase('en-US') !== 'kangaskhan'
       || (babySheet.level ?? 0) >= 25
-      || !pokemonHasResolvedCapability(babySheet as CharacterSheet, 'Marsupial')) {
-      fail('marsupial-baby-invalid', 'Marsupial pouch shelter requires an adjacent Kangaskhan below Level 25 with Marsupial.')
+      || !pokemonHasResolvedCapability(babySheet as CharacterSheet, 'Marsupial')
+      || !pokemonHasActiveMarsupialBabyTemplate(babySheet as CharacterSheet)) {
+      fail('marsupial-baby-invalid', 'Marsupial pouch shelter requires an adjacent Kangaskhan with current server-owned Baby Template authority below Level 25.')
     }
     if (!['experience-share:0', 'experience-share:20'].includes(input.command.selections.optionId ?? '')) {
       fail('marsupial-experience-choice-invalid', 'Marsupial shelter must retain the Trainer’s 0% or 20% Experience-sharing choice.')
@@ -843,11 +849,16 @@ export const validateCapabilityActionSelections = (input: {
         && (typeof pouch.capabilityInstanceId !== 'string' || link.capabilityInstanceId === pouch.capabilityInstanceId)
       ))
       const motherSheet = mother?.sheetKind === 'pokemon' ? input.pokemonSheets.get(mother.sheetSlug) : null
+      const baby = input.map.placements.find(placement => placement.id === babyPlacementId)
+      const babySheet = baby?.sheetKind === 'pokemon' ? input.pokemonSheets.get(baby.sheetSlug) : null
+      const parentalBondActive = baby && babySheet
+        ? effectiveRuntimeAbilityIds({ map: input.map, placement: baby, sheet: babySheet }).includes('Parental Bond')
+        : false
       const motherToken = sourceLink && mother && motherSheet ? placementToSpawned(mother, {
         pokemon: new Map(input.pokemonSheets),
         trainer: new Map(input.trainerSheets),
       }, input.map) : null
-      return (motherToken?.currentHp ?? 0) > 0 ? [babyPlacementId] : []
+      return (motherToken?.currentHp ?? 0) > 0 && !parentalBondActive ? [babyPlacementId] : []
     }))
     if (targets.some(target => protectedBabyIds.has(target.id))) {
       fail('marsupial-baby-protected', 'A conscious mother prevents attacks from targeting the Baby-Template Kangaskhan in her pouch.')

@@ -1,5 +1,6 @@
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
+import { parseBreedingRealtimeRefreshEventV1 } from '#shared/breeding/realtime'
 import type { RealtimeEventAccess, PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -33,6 +34,8 @@ export interface RealtimeDeliveryPrincipal {
   readonly role: AuthRole
   readonly playerProfile?: PlayerProfile | null
   readonly sessionAccess?: RealtimeSessionAccessGrant | null
+  /** Set only by authenticated operator policy; ordinary GM sessions omit it. */
+  readonly breedingDiagnosticAccess?: true
 }
 
 export interface RealtimeEventAccessDependencies {
@@ -62,6 +65,7 @@ export type RealtimeEventAccessDecision =
         | 'shop-not-found'
         | 'shop-not-accessible'
         | 'pending-move-response-not-accessible'
+        | 'breeding-not-accessible'
         | 'invalid-access'
     }
 
@@ -69,6 +73,8 @@ export interface RealtimeEventAccessEvaluationInput {
   readonly access: RealtimeEventAccess
   readonly principal: RealtimeDeliveryPrincipal
   readonly dependencies: RealtimeEventAccessDependencies
+  /** Required for breeding-access so descriptor and refresh audience are inseparable. */
+  readonly event?: unknown
 }
 
 export type RealtimeEventAccessEvaluator = (
@@ -247,6 +253,50 @@ const evaluatePendingMoveResponseAccess = (
   return grant ? allowed() : denied('pending-move-response-not-accessible')
 }
 
+const playerProfileDirectlyControlsTrainer = (
+  principal: RealtimeDeliveryPrincipal,
+  trainerSheetSlug: string,
+): boolean => principal.playerProfile?.linkedCharacters.some(ref => (
+  ref.sheetKind === 'trainer' && ref.sheetSlug === trainerSheetSlug
+)) === true
+
+const evaluateBreedingAccess = (
+  access: Extract<RealtimeEventAccess, { readonly kind: 'breeding-access' }>,
+  principal: RealtimeDeliveryPrincipal,
+  dependencies: RealtimeEventAccessDependencies,
+  event: unknown,
+): RealtimeEventAccessDecision => {
+  let refresh
+  try {
+    refresh = parseBreedingRealtimeRefreshEventV1(event)
+  } catch {
+    return denied('invalid-access')
+  }
+  if (refresh.data.audienceRefreshScope !== access.audience) return denied('invalid-access')
+
+  if (access.audience === 'public') return allowed()
+  if (access.audience === 'gm') {
+    return principal.role === 'gm' ? allowed() : denied('breeding-not-accessible')
+  }
+  if (access.audience === 'diagnostic') {
+    return principal.role === 'gm' && principal.breedingDiagnosticAccess === true
+      ? allowed()
+      : denied('breeding-not-accessible')
+  }
+  const trainerSheetSlug = access.trainerSheetSlug
+  if (typeof trainerSheetSlug !== 'string'
+    || principal.role !== 'player'
+    || !playerProfileDirectlyControlsTrainer(principal, trainerSheetSlug)) {
+    return denied('breeding-not-accessible')
+  }
+  const trainer = dependencies.getSheet('trainer', trainerSheetSlug)
+  if (!trainer) return denied('sheet-not-found')
+  if (trainer.kind !== 'trainer' || trainer.slug !== trainerSheetSlug) {
+    return denied('invalid-access')
+  }
+  return allowed()
+}
+
 /**
  * Evaluates durable event-log records only. Replay control messages are
  * connection metadata without RealtimeEventAccess and must be delivered outside
@@ -273,6 +323,9 @@ export const evaluateRealtimeEventAccess = (
   if (input.access.kind === 'pending-move-response-access') {
     return evaluatePendingMoveResponseAccess(input.access, input.principal, input.dependencies)
   }
+  if (input.access.kind === 'breeding-access') {
+    return evaluateBreedingAccess(input.access, input.principal, input.dependencies, input.event)
+  }
 
   return denied('invalid-access')
 }
@@ -292,7 +345,11 @@ export const filterRealtimeEventsForPrincipal = (
   const deniedEvents: DeniedRealtimeEventAccess[] = []
 
   for (const event of input.events) {
-    const decision = evaluator({ access: event.access, principal: input.principal })
+    const decision = evaluator({
+      access: event.access,
+      principal: input.principal,
+      event: event.event,
+    })
     if (decision.allowed) {
       const sourceControllerCanInspectSheet = event.access.kind === 'sheet-access'
         ? playerProfileCanAccessSheet(

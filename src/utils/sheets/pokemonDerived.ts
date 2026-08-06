@@ -16,6 +16,11 @@ import { resolvePokemonVitaminSummary } from '~/utils/sheets/pokemonVitamins'
 import { parseCapabilityLabel } from '#shared/capabilityAutomation/catalog'
 import { sheetEdgeChoiceValues, sheetHasCanonicalEdge } from '#shared/edgeAutomation/sheetEdges'
 import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
+import {
+  parseBreedingBabyTemplateMechanicsV1,
+  resolveBreedingBabyTemplateStageV1,
+  type BreedingBabyTemplateStageV1,
+} from '#shared/breeding/babyTemplate'
 
 const pokedexBySpecies = new Map<string, PokedexRecord>(
   (pokedexData as PokedexRecord[]).map((entry) => [entry.species, entry]),
@@ -132,6 +137,54 @@ export const pokemonAddedStatPointBudget = (sheet: CharacterSheet): number => (
   computePokemonLevelUpStatPointBudget(sheet.level) + realizedPotentialBonusStatPoints(sheet)
 )
 
+export const resolvePokemonBabyTemplateStage = (sheet: CharacterSheet): BreedingBabyTemplateStageV1 | null => {
+  const privateAuthority = sheet.serverPrivate?.breedingBabyTemplate
+  const rawMechanics = privateAuthority
+    ? { schemaVersion: 1, applicationKind: privateAuthority.applicationKind, effects: privateAuthority.effects }
+    : sheet.babyTemplateMechanics
+  if (rawMechanics) {
+    try {
+      const mechanics = parseBreedingBabyTemplateMechanicsV1(rawMechanics)
+      return resolveBreedingBabyTemplateStageV1({ mechanics, currentLevel: sheet.level })
+    }
+    catch {
+      // A malformed projected mirror never gains mechanic authority. Server
+      // storage validates private authority before it reaches this boundary.
+    }
+  }
+  // Editable and legacy booleans never prove origin or mechanics. Owner-safe
+  // projected mechanics may drive presentation, while every server mutation
+  // restores and validates the private authority before using this reducer.
+  return null
+}
+
+export const pokemonHasActiveBabyTemplate = (sheet: CharacterSheet): boolean => (
+  resolvePokemonBabyTemplateStage(sheet)?.active === true
+)
+
+/**
+ * Marsupial's command, movement, and pouch restrictions are not generic Baby
+ * Template rules. Keep that capability-owned behavior scoped to an active
+ * server-authored Marsupial application so an optional campaign template does
+ * not silently acquire Kangaskhan-only restrictions.
+ */
+export const pokemonHasActiveMarsupialBabyTemplate = (sheet: CharacterSheet): boolean => {
+  if (!pokemonHasActiveBabyTemplate(sheet)) return false
+  const privateAuthority = sheet.serverPrivate?.breedingBabyTemplate
+  const rawMechanics = privateAuthority
+    ? { schemaVersion: 1, applicationKind: privateAuthority.applicationKind, effects: privateAuthority.effects }
+    : sheet.babyTemplateMechanics
+  if (!rawMechanics) return false
+  try { return parseBreedingBabyTemplateMechanicsV1(rawMechanics).applicationKind === 'marsupial' }
+  catch { return false }
+}
+
+export const pokemonMarsupialBabyActionRestricted = (
+  sheet: CharacterSheet,
+  effectiveAbilityIds: readonly string[],
+): boolean => pokemonHasActiveMarsupialBabyTemplate(sheet)
+  && !effectiveAbilityIds.includes('Parental Bond')
+
 export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
   const species = getPokedexEntry(sheet.species)
   const baseStats = species?.base_stats
@@ -155,6 +208,7 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
   const plus = chartNatureMod?.plus
   const minus = chartNatureMod?.minus
   const vitaminSummary = resolvePokemonVitaminSummary(sheet)
+  const babyTemplateStage = resolvePokemonBabyTemplateStage(sheet)
 
   return POKEMON_STAT_KEYS.map((key) => {
     const personal = sheet.stats?.[key] ?? {}
@@ -162,7 +216,7 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
     const mod = baseStats ? adjustedNatureModForStat(speciesValue, key, plus, minus) : 0
     const vitaminAdjustment = vitaminSummary.statNetAdjustments[key]
     const capabilityBaseStatBonus = (sheet.capabilityCampaignState?.letterPress?.statBonuses[key] ?? 0)
-      - (sheet.babyTemplate === true ? 5 : 0)
+      - (babyTemplateStage?.remainingBaseStatPenaltyEach ?? 0)
     const edgeAdjustment = sheetHasCanonicalEdge(sheet, 'poke', 'Underdog’s Strength') ? 1 : 0
     const rawBase = speciesValue + mod + vitaminAdjustment + capabilityBaseStatBonus + edgeAdjustment
     const base = speciesValue > 0 ? Math.max(1, rawBase) : Math.max(0, rawBase)
@@ -269,6 +323,14 @@ const rankUpPokemonSkill = (value: string, steps: number): string => {
   return `${dice}d6${modifier}`
 }
 
+const rankDownPokemonSkill = (value: string, steps: number): string => {
+  const match = /^\s*(\d+)d6(?:\s*([+-])\s*(\d+))?\s*$/iu.exec(value)
+  if (!match || steps <= 0) return value
+  const dice = Math.max(1, Number.parseInt(match[1] ?? '1', 10) - steps)
+  const modifier = match[2] && match[3] ? `${match[2]}${match[3]}` : ''
+  return `${dice}d6${modifier}`
+}
+
 export const pokemonBaseRelationWaivers = (sheet: CharacterSheet): ReadonlySet<StatKey> => {
   const choices = sheetEdgeChoiceValues({ sheet, family: 'poke', canonicalId: 'Attack Conflict', choiceId: 'choice-1' })
   return new Set(choices.flatMap(value => value === 'Attack' ? ['atk' as const] : value === 'Special Attack' ? ['satk' as const] : []))
@@ -285,6 +347,7 @@ export const resolveSkills = (sheet: CharacterSheet): ResolvedSkill[] => {
     if (key) speciesByKey.set(key, value)
   }
 
+  const babyTemplateStage = resolvePokemonBabyTemplateStage(sheet)
   return SHEET_SKILL_ORDER.map(([key, label]) => {
     const override = sheet.skills?.[key]
     const speciesValue = speciesByKey.get(key)
@@ -293,7 +356,10 @@ export const resolveSkills = (sheet: CharacterSheet): ResolvedSkill[] => {
       ?? (EDU_KEYS.has(key) ? DEFAULT_EDU_SKILL : DEFAULT_SKILL)
     const improvementCount = sheetEdgeChoiceValues({ sheet, family: 'poke', canonicalId: 'Skill Improvement', choiceId: 'choice-1' })
       .filter(selected => selected === key).length
-    const value = rankUpPokemonSkill(baseValue, improvementCount)
+    const value = rankDownPokemonSkill(
+      rankUpPokemonSkill(baseValue, improvementCount),
+      babyTemplateStage?.skillRankPenalty ?? 0,
+    )
     return {
       key,
       label,
@@ -313,6 +379,13 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
   const speciesCaps = species?.capabilities ?? {}
   const sheetCaps = sheet.capabilities ?? {}
   const moveGrantedCapabilities = resolveMoveGrantedCapabilities(capabilityGrantingMoves(sheet))
+  const babyTemplateStage = resolvePokemonBabyTemplateStage(sheet)
+  const babyCapabilityPenalty = babyTemplateStage?.capabilityPenalty ?? 0
+  const babyAdjusted = (value: number | undefined): number | undefined => value === undefined
+    ? undefined
+    : value <= 0
+      ? value
+      : Math.max(1, value - babyCapabilityPenalty)
 
   const baseLevitate = applyNumberedCapabilityBonus(
     sheetCaps.levitate ?? speciesCaps.levitate,
@@ -330,42 +403,48 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
     value === undefined && bonus === 0 ? undefined : (value ?? 0) + bonus
   )
   const edgeJump = (value: string | number | undefined): string | number | undefined => {
-    if (typeof value !== 'string') return value
+    if (typeof value !== 'string') return typeof value === 'number' && value > 0 ? Math.max(1, value - babyCapabilityPenalty) : value
     const match = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(value)
     if (!match) return value
-    const long = Number.parseInt(match[1] ?? '0', 10) + edgeNumberBonus('Long Jump')
-    const high = Number.parseInt(match[2] ?? '0', 10) + edgeNumberBonus('High Jump')
+    const adjustedJump = (base: number, edgeBonus: number): number => {
+      const value = base + edgeBonus
+      return value <= 0 ? value : Math.max(1, value - babyCapabilityPenalty)
+    }
+    const long = adjustedJump(Number.parseInt(match[1] ?? '0', 10), edgeNumberBonus('Long Jump'))
+    const high = adjustedJump(Number.parseInt(match[2] ?? '0', 10), edgeNumberBonus('High Jump'))
     return `${long}/${high}`
   }
 
   const numbered: Array<[string, number | string | undefined]> = [
-    ['Overland', withEdgeBonus(applyNumberedCapabilityBonus(
+    ['Overland', babyAdjusted(withEdgeBonus(applyNumberedCapabilityBonus(
       sheetCaps.overland ?? speciesCaps.overland,
       moveGrantedCapabilities.numberedBonuses.overland,
-    ), edgeNumberBonus('Overland'))],
-    ['Sky',      withEdgeBonus(applyNumberedCapabilityBonus(
+    ), edgeNumberBonus('Overland')))],
+    ['Sky',      babyAdjusted(withEdgeBonus(applyNumberedCapabilityBonus(
       sheetCaps.sky      ?? speciesCaps.sky,
       moveGrantedCapabilities.numberedBonuses.sky,
-    ), edgeNumberBonus('Sky'))],
-    ['Swim',     withEdgeBonus(applyNumberedCapabilityBonus(
+    ), edgeNumberBonus('Sky')))],
+    ['Swim',     babyAdjusted(withEdgeBonus(applyNumberedCapabilityBonus(
       sheetCaps.swim     ?? speciesCaps.swim,
       moveGrantedCapabilities.numberedBonuses.swim,
-    ), edgeNumberBonus('Swim'))],
-    ['Levitate', withEdgeBonus(nativeLevitate, edgeNumberBonus('Levitate'))],
-    ['Burrow',   withEdgeBonus(applyNumberedCapabilityBonus(
+    ), edgeNumberBonus('Swim')))],
+    ['Levitate', babyAdjusted(withEdgeBonus(nativeLevitate, edgeNumberBonus('Levitate')))],
+    ['Burrow',   babyAdjusted(withEdgeBonus(applyNumberedCapabilityBonus(
       sheetCaps.burrow   ?? speciesCaps.burrow,
       moveGrantedCapabilities.numberedBonuses.burrow,
-    ), edgeNumberBonus('Burrow'))],
+    ), edgeNumberBonus('Burrow')))],
     ['Jump',     edgeJump(applyJumpCapabilityBonuses(
       sheetCaps.jump     ?? speciesCaps.jump,
       moveGrantedCapabilities.jumpBonuses,
     ))],
-    ['Power',    withEdgeBonus(applyNumberedCapabilityBonus(
+    ['Power',    babyAdjusted(withEdgeBonus(applyNumberedCapabilityBonus(
       sheetCaps.power    ?? speciesCaps.power,
       moveGrantedCapabilities.numberedBonuses.power,
-    ), edgeNumberBonus('Power'))],
+    ), edgeNumberBonus('Power')))],
     ['Weight',   sheetCaps.weight   ?? species?.weight],
-    ['Size',     sheetCaps.size     ?? species?.size],
+    ['Size',     babyTemplateStage?.active
+      ? `${sheetCaps.size ?? species?.size ?? 'Unknown'} (${babyTemplateStage.sizePercentOfAdult}% adult)`
+      : sheetCaps.size ?? species?.size],
   ]
 
   const rows: ResolvedCapability[] = []

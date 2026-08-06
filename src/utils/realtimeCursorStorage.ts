@@ -14,6 +14,8 @@ export interface RealtimeCursorStorageAdapter {
 export interface RealtimeCursorStorage {
   readonly readCursor: (contextKey: string) => number | null
   readonly advanceCursor: (contextKey: string, sequence: number) => number
+  /** Authoritative replay reconciliation may move an ahead cursor backward. */
+  readonly replaceCursor: (contextKey: string, sequence: number) => number
   readonly clearMemoryForTests?: () => void
 }
 
@@ -125,32 +127,42 @@ export const createRealtimeCursorStorage = (
     }
   }
 
-  const advanceCursor = (contextKey: string, sequenceInput: number): number => {
-    const sequence = parseRealtimeEventCursorValue(sequenceInput, 'realtime cursor sequence')
-    const current = readCursor(contextKey)
-    const next = current === null ? sequence : Math.max(current, sequence)
+  const writeCursor = (contextKey: string, sequence: number): number => {
     const storage = resolveStorage('write cursor')
-
     if (!storage) {
-      memory.set(contextKey, next)
-      return next
+      memory.set(contextKey, sequence)
+      return sequence
     }
 
     try {
-      storage.setItem(storageKeyForContext(contextKey), serializeCursor(next))
+      storage.setItem(storageKeyForContext(contextKey), serializeCursor(sequence))
       memory.delete(contextKey)
-      return next
+      return sequence
     } catch (error) {
       sessionStorageFailed = true
-      memory.set(contextKey, next)
+      memory.set(contextKey, sequence)
       warnStorageFailure('write cursor', error)
-      return next
+      return sequence
     }
+  }
+
+  const replaceCursor = (contextKey: string, sequenceInput: number): number => (
+    writeCursor(
+      contextKey,
+      parseRealtimeEventCursorValue(sequenceInput, 'realtime cursor sequence'),
+    )
+  )
+
+  const advanceCursor = (contextKey: string, sequenceInput: number): number => {
+    const sequence = parseRealtimeEventCursorValue(sequenceInput, 'realtime cursor sequence')
+    const current = readCursor(contextKey)
+    return writeCursor(contextKey, current === null ? sequence : Math.max(current, sequence))
   }
 
   return {
     readCursor,
     advanceCursor,
+    replaceCursor,
     clearMemoryForTests: () => memory.clear(),
   }
 }

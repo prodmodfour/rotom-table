@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-fossil-egg-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "f655865b9bbfe2990a93a1e5f975aa18a611581a008a4f17df476ae45004b6be",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-065",
+    "sharedContractPath": "shared/breeding/fossilEgg.ts",
+    "domainPath": "server/domain/breeding/fossilEgg.ts",
+    "useCasePath": "server/useCases/createBreedingFossilEgg.ts",
+    "testPath": "tests/server/breedingFossilEgg.test.ts",
+    "source": {
+      "kind": "fossil",
+      "designation": "current-authenticated-GM-designates-one-exact-Trainer-inventory-row-and-quantity-backed-unit",
+      "freeTextOrHeldLabelAuthority": "none",
+      "frozenFields": [
+        "Egg-ID",
+        "source-ID",
+        "owner-Trainer-slug-and-revision",
+        "owner-Trainer-document-hash",
+        "inventory-row-ID-and-unit-ordinal",
+        "inventory-row-hash",
+        "campaign-minute",
+        "self-hash"
+      ],
+      "consumption": "exactly-one-designated-source-unit-in-the-creation-transaction",
+      "machineConsumption": "none"
+    },
+    "reanimationAuthority": {
+      "edge": "exactly-one-current-effective-unsuppressed-parameter-ready-Paleontologist-instance",
+      "prerequisite": "current-Novice-or-better-Pokemon-Education-or-Survival",
+      "edgeCampaignPlan": "exact-reanimate-fossil-permission-with-no-resource-deltas",
+      "tool": "one-distinct-exact-current-Reanimation-Machine-inventory-row-and-quantity-backed-unit",
+      "clientDeclarations": "never-authority",
+      "frozenEvidence": "canonical-record-runtime-effective-projection-Skill-tool-row-and-operation-plan-hashes"
+    },
+    "boundedOffers": {
+      "chooser": "current-authenticated-GM",
+      "target": "future-revision-zero-Egg",
+      "commandBinding": "exact-operation-and-full-command-hash",
+      "expiry": "campaign-time-strictly-before-equality",
+      "slots": [
+        "species",
+        "nature",
+        "primary-ability",
+        "gender",
+        "inheritance-move",
+        "restoration-extra-ability",
+        "prehistoric-bond-stat",
+        "hatch-duration",
+        "baby-template"
+      ],
+      "source": "synchronous-server-owned-resolver",
+      "unknownStaleDuplicateOrExtraneous": "reject",
+      "babyTemplateValueBinding": "exact-BR-067-policy-frozen-campaign-options-source-and-command-bound-offer"
+    },
+    "egg": {
+      "aggregate": "PokemonEggDocumentV1",
+      "revision": 0,
+      "status": "incubating",
+      "parentSnapshots": 0,
+      "breederSnapshot": null,
+      "defaultStartingLevel": 10,
+      "defaultInheritance": "none",
+      "optionalInheritance": "at-most-nine-explicit-app-owned-canonical-Moves",
+      "babyTemplate": "disabled-or-one-current-bounded-per-Egg-GM-choice-or-forced-Marsupial",
+      "incubation": "shared-campaign-clock-duration-and-readiness-state",
+      "hatch": "shared-special-child-lineage-reward-and-completion-pipeline",
+      "parallelFossilHatchPath": "forbidden"
+    },
+    "fossilRestoration": {
+      "authority": "one-current-effective-Fossil-Restoration-Feature-handoff-at-creation",
+      "pokemonEducationMinimum": "Novice",
+      "tutorPointDelta": -2,
+      "twoBasicAbilities": "freeze-the-other-distinct-Basic-Ability",
+      "oneBasicAbility": "require-one-GM-bounded-current-Species-Advanced-Ability-offer",
+      "child": "extra-Ability-and-two-spent-Tutor-Points"
+    },
+    "prehistoricBond": {
+      "authority": "one-current-effective-Prehistoric-Bond-plus-Fossil-Restoration-handoff-at-creation",
+      "pokemonEducationMinimum": "Expert",
+      "statAuthority": "current-app-owned-Species-Base-Stats-adjusted-by-frozen-Nature-only",
+      "uniqueMaximum": "automatic-no-choice",
+      "tiedMaximum": "one-GM-bounded-offer-among-exact-tied-stats",
+      "heldItems": {
+        "hp": "Relic Crown",
+        "atk": "Primal Frame",
+        "def": "Prehistoric Razors",
+        "satk": "Primal Cloak",
+        "sdef": "Prehistoric Aegis",
+        "spd": "Relic Sash"
+      },
+      "restriction": "may-only-be-used-by-Pokemon-revived-from-Fossils",
+      "child": "frozen-held-item-name-effect-and-server-private-provider-provenance"
+    },
+    "randomness": {
+      "traits": "none-only-bounded-offers",
+      "hatchDuration": "zero-or-one-command-bound-persisted-server-percentage-roll-as-required-by-campaign-options",
+      "persistBeforeReducer": true,
+      "exactRetryRedraw": "forbidden"
+    },
+    "transaction": {
+      "phase1": "durable-operation-reservation-offers-read-set-receipt-and-optional-roll",
+      "phase2": "one-BR-037-top-level-synchronous-SQLite-transaction",
+      "writes": [
+        "consume-selected-offers",
+        "consume-one-fossil-source-unit",
+        "insert-shared-Egg",
+        "append-sheet-and-Egg-realtime-rows",
+        "settle-operation"
+      ],
+      "rollback": "all-phase-2-writes-rollback-together-and-pending-authority-remains-recoverable",
+      "nestedExecution": "forbidden"
+    },
+    "privacy": {
+      "creationProjection": "coarse-GM-or-owner-status-Level-parent-count-and-provider-booleans",
+      "EggRealtime": "payload-free-refresh-only",
+      "sheetRealtime": "existing-sheet-access-policy",
+      "forbiddenInEggRefresh": [
+        "Species",
+        "Nature",
+        "Ability",
+        "source-row",
+        "Paleontologist",
+        "Reanimation-Machine",
+        "Feature-instance",
+        "read-set",
+        "receipt",
+        "roll"
+      ]
+    },
+    "failure": {
+      "unknownMalformedEnrichedAccessorSparseOrPromiseLike": "reject-before-settlement",
+      "staleTrainerClockSourceToolEdgeFeatureOfferOrReference": "fail-closed",
+      "sourceLossAfterAcceptance": "non-mutating-frozen-authority-diagnostic",
+      "facilityAuthority": "unavailable"
+    },
+    "bindings": {
+      "runtimePolicyDefinitionSha256": "d3fd3006a889f09e3c54a7ca29906b13c2aceeaac466f1148350f613f1939a9f",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "featureProviderHandoffContractDefinitionSha256": "fdc100e73b51ad2179d2069a6b36b7d9ecf3d441b6d5ed0e0a5fe743714b9479",
+      "modifierProviderHandoffContractDefinitionSha256": "286ccffed06f9d8f8f2a3ce3771a2cda54c204c5473bf256dc07e34e6ec8c19a",
+      "childSheetConstructionContractDefinitionSha256": "8dbbaa234d9bbcacdeeaf2f376603e451b6083e1d2d526f3e86146109409ae14",
+      "hatchCompletionContractDefinitionSha256": "4558c84d58d5d6fa4725001d42c253f31ea8f98c421e0dd0fb73516b583b667d",
+      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "sourceAdjudicationsSha256": "762e166f93ec3019150c9c6c36e4433c352781a51181cf3181964a45a2a5f0a7",
+      "babyTemplateRuntimePolicyDefinitionSha256": "9efae47e792f62a4bd2203cb776c4d864dd6f64a89d78fca948800b55e6afc93"
+    },
+    "tests": {
+      "focusedCases": 14,
+      "required": [
+        "current-edge-Skill-tool-custody",
+        "default-shared-Egg-Level-10",
+        "optional-policy-bound-Baby-Template-through-shared-pipeline",
+        "Kangaskhan-forces-Marsupial-without-campaign-substitute",
+        "Advanced-Ability-bounded-choice",
+        "Restoration-and-Bond-freeze",
+        "Nature-adjusted-stat-tie-choice",
+        "ordinary-child-builder",
+        "atomic-source-consumption-and-events",
+        "persisted-duration-no-redraw",
+        "rollback-and-resume",
+        "historical-exact-retry-remains-silent",
+        "malformed-stale-Promise-and-non-GM-failure",
+        "quantity-and-source-drift"
+      ]
+    },
+    "extendedByTicket": "BR-067"
+  }
+}

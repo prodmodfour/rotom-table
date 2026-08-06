@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-realtime-refresh-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+  "definition": {
+    "version": 1,
+    "sharedAccessPath": "shared/breeding/realtimeAccess.ts",
+    "sharedEventAndAdoptionPath": "shared/breeding/realtime.ts",
+    "serverBuilderPath": "server/realtime/breedingRealtime.ts",
+    "eventRepositoryPath": "server/storage/realtimeEventRepository.ts",
+    "accessPolicyPath": "server/realtime/realtimeEventAccessPolicy.ts",
+    "event": {
+      "channelByAudience": "breeding:{audience-refresh-scope}",
+      "type": "breeding-aggregate-refresh",
+      "durability": "SQLite-global-sequence-event-log",
+      "maximumCanonicalJsonBytes": 4096,
+      "payloadFields": [
+        "schemaVersion",
+        "aggregateKind",
+        "aggregateIdentitySha256",
+        "revision",
+        "operationKind",
+        "audienceRefreshScope"
+      ],
+      "aggregateKinds": [
+        "breeding-project",
+        "pokemon-egg"
+      ],
+      "aggregateIdentity": "campaign-keyed-HMAC-SHA-256-never-raw-ID",
+      "operationKind": "closed-breeding-command-kind",
+      "transientEvent": "forbidden",
+      "accessDescriptorOnWire": false
+    },
+    "forbiddenPayload": [
+      "aggregate-raw-ID",
+      "actor-or-profile",
+      "authorization-or-control-evidence",
+      "command-or-result",
+      "consent",
+      "choice-or-offer",
+      "parent-or-breeder",
+      "trait-or-inheritance",
+      "roll-check-or-adjudication",
+      "sheet-or-lineage",
+      "campaign-minute"
+    ],
+    "access": {
+      "descriptorKind": "breeding-access",
+      "descriptorFields": [
+        "kind",
+        "audience",
+        "trainerSheetSlug"
+      ],
+      "public": "all-current-stream-principals",
+      "owner": "player-current-selected-Profile-directly-controls-target-Trainer",
+      "participatingOwner": "player-current-selected-Profile-directly-controls-target-parent-owner-Trainer",
+      "gm": "authenticated-GM-only",
+      "diagnostic": "authenticated-GM-plus-explicit-operator-policy-only",
+      "mapVisibilityOrSessionSheetGrant": "insufficient-for-private-breeding-audiences",
+      "audienceEventMismatch": "deny",
+      "missingTargetTrainer": "deny",
+      "pokemonEggParticipatingOwner": "forbidden"
+    },
+    "snapshot": {
+      "schemaVersion": 1,
+      "audienceHomogeneous": true,
+      "completeReplacement": true,
+      "throughSequence": "global-durable-event-cursor",
+      "entryMaximum": 100,
+      "maximumCanonicalJsonBytes": 4194304,
+      "entryFields": [
+        "aggregateKind",
+        "aggregateIdentitySha256",
+        "revision",
+        "projection"
+      ],
+      "projection": "strict-current-authorized-audience-projection-v1",
+      "identity": "same-campaign-keyed-HMAC-as-refresh-event",
+      "order": "unique-aggregateIdentitySha256-code-point",
+      "privateIdentityValidation": "server-matches-projection-ID-to-supplied-aggregate-ID",
+      "publicAndDiagnosticIdentityValidation": "server-matches-keyed-projection-hash"
+    },
+    "adoption": {
+      "statePersistence": "memory-only-presentation-state",
+      "transportCursorPersistence": "session-scoped-sequence-only-no-campaign-facts",
+      "sequence": "monotonic-global-cursor-numeric-jumps-allowed",
+      "duplicateOrOlderEvent": "ignore",
+      "coveredAggregateRevision": "advance-cursor-without-refresh",
+      "newerOrUnknownAggregateRevision": "mark-keyed-identity-invalidated",
+      "invalidationMaximum": 256,
+      "invalidationOverflow": "discard-snapshot-and-require-replacement",
+      "audienceMismatch": "reject",
+      "aggregateKindContradiction": "reject",
+      "replayGapOrAhead": "discard-all-local-projections-and-require-fresh-snapshot-through-latest-sequence",
+      "staleReplacementSnapshot": "ignore",
+      "freshReplacementSnapshot": "replace-completely-and-clear-invalidations",
+      "sameCursorSameSnapshot": "exact-replay",
+      "sameCursorDifferentSnapshot": "reject-conflict"
+    },
+    "durabilityAndPublication": {
+      "eventInsertion": "same-caller-owned-SQLite-transaction-as-aggregate-settlement",
+      "repositoryWriteValidation": "strict-event-size-access-and-audience-before-insert",
+      "repositoryReadValidation": "strict-event-size-access-and-audience-after-restart",
+      "dedupeIdentity": "aggregate-hash-revision-audience-target-descriptor-hash",
+      "sameDedupeSameMaterial": "exact-replay",
+      "sameDedupeDifferentMaterial": "conflict",
+      "transactionFailure": "event-and-sequence-roll-back",
+      "publication": "persisted-sequence-order-only-after-commit",
+      "publicationFailure": "durable-row-remains-replayable"
+    },
+    "strictness": {
+      "unknownFields": "reject",
+      "plainJsonOnly": true,
+      "accessorsSymbolsSparseOrEnrichedValues": "reject",
+      "nonfiniteOrUnsafeNumbers": "reject",
+      "duplicateTargetsOrEntries": "reject",
+      "unknownAudienceOperationAggregateOrVersion": "reject"
+    },
+    "bindings": {
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "projectionContractDefinitionSha256": "2177141c8935978d0066bcdeea992b8c55a167bf0b4d93b32cd981b01e9eb3ce",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "storageSchemaDefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89"
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "schemaId": "rotom-breeding-storage-v25",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "2f880d20018c44fae23cf273cb7677a2d0f003fd75e16203795499cbdcbc7699",
+  "definition": {
+    "version": 25,
+    "migrationName": "allow authoritative Egg Warmer Capability breeding operations without rewriting v24 rows",
+    "fromVersion": 24,
+    "toVersion": 25,
+    "rowPolicy": "byte-equivalent-operation-and-dependent-row-preservation",
+    "rebuiltTable": "breeding_operations",
+    "newCommandKind": "apply-egg-warmer-capability",
+    "commandKinds": [
+      "preview-breeding",
+      "create-breeding-project",
+      "grant-breeding-consent",
+      "revoke-breeding-consent",
+      "advance-breeding-project-time",
+      "resolve-breeding-check",
+      "produce-egg",
+      "cancel-breeding-project",
+      "create-source-egg",
+      "transfer-egg",
+      "advance-egg-incubation",
+      "set-egg-incubation-pause",
+      "apply-egg-warmer-capability",
+      "mark-egg-ready",
+      "begin-hatch",
+      "resolve-hatch-special",
+      "complete-hatch",
+      "cancel-egg",
+      "advance-campaign-clock",
+      "record-inheritance-learning",
+      "recover-breeding-operation"
+    ],
+    "invariants": {
+      "foreignKeysSuspendedOnlyForParentTableRebuild": true,
+      "foreignKeyCheckAfterMigration": "empty",
+      "operationRowsPreserved": true,
+      "scopeAndEvidenceRowsPreserved": true,
+      "newRowsCreated": false,
+      "callerMigrationTransaction": "all-or-nothing",
+      "rollback": "v24-byte-equivalent"
+    },
+    "bindings": {
+      "priorIncubationStorageSchemaDefinitionSha256": "102ae6fa26e3e04d32de63cfbb0cfd812774e3abe0e2eae002de1cc235e3dac0",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "modifierProviderHandoffContractDefinitionSha256": "286ccffed06f9d8f8f2a3ce3771a2cda54c204c5473bf256dc07e34e6ec8c19a"
+    },
+    "paths": {
+      "application": "server/storage/migrations.ts",
+      "offline": "scripts/migrate-campaign-to-sqlite.mjs",
+      "test": "tests/server/breedingStorageMigrations.test.ts"
+    }
+  }
+}

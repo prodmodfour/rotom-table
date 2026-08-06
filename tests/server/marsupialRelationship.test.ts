@@ -6,6 +6,7 @@ import {
 } from '../../server/domain/capabilityAutomation/marsupialRelationship'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
+import { createBreedingBabyTemplateAuthorityV1, createBreedingMarsupialProviderTraitV1, resolveBreedingMarsupialBabyTemplateV1 } from '../../server/domain/breeding/babyTemplate'
 
 const pouch = (overrides: Record<string, unknown> = {}) => ({
   motherSheetSlug: 'kangaskhan-mother',
@@ -22,8 +23,12 @@ const mother = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
   ...overrides,
 })
 
+const template = resolveBreedingMarsupialBabyTemplateV1()
+const babyAuthority = createBreedingBabyTemplateAuthorityV1({ sourceEggId: 'pokemon-egg:v1:94949494949494949494949494949494', babyTemplate: template, marsupial: createBreedingMarsupialProviderTraitV1() })
 const baby = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
   slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 10, babyTemplate: true,
+  babyTemplateMechanics: { schemaVersion: 1, applicationKind: babyAuthority.applicationKind, effects: babyAuthority.effects },
+  serverPrivate: { breedingBabyTemplate: babyAuthority },
   capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch() },
   ...overrides,
 })

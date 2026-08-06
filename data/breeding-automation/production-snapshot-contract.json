@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-production-snapshot-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "aa6e4365b417b02dc94dcf9cae76270d4502b2c7264c92985fdef687c641e18d",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-046",
+    "implementation": {
+      "sharedPath": "shared/breeding/productionSnapshots.ts",
+      "domainPath": "server/domain/breeding/productionSnapshots.ts",
+      "parentBreederSnapshotPath": "server/domain/breeding/lineage.ts",
+      "readSetPath": "server/domain/breeding/readSets.ts",
+      "testPath": "tests/server/breedingProductionSnapshots.test.ts"
+    },
+    "checkpoint": {
+      "id": "egg-acceptance",
+      "commandKind": "produce-egg",
+      "projectStatus": "ready-to-produce",
+      "campaignTime": "exact-current-campaign-clock-read-set-minute",
+      "acceptanceBoundary": "snapshot-becomes-authoritative-only-when-the-BR-048-Egg-transaction-commits",
+      "standaloneClientOrMemoryAuthority": "none"
+    },
+    "snapshotPackage": {
+      "schema": "strict-plain-exact-fields-deeply-frozen-and-self-hashed",
+      "contains": [
+        "command-and-Project-binding",
+        "successful-check-binding",
+        "ordered-parent-snapshots",
+        "Breeder-snapshot",
+        "typed-provider-snapshot",
+        "complete-app-reference-snapshot",
+        "full-campaign-option-snapshot",
+        "accepted-definition-hash-set"
+      ],
+      "bindings": [
+        "produce-Egg-operation-and-full-command-hash",
+        "current-ready-Project-revision-and-document-hash",
+        "exact-successful-persisted-check-row",
+        "complete-read-set-and-authorized-receipt",
+        "exact-campaign-minute",
+        "current-ruleset-security-policy-and-compiled-registry"
+      ],
+      "changedFactsUnderHash": "reject"
+    },
+    "parents": {
+      "countAndOrder": "exactly-two-in-Project-command-order",
+      "bindings": [
+        "sheet-slug-owner-and-immutable-Project-revision",
+        "source-sheet-definition-hash-and-snapshot-read",
+        "canonical-species-family-root-spec-hash-and-Egg-Groups",
+        "current-bounded-role-and-maturity-evidence",
+        "complete-effective-known-Move-provenance",
+        "current-owner-control-or-cross-owner-consent-evidence",
+        "capture-campaign-minute"
+      ],
+      "parentDriftAfterCheck": "stale-authority",
+      "unknownOrProvider-ManufacturedMove": "reject"
+    },
+    "breeder": {
+      "source": "current-server-effective-Breeder-authority-at-Egg-acceptance",
+      "bindings": [
+        "Project-Breeder-Trainer",
+        "Trainer-revision-and-source-definition-hash",
+        "Pokemon-Education-rank",
+        "effective-Breeder-Edge-instance-record-and-projection",
+        "typed-provider-snapshot-hash",
+        "read-set-receipt-and-campaign-minute"
+      ],
+      "editable-label-client-rank-or-historical-hash-alone": "never-authority"
+    },
+    "providers": {
+      "policyId": "breeding-provider-snapshot-v1",
+      "sourceInventoryDefinitionSha256": "24bb20a9d61003f540f6b410df3b0919ee49233012e45ec2dd14bfc9ed5c2dd9",
+      "contributionValueKinds": [
+        "evidence-only",
+        "flag",
+        "integer",
+        "ratio",
+        "canonical-id-set"
+      ],
+      "eachContribution": [
+        "reviewed-modifier-inventory-entry-and-contribution-ID",
+        "declared-review-checkpoint",
+        "provider-subject-source-identity-and-revision",
+        "typed-bounded-value",
+        "provider-definition-and-effective-evidence-hashes",
+        "exact-read-set-dependency",
+        "authorization-receipt-evidence-hash"
+      ],
+      "completeSnapshotAttestation": "one-system-Project-dependency-binds-the-entire-provider-snapshot-hash",
+      "facilityPolicy": "no-inventory-entry-means-fail-closed",
+      "freeTextPatchClientEffectOrUnknownContribution": "forbidden"
+    },
+    "referencesAndOptions": {
+      "references": "every-app-owned-reference-content-hash-plus-current-source-manifest-semantic-registry-canonical-ID-compiled-registry-ruleset-and-required-contract-hashes",
+      "campaignOptions": "all-15-canonical-option-ID-and-value-pairs-plus-source-snapshot-and-ruleset-hashes",
+      "ProjectOptionBinding": "exact-Project-creation-option-snapshot-hash",
+      "sourceUpdateBeforeAcceptance": "stale-authority",
+      "sourceUpdateAfterAcceptedEgg": "cannot-rewrite-frozen-Egg-facts"
+    },
+    "consent": {
+      "sameOwner": "zero-cross-owner-consent-evidence-rows",
+      "crossOwner": "one-self-hashed-positive-operation-bound-evidence-row-and-current-read-resource-per-cross-owner-parent",
+      "strictExpiry": "validation-minute-must-be-strictly-before-expiry",
+      "gmOverrideAsConsent": "forbidden"
+    },
+    "acceptedDefinitionHashes": {
+      "canonicalOrder": "strict-code-point-unique",
+      "covers": [
+        "Project",
+        "successful-check",
+        "parents",
+        "parent-specs",
+        "effective-Move-snapshots",
+        "Breeder",
+        "provider-snapshot",
+        "reference-snapshot",
+        "ruleset",
+        "compiled-registry",
+        "full-and-source-campaign-options"
+      ],
+      "missingExtraneousOrReordered": "reject"
+    },
+    "projection": {
+      "audiences": [
+        "gm",
+        "owner"
+      ],
+      "allows": [
+        "frozen-status",
+        "egg-acceptance-checkpoint",
+        "capture-campaign-minute",
+        "fixed-snapshot-kind-labels"
+      ],
+      "forbids": [
+        "Project-Egg-parent-Trainer-Profile-consent-or-provider-identities",
+        "species-Moves-rank-options-values-or-private-mechanics",
+        "commands-read-sets-receipts-rolls-check-components-or-definition-hashes",
+        "map-encounter-scene-initiative-browser-or-wall-clock-state"
+      ]
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparse": "reject",
+      "nestedAndEnvelopeSelfHashes": "verified-server-side",
+      "staleProjectCheckParentBreederProviderReferenceOptionConsentOrPolicy": "fail-closed",
+      "randomRollChoiceOrAdjudication": "none-created-or-consumed-by-snapshot-freezing",
+      "runtimeAuthority": "app-owned-JSON-compiled-artifacts-current-server-providers-and-durable-operation-evidence-only"
+    },
+    "tests": {
+      "count": 9,
+      "requiredCases": [
+        "complete-Egg-acceptance-snapshot-and-deep-freeze",
+        "bounded-owner-GM-projection-privacy",
+        "reviewed-typed-provider-contribution-dependency-receipt-and-complete-snapshot-attestation",
+        "parent-revision-source-spec-role-maturity-and-Move-provenance-staleness",
+        "Breeder-rank-Trainer-provider-and-effective-Edge-staleness",
+        "cross-owner-positive-consent-and-GM-override-non-substitution",
+        "campaign-option-and-app-reference-drift",
+        "post-capture-source-mutation-and-hash-tamper",
+        "wrong-status-command-check-unknown-enriched-and-sparse-input-rejection"
+      ]
+    },
+    "bindings": {
+      "projectAdditionalProgressContractDefinitionSha256": "4bdf0e8290941406f8e60e66a5544e8750f330b8c56180add66023debd4e48b8",
+      "projectCheckContractDefinitionSha256": "4e834427710d2ef0121ff1b8df409d39042e778522ba5a5bc10e534396d67a7e",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "eggContractDefinitionSha256": "d10aefe81deaef159203e11d722d6be9ea41d518d9c17e6a1c5234b9f5f2fcc6",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75"
+    }
+  }
+}

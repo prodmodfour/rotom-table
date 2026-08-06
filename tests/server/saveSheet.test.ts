@@ -15,6 +15,11 @@ import {
 } from '../../server/storage/realtimeEventRepository'
 import { setupSheetSaveRealtimeDedupeKey } from '../../server/realtime/setupDocumentRealtime'
 import { SaveSheetUseCaseError, saveSheetUseCase } from '../../server/useCases/saveSheet'
+import {
+  createBreedingBabyTemplateAuthorityV1,
+  createBreedingMarsupialProviderTraitV1,
+  resolveBreedingMarsupialBabyTemplateV1,
+} from '../../server/domain/breeding/babyTemplate'
 
 const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
   schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
@@ -34,6 +39,20 @@ const pokemonSheet = (overrides: Record<string, unknown> = {}): Record<string, u
   updatedAt: 100,
   ...overrides,
 })
+
+const marsupialBabyAuthorityFields = (): Record<string, unknown> => {
+  const template = resolveBreedingMarsupialBabyTemplateV1()
+  const authority = createBreedingBabyTemplateAuthorityV1({
+    sourceEggId: 'pokemon-egg:v1:91919191919191919191919191919191',
+    babyTemplate: template,
+    marsupial: createBreedingMarsupialProviderTraitV1(),
+  })
+  return {
+    babyTemplate: true,
+    babyTemplateMechanics: { schemaVersion: 1, applicationKind: authority.applicationKind, effects: authority.effects },
+    serverPrivate: { breedingBabyTemplate: authority },
+  }
+}
 
 const trainerSheet = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   slug: 'brock',
@@ -479,8 +498,8 @@ describe('save sheet use case', () => {
       capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
     })
     sheets.saveSetupSheet('pokemon', 'kangaskhan-baby', {
-      slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 10, babyTemplate: true,
-      revision: 1, updatedAt: 100,
+      slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 10,
+      ...marsupialBabyAuthorityFields(), revision: 1, updatedAt: 100,
       capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
     })
 
@@ -518,6 +537,26 @@ describe('save sheet use case', () => {
     expect((forged.sheet.capabilityCampaignState as Record<string, unknown> | undefined)?.marsupialPouch ?? null).toBeNull()
   })
 
+  it('fails closed before reducers when stored Baby Template authority has a stale self-hash', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const authorityFields = structuredClone(marsupialBabyAuthorityFields())
+    ;(((authorityFields.serverPrivate as Record<string, unknown>).breedingBabyTemplate as Record<string, unknown>).definitionSha256) = '0'.repeat(64)
+    sheets.saveSetupSheet('pokemon', 'kangaskhan-baby', {
+      slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 10,
+      ...authorityFields, revision: 1, updatedAt: 100,
+    })
+
+    expect(() => saveSheetUseCase({
+      role: 'gm', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon', slug: 'kangaskhan-baby', expectedRevision: 1,
+      sheet: { slug: 'kangaskhan-baby', nickname: 'Forged', species: 'Kangaskhan', level: 25 },
+    }, { database, sheetRepository: sheets, realtimeEventRepository: realtime, now: () => 200 }))
+      .toThrowError(expect.objectContaining({ statusCode: 409 }))
+    expect(sheets.getByRef('pokemon', 'kangaskhan-baby')).toMatchObject({ revision: 1, sheet: { level: 10 } })
+  })
+
   it('atomically exits a Level 25 Marsupial baby across both sheets and map mirrors, including rollback', () => {
     const database = db()
     const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
@@ -533,8 +572,8 @@ describe('save sheet use case', () => {
       capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
     })
     sheets.saveSetupSheet('pokemon', 'kangaskhan-baby', {
-      slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 24, babyTemplate: true,
-      revision: 1, updatedAt: 100,
+      slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 24,
+      ...marsupialBabyAuthorityFields(), babyTemplate: false, revision: 1, updatedAt: 100,
       capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
     })
     const encounter = createEmptyEncounterState()
@@ -572,7 +611,7 @@ describe('save sheet use case', () => {
     expect(() => saveSheetUseCase(input, {
       database, sheetRepository: sheets, mapRepository: maps, realtimeEventRepository: failingRealtime, now: () => 200,
     })).toThrow('lifecycle event failure')
-    expect(sheets.getByRef('pokemon', 'kangaskhan-baby')).toMatchObject({ revision: 1, sheet: { babyTemplate: true } })
+    expect(sheets.getByRef('pokemon', 'kangaskhan-baby')).toMatchObject({ revision: 1, sheet: { babyTemplate: false } })
     expect(sheets.getByRef('pokemon', 'kangaskhan-mother')?.sheet.capabilityCampaignState).toBeDefined()
     expect(maps.getBySlug('arena')).toMatchObject({ revision: 4 })
 

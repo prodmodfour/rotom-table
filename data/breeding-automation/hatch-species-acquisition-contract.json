@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-hatch-species-acquisition-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "c1f2bc402d9039e372fc5fbf7f6d76849aca3f7994f4bb518171aa27e86748ce",
+  "definition": {
+    "version": 1,
+    "domainPath": "server/domain/breeding/hatchSpeciesAcquisition.ts",
+    "servicePath": "server/useCases/recordTrainerSpeciesAcquisition.ts",
+    "integrationPath": "server/useCases/completePokemonEggHatch.ts",
+    "history": {
+      "identity": [
+        "trainerSheetSlug",
+        "speciesId"
+      ],
+      "firstFacts": "immutable",
+      "rosterRemoval": "preserve",
+      "dexExpInference": "forbidden",
+      "deletion": "forbidden"
+    },
+    "freshHatchOutcomes": {
+      "missingHistory": {
+        "insert": {
+          "sourceKind": "hatch",
+          "sourceEgg": "exact-current-Egg",
+          "operation": "exact-complete-hatch",
+          "campaignMinute": "current-clock",
+          "trainerRevision": "before-reward"
+        },
+        "reward": {
+          "trainerField": "dexExp",
+          "amount": 1,
+          "trainerRevisionDelta": 1
+        }
+      },
+      "existingHistory": {
+        "insert": false,
+        "preserveFirstFacts": true,
+        "rewardAmount": 0,
+        "trainerRevisionDelta": 0
+      }
+    },
+    "transaction": {
+      "boundary": "same-BR-057-phase-2-top-level-transaction",
+      "ordering": [
+        "history-and-conditional-reward",
+        "Trainer-roster-link"
+      ],
+      "rollback": "history-reward-roster-child-Egg-lineage-result-and-events-together"
+    },
+    "replay": {
+      "pendingRecovery": "rerun-from-original-history-presence-read",
+      "terminalRetry": "stored-result-no-service-execution",
+      "exactRewardReplay": "zero-additional-reward",
+      "changedFirstFacts": "reject"
+    },
+    "authority": {
+      "species": "frozen-Egg-blueprint-current-canonical-ID",
+      "trainer": "current-Egg-owner-destination",
+      "historyPresence": "read-set-bound-present-or-absent",
+      "campaignTime": "campaign-clock-only",
+      "sourceKinds": [
+        "capture",
+        "hatch",
+        "evolution",
+        "trade",
+        "migration",
+        "gm-reviewed"
+      ]
+    },
+    "privacy": {
+      "completionProjectionRewardDetails": "forbidden",
+      "realtimeHistoryPayload": "forbidden",
+      "rosterIdentities": "forbidden",
+      "history": "server-private"
+    },
+    "bindings": {
+      "runtimePolicyDefinitionSha256": "282b59277b5a6245e4e3e72f20156cc7697e254fea3664d25ad854c3076eba84",
+      "speciesAcquisitionRewardContractDefinitionSha256": "a3323f91d56eb8ced5428250c3bc2756140c1048fac794aaff1c0805aaed64ae",
+      "hatchCompletionContractDefinitionSha256": "4558c84d58d5d6fa4725001d42c253f31ea8f98c421e0dd0fb73516b583b667d"
+    },
+    "tests": {
+      "service": "tests/server/trainerSpeciesAcquisitionReward.test.ts",
+      "hatchIntegration": "tests/server/breedingHatchCompletion.test.ts",
+      "cases": [
+        "first-hatch-insert-and-one-reward",
+        "preexisting-history-no-hatch-reward",
+        "terminal-retry-no-reward",
+        "rollback-no-history-or-reward",
+        "roster-removal-preserves-history",
+        "dexExp-does-not-imply-history"
+      ]
+    }
+  }
+}

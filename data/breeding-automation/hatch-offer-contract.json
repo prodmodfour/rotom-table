@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-pokemon-egg-hatch-offer-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "d8b699d0a653651de87f1f03ffe109f33fd2fe6f03065805d0ef05d4d0818561",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-054",
+    "implementation": {
+      "sharedContractPath": "shared/breeding/hatchOffers.ts",
+      "domainPath": "server/domain/breeding/hatchOffers.ts",
+      "currentUseCasePath": "server/useCases/projectPokemonEggHatchOffer.ts",
+      "testPath": "tests/server/breedingHatchOffers.test.ts"
+    },
+    "command": {
+      "kind": "begin-hatch",
+      "scope": "exactly-one-current-Pokemon-Egg-scope",
+      "ruleset": "exact-current-Egg-and-app-reference-ruleset",
+      "destinationKinds": [
+        "box",
+        "team"
+      ],
+      "destinationTrainer": "exact-current-Egg-owner-only",
+      "requestSpecialRoll": true,
+      "commandBinding": "operation-ID-and-full-stable-JSON-SHA-256",
+      "clientDeclarationAuthority": "none"
+    },
+    "currentAuthority": {
+      "egg": "server-loaded-exact-current-authoritative-Egg-document-revision-and-hash",
+      "campaignMinute": "current-campaign-clock-only",
+      "references": "exact-current-app-owned-self-hashed-reference-snapshot",
+      "ownerTrainer": "server-loaded-current-storage-owned-Trainer-sheet-revision-and-full-document-hash",
+      "gm": "current-authenticated-campaign-principal-verifier-required",
+      "owner": "current-authenticated-Profile-and-exact-owner-Trainer-control-required",
+      "participantOwner": "never-Egg-hatch-authority",
+      "mapEncounterBrowserWallClock": "never-authority",
+      "postProjectionRecheck": [
+        "campaign-minute",
+        "Egg-revision-and-definition",
+        "owner-Trainer-revision-and-destination-fact"
+      ],
+      "sourceLossFacilityOrStorage": "cannot-confer-or-remove-authority"
+    },
+    "ownerDestinationFact": {
+      "teamCapacity": 6,
+      "sourceFields": [
+        "currentTeam",
+        "boxedPokemon"
+      ],
+      "rosters": "strict-bounded-canonical-deduplicated-and-disjoint",
+      "documentAuthority": "full-current-Trainer-document-hash",
+      "safeCounts": [
+        "current-team-count",
+        "boxed-Pokemon-count",
+        "remaining-team-slots"
+      ],
+      "privateRosterIdentities": "never-projected"
+    },
+    "choices": {
+      "orderedKinds": [
+        "box",
+        "team"
+      ],
+      "optionIdentity": "deterministic-command-Egg-Trainer-kind-and-campaign-minute-bound",
+      "optionIntegrity": "self-hashed-server-private-definition",
+      "box": "available-whenever-Egg-lifecycle-is-ready",
+      "team": "available-only-with-at-least-one-of-six-slots-open",
+      "selectedChoice": "exact-command-destination-kind",
+      "crossOwnerGiftOrTransfer": "BR-064-only"
+    },
+    "blockers": {
+      "precedence": "Egg-lifecycle-before-destination-capacity",
+      "closedLifecycleReasons": [
+        "breeding.egg-lifecycle.not-ready",
+        "breeding.egg-lifecycle.hatch-already-started",
+        "breeding.egg-lifecycle.already-hatched",
+        "breeding.egg-lifecycle.cancelled",
+        "breeding.egg-lifecycle.invalidated-by-gm"
+      ],
+      "capacityReason": "breeding.hatch-offer.team-full",
+      "lifecycleBlockerAppliesTo": "both-destinations",
+      "teamFullAppliesTo": "team-only",
+      "unavailableConsumption": "reject",
+      "sourceContinuityLoss": "not-a-hatch-blocker-after-Egg-acceptance"
+    },
+    "offer": {
+      "genericContract": "campaign-operation-offer-v1",
+      "workspaceId": "breeding",
+      "operationFamilyId": "pokemon-egg-hatch",
+      "actionId": "breeding.egg.begin-hatch",
+      "source": "breeding.v1-system",
+      "audiences": [
+        "owner",
+        "gm"
+      ],
+      "requiredInputKinds": [
+        "confirmation"
+      ],
+      "validity": "issued-at-current-campaign-minute-and-expires-exactly-one-minute-later",
+      "expiryEquality": "expired",
+      "identity": "deterministic-full-current-authority-material",
+      "persistence": "none-reproject-current-authority-before-consumption",
+      "settlement": "none-BR-054-does-not-start-or-mutate-the-Egg"
+    },
+    "consumption": {
+      "declarationFields": [
+        "offerId",
+        "offerDefinitionSha256",
+        "operationId"
+      ],
+      "reprojection": "rebuild-from-current-storage-authority-before-comparison",
+      "match": "all-three-declaration-fields-exact",
+      "selectedDestination": "must-be-current-command-bound-and-available",
+      "expiry": "equality-or-later-cannot-match-current-offer",
+      "retry": "unchanged-current-facts-return-byte-equivalent-authority-and-projection",
+      "randomness": "none",
+      "rolls": "none"
+    },
+    "projection": {
+      "audiences": [
+        "owner",
+        "gm"
+      ],
+      "allows": [
+        "Egg-ID-revision-and-coarse-status",
+        "bounded-campaign-operation-offer-and-declaration-hash",
+        "owner-Trainer-destination-slug",
+        "box-and-team-option-IDs",
+        "availability-and-one-safe-closed-blocker",
+        "remaining-team-slot-count",
+        "selected-option-and-submit-boolean",
+        "generated-campaign-minute"
+      ],
+      "forbids": [
+        "Trainer-roster-identities",
+        "offspring-blueprint-and-traits",
+        "parents-and-Breeder",
+        "Profiles-control-and-consent",
+        "source-loss-or-facility-details",
+        "commands-and-command-hash",
+        "reference-security-Egg-Trainer-option-or-authority-hashes",
+        "read-sets-receipts-rolls-adjudications-and-provider-payloads"
+      ],
+      "authorityEnvelope": "server-private-never-client-projected",
+      "privacyEnforcement": "server-only-never-client-CSS"
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparseContradictory": "reject",
+      "staleEggTrainerActorRulesetReferenceCampaignMinuteOrDestination": "reject",
+      "extraConflictScope": "reject",
+      "forgedOrChangedHash": "reject",
+      "asyncOrFaultingCurrentAuthorityVerifier": "reject",
+      "unsupportedDestinationOrActor": "reject",
+      "viewerDeclaration": "never-confers-authority"
+    },
+    "tests": {
+      "focusedCount": 10,
+      "requiredCases": [
+        "owner-box-offer-consumption-and-exact-replay",
+        "privacy-bounded-owner-and-GM-projection",
+        "team-open-and-team-full-with-box-fallback",
+        "closed-lifecycle-blocker-precedence-and-source-loss-independence",
+        "exact-owner-control-and-current-GM-authority",
+        "stale-Egg-ruleset-actor-extra-scope-and-foreign-destination-rejection",
+        "expiry-declaration-hash-enrichment-and-projection-tamper-rejection",
+        "strict-current-Trainer-roster-and-accessor-rejection",
+        "current-storage-projection-consumption-and-byte-equivalent-retry",
+        "GM-verifier-reference-clock-expiry-and-Trainer-revision-drift-fail-closed"
+      ]
+    },
+    "bindings": {
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "eggLifecyclePolicyContractDefinitionSha256": "0f4006dcab19fc4868eec8917f7e37080b528676acbcbf9e3182e41b25fbf7bd",
+      "projectCampaignOfferContractDefinitionSha256": "f9c5f9b668aca27f072d8369080fc2ff8b5517197b4f8c2e143c503bc9a0f946",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5"
+    }
+  }
+}

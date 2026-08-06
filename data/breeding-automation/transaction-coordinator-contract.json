@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-transaction-coordinator-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+  "definition": {
+    "version": 1,
+    "coordinatorPath": "server/useCases/executeBreedingTransaction.ts",
+    "genericOperationPath": "server/useCases/executeCampaignOperation.ts",
+    "participants": [
+      "breeding-project",
+      "pokemon-egg",
+      "egg-transfer-consent",
+      "pokemon-sheet",
+      "trainer-sheet",
+      "species-acquisition-history",
+      "breeding-operation-terminal-result",
+      "realtime-event-log"
+    ],
+    "transaction": {
+      "reservation": "durable-phase-1-before-mechanics",
+      "pendingDuplicate": "return-without-execution",
+      "pendingRecovery": "explicit-resume-only",
+      "aggregateAndSettlement": "one-top-level-SQLite-transaction",
+      "repositoryConnection": "exact-coordinator-object-identity-required",
+      "repositoryNestedWork": "savepoint-participation-on-same-connection",
+      "nestedInvocation": "reject",
+      "planner": "synchronous-only",
+      "terminalSettlement": "same-savepoint-after-all-writes",
+      "exactTerminalRetry": "return-stored-result-without-planner-or-publication",
+      "transferAtomicity": "Egg-owner-successor-both-consent-consumptions-result-and-realtime-rows"
+    },
+    "writeAccess": {
+      "projects": "strict-project-repository",
+      "eggs": "strict-Egg-repository",
+      "pokemonSheetCreation": "complete-normalized-revision-zero-only",
+      "trainerSheets": "bounded-Breeding-repository-facade-no-map-mutators",
+      "speciesHistoryAndReward": "shared-immutable-history-and-exactly-once-reward-service",
+      "campaignClock": "authoritative-campaign-minute-repository",
+      "operation": "coordinator-owned-reservation-and-settlement",
+      "realtime": "coordinator-owned-fresh-row-append",
+      "transferConsents": "strict-caller-transaction-only-transfer-consent-repository"
+    },
+    "events": {
+      "input": "strict-persisted-realtime-append-material",
+      "freshRowsRequired": true,
+      "existingDedupeReplayDuringSettlement": "reject",
+      "duplicateSequenceWithinSettlement": "reject",
+      "maximumRowsPerOperation": 1000,
+      "emptyBatch": "reject",
+      "contextLifetime": "active-planner-transaction-only",
+      "rolledBackSequence": "reusable-without-gap"
+    },
+    "publication": {
+      "timing": "after-top-level-commit-only",
+      "source": "persisted-event-rows-not-transient-drafts",
+      "order": "persisted-global-sequence",
+      "exactRetry": "do-not-republish",
+      "failure": "report-and-retain-durable-replay-row",
+      "failureAffectsTerminalCommit": false
+    },
+    "failure": {
+      "plannerOrValidation": "rollback-all-phase-2-participants",
+      "beforeSettlement": "rollback-all-phase-2-participants",
+      "settlement": "rollback-all-phase-2-participants",
+      "reservationAfterFailure": "durable-pending",
+      "recovery": "same-command-hash-and-explicit-resume",
+      "partialAggregateOrEventCommit": "forbidden"
+    },
+    "authority": {
+      "serverOnly": true,
+      "mapDependency": "none",
+      "encounterDependency": "none",
+      "browserAuthority": "none",
+      "wallClockLifecycleAuthority": "none",
+      "campaignTime": "injected-authoritative-minutes-only"
+    },
+    "strictness": {
+      "mixedDatabaseRepositories": "reject-at-construction",
+      "outerTransaction": "reject-before-reservation",
+      "asynchronousPlanner": "reject-and-leave-pending",
+      "inactiveOrLeakedContext": "reject",
+      "oldOrDuplicateEventMaterial": "reject-and-roll-back",
+      "publicationFailure": "never-delete-or-roll-back-durable-row"
+    },
+    "bindings": {
+      "operationLedgerContractDefinitionSha256": "0ddc9e1d73013c055dbc84b3b2175591db2a302efd05010dce631fc6d985894a",
+      "repositoryContractDefinitionSha256": "d15c11f9f360d1ebd603feee8ec1506be9262d58f20bc9f753f5af979fa823b5",
+      "initializedPokemonSheetContractDefinitionSha256": "12891b11fb06b97cdfb2add56677781ee9e3d3697733e1bb3f8bae9311e56983",
+      "speciesAcquisitionRewardContractDefinitionSha256": "a3323f91d56eb8ced5428250c3bc2756140c1048fac794aaff1c0805aaed64ae",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "storageSchemaDefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89"
+    }
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-persistence-conformance-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "af4326624a4cb5db8648e10846bf6d1ad0d78ee6b282f3e5c1731d7bfaaf7ff2",
+  "definition": {
+    "version": 1,
+    "phase": 4,
+    "ticket": "BR-039",
+    "surfaces": [
+      {
+        "id": "schema-migration",
+        "testPath": "tests/server/breedingStorageMigrations.test.ts",
+        "requiredCases": [
+          "fresh-contiguous-v22-authority-schema",
+          "v21-preservation-without-legacy-inference",
+          "v22-to-v23-archive-upgrade",
+          "application-offline-byte-equivalence",
+          "constraint-enforcement"
+        ]
+      },
+      {
+        "id": "aggregate-repositories",
+        "testPath": "tests/server/breedingRepositories.test.ts",
+        "requiredCases": [
+          "exact-replay",
+          "identity-collision",
+          "optimistic-stale-revision",
+          "missing-aggregate",
+          "caller-transaction-rollback",
+          "strict-corruption",
+          "restart"
+        ]
+      },
+      {
+        "id": "initialized-child-and-history",
+        "testPath": "tests/server/initializedPokemonSheetRepository.test.ts",
+        "requiredCases": [
+          "single-complete-revision-zero-insert",
+          "bounded-slug-collision",
+          "noncollision-failure-propagation",
+          "savepoint-rollback",
+          "restart"
+        ]
+      },
+      {
+        "id": "species-reward",
+        "testPath": "tests/server/trainerSpeciesAcquisitionReward.test.ts",
+        "requiredCases": [
+          "first-reward-exactly-once",
+          "later-acquisition-zero-reward",
+          "exact-operation-retry",
+          "identity-collision",
+          "atomic-rollback"
+        ]
+      },
+      {
+        "id": "operation-ledger-and-clock",
+        "testPath": "tests/server/campaignClock.test.ts",
+        "requiredCases": [
+          "durable-pending-recovery",
+          "terminal-exact-retry",
+          "stale-competing-revision",
+          "phase-two-rollback",
+          "restart"
+        ]
+      },
+      {
+        "id": "transaction-coordinator",
+        "testPath": "tests/server/breedingTransactionCoordinator.test.ts",
+        "requiredCases": [
+          "cross-repository-atomic-commit",
+          "all-participant-rollback",
+          "explicit-pending-recovery",
+          "ordered-post-commit-publication",
+          "publication-failure-isolation",
+          "restart"
+        ]
+      },
+      {
+        "id": "archive-restore",
+        "testPath": "tests/server/breedingArchiveManager.test.ts",
+        "requiredCases": [
+          "immutable-exact-replay",
+          "identity-collision-and-corruption",
+          "atomic-restore-and-receipt",
+          "failure-injection-rollback",
+          "dependency-rejection",
+          "orphan-diagnostics",
+          "restart"
+        ]
+      },
+      {
+        "id": "cross-connection-conformance",
+        "testPath": "tests/server/breedingPersistenceConformance.test.ts",
+        "requiredCases": [
+          "two-connection-stale-writer",
+          "two-connection-exact-operation-retry",
+          "two-connection-archive-identity-collision",
+          "failed-export-invisible-across-connections"
+        ]
+      }
+    ],
+    "invariants": {
+      "database": "SQLite-one-authoritative-campaign-file",
+      "writers": "serialized-transactions-plus-optimistic-revisions",
+      "staleWriter": "typed-result-or-terminal-rejection-never-overwrite",
+      "exactRetry": "same-stable-json-facts-only-no-second-mutation",
+      "operationRecovery": "explicit-only",
+      "rollback": "all-caller-owned-transaction-participants",
+      "migration": "contiguous-all-or-nothing-preserve-existing-rows",
+      "restart": "strict-reparse-from-durable-state",
+      "mapEncounterAuthority": "none",
+      "wallClockAuthority": "none"
+    },
+    "validation": {
+      "focusedVitest": "single-worker-no-file-parallelism",
+      "typecheck": "required",
+      "targetedLint": "required",
+      "breedingChecker": "required",
+      "diffCheck": "required"
+    },
+    "bindings": {
+      "storageSchemaV22DefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89",
+      "archiveStorageSchemaV23DefinitionSha256": "f5244778586a7a0567faba9befc8481c6911dc72ebdd0c62a850b7f4ee290959",
+      "repositoryContractDefinitionSha256": "d15c11f9f360d1ebd603feee8ec1506be9262d58f20bc9f753f5af979fa823b5",
+      "operationLedgerContractDefinitionSha256": "0ddc9e1d73013c055dbc84b3b2175591db2a302efd05010dce631fc6d985894a",
+      "campaignClockContractDefinitionSha256": "abd4dd586f20dfcbc3b716e2bffbc7d1418853812ff9aaac127e593730215a06",
+      "transactionCoordinatorDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+      "archiveStorageRuntimeDefinitionSha256": "9b666f8947b25eb910fb850d234ac8fbe7b654302e62c6de3479c59e9ab9a396"
+    }
+  }
+}

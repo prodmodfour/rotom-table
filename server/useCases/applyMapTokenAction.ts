@@ -3,6 +3,7 @@ import { applyAa061BallFetchSendOutTriggers } from '../domain/abilityAutomation/
 import { applyAa065CuriousMedicineSendOutTrigger } from '../domain/abilityAutomation/mechanics/aa065PresenceIntegration'
 import { removeCapabilityPresenceGroup } from '../domain/capabilityAutomation/presenceLifecycle'
 import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
+import { effectiveRuntimeAbilityIds } from '../domain/abilityAutomation/effectiveRuntimeAbilities'
 import { rebindZygardeAssemblyOnPresence } from '../domain/capabilityAutomation/zygardeAssembly'
 import { parseCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
 import {
@@ -50,6 +51,7 @@ import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { isSheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
+import { pokemonMarsupialBabyActionRestricted } from '~/utils/sheets/pokemonDerived'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
@@ -656,11 +658,14 @@ const applySpawnTokenToMap = (
       }),
     })
     if (relationship.status === 'corrupt') rejectLivePlayCommand('conflict', relationship.message)
-    if (sheet.babyTemplate === true) {
+    const abilityIds = effectiveRuntimeAbilityIds({ map: context.map, placement, sheet })
+    const parentalBondActive = abilityIds.includes('Parental Bond')
+    if (pokemonMarsupialBabyActionRestricted(sheet, abilityIds)) {
       const motherSlug = relationship.status === 'valid' ? relationship.pouch.motherSheetSlug : null
       rejectLivePlayCommand('conflict', `Baby-Template Kangaskhan ${placement.sheetSlug} cannot deploy independently${motherSlug ? ` from its mother ${motherSlug}` : ''}`)
     }
-    if (relationship.status === 'valid') {
+    if (relationship.status === 'valid'
+      && !(relationship.subjectRole === 'baby' && parentalBondActive)) {
       rejectLivePlayCommand('conflict', `Bound Marsupial Pokémon ${placement.sheetSlug} must deploy through an authoritative paired send-out`)
     }
   }
@@ -836,30 +841,45 @@ const resolveSendOutPokemonMapContext = (
     }),
   })
   if (relationship.status === 'corrupt') rejectLivePlayCommand('conflict', relationship.message)
-  if (pokemonSheet.babyTemplate === true || (relationship.status === 'valid' && relationship.subjectRole === 'baby')) {
+
+  const placement = normalizeLivePlaySendOutPlacement(payload, trainerPlacement)
+  const abilityIds = effectiveRuntimeAbilityIds({ map: context.map, placement, sheet: pokemonSheet })
+  if (pokemonMarsupialBabyActionRestricted(pokemonSheet, abilityIds)
+    || (relationship.status === 'valid' && relationship.subjectRole === 'baby'
+      && !abilityIds.includes('Parental Bond'))) {
     const motherSlug = relationship.status === 'valid' ? relationship.pouch.motherSheetSlug : 'its authoritative mother'
     rejectLivePlayCommand('conflict', `Baby-Template Kangaskhan ${payload.pokemonSlug} must be sent out with ${motherSlug}`)
   }
 
-  const placement = normalizeLivePlaySendOutPlacement(payload, trainerPlacement)
   const marsupialRelationship = relationship.status === 'valid' ? relationship : null
   let marsupialBaby: ResolvedSendOutPokemonMapContext['marsupialBaby'] = null
   if (marsupialRelationship?.subjectRole === 'mother') {
     const babySheet = marsupialRelationship.baby
-    if (!trainerOwnsRosterPokemon(trainerRecord.sheet, babySheet.slug)
-      || context.map.placements.some(candidate => candidate.sheetKind === 'pokemon'
-        && candidate.sheetSlug === babySheet.slug)) {
-      rejectLivePlayCommand('conflict', 'The authoritative Marsupial mother/baby pair cannot be deployed together')
-    }
-    const babyPlacement: SheetPlacement = {
+    const existingBabyPlacement = context.map.placements.find(candidate => (
+      candidate.sheetKind === 'pokemon' && candidate.sheetSlug === babySheet.slug
+    ))
+    const prospectiveBabyPlacement: SheetPlacement = existingBabyPlacement ?? {
       ...placement,
       id: `${payload.tokenId.slice(0, 100)}-marsupial-baby`,
       sheetSlug: babySheet.slug,
     }
-    if (context.map.placements.some(candidate => candidate.id === babyPlacement.id)) {
-      rejectLivePlayCommand('conflict', `Marsupial baby placement ${babyPlacement.id} already exists`)
+    const parentalBondActive = effectiveRuntimeAbilityIds({
+      map: context.map,
+      placement: prospectiveBabyPlacement,
+      sheet: babySheet,
+    }).includes('Parental Bond')
+    if (existingBabyPlacement && !parentalBondActive) {
+      rejectLivePlayCommand('conflict', 'The authoritative Marsupial mother/baby pair cannot be deployed together')
     }
-    marsupialBaby = { placement: babyPlacement, sheet: babySheet }
+    if (!existingBabyPlacement && !parentalBondActive) {
+      if (!trainerOwnsRosterPokemon(trainerRecord.sheet, babySheet.slug)) {
+        rejectLivePlayCommand('conflict', 'The authoritative Marsupial mother/baby pair cannot be deployed together')
+      }
+      if (context.map.placements.some(candidate => candidate.id === prospectiveBabyPlacement.id)) {
+        rejectLivePlayCommand('conflict', `Marsupial baby placement ${prospectiveBabyPlacement.id} already exists`)
+      }
+      marsupialBaby = { placement: prospectiveBabyPlacement, sheet: babySheet }
+    }
   }
   const lookup = sendOutSheetLookup(trainerPlacement, trainerRecord.sheet, payload.pokemonSlug, pokemonRecord.sheet)
   if (marsupialBaby) lookup.pokemon.set(marsupialBaby.sheet.slug, marsupialBaby.sheet)
@@ -1048,7 +1068,15 @@ const applyDeleteTokenToMap = (
     })
     if (relationship.status === 'corrupt') rejectLivePlayCommand('conflict', relationship.message)
     if (relationship.status === 'valid') {
-      authoritativeMarsupialPlacementIds = marsupialRelationshipPlacementIds(context.map, relationship)
+      const babyPlacement = context.map.placements.find(candidate => (
+        candidate.sheetKind === 'pokemon' && candidate.sheetSlug === relationship.pouch.babySheetSlug
+      ))
+      const parentalBondActive = babyPlacement
+        ? effectiveRuntimeAbilityIds({ map: context.map, placement: babyPlacement, sheet: relationship.baby }).includes('Parental Bond')
+        : false
+      if (!parentalBondActive) {
+        authoritativeMarsupialPlacementIds = marsupialRelationshipPlacementIds(context.map, relationship)
+      }
     }
   }
 

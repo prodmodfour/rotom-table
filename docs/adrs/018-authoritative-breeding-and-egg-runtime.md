@@ -15,7 +15,7 @@ The source and conflict decisions are frozen by ADR 017. This ADR assigns runtim
 
 ### Aggregate boundary
 
-A breeding project, parent consent, Pokémon Egg, breeding operation result, campaign clock, and species-acquisition record are separate durable campaign records. An Egg is not a Pokémon sheet, Trainer roster row, inventory item, map record, encounter participant, or status condition.
+A breeding project, parent consent, Egg-transfer consent, Pokémon Egg, breeding operation result, campaign clock, and species-acquisition record are separate durable campaign records. An Egg is not a Pokémon sheet, Trainer roster row, inventory item, map record, encounter participant, or status condition.
 
 There remain exactly two sheet kinds: Trainer and Pokémon. A Pokémon sheet is created only by the terminal hatch transaction.
 
@@ -38,9 +38,33 @@ Edge automation owns effective Breeder and Paleontologist permission. Feature, A
 
 `edge.breeder.request.v1` terminates at the breeding authorization adapter. It does not itself create a project or Egg.
 
+### Fossil source boundary
+
+A fossil creates the same durable Egg aggregate and uses the same incubation, hatch-special, child, lineage, acquisition, and completion pipeline. There is no fossil sheet kind, inventory-row Egg, or parallel hatch command. The accepted source is `source.kind = fossil`, parentless, Breeder-free, and Level 10 by default, with no implicit inheritance.
+
+Creation requires a current authenticated GM designation of one exact quantity-backed fossil source row/unit, one current effective unsuppressed `Paleontologist` Edge, its current Novice Pokémon Education or Survival prerequisite, and one distinct exact Reanimation Machine row/unit. All selectable traits come from command-bound server offers. Any hatch-duration random value is durable before reduction. The source unit is consumed atomically with Egg insertion; the machine is evidence and is not consumed.
+
+`Fossil Restoration` and `Prehistoric Bond` remain Feature-owned permissions/contributions, while the fossil reducer owns their mechanics. Restoration spends two Tutor Points and freezes the only legal extra Basic or bounded Advanced Ability. Bond requires Restoration and Expert Pokémon Education, resolves the highest Nature-adjusted Base Stat, and freezes the corresponding fossil-only Held Item; only an exact maximum tie creates a GM choice. BR-067 layers its optional Baby Template choice onto this same source adapter without changing fossil ownership or creating another hatch path.
+
+### GM-source provenance boundary
+
+GM-authored, mysterious, direct campaign-gift, and imported origins create the same parentless durable Egg with `source.kind = gm`, no Breeder, and Level 1. Every new source contains a closed self-hashed provenance record bound to the future Egg, current owner Trainer, creating GM Profile, and campaign checkpoint. Imported origins additionally bind a current server-reviewed source-record and import-receipt hash. Historical three-field GM sources remain readable but cannot authorize creation. A later Trainer gift is BR-064 ownership transfer, not a source rewrite.
+
+All GM-source traits and durations come from deterministic command-bound server offers; required random duration variation is persisted before reduction. One BR-037 transaction consumes selected offers, inserts the ordinary Egg, settles the operation, and appends payload-free refreshes without mutating the Trainer. GM may see the coarse provenance class; owner projections may not. These Eggs use the same incubation, hatch-special, child, lineage, acquisition, and completion path. BR-067 owns their optional-template extension and forced Marsupial specialization rather than changing BR-066 provenance ownership.
+
+### Baby Template, Marsupial, and artificial-source boundary
+
+Baby Template is a frozen server-owned overlay over app-owned Species data, never a Species mutation. A campaign application is disabled by default and, when enabled, requires one policy-bound server offer that freezes a 2–4 Base Stat penalty, typed Skill/Capability/size effects, and five-Level recovery. Marsupial alone forces penalty 5 through Level 24. Editable sheet fields and player-supplied private data cannot establish, erase, or reactivate authority.
+
+Kangaskhan hatch completion rebuilds current Marsupial and optional Parental Bond authority from one adult mother and commits the child plus reciprocal pouch records atomically. Marsupial's no-action and pouch-protection rules apply only to its active template; current effective Parental Bond permits action and departure while retaining the reviewed tether and Damage Reduction. Level 25 clears the durable relationship without rewriting Species authority.
+
+Playing God creates `source.kind = feature-artificial` through the same Egg and hatch pipeline. Its dedicated reducer requires current Feature parameters, exact Chemistry Set custody, an atomic $3500 cost, persisted required randomness, and exactly rank-bound Expert/Master upgrades. The handoff alone mutates nothing, the tool is not consumed, and retries neither redraw nor spend twice.
+
 ### Transactions
 
-Project mutation, Egg production, campaign-clock advancement, and hatching each have one SQLite transaction. Every transaction includes its terminal operation result and durable audit/realtime event records. Events publish only after commit.
+Project mutation, Egg production, Egg ownership transfer, campaign-clock advancement, and hatching each have one SQLite transaction. Every transaction includes its terminal operation result and durable audit/realtime event records. Events publish only after commit.
+
+Ownership transfer requires durable, linked positive consent from both the current source Trainer controller and the targeted recipient Trainer controller. Consent is bound to the exact Egg and Trainer revisions and expires under campaign time at equality. GM authority can execute but cannot replace consent. The transfer transaction consumes both consent records, advances only Egg ownership metadata, settles the operation, and appends former-owner/new-owner refresh rows atomically; storage movement itself remains non-mutating and does not pause incubation.
 
 The hatch transaction atomically revision-checks the Egg, records or reuses the special roll, resolves bounded adjudication, allocates and inserts one complete Pokémon sheet, updates one Trainer roster, inserts species-acquisition history, conditionally grants the first-species reward, marks the Egg hatched, stores the operation result, and appends events.
 

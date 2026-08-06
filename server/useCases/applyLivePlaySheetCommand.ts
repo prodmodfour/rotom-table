@@ -1093,7 +1093,7 @@ const applyGrantExperience = (
     const resultingBaby = context.sheet.slug === resolvedRelationship.pouch.babySheetSlug
       ? updated
       : babyUpdated ?? babyOriginal
-    relationshipEnded = babyOriginal.babyTemplate === true && resultingBaby.babyTemplate === false
+    relationshipEnded = resultingBaby.babyTemplate === false
     if (relationshipEnded) {
       if (context.sheet.slug === resolvedRelationship.pouch.motherSheetSlug
         || context.sheet.slug === resolvedRelationship.pouch.babySheetSlug) {

@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-trainer-species-acquisition-reward-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "a3323f91d56eb8ced5428250c3bc2756140c1048fac794aaff1c0805aaed64ae",
+  "definition": {
+    "version": 1,
+    "sharedRequestPath": "shared/speciesAcquisition.ts",
+    "servicePath": "server/useCases/recordTrainerSpeciesAcquisition.ts",
+    "repositoryPath": "server/storage/trainerSpeciesAcquisitionRepository.ts",
+    "sources": [
+      "capture",
+      "hatch",
+      "evolution",
+      "trade",
+      "migration",
+      "gm-reviewed"
+    ],
+    "history": {
+      "identity": [
+        "trainerSheetSlug",
+        "speciesId"
+      ],
+      "firstFacts": [
+        "trainerRevisionBeforeReward",
+        "trainerSheetUpdatedAt",
+        "sourceKind",
+        "firstAcquiredAtCampaignMinute",
+        "sourceEggId",
+        "operationId"
+      ],
+      "deletion": "forbidden",
+      "releaseEffect": "history-retained",
+      "dexExpInference": "forbidden",
+      "rosterInference": "forbidden",
+      "legacyFieldMigrationInference": "forbidden",
+      "changedFirstFacts": "identity-collision"
+    },
+    "reward": {
+      "trainerField": "dexExp",
+      "amount": 1,
+      "onlyWhenHistoricalInsertIsNew": true,
+      "missingDexExpBase": 0,
+      "secondAcquisitionAmount": 0,
+      "exactReplayAppliedAmount": 0,
+      "trainerRevisionIncrement": 1,
+      "trainerLevelMutation": "none",
+      "overflow": "reject"
+    },
+    "sourceBinding": {
+      "hatchRequiresSourceEggId": true,
+      "nonHatchForbidsSourceEggId": true,
+      "operationId": "required-hash-bound-campaign-operation",
+      "freeTextSource": "forbidden"
+    },
+    "request": {
+      "schemaVersion": 1,
+      "unknownFields": "reject",
+      "plainJsonOnly": true,
+      "accessorsSymbolsSparseOrEnrichedValues": "reject",
+      "expectedTrainerRevision": "safe-nonnegative-integer",
+      "campaignTime": "only-first-acquisition-clock",
+      "sheetUpdatedAt": "storage-metadata-only-not-lifecycle-authority"
+    },
+    "exactReplay": {
+      "sameOperation": "all-persisted-first-facts-must-match",
+      "changedOperationFacts": "reject",
+      "differentOperationAfterHistory": "already-acquired-no-reward",
+      "terminalOperationReplayOwner": "generic-campaign-operation-ledger"
+    },
+    "transaction": {
+      "owner": "use-case-or-caller-coordinator",
+      "acquisitionAndTrainerReward": "single-SQLite-savepoint",
+      "callerOwnedParticipation": true,
+      "independentNestedCommit": "forbidden",
+      "failureRollsBackHistoryAndReward": true
+    },
+    "canonicalAuthority": {
+      "species": "compiled app-owned canonical Species registry",
+      "trainer": "current SQLite Trainer sheet revision",
+      "history": "trainer_species_acquisitions row",
+      "legacyDexExp": "value-only-never-species-identity",
+      "mapDependency": "none",
+      "encounterDependency": "none"
+    },
+    "privacy": {
+      "history": "campaign-private",
+      "browserDirectAccess": "none",
+      "localPersistence": "none",
+      "errors": "bounded-field-and-policy-only"
+    },
+    "bindings": {
+      "ownershipMapDefinitionSha256": "68a72c5077651ab406a18bb9d8826102194328eb75423002ff90d7d351073e5e",
+      "archiveContractDefinitionSha256": "ed6e1663cc0fba166914985ad7f5aff44a752a4cc98c0b05d87a28082ce4dbd7",
+      "storageSchemaDefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89",
+      "repositoryContractDefinitionSha256": "d15c11f9f360d1ebd603feee8ec1506be9262d58f20bc9f753f5af979fa823b5"
+    }
+  }
+}

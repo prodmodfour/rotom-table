@@ -5,6 +5,7 @@ import type { CapabilityCampaignState } from '#shared/capabilityAutomation/campa
 import type { PokeEdgeInstanceData } from '#shared/edgeAutomation/instances'
 import type { EdgeUsageLedger } from '#shared/edgeAutomation/state'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
+import type { BreedingBabyTemplateAuthorityV1, BreedingBabyTemplateMechanicsV1 } from '#shared/breeding/babyTemplate'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
 
@@ -166,6 +167,63 @@ export interface CharacterSheetGm {
 
 /** Server-authored evidence that must never be accepted from or projected to a client. */
 export interface CharacterSheetServerPrivate {
+  breedingBabyTemplate?: BreedingBabyTemplateAuthorityV1
+  breedingProviderTraits?: {
+    serpentsMark: {
+      patternId: 'attack' | 'crush' | 'fear' | 'life' | 'speed' | 'stealth'
+      sourceParentSheetSlugs: string[]
+      providerEvidenceDefinitionSha256s: string[]
+      sourceEggId: string
+    } | null
+    coreHatchRules?: {
+      loyaltyRank: 3
+      startingTutorPoints: 1
+      providerEvidenceDefinitionSha256s: string[]
+      handoffDefinitionSha256: string
+      sourceEggId: string
+    }
+    fossilRestoration?: {
+      tutorPointDelta: -2
+      extraAbilityId: string
+      extraAbilityTier: 'basic' | 'advanced'
+      sourceTrainerSlug: string
+      providerEvidenceDefinitionSha256: string
+      providerHandoffDefinitionSha256: string
+      sourceEggId: string
+    } | null
+    prehistoricBond?: {
+      highestBaseStatId: StatKey
+      heldItemId: string
+      sourceTrainerSlug: string
+      providerEvidenceDefinitionSha256: string
+      providerHandoffDefinitionSha256: string
+      sourceEggId: string
+    } | null
+    marsupial?: {
+      providerRecordSha256: string
+      providerMechanicFieldsSha256: string
+      providerEvidenceDefinitionSha256s: string[]
+      motherPouchRequired: true
+      removalLevel: 25
+      sourceEggId: string
+      motherSheetSlug?: string
+      hatchHandoffDefinitionSha256?: string
+      parentalBondHandoffDefinitionSha256?: string | null
+    } | null
+    playingGod?: {
+      sourceTrainerSlug: string
+      sourceTrainerRevision: number
+      featureContributionDefinitionSha256: string
+      featureHandoffDefinitionSha256: string
+      chemistryAuthorityDefinitionSha256: string
+      technologyEducationRank: 5 | 6
+      colorationContestStatId: 'beauty' | 'cool' | 'cute' | 'smart' | 'tough' | null
+      inheritanceMoveIds: string[]
+      baseStatIncreases: Record<StatKey, number>
+      upgradeOptionIds: string[]
+      sourceEggId: string
+    } | null
+  }
   abilityItemEvidence?: Array<{
     stateId: string
     canonicalItemId: string
@@ -247,6 +305,8 @@ export interface CharacterSheet {
   nature?: string
   /** Canonical Marsupial/Baby Template lifecycle marker. */
   babyTemplate?: boolean
+  /** Owner-safe server-authored Baby Template mechanics; never accepted as authority from a sheet save. */
+  babyTemplateMechanics?: BreedingBabyTemplateMechanicsV1
   /** Irreversible Letter Press membership; combined sheets cannot act or spawn independently. */
   letterPressCombinedInto?: {
     ownerSheetSlug: string

@@ -3259,7 +3259,6 @@ export const executeCapabilityMechanic = (
       }
       const babyCurrent: CharacterSheet = {
         ...deepCloneJson(baby),
-        babyTemplate: true,
         capabilityCampaignState: parseCapabilityCampaignState({ ...babyState, marsupialPouch: pouch }),
       }
       return {

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "schemaId": "rotom-breeding-incubation-storage-v24",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "102ae6fa26e3e04d32de63cfbb0cfd812774e3abe0e2eae002de1cc235e3dac0",
+  "definition": {
+    "version": 24,
+    "migrationName": "store immutable authoritative Egg incubation segment results",
+    "applicationMigrationSqlSha256": "f1f45815cf955eea1062c552ccbb3d3f4bb7472beafc503d0f2ddd1102528a45",
+    "offlineMigrationSqlSha256": "f1f45815cf955eea1062c552ccbb3d3f4bb7472beafc503d0f2ddd1102528a45",
+    "tables": [
+      "breeding_incubation_segments"
+    ],
+    "invariants": {
+      "oneSegmentPerOperation": true,
+      "oneSegmentPerEggRevision": true,
+      "eggRevisionAdvance": "exactly-one",
+      "commandKinds": [
+        "advance-egg-incubation",
+        "set-egg-incubation-pause"
+      ],
+      "recordJson": "strict-self-hashed-authoritative-segment",
+      "operationForeignKey": "cascade-delete-deferred",
+      "eggForeignKey": "deferred",
+      "overflowPersistence": "segment-result-not-future-progress",
+      "callerOwnedTransaction": true,
+      "mapOrEncounterAuthority": "none"
+    },
+    "migration": {
+      "fromVersion": 23,
+      "toVersion": 24,
+      "preservesExistingRows": true,
+      "createsNoSegmentRows": true,
+      "offlineAndApplicationSqlMustMatch": true,
+      "transaction": "BEGIN-IMMEDIATE-all-or-nothing"
+    },
+    "bindings": {
+      "hatchDurationPolicyDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a",
+      "transactionCoordinatorDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0"
+    }
+  }
+}

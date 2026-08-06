@@ -330,6 +330,7 @@ class RealtimeSseConnection {
         access: record.access,
         principal: this.principal,
         dependencies: this.accessDependencies,
+        event: record.event,
       })
       scannedThroughSequence = record.sequence
 
@@ -429,6 +430,7 @@ class RealtimeSseConnection {
           access: publication.access,
           principal: this.principal,
           dependencies: this.accessDependencies,
+          event: publication.event,
         })
         if (!decision.allowed) continue
         await this.writeData(redactRealtimeEventForPrincipal(

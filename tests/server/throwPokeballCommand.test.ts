@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LIVE_PLAY_COMMAND_TYPES, type ThrowPokeballLivePlayCommand } from '#shared/livePlayCommands'
 import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
+import { createEmptyCapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
@@ -19,6 +20,27 @@ import { parsePlayerProfileId, sanitizePlayerProfileDisplayName, type PlayerProf
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { CharacterSheet } from '~/types/characterSheet'
+import {
+  createBreedingBabyTemplateAuthorityV1,
+  createBreedingMarsupialProviderTraitV1,
+  resolveBreedingMarsupialBabyTemplateV1,
+} from '~~/server/domain/breeding/babyTemplate'
+
+const marsupialTemplate = resolveBreedingMarsupialBabyTemplateV1()
+const marsupialAuthority = createBreedingBabyTemplateAuthorityV1({
+  sourceEggId: 'pokemon-egg:v1:96969696969696969696969696969696',
+  babyTemplate: marsupialTemplate,
+  marsupial: createBreedingMarsupialProviderTraitV1(),
+})
+const marsupialBabyAuthorityFields = {
+  babyTemplate: true,
+  babyTemplateMechanics: {
+    schemaVersion: 1 as const,
+    applicationKind: marsupialAuthority.applicationKind,
+    effects: marsupialAuthority.effects,
+  },
+  serverPrivate: { breedingBabyTemplate: marsupialAuthority },
+}
 
 const openDatabases: RotomDatabase[] = []
 
@@ -110,7 +132,8 @@ const setup = (options: {
   const map = options.map ?? baseMap()
   maps.saveSetupMap(map)
   sheets.saveSetupSheet('trainer', 'ash', (options.trainer ?? trainerSheet()) as unknown as Record<string, unknown>)
-  sheets.saveSetupSheet('pokemon', 'pidgey', (options.target ?? targetSheet()) as unknown as Record<string, unknown>)
+  const target = options.target ?? targetSheet()
+  sheets.saveSetupSheet('pokemon', target.slug, target as unknown as Record<string, unknown>)
   if (options.extraTrainer) sheets.saveSetupSheet('trainer', options.extraTrainer.slug, options.extraTrainer as unknown as Record<string, unknown>)
   if (options.extraPokemon) sheets.saveSetupSheet('pokemon', options.extraPokemon.slug, options.extraPokemon as unknown as Record<string, unknown>)
   modes.set({ slug: map.slug, interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 1_700_000_000_000 })
@@ -145,6 +168,45 @@ const execute = async (input: ReturnType<typeof setup> & {
 })
 
 describe('throwPokeball live-play command', () => {
+  it('keeps a conscious mother’s pouch protection unless active Parental Bond has moved the Baby out', async () => {
+    const pouch = {
+      motherSheetSlug: 'kangaskhan-mother', babySheetSlug: 'kangaskhan-baby', experienceSharePercent: 20 as const,
+      establishedAt: 1_000, sourceOperationId: 'op_capture_parental_pouch',
+    }
+    const map = baseMap({
+      placements: [
+        { id: 'trainer-1', sheetKind: 'trainer', sheetSlug: 'ash', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-1', sheetKind: 'pokemon', sheetSlug: 'kangaskhan-baby', position: { x: 1, y: 0, z: 0 } },
+        { id: 'mother-1', sheetKind: 'pokemon', sheetSlug: 'kangaskhan-mother', position: { x: 2, y: 0, z: 0 } },
+      ],
+    })
+    const mother = targetSheet({
+      slug: 'kangaskhan-mother', nickname: 'Mother', species: 'Kangaskhan', level: 30,
+      combat: { currentHp: 40 },
+      capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+    })
+    const baby = (abilities: CharacterSheet['abilities'] = []) => targetSheet({
+      slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 5,
+      abilities,
+      ...marsupialBabyAuthorityFields,
+      capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+    })
+
+    const protectedEnv = setup({ map, target: baby(), extraPokemon: mother })
+    const protectedRandom = vi.fn(() => 0)
+    const protectedResponse = await execute({ ...protectedEnv, random: protectedRandom })
+    expect(protectedResponse.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(protectedRandom).not.toHaveBeenCalled()
+
+    const bondedEnv = setup({ map, target: baby([{ name: 'Parental Bond' }]), extraPokemon: mother })
+    const bondedRandom = vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0)
+    const bondedResponse = await execute({ ...bondedEnv, random: bondedRandom })
+    expect(bondedResponse.result).toMatchObject({ ok: true, revision: 1 })
+    expect(bondedResponse.capture).toMatchObject({ targetSlug: 'kangaskhan-baby', result: { success: true } })
+    expect(bondedEnv.maps.getBySlug('arena')!.placements.map(placement => placement.id)).toContain('mother-1')
+    expect(bondedRandom).toHaveBeenCalledTimes(2)
+  })
+
   it('successfully captures atomically, updates map metadata, roster, caught-ball, placement, revisions, and realtime events', async () => {
     const env = setup()
     const random = vi.fn()

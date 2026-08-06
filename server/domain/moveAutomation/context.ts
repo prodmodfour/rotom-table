@@ -87,7 +87,7 @@ import {
   struggleAccuracyForCombatRank,
   struggleDamageBaseForCombatRank,
 } from '~/utils/struggleMoves'
-import { pokemonHasResolvedCapability, resolveStats } from '~/utils/sheets/pokemonDerived'
+import { pokemonHasResolvedCapability, pokemonMarsupialBabyActionRestricted, resolveStats } from '~/utils/sheets/pokemonDerived'
 import { computeInjuryAdjustedMaxHp, computePokemonFormulaMaxHp } from '~/utils/ptuHp'
 import type { RegisteredMoveHandlerRegistry } from './handlers/registry'
 import {
@@ -908,16 +908,21 @@ export const buildAuthoritativeMoveRulesContext = (
       capabilityAllowedMoveByPlacement.set(mode.actorPlacementId, mode.description.trim())
     }
   }
+  const parentalBondActive = (placementId: string): boolean => (
+    effectiveAbilitiesByPlacement.get(placementId)?.some(ability => ability.canonicalId === 'Parental Bond') === true
+  )
   const capabilityCarriedPlacementIds = new Set(activeCapabilityLinks
     .filter(link => link.kind === 'as-one-mount' || link.kind === 'viral-fusion' || link.kind === 'marsupial-pouch')
-    .flatMap(link => link.participantPlacementIds))
+    .flatMap(link => link.kind === 'marsupial-pouch'
+      ? link.participantPlacementIds.filter(placementId => !parentalBondActive(placementId))
+      : link.participantPlacementIds))
   const capabilityActionBlockedPlacementIds = new Set(activeCapabilityLinks
     .filter(link => link.kind === 'marsupial-pouch')
-    .flatMap(link => link.participantPlacementIds))
+    .flatMap(link => link.participantPlacementIds.filter(placementId => !parentalBondActive(placementId))))
   for (const placement of basePlacementSnapshot.placements) {
     if (placement.sheetKind !== 'pokemon') continue
     const sheet = sheetByRef.get(sheetReadKey({ kind: 'pokemon', slug: placement.sheetSlug }))?.sheet as CharacterSheet | undefined
-    if (sheet?.babyTemplate === true || sheet?.letterPressCombinedInto || sheet?.zygardeDisassembledIntoCells) {
+    if ((sheet && pokemonMarsupialBabyActionRestricted(sheet, parentalBondActive(placement.id) ? ['Parental Bond'] : [])) || sheet?.letterPressCombinedInto || sheet?.zygardeDisassembledIntoCells) {
       capabilityActionBlockedPlacementIds.add(placement.id)
       if (sheet?.letterPressCombinedInto || sheet?.zygardeDisassembledIntoCells) capabilityCarriedPlacementIds.add(placement.id)
     }

@@ -1,0 +1,297 @@
+{
+  "schemaVersion": 1,
+  "contractId": "ptu-1.05-breeding-operation-read-set-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+  "definition": {
+    "version": 1,
+    "readSet": {
+      "exactFields": [
+        "schemaVersion",
+        "readSetId",
+        "operationId",
+        "commandSha256",
+        "commandKind",
+        "capturedAtCampaignMinute",
+        "resources",
+        "referenceVersions",
+        "dependencyEvidence",
+        "dependencySetDefinitionSha256",
+        "writeExpectations",
+        "complete",
+        "definitionSha256"
+      ],
+      "identity": "breeding-read-set:v1:<32-lowercase-hex>",
+      "commandBinding": "operation-id-command-kind-and-full-command-sha256",
+      "maximumResources": 256,
+      "maximumDependencies": 256,
+      "completeLiteral": true,
+      "selfHash": "stable-json-v1-sha256-excluding-definitionSha256",
+      "capture": "inside-caller-owned-transaction-before-randomness-or-reducer-execution",
+      "reuseAfterStale": "forbidden-new-operation-id-required",
+      "cardinality": "exactly-zero-or-one-immutable-read-set-per-operation",
+      "identityRetry": "exact-record-replay-or-identity-collision"
+    },
+    "resources": {
+      "exactFields": [
+        "resourceKind",
+        "resourceId",
+        "existence",
+        "revision",
+        "definitionSha256",
+        "observedCampaignMinute",
+        "purposes"
+      ],
+      "kinds": [
+        "breeding-adjudication",
+        "breeding-check",
+        "breeding-offer",
+        "breeding-operation",
+        "breeding-project",
+        "breeding-roll",
+        "campaign-clock",
+        "parent-consent",
+        "egg-transfer-consent",
+        "pokemon-egg",
+        "pokemon-sheet",
+        "pokemon-sheet-allocation",
+        "species-acquisition",
+        "trainer-sheet"
+      ],
+      "existence": [
+        "present",
+        "absent"
+      ],
+      "absentShape": "null-revision-null-hash",
+      "versionedKinds": [
+        "breeding-adjudication",
+        "breeding-offer",
+        "breeding-project",
+        "campaign-clock",
+        "parent-consent",
+        "egg-transfer-consent",
+        "pokemon-egg",
+        "pokemon-sheet",
+        "pokemon-sheet-allocation",
+        "trainer-sheet"
+      ],
+      "immutableKinds": [
+        "breeding-check",
+        "breeding-operation",
+        "breeding-roll",
+        "species-acquisition"
+      ],
+      "presentVersionedShape": "revision-and-definition-hash",
+      "presentImmutableShape": "null-revision-and-definition-hash",
+      "campaignClock": "present-clock-alone-carries-observedCampaignMinute-equal-to-read-set-capture-minute",
+      "canonicalOrder": "resource-kind-NUL-resource-id",
+      "purposes": [
+        "authorization",
+        "campaign-time",
+        "conflict",
+        "consent",
+        "idempotency",
+        "mechanics",
+        "privacy",
+        "random-input",
+        "reference",
+        "reward",
+        "snapshot",
+        "write-destination"
+      ]
+    },
+    "referenceVersions": {
+      "exactFields": [
+        "schemaVersion",
+        "rulesetId",
+        "rulesetDefinitionSha256",
+        "sourceManifestSha256",
+        "semanticRegistryDefinitionSha256",
+        "compiledRegistryDefinitionSha256",
+        "canonicalIdsDefinitionSha256",
+        "campaignOptionSnapshotDefinitionSha256",
+        "referenceSources",
+        "contractDefinitionHashes",
+        "definitionSha256"
+      ],
+      "authoritativeReferenceSources": [
+        "abilities",
+        "capabilities",
+        "conditions",
+        "edges",
+        "features",
+        "items",
+        "maneuvers",
+        "moves",
+        "poke-edges",
+        "pokedex",
+        "pokemon-experience-chart",
+        "rules",
+        "stat-rankings"
+      ],
+      "referenceSourcePaths": {
+        "abilities": "data/reference/abilities.json",
+        "capabilities": "data/reference/capabilities.json",
+        "conditions": "data/reference/conditions.json",
+        "edges": "data/reference/edges.json",
+        "features": "data/reference/features.json",
+        "items": "data/reference/items.json",
+        "maneuvers": "data/reference/maneuvers.json",
+        "moves": "data/reference/moves.json",
+        "poke-edges": "data/reference/poke-edges.json",
+        "pokedex": "data/reference/pokedex.json",
+        "pokemon-experience-chart": "data/reference/pokemonExperienceChart.json",
+        "rules": "data/reference/rules.json",
+        "stat-rankings": "data/reference/stat-rankings.json"
+      },
+      "requiredContracts": [
+        "breeding-authorization-contract",
+        "breeding-ledger-contract",
+        "breeding-lineage-contract",
+        "breeding-operation-contract",
+        "breeding-project-contract",
+        "breeding-read-set-contract",
+        "breeding-security-policy",
+        "pokemon-egg-contract"
+      ],
+      "allThirteenReferencesRequired": true,
+      "campaignOptionSnapshotRequired": true,
+      "runtimeSupplementation": "forbidden",
+      "selfHash": "stable-json-v1-sha256-excluding-definitionSha256"
+    },
+    "dependencyEvidence": {
+      "exactFields": [
+        "providerKind",
+        "providerId",
+        "subjectKind",
+        "subjectId",
+        "subjectRevision",
+        "checkpoint",
+        "providerDefinitionSha256",
+        "effectiveEvidenceSha256"
+      ],
+      "providerKinds": [
+        "ability",
+        "campaign-option",
+        "capability",
+        "edge",
+        "facility",
+        "feature",
+        "item",
+        "move",
+        "species-registry",
+        "system"
+      ],
+      "subjectKinds": [
+        "campaign",
+        "pokemon-egg",
+        "pokemon-sheet",
+        "profile",
+        "project",
+        "trainer-sheet"
+      ],
+      "checkpoints": [
+        "authorization",
+        "begin-hatch",
+        "campaign-clock-segment",
+        "egg-acceptance",
+        "hatch-transaction",
+        "incubation-operation",
+        "inheritance-learning",
+        "project-check",
+        "project-creation",
+        "project-preview"
+      ],
+      "canonicalOrder": "checkpoint-provider-kind-provider-id-subject-kind-subject-id",
+      "resolverAttestation": {
+        "providerKind": "system",
+        "providerId": "breeding-effective-dependency-set-v1",
+        "subjectKind": "campaign",
+        "subjectId": "campaign",
+        "subjectRevision": null,
+        "checkpoint": "authorization",
+        "effectiveEvidenceSha256": "hash-of-all-other-canonical-dependency-evidence"
+      },
+      "emptyEffectiveSet": "represented-by-the-required-resolver-attestation",
+      "setHash": "stable-json-v1-sha256-of-complete-canonical-evidence-array"
+    },
+    "completeness": {
+      "allCommands": [
+        "present-campaign-clock-with-campaign-time-purpose",
+        "exact-command-ruleset",
+        "exact-write-expectations",
+        "complete-reference-versions",
+        "dependency-resolver-attestation"
+      ],
+      "writeScopeRule": "every-declared-conflict-scope-has-a-matching-resource-existence-and-revision-read-with-conflict-purpose",
+      "previewAndCreate": [
+        "owner-trainer-authorization",
+        "breeder-trainer-mechanics",
+        "both-parent-revision-snapshots",
+        "command-option-snapshot-match"
+      ],
+      "projectLifecycle": "current-project-mechanics-and-command-specific-absence-proofs",
+      "eggLifecycle": "current-egg-mechanics-and-command-specific-destinations",
+      "hatch": [
+        "destination-trainer",
+        "pokemon-slug-allocation",
+        "species-acquisition"
+      ],
+      "consent": [
+        "project",
+        "parent-revision",
+        "consent-existence"
+      ],
+      "recovery": "target-operation-idempotency",
+      "inheritance": "source-egg-snapshot-and-child-sheet-mechanics",
+      "transferEgg": "current-Egg-source-and-destination-Trainers-and-exactly-two-active-transfer-consents-with-conflict-and-consent-purposes"
+    },
+    "freshness": {
+      "checkpoint": "immediately-before-write-in-the-same-transaction",
+      "comparison": [
+        "existence",
+        "revision",
+        "definition-hash",
+        "campaign-minute",
+        "reference-snapshot-hash",
+        "dependency-set-hash"
+      ],
+      "reasonIds": [
+        "breeding.read-set.resource-created",
+        "breeding.read-set.resource-deleted",
+        "breeding.read-set.revision-changed",
+        "breeding.read-set.definition-changed",
+        "breeding.read-set.reference-changed",
+        "breeding.read-set.dependency-changed"
+      ],
+      "automaticRefreshAfterRoll": "forbidden",
+      "staleOutcome": "breeding.operation.stale-revision-or-conflict",
+      "currentResourceInput": "same-identity-duplicates-rejected"
+    },
+    "privacy": {
+      "persisted": "hashes-identities-revisions-and-bounded-provider-evidence-only",
+      "optionsRollsParentFacts": "remain-in-own-private-ledgers-or-aggregates",
+      "projection": "never-return-raw-read-set-to-public-viewers",
+      "diagnostic": "bounded-reason-ids-and-resource-keys-only"
+    },
+    "authority": {
+      "clientReadSet": "never-authoritative",
+      "serverCapture": "required",
+      "mapEncounterDependency": "none",
+      "wallClock": "none",
+      "campaignClock": "only-time-source",
+      "legacySheetFields": "no-supplemental-authority"
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "lineageContractDefinitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5"
+    }
+  }
+}

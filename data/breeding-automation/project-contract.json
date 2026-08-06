@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 1,
+  "contractId": "ptu-1.05-breeding-project-document-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+  "definition": {
+    "version": 1,
+    "document": {
+      "exactFields": [
+        "schemaVersion",
+        "projectId",
+        "revision",
+        "status",
+        "ruleset",
+        "projectCreationOptionSnapshotSha256",
+        "ownerTrainerSlug",
+        "breederTrainerSlug",
+        "parentRefs",
+        "consentPolicy",
+        "timeline",
+        "check",
+        "producedEggId",
+        "terminal",
+        "createdAtCampaignMinute",
+        "updatedAtCampaignMinute",
+        "statusChangedAtCampaignMinute",
+        "lastOperationId"
+      ],
+      "parentRefFields": [
+        "pokemonSheetSlug",
+        "ownerTrainerSlug",
+        "expectedSheetRevision"
+      ],
+      "rulesetFields": [
+        "rulesetId",
+        "definitionSha256"
+      ],
+      "timelineFields": [
+        "initialRequiredCampaignMinutes",
+        "initialAccumulatedCampaignMinutes",
+        "additionalRequiredCampaignMinutes",
+        "additionalAccumulatedCampaignMinutes",
+        "initialStartedAtCampaignMinute",
+        "checkReadyAtCampaignMinute",
+        "additionalStartedAtCampaignMinute",
+        "readyToProduceAtCampaignMinute",
+        "eggProducedAtCampaignMinute",
+        "lastAppliedClockRevision",
+        "lastAppliedClockMinute"
+      ],
+      "checkReferenceFields": [
+        "checkRecordId",
+        "outcome",
+        "resolvedAtCampaignMinute"
+      ],
+      "terminalFields": [
+        "reasonId",
+        "atCampaignMinute",
+        "operationId"
+      ],
+      "unknownFields": "reject",
+      "objects": "plain-enumerable-data-only",
+      "detachAndDeepFreeze": true
+    },
+    "identity": {
+      "projectId": "breeding-project:v1:<32-lowercase-hex>",
+      "operationId": "breeding-operation:v1:<32-lowercase-hex>",
+      "checkRecordId": "breeding-check:v1:<32-lowercase-hex>",
+      "eggId": "pokemon-egg:v1:<32-lowercase-hex>",
+      "sheetRefs": "canonical-sheet-slugs",
+      "parentCount": 2,
+      "duplicateParent": "reject"
+    },
+    "statuses": [
+      "draft",
+      "awaiting-parent-consent",
+      "initial-time-in-progress",
+      "check-ready",
+      "additional-time-in-progress",
+      "ready-to-produce",
+      "egg-produced",
+      "check-failed",
+      "cancelled",
+      "expired",
+      "abandoned",
+      "conflicted"
+    ],
+    "activeStatuses": [
+      "draft",
+      "awaiting-parent-consent",
+      "initial-time-in-progress",
+      "check-ready",
+      "additional-time-in-progress",
+      "ready-to-produce"
+    ],
+    "settledStatuses": [
+      "egg-produced",
+      "check-failed",
+      "cancelled",
+      "expired",
+      "abandoned",
+      "conflicted"
+    ],
+    "terminalStatuses": [
+      "check-failed",
+      "cancelled",
+      "expired",
+      "abandoned",
+      "conflicted"
+    ],
+    "transitions": {
+      "draft": [
+        "awaiting-parent-consent",
+        "initial-time-in-progress",
+        "cancelled",
+        "expired",
+        "abandoned",
+        "conflicted"
+      ],
+      "awaiting-parent-consent": [
+        "initial-time-in-progress",
+        "check-ready",
+        "cancelled",
+        "expired",
+        "abandoned",
+        "conflicted"
+      ],
+      "initial-time-in-progress": [
+        "awaiting-parent-consent",
+        "check-ready",
+        "cancelled",
+        "expired",
+        "abandoned",
+        "conflicted"
+      ],
+      "check-ready": [
+        "awaiting-parent-consent",
+        "additional-time-in-progress",
+        "check-failed",
+        "cancelled",
+        "expired",
+        "abandoned",
+        "conflicted"
+      ],
+      "additional-time-in-progress": [
+        "ready-to-produce",
+        "cancelled",
+        "expired",
+        "abandoned",
+        "conflicted"
+      ],
+      "ready-to-produce": [
+        "egg-produced",
+        "cancelled",
+        "expired",
+        "abandoned",
+        "conflicted"
+      ],
+      "egg-produced": [],
+      "check-failed": [],
+      "cancelled": [],
+      "expired": [],
+      "abandoned": [],
+      "conflicted": []
+    },
+    "sameStatusRevision": "allowed-for-progress-or-reference-update",
+    "terminalTransition": "forbidden",
+    "timing": {
+      "authoritativeUnit": "campaign-minute",
+      "initialRequiredCampaignMinutes": 240,
+      "additionalRequiredCampaignMinutes": 240,
+      "bounds": "non-negative-safe-integers",
+      "accumulated": "clamped-zero-through-required",
+      "timestamps": "created-less-than-or-equal-status-changed-less-than-or-equal-updated",
+      "clockPair": "both-null-or-both-non-negative-safe-integers"
+    },
+    "check": {
+      "referenceOnly": "details-owned-by-BR-024-ledger",
+      "beforeCheck": "null",
+      "successRequiredStatuses": [
+        "additional-time-in-progress",
+        "ready-to-produce",
+        "egg-produced"
+      ],
+      "failureStatus": "check-failed",
+      "attemptsPerProject": 1,
+      "failedProject": "terminal-new-project-identity-required"
+    },
+    "terminal": {
+      "eggProduced": "produced-egg-id-required-terminal-object-null",
+      "checkFailedReasonId": "breeding.project-terminal.check-failed",
+      "otherTerminal": "typed-reason-operation-and-campaign-minute-required",
+      "active": "terminal-object-and-produced-egg-id-null"
+    },
+    "successor": {
+      "revision": "exactly-current-plus-one",
+      "updatedTime": "monotonic",
+      "newOperationId": "required",
+      "immutableFields": [
+        "schemaVersion",
+        "projectId",
+        "ruleset",
+        "projectCreationOptionSnapshotSha256",
+        "ownerTrainerSlug",
+        "breederTrainerSlug",
+        "consentPolicy",
+        "createdAtCampaignMinute",
+        "parent-sheet-slugs",
+        "parent-owner-trainer-slugs",
+        "required-duration-fields"
+      ],
+      "parentExpectedRevisionChange": "only-before-successful-check-while-next-status-awaiting-parent-consent",
+      "statusChangedAt": "unchanged-for-same-status-equals-updated-time-for-status-transition"
+    },
+    "authority": {
+      "writer": "breeding-project-use-case-and-repository-only",
+      "browserDocumentWrite": "forbidden",
+      "sheetOrMapAuthority": "none",
+      "consentDetails": "separate-ledger",
+      "checkDetails": "separate-ledger",
+      "eggBlueprint": "separate-aggregate"
+    },
+    "limits": {
+      "revisionMaximum": 2147483647,
+      "campaignMinuteMaximum": 9007199254740991,
+      "identifierCharactersMaximum": 160
+    },
+    "failureCodes": [
+      "breeding.project.invalid-document",
+      "breeding.project.unknown-field",
+      "breeding.project.invalid-id",
+      "breeding.project.invalid-status",
+      "breeding.project.invalid-invariant",
+      "breeding.project.invalid-transition",
+      "breeding.project.stale-revision",
+      "breeding.project.immutable-field"
+    ],
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "ownershipMapDefinitionSha256": "68a72c5077651ab406a18bb9d8826102194328eb75423002ff90d7d351073e5e"
+    }
+  }
+}

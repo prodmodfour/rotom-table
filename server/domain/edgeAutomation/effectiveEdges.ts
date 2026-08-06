@@ -21,9 +21,10 @@ import {
 import { EDGE_AUTOMATION_RUNTIME_REGISTRY } from './registry'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { resolvedSheetFeatureClosure } from '#shared/featureAutomation/sheetFeatures'
 import { resolveFeatureGrants } from '#shared/featureAutomation/grants'
+import type { FeatureSuppressionInput } from '#shared/featureAutomation/effective'
 import { isCanonicalEdgeId } from '#shared/edgeAutomation/catalog'
+import { resolveEffectiveFeatures } from '../featureAutomation/effectiveFeatures'
 
 export interface GrantedEdgeInput {
   readonly family: EdgeFamily
@@ -89,6 +90,8 @@ export const resolveEffectiveEdges = (input: {
   readonly sheet: CharacterSheet | TrainerSheet
   readonly grants?: readonly GrantedEdgeInput[]
   readonly suppressions?: readonly EdgeSuppressionInput[]
+  /** Campaign Feature suppression is server authority; never accept this list from a client. */
+  readonly featureSuppressions?: readonly FeatureSuppressionInput[]
 }): EffectiveEdgeSet => {
   const rawEntries: readonly LegacyEdgeEntrySource[] = input.sheet.edges ?? []
   const unresolved: UnresolvedEffectiveEdge[] = []
@@ -135,8 +138,12 @@ export const resolveEffectiveEdges = (input: {
   }))
 
   const automaticFeatureGrants: GrantedEdgeInput[] = input.family === 'trainer'
-    ? resolvedSheetFeatureClosure(input.sheet).flatMap(source => {
-        return resolveFeatureGrants(source).flatMap((grant, index): GrantedEdgeInput[] => {
+    ? resolveEffectiveFeatures({
+        ownerId: input.ownerId,
+        sheet: input.sheet as TrainerSheet,
+        suppressions: input.featureSuppressions,
+      }).instances.filter(source => source.effective && source.parameterStatus === 'ready').flatMap(source => {
+        return resolveFeatureGrants(source.instance).flatMap((grant, index): GrantedEdgeInput[] => {
           if (grant.kind !== 'edge' || grant.targetPolicy !== 'trainer' || grant.duration !== 'permanent' || !isCanonicalEdgeId('trainer', grant.canonicalId)) return []
           try {
             const instance = parseEdgeInstanceData({ schemaVersion: 1, instanceId: `${source.instanceId}:edge-grant:${index}`, family: 'trainer', canonicalId: grant.canonicalId, definitionVersion: 1, rank: 1, choices: [], acquisition: { kind: 'feature-grant', sourceId: source.instanceId }, prerequisiteOverride: null }, 'trainer', grant.canonicalId)

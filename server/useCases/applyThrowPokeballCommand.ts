@@ -65,6 +65,7 @@ import { toPersistedMap } from './saveMap'
 import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
 import { capabilityStandardActionRestriction } from '../domain/capabilityAutomation/actionEligibility'
 import { resolveMarsupialRelationship } from '../domain/capabilityAutomation/marsupialRelationship'
+import { effectiveRuntimeAbilityIds } from '../domain/abilityAutomation/effectiveRuntimeAbilities'
 import {
   clearPhysicalPowerLoadsForPlacements,
   physicalPowerSourceValues,
@@ -554,6 +555,16 @@ const rejectCombinedParticipantCapture = (context: ResolvedThrowPokeballCommandC
 const rejectProtectedMarsupialBabyCapture = (context: ResolvedThrowPokeballCommandContext): void => {
   const relationship = marsupialRelationshipForCaptureTarget(context)
   if (relationship.status !== 'valid' || relationship.subjectRole !== 'baby') return
+  const babySheet = context.pokemonBySlug.get(context.targetPlacement.sheetSlug)
+    ?? rejectLivePlayCommand('conflict', 'The authoritative Marsupial baby sheet is unavailable')
+  // Parental Bond explicitly moves the Baby out of the pouch. Its 10-metre
+  // movement tether remains authoritative, but the conscious-mother pouch
+  // protection no longer applies while the Ability is currently effective.
+  if (effectiveRuntimeAbilityIds({
+    map: context.map,
+    placement: context.targetPlacement,
+    sheet: babySheet,
+  }).includes('Parental Bond')) return
   const motherPlacement = context.map.placements.find(placement => (
     placement.sheetKind === 'pokemon' && placement.sheetSlug === relationship.pouch.motherSheetSlug
   ))

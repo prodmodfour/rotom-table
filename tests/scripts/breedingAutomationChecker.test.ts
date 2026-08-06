@@ -16,7 +16,9 @@ describe('breeding automation checker', () => {
   it('passes the current source, registry, plan, coverage, gate, and synthetic-fixture state', () => {
     const result = runChecker('--check-plan')
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)
-    expect(result.stdout).toContain('Breeding automation check passed: 19/90 tickets')
+    const plan = readFileSync(resolve(ROOT, 'implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md'), 'utf8')
+    const completedTickets = plan.match(/^- \[x\] \*\*BR-\d{3} .* — `DONE`$/gm)?.length ?? 0
+    expect(result.stdout).toContain(`Breeding automation check passed: ${completedTickets}/90 tickets`)
     expect(result.stdout).toContain('30 frozen sources')
     expect(result.stdout).toContain('20 adjudications')
     expect(result.stdout).toContain('6 fixtures, 21 scripts')

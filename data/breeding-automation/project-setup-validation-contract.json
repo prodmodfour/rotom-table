@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-project-setup-validation-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "88266946419fd3d9da33c97c098c736ee7f0aab31ab43917981741786a10b25c",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-042",
+    "contract": {
+      "sharedPath": "shared/breeding/projectSetupValidation.ts",
+      "serverPath": "server/domain/breeding/projectSetupValidation.ts",
+      "testPath": "tests/server/breedingProjectSetupValidation.test.ts",
+      "supportedCommands": [
+        "create-breeding-project",
+        "preview-breeding"
+      ],
+      "schema": "strict-plain-exact-fields-self-hashed-server-authority",
+      "outcomeStatuses": [
+        "awaiting-consent",
+        "ready",
+        "unavailable"
+      ],
+      "checkOrder": [
+        "ownership",
+        "consent",
+        "location-facility",
+        "parent-facts",
+        "maturity",
+        "compatibility"
+      ],
+      "effect": "validation-only-no-project-Egg-sheet-ledger-or-map-write"
+    },
+    "stagedEvaluation": {
+      "authorityFirst": "complete-command-read-set-actor-owner-Breeder-parent-control-and-typed-GM-override-authorization",
+      "unauthorized": "bounded-unavailable-with-no-parent-mechanics-evaluation",
+      "unauthorizedPrivateEvidence": "reject-as-extraneous-without-parsing-mechanics",
+      "awaitingConsent": "cross-owner-player-create-may-return-awaiting-consent-with-zero-parent-fact-or-adjudication-inputs",
+      "unsupportedFacility": "return-unavailable-before-parent-fact-loading-and-reject-downstream-private-evidence",
+      "authorizedEvaluation": "requires-exactly-two-current-parent-fact-records-in-command-order"
+    },
+    "ownershipAndConsent": {
+      "authority": "BR-026-current-authorization-receipt-composed-not-reimplemented",
+      "ownerControl": "current-Profile-selected-owner-Trainer-exact-revision",
+      "breederControl": "current-effective-Breeder-Edge-and-authorized-access-or-exact-typed-GM-overrides",
+      "parentControl": "current-Trainer-roster-link-parent-sheet-revision-and-definition-hash",
+      "sameOwner": "current-control-satisfies-setup-consent-check",
+      "crossOwnerPreview": "unavailable-before-private-mechanics",
+      "crossOwnerCreate": "awaiting-parent-consent-with-server-verified-link-only",
+      "positiveConsent": "later-project-operation-revalidates-active-project-parent-owner-Profile-scopes-read-set-and-strict-campaign-expiry-through-BR-026",
+      "gmOverride": "minimal-command-bound-targeted-override-is-not-consent-and-does-not-supply-mechanics"
+    },
+    "parentFacts": {
+      "fields": [
+        "campaign-minute",
+        "egg-group-ids",
+        "gender-id",
+        "level",
+        "parent-sheet-definition-hash",
+        "parent-sheet-revision",
+        "parent-sheet-slug",
+        "species-id",
+        "species-spec-definition-hash"
+      ],
+      "source": "current-server-loaded-Pokemon-sheet-plus-compiled-app-owned-BreedingSpeciesSpec",
+      "selfHash": "stable-json-v1-sha256",
+      "exactBindings": [
+        "command-parent-order-and-revision",
+        "parent-control",
+        "pokemon-sheet-read-set-row-with-snapshot-purpose",
+        "compiled-Species-spec-hash-and-Egg-Groups",
+        "read-set-campaign-minute"
+      ],
+      "sheetOverrideOfEggGroups": "forbidden",
+      "documentaryFallback": "forbidden"
+    },
+    "maturity": {
+      "policies": {
+        "minimum-level": "both-levels-meet-current-bounded-campaign-option-and-extraneous-GM-confirmations-are-rejected",
+        "gm-confirmed-per-parent": "exactly-two-current-resolved-positive-audited-confirmations-one-per-command-parent"
+      },
+      "confirmationBindings": [
+        "parent-fact-definition-hash",
+        "pokemon-sheet-target-and-revision",
+        "campaign-option-snapshot",
+        "compatibility-policy",
+        "ruleset",
+        "mechanics-read-set-row"
+      ],
+      "gmAuthority": "injected-server-dependency-rechecks-persisted-settlement-command-complete-read-set-authenticated-GM-authorization-receipt-and-terminal-result",
+      "callbackFailureAsyncOrAbsence": "reject",
+      "randomness": "none"
+    },
+    "locationAndFacility": {
+      "policyId": "campaign-workshop-off-map-v1",
+      "mapEncounterPlacementInitiativeOrSceneAuthority": "forbidden-and-never-consulted",
+      "canonicalFacilityInventoryCount": 0,
+      "noFacility": "satisfied-under-campaign-Workshop-policy",
+      "anyFacilityDependency": "unavailable-breeding.setup.facility-unsupported",
+      "unsupportedFacilityIdProjection": null,
+      "futureFacilityAuthority": "requires-reviewed-app-owned-provider-registry-migration-before-runtime-acceptance"
+    },
+    "compatibility": {
+      "evaluator": "existing-pure-compiled-evaluateBreedingCompatibility",
+      "inputs": [
+        "exact-parent-facts",
+        "current-campaign-options",
+        "positive-maturity-result",
+        "optional-authoritative-parent-role-override"
+      ],
+      "kinds": [
+        "canonical-ditto",
+        "conventional",
+        "gm-role-override"
+      ],
+      "failure": "bounded-canonical-reason-ids-only",
+      "previewIsAuthority": false,
+      "staleOrUnresolvedFacts": "reject-or-unavailable-never-infer"
+    },
+    "boundedParentRoleAdjudication": {
+      "acceptedOnlyWhen": "canonical-same-sex-policy-requires-role-override",
+      "record": "resolved-revision-1-parent-role-override-bounded-option-GM-adjudication",
+      "offer": "matching-consumed-revision-1-parent-role-offer",
+      "choices": [
+        "first-female-second-male",
+        "first-male-second-female"
+      ],
+      "authority": "both-parent-fact-hashes-campaign-options-ruleset-and-compatibility-policy",
+      "expiry": "offer-must-have-settled-strictly-before-expiry-campaign-minute",
+      "settlement": "injected-server-dependency-rechecks-persisted-authenticated-GM-operation-chain",
+      "freeTextOrClientValue": "forbidden",
+      "extraneousUse": "reject"
+    },
+    "authorityEnvelope": {
+      "identity": "command-operation-id-full-command-hash-and-self-hashed-result",
+      "references": [
+        "campaign-option-snapshot",
+        "compiled-registry",
+        "compatibility-policy",
+        "ruleset",
+        "security-policy"
+      ],
+      "exactReplay": "stable-json-semantic-equality-through-definition-hash",
+      "readSet": "all-parent-sheet-Trainer-consent-provider-adjudication-offer-reference-and-campaign-time-facts-are-current-operation-bound",
+      "writes": "none"
+    },
+    "projection": {
+      "audiences": [
+        "gm",
+        "owner"
+      ],
+      "allows": [
+        "bounded-status-and-reasons",
+        "five-check-statuses",
+        "bounded-compatibility-kind-and-reasons",
+        "closed-location-policy-id",
+        "null-facility-id"
+      ],
+      "forbids": [
+        "operation-command-or-read-set",
+        "Profile-or-sheet-identities",
+        "parent-facts-or-definition-hashes",
+        "control-Breeder-or-GM-override-evidence",
+        "consent-records",
+        "adjudication-or-offer-records",
+        "map-encounter-scene-placement-or-initiative-state"
+      ],
+      "enforcement": "server-projection-schema-not-client-CSS",
+      "awaitingConsentPrivacy": "ownership-and-awaiting-consent-only-with-all-private-downstream-checks-not-evaluated"
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparse": "reject",
+      "staleCommandReadSetControlParentSpecOptionsReferenceOrPolicy": "reject",
+      "missingExtraneousHashInvalidOrMismatchedAdjudication": "reject",
+      "unavailableOrAwaitingOutcome": "cannot-confer-ready-authority",
+      "browserLocalMapOrDocumentaryAuthority": "none"
+    },
+    "tests": {
+      "count": 9,
+      "requiredCases": [
+        "deterministic-ready-same-owner-authority-exact-replay-and-private-projection",
+        "minimum-Level-failure-with-bounded-compatibility-reason",
+        "default-per-parent-resolved-positive-GM-maturity-confirmations-and-persisted-authority-recheck",
+        "cross-owner-create-awaiting-consent-before-private-mechanics-loading",
+        "cross-owner-preview-denial-before-private-mechanics-loading",
+        "closed-off-map-no-facility-policy-and-unsupported-facility-rejection",
+        "stale-parent-and-canonical-incompatibility-fail-closed",
+        "bounded-parent-role-offer-adjudication-free-text-and-strict-expiry",
+        "unknown-enriched-sparse-accessor-extraneous-option-drift-and-hash-tamper-rejection"
+      ]
+    },
+    "bindings": {
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "compatibilityPolicyDefinitionSha256": "6a38a2ea1cf38b4d331a638ef94be2b9d1b6fb2781c668eedc84f0a6dcd7a34f",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "parentDiscoveryContractDefinitionSha256": "ec9aaa847e2bfaf3475f61638c0b8cdda10571b0e8f6432f75af2a7c642dd438",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5"
+    }
+  }
+}

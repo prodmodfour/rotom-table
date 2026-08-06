@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "contractId": "ptu-1.05-breeding-presentation-projections-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "2177141c8935978d0066bcdeea992b8c55a167bf0b4d93b32cd981b01e9eb3ce",
+  "definition": {
+    "version": 1,
+    "audiences": [
+      "diagnostic",
+      "gm",
+      "owner",
+      "participating-owner",
+      "public"
+    ],
+    "common": {
+      "schemaVersion": 1,
+      "plainDataOnly": true,
+      "unknownFields": "reject",
+      "projectionSelfHash": "stable-json-v1-sha256-excluding-projectionDefinitionSha256",
+      "generatedAt": "campaign-minute-only-for-authenticated-private-gm-and-diagnostic-projections; omitted-publicly",
+      "audienceAdoption": "exact-audience-match-only",
+      "clientFieldHiding": "forbidden"
+    },
+    "public": {
+      "exactFields": [
+        "schemaVersion",
+        "audience",
+        "aggregateKind",
+        "aggregateIdentitySha256",
+        "coarseStatus",
+        "summaryId",
+        "progressBand",
+        "securityPolicyDefinitionSha256",
+        "projectionDefinitionSha256"
+      ],
+      "identity": "campaign-keyed-HMAC-only",
+      "aggregateKinds": [
+        "breeding-project",
+        "pokemon-egg"
+      ],
+      "coarseStatuses": [
+        "awaiting-consent",
+        "cancelled",
+        "completed",
+        "decision-required",
+        "hatching",
+        "incubating",
+        "in-progress",
+        "planning",
+        "ready",
+        "unavailable"
+      ],
+      "summaryIds": [
+        "breeding.public.egg",
+        "breeding.public.project"
+      ],
+      "progressBands": [
+        "complete",
+        "early",
+        "late",
+        "middle",
+        "none"
+      ],
+      "forbidden": [
+        "raw-aggregate-id",
+        "revision",
+        "owner",
+        "breeder",
+        "parent",
+        "consent",
+        "exact-time",
+        "trait",
+        "move",
+        "roll",
+        "option",
+        "operation",
+        "hash-trace"
+      ]
+    },
+    "ownerProject": {
+      "exactFields": [
+        "schemaVersion",
+        "audience",
+        "aggregateKind",
+        "projectId",
+        "revision",
+        "status",
+        "ownerTrainerSlug",
+        "breederTrainerSlug",
+        "parentSlots",
+        "timeline",
+        "checkStatus",
+        "offers",
+        "availableActions",
+        "explanationReasonIds",
+        "generatedAtCampaignMinute",
+        "securityPolicyDefinitionSha256",
+        "projectionDefinitionSha256"
+      ],
+      "access": "current-player-profile-control-of-owner-trainer",
+      "parentPolicy": "owned-parent-identity-only; participating-parent-slot-hides-slug-revision-and-all-private-facts",
+      "timeline": "exact-campaign-progress",
+      "check": "bounded-status-no-roll-or-skill-input",
+      "offers": "active-server-issued-offers-for-viewer-profile-only",
+      "actions": "server-authorized-action-ids-only",
+      "forbidden": [
+        "other-parent-identity",
+        "parent-snapshot",
+        "raw-check",
+        "roll",
+        "full-consent-profile",
+        "provider-trace",
+        "gm-override"
+      ]
+    },
+    "ownerEgg": {
+      "exactFields": [
+        "schemaVersion",
+        "audience",
+        "aggregateKind",
+        "eggId",
+        "revision",
+        "status",
+        "ownerTrainerSlug",
+        "sourceKind",
+        "offspring",
+        "incubation",
+        "specialStatus",
+        "specialOutcomeId",
+        "inheritanceMoveIds",
+        "childSheetSlug",
+        "offers",
+        "availableActions",
+        "explanationReasonIds",
+        "generatedAtCampaignMinute",
+        "securityPolicyDefinitionSha256",
+        "projectionDefinitionSha256"
+      ],
+      "access": "current-player-profile-control-of-owner-trainer",
+      "offspring": "resolved-owner-safe-traits",
+      "incubation": "exact-campaign-minute-progress",
+      "inheritance": "deduplicated-move-ids-with-no-private-parent-attribution",
+      "special": "state-and-resolved-outcome-without-roll-total-trigger-or-automatic-Shiny-inference",
+      "forbidden": [
+        "parents",
+        "breeder-snapshot",
+        "lineage-sources",
+        "rolls",
+        "adjudication-notes",
+        "definition-traces"
+      ]
+    },
+    "participatingOwner": {
+      "exactFields": [
+        "schemaVersion",
+        "audience",
+        "aggregateKind",
+        "projectId",
+        "revision",
+        "coarseStatus",
+        "breederTrainerSlug",
+        "ownParent",
+        "consent",
+        "ownContributionMoveIds",
+        "otherParentPresent",
+        "availableActions",
+        "generatedAtCampaignMinute",
+        "securityPolicyDefinitionSha256",
+        "projectionDefinitionSha256"
+      ],
+      "access": "current-profile-control-of-exact-participating-parent-owner-trainer-and-link",
+      "ownParent": "own-controlled-safe-summary-only",
+      "consent": "own-request-status-all-three-scopes-and-expiry-no-profile-id",
+      "contributions": "own-parent-move-ids-only",
+      "actions": [
+        "grant-breeding-consent",
+        "revoke-breeding-consent"
+      ],
+      "forbidden": [
+        "project-owner-identity",
+        "other-parent-identity",
+        "other-parent-species",
+        "other-parent-moves",
+        "offspring-traits",
+        "exact-timeline",
+        "raw-checks",
+        "rolls",
+        "other-consent",
+        "consenting-profile-id",
+        "gm-data"
+      ]
+    },
+    "gm": {
+      "exactFields": [
+        "schemaVersion",
+        "audience",
+        "aggregateKind",
+        "document",
+        "rolls",
+        "checks",
+        "offers",
+        "consents",
+        "adjudications",
+        "authorizationReceipts",
+        "readSets",
+        "availableActions",
+        "generatedAtCampaignMinute",
+        "securityPolicyDefinitionSha256",
+        "projectionDefinitionSha256"
+      ],
+      "access": "current-authenticated-gm-principal",
+      "document": "strict-full-project-or-Egg-contract",
+      "ledgers": "authoritative-self-hash-verified-before-projection",
+      "readSets": "authoritative-self-hash-verified",
+      "actions": "server-authorized-GM-action-ids",
+      "maximums": {
+        "rolls": 32,
+        "checks": 4,
+        "offers": 64,
+        "consents": 2,
+        "adjudications": 64,
+        "authorizationReceipts": 128,
+        "readSets": 128
+      }
+    },
+    "diagnostic": {
+      "exactFields": [
+        "schemaVersion",
+        "audience",
+        "aggregateKind",
+        "aggregateIdentitySha256",
+        "revision",
+        "aggregateDefinitionSha256",
+        "rulesetDefinitionSha256",
+        "operationDefinitionHashes",
+        "traces",
+        "reasonIds",
+        "generatedAtCampaignMinute",
+        "operatorAuthorizationDefinitionSha256",
+        "securityPolicyDefinitionSha256",
+        "projectionDefinitionSha256"
+      ],
+      "access": "current-self-hashed-authorized-operator-evidence",
+      "identity": "campaign-keyed-HMAC-only",
+      "traceStages": [
+        "authorize",
+        "load",
+        "persist",
+        "publish",
+        "recover",
+        "resolve"
+      ],
+      "traceStatuses": [
+        "failed",
+        "ok",
+        "pending"
+      ],
+      "forbidden": [
+        "aggregate-id",
+        "sheet-id",
+        "profile-id",
+        "command-payload",
+        "option-payload",
+        "parent",
+        "trait",
+        "move",
+        "consent-payload",
+        "note",
+        "roll-value"
+      ]
+    },
+    "offerProjection": {
+      "fields": [
+        "offerId",
+        "revision",
+        "choiceKind",
+        "expiresAtCampaignMinute",
+        "options"
+      ],
+      "optionFields": [
+        "optionId",
+        "canonicalValueId"
+      ],
+      "eligibility": "active-unexpired-offer-chooser-profile-exact-match",
+      "forbidden": [
+        "authority-evidence",
+        "definition-hash",
+        "other-chooser",
+        "settlement-command"
+      ]
+    },
+    "realtime": {
+      "payload": "refresh-signal-only",
+      "projectionDelivery": "authenticated-request-after-refresh",
+      "cacheKey": "audience-plus-authorized-viewer-plus-aggregate-revision",
+      "crossAudienceCacheReuse": "forbidden"
+    },
+    "authority": {
+      "projectionBuilder": "server-only",
+      "visibilityBeforeControl": true,
+      "controlCannotExceedVisibleIdentity": true,
+      "deepLink": "current-projection-identities-only",
+      "localPersistence": "presentation-preferences-only",
+      "publicAndDiagnosticIdentity": "keyed-not-plain-sha",
+      "mapEncounterDependency": "none",
+      "clientInference": "none"
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5"
+    }
+  }
+}

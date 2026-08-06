@@ -5,6 +5,7 @@ import {
   splitEvolutionTarget,
 } from '../../server/domain/capabilityAutomation/evolutionProviders'
 import type { CharacterSheet } from '~/types/characterSheet'
+import { createBreedingBabyTemplateAuthorityV1, createBreedingMarsupialProviderTraitV1, resolveBreedingMarsupialBabyTemplateV1 } from '../../server/domain/breeding/babyTemplate'
 
 const pokemon = (species: string, overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
   slug: species.toLowerCase(), name: species, species, level: 20, ...overrides,
@@ -36,7 +37,11 @@ describe('Capability evolution providers', () => {
   })
 
   it('ends the Marsupial Baby Template at level 25', () => {
-    const previous = pokemon('Kangaskhan', { level: 24, babyTemplate: true })
+    const template = resolveBreedingMarsupialBabyTemplateV1()
+    const authority = createBreedingBabyTemplateAuthorityV1({ sourceEggId: 'pokemon-egg:v1:92929292929292929292929292929292', babyTemplate: template, marsupial: createBreedingMarsupialProviderTraitV1() })
+    const previous = pokemon('Kangaskhan', { level: 24, babyTemplate: true,
+      babyTemplateMechanics: { schemaVersion: 1, applicationKind: authority.applicationKind, effects: authority.effects },
+      serverPrivate: { breedingBabyTemplate: authority } })
     const result = applyCapabilityEvolutionTransition(previous, { ...previous, level: 25 })
     expect(result.sheet.babyTemplate).toBe(false)
     expect(result.reasonCodes).toContain('capability.marsupial.baby-template-ended')

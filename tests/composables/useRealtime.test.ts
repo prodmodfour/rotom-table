@@ -454,6 +454,7 @@ describe('useRealtime connection state and replay controls', () => {
       },
     }))
 
+    cursorStorage.advanceCursor('gm', 9)
     FakeEventSource.instances[0]?.emitMessage(aheadControl())
     expect(cursorStorage.readCursor('gm')).toBe(6)
     expect(changes).toContainEqual(expect.objectContaining({

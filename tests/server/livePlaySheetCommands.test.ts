@@ -30,6 +30,11 @@ import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { createEmptyCapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
 import { resolveEffectiveCapabilities } from '~~/server/domain/capabilityAutomation/effectiveCapabilities'
 import type { CharacterSheet } from '~/types/characterSheet'
+import { createBreedingBabyTemplateAuthorityV1, createBreedingMarsupialProviderTraitV1, resolveBreedingMarsupialBabyTemplateV1 } from '~~/server/domain/breeding/babyTemplate'
+
+const marsupialTemplate = resolveBreedingMarsupialBabyTemplateV1()
+const marsupialAuthority = createBreedingBabyTemplateAuthorityV1({ sourceEggId: 'pokemon-egg:v1:96969696969696969696969696969696', babyTemplate: marsupialTemplate, marsupial: createBreedingMarsupialProviderTraitV1() })
+const marsupialBabyAuthorityFields = { babyTemplate: true, babyTemplateMechanics: { schemaVersion: 1 as const, applicationKind: marsupialAuthority.applicationKind, effects: marsupialAuthority.effects }, serverPrivate: { breedingBabyTemplate: marsupialAuthority } }
 
 const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
   schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
@@ -921,7 +926,7 @@ describe('live-play sheet commands', () => {
       kind: 'pokemon', slug: 'kangaskhan-baby', revision: 1, updatedAt: 30,
       sheet: {
         slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 20,
-        totalExp: 500, babyTemplate: true, revision: 1, updatedAt: 30,
+        totalExp: 500, ...marsupialBabyAuthorityFields, revision: 1, updatedAt: 30,
         capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
       },
     })
@@ -951,7 +956,7 @@ describe('live-play sheet commands', () => {
       kind: 'pokemon', slug: 'kangaskhan-baby', revision: 1, updatedAt: 30,
       sheet: {
         slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 20,
-        totalExp: 500, babyTemplate: true, revision: 1, updatedAt: 30,
+        totalExp: 500, ...marsupialBabyAuthorityFields, revision: 1, updatedAt: 30,
         capabilityCampaignState: {
           ...createEmptyCapabilityCampaignState(),
           marsupialPouch: { ...motherPouch, experienceSharePercent: 0 },
@@ -1008,7 +1013,7 @@ describe('live-play sheet commands', () => {
       kind: 'pokemon', slug: 'kangaskhan-baby', revision: 1, updatedAt: 30,
       sheet: {
         slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 24,
-        totalExp: 740, babyTemplate: true, revision: 1, updatedAt: 30,
+        totalExp: 740, ...marsupialBabyAuthorityFields, babyTemplate: false, revision: 1, updatedAt: 30,
         capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
       },
     })
@@ -1046,7 +1051,7 @@ describe('live-play sheet commands', () => {
       })
       sheetRepository.saveSetupSheet('pokemon', 'kangaskhan-baby', {
         slug: 'kangaskhan-baby', nickname: 'Baby', species: 'Kangaskhan', level: 20,
-        totalExp: 500, babyTemplate: true, revision: 1, updatedAt: 30,
+        totalExp: 500, ...marsupialBabyAuthorityFields, revision: 1, updatedAt: 30,
         capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
       })
       sheetRepository.saveSetupSheet('trainer', 'giovanni', trainerSheet().sheet)

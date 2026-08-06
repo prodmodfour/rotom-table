@@ -1,6 +1,6 @@
 import type { CharacterSheet } from '~/types/characterSheet'
 import { resolveNature } from '~/utils/ptuNatures'
-import { pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
+import { pokemonHasActiveBabyTemplate, pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
 import { deepCloneJson } from '~/utils/serialization'
 import {
   type MarsupialRelationshipResolution,
@@ -77,13 +77,14 @@ export const applyCapabilityEvolutionTransition = (
     producedHeldItem = 'Pink Pearl'
     reasons.push('capability.pearl-creation.applied')
   }
-  if ((next.level ?? 0) < 25 && pokemonHasResolvedCapability(next, 'Marsupial')) {
-    if (next.babyTemplate !== true) reasons.push('capability.marsupial.baby-template-applied')
-    next.babyTemplate = true
+  const previousBabyTemplateActive = pokemonHasActiveBabyTemplate(previous)
+  const nextBabyTemplateActive = pokemonHasActiveBabyTemplate(next)
+  if ((next.level ?? 0) < 25 && previousBabyTemplateActive) {
+    // Preserve only already-authoritative mechanics. Species identity and the
+    // editable compatibility flag can never manufacture a Baby Template.
+    next.babyTemplate = nextBabyTemplateActive
   }
-  else if ((next.level ?? 0) >= 25
-    && (pokemonHasResolvedCapability(previous, 'Marsupial') || pokemonHasResolvedCapability(next, 'Marsupial'))
-    && next.babyTemplate === true) {
+  else if ((next.level ?? 0) >= 25 && previousBabyTemplateActive && !nextBabyTemplateActive) {
     next.babyTemplate = false
     const cleared = withoutMarsupialPouchState(next)
     if (cleared.capabilityCampaignState) next.capabilityCampaignState = cleared.capabilityCampaignState

@@ -367,7 +367,10 @@ const handleReconcileRequiredControl = (
   control: RealtimeReplayReconcileRequiredControl,
   sourceContext: SourceContext,
 ): void => {
-  getCursorStorage().advanceCursor(sourceContext.contextKey, control.latestSequence)
+  // The server's cursor state is authoritative for both retained gaps and an
+  // ahead client cursor. Replacement (not monotonic advance) prevents an ahead
+  // cursor from surviving reconnect and requesting the same impossible range.
+  getCursorStorage().replaceCursor(sourceContext.contextKey, control.latestSequence)
   notifyConnection('replaying', {
     reason: 'reconcile-required',
     reconnected: sourceContext.reconnected,

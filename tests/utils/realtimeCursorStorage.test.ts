@@ -60,13 +60,15 @@ describe('realtime cursor storage', () => {
     )
   })
 
-  it('never moves a cursor backward', () => {
+  it('advances monotonically but lets authoritative replay reconciliation replace an ahead cursor', () => {
     const sessionStorage = new FakeSessionStorage()
     const storage = createRealtimeCursorStorage({ getSessionStorage: () => sessionStorage, warn: vi.fn() })
 
     expect(storage.advanceCursor('gm', 10)).toBe(10)
     expect(storage.advanceCursor('gm', 6)).toBe(10)
-    expect(storage.readCursor('gm')).toBe(10)
+    expect(storage.replaceCursor('gm', 6)).toBe(6)
+    expect(storage.readCursor('gm')).toBe(6)
+    expect(() => storage.replaceCursor('gm', -1)).toThrow(/cursor/)
   })
 
   it('performs no session storage access when no browser storage is available', () => {

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { parseBreedingRealtimeRefreshEventV1 } from '#shared/breeding/realtime'
 import {
   DEFAULT_REALTIME_EVENT_READ_LIMIT,
   MAX_REALTIME_EVENT_READ_LIMIT,
@@ -297,6 +298,16 @@ const normalizeAppendInput = (
     ? defaultTimestamp
     : parseRealtimeEventTimestamp(input.timestamp, 'realtime event timestamp')
   if (timestamp === undefined) throw new Error('realtime event timestamp default was not captured')
+  if (access.kind === 'breeding-access') {
+    const refresh = parseBreedingRealtimeRefreshEventV1({
+      ...event,
+      sequence: 0,
+      timestamp,
+    })
+    if (refresh.data.audienceRefreshScope !== access.audience) {
+      throw new Error('Breeding realtime event audience must match its access descriptor')
+    }
+  }
 
   return {
     event,
@@ -319,6 +330,12 @@ const rowToStoredRealtimeEvent = (row: RealtimeEventRow): StoredRealtimeEvent =>
   const event = parseSequencedRealtimeEvent(
     parseJsonColumn(row.event_json, `realtime event ${sequence} event_json`),
   )
+  if (access.kind === 'breeding-access') {
+    const refresh = parseBreedingRealtimeRefreshEventV1(event)
+    if (refresh.data.audienceRefreshScope !== access.audience) {
+      throw new Error(`realtime event ${sequence} breeding audience must match access_json`)
+    }
+  }
 
   const channel = typeof row.channel === 'string' ? row.channel : null
   const eventType = typeof row.event_type === 'string' ? row.event_type : null

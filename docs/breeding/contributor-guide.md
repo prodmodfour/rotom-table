@@ -67,6 +67,8 @@ A use case must:
 
 Never use `Math.random` in an owning use case. Never create a blank child and patch it later.
 
+For parentless source Eggs, adapt into `PokemonEggDocumentV1` rather than adding another lifecycle. Bind the future Egg ID, exact source custody or typed provenance, actor, campaign checkpoint, current provider/tool/import evidence, options, offers, and any persisted roll before settlement. Consume source resources when applicable and insert the Egg under the caller-owned transaction. GM, mysterious, campaign-gift, and imported creation all use the closed self-hashed GM provenance shape; legacy three-field GM sources are read-only. Source-specific reducers may freeze blueprint traits, but they may not fork incubation, hatch-special, child construction, lineage, acquisition rewards, or completion.
+
 ## Privacy
 
 Implement separate public, owner, participating-owner, GM, and diagnostic parsers/projections. Do not serialize private fields and hide them in Vue. Control cannot exceed visible authorized identity. Realtime remains a refresh signal.

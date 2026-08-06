@@ -1,0 +1,306 @@
+{
+  "schemaVersion": 1,
+  "contractId": "ptu-1.05-breeding-replay-ledgers-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+  "definition": {
+    "version": 1,
+    "common": {
+      "schemaVersion": 1,
+      "plainDataOnly": true,
+      "unknownFields": "reject",
+      "recordDefinitionHash": "stable-json-v1-sha256-of-all-fields-except-definitionSha256",
+      "stableIdentityCollision": "exact-record-replay-or-fail-closed",
+      "commandBinding": "operation-id-and-full-command-sha256",
+      "campaignTime": "nonnegative-safe-integer"
+    },
+    "rollLedger": {
+      "exactFields": [
+        "schemaVersion",
+        "rollRecordId",
+        "operationId",
+        "commandSha256",
+        "operationRollOrdinal",
+        "purpose",
+        "target",
+        "formula",
+        "dieCount",
+        "dieSides",
+        "ordered",
+        "modifier",
+        "values",
+        "total",
+        "generatorId",
+        "sourceDefinitionHashes",
+        "generatedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "identity": "breeding-roll:v1:<32-lowercase-hex>",
+      "operationMaximum": 32,
+      "ordinal": "unique-zero-through-31",
+      "values": "injected-and-persisted-before-reducer",
+      "generationInsideReducer": "forbidden",
+      "total": "sum-values-plus-modifier",
+      "purposes": [
+        "breeder-check-d20",
+        "offspring-family-d20",
+        "nature-ordered-2d6",
+        "ability-uniform-index",
+        "gender-d100",
+        "hatch-duration-percentage",
+        "hatch-special-d100",
+        "provider-bounded"
+      ],
+      "formulaByPurpose": {
+        "breeder-check-d20": "1d20",
+        "offspring-family-d20": "1d20",
+        "nature-ordered-2d6": "ordered-2d6",
+        "ability-uniform-index": "uniform-index",
+        "gender-d100": "1d100",
+        "hatch-duration-percentage": "percentage-50-to-200",
+        "hatch-special-d100": "1d100",
+        "provider-bounded": "provider-bounded"
+      },
+      "generators": [
+        "server-rng-v1",
+        "reviewed-import-v1"
+      ],
+      "setInvariant": "same-operation-and-command-hash-sorted-unique-ordinals"
+    },
+    "checkLedger": {
+      "exactFields": [
+        "schemaVersion",
+        "checkRecordId",
+        "operationId",
+        "commandSha256",
+        "projectId",
+        "projectRevision",
+        "breederSnapshotDefinitionSha256",
+        "skillId",
+        "difficultyClass",
+        "authoritativeSkillTotal",
+        "rollRecordId",
+        "dieTotal",
+        "finalTotal",
+        "outcome",
+        "rulesetDefinitionSha256",
+        "resolvedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "identity": "breeding-check:v1:<32-lowercase-hex>",
+      "attemptsPerProject": 1,
+      "skillId": "pokemon-education",
+      "difficultyClass": 12,
+      "rollPurpose": "breeder-check-d20",
+      "finalTotal": "dieTotal-plus-authoritativeSkillTotal",
+      "success": "finalTotal-greater-than-or-equal-12",
+      "rollLink": "same-operation-command-project-revision-roll-id-total-ruleset-source-and-nondecreasing-campaign-time"
+    },
+    "optionLedger": {
+      "exactFields": [
+        "schemaVersion",
+        "offerId",
+        "revision",
+        "status",
+        "choiceKind",
+        "target",
+        "chooserProfileId",
+        "minimumPokemonEducationRank",
+        "options",
+        "issuedOperationId",
+        "issuedCommandSha256",
+        "issuedAtCampaignMinute",
+        "expiresAtCampaignMinute",
+        "selectedOptionId",
+        "settlementOperationId",
+        "settlementCommandSha256",
+        "settledAtCampaignMinute",
+        "settlementReasonId",
+        "definitionSha256"
+      ],
+      "identity": "breeding-offer:v1:<32-lowercase-hex>",
+      "optionFields": [
+        "optionId",
+        "kind",
+        "canonicalValueId",
+        "valueDefinitionSha256",
+        "authorityEvidenceIds"
+      ],
+      "maximumOptions": 64,
+      "options": "strict-option-id-order-and-choice-kind-match",
+      "statuses": [
+        "active",
+        "consumed",
+        "expired",
+        "revoked"
+      ],
+      "transitions": {
+        "active": [
+          "consumed",
+          "expired",
+          "revoked"
+        ],
+        "consumed": [],
+        "expired": [],
+        "revoked": []
+      },
+      "consumption": "selected-option-must-belong-to-immutable-offer-and-bind-consuming-operation-command",
+      "expiryMaximumCampaignMinutes": 525600,
+      "revision": "initial-active-is-0-and-terminal-settlement-is-1",
+      "consumeBeforeExpiry": "strictly-before-expiresAtCampaignMinute"
+    },
+    "consentLedger": {
+      "exactFields": [
+        "schemaVersion",
+        "consentId",
+        "revision",
+        "status",
+        "projectId",
+        "parentSheetSlug",
+        "parentSheetRevision",
+        "ownerTrainerSlug",
+        "consentingProfileId",
+        "scopes",
+        "grantedAtCampaignMinute",
+        "expiresAtCampaignMinute",
+        "grantOperationId",
+        "grantCommandSha256",
+        "settledAtCampaignMinute",
+        "settlementOperationId",
+        "settlementCommandSha256",
+        "settlementReasonId",
+        "definitionSha256"
+      ],
+      "identity": "breeding-consent:v1:<32-lowercase-hex>",
+      "statuses": [
+        "active",
+        "revoked",
+        "expired",
+        "superseded"
+      ],
+      "transitions": {
+        "active": [
+          "revoked",
+          "expired",
+          "superseded"
+        ],
+        "revoked": [],
+        "expired": [],
+        "superseded": []
+      },
+      "positiveConsentOnly": true,
+      "gmOverrideAsConsent": "forbidden",
+      "currentUseRechecks": [
+        "status",
+        "project-id",
+        "parent-sheet-slug",
+        "parent-sheet-revision",
+        "owner-trainer-slug",
+        "consenting-profile-id",
+        "expiry"
+      ],
+      "expiryMaximumCampaignMinutes": 525600,
+      "reactivation": "forbidden",
+      "revision": "initial-active-is-0-and-terminal-settlement-is-1"
+    },
+    "gmAdjudicationLedger": {
+      "exactFields": [
+        "schemaVersion",
+        "adjudicationId",
+        "revision",
+        "status",
+        "adjudicationKind",
+        "decisionMode",
+        "target",
+        "createdByProfileId",
+        "reasonId",
+        "offerId",
+        "decision",
+        "createdOperationId",
+        "createdCommandSha256",
+        "createdAtCampaignMinute",
+        "resolvedByProfileId",
+        "settlementOperationId",
+        "settlementCommandSha256",
+        "settledAtCampaignMinute",
+        "settlementReasonId",
+        "authorityDefinitionHashes",
+        "definitionSha256"
+      ],
+      "identity": "breeding-adjudication:v1:<32-lowercase-hex>",
+      "statuses": [
+        "pending",
+        "resolved",
+        "cancelled"
+      ],
+      "transitions": {
+        "pending": [
+          "resolved",
+          "cancelled"
+        ],
+        "resolved": [],
+        "cancelled": []
+      },
+      "kinds": [
+        "maturity-confirmation",
+        "parent-role-override",
+        "offspring-family",
+        "hatch-duration",
+        "hatch-special-result",
+        "source-egg",
+        "mark-ready",
+        "correction",
+        "legacy-lineage",
+        "provider-modifier"
+      ],
+      "decisionModes": {
+        "bounded-option": "offer-required-and-option-decision-only",
+        "audited-confirmation": "offer-null-and-hash-bound-boolean-confirmation-only"
+      },
+      "freeTextOutcome": "forbidden",
+      "boundedOfferLink": "same-creation-operation-command-target-expected-choice-kind-option-selection-settlement-operation-command-and-resolving-profile",
+      "revision": "initial-pending-is-0-and-terminal-settlement-is-1"
+    },
+    "targets": {
+      "kinds": [
+        "breeding-project",
+        "pokemon-egg",
+        "pokemon-sheet",
+        "trainer-sheet"
+      ],
+      "revision": "required-nonnegative-safe-integer"
+    },
+    "replay": {
+      "identityRetry": "byte-semantic-stable-json-equality",
+      "changedSameIdentity": "collision",
+      "settledLifecycleRecord": "terminal",
+      "rollRerun": "forbidden",
+      "checkRerun": "forbidden",
+      "optionReuse": "forbidden",
+      "consentReactivation": "forbidden",
+      "adjudicationReresolution": "forbidden"
+    },
+    "privacy": {
+      "rollsChecksFullOptionsConsentProfilesAdjudications": "gm-or-owning-authorized-projection-only",
+      "diagnostic": "hashes-and-bounded-traces-only",
+      "realtime": "never-ledger-payload"
+    },
+    "authority": {
+      "randomValues": "server-rng-service-injected-before-record-creation",
+      "optionValues": "server-issued-from-authoritative-catalog",
+      "consent": "positive-current-control-rechecked-transactionally",
+      "adjudication": "authenticated-gm-rechecked-by-use-case",
+      "storage": "dedicated-ledgers-in-caller-owned-transaction",
+      "legacyFields": "no-authority"
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5"
+    }
+  }
+}

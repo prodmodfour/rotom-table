@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "schemaId": "rotom-breeding-archive-storage-v23",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "f5244778586a7a0567faba9befc8481c6911dc72ebdd0c62a850b7f4ee290959",
+  "definition": {
+    "version": 23,
+    "migrationName": "store immutable breeding archives import requests and restore receipts",
+    "applicationMigrationSqlSha256": "a51eb7ba8a685b801ba2373aeb3774fd3f028718adb3a632a6690b48c6cfe48f",
+    "offlineMigrationSqlSha256": "a51eb7ba8a685b801ba2373aeb3774fd3f028718adb3a632a6690b48c6cfe48f",
+    "tables": [
+      "breeding_archive_import_requests",
+      "breeding_archive_restore_receipts",
+      "breeding_archives"
+    ],
+    "invariants": {
+      "archiveMaximumBytes": 67108864,
+      "archivePurposes": [
+        "campaign-backup",
+        "gm-audit",
+        "owner-portable"
+      ],
+      "importModes": [
+        "replace-campaign",
+        "restore-new-campaign",
+        "validate-only"
+      ],
+      "immutableArchiveIdentity": "archive-id-plus-exact-stable-json-replay-only",
+      "immutableRequestIdentity": "request-id-plus-exact-stable-json-replay-only",
+      "oneTerminalReceiptPerRequest": true,
+      "acceptedReceiptRequiresCampaignMinute": true,
+      "callerOwnedRestoreTransaction": true,
+      "ownerPortableRestorable": false,
+      "legacyMapAuthority": "none"
+    },
+    "migration": {
+      "fromVersion": 22,
+      "toVersion": 23,
+      "preservesExistingRows": true,
+      "createsNoArchivesRequestsOrReceipts": true,
+      "offlineAndApplicationSqlMustMatch": true,
+      "transaction": "BEGIN-IMMEDIATE-all-or-nothing"
+    },
+    "bindings": {
+      "archiveContractDefinitionSha256": "ed6e1663cc0fba166914985ad7f5aff44a752a4cc98c0b05d87a28082ce4dbd7",
+      "storageSchemaV22DefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89",
+      "transactionCoordinatorDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0"
+    }
+  }
+}

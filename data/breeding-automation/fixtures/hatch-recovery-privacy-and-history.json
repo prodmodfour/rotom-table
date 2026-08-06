@@ -74,6 +74,7 @@
       "requirementIds": [
         "breeding:BR-022",
         "breeding:BR-060",
+        "breeding:BR-063",
         "breeding:BR-065"
       ],
       "actorAudience": "gm",

@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-campaign-clock-incubation-batch-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "044683f29f2bf3906297ae7e33a1bcbf8c974b4bede4e9dc9671434909c6bdcb",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-052",
+    "implementation": {
+      "sharedPath": "shared/breeding/campaignClockBatch.ts",
+      "domainPath": "server/domain/breeding/campaignClockBatch.ts",
+      "authorizationPath": "server/domain/breeding/authorization.ts",
+      "clockUseCasePath": "server/useCases/advanceBreedingCampaignClock.ts",
+      "batchUseCasePath": "server/useCases/advanceBreedingCampaignClockBatch.ts",
+      "EggRepositoryPath": "server/storage/pokemonEggRepository.ts",
+      "archiveValidationPath": "server/domain/breeding/archives.ts",
+      "testPath": "tests/server/breedingCampaignClockBatch.test.ts"
+    },
+    "parentCommand": {
+      "kind": "advance-campaign-clock",
+      "scopeOrder": [
+        "current-campaign-clock",
+        "first-due-Egg-page-in-Egg-ID-order"
+      ],
+      "target": "nondecreasing-campaign-minute",
+      "forwardTarget": "clock-revision-plus-one",
+      "equalTarget": "clock-no-op-permitted-for-due-page-continuation",
+      "projectScopes": "forbidden-in-BR-052-Egg-batch",
+      "clientSelectedPage": "rejected-unless-exact-server-discovered-page"
+    },
+    "discovery": {
+      "status": "incubating-only",
+      "due": "last-applied-Egg-clock-checkpoint-strictly-behind-target-revision-or-minute",
+      "order": "Egg-ID-code-point",
+      "maximumPerParent": 100,
+      "continuation": "new-equal-target-parent-command-discovers-next-page",
+      "alreadyCurrentReadyHatchingTerminal": "excluded",
+      "scopeRevision": "exact-current-Egg-revision"
+    },
+    "authority": {
+      "parentActor": "current-authenticated-GM-only",
+      "parentOverride": "one-self-targeted-command-bound-operation-recovery-override",
+      "parentReadSet": [
+        "current-campaign-clock-definition-revision-and-minute",
+        "every-discovered-current-Egg-definition-and-revision",
+        "one-clock-batch-policy-dependency",
+        "complete-effective-dependency-set-attestation",
+        "current-app-reference-snapshot"
+      ],
+      "childActor": "server-derived-command-matched-GM-authority-at-target-campaign-minute",
+      "childOverride": "server-derived-command-bound-owner-control-override",
+      "childReadSet": "ordinary-BR-050-current-clock-Egg-base-rate-authority",
+      "verifierFaultOrAsyncResult": "fail-closed",
+      "mapEncounterClientDeclaration": "never-authority"
+    },
+    "policy": {
+      "providerId": "breeding-campaign-clock-incubation-batch-v1",
+      "policyDefinitionSha256": "a45278caa2982fa0ffaeb0cd9ade231632ca7db58b32900664a2db1973093d78",
+      "effectiveEvidenceDefinitionSha256": "e339128d3a0cc2b594a87850dfe522f0d1f0a21b68094a6c4baa4ab3fb867d5e",
+      "checkpoint": "campaign-clock-segment",
+      "childIdentity": "namespaced-SHA-256-of-parent-operation-ID-and-Egg-ID-first-128-bits",
+      "childReadSetAndOverrideIdentity": "separately-namespaced-same-parent-and-Egg-binding",
+      "identityCollision": "fail-closed"
+    },
+    "downtime": {
+      "clock": "campaign-clock-only",
+      "unpaused": "ordinary-incubation-reducer-credits-valid-gap-through-target",
+      "paused": "ordinary-incubation-reducer-skips-complete-paused-gap",
+      "threshold": "exact-ready-minute-inside-gap",
+      "overflow": "child-segment-audit-only-never-future-credit",
+      "wallBrowserProcessTimezoneMapEncounter": "never-authority"
+    },
+    "dedupe": {
+      "parent": "operation-ledger-exact-command-replay",
+      "child": "deterministic-operation-ledger-exact-command-replay",
+      "Egg": "durable-last-applied-clock-revision-and-minute",
+      "segment": "one-immutable-row-per-child-operation-and-Egg-successor",
+      "terminalReplay": "no-clock-write-Egg-revision-segment-event-or-publication",
+      "rejectedChild": "terminal-and-not-redrawn-or-rebound"
+    },
+    "transactionAndRecovery": {
+      "parentPhaseOne": [
+        "pending-parent-reservation",
+        "complete-parent-read-set",
+        "parent-authorization-receipt"
+      ],
+      "parentPhaseTwo": [
+        "campaign-clock-CAS-or-equal-target-no-op",
+        "terminal-parent-result"
+      ],
+      "childBoundary": "one-existing-BR-037-atomic-incubation-transaction-per-Egg",
+      "globalBatchAtomicity": false,
+      "reason": "bounded-recoverable-prefix-allows-more-than-one-Egg-without-nested-coordinator-transactions",
+      "partialFailure": "parent-and-complete-child-prefix-remain-durable-next-child-pending",
+      "resume": "exact-parent-command-and-current-GM-recovery-reuses-terminal-prefix-and-resumes-pending-child",
+      "parentRollback": "clock-and-result-absent-while-parent-phase-one-evidence-remains",
+      "publication": "each-child-post-commit-only"
+    },
+    "projection": {
+      "audience": "gm-only",
+      "allows": [
+        "parent-operation-ID-and-execution-status",
+        "target-clock-revision-and-minute",
+        "Egg-and-derived-child-operation-IDs",
+        "child-terminal-or-pending-status",
+        "before-and-after-revisions",
+        "credited-skipped-overflow-minutes",
+        "readiness-crossing",
+        "more-due-page-flag"
+      ],
+      "forbids": [
+        "species",
+        "Nature",
+        "Ability",
+        "Gender",
+        "parents",
+        "Breeder",
+        "Profiles",
+        "consent",
+        "provider-payloads",
+        "commands",
+        "read-sets",
+        "receipts",
+        "hashes"
+      ],
+      "ownerAndParticipatingOwnerBatchProjection": "forbidden",
+      "realtime": "ordinary-four-row-per-mutated-Egg-bounded-refresh-only"
+    },
+    "archive": {
+      "parentLink": "every-accepted-parent-Egg-scope-must-have-its-deterministic-terminal-child-command",
+      "childTarget": "exact-parent-clock-result-revision-and-target-minute",
+      "childScope": "exact-parent-Egg-scope",
+      "childSegment": "required-for-every-accepted-child",
+      "pendingBackup": "forbidden-until-recovered-or-settled"
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparse": "reject",
+      "staleClockEggScopeReferenceOrReceipt": "reject",
+      "omittedReorderedExtraneousPageScope": "reject-before-parent-reservation",
+      "unsupportedModifier": "ordinary-BR-050-base-rate-only-fail-closed",
+      "randomness": "none"
+    },
+    "tests": {
+      "count": 8,
+      "requiredCases": [
+        "canonical-two-Egg-discovery-credit-and-paused-skip",
+        "long-downtime-threshold-and-overflow",
+        "equal-clock-catch-up-and-parent-child-dedupe",
+        "bounded-100-Egg-page-continuation",
+        "parent-rollback-pending-evidence-and-explicit-resume",
+        "partial-child-prefix-recovery-without-duplicate-events",
+        "scope-verifier-reference-and-enrichment-fail-closed",
+        "restart-persistent-parent-child-segment-and-replay"
+      ]
+    },
+    "bindings": {
+      "campaignClockContractDefinitionSha256": "abd4dd586f20dfcbc3b716e2bffbc7d1418853812ff9aaac127e593730215a06",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+      "archiveContractDefinitionSha256": "ed6e1663cc0fba166914985ad7f5aff44a752a4cc98c0b05d87a28082ce4dbd7",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "incubationContractDefinitionSha256": "d9aed047dfc2e06166e33e284e91a27c483e456f3dfa56c2b0a123c5382cf587",
+      "readinessCorrectionContractDefinitionSha256": "0763884ad515bc9f91d1b03201f28f150f2a73d374a640945629a1c27c784e16",
+      "storageSchemaV24DefinitionSha256": "102ae6fa26e3e04d32de63cfbb0cfd812774e3abe0e2eae002de1cc235e3dac0"
+    }
+  }
+}

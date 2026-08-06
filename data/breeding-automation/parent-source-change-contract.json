@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-parent-source-change-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "f5fb56051d0c8ec783eaed90346f45de3564cb7337104dab359111aa7c79b073",
+  "definition": {
+    "version": 1,
+    "sharedPath": "shared/breeding/parentSourceChange.ts",
+    "domainPath": "server/domain/breeding/parentSourceChange.ts",
+    "testPath": "tests/server/breedingParentSourceChange.test.ts",
+    "changeKinds": [
+      "evolution",
+      "trade",
+      "rename",
+      "folder-move",
+      "deletion",
+      "retraining",
+      "source-reference-update"
+    ],
+    "authority": {
+      "evidence": "exact-server-observed-before-and-after-storage-documents-and-reference-snapshots",
+      "semanticDelta": "exactly-one-declared-change-family",
+      "storageIdentity": "exact-slug-revision-owner-folder-and-normalized-document-hash",
+      "referenceIdentity": "exact-current-reference-snapshot-definition-hash",
+      "clientAuthority": "none",
+      "unknownStaleMalformedAmbiguousAccessorBackedSparseEnrichedOrHashDrifted": "fail-closed"
+    },
+    "projectMatrix": {
+      "preCheckRevisionRefreshable": {
+        "statuses": [
+          "draft",
+          "awaiting-parent-consent",
+          "initial-time-in-progress",
+          "check-ready"
+        ],
+        "changes": [
+          "evolution",
+          "folder-move",
+          "retraining"
+        ],
+        "disposition": "explicit-interruption-refresh-and-full-revalidation",
+        "creditedProgress": "preserved-no-new-credit",
+        "consent": "renew-current-parent-revision-required"
+      },
+      "preCheckIdentityOrReferenceChange": {
+        "changes": [
+          "trade",
+          "rename",
+          "deletion",
+          "source-reference-update"
+        ],
+        "disposition": "block-until-cancel-or-reviewed-migration",
+        "silentRetargetOrReinterpretation": "forbidden"
+      },
+      "postCheck": {
+        "statuses": [
+          "additional-time-in-progress",
+          "ready-to-produce"
+        ],
+        "allChanges": "block-until-cancel-or-reviewed-migration",
+        "parentRefresh": "forbidden",
+        "creditedProgress": "preserved-no-new-credit"
+      },
+      "settledWithEgg": "preserve-settled-project-and-immutable-accepted-snapshot",
+      "terminal": "preserve-terminal-project-without-reopening",
+      "assessmentMutation": "none"
+    },
+    "acceptedEggMatrix": {
+      "allChanges": "preserve-immutable-Egg",
+      "parentSnapshots": "authoritative-without-live-parent-lookup",
+      "offspringBlueprint": "unchanged",
+      "providerTraits": "unchanged",
+      "incubation": "preserve-current-explicit-state",
+      "hatchEligibility": "preserve-status-derived-eligibility",
+      "sourceLoss": "diagnostic-only",
+      "assessmentMutation": "none"
+    },
+    "ownershipBoundaries": {
+      "BR-063": [
+        "change-evidence",
+        "checkpoint-impact-policy",
+        "immutable-Egg-source-loss-evaluation"
+      ],
+      "BR-064": [
+        "Egg-transfer-consent-and-custody-mutation"
+      ],
+      "BR-065": [
+        "fossil-source-reducers"
+      ],
+      "BR-066": [
+        "GM-mysterious-gifted-and-imported-source-creation"
+      ],
+      "existingProjectReducers": [
+        "explicit-pre-check-interruption",
+        "consent-renewal",
+        "post-check-stale-rejection"
+      ]
+    },
+    "bindings": {
+      "runtimePolicyDefinitionSha256": "312be56adce3af78847b38c8934bc2b2818e75d38738562eb9c49ff8e57e0e84",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "eggLifecyclePolicyContractDefinitionSha256": "0f4006dcab19fc4868eec8917f7e37080b528676acbcbf9e3182e41b25fbf7bd"
+    }
+  }
+}

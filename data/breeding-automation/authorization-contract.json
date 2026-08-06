@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "contractId": "ptu-1.05-breeding-authorization-contract-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+  "definition": {
+    "version": 1,
+    "actorAuthority": {
+      "exactFields": [
+        "schemaVersion",
+        "role",
+        "commandActorProfileId",
+        "authenticatedProfileId",
+        "selectedTrainerSlug",
+        "profileDefinitionSha256",
+        "authenticatedPrincipalSha256",
+        "authenticationPolicyDefinitionSha256",
+        "evaluatedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "roles": [
+        "gm",
+        "player"
+      ],
+      "player": "current-stored-profile-id-and-definition-must-match-command-actor",
+      "gm": "authenticated-principal-hash-with-null-player-profile",
+      "submittedProfile": "claim-only-never-authority",
+      "selectedTrainer": "must-match-command-and-does-not-itself-prove-control"
+    },
+    "trainerControl": {
+      "exactFields": [
+        "schemaVersion",
+        "profileId",
+        "trainerSheetSlug",
+        "trainerSheetRevision",
+        "trainerSheetDefinitionSha256",
+        "profileDefinitionSha256",
+        "linkedCharacterEvidenceSha256",
+        "evaluatedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "authority": "current-profile-linked-trainer-exactly-once",
+      "mapPlacementDependency": "none",
+      "browserSelection": "not-control"
+    },
+    "ownerAuthority": {
+      "player": "actor-profile-controls-current-owner-trainer-and-command-selected-trainer-matches-owner",
+      "gm": "typed-owner-control-override-required",
+      "readSet": "exact-trainer-revision-and-definition-required"
+    },
+    "parentControl": {
+      "exactFields": [
+        "schemaVersion",
+        "parentSheetSlug",
+        "parentSheetRevision",
+        "parentSheetDefinitionSha256",
+        "ownerTrainerSlug",
+        "ownerTrainerRevision",
+        "ownerTrainerDefinitionSha256",
+        "rosterField",
+        "verificationMode",
+        "trainerControlEvidenceDefinitionSha256",
+        "parentLinkEvidenceSha256",
+        "evaluatedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "rosterFields": [
+        "boxed-pokemon",
+        "current-team"
+      ],
+      "link": "parent-appears-exactly-once-in-current-owner-trainer-rosters",
+      "profileControl": "current-owner-trainer-control-evidence-required",
+      "gmVerified": "null-profile-control-and-typed-parent-control-override-required",
+      "revisionChange": "stale-and-deny",
+      "serverVerifiedLink": "current-parent-owner-roster-link-without-profile-impersonation-or-operation-authority"
+    },
+    "breederAuthority": {
+      "exactFields": [
+        "schemaVersion",
+        "breederTrainerSlug",
+        "breederTrainerRevision",
+        "breederTrainerDefinitionSha256",
+        "accessMode",
+        "accessEvidenceDefinitionSha256",
+        "edgeCanonicalId",
+        "edgeInstanceId",
+        "edgeRecordSha256",
+        "effectiveEdgeProjectionSha256",
+        "pokemonEducationRank",
+        "pokemonEducationSkillTotal",
+        "evaluatedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "edgeCanonicalId": "Breeder",
+      "edgeAuthority": "effective-edge-automation-projection-bound-in-read-set-dependencies",
+      "lifecycleAuthority": "none",
+      "accessModes": [
+        "campaign-shared-service",
+        "gm-authority",
+        "profile-control"
+      ],
+      "profileAccess": "same-actor-current-control",
+      "gmAccess": "typed-breeder-access-override",
+      "sharedService": "reviewed-facility-or-system-dependency-required",
+      "missingEdge": "deny-unless-typed-gm-breeder-permission-override"
+    },
+    "crossOwnerConsent": {
+      "exactFields": [
+        "schemaVersion",
+        "consentId",
+        "consentRevision",
+        "consentRecordDefinitionSha256",
+        "projectId",
+        "parentSheetSlug",
+        "parentSheetRevision",
+        "ownerTrainerSlug",
+        "consentingProfileId",
+        "scopes",
+        "expiresAtCampaignMinute",
+        "trainerControlEvidenceDefinitionSha256",
+        "validationOperationId",
+        "validationCommandSha256",
+        "validatedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "requiredScopes": [
+        "own-parent-contribution-attribution",
+        "own-parent-safe-summary",
+        "project-participation"
+      ],
+      "positiveOnly": true,
+      "mustRecheck": [
+        "active-status",
+        "project-id",
+        "parent-slug",
+        "parent-revision",
+        "owner-trainer",
+        "consenting-profile",
+        "profile-control",
+        "all-scopes",
+        "campaign-expiry",
+        "operation-id",
+        "command-hash"
+      ],
+      "preview": "cannot-authorize-cross-owner-mechanics; project-may-first-be-created-awaiting-consent",
+      "revocationOrExpiry": "deny",
+      "blanketLegacyPublicOrSelectionConsent": "forbidden",
+      "transactionalReadSet": [
+        "current-parent-sheet-revision-and-hash",
+        "current-owner-trainer-revision-hash-and-link",
+        "active-consent-revision-and-definition-hash",
+        "campaign-minute",
+        "operation-id-and-full-command-hash"
+      ]
+    },
+    "gmOverride": {
+      "exactFields": [
+        "schemaVersion",
+        "overrideId",
+        "operationId",
+        "commandSha256",
+        "actorAuthorityDefinitionSha256",
+        "overrideKind",
+        "target",
+        "reasonId",
+        "createdAtCampaignMinute",
+        "securityPolicyDefinitionSha256",
+        "definitionSha256"
+      ],
+      "identity": "breeding-override:v1:<32-lowercase-hex>",
+      "kinds": [
+        "breeder-access",
+        "breeder-permission",
+        "cross-owner-consent",
+        "operation-recovery",
+        "owner-control",
+        "parent-control"
+      ],
+      "targetByKind": {
+        "owner-control": "trainer-sheet",
+        "breeder-access": "trainer-sheet",
+        "breeder-permission": "trainer-sheet",
+        "parent-control": "parent-sheet-and-revision",
+        "cross-owner-consent": "parent-sheet-and-revision",
+        "operation-recovery": "breeding-operation"
+      },
+      "reason": "typed-breeding.override-reason-id",
+      "binding": "same-gm-principal-operation-command-campaign-minute-and-security-policy",
+      "extraneous": "deny",
+      "mechanicsOutcome": "cannot-supply-randomness-species-traits-lineage-or-child-facts"
+    },
+    "authorizationReceipt": {
+      "exactFields": [
+        "schemaVersion",
+        "operationId",
+        "commandSha256",
+        "commandKind",
+        "actorAuthorityDefinitionSha256",
+        "readSetDefinitionSha256",
+        "evidenceDefinitionHashes",
+        "gmOverrideIds",
+        "authorized",
+        "reasonId",
+        "evaluatedAtCampaignMinute",
+        "securityPolicyDefinitionSha256",
+        "definitionSha256"
+      ],
+      "selfHash": "stable-json-v1-sha256-excluding-definitionSha256",
+      "evidence": "sorted-unique-hashes-only",
+      "exactReplay": true,
+      "reasonIds": [
+        "breeding.authorization.actor-mismatch",
+        "breeding.authorization.authorized",
+        "breeding.authorization.breeder-access-required",
+        "breeding.authorization.breeder-edge-required",
+        "breeding.authorization.consent-required",
+        "breeding.authorization.consent-scope-missing",
+        "breeding.authorization.consent-stale",
+        "breeding.authorization.gm-override-invalid",
+        "breeding.authorization.owner-control-required",
+        "breeding.authorization.parent-control-required",
+        "breeding.authorization.parent-link-stale",
+        "breeding.authorization.profile-stale",
+        "breeding.authorization.unauthenticated"
+      ]
+    },
+    "projectSetup": {
+      "commands": [
+        "preview-breeding",
+        "create-breeding-project"
+      ],
+      "sameOwner": "actor-owner-control-plus-current-parent-link",
+      "crossOwner": "preview-denied-private-mechanics; creation-may-record-server-verified-link-in-awaiting-consent; later-execution-requires-current-project-parent-revision-consent",
+      "parents": "exact-command-order-two-distinct-current-read-set-sheets",
+      "breeder": "effective-Breeder-permission-and-authorized-access",
+      "gm": "explicit-minimal-targeted-overrides-for-each-bypassed-control-or-consent",
+      "transaction": "all-evidence-at-read-set-campaign-minute"
+    },
+    "operationPolicy": {
+      "preview-breeding": "owner-control-breeder-parent-control-or-create-project-for-consent",
+      "create-breeding-project": "owner-control-breeder-and-current-links; cross-owner-project-starts-awaiting-consent-without-consuming-consent",
+      "grant-breeding-consent": "consenting-profile-controls-current-parent-owner-trainer-and-link",
+      "revoke-breeding-consent": "same-consenting-profile-current-control-or-gm-override",
+      "project-and-egg-owner-mutations": "current-aggregate-owner-trainer-control-or-targeted-gm-override",
+      "advance-campaign-clock": "gm-only",
+      "record-inheritance-learning": "current-child-owner-control-or-targeted-gm-override",
+      "recover-breeding-operation": "own-operation-authority-or-targeted-gm-override"
+    },
+    "privacy": {
+      "public": "no-authority-evidence",
+      "owner": "bounded-denial-reason-only",
+      "participant": "own-consent-and-own-parent-safe-context-only",
+      "gm": "full-audit",
+      "diagnostic": "hashes-and-reason-ids-no-profile-sheet-consent-or-command-payload"
+    },
+    "authority": {
+      "serverDerivedOnly": true,
+      "clientEvidence": "reject",
+      "currentProfileAndSheets": "authoritative",
+      "mapEncounter": "not-consulted",
+      "wallClock": "not-consulted",
+      "campaignClock": "only-time",
+      "edgePermissionBoundary": "permission-and-contribution-evidence-only",
+      "consentDoesNotRevealOtherParent": true
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "breederEdgeCanonicalId": "Breeder",
+      "breederEdgeRecordSha256": "d303cbe8c377ec9bb2a305ee5626e3c80f9c1ebd77975623c985bce741a321f4"
+    }
+  }
+}

@@ -1,0 +1,524 @@
+{
+  "authorizationReceipt": {
+    "actorAuthorityDefinitionSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "authorized": true,
+    "commandKind": "produce-egg",
+    "commandSha256": "1fcbecaa5ee0c26612304d9cf8359f8c4b67059dc41c0520483fb1b353829575",
+    "evaluatedAtCampaignMinute": 600,
+    "evidenceDefinitionHashes": [
+      "5c80173e72c9458857acd9364bef7e01c2089c6a96286b91b7aabc834af66c39",
+      "b9a97844908f9b0eb54b0db9381d63c6ca6f178d05f5b72c8312195ae2a300a4",
+      "c299280b2ada983857e41dbb74177cc96c52a59baea51bd62ce7f55f164c318b",
+      "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    ],
+    "gmOverrideIds": [],
+    "operationId": "breeding-operation:v1:00000000000000000000000000000014",
+    "readSetDefinitionSha256": "b4a1359d33e785c2956d4a35e2a437e526f6547218b43f81e9cccf3eb9c4a5de",
+    "reasonId": "breeding.authorization.authorized",
+    "schemaVersion": 1,
+    "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+    "definitionSha256": "e8be8bbb4fdd82a8e786a02a4cc48b5d476ab6bc0e5b37f06246c115f154bd32"
+  },
+  "breeder": {
+    "capturedAtCampaignMinute": 600,
+    "definitionSha256": "9c6065c9cf01679003edae8c03c88dcd272201afa2fdc5abb8a68c52b3c1ed41",
+    "permissionEvidenceIds": [
+      "edge-instance:breeder"
+    ],
+    "pokemonEducationRank": "Expert",
+    "providerSnapshotDefinitionSha256": "b9a97844908f9b0eb54b0db9381d63c6ca6f178d05f5b72c8312195ae2a300a4",
+    "schemaVersion": 1,
+    "sheetRevision": 5,
+    "sourceSheetSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    "trainerSheetSlug": "trainer-breeder"
+  },
+  "breederAuthority": {
+    "accessEvidenceDefinitionSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "accessMode": "profile-control",
+    "breederTrainerDefinitionSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    "breederTrainerRevision": 5,
+    "breederTrainerSlug": "trainer-breeder",
+    "definitionSha256": "c299280b2ada983857e41dbb74177cc96c52a59baea51bd62ce7f55f164c318b",
+    "edgeCanonicalId": "Breeder",
+    "edgeInstanceId": "edge-instance:breeder",
+    "edgeRecordSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+    "effectiveEdgeProjectionSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "evaluatedAtCampaignMinute": 600,
+    "pokemonEducationRank": "Expert",
+    "pokemonEducationSkillTotal": 5,
+    "schemaVersion": 1
+  },
+  "campaignOptionSnapshot": {
+    "definitionSha256": "69ee380c346ffc53c3fe87318bafbce39418d97e22da102e8946c1e002f3e7e9",
+    "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+    "schemaVersion": 1,
+    "values": {
+      "breeding.baby-template-policy": "disabled",
+      "breeding.baby-template-stat-penalty": 2,
+      "breeding.check-failure-policy": "terminal-no-egg",
+      "breeding.form-root-policy": "compiled-form-root-only",
+      "breeding.fossil-hatch-level": 10,
+      "breeding.fossil-inheritance-policy": "none",
+      "breeding.genderless-policy": "ditto-only",
+      "breeding.gm-hatch-duration-minutes": 1440,
+      "breeding.hatch-duration-variation": "fixed-average",
+      "breeding.hatch-special-policy": "bounded-gm-adjudication",
+      "breeding.maturity-policy": "minimum-level",
+      "breeding.minimum-maturity-level": 20,
+      "breeding.missing-hatch-duration-policy": "unavailable",
+      "breeding.parent-family-policy": "core-d20",
+      "breeding.same-sex-policy": "incompatible"
+    }
+  },
+  "check": {
+    "authoritativeSkillTotal": 5,
+    "breederSnapshotDefinitionSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "checkRecordId": "breeding-check:v1:00000000000000000000000000000009",
+    "commandSha256": "27edab83ee663d88ab7040da24f3aa07fffa92c8fbdf7f8019eabe54f3df8e6e",
+    "definitionSha256": "878b35e26fb3c9f1fb4fc9ccf1758389569863fa684be03710edeb1562c4ded8",
+    "dieTotal": 7,
+    "difficultyClass": 12,
+    "finalTotal": 12,
+    "operationId": "breeding-operation:v1:00000000000000000000000000000009",
+    "outcome": "success",
+    "projectId": "breeding-project:v1:33333333333333333333333333333333",
+    "projectRevision": 0,
+    "resolvedAtCampaignMinute": 300,
+    "rollRecordId": "breeding-roll:v1:00000000000000000000000000000009",
+    "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+    "schemaVersion": 1,
+    "skillId": "pokemon-education"
+  },
+  "command": {
+    "actor": {
+      "profileId": "profile_owner_0001",
+      "selectedTrainerSlug": "trainer-owner"
+    },
+    "commandKind": "produce-egg",
+    "operationId": "breeding-operation:v1:00000000000000000000000000000014",
+    "payload": {
+      "eggId": "pokemon-egg:v1:44444444444444444444444444444444",
+      "projectId": "breeding-project:v1:33333333333333333333333333333333",
+      "resolutions": {
+        "requestedRollKinds": [
+          "offspring-family",
+          "nature",
+          "ability",
+          "gender"
+        ],
+        "selectedOptionIds": []
+      }
+    },
+    "ruleset": {
+      "definitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "rulesetId": "ptu-1.05-breeding-v1"
+    },
+    "schemaVersion": 1,
+    "scopes": [
+      {
+        "expectedRevision": 2,
+        "kind": "breeding-project",
+        "projectId": "breeding-project:v1:33333333333333333333333333333333"
+      },
+      {
+        "eggId": "pokemon-egg:v1:44444444444444444444444444444444",
+        "expectedRevision": null,
+        "kind": "pokemon-egg"
+      }
+    ]
+  },
+  "consentEvidence": [
+    {
+      "consentId": "breeding-consent:v1:00000000000000000000000000000001",
+      "consentRecordDefinitionSha256": "ce7a2db9254079b89ddd24dd55310be29f081e163daa7de762366e3a24fe0538",
+      "consentRevision": 0,
+      "consentingProfileId": "profile_other_0001",
+      "definitionSha256": "5c80173e72c9458857acd9364bef7e01c2089c6a96286b91b7aabc834af66c39",
+      "expiresAtCampaignMinute": 700,
+      "ownerTrainerSlug": "trainer-other",
+      "parentSheetRevision": 3,
+      "parentSheetSlug": "pokemon-parent-b",
+      "projectId": "breeding-project:v1:33333333333333333333333333333333",
+      "schemaVersion": 1,
+      "scopes": [
+        "own-parent-contribution-attribution",
+        "own-parent-safe-summary",
+        "project-participation"
+      ],
+      "trainerControlEvidenceDefinitionSha256": "9b4615347441e12a527fedeaf82da5cbe95c6672b10523ab43ffd6677ed7143e",
+      "validatedAtCampaignMinute": 600,
+      "validationCommandSha256": "1fcbecaa5ee0c26612304d9cf8359f8c4b67059dc41c0520483fb1b353829575",
+      "validationOperationId": "breeding-operation:v1:00000000000000000000000000000014"
+    }
+  ],
+  "parents": [
+    {
+      "capturedAtCampaignMinute": 600,
+      "controlEvidenceDefinitionSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "definitionSha256": "102281e3ab1e145b9cb06851b3ee16596ac131d9e74d47450325d1c7bfba0678",
+      "displayNameAtSnapshot": "Garden Parent",
+      "effectiveKnownMoves": [],
+      "effectiveMoveSnapshotDefinitionSha256": "59be29067d9bfcd1d4f62033c9a4f1ea8e5a8289d8e3946c311234bbeeed8eee",
+      "eggGroupIds": [
+        "monster",
+        "plant"
+      ],
+      "familyRootSpeciesId": "bulbasaur",
+      "genderId": "female",
+      "level": 25,
+      "maturity": {
+        "eligible": true,
+        "evidenceDefinitionSha256": "69ee380c346ffc53c3fe87318bafbce39418d97e22da102e8946c1e002f3e7e9",
+        "gmConfirmed": null,
+        "minimumLevel": 20,
+        "policyId": "minimum-level"
+      },
+      "ownerTrainerSlug": "trainer-owner",
+      "parentIndex": 0,
+      "pokemonSheetSlug": "pokemon-parent-a",
+      "roleEvidenceDefinitionSha256": "6a38a2ea1cf38b4d331a638ef94be2b9d1b6fb2781c668eedc84f0a6dcd7a34f",
+      "roleId": "female-parent",
+      "schemaVersion": 1,
+      "sheetRevision": 2,
+      "sourceSheetSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "speciesId": "bulbasaur",
+      "speciesSpecDefinitionSha256": "6389ae015a6532faf0043a64a5ddbfe0359747083674b4b8ad8ab506f6939a51"
+    },
+    {
+      "capturedAtCampaignMinute": 600,
+      "controlEvidenceDefinitionSha256": "5c80173e72c9458857acd9364bef7e01c2089c6a96286b91b7aabc834af66c39",
+      "definitionSha256": "98c21d047300f685c4d0ed60761e5cb2e39efc50477b645b15048c216696519f",
+      "displayNameAtSnapshot": "Meadow Parent",
+      "effectiveKnownMoves": [],
+      "effectiveMoveSnapshotDefinitionSha256": "e39acc34e90e3ce2f9fdff0f8abd93e38fe8bf36c9204f3b4c5bd942f81b9e0a",
+      "eggGroupIds": [
+        "monster",
+        "plant"
+      ],
+      "familyRootSpeciesId": "bulbasaur",
+      "genderId": "male",
+      "level": 25,
+      "maturity": {
+        "eligible": true,
+        "evidenceDefinitionSha256": "69ee380c346ffc53c3fe87318bafbce39418d97e22da102e8946c1e002f3e7e9",
+        "gmConfirmed": null,
+        "minimumLevel": 20,
+        "policyId": "minimum-level"
+      },
+      "ownerTrainerSlug": "trainer-other",
+      "parentIndex": 1,
+      "pokemonSheetSlug": "pokemon-parent-b",
+      "roleEvidenceDefinitionSha256": "6a38a2ea1cf38b4d331a638ef94be2b9d1b6fb2781c668eedc84f0a6dcd7a34f",
+      "roleId": "male-parent",
+      "schemaVersion": 1,
+      "sheetRevision": 3,
+      "sourceSheetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "speciesId": "bulbasaur",
+      "speciesSpecDefinitionSha256": "6389ae015a6532faf0043a64a5ddbfe0359747083674b4b8ad8ab506f6939a51"
+    }
+  ],
+  "project": {
+    "breederTrainerSlug": "trainer-breeder",
+    "check": {
+      "checkRecordId": "breeding-check:v1:00000000000000000000000000000009",
+      "outcome": "success",
+      "resolvedAtCampaignMinute": 300
+    },
+    "consentPolicy": "cross-owner-current-revision-consent",
+    "createdAtCampaignMinute": 0,
+    "lastOperationId": "breeding-operation:v1:00000000000000000000000000000008",
+    "ownerTrainerSlug": "trainer-owner",
+    "parentRefs": [
+      {
+        "expectedSheetRevision": 2,
+        "ownerTrainerSlug": "trainer-owner",
+        "pokemonSheetSlug": "pokemon-parent-a"
+      },
+      {
+        "expectedSheetRevision": 3,
+        "ownerTrainerSlug": "trainer-other",
+        "pokemonSheetSlug": "pokemon-parent-b"
+      }
+    ],
+    "producedEggId": null,
+    "projectCreationOptionSnapshotSha256": "69ee380c346ffc53c3fe87318bafbce39418d97e22da102e8946c1e002f3e7e9",
+    "projectId": "breeding-project:v1:33333333333333333333333333333333",
+    "revision": 2,
+    "ruleset": {
+      "definitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "rulesetId": "ptu-1.05-breeding-v1"
+    },
+    "schemaVersion": 1,
+    "status": "ready-to-produce",
+    "statusChangedAtCampaignMinute": 600,
+    "terminal": null,
+    "timeline": {
+      "additionalAccumulatedCampaignMinutes": 240,
+      "additionalRequiredCampaignMinutes": 240,
+      "additionalStartedAtCampaignMinute": 300,
+      "checkReadyAtCampaignMinute": 240,
+      "eggProducedAtCampaignMinute": null,
+      "initialAccumulatedCampaignMinutes": 240,
+      "initialRequiredCampaignMinutes": 240,
+      "initialStartedAtCampaignMinute": 0,
+      "lastAppliedClockMinute": 600,
+      "lastAppliedClockRevision": 3,
+      "readyToProduceAtCampaignMinute": 540
+    },
+    "updatedAtCampaignMinute": 600
+  },
+  "providerSnapshot": {
+    "capturedAtCampaignMinute": 600,
+    "checkpoint": "egg-acceptance",
+    "contributions": [],
+    "definitionSha256": "b9a97844908f9b0eb54b0db9381d63c6ca6f178d05f5b72c8312195ae2a300a4",
+    "schemaVersion": 1
+  },
+  "readSet": {
+    "capturedAtCampaignMinute": 600,
+    "commandKind": "produce-egg",
+    "commandSha256": "1fcbecaa5ee0c26612304d9cf8359f8c4b67059dc41c0520483fb1b353829575",
+    "complete": true,
+    "dependencyEvidence": [
+      {
+        "checkpoint": "authorization",
+        "effectiveEvidenceSha256": "e5ab86323cac28097e344505260d850f0fc1d896a21a264ed79fbdfdc2b7fe9e",
+        "providerDefinitionSha256": "081bfa3ea6f076cada104d76eaa30b45a35710ff85201be36db8465a315e0141",
+        "providerId": "breeding-effective-dependency-set-v1",
+        "providerKind": "system",
+        "subjectId": "campaign",
+        "subjectKind": "campaign",
+        "subjectRevision": null
+      },
+      {
+        "checkpoint": "egg-acceptance",
+        "effectiveEvidenceSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+        "providerDefinitionSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "providerId": "Breeder",
+        "providerKind": "edge",
+        "subjectId": "trainer-breeder",
+        "subjectKind": "trainer-sheet",
+        "subjectRevision": 5
+      },
+      {
+        "checkpoint": "egg-acceptance",
+        "effectiveEvidenceSha256": "b9a97844908f9b0eb54b0db9381d63c6ca6f178d05f5b72c8312195ae2a300a4",
+        "providerDefinitionSha256": "2b5099dbbc01aaa89bf5a9e77e0e96ca14b929323262a38040bb4aa7d7b05336",
+        "providerId": "breeding-provider-snapshot-v1",
+        "providerKind": "system",
+        "subjectId": "breeding-project:v1:33333333333333333333333333333333",
+        "subjectKind": "project",
+        "subjectRevision": 2
+      }
+    ],
+    "dependencySetDefinitionSha256": "f5297da1331d2ae7f9a152b63aabd8037e31870cda4d15855bfd7e61dac0ff98",
+    "operationId": "breeding-operation:v1:00000000000000000000000000000014",
+    "readSetId": "breeding-read-set:v1:00000000000000000000000000000014",
+    "referenceVersions": {
+      "campaignOptionSnapshotDefinitionSha256": "69ee380c346ffc53c3fe87318bafbce39418d97e22da102e8946c1e002f3e7e9",
+      "canonicalIdsDefinitionSha256": "99e9ab4c4107086d64e2d70e7cdcaa7f9e10fd534f223f0ca053b2c1c4798d1e",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
+      "contractDefinitionHashes": [
+        {
+          "contractId": "breeding-authorization-contract",
+          "definitionSha256": "0000000000000000000000000000000000000000000000000000000000000014"
+        },
+        {
+          "contractId": "breeding-ledger-contract",
+          "definitionSha256": "0000000000000000000000000000000000000000000000000000000000000015"
+        },
+        {
+          "contractId": "breeding-lineage-contract",
+          "definitionSha256": "0000000000000000000000000000000000000000000000000000000000000016"
+        },
+        {
+          "contractId": "breeding-operation-contract",
+          "definitionSha256": "0000000000000000000000000000000000000000000000000000000000000017"
+        },
+        {
+          "contractId": "breeding-project-contract",
+          "definitionSha256": "0000000000000000000000000000000000000000000000000000000000000018"
+        },
+        {
+          "contractId": "breeding-read-set-contract",
+          "definitionSha256": "0000000000000000000000000000000000000000000000000000000000000019"
+        },
+        {
+          "contractId": "breeding-security-policy",
+          "definitionSha256": "000000000000000000000000000000000000000000000000000000000000001a"
+        },
+        {
+          "contractId": "pokemon-egg-contract",
+          "definitionSha256": "000000000000000000000000000000000000000000000000000000000000001b"
+        }
+      ],
+      "referenceSources": [
+        {
+          "contentSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+          "sourceId": "abilities"
+        },
+        {
+          "contentSha256": "8f819401d40c598ae781ae0b273fd749575e05d6997a79c64be61f4ced8f654e",
+          "sourceId": "capabilities"
+        },
+        {
+          "contentSha256": "2203364f0ea1a1919d8cefed78546de7ad4d3a3cf6499dd88ffcfb02101ab0f3",
+          "sourceId": "conditions"
+        },
+        {
+          "contentSha256": "62348f9f5e57c28a3b61bfc3f554bcad258a769b054f5531c1d07ae6853e2123",
+          "sourceId": "edges"
+        },
+        {
+          "contentSha256": "27d0f2bee4db96ebfb0c431cce9ea5222fe3d2d9fe9ead32507c46b51a9d77c4",
+          "sourceId": "features"
+        },
+        {
+          "contentSha256": "0a101802a698403651756b19e9cc6a10b8c6e2c91cfa9b79be1bcb1e7aa60082",
+          "sourceId": "items"
+        },
+        {
+          "contentSha256": "9532ec3641f6fa273a96ca7fe190252728c056aa2383109687587d93fca41b71",
+          "sourceId": "maneuvers"
+        },
+        {
+          "contentSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815",
+          "sourceId": "moves"
+        },
+        {
+          "contentSha256": "3e2dbb84a8c35e4655b62ece57a3760a2b9a6e09b917dc8a581e5e613e14e021",
+          "sourceId": "poke-edges"
+        },
+        {
+          "contentSha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696",
+          "sourceId": "pokedex"
+        },
+        {
+          "contentSha256": "a8b9026cd855e2c84c157e5f117454c6afe8f48549ff215fe562867208629428",
+          "sourceId": "pokemon-experience-chart"
+        },
+        {
+          "contentSha256": "c655b862a90994b7112b8e355301c79fb18725fdb93c73638573f858279f353b",
+          "sourceId": "rules"
+        },
+        {
+          "contentSha256": "f5aa0b4eedfc7ad07e0db38a79023b5b38c1697a325929ad282f4285cebbaf8a",
+          "sourceId": "stat-rankings"
+        }
+      ],
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "rulesetId": "ptu-1.05-breeding-v1",
+      "schemaVersion": 1,
+      "semanticRegistryDefinitionSha256": "47da9c36ae047cee2edb68a5b7b230d82279f6b2cc70c42a1f3e3c8cdd6512c3",
+      "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+      "definitionSha256": "705ae5700c563ecb140a81bf85f35514db7139c4d78e328139553ac14f867eac"
+    },
+    "resources": [
+      {
+        "definitionSha256": "878b35e26fb3c9f1fb4fc9ccf1758389569863fa684be03710edeb1562c4ded8",
+        "existence": "present",
+        "observedCampaignMinute": null,
+        "purposes": [
+          "mechanics"
+        ],
+        "resourceId": "breeding-check:v1:00000000000000000000000000000009",
+        "resourceKind": "breeding-check",
+        "revision": null
+      },
+      {
+        "definitionSha256": "55e05d1ee278ee29b34c1307977b8e4226f535fea9749f213e5e1e6360835245",
+        "existence": "present",
+        "observedCampaignMinute": null,
+        "purposes": [
+          "conflict",
+          "mechanics"
+        ],
+        "resourceId": "breeding-project:v1:33333333333333333333333333333333",
+        "resourceKind": "breeding-project",
+        "revision": 2
+      },
+      {
+        "definitionSha256": "9d6b4da66e7e9b5e4f404e06f0392bd64ba2acb612b4c88cd97e62f80590283f",
+        "existence": "present",
+        "observedCampaignMinute": 600,
+        "purposes": [
+          "campaign-time"
+        ],
+        "resourceId": "campaign-clock",
+        "resourceKind": "campaign-clock",
+        "revision": 3
+      },
+      {
+        "definitionSha256": "ce7a2db9254079b89ddd24dd55310be29f081e163daa7de762366e3a24fe0538",
+        "existence": "present",
+        "observedCampaignMinute": null,
+        "purposes": [
+          "consent"
+        ],
+        "resourceId": "breeding-consent:v1:00000000000000000000000000000001",
+        "resourceKind": "parent-consent",
+        "revision": 0
+      },
+      {
+        "definitionSha256": null,
+        "existence": "absent",
+        "observedCampaignMinute": null,
+        "purposes": [
+          "conflict"
+        ],
+        "resourceId": "pokemon-egg:v1:44444444444444444444444444444444",
+        "resourceKind": "pokemon-egg",
+        "revision": null
+      },
+      {
+        "definitionSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "existence": "present",
+        "observedCampaignMinute": null,
+        "purposes": [
+          "snapshot"
+        ],
+        "resourceId": "pokemon-parent-a",
+        "resourceKind": "pokemon-sheet",
+        "revision": 2
+      },
+      {
+        "definitionSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "existence": "present",
+        "observedCampaignMinute": null,
+        "purposes": [
+          "snapshot"
+        ],
+        "resourceId": "pokemon-parent-b",
+        "resourceKind": "pokemon-sheet",
+        "revision": 3
+      },
+      {
+        "definitionSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "existence": "present",
+        "observedCampaignMinute": null,
+        "purposes": [
+          "mechanics"
+        ],
+        "resourceId": "trainer-breeder",
+        "resourceKind": "trainer-sheet",
+        "revision": 5
+      }
+    ],
+    "schemaVersion": 1,
+    "writeExpectations": [
+      {
+        "expectedRevision": 2,
+        "kind": "breeding-project",
+        "projectId": "breeding-project:v1:33333333333333333333333333333333"
+      },
+      {
+        "eggId": "pokemon-egg:v1:44444444444444444444444444444444",
+        "expectedRevision": null,
+        "kind": "pokemon-egg"
+      }
+    ],
+    "definitionSha256": "b4a1359d33e785c2956d4a35e2a437e526f6547218b43f81e9cccf3eb9c4a5de"
+  },
+  "roleOverride": null,
+  "roleOverrideEvidenceDefinitionSha256": null
+}

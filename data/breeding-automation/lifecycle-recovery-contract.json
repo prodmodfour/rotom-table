@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-lifecycle-recovery-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "9173943f15bb29b3412b1e535eaeb47d71775fb2e822e3039fbe9ba9d49d4c0a",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-049",
+    "implementation": {
+      "sharedPath": "shared/breeding/lifecycleRecovery.ts",
+      "domainPath": "server/domain/breeding/lifecycleRecovery.ts",
+      "authorizationPath": "server/domain/breeding/authorization.ts",
+      "lifecycleUseCasePath": "server/useCases/manageBreedingLifecycleRecovery.ts",
+      "recoveryUseCasePath": "server/useCases/recoverBreedingOperation.ts",
+      "testPath": "tests/server/breedingLifecycleRecovery.test.ts"
+    },
+    "projectTermination": {
+      "command": "cancel-breeding-project",
+      "activeSourceStatuses": [
+        "draft",
+        "awaiting-parent-consent",
+        "initial-time-in-progress",
+        "check-ready",
+        "additional-time-in-progress",
+        "ready-to-produce"
+      ],
+      "closedOutcomes": {
+        "breeding.project-terminal.cancelled": "cancelled",
+        "breeding.project-terminal.consent-expired": "expired",
+        "breeding.project-terminal.abandoned": "abandoned",
+        "breeding.project-terminal.conflicted": "conflicted"
+      },
+      "revision": "exactly-plus-one",
+      "terminalEvidence": "reason-campaign-minute-operation-ID",
+      "immutable": [
+        "ruleset",
+        "owner",
+        "Breeder",
+        "parents",
+        "check",
+        "progress",
+        "created-time"
+      ],
+      "EggProducedProject": "never-rewritten-or-cancelled",
+      "activeOffersAfterTerminalProject": "durable-but-non-executable-no-undeclared-offer-write"
+    },
+    "consent": {
+      "command": "revoke-breeding-consent",
+      "statuses": {
+        "breeding.consent.revoked": "revoked",
+        "breeding.consent.expired": "expired"
+      },
+      "expiryBoundary": "current-campaign-minute-greater-than-or-equal-to-expiry",
+      "revocationBoundary": "strictly-before-expiry-or-no-expiry",
+      "successor": "active-revision-zero-to-single-terminal-revision-one",
+      "grantFacts": "immutable",
+      "playerAuthority": "same-current-consenting-Profile-controls-current-owner-Trainer",
+      "gmAuthority": "exact-command-bound-operation-recovery-override",
+      "gmOverrideAsConsent": "forbidden",
+      "activeProjectCheckpoint": "same-status-Project-revision-plus-one-for-realtime-and-conflict-authority",
+      "settledProject": "consent-audit-may-settle-without-rewriting-Project-or-Egg",
+      "postEggRevocation": "never-rewrites-accepted-Egg-snapshot"
+    },
+    "projectExpiry": {
+      "authority": "current-cross-owner-Project-plus-at-least-one-read-set-bound-active-consent-at-or-after-expiry",
+      "consentRow": "may-remain-active-as-historical-grant-but-is-effectively-unusable-at-equality",
+      "wallClock": "never-consulted"
+    },
+    "authorization": {
+      "input": "strict-command-read-set-receipt-actor-control-or-GM-override",
+      "receipt": "recomputed-exactly-from-current-Project-consent-sheet-revisions-and-security-policy-before-and-inside-transaction",
+      "playerCancellation": "current-Project-owner-control-only-and-cancelled-reason-only",
+      "playerConsentSettlement": "consenting-Profile-current-owner-Trainer-control-and-revoked-reason-only",
+      "gmTerminalRecovery": "one-minimal-operation-recovery-override",
+      "exactTerminalRetry": "stored-result-and-immutable-operation-evidence-without-current-mechanics-reexecution"
+    },
+    "atomicity": {
+      "lifecycleTransaction": [
+        "operation-evidence",
+        "consent-successor-if-any",
+        "Project-successor-if-any",
+        "terminal-operation-result",
+        "fresh-realtime-rows-if-Project-revision-changed"
+      ],
+      "phaseTwoFailure": "rolls-back-all-lifecycle-writes-and-events-leaving-pending-command",
+      "consentProjectOrdering": "any-post-first-write-failure-escapes-to-top-level-rollback",
+      "exactRetry": "no-new-revision-event-or-publication"
+    },
+    "recovery": {
+      "command": "recover-breeding-operation",
+      "audience": "GM-only",
+      "actions": {
+        "inspect": "audit-current-target-without-target-mutation",
+        "resume": "invoke-server-owned-exact-target-dispatcher-outside-any-coordinator-transaction",
+        "abandon": "atomically-settle-pending-target-as-breeding.operation.abandoned-and-settle-recovery-audit",
+        "retry-publication": "invoke-server-owned-persisted-terminal-event-publication-only-without-ledger-rewrite"
+      },
+      "targetAuthority": "exact-operation-resource-definition-plus-current-clock-plus-command-bound-operation-recovery-override",
+      "reservation": "recovery-command-durable-before-external-resume-or-publication-callback",
+      "crashAfterTargetSettlement": "pending-recovery-recognizes-the-exact-prior-pending-target-identity-and-converges-without-dispatching-again",
+      "callbackFailure": "recovery-command-remains-pending-for-explicit-resume",
+      "abandonRetention": "target-command-read-set-receipt-rolls-and-other-phase-one-evidence-never-deleted",
+      "nestedCoordinator": "forbidden",
+      "callbacks": "synchronous-server-owned-only"
+    },
+    "reconnect": {
+      "projection": "GM-only-current-read-model",
+      "pendingLimit": 100,
+      "sort": "created-campaign-minute-then-operation-ID",
+      "fields": [
+        "operation-ID",
+        "command-kind",
+        "created-campaign-minute",
+        "authority-evidence-present",
+        "persisted-roll-count"
+      ],
+      "forbidden": [
+        "command-payload",
+        "scopes",
+        "read-set",
+        "receipt",
+        "hashes",
+        "private-mechanics"
+      ],
+      "restartPersistent": true,
+      "clientLocalAuthority": "none"
+    },
+    "realtime": {
+      "ProjectMutation": "refresh-only-five-audience-set-with-participating-owner-deduplication",
+      "settledProjectConsentChange": "no-fake-same-revision-event",
+      "publication": "post-commit-through-BR-037",
+      "recovery": "query-and-existing-replay-infrastructure-not-map-events"
+    },
+    "projection": {
+      "lifecycleAudiences": [
+        "gm",
+        "owner",
+        "participating-owner"
+      ],
+      "allows": [
+        "Project-ID",
+        "accepted-Project-revision",
+        "coarse-terminal-or-consent-status",
+        "campaign-minute"
+      ],
+      "forbids": [
+        "parents",
+        "Trainers",
+        "Profiles",
+        "traits",
+        "inheritance",
+        "rolls",
+        "options",
+        "consent-record-identity",
+        "read-sets",
+        "receipts",
+        "hashes"
+      ],
+      "recoveryAllows": [
+        "recovery-and-target-operation-IDs",
+        "action",
+        "coarse-execution-disposition",
+        "terminal-boolean"
+      ],
+      "recoveryForbids": [
+        "target-command-payload",
+        "scopes",
+        "authority-evidence",
+        "mechanics"
+      ]
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparse": "reject",
+      "staleClockProjectConsentTrainerOperationOrReceipt": "fail-closed",
+      "expiryEquality": "expired-not-usable",
+      "terminalProject": "immutable",
+      "mapEncounterBrowserWallClock": "never-authority"
+    },
+    "tests": {
+      "count": 8,
+      "requiredCases": [
+        "atomic-owner-cancellation-exact-retry-and-bounded-realtime",
+        "consent-revocation-rollback-explicit-recovery-and-Project-checkpoint",
+        "consent-expiry-equality-and-GM-abandonment",
+        "unauthorized-stale-enriched-and-accessor-backed-rejection",
+        "pending-inspection-and-atomic-abandonment",
+        "exact-resume-and-crash-after-target-settlement-convergence",
+        "terminal-persisted-publication-retry-and-callback-failure-recovery",
+        "GM-only-bounded-reconnect-across-file-database-restart"
+      ]
+    },
+    "bindings": {
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "campaignOperationLedgerContractDefinitionSha256": "0ddc9e1d73013c055dbc84b3b2175591db2a302efd05010dce631fc6d985894a",
+      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "eggProductionContractDefinitionSha256": "6076ce38cc423e74f991c22c96dd41f1e5be5a903a0e528dabd5678da268814a"
+    }
+  }
+}

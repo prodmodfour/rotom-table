@@ -36,7 +36,9 @@ Poké Edges spend one Tutor Point per instance. Acquisition validates species, L
 
 ## Breeder boundary
 
-`Breeder` is the only closed delegation. Edge automation owns its identity, prerequisites, effective permission, contribution evidence, and request contract `edge.breeder.request.v1`. The downstream capability is `breeding.v1`, owned by `BREEDING_AND_EGG_LIFECYCLE_PLAN.md`. Until that capability exists, the planner returns `downstream-capability-unavailable`; Edge automation never creates Eggs, offspring, lineage, inheritance, or incubation state.
+`Breeder` is the only closed delegation. Edge automation owns its identity, prerequisites, effective permission, contribution evidence, and request contract `edge.breeder.request.v1`. The downstream capability is `breeding.v1`, owned by `BREEDING_AND_EGG_LIFECYCLE_PLAN.md`. The Edge planner still returns `downstream-capability-unavailable` unless its server caller explicitly confirms that capability; it never creates Eggs, offspring, lineage, inheritance, or incubation state.
+
+BR-060 closes the direct server handoff in `server/domain/breeding/breederEdgeHandoff.ts` and `server/useCases/resolveBreedingBreederEdgeHandoff.ts`. The bridge reloads the current Trainer and campaign clock, accepts exactly one effective unsuppressed Trainer `Breeder`, enforces Novice Pokémon Education for direct acquisition, derives the current rank/check contribution server-side, and emits only breeding authority, a mandated-Skill record, and matching dependency evidence. BR-061 adds the only Feature-grant path: a current effective `Dilettante` contribution must match the Edge source, and a synchronous server-owned choice substitutes General Education or Perception while honoring Dilettante's Skill-prerequisite waiver. The selected source, Skill, rank, and total are hash-bound. Provider faults, Promises, duplicates, stale control, source drift, and client-enriched claims fail without mutation. Campaign-shared authority remains closed; campaign time, the DC 12 check, outcomes, Eggs, and hatching remain exclusively `breeding.v1` mechanics.
 
 ## Contributor workflow
 

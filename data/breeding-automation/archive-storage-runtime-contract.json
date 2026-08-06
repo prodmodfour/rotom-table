@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-archive-storage-runtime-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "9b666f8947b25eb910fb850d234ac8fbe7b654302e62c6de3479c59e9ab9a396",
+  "definition": {
+    "version": 1,
+    "repositoryPaths": [
+      "server/storage/breedingArchiveRepository.ts",
+      "server/storage/breedingArchiveStateRepository.ts"
+    ],
+    "managerPath": "server/useCases/manageBreedingArchives.ts",
+    "schemaArtifactPath": "data/breeding-automation/archive-storage-schema-v23.json",
+    "storage": {
+      "schemaVersion": 23,
+      "archives": "immutable-strict-stable-json",
+      "importRequests": "immutable-strict-stable-json",
+      "restoreReceipts": "one-terminal-decision-per-request",
+      "identityReplay": "exact-only",
+      "identityFactDrift": "reject",
+      "maximumEnvelopeBytes": 67108864,
+      "denormalizedColumns": "validated-against-strict-authoritative-document",
+      "restartPersistence": true
+    },
+    "export": {
+      "campaignBackup": "complete-terminal-authority-record-set",
+      "gmAudit": "strict-read-only-authority-record-set",
+      "ownerPortable": "server-projected-owner-and-participant-records-only",
+      "ownerPortableRestore": "forbidden",
+      "pendingCampaignOperation": "backup-blocker",
+      "unsupportedPrivateEvidence": "fail-closed-never-omit",
+      "consistentSnapshot": "BEGIN-IMMEDIATE-single-connection",
+      "campaignClockCheckpoint": "archive-created-minute-must-equal-authoritative-campaign-minute",
+      "browserAuthority": "none"
+    },
+    "restore": {
+      "acceptedPurpose": "campaign-backup-only",
+      "authority": "current-authenticated-GM-bound-request",
+      "referenceVersions": "exact-current-match",
+      "recordDependencies": "server-validated-all-records",
+      "replacementCheckpoint": "persisted-current-backup-and-unchanged-state-required",
+      "newCampaignTarget": "empty-breeding-authority-required",
+      "transaction": "archive-request-authority-replacement-and-receipt-one-BEGIN-IMMEDIATE",
+      "failure": "rollback-all",
+      "foreignKeys": "deferred-and-checked-at-top-level-commit",
+      "exactRequestReplay": "return-stored-receipt-without-replacement",
+      "operationIdentity": "command-result-read-set-authorization-and-scope-records-preserved",
+      "projectEggCycle": "restored-inside-one-deferred-foreign-key-transaction",
+      "legacyMapMetadata": "never-imported-or-interpreted"
+    },
+    "integrity": {
+      "audience": "authenticated-GM-only",
+      "sqliteIntegrityCheck": true,
+      "foreignKeyCheck": true,
+      "strictDocumentAndHashReparse": true,
+      "maximumDiagnostics": 10000,
+      "missingLinks": [
+        "owner-trainer",
+        "breeder-trainer",
+        "parent-pokemon",
+        "hatched-child-pokemon",
+        "hatched-Egg-origin",
+        "origin-Egg-child",
+        "acquisition-trainer"
+      ],
+      "backupBlockers": [
+        "corrupt-authority-row",
+        "foreign-key-violation",
+        "missing-link",
+        "pending-operation",
+        "unrepresentable-private-evidence"
+      ],
+      "legacyMapEggMetadata": "warning-only-quarantine-never-authority",
+      "report": "stable-json-SHA-256-bound"
+    },
+    "strictness": {
+      "nonPlainOrUnknownArchiveInput": "reject",
+      "oversizedEnvelopeBeforeJsonParse": "reject",
+      "invalidUtf8OrJson": "reject",
+      "asynchronousAuthorizationDependencyOrHook": "reject",
+      "nestedTransactionBoundary": "reject",
+      "mixedDatabaseConnection": "impossible-manager-owned-repositories",
+      "staleActorOrCheckpoint": "reject",
+      "changedReplayFacts": "reject"
+    },
+    "bindings": {
+      "archiveContractDefinitionSha256": "ed6e1663cc0fba166914985ad7f5aff44a752a4cc98c0b05d87a28082ce4dbd7",
+      "archiveStorageSchemaV23DefinitionSha256": "f5244778586a7a0567faba9befc8481c6911dc72ebdd0c62a850b7f4ee290959",
+      "storageSchemaV22DefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89",
+      "repositoryContractDefinitionSha256": "d15c11f9f360d1ebd603feee8ec1506be9262d58f20bc9f753f5af979fa823b5",
+      "transactionCoordinatorDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0"
+    }
+  }
+}

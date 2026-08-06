@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-gm-egg-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "5505477eee78b7b8a3f2b501573f6afec12cfe0a6946b24f6d02ef7a734a7edf",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-066",
+    "sharedContractPath": "shared/breeding/gmEgg.ts",
+    "domainPath": "server/domain/breeding/gmEgg.ts",
+    "useCasePath": "server/useCases/createBreedingGmEgg.ts",
+    "testPath": "tests/server/breedingGmEgg.test.ts",
+    "source": {
+      "kind": "gm",
+      "provenanceKinds": [
+        "gm-authored",
+        "mysterious",
+        "campaign-gift",
+        "imported"
+      ],
+      "reasonIds": {
+        "gm-authored": "breeding.egg-source.gm-authored",
+        "mysterious": "breeding.egg-source.mysterious",
+        "campaign-gift": "breeding.egg-source.campaign-gift",
+        "imported": "breeding.egg-source.imported"
+      },
+      "frozenFields": [
+        "provenance-kind-and-ID",
+        "future-Egg-ID",
+        "owner-Trainer-slug-revision-and-document-hash",
+        "creating-GM-profile-ID",
+        "reviewed-import-record-receipt-and-full-evidence-hashes-when-applicable",
+        "campaign-minute",
+        "self-hash"
+      ],
+      "legacyThreeFieldGmSource": "read-only-never-valid-for-new-creation",
+      "freeTextLabels": "never-authority"
+    },
+    "variants": {
+      "gm-authored": "current-authenticated-GM-plus-bounded-server-options",
+      "mysterious": "same-authority-and-mechanics-with-private-provenance-classification",
+      "campaign-gift": "direct-GM-created-gift; later-player-gifts-use-BR-064-and-preserve-source-byte-for-byte",
+      "imported": "current-synchronous-server-owned-reviewed-source-record-and-import-receipt-evidence-required"
+    },
+    "boundedOffers": {
+      "chooser": "current-authenticated-GM",
+      "target": "future-revision-zero-Egg",
+      "commandBinding": "exact-operation-and-full-command-hash",
+      "expiry": "campaign-time-strictly-before-equality",
+      "slots": [
+        "species",
+        "nature",
+        "primary-ability",
+        "gender",
+        "inheritance-move",
+        "base-hatch-duration",
+        "hatch-duration",
+        "baby-template"
+      ],
+      "source": "synchronous-server-owned-resolver",
+      "unknownStaleDuplicateOrExtraneous": "reject"
+    },
+    "egg": {
+      "aggregate": "PokemonEggDocumentV1",
+      "revision": 0,
+      "status": "incubating",
+      "parentSnapshots": 0,
+      "breederSnapshot": null,
+      "defaultStartingLevel": 1,
+      "defaultInheritance": "none",
+      "optionalInheritance": "at-most-nine-explicit-app-owned-canonical-Moves",
+      "providerTraits": "all-null-except-forced-canonical-Marsupial-on-Kangaskhan",
+      "babyTemplate": "disabled-by-default-current-campaign-choice-or-forced-Marsupial-minus-5",
+      "incubation": "shared-campaign-clock-duration-and-readiness-state",
+      "hatch": "shared-special-child-lineage-reward-and-completion-pipeline",
+      "parallelSourceHatchPath": "forbidden"
+    },
+    "randomness": {
+      "traits": "none-only-bounded-offers",
+      "hatchDuration": "zero-or-one-command-bound-persisted-server-percentage-roll-as-required-by-campaign-options",
+      "persistBeforeReducer": true,
+      "exactRetryRedraw": "forbidden"
+    },
+    "transaction": {
+      "phase1": "durable-operation-reservation-offers-read-set-receipt-and-optional-roll",
+      "phase2": "one-BR-037-top-level-synchronous-SQLite-transaction",
+      "writes": [
+        "consume-selected-offers",
+        "insert-shared-Egg-with-typed-provenance",
+        "append-payload-free-Egg-refresh-rows",
+        "settle-operation"
+      ],
+      "ownerTrainerMutation": "none",
+      "rollback": "all-phase-2-writes-rollback-together-and-pending-authority-remains-recoverable",
+      "nestedExecution": "forbidden"
+    },
+    "privacy": {
+      "gmCreationProjection": "coarse-status-Level-parent-count-plus-provenance-classification",
+      "ownerCreationProjection": "coarse-status-Level-parent-count-with-provenance-classification-and-import-state-redacted",
+      "EggRealtime": "payload-free-refresh-only",
+      "forbiddenInOwnerProjectionOrEggRefresh": [
+        "Species",
+        "Nature",
+        "Ability",
+        "provenance-kind-or-ID",
+        "source-system-or-record-ID",
+        "source-record-hash",
+        "import-receipt-hash",
+        "read-set",
+        "receipt",
+        "roll"
+      ]
+    },
+    "failure": {
+      "unknownMalformedEnrichedAccessorSparseOrPromiseLike": "reject-before-settlement",
+      "staleTrainerClockGmImportOfferOrReference": "fail-closed",
+      "missingImportResolverOrReceipt": "fail-closed",
+      "clientProvenanceOrImportedDocument": "never-authority",
+      "facilityAuthority": "unavailable"
+    },
+    "bindings": {
+      "runtimePolicyDefinitionSha256": "af96cf13e1768ee0e9abac78a8479c5b02978ed492ad7949d4d537d2ac84c8a4",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "hatchCompletionContractDefinitionSha256": "4558c84d58d5d6fa4725001d42c253f31ea8f98c421e0dd0fb73516b583b667d",
+      "eggTransferContractDefinitionSha256": "ebc3d04f38310d892780a596a5e9e543eb5c9c3bf12cc91c56bbac8718faa265",
+      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "sourceAdjudicationsSha256": "762e166f93ec3019150c9c6c36e4433c352781a51181cf3181964a45a2a5f0a7"
+    },
+    "tests": {
+      "focusedCases": 10,
+      "required": [
+        "ordinary-Level-1-parentless-shared-Egg",
+        "mysterious-and-campaign-gift-typed-provenance",
+        "reviewed-import-evidence-and-stale-rejection",
+        "atomic-settlement-and-payload-free-events",
+        "persisted-duration-roll-pending-recovery-and-no-redraw",
+        "malformed-coercive-stale-and-legacy-source-rejection",
+        "BR-064-gift-transfer-preserves-source-and-blueprint",
+        "owner-projection-redacts-private-provenance",
+        "Kangaskhan-forces-Marsupial-Baby-Template-provider-trait",
+        "optional-Baby-Template-value-hash-binds-frozen-campaign-options"
+      ]
+    }
+  }
+}

@@ -19,6 +19,12 @@ Permanent Move, Ability, Capability, Edge, and Feature grants retain their sourc
 
 Execution compiles an immutable context and optimistic read set into a state plan. Request receipts provide exact retry, while stale revisions reject the whole plan. AP Bind/Drain, frequency ledgers, target-Pokémon grant reconciliation, team relationships, campaign inventory deltas, injected rolls, pending reactions, and bounded adjudications all retain source IDs and audit evidence. Extended Rest, scene cleanup, expiry, source loss, pass, cancellation, and GM recovery have explicit lifecycle operations.
 
+## Breeding provider boundary
+
+BR-061 consumes Feature authority only through `server/domain/breeding/featureProviderHandoff.ts` and `server/useCases/resolveBreedingFeatureProviderHandoff.ts`. The adapter reloads the current Trainer and campaign clock, accepts only effective unsuppressed parameter-complete Feature instances, checks canonical records/runtime definitions and the reviewed breeding modifier inventory, and emits self-hashed server-private typed contributions with matching read-set dependencies. Submitted Feature projections, choices, values, facility claims, dependencies, and hashes have no authority.
+
+`Dilettante` may grant `Breeder` only from its current selected Edge. Its canonical Skill-prerequisite waiver and General Education/Perception substitution are resolved by a synchronous server-owned choice and folded into Breeder evidence; Feature automation still does not run the DC 12 check or own a Project. `Playing God` exposes bounded potential artificial-Egg parameters, while the hatch-special, fossil, and learning contributions remain gated to their breeding tickets. No facility definition exists. The handoff performs no mutation, roll, publication, or client projection, and Feature authority ends before Project, Egg, incubation, hatch, child, lineage, or outcome mechanics.
+
 ## Security and privacy
 
 - Clients submit stable intent IDs, selected server-offered values, and authorized targets; they never submit mechanics, reference prose, rolls, AP settlement, or output deltas.

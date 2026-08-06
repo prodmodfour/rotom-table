@@ -1,0 +1,492 @@
+{
+  "schemaVersion": 1,
+  "contractId": "ptu-1.05-pokemon-egg-document-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+  "definition": {
+    "version": 1,
+    "document": {
+      "exactFields": [
+        "schemaVersion",
+        "eggId",
+        "revision",
+        "status",
+        "ownerTrainerSlug",
+        "source",
+        "ruleset",
+        "definitionHashes",
+        "parents",
+        "breeder",
+        "offspring",
+        "incubation",
+        "special",
+        "hatchOperationId",
+        "childSheetSlug",
+        "terminal",
+        "createdAtCampaignMinute",
+        "updatedAtCampaignMinute",
+        "statusChangedAtCampaignMinute",
+        "lastOperationId"
+      ],
+      "unknownFields": "reject",
+      "plainDataOnly": true,
+      "detachAndDeepFreeze": true
+    },
+    "identity": {
+      "eggId": "pokemon-egg:v1:<32-lowercase-hex>",
+      "operationId": "breeding-operation:v1:<32-lowercase-hex>",
+      "rollRecordId": "breeding-roll:v1:<32-lowercase-hex>",
+      "sheetRefs": "canonical-sheet-slugs",
+      "definitionHashes": "strict-sorted-unique-lowercase-sha256-maximum-256"
+    },
+    "sourceKinds": {
+      "breeding": {
+        "fields": [
+          "kind",
+          "projectId"
+        ],
+        "parentCount": 2,
+        "breeder": "required"
+      },
+      "fossil": {
+        "fields": [
+          "kind",
+          "sourceId",
+          "evidenceDefinitionSha256"
+        ],
+        "parentCount": 0,
+        "breeder": "null"
+      },
+      "gm": {
+        "fields": [
+          "kind",
+          "reasonId",
+          "evidenceDefinitionSha256"
+        ],
+        "legacyReadOnlyFields": [
+          "kind",
+          "reasonId",
+          "evidenceDefinitionSha256"
+        ],
+        "newCreationFields": [
+          "kind",
+          "reasonId",
+          "provenance",
+          "evidenceDefinitionSha256"
+        ],
+        "provenanceFields": [
+          "schemaVersion",
+          "provenanceKind",
+          "provenanceId",
+          "eggId",
+          "ownerTrainerSlug",
+          "ownerTrainerRevision",
+          "ownerTrainerDefinitionSha256",
+          "createdByGmProfileId",
+          "sourceSystemId",
+          "sourceRecordId",
+          "sourceRecordDefinitionSha256",
+          "importReceiptDefinitionSha256",
+          "importEvidenceDefinitionSha256",
+          "capturedAtCampaignMinute",
+          "definitionSha256"
+        ],
+        "provenanceKinds": [
+          "gm-authored",
+          "mysterious",
+          "campaign-gift",
+          "imported"
+        ],
+        "reasonAndEvidenceBinding": "closed-kind-specific-reason-and-provenance-self-hash",
+        "importedOnlyFields": "source-system-record-and-reviewed-receipt-identities-and-hashes",
+        "parentCount": 0,
+        "breeder": "null"
+      },
+      "feature-artificial": {
+        "fields": [
+          "kind",
+          "providerId",
+          "evidenceDefinitionSha256"
+        ],
+        "parentCount": 0,
+        "breeder": "null"
+      }
+    },
+    "parentSnapshot": {
+      "fields": [
+        "schemaVersion",
+        "parentIndex",
+        "pokemonSheetSlug",
+        "displayNameAtSnapshot",
+        "ownerTrainerSlug",
+        "sheetRevision",
+        "sourceSheetSha256",
+        "speciesId",
+        "familyRootSpeciesId",
+        "speciesSpecDefinitionSha256",
+        "genderId",
+        "roleId",
+        "roleEvidenceDefinitionSha256",
+        "level",
+        "maturity",
+        "eggGroupIds",
+        "effectiveKnownMoves",
+        "effectiveMoveSnapshotDefinitionSha256",
+        "controlEvidenceDefinitionSha256",
+        "capturedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "maturityFields": [
+        "policyId",
+        "minimumLevel",
+        "gmConfirmed",
+        "eligible",
+        "evidenceDefinitionSha256"
+      ],
+      "effectiveKnownMoveFields": [
+        "moveId",
+        "evidence"
+      ],
+      "effectiveKnownMoveMaximum": 64,
+      "order": "parent-index-0-then-1",
+      "roles": "complementary-female-parent-and-male-parent",
+      "acceptedMaturity": "eligible-required",
+      "selfHash": "stable-json-v1-of-all-fields-except-definitionSha256-verified-server-side",
+      "laterParentMutation": "no-effect"
+    },
+    "breederSnapshot": {
+      "fields": [
+        "schemaVersion",
+        "trainerSheetSlug",
+        "sheetRevision",
+        "sourceSheetSha256",
+        "pokemonEducationRank",
+        "permissionEvidenceIds",
+        "providerSnapshotDefinitionSha256",
+        "capturedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "selfHash": "stable-json-v1-of-all-fields-except-definitionSha256-verified-server-side"
+    },
+    "offspringBlueprint": {
+      "fields": [
+        "schemaVersion",
+        "speciesId",
+        "familyRootSpeciesId",
+        "speciesSpecDefinitionSha256",
+        "nature",
+        "ability",
+        "gender",
+        "inheritanceCandidates",
+        "providerTraits",
+        "startingLevel",
+        "babyTemplate",
+        "definitionSha256"
+      ],
+      "resolvedValueFields": [
+        "valueId",
+        "resolutionKind",
+        "rollRecordId",
+        "optionId",
+        "choiceEvidenceId"
+      ],
+      "inheritanceCandidateIdentity": "canonical-move-id-retain-all-parent-pathway-evidence",
+      "candidateMaximum": 256,
+      "startingLevelBounds": [
+        1,
+        100
+      ],
+      "immutableAfterAcceptance": true,
+      "inheritanceSourceKinds": {
+        "parent": {
+          "fields": [
+            "kind",
+            "parentIndex",
+            "parentRef",
+            "parentSpeciesId",
+            "pathwayId",
+            "knownMoveEvidence"
+          ],
+          "allowedFor": "breeding-source-only"
+        },
+        "source-authority": {
+          "fields": [
+            "kind",
+            "authorityKind",
+            "authorityId",
+            "evidenceDefinitionSha256"
+          ],
+          "authorityKinds": [
+            "fossil",
+            "gm",
+            "feature-provider"
+          ],
+          "allowedFor": "matching-parentless-source-only"
+        }
+      },
+      "providerTraits": {
+        "fields": [
+          "serpentsMark",
+          "fossilRestoration",
+          "prehistoricBond",
+          "marsupial",
+          "playingGod"
+        ],
+        "serpentsMarkFields": [
+          "patternId",
+          "selectionKind",
+          "sourceParentSheetSlugs",
+          "selectionRollRecordId",
+          "providerEvidenceDefinitionSha256s"
+        ],
+        "patterns": [
+          "attack",
+          "crush",
+          "fear",
+          "life",
+          "speed",
+          "stealth"
+        ],
+        "selectionKinds": [
+          "single-parent",
+          "same-parent-pattern",
+          "bounded-coin"
+        ],
+        "authority": "frozen-owning-reducer-provider-evidence-only-never-editable-sheet-fields",
+        "nonApplicable": {
+          "serpentsMark": null,
+          "fossilRestoration": null,
+          "prehistoricBond": null,
+          "marsupial": null,
+          "playingGod": null
+        },
+        "fossilRestorationFields": [
+          "providerSnapshotDefinitionSha256",
+          "providerRecordSha256",
+          "tutorPointDelta",
+          "extraAbilityId",
+          "extraAbilityTier",
+          "selectionKind",
+          "selectionOptionId"
+        ],
+        "fossilRestorationAbilityTiers": [
+          "basic",
+          "advanced"
+        ],
+        "fossilRestorationSelectionKinds": [
+          "other-basic",
+          "bounded-gm-advanced"
+        ],
+        "prehistoricBondFields": [
+          "providerSnapshotDefinitionSha256",
+          "providerRecordSha256",
+          "highestBaseStatId",
+          "selectionKind",
+          "selectionOptionId",
+          "heldItemId",
+          "heldItemName",
+          "heldItemEffect",
+          "heldItemEffectDefinitionSha256"
+        ],
+        "prehistoricBondSelectionKinds": [
+          "unique-highest",
+          "bounded-gm-tie"
+        ],
+        "prehistoricBondStatIds": [
+          "hp",
+          "atk",
+          "def",
+          "satk",
+          "sdef",
+          "spd"
+        ],
+        "marsupialFields": [
+          "providerRecordSha256",
+          "providerMechanicFieldsSha256",
+          "providerEvidenceDefinitionSha256s",
+          "forcedBaseStatPenaltyEach",
+          "motherPouchRequired",
+          "removalLevel"
+        ],
+        "marsupialPolicy": "Kangaskhan-only-forced-minus-5-pouch-required-removal-Level-25",
+        "playingGodFields": [
+          "sourceTrainerSlug",
+          "sourceTrainerRevision",
+          "featureContributionDefinitionSha256",
+          "featureHandoffDefinitionSha256",
+          "chemistryAuthorityDefinitionSha256",
+          "technologyEducationRank",
+          "colorationContestStatId",
+          "inheritanceMoveIds",
+          "baseStatIncreases",
+          "upgradeOptionIds"
+        ],
+        "playingGodPolicy": "feature-artificial-only-Level-5-rank-5-or-6-bounded-upgrades"
+      },
+      "babyTemplateAuthority": "disabled-or-one-offer-bound-2-through-4-effect-set; Kangaskhan-forced-5-requires-exact-Marsupial-trait"
+    },
+    "incubation": {
+      "fields": [
+        "averageCampaignMinutes",
+        "targetCampaignMinutes",
+        "accumulatedCampaignMinutes",
+        "variationPolicyId",
+        "durationResultDefinitionSha256",
+        "lastAppliedClockRevision",
+        "lastAppliedClockMinute",
+        "readyAtCampaignMinute",
+        "readinessKind",
+        "readyOperationId",
+        "paused",
+        "pauseReasonId",
+        "pauseOperationId"
+      ],
+      "progress": "zero-through-target",
+      "readyKinds": [
+        "incubation-complete",
+        "gm-mark-ready"
+      ],
+      "completeReadiness": "accumulated-equals-target",
+      "gmReadiness": "may-be-less-than-target-with-audited-operation",
+      "clockPair": "both-non-negative-safe-integers",
+      "pauseEvidence": "required-exactly-when-paused"
+    },
+    "special": {
+      "fields": [
+        "state",
+        "rollRecordId",
+        "rollTotal",
+        "triggerIds",
+        "adjudicationId",
+        "outcomeId",
+        "automaticShiny"
+      ],
+      "states": [
+        "not-rolled",
+        "normal",
+        "pending-adjudication",
+        "resolved"
+      ],
+      "rollPair": "both-null-or-record-id-and-1-through-100",
+      "pendingStatus": "awaiting-special-adjudication",
+      "automaticShiny": false
+    },
+    "statuses": [
+      "incubating",
+      "ready",
+      "awaiting-special-adjudication",
+      "hatching",
+      "hatched",
+      "cancelled",
+      "invalidated-by-gm"
+    ],
+    "activeStatuses": [
+      "incubating",
+      "ready",
+      "awaiting-special-adjudication",
+      "hatching"
+    ],
+    "settledStatuses": [
+      "hatched",
+      "cancelled",
+      "invalidated-by-gm"
+    ],
+    "terminalNonHatchStatuses": [
+      "cancelled",
+      "invalidated-by-gm"
+    ],
+    "transitions": {
+      "incubating": [
+        "ready",
+        "cancelled",
+        "invalidated-by-gm"
+      ],
+      "ready": [
+        "awaiting-special-adjudication",
+        "hatching",
+        "cancelled",
+        "invalidated-by-gm"
+      ],
+      "awaiting-special-adjudication": [
+        "hatching",
+        "cancelled",
+        "invalidated-by-gm"
+      ],
+      "hatching": [
+        "hatched",
+        "invalidated-by-gm"
+      ],
+      "hatched": [],
+      "cancelled": [],
+      "invalidated-by-gm": []
+    },
+    "statusInvariants": {
+      "incubating": "not-ready-no-hatch-operation-no-child",
+      "ready": "ready-special-not-rolled-no-hatch-operation-no-child",
+      "awaiting-special-adjudication": "ready-pending-special-hatch-operation-no-child",
+      "hatching": "ready-normal-or-resolved-special-hatch-operation-no-child",
+      "hatched": "ready-normal-or-resolved-special-hatch-operation-and-child",
+      "terminal": "typed-terminal-record-no-new-successor"
+    },
+    "successor": {
+      "revision": "exactly-current-plus-one",
+      "updatedTime": "monotonic",
+      "newOperationId": "required",
+      "immutableFields": [
+        "schemaVersion",
+        "eggId",
+        "source",
+        "ruleset",
+        "definitionHashes",
+        "parents",
+        "breeder",
+        "offspring",
+        "createdAtCampaignMinute"
+      ],
+      "ownerTransfer": "allowed-before-hatched-by-authorized-operation",
+      "incubationProgress": "monotonic",
+      "readyFacts": "immutable-once-set",
+      "specialFacts": "monotonic-state-machine-and-single-roll",
+      "hatchOperationId": "immutable-once-set",
+      "childSheetSlug": "write-once-at-hatched",
+      "statusChangedAt": "unchanged-for-same-status-equals-updated-for-transition"
+    },
+    "authority": {
+      "writer": "pokemon-egg-use-case-and-repository-only",
+      "notSheetKind": true,
+      "notInventoryRow": true,
+      "notMapMetadata": true,
+      "browserDocumentWrite": "forbidden",
+      "realtime": "refresh-signal-after-commit"
+    },
+    "limits": {
+      "revisionMaximum": 2147483647,
+      "campaignMinuteMaximum": 9007199254740991,
+      "parentCountMaximum": 2,
+      "inheritanceCandidatesMaximum": 256,
+      "definitionHashesMaximum": 256,
+      "identifierCharactersMaximum": 160
+    },
+    "failureCodes": [
+      "breeding.egg.invalid-document",
+      "breeding.egg.unknown-field",
+      "breeding.egg.invalid-id",
+      "breeding.egg.invalid-status",
+      "breeding.egg.invalid-invariant",
+      "breeding.egg.invalid-transition",
+      "breeding.egg.stale-revision",
+      "breeding.egg.immutable-field"
+    ],
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "ownershipMapDefinitionSha256": "68a72c5077651ab406a18bb9d8826102194328eb75423002ff90d7d351073e5e",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "hatchDurationPolicyDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a",
+      "eggRuleHelpersPolicyDefinitionSha256": "20d7daa639780db9e983e72a739d81a5a60b81f00e99a4f1135b7e777dc44ec7",
+      "inheritanceCandidatePolicyDefinitionSha256": "b30536b9757b436feac611ed64ed4a94eb1e5bd790b2e2fb7dd6d27c65f4b143"
+    }
+  }
+}

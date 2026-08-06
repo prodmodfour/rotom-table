@@ -193,6 +193,54 @@ for (const path of [
   'data/breeding-automation/inheritance-candidate-policy.json',
   'data/breeding-automation/egg-rule-helpers-policy.json',
   'data/breeding-automation/pure-rules-conformance.json',
+  'data/breeding-automation/project-contract.json',
+  'data/breeding-automation/egg-contract.json',
+  'data/breeding-automation/lineage-contract.json',
+  'data/breeding-automation/operation-contract.json',
+  'data/breeding-automation/ledger-contract.json',
+  'data/breeding-automation/read-set-contract.json',
+  'data/breeding-automation/authorization-contract.json',
+  'data/breeding-automation/projection-contract.json',
+  'data/breeding-automation/archive-contract.json',
+  'data/breeding-automation/storage-schema-v22.json',
+  'data/breeding-automation/repository-contract.json',
+  'data/breeding-automation/initialized-pokemon-sheet-contract.json',
+  'data/breeding-automation/species-acquisition-reward-contract.json',
+  'data/breeding-automation/campaign-operation-ledger-contract.json',
+  'data/breeding-automation/campaign-clock-contract.json',
+  'data/breeding-automation/realtime-contract.json',
+  'data/breeding-automation/transaction-coordinator-contract.json',
+  'data/breeding-automation/archive-storage-schema-v23.json',
+  'data/breeding-automation/archive-storage-runtime-contract.json',
+  'data/breeding-automation/persistence-conformance-contract.json',
+  'data/breeding-automation/project-setup-validation-contract.json',
+  'data/breeding-automation/project-initial-progress-contract.json',
+  'data/breeding-automation/project-check-contract.json',
+  'data/breeding-automation/project-additional-progress-contract.json',
+  'data/breeding-automation/production-snapshot-contract.json',
+  'data/breeding-automation/offspring-production-contract.json',
+  'data/breeding-automation/egg-production-contract.json',
+  'data/breeding-automation/lifecycle-recovery-contract.json',
+  'data/breeding-automation/incubation-contract.json',
+  'data/breeding-automation/incubation-storage-schema-v24.json',
+  'data/breeding-automation/readiness-correction-contract.json',
+  'data/breeding-automation/campaign-clock-incubation-batch-contract.json',
+  'data/breeding-automation/egg-lifecycle-policy-contract.json',
+  'data/breeding-automation/hatch-offer-contract.json',
+  'data/breeding-automation/hatch-special-contract.json',
+  'data/breeding-automation/child-sheet-construction-contract.json',
+  'data/breeding-automation/hatch-completion-contract.json',
+  'data/breeding-automation/hatch-species-acquisition-contract.json',
+  'data/breeding-automation/hatch-resilience-contract.json',
+  'data/breeding-automation/breeder-edge-handoff-contract.json',
+  'data/breeding-automation/feature-provider-handoff-contract.json',
+  'data/breeding-automation/modifier-provider-handoff-contract.json',
+  'data/breeding-automation/storage-schema-v25.json',
+  'data/breeding-automation/parent-source-change-contract.json',
+  'data/breeding-automation/storage-schema-v26.json',
+  'data/breeding-automation/egg-transfer-contract.json',
+  'data/breeding-automation/fossil-egg-contract.json',
+  'data/breeding-automation/gm-egg-contract.json',
 ]) {
   const document = json<Record<string, any>>(path)
   assert(document.rulesetId === ruleset.rulesetId, `${path} ruleset ID drifted`)
@@ -200,6 +248,172 @@ for (const path of [
   assert(document.sourceManifestSha256 === sourceManifestSha256, `${path} source-manifest link drifted`)
   assert(document.definitionSha256 === sha256(stable(document.definition)), `${path} definition hash drifted`)
 }
+const hatchOfferContract = json<Record<string, any>>('data/breeding-automation/hatch-offer-contract.json')
+assert(hatchOfferContract.contractId === 'rotom-pokemon-egg-hatch-offer-v1', 'hatch-offer contract identity drifted')
+assert(JSON.stringify(hatchOfferContract.definition?.command?.destinationKinds) === JSON.stringify(['box', 'team']), 'hatch destination kinds drifted')
+assert(hatchOfferContract.definition?.ownerDestinationFact?.teamCapacity === 6, 'hatch team capacity drifted')
+assert(hatchOfferContract.definition?.offer?.validity === 'issued-at-current-campaign-minute-and-expires-exactly-one-minute-later', 'hatch offer expiry policy drifted')
+assert(hatchOfferContract.definition?.offer?.settlement === 'none-BR-054-does-not-start-or-mutate-the-Egg', 'hatch offer projection must remain non-mutating')
+assert(hatchOfferContract.definition?.blockers?.sourceContinuityLoss === 'not-a-hatch-blocker-after-Egg-acceptance', 'accepted source loss became a hatch blocker')
+assert(hatchOfferContract.definition?.tests?.focusedCount === 10, 'hatch-offer focused test count drifted')
+const hatchSpecialContract = json<Record<string, any>>('data/breeding-automation/hatch-special-contract.json')
+assert(hatchSpecialContract.contractId === 'rotom-pokemon-egg-hatch-special-v1', 'hatch-special contract identity drifted')
+assert(hatchSpecialContract.definition?.roll?.countPerEgg === 1 && hatchSpecialContract.definition?.roll?.purpose === 'hatch-special-d100', 'hatch-special single-roll policy drifted')
+assert(JSON.stringify(hatchSpecialContract.definition?.reducer?.specialTotals) === JSON.stringify([1, 100]), 'hatch-special trigger totals drifted')
+assert(hatchSpecialContract.definition?.reducer?.automaticShiny === false && hatchSpecialContract.definition?.boundedAdjudication?.shinyOption === 'absent', 'hatch-special workflow began implying Shiny')
+assert(hatchSpecialContract.definition?.boundedAdjudication?.outcomeIds?.length === 3 && hatchSpecialContract.definition.boundedAdjudication.outcomeMechanics === 'no-automatic-mechanical-change', 'hatch-special bounded outcome inventory drifted')
+assert(hatchSpecialContract.definition?.transactions?.exactRetry === 'no-Egg-revision-ledger-revision-roll-event-or-publication-duplication', 'hatch-special retry policy drifted')
+assert(hatchSpecialContract.definition?.tests?.focusedCount === 7, 'hatch-special focused test count drifted')
+const modifierProviderContract = json<Record<string, any>>('data/breeding-automation/modifier-provider-handoff-contract.json')
+assert(modifierProviderContract.contractId === 'rotom-breeding-modifier-provider-handoff-v1', 'modifier-provider handoff contract identity drifted')
+assert(modifierProviderContract.definition?.closedPolicies?.length === 9, 'modifier-provider policy inventory drifted')
+assert(modifierProviderContract.definition?.authority?.clientAuthority === 'none', 'modifier-provider contract granted client authority')
+assert(modifierProviderContract.definition?.activeIntegrations?.eggWarmerItem?.includes('continuous-2-to-1'), 'Egg Warmer item rate policy drifted')
+assert(modifierProviderContract.definition?.activeIntegrations?.eggWarmerCapability?.includes('once-per-1440-campaign-minutes'), 'Egg Warmer Capability cooldown drifted')
+assert(modifierProviderContract.definition?.activeIntegrations?.reanimationMachine?.includes('exact-current-distinct-Trainer-inventory-row')
+  && modifierProviderContract.definition?.activeIntegrations?.playingGod?.includes('Chemistry-Set')
+  && modifierProviderContract.definition?.activeIntegrations?.babyTemplate?.includes('Marsupial')
+  && modifierProviderContract.definition?.reserved?.['BR-068']?.includes('post-hatch-learning'), 'downstream modifier ownership drifted')
+const storageSchemaV25 = json<Record<string, any>>('data/breeding-automation/storage-schema-v25.json')
+assert(storageSchemaV25.schemaId === 'rotom-breeding-storage-v25' && storageSchemaV25.definition?.fromVersion === 24 && storageSchemaV25.definition?.toVersion === 25, 'storage schema v25 identity drifted')
+assert(storageSchemaV25.definition?.newCommandKind === 'apply-egg-warmer-capability' && storageSchemaV25.definition?.invariants?.operationRowsPreserved === true, 'storage schema v25 Egg Warmer preservation policy drifted')
+const parentSourceChangeContract = json<Record<string, any>>('data/breeding-automation/parent-source-change-contract.json')
+assert(parentSourceChangeContract.contractId === 'rotom-breeding-parent-source-change-v1', 'parent source-change contract identity drifted')
+assert(parentSourceChangeContract.definition?.changeKinds?.length === 7
+  && parentSourceChangeContract.definition?.authority?.clientAuthority === 'none', 'parent source-change inventory or authority drifted')
+assert(parentSourceChangeContract.definition?.projectMatrix?.preCheckRevisionRefreshable?.disposition === 'explicit-interruption-refresh-and-full-revalidation'
+  && parentSourceChangeContract.definition?.projectMatrix?.postCheck?.allChanges === 'block-until-cancel-or-reviewed-migration', 'parent Project checkpoint policy drifted')
+assert(parentSourceChangeContract.definition?.acceptedEggMatrix?.allChanges === 'preserve-immutable-Egg'
+  && parentSourceChangeContract.definition?.acceptedEggMatrix?.hatchEligibility === 'preserve-status-derived-eligibility', 'accepted Egg source-change policy drifted')
+assert(parentSourceChangeContract.definition?.ownershipBoundaries?.['BR-064']?.includes('Egg-transfer-consent-and-custody-mutation'), 'parent source-change contract crossed BR-064 ownership')
+const storageSchemaV26 = json<Record<string, any>>('data/breeding-automation/storage-schema-v26.json')
+assert(storageSchemaV26.schemaId === 'rotom-breeding-storage-v26'
+  && storageSchemaV26.definition?.fromVersion === 25
+  && storageSchemaV26.definition?.toVersion === 26, 'storage schema v26 identity drifted')
+assert(storageSchemaV26.definition?.newScopeKind === 'egg-transfer-consent'
+  && storageSchemaV26.definition?.invariants?.offlineParity === true
+  && storageSchemaV26.definition?.invariants?.noMapEncounterColumns === true, 'storage schema v26 transfer-consent policy drifted')
+const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
+assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
+  && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')
+assert(eggTransferContract.definition?.workflow?.requiredConsentCount === 2
+  && eggTransferContract.definition?.workflow?.expiry?.includes('equality-is-invalid')
+  && eggTransferContract.definition?.workflow?.gmOverride === 'cannot-create-or-replace-positive-consent', 'Egg transfer consent policy drifted')
+assert(eggTransferContract.definition?.atomicSettlement?.transaction === 'one-BR-037-top-level-synchronous-transaction'
+  && eggTransferContract.definition?.storage?.schemaVersion === 26
+  && eggTransferContract.definition?.privacy?.realtime?.includes('no-consent-or-Egg-payload'), 'Egg transfer atomicity, storage, or privacy policy drifted')
+const fossilEggContract = json<Record<string, any>>('data/breeding-automation/fossil-egg-contract.json')
+assert(fossilEggContract.contractId === 'rotom-breeding-fossil-egg-v1'
+  && fossilEggContract.definition?.ticket === 'BR-065', 'fossil Egg contract identity drifted')
+assert(fossilEggContract.definition?.source?.kind === 'fossil'
+  && fossilEggContract.definition?.source?.consumption?.includes('exactly-one')
+  && fossilEggContract.definition?.reanimationAuthority?.edge?.includes('current-effective-unsuppressed'), 'fossil source or Paleontologist authority drifted')
+assert(fossilEggContract.definition?.egg?.aggregate === 'PokemonEggDocumentV1'
+  && fossilEggContract.definition?.egg?.defaultStartingLevel === 10
+  && fossilEggContract.definition?.egg?.parallelFossilHatchPath === 'forbidden'
+  && fossilEggContract.definition?.extendedByTicket === 'BR-067'
+  && fossilEggContract.definition?.boundedOffers?.slots?.includes('baby-template')
+  && fossilEggContract.definition?.egg?.babyTemplate?.includes('per-Egg-GM-choice')
+  && fossilEggContract.definition?.egg?.babyTemplate?.includes('forced-Marsupial'), 'fossil Egg shared-pipeline or BR-067 extension policy drifted')
+assert(fossilEggContract.definition?.fossilRestoration?.tutorPointDelta === -2
+  && fossilEggContract.definition?.prehistoricBond?.tiedMaximum?.includes('GM-bounded-offer')
+  && fossilEggContract.definition?.prehistoricBond?.restriction?.includes('revived-from-Fossils'), 'fossil provider reducer policy drifted')
+assert(fossilEggContract.definition?.transaction?.phase2 === 'one-BR-037-top-level-synchronous-SQLite-transaction'
+  && fossilEggContract.definition?.randomness?.exactRetryRedraw === 'forbidden'
+  && fossilEggContract.definition?.privacy?.EggRealtime === 'payload-free-refresh-only', 'fossil atomicity, replay, or privacy policy drifted')
+const gmEggContract = json<Record<string, any>>('data/breeding-automation/gm-egg-contract.json')
+assert(gmEggContract.contractId === 'rotom-breeding-gm-egg-v1'
+  && gmEggContract.definition?.ticket === 'BR-066'
+  && JSON.stringify(gmEggContract.definition?.source?.provenanceKinds) === JSON.stringify(['gm-authored','mysterious','campaign-gift','imported']), 'GM Egg contract identity or provenance inventory drifted')
+assert(gmEggContract.definition?.source?.legacyThreeFieldGmSource === 'read-only-never-valid-for-new-creation'
+  && gmEggContract.definition?.variants?.imported?.includes('server-owned-reviewed-source-record')
+  && gmEggContract.definition?.variants?.['campaign-gift']?.includes('BR-064'), 'GM Egg legacy, import, or gift authority drifted')
+assert(gmEggContract.definition?.egg?.aggregate === 'PokemonEggDocumentV1'
+  && gmEggContract.definition?.egg?.defaultStartingLevel === 1
+  && gmEggContract.definition?.egg?.parallelSourceHatchPath === 'forbidden', 'GM Egg shared-pipeline policy drifted')
+assert(gmEggContract.definition?.transaction?.phase2 === 'one-BR-037-top-level-synchronous-SQLite-transaction'
+  && gmEggContract.definition?.randomness?.exactRetryRedraw === 'forbidden'
+  && gmEggContract.definition?.privacy?.EggRealtime === 'payload-free-refresh-only'
+  && gmEggContract.definition?.boundedOffers?.slots?.includes('baby-template')
+  && gmEggContract.definition?.egg?.babyTemplate?.includes('forced-Marsupial'), 'GM Egg atomicity, replay, privacy, or Baby Template policy drifted')
+const babyTemplateContract = json<Record<string, any>>('data/breeding-automation/baby-template-contract.json')
+assert(babyTemplateContract.contractId === 'rotom-breeding-baby-template-and-artificial-egg-v1'
+  && babyTemplateContract.definition?.ticket === 'BR-067', 'Baby Template contract identity drifted')
+assert(JSON.stringify(babyTemplateContract.definition?.babyTemplate?.campaignBaseStatPenaltyEach) === JSON.stringify([2, 3, 4])
+  && babyTemplateContract.definition?.babyTemplate?.recovery?.intervalLevels === 5
+  && babyTemplateContract.definition?.babyTemplate?.speciesReferenceMutation === 'forbidden'
+  && babyTemplateContract.definition?.babyTemplate?.editableBabyTemplate?.includes('never-authority')
+  && babyTemplateContract.definition?.babyTemplate?.ordinaryProjectOfferIssuance?.includes('frozen-campaign-option-bound')
+  && babyTemplateContract.definition?.babyTemplate?.optionalValueHashClosure?.includes('exact-frozen-campaign-option-snapshot')
+  && JSON.stringify(babyTemplateContract.definition?.babyTemplate?.eligibleEggSources) === JSON.stringify(['ordinary-breeding-project','fossil','gm','feature-artificial']), 'Baby Template recovery, issuance, source, or authority policy drifted')
+assert(babyTemplateContract.definition?.marsupial?.forcedBaseStatPenaltyEach === 5
+  && babyTemplateContract.definition?.marsupial?.pouch?.includes('atomic-exact-reciprocal')
+  && babyTemplateContract.definition?.marsupial?.exit?.includes('Level-25')
+  && babyTemplateContract.definition?.marsupial?.actionRestriction?.includes('without-active-Parental-Bond')
+  && babyTemplateContract.definition?.marsupial?.parentalBond?.includes('10-metre-tether'), 'Marsupial Baby Template or Parental Bond policy drifted')
+assert(babyTemplateContract.definition?.playingGod?.cost === 3500
+  && babyTemplateContract.definition?.playingGod?.startingLevel === 5
+  && babyTemplateContract.definition?.playingGod?.maximumHatchCampaignMinutes === 1440
+  && babyTemplateContract.definition?.playingGod?.hatch?.includes('ordinary'), 'Playing God artificial Egg policy drifted')
+assert(babyTemplateContract.definition?.security?.privateRestoreBeforeCalculation === true
+  && babyTemplateContract.definition?.security?.randomness?.includes('persisted-command-target')
+  && babyTemplateContract.definition?.security?.replay?.includes('no-redraw'), 'BR-067 security or replay policy drifted')
+const childSheetContract = json<Record<string, any>>('data/breeding-automation/child-sheet-construction-contract.json')
+assert(childSheetContract.contractId === 'rotom-breeding-child-sheet-construction-v1', 'child-sheet construction contract identity drifted')
+assert(childSheetContract.definition?.construction?.shiny === false, 'child-sheet construction began deriving Shiny from special state')
+assert(childSheetContract.definition?.construction?.appliedMoves?.length === 0 && childSheetContract.definition?.construction?.pokeEdges?.length === 0, 'newborn child construction may not grant applied Moves or Poké Edges')
+assert(childSheetContract.definition?.storage?.insertRevision === 0
+  && childSheetContract.definition?.storage?.placeholderOrFollowupSave?.includes('Marsupial-pouch-link'), 'child-sheet initialized storage policy drifted')
+assert(childSheetContract.definition?.construction?.babyTemplate?.includes('server-private-authority')
+  && childSheetContract.definition?.construction?.playingGod?.includes('BR-068')
+  && childSheetContract.definition?.unsupported?.babyTemplateApplied === undefined
+  && childSheetContract.definition?.unsupported?.startingLevelAtLeast20 === 'unavailable-until-BR-068-hatch-construction-checkpoints', 'child-sheet BR-067/BR-068 ownership policy drifted')
+const hatchCompletionContract = json<Record<string, any>>('data/breeding-automation/hatch-completion-contract.json')
+assert(hatchCompletionContract.contractId === 'rotom-breeding-hatch-completion-v1', 'hatch-completion contract identity drifted')
+assert(hatchCompletionContract.definition?.transaction?.phase2 === 'one-BR-037-top-level-synchronous-SQLite-transaction', 'hatch-completion transaction boundary drifted')
+assert(JSON.stringify(hatchCompletionContract.definition?.transaction?.orderedWrites) === JSON.stringify(['initialized-child-sheet', 'optional-mirrored-Marsupial-mother-and-baby-pouch-state', 'first-Species-history-and-conditional-reward', 'Trainer-roster-link', 'settled-Egg-revision', 'immutable-lineage-origin', 'restricted-realtime-rows', 'terminal-operation-result']), 'hatch-completion atomic participant order drifted')
+assert(hatchCompletionContract.definition?.settlement?.teamCapacity === 6 && JSON.stringify(hatchCompletionContract.definition?.settlement?.destinationKinds) === JSON.stringify(['box', 'team']), 'hatch-completion destination policy drifted')
+assert(hatchCompletionContract.definition?.replay?.publication === 'silent'
+  && hatchCompletionContract.definition?.realtime?.rowsPerFreshSettlement === '6-or-8-with-Marsupial-mother-sheet-refresh', 'hatch-completion replay/realtime policy drifted')
+assert(hatchCompletionContract.definition?.privacy?.forbidden?.includes('lineage') && hatchCompletionContract.definition?.privacy?.forbidden?.includes('reward-details'), 'hatch-completion privacy exclusions drifted')
+const hatchAcquisitionContract = json<Record<string, any>>('data/breeding-automation/hatch-species-acquisition-contract.json')
+assert(hatchAcquisitionContract.contractId === 'rotom-breeding-hatch-species-acquisition-v1', 'hatch Species-acquisition contract identity drifted')
+assert(JSON.stringify(hatchAcquisitionContract.definition?.history?.identity) === JSON.stringify(['trainerSheetSlug', 'speciesId']), 'hatch Species-history identity drifted')
+assert(hatchAcquisitionContract.definition?.freshHatchOutcomes?.missingHistory?.reward?.amount === 1 && hatchAcquisitionContract.definition?.freshHatchOutcomes?.existingHistory?.rewardAmount === 0, 'hatch first-Species reward policy drifted')
+assert(hatchAcquisitionContract.definition?.replay?.terminalRetry === 'stored-result-no-service-execution', 'hatch Species reward retry policy drifted')
+assert(hatchAcquisitionContract.definition?.privacy?.completionProjectionRewardDetails === 'forbidden', 'hatch Species reward leaked into completion projection')
+const hatchResilienceContract = json<Record<string, any>>('data/breeding-automation/hatch-resilience-contract.json')
+assert(hatchResilienceContract.contractId === 'rotom-breeding-hatch-resilience-v1', 'hatch resilience contract identity drifted')
+assert(hatchResilienceContract.definition?.invariants?.maximumSuccessfulChildrenPerEgg === 1 && hatchResilienceContract.definition?.invariants?.freshRealtimeRows === 6 && hatchResilienceContract.definition?.invariants?.terminalRetryRealtimeRows === 0, 'hatch resilience cardinality drifted')
+assert(hatchResilienceContract.definition?.hazards?.concurrent?.connections === 'two-independent-SQLite-connections', 'hatch concurrent-connection evidence drifted')
+assert(hatchResilienceContract.definition?.hazards?.pendingLoser?.recovery === 'current-authorized-resume-settles-original-pending-operation-stale', 'hatch pending-loser recovery drifted')
+assert(hatchResilienceContract.definition?.hazards?.replayGap?.mechanicsReplay === 'forbidden', 'hatch replay-gap mechanics policy drifted')
+const breederEdgeHandoffContract = json<Record<string, any>>('data/breeding-automation/breeder-edge-handoff-contract.json')
+assert(breederEdgeHandoffContract.contractId === 'rotom-breeding-breeder-edge-handoff-v1', 'Breeder Edge handoff contract identity drifted')
+assert(breederEdgeHandoffContract.definition?.identity?.capabilityId === 'breeding.v1'
+  && breederEdgeHandoffContract.definition?.identity?.requestContractId === 'edge.breeder.request.v1', 'Breeder Edge delegation identity drifted')
+assert(JSON.stringify(breederEdgeHandoffContract.definition?.authorityBoundary?.sourceContributionIds) === JSON.stringify(['breeding-project-request', 'breeder-dc12-timeline']), 'Breeder Edge contribution inventory drifted')
+assert(breederEdgeHandoffContract.definition?.canonicalAuthority?.recordSha256 === 'd303cbe8c377ec9bb2a305ee5626e3c80f9c1ebd77975623c985bce741a321f4'
+  && breederEdgeHandoffContract.definition?.canonicalAuthority?.minimumPokemonEducationRank === 'Novice', 'Breeder canonical authority drifted')
+assert(breederEdgeHandoffContract.definition?.handoff?.campaignSharedService === 'unavailable-until-BR-061'
+  && breederEdgeHandoffContract.definition?.handoff?.featureGrantedBreeder === 'unavailable-until-BR-061', 'Breeder handoff crossed the BR-061 provider boundary')
+assert(breederEdgeHandoffContract.definition?.delegation?.resourceMutation === 'none'
+  && breederEdgeHandoffContract.definition?.privacy?.projection === 'none-server-private-authority-only', 'Breeder handoff acquired mutation or projection authority')
+assert(breederEdgeHandoffContract.definition?.tests?.focusedCount === 10, 'Breeder Edge handoff focused test count drifted')
+const featureProviderHandoffContract = json<Record<string, any>>('data/breeding-automation/feature-provider-handoff-contract.json')
+const modifierInventoryContract = json<Record<string, any>>('data/breeding-automation/modifier-inventory.json')
+assert(featureProviderHandoffContract.contractId === 'rotom-breeding-feature-provider-handoff-v1', 'Feature provider handoff contract identity drifted')
+assert(featureProviderHandoffContract.definition?.canonicalAuthority?.modifierInventoryDefinitionSha256 === modifierInventoryContract.definitionSha256
+  && featureProviderHandoffContract.definition?.canonicalAuthority?.effectiveProjection === 'current-server-resolved-effective-unsuppressed-ready-Feature-set', 'Feature provider canonical authority drifted')
+assert(featureProviderHandoffContract.definition?.checkpoints?.length === 9
+  && featureProviderHandoffContract.definition.checkpoints.some((entry: any) => entry.providerCanonicalId === 'Dilettante' && entry.disposition === 'active-upstream-effective-provider')
+  && featureProviderHandoffContract.definition.checkpoints.some((entry: any) => entry.providerCanonicalId === 'This One’s Special, I Know It' && entry.disposition === 'reserved-br-062'), 'Feature provider checkpoint inventory drifted')
+assert(JSON.stringify(featureProviderHandoffContract.definition?.dilettante?.mandatedSkillChoices) === JSON.stringify(['general-education', 'perception'])
+  && featureProviderHandoffContract.definition?.dilettante?.skillPrerequisiteWaiver === true, 'Dilettante Breeder substitution policy drifted')
+assert(featureProviderHandoffContract.definition?.facilities?.registryState === 'empty-no-authority'
+  && featureProviderHandoffContract.definition?.authorityBoundary?.handoffMutation === 'none'
+  && featureProviderHandoffContract.definition?.authorityBoundary?.realtimeRows === 0, 'Feature provider handoff acquired facility or mutation authority')
+assert(featureProviderHandoffContract.definition?.tests?.focusedCount === 10, 'Feature provider handoff focused test count drifted')
 const adjudications = json<Record<string, any>>('data/breeding-automation/source-adjudications.json')
 assert(adjudications.status === 'reviewed-no-open-runtime-conflicts', 'breeding source adjudications are open')
 assert(adjudications.rulesetDefinitionSha256 === ruleset.definitionSha256 && adjudications.sourceManifestSha256 === sourceManifestSha256, 'breeding adjudication links drifted')
@@ -398,6 +612,152 @@ for (const path of [
   'server/domain/breeding/eggRuleHelpers.ts',
   'tests/server/breedingEggRuleHelpers.test.ts',
   'tests/server/breedingPureRulesConformance.test.ts',
+  'shared/breeding/project.ts',
+  'server/domain/breeding/projectLifecycle.ts',
+  'tests/shared/breedingProjectContract.test.ts',
+  'shared/breeding/egg.ts',
+  'server/domain/breeding/eggLifecycle.ts',
+  'tests/shared/pokemonEggContract.test.ts',
+  'shared/breeding/lineage.ts',
+  'server/domain/breeding/lineage.ts',
+  'tests/shared/breedingLineageContract.test.ts',
+  'shared/breeding/operations.ts',
+  'server/domain/breeding/operations.ts',
+  'tests/shared/breedingOperationContract.test.ts',
+  'shared/breeding/ledgers.ts',
+  'server/domain/breeding/ledgers.ts',
+  'tests/shared/breedingLedgerContract.test.ts',
+  'shared/breeding/readSets.ts',
+  'server/domain/breeding/readSets.ts',
+  'tests/shared/breedingReadSetContract.test.ts',
+  'shared/breeding/authorization.ts',
+  'server/domain/breeding/authorization.ts',
+  'tests/shared/breedingAuthorizationContract.test.ts',
+  'shared/breeding/projections.ts',
+  'server/domain/breeding/projections.ts',
+  'tests/shared/breedingProjectionContract.test.ts',
+  'shared/breeding/archives.ts',
+  'server/domain/breeding/archives.ts',
+  'tests/shared/breedingArchiveContract.test.ts',
+  'server/storage/migrations.ts',
+  'scripts/migrate-campaign-to-sqlite.mjs',
+  'tests/server/breedingStorageMigrations.test.ts',
+  'server/storage/breedingRepositorySupport.ts',
+  'server/storage/breedingProjectRepository.ts',
+  'server/storage/pokemonEggRepository.ts',
+  'server/storage/breedingConsentRepository.ts',
+  'server/storage/trainerSpeciesAcquisitionRepository.ts',
+  'tests/server/breedingRepositories.test.ts',
+  'server/useCases/executeBreedingTransaction.ts',
+  'tests/server/breedingTransactionCoordinator.test.ts',
+  'shared/breeding/projectInitialProgress.ts',
+  'server/domain/breeding/projectInitialProgress.ts',
+  'server/storage/breedingOperationEvidenceRepository.ts',
+  'server/useCases/manageBreedingProjectInitialTime.ts',
+  'tests/server/breedingProjectInitialProgress.test.ts',
+  'shared/breeding/projectCheck.ts',
+  'server/domain/breeding/projectCheck.ts',
+  'server/storage/breedingCheckLedgerRepository.ts',
+  'server/useCases/resolveBreedingProjectCheck.ts',
+  'tests/server/breedingProjectCheck.test.ts',
+  'shared/breeding/projectAdditionalProgress.ts',
+  'server/domain/breeding/projectAdditionalProgress.ts',
+  'server/useCases/advanceBreedingProjectAdditionalTime.ts',
+  'tests/server/breedingProjectAdditionalProgress.test.ts',
+  'shared/breeding/productionSnapshots.ts',
+  'server/domain/breeding/productionSnapshots.ts',
+  'tests/server/breedingProductionSnapshots.test.ts',
+  'shared/breeding/offspringProduction.ts',
+  'server/domain/breeding/offspringProduction.ts',
+  'server/storage/breedingRollRepository.ts',
+  'server/storage/breedingOptionOfferRepository.ts',
+  'tests/server/breedingOffspringProduction.test.ts',
+  'data/breeding-automation/offspring-production-contract.json',
+  'shared/breeding/eggProduction.ts',
+  'server/domain/breeding/eggProduction.ts',
+  'server/useCases/produceBreedingProjectEgg.ts',
+  'tests/server/breedingEggProduction.test.ts',
+  'data/breeding-automation/egg-production-contract.json',
+  'shared/breeding/lifecycleRecovery.ts',
+  'server/domain/breeding/lifecycleRecovery.ts',
+  'server/useCases/manageBreedingLifecycleRecovery.ts',
+  'server/useCases/recoverBreedingOperation.ts',
+  'tests/server/breedingLifecycleRecovery.test.ts',
+  'data/breeding-automation/lifecycle-recovery-contract.json',
+  'shared/breeding/incubation.ts',
+  'server/domain/breeding/incubation.ts',
+  'server/storage/breedingIncubationSegmentRepository.ts',
+  'server/useCases/managePokemonEggIncubation.ts',
+  'data/breeding-automation/incubation-contract.json',
+  'data/breeding-automation/incubation-storage-schema-v24.json',
+  'shared/breeding/readinessCorrection.ts',
+  'server/domain/breeding/readinessCorrection.ts',
+  'server/useCases/markPokemonEggReady.ts',
+  'data/breeding-automation/readiness-correction-contract.json',
+  'shared/breeding/campaignClockBatch.ts',
+  'server/domain/breeding/campaignClockBatch.ts',
+  'server/useCases/advanceBreedingCampaignClockBatch.ts',
+  'tests/server/breedingCampaignClockBatch.test.ts',
+  'data/breeding-automation/campaign-clock-incubation-batch-contract.json',
+  'shared/breeding/eggLifecycle.ts',
+  'server/domain/breeding/eggLifecyclePolicy.ts',
+  'server/useCases/queryPokemonEggLifecycle.ts',
+  'tests/server/breedingEggLifecyclePolicy.test.ts',
+  'data/breeding-automation/egg-lifecycle-policy-contract.json',
+  'shared/breeding/hatchOffers.ts',
+  'server/domain/breeding/hatchOffers.ts',
+  'server/useCases/projectPokemonEggHatchOffer.ts',
+  'tests/server/breedingHatchOffers.test.ts',
+  'data/breeding-automation/hatch-offer-contract.json',
+  'shared/breeding/hatchCompletion.ts',
+  'server/domain/breeding/hatchCompletion.ts',
+  'server/storage/breedingLineageRepository.ts',
+  'server/useCases/completePokemonEggHatch.ts',
+  'tests/server/breedingHatchCompletion.test.ts',
+  'data/breeding-automation/hatch-completion-contract.json',
+  'server/domain/breeding/hatchSpeciesAcquisition.ts',
+  'tests/server/trainerSpeciesAcquisitionReward.test.ts',
+  'data/breeding-automation/hatch-species-acquisition-contract.json',
+  'data/breeding-automation/hatch-resilience-contract.json',
+  'shared/breeding/breederEdgeHandoff.ts',
+  'server/domain/breeding/breederEdgeHandoff.ts',
+  'server/useCases/resolveBreedingBreederEdgeHandoff.ts',
+  'tests/server/breedingBreederEdgeHandoff.test.ts',
+  'data/breeding-automation/breeder-edge-handoff-contract.json',
+  'shared/breeding/featureProviderHandoff.ts',
+  'server/domain/breeding/featureProviderHandoff.ts',
+  'server/useCases/resolveBreedingFeatureProviderHandoff.ts',
+  'tests/server/breedingFeatureProviderHandoff.test.ts',
+  'data/breeding-automation/feature-provider-handoff-contract.json',
+  'shared/breeding/modifierProviderHandoff.ts',
+  'server/domain/breeding/modifierProviderHandoff.ts',
+  'server/domain/breeding/eggWarmerCapability.ts',
+  'server/useCases/applyPokemonEggWarmerCapability.ts',
+  'tests/server/breedingModifierProviderHandoff.test.ts',
+  'data/breeding-automation/modifier-provider-handoff-contract.json',
+  'data/breeding-automation/storage-schema-v25.json',
+  'shared/breeding/parentSourceChange.ts',
+  'server/domain/breeding/parentSourceChange.ts',
+  'tests/server/breedingParentSourceChange.test.ts',
+  'data/breeding-automation/parent-source-change-contract.json',
+  'shared/breeding/eggTransfer.ts',
+  'server/domain/breeding/eggTransfer.ts',
+  'server/storage/pokemonEggTransferConsentRepository.ts',
+  'server/useCases/managePokemonEggTransferConsent.ts',
+  'server/useCases/transferPokemonEggOwnership.ts',
+  'tests/server/breedingEggTransfer.test.ts',
+  'data/breeding-automation/storage-schema-v26.json',
+  'data/breeding-automation/egg-transfer-contract.json',
+  'shared/breeding/fossilEgg.ts',
+  'server/domain/breeding/fossilEgg.ts',
+  'server/useCases/createBreedingFossilEgg.ts',
+  'tests/server/breedingFossilEgg.test.ts',
+  'data/breeding-automation/fossil-egg-contract.json',
+  'shared/breeding/gmEgg.ts',
+  'server/domain/breeding/gmEgg.ts',
+  'server/useCases/createBreedingGmEgg.ts',
+  'tests/server/breedingGmEgg.test.ts',
+  'data/breeding-automation/gm-egg-contract.json',
   'docs/adrs/018-authoritative-breeding-and-egg-runtime.md',
   'docs/breeding/architecture-and-ownership.md',
   'docs/breeding/contributor-guide.md',

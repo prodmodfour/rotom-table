@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-modifier-provider-handoff-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "286ccffed06f9d8f8f2a3ce3771a2cda54c204c5473bf256dc07e34e6ec8c19a",
+  "definition": {
+    "version": 1,
+    "domainPath": "server/domain/breeding/modifierProviderHandoff.ts",
+    "sharedPath": "shared/breeding/modifierProviderHandoff.ts",
+    "inventoryDefinitionSha256": "24bb20a9d61003f540f6b410df3b0919ee49233012e45ec2dd14bfc9ed5c2dd9",
+    "closedPolicies": [
+      {
+        "inventoryEntryId": "ability:Parental Bond",
+        "checkpoint": "hatch-transaction",
+        "contributionIds": [
+          "kangaskhan-baby-template-interaction"
+        ],
+        "disposition": "reserved-br-067"
+      },
+      {
+        "inventoryEntryId": "ability:Serpent’s Mark",
+        "checkpoint": "egg-acceptance",
+        "contributionIds": [
+          "arbok-pattern-inheritance"
+        ],
+        "disposition": "active-br-062"
+      },
+      {
+        "inventoryEntryId": "capability:Egg Warmer",
+        "checkpoint": "incubation-operation",
+        "contributionIds": [
+          "once-per-24-hours-hatch-reduction-d10"
+        ],
+        "disposition": "active-br-062"
+      },
+      {
+        "inventoryEntryId": "capability:Marsupial",
+        "checkpoint": "hatch-transaction",
+        "contributionIds": [
+          "kangaskhan-forced-baby-template-minus-5",
+          "mother-pouch-link",
+          "level-25-template-removal"
+        ],
+        "disposition": "reserved-br-067"
+      },
+      {
+        "inventoryEntryId": "item:Chemistry Set",
+        "checkpoint": "egg-acceptance",
+        "contributionIds": [
+          "artificial-egg-required-tool"
+        ],
+        "disposition": "reserved-br-065"
+      },
+      {
+        "inventoryEntryId": "item:Egg Warmer",
+        "checkpoint": "campaign-clock-segment",
+        "contributionIds": [
+          "egg-capacity-4",
+          "incubation-rate-times-2"
+        ],
+        "disposition": "active-br-062"
+      },
+      {
+        "inventoryEntryId": "item:Reanimation Machine",
+        "checkpoint": "egg-acceptance",
+        "contributionIds": [
+          "fossil-reanimation-tool"
+        ],
+        "disposition": "reserved-br-065"
+      },
+      {
+        "inventoryEntryId": "rule:Loyalty",
+        "checkpoint": "hatch-transaction",
+        "contributionIds": [
+          "bounded-starting-loyalty-offer-rank-3"
+        ],
+        "disposition": "active-core-rule"
+      },
+      {
+        "inventoryEntryId": "rule:Tutor Points",
+        "checkpoint": "hatch-transaction",
+        "contributionIds": [
+          "hatch-starting-tutor-point-1"
+        ],
+        "disposition": "active-core-rule"
+      }
+    ],
+    "authority": {
+      "canonicalRuntimeSources": [
+        "data/reference/abilities.json",
+        "data/reference/capabilities.json",
+        "data/reference/items.json",
+        "data/reference/moves.json",
+        "data/reference/pokedex.json",
+        "data/reference/rules.json",
+        "data/breeding-automation/natures.json"
+      ],
+      "storedSheetInputs": "exact-current-storage-owned-slug-revision-and-embedded-document-identity",
+      "effectiveProviders": "current-effective-unsuppressed-unambiguous-and-synchronous",
+      "itemCustody": "exact-owner-inventory-row-quantity-backed-unit-and-target-binding",
+      "clientAuthority": "none",
+      "unknownOrStale": "fail-closed"
+    },
+    "activeIntegrations": {
+      "serpentsMark": "one-or-two-current-Arbok-parent-patterns-freeze-one-pattern-with-persisted-d2-only-when-different",
+      "eggWarmerItem": "one-current-custodied-unit-covers-one-through-four-unique-Eggs-and-applies-continuous-2-to-1-progress-rate",
+      "eggWarmerCapability": "one-effective-source-once-per-1440-campaign-minutes-persists-one-d10-and-credits-60-minutes-per-total-without-changing-target",
+      "hatchDuration": "fixed-average-or-one-persisted-server-percentage-roll-or-one-current-bounded-GM-offer",
+      "coreHatchRules": "Loyalty-rank-3-and-one-starting-Tutor-Point-from-current-app-owned-rules-with-server-private-evidence",
+      "reanimationMachine": "exact-current-distinct-Trainer-inventory-row-and-quantity-backed-unit-authorizes-BR-065-fossil-creation-without-consumption",
+      "playingGod": "current-Playing-God-plus-exact-Chemistry-Set-custody-authorizes-one-cost-bound-Level-5-artificial-Egg-with-rank-bounded-upgrades",
+      "babyTemplate": "current-Marsupial-hatch-handoff-forces-minus-5-and-one-reciprocal-pouch; optional-current-Parental-Bond-handoff-is-bound-server-private"
+    },
+    "canonicalTraitBoundaries": {
+      "moves": "frozen-current-effective-parent-Move-provenance; application-and-post-hatch-learning-remain-BR-068",
+      "nature": "canonical-app-owned-random-or-rank-authorized-offer-resolution-only",
+      "form": "compiled-form-root-only-or-current-bounded-GM-Species-offer-under-frozen-campaign-policy",
+      "campaignOverrides": "frozen-campaign-option-snapshot-and-command-bound-server-issued-offers-only"
+    },
+    "transactions": {
+      "capabilityUse": "reservation-roll-Egg-successor-operation-evidence-and-realtime-atomic-in-one-phase-2-transaction",
+      "itemRate": "modifier-rebuilt-before-and-inside-incubation-settlement",
+      "exactRetry": "no-redraw-no-revision-no-republication",
+      "campaignTimeOnly": true
+    },
+    "reserved": {
+      "BR-065": [
+        "Chemistry Set"
+      ],
+      "BR-067": [
+        "historical-disposition-labels-remain-readable-while-BR-067-owning-reducers-are-active"
+      ],
+      "BR-068": [
+        "inherited-Move application",
+        "post-hatch-learning",
+        "Level-20-plus checkpoints"
+      ],
+      "BR-066": [
+        "Chemistry Set"
+      ],
+      "dispositionSemantics": "handoff-rollout-label-only; owning-source-Egg-and-hatch-reducers-control-current-executability"
+    },
+    "privacy": {
+      "handoffs": "server-private",
+      "childProviderEvidence": "serverPrivate-and-player-redacted",
+      "realtime": "bounded-refresh-only"
+    },
+    "bindings": {
+      "runtimePolicyDefinitionSha256": "dfc8ee1d4860eed79e7dfa78d8b3cab7b43dda1f3752149e2213ef47e0ab6a70",
+      "eggWarmerCapabilityPolicyDefinitionSha256": "39ce898c42e85331f1c4450eb4da3b86ac74137fb0734406f90b115e842d016b",
+      "incubationPolicyDefinitionSha256": "20960e0cebafed7cce64577110369367d0f7957d49cc9698c4a3a592eb0b239e",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "incubationContractDefinitionSha256": "a73d48a0bf718ac166937e52950c09437f3a5387036efd16b8544f6668502abb",
+      "offspringProductionContractDefinitionSha256": "298b4dcc956099a4d7428df17ef80a5842ba31f91b865efeca7ed127cb265682",
+      "childSheetConstructionContractDefinitionSha256": "8dbbaa234d9bbcacdeeaf2f376603e451b6083e1d2d526f3e86146109409ae14",
+      "initializedPokemonSheetContractDefinitionSha256": "12891b11fb06b97cdfb2add56677781ee9e3d3697733e1bb3f8bae9311e56983",
+      "hatchDurationPolicyDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a"
+    }
+  }
+}

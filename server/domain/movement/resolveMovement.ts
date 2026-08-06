@@ -17,6 +17,7 @@ import type {
 } from '~/types/movement'
 import type { MoveAutomationAreaDirection } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { pokemonMarsupialBabyActionRestricted } from '~/utils/sheets/pokemonDerived'
 import {
   footprintsOverlap,
   getClearanceValue,
@@ -1002,7 +1003,7 @@ const buildMovementSnapshots = (
     }
 
     if (placement.sheetKind === 'pokemon'
-      && ((sheet as CharacterSheet).babyTemplate === true
+      && (pokemonMarsupialBabyActionRestricted(sheet as CharacterSheet, effectiveAbilityIds)
         || (sheet as CharacterSheet).letterPressCombinedInto
         || (sheet as CharacterSheet).zygardeDisassembledIntoCells)) {
       capabilityMovementBlockedPlacementIds.add(placement.id)

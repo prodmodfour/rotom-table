@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "contractId": "ptu-1.05-breeding-archive-migration-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "ed6e1663cc0fba166914985ad7f5aff44a752a4cc98c0b05d87a28082ce4dbd7",
+  "definition": {
+    "version": 1,
+    "archive": {
+      "exactFields": [
+        "schemaVersion",
+        "archiveId",
+        "purpose",
+        "campaignIdentitySha256",
+        "createdAtCampaignMinute",
+        "rulesetId",
+        "rulesetDefinitionSha256",
+        "referenceVersions",
+        "chunks",
+        "payloadDefinitionSha256",
+        "archiveDefinitionSha256"
+      ],
+      "identity": "breeding-archive:v1:<32-lowercase-hex>",
+      "purposes": [
+        "campaign-backup",
+        "gm-audit",
+        "owner-portable"
+      ],
+      "maximumBytes": 67108864,
+      "maximumChunks": 4096,
+      "maximumRecordsPerChunk": 1000,
+      "payloadHash": "stable-json-v1-sha256-of-all-strict-chunks",
+      "archiveHash": "stable-json-v1-sha256-of-all-fields-except-archiveDefinitionSha256",
+      "referencePolicy": "exact-current-self-hashed-reference-version-snapshot"
+    },
+    "chunks": {
+      "exactFields": [
+        "schemaVersion",
+        "chunkId",
+        "index",
+        "recordKind",
+        "recordCount",
+        "recordsSha256",
+        "records"
+      ],
+      "order": "contiguous-index-and-strict-chunk-id",
+      "recordOrder": "strict-stable-record-identity-across-all-same-kind-chunks",
+      "recordDigest": "stable-json-v1-sha256-of-strict-record-array",
+      "recordKinds": [
+        "adjudication",
+        "authorization-receipt",
+        "campaign-clock",
+        "check",
+        "consent",
+        "egg",
+        "gm-projection",
+        "inheritance-learning",
+        "offer",
+        "operation-command",
+        "operation-result",
+        "origin",
+        "owner-projection",
+        "participant-projection",
+        "project",
+        "read-set",
+        "roll",
+        "species-acquisition"
+      ],
+      "chunkId": "chunk:v1:<zero-padded-index>:<record-kind>",
+      "batching": "exactly-1000-records-per-non-final-kind-chunk"
+    },
+    "purposePolicy": {
+      "owner-portable": {
+        "allowed": [
+          "owner-projection",
+          "participant-projection"
+        ],
+        "restorable": false,
+        "authority": "presentation-only-never-campaign-authority"
+      },
+      "gm-audit": {
+        "allowed": "all-strict-record-kinds",
+        "restorable": false,
+        "authority": "read-only-audit"
+      },
+      "campaign-backup": {
+        "allowed": [
+          "adjudication",
+          "authorization-receipt",
+          "campaign-clock",
+          "check",
+          "consent",
+          "egg",
+          "inheritance-learning",
+          "operation-command",
+          "operation-result",
+          "origin",
+          "project",
+          "read-set",
+          "roll",
+          "species-acquisition",
+          "offer"
+        ],
+        "restorable": true,
+        "authority": "complete-atomic-campaign-backup"
+      }
+    },
+    "backupRecords": {
+      "campaignClock": [
+        "schemaVersion",
+        "revision",
+        "campaignMinute",
+        "lastOperationId",
+        "definitionSha256"
+      ],
+      "speciesAcquisition": [
+        "schemaVersion",
+        "trainerSheetSlug",
+        "trainerRevisionBeforeReward",
+        "trainerSheetUpdatedAt",
+        "speciesId",
+        "sourceKind",
+        "firstAcquiredAtCampaignMinute",
+        "sourceEggId",
+        "operationId",
+        "definitionSha256"
+      ],
+      "allOtherRecords": "strict-existing-v1-contracts",
+      "clockCardinality": 1,
+      "operationCardinality": "one-terminal-result-per-command",
+      "crossLinks": [
+        "project-produced-Egg",
+        "breeding-Egg-project",
+        "origin-hatched-Egg-child",
+        "learning-origin-Egg-child",
+        "acquisition-source-kind-and-Egg"
+      ],
+      "mapMetadataRecordKind": "forbidden",
+      "operationEvidence": "one-exact-command-result-complete-read-set-authorization-receipt-chain-per-operation",
+      "clockCheckpoint": "exactly-one-clock-at-archive-created-campaign-minute",
+      "hatchOrigin": "exactly-one-origin-per-hatched-Egg-and-child"
+    },
+    "importRequest": {
+      "exactFields": [
+        "schemaVersion",
+        "requestId",
+        "archiveId",
+        "archiveDefinitionSha256",
+        "mode",
+        "targetCampaignIdentitySha256",
+        "expectedCurrentArchiveDefinitionSha256",
+        "actorAuthorityDefinitionSha256",
+        "requestedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "modes": [
+        "replace-campaign",
+        "restore-new-campaign",
+        "validate-only"
+      ],
+      "validateOnly": "any-purpose-no-mutation",
+      "restore": "campaign-backup-and-current-GM-only",
+      "replace": "expected-current-backup-hash-required",
+      "new": "empty-target-required",
+      "references": "all-exact-current-or-reject"
+    },
+    "restoreReceipt": {
+      "exactFields": [
+        "schemaVersion",
+        "requestId",
+        "archiveId",
+        "archiveDefinitionSha256",
+        "accepted",
+        "reasonId",
+        "recordCounts",
+        "committedAtCampaignMinute",
+        "resultingArchiveDefinitionSha256",
+        "definitionSha256"
+      ],
+      "reasonIds": [
+        "breeding.archive.accepted",
+        "breeding.archive.digest-mismatch",
+        "breeding.archive.incompatible-reference",
+        "breeding.archive.invalid-record",
+        "breeding.archive.not-restorable",
+        "breeding.archive.stale-target"
+      ],
+      "atomic": "all-records-or-none",
+      "accepted": "commit-minute-and-resulting-backup-hash-required"
+    },
+    "legacyLineageReview": {
+      "exactFields": [
+        "schemaVersion",
+        "reviewId",
+        "pokemonSheetSlug",
+        "pokemonSheetRevision",
+        "pokemonSheetDefinitionSha256",
+        "legacyEggMoveIds",
+        "legacyInheritedMoveIds",
+        "legacyFieldsDefinitionSha256",
+        "decision",
+        "existingOriginId",
+        "existingOriginDefinitionSha256",
+        "adjudicationDefinitionSha256",
+        "reviewerPrincipalSha256",
+        "reasonId",
+        "reviewedAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "decisions": [
+        "attach-existing-origin",
+        "compatibility-only",
+        "reject"
+      ],
+      "default": "compatibility-only",
+      "attach": "only-already-authoritative-origin-whose-child-is-this-exact-sheet",
+      "createOrigin": "forbidden",
+      "manufactureParents": "forbidden",
+      "legacyEggMovesAndInheritedMoves": "compatibility-data-not-lineage-proof",
+      "legacyFieldsHash": "stable-json-v1-sha256-of-sorted-legacy-Egg-and-inherited-Move-IDs"
+    },
+    "migrationPackage": {
+      "exactFields": [
+        "schemaVersion",
+        "migrationId",
+        "migrationKind",
+        "sourceSchemaId",
+        "targetSchemaId",
+        "sourceCampaignIdentitySha256",
+        "sourceArtifacts",
+        "legacyLineageReviews",
+        "resultArchiveDefinitionSha256",
+        "migrationToolDefinitionSha256",
+        "reviewerEvidenceDefinitionSha256",
+        "createdAtCampaignMinute",
+        "definitionSha256"
+      ],
+      "kinds": [
+        "archive-schema-upgrade",
+        "legacy-lineage-review",
+        "legacy-map-metadata-quarantine",
+        "pre-breeding-campaign-audit"
+      ],
+      "sourceArtifacts": "nonempty-source-id-content-hash-byte-size-and-privacy-class",
+      "targetSchemaId": "breeding-archive-v1",
+      "review": "source-hash-and-tool-hash-bound",
+      "legacyMapMetadata": "quarantine-only-null-result-archive-never-create-Egg",
+      "unknownVersion": "reject",
+      "silentSupplementation": "forbidden",
+      "application": "exact-observed-source-metadata-current-tool-reviewer-and-adjudication-evidence"
+    },
+    "privacy": {
+      "ownerExport": "only-already-owner-or-participant-projected-records",
+      "gmAudit": "GM-only-campaign-private",
+      "backup": "GM-only-encrypted-at-transport-and-storage-boundary",
+      "diagnostic": "not-owner-export",
+      "filePaths": "hashed-or-stable-source-ids-no-host-paths",
+      "error": "bounded-reason-and-counts-no-record-payload"
+    },
+    "authority": {
+      "exportBuilder": "server-only",
+      "importParser": "strict-and-size-bounded-before-write",
+      "restoreTransaction": "caller-owned-single-transaction",
+      "currentReferenceMatch": true,
+      "operationReplayPreserved": true,
+      "randomnessPreserved": true,
+      "mapEncounterDependency": "none",
+      "legacyMapEggAuthority": "none",
+      "recordDependencyValidation": "required-server-validation-of-canonical-membership-and-external-campaign-links-for-every-record",
+      "identityReplay": "archive-request-receipt-migration-and-review-identities-allow-exact-stable-JSON-replay-only"
+    },
+    "bindings": {
+      "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "projectionContractDefinitionSha256": "2177141c8935978d0066bcdeea992b8c55a167bf0b4d93b32cd981b01e9eb3ce",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "lineageContractDefinitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e"
+    }
+  }
+}

@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-feature-provider-handoff-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "fdc100e73b51ad2179d2069a6b36b7d9ecf3d441b6d5ed0e0a5fe743714b9479",
+  "definition": {
+    "identity": {
+      "contractId": "rotom-breeding-feature-provider-handoff-v1",
+      "schemaVersion": 1,
+      "authorityOwner": "feature-automation-to-breeding.v1"
+    },
+    "canonicalAuthority": {
+      "referencePath": "data/reference/features.json",
+      "referenceContentSha256": "27d0f2bee4db96ebfb0c431cce9ea5222fe3d2d9fe9ead32507c46b51a9d77c4",
+      "featureManifestPath": "data/feature-automation/manifest.json",
+      "featureManifestContentSha256": "e39084ef5f2a93aab5756fa2404b856678d38f0ebbed110d05d7a414b1370636",
+      "campaignOperationCatalogPath": "data/feature-automation/campaign-operations.json",
+      "campaignOperationCatalogContentSha256": "eb5a6493e7bbf1e4b363038ebdd81e5a72ae7c5c06e01f6ed62a3dfe7d63a74c",
+      "modifierInventoryDefinitionSha256": "24bb20a9d61003f540f6b410df3b0919ee49233012e45ec2dd14bfc9ed5c2dd9",
+      "effectiveProjection": "current-server-resolved-effective-unsuppressed-ready-Feature-set",
+      "clientAuthority": "none"
+    },
+    "checkpoints": [
+      {
+        "checkpoint": "project-creation",
+        "providerCanonicalId": "Dilettante",
+        "contributionIds": [
+          "effective-breeder-edge-grant"
+        ],
+        "disposition": "active-upstream-effective-provider"
+      },
+      {
+        "checkpoint": "egg-acceptance",
+        "providerCanonicalId": "Playing God",
+        "contributionIds": [
+          "artificial-egg-source",
+          "artificial-species-options",
+          "hatch-within-one-day",
+          "starting-level-5",
+          "nature-choice",
+          "basic-ability-choice",
+          "bounded-artificial-upgrades"
+        ],
+        "disposition": "active-provider-evidence"
+      },
+      {
+        "checkpoint": "begin-hatch",
+        "providerCanonicalId": "This One’s Special, I Know It",
+        "contributionIds": [
+          "force-bounded-special-outcome"
+        ],
+        "disposition": "reserved-br-062"
+      },
+      {
+        "checkpoint": "hatch-transaction",
+        "providerCanonicalId": "Fossil Restoration",
+        "contributionIds": [
+          "fossil-tutor-point-delta-minus-2",
+          "fossil-extra-basic-or-advanced-ability"
+        ],
+        "disposition": "reserved-br-065"
+      },
+      {
+        "checkpoint": "hatch-transaction",
+        "providerCanonicalId": "Prehistoric Bond",
+        "contributionIds": [
+          "fossil-remnant-held-item"
+        ],
+        "disposition": "reserved-br-065"
+      },
+      {
+        "checkpoint": "post-hatch-operation",
+        "providerCanonicalId": "Ancient Heritage",
+        "contributionIds": [
+          "fossil-ancient-power-learning"
+        ],
+        "disposition": "reserved-br-068"
+      },
+      {
+        "checkpoint": "post-hatch-operation",
+        "providerCanonicalId": "Egg Tutor",
+        "contributionIds": [
+          "egg-list-move-learning"
+        ],
+        "disposition": "reserved-br-068"
+      },
+      {
+        "checkpoint": "post-hatch-operation",
+        "providerCanonicalId": "Genetic Memory",
+        "contributionIds": [
+          "fossil-egg-or-tutor-move-learning"
+        ],
+        "disposition": "reserved-br-068"
+      },
+      {
+        "checkpoint": "post-hatch-operation",
+        "providerCanonicalId": "Tutoring",
+        "contributionIds": [
+          "compatible-egg-move-learning"
+        ],
+        "disposition": "reserved-br-068"
+      }
+    ],
+    "typedValues": {
+      "closedKinds": [
+        "evidence-only",
+        "flag",
+        "integer",
+        "ratio",
+        "canonical-id-set"
+      ],
+      "playingGod": {
+        "speciesIds": [
+          "castform",
+          "grimer",
+          "koffing",
+          "magnemite",
+          "porygon",
+          "solosis",
+          "trubbish",
+          "voltorb"
+        ],
+        "selectedSpeciesCardinality": 1,
+        "maximumHatchMinutes": 1440,
+        "startingLevel": 5,
+        "technologyEducationRankBounds": [
+          5,
+          6
+        ]
+      },
+      "fossilRestorationTutorPointDelta": -2,
+      "hatchSpecialPotentialUseBounds": [
+        0,
+        4
+      ],
+      "tutoringMasteredMoveCardinality": 1,
+      "genericProviderSnapshotConversion": "one-self-hashed-modifier-inventory-snapshot-per-contribution-value"
+    },
+    "dilettante": {
+      "grantedEdge": "Breeder",
+      "skillPrerequisiteWaiver": true,
+      "mandatedSkillChoices": [
+        "general-education",
+        "perception"
+      ],
+      "choiceAuthority": "server-owned-synchronous-command-bound-choice-resolver",
+      "effectiveRankAndCheckTotal": "selected-current-skill-rankValue-plus-modifier",
+      "authorityVariant": "schema-v1-mandatedSkillId-present-only-for-BR-061-substitution",
+      "checkProjection": "reports-the-effective-mandated-Skill-ID-without-exposing-the-component-total",
+      "binding": "Feature-contribution-hash-plus-instance-plus-selected-skill-are-folded-into-effective-Edge-evidence-hash",
+      "missingInvalidOrAsynchronousChoice": "fail-closed"
+    },
+    "facilities": {
+      "registryState": "empty-no-authority",
+      "acceptedClaims": [],
+      "unknownOrFreeTextClaim": "reject"
+    },
+    "freshnessAndFailure": {
+      "trainer": "current-stored-revision-and-stable-JSON-document-hash",
+      "campaignMinute": "current-campaign-clock-only",
+      "accessModes": [
+        "profile-control",
+        "gm-authority"
+      ],
+      "gmVerification": "server-owned-synchronous-exact-true",
+      "malformedUnresolvedSuppressedMissingParameterOrDriftingProvider": "fail-closed",
+      "providerExceptionOrPromise": "fail-closed-without-mutation",
+      "dependencies": "one-exact-effective-Feature-attestation-per-canonical-provider"
+    },
+    "authorityBoundary": {
+      "featureAutomationOwns": [
+        "effective-Feature-identity",
+        "Feature-instance-parameters",
+        "Feature-granted-Edge-projection",
+        "campaign-operation-declarations"
+      ],
+      "breedingV1Owns": [
+        "Projects",
+        "checks",
+        "provider-reducer-selection",
+        "Eggs",
+        "offspring-blueprints",
+        "incubation",
+        "hatching",
+        "child-construction",
+        "lineage",
+        "outcomes"
+      ],
+      "handoffMutation": "none",
+      "rolls": "none",
+      "realtimeRows": 0,
+      "reservedContributions": "execute-only-in-their-owning-downstream-reducer; Fossil-Restoration-and-Prehistoric-Bond-are-integrated-by-BR-065"
+    },
+    "privacy": {
+      "projection": "none-server-private-authority-only",
+      "realtimePayload": "forbidden",
+      "forbiddenClientInputs": [
+        "effective-Feature-set",
+        "Feature-instance-id",
+        "typed-contribution-values",
+        "provider-hashes",
+        "dependency-evidence",
+        "facility-authority",
+        "Dilettante-skill-total"
+      ]
+    },
+    "tests": {
+      "focusedCount": 10,
+      "required": [
+        "current-player-Feature-authority",
+        "Dilettante-grant-and-skill-substitution",
+        "checkpoint-dispositions",
+        "typed-Playing-God-values",
+        "generic-provider-snapshot-conversion",
+        "suppression-and-required-parameter-failure",
+        "facility-fail-closed",
+        "GM-and-Profile-access-separation",
+        "stale-and-enriched-input",
+        "provider-exception-and-Promise-failure"
+      ]
+    }
+  }
+}

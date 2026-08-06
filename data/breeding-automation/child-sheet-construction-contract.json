@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-child-sheet-construction-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "8dbbaa234d9bbcacdeeaf2f376603e451b6083e1d2d526f3e86146109409ae14",
+  "definition": {
+    "version": 1,
+    "domainPath": "server/domain/breeding/childSheetConstruction.ts",
+    "storagePath": "server/storage/initializedPokemonSheetRepository.ts",
+    "input": {
+      "exactFields": [
+        "egg",
+        "command"
+      ],
+      "commandKind": "complete-hatch",
+      "eggStatus": "hatching",
+      "specialStates": [
+        "normal",
+        "resolved"
+      ],
+      "childBefore": null,
+      "terminalBefore": null,
+      "destination": "exact-current-Egg-owner",
+      "scopeBinding": "exact-Egg-revision-ruleset-Trainer-allocation-and-species-acquisition"
+    },
+    "authority": {
+      "offspring": "immutable-accepted-Egg-blueprint",
+      "runtimeSources": [
+        "data/reference/pokedex.json",
+        "data/reference/moves.json",
+        "data/reference/abilities.json",
+        "data/reference/pokemonExperienceChart.json",
+        "data/breeding-automation/natures.json",
+        "data/breeding-automation/canonical-ids.json",
+        "data/reference/rules.json"
+      ],
+      "supplementarySources": "forbidden",
+      "currentCompiledSpecies": "must-exactly-match-frozen-spec-definition-and-Basic-Ability",
+      "serverOwned": true,
+      "clientOverride": "none"
+    },
+    "construction": {
+      "nicknameAndSlugRoot": "canonical-Species-display-name",
+      "levelAndExperience": "frozen-starting-Level-and-exact-app-chart-threshold",
+      "genderNatureAbility": "canonical-display-projection-of-frozen-IDs",
+      "shiny": false,
+      "loyalty": 3,
+      "caughtBall": "Basic Ball",
+      "player": false,
+      "levelMoves": "all-unique-current-app-owned-level-up-Moves-at-or-below-starting-Level-in-source-order",
+      "compatibilityEggMoves": "all-frozen-inheritance-candidate-Moves-without-lineage-authority",
+      "inheritedRemaining": "minimum-of-nine-and-frozen-candidate-count",
+      "appliedMoves": [],
+      "pokeEdges": [],
+      "currentHp": "full-current-formula-HP-from-frozen-Nature-and-Species",
+      "normalization": "complete-current-CharacterSheet-shape-before-storage",
+      "startingTutorPoints": {
+        "earned": 1,
+        "spent": 0,
+        "authority": "PTU-hatch-base-before-level-derived-growth"
+      },
+      "tmAndTutorMoveLimit": 3,
+      "serpentsMarkInheritance": "frozen-pattern-and-provider-evidence-in-serverPrivate-breedingProviderTraits",
+      "coreHatchRules": "canonical-rule-handoff-loyalty-3-and-starting-tutor-point-1-with-server-private-evidence",
+      "fossilRestoration": "frozen-extra-Basic-or-bounded-Advanced-Ability-and-exactly-two-spent-Tutor-Points",
+      "prehistoricBond": "frozen-Nature-adjusted-highest-stat-Held-Item-with-fossil-only-restriction",
+      "providerTraitAuthority": "serverPrivate-frozen-Egg-evidence-only-never-client-sheet-fields",
+      "babyTemplate": "applied-Egg-template-creates-self-hashed-server-private-authority-owner-safe-mechanics-and-Level-derived-recovery",
+      "marsupial": "forced-minus-5-provider-trait-and-Level-25-policy-retained-server-private",
+      "playingGod": "frozen-coloration-Move-and-Vitamin-upgrades-applied-without-bypassing-BR-068-learning-ownership"
+    },
+    "storage": {
+      "candidateExcludes": [
+        "slug",
+        "folder",
+        "revision",
+        "createdAt",
+        "updatedAt"
+      ],
+      "folder": "empty-v1",
+      "insertRevision": 0,
+      "placeholderOrFollowupSave": "forbidden-except-one-same-hatch-transaction-Marsupial-pouch-link-revision",
+      "collisionAllocation": "initialized-Pokemon-sheet-repository-only",
+      "marsupialChildRevision": "one-after-atomic-reciprocal-pouch-link-otherwise-zero"
+    },
+    "unsupported": {
+      "startingLevelAtLeast20": "unavailable-until-BR-068-hatch-construction-checkpoints",
+      "unknownOrStaleIdentity": "fail-closed"
+    },
+    "replay": {
+      "plan": "self-hashed-complete-server-private-plan",
+      "exactReplay": "rebuild-from-exact-Egg-and-command",
+      "changedOrEnrichedPlan": "reject",
+      "randomness": "none",
+      "persistence": "none-BR-057-owner"
+    },
+    "privacy": {
+      "plan": "server-private",
+      "clientProjection": "none",
+      "forbiddenInDocument": [
+        "Egg-ID",
+        "origin",
+        "lineage",
+        "parents",
+        "Breeder",
+        "roll",
+        "adjudication",
+        "command",
+        "read-set",
+        "receipt"
+      ],
+      "providerEvidence": "serverPrivate-only-and-stripped-from-player-projections; owner-safe-Baby-Template-mechanics-exclude-source-evidence"
+    },
+    "bindings": {
+      "runtimePolicyDefinitionSha256": "5fac1db9588b719d61fba0ed1353dd466d5bd7d1f277fda201a11d66882bbb85",
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "lineageContractDefinitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1",
+      "initializedPokemonSheetContractDefinitionSha256": "12891b11fb06b97cdfb2add56677781ee9e3d3697733e1bb3f8bae9311e56983",
+      "hatchSpecialContractDefinitionSha256": "422c22f2359eadebb1aeb0e03eeb0001ad3bd4bf691515d135256e7e000df024",
+      "canonicalIdsDefinitionSha256": "99e9ab4c4107086d64e2d70e7cdcaa7f9e10fd534f223f0ca053b2c1c4798d1e",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
+      "natureDefinitionSha256": "d95d1ab8f6065c04790824a2258d99239907348081695f18e88a500a1ac9ff4e"
+    }
+  }
+}

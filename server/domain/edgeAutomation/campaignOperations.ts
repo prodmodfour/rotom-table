@@ -1,6 +1,7 @@
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { sheetHasCanonicalEdge } from '#shared/edgeAutomation/sheetEdges'
+import type { EffectiveEdgeSet } from '#shared/edgeAutomation/effective'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
+import { resolveEffectiveEdges } from './effectiveEdges'
 
 export type EdgeCampaignActionId =
   | 'craft-basic-ball'
@@ -120,10 +121,19 @@ export const planTrainerEdgeCampaignOperation = (
   sheet: TrainerSheet,
   request: EdgeCampaignOperationRequest,
   resources: EdgeCampaignResourceSnapshot,
-  options: { readonly breedingCapabilityAvailable?: boolean } = {},
+  options: {
+    readonly breedingCapabilityAvailable?: boolean
+    /** Server-resolved projection; callers must never forward a client-authored set. */
+    readonly effectiveEdgeSet?: EffectiveEdgeSet
+  } = {},
 ): EdgeCampaignOperationPlan => {
   const edge = ACTION_EDGE[request.actionId]
-  if (!sheetHasCanonicalEdge(sheet, 'trainer', edge)) {
+  const effectiveEdgeSet = options.effectiveEdgeSet
+    ?? resolveEffectiveEdges({ ownerId: sheet.slug, family: 'trainer', sheet })
+  if (effectiveEdgeSet.ownerId !== sheet.slug || effectiveEdgeSet.family !== 'trainer') {
+    return rejected(request.actionId, edge, 'edge.campaign.effective-projection-invalid', 'The effective Trainer Edge projection does not match this Trainer.')
+  }
+  if (!effectiveEdgeSet.instances.some(instance => instance.effective && instance.canonicalId === edge)) {
     return rejected(request.actionId, edge, 'edge.campaign.permission-missing', `${edge} is not effective.`)
   }
   const output = request.outputId?.trim() ?? ''

@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-project-check-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "4e834427710d2ef0121ff1b8df409d39042e778522ba5a5bc10e534396d67a7e",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-044",
+    "implementation": {
+      "sharedProjectionPath": "shared/breeding/projectCheck.ts",
+      "domainPath": "server/domain/breeding/projectCheck.ts",
+      "repositoryPath": "server/storage/breedingCheckLedgerRepository.ts",
+      "useCasePath": "server/useCases/resolveBreedingProjectCheck.ts",
+      "transactionCoordinatorPath": "server/useCases/executeBreedingTransaction.ts",
+      "testPath": "tests/server/breedingProjectCheck.test.ts"
+    },
+    "policy": {
+      "policyId": "breeding-project-check-v1",
+      "skillId": "pokemon-education",
+      "difficultyClass": 12,
+      "authoritativeSkillTotal": "exact-current-Breeder-authority-snapshot-value",
+      "roll": "one-server-owned-unmodified-1d20",
+      "finalTotal": "persisted-d20-plus-authoritative-skill-total",
+      "success": "final-total-greater-than-or-equal-12",
+      "attemptsPerProject": 1,
+      "randomnessInsideReducer": "forbidden"
+    },
+    "preconditions": {
+      "projectStatus": "check-ready",
+      "initialProgress": "exactly-240-cumulative-campaign-minutes-with-readiness-minute",
+      "priorCheck": "none-in-Project-and-none-in-check-ledger",
+      "command": "resolve-breeding-check-with-current-Project-revision-and-new-check-identity",
+      "campaignTime": "exact-current-campaign-clock-read-set-checkpoint",
+      "ruleset": "exact-frozen-Project-ruleset",
+      "parents": "both-command-order-Project-parent-revisions-present-as-snapshot-reads",
+      "crossOwnerConsent": "current-positive-project-parent-owner-revision-scope-and-strict-expiry-evidence-required",
+      "gmOverrideAsConsent": "forbidden"
+    },
+    "breederAuthority": {
+      "source": "current-server-effective-Breeder-Edge-authority",
+      "bindings": [
+        "Project-breeder-Trainer-slug",
+        "exact-Trainer-revision-and-definition-hash",
+        "current-Pokemon-Education-rank-and-skill-total",
+        "effective-Breeder-Edge-record-and-projection-hashes",
+        "project-check-read-set-dependency-row",
+        "authorization-receipt-evidence-hash",
+        "exact-campaign-minute"
+      ],
+      "sheetLabelOrClientSkillTotal": "never-authority"
+    },
+    "rollLifecycle": {
+      "operationReservation": "durable-phase-1-before-randomness",
+      "identity": "deterministic-one-roll-identity-from-operation-id",
+      "generation": "synchronous-server-crypto-random-source-or-injected-server-test-source",
+      "bounds": "one-integer-1-through-20",
+      "persistence": "immutable-roll-row-in-a-committed-pre-reducer-transaction",
+      "sourceHashes": "exact-Breeder-authority-check-policy-and-ruleset-hashes",
+      "reducerInput": "repository-reloaded-authoritative-roll-only",
+      "unavailableOrStaleBeforeDraw": "no-roll",
+      "phase2Failure": "pending-operation-authority-and-roll-survive-for-exact-recovery",
+      "recovery": "reuse-persisted-roll-with-zero-new-draws",
+      "terminalExactRetry": "zero-new-draws"
+    },
+    "checkLedger": {
+      "tables": [
+        "breeding_rolls",
+        "breeding_checks"
+      ],
+      "schema": "strict-self-hashed-canonical-stable-JSON-with-duplicated-column-validation",
+      "checkBindings": "operation-command-Project-revision-Breeder-snapshot-roll-total-ruleset-and-resolution-minute",
+      "uniqueness": "one-roll-ordinal-zero-per-check-operation-and-one-check-per-Project",
+      "writeBoundary": "caller-owned-SQLite-transaction-only",
+      "identityReplay": "exact-stable-JSON-only",
+      "changedFactsOrCorruption": "fail-closed"
+    },
+    "projectTransitions": {
+      "success": {
+        "status": "additional-time-in-progress",
+        "additionalStartedAtCampaignMinute": "check-resolution-minute",
+        "additionalAccumulatedCampaignMinutes": 0,
+        "clockCheckpoint": "exact-resolution-clock-revision-and-minute"
+      },
+      "failure": {
+        "status": "check-failed",
+        "terminalReasonId": "breeding.project-terminal.check-failed",
+        "additionalTime": "not-started"
+      },
+      "both": "one-revision-increment-with-immutable-check-reference-and-operation-id"
+    },
+    "atomicityAndReplay": {
+      "phase1b": "operation-read-set-authorization-receipt-and-roll-commit-before-reducer",
+      "phase2": "Project-CAS-check-row-terminal-result-and-bounded-realtime-rows-in-one-coordinator-transaction",
+      "phase2Failure": "roll-back-Project-check-result-and-events-while-retaining-pending-authority-and-roll",
+      "pendingDuplicate": "no-execution-no-draw",
+      "explicitResume": "same-command-read-set-receipt-Breeder-consent-and-persisted-roll-only",
+      "exactTerminalRetry": "same-result-no-draw-no-Project-revision-no-event-no-publication",
+      "restart": "roll-check-Project-operation-and-authority-links-remain-strictly-readable"
+    },
+    "projection": {
+      "audiences": [
+        "gm",
+        "owner"
+      ],
+      "allows": [
+        "success-or-failure-status",
+        "pokemon-education-DC-12-label",
+        "final-total",
+        "resolved-campaign-minute"
+      ],
+      "forbids": [
+        "raw-Project-check-roll-operation-Profile-Trainer-parent-or-consent-identities",
+        "die-value-or-authoritative-skill-total-components",
+        "commands-read-sets-receipts-provider-or-definition-hashes",
+        "map-encounter-scene-initiative-browser-or-wall-clock-state"
+      ],
+      "realtime": "refresh-only-audience-rows-after-terminal-commit"
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparse": "reject-before-reservation",
+      "clientSuppliedRollChoiceModifierDCOrSkillTotal": "not-accepted",
+      "missingOrExtraneousConsentProviderRollOrCheckAuthority": "reject-or-bounded-unavailable-without-reducer",
+      "staleProjectClockBreederParentConsentReferenceOrPolicy": "fail-closed",
+      "documentaryMapOrLocalPersistenceAuthority": "none"
+    },
+    "tests": {
+      "count": 9,
+      "requiredCases": [
+        "persisted-before-reducer-d20-and-DC-12-success-transition",
+        "exact-final-total-11-failure-terminal-transition",
+        "terminal-exact-retry-without-draw-mutation-event-or-publication",
+        "phase2-failure-pending-authority-roll-retention-and-exact-recovery",
+        "stale-or-already-checked-no-second-check-and-no-extraneous-draw",
+        "cross-owner-positive-consent-required-and-GM-override-not-consent",
+        "malformed-extraneous-provider-receipt-and-random-source-rejection",
+        "caller-owned-strict-ledger-storage-exact-replay-and-corruption-detection",
+        "file-database-restart-and-no-redraw-exact-retry"
+      ]
+    },
+    "bindings": {
+      "projectInitialProgressContractDefinitionSha256": "538602b876133ed21eb86eadd4a3013846bf4cd2c5a9ed8b5893c7b8eb5cbd00",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "campaignClockContractDefinitionSha256": "abd4dd586f20dfcbc3b716e2bffbc7d1418853812ff9aaac127e593730215a06",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0"
+    }
+  }
+}

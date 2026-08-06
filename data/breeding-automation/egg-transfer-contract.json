@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-pokemon-egg-transfer-v1",
+  "definitionSha256": "ebc3d04f38310d892780a596a5e9e543eb5c9c3bf12cc91c56bbac8718faa265",
+  "definition": {
+    "schemaVersion": 1,
+    "contractId": "pokemon-egg-transfer-consent-and-privacy-v1",
+    "ticketId": "BR-064",
+    "rulesetId": "ptu-1.05-breeding-v1",
+    "clientAuthority": "none",
+    "workflow": {
+      "sourceGift": "one-current-source-owner-Profile-control-consent",
+      "recipientAcceptance": "one-current-targeted-recipient-Profile-control-consent-linked-to-source-gift",
+      "requiredConsentCount": 2,
+      "expiry": "strictly-before-expiresAtCampaignMinute; equality-is-invalid",
+      "gmOverride": "cannot-create-or-replace-positive-consent",
+      "transferCommand": "exact-current-Egg-plus-two-active-revision-zero-consent-scopes",
+      "exactRetry": "stored-terminal-result-without-reconsumption-or-republication"
+    },
+    "authority": {
+      "egg": "current-dedicated-aggregate-revision-ruleset-owner-and-transferable-status",
+      "trainers": "exact-current-storage-owned-slug-revision-and-normalized-document-hash",
+      "profiles": "synchronous-server-resolved-current-control-for-both-Trainers",
+      "consents": "durable-self-hashed-role-linked-records-bound-to-Egg-and-Trainer-revisions",
+      "clock": "campaign-minute-only",
+      "dependencies": "one-hash-bound-transfer-policy-contribution-plus-exact-resolver-attestation",
+      "malformedAsyncAmbiguousStale": "fail-closed"
+    },
+    "atomicSettlement": {
+      "writes": [
+        "source-consent-consumed-revision-1",
+        "recipient-consent-consumed-revision-1",
+        "Egg-owner-successor",
+        "operation-result",
+        "restricted-realtime-rows"
+      ],
+      "transaction": "one-BR-037-top-level-synchronous-transaction",
+      "rollback": "no-partial-consent-Egg-result-or-event-state; pending-phase-one-evidence-remains-recoverable",
+      "transferMutation": [
+        "ownerTrainerSlug",
+        "revision",
+        "updatedAtCampaignMinute",
+        "lastOperationId"
+      ],
+      "preserved": [
+        "status",
+        "statusChangedAtCampaignMinute",
+        "source",
+        "parents",
+        "breeder",
+        "offspring",
+        "incubation",
+        "special",
+        "hatchOperationId",
+        "childSheetSlug",
+        "terminal",
+        "createdAtCampaignMinute",
+        "definitionHashes",
+        "ruleset"
+      ]
+    },
+    "storage": {
+      "schemaVersion": 26,
+      "table": "pokemon_egg_transfer_consents",
+      "mutationHelpers": "caller-owned-transaction-only",
+      "activeUniqueness": "one-role-per-Egg-revision",
+      "custodyObservation": "carried-or-stored-is-non-mutating-and-never-pauses-or-unreadies",
+      "dedicatedEggAggregate": "never-sheet-inventory-row-map-record-or-Pokemon-before-hatch"
+    },
+    "privacy": {
+      "invitationProjection": [
+        "audience",
+        "opaque-offer-consent-id",
+        "Egg-id-and-revision",
+        "coarse-state",
+        "counterparty-Trainer-slug",
+        "bounded-actions",
+        "expiry",
+        "campaign-minute"
+      ],
+      "forbidden": [
+        "offspring-blueprint",
+        "parents",
+        "breeder",
+        "source-provenance",
+        "providers",
+        "Profiles",
+        "control-evidence",
+        "read-set",
+        "receipt",
+        "hashes",
+        "rolls"
+      ],
+      "afterTransfer": "former-owner-receives-refresh-removal-signal-and-coarse-transfer-receipt-only",
+      "realtime": "GM-diagnostic-old-owner-new-owner-public-refresh-only; no-consent-or-Egg-payload"
+    },
+    "bindings": {
+      "runtimePolicyDefinitionSha256": "eb2bcbf2237a13a3fa3d8ce60583c5868fc4bf49c2478ac27da5a055664d0da5",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "eggLifecyclePolicyContractDefinitionSha256": "0f4006dcab19fc4868eec8917f7e37080b528676acbcbf9e3182e41b25fbf7bd",
+      "storageSchemaV26DefinitionSha256": "c5426224c9448a95eb8074559c3b292c31aabaf08187012f08de9c4cd7b85c36",
+      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "repositoryContractDefinitionSha256": "d15c11f9f360d1ebd603feee8ec1506be9262d58f20bc9f753f5af979fa823b5"
+    },
+    "ownershipBoundaries": {
+      "BR-053": "pure-lifecycle-and-transfer-reducer",
+      "BR-064": "durable-consent-authorization-storage-settlement-and-privacy",
+      "BR-065": "fossil-Egg-creation",
+      "BR-066": "alternate-source-Egg-creation"
+    }
+  },
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7"
+}

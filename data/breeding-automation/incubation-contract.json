@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-incubation-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "a73d48a0bf718ac166937e52950c09437f3a5387036efd16b8544f6668502abb",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-050+BR-062",
+    "implementation": {
+      "sharedPath": "shared/breeding/incubation.ts",
+      "domainPath": "server/domain/breeding/incubation.ts",
+      "authorizationPath": "server/domain/breeding/authorization.ts",
+      "useCasePath": "server/useCases/managePokemonEggIncubation.ts",
+      "repositoryPath": "server/storage/breedingIncubationSegmentRepository.ts",
+      "migrationPath": "server/storage/migrations.ts",
+      "testPath": "tests/server/breedingIncubation.test.ts"
+    },
+    "timeAuthority": {
+      "clock": "campaign-clock-only",
+      "wallBrowserProcessTimezoneMapEncounter": "never-authority",
+      "segmentStart": "Egg-last-applied-clock-revision-and-minute",
+      "segmentEnd": "exact-current-read-set-bound-clock-revision-and-minute",
+      "continuity": "monotonic-durable-checkpoints-with-no-uncredited-gap",
+      "automaticBatching": "reserved-for-BR-052"
+    },
+    "durationAuthority": {
+      "average": "frozen-on-accepted-Egg",
+      "target": "frozen-on-accepted-Egg",
+      "fixedAverage": "target-equals-average",
+      "nonFixedBounds": "ceil-average-divided-by-two-through-average-times-two",
+      "requiredBindings": [
+        "ruleset",
+        "hatch-duration-policy",
+        "duration-result"
+      ],
+      "clientDuration": "forbidden"
+    },
+    "progress": {
+      "baseRate": "one-credited-minute-per-valid-campaign-minute",
+      "clamp": "zero-through-frozen-target",
+      "remaining": "target-minus-accumulated",
+      "basisPoints": "floor-accumulated-times-10000-divided-by-target",
+      "readiness": "target-progress-and-ready-status-commit-atomically",
+      "readyAtCampaignMinute": "exact-threshold-minute-even-when-settled-after-overflow",
+      "overflow": "immutable-segment-result-only-never-future-credit",
+      "parentBreederSourceStorageTransferLoss": "does-not-implicitly-interrupt-or-pause"
+    },
+    "modifierPolicy": {
+      "checkpoints": [
+        "snapshot",
+        "continuous",
+        "operation"
+      ],
+      "currentExecutableMode": "base-rate-or-authoritative-continuous-rate",
+      "baseRateProviderId": "breeding-incubation-base-rate-v1",
+      "policyDefinitionSha256": "20960e0cebafed7cce64577110369367d0f7957d49cc9698c4a3a592eb0b239e",
+      "baseRateEvidenceDefinitionSha256": "707c5e8391aed6805c16be6b320c0d359b1b7b347fb0c9871623a82e8f60837f",
+      "contributionEnvelope": {
+        "maximum": 16,
+        "order": "provider-kind-provider-ID-subject-kind-subject-ID",
+        "providerKinds": [
+          "capability",
+          "facility",
+          "item"
+        ],
+        "effect": "continuous-progress-rate-multiplier",
+        "subjects": [
+          "pokemon-egg",
+          "trainer-sheet"
+        ],
+        "authority": "strict-self-hash-plus-current-read-set-and-owning-reducer"
+      },
+      "unsupportedContribution": "fail-closed-without-Egg-segment-result-or-realtime-mutation",
+      "parsingAloneAuthorizesApplication": false,
+      "futureIntegrations": {
+        "featureAndFacilityReducers": "BR-061",
+        "itemAbilityCapabilityMoveNatureAndOverrideReducers": "active-BR-062",
+        "eggWarmerItem": "continuous-two-times-progress-when-current-custody-reducer-authorizes",
+        "eggWarmerCapability": "one-command-bound-d10-target-reduction-where-1-is-zero-and-2-through-10-is-result-times-60-campaign-minutes"
+      },
+      "unknownFacility": "forbidden-without-app-owned-canonical-registry",
+      "eggWarmerItemAuthority": "exact-current-owner-inventory-row-unit-capacity-assignment-and-read-set-dependency",
+      "rawContributionAuthority": "forbidden-handoff-only"
+    },
+    "pausePolicy": {
+      "command": "set-egg-incubation-pause",
+      "authority": "current-owner-control-or-one-command-bound-GM-owner-control-override",
+      "playerPauseReason": "breeding.incubation-pause.owner-request",
+      "closedReasons": [
+        "breeding.incubation-pause.campaign-rule",
+        "breeding.incubation-pause.gm-maintenance",
+        "breeding.incubation-pause.owner-request"
+      ],
+      "pause": "credits-valid-prefix-before-checkpoint-then-persists-explicit-state",
+      "pausedInterval": "all-elapsed-minutes-skipped-and-zero-credited",
+      "resume": "skips-paused-prefix-and-starts-from-durable-resume-checkpoint",
+      "sameStateRequest": "rejected",
+      "thresholdBeforePause": "must-settle-readiness-through-advance-not-hide-ready-Egg-behind-pause",
+      "implicitPauseTriggers": []
+    },
+    "segmentResult": {
+      "identity": "one-command-bound-row-per-operation-and-Egg-successor-revision",
+      "revision": "exactly-plus-one",
+      "equation": "base-rate:elapsed=credited+skipped+overflow; authoritative-2x:2*elapsed=credited+overflow while unpaused and skipped=elapsed while paused",
+      "progressEquation": "accumulated-after-equals-accumulated-before-plus-credited",
+      "clock": "same-checkpoint-only-for-pause-toggle-otherwise-strictly-newer-revision-and-nondecreasing-minute",
+      "selfHash": "exact-stable-JSON-without-definition-hash",
+      "immutable": true,
+      "archiveRecordKind": "incubation-segment"
+    },
+    "authorization": {
+      "commandKinds": [
+        "advance-egg-incubation",
+        "set-egg-incubation-pause",
+        "apply-egg-warmer-capability"
+      ],
+      "player": "authenticated-current-Profile-controls-current-Egg-owner-Trainer",
+      "gm": "one-minimal-command-bound-owner-control-override",
+      "receipt": "recomputed-exactly-before-and-inside-top-level-transaction",
+      "readSet": [
+        "current-Egg-revision-and-definition",
+        "current-campaign-clock-revision-minute-and-definition",
+        "current-owner-Trainer-for-player",
+        "exact-base-rate-plus-current-modifier-provider-dependencies",
+        "complete-effective-dependency-set-attestation"
+      ],
+      "staleClockEggTrainerReceiptOrDependency": "reject",
+      "mapEncounterDeclaration": "never-authority"
+    },
+    "atomicity": {
+      "phaseOne": [
+        "operation-reservation",
+        "complete-read-set",
+        "authorization-receipt"
+      ],
+      "phaseOneTransaction": "one-caller-owned-transaction-before-Egg-mechanics-and-exactly-replay-bound",
+      "phaseTwoTransaction": [
+        "Egg-revision-successor",
+        "incubation-segment",
+        "terminal-operation-result",
+        "four-privacy-scoped-realtime-rows"
+      ],
+      "failure": "rolls-back-Egg-segment-result-and-events-while-retaining-recoverable-pending-reservation-and-authority-evidence",
+      "recovery": "exact-command-read-set-and-receipt-resume-without-rebinding-or-redraw",
+      "exactRetry": "stored-result-and-segment-no-new-revision-or-publication",
+      "callerOwnedRepositoryTransaction": true
+    },
+    "projection": {
+      "audiences": [
+        "gm",
+        "owner"
+      ],
+      "queryAuthority": "current-clock-matched-current-viewer-authority",
+      "allows": [
+        "Egg-ID",
+        "revision",
+        "coarse-status",
+        "target-accumulated-remaining-minutes",
+        "basis-points",
+        "pause-readiness",
+        "clock-checkpoint",
+        "base-rate-mode",
+        "available-actions",
+        "generated-campaign-minute"
+      ],
+      "forbids": [
+        "species",
+        "Nature",
+        "Ability",
+        "Gender",
+        "parents",
+        "Breeder",
+        "Profiles",
+        "consent",
+        "providers",
+        "rolls",
+        "offers",
+        "commands",
+        "read-sets",
+        "receipts",
+        "hashes"
+      ],
+      "participatingOwner": "forbidden",
+      "clientCssPrivacy": "forbidden"
+    },
+    "realtime": {
+      "audiences": [
+        "diagnostic",
+        "gm",
+        "owner",
+        "public"
+      ],
+      "participatingOwner": "structurally-forbidden",
+      "payload": "bounded-refresh-only-no-segment-or-ledger-data",
+      "publication": "post-commit-only",
+      "exactRetry": "publication-silent"
+    },
+    "persistence": {
+      "schemaVersion": 24,
+      "table": "breeding_incubation_segments",
+      "indexes": [
+        "primary-operation-ID",
+        "unique-Egg-revision-after",
+        "Egg-revision-operation-index"
+      ],
+      "backupRestore": "complete-campaign-backup-only-with-cross-link-validation",
+      "ownerPortable": "projection-only-no-segment-records",
+      "restartPersistent": true
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparse": "reject",
+      "IDsHashesArraysBoundsCanonicalOrder": "strict",
+      "modifierEvidenceWithoutIntegratedReducer": "reject",
+      "directFieldEditing": "forbidden",
+      "randomness": "none-in-BR-050-base-rate-reducer"
+    },
+    "tests": {
+      "count": 8,
+      "requiredCases": [
+        "base-rate-clamp-exact-readiness-and-overflow",
+        "pause-prefix-skip-and-durable-resume",
+        "atomic-segment-result-Egg-realtime-and-exact-retry",
+        "stale-clock-and-unsupported-provider-rejection",
+        "rollback-and-pending-resume",
+        "owner-GM-authorization-and-private-query",
+        "malformed-enriched-accessor-and-direct-write-rejection",
+        "restart-persistent-segment-and-evidence-replay"
+      ]
+    },
+    "bindings": {
+      "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+      "archiveContractDefinitionSha256": "ed6e1663cc0fba166914985ad7f5aff44a752a4cc98c0b05d87a28082ce4dbd7",
+      "archiveStorageRuntimeContractDefinitionSha256": "9b666f8947b25eb910fb850d234ac8fbe7b654302e62c6de3479c59e9ab9a396",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "hatchDurationPolicyDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a",
+      "modifierInventoryDefinitionSha256": "24bb20a9d61003f540f6b410df3b0919ee49233012e45ec2dd14bfc9ed5c2dd9",
+      "storageSchemaV24DefinitionSha256": "102ae6fa26e3e04d32de63cfbb0cfd812774e3abe0e2eae002de1cc235e3dac0"
+    }
+  }
+}

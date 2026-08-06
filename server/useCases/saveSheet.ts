@@ -57,6 +57,8 @@ import {
 import { listRepositorySheets } from './listSheets'
 import { applyHpToSheet } from '~/utils/sheetMutations'
 import { preservePlayerHiddenAutomationFieldsForSave } from '~/utils/sheets/pokemonGmFields'
+import { reconcileServerOwnedBreedingBabyTemplate } from '~/utils/sheets/pokemonBabyTemplate'
+import { parseAuthoritativeBreedingBabyTemplateAuthorityV1 } from '../domain/breeding/babyTemplate'
 import {
   defaultPersistedSetupSaveRealtimeEventPublisher,
   defaultSetupSaveRealtimePublicationFailureReporter,
@@ -285,9 +287,28 @@ export const saveSheetUseCase = (
   // authoritative inputs before any server-owned lifecycle calculation so a
   // forged value cannot influence it, while allowing that calculation to emit
   // a legitimate replacement state later in this transaction.
-  const playerAuthorityPreservedSheet = input.role === 'player'
+  let playerAuthorityPreservedSheet = input.role === 'player'
     ? preservePlayerHiddenAutomationFieldsForSave(input.sheet, current.sheet)
     : input.sheet
+  if (input.kind === 'pokemon') {
+    try {
+      const currentPokemon = current.sheet as unknown as CharacterSheet
+      if (currentPokemon.serverPrivate !== undefined
+        && Object.hasOwn(currentPokemon.serverPrivate, 'breedingBabyTemplate')) {
+        parseAuthoritativeBreedingBabyTemplateAuthorityV1(
+          currentPokemon.serverPrivate.breedingBabyTemplate,
+          'currentSheet.serverPrivate.breedingBabyTemplate',
+        )
+      }
+      playerAuthorityPreservedSheet = reconcileServerOwnedBreedingBabyTemplate(
+        currentPokemon,
+        playerAuthorityPreservedSheet as unknown as CharacterSheet,
+      ) as unknown as Record<string, unknown>
+    }
+    catch {
+      throw new SaveSheetUseCaseError(409, 'Stored Baby Template authority is malformed; repair is required before saving')
+    }
+  }
 
   let currentMarsupialRelationship: MarsupialRelationshipResolution | undefined
   let capabilityAdjustedSheet = playerAuthorityPreservedSheet
@@ -394,7 +415,6 @@ export const saveSheetUseCase = (
     const candidate = { ...authoritativeSheet, slug: input.slug } as unknown as CharacterSheet
     const relationshipExited = currentMarsupialRelationship.status === 'valid'
       && currentMarsupialRelationship.subjectRole === 'baby'
-      && (current.sheet as unknown as CharacterSheet).babyTemplate === true
       && candidate.babyTemplate === false
     if (relationshipExited && currentMarsupialRelationship.status === 'valid') {
       const counterpartSlug = currentMarsupialRelationship.pouch.motherSheetSlug

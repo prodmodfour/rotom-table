@@ -33,6 +33,11 @@ import { canonicalBattlefieldZoneComponents } from '~~/server/domain/moveAutomat
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
 import type { TabletopMap } from '~/types/map'
+import { createBreedingBabyTemplateAuthorityV1, createBreedingMarsupialProviderTraitV1, resolveBreedingMarsupialBabyTemplateV1 } from '~~/server/domain/breeding/babyTemplate'
+
+const marsupialTemplate = resolveBreedingMarsupialBabyTemplateV1()
+const marsupialAuthority = createBreedingBabyTemplateAuthorityV1({ sourceEggId: 'pokemon-egg:v1:95959595959595959595959595959595', babyTemplate: marsupialTemplate, marsupial: createBreedingMarsupialProviderTraitV1() })
+const marsupialBabyAuthorityFields = { babyTemplate: true, babyTemplateMechanics: { schemaVersion: 1 as const, applicationKind: marsupialAuthority.applicationKind, effects: marsupialAuthority.effects }, serverPrivate: { breedingBabyTemplate: marsupialAuthority } }
 
 const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
   schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
@@ -815,7 +820,7 @@ describe('live-play map token commands', () => {
         : slug === 'kangaskhan-baby'
           ? {
               slug, nickname: 'Baby', species: 'Kangaskhan', level: 5, revision: 1,
-              capabilities: { overland: 6 }, babyTemplate: true,
+              capabilities: { overland: 6 }, ...marsupialBabyAuthorityFields,
             }
           : { slug, nickname: 'Bolt', species: 'Pikachu', level: 10, revision: 1, capabilities: { overland: 6 } },
     }))
@@ -853,6 +858,90 @@ describe('live-play map token commands', () => {
     }, harness.deps)
     expect(sent.result).toMatchObject({ ok: false, reason: 'conflict' })
     expect(harness.writes).toEqual([])
+  })
+
+  it('lets an active Parental Bond baby deploy and recall independently while retaining its durable mother tether', async () => {
+    const pouch = {
+      motherSheetSlug: 'kangaskhan-mother', babySheetSlug: 'kangaskhan-baby', experienceSharePercent: 20,
+      establishedAt: 1_000, sourceOperationId: 'op_parental_bond_pouch',
+    }
+    const harness = createHarness()
+    harness.deps.readSheet.mockImplementation((kind: string, slug: string) => ({
+      sheet: kind === 'trainer'
+        ? {
+            slug, name: 'Boss', level: 10, revision: 1,
+            currentTeam: ['kangaskhan-mother', 'kangaskhan-baby'], capabilities: { overland: 5 },
+          }
+        : slug === 'kangaskhan-mother'
+          ? {
+              slug, nickname: 'Mother', species: 'Kangaskhan', level: 30, revision: 1,
+              capabilities: { overland: 6 },
+              capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+            }
+          : slug === 'kangaskhan-baby'
+            ? {
+                slug, nickname: 'Baby', species: 'Kangaskhan', level: 5, revision: 1,
+                capabilities: { overland: 6 }, abilities: [{ name: 'Parental Bond' }],
+                ...marsupialBabyAuthorityFields,
+                capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
+              }
+            : { slug, nickname: 'Bolt', species: 'Pikachu', level: 10, revision: 1, capabilities: { overland: 6 } },
+    }))
+
+    const babySent = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: sendOutCommand({
+        opId: 'op_send_parental_baby',
+        payload: {
+          trainerId: 'unlinked-token', pokemonSlug: 'kangaskhan-baby', tokenId: 'parental-baby',
+          position: { x: 3, y: 0, z: 2 }, facing: 'south-east',
+        },
+        scopes: [
+          { kind: 'token', placementId: 'unlinked-token', field: 'sendOut' },
+          { kind: 'token', placementId: 'parental-baby', field: 'spawn' },
+        ],
+      }),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+    }, harness.deps)
+    expect(babySent.result).toMatchObject({ ok: true, revision: 5 })
+    expect(harness.storedMap.placements.filter(placement => placement.sheetSlug === 'kangaskhan-baby')).toHaveLength(1)
+    expect(harness.storedMap.placements.some(placement => placement.sheetSlug === 'kangaskhan-mother')).toBe(false)
+
+    const motherSent = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: sendOutCommand({
+        opId: 'op_send_parental_mother', baseRevision: 5,
+        payload: {
+          trainerId: 'unlinked-token', pokemonSlug: 'kangaskhan-mother', tokenId: 'parental-mother',
+          position: { x: 4, y: 0, z: 2 }, facing: 'south-east',
+        },
+        scopes: [
+          { kind: 'token', placementId: 'unlinked-token', field: 'sendOut' },
+          { kind: 'token', placementId: 'parental-mother', field: 'spawn' },
+        ],
+      }),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+    }, harness.deps)
+    expect(motherSent.result).toMatchObject({ ok: true, revision: 6 })
+    expect(harness.storedMap.placements.filter(placement => (
+      placement.sheetSlug === 'kangaskhan-mother' || placement.sheetSlug === 'kangaskhan-baby'
+    ))).toHaveLength(2)
+    expect(harness.storedMap.encounterState?.capabilityRuntime?.links ?? []).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'marsupial-pouch' }),
+    ]))
+
+    const babyRecalled = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: deleteCommand({
+        opId: 'op_recall_parental_baby', baseRevision: 6,
+        payload: { placementId: 'parental-baby' },
+        scopes: [{ kind: 'token', placementId: 'parental-baby', field: 'delete' }],
+      }),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+    }, harness.deps)
+    expect(babyRecalled.result).toMatchObject({ ok: true, revision: 7 })
+    expect(harness.storedMap.placements.some(placement => placement.id === 'parental-baby')).toBe(false)
+    expect(harness.storedMap.placements.some(placement => placement.id === 'parental-mother')).toBe(true)
   })
 
   it('never spawns or sends out a Zygarde sheet archived by Cube disassembly', async () => {
@@ -924,7 +1013,7 @@ describe('live-play map token commands', () => {
           : slug === 'kangaskhan-baby'
             ? {
                 slug, nickname: 'Baby', species: 'Kangaskhan', level: 5, revision: 1, capabilities: { overland: 6 },
-                babyTemplate: true,
+                ...marsupialBabyAuthorityFields,
                 capabilityCampaignState: {
                   ...createEmptyCapabilityCampaignState(),
                   marsupialPouch: { ...motherPouch, experienceSharePercent: 0 },
@@ -977,7 +1066,7 @@ describe('live-play map token commands', () => {
           : slug === 'kangaskhan-baby'
             ? {
                 slug, nickname: 'Baby', species: 'Kangaskhan', level: 5, revision: 1,
-                capabilities: { overland: 6 }, babyTemplate: true,
+                capabilities: { overland: 6 }, ...marsupialBabyAuthorityFields,
                 capabilityCampaignState: { ...createEmptyCapabilityCampaignState(), marsupialPouch: pouch },
               }
             : {

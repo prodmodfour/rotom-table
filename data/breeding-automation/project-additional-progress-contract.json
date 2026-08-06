@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-project-additional-progress-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "4bdf0e8290941406f8e60e66a5544e8750f330b8c56180add66023debd4e48b8",
+  "definition": {
+    "version": 1,
+    "ticket": "BR-045",
+    "implementation": {
+      "sharedPath": "shared/breeding/projectAdditionalProgress.ts",
+      "domainPath": "server/domain/breeding/projectAdditionalProgress.ts",
+      "useCasePath": "server/useCases/advanceBreedingProjectAdditionalTime.ts",
+      "operationEvidenceRepositoryPath": "server/storage/breedingOperationEvidenceRepository.ts",
+      "checkLedgerRepositoryPath": "server/storage/breedingCheckLedgerRepository.ts",
+      "transactionCoordinatorPath": "server/useCases/executeBreedingTransaction.ts",
+      "testPath": "tests/server/breedingProjectAdditionalProgress.test.ts"
+    },
+    "policy": {
+      "policyId": "breeding-additional-progress-v1",
+      "requiredCampaignMinutes": 240,
+      "timeAuthority": "campaign-clock-only",
+      "accumulation": "bounded-cumulative-authorized-segments",
+      "sourceStatus": "additional-time-in-progress-after-one-successful-Breeder-check",
+      "completionStatus": "ready-to-produce",
+      "overshoot": "cap-at-240-and-record-exact-threshold-minute",
+      "wallClockMapEncounterSceneInitiativeAuthority": "none"
+    },
+    "successfulCheckAuthority": {
+      "projectReference": "immutable-success-check-record-id-outcome-and-resolution-minute",
+      "ledger": "exact-current-self-hashed-check-row-for-this-Project",
+      "readSet": "present-breeding-check-mechanics-resource-bound-to-definition-hash",
+      "failedMissingChangedOrDuplicateCheck": "fail-closed-without-progress",
+      "newRollOrCheck": "never-created-or-consumed"
+    },
+    "segmentAuthority": {
+      "schema": "strict-plain-exact-fields-self-hashed-server-authority",
+      "bindings": [
+        "full-command-hash-and-operation-id",
+        "current-Project-id-revision-and-document-hash",
+        "current-campaign-clock-revision-and-minute",
+        "immutable-successful-check-row",
+        "both-parent-identities-owners-and-current-revisions",
+        "complete-read-set-segment-dependency-row",
+        "authorized-operation-receipt"
+      ],
+      "creditedFrom": "server-derived-maximum-of-last-durable-checkpoint-and-current-cross-owner-consent-grant-minutes",
+      "skippedGap": "minutes-before-creditedFrom-advance-the-durable-clock-checkpoint-but-earn-no-progress",
+      "sameOwner": "creditedFrom-must-equal-last-durable-checkpoint",
+      "sameClockRevisionDifferentMinute": "reject",
+      "backwardClockCheckpointOrCreditedFrom": "reject"
+    },
+    "continuity": {
+      "parents": "exact-Project-parent-snapshot-resources-at-immutable-revisions",
+      "crossOwnerConsent": "one-current-positive-operation-bound-evidence-row-per-cross-owner-parent",
+      "expiry": "consumed-strictly-before-expiry-equality-is-unavailable",
+      "freshGrantAfterGap": "credits-only-from-the-new-durable-grant-minute",
+      "gmOverrideAsConsent": "forbidden",
+      "parentDriftAfterCheck": "stale-authority-no-progress"
+    },
+    "operationAuthority": {
+      "commandKind": "advance-breeding-project-time",
+      "readSet": "complete-current-Project-clock-check-parent-snapshots-consents-references-and-segment-dependency",
+      "authorizationReceipt": "authorized-exact-command-read-set-security-policy-segment-and-consent-evidence",
+      "persistence": "one-immutable-read-set-and-authorization-receipt-pair-per-operation",
+      "terminalEvidenceGap": "fail-closed",
+      "identityReplay": "exact-stable-json-only",
+      "staleOrUnavailable": "terminal-bounded-rejection-with-no-Project-or-event-mutation"
+    },
+    "projectTransition": {
+      "active": "same-status-revision-with-bounded-cumulative-minutes-and-new-clock-checkpoint",
+      "complete": "ready-to-produce-at-the-exact-cumulative-240-minute-threshold",
+      "readyTimestamp": "threshold-minute-not-later-command-through-minute",
+      "progress": "monotonic-never-decreases-and-never-exceeds-240",
+      "operationIdentity": "fresh-last-operation-id-on-every-mutating-segment"
+    },
+    "atomicityAndReplay": {
+      "reservation": "durable-phase-1-pending-operation",
+      "phase2": "operation-evidence-Project-CAS-terminal-result-and-bounded-realtime-rows-in-one-coordinator-transaction",
+      "failure": "roll-back-all-phase-2-rows-and-retain-only-recoverable-pending-reservation",
+      "pendingDuplicate": "no-execution-or-mutation",
+      "explicitResume": "same-command-read-set-receipt-segment-consent-and-current-authority-only",
+      "exactTerminalRetry": "same-result-no-reaccrual-revision-event-or-publication",
+      "restart": "Project-checkpoint-check-operation-evidence-and-result-remain-replay-safe"
+    },
+    "projection": {
+      "audiences": [
+        "gm",
+        "owner"
+      ],
+      "allows": [
+        "bounded-workflow-status",
+        "required-accumulated-and-remaining-additional-campaign-minutes",
+        "ready-to-produce-campaign-minute"
+      ],
+      "forbids": [
+        "raw-Project-check-roll-operation-Profile-Trainer-parent-or-consent-identities",
+        "commands-read-sets-receipts-provider-or-definition-hashes",
+        "die-skill-Edge-or-private-mechanics-components",
+        "map-encounter-scene-initiative-browser-or-wall-clock-state"
+      ],
+      "realtime": "refresh-only-bounded-audience-rows-after-commit"
+    },
+    "strictness": {
+      "unknownMalformedEnrichedAccessorBackedNonPlainSparse": "reject-before-mechanics",
+      "clientSelectedCreditedInterval": "must-exactly-match-server-derived-continuity-start",
+      "missingOrExtraneousConsentCheckSegmentOrReceiptAuthority": "reject-or-bounded-unavailable",
+      "randomRollChoiceModifierOrAdjudication": "none-accepted-or-consumed",
+      "documentaryMapOrLocalPersistenceAuthority": "none"
+    },
+    "tests": {
+      "count": 9,
+      "requiredCases": [
+        "atomic-campaign-segment-progress-evidence-private-projection-and-bounded-realtime",
+        "cumulative-multi-command-240-threshold-with-exact-overshoot-minute",
+        "cross-owner-fresh-consent-gap-skip",
+        "forged-creditedFrom-project-parent-check-or-clock-authority-rejection",
+        "terminal-exact-retry-without-reaccrual-revision-event-or-publication",
+        "phase2-failure-rollback-pending-reservation-and-explicit-recovery",
+        "file-database-restart-and-exact-terminal-replay",
+        "unknown-enriched-sparse-and-self-hash-tampering-rejection",
+        "bounded-owner-projection-without-private-authority-identities"
+      ]
+    },
+    "bindings": {
+      "projectCheckContractDefinitionSha256": "4e834427710d2ef0121ff1b8df409d39042e778522ba5a5bc10e534396d67a7e",
+      "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
+      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
+      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
+      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "campaignClockContractDefinitionSha256": "abd4dd586f20dfcbc3b716e2bffbc7d1418853812ff9aaac127e593730215a06",
+      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0"
+    }
+  }
+}

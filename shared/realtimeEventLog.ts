@@ -7,6 +7,10 @@ import {
 } from './livePlayCommands'
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
 import type { RealtimeEvent } from './realtime'
+import {
+  parseBreedingRealtimeEventAccess,
+  type BreedingRealtimeEventAccess,
+} from './breeding/realtimeAccess'
 import { isSheetKind, type SheetKind } from './sheets'
 
 export type RealtimeEventAccess =
@@ -36,6 +40,7 @@ export type RealtimeEventAccess =
       readonly resolutionId: string
       readonly windowId: string
     }
+  | BreedingRealtimeEventAccess
 
 export interface SequencedRealtimeEvent<TData = unknown> extends RealtimeEvent<TData> {
   readonly sequence: number
@@ -455,7 +460,11 @@ export const parseRealtimeEventAccess = (value: unknown, label = 'access'): Real
     }
   }
 
-  throw new Error(`${label}.kind must be gm-only, map-access, sheet-access, group-inventory-access, shop-access, or pending-move-response-access`)
+  if (access.kind === 'breeding-access') {
+    return parseBreedingRealtimeEventAccess(access, label)
+  }
+
+  throw new Error(`${label}.kind must be gm-only, map-access, sheet-access, group-inventory-access, shop-access, pending-move-response-access, or breeding-access`)
 }
 
 export const parseRealtimeEventDraft = <TData = unknown>(value: unknown): RealtimeEventDraft<TData> => {
