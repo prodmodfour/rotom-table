@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 71,
+    "covered": 72,
     "in-progress": 1,
-    "planned": 18,
+    "planned": 17,
     "blocked": 0
   },
   "requirements": [
@@ -1735,8 +1735,24 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/project-guidance-presentation-contract.json",
+        "shared/breeding/projectGuidance.ts",
+        "server/domain/breeding/projectGuidance.ts",
+        "server/useCases/loadBreedingProjectGuidance.ts",
+        "server/api/breeding/projects/wizard/guidance.post.ts",
+        "src/composables/breeding/useBreedingProjectWizard.ts",
+        "src/components/breeding/BreedingProjectWizard.vue",
+        "src/pages/breeding/index.vue",
+        "tests/shared/breedingProjectGuidanceContract.test.ts",
+        "tests/server/breedingProjectGuidance.test.ts",
+        "tests/server/breedingProjectGuidanceRoute.test.ts",
+        "tests/composables/breeding/useBreedingProjectWizard.test.ts",
+        "tests/components/breedingProjectWizard.test.ts",
+        "docs/breeding/workshop.md",
+        "docs/breeding/security-and-privacy.md"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -1749,7 +1765,7 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

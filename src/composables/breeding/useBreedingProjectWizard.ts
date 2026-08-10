@@ -1,9 +1,10 @@
 import { computed, ref, shallowRef } from 'vue'
+import type { BreedingProjectWizardProjectionV1 } from '#shared/breeding/projectWizard'
 import {
-  BREEDING_PROJECT_WIZARD_API_PATH,
-  verifyBreedingProjectWizardProjectionV1,
-  type BreedingProjectWizardProjectionV1,
-} from '#shared/breeding/projectWizard'
+  BREEDING_PROJECT_GUIDANCE_API_PATH,
+  verifyBreedingProjectGuidanceProjectionV1,
+  type BreedingProjectGuidanceProjectionV1,
+} from '#shared/breeding/projectGuidance'
 import type { BreedingParentSelectionRefV1 } from '#shared/breeding/parentDiscovery'
 import { getErrorMessage } from '~/utils/errorMessages'
 
@@ -19,6 +20,7 @@ export const useBreedingProjectWizard = () => {
   const profiles = usePlayerProfiles()
   const { postJson } = useApiClient()
   const projection = shallowRef<BreedingProjectWizardProjectionV1 | null>(null)
+  const guidance = shallowRef<BreedingProjectGuidanceProjectionV1 | null>(null)
   const destinationTrainerSlug = ref<string | null>(null)
   const breederTrainerSlug = ref<string | null>(null)
   const parentRefs = ref<readonly BreedingParentSelectionRefV1[]>([])
@@ -44,17 +46,18 @@ export const useBreedingProjectWizard = () => {
     loading.value = true
     error.value = null
     try {
-      const raw = await postJson<unknown>(BREEDING_PROJECT_WIZARD_API_PATH, {
+      const raw = await postJson<unknown>(BREEDING_PROJECT_GUIDANCE_API_PATH, {
         schemaVersion: 1,
         profileId: isPlayer.value ? profiles.selectedProfileId.value : null,
         destinationTrainerSlug: destination,
         breederTrainerSlug: breeder,
         parentRefs: parentRefs.value,
       })
-      const parsed = await verifyBreedingProjectWizardProjectionV1(raw)
+      const parsed = await verifyBreedingProjectGuidanceProjectionV1(raw)
       if (sequence !== requestSequence) return
-      projection.value = parsed
-      parentRefs.value = parsed.parentDiscovery.selectedParentRefs
+      guidance.value = parsed
+      projection.value = parsed.wizard
+      parentRefs.value = parsed.wizard.parentDiscovery.selectedParentRefs
     }
     catch (cause) {
       if (sequence !== requestSequence) return
@@ -72,6 +75,7 @@ export const useBreedingProjectWizard = () => {
     breederTrainerSlug.value = defaultTrainerSlug
     parentRefs.value = []
     projection.value = null
+    guidance.value = null
     await reload()
   }
 
@@ -81,6 +85,7 @@ export const useBreedingProjectWizard = () => {
     loading.value = false
     error.value = null
     projection.value = null
+    guidance.value = null
     parentRefs.value = []
     activeStep.value = 0
   }
@@ -91,6 +96,7 @@ export const useBreedingProjectWizard = () => {
     breederTrainerSlug.value ??= trainerSheetSlug
     parentRefs.value = []
     projection.value = null
+    guidance.value = null
     activeStep.value = Math.min(activeStep.value, 1)
     await reload()
   }
@@ -99,6 +105,7 @@ export const useBreedingProjectWizard = () => {
     if (breederTrainerSlug.value === trainerSheetSlug) return
     breederTrainerSlug.value = trainerSheetSlug
     projection.value = null
+    guidance.value = null
     await reload()
   }
 
@@ -135,6 +142,7 @@ export const useBreedingProjectWizard = () => {
 
   return {
     projection,
+    guidance,
     destinationTrainerSlug,
     breederTrainerSlug,
     parentRefs,

@@ -1,8 +1,8 @@
 # Breeding Workshop
 
-The Breeding Workshop is the campaign-scoped presentation entry point for breeding and Egg lifecycle work. Its route is `/breeding`; the shell read API is `/api/breeding/workshop`, and the non-mutating Project-wizard projection API is `POST /api/breeding/projects/wizard`. It is not a map, encounter, placement, scene, or initiative surface.
+The Breeding Workshop is the campaign-scoped presentation entry point for breeding and Egg lifecycle work. Its route is `/breeding`; the shell read API is `/api/breeding/workshop`, the base non-mutating Project-wizard API is `POST /api/breeding/projects/wizard`, and the current explanation projection is `POST /api/breeding/projects/wizard/guidance`. It is not a map, encounter, placement, scene, or initiative surface.
 
-BR-070 establishes the Workshop shell, ownership context, navigation, and safe loading/empty/error states. BR-071 adds the transient Project wizard for destination, Breeder, parents, consent status, and campaign timeline. The wizard does not create or mutate a Project: final server validation, rank-authorised choices, consent evidence, and confirmation remain downstream work. Explanations, project and Egg cards, incubation controls, hatch controls, and later GM tools remain owned by BR-072 through BR-078.
+BR-070 establishes the Workshop shell, ownership context, navigation, and safe loading/empty/error states. BR-071 adds the transient Project wizard for destination, Breeder, parents, consent status, and campaign timeline. BR-072 adds closed compatibility and unavailable explanations, current source contributions, and bounded GM diagnostics. The wizard does not create or mutate a Project: rank-authorised choices, consent evidence, final validation, and confirmation remain downstream work. Project and Egg cards, incubation controls, hatch controls, and later GM tools remain owned by BR-073 through BR-078.
 
 ## Authority and ownership
 
@@ -44,6 +44,22 @@ The timeline is projected from server policy and uses only campaign time: 240 in
 
 The wizard keeps no local persistent draft. Profile changes close it; destination changes clear parent selectors; Breeder and parent changes request a fresh projection; errors offer retry; policy or digest mismatch rejects the response without adopting its facts.
 
+## Compatibility guidance and diagnostics
+
+The BR-072 guidance endpoint accepts exactly the BR-071 selector request and nests one exact current BR-071 wizard projection. It adds only presentation facts under a second security-bound self-hash:
+
+- a closed app-owned catalog gives every parent-candidate and pair-preview reason a stable ID, severity, human summary, and recovery action;
+- unavailable parent cards expose those explanations through keyboard-operable native disclosure controls;
+- complete pairs show either their current safe blocker explanations or that final server validation is still required;
+- source cards report current `Breeder` Trainer Edge and `Dilettante` Trainer Feature contribution status;
+- an active direct Breeder source may expose only its mandated Skill ID, rank, and bounded check total;
+- Dilettante is shown as an active upstream grant while the Breeder source remains `choice-required` until a later server-issued General Education or Perception choice;
+- malformed, stale, asynchronous, ambiguous, or unavailable provider authority fails closed to a safe reason and never projects provider evidence or internal errors.
+
+The catalog is presentation authority only. Compatibility remains owned by BR-020 discovery and current final validation; browser prose never recalculates Egg Groups, Gender roles, maturity, consent, or provider mechanics.
+
+Only the GM audience receives diagnostics. Those diagnostics are bounded counts and enums: candidate availability counts, selected-parent count, same-owner/cross-owner topology, Breeder status, maturity policy, consent and preview status, the campaign-Workshop location policy, the empty facility-registry state, and the final-validation requirement. They contain no Trainer, Pokémon, Profile, Project, Egg, operation, provider, offer, consent-evidence, or hash identity. Owner projections carry `gmDiagnostics: null`. Cross-owner private mechanics are not resolved or exposed before consent.
+
 ## Presentation states
 
 The shell has explicit paths for:
@@ -72,4 +88,4 @@ If the Workshop cannot load:
 4. retry to force a current server projection;
 5. treat security-policy or projection-hash mismatch as an integrity failure rather than rendering stale data.
 
-The reviewed BR-070 shell contract is `data/breeding-automation/workshop-presentation-contract.json`. The reviewed BR-071 wizard contract is `data/breeding-automation/project-wizard-presentation-contract.json`. Focused evidence lives in the shared-contract, server-projection, API-route, composable, component/accessibility, navigation, and Profile-route-guard tests named by those contracts.
+The reviewed BR-070 shell contract is `data/breeding-automation/workshop-presentation-contract.json`, the BR-071 wizard contract is `data/breeding-automation/project-wizard-presentation-contract.json`, and the BR-072 guidance contract is `data/breeding-automation/project-guidance-presentation-contract.json`. Focused evidence lives in the shared-contract, server-projection, API-route, composable, component/accessibility, navigation, and Profile-route-guard tests named by those contracts.

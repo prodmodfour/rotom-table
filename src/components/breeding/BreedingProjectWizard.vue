@@ -13,11 +13,17 @@ import type { BreedingWorkshopOwnershipContextV1 } from '#shared/breeding/worksh
 import type {
   BreedingProjectWizardProjectionV1,
 } from '#shared/breeding/projectWizard'
+import {
+  breedingProjectGuidanceReason,
+  type BreedingProjectGuidanceProjectionV1,
+  type BreedingProjectGuidanceReasonId,
+} from '#shared/breeding/projectGuidance'
 import { BREEDING_PROJECT_WIZARD_STEPS } from '~/composables/breeding/useBreedingProjectWizard'
 
 const props = defineProps<{
   open: boolean
   projection: BreedingProjectWizardProjectionV1 | null
+  guidance: BreedingProjectGuidanceProjectionV1 | null
   ownershipContexts: readonly BreedingWorkshopOwnershipContextV1[]
   destinationTrainerSlug: string | null
   breederTrainerSlug: string | null
@@ -46,6 +52,10 @@ const candidates = computed(() => props.projection?.parentDiscovery.trainerSheet
 const selectedCandidates = computed(() => candidates.value.filter(candidate => (
   props.selectedParentSlugs.has(candidate.parentSheetSlug)
 )))
+const applicableReasons = computed(() => props.guidance?.applicableReasonIds.map(
+  reasonId => breedingProjectGuidanceReason(reasonId),
+) ?? [])
+const sourceContributions = computed(() => props.guidance?.sourceContributions ?? [])
 const nextDisabled = computed(() => props.loading
   || (props.activeStep === 2 && !props.canReview)
   || props.activeStep >= BREEDING_PROJECT_WIZARD_STEPS.length - 1)
@@ -63,6 +73,17 @@ const handleBreeder = (event: Event): void => {
   const value = selectValue(event)
   if (value) emit('selectBreeder', value)
 }
+const candidateReasons = (reasonIds: readonly string[]) => reasonIds.map(
+  reasonId => breedingProjectGuidanceReason(reasonId as BreedingProjectGuidanceReasonId),
+)
+const sourceStatus = (status: string): string => status === 'active'
+  ? 'Active'
+  : status === 'choice-required' ? 'Choice required' : 'Unavailable'
+const skillLabel = (skillId: string): string => ({
+  'general-education': 'General Education',
+  perception: 'Perception',
+  'pokemon-education': 'Pokémon Education',
+})[skillId] ?? skillId
 const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
   const values = [
     candidate.speciesId,
@@ -164,6 +185,29 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
               </option>
             </select>
           </label>
+
+          <section class="breeding-project-wizard__sources" aria-labelledby="wizard-sources-title">
+            <h4 id="wizard-sources-title">Current source contributions</h4>
+            <article
+              v-for="source in sourceContributions"
+              :key="`${source.sourceKind}:${source.sourceCanonicalId}`"
+              class="breeding-project-wizard__source"
+            >
+              <div>
+                <strong>{{ source.sourceCanonicalId }}</strong>
+                <span :class="`is-${source.status}`">{{ sourceStatus(source.status) }}</span>
+              </div>
+              <p v-if="source.skillApplication">
+                {{ skillLabel(source.skillApplication.skillId) }} · {{ source.skillApplication.rank }} ·
+                check total {{ source.skillApplication.skillTotal >= 0 ? '+' : '' }}{{ source.skillApplication.skillTotal }}
+              </p>
+              <template v-else-if="source.reasonId">
+                <p>{{ breedingProjectGuidanceReason(source.reasonId).summary }}</p>
+                <p><strong>Next:</strong> {{ breedingProjectGuidanceReason(source.reasonId).recovery }}</p>
+              </template>
+              <p v-else>Provides {{ source.contributionIds.join(' and ') }}.</p>
+            </article>
+          </section>
         </section>
 
         <section v-else-if="activeStep === 2" aria-labelledby="wizard-parents-title">
@@ -175,7 +219,7 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
           </p>
 
           <div v-if="candidates.length > 0" class="breeding-project-wizard__parents">
-            <label
+            <div
               v-for="candidate in candidates"
               :key="candidate.parentSheetSlug"
               class="breeding-project-wizard__parent"
@@ -184,19 +228,32 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
                 'is-unavailable': candidate.availability.status !== 'selectable',
               }"
             >
-              <input
-                type="checkbox"
-                :checked="selectedParentSlugs.has(candidate.parentSheetSlug)"
-                :disabled="loading || candidate.availability.status !== 'selectable'
-                  || (!selectedParentSlugs.has(candidate.parentSheetSlug) && selectedParentSlugs.size >= 2)"
-                @change="emit('toggleParent', candidate.parentSheetSlug)"
+              <label>
+                <input
+                  type="checkbox"
+                  :checked="selectedParentSlugs.has(candidate.parentSheetSlug)"
+                  :disabled="loading || candidate.availability.status !== 'selectable'
+                    || (!selectedParentSlugs.has(candidate.parentSheetSlug) && selectedParentSlugs.size >= 2)"
+                  @change="emit('toggleParent', candidate.parentSheetSlug)"
+                >
+                <span>
+                  <strong>{{ candidate.label }}</strong>
+                  <small>{{ parentMeta(candidate) }}</small>
+                  <small v-if="candidate.availability.status !== 'selectable'">Unavailable</small>
+                </span>
+              </label>
+              <details
+                v-if="candidate.availability.reasonIds.length > 0"
+                class="breeding-project-wizard__reason-details"
               >
-              <span>
-                <strong>{{ candidate.label }}</strong>
-                <small>{{ parentMeta(candidate) }}</small>
-                <small v-if="candidate.availability.status !== 'selectable'">Unavailable</small>
-              </span>
-            </label>
+                <summary>Why unavailable</summary>
+                <div v-for="reason in candidateReasons(candidate.availability.reasonIds)" :key="reason.reasonId">
+                  <strong>{{ reason.title }}</strong>
+                  <small>{{ reason.summary }}</small>
+                  <small><strong>Next:</strong> {{ reason.recovery }}</small>
+                </div>
+              </details>
+            </div>
           </div>
           <div v-else class="breeding-project-wizard__state" data-testid="breeding-wizard-no-parents">
             <PhEgg :size="24" weight="duotone" aria-hidden="true" />
@@ -205,13 +262,23 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
               <p>Add current Pokémon to an authorized Trainer roster, then retry.</p>
             </div>
           </div>
-          <p
+          <div
             v-if="projection.reviewStatus === 'pair-unavailable'"
-            class="breeding-project-wizard__notice"
+            class="breeding-project-wizard__reason-list"
             role="alert"
           >
-            This pair is unavailable under the current campaign authority.
-          </p>
+            <article
+              v-for="reason in applicableReasons.filter(entry => entry.severity === 'error')"
+              :key="reason.reasonId"
+              class="breeding-project-wizard__notice"
+            >
+              <div>
+                <strong>{{ reason.title }}</strong>
+                <p>{{ reason.summary }}</p>
+                <p><strong>Next:</strong> {{ reason.recovery }}</p>
+              </div>
+            </article>
+          </div>
         </section>
 
         <section v-else aria-labelledby="wizard-review-title">
@@ -240,6 +307,20 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
             </div>
           </dl>
 
+          <section class="breeding-project-wizard__review-guidance" aria-labelledby="wizard-review-guidance-title">
+            <h3 id="wizard-review-guidance-title">Validation guidance</h3>
+            <article
+              v-for="reason in applicableReasons"
+              :key="reason.reasonId"
+              class="breeding-project-wizard__guidance"
+              :class="`is-${reason.severity}`"
+            >
+              <strong>{{ reason.title }}</strong>
+              <p>{{ reason.summary }}</p>
+              <p><strong>Next:</strong> {{ reason.recovery }}</p>
+            </article>
+          </section>
+
           <div class="breeding-project-wizard__timeline" aria-labelledby="wizard-timeline-title">
             <PhClock :size="24" weight="duotone" aria-hidden="true" />
             <div>
@@ -253,6 +334,25 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
               <p>Only the campaign clock advances this timeline.</p>
             </div>
           </div>
+
+          <section
+            v-if="guidance?.gmDiagnostics"
+            class="breeding-project-wizard__diagnostics"
+            aria-labelledby="wizard-diagnostics-title"
+            data-testid="breeding-project-gm-diagnostics"
+          >
+            <h3 id="wizard-diagnostics-title">GM diagnostics</h3>
+            <dl>
+              <div><dt>Parent directory</dt><dd>{{ guidance.gmDiagnostics.selectableCandidateCount }} selectable · {{ guidance.gmDiagnostics.unavailableCandidateCount }} unavailable</dd></div>
+              <div><dt>Ownership</dt><dd>{{ guidance.gmDiagnostics.ownershipTopology }}</dd></div>
+              <div><dt>Breeder source</dt><dd>{{ sourceStatus(guidance.gmDiagnostics.breederAuthorityStatus) }}</dd></div>
+              <div><dt>Maturity</dt><dd>{{ guidance.gmDiagnostics.maturityPolicy }}<template v-if="guidance.gmDiagnostics.minimumMaturityLevel !== null"> · Level {{ guidance.gmDiagnostics.minimumMaturityLevel }}</template></dd></div>
+              <div><dt>Consent</dt><dd>{{ guidance.gmDiagnostics.consentStatus }}</dd></div>
+              <div><dt>Compatibility</dt><dd>{{ guidance.gmDiagnostics.compatibilityPreviewStatus }}</dd></div>
+              <div><dt>Location</dt><dd>Campaign Workshop · no facility authority</dd></div>
+              <div><dt>Creation</dt><dd>Final server validation required</dd></div>
+            </dl>
+          </section>
 
           <div class="breeding-project-wizard__confirmation">
             <p role="status">
@@ -424,6 +524,60 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
   font: inherit;
 }
 
+.breeding-project-wizard__sources,
+.breeding-project-wizard__review-guidance,
+.breeding-project-wizard__diagnostics {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.breeding-project-wizard__source,
+.breeding-project-wizard__guidance,
+.breeding-project-wizard__diagnostics {
+  padding: 0.8rem;
+  border: 1px solid var(--rt-rule);
+  border-radius: var(--rt-radius-small);
+  background: var(--rt-surface-1);
+}
+
+.breeding-project-wizard__source > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.breeding-project-wizard__source span {
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--rt-rule);
+  border-radius: var(--rt-radius-round);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.breeding-project-wizard__source span.is-active,
+.breeding-project-wizard__guidance.is-info {
+  border-color: var(--rt-success);
+}
+
+.breeding-project-wizard__source span.is-choice-required,
+.breeding-project-wizard__guidance.is-warning {
+  border-color: var(--rt-pending);
+}
+
+.breeding-project-wizard__source span.is-unavailable,
+.breeding-project-wizard__guidance.is-error {
+  border-color: var(--rt-danger);
+}
+
+.breeding-project-wizard__source p,
+.breeding-project-wizard__guidance p {
+  margin: 0.4rem 0 0;
+  color: var(--rt-text-muted);
+  line-height: 1.45;
+}
+
 .breeding-project-wizard__selection-count {
   font-weight: 700;
 }
@@ -435,14 +589,19 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
 }
 
 .breeding-project-wizard__parent {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
   gap: 0.65rem;
   min-height: 4.5rem;
   padding: 0.75rem;
   border: 1px solid var(--rt-rule);
   border-radius: var(--rt-radius-small);
   background: var(--rt-surface-1);
+}
+
+.breeding-project-wizard__parent > label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
   cursor: pointer;
 }
 
@@ -451,8 +610,11 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
 }
 
 .breeding-project-wizard__parent.is-unavailable {
+  opacity: 0.78;
+}
+
+.breeding-project-wizard__parent.is-unavailable > label {
   cursor: not-allowed;
-  opacity: 0.68;
 }
 
 .breeding-project-wizard__parent input {
@@ -473,6 +635,28 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
   color: var(--rt-text-muted);
 }
 
+.breeding-project-wizard__reason-details {
+  border-top: 1px solid var(--rt-rule);
+}
+
+.breeding-project-wizard__reason-details summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--rt-text-strong);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.breeding-project-wizard__reason-details > div + div {
+  margin-top: 0.65rem;
+}
+
+.breeding-project-wizard__reason-details small {
+  line-height: 1.4;
+}
+
 .breeding-project-wizard__state,
 .breeding-project-wizard__timeline,
 .breeding-project-wizard__notice {
@@ -488,6 +672,18 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
 .breeding-project-wizard__state--error,
 .breeding-project-wizard__notice {
   border-color: var(--rt-danger);
+}
+
+.breeding-project-wizard__reason-list {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+}
+
+.breeding-project-wizard__notice p {
+  margin: 0.35rem 0 0;
+  color: var(--rt-text-muted);
+  line-height: 1.45;
 }
 
 .breeding-project-wizard__summary {
@@ -520,6 +716,33 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
 .breeding-project-wizard__timeline ol {
   margin: 0.4rem 0;
   padding-left: 1.25rem;
+}
+
+.breeding-project-wizard__diagnostics dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.breeding-project-wizard__diagnostics dl > div {
+  padding: 0.6rem;
+  border: 1px solid var(--rt-rule);
+  border-radius: var(--rt-radius-small);
+  background: var(--rt-surface-2);
+}
+
+.breeding-project-wizard__diagnostics dt {
+  color: var(--rt-text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.breeding-project-wizard__diagnostics dd {
+  margin: 0.25rem 0 0;
+  color: var(--rt-text-strong);
+  font-weight: 700;
 }
 
 .breeding-project-wizard__confirmation {
@@ -572,7 +795,8 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
   }
 
   .breeding-project-wizard__parents,
-  .breeding-project-wizard__summary {
+  .breeding-project-wizard__summary,
+  .breeding-project-wizard__diagnostics dl {
     grid-template-columns: 1fr;
   }
 

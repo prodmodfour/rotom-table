@@ -209,6 +209,7 @@ for (const path of [
   'data/breeding-automation/species-acquisition-integration-contract.json',
   'data/breeding-automation/workshop-presentation-contract.json',
   'data/breeding-automation/project-wizard-presentation-contract.json',
+  'data/breeding-automation/project-guidance-presentation-contract.json',
   'data/breeding-automation/campaign-operation-ledger-contract.json',
   'data/breeding-automation/campaign-clock-contract.json',
   'data/breeding-automation/realtime-contract.json',
@@ -378,6 +379,34 @@ assert(projectWizardContract.definition?.presentation?.minimumControlHeightPx ==
   && projectWizardContract.definition?.presentation?.keyboardOperable === true
   && projectWizardContract.definition?.presentation?.statusAndErrorAnnouncements === true
   && projectWizardContract.definition?.presentation?.reducedMotion === 'honored', 'Project wizard accessibility contract drifted')
+const projectGuidanceContract = json<Record<string, any>>('data/breeding-automation/project-guidance-presentation-contract.json')
+assert(projectGuidanceContract.contractId === 'rotom-breeding-project-guidance-presentation-v1'
+  && projectGuidanceContract.definition?.ticket === 'BR-072', 'Project guidance presentation contract identity drifted')
+assert(projectGuidanceContract.definition?.scope?.apiRoute === '/api/breeding/projects/wizard/guidance'
+  && projectGuidanceContract.definition?.scope?.extends === 'BR-071-non-mutating-wizard'
+  && projectGuidanceContract.definition?.scope?.projectMutation === 'none-preview-only'
+  && projectGuidanceContract.definition?.scope?.clientMechanicsAuthority === 'none', 'Project guidance authority boundary drifted')
+assert(projectGuidanceContract.definition?.reasonCatalog?.authority === 'closed-app-owned-presentation-catalog'
+  && projectGuidanceContract.definition?.reasonCatalog?.runtimeProseInterpretation === 'forbidden'
+  && projectGuidanceContract.definition?.reasonCatalog?.unknownReason === 'reject', 'Project guidance reason closure drifted')
+assert(JSON.stringify(projectGuidanceContract.definition?.sourceContributions?.sources) === JSON.stringify(['Breeder-Trainer-Edge', 'Dilettante-Trainer-Feature'])
+  && projectGuidanceContract.definition?.sourceContributions?.providerEvidence === 'never-projected'
+  && projectGuidanceContract.definition?.sourceContributions?.facilityAuthority === 'empty-no-authority', 'Project guidance source boundary drifted')
+assert(projectGuidanceContract.definition?.compatibility?.mechanicsAuthority === 'reuse-BR-020-discovery-and-compatibility-preview'
+  && projectGuidanceContract.definition?.compatibility?.browserRecalculation === 'forbidden'
+  && projectGuidanceContract.definition?.compatibility?.crossOwnerPrivateMechanicsBeforeConsent === 'not-evaluated-or-projected', 'Project guidance compatibility or consent privacy drifted')
+assert(projectGuidanceContract.definition?.gmDiagnostics?.audience === 'gm-only'
+  && projectGuidanceContract.definition?.gmDiagnostics?.identifiers === 'forbidden'
+  && projectGuidanceContract.definition?.gmDiagnostics?.hashes === 'forbidden'
+  && projectGuidanceContract.definition?.gmDiagnostics?.ownerProjection === 'null', 'Project guidance GM diagnostic privacy drifted')
+assert(projectGuidanceContract.definition?.projection?.sourceMaximum === 2
+  && projectGuidanceContract.definition?.projection?.securityPolicyBinding === 'mandatory'
+  && projectGuidanceContract.definition?.projection?.unknownFields === 'reject'
+  && projectGuidanceContract.definition?.projection?.accessorsSymbolsSparseOrEnrichedValues === 'reject', 'Project guidance projection closure drifted')
+assert(projectGuidanceContract.definition?.presentation?.candidateDisclosure === 'native-details-with-title-summary-and-recovery'
+  && projectGuidanceContract.definition?.presentation?.minimumControlHeightPx === 44
+  && projectGuidanceContract.definition?.presentation?.keyboardOperable === true
+  && projectGuidanceContract.definition?.presentation?.reducedMotion === 'honored', 'Project guidance accessibility contract drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
   && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')
@@ -878,6 +907,14 @@ for (const path of [
   'tests/composables/breeding/useBreedingProjectWizard.test.ts',
   'tests/components/breedingProjectWizard.test.ts',
   'data/breeding-automation/project-wizard-presentation-contract.json',
+  'shared/breeding/projectGuidance.ts',
+  'server/domain/breeding/projectGuidance.ts',
+  'server/useCases/loadBreedingProjectGuidance.ts',
+  'server/api/breeding/projects/wizard/guidance.post.ts',
+  'tests/shared/breedingProjectGuidanceContract.test.ts',
+  'tests/server/breedingProjectGuidance.test.ts',
+  'tests/server/breedingProjectGuidanceRoute.test.ts',
+  'data/breeding-automation/project-guidance-presentation-contract.json',
   'docs/breeding/workshop.md',
   'shared/breeding/fossilEgg.ts',
   'server/domain/breeding/fossilEgg.ts',

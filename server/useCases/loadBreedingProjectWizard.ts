@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import rulesetJson from '../../data/breeding-automation/ruleset.json'
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import type { AuthRole } from '#shared/auth'
+import type { BreedingActorAuthorityV1 } from '#shared/breeding/authorization'
 import {
   parseBreedingParentDiscoveryProjectionV1,
   type BreedingParentSelectionRefV1,
@@ -9,6 +10,7 @@ import {
 import {
   parseBreedingProjectWizardRequestV1,
   type BreedingProjectWizardProjectionV1,
+  type BreedingProjectWizardRequestV1,
   type BreedingProjectWizardTrainerContextV1,
 } from '#shared/breeding/projectWizard'
 import { normalizePlayerProfile, type PlayerProfile } from '#shared/playerProfiles'
@@ -16,6 +18,7 @@ import { createBreedingActorAuthorityV1 } from '../domain/breeding/authorization
 import {
   DEFAULT_BREEDING_CAMPAIGN_OPTION_SNAPSHOT,
   parseBreedingCampaignOptionSnapshotV1,
+  type BreedingCampaignOptionSnapshotV1,
 } from '../domain/breeding/campaignOptions'
 import { parseBreedingOperationCommandV1 } from '#shared/breeding/operations'
 import {
@@ -58,6 +61,16 @@ export interface LoadBreedingProjectWizardDependencies {
   readonly sheetRepository?: WizardSheetRepository
   readonly clockRepository?: WizardClockRepository
   readonly resolveCurrentCampaignOptions?: () => unknown
+}
+
+export interface LoadedBreedingProjectWizardAuthorityV1 {
+  readonly projection: BreedingProjectWizardProjectionV1
+  readonly request: BreedingProjectWizardRequestV1
+  readonly actorAuthority: BreedingActorAuthorityV1
+  readonly campaignOptions: BreedingCampaignOptionSnapshotV1
+  readonly playerProfile: PlayerProfile | null
+  readonly database: RotomDatabase
+  readonly sheetRepository: WizardSheetRepository
 }
 
 const AUTHENTICATION_POLICY = Object.freeze({
@@ -128,10 +141,10 @@ const trainerContext = (
  * accepts Trainer and parent selectors only; every mechanic and eventual
  * creation confirmation remains a later server rebuild.
  */
-export const loadBreedingProjectWizard = (
+export const loadBreedingProjectWizardAuthority = (
   input: LoadBreedingProjectWizardInput,
   dependencies: LoadBreedingProjectWizardDependencies = {},
-): BreedingProjectWizardProjectionV1 => {
+): LoadedBreedingProjectWizardAuthorityV1 => {
   if (!input || typeof input !== 'object' || Array.isArray(input)
     || Object.getPrototypeOf(input) !== Object.prototype
     || Object.getOwnPropertySymbols(input).length > 0
@@ -301,7 +314,7 @@ export const loadBreedingProjectWizard = (
       ? 'requires-final-validation' as const
       : 'pair-unavailable' as const
 
-  return createBreedingProjectWizardProjectionV1({
+  const projection = createBreedingProjectWizardProjectionV1({
     audience: input.role === 'gm' ? 'gm' : 'owner',
     generatedAtCampaignMinute: currentClock.campaignMinute,
     destination,
@@ -317,4 +330,18 @@ export const loadBreedingProjectWizard = (
     consentStatus,
     reviewStatus,
   })
+  return Object.freeze({
+    projection,
+    request,
+    actorAuthority: actor,
+    campaignOptions,
+    playerProfile,
+    database,
+    sheetRepository: sheets,
+  })
 }
+
+export const loadBreedingProjectWizard = (
+  input: LoadBreedingProjectWizardInput,
+  dependencies: LoadBreedingProjectWizardDependencies = {},
+): BreedingProjectWizardProjectionV1 => loadBreedingProjectWizardAuthority(input, dependencies).projection

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import type { BreedingParentSelectionRefV1 } from '../../../shared/breeding/parentDiscovery'
 import { createBreedingProjectWizardProjectionV1 } from '../../../server/domain/breeding/projectWizard'
+import { createBreedingProjectGuidanceProjectionV1 } from '../../../server/domain/breeding/projectGuidance'
 import { useBreedingProjectWizard } from '../../../src/composables/breeding/useBreedingProjectWizard'
 
 const candidates = [
@@ -68,6 +69,38 @@ const result = (
   consentStatus: parentRefs.length === 2 ? 'not-required' : 'selection-incomplete',
   reviewStatus: parentRefs.length === 2 ? 'requires-final-validation' : 'selection-incomplete',
 })
+const guidanceResult = (
+  parentRefs: readonly BreedingParentSelectionRefV1[] = [],
+  audience: 'owner' | 'gm' = 'owner',
+) => createBreedingProjectGuidanceProjectionV1({
+  wizard: result(parentRefs, audience),
+  applicableReasonIds: parentRefs.length === 2
+    ? ['breeding.project-guidance.pair-requires-final-validation']
+    : ['breeding.project-guidance.parent-selection-incomplete'],
+  sourceContributions: [{
+    sourceKind: 'trainer-edge',
+    sourceCanonicalId: 'Breeder',
+    status: 'active',
+    contributionIds: ['breeding-project-request', 'breeder-dc12-timeline'],
+    skillApplication: { skillId: 'pokemon-education', rank: 'Novice', skillTotal: 5 },
+    reasonId: null,
+  }],
+  gmDiagnostics: audience === 'gm' ? {
+    candidateCount: 2,
+    selectableCandidateCount: 2,
+    unavailableCandidateCount: 0,
+    selectedParentCount: parentRefs.length,
+    ownershipTopology: parentRefs.length === 2 ? 'same-owner' : 'incomplete',
+    breederAuthorityStatus: 'active',
+    maturityPolicy: 'minimum-level',
+    minimumMaturityLevel: 20,
+    consentStatus: parentRefs.length === 2 ? 'not-required' : 'selection-incomplete',
+    compatibilityPreviewStatus: parentRefs.length === 2 ? 'requires-validation' : 'not-evaluated',
+    locationPolicyId: 'campaign-workshop-off-map-v1',
+    facilityRegistryState: 'empty-no-authority',
+    finalValidationStatus: 'required-before-creation',
+  } : null,
+})
 const installGlobals = (responses: readonly unknown[], player = true) => {
   const postJson = vi.fn()
   responses.forEach(response => postJson.mockResolvedValueOnce(response))
@@ -81,11 +114,11 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('useBreedingProjectWizard', () => {
   it('starts from one Trainer and adopts only a verified current server projection', async () => {
-    const globals = installGlobals([result()])
+    const globals = installGlobals([guidanceResult()])
     const wizard = useBreedingProjectWizard()
     await wizard.start('trainer-owner')
 
-    expect(globals.postJson).toHaveBeenCalledWith('/api/breeding/projects/wizard', {
+    expect(globals.postJson).toHaveBeenCalledWith('/api/breeding/projects/wizard/guidance', {
       schemaVersion: 1,
       profileId: 'profile_owner000',
       destinationTrainerSlug: 'trainer-owner',
@@ -95,6 +128,7 @@ describe('useBreedingProjectWizard', () => {
     expect(wizard.open.value).toBe(true)
     expect(wizard.parentCandidates.value.map(candidate => candidate.label)).toEqual(['Leaf', 'Bloom'])
     expect(wizard.error.value).toBeNull()
+    expect(wizard.guidance.value?.sourceContributions[0]?.sourceCanonicalId).toBe('Breeder')
   })
 
   it('submits only selected identity and revision selectors and enables review after two', async () => {
@@ -103,13 +137,15 @@ describe('useBreedingProjectWizard', () => {
       ...firstRef,
       { pokemonSheetSlug: 'pokemon-parent-b', expectedSheetRevision: 3 },
     ]
-    const globals = installGlobals([result(), result(firstRef), result(bothRefs)])
+    const globals = installGlobals([
+      guidanceResult(), guidanceResult(firstRef), guidanceResult(bothRefs),
+    ])
     const wizard = useBreedingProjectWizard()
     await wizard.start('trainer-owner')
     await wizard.toggleParent('pokemon-parent-a')
     await wizard.toggleParent('pokemon-parent-b')
 
-    expect(globals.postJson).toHaveBeenLastCalledWith('/api/breeding/projects/wizard', {
+    expect(globals.postJson).toHaveBeenLastCalledWith('/api/breeding/projects/wizard/guidance', {
       schemaVersion: 1,
       profileId: 'profile_owner000',
       destinationTrainerSlug: 'trainer-owner',
@@ -127,10 +163,13 @@ describe('useBreedingProjectWizard', () => {
   })
 
   it('rejects hash drift without adopting response facts and clears state on close', async () => {
-    const valid = result()
+    const valid = guidanceResult()
     installGlobals([{
       ...valid,
-      destination: { ...valid.destination, displayName: 'Changed' },
+      wizard: {
+        ...valid.wizard,
+        destination: { ...valid.wizard.destination, displayName: 'Changed' },
+      },
     }])
     const wizard = useBreedingProjectWizard()
     await wizard.start('trainer-owner')
@@ -141,10 +180,11 @@ describe('useBreedingProjectWizard', () => {
     expect(wizard.open.value).toBe(false)
     expect(wizard.error.value).toBeNull()
     expect(wizard.parentRefs.value).toEqual([])
+    expect(wizard.guidance.value).toBeNull()
   })
 
   it('uses null Profile selectors for GM requests', async () => {
-    const globals = installGlobals([result([], 'gm')], false)
+    const globals = installGlobals([guidanceResult([], 'gm')], false)
     const wizard = useBreedingProjectWizard()
     await wizard.start('trainer-owner')
     expect(globals.postJson.mock.calls[0]?.[1]).toMatchObject({ profileId: null })

@@ -43,6 +43,7 @@ watch(workshop.selectedProfileId, () => {
     <BreedingProjectWizard
       :open="projectWizard.open.value"
       :projection="projectWizard.projection.value"
+      :guidance="projectWizard.guidance.value"
       :ownership-contexts="workshop.ownershipContexts.value"
       :destination-trainer-slug="projectWizard.destinationTrainerSlug.value"
       :breeder-trainer-slug="projectWizard.breederTrainerSlug.value"
