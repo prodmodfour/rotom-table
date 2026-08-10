@@ -17,6 +17,7 @@ export const useBreedingHatchWorkflow = () => {
   const submitting = ref(false)
   const error = ref<string | null>(null)
   let trainerSheetSlug: string | null = null
+  let selectedProfileId: string | null = null
   let eggId: string | null = null
   let expectedEggRevision: number | null = null
   let requestSequence = 0
@@ -38,7 +39,7 @@ export const useBreedingHatchWorkflow = () => {
     try {
       const raw = await postJson<unknown>(BREEDING_HATCH_WORKFLOW_API_PATH, {
         schemaVersion: 1,
-        profileId: isPlayer.value ? profiles.selectedProfileId.value : null,
+        profileId: isPlayer.value ? selectedProfileId : null,
         trainerSheetSlug,
         eggId,
         expectedEggRevision,
@@ -63,9 +64,17 @@ export const useBreedingHatchWorkflow = () => {
       }
     }
   }
-  const openFor = async (nextTrainerSheetSlug: string, nextEggId: string, revision: number): Promise<void> => {
+  const openFor = async (
+    nextTrainerSheetSlug: string,
+    nextEggId: string,
+    revision: number,
+    profileId?: string | null,
+  ): Promise<void> => {
     requestSequence += 1
     trainerSheetSlug = nextTrainerSheetSlug
+    selectedProfileId = isPlayer.value
+      ? profileId === undefined ? profiles.selectedProfileId.value : profileId
+      : null
     eggId = nextEggId
     expectedEggRevision = revision
     projection.value = null
@@ -76,6 +85,7 @@ export const useBreedingHatchWorkflow = () => {
   const close = (): void => {
     requestSequence += 1
     trainerSheetSlug = null
+    selectedProfileId = null
     eggId = null
     expectedEggRevision = null
     projection.value = null

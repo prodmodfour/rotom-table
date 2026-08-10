@@ -65,13 +65,24 @@ At a 1440×900 or larger shared display:
 
 This is a campaign-maintenance view, not a public projection. The GM must still avoid displaying private owner cards to the table; structural server projection remains the privacy authority.
 
-## Verification
+## Component and real-browser verification
 
-Focused acceptance is implemented by:
+BR-078 component acceptance remains implemented by:
 
 - `tests/components/breedingWorkshopAccessibilityAcceptance.test.ts`;
-- the five focused `tests/components/breeding*.test.ts` Workshop suites;
-- strict contract/hash validation in `scripts/check_breeding_automation.ts`;
-- changed-file lint and typecheck filtering.
+- the five focused `tests/components/breeding*.test.ts` Workshop suites; and
+- the self-hashed matrix in `data/breeding-automation/workshop-interaction-acceptance.json`.
 
-BR-079 must add real-browser Nuxt, Playwright, axe, multi-context privacy, reconnect, and screenshot evidence against the same states and viewport matrix.
+BR-079 consumes that matrix without redefining it. `tests/nuxt/BreedingWorkshopAccessibility.test.ts` mounts the role-private shell, activity, consent, and hatch surfaces through Nuxt's `mountSuspended` harness. `tests/e2e/breeding-workshop.spec.ts` runs the production Nitro app in desktop Chromium and a Pixel 7 project, with deterministic server-created and browser-verified projections. It verifies:
+
+- zero serious or critical axe findings for WCAG 2 A/AA and WCAG 2.1 AA tags;
+- 320, 390, 768, and 1440 CSS-pixel reflow with no essential horizontal overflow and 44-pixel actions;
+- keyboard entry, modal containment, safe Escape, and opener focus restoration;
+- reduced-motion static equivalence;
+- simultaneous GM and player contexts with structurally different private parent views;
+- bounded failed-load messaging, explicit Retry, full reconnect, and no duplicate aggregate cards;
+- selector-only consent and hatch requests carrying the selected Profile snapshot, with no browser command, read set, receipt, roll, or mechanics claim;
+- no Project, Egg, or transfer-consent identity in rendered owner text or local persistence; and
+- desktop/mobile Workshop and hatch-dialog screenshot baselines.
+
+The immutable browser evidence inventory is `data/breeding-automation/workshop-browser-acceptance.json`. Run the focused browser suite with `npx playwright test tests/e2e/breeding-workshop.spec.ts --workers=1`; Playwright builds and serves the production Nitro output on its isolated campaign root. Treat an axe violation, projection-hash rejection, privacy difference, unexpected screenshot change, overflow, or reconnect duplication as a release failure, not as a baseline to waive casually.

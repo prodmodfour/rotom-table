@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 78,
+    "covered": 79,
     "in-progress": 1,
-    "planned": 11,
+    "planned": 10,
     "blocked": 0
   },
   "requirements": [
@@ -1976,9 +1976,31 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
-      "acceptanceFixtureIds": []
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/workshop-browser-acceptance.json",
+        "data/breeding-automation/workshop-interaction-acceptance.json",
+        "tests/fixtures/breeding/workshop-browser-projections-v1.json",
+        "tests/nuxt/BreedingWorkshopAccessibility.test.ts",
+        "tests/e2e/breeding-workshop.spec.ts",
+        "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-chromium-linux.png",
+        "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-mobile-chromium-linux.png",
+        "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-hatch-decision-chromium-linux.png",
+        "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-hatch-decision-mobile-chromium-linux.png",
+        "src/pages/breeding/index.vue",
+        "src/composables/breeding/useBreedingFocusBoundary.ts",
+        "src/composables/breeding/useBreedingWorkshopActivity.ts",
+        "src/composables/breeding/useBreedingConsentWorkflow.ts",
+        "src/composables/breeding/useBreedingProjectWizard.ts",
+        "src/composables/breeding/useBreedingHatchWorkflow.ts",
+        "src/components/breeding/BreedingConsentCenter.vue",
+        "docs/breeding/accessibility-responsive-and-table-distance.md",
+        "docs/breeding/workshop.md",
+        "docs/breeding/operator-guide.md"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
     },
     {
       "id": "breeding:BR-080",
@@ -1990,7 +2012,7 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

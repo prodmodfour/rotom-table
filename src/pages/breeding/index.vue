@@ -26,7 +26,8 @@ let initialized = false
 const loadSelectedData = async (): Promise<void> => {
   const selected = workshop.selectedOwnershipContext.value
   const trainerSheetSlug = selected?.availability === 'available' ? selected.trainerSheetSlug : null
-  await Promise.all([activity.load(trainerSheetSlug), consent.load(trainerSheetSlug)])
+  const profileId = workshop.selectedProfileId.value
+  await Promise.all([activity.load(trainerSheetSlug, profileId), consent.load(trainerSheetSlug, profileId)])
 }
 
 onMounted(async () => {
@@ -59,10 +60,13 @@ watch(() => consent.projection.value?.transition, (transition) => {
     void Promise.all([workshop.reload(), activity.reload()])
   }
 })
+const startProject = (trainerSheetSlug: string): void => {
+  void projectWizard.start(trainerSheetSlug, workshop.selectedProfileId.value)
+}
 const openHatch = (eggId: string, revision: number): void => {
   const selected = workshop.selectedOwnershipContext.value
   if (selected?.availability === 'available') {
-    void hatchWorkflow.openFor(selected.trainerSheetSlug, eggId, revision)
+    void hatchWorkflow.openFor(selected.trainerSheetSlug, eggId, revision, workshop.selectedProfileId.value)
   }
 }
 </script>
@@ -80,7 +84,7 @@ const openHatch = (eggId: string, revision: number): void => {
       @retry="workshop.reload"
       @select-ownership="workshop.selectOwnershipContext"
       @load-more="workshop.loadMoreOwnershipContexts"
-      @start-project="projectWizard.start"
+      @start-project="startProject"
     />
     <BreedingWorkshopActivityCards
       v-if="workshop.selectedOwnershipContext.value?.availability === 'available'"
@@ -151,6 +155,7 @@ const openHatch = (eggId: string, revision: number): void => {
 .breeding-workshop-page {
   min-height: 100dvh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: clamp(1rem, 2vw, 1.5rem);
   padding: clamp(0.75rem, 2vw, 1.5rem);
@@ -158,7 +163,7 @@ const openHatch = (eggId: string, revision: number): void => {
   color: var(--rt-text);
 }
 
-.breeding-workshop-page > :deep(*) {
+.breeding-workshop-page > * {
   width: min(100%, 96rem);
   margin-inline: auto;
 }

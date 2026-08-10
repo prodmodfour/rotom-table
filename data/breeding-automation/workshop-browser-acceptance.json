@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "acceptanceId": "rotom-breeding-workshop-browser-acceptance-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "b17d69450b062d5052481b9351077c555eb131eb8bae792a7a84dcc40dc8de9c",
+  "definition": {
+    "ticket": "BR-079",
+    "context": "Workshop",
+    "route": "/breeding",
+    "status": "browser-accepted",
+    "authority": {
+      "consumedInteractionAcceptanceId": "rotom-breeding-workshop-interaction-acceptance-v1",
+      "consumedInteractionAcceptanceDefinitionSha256": "b68242ba84122c5c0b45b3b9017ef1ea452fdd0396f9855a3a9f0908a4912c85",
+      "matrixRedefinedByBrowserSuite": false,
+      "mechanics": "server-projected-only",
+      "privacy": "structural-role-projections",
+      "browserSelectorsConferAuthority": false,
+      "mapOrEncounterDependency": "none"
+    },
+    "runtime": {
+      "framework": "Nuxt-4-production-Nitro",
+      "browserEngine": "Chromium",
+      "projects": [
+        "Desktop-Chrome",
+        "Pixel-7"
+      ],
+      "baseUrl": "http://127.0.0.1:3017",
+      "campaignIsolation": ".playwright-campaign",
+      "hostedWritesEnabled": true,
+      "localHostingAuthority": "none-liveplay-contracts-remain-authoritative"
+    },
+    "nuxt": {
+      "suite": "tests/nuxt/BreedingWorkshopAccessibility.test.ts",
+      "mountHarness": "@nuxt/test-utils/runtime:mountSuspended",
+      "components": [
+        "BreedingWorkshopShell",
+        "BreedingWorkshopActivityCards",
+        "BreedingConsentCenter",
+        "BreedingHatchDecisionFlow"
+      ],
+      "required": [
+        "role-private-hydration",
+        "visible-heading-hierarchy",
+        "named-modal-semantics",
+        "initial-focus",
+        "native-destination-options",
+        "no-aggregate-id-labels"
+      ]
+    },
+    "playwright": {
+      "suite": "tests/e2e/breeding-workshop.spec.ts",
+      "config": "playwright.config.ts",
+      "fixture": {
+        "path": "tests/fixtures/breeding/workshop-browser-projections-v1.json",
+        "contentSha256": "dc7460f6c988ee559baa5b13fcffaa678892ddd739f69b9e5fb54abafe73e6c4",
+        "synthetic": true,
+        "containsCampaignData": false,
+        "projectionHashesVerifiedByBrowser": true
+      },
+      "apiInterception": "deterministic-role-private-security-bound-projections",
+      "requestPolicy": {
+        "explicitSelectedProfileSnapshot": true,
+        "allowed": [
+          "profileId",
+          "trainerSheetSlug",
+          "selectors",
+          "opaque-server-issued-option-ids",
+          "intent",
+          "confirmed"
+        ],
+        "forbidden": [
+          "command",
+          "scopes",
+          "readSet",
+          "receipt",
+          "roll",
+          "mechanics",
+          "authority-claim"
+        ]
+      }
+    },
+    "accessibility": {
+      "runner": "@axe-core/playwright",
+      "tags": [
+        "wcag2a",
+        "wcag2aa",
+        "wcag21aa"
+      ],
+      "maximumSeriousOrCriticalViolations": 0,
+      "keyboard": [
+        "transfer-initial-focus",
+        "transfer-Shift-Tab-containment",
+        "transfer-Escape-origin-restore",
+        "hatch-heading-focus",
+        "hatch-Escape-origin-restore"
+      ],
+      "minimumEssentialTargetCssPx": 44,
+      "reducedMotion": "static-equivalent-with-zero-transition"
+    },
+    "responsive": {
+      "source": "BR-078-consumed-without-redefinition",
+      "cssWidths": [
+        320,
+        390,
+        768,
+        1440
+      ],
+      "horizontalEssentialContentOverflow": "none",
+      "mobileVisualProject": "Pixel-7",
+      "gridTrackPolicy": "minmax-zero-one-fr"
+    },
+    "privacy": {
+      "contexts": [
+        "current-gm",
+        "selected-profile-linked-player"
+      ],
+      "simultaneousBrowserContexts": true,
+      "playerStructurallyOmits": [
+        "counterpart-parent-identity",
+        "counterpart-trainer-slug",
+        "raw-project-id",
+        "raw-egg-id",
+        "raw-transfer-consent-id",
+        "private-command-or-evidence"
+      ],
+      "gmBoundaryCopyRequired": true,
+      "gmCannotSubstituteConsent": true,
+      "localStorage": "selected-profile-memory-only-no-project-Egg-transfer-or-mechanics-payload"
+    },
+    "reconnect": {
+      "failure": "bounded-activity-503",
+      "recovery": "visible-retry-then-full-page-reconnect",
+      "required": [
+        "safe-error-copy",
+        "current-projection-reload",
+        "one-card-per-aggregate",
+        "no-private-leakage",
+        "no-optimistic-mutation"
+      ]
+    },
+    "visualRegression": {
+      "animations": "disabled",
+      "maximumDiffPixelRatio": 0.02,
+      "baselines": [
+        {
+          "path": "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-chromium-linux.png",
+          "contentSha256": "40dd9f00f339dab4717a296243272828d16f9b5b71b7927beded9442813a929d"
+        },
+        {
+          "path": "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-mobile-chromium-linux.png",
+          "contentSha256": "20e45808b9dd5af2548410790d5db7354a6973d757dd841dc3a8df7be547a9be"
+        },
+        {
+          "path": "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-hatch-decision-chromium-linux.png",
+          "contentSha256": "b39faee132c30a5d4e74d73b6d720767c8b5bbdb2d809c7417cba947fec7dfd2"
+        },
+        {
+          "path": "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-hatch-decision-mobile-chromium-linux.png",
+          "contentSha256": "792c6272ae7a52aad5d6f469186874aba33c5b53cfaeab0387c2b446692ddc02"
+        }
+      ]
+    },
+    "implementation": {
+      "page": "src/pages/breeding/index.vue",
+      "focusBoundary": "src/composables/breeding/useBreedingFocusBoundary.ts",
+      "profileSnapshotComposables": [
+        "src/composables/breeding/useBreedingWorkshopActivity.ts",
+        "src/composables/breeding/useBreedingConsentWorkflow.ts",
+        "src/composables/breeding/useBreedingProjectWizard.ts",
+        "src/composables/breeding/useBreedingHatchWorkflow.ts"
+      ],
+      "documentation": [
+        "docs/breeding/accessibility-responsive-and-table-distance.md",
+        "docs/breeding/workshop.md",
+        "docs/breeding/operator-guide.md"
+      ]
+    },
+    "bindings": {
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "workshopPresentationContractDefinitionSha256": "64ef9869977653c06cd7229dfc7a27f38f8db9a9a1e1adf4877a241c15314cc4",
+      "workshopActivityPresentationContractDefinitionSha256": "3388880101205852ee45a2356ad2a92e695c2169edd3c00e359da3c05b50847e",
+      "consentWorkflowPresentationContractDefinitionSha256": "a450b7d354f462ff46ec0feb2ca79e337c87514df67f6191640cafbfc7b0ae81",
+      "hatchWorkflowPresentationContractDefinitionSha256": "d304eb0305b6a41f6683a3a4f386b83e35b4d6932ad3bed66efda1e2c141b221",
+      "hatchDestinationPresentationContractDefinitionSha256": "28c2c1d79227b8f9b9bbf869c16ec908234b50237ca7434216ed8db3120c065a"
+    },
+    "acceptance": {
+      "nuxtResult": "pass",
+      "playwrightDesktopResult": "pass",
+      "playwrightMobileResult": "pass",
+      "axeResult": "pass",
+      "multiContextPrivacyResult": "pass",
+      "reconnectResult": "pass",
+      "visualRegressionResult": "pass",
+      "selectorOnlyRequestResult": "pass",
+      "localPersistencePrivacyResult": "pass",
+      "productionBuildResult": "pass"
+    }
+  }
+}

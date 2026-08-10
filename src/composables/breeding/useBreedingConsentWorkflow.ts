@@ -19,10 +19,11 @@ export const useBreedingConsentWorkflow = () => {
   const error = ref<string | null>(null)
   const transferSetup = ref<{ readonly eggId: string, readonly eggRevision: number } | null>(null)
   let trainerSheetSlug: string | null = null
+  let selectedProfileId: string | null = null
   let requestSequence = 0
 
   const notificationCount = computed(() => projection.value?.notifications.total ?? 0)
-  const profileId = (): string | null => isPlayer.value ? profiles.selectedProfileId.value : null
+  const profileId = (): string | null => isPlayer.value ? selectedProfileId : null
   const baseRequest = (intent: BreedingConsentWorkflowIntent) => ({
     schemaVersion: 1 as const,
     profileId: profileId(),
@@ -68,18 +69,22 @@ export const useBreedingConsentWorkflow = () => {
   const clear = (): void => {
     requestSequence += 1
     trainerSheetSlug = null
+    selectedProfileId = null
     projection.value = null
     transferSetup.value = null
     loading.value = false
     submitting.value = false
     error.value = null
   }
-  const load = async (nextTrainerSheetSlug: string | null): Promise<void> => {
+  const load = async (nextTrainerSheetSlug: string | null, nextProfileId?: string | null): Promise<void> => {
     if (!nextTrainerSheetSlug) {
       clear()
       return
     }
     trainerSheetSlug = nextTrainerSheetSlug
+    selectedProfileId = isPlayer.value
+      ? nextProfileId === undefined ? profiles.selectedProfileId.value : nextProfileId
+      : null
     transferSetup.value = null
     await send(baseRequest('view'))
   }

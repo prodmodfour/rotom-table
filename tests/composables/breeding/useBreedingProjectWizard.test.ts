@@ -171,11 +171,11 @@ describe('useBreedingProjectWizard', () => {
   it('starts from one Trainer and adopts only a verified current server projection', async () => {
     const globals = installGlobals([choicesResult()])
     const wizard = useBreedingProjectWizard()
-    await wizard.start('trainer-owner')
+    await wizard.start('trainer-owner', 'profile_explicit079')
 
     expect(globals.postJson).toHaveBeenCalledWith('/api/breeding/projects/wizard/choices', expect.objectContaining({
       schemaVersion: 1,
-      profileId: 'profile_owner000',
+      profileId: 'profile_explicit079',
       destinationTrainerSlug: 'trainer-owner',
       breederTrainerSlug: 'trainer-owner',
       parentRefs: [],

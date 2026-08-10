@@ -2,7 +2,7 @@
 
 ## Current rollout state
 
-The Breeding Workshop, Project wizard/guidance, rank-choice/confirmation flow, current Project/Egg activity cards, role-private Project/Egg-transfer consent center, and the role-projected hatch decision/special-review/accepted-reveal flow are available at `/breeding`, and the durable server runtime through BR-077 remains operational. BR-073 confirmation creates a revision-zero Project through the existing initial-progress transaction; a reviewed cross-owner setup waits for participant consent. BR-074 cards read current campaign progress, history, recovery, and transfer handoffs without creating a second mechanics path; BR-075 delegates hatch mutations to the established offer, special, and atomic-completion authorities; BR-076 adds current team/Box choice, capacity explanations, accepted linkage, and sheet navigation; BR-077 delegates consent and transfer settlement to existing durable authorities. BR-078 completes component-level responsive, keyboard, screen-reader, touch, zoom, reduced-motion, and table-distance acceptance; BR-079 remains the owner of real-browser, axe, reconnect, multi-context, and visual-regression certification. Do not describe the Workshop as production-complete until the implementation ledger is complete. Do not represent edits to `eggMoves`, `inheritedMoves`, Gender, Nature, Abilities, `babyTemplate`, inventory, or map metadata as a completed breeding or hatch operation.
+The Breeding Workshop, Project wizard/guidance, rank-choice/confirmation flow, current Project/Egg activity cards, role-private Project/Egg-transfer consent center, and the role-projected hatch decision/special-review/accepted-reveal flow are available at `/breeding`, and the durable server runtime through BR-077 remains operational. BR-073 confirmation creates a revision-zero Project through the existing initial-progress transaction; a reviewed cross-owner setup waits for participant consent. BR-074 cards read current campaign progress, history, recovery, and transfer handoffs without creating a second mechanics path; BR-075 delegates hatch mutations to the established offer, special, and atomic-completion authorities; BR-076 adds current team/Box choice, capacity explanations, accepted linkage, and sheet navigation; BR-077 delegates consent and transfer settlement to existing durable authorities. BR-078 completes component-level responsive, keyboard, screen-reader, touch, zoom, reduced-motion, and table-distance acceptance. BR-079 certifies those same states through Nuxt mounts and the production Nitro Playwright server, including axe, reconnect, simultaneous GM/player privacy, selector-only requests, and visual baselines. Do not describe the Workshop as production-complete until the implementation ledger is complete. Do not represent edits to `eggMoves`, `inheritedMoves`, Gender, Nature, Abilities, `babyTemplate`, inventory, or map metadata as a completed breeding or hatch operation.
 
 The authoritative readiness command is:
 
@@ -18,6 +18,14 @@ scripts/quality-gate.sh
 ```
 
 both pass from the current source/build and the plan is archived with all 90 requirements covered.
+
+The focused production-browser command is:
+
+```bash
+npx playwright test tests/e2e/breeding-workshop.spec.ts --workers=1
+```
+
+It owns an isolated `.playwright-campaign`, builds Nuxt for production, and serves Nitro at `127.0.0.1:3017`. A deliberate visual change requires reviewing and regenerating all affected desktop/mobile baselines, updating their hashes in `data/breeding-automation/workshop-browser-acceptance.json`, and rerunning axe and privacy checks. Never update a screenshot merely to hide clipping, raw identity, a focus failure, or unauthorized state. The deterministic browser fixture contains synthetic server-created projections only and is not campaign data.
 
 ## Workshop shell triage
 

@@ -1,0 +1,489 @@
+{
+  "schemaVersion": 1,
+  "profile": {
+    "schemaVersion": 1,
+    "id": "profile_player_0001",
+    "displayName": "Mira player",
+    "linkedCharacters": [
+      {
+        "sheetKind": "trainer",
+        "sheetSlug": "trainer-mira"
+      }
+    ]
+  },
+  "aggregateIds": {
+    "projectId": "breeding-project:v1:79797979797979797979797979797979",
+    "eggId": "pokemon-egg:v1:79797979797979797979797979797979",
+    "transferId": "egg-transfer-consent:v1:79797979797979797979797979797979"
+  },
+  "gm": {
+    "workshop": {
+      "schemaVersion": 1,
+      "audience": "gm",
+      "generatedAtCampaignMinute": 720,
+      "profileSelectionRequired": false,
+      "ownershipCursor": null,
+      "nextOwnershipCursor": null,
+      "ownershipContexts": [
+        {
+          "trainerSheetSlug": "trainer-mira",
+          "trainerRevision": 7,
+          "displayName": "Mira",
+          "availability": "available",
+          "unavailableReasonId": null,
+          "hasProjects": true,
+          "hasEggs": true
+        }
+      ],
+      "selectedOwnershipContext": {
+        "trainerSheetSlug": "trainer-mira",
+        "trainerRevision": 7,
+        "displayName": "Mira",
+        "availability": "available",
+        "unavailableReasonId": null,
+        "hasProjects": true,
+        "hasEggs": true
+      },
+      "emptyState": null,
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "projectionDefinitionSha256": "95daef3ae0a62919eac74123caaea2c4c4ec6759836042b8b4c459053525f97c"
+    },
+    "activity": {
+      "schemaVersion": 1,
+      "audience": "gm",
+      "trainer": {
+        "trainerSheetSlug": "trainer-mira",
+        "trainerRevision": 7,
+        "displayName": "Mira"
+      },
+      "generatedAtCampaignMinute": 720,
+      "projectsTruncated": false,
+      "eggsTruncated": false,
+      "projects": [
+        {
+          "aggregateKind": "breeding-project",
+          "projectId": "breeding-project:v1:79797979797979797979797979797979",
+          "revision": 2,
+          "status": "awaiting-parent-consent",
+          "breederDisplayName": "Mira",
+          "parents": [
+            {
+              "parentIndex": 0,
+              "relationship": "owned",
+              "displayName": "Leaf",
+              "pokemonSheetSlug": "pokemon-leaf",
+              "consentStatus": "not-required"
+            },
+            {
+              "parentIndex": 1,
+              "relationship": "participating",
+              "displayName": "Secret Parent",
+              "pokemonSheetSlug": "pokemon-secret",
+              "consentStatus": "waiting"
+            }
+          ],
+          "progress": {
+            "stage": "awaiting-consent",
+            "accumulatedCampaignMinutes": 0,
+            "targetCampaignMinutes": 480,
+            "percent": 0
+          },
+          "history": [
+            {
+              "kind": "created",
+              "campaignMinute": 700
+            }
+          ],
+          "recovery": {
+            "state": "none",
+            "pendingSinceCampaignMinute": null,
+            "canRefresh": false
+          },
+          "createdAtCampaignMinute": 700,
+          "updatedAtCampaignMinute": 710,
+          "statusChangedAtCampaignMinute": 700
+        }
+      ],
+      "eggs": [
+        {
+          "aggregateKind": "pokemon-egg",
+          "eggId": "pokemon-egg:v1:79797979797979797979797979797979",
+          "revision": 4,
+          "status": "ready",
+          "sourceKind": "breeding",
+          "speciesName": "Bulbasaur",
+          "natureName": "Cuddly",
+          "abilityName": "Overgrow",
+          "genderId": "female",
+          "startingLevel": 1,
+          "progress": {
+            "stage": "ready",
+            "accumulatedCampaignMinutes": 1200,
+            "targetCampaignMinutes": 1200,
+            "percent": 100,
+            "paused": false
+          },
+          "history": [
+            {
+              "kind": "created",
+              "campaignMinute": 500
+            },
+            {
+              "kind": "egg-ready",
+              "campaignMinute": 720
+            }
+          ],
+          "recovery": {
+            "state": "none",
+            "pendingSinceCampaignMinute": null,
+            "canRefresh": false
+          },
+          "transfer": {
+            "state": "available",
+            "action": "start",
+            "reasonId": null,
+            "counterpartyTrainerSlug": null,
+            "expiresAtCampaignMinute": null
+          },
+          "childSheetSlug": null,
+          "createdAtCampaignMinute": 500,
+          "updatedAtCampaignMinute": 720,
+          "statusChangedAtCampaignMinute": 720
+        }
+      ],
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "projectionDefinitionSha256": "0ed6098a12885d3abe49a921ad0f0da4763e734122cd99f8ab07832559b5563b"
+    },
+    "consent": {
+      "schemaVersion": 1,
+      "audience": "gm",
+      "context": {
+        "trainerSheetSlug": "trainer-mira",
+        "trainerRevision": 7,
+        "displayName": "Mira"
+      },
+      "generatedAtCampaignMinute": 720,
+      "notifications": {
+        "projectRequests": 0,
+        "transferInvitations": 0,
+        "readyTransfers": 0,
+        "total": 0
+      },
+      "projectRequestsTruncated": false,
+      "eggTransfersTruncated": false,
+      "projectRequests": [
+        {
+          "projectId": "breeding-project:v1:79797979797979797979797979797979",
+          "projectRevision": 2,
+          "coarseStatus": "awaiting-consent",
+          "ownParent": {
+            "pokemonSheetSlug": "pokemon-leaf",
+            "expectedSheetRevision": 3,
+            "displayName": "Leaf",
+            "current": true
+          },
+          "breederDisplayName": "Mira",
+          "consent": {
+            "consentId": null,
+            "status": "waiting",
+            "scopes": [
+              "own-parent-contribution-attribution",
+              "own-parent-safe-summary",
+              "project-participation"
+            ],
+            "expiresAtCampaignMinute": null
+          },
+          "canGrant": false,
+          "canRevoke": false,
+          "ownerTrainerSlug": "trainer-mira",
+          "participantTrainerSlug": "trainer-secret",
+          "recovery": {
+            "state": "none",
+            "pendingSinceCampaignMinute": null
+          },
+          "gmReview": {
+            "setupOverrideKind": "cross-owner-consent",
+            "setupOverrideOnly": true,
+            "consentSubstitutionAllowed": false,
+            "canCancelProject": true
+          }
+        }
+      ],
+      "eggTransfers": [],
+      "gmPolicy": {
+        "setupOverrideOnly": true,
+        "positiveConsentSubstitutionAllowed": false,
+        "transferRequiresTwoPositiveConsents": true
+      },
+      "transition": "none",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "projectionDefinitionSha256": "b0638fb27d06a321021f2f5915ecd946753bed14b95712e72a0fe73dd4c0d678"
+    }
+  },
+  "player": {
+    "workshop": {
+      "schemaVersion": 1,
+      "audience": "owner",
+      "generatedAtCampaignMinute": 720,
+      "profileSelectionRequired": false,
+      "ownershipCursor": null,
+      "nextOwnershipCursor": null,
+      "ownershipContexts": [
+        {
+          "trainerSheetSlug": "trainer-mira",
+          "trainerRevision": 7,
+          "displayName": "Mira",
+          "availability": "available",
+          "unavailableReasonId": null,
+          "hasProjects": true,
+          "hasEggs": true
+        }
+      ],
+      "selectedOwnershipContext": {
+        "trainerSheetSlug": "trainer-mira",
+        "trainerRevision": 7,
+        "displayName": "Mira",
+        "availability": "available",
+        "unavailableReasonId": null,
+        "hasProjects": true,
+        "hasEggs": true
+      },
+      "emptyState": null,
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "projectionDefinitionSha256": "f3009e3d853e155876913a1fb21b8d0a6bf310c0d93a8f7ffd9d85d5e7db454e"
+    },
+    "activity": {
+      "schemaVersion": 1,
+      "audience": "owner",
+      "trainer": {
+        "trainerSheetSlug": "trainer-mira",
+        "trainerRevision": 7,
+        "displayName": "Mira"
+      },
+      "generatedAtCampaignMinute": 720,
+      "projectsTruncated": false,
+      "eggsTruncated": false,
+      "projects": [
+        {
+          "aggregateKind": "breeding-project",
+          "projectId": "breeding-project:v1:79797979797979797979797979797979",
+          "revision": 2,
+          "status": "awaiting-parent-consent",
+          "breederDisplayName": "Mira",
+          "parents": [
+            {
+              "parentIndex": 0,
+              "relationship": "owned",
+              "displayName": "Leaf",
+              "pokemonSheetSlug": "pokemon-leaf",
+              "consentStatus": "not-required"
+            },
+            {
+              "parentIndex": 1,
+              "relationship": "participating",
+              "displayName": "Participating parent",
+              "pokemonSheetSlug": null,
+              "consentStatus": "waiting"
+            }
+          ],
+          "progress": {
+            "stage": "awaiting-consent",
+            "accumulatedCampaignMinutes": 0,
+            "targetCampaignMinutes": 480,
+            "percent": 0
+          },
+          "history": [
+            {
+              "kind": "created",
+              "campaignMinute": 700
+            }
+          ],
+          "recovery": {
+            "state": "none",
+            "pendingSinceCampaignMinute": null,
+            "canRefresh": false
+          },
+          "createdAtCampaignMinute": 700,
+          "updatedAtCampaignMinute": 710,
+          "statusChangedAtCampaignMinute": 700
+        }
+      ],
+      "eggs": [
+        {
+          "aggregateKind": "pokemon-egg",
+          "eggId": "pokemon-egg:v1:79797979797979797979797979797979",
+          "revision": 4,
+          "status": "ready",
+          "sourceKind": "breeding",
+          "speciesName": "Bulbasaur",
+          "natureName": "Cuddly",
+          "abilityName": "Overgrow",
+          "genderId": "female",
+          "startingLevel": 1,
+          "progress": {
+            "stage": "ready",
+            "accumulatedCampaignMinutes": 1200,
+            "targetCampaignMinutes": 1200,
+            "percent": 100,
+            "paused": false
+          },
+          "history": [
+            {
+              "kind": "created",
+              "campaignMinute": 500
+            },
+            {
+              "kind": "egg-ready",
+              "campaignMinute": 720
+            }
+          ],
+          "recovery": {
+            "state": "none",
+            "pendingSinceCampaignMinute": null,
+            "canRefresh": false
+          },
+          "transfer": {
+            "state": "available",
+            "action": "start",
+            "reasonId": null,
+            "counterpartyTrainerSlug": null,
+            "expiresAtCampaignMinute": null
+          },
+          "childSheetSlug": null,
+          "createdAtCampaignMinute": 500,
+          "updatedAtCampaignMinute": 720,
+          "statusChangedAtCampaignMinute": 720
+        }
+      ],
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "projectionDefinitionSha256": "88b3d93f156541b58c74359af068837d052ff3276fa33fca9230daa3b7ce9cd6"
+    },
+    "consent": {
+      "schemaVersion": 1,
+      "audience": "player",
+      "context": {
+        "trainerSheetSlug": "trainer-mira",
+        "trainerRevision": 7,
+        "displayName": "Mira"
+      },
+      "generatedAtCampaignMinute": 720,
+      "notifications": {
+        "projectRequests": 1,
+        "transferInvitations": 1,
+        "readyTransfers": 0,
+        "total": 2
+      },
+      "projectRequestsTruncated": false,
+      "eggTransfersTruncated": false,
+      "projectRequests": [
+        {
+          "projectId": "breeding-project:v1:79797979797979797979797979797979",
+          "projectRevision": 2,
+          "coarseStatus": "awaiting-consent",
+          "ownParent": {
+            "pokemonSheetSlug": "pokemon-leaf",
+            "expectedSheetRevision": 3,
+            "displayName": "Leaf",
+            "current": true
+          },
+          "breederDisplayName": "Mira",
+          "consent": {
+            "consentId": null,
+            "status": "waiting",
+            "scopes": [
+              "own-parent-contribution-attribution",
+              "own-parent-safe-summary",
+              "project-participation"
+            ],
+            "expiresAtCampaignMinute": null
+          },
+          "canGrant": true,
+          "canRevoke": false,
+          "ownerTrainerSlug": null,
+          "participantTrainerSlug": null,
+          "recovery": {
+            "state": "none",
+            "pendingSinceCampaignMinute": null
+          },
+          "gmReview": null
+        }
+      ],
+      "eggTransfers": [
+        {
+          "offerConsentId": "egg-transfer-consent:v1:79797979797979797979797979797979",
+          "ownConsentId": "egg-transfer-consent:v1:79797979797979797979797979797979",
+          "eggId": "pokemon-egg:v1:79797979797979797979797979797979",
+          "eggRevision": 4,
+          "audience": "recipient",
+          "state": "offered",
+          "expiresAtCampaignMinute": 44000,
+          "canAccept": true,
+          "canTransfer": false,
+          "canRevoke": false,
+          "ownConsentActive": false,
+          "recovery": {
+            "state": "none",
+            "pendingSinceCampaignMinute": null
+          }
+        }
+      ],
+      "gmPolicy": null,
+      "transition": "none",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "projectionDefinitionSha256": "e8ad845e1ba681f1cb8fe9657f2d3bd3e95119308c78389b6c5f0298c82ca53c"
+    },
+    "hatch": {
+      "schemaVersion": 1,
+      "audience": "owner",
+      "trainerSheetSlug": "trainer-mira",
+      "stage": "ready",
+      "egg": {
+        "eggId": "pokemon-egg:v1:79797979797979797979797979797979",
+        "revision": 4,
+        "status": "ready",
+        "speciesName": "Bulbasaur",
+        "updatedAtCampaignMinute": 720
+      },
+      "decision": {
+        "kind": "begin-hatch",
+        "canSubmit": true,
+        "requiresConfirmation": true,
+        "reasonId": null
+      },
+      "special": {
+        "state": "not-rolled",
+        "outcomeId": null,
+        "gmReview": null
+      },
+      "destination": {
+        "teamCapacity": 6,
+        "options": [
+          {
+            "optionId": "option:v1:79797979797979797979797979797970",
+            "kind": "box",
+            "availability": "available",
+            "reasonId": null,
+            "remainingTeamSlots": null
+          },
+          {
+            "optionId": "option:v1:79797979797979797979797979797971",
+            "kind": "team",
+            "availability": "available",
+            "reasonId": null,
+            "remainingTeamSlots": 2
+          }
+        ],
+        "acceptedKind": null
+      },
+      "childReveal": null,
+      "recovery": {
+        "state": "none",
+        "pendingSinceCampaignMinute": null
+      },
+      "transition": "none",
+      "generatedAtCampaignMinute": 720,
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "projectionDefinitionSha256": "29d73987e38e22bf7c4dd2a5bcc56868b093d11eafb63f10f2a311afa33403d2"
+    }
+  }
+}

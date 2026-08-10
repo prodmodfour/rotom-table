@@ -44,20 +44,29 @@ export const useBreedingFocusBoundary = (options: BreedingFocusBoundaryOptions):
     if (target?.isConnected) focusWithoutScroll(target)
   }
 
+  const focusIntoBoundary = (): void => {
+    const container = options.container.value
+    if (!container || !options.active.value) return
+    const current = typeof document === 'undefined' ? null : document.activeElement
+    if (current && container.contains(current)) return
+    const target = options.initialFocus?.value ?? focusableChildren(container)[0] ?? container
+    focusWithoutScroll(target)
+  }
+
   watch(options.active, async (active, wasActive) => {
     if (active && !wasActive) {
       if (typeof document === 'undefined') return
       const current = document.activeElement
       returnTarget = current instanceof HTMLElement ? current : null
       await nextTick()
-      const container = options.container.value
-      if (!container) return
-      const target = options.initialFocus?.value ?? focusableChildren(container)[0] ?? container
-      focusWithoutScroll(target)
+      focusIntoBoundary()
       return
     }
     if (!active && wasActive) await restore()
   }, { flush: 'post', immediate: true })
+  watch(options.container, (container, previous) => {
+    if (container && !previous) focusIntoBoundary()
+  }, { flush: 'post' })
 
   onBeforeUnmount(() => {
     if (returnTarget?.isConnected) focusWithoutScroll(returnTarget)

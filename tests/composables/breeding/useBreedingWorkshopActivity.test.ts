@@ -26,9 +26,9 @@ describe('useBreedingWorkshopActivity', () => {
   it('loads a selected Trainer with current Profile authority and adopts only verified cards', async () => {
     const globals = install([projection()])
     const activity = useBreedingWorkshopActivity()
-    await activity.load('trainer-owner')
+    await activity.load('trainer-owner', 'profile_explicit079')
     expect(globals.getJson).toHaveBeenCalledWith('/api/breeding/workshop/activity', {
-      params: { profileId: 'profile_owner000', trainerSheetSlug: 'trainer-owner' },
+      params: { profileId: 'profile_explicit079', trainerSheetSlug: 'trainer-owner' },
     })
     expect(activity.projection.value?.trainer.displayName).toBe('Mira')
     expect(activity.error.value).toBeNull()

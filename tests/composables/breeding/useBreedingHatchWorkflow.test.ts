@@ -37,9 +37,9 @@ describe('useBreedingHatchWorkflow', () => {
   it('inspects with current Profile selectors then confirms using the adopted Egg revision', async () => {
     const postJson = install([projection(), projection(2, 'hatching')])
     const workflow = useBreedingHatchWorkflow()
-    await workflow.openFor('trainer-owner', EGG_ID, 1)
+    await workflow.openFor('trainer-owner', EGG_ID, 1, 'profile_explicit_0079')
     expect(postJson).toHaveBeenNthCalledWith(1, '/api/breeding/hatch', {
-      schemaVersion: 1, profileId: 'profile_owner_0075', trainerSheetSlug: 'trainer-owner', eggId: EGG_ID,
+      schemaVersion: 1, profileId: 'profile_explicit_0079', trainerSheetSlug: 'trainer-owner', eggId: EGG_ID,
       expectedEggRevision: 1, intent: 'inspect', destinationOptionId: null, selectedOptionId: null, confirmed: false,
     })
     await workflow.begin(TEAM_OPTION_ID)

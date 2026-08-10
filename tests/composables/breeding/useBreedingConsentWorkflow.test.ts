@@ -48,10 +48,10 @@ describe('useBreedingConsentWorkflow', () => {
   it('loads one private Trainer context and sends selector-only Project consent', async () => {
     const postJson = install([projection(), projection(true)])
     const workflow = useBreedingConsentWorkflow()
-    await workflow.load('trainer-owner')
+    await workflow.load('trainer-owner', 'profile_explicit_0079')
     expect(postJson).toHaveBeenNthCalledWith(1, '/api/breeding/consent', {
       schemaVersion: 1,
-      profileId: 'profile_owner_0077',
+      profileId: 'profile_explicit_0079',
       trainerSheetSlug: 'trainer-owner',
       intent: 'view',
       projectId: null,

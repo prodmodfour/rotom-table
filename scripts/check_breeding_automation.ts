@@ -521,6 +521,39 @@ assert(Array.isArray(workshopInteractionAcceptance.definition?.componentMatrix)
   && workshopInteractionAcceptance.definition.componentMatrix.length === 5
   && workshopInteractionAcceptance.definition.componentMatrix.every((row: any) => row.responsive === true && row.keyboard === true
     && row.screenReader === true && row.touch === true && row.zoom === true && row.reducedMotion === true && row.tableDistance === true), 'Workshop component acceptance matrix drifted')
+const workshopBrowserAcceptance = json<Record<string, any>>('data/breeding-automation/workshop-browser-acceptance.json')
+assert(workshopBrowserAcceptance.acceptanceId === 'rotom-breeding-workshop-browser-acceptance-v1'
+  && workshopBrowserAcceptance.definition?.ticket === 'BR-079'
+  && workshopBrowserAcceptance.definition?.context === 'Workshop'
+  && workshopBrowserAcceptance.definition?.status === 'browser-accepted', 'Workshop browser acceptance identity drifted')
+assert(workshopBrowserAcceptance.definition?.authority?.consumedInteractionAcceptanceDefinitionSha256 === workshopInteractionAcceptance.definitionSha256
+  && workshopBrowserAcceptance.definition?.authority?.matrixRedefinedByBrowserSuite === false
+  && workshopBrowserAcceptance.definition?.authority?.browserSelectorsConferAuthority === false
+  && workshopBrowserAcceptance.definition?.runtime?.framework === 'Nuxt-4-production-Nitro', 'Workshop browser suite authority or runtime boundary drifted')
+assert(workshopBrowserAcceptance.definition?.accessibility?.runner === '@axe-core/playwright'
+  && workshopBrowserAcceptance.definition?.accessibility?.maximumSeriousOrCriticalViolations === 0
+  && workshopBrowserAcceptance.definition?.accessibility?.minimumEssentialTargetCssPx === 44
+  && workshopBrowserAcceptance.definition?.responsive?.cssWidths?.join(',') === '320,390,768,1440'
+  && workshopBrowserAcceptance.definition?.responsive?.horizontalEssentialContentOverflow === 'none', 'Workshop browser accessibility or responsive acceptance drifted')
+assert(workshopBrowserAcceptance.definition?.privacy?.simultaneousBrowserContexts === true
+  && workshopBrowserAcceptance.definition?.privacy?.playerStructurallyOmits?.includes('counterpart-parent-identity')
+  && workshopBrowserAcceptance.definition?.privacy?.playerStructurallyOmits?.includes('raw-egg-id')
+  && workshopBrowserAcceptance.definition?.privacy?.gmCannotSubstituteConsent === true
+  && workshopBrowserAcceptance.definition?.reconnect?.required?.includes('one-card-per-aggregate'), 'Workshop browser privacy or reconnect acceptance drifted')
+const browserFixture = workshopBrowserAcceptance.definition?.playwright?.fixture
+assert(typeof browserFixture?.path === 'string' && existsSync(resolve(ROOT, browserFixture.path))
+  && sha256(readFileSync(resolve(ROOT, browserFixture.path))) === browserFixture.contentSha256
+  && browserFixture.synthetic === true && browserFixture.containsCampaignData === false, 'Workshop browser fixture content drifted')
+assert(workshopBrowserAcceptance.definition?.playwright?.requestPolicy?.explicitSelectedProfileSnapshot === true
+  && ['command', 'readSet', 'receipt', 'roll', 'mechanics'].every(value => workshopBrowserAcceptance.definition.playwright.requestPolicy.forbidden.includes(value))
+  && existsSync(resolve(ROOT, workshopBrowserAcceptance.definition?.nuxt?.suite ?? ''))
+  && existsSync(resolve(ROOT, workshopBrowserAcceptance.definition?.playwright?.suite ?? '')), 'Workshop browser suites or selector-only request policy drifted')
+const browserBaselines = workshopBrowserAcceptance.definition?.visualRegression?.baselines
+assert(Array.isArray(browserBaselines) && browserBaselines.length === 4
+  && browserBaselines.every((baseline: any) => typeof baseline.path === 'string'
+    && existsSync(resolve(ROOT, baseline.path))
+    && sha256(readFileSync(resolve(ROOT, baseline.path))) === baseline.contentSha256), 'Workshop browser visual baselines drifted')
+assert(Object.values(workshopBrowserAcceptance.definition?.acceptance ?? {}).every(result => result === 'pass'), 'Workshop browser acceptance result drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
   && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')

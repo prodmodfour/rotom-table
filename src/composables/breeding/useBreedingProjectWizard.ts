@@ -39,6 +39,7 @@ export const useBreedingProjectWizard = () => {
   const loading = ref(false)
   const confirming = ref(false)
   const error = ref<string | null>(null)
+  let selectedProfileId: string | null = null
   let requestSequence = 0
 
   const parentCandidates = computed(() => projection.value?.parentDiscovery.trainerSheets
@@ -63,7 +64,7 @@ export const useBreedingProjectWizard = () => {
       const raw = await postJson<unknown>(BREEDING_PROJECT_CHOICES_API_PATH, {
         schemaVersion: 1,
         draftId: draftId.value,
-        profileId: isPlayer.value ? profiles.selectedProfileId.value : null,
+        profileId: isPlayer.value ? selectedProfileId : null,
         destinationTrainerSlug: destination,
         breederTrainerSlug: breeder,
         parentRefs: parentRefs.value,
@@ -91,7 +92,10 @@ export const useBreedingProjectWizard = () => {
     }
   }
 
-  const start = async (defaultTrainerSlug: string): Promise<void> => {
+  const start = async (defaultTrainerSlug: string, profileId?: string | null): Promise<void> => {
+    selectedProfileId = isPlayer.value
+      ? profileId === undefined ? profiles.selectedProfileId.value : profileId
+      : null
     open.value = true
     activeStep.value = 0
     destinationTrainerSlug.value = defaultTrainerSlug
@@ -107,6 +111,7 @@ export const useBreedingProjectWizard = () => {
 
   const close = (): void => {
     requestSequence += 1
+    selectedProfileId = null
     open.value = false
     loading.value = false
     error.value = null

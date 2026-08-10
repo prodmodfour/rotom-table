@@ -505,7 +505,7 @@ const submitOffer = (): void => {
   border: 1px solid transparent;
   border-radius: var(--rt-radius-small);
   background: var(--rt-focus);
-  color: var(--rt-on-focus);
+  color: var(--rt-bg-world);
   font: inherit;
   font-weight: 750;
   cursor: pointer;
