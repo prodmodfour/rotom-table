@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "acceptanceId": "rotom-breeding-workshop-interaction-acceptance-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "b68242ba84122c5c0b45b3b9017ef1ea452fdd0396f9855a3a9f0908a4912c85",
+  "definition": {
+    "ticket": "BR-078",
+    "context": "Workshop",
+    "route": "/breeding",
+    "status": "component-accepted",
+    "authority": {
+      "design": "DESIGN.md",
+      "mechanics": "server-projected-only",
+      "privacy": "structural-role-projections",
+      "mapOrEncounterDependency": "none",
+      "browserAcceptanceOwner": "BR-079"
+    },
+    "viewports": [
+      {
+        "id": "narrow-320",
+        "cssWidth": 320,
+        "purpose": "small-phone-and-400-percent-reflow-equivalent",
+        "required": [
+          "single-column-primary-flow",
+          "full-width-essential-controls",
+          "no-two-dimensional-content-scroll",
+          "modal-content-scrolls-within-viewport"
+        ]
+      },
+      {
+        "id": "mobile-390",
+        "cssWidth": 390,
+        "purpose": "common-touch-phone",
+        "required": [
+          "single-column-cards",
+          "bottom-aligned-modal",
+          "no-hover-dependency"
+        ]
+      },
+      {
+        "id": "tablet-768",
+        "cssWidth": 768,
+        "purpose": "tablet-and-200-percent-desktop-zoom",
+        "required": [
+          "collapsed-ownership-layout",
+          "single-column-activity-cards",
+          "complete-labelled-controls"
+        ]
+      },
+      {
+        "id": "desktop-1440",
+        "cssWidth": 1440,
+        "purpose": "table-distance-desktop",
+        "required": [
+          "bounded-96rem-reading-width",
+          "two-column-card-scanning",
+          "one-primary-action-per-decision",
+          "campaign-state-visible-without-hover"
+        ]
+      }
+    ],
+    "keyboard": {
+      "allActionsNative": true,
+      "focusIndicator": "three-pixel-electric-focus-outline-with-offset",
+      "projectWizard": "opening-focus-heading-step-heading-focus-on-navigation-Escape-close-origin-restore",
+      "transferDialog": "opening-focus-field-Tab-and-Shift-Tab-contained-Escape-close-origin-restore",
+      "hatchDialog": "opening-focus-heading-Tab-and-Shift-Tab-contained-Escape-close-when-safe-origin-restore",
+      "disclosures": "native-details-summary",
+      "spatialOrDragOnlyAction": "none"
+    },
+    "screenReader": {
+      "pageLandmark": "one-main-Workshop-context",
+      "sections": "labelled-by-visible-headings",
+      "loadingAndTransitions": "polite-status",
+      "errorsAnd-invalid-destination": "assertive-alert",
+      "modalNames": "visible-heading-via-aria-labelledby",
+      "progress": "native-progress-with-complete-text-alternative",
+      "selectionCounts": "polite-status",
+      "icons": "decorative-icons-hidden",
+      "rawIdsAsNames": false,
+      "passiveAnnouncementFlood": "forbidden"
+    },
+    "touch": {
+      "minimumEssentialTargetCssPx": 44,
+      "labelsExpandCheckboxAndRadioTargets": true,
+      "touchAction": "manipulation-on-buttons-selects-disclosures-and-option-rows",
+      "hoverOnlyAction": false,
+      "rightClickOnlyAction": false
+    },
+    "zoomAndReflow": {
+      "requiredZoomPercent": [
+        200,
+        400
+      ],
+      "minimumEffectiveCssWidth": 320,
+      "fixedContentColumnsAtNarrowWidth": 1,
+      "longHumanLabels": "overflow-wrap-anywhere",
+      "modalMaximumBlockSize": "viewport-minus-safe-padding",
+      "horizontalPageScrollForEssentialContent": "forbidden",
+      "textResizingInsteadOfEssentialTextClipping": true
+    },
+    "reducedMotion": {
+      "query": "prefers-reduced-motion: reduce",
+      "scope": "every-Breeding-Workshop-component",
+      "revealAnimation": "disabled",
+      "scrollAnimation": "disabled",
+      "transitionMeaning": "retained-through-static-status-and-copy",
+      "continuousDecorativeAnimation": "none"
+    },
+    "tableDistance": {
+      "targetViewport": "1440x900-or-larger-shared-table-display",
+      "primaryPageTitleMinimumCssPx": 32,
+      "essentialControlMinimumCssPx": 44,
+      "semanticStateAlwaysHasText": true,
+      "colourOnlyMeaning": false,
+      "rawAggregateIdentityAsLabel": false,
+      "recoveryDistinctFromGameDecision": true,
+      "acceptedStateDistinctFromPending": true
+    },
+    "componentMatrix": [
+      {
+        "component": "BreedingWorkshopShell",
+        "responsive": true,
+        "keyboard": true,
+        "screenReader": true,
+        "touch": true,
+        "zoom": true,
+        "reducedMotion": true,
+        "tableDistance": true
+      },
+      {
+        "component": "BreedingProjectWizard",
+        "responsive": true,
+        "keyboard": true,
+        "screenReader": true,
+        "touch": true,
+        "zoom": true,
+        "reducedMotion": true,
+        "tableDistance": true
+      },
+      {
+        "component": "BreedingWorkshopActivityCards",
+        "responsive": true,
+        "keyboard": true,
+        "screenReader": true,
+        "touch": true,
+        "zoom": true,
+        "reducedMotion": true,
+        "tableDistance": true
+      },
+      {
+        "component": "BreedingConsentCenter",
+        "responsive": true,
+        "keyboard": true,
+        "screenReader": true,
+        "touch": true,
+        "zoom": true,
+        "reducedMotion": true,
+        "tableDistance": true
+      },
+      {
+        "component": "BreedingHatchDecisionFlow",
+        "responsive": true,
+        "keyboard": true,
+        "screenReader": true,
+        "touch": true,
+        "zoom": true,
+        "reducedMotion": true,
+        "tableDistance": true
+      }
+    ],
+    "implementation": {
+      "page": "src/pages/breeding/index.vue",
+      "focusBoundary": "src/composables/breeding/useBreedingFocusBoundary.ts",
+      "components": [
+        "src/components/breeding/BreedingWorkshopShell.vue",
+        "src/components/breeding/BreedingProjectWizard.vue",
+        "src/components/breeding/BreedingWorkshopActivityCards.vue",
+        "src/components/breeding/BreedingConsentCenter.vue",
+        "src/components/breeding/BreedingHatchDecisionFlow.vue"
+      ],
+      "documentation": "docs/breeding/accessibility-responsive-and-table-distance.md",
+      "componentAcceptanceTest": "tests/components/breedingWorkshopAccessibilityAcceptance.test.ts",
+      "focusedComponentTests": [
+        "tests/components/breedingWorkshopShell.test.ts",
+        "tests/components/breedingProjectWizard.test.ts",
+        "tests/components/breedingWorkshopActivityCards.test.ts",
+        "tests/components/breedingConsentCenter.test.ts",
+        "tests/components/breedingHatchDecisionFlow.test.ts"
+      ]
+    },
+    "bindings": {
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "workshopPresentationContractDefinitionSha256": "64ef9869977653c06cd7229dfc7a27f38f8db9a9a1e1adf4877a241c15314cc4",
+      "projectWizardPresentationContractDefinitionSha256": "381836c8e226178119f2511235dbd8d952c50dd6414dab5c501759f8f6253c4d",
+      "projectGuidancePresentationContractDefinitionSha256": "262b2927dbc4a79ddf873f26b0a60e90a3fd60625d6e5ea73fa801823e985e7c",
+      "projectChoicesPresentationContractDefinitionSha256": "4d20bd9571e0323507eb5f6a4131e67963307b882c4895dc608f4f8848f390d9",
+      "workshopActivityPresentationContractDefinitionSha256": "3388880101205852ee45a2356ad2a92e695c2169edd3c00e359da3c05b50847e",
+      "consentWorkflowPresentationContractDefinitionSha256": "a450b7d354f462ff46ec0feb2ca79e337c87514df67f6191640cafbfc7b0ae81",
+      "hatchWorkflowPresentationContractDefinitionSha256": "d304eb0305b6a41f6683a3a4f386b83e35b4d6932ad3bed66efda1e2c141b221",
+      "hatchDestinationPresentationContractDefinitionSha256": "28c2c1d79227b8f9b9bbf869c16ec908234b50237ca7434216ed8db3120c065a"
+    },
+    "acceptance": {
+      "componentMatrixResult": "pass",
+      "keyboardFocusResult": "pass",
+      "screenReaderSemanticsResult": "pass",
+      "touchTargetResult": "pass",
+      "zoomAndReflowSourceResult": "pass",
+      "reducedMotionResult": "pass",
+      "tableDistanceHierarchyResult": "pass",
+      "privacyResult": "pass"
+    }
+  }
+}

@@ -249,6 +249,7 @@ const activityLabel = computed(() => {
   font-family: var(--rt-font-interface);
   font-size: clamp(2rem, 5vw, 3.25rem);
   line-height: 1;
+  overflow-wrap: anywhere;
 }
 
 .breeding-workshop-shell h2 {
@@ -346,6 +347,7 @@ const activityLabel = computed(() => {
   background: var(--rt-surface-2);
   color: var(--rt-text-strong);
   font: inherit;
+  touch-action: manipulation;
 }
 
 .breeding-ownership__selector select:focus-visible,
@@ -403,6 +405,7 @@ const activityLabel = computed(() => {
   font: inherit;
   font-weight: 700;
   text-decoration: none;
+  touch-action: manipulation;
 }
 
 .breeding-workshop-button--secondary {

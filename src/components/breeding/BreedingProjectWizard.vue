@@ -8,7 +8,7 @@ import {
   PhWarning,
   PhX,
 } from '@phosphor-icons/vue'
-import { computed } from 'vue'
+import { computed, nextTick, ref, toRef, watch } from 'vue'
 import type { BreedingWorkshopOwnershipContextV1 } from '#shared/breeding/workshop'
 import type {
   BreedingProjectWizardProjectionV1,
@@ -24,6 +24,7 @@ import type {
   BreedingProjectChoicesProjectionV1,
   BreedingProjectTraitChoiceAuthorityV1,
 } from '#shared/breeding/projectChoices'
+import { useBreedingFocusBoundary } from '~/composables/breeding/useBreedingFocusBoundary'
 import { BREEDING_PROJECT_WIZARD_STEPS } from '~/composables/breeding/useBreedingProjectWizard'
 
 const props = defineProps<{
@@ -53,6 +54,36 @@ const emit = defineEmits<{
   next: []
   previous: []
 }>()
+
+const wizard = ref<HTMLElement | null>(null)
+const wizardTitle = ref<HTMLElement | null>(null)
+useBreedingFocusBoundary({
+  active: toRef(props, 'open'),
+  container: wizard,
+  initialFocus: wizardTitle,
+  trap: false,
+})
+const onWizardKeydown = (event: KeyboardEvent): void => {
+  if (event.key === 'Escape' && !props.confirming) {
+    event.preventDefault()
+    emit('close')
+  }
+}
+const stepHeadingIds = Object.freeze([
+  'wizard-destination-title',
+  'wizard-breeder-title',
+  'wizard-parents-title',
+  'wizard-review-title',
+] as const)
+watch(() => props.activeStep, async (step, previous) => {
+  if (!props.open || step === previous) return
+  await nextTick()
+  const heading = wizard.value?.querySelector<HTMLElement>(`#${stepHeadingIds[step] ?? ''}`)
+  if (heading) {
+    try { heading.focus({ preventScroll: true }) }
+    catch { heading.focus() }
+  }
+})
 
 const availableContexts = computed(() => props.ownershipContexts.filter(
   context => context.availability === 'available',
@@ -139,20 +170,24 @@ const confirmationMessage = computed(() => {
 <template>
   <section
     v-if="open"
+    ref="wizard"
     class="breeding-project-wizard"
     aria-labelledby="breeding-project-wizard-title"
-    :aria-busy="loading"
+    :aria-busy="loading || confirming"
+    tabindex="-1"
+    @keydown="onWizardKeydown"
   >
     <header class="breeding-project-wizard__header">
       <div>
         <p class="breeding-project-wizard__eyebrow">New project</p>
-        <h2 id="breeding-project-wizard-title">Plan a breeding project</h2>
+        <h2 id="breeding-project-wizard-title" ref="wizardTitle" tabindex="-1">Plan a breeding project</h2>
         <p>Choose campaign contexts and parents. The server rechecks every selection before creation.</p>
       </div>
       <button
         type="button"
         class="breeding-project-wizard__icon-button"
         aria-label="Close project wizard"
+        :disabled="confirming"
         @click="emit('close')"
       >
         <PhX :size="20" weight="bold" aria-hidden="true" />
@@ -195,7 +230,7 @@ const confirmationMessage = computed(() => {
       <div class="breeding-project-wizard__content">
         <section v-if="activeStep === 0" aria-labelledby="wizard-destination-title">
           <p class="breeding-project-wizard__eyebrow">Step 1</p>
-          <h3 id="wizard-destination-title">Choose the Egg destination</h3>
+          <h3 id="wizard-destination-title" tabindex="-1">Choose the Egg destination</h3>
           <p>The destination Trainer owns the project and receives its resulting Egg.</p>
           <label class="breeding-project-wizard__field">
             <span>Destination Trainer</span>
@@ -213,7 +248,7 @@ const confirmationMessage = computed(() => {
 
         <section v-else-if="activeStep === 1" aria-labelledby="wizard-breeder-title">
           <p class="breeding-project-wizard__eyebrow">Step 2</p>
-          <h3 id="wizard-breeder-title">Choose the Breeder</h3>
+          <h3 id="wizard-breeder-title" tabindex="-1">Choose the Breeder</h3>
           <p>The selected Trainer performs the project’s server-authoritative Breeder check.</p>
           <label class="breeding-project-wizard__field">
             <span>Breeder Trainer</span>
@@ -272,7 +307,7 @@ const confirmationMessage = computed(() => {
 
         <section v-else-if="activeStep === 2" aria-labelledby="wizard-parents-title">
           <p class="breeding-project-wizard__eyebrow">Step 3</p>
-          <h3 id="wizard-parents-title">Choose two parents</h3>
+          <h3 id="wizard-parents-title" tabindex="-1">Choose two parents</h3>
           <p>Select exactly two current roster entries. Unavailable entries cannot be selected.</p>
           <p class="breeding-project-wizard__selection-count" role="status" aria-live="polite">
             {{ selectedParentSlugs.size }} of 2 parents selected
@@ -343,7 +378,7 @@ const confirmationMessage = computed(() => {
 
         <section v-else aria-labelledby="wizard-review-title">
           <p class="breeding-project-wizard__eyebrow">Step 4</p>
-          <h3 id="wizard-review-title">Review the project plan</h3>
+          <h3 id="wizard-review-title" tabindex="-1">Review the project plan</h3>
           <dl class="breeding-project-wizard__summary">
             <div>
               <dt>Destination</dt>
@@ -547,6 +582,7 @@ const confirmationMessage = computed(() => {
 .breeding-project-wizard h2,
 .breeding-project-wizard h3 {
   color: var(--rt-text-strong);
+  overflow-wrap: anywhere;
 }
 
 .breeding-project-wizard__header p,
@@ -578,7 +614,9 @@ const confirmationMessage = computed(() => {
   background: var(--rt-surface-2);
   color: var(--rt-text-strong);
   cursor: pointer;
+  touch-action: manipulation;
 }
+.breeding-project-wizard__icon-button:disabled { cursor: not-allowed; opacity: 0.65; }
 
 .breeding-project-wizard__steps {
   display: grid;
@@ -1004,6 +1042,7 @@ const confirmationMessage = computed(() => {
   cursor: pointer;
   font: inherit;
   font-weight: 700;
+  touch-action: manipulation;
 }
 
 .breeding-project-wizard__button--secondary {
@@ -1051,6 +1090,12 @@ const confirmationMessage = computed(() => {
   .breeding-project-wizard__confirmation .breeding-project-wizard__button {
     width: 100%;
   }
+}
+
+@media (max-width: 28rem) {
+  .breeding-project-wizard__steps { grid-template-columns: 1fr; }
+  .breeding-project-wizard__footer { align-items: stretch; flex-direction: column-reverse; }
+  .breeding-project-wizard__footer .breeding-project-wizard__button { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

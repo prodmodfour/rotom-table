@@ -13,7 +13,7 @@
     "b9a97844908f9b0eb54b0db9381d63c6ca6f178d05f5b72c8312195ae2a300a4",
     "c704eb6869f8bfc5bf278856c99c0d58d71ef4d6678cb2c7e47e4d9c94713210",
     "e39acc34e90e3ce2f9fdff0f8abd93e38fe8bf36c9204f3b4c5bd942f81b9e0a",
-    "fd02cdfe2eb81a404571b049ff7fbc4451d4fc01eaff20c2c30cd2d828be80b0"
+    "f7dd37d268a90cd70f50dc5c4b0d4e3308689cfcd4af7b5f433b4474b0e2de4f"
   ],
   "authorizationReceiptDefinitionSha256": "51faa5ccb296ac2ad18a4c4561c825cefcb44c77f122693e7a94a4673d0ebdfe",
   "breeder": {
@@ -275,10 +275,10 @@
     "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
     "rulesetId": "ptu-1.05-breeding-v1",
     "schemaVersion": 1,
-    "semanticRegistryDefinitionSha256": "37a18c78d03cfea6cf55cf18b4e696e742dca2d15144b6d4fe8465f263efdf29",
+    "semanticRegistryDefinitionSha256": "25be5c3ee5e8a0d672c2ed1c0a8959012b8137b7fd05c5ef51e0e3823470d65c",
     "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-    "definitionSha256": "fd02cdfe2eb81a404571b049ff7fbc4451d4fc01eaff20c2c30cd2d828be80b0"
+    "definitionSha256": "f7dd37d268a90cd70f50dc5c4b0d4e3308689cfcd4af7b5f433b4474b0e2de4f"
   },
   "schemaVersion": 1,
-  "definitionSha256": "a8bf3882fe89bbe59b16f233f886f964f319ab04c1d3fe33c2d5792c61219007"
+  "definitionSha256": "030caf6908b55deb6f8cd5182fb9279625edd16b2bc79d6b4af9c4f09112a4e9"
 }

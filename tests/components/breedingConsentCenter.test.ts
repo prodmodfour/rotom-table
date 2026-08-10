@@ -82,6 +82,27 @@ describe('Breeding consent center', () => {
     expect(wrapper.emitted('cancelProjectAsGm')).toEqual([[gm.projectRequests[0]]])
   })
 
+  it('contains transfer-dialog focus and restores the non-mutating opening control', async () => {
+    const origin = document.createElement('button')
+    origin.textContent = 'Set up Egg gift'
+    document.body.append(origin)
+    origin.focus()
+    const wrapper = mountCenter(playerProjection())
+    await wrapper.setProps({ transferSetup: { eggId: EGG_ID, eggRevision: 2 } })
+    await wrapper.vm.$nextTick()
+    const dialog = document.body.querySelector<HTMLElement>('[role="dialog"]')!
+    expect(document.activeElement).toBe(dialog.querySelector('input'))
+    const focusable = [...dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled])')]
+    focusable.at(-1)!.focus()
+    focusable.at(-1)!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }))
+    expect(document.activeElement).toBe(focusable[0])
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))
+    expect(wrapper.emitted('closeTransferSetup')).toEqual([[]])
+    await wrapper.setProps({ transferSetup: null })
+    await wrapper.vm.$nextTick()
+    expect(document.activeElement).toBe(origin)
+  })
+
   it('uses a labelled modal for non-mutating transfer setup and validates a different Trainer slug', async () => {
     const wrapper = mountCenter(playerProjection(), { transferSetup: { eggId: EGG_ID, eggRevision: 2 } })
     const dialog = document.body.querySelector('[role="dialog"]')!

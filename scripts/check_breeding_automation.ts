@@ -215,6 +215,7 @@ for (const path of [
   'data/breeding-automation/hatch-workflow-presentation-contract.json',
   'data/breeding-automation/hatch-destination-presentation-contract.json',
   'data/breeding-automation/consent-workflow-presentation-contract.json',
+  'data/breeding-automation/workshop-interaction-acceptance.json',
   'data/breeding-automation/campaign-operation-ledger-contract.json',
   'data/breeding-automation/campaign-clock-contract.json',
   'data/breeding-automation/realtime-contract.json',
@@ -502,6 +503,24 @@ assert(consentWorkflowContract.definition?.presentation?.transferSetupModal === 
   && consentWorkflowContract.definition?.presentation?.minimumControlHeightPx === 44
   && consentWorkflowContract.definition?.presentation?.keyboardAndTouchOperable === true
   && consentWorkflowContract.definition?.presentation?.reducedMotion === 'honored', 'Consent workflow accessibility drifted')
+const workshopInteractionAcceptance = json<Record<string, any>>('data/breeding-automation/workshop-interaction-acceptance.json')
+assert(workshopInteractionAcceptance.acceptanceId === 'rotom-breeding-workshop-interaction-acceptance-v1'
+  && workshopInteractionAcceptance.definition?.ticket === 'BR-078'
+  && workshopInteractionAcceptance.definition?.context === 'Workshop'
+  && workshopInteractionAcceptance.definition?.status === 'component-accepted'
+  && workshopInteractionAcceptance.definition?.authority?.browserAcceptanceOwner === 'BR-079', 'Workshop interaction acceptance identity or ownership drifted')
+assert(workshopInteractionAcceptance.definition?.viewports?.map((entry: any) => entry.cssWidth).join(',') === '320,390,768,1440'
+  && workshopInteractionAcceptance.definition?.touch?.minimumEssentialTargetCssPx === 44
+  && workshopInteractionAcceptance.definition?.zoomAndReflow?.requiredZoomPercent?.join(',') === '200,400'
+  && workshopInteractionAcceptance.definition?.tableDistance?.primaryPageTitleMinimumCssPx === 32, 'Workshop viewport, touch, zoom, or table-distance acceptance drifted')
+assert(workshopInteractionAcceptance.definition?.keyboard?.transferDialog?.includes('Tab-and-Shift-Tab-contained')
+  && workshopInteractionAcceptance.definition?.keyboard?.hatchDialog?.includes('origin-restore')
+  && workshopInteractionAcceptance.definition?.screenReader?.rawIdsAsNames === false
+  && workshopInteractionAcceptance.definition?.reducedMotion?.continuousDecorativeAnimation === 'none', 'Workshop keyboard, screen-reader, or reduced-motion acceptance drifted')
+assert(Array.isArray(workshopInteractionAcceptance.definition?.componentMatrix)
+  && workshopInteractionAcceptance.definition.componentMatrix.length === 5
+  && workshopInteractionAcceptance.definition.componentMatrix.every((row: any) => row.responsive === true && row.keyboard === true
+    && row.screenReader === true && row.touch === true && row.zoom === true && row.reducedMotion === true && row.tableDistance === true), 'Workshop component acceptance matrix drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
   && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')
@@ -1057,6 +1076,10 @@ for (const path of [
   'tests/composables/breeding/useBreedingConsentWorkflow.test.ts',
   'tests/components/breedingConsentCenter.test.ts',
   'data/breeding-automation/consent-workflow-presentation-contract.json',
+  'src/composables/breeding/useBreedingFocusBoundary.ts',
+  'tests/components/breedingWorkshopAccessibilityAcceptance.test.ts',
+  'data/breeding-automation/workshop-interaction-acceptance.json',
+  'docs/breeding/accessibility-responsive-and-table-distance.md',
   'docs/breeding/workshop.md',
   'shared/breeding/fossilEgg.ts',
   'server/domain/breeding/fossilEgg.ts',

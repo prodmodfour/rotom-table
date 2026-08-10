@@ -32,6 +32,29 @@ const mountFlow = (projection: BreedingHatchWorkflowProjectionV1 | null = ready(
 afterEach(() => document.body.replaceChildren())
 
 describe('Breeding hatch decision flow', () => {
+  it('traps modal keyboard focus, supports Escape, and restores the opening control', async () => {
+    const origin = document.createElement('button')
+    origin.textContent = 'Open hatch'
+    document.body.append(origin)
+    origin.focus()
+    const wrapper = mountFlow(ready(), { open: false })
+    await wrapper.setProps({ open: true })
+    await wrapper.vm.$nextTick()
+    expect(document.activeElement?.id).toBe('hatch-flow-title')
+    const dialog = document.body.querySelector<HTMLElement>('[role="dialog"]')!
+    const focusable = [...dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), a[href]')]
+    focusable.at(-1)!.focus()
+    focusable.at(-1)!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }))
+    expect(document.activeElement).toBe(focusable[0])
+    focusable[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }))
+    expect(document.activeElement).toBe(focusable.at(-1))
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))
+    expect(wrapper.emitted('close')).toEqual([[]])
+    await wrapper.setProps({ open: false })
+    await wrapper.vm.$nextTick()
+    expect(document.activeElement).toBe(origin)
+  })
+
   it('renders a labelled modal and requires an explicit begin confirmation', async () => {
     const wrapper = mountFlow()
     const dialog = document.body.querySelector('[role="dialog"]')!

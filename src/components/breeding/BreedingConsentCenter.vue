@@ -8,12 +8,13 @@ import {
   PhWarning,
   PhX,
 } from '@phosphor-icons/vue'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type {
   BreedingConsentWorkflowEggTransferV1,
   BreedingConsentWorkflowProjectRequestV1,
   BreedingConsentWorkflowProjectionV1,
 } from '#shared/breeding/consentWorkflow'
+import { useBreedingFocusBoundary } from '~/composables/breeding/useBreedingFocusBoundary'
 
 const props = defineProps<{
   projection: BreedingConsentWorkflowProjectionV1 | null
@@ -36,6 +37,14 @@ const emit = defineEmits<{
 
 const destinationTrainerSlug = ref('')
 const destinationInput = ref<HTMLInputElement | null>(null)
+const transferDialog = ref<HTMLElement | null>(null)
+const transferSetupOpen = computed(() => props.transferSetup !== null)
+const { handleFocusBoundaryKeydown } = useBreedingFocusBoundary({
+  active: transferSetupOpen,
+  container: transferDialog,
+  initialFocus: destinationInput,
+  trap: true,
+})
 const hasCards = computed(() => Boolean(
   props.projection && (props.projection.projectRequests.length || props.projection.eggTransfers.length),
 ))
@@ -77,13 +86,20 @@ const transitionMessage = computed(() => {
     : ''
 })
 
-watch(() => props.transferSetup, async (value) => {
+watch(() => props.transferSetup, () => {
   destinationTrainerSlug.value = ''
-  if (value) {
-    await nextTick()
-    destinationInput.value?.focus()
-  }
 })
+const closeTransferSetup = (): void => {
+  if (!props.submitting) emit('closeTransferSetup')
+}
+const onDialogKeydown = (event: KeyboardEvent): void => {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeTransferSetup()
+    return
+  }
+  handleFocusBoundaryKeydown(event)
+}
 const submitOffer = (): void => {
   if (destinationValid.value && !props.submitting) emit('offerEggTransfer', destinationTrainerSlug.value)
 }
@@ -314,21 +330,23 @@ const submitOffer = (): void => {
       v-if="transferSetup"
       class="breeding-consent-dialog-backdrop"
       role="presentation"
-      @click.self="emit('closeTransferSetup')"
+      @click.self="closeTransferSetup"
     >
       <section
+        ref="transferDialog"
         class="breeding-consent-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="breeding-transfer-setup-title"
-        @keydown.esc="emit('closeTransferSetup')"
+        tabindex="-1"
+        @keydown="onDialogKeydown"
       >
         <header>
           <div>
             <p class="breeding-consent-center__eyebrow">Non-mutating setup</p>
             <h2 id="breeding-transfer-setup-title">Offer an Egg gift</h2>
           </div>
-          <button type="button" class="breeding-consent-dialog__close" aria-label="Close transfer setup" @click="emit('closeTransferSetup')">
+          <button type="button" class="breeding-consent-dialog__close" aria-label="Close transfer setup" :disabled="submitting" @click="closeTransferSetup">
             <PhX :size="20" aria-hidden="true" />
           </button>
         </header>
@@ -353,7 +371,7 @@ const submitOffer = (): void => {
             Choose a different Trainer. Egg gifts cannot transfer to the current owner.
           </p>
           <div class="breeding-consent-dialog__actions">
-            <button type="button" class="breeding-consent-button breeding-consent-button--secondary" @click="emit('closeTransferSetup')">Cancel</button>
+            <button type="button" class="breeding-consent-button breeding-consent-button--secondary" :disabled="submitting" @click="closeTransferSetup">Cancel</button>
             <button type="submit" class="breeding-consent-button" :disabled="!destinationValid || submitting">
               <PhGift :size="18" weight="fill" aria-hidden="true" />
               {{ submitting ? 'Recording gift…' : 'Give source consent' }}
@@ -407,7 +425,7 @@ const submitOffer = (): void => {
 .breeding-consent-center p { margin-top: 0; }
 .breeding-consent-center h2 { margin-bottom: 0; font-size: 1.3rem; color: var(--rt-text-strong); }
 .breeding-consent-center h3 { margin-bottom: 0.35rem; color: var(--rt-text-strong); }
-.breeding-consent-center h4 { margin-bottom: 0; color: var(--rt-text-strong); font-size: 1.05rem; }
+.breeding-consent-center h4 { margin-bottom: 0; color: var(--rt-text-strong); font-size: 1.05rem; overflow-wrap: anywhere; }
 .breeding-consent-center__eyebrow,
 .breeding-consent-card__kind {
   margin-bottom: 0.15rem;
@@ -482,7 +500,7 @@ const submitOffer = (): void => {
 .breeding-consent-button {
   justify-content: center;
   gap: 0.4rem;
-  min-height: 2.65rem;
+  min-height: 2.75rem;
   padding: 0.55rem 0.85rem;
   border: 1px solid transparent;
   border-radius: var(--rt-radius-small);
@@ -491,6 +509,7 @@ const submitOffer = (): void => {
   font: inherit;
   font-weight: 750;
   cursor: pointer;
+  touch-action: manipulation;
 }
 .breeding-consent-button--secondary { border-color: var(--rt-rule); background: var(--rt-surface-2); color: var(--rt-text-strong); }
 .breeding-consent-button--danger { border-color: var(--rt-danger); background: transparent; color: var(--rt-danger); }
@@ -518,12 +537,17 @@ const submitOffer = (): void => {
 }
 .breeding-consent-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .breeding-consent-dialog > p { color: var(--rt-text-muted); line-height: 1.5; }
-.breeding-consent-dialog__close { display: grid; place-items: center; min-width: 2.75rem; min-height: 2.75rem; border: 0; border-radius: var(--rt-radius-small); background: transparent; color: var(--rt-text); cursor: pointer; }
+.breeding-consent-dialog__close { display: grid; place-items: center; min-width: 2.75rem; min-height: 2.75rem; border: 0; border-radius: var(--rt-radius-small); background: transparent; color: var(--rt-text); cursor: pointer; touch-action: manipulation; }
+.breeding-consent-dialog__close:disabled { cursor: not-allowed; opacity: 0.65; }
 .breeding-consent-dialog form,
 .breeding-consent-dialog label { display: grid; gap: 0.45rem; }
 .breeding-consent-dialog label > span { color: var(--rt-text-strong); font-weight: 700; }
 .breeding-consent-dialog input { min-height: 2.8rem; padding: 0.55rem 0.7rem; border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); background: var(--rt-surface-2); color: var(--rt-text); font: inherit; }
 .breeding-consent-dialog__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.9rem; }
+@media (max-width: 40rem), (max-height: 36rem) {
+  .breeding-consent-dialog-backdrop { place-items: stretch; padding: 0.5rem; }
+  .breeding-consent-dialog { max-height: calc(100dvh - 1rem); overflow: auto; }
+}
 @media (max-width: 560px) {
   .breeding-consent-center__header,
   .breeding-consent-card > header { align-items: flex-start; }

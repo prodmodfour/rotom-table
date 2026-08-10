@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "registryId": "breeding-semantic-registry-v1",
-  "definitionSha256": "37a18c78d03cfea6cf55cf18b4e696e742dca2d15144b6d4fe8465f263efdf29",
+  "definitionSha256": "25be5c3ee5e8a0d672c2ed1c0a8959012b8137b7fd05c5ef51e0e3823470d65c",
   "definition": {
     "activePlanPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
     "donePlanPath": "implementation-plans/done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
@@ -812,6 +812,15 @@
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
         "expectedDefinitionSha256": "a450b7d354f462ff46ec0feb2ca79e337c87514df67f6191640cafbfc7b0ae81"
+      },
+      {
+        "id": "breeding-workshop-interaction-acceptance",
+        "path": "data/breeding-automation/workshop-interaction-acceptance.json",
+        "ownerTicket": "BR-078",
+        "kind": "report",
+        "binding": "definition-field",
+        "definitionHashField": "definitionSha256",
+        "expectedDefinitionSha256": "b68242ba84122c5c0b45b3b9017ef1ea452fdd0396f9855a3a9f0908a4912c85"
       },
       {
         "id": "scenario-requirements",

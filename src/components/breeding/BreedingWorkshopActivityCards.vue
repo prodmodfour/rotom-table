@@ -435,7 +435,7 @@ const hatchActionLabel = (card: BreedingWorkshopEggCardV1): string => {
   justify-content: space-between;
   gap: 0.75rem;
 }
-.breeding-card__header h4 { font-size: 1.05rem; line-height: 1.35; }
+.breeding-card__header h4 { font-size: 1.05rem; line-height: 1.35; overflow-wrap: anywhere; }
 .breeding-card__status[data-status='completed'],
 .breeding-card__status[data-status='ready'],
 .breeding-card__status[data-status='production-ready'] { border-color: var(--rt-success); color: var(--rt-success); }
@@ -499,6 +499,7 @@ const hatchActionLabel = (card: BreedingWorkshopEggCardV1): string => {
   color: var(--rt-text-strong);
   cursor: pointer;
   font-weight: 750;
+  touch-action: manipulation;
 }
 .breeding-card__history summary:focus-visible,
 .breeding-card__transfer summary:focus-visible,
@@ -525,6 +526,7 @@ const hatchActionLabel = (card: BreedingWorkshopEggCardV1): string => {
   cursor: pointer;
   font: inherit;
   font-weight: 750;
+  touch-action: manipulation;
 }
 .breeding-activity-button--secondary { border-color: var(--rt-rule); background: var(--rt-surface-3); color: var(--rt-text-strong); }
 @media (max-width: 800px) {

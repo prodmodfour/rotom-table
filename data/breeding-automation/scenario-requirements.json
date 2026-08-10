@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 77,
+    "covered": 78,
     "in-progress": 1,
-    "planned": 12,
+    "planned": 11,
     "blocked": 0
   },
   "requirements": [
@@ -1943,8 +1943,25 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/workshop-interaction-acceptance.json",
+        "src/pages/breeding/index.vue",
+        "src/composables/breeding/useBreedingFocusBoundary.ts",
+        "src/components/breeding/BreedingWorkshopShell.vue",
+        "src/components/breeding/BreedingProjectWizard.vue",
+        "src/components/breeding/BreedingWorkshopActivityCards.vue",
+        "src/components/breeding/BreedingConsentCenter.vue",
+        "src/components/breeding/BreedingHatchDecisionFlow.vue",
+        "tests/components/breedingWorkshopAccessibilityAcceptance.test.ts",
+        "tests/components/breedingWorkshopShell.test.ts",
+        "tests/components/breedingProjectWizard.test.ts",
+        "tests/components/breedingWorkshopActivityCards.test.ts",
+        "tests/components/breedingConsentCenter.test.ts",
+        "tests/components/breedingHatchDecisionFlow.test.ts",
+        "docs/breeding/accessibility-responsive-and-table-distance.md",
+        "docs/breeding/workshop.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -1959,7 +1976,7 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

@@ -7,7 +7,7 @@ import {
   PhWarning,
   PhX,
 } from '@phosphor-icons/vue'
-import { nextTick, ref, watch } from 'vue'
+import { ref, toRef, watch } from 'vue'
 import {
   breedingHatchDestinationLabel,
   breedingHatchDestinationReasonMessage,
@@ -15,6 +15,7 @@ import {
   breedingHatchWorkflowReasonMessage,
   type BreedingHatchWorkflowProjectionV1,
 } from '#shared/breeding/hatchWorkflow'
+import { useBreedingFocusBoundary } from '~/composables/breeding/useBreedingFocusBoundary'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
 
 const props = defineProps<{
@@ -31,7 +32,14 @@ const emit = defineEmits<{
   resolveSpecial: [optionId: string]
   complete: []
 }>()
+const dialog = ref<HTMLElement | null>(null)
 const title = ref<HTMLElement | null>(null)
+const { handleFocusBoundaryKeydown } = useBreedingFocusBoundary({
+  active: toRef(props, 'open'),
+  container: dialog,
+  initialFocus: title,
+  trap: true,
+})
 const selectedDestinationOptionId = ref<string | null>(null)
 const selectedSpecialOptionId = ref<string | null>(null)
 
@@ -57,14 +65,14 @@ const confirmSpecial = (): void => {
 const childSheetPath = (slug: string): string => sheetEditorPath('pokemon', slug)
 const trainerSheetPath = (slug: string): string => sheetEditorPath('trainer', slug)
 const onKeydown = (event: KeyboardEvent): void => {
-  if (event.key === 'Escape' && props.open && !props.submitting) emit('close')
+  if (event.key === 'Escape' && props.open && !props.submitting) {
+    event.preventDefault()
+    emit('close')
+    return
+  }
+  handleFocusBoundaryKeydown(event)
 }
 
-watch(() => props.open, async (open) => {
-  if (!open) return
-  await nextTick()
-  title.value?.focus()
-})
 watch(() => props.projection?.egg.revision, () => {
   selectedDestinationOptionId.value = null
   selectedSpecialOptionId.value = null
@@ -80,9 +88,11 @@ watch(() => props.projection?.egg.revision, () => {
       @keydown="onKeydown"
     >
       <section
+        ref="dialog"
         class="hatch-flow"
         role="dialog"
         aria-modal="true"
+        tabindex="-1"
         aria-labelledby="hatch-flow-title"
         :aria-busy="loading || submitting"
       >
@@ -329,7 +339,7 @@ watch(() => props.projection?.egg.revision, () => {
 .hatch-flow__header h2,
 .hatch-flow h3,
 .hatch-flow p { margin-top: 0; }
-.hatch-flow__header h2 { margin-bottom: 0; color: var(--rt-text-strong); }
+.hatch-flow__header h2 { margin-bottom: 0; color: var(--rt-text-strong); overflow-wrap: anywhere; }
 .hatch-flow__icon-button,
 .hatch-flow__button {
   display: inline-flex;
@@ -345,6 +355,7 @@ watch(() => props.projection?.egg.revision, () => {
   cursor: pointer;
   font: inherit;
   font-weight: 750;
+  touch-action: manipulation;
 }
 .hatch-flow__icon-button { flex: 0 0 auto; border-color: var(--rt-rule); background: var(--rt-surface-2); color: var(--rt-text); }
 .hatch-flow__button--secondary { border-color: var(--rt-rule); background: var(--rt-surface-2); color: var(--rt-text-strong); }
@@ -399,7 +410,7 @@ watch(() => props.projection?.egg.revision, () => {
 .hatch-flow__decision--stacked { display: grid; align-items: initial; }
 .hatch-flow__options { display: grid; gap: 0.5rem; margin: 0; padding: 0; border: 0; }
 .hatch-flow__options legend { margin-bottom: 0.5rem; color: var(--rt-text-strong); font-weight: 800; }
-.hatch-flow__options label { display: flex; gap: 0.7rem; min-height: 54px; padding: 0.7rem; border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); cursor: pointer; }
+.hatch-flow__options label { display: flex; gap: 0.7rem; min-height: 54px; padding: 0.7rem; border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); cursor: pointer; touch-action: manipulation; }
 .hatch-flow__options label:has(input:checked) { border-color: var(--rt-focus); background: var(--rt-surface-1); }
 .hatch-flow__options input { width: 1.2rem; height: 1.2rem; margin-top: 0.15rem; accent-color: var(--rt-brand); }
 .hatch-flow__options span { display: grid; gap: 0.2rem; }
@@ -419,6 +430,10 @@ watch(() => props.projection?.egg.revision, () => {
 .hatch-flow__navigation { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
 .hatch-flow__navigation a { text-decoration: none; }
 @keyframes hatch-reveal { from { opacity: 0; transform: scale(0.72) rotate(-12deg); } to { opacity: 1; transform: none; } }
+@media (max-width: 40rem), (max-height: 36rem) {
+  .hatch-flow-backdrop { place-items: stretch; padding: 0.5rem; }
+  .hatch-flow { max-height: calc(100dvh - 1rem); }
+}
 @media (max-width: 520px) {
   .hatch-flow-backdrop { align-items: end; padding: 0; }
   .hatch-flow { max-height: 94dvh; border-radius: var(--rt-radius-large) var(--rt-radius-large) 0 0; }
@@ -429,7 +444,9 @@ watch(() => props.projection?.egg.revision, () => {
   .hatch-flow__navigation { display: grid; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hatch-flow__reveal-mark { animation: none; }
+  .hatch-flow *,
+  .hatch-flow *::before,
+  .hatch-flow *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
   .hatch-flow-backdrop { backdrop-filter: none; }
 }
 </style>

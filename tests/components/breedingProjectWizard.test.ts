@@ -233,6 +233,27 @@ const mountWizard = (overrides: Record<string, unknown> = {}) => mount(BreedingP
 afterEach(() => document.body.replaceChildren())
 
 describe('Breeding Project wizard', () => {
+  it('moves focus into the opened wizard, supports Escape, and restores the opening control', async () => {
+    const origin = document.createElement('button')
+    origin.textContent = 'Start a project'
+    document.body.append(origin)
+    origin.focus()
+    const wrapper = mountWizard({ open: false })
+    await wrapper.setProps({ open: true })
+    await wrapper.vm.$nextTick()
+    expect(document.activeElement?.id).toBe('breeding-project-wizard-title')
+    await wrapper.setProps({ activeStep: 1 })
+    await wrapper.vm.$nextTick()
+    expect(document.activeElement?.id).toBe('wizard-breeder-title')
+    wrapper.get('.breeding-project-wizard').element.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Escape', bubbles: true, cancelable: true,
+    }))
+    expect(wrapper.emitted('close')).toEqual([[]])
+    await wrapper.setProps({ open: false })
+    await wrapper.vm.$nextTick()
+    expect(document.activeElement).toBe(origin)
+  })
+
   it('provides labelled keyboard controls for destination and Breeder steps', async () => {
     const wrapper = mountWizard()
     expect(wrapper.get('#breeding-project-wizard-title').text()).toBe('Plan a breeding project')
