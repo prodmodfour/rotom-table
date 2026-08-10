@@ -4,6 +4,8 @@ import { createBreedingHatchWorkflowProjectionV1 } from '../../../server/domain/
 import { useBreedingHatchWorkflow } from '../../../src/composables/breeding/useBreedingHatchWorkflow'
 
 const EGG_ID = 'pokemon-egg:v1:75757575757575757575757575757575'
+const BOX_OPTION_ID = 'option:v1:75757575757575757575757575757570'
+const TEAM_OPTION_ID = 'option:v1:75757575757575757575757575757571'
 const projection = (revision = 1, status: 'ready' | 'hatching' = 'ready') => createBreedingHatchWorkflowProjectionV1({
   audience: 'owner', trainerSheetSlug: 'trainer-owner',
   stage: status === 'ready' ? 'ready' : 'ready-to-complete',
@@ -12,6 +14,12 @@ const projection = (revision = 1, status: 'ready' | 'hatching' = 'ready') => cre
     ? { kind: 'begin-hatch', canSubmit: true, requiresConfirmation: true, reasonId: null }
     : { kind: 'complete-hatch', canSubmit: true, requiresConfirmation: true, reasonId: null },
   special: { state: status === 'ready' ? 'not-rolled' : 'normal', outcomeId: null, gmReview: null },
+  destination: status === 'ready'
+    ? { teamCapacity: 6 as const, acceptedKind: null, options: [
+        { optionId: BOX_OPTION_ID as never, kind: 'box' as const, availability: 'available' as const, reasonId: null, remainingTeamSlots: null },
+        { optionId: TEAM_OPTION_ID as never, kind: 'team' as const, availability: 'available' as const, reasonId: null, remainingTeamSlots: 2 },
+      ] }
+    : { teamCapacity: 6 as const, acceptedKind: 'box' as const, options: [] },
   childReveal: null, recovery: { state: 'none', pendingSinceCampaignMinute: null },
   transition: status === 'ready' ? 'none' : 'hatch-started', generatedAtCampaignMinute: 700,
 })
@@ -32,11 +40,11 @@ describe('useBreedingHatchWorkflow', () => {
     await workflow.openFor('trainer-owner', EGG_ID, 1)
     expect(postJson).toHaveBeenNthCalledWith(1, '/api/breeding/hatch', {
       schemaVersion: 1, profileId: 'profile_owner_0075', trainerSheetSlug: 'trainer-owner', eggId: EGG_ID,
-      expectedEggRevision: 1, intent: 'inspect', selectedOptionId: null, confirmed: false,
+      expectedEggRevision: 1, intent: 'inspect', destinationOptionId: null, selectedOptionId: null, confirmed: false,
     })
-    await workflow.begin()
+    await workflow.begin(TEAM_OPTION_ID)
     expect(postJson).toHaveBeenNthCalledWith(2, '/api/breeding/hatch', expect.objectContaining({
-      expectedEggRevision: 1, intent: 'begin', confirmed: true,
+      expectedEggRevision: 1, intent: 'begin', destinationOptionId: TEAM_OPTION_ID, confirmed: true,
     }))
     expect(workflow.projection.value?.egg.revision).toBe(2)
     expect(workflow.submitting.value).toBe(false)
@@ -53,6 +61,7 @@ describe('useBreedingHatchWorkflow', () => {
         { optionId: 'option:v1:75757575757575757575757575757576' as never, outcomeId: 'breeding.hatch-special.outcome.distinctive-appearance', label: 'Distinctive appearance', description: 'Memorable appearance.' },
         { optionId: 'option:v1:75757575757575757575757575757577' as never, outcomeId: 'breeding.hatch-special.outcome.distinctive-temperament', label: 'Distinctive temperament', description: 'Memorable temperament.' },
       ] } },
+      destination: { teamCapacity: 6, acceptedKind: 'box', options: [] },
       childReveal: null, recovery: { state: 'none', pendingSinceCampaignMinute: null }, transition: 'none', generatedAtCampaignMinute: 700,
     })
     const postJson = install([gm, { ...gm, projectionDefinitionSha256: '0'.repeat(64) }], false)

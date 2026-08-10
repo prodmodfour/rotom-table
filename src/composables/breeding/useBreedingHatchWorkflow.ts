@@ -27,6 +27,7 @@ export const useBreedingHatchWorkflow = () => {
   const request = async (
     intent: BreedingHatchWorkflowIntent,
     selectedOptionId: string | null = null,
+    destinationOptionId: string | null = null,
   ): Promise<void> => {
     if (!trainerSheetSlug || !eggId || expectedEggRevision === null) return
     const sequence = ++requestSequence
@@ -42,6 +43,7 @@ export const useBreedingHatchWorkflow = () => {
         eggId,
         expectedEggRevision,
         intent,
+        destinationOptionId,
         selectedOptionId,
         confirmed: mutating,
       })
@@ -83,8 +85,10 @@ export const useBreedingHatchWorkflow = () => {
     open.value = false
   }
   const retry = async (): Promise<void> => request('inspect')
-  const begin = async (): Promise<void> => {
-    if (projection.value?.decision.kind === 'begin-hatch' && canAct.value) await request('begin')
+  const begin = async (destinationOptionId: string): Promise<void> => {
+    if (projection.value?.decision.kind === 'begin-hatch' && canAct.value) {
+      await request('begin', null, destinationOptionId)
+    }
   }
   const resolveSpecial = async (optionId: string): Promise<void> => {
     if (projection.value?.decision.kind === 'resolve-special' && canAct.value) await request('resolve-special', optionId)

@@ -31,6 +31,23 @@ export const BREEDING_HATCH_WORKFLOW_PRESENTATION_POLICY_DEFINITION_SHA256 = sha
   BREEDING_HATCH_WORKFLOW_PRESENTATION_POLICY_DEFINITION,
 )
 
+export const BREEDING_HATCH_DESTINATION_PRESENTATION_POLICY_DEFINITION = Object.freeze({
+  schemaVersion: 1 as const,
+  policyId: 'breeding-hatch-destination-presentation-v1' as const,
+  ticket: 'BR-076' as const,
+  choiceAuthority: 'two-current-server-issued-opaque-destination-options' as const,
+  teamCapacity: 6 as const,
+  teamFullBehavior: 'disabled-with-closed-explanation-and-box-still-available' as const,
+  acceptedLinkage: 'existing-atomic-hatch-completion-Trainer-roster-write' as const,
+  childNavigation: 'accepted-storage-owned-child-slug-only' as const,
+  trainerNavigation: 'current-authorized-Trainer-selector-only' as const,
+  optimisticRosterMutation: 'forbidden' as const,
+  browserMechanicsAuthority: 'none' as const,
+})
+export const BREEDING_HATCH_DESTINATION_PRESENTATION_POLICY_DEFINITION_SHA256 = sha256(
+  BREEDING_HATCH_DESTINATION_PRESENTATION_POLICY_DEFINITION,
+)
+
 export class BreedingHatchWorkflowProjectionAuthorityError extends Error {
   readonly code:
     | 'breeding.hatch-workflow.hash-mismatch'
@@ -79,7 +96,7 @@ export const createBreedingHatchWorkflowProjectionV1 = (
     )
   }
   const expected = [
-    'audience', 'trainerSheetSlug', 'stage', 'egg', 'decision', 'special', 'childReveal',
+    'audience', 'trainerSheetSlug', 'stage', 'egg', 'decision', 'special', 'destination', 'childReveal',
     'recovery', 'transition', 'generatedAtCampaignMinute',
   ].sort()
   const fields = Object.getOwnPropertyNames(value)

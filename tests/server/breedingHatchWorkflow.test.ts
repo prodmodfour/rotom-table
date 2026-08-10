@@ -147,6 +147,7 @@ const request = (database: RotomDatabase, value: {
   intent: 'inspect' | 'begin' | 'resolve-special' | 'complete'
   revision: number
   optionId?: string
+  destinationOptionId?: string
   role?: 'player' | 'gm'
   draw?: number
 }) => manageBreedingHatchWorkflow({
@@ -159,6 +160,7 @@ const request = (database: RotomDatabase, value: {
     eggId: EGG_ID,
     expectedEggRevision: value.revision,
     intent: value.intent,
+    destinationOptionId: value.destinationOptionId ?? null,
     selectedOptionId: value.optionId ?? null,
     confirmed: value.intent !== 'inspect',
   },
@@ -178,7 +180,9 @@ describe('BR-075 server-authorized hatch workflow', () => {
       expect(inspected).not.toHaveProperty('authorizationReceipt')
       expect(inspected).not.toHaveProperty('operationId')
 
-      const begun = request(database, { intent: 'begin', revision: 1, draw: 50 })
+      expect(inspected.destination.options).toHaveLength(2)
+      const boxOptionId = inspected.destination.options.find(option => option.kind === 'box')!.optionId
+      const begun = request(database, { intent: 'begin', revision: 1, destinationOptionId: boxOptionId, draw: 50 })
       expect(begun).toMatchObject({ stage: 'ready-to-complete', transition: 'hatch-started', egg: { revision: 2, status: 'hatching' } })
       expect(begun.special).toEqual({ state: 'normal', outcomeId: null, gmReview: null })
 
@@ -198,10 +202,57 @@ describe('BR-075 server-authorized hatch workflow', () => {
     finally { database.close() }
   })
 
+  it('binds a selected team destination through completion and exact begin replay', () => {
+    const database = seed()
+    try {
+      const inspected = request(database, { intent: 'inspect', revision: 1 })
+      const teamOptionId = inspected.destination.options.find(option => option.kind === 'team')!.optionId
+      const begun = request(database, { intent: 'begin', revision: 1, destinationOptionId: teamOptionId, draw: 50 })
+      expect(begun.destination).toEqual({ teamCapacity: 6, options: [], acceptedKind: 'team' })
+      const completed = request(database, { intent: 'complete', revision: 2 })
+      expect(completed.childReveal).toMatchObject({ destinationKind: 'team', childSheetSlug: 'bulbasaur' })
+      expect(createSqliteSheetRepository(database).get('trainer', 'trainer-owner')?.document).toMatchObject({
+        currentTeam: ['bulbasaur'], boxedPokemon: [],
+      })
+      const eventCount = Number((database.connection.prepare('SELECT COUNT(*) AS count FROM realtime_events').get() as { count: number }).count)
+      const replay = request(database, { intent: 'begin', revision: 1, destinationOptionId: teamOptionId })
+      expect(replay).toMatchObject({ transition: 'exact-replay', destination: { acceptedKind: 'team' } })
+      expect(Number((database.connection.prepare('SELECT COUNT(*) AS count FROM realtime_events').get() as { count: number }).count)).toBe(eventCount)
+    }
+    finally { database.close() }
+  })
+
+  it('explains a full team without exposing roster identities and keeps Box available', () => {
+    const database = seed()
+    try {
+      const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+      sheets.save({
+        kind: 'trainer', slug: 'trainer-owner', revision: 1, updatedAt: 1_001,
+        document: { slug: 'trainer-owner', name: 'Owner', level: 10, dexExp: 0,
+          currentTeam: ['team-one', 'team-two', 'team-three', 'team-four', 'team-five', 'team-six'], boxedPokemon: [] },
+      })
+      const inspected = request(database, { intent: 'inspect', revision: 1 })
+      const box = inspected.destination.options.find(option => option.kind === 'box')!
+      const team = inspected.destination.options.find(option => option.kind === 'team')!
+      expect(box).toMatchObject({ availability: 'available', reasonId: null, remainingTeamSlots: null })
+      expect(team).toMatchObject({ availability: 'unavailable', reasonId: 'breeding.hatch-offer.team-full', remainingTeamSlots: 0 })
+      expect(JSON.stringify(inspected)).not.toContain('team-one')
+      expect(() => request(database, { intent: 'begin', revision: 1, destinationOptionId: team.optionId })).toThrowError(
+        expect.objectContaining({ statusCode: 409 }),
+      )
+      expect(Number((database.connection.prepare('SELECT COUNT(*) AS count FROM breeding_rolls').get() as { count: number }).count)).toBe(0)
+      expect(request(database, { intent: 'begin', revision: 1, destinationOptionId: box.optionId, draw: 50 }))
+        .toMatchObject({ destination: { acceptedKind: 'box' }, egg: { status: 'hatching' } })
+    }
+    finally { database.close() }
+  })
+
   it('redacts a triggered roll from owners and permits only the GM bounded option', () => {
     const database = seed()
     try {
-      const begun = request(database, { intent: 'begin', revision: 1, draw: 1 })
+      const inspected = request(database, { intent: 'inspect', revision: 1 })
+      const teamOptionId = inspected.destination.options.find(option => option.kind === 'team')!.optionId
+      const begun = request(database, { intent: 'begin', revision: 1, destinationOptionId: teamOptionId, draw: 1 })
       expect(begun).toMatchObject({ stage: 'awaiting-gm', decision: { kind: 'none', reasonId: 'breeding.hatch.awaiting-gm' } })
       expect(JSON.stringify(begun)).not.toContain('rollTotal')
       expect(JSON.stringify(begun)).not.toContain('option:v1:')
@@ -222,13 +273,13 @@ describe('BR-075 server-authorized hatch workflow', () => {
       expect(() => manageBreedingHatchWorkflow({
         role: 'player', playerProfile: profile,
         request: { schemaVersion: 1, profileId: profile.id, trainerSheetSlug: 'trainer-owner', eggId: EGG_ID,
-          expectedEggRevision: 1, intent: 'inspect', selectedOptionId: null, confirmed: false, authority: true },
+          expectedEggRevision: 1, intent: 'inspect', destinationOptionId: null, selectedOptionId: null, confirmed: false, authority: true },
       }, { database })).toThrow()
       expect(() => request(database, { intent: 'inspect', revision: 0 })).toThrow()
       expect(() => manageBreedingHatchWorkflow({
         role: 'player', playerProfile: { ...profile, linkedCharacters: [] },
         request: { schemaVersion: 1, profileId: profile.id, trainerSheetSlug: 'trainer-owner', eggId: EGG_ID,
-          expectedEggRevision: 1, intent: 'inspect', selectedOptionId: null, confirmed: false },
+          expectedEggRevision: 1, intent: 'inspect', destinationOptionId: null, selectedOptionId: null, confirmed: false },
       }, { database })).toThrowError(expect.objectContaining({ statusCode: 403 }))
     }
     finally { database.close() }

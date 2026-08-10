@@ -9,10 +9,13 @@ import {
 } from '@phosphor-icons/vue'
 import { nextTick, ref, watch } from 'vue'
 import {
+  breedingHatchDestinationLabel,
+  breedingHatchDestinationReasonMessage,
   breedingHatchWorkflowOutcomeLabel,
   breedingHatchWorkflowReasonMessage,
   type BreedingHatchWorkflowProjectionV1,
 } from '#shared/breeding/hatchWorkflow'
+import { sheetEditorPath } from '~/utils/sheetRoutes'
 
 const props = defineProps<{
   open: boolean
@@ -24,11 +27,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   retry: []
-  begin: []
+  begin: [destinationOptionId: string]
   resolveSpecial: [optionId: string]
   complete: []
 }>()
 const title = ref<HTMLElement | null>(null)
+const selectedDestinationOptionId = ref<string | null>(null)
 const selectedSpecialOptionId = ref<string | null>(null)
 
 const transitionMessage = (projection: BreedingHatchWorkflowProjectionV1): string => ({
@@ -44,9 +48,14 @@ const transitionMessage = (projection: BreedingHatchWorkflowProjectionV1): strin
 const genderLabel = (value: 'female' | 'male' | 'genderless'): string => ({
   female: 'Female', male: 'Male', genderless: 'Genderless',
 })[value]
+const confirmBegin = (): void => {
+  if (selectedDestinationOptionId.value) emit('begin', selectedDestinationOptionId.value)
+}
 const confirmSpecial = (): void => {
   if (selectedSpecialOptionId.value) emit('resolveSpecial', selectedSpecialOptionId.value)
 }
+const childSheetPath = (slug: string): string => sheetEditorPath('pokemon', slug)
+const trainerSheetPath = (slug: string): string => sheetEditorPath('trainer', slug)
 const onKeydown = (event: KeyboardEvent): void => {
   if (event.key === 'Escape' && props.open && !props.submitting) emit('close')
 }
@@ -57,6 +66,7 @@ watch(() => props.open, async (open) => {
   title.value?.focus()
 })
 watch(() => props.projection?.egg.revision, () => {
+  selectedDestinationOptionId.value = null
   selectedSpecialOptionId.value = null
 })
 </script>
@@ -144,21 +154,47 @@ watch(() => props.projection?.egg.revision, () => {
             </button>
           </div>
 
-          <section v-else-if="projection.decision.kind === 'begin-hatch'" class="hatch-flow__decision" aria-labelledby="begin-hatch-title">
-            <PhEgg :size="42" weight="duotone" aria-hidden="true" />
+          <section v-else-if="projection.decision.kind === 'begin-hatch'" class="hatch-flow__decision hatch-flow__decision--stacked" aria-labelledby="begin-hatch-title">
             <div>
-              <h3 id="begin-hatch-title">Begin hatching?</h3>
-              <p>The server will persist exactly one special-result roll before applying it. The accepted child will initially join this Trainer’s Box.</p>
-              <button
-                type="button"
-                class="hatch-flow__button"
-                :disabled="submitting"
-                @click="emit('begin')"
-              >
-                <PhSparkle :size="19" weight="fill" aria-hidden="true" />
-                {{ submitting ? 'Starting hatch…' : 'Confirm and begin hatch' }}
-              </button>
+              <h3 id="begin-hatch-title">Choose where the child will join</h3>
+              <p>The server rebuilt both destinations from the current Trainer roster. It will persist exactly one special-result roll only after you confirm an available choice.</p>
             </div>
+            <fieldset class="hatch-flow__options hatch-flow__destinations">
+              <legend>Child destination</legend>
+              <label
+                v-for="option in projection.destination.options"
+                :key="option.optionId"
+                :class="{ 'is-unavailable': option.availability === 'unavailable' }"
+              >
+                <input
+                  v-model="selectedDestinationOptionId"
+                  type="radio"
+                  name="hatch-destination-option"
+                  :value="option.optionId"
+                  :disabled="option.availability === 'unavailable'"
+                >
+                <span>
+                  <strong>{{ breedingHatchDestinationLabel(option.kind) }}</strong>
+                  <small v-if="option.kind === 'team'">
+                    {{ option.remainingTeamSlots }} of {{ projection.destination.teamCapacity }} team slots available
+                  </small>
+                  <small v-else>Always available for this ready Egg.</small>
+                  <small v-if="option.reasonId" class="hatch-flow__option-warning">
+                    {{ breedingHatchDestinationReasonMessage(option.reasonId) }}
+                  </small>
+                </span>
+              </label>
+            </fieldset>
+            <p class="hatch-flow__selection-note">The accepted destination is bound to this hatch and cannot be changed during reveal.</p>
+            <button
+              type="button"
+              class="hatch-flow__button"
+              :disabled="!selectedDestinationOptionId || submitting"
+              @click="confirmBegin"
+            >
+              <PhSparkle :size="19" weight="fill" aria-hidden="true" />
+              {{ submitting ? 'Starting hatch…' : 'Confirm destination and begin hatch' }}
+            </button>
           </section>
 
           <section
@@ -198,7 +234,7 @@ watch(() => props.projection?.egg.revision, () => {
                 {{ breedingHatchWorkflowOutcomeLabel(projection.special.outcomeId) }} accepted
               </p>
               <h3 id="complete-hatch-title">Reveal and accept the child?</h3>
-              <p>Confirmation atomically creates the initialized child sheet, links the Trainer’s Box, settles the Egg, and records lineage.</p>
+              <p>Confirmation atomically creates the initialized child sheet, links the Trainer’s {{ projection.destination.acceptedKind === 'team' ? 'active team' : 'Pokémon Box' }}, settles the Egg, and records lineage.</p>
               <button
                 type="button"
                 class="hatch-flow__button"
@@ -224,7 +260,15 @@ watch(() => props.projection?.egg.revision, () => {
               <div><dt>Gender</dt><dd>{{ genderLabel(projection.childReveal.genderId) }}</dd></div>
               <div><dt>Starting Level</dt><dd>{{ projection.childReveal.startingLevel }}</dd></div>
             </dl>
-            <button type="button" class="hatch-flow__button" @click="emit('close')">Done</button>
+            <nav class="hatch-flow__navigation" aria-label="Accepted hatch navigation">
+              <NuxtLink class="hatch-flow__button" :to="childSheetPath(projection.childReveal.childSheetSlug)">
+                Open child sheet
+              </NuxtLink>
+              <NuxtLink class="hatch-flow__button hatch-flow__button--secondary" :to="trainerSheetPath(projection.trainerSheetSlug)">
+                Open Trainer sheet
+              </NuxtLink>
+              <button type="button" class="hatch-flow__button hatch-flow__button--secondary" @click="emit('close')">Return to Workshop</button>
+            </nav>
           </section>
 
           <div v-else class="hatch-flow__state">
@@ -361,6 +405,10 @@ watch(() => props.projection?.egg.revision, () => {
 .hatch-flow__options span { display: grid; gap: 0.2rem; }
 .hatch-flow__options strong { color: var(--rt-text-strong); }
 .hatch-flow__options small { color: var(--rt-text-muted); line-height: 1.4; }
+.hatch-flow__options label.is-unavailable { cursor: not-allowed; opacity: 0.78; }
+.hatch-flow__options label.is-unavailable input { cursor: not-allowed; }
+.hatch-flow__options .hatch-flow__option-warning { color: var(--rt-pending); font-weight: 700; }
+.hatch-flow__selection-note { margin: 0; color: var(--rt-text-muted); font-size: 0.86rem; }
 .hatch-flow__reveal { position: relative; overflow: hidden; text-align: center; }
 .hatch-flow__reveal-mark { color: var(--rt-success); animation: hatch-reveal 500ms ease-out both; }
 .hatch-flow__reveal h3 { margin-bottom: 0.4rem; color: var(--rt-text-strong); font-size: clamp(1.5rem, 5vw, 2.2rem); }
@@ -368,6 +416,8 @@ watch(() => props.projection?.egg.revision, () => {
 .hatch-flow__reveal dl div { padding: 0.65rem; border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); }
 .hatch-flow__reveal dt { color: var(--rt-text-muted); font-size: 0.76rem; font-weight: 700; }
 .hatch-flow__reveal dd { margin: 0.2rem 0 0; color: var(--rt-text-strong); font-weight: 750; }
+.hatch-flow__navigation { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
+.hatch-flow__navigation a { text-decoration: none; }
 @keyframes hatch-reveal { from { opacity: 0; transform: scale(0.72) rotate(-12deg); } to { opacity: 1; transform: none; } }
 @media (max-width: 520px) {
   .hatch-flow-backdrop { align-items: end; padding: 0; }
@@ -376,6 +426,7 @@ watch(() => props.projection?.egg.revision, () => {
   .hatch-flow__decision { align-items: flex-start; }
   .hatch-flow__reveal dl { grid-template-columns: 1fr; }
   .hatch-flow__button { width: 100%; }
+  .hatch-flow__navigation { display: grid; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hatch-flow__reveal-mark { animation: none; }

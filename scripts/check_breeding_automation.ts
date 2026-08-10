@@ -213,6 +213,7 @@ for (const path of [
   'data/breeding-automation/project-choices-presentation-contract.json',
   'data/breeding-automation/workshop-activity-presentation-contract.json',
   'data/breeding-automation/hatch-workflow-presentation-contract.json',
+  'data/breeding-automation/hatch-destination-presentation-contract.json',
   'data/breeding-automation/campaign-operation-ledger-contract.json',
   'data/breeding-automation/campaign-clock-contract.json',
   'data/breeding-automation/realtime-contract.json',
@@ -456,6 +457,21 @@ assert(hatchWorkflowContract.definition?.presentation?.modalSemantics === 'label
   && hatchWorkflowContract.definition?.presentation?.nativeGmRadioGroup === true
   && hatchWorkflowContract.definition?.presentation?.separateConfirmation === true
   && hatchWorkflowContract.definition?.presentation?.reducedMotion === 'reveal-animation-disabled', 'Hatch workflow accessibility contract drifted')
+const hatchDestinationContract = json<Record<string, any>>('data/breeding-automation/hatch-destination-presentation-contract.json')
+assert(hatchDestinationContract.contractId === 'rotom-breeding-hatch-destination-presentation-v1'
+  && hatchDestinationContract.definition?.ticket === 'BR-076'
+  && hatchDestinationContract.definition?.scope?.apiRoute === '/api/breeding/hatch'
+  && hatchDestinationContract.definition?.scope?.browserMechanicsAuthority === 'none', 'Hatch destination presentation identity or authority drifted')
+assert(hatchDestinationContract.definition?.requestAuthority?.beginSelection === 'one-opaque-current-server-destination-option-ID'
+  && hatchDestinationContract.definition?.requestAuthority?.browserDestinationKindOrCapacity === 'forbidden'
+  && hatchDestinationContract.definition?.destinationProjection?.teamCapacity === 6
+  && hatchDestinationContract.definition?.destinationProjection?.teamFullReasonId === 'breeding.hatch-offer.team-full'
+  && hatchDestinationContract.definition?.destinationProjection?.rosterIdentities === 'forbidden', 'Hatch destination selection or privacy boundary drifted')
+assert(hatchDestinationContract.definition?.linkage?.writer === 'existing-BR-057-atomic-hatch-completion-transaction'
+  && hatchDestinationContract.definition?.linkage?.optimisticMutation === 'forbidden'
+  && hatchDestinationContract.definition?.navigation?.preAcceptanceChildLink === 'forbidden'
+  && hatchDestinationContract.definition?.presentation?.nativeDestinationRadioGroup === true
+  && hatchDestinationContract.definition?.presentation?.minimumControlHeightPx === 44, 'Hatch destination linkage, navigation, or accessibility contract drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
   && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')
@@ -998,6 +1014,7 @@ for (const path of [
   'tests/composables/breeding/useBreedingHatchWorkflow.test.ts',
   'tests/components/breedingHatchDecisionFlow.test.ts',
   'data/breeding-automation/hatch-workflow-presentation-contract.json',
+  'data/breeding-automation/hatch-destination-presentation-contract.json',
   'docs/breeding/workshop.md',
   'shared/breeding/fossilEgg.ts',
   'server/domain/breeding/fossilEgg.ts',

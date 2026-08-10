@@ -15,6 +15,7 @@ import {
   type PokemonEggHatchOfferProjectionV1,
   type PokemonEggHatchOwnerTrainerFactV1,
 } from '#shared/breeding/hatchOffers'
+import type { BreedingOfferOptionId } from '#shared/breeding/ids'
 import { parseBreedingOperationCommandV1, type BreedingOperationCommandV1 } from '#shared/breeding/operations'
 import {
   createCampaignOperationOfferV1,
@@ -264,6 +265,25 @@ const currentPlayerControl = (input: {
   }
   return control
 }
+export const derivePokemonEggHatchDestinationOptionIdV1 = (input: {
+  readonly eggId: string
+  readonly eggRevision: number
+  readonly trainerSheetSlug: string
+  readonly trainerSheetRevision: number
+  readonly kind: 'box' | 'team'
+  readonly commandSha256: string
+  readonly atCampaignMinute: number
+}): BreedingOfferOptionId => `option:v1:${sha256({
+  policyId: 'pokemon-egg-hatch-destination-v1',
+  eggId: input.eggId,
+  eggRevision: input.eggRevision,
+  trainerSheetSlug: input.trainerSheetSlug,
+  trainerSheetRevision: input.trainerSheetRevision,
+  kind: input.kind,
+  commandSha256: input.commandSha256,
+  atCampaignMinute: input.atCampaignMinute,
+}).slice(0, 32)}` as BreedingOfferOptionId
+
 const createDestination = (input: {
   readonly egg: PokemonEggDocumentV1
   readonly fact: PokemonEggHatchOwnerTrainerFactV1
@@ -276,8 +296,7 @@ const createDestination = (input: {
     ? 'breeding.hatch-offer.team-full' as const
     : null
   const reasonId = input.lifecycleBlocker ?? capacityBlocker
-  const optionId = `option:v1:${sha256({
-    policyId: 'pokemon-egg-hatch-destination-v1',
+  const optionId = derivePokemonEggHatchDestinationOptionIdV1({
     eggId: input.egg.eggId,
     eggRevision: input.egg.revision,
     trainerSheetSlug: input.fact.trainerSheetSlug,
@@ -285,7 +304,7 @@ const createDestination = (input: {
     kind: input.kind,
     commandSha256: input.commandSha256,
     atCampaignMinute: input.atCampaignMinute,
-  }).slice(0, 32)}` as const
+  })
   const definition = {
     schemaVersion: 1 as const,
     optionId,

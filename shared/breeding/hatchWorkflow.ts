@@ -20,6 +20,12 @@ import {
   BREEDING_HATCH_SPECIAL_OUTCOME_IDS,
   type BreedingHatchSpecialOutcomeId,
 } from './hatchSpecial'
+import {
+  POKEMON_EGG_HATCH_BLOCKER_REASON_IDS,
+  POKEMON_EGG_HATCH_TEAM_CAPACITY,
+  type PokemonEggHatchBlockerReasonIdV1,
+  type PokemonEggHatchDestinationKindV1,
+} from './hatchOffers'
 
 export const BREEDING_HATCH_WORKFLOW_API_PATH = '/api/breeding/hatch' as const
 export const BREEDING_HATCH_WORKFLOW_INTENTS = Object.freeze([
@@ -54,6 +60,7 @@ export interface BreedingHatchWorkflowRequestV1 {
   readonly eggId: PokemonEggId
   readonly expectedEggRevision: number
   readonly intent: BreedingHatchWorkflowIntent
+  readonly destinationOptionId: BreedingOfferOptionId | null
   readonly selectedOptionId: BreedingOfferOptionId | null
   readonly confirmed: boolean
 }
@@ -86,6 +93,18 @@ export interface BreedingHatchWorkflowSpecialV1 {
   readonly outcomeId: BreedingHatchSpecialOutcomeId | null
   readonly gmReview: BreedingHatchWorkflowGmReviewV1 | null
 }
+export interface BreedingHatchWorkflowDestinationOptionV1 {
+  readonly optionId: BreedingOfferOptionId
+  readonly kind: PokemonEggHatchDestinationKindV1
+  readonly availability: 'available' | 'unavailable'
+  readonly reasonId: PokemonEggHatchBlockerReasonIdV1 | null
+  readonly remainingTeamSlots: number | null
+}
+export interface BreedingHatchWorkflowDestinationV1 {
+  readonly teamCapacity: 6
+  readonly options: readonly BreedingHatchWorkflowDestinationOptionV1[]
+  readonly acceptedKind: PokemonEggHatchDestinationKindV1 | null
+}
 export interface BreedingHatchWorkflowChildRevealV1 {
   readonly childSheetSlug: string
   readonly speciesName: string
@@ -108,6 +127,7 @@ export interface BreedingHatchWorkflowProjectionV1 {
   readonly egg: BreedingHatchWorkflowEggV1
   readonly decision: BreedingHatchWorkflowDecisionV1
   readonly special: BreedingHatchWorkflowSpecialV1
+  readonly destination: BreedingHatchWorkflowDestinationV1
   readonly childReveal: BreedingHatchWorkflowChildRevealV1 | null
   readonly recovery: BreedingHatchWorkflowRecoveryV1
   readonly transition: BreedingHatchWorkflowTransitionKind
@@ -142,6 +162,7 @@ const REASONS = new Set<string>(BREEDING_HATCH_WORKFLOW_REASON_IDS)
 const EGG_STATUSES = new Set<string>(POKEMON_EGG_STATUSES)
 const OUTCOMES = new Set<string>(BREEDING_HATCH_SPECIAL_OUTCOME_IDS)
 const SPECIAL_STATES = new Set<string>(['not-rolled', 'normal', 'pending-adjudication', 'resolved'])
+const DESTINATION_BLOCKERS = new Set<string>(POKEMON_EGG_HATCH_BLOCKER_REASON_IDS)
 const fail = (code: BreedingHatchWorkflowContractError['code'], path: string, message: string): never => {
   throw new BreedingHatchWorkflowContractError(code, path, message)
 }
@@ -217,20 +238,25 @@ export const parseBreedingHatchWorkflowRequestV1 = (
 ): BreedingHatchWorkflowRequestV1 => {
   const row = exact(value, [
     'schemaVersion', 'profileId', 'trainerSheetSlug', 'eggId', 'expectedEggRevision',
-    'intent', 'selectedOptionId', 'confirmed',
+    'intent', 'destinationOptionId', 'selectedOptionId', 'confirmed',
   ], path)
   if (row.schemaVersion !== 1 || typeof row.intent !== 'string' || !INTENTS.has(row.intent)
     || typeof row.confirmed !== 'boolean') {
     return fail('breeding.hatch-workflow.invalid-document', path, 'must be one schema-v1 hatch request.')
   }
   const intent = row.intent as BreedingHatchWorkflowIntent
+  const destinationOptionId = row.destinationOptionId === null
+    ? null
+    : parseBreedingOfferOptionIdSyntax(row.destinationOptionId)
+      ?? fail('breeding.hatch-workflow.invalid-id', `${path}.destinationOptionId`, 'must be one opaque server destination option ID or null.')
   const selectedOptionId = row.selectedOptionId === null
     ? null
     : parseBreedingOfferOptionIdSyntax(row.selectedOptionId)
-      ?? fail('breeding.hatch-workflow.invalid-id', `${path}.selectedOptionId`, 'must be one opaque server option ID or null.')
-  if ((intent === 'resolve-special') !== (selectedOptionId !== null)
+      ?? fail('breeding.hatch-workflow.invalid-id', `${path}.selectedOptionId`, 'must be one opaque server special option ID or null.')
+  if ((intent === 'begin') !== (destinationOptionId !== null)
+    || (intent === 'resolve-special') !== (selectedOptionId !== null)
     || row.confirmed !== (intent !== 'inspect')) {
-    return fail('breeding.hatch-workflow.invalid-invariant', path, 'only confirmed special resolution selects one option; inspect remains unconfirmed.')
+    return fail('breeding.hatch-workflow.invalid-invariant', path, 'only confirmed begin and special actions select their one current opaque option; inspect remains unconfirmed.')
   }
   const profileId = row.profileId === null ? null
     : isPlayerProfileId(row.profileId) ? row.profileId
@@ -243,6 +269,7 @@ export const parseBreedingHatchWorkflowRequestV1 = (
       ?? fail('breeding.hatch-workflow.invalid-id', `${path}.eggId`, 'must be a Pokémon Egg ID.'),
     expectedEggRevision: integer(row.expectedEggRevision, `${path}.expectedEggRevision`),
     intent,
+    destinationOptionId,
     selectedOptionId,
     confirmed: row.confirmed,
   }) as BreedingHatchWorkflowRequestV1
@@ -317,6 +344,48 @@ const parseSpecial = (value: unknown, audience: 'gm' | 'owner', path: string): B
   }
   return { state: row.state as PokemonEggSpecialStateId, outcomeId, gmReview }
 }
+const parseDestinationOption = (value: unknown, index: number, path: string): BreedingHatchWorkflowDestinationOptionV1 => {
+  const row = exact(value, ['optionId', 'kind', 'availability', 'reasonId', 'remainingTeamSlots'], path)
+  const expectedKind = index === 0 ? 'box' : 'team'
+  if (row.kind !== expectedKind || (row.availability !== 'available' && row.availability !== 'unavailable')) {
+    return fail('breeding.hatch-workflow.invalid-document', path, 'must be one box-then-team destination option.')
+  }
+  const reasonId = row.reasonId === null ? null
+    : typeof row.reasonId === 'string' && DESTINATION_BLOCKERS.has(row.reasonId)
+      ? row.reasonId as PokemonEggHatchBlockerReasonIdV1
+      : fail('breeding.hatch-workflow.invalid-id', `${path}.reasonId`, 'must be one closed hatch destination blocker.')
+  const remainingTeamSlots = row.remainingTeamSlots === null ? null
+    : integer(row.remainingTeamSlots, `${path}.remainingTeamSlots`, 0, POKEMON_EGG_HATCH_TEAM_CAPACITY)
+  if ((row.availability === 'available') !== (reasonId === null)
+    || (expectedKind === 'box') !== (remainingTeamSlots === null)
+    || expectedKind === 'box' && row.availability !== 'available'
+    || expectedKind === 'team' && ((remainingTeamSlots! > 0) !== (row.availability === 'available'))
+    || expectedKind === 'team' && reasonId !== (remainingTeamSlots === 0 ? 'breeding.hatch-offer.team-full' : null)) {
+    return fail('breeding.hatch-workflow.invalid-invariant', path, 'destination availability, capacity, and closed blocker must agree.')
+  }
+  return {
+    optionId: parseBreedingOfferOptionIdSyntax(row.optionId)
+      ?? fail('breeding.hatch-workflow.invalid-id', `${path}.optionId`, 'must be one opaque destination option ID.'),
+    kind: expectedKind,
+    availability: row.availability,
+    reasonId,
+    remainingTeamSlots,
+  }
+}
+const parseDestination = (value: unknown, path: string): BreedingHatchWorkflowDestinationV1 => {
+  const row = exact(value, ['teamCapacity', 'options', 'acceptedKind'], path)
+  if (row.teamCapacity !== POKEMON_EGG_HATCH_TEAM_CAPACITY || !Array.isArray(row.options)
+    || (row.options.length !== 0 && row.options.length !== 2)
+    || (row.acceptedKind !== null && row.acceptedKind !== 'box' && row.acceptedKind !== 'team')) {
+    return fail('breeding.hatch-workflow.invalid-document', path, 'must contain bounded six-slot destination presentation.')
+  }
+  const options = row.options.map((option, index) => parseDestinationOption(option, index, `${path}.options[${index}]`))
+  if (new Set(options.map(option => option.optionId)).size !== options.length
+    || (options.length > 0 && row.acceptedKind !== null)) {
+    return fail('breeding.hatch-workflow.invalid-invariant', path, 'current destination choices and an accepted destination are mutually exclusive.')
+  }
+  return { teamCapacity: POKEMON_EGG_HATCH_TEAM_CAPACITY, options, acceptedKind: row.acceptedKind }
+}
 const parseChildReveal = (value: unknown, path: string): BreedingHatchWorkflowChildRevealV1 => {
   const row = exact(value, [
     'childSheetSlug', 'speciesName', 'natureName', 'abilityName', 'genderId', 'startingLevel',
@@ -344,7 +413,7 @@ export const parseBreedingHatchWorkflowProjectionV1 = (
 ): BreedingHatchWorkflowProjectionV1 => {
   const row = exact(value, [
     'schemaVersion', 'audience', 'trainerSheetSlug', 'stage', 'egg', 'decision', 'special',
-    'childReveal', 'recovery', 'transition', 'generatedAtCampaignMinute',
+    'destination', 'childReveal', 'recovery', 'transition', 'generatedAtCampaignMinute',
     'securityPolicyDefinitionSha256', 'projectionDefinitionSha256',
   ], path)
   if (row.schemaVersion !== 1 || (row.audience !== 'gm' && row.audience !== 'owner')
@@ -376,6 +445,7 @@ export const parseBreedingHatchWorkflowProjectionV1 = (
   const recovery: BreedingHatchWorkflowRecoveryV1 = { state: recoveryRow.state, pendingSinceCampaignMinute: pendingSince }
   const decision = parseDecision(row.decision, `${path}.decision`)
   const special = parseSpecial(row.special, row.audience, `${path}.special`)
+  const destination = parseDestination(row.destination, `${path}.destination`)
   const reveal = row.childReveal === null ? null : parseChildReveal(row.childReveal, `${path}.childReveal`)
   const generatedAtCampaignMinute = integer(row.generatedAtCampaignMinute, `${path}.generatedAtCampaignMinute`)
   const expected = expectedStage(egg.status, recovery.state)
@@ -400,12 +470,19 @@ export const parseBreedingHatchWorkflowProjectionV1 = (
       : egg.status === 'hatching' || egg.status === 'hatched'
         ? special.state === 'normal' || special.state === 'resolved'
         : true
+  const destinationMatches = egg.status === 'ready' && recovery.state === 'none'
+    ? destination.options.length === 2 && destination.acceptedKind === null
+    : egg.status === 'awaiting-special-adjudication' || egg.status === 'hatching' || egg.status === 'hatched'
+      ? destination.options.length === 0 && destination.acceptedKind !== null
+      : destination.options.length === 0 && destination.acceptedKind === null
   if (row.stage !== expected || decision.kind !== expectedDecision
     || decision.canSubmit !== (expectedDecision !== 'none')
     || decision.reasonId !== expectedReason
     || !specialMatchesStatus
+    || !destinationMatches
     || (reveal !== null) !== (egg.status === 'hatched')
-    || reveal && reveal.hatchedAtCampaignMinute !== egg.updatedAtCampaignMinute
+    || reveal && (reveal.hatchedAtCampaignMinute !== egg.updatedAtCampaignMinute
+      || reveal.destinationKind !== destination.acceptedKind)
     || generatedAtCampaignMinute < egg.updatedAtCampaignMinute
     || pendingSince !== null && pendingSince > generatedAtCampaignMinute
     || !transitionMatches) {
@@ -419,6 +496,7 @@ export const parseBreedingHatchWorkflowProjectionV1 = (
     egg,
     decision,
     special,
+    destination,
     childReveal: reveal,
     recovery,
     transition,
@@ -458,4 +536,17 @@ export const breedingHatchWorkflowReasonMessage = (reasonId: BreedingHatchWorkfl
   'breeding.hatch.lifecycle-ended': 'This Egg lifecycle ended without a hatch action.',
   'breeding.hatch.not-ready': 'Incubation must finish before hatching can begin.',
   'breeding.hatch.recovery-required': 'Refresh authoritative state before another hatch action.',
+})[reasonId]
+
+export const breedingHatchDestinationLabel = (kind: PokemonEggHatchDestinationKindV1): string => (
+  kind === 'team' ? 'Active team' : 'Pokémon Box'
+)
+
+export const breedingHatchDestinationReasonMessage = (reasonId: PokemonEggHatchBlockerReasonIdV1): string => ({
+  'breeding.egg-lifecycle.already-hatched': 'This Egg already hatched.',
+  'breeding.egg-lifecycle.cancelled': 'This Egg was cancelled.',
+  'breeding.egg-lifecycle.hatch-already-started': 'Hatching already started.',
+  'breeding.egg-lifecycle.invalidated-by-gm': 'This Egg was invalidated by a reviewed GM action.',
+  'breeding.egg-lifecycle.not-ready': 'Incubation must finish before selecting a destination.',
+  'breeding.hatch-offer.team-full': 'The active team is full. Choose the Pokémon Box to continue.',
 })[reasonId]

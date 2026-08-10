@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-hatch-destination-presentation-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "28c2c1d79227b8f9b9bbf869c16ec908234b50237ca7434216ed8db3120c065a",
+  "definition": {
+    "ticket": "BR-076",
+    "scope": {
+      "kind": "current-hatch-destination-capacity-linkage-and-navigation",
+      "route": "/breeding",
+      "apiRoute": "/api/breeding/hatch",
+      "extends": "BR-075-role-projected-hatch-workflow",
+      "mapDependency": "none",
+      "encounterDependency": "none",
+      "browserMechanicsAuthority": "none"
+    },
+    "implementation": {
+      "sharedContractPath": "shared/breeding/hatchWorkflow.ts",
+      "serverOfferPath": "server/domain/breeding/hatchOffers.ts",
+      "serverWorkflowPath": "server/useCases/manageBreedingHatchWorkflow.ts",
+      "composablePath": "src/composables/breeding/useBreedingHatchWorkflow.ts",
+      "componentPath": "src/components/breeding/BreedingHatchDecisionFlow.vue",
+      "destinationPresentationPolicyDefinitionSha256": "7d50f8aad9542690c5ad6a97b79e600027b089df1762807a7574d1e4141b8a5e"
+    },
+    "requestAuthority": {
+      "fields": [
+        "schemaVersion",
+        "profileId",
+        "trainerSheetSlug",
+        "eggId",
+        "expectedEggRevision",
+        "intent",
+        "destinationOptionId",
+        "selectedOptionId",
+        "confirmed"
+      ],
+      "beginSelection": "one-opaque-current-server-destination-option-ID",
+      "browserDestinationKindOrCapacity": "forbidden",
+      "mutationConfirmation": "explicit-true",
+      "staleOrUnavailableOption": "reject-before-reservation-randomness-or-mutation"
+    },
+    "destinationProjection": {
+      "order": [
+        "box",
+        "team"
+      ],
+      "teamCapacity": 6,
+      "boxAvailabilityForReadyEgg": "available",
+      "teamAvailability": "remaining-slot-count-greater-than-zero",
+      "teamFullReasonId": "breeding.hatch-offer.team-full",
+      "rosterIdentities": "forbidden",
+      "optionIdentity": "opaque-command-bound-current-authority",
+      "acceptedDestination": "immutable-from-accepted-begin-hatch-command"
+    },
+    "linkage": {
+      "writer": "existing-BR-057-atomic-hatch-completion-transaction",
+      "team": "exactly-one-currentTeam-link-and-six-slot-capacity-recheck",
+      "box": "exactly-one-boxedPokemon-link",
+      "optimisticMutation": "forbidden",
+      "childReveal": "only-after-accepted-linkage",
+      "exactReplay": "no-second-link-child-reward-Egg-revision-event-or-publication"
+    },
+    "navigation": {
+      "child": "/sheets/{accepted-storage-owned-childSheetSlug}",
+      "trainer": "/sheets/trainers/{current-authorized-trainerSheetSlug}",
+      "pathConstruction": "canonical-existing-sheet-route-helper",
+      "authorityEffect": "none-routes-recheck-normal-sheet-access",
+      "preAcceptanceChildLink": "forbidden"
+    },
+    "privacy": {
+      "ownerAndGmSafeFacts": [
+        "destination-kind",
+        "remaining-team-slots",
+        "team-capacity",
+        "closed-blocker",
+        "accepted-child-and-Trainer-navigation"
+      ],
+      "forbiddenFacts": [
+        "roster-identities",
+        "roster-documents",
+        "command",
+        "operation",
+        "read-set",
+        "receipt",
+        "offer-hash",
+        "control-evidence",
+        "acquisition-outcome",
+        "lineage"
+      ]
+    },
+    "presentation": {
+      "nativeDestinationRadioGroup": true,
+      "unavailableTeamControlDisabled": true,
+      "closedTeamFullExplanation": true,
+      "minimumControlHeightPx": 44,
+      "visibleFocus": true,
+      "acceptedNavigationLandmarks": true,
+      "responsive": "single-column-mobile-and-wrapping-desktop",
+      "reducedMotion": "inherits-BR-075-reveal-policy"
+    },
+    "verification": {
+      "focusedTests": [
+        "tests/shared/breedingHatchWorkflowContract.test.ts",
+        "tests/server/breedingHatchWorkflow.test.ts",
+        "tests/server/breedingHatchWorkflowRoute.test.ts",
+        "tests/composables/breeding/useBreedingHatchWorkflow.test.ts",
+        "tests/components/breedingHatchDecisionFlow.test.ts"
+      ],
+      "fixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
+    }
+  }
+}

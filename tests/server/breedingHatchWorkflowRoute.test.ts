@@ -16,7 +16,7 @@ type RouteHandler = EventHandler<EventHandlerRequest, unknown>
 const body = (profileId: string | null = null) => ({
   schemaVersion: 1, profileId, trainerSheetSlug: 'trainer-owner',
   eggId: 'pokemon-egg:v1:75757575757575757575757575757575', expectedEggRevision: 1,
-  intent: 'inspect', selectedOptionId: null, confirmed: false,
+  intent: 'inspect', destinationOptionId: null, selectedOptionId: null, confirmed: false,
 })
 const invoke = async (role: 'gm' | 'player' | null, request: unknown): Promise<unknown> => {
   const headers: Record<string, string> = { 'content-type': 'application/json' }
@@ -54,7 +54,8 @@ describe('BR-075 hatch workflow API route', () => {
   it('rejects command payloads, unconfirmed mutation, malformed options, and unknown fields at the boundary', async () => {
     for (const invalid of [
       { ...body(), command: { commandKind: 'begin-hatch' } },
-      { ...body(), intent: 'begin', confirmed: false },
+      { ...body(), intent: 'begin', destinationOptionId: 'option:v1:75757575757575757575757575757570', confirmed: false },
+      { ...body(), destinationOptionId: 'bulbasaur' },
       { ...body(), selectedOptionId: 'bulbasaur' },
       { ...body(), expectedEggRevision: -1 },
       undefined,

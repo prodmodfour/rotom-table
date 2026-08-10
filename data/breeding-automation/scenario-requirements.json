@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 75,
+    "covered": 76,
     "in-progress": 1,
-    "planned": 14,
+    "planned": 13,
     "blocked": 0
   },
   "requirements": [
@@ -1869,9 +1869,30 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
-      "acceptanceFixtureIds": []
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/hatch-destination-presentation-contract.json",
+        "shared/breeding/hatchWorkflow.ts",
+        "server/domain/breeding/hatchOffers.ts",
+        "server/domain/breeding/hatchWorkflow.ts",
+        "server/useCases/manageBreedingHatchWorkflow.ts",
+        "server/api/breeding/hatch.post.ts",
+        "src/composables/breeding/useBreedingHatchWorkflow.ts",
+        "src/components/breeding/BreedingHatchDecisionFlow.vue",
+        "src/pages/breeding/index.vue",
+        "tests/shared/breedingHatchWorkflowContract.test.ts",
+        "tests/server/breedingHatchWorkflow.test.ts",
+        "tests/server/breedingHatchWorkflowRoute.test.ts",
+        "tests/composables/breeding/useBreedingHatchWorkflow.test.ts",
+        "tests/components/breedingHatchDecisionFlow.test.ts",
+        "docs/breeding/workshop.md",
+        "docs/breeding/security-and-privacy.md",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
     },
     {
       "id": "breeding:BR-077",
@@ -1883,7 +1904,7 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

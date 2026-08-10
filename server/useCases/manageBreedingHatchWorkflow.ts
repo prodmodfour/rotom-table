@@ -5,6 +5,8 @@ import { stableJsonStringify } from '#shared/automation/stableJson'
 import type { AuthRole } from '#shared/auth'
 import type { BreedingActorAuthorityV1 } from '#shared/breeding/authorization'
 import type { PokemonEggDocumentV1 } from '#shared/breeding/egg'
+import type { PokemonEggHatchDestinationKindV1 } from '#shared/breeding/hatchOffers'
+import { parseBreedingReadSetIdSyntax } from '#shared/breeding/ids'
 import {
   parseBreedingHatchWorkflowRequestV1,
   type BreedingHatchWorkflowGmReviewV1,
@@ -39,6 +41,7 @@ import {
 } from '../domain/breeding/hatchCompletion'
 import {
   createPokemonEggHatchOwnerTrainerFactV1,
+  derivePokemonEggHatchDestinationOptionIdV1,
   projectPokemonEggHatchOfferV1,
 } from '../domain/breeding/hatchOffers'
 import {
@@ -60,6 +63,7 @@ import { createBreedingOperationCommandHash } from '../domain/breeding/operation
 import { createBreedingOperationReadSetV1 } from '../domain/breeding/readSets'
 import { resolveEffectiveCapabilities as resolveCapabilityAutomation } from '../domain/capabilityAutomation/effectiveCapabilities'
 import { createSqliteBreedingGmAdjudicationRepository } from '../storage/breedingGmAdjudicationRepository'
+import { createSqliteBreedingOperationEvidenceRepository } from '../storage/breedingOperationEvidenceRepository'
 import { createSqliteBreedingOperationRepository, type BreedingOperationLedgerRecord } from '../storage/breedingOperationRepository'
 import { createSqliteBreedingOptionOfferRepository } from '../storage/breedingOptionOfferRepository'
 import { createSqliteCampaignClockRepository } from '../storage/campaignClockRepository'
@@ -172,9 +176,9 @@ const currentOptions = (dependencies: ManageBreedingHatchWorkflowDependencies): 
 const operationId = (kind: string, material: unknown): `breeding-operation:v1:${string}` => (
   `breeding-operation:v1:${sha256({ kind, material }).slice(0, 32)}`
 )
-const readSetId = (operation: string): `breeding-read-set:v1:${string}` => (
-  `breeding-read-set:v1:${sha256({ kind: 'breeding-hatch-workflow-read-set-v1', operation }).slice(0, 32)}`
-)
+const readSetId = (operation: string) => parseBreedingReadSetIdSyntax(
+  `breeding-read-set:v1:${sha256({ kind: 'breeding-hatch-workflow-read-set-v1', operation }).slice(0, 32)}`,
+) ?? fail(409, 'Hatch workflow read-set identity is unavailable')
 const originId = (operation: string, eggId: string): `pokemon-breeding-origin:v1:${string}` => (
   `pokemon-breeding-origin:v1:${sha256({ kind: 'breeding-hatch-workflow-origin-v1', operation, eggId }).slice(0, 32)}`
 )
@@ -390,9 +394,13 @@ const context = (inputValue: ManageBreedingHatchWorkflowInput, dependencies: Man
   const owner = ownerFactAndControl({ trainer, role: input.role, profile, campaignMinute: clock.campaignMinute })
   return Object.freeze({ input, request, role: input.role, profile, database, options, references, clock, trainer, egg, ...owner, dependencies })
 }
-const beginOperationId = (ctx: WorkflowContext, expectedRevision = ctx.request.expectedEggRevision) => operationId('breeding-hatch-workflow-begin-v1', {
+const beginOperationId = (
+  ctx: WorkflowContext,
+  destinationKind: PokemonEggHatchDestinationKindV1,
+  expectedRevision = ctx.request.expectedEggRevision,
+) => operationId('breeding-hatch-workflow-begin-v1', {
   actor: actorKey(ctx.role, ctx.profile), eggId: ctx.egg.eggId, eggRevision: expectedRevision,
-  trainerSheetSlug: ctx.trainer.slug, destinationKind: 'box',
+  trainerSheetSlug: ctx.trainer.slug, destinationKind,
 })
 const resolveOperationId = (ctx: WorkflowContext) => operationId('breeding-hatch-workflow-special-resolution-v1', {
   actor: actorKey(ctx.role, ctx.profile), eggId: ctx.egg.eggId, hatchOperationId: ctx.egg.hatchOperationId,
@@ -402,13 +410,117 @@ const completeOperationId = (ctx: WorkflowContext, expectedRevision = ctx.reques
   actor: actorKey(ctx.role, ctx.profile), eggId: ctx.egg.eggId, hatchOperationId: ctx.egg.hatchOperationId,
   eggRevision: expectedRevision,
 })
-const expectedActionOperationId = (ctx: WorkflowContext): string | null => ctx.request.intent === 'begin'
-  ? beginOperationId(ctx)
-  : ctx.request.intent === 'resolve-special'
-    ? resolveOperationId(ctx)
-    : ctx.request.intent === 'complete'
-      ? completeOperationId(ctx)
-      : null
+const expectedActionOperationId = (ctx: WorkflowContext): string | null => ctx.request.intent === 'resolve-special'
+  ? resolveOperationId(ctx)
+  : ctx.request.intent === 'complete'
+    ? completeOperationId(ctx)
+    : null
+
+const createBeginCommand = (
+  ctx: WorkflowContext,
+  destinationKind: PokemonEggHatchDestinationKindV1,
+  expectedRevision = ctx.egg.revision,
+): Extract<BreedingOperationCommandV1, { readonly commandKind: 'begin-hatch' }> => parseBreedingOperationCommandV1({
+  schemaVersion: 1,
+  operationId: beginOperationId(ctx, destinationKind, expectedRevision),
+  commandKind: 'begin-hatch',
+  actor: actorCommandFields(ctx.role, ctx.profile, ctx.trainer.slug),
+  ruleset: ctx.egg.ruleset,
+  scopes: [{ kind: 'pokemon-egg', eggId: ctx.egg.eggId, expectedRevision }],
+  payload: {
+    eggId: ctx.egg.eggId,
+    destination: { kind: destinationKind, trainerSheetSlug: ctx.trainer.slug },
+    requestSpecialRoll: true,
+  },
+}) as Extract<BreedingOperationCommandV1, { readonly commandKind: 'begin-hatch' }>
+
+interface CurrentDestinationAuthority {
+  readonly kind: PokemonEggHatchDestinationKindV1
+  readonly command: Extract<BreedingOperationCommandV1, { readonly commandKind: 'begin-hatch' }>
+  readonly actor: BreedingActorAuthorityV1
+  readonly authority: ReturnType<typeof projectPokemonEggHatchOfferV1>
+}
+const currentDestinationAuthorities = (ctx: WorkflowContext): readonly CurrentDestinationAuthority[] => {
+  if (ctx.egg.status !== 'ready') return fail(409, 'Current hatch destinations require a ready Egg')
+  try {
+    return Object.freeze((['box', 'team'] as const).map((kind) => {
+      const command = createBeginCommand(ctx, kind)
+      const actor = createActor({ role: ctx.role, profile: ctx.profile, command, campaignMinute: ctx.clock.campaignMinute })
+      const authority = projectPokemonEggHatchOfferV1({
+        command,
+        egg: ctx.egg,
+        ownerTrainerFact: ctx.fact,
+        actorAuthority: actor,
+        ownerTrainerControl: ctx.control,
+        referenceVersions: ctx.references,
+        atCampaignMinute: ctx.clock.campaignMinute,
+        securityPolicyDefinitionSha256: securityPolicyJson.definitionSha256,
+      })
+      return Object.freeze({ kind, command, actor, authority })
+    }))
+  }
+  catch { return fail(409, 'Current hatch destination offers are unavailable') }
+}
+const exactAcceptedBeginReplayRecord = (ctx: WorkflowContext): BreedingOperationLedgerRecord | null => {
+  if (ctx.request.intent !== 'begin' || !ctx.request.destinationOptionId) return null
+  const operations = createSqliteBreedingOperationRepository(ctx.database)
+  const evidenceRepository = createSqliteBreedingOperationEvidenceRepository(ctx.database)
+  for (const kind of ['box', 'team'] as const) {
+    const record = operations.get(beginOperationId(ctx, kind, ctx.request.expectedEggRevision))
+    if (!exactAcceptedReplay({ record, request: ctx.request, role: ctx.role, profile: ctx.profile, egg: ctx.egg })) continue
+    const evidence = evidenceRepository.get(record!.operationId)
+    const trainerResources = evidence?.readSet.resources.filter(resource => (
+      resource.resourceKind === 'trainer-sheet' && resource.resourceId === ctx.trainer.slug
+    )) ?? []
+    const trainerResource = trainerResources[0]
+    if (!evidence || trainerResources.length !== 1 || trainerResource?.existence !== 'present'
+      || trainerResource.revision === null) return fail(409, 'Accepted hatch destination evidence is unavailable')
+    const optionId = derivePokemonEggHatchDestinationOptionIdV1({
+      eggId: ctx.egg.eggId,
+      eggRevision: ctx.request.expectedEggRevision,
+      trainerSheetSlug: ctx.trainer.slug,
+      trainerSheetRevision: trainerResource.revision,
+      kind,
+      commandSha256: createBreedingOperationCommandHash(record!.command),
+      atCampaignMinute: evidence.readSet.capturedAtCampaignMinute,
+    })
+    if (optionId === ctx.request.destinationOptionId) return record
+  }
+  return null
+}
+const acceptedDestinationKind = (ctx: WorkflowContext): PokemonEggHatchDestinationKindV1 | null => {
+  if (!ctx.egg.hatchOperationId) return null
+  const begin = createSqliteBreedingOperationRepository(ctx.database).get(ctx.egg.hatchOperationId)
+  if (!begin || begin.status !== 'accepted' || !begin.result?.ok || begin.command.commandKind !== 'begin-hatch'
+    || begin.command.payload.eggId !== ctx.egg.eggId
+    || begin.command.payload.destination.trainerSheetSlug !== ctx.trainer.slug) {
+    return fail(409, 'Accepted hatch destination authority is unavailable')
+  }
+  return begin.command.payload.destination.kind
+}
+const destinationProjection = (
+  ctx: WorkflowContext,
+  recoveryPending: boolean,
+): BreedingHatchWorkflowProjectionV1['destination'] => {
+  if (ctx.egg.status === 'ready' && !recoveryPending) {
+    const options = currentDestinationAuthorities(ctx).map(({ kind, authority }) => {
+      const selected = authority.destinations.find(option => option.kind === kind)
+        ?? fail(409, 'Current hatch destination option is unavailable')
+      return Object.freeze({
+        optionId: selected.optionId,
+        kind,
+        availability: selected.availability.status,
+        reasonId: selected.availability.reasonId,
+        remainingTeamSlots: selected.remainingTeamSlots,
+      })
+    })
+    return Object.freeze({ teamCapacity: 6 as const, options: Object.freeze(options), acceptedKind: null })
+  }
+  const acceptedKind = ctx.egg.status === 'awaiting-special-adjudication'
+    || ctx.egg.status === 'hatching' || ctx.egg.status === 'hatched'
+    ? acceptedDestinationKind(ctx) : null
+  return Object.freeze({ teamCapacity: 6 as const, options: Object.freeze([]), acceptedKind })
+}
 
 const specialProjection = (ctx: WorkflowContext): BreedingHatchWorkflowSpecialV1 => {
   const egg = ctx.egg
@@ -510,6 +622,7 @@ const workflowProjection = (
       reasonId,
     },
     special: specialProjection(ctx),
+    destination: destinationProjection(ctx, recovery.state === 'pending'),
     childReveal: childReveal(ctx),
     recovery,
     transition,
@@ -519,36 +632,16 @@ const workflowProjection = (
 const refreshedContext = (ctx: WorkflowContext): WorkflowContext => context(ctx.input, ctx.dependencies)
 
 const beginHatch = (ctx: WorkflowContext): BreedingHatchWorkflowProjectionV1 => {
-  if (ctx.egg.status !== 'ready' || ctx.egg.revision !== ctx.request.expectedEggRevision) return fail(409, 'Ready Egg authority changed before hatch')
-  const command = parseBreedingOperationCommandV1({
-    schemaVersion: 1,
-    operationId: beginOperationId(ctx),
-    commandKind: 'begin-hatch',
-    actor: actorCommandFields(ctx.role, ctx.profile, ctx.trainer.slug),
-    ruleset: ctx.egg.ruleset,
-    scopes: [{ kind: 'pokemon-egg', eggId: ctx.egg.eggId, expectedRevision: ctx.egg.revision }],
-    payload: {
-      eggId: ctx.egg.eggId,
-      destination: { kind: 'box', trainerSheetSlug: ctx.trainer.slug },
-      requestSpecialRoll: true,
-    },
-  })
-  const actor = createActor({ role: ctx.role, profile: ctx.profile, command, campaignMinute: ctx.clock.campaignMinute })
-  let hatchOfferAuthority
-  try {
-    hatchOfferAuthority = projectPokemonEggHatchOfferV1({
-      command,
-      egg: ctx.egg,
-      ownerTrainerFact: ctx.fact,
-      actorAuthority: actor,
-      ownerTrainerControl: ctx.control,
-      referenceVersions: ctx.references,
-      atCampaignMinute: ctx.clock.campaignMinute,
-      securityPolicyDefinitionSha256: securityPolicyJson.definitionSha256,
-    })
+  if (ctx.egg.status !== 'ready' || ctx.egg.revision !== ctx.request.expectedEggRevision
+    || !ctx.request.destinationOptionId) return fail(409, 'Ready Egg authority changed before hatch')
+  const matches = currentDestinationAuthorities(ctx).filter(({ kind, authority }) => (
+    authority.destinations.find(option => option.kind === kind)?.optionId === ctx.request.destinationOptionId
+  ))
+  if (matches.length !== 1) return fail(409, 'Selected hatch destination is stale or unavailable')
+  const { command, actor, authority: hatchOfferAuthority } = matches[0]!
+  if (hatchOfferAuthority.offer.availability.status !== 'available') {
+    return fail(409, 'Selected hatch destination is unavailable')
   }
-  catch { return fail(409, 'Current hatch offer is unavailable') }
-  if (hatchOfferAuthority.offer.availability.status !== 'available') return fail(409, 'Current hatch offer is unavailable')
   const readSet = createBreedingOperationReadSetV1({
     readSetId: readSetId(command.operationId),
     operationId: command.operationId,
@@ -699,7 +792,7 @@ const marsupialMother = (ctx: WorkflowContext): StoredSheetDocument<Record<strin
     const sheet = sheets.get('pokemon', slug)
     if (!sheet || !plainRecord(sheet.document)) return []
     let state
-    try { state = parseCapabilityCampaignState((sheet.document as CharacterSheet).capabilityCampaignState) }
+    try { state = parseCapabilityCampaignState((sheet.document as unknown as CharacterSheet).capabilityCampaignState) }
     catch { return [] }
     const document = sheet.document as unknown as CharacterSheet
     return document.species === 'Kangaskhan' && Number.isSafeInteger(document.level) && Number(document.level) >= 25
@@ -749,8 +842,8 @@ const completionAuthority = (ctx: WorkflowContext) => {
       capturedAtCampaignMinute: ctx.clock.campaignMinute,
     }, { resolveEffectiveCapabilities: capabilityResolver })
     providerDependencies.push(...handoff.dependencyEvidence)
-    const abilities = Array.isArray((mother.document as unknown as CharacterSheet).abilities)
-      ? (mother.document as unknown as CharacterSheet).abilities : []
+    const abilityRows = (mother.document as unknown as CharacterSheet).abilities
+    const abilities = Array.isArray(abilityRows) ? abilityRows : []
     if (abilities.some(entry => typeof entry?.name === 'string'
       && normalizedProviderName(entry.name) === normalizedProviderName('Parental Bond'))) {
       providerDependencies.push(...createBreedingParentalBondHandoffV1({
@@ -843,20 +936,10 @@ export const manageBreedingHatchWorkflow = (
     if (ctx.egg.revision !== ctx.request.expectedEggRevision) return fail(409, 'Egg changed before hatch workflow inspection')
     // Projecting these stages also verifies their current durable authority.
     if (ctx.egg.status === 'ready') {
-      const command = parseBreedingOperationCommandV1({
-        schemaVersion: 1, operationId: beginOperationId(ctx), commandKind: 'begin-hatch',
-        actor: actorCommandFields(ctx.role, ctx.profile, ctx.trainer.slug), ruleset: ctx.egg.ruleset,
-        scopes: [{ kind: 'pokemon-egg', eggId: ctx.egg.eggId, expectedRevision: ctx.egg.revision }],
-        payload: { eggId: ctx.egg.eggId, destination: { kind: 'box', trainerSheetSlug: ctx.trainer.slug }, requestSpecialRoll: true },
-      })
-      const actor = createActor({ role: ctx.role, profile: ctx.profile, command, campaignMinute: ctx.clock.campaignMinute })
-      try {
-        const authority = projectPokemonEggHatchOfferV1({ command, egg: ctx.egg, ownerTrainerFact: ctx.fact,
-          actorAuthority: actor, ownerTrainerControl: ctx.control, referenceVersions: ctx.references,
-          atCampaignMinute: ctx.clock.campaignMinute, securityPolicyDefinitionSha256: securityPolicyJson.definitionSha256 })
-        if (authority.offer.availability.status !== 'available') return fail(409, 'Current hatch offer is unavailable')
+      const destinations = currentDestinationAuthorities(ctx)
+      if (destinations[0]?.authority.offer.availability.status !== 'available') {
+        return fail(409, 'Current Box hatch destination is unavailable')
       }
-      catch { return fail(409, 'Current hatch offer is unavailable') }
     }
     else if (ctx.egg.status === 'hatching') completionAuthority(ctx)
     return workflowProjection(ctx, 'none', null)
@@ -865,9 +948,10 @@ export const manageBreedingHatchWorkflow = (
   const expectedId = expectedActionOperationId(ctx)
   const existing = expectedId ? createSqliteBreedingOperationRepository(ctx.database).get(expectedId) : null
   if (ctx.egg.revision !== ctx.request.expectedEggRevision) {
-    if (exactAcceptedReplay({ record: existing, request: ctx.request, role: ctx.role, profile: ctx.profile, egg: ctx.egg })) {
-      return workflowProjection(ctx, 'exact-replay', null)
-    }
+    const exactReplay = ctx.request.intent === 'begin'
+      ? exactAcceptedBeginReplayRecord(ctx) !== null
+      : exactAcceptedReplay({ record: existing, request: ctx.request, role: ctx.role, profile: ctx.profile, egg: ctx.egg })
+    if (exactReplay) return workflowProjection(ctx, 'exact-replay', null)
     return fail(409, 'Egg changed before the confirmed hatch action')
   }
   if (ctx.request.intent === 'begin') return beginHatch(ctx)
