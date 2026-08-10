@@ -1,8 +1,8 @@
 # Breeding Workshop
 
-The Breeding Workshop is the campaign-scoped presentation entry point for breeding and Egg lifecycle work. Its route is `/breeding`; the shell read API is `/api/breeding/workshop`, the base non-mutating Project-wizard API is `POST /api/breeding/projects/wizard`, the explanation projection is `POST /api/breeding/projects/wizard/guidance`, and the current choice/confirmation API is `POST /api/breeding/projects/wizard/choices`. It is not a map, encounter, placement, scene, or initiative surface.
+The Breeding Workshop is the campaign-scoped presentation entry point for breeding and Egg lifecycle work. Its route is `/breeding`; the shell read API is `/api/breeding/workshop`, current Project/Egg cards load from `/api/breeding/workshop/activity`, the base non-mutating Project-wizard API is `POST /api/breeding/projects/wizard`, the explanation projection is `POST /api/breeding/projects/wizard/guidance`, and the current choice/confirmation API is `POST /api/breeding/projects/wizard/choices`. It is not a map, encounter, placement, scene, or initiative surface.
 
-BR-070 establishes the Workshop shell, ownership context, navigation, and safe loading/empty/error states. BR-071 adds the transient Project wizard for destination, Breeder, parents, consent status, and campaign timeline. BR-072 adds closed compatibility and unavailable explanations, current source contributions, and bounded GM diagnostics. BR-073 adds rank-authority presentation, campaign settings, server-issued setup choices, explicit confirmation, and same-owner Project creation through the existing durable initial-progress path. Project and Egg cards, incubation controls, hatch controls, cross-owner consent UX, and later GM tools remain owned by BR-074 through BR-078.
+BR-070 establishes the Workshop shell, ownership context, navigation, and safe loading/empty/error states. BR-071 adds the transient Project wizard for destination, Breeder, parents, consent status, and campaign timeline. BR-072 adds closed compatibility and unavailable explanations, current source contributions, and bounded GM diagnostics. BR-073 adds rank-authority presentation, campaign settings, server-issued setup choices, explicit confirmation, and same-owner Project creation through the existing durable initial-progress path. BR-074 adds owner/GM Project and Egg cards with exact campaign progress, bounded lifecycle history, system recovery state, and transfer handoffs. Hatch decisions, child destinations, and complete private cross-owner consent UX remain owned by BR-075 through BR-078.
 
 ## Authority and ownership
 
@@ -79,6 +79,16 @@ Selecting an option refreshes the complete self-hashed projection. Pressing **Co
 
 Exact retries return the same Project without another revision, adjudication, realtime row, publication, or random draw. A changed parent revision, campaign option, provider handoff, security/reference hash, or option identity requires fresh authority. Cross-owner confirmation remains blocked for BR-077.
 
+## Project and Egg activity cards
+
+After the shell authorizes one selected Trainer, the BR-074 activity endpoint rebuilds that same Profile/Trainer or GM context against the current campaign database. Aggregate IDs are lookup results, never request authority. One response contains at most the 50 most recently updated owner Projects and 50 owner Eggs and explicitly reports truncation. It is security-bound, self-hashed, plain-JSON-only, and rejected by the browser before adoption on any shape, policy, or digest drift.
+
+Project cards show human parent/Breeder labels, revision and exact status, combined progress against the reviewed 480 campaign minutes, current consent state, and bounded aggregate milestones. An owner can identify only their own parent; a participating parent's sheet identity is structurally null and rendered only as `Participating parent`. An authenticated GM may identify both current parent references for the selected owner's card. Neither card audience receives Profile IDs, operation IDs, hashes, rolls, providers, read sets, receipts, or consent records.
+
+Egg cards show owner-authorized resolved Species, Nature, Ability, Gender, starting Level, source class, exact incubation progress/pause, revision/status, and bounded lifecycle/consumed-transfer milestones. Transfer presentation comes only from current Egg status/revision and durable consent rows. It exposes either a visible setup/review handoff or a concise unavailable reason. Opening setup is non-mutating and ownership never changes optimistically; the private dual-positive-consent completion UX remains BR-077 authority.
+
+A pending operation scope turns the affected card into an amber system-recovery state and blocks transfer presentation. Normal users receive a safe authoritative refresh action, not command payloads or a second mutation. History uses native disclosures and campaign-minute facts; recovery is visually and semantically separate from a breeding or hatch decision.
+
 ## Presentation states
 
 The shell has explicit paths for:
@@ -107,4 +117,4 @@ If the Workshop cannot load:
 4. retry to force a current server projection;
 5. treat security-policy or projection-hash mismatch as an integrity failure rather than rendering stale data.
 
-The reviewed BR-070 shell contract is `data/breeding-automation/workshop-presentation-contract.json`, the BR-071 wizard contract is `data/breeding-automation/project-wizard-presentation-contract.json`, the BR-072 guidance contract is `data/breeding-automation/project-guidance-presentation-contract.json`, and the BR-073 choice/creation contract is `data/breeding-automation/project-choices-presentation-contract.json`. Focused evidence lives in the shared-contract, server-projection, current-reference, API-route, composable, component/accessibility, navigation, and Profile-route-guard tests named by those contracts.
+The reviewed BR-070 shell contract is `data/breeding-automation/workshop-presentation-contract.json`, the BR-071 wizard contract is `data/breeding-automation/project-wizard-presentation-contract.json`, the BR-072 guidance contract is `data/breeding-automation/project-guidance-presentation-contract.json`, the BR-073 choice/creation contract is `data/breeding-automation/project-choices-presentation-contract.json`, and the BR-074 card contract is `data/breeding-automation/workshop-activity-presentation-contract.json`. Focused evidence lives in the shared-contract, server-projection, current-reference, API-route, composable, component/accessibility, navigation, and Profile-route-guard tests named by those contracts.

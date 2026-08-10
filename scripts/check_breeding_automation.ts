@@ -210,6 +210,8 @@ for (const path of [
   'data/breeding-automation/workshop-presentation-contract.json',
   'data/breeding-automation/project-wizard-presentation-contract.json',
   'data/breeding-automation/project-guidance-presentation-contract.json',
+  'data/breeding-automation/project-choices-presentation-contract.json',
+  'data/breeding-automation/workshop-activity-presentation-contract.json',
   'data/breeding-automation/campaign-operation-ledger-contract.json',
   'data/breeding-automation/campaign-clock-contract.json',
   'data/breeding-automation/realtime-contract.json',
@@ -407,6 +409,34 @@ assert(projectGuidanceContract.definition?.presentation?.candidateDisclosure ===
   && projectGuidanceContract.definition?.presentation?.minimumControlHeightPx === 44
   && projectGuidanceContract.definition?.presentation?.keyboardOperable === true
   && projectGuidanceContract.definition?.presentation?.reducedMotion === 'honored', 'Project guidance accessibility contract drifted')
+const projectChoicesContract = json<Record<string, any>>('data/breeding-automation/project-choices-presentation-contract.json')
+assert(projectChoicesContract.contractId === 'rotom-breeding-project-choices-presentation-v1'
+  && projectChoicesContract.definition?.ticket === 'BR-073'
+  && projectChoicesContract.definition?.scope?.clientMechanicsAuthority === 'none', 'Project choices presentation identity or authority drifted')
+assert(projectChoicesContract.definition?.creation?.explicitConfirmation === 'mandatory'
+  && projectChoicesContract.definition?.creation?.minimumCampaignMinutesBeforeEgg === 480
+  && projectChoicesContract.definition?.privacy?.crossOwnerBeforeConsent?.startsWith('blocked'), 'Project choices confirmation, timeline, or cross-owner boundary drifted')
+const workshopActivityContract = json<Record<string, any>>('data/breeding-automation/workshop-activity-presentation-contract.json')
+assert(workshopActivityContract.contractId === 'rotom-breeding-workshop-activity-presentation-v1'
+  && workshopActivityContract.definition?.ticket === 'BR-074'
+  && workshopActivityContract.definition?.scope?.apiRoute === '/api/breeding/workshop/activity'
+  && workshopActivityContract.definition?.scope?.clientMechanicsAuthority === 'none', 'Workshop activity presentation identity or authority drifted')
+assert(workshopActivityContract.definition?.authority?.projectsAndEggs === 'selected-owner-only-latest-50-each'
+  && workshopActivityContract.definition?.authority?.progress === 'aggregate-campaign-minute-facts-only'
+  && workshopActivityContract.definition?.authority?.recovery === 'current-pending-operation-scopes'
+  && workshopActivityContract.definition?.authority?.transfer === 'current-Egg-status-revision-and-durable-consent-state', 'Workshop activity authority sources drifted')
+assert(workshopActivityContract.definition?.cards?.historyMaximum === 12
+  && workshopActivityContract.definition?.cards?.projectMaximum === 50
+  && workshopActivityContract.definition?.cards?.EggMaximum === 50
+  && workshopActivityContract.definition?.cards?.truncationVisible === true, 'Workshop activity card bounds drifted')
+assert(workshopActivityContract.definition?.privacy?.ownerForeignParentIdentity === 'null'
+  && workshopActivityContract.definition?.privacy?.ProfileIds === 'forbidden'
+  && workshopActivityContract.definition?.privacy?.operationIdsAndHashes === 'forbidden'
+  && workshopActivityContract.definition?.transferAndRecoveryPresentation?.optimisticOwnershipChange === 'forbidden', 'Workshop activity privacy or durable transfer boundary drifted')
+assert(workshopActivityContract.definition?.presentation?.nativeProgress === true
+  && workshopActivityContract.definition?.presentation?.minimumControlHeightPx === 44
+  && workshopActivityContract.definition?.presentation?.keyboardOperable === true
+  && workshopActivityContract.definition?.presentation?.reducedMotion === 'honored', 'Workshop activity accessibility contract drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
   && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')
@@ -915,6 +945,28 @@ for (const path of [
   'tests/server/breedingProjectGuidance.test.ts',
   'tests/server/breedingProjectGuidanceRoute.test.ts',
   'data/breeding-automation/project-guidance-presentation-contract.json',
+  'shared/breeding/projectChoices.ts',
+  'server/domain/breeding/currentReferences.ts',
+  'server/domain/breeding/projectChoices.ts',
+  'server/useCases/loadBreedingProjectChoices.ts',
+  'server/api/breeding/projects/wizard/choices.post.ts',
+  'tests/shared/breedingProjectChoicesContract.test.ts',
+  'tests/server/breedingCurrentReferences.test.ts',
+  'tests/server/breedingProjectChoices.test.ts',
+  'tests/server/breedingProjectChoicesRoute.test.ts',
+  'data/breeding-automation/project-choices-presentation-contract.json',
+  'shared/breeding/workshopActivity.ts',
+  'server/domain/breeding/workshopActivity.ts',
+  'server/useCases/loadBreedingWorkshopActivity.ts',
+  'server/api/breeding/workshop/activity.get.ts',
+  'src/composables/breeding/useBreedingWorkshopActivity.ts',
+  'src/components/breeding/BreedingWorkshopActivityCards.vue',
+  'tests/shared/breedingWorkshopActivityContract.test.ts',
+  'tests/server/breedingWorkshopActivity.test.ts',
+  'tests/server/breedingWorkshopActivityRoute.test.ts',
+  'tests/composables/breeding/useBreedingWorkshopActivity.test.ts',
+  'tests/components/breedingWorkshopActivityCards.test.ts',
+  'data/breeding-automation/workshop-activity-presentation-contract.json',
   'docs/breeding/workshop.md',
   'shared/breeding/fossilEgg.ts',
   'server/domain/breeding/fossilEgg.ts',

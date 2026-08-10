@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "contractId": "rotom-breeding-workshop-activity-presentation-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "8186c60f85085b466429385ad5e6583d4e2df4cfc8e06d79ee2b2fc29d92a7d1",
+  "definition": {
+    "ticket": "BR-074",
+    "scope": {
+      "kind": "campaign-project-and-Egg-activity-cards",
+      "route": "/breeding",
+      "apiRoute": "/api/breeding/workshop/activity",
+      "apiMethod": "GET",
+      "extends": "BR-070-authoritative-ownership-shell",
+      "mapDependency": "none",
+      "encounterDependency": "none",
+      "clientMechanicsAuthority": "none"
+    },
+    "implementation": {
+      "sharedContractPath": "shared/breeding/workshopActivity.ts",
+      "serverPolicyPath": "server/domain/breeding/workshopActivity.ts",
+      "useCasePath": "server/useCases/loadBreedingWorkshopActivity.ts",
+      "apiPath": "server/api/breeding/workshop/activity.get.ts",
+      "composablePath": "src/composables/breeding/useBreedingWorkshopActivity.ts",
+      "componentPath": "src/components/breeding/BreedingWorkshopActivityCards.vue",
+      "pagePath": "src/pages/breeding/index.vue",
+      "presentationPolicyDefinitionSha256": "92ba2a006d6c56b8088360bfc660a1bdee57850973a9ce57b73a3136c5f7299a"
+    },
+    "authority": {
+      "request": "current-Profile-and-selected-Trainer-selector-only",
+      "playerAccess": "exact-current-selected-Profile-link",
+      "gmAccess": "current-authenticated-GM-selected-campaign-Trainer",
+      "repositories": "one-current-SQLite-connection",
+      "projectsAndEggs": "selected-owner-only-latest-50-each",
+      "progress": "aggregate-campaign-minute-facts-only",
+      "history": "immutable-aggregate-milestones-and-consumed-transfer-settlements",
+      "recovery": "current-pending-operation-scopes",
+      "transfer": "current-Egg-status-revision-and-durable-consent-state",
+      "browserInference": "forbidden"
+    },
+    "cards": {
+      "project": [
+        "human-parent-and-Breeder-presentation",
+        "exact-status-and-revision",
+        "480-minute-progress",
+        "consent-status",
+        "bounded-history",
+        "pending-recovery"
+      ],
+      "Egg": [
+        "human-Species-Nature-Ability-Gender-and-Level",
+        "exact-status-and-revision",
+        "incubation-progress-and-pause",
+        "bounded-history",
+        "pending-recovery",
+        "transfer-state-and-action"
+      ],
+      "historyMaximum": 12,
+      "projectMaximum": 50,
+      "EggMaximum": 50,
+      "truncationVisible": true,
+      "raw-identifiersAsLabels": false
+    },
+    "privacy": {
+      "serverProjection": "mandatory",
+      "ownerForeignParent": "relationship-and-consent-status-only",
+      "ownerForeignParentIdentity": "null",
+      "gmParentIdentity": "current-selected-card-access",
+      "ProfileIds": "forbidden",
+      "operationIdsAndHashes": "forbidden",
+      "providerRollReadSetReceiptEvidence": "forbidden",
+      "realtimePayload": "none"
+    },
+    "transferAndRecoveryPresentation": {
+      "transferAvailability": "server-issued-visible-action-or-reason",
+      "transferMutation": "deferred-until-private-dual-consent-workflow",
+      "pendingCommand": "system-recovery-card-not-game-decision",
+      "safeRecoveryAction": "refresh-authoritative-state",
+      "optimisticOwnershipChange": "forbidden"
+    },
+    "projection": {
+      "schemaVersion": 1,
+      "securityPolicyBinding": "mandatory",
+      "hash": "sha256-stable-json-projection-excluding-projectionDefinitionSha256",
+      "plainJsonOnly": true,
+      "unknownFieldsAccessorsSymbolsSparseOrEnrichedValues": "reject"
+    },
+    "presentation": {
+      "semanticRegionsAndHeadings": true,
+      "nativeProgress": true,
+      "nativeHistoryAndTransferDisclosure": true,
+      "minimumControlHeightPx": 44,
+      "keyboardOperable": true,
+      "screenReaderLabels": true,
+      "visibleFocus": true,
+      "statusAndErrorAnnouncements": true,
+      "responsive": "two-to-one-column",
+      "reducedMotion": "honored",
+      "unavailableReasonsVisible": true
+    },
+    "bindings": {
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "projectionContractDefinitionSha256": "2177141c8935978d0066bcdeea992b8c55a167bf0b4d93b32cd981b01e9eb3ce",
+      "eggTransferContractDefinitionSha256": "ebc3d04f38310d892780a596a5e9e543eb5c9c3bf12cc91c56bbac8718faa265",
+      "lifecycleRecoveryContractDefinitionSha256": "9173943f15bb29b3412b1e535eaeb47d71775fb2e822e3039fbe9ba9d49d4c0a",
+      "workshopPresentationContractDefinitionSha256": "64ef9869977653c06cd7229dfc7a27f38f8db9a9a1e1adf4877a241c15314cc4"
+    },
+    "verification": {
+      "sharedContractTest": "tests/shared/breedingWorkshopActivityContract.test.ts",
+      "serverUseCaseTest": "tests/server/breedingWorkshopActivity.test.ts",
+      "routeTest": "tests/server/breedingWorkshopActivityRoute.test.ts",
+      "componentAndAccessibilityTest": "tests/components/breedingWorkshopActivityCards.test.ts",
+      "composableTest": "tests/composables/breeding/useBreedingWorkshopActivity.test.ts"
+    }
+  }
+}

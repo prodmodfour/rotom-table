@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 73,
+    "covered": 74,
     "in-progress": 1,
-    "planned": 16,
+    "planned": 15,
     "blocked": 0
   },
   "requirements": [
@@ -1799,8 +1799,26 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/workshop-activity-presentation-contract.json",
+        "shared/breeding/workshopActivity.ts",
+        "server/domain/breeding/workshopActivity.ts",
+        "server/useCases/loadBreedingWorkshopActivity.ts",
+        "server/api/breeding/workshop/activity.get.ts",
+        "src/composables/breeding/useBreedingWorkshopActivity.ts",
+        "src/components/breeding/BreedingWorkshopActivityCards.vue",
+        "src/pages/breeding/index.vue",
+        "tests/shared/breedingWorkshopActivityContract.test.ts",
+        "tests/server/breedingWorkshopActivity.test.ts",
+        "tests/server/breedingWorkshopActivityRoute.test.ts",
+        "tests/composables/breeding/useBreedingWorkshopActivity.test.ts",
+        "tests/components/breedingWorkshopActivityCards.test.ts",
+        "docs/breeding/workshop.md",
+        "docs/breeding/security-and-privacy.md",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-cross-owner-consent-v1"
       ]
@@ -1815,7 +1833,7 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },
