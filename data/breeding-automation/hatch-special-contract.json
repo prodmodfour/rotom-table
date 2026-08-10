@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "422c22f2359eadebb1aeb0e03eeb0001ad3bd4bf691515d135256e7e000df024",
+  "definitionSha256": "de3c68e70695c00a926bbae4875a017f0a790d51b778c46aa7b1a2bdf6e8e0e0",
   "definition": {
     "version": 1,
     "ticket": "BR-055",
@@ -190,12 +190,12 @@
     },
     "bindings": {
       "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
-      "hatchOfferContractDefinitionSha256": "d8b699d0a653651de87f1f03ffe109f33fd2fe6f03065805d0ef05d4d0818561",
-      "ledgerContractDefinitionSha256": "dcd6505d167a32e3bfbaf08353aee1e228fe51291668eef7456ab8f3cb2624bf",
-      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
-      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
-      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
-      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "hatchOfferContractDefinitionSha256": "29995f835ede496af29d4ff829fa5ad7c03f2c08190a47201a7b42cc4fc96c10",
+      "ledgerContractDefinitionSha256": "a06f2d8c7384c60aa7ca75a1e24d95cf9dbbf203251a9c8f4f6b48f83f990075",
+      "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
+      "authorizationContractDefinitionSha256": "2ae8a4ad9dcea11042dbdcc6ba71a6c87f00578b42d5699407e4eae643e55dd4",
+      "transactionCoordinatorContractDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea",
+      "realtimeContractDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932",
       "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
       "runtimePolicyDefinitionSha256": "dea894103ccc00bc4f271fbdc23c05eb937bc6f28afc95d50fc20cf6daf8305d",
       "runtimeEvidenceDefinitionSha256": "8ae720138b142ae86979758a37ac28142456830f6318a013196b784df66eafc0"

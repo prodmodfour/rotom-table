@@ -214,6 +214,7 @@ for (const path of [
   'data/breeding-automation/workshop-activity-presentation-contract.json',
   'data/breeding-automation/hatch-workflow-presentation-contract.json',
   'data/breeding-automation/hatch-destination-presentation-contract.json',
+  'data/breeding-automation/consent-workflow-presentation-contract.json',
   'data/breeding-automation/campaign-operation-ledger-contract.json',
   'data/breeding-automation/campaign-clock-contract.json',
   'data/breeding-automation/realtime-contract.json',
@@ -247,6 +248,7 @@ for (const path of [
   'data/breeding-automation/parent-source-change-contract.json',
   'data/breeding-automation/storage-schema-v26.json',
   'data/breeding-automation/storage-schema-v27.json',
+  'data/breeding-automation/storage-schema-v28.json',
   'data/breeding-automation/egg-transfer-contract.json',
   'data/breeding-automation/fossil-egg-contract.json',
   'data/breeding-automation/gm-egg-contract.json',
@@ -312,6 +314,17 @@ assert(storageSchemaV27.definition?.newTable === 'trainer_species_acquisition_so
   && storageSchemaV27.definition?.invariants?.externalSourcesDoNotForgeBreedingOperations === true
   && storageSchemaV27.definition?.invariants?.sourceSettlementRequiresHistory === true
   && storageSchemaV27.definition?.invariants?.offlineParity === true, 'storage schema v27 acquisition policy drifted')
+const storageSchemaV28 = json<Record<string, any>>('data/breeding-automation/storage-schema-v28.json')
+assert(storageSchemaV28.schemaId === 'rotom-breeding-storage-v28'
+  && storageSchemaV28.definition?.fromVersion === 27
+  && storageSchemaV28.definition?.toVersion === 28
+  && storageSchemaV28.definition?.newCommandKind === 'settle-egg-transfer-consent'
+  && storageSchemaV28.definition?.newOutcomeKind === 'egg-transfer-consent-settled', 'storage schema v28 identity drifted')
+assert(storageSchemaV28.definition?.settlementPolicy?.gmConsentSubstitution === 'forbidden'
+  && storageSchemaV28.definition?.settlementPolicy?.expiryEquality === 'expired'
+  && storageSchemaV28.definition?.invariants?.existingOperationRowsPreserved === true
+  && storageSchemaV28.definition?.invariants?.offlineParity === true
+  && storageSchemaV28.definition?.invariants?.noEggOwnershipMutation === true, 'storage schema v28 transfer-consent policy drifted')
 const acquisitionIntegrationContract = json<Record<string, any>>('data/breeding-automation/species-acquisition-integration-contract.json')
 assert(acquisitionIntegrationContract.contractId === 'rotom-breeding-species-acquisition-integration-v1'
   && acquisitionIntegrationContract.definition?.ticket === 'BR-069'
@@ -472,6 +485,23 @@ assert(hatchDestinationContract.definition?.linkage?.writer === 'existing-BR-057
   && hatchDestinationContract.definition?.navigation?.preAcceptanceChildLink === 'forbidden'
   && hatchDestinationContract.definition?.presentation?.nativeDestinationRadioGroup === true
   && hatchDestinationContract.definition?.presentation?.minimumControlHeightPx === 44, 'Hatch destination linkage, navigation, or accessibility contract drifted')
+const consentWorkflowContract = json<Record<string, any>>('data/breeding-automation/consent-workflow-presentation-contract.json')
+assert(consentWorkflowContract.contractId === 'rotom-breeding-consent-workflow-presentation-v1'
+  && consentWorkflowContract.definition?.ticket === 'BR-077'
+  && consentWorkflowContract.definition?.scope?.apiRoute === '/api/breeding/consent'
+  && consentWorkflowContract.definition?.scope?.clientMechanicsAuthority === 'none', 'Consent workflow presentation identity or authority drifted')
+assert(consentWorkflowContract.definition?.projectConsent?.privateMechanicsBeforeConsent === 'not-parsed-resolved-or-projected'
+  && consentWorkflowContract.definition?.eggTransferConsent?.requiredPositiveConsentCount === 2
+  && consentWorkflowContract.definition?.eggTransferConsent?.gmPositiveConsentSubstitution === 'forbidden'
+  && consentWorkflowContract.definition?.gmPolicy?.setupOverrideCreatesConsent === false, 'Consent workflow separation or GM policy drifted')
+assert(consentWorkflowContract.definition?.privacy?.playerTransferCounterpartIdentity === 'structurally-absent'
+  && consentWorkflowContract.definition?.privacy?.notifications === 'counts-only-no-counterpart-choice-or-private-mechanics'
+  && consentWorkflowContract.definition?.recovery?.ordinaryActionsWhilePending === 'all-disabled'
+  && consentWorkflowContract.definition?.recovery?.commandPayloadProjection === 'forbidden', 'Consent workflow privacy or recovery drifted')
+assert(consentWorkflowContract.definition?.presentation?.transferSetupModal === 'labelled-aria-modal-dialog'
+  && consentWorkflowContract.definition?.presentation?.minimumControlHeightPx === 44
+  && consentWorkflowContract.definition?.presentation?.keyboardAndTouchOperable === true
+  && consentWorkflowContract.definition?.presentation?.reducedMotion === 'honored', 'Consent workflow accessibility drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
   && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')
@@ -947,6 +977,7 @@ for (const path of [
   'server/useCases/settleReviewedSpeciesAcquisition.ts',
   'tests/server/speciesAcquisitionIntegration.test.ts',
   'data/breeding-automation/storage-schema-v27.json',
+  'data/breeding-automation/storage-schema-v28.json',
   'data/breeding-automation/species-acquisition-integration-contract.json',
   'shared/breeding/workshop.ts',
   'server/domain/breeding/workshop.ts',
@@ -1015,6 +1046,17 @@ for (const path of [
   'tests/components/breedingHatchDecisionFlow.test.ts',
   'data/breeding-automation/hatch-workflow-presentation-contract.json',
   'data/breeding-automation/hatch-destination-presentation-contract.json',
+  'shared/breeding/consentWorkflow.ts',
+  'server/domain/breeding/consentWorkflow.ts',
+  'server/useCases/manageBreedingConsentWorkflow.ts',
+  'server/api/breeding/consent.post.ts',
+  'src/composables/breeding/useBreedingConsentWorkflow.ts',
+  'src/components/breeding/BreedingConsentCenter.vue',
+  'tests/shared/breedingConsentWorkflowContract.test.ts',
+  'tests/server/breedingConsentWorkflowRoute.test.ts',
+  'tests/composables/breeding/useBreedingConsentWorkflow.test.ts',
+  'tests/components/breedingConsentCenter.test.ts',
+  'data/breeding-automation/consent-workflow-presentation-contract.json',
   'docs/breeding/workshop.md',
   'shared/breeding/fossilEgg.ts',
   'server/domain/breeding/fossilEgg.ts',

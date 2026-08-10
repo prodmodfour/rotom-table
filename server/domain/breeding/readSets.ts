@@ -173,6 +173,10 @@ const validateCommandPayloadReads = (command: BreedingOperationCommandV1, readSe
     requireResource(readSet, { kind: 'trainer-sheet', id: payload.ownerTrainerSlug, existence: 'present', purpose: 'authorization' }, 'readSet.resources')
     return
   }
+  if (command.commandKind === 'settle-egg-transfer-consent') {
+    requireResource(readSet, { kind: 'egg-transfer-consent', id: payload.consentId, existence: 'present', revision: revisionFromScope(command, 'egg-transfer-consent', payload.consentId), purpose: 'consent' }, 'readSet.resources')
+    return
+  }
   if (['transfer-egg', 'advance-egg-incubation', 'set-egg-incubation-pause', 'apply-egg-warmer-capability', 'mark-egg-ready', 'begin-hatch', 'resolve-hatch-special', 'complete-hatch', 'cancel-egg'].includes(command.commandKind)) requireEgg(readSet, command, payload.eggId)
   if (command.commandKind === 'apply-egg-warmer-capability') requireResource(readSet, { kind: 'pokemon-sheet', id: payload.sourcePokemonSheetSlug, existence: 'present', revision: payload.expectedSourcePokemonSheetRevision, purpose: 'mechanics' }, 'readSet.resources')
   if (command.commandKind === 'transfer-egg') {

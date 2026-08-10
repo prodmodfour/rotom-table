@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "52d31dcb6f1247651a11a4124c64d4173144a8dfc59a403f004fe4490b9d88f3",
+  "definitionSha256": "4d20bd9571e0323507eb5f6a4131e67963307b882c4895dc608f4f8848f390d9",
   "definition": {
     "ticket": "BR-073",
     "scope": {
@@ -146,14 +146,14 @@
     },
     "bindings": {
       "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
-      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
+      "authorizationContractDefinitionSha256": "2ae8a4ad9dcea11042dbdcc6ba71a6c87f00578b42d5699407e4eae643e55dd4",
       "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
-      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
-      "projectSetupValidationContractDefinitionSha256": "88266946419fd3d9da33c97c098c736ee7f0aab31ab43917981741786a10b25c",
-      "projectInitialProgressContractDefinitionSha256": "538602b876133ed21eb86eadd4a3013846bf4cd2c5a9ed8b5893c7b8eb5cbd00",
-      "projectCampaignOfferContractDefinitionSha256": "f9c5f9b668aca27f072d8369080fc2ff8b5517197b4f8c2e143c503bc9a0f946",
-      "projectWizardPresentationContractDefinitionSha256": "f7f12c4069c5afccc4c3d16f5263239aac7dbeeccc5fd693fa56ce7903c34849",
-      "projectGuidancePresentationContractDefinitionSha256": "1acbcb6fc06614fbb0e4f9f91acf5ef5fc436d840af0506137bc5b4d6318d9e5",
+      "readSetContractDefinitionSha256": "98b2b9a040aea6a95165ff88e57277a8a31dd01f8d47e12930ab035a5273f639",
+      "projectSetupValidationContractDefinitionSha256": "d35193828d217b2715f9c94bba88697fc3e0fb8b8f6316743f30a2aabf95fec0",
+      "projectInitialProgressContractDefinitionSha256": "583e3cb25379c86ac175f09f3683b0cd40955a6a27a442fbf3348c4876ac19ac",
+      "projectCampaignOfferContractDefinitionSha256": "73578fbb9fa2fa421c96a4531b95182810573694861976345293332421b2d4ff",
+      "projectWizardPresentationContractDefinitionSha256": "381836c8e226178119f2511235dbd8d952c50dd6414dab5c501759f8f6253c4d",
+      "projectGuidancePresentationContractDefinitionSha256": "262b2927dbc4a79ddf873f26b0a60e90a3fd60625d6e5ea73fa801823e985e7c",
       "breederEdgeHandoffContractDefinitionSha256": "6d00f0adbf87c5751d1f5df6973325b29c78b9636f1fcf92d55b038299dcf55e",
       "featureProviderHandoffContractDefinitionSha256": "fdc100e73b51ad2179d2069a6b36b7d9ecf3d441b6d5ed0e0a5fe743714b9479"
     },

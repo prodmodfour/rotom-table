@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "068e407457fe1b0ce5ace96a9d594caa402db3c27709ff3b862d1e9d621a8d0d",
+  "definitionSha256": "13f6d6f3af88188e5409c58d297c7f24fcdcb018eee054d8dd57d63d276a6172",
   "definition": {
     "version": 1,
     "domainPath": "server/domain/breeding/inheritanceLearning.ts",
@@ -134,13 +134,13 @@
     "bindings": {
       "runtimePolicyDefinitionSha256": "0ae30cde6f2bcd70b4db6a60c9af6e7cf784a4522a1dd363b733adeb8aa85bb8",
       "lineageContractDefinitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1",
-      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
-      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
-      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
-      "storageSchemaV25DefinitionSha256": "9fdd70e8026120bab453c74b608230edb52aec071ff59c3b0c76d32284e3a235",
-      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
-      "childSheetConstructionContractDefinitionSha256": "de128d78ecbe881ac1cf97333fef08d34c97f7db123586692398161d1bdea531",
-      "hatchCompletionContractDefinitionSha256": "0a1d03867ff10ae647a00a17db06770f4928e063adb7de103f7f8384c8e9a635"
+      "authorizationContractDefinitionSha256": "2ae8a4ad9dcea11042dbdcc6ba71a6c87f00578b42d5699407e4eae643e55dd4",
+      "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
+      "readSetContractDefinitionSha256": "98b2b9a040aea6a95165ff88e57277a8a31dd01f8d47e12930ab035a5273f639",
+      "storageSchemaV25DefinitionSha256": "766c133e38315ecba7934881243d4c156911398e86d2bfeee6de430bce8efa95",
+      "realtimeContractDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932",
+      "childSheetConstructionContractDefinitionSha256": "e031d7fd01540639b181e6dd8a256dc16d850897e39e6a3bf46613c6da5352f9",
+      "hatchCompletionContractDefinitionSha256": "1867892d039355a3e6e6fd128a5f0e853d02e4ead538850adfc78f816e631d84"
     },
     "tests": {
       "domain": "tests/server/breedingInheritanceLearning.test.ts",

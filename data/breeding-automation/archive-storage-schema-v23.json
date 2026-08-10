@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "f5244778586a7a0567faba9befc8481c6911dc72ebdd0c62a850b7f4ee290959",
+  "definitionSha256": "236726ef662682f290cd267e988e84b87b86f9390bb74f7c59b92291c38c0803",
   "definition": {
     "version": 23,
     "migrationName": "store immutable breeding archives import requests and restore receipts",
@@ -44,9 +44,9 @@
       "transaction": "BEGIN-IMMEDIATE-all-or-nothing"
     },
     "bindings": {
-      "archiveContractDefinitionSha256": "ed6e1663cc0fba166914985ad7f5aff44a752a4cc98c0b05d87a28082ce4dbd7",
-      "storageSchemaV22DefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89",
-      "transactionCoordinatorDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0"
+      "archiveContractDefinitionSha256": "791c7236517655fb02eaa598865bd51b9391173be39b8eea6b0995da67af11e2",
+      "storageSchemaV22DefinitionSha256": "0da2fb267112523d86bc1d248080a782d1778d02eacece447e91ca64c412a934",
+      "transactionCoordinatorDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea"
     }
   }
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "contractId": "rotom-pokemon-egg-transfer-v1",
-  "definitionSha256": "ebc3d04f38310d892780a596a5e9e543eb5c9c3bf12cc91c56bbac8718faa265",
+  "definitionSha256": "35eb7497732ad71dbda180a5c132bb0534f89f85a8eda2e1acb5cf2f9968cb31",
   "definition": {
     "schemaVersion": 1,
     "contractId": "pokemon-egg-transfer-consent-and-privacy-v1",
@@ -15,6 +15,9 @@
       "expiry": "strictly-before-expiresAtCampaignMinute; equality-is-invalid",
       "gmOverride": "cannot-create-or-replace-positive-consent",
       "transferCommand": "exact-current-Egg-plus-two-active-revision-zero-consent-scopes",
+      "consentSettlementCommand": "one-active-revision-zero-consent-scope-current-consenting-Profile-control-only",
+      "revocation": "immutable-revision-one-revoked-successor",
+      "expirySettlement": "immutable-revision-one-expired-successor-at-or-after-campaign-minute-equality",
       "exactRetry": "stored-terminal-result-without-reconsumption-or-republication"
     },
     "authority": {
@@ -96,21 +99,23 @@
     },
     "bindings": {
       "runtimePolicyDefinitionSha256": "eb2bcbf2237a13a3fa3d8ce60583c5868fc4bf49c2478ac27da5a055664d0da5",
-      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
-      "eggLifecyclePolicyContractDefinitionSha256": "0f4006dcab19fc4868eec8917f7e37080b528676acbcbf9e3182e41b25fbf7bd",
+      "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
+      "eggLifecyclePolicyContractDefinitionSha256": "38f3a08c73b99cb376b403c474cf7a8e485f2e7c4c59768ec03cdadfafb0403b",
       "storageSchemaV26DefinitionSha256": "c5426224c9448a95eb8074559c3b292c31aabaf08187012f08de9c4cd7b85c36",
-      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
-      "readSetContractDefinitionSha256": "444d2ea2ac57f4c5aebb07c5fd701995de9ded95483fa7035889085ad9f004e5",
-      "authorizationContractDefinitionSha256": "d27c2bc1fd605e36efdf3ad3347fb1fc161bd86639a2fb87d54643bea1ff7762",
-      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+      "storageSchemaV28DefinitionSha256": "a9ab42f40b0094c2659c091b4b5ba1edde9ce3281e45a689680b65d0a6011802",
+      "transactionCoordinatorContractDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea",
+      "readSetContractDefinitionSha256": "98b2b9a040aea6a95165ff88e57277a8a31dd01f8d47e12930ab035a5273f639",
+      "authorizationContractDefinitionSha256": "2ae8a4ad9dcea11042dbdcc6ba71a6c87f00578b42d5699407e4eae643e55dd4",
+      "realtimeContractDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932",
       "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
-      "repositoryContractDefinitionSha256": "d15c11f9f360d1ebd603feee8ec1506be9262d58f20bc9f753f5af979fa823b5"
+      "repositoryContractDefinitionSha256": "a49fbb1583b2eb417a781a11c2f843d072fec219a78a61cae885d77e721b1c7f"
     },
     "ownershipBoundaries": {
       "BR-053": "pure-lifecycle-and-transfer-reducer",
       "BR-064": "durable-consent-authorization-storage-settlement-and-privacy",
       "BR-065": "fossil-Egg-creation",
-      "BR-066": "alternate-source-Egg-creation"
+      "BR-066": "alternate-source-Egg-creation",
+      "BR-077": "private-Project-and-Egg-transfer-consent-orchestration-revocation-and-presentation"
     }
   },
   "rulesetId": "ptu-1.05-breeding-v1",

@@ -166,7 +166,7 @@ describe('SQLite campaign migration script', () => {
     expect(existsSync(join(backupPath, 'campaign/data/player-profiles/profile_ash00000.json'))).toBe(true)
 
     const migratedConnection = new DatabaseSync(join(campaignRoot, 'rotom-table.sqlite'))
-    expect(migratedConnection.prepare('PRAGMA user_version').get()).toEqual({ user_version: 27 })
+    expect(migratedConnection.prepare('PRAGMA user_version').get()).toEqual({ user_version: 28 })
     for (const table of [
       'pending_move_resolutions',
       'encounter_documents',

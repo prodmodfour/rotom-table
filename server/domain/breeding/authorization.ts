@@ -21,16 +21,18 @@ import {
   type BreedingParentControlEvidenceV1,
   type BreedingTrainerControlEvidenceV1,
 } from '#shared/breeding/authorization'
-import { BREEDING_CONSENT_SCOPES, parseBreedingOperationCommandV1, type BreedingOperationCommandV1 } from '#shared/breeding/operations'
+import { BREEDING_CONSENT_SCOPES, parseBreedingOperationCommandV1, type BreedingOperationCommandV1, type GrantBreedingConsentPayloadV1, type SettleEggTransferConsentPayloadV1 } from '#shared/breeding/operations'
 import type { BreedingOverrideId } from '#shared/breeding/ids'
 import type { BreedingConsentRecordV1 } from '#shared/breeding/ledgers'
+import type { PokemonEggTransferConsentV1 } from '#shared/breeding/eggTransfer'
 import { BREEDING_INCUBATION_PAUSE_REASON_IDS } from '#shared/breeding/incubation'
 import { BREEDING_EGG_READY_CORRECTION_REASON_IDS } from '#shared/breeding/readinessCorrection'
 import { parsePokemonEggDocumentV1, type PokemonEggDocumentV1 } from '#shared/breeding/egg'
-import { parseBreedingProjectDocumentV1, type BreedingProjectDocumentV1 } from '#shared/breeding/project'
+import { BREEDING_PROJECT_ACTIVE_STATUSES, parseBreedingProjectDocumentV1, type BreedingProjectDocumentV1 } from '#shared/breeding/project'
 import type { BreedingOperationReadSetV1 } from '#shared/breeding/readSets'
 import { createBreedingOperationCommandHash } from './operations'
 import { isBreedingConsentCurrentlyUsable, parseAuthoritativeBreedingConsentRecordV1 } from './ledgers'
+import { parseAuthoritativePokemonEggTransferConsentV1 } from './eggTransfer'
 import { parseAuthoritativeBreedingOperationReadSetV1, validateBreedingOperationReadSetCompleteness } from './readSets'
 import {
   BREEDING_CAMPAIGN_CLOCK_BATCH_EVIDENCE_DEFINITION_SHA256,
@@ -288,6 +290,77 @@ const validateOverrides = (values: readonly unknown[], command: BreedingOperatio
   }
   return Object.freeze(parsed)
 }
+export const authorizeBreedingConsentGrantV1 = (input: {
+  readonly command: unknown
+  readonly readSet: unknown
+  readonly actorAuthority: unknown
+  readonly trainerControl: unknown
+  readonly parentControl: unknown
+  readonly project: unknown
+  readonly securityPolicyDefinitionSha256: string
+}): BreedingAuthorizationReceiptV1 => {
+  const command = parseBreedingOperationCommandV1(input.command)
+  if (command.commandKind !== 'grant-breeding-consent') {
+    fail('breeding.authorization.unsupported-command', 'command.commandKind', 'consent grant authorization accepts grant-breeding-consent only.')
+  }
+  const payload = command.payload as GrantBreedingConsentPayloadV1
+  const readSet = validateBreedingOperationReadSetCompleteness(command, input.readSet)
+  const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
+  const control = parseAuthoritativeBreedingTrainerControlEvidenceV1(input.trainerControl)
+  const parent = parseAuthoritativeBreedingParentControlEvidenceV1(input.parentControl)
+  const project = parseBreedingProjectDocumentV1(input.project)
+  const evidence: BreedingAuthorizationEvidenceV1[] = [actor, control, parent]
+  const context = {
+    command,
+    actor,
+    readSet,
+    evidence,
+    overrides: [] as readonly BreedingGmOverrideEvidenceV1[],
+    securityPolicyDefinitionSha256: input.securityPolicyDefinitionSha256,
+  }
+  const projectRead = readSet.resources.find(resource => resource.resourceKind === 'breeding-project'
+    && resource.resourceId === project.projectId)
+  const consentRead = readSet.resources.find(resource => resource.resourceKind === 'parent-consent'
+    && resource.resourceId === payload.consentId)
+  const commandParent = project.parentRefs.find(ref => ref.pokemonSheetSlug === payload.parentSheetSlug)
+  const authorized = actor.role === 'player'
+    && actor.authenticatedProfileId === control.profileId
+    && actor.profileDefinitionSha256 === control.profileDefinitionSha256
+    && actor.commandActorProfileId === control.profileId
+    && actor.selectedTrainerSlug === control.trainerSheetSlug
+    && actor.evaluatedAtCampaignMinute === readSet.capturedAtCampaignMinute
+    && control.evaluatedAtCampaignMinute === readSet.capturedAtCampaignMinute
+    && parent.evaluatedAtCampaignMinute === readSet.capturedAtCampaignMinute
+    && parent.verificationMode === 'profile-control'
+    && parent.trainerControlEvidenceDefinitionSha256 === control.definitionSha256
+    && parent.ownerTrainerSlug === control.trainerSheetSlug
+    && payload.projectId === project.projectId
+    && commandParent !== undefined
+    && commandParent.ownerTrainerSlug === parent.ownerTrainerSlug
+    && commandParent.ownerTrainerSlug !== project.ownerTrainerSlug
+    && commandParent.expectedSheetRevision === payload.parentSheetRevision
+    && parent.parentSheetSlug === payload.parentSheetSlug
+    && parent.parentSheetRevision === payload.parentSheetRevision
+    && project.consentPolicy === 'cross-owner-current-revision-consent'
+    && (BREEDING_PROJECT_ACTIVE_STATUSES as readonly string[]).includes(project.status)
+    && same(payload.consentScopes, [...BREEDING_CONSENT_SCOPES].sort(compareCodePoint))
+    && payload.expiresAtCampaignMinute !== null
+    && payload.expiresAtCampaignMinute > readSet.capturedAtCampaignMinute
+    && projectRead?.existence === 'present'
+    && projectRead.revision === project.revision
+    && projectRead.definitionSha256 === sha256(project)
+    && projectRead.purposes.includes('mechanics')
+    && consentRead?.existence === 'absent'
+    && consentRead.purposes.includes('conflict')
+    && readResourceMatches(readSet, 'pokemon-sheet', parent.parentSheetSlug, parent.parentSheetRevision, parent.parentSheetDefinitionSha256)
+    && readResourceMatches(readSet, 'trainer-sheet', parent.ownerTrainerSlug, parent.ownerTrainerRevision, parent.ownerTrainerDefinitionSha256)
+  return receipt({
+    ...context,
+    authorized,
+    reasonId: authorized ? 'breeding.authorization.authorized' : 'breeding.authorization.consent-stale',
+  })
+}
+
 export interface BreedingProjectSetupParentAuthorityInputV1 {
   readonly parentControl: BreedingParentControlEvidenceV1
   readonly ownerTrainerControl: BreedingTrainerControlEvidenceV1 | null
@@ -754,6 +827,67 @@ export const authorizeBreedingLifecycleControlV1 = (input: {
     : { kind: 'breeding-operation', operationId: command.commandKind === 'recover-breeding-operation' ? command.payload.targetOperationId : command.operationId }
   if (!overrideMatches(overrides[0]!, expectedKind, expectedTarget)) return deny(context, 'breeding.authorization.gm-override-invalid')
   return receipt({ ...context, authorized: true, reasonId: 'breeding.authorization.authorized' })
+}
+
+export const authorizePokemonEggTransferConsentSettlementV1 = (input: {
+  readonly command: unknown
+  readonly readSet: unknown
+  readonly actorAuthority: unknown
+  readonly trainerControl: unknown
+  readonly consent: PokemonEggTransferConsentV1
+  readonly securityPolicyDefinitionSha256: string
+}): BreedingAuthorizationReceiptV1 => {
+  const command = parseBreedingOperationCommandV1(input.command)
+  if (command.commandKind !== 'settle-egg-transfer-consent') {
+    fail('breeding.authorization.unsupported-command', 'command.commandKind', 'Egg-transfer consent settlement accepts its dedicated command only.')
+  }
+  const payload = command.payload as SettleEggTransferConsentPayloadV1
+  const readSet = validateBreedingOperationReadSetCompleteness(command, input.readSet)
+  const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
+  const control = parseAuthoritativeBreedingTrainerControlEvidenceV1(input.trainerControl)
+  const consent = parseAuthoritativePokemonEggTransferConsentV1(input.consent)
+  const evidence: BreedingAuthorizationEvidenceV1[] = [actor, control]
+  const context = {
+    command,
+    actor,
+    readSet,
+    evidence,
+    overrides: [] as readonly BreedingGmOverrideEvidenceV1[],
+    securityPolicyDefinitionSha256: input.securityPolicyDefinitionSha256,
+  }
+  const consentResource = readSet.resources.find(resource => resource.resourceKind === 'egg-transfer-consent'
+    && resource.resourceId === consent.consentId)
+  const scope = command.scopes[0]
+  const expiredAtCheckpoint = readSet.capturedAtCampaignMinute >= consent.expiresAtCampaignMinute
+  const reasonMatchesTime = payload.reasonId === (expiredAtCheckpoint
+    ? 'breeding.egg-transfer-consent.expired'
+    : 'breeding.egg-transfer-consent.revoked')
+  const authorized = actor.role === 'player'
+    && consent.status === 'active'
+    && payload.consentId === consent.consentId
+    && reasonMatchesTime
+    && scope?.kind === 'egg-transfer-consent'
+    && scope.consentId === consent.consentId
+    && scope.expectedRevision === consent.revision
+    && actor.authenticatedProfileId === consent.consentingProfileId
+    && actor.authenticatedProfileId === control.profileId
+    && actor.profileDefinitionSha256 === control.profileDefinitionSha256
+    && actor.commandActorProfileId === control.profileId
+    && actor.selectedTrainerSlug === consent.consentingTrainerSlug
+    && control.trainerSheetSlug === consent.consentingTrainerSlug
+    && actor.evaluatedAtCampaignMinute === readSet.capturedAtCampaignMinute
+    && control.evaluatedAtCampaignMinute === readSet.capturedAtCampaignMinute
+    && consentResource?.existence === 'present'
+    && consentResource.revision === consent.revision
+    && consentResource.definitionSha256 === consent.definitionSha256
+    && consentResource.purposes.includes('conflict')
+    && consentResource.purposes.includes('consent')
+    && readResourceMatches(readSet, 'trainer-sheet', control.trainerSheetSlug, control.trainerSheetRevision, control.trainerSheetDefinitionSha256)
+  return receipt({
+    ...context,
+    authorized,
+    reasonId: authorized ? 'breeding.authorization.authorized' : 'breeding.authorization.consent-stale',
+  })
 }
 
 export const assertBreedingAuthorizationReceiptExactReplay = (existingValue: unknown, attemptedValue: unknown): BreedingAuthorizationReceiptV1 => {

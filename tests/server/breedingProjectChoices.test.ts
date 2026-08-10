@@ -10,6 +10,7 @@ import { createSqliteCampaignClockRepository } from '../../server/storage/campai
 import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
 import { createSqliteRealtimeEventRepository } from '../../server/storage/realtimeEventRepository'
 import { loadBreedingProjectChoices } from '../../server/useCases/loadBreedingProjectChoices'
+import { manageBreedingConsentWorkflow } from '../../server/useCases/manageBreedingConsentWorkflow'
 import { resolveBreedingCampaignOptionSnapshot } from '../../server/domain/breeding/campaignOptions'
 
 const databases: RotomDatabase[] = []
@@ -307,12 +308,153 @@ describe('BR-073 authoritative Breeding Project choices and creation', () => {
       request: { ...request({ parentRefs: refs }), destinationTrainerSlug: 'trainer-alpha', breederTrainerSlug: 'trainer-alpha' },
     }, { database })
     expect(result.confirmation).toMatchObject({
-      status: 'blocked',
-      messageId: 'breeding.project-choices.cross-owner-consent-required',
+      status: 'ready',
+      messageId: 'breeding.project-choices.ready-to-confirm',
     })
     expect(result.maturityChoices).toEqual([])
     expect(result.parentRoleChoice).toEqual({ status: 'unavailable', options: [] })
     expect(JSON.stringify(result)).not.toMatch(/parentFacts|eggGroup|serverPrivate|adjudicationId/u)
-    expect(createSqliteBreedingProjectRepository(database).listByOwner('trainer-alpha')).toEqual([])
+    const created = loadBreedingProjectChoices({
+      role: 'gm', playerProfile: null,
+      request: { ...request({ parentRefs: refs }), destinationTrainerSlug: 'trainer-alpha', breederTrainerSlug: 'trainer-alpha', confirmed: true },
+    }, { database })
+    expect(created.confirmation).toMatchObject({
+      status: 'created',
+      setupStatus: 'awaiting-consent',
+      project: { status: 'awaiting-parent-consent', revision: 0 },
+    })
+    const durable = createSqliteBreedingProjectRepository(database).listByOwner('trainer-alpha')[0]!
+    expect(durable.status).toBe('awaiting-parent-consent')
+    const participantProfile: PlayerProfile = {
+      schemaVersion: 1,
+      id: 'profile_beta_0001',
+      displayName: 'Beta player',
+      linkedCharacters: [{ sheetKind: 'trainer', sheetSlug: 'trainer-beta' }],
+    }
+    const viewRequest = {
+      schemaVersion: 1 as const,
+      profileId: participantProfile.id,
+      trainerSheetSlug: 'trainer-beta',
+      intent: 'view' as const,
+      projectId: null,
+      expectedProjectRevision: null,
+      parentSheetSlug: null,
+      consentId: null,
+      eggId: null,
+      expectedEggRevision: null,
+      destinationTrainerSlug: null,
+      transferConsentId: null,
+      confirmed: false,
+    }
+    const privateView = manageBreedingConsentWorkflow({
+      role: 'player', playerProfile: participantProfile, request: viewRequest,
+    }, { database })
+    expect(privateView.notifications).toMatchObject({ projectRequests: 1, total: 1 })
+    expect(privateView.projectRequests[0]).toMatchObject({
+      projectId: durable.projectId,
+      ownParent: { pokemonSheetSlug: 'pokemon-parent-b', current: true },
+      consent: { status: 'waiting' },
+      canGrant: true,
+      ownerTrainerSlug: null,
+      gmReview: null,
+    })
+    expect(JSON.stringify(privateView)).not.toContain('pokemon-parent-a')
+
+    const granted = manageBreedingConsentWorkflow({
+      role: 'player',
+      playerProfile: participantProfile,
+      request: {
+        ...viewRequest,
+        intent: 'grant-project-consent',
+        projectId: durable.projectId,
+        expectedProjectRevision: durable.revision,
+        parentSheetSlug: 'pokemon-parent-b',
+        confirmed: true,
+      },
+    }, { database })
+    expect(granted.transition).toBe('project-consent-granted')
+    expect(granted.notifications.projectRequests).toBe(0)
+    expect(granted.projectRequests[0]).toMatchObject({ consent: { status: 'active' }, canRevoke: true })
+    expect(createSqliteBreedingProjectRepository(database).get(durable.projectId)).toMatchObject({
+      revision: 1,
+      status: 'initial-time-in-progress',
+      timeline: { initialStartedAtCampaignMinute: 0 },
+    })
+
+    const activeCard = granted.projectRequests[0]!
+    const revoked = manageBreedingConsentWorkflow({
+      role: 'player',
+      playerProfile: participantProfile,
+      request: {
+        ...viewRequest,
+        intent: 'revoke-project-consent',
+        projectId: durable.projectId,
+        expectedProjectRevision: activeCard.projectRevision,
+        consentId: activeCard.consent.consentId,
+        confirmed: true,
+      },
+    }, { database })
+    expect(revoked.transition).toBe('project-consent-revoked')
+    expect(revoked.projectRequests[0]).toMatchObject({
+      coarseStatus: 'in-progress',
+      consent: { status: 'revoked' },
+      canGrant: true,
+      canRevoke: false,
+    })
+    expect(createSqliteBreedingProjectRepository(database).get(durable.projectId)).toMatchObject({
+      revision: 2,
+      status: 'initial-time-in-progress',
+      terminal: null,
+    })
+    const replay = manageBreedingConsentWorkflow({
+      role: 'player',
+      playerProfile: participantProfile,
+      request: {
+        ...viewRequest,
+        intent: 'revoke-project-consent',
+        projectId: durable.projectId,
+        expectedProjectRevision: activeCard.projectRevision,
+        consentId: activeCard.consent.consentId,
+        confirmed: true,
+      },
+    }, { database })
+    expect(replay.transition).toBe('exact-replay')
+
+    const gmView = manageBreedingConsentWorkflow({
+      role: 'gm',
+      playerProfile: null,
+      request: { ...viewRequest, profileId: null, trainerSheetSlug: 'trainer-alpha' },
+    }, { database })
+    expect(gmView.gmPolicy).toEqual({
+      setupOverrideOnly: true,
+      positiveConsentSubstitutionAllowed: false,
+      transferRequiresTwoPositiveConsents: true,
+    })
+    expect(gmView.projectRequests[0]).toMatchObject({
+      ownerTrainerSlug: 'trainer-alpha',
+      participantTrainerSlug: 'trainer-beta',
+      gmReview: { setupOverrideOnly: true, consentSubstitutionAllowed: false, canCancelProject: true },
+      canGrant: false,
+      canRevoke: false,
+    })
+    const gmCancelled = manageBreedingConsentWorkflow({
+      role: 'gm',
+      playerProfile: null,
+      request: {
+        ...viewRequest,
+        profileId: null,
+        trainerSheetSlug: 'trainer-alpha',
+        intent: 'gm-cancel-project',
+        projectId: durable.projectId,
+        expectedProjectRevision: 2,
+        confirmed: true,
+      },
+    }, { database, validateCurrentGmAuthority: () => true })
+    expect(gmCancelled.transition).toBe('project-cancelled-by-gm')
+    expect(createSqliteBreedingProjectRepository(database).get(durable.projectId)).toMatchObject({
+      revision: 3,
+      status: 'abandoned',
+      terminal: { reasonId: 'breeding.project-terminal.abandoned' },
+    })
   })
 })

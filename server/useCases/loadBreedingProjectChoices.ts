@@ -570,14 +570,27 @@ const gmOverridesFor = (input: {
   const definitions = [
     { kind: 'owner-control' as const, target: { kind: 'trainer-sheet' as const, trainerSheetSlug: input.command.payload.ownerTrainerSlug } },
     { kind: 'breeder-access' as const, target: { kind: 'trainer-sheet' as const, trainerSheetSlug: input.command.payload.breederTrainerSlug } },
-    ...input.parents.map(parent => ({
-      kind: 'parent-control' as const,
-      target: {
-        kind: 'parent-sheet' as const,
-        parentSheetSlug: parent.sheet.slug,
-        parentSheetRevision: parent.sheet.revision,
+    ...input.parents.flatMap(parent => ([
+      {
+        kind: 'parent-control' as const,
+        target: {
+          kind: 'parent-sheet' as const,
+          parentSheetSlug: parent.sheet.slug,
+          parentSheetRevision: parent.sheet.revision,
+        },
       },
-    })),
+      ...(parent.owner.slug !== input.command.payload.ownerTrainerSlug ? [{
+        // This audited setup-only override permits creation of the private
+        // request. It is never accepted as positive participant consent by
+        // later Project mechanics.
+        kind: 'cross-owner-consent' as const,
+        target: {
+          kind: 'parent-sheet' as const,
+          parentSheetSlug: parent.sheet.slug,
+          parentSheetRevision: parent.sheet.revision,
+        },
+      }] : []),
+    ])),
   ]
   return Object.freeze(definitions.map(definition => createBreedingGmOverrideEvidenceV1({
     overrideId: overrideId({ operationId: input.command.operationId, ...definition }),
@@ -1152,6 +1165,88 @@ export const loadBreedingProjectChoices = (
   }
   if (guidance.wizard.consentStatus === 'review-required') {
     assertOnlyServerIssuedOptions(request.selectedOptionIds, skillAllowedOptionIds)
+    const blocked = skill.projection.status === 'required' || skill.projection.status === 'unavailable'
+    let created: BreedingProjectInitialTimeExecutionResultV1['project'] = null
+    if (request.confirmed) {
+      if (blocked) return fail(409, 'Current Breeder authority is incomplete or unavailable')
+      const crossOwnerCommand = makeCommand({
+        commandKind: 'create-breeding-project', operationId: identity.operationId, projectId: identity.projectId,
+        request, profile, options, crossOwner: true,
+      })
+      const coordinator = dependencies.coordinator ?? createBreedingTransactionCoordinator({ database: wizardAuthority.database })
+      if (coordinator.database !== wizardAuthority.database) return fail(409, 'Project choice coordinator must share the current database connection')
+      const current = buildContext({
+        role: input.role,
+        profile,
+        request,
+        guidanceAuthority,
+        command: crossOwnerCommand,
+        selectedSkill: skill.selected,
+        extraRecords: [],
+        dependencies,
+      })
+      const parentInputs = current.parents.map(parent => ({
+        parentControl: parent.parentControl,
+        ownerTrainerControl: input.role === 'player' ? parent.ownerControl : null,
+        consentEvidence: null,
+      })) as unknown as readonly [
+        { readonly parentControl: BreedingParentControlEvidenceV1, readonly ownerTrainerControl: BreedingTrainerControlEvidenceV1 | null, readonly consentEvidence: null },
+        { readonly parentControl: BreedingParentControlEvidenceV1, readonly ownerTrainerControl: BreedingTrainerControlEvidenceV1 | null, readonly consentEvidence: null },
+      ]
+      const setup = validateBreedingProjectSetupV1({
+        command: current.command,
+        readSet: current.readSet,
+        actorAuthority: current.actor,
+        ownerTrainerControl: current.ownerControl,
+        breederAuthority: current.breeder.handoff.breederAuthority,
+        breederTrainerControl: current.breederControl,
+        parents: parentInputs,
+        gmOverrides: current.gmOverrides,
+        securityPolicyDefinitionSha256: securityPolicyJson.definitionSha256,
+        campaignOptions: options,
+        // Cross-owner setup deliberately stops before parent mechanics,
+        // maturity, or role adjudication. Positive consent is a later,
+        // participant-owned operation.
+        parentFacts: [],
+        maturityAdjudications: [],
+        roleAdjudication: null,
+        roleOffer: null,
+      })
+      if (setup.authority.status !== 'awaiting-consent') return fail(409, 'Cross-owner Project setup did not remain consent-gated')
+      const result = (dependencies.createProject ?? createBreedingProjectFromValidatedSetup)({
+        command: current.command,
+        readSet: current.readSet,
+        authorizationReceipt: current.receipt,
+        setupValidation: setup.authority,
+        parentControls: current.parents.map(parent => parent.parentControl) as unknown as readonly [unknown, unknown],
+        audience: input.role === 'gm' ? 'gm' : 'owner',
+      }, {
+        database: wizardAuthority.database,
+        coordinator,
+        campaignProjectionKey: dependencies.campaignProjectionKey ?? securityPolicyJson.definitionSha256,
+        realtimeTimestamp: dependencies.realtimeTimestamp ?? Date.now(),
+      })
+      created = result.project
+      if (!created || created.status !== 'awaiting-parent-consent') return fail(409, 'Cross-owner Project request was not durably created')
+    }
+    const confirmation: BreedingProjectChoiceConfirmationV1 = created
+      ? confirmationFor({
+          guidance, skillChoice: skill.projection, maturityChoices: [],
+          roleChoice: { status: 'unavailable', options: [] },
+          currentCompatibilityUnavailable: false, created,
+        })
+      : Object.freeze({
+          status: blocked ? 'blocked' : 'ready',
+          setupStatus: blocked ? 'unavailable' : 'ready',
+          canConfirm: !blocked,
+          explicitConfirmationRequired: true,
+          messageId: skill.projection.status === 'required'
+            ? 'breeding.project-choices.breeder-choice-required'
+            : skill.projection.status === 'unavailable'
+              ? 'breeding.project-choices.breeder-unavailable'
+              : 'breeding.project-choices.ready-to-confirm',
+          project: null,
+        })
     return createBreedingProjectChoicesProjectionV1({
       guidance,
       skillChoice: skill.projection,
@@ -1159,11 +1254,7 @@ export const loadBreedingProjectChoices = (
       campaignSettings: settings,
       maturityChoices: Object.freeze([]),
       parentRoleChoice: Object.freeze({ status: 'unavailable', options: Object.freeze([]) }),
-      confirmation: confirmationFor({
-        guidance, skillChoice: skill.projection, maturityChoices: [],
-        roleChoice: { status: 'unavailable', options: [] },
-        currentCompatibilityUnavailable: false, created: null,
-      }),
+      confirmation,
     })
   }
   if (skill.projection.status === 'required' || skill.projection.status === 'unavailable') {

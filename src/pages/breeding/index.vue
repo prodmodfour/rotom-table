@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import BreedingConsentCenter from '~/components/breeding/BreedingConsentCenter.vue'
 import BreedingHatchDecisionFlow from '~/components/breeding/BreedingHatchDecisionFlow.vue'
 import BreedingProjectWizard from '~/components/breeding/BreedingProjectWizard.vue'
 import BreedingWorkshopActivityCards from '~/components/breeding/BreedingWorkshopActivityCards.vue'
 import BreedingWorkshopShell from '~/components/breeding/BreedingWorkshopShell.vue'
+import { useBreedingConsentWorkflow } from '~/composables/breeding/useBreedingConsentWorkflow'
 import { useBreedingHatchWorkflow } from '~/composables/breeding/useBreedingHatchWorkflow'
 import { useBreedingProjectWizard } from '~/composables/breeding/useBreedingProjectWizard'
 import { useBreedingWorkshop } from '~/composables/breeding/useBreedingWorkshop'
@@ -16,38 +18,46 @@ useHead({
 
 const workshop = useBreedingWorkshop()
 const activity = useBreedingWorkshopActivity()
+const consent = useBreedingConsentWorkflow()
 const hatchWorkflow = useBreedingHatchWorkflow()
 const projectWizard = useBreedingProjectWizard()
 let initialized = false
 
-const loadSelectedActivity = (): Promise<void> => {
+const loadSelectedData = async (): Promise<void> => {
   const selected = workshop.selectedOwnershipContext.value
-  return activity.load(selected?.availability === 'available' ? selected.trainerSheetSlug : null)
+  const trainerSheetSlug = selected?.availability === 'available' ? selected.trainerSheetSlug : null
+  await Promise.all([activity.load(trainerSheetSlug), consent.load(trainerSheetSlug)])
 }
 
 onMounted(async () => {
   await workshop.initialize()
   initialized = true
-  await loadSelectedActivity()
+  await loadSelectedData()
 })
 
 watch(workshop.selectedOwnershipContext, () => {
   hatchWorkflow.close()
-  if (initialized) void loadSelectedActivity()
+  if (initialized) void loadSelectedData()
 })
 watch(workshop.selectedProfileId, () => {
   projectWizard.close()
   hatchWorkflow.close()
   activity.clear()
+  consent.clear()
   if (initialized) void workshop.reloadForProfile()
 })
 watch(() => projectWizard.choices.value?.confirmation.status, (status, previous) => {
   if (status === 'created' && previous !== 'created') {
-    void workshop.reload().then(loadSelectedActivity)
+    void workshop.reload().then(loadSelectedData)
   }
 })
 watch(() => hatchWorkflow.projection.value?.transition, (transition) => {
-  if (transition && transition !== 'none') void loadSelectedActivity()
+  if (transition && transition !== 'none') void loadSelectedData()
+})
+watch(() => consent.projection.value?.transition, (transition) => {
+  if (transition && transition !== 'none' && transition !== 'exact-replay') {
+    void Promise.all([workshop.reload(), activity.reload()])
+  }
 })
 const openHatch = (eggId: string, revision: number): void => {
   const selected = workshop.selectedOwnershipContext.value
@@ -78,7 +88,25 @@ const openHatch = (eggId: string, revision: number): void => {
       :loading="activity.loading.value"
       :error="activity.error.value"
       @retry="activity.reload"
+      @request-transfer="consent.openTransferSetup"
       @request-hatch="openHatch"
+    />
+    <BreedingConsentCenter
+      v-if="workshop.selectedOwnershipContext.value?.availability === 'available'"
+      :projection="consent.projection.value"
+      :loading="consent.loading.value"
+      :submitting="consent.submitting.value"
+      :error="consent.error.value"
+      :transfer-setup="consent.transferSetup.value"
+      @retry="consent.reload"
+      @grant-project-consent="consent.grantProjectConsent"
+      @revoke-project-consent="consent.revokeProjectConsent"
+      @cancel-project-as-gm="consent.cancelProjectAsGm"
+      @close-transfer-setup="consent.closeTransferSetup"
+      @offer-egg-transfer="consent.offerEggTransfer"
+      @accept-egg-transfer="consent.acceptEggTransfer"
+      @revoke-egg-transfer-consent="consent.revokeEggTransferConsent"
+      @complete-egg-transfer="consent.completeEggTransfer"
     />
     <BreedingHatchDecisionFlow
       :open="hatchWorkflow.open.value"

@@ -29,7 +29,7 @@ export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
 export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
 export const DEFAULT_MIGRATION_BACKUP_DIRNAME = 'backups'
 export const SQLITE_MIGRATION_BACKUP_PREFIX = 'rotom-sqlite-migration-'
-export const STORAGE_SCHEMA_VERSION = 27
+export const STORAGE_SCHEMA_VERSION = 28
 
 const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
@@ -618,7 +618,7 @@ const applyStorageMigrations = (connection) => {
   }
 
   const foreignKeysBefore = connection.prepare('PRAGMA foreign_keys').get()?.foreign_keys
-  const suspendForeignKeyActions = fromVersion < 27 && foreignKeysBefore === 1
+  const suspendForeignKeyActions = fromVersion < 28 && foreignKeysBefore === 1
   if (suspendForeignKeyActions) connection.exec('PRAGMA foreign_keys = OFF')
   connection.exec('BEGIN IMMEDIATE')
   try {
@@ -1535,11 +1535,66 @@ const applyStorageMigrations = (connection) => {
   `)
       setUserVersion(connection, 27)
     }
+    if (fromVersion < 28) {
+      const operationRow = connection.prepare(`
+        SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'breeding_operations'
+      `).get()
+      const operationSql = operationRow?.sql
+      if (typeof operationSql !== 'string') {
+        throw new Error('Storage migration v28 requires the authoritative breeding_operations table')
+      }
+      if (!operationSql.includes('settle-egg-transfer-consent')) {
+        const before = "'create-source-egg', 'transfer-egg',\n        'advance-egg-incubation'"
+        if (!operationSql.includes(before) || !operationSql.includes('apply-egg-warmer-capability')) {
+          throw new Error('Storage migration v28 requires the exact row-preserving v27 breeding_operations definition')
+        }
+        const foreignKeys = connection.prepare('PRAGMA foreign_keys').get()?.foreign_keys
+        if (foreignKeys !== 0) throw new Error('Storage migration v28 requires the migration runner to suspend foreign-key actions during the operation-table rebuild')
+        connection.exec(`
+    CREATE TABLE breeding_operations_v28 (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_kind TEXT NOT NULL CHECK (command_kind IN (
+        'preview-breeding', 'create-breeding-project', 'grant-breeding-consent',
+        'revoke-breeding-consent', 'advance-breeding-project-time', 'resolve-breeding-check',
+        'produce-egg', 'cancel-breeding-project', 'create-source-egg', 'transfer-egg',
+        'settle-egg-transfer-consent', 'advance-egg-incubation', 'set-egg-incubation-pause',
+        'apply-egg-warmer-capability', 'mark-egg-ready', 'begin-hatch', 'resolve-hatch-special',
+        'complete-hatch', 'cancel-egg', 'advance-campaign-clock', 'record-inheritance-learning',
+        'recover-breeding-operation'
+      )),
+      command_json TEXT NOT NULL CHECK (json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 32768),
+      status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
+      result_json TEXT CHECK (result_json IS NULL OR json_valid(result_json)),
+      result_definition_sha256 TEXT CHECK (result_definition_sha256 IS NULL OR length(result_definition_sha256) = 64),
+      created_at_campaign_minute INTEGER NOT NULL CHECK (created_at_campaign_minute >= 0),
+      settled_at_campaign_minute INTEGER CHECK (settled_at_campaign_minute IS NULL OR settled_at_campaign_minute >= created_at_campaign_minute),
+      CHECK (
+        (status = 'pending' AND result_json IS NULL AND result_definition_sha256 IS NULL AND settled_at_campaign_minute IS NULL)
+        OR
+        (status IN ('accepted', 'rejected') AND result_json IS NOT NULL AND result_definition_sha256 IS NOT NULL AND settled_at_campaign_minute IS NOT NULL)
+      )
+    );
+    INSERT INTO breeding_operations_v28 (
+      operation_id, command_sha256, command_kind, command_json, status, result_json,
+      result_definition_sha256, created_at_campaign_minute, settled_at_campaign_minute
+    ) SELECT
+      operation_id, command_sha256, command_kind, command_json, status, result_json,
+      result_definition_sha256, created_at_campaign_minute, settled_at_campaign_minute
+    FROM breeding_operations;
+    DROP TABLE breeding_operations;
+    ALTER TABLE breeding_operations_v28 RENAME TO breeding_operations;
+    CREATE INDEX breeding_operations_status_created_idx
+      ON breeding_operations (status, created_at_campaign_minute, operation_id);
+  `)
+      }
+      setUserVersion(connection, 28)
+    }
     connection.exec('COMMIT')
     if (suspendForeignKeyActions) {
       connection.exec('PRAGMA foreign_keys = ON')
       if (connection.prepare('PRAGMA foreign_key_check').all().length !== 0) {
-        throw new Error('Storage migration v25/v26/v27 produced foreign-key violations')
+        throw new Error('Storage migration v25/v26/v27/v28 produced foreign-key violations')
       }
     }
   } catch (error) {

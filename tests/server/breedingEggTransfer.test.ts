@@ -47,6 +47,8 @@ import {
   transferPokemonEggOwnership,
   TransferPokemonEggOwnershipError,
 } from '../../server/useCases/transferPokemonEggOwnership'
+import { manageBreedingConsentWorkflow } from '../../server/useCases/manageBreedingConsentWorkflow'
+import { createBreedingTransactionCoordinator, type BreedingTransactionCoordinator } from '../../server/useCases/executeBreedingTransaction'
 
 const authority = authorityJson as any
 const databases: RotomDatabase[] = []
@@ -216,7 +218,10 @@ const seed = (): Seeded => {
     database.connection.prepare(`
       INSERT INTO sheets (kind, slug, document_json, revision, updated_at)
       VALUES ('trainer', 'trainer-owner', ?, 5, 100), ('trainer', 'trainer-recipient', ?, 7, 100)
-    `).run(stableJsonStringify({ slug: 'trainer-owner', folder: '' }), stableJsonStringify({ slug: 'trainer-recipient', folder: '' }))
+    `).run(
+      stableJsonStringify({ slug: 'trainer-owner', folder: '', name: 'Source', revision: 5, updatedAt: 100, currentTeam: [], boxedPokemon: [] }),
+      stableJsonStringify({ slug: 'trainer-recipient', folder: '', name: 'Recipient', revision: 7, updatedAt: 100, currentTeam: [], boxedPokemon: [] }),
+    )
   })
   const sheets = createSqliteSheetRepository(database)
   const source = sheets.get('trainer', 'trainer-owner')!
@@ -590,6 +595,221 @@ describe('BR-064 Egg transfer, gift consent, storage, and privacy', () => {
       command: transferCommand(), readSet: asyncAuthority.readSet, authorizationReceipt: asyncAuthority.receipt,
       actorAuthority: asyncAuthority.actor, audience: 'source-owner',
     }, options(asyncSeed, asyncConsents, { resolveCurrentTrainerControl: () => Promise.resolve(asyncConsents.controls.source) }))).toThrow('must be synchronous')
+  })
+
+  it('orchestrates private source offer, recipient acceptance, and atomic ownership transfer without GM consent substitution', () => {
+    const seeded = seed()
+    const baseRequest = (profile: PlayerProfile, trainerSheetSlug: string) => ({
+      schemaVersion: 1 as const,
+      profileId: profile.id,
+      trainerSheetSlug,
+      intent: 'view' as const,
+      projectId: null,
+      expectedProjectRevision: null,
+      parentSheetSlug: null,
+      consentId: null,
+      eggId: null,
+      expectedEggRevision: null,
+      destinationTrainerSlug: null,
+      transferConsentId: null,
+      confirmed: false,
+    })
+    expect(manageBreedingConsentWorkflow({
+      role: 'player', playerProfile: SOURCE_PROFILE, request: baseRequest(SOURCE_PROFILE, 'trainer-owner'),
+    }, { database: seeded.database }).eggTransfers).toEqual([])
+
+    const offered = manageBreedingConsentWorkflow({
+      role: 'player',
+      playerProfile: SOURCE_PROFILE,
+      request: {
+        ...baseRequest(SOURCE_PROFILE, 'trainer-owner'),
+        intent: 'offer-egg-transfer',
+        eggId: EGG_ID,
+        expectedEggRevision: 0,
+        destinationTrainerSlug: 'trainer-recipient',
+        confirmed: true,
+      },
+    }, { database: seeded.database })
+    expect(offered.transition).toBe('egg-transfer-offered')
+    expect(offered.eggTransfers[0]).toMatchObject({
+      audience: 'source-owner', state: 'offered', canAccept: false, canTransfer: false, canRevoke: true,
+    })
+    expect(JSON.stringify(offered)).not.toContain('trainer-recipient')
+
+    const invitation = manageBreedingConsentWorkflow({
+      role: 'player', playerProfile: RECIPIENT_PROFILE, request: baseRequest(RECIPIENT_PROFILE, 'trainer-recipient'),
+    }, { database: seeded.database })
+    expect(invitation.notifications).toMatchObject({ transferInvitations: 1, total: 1 })
+    expect(invitation.eggTransfers[0]).toMatchObject({
+      audience: 'recipient', state: 'offered', canAccept: true, canRevoke: false,
+    })
+    expect(JSON.stringify(invitation)).not.toContain('trainer-owner')
+
+    const accepted = manageBreedingConsentWorkflow({
+      role: 'player',
+      playerProfile: RECIPIENT_PROFILE,
+      request: {
+        ...baseRequest(RECIPIENT_PROFILE, 'trainer-recipient'),
+        intent: 'accept-egg-transfer',
+        expectedEggRevision: 0,
+        transferConsentId: invitation.eggTransfers[0]!.offerConsentId,
+        confirmed: true,
+      },
+    }, { database: seeded.database })
+    expect(accepted.transition).toBe('egg-transfer-accepted')
+    expect(accepted.eggTransfers[0]).toMatchObject({ state: 'accepted', canTransfer: true, canRevoke: true })
+
+    expect(() => manageBreedingConsentWorkflow({
+      role: 'gm',
+      playerProfile: null,
+      request: {
+        ...baseRequest(SOURCE_PROFILE, 'trainer-owner'),
+        profileId: null,
+        intent: 'revoke-egg-transfer-consent',
+        transferConsentId: invitation.eggTransfers[0]!.offerConsentId,
+        confirmed: true,
+      },
+    }, { database: seeded.database })).toThrow('cannot impersonate')
+
+    const transferred = manageBreedingConsentWorkflow({
+      role: 'player',
+      playerProfile: SOURCE_PROFILE,
+      request: {
+        ...baseRequest(SOURCE_PROFILE, 'trainer-owner'),
+        intent: 'complete-egg-transfer',
+        expectedEggRevision: 0,
+        transferConsentId: invitation.eggTransfers[0]!.offerConsentId,
+        confirmed: true,
+      },
+    }, {
+      database: seeded.database,
+      resolveCurrentPlayerProfile: profileId => profileId === SOURCE_PROFILE.id ? SOURCE_PROFILE : RECIPIENT_PROFILE,
+      campaignProjectionKey: 'workflow-test-campaign-key-at-least-32-bytes',
+      realtimeTimestamp: 1_000,
+    })
+    expect(transferred.transition).toBe('egg-transferred')
+    expect(createSqlitePokemonEggRepository(seeded.database).get(EGG_ID)).toMatchObject({
+      ownerTrainerSlug: 'trainer-recipient', revision: 1,
+    })
+    expect(createSqlitePokemonEggTransferConsentRepository(seeded.database).listByEgg(EGG_ID).map(value => value.status)).toEqual(['consumed', 'consumed'])
+    const replay = manageBreedingConsentWorkflow({
+      role: 'player',
+      playerProfile: SOURCE_PROFILE,
+      request: {
+        ...baseRequest(SOURCE_PROFILE, 'trainer-owner'),
+        intent: 'complete-egg-transfer',
+        expectedEggRevision: 0,
+        transferConsentId: invitation.eggTransfers[0]!.offerConsentId,
+        confirmed: true,
+      },
+    }, {
+      database: seeded.database,
+      resolveCurrentPlayerProfile: profileId => profileId === SOURCE_PROFILE.id ? SOURCE_PROFILE : RECIPIENT_PROFILE,
+    })
+    expect(replay.transition).toBe('exact-replay')
+    const attacker: PlayerProfile = {
+      ...SOURCE_PROFILE,
+      id: 'profile_attacker_0001',
+      displayName: 'Attacker',
+    }
+    expect(() => manageBreedingConsentWorkflow({
+      role: 'player',
+      playerProfile: attacker,
+      request: {
+        ...baseRequest(attacker, 'trainer-owner'),
+        intent: 'complete-egg-transfer',
+        expectedEggRevision: 0,
+        transferConsentId: invitation.eggTransfers[0]!.offerConsentId,
+        confirmed: true,
+      },
+    }, { database: seeded.database })).toThrow('exact transfer participant')
+  })
+
+  it('lets the consenting participant settle campaign-time expiry at equality without transferring ownership', () => {
+    const seeded = seed()
+    consents(seeded, 101)
+    seeded.database.connection.prepare('UPDATE campaign_clock SET campaign_minute = 101 WHERE singleton = 1').run()
+    const viewRequest = {
+      schemaVersion: 1 as const,
+      profileId: SOURCE_PROFILE.id,
+      trainerSheetSlug: 'trainer-owner',
+      intent: 'view' as const,
+      projectId: null,
+      expectedProjectRevision: null,
+      parentSheetSlug: null,
+      consentId: null,
+      eggId: null,
+      expectedEggRevision: null,
+      destinationTrainerSlug: null,
+      transferConsentId: null,
+      confirmed: false,
+    }
+    const expired = manageBreedingConsentWorkflow({ role: 'player', playerProfile: SOURCE_PROFILE, request: viewRequest }, { database: seeded.database })
+    expect(expired.eggTransfers[0]).toMatchObject({ state: 'expired', canRevoke: true, canTransfer: false })
+    const settled = manageBreedingConsentWorkflow({
+      role: 'player',
+      playerProfile: SOURCE_PROFILE,
+      request: { ...viewRequest, intent: 'revoke-egg-transfer-consent', transferConsentId: SOURCE_CONSENT_ID, confirmed: true },
+    }, { database: seeded.database })
+    expect(settled.transition).toBe('egg-transfer-consent-revoked')
+    expect(createSqlitePokemonEggTransferConsentRepository(seeded.database).get(SOURCE_CONSENT_ID)?.status).toBe('expired')
+    expect(createSqlitePokemonEggRepository(seeded.database).get(EGG_ID)).toMatchObject({ ownerTrainerSlug: 'trainer-owner', revision: 0 })
+  })
+
+  it('projects a pending transfer command as system recovery with every ownership action disabled', () => {
+    const seeded = seed()
+    consents(seeded)
+    const baseCoordinator = createBreedingTransactionCoordinator({ database: seeded.database })
+    const failingCoordinator: BreedingTransactionCoordinator = {
+      database: seeded.database,
+      execute: input => baseCoordinator.execute({
+        ...input,
+        beforeSettle: () => { throw new Error('injected consent workflow interruption') },
+      }),
+    }
+    const request = {
+      schemaVersion: 1 as const,
+      profileId: SOURCE_PROFILE.id,
+      trainerSheetSlug: 'trainer-owner',
+      intent: 'complete-egg-transfer' as const,
+      projectId: null,
+      expectedProjectRevision: null,
+      parentSheetSlug: null,
+      consentId: null,
+      eggId: null,
+      expectedEggRevision: 0,
+      destinationTrainerSlug: null,
+      transferConsentId: SOURCE_CONSENT_ID,
+      confirmed: true,
+    }
+    expect(() => manageBreedingConsentWorkflow({
+      role: 'player', playerProfile: SOURCE_PROFILE, request,
+    }, {
+      database: seeded.database,
+      coordinator: failingCoordinator,
+      resolveCurrentPlayerProfile: profileId => profileId === SOURCE_PROFILE.id ? SOURCE_PROFILE : RECIPIENT_PROFILE,
+    })).toThrow('injected consent workflow interruption')
+
+    const recovery = manageBreedingConsentWorkflow({
+      role: 'player',
+      playerProfile: SOURCE_PROFILE,
+      request: {
+        ...request,
+        intent: 'view',
+        expectedEggRevision: null,
+        transferConsentId: null,
+        confirmed: false,
+      },
+    }, { database: seeded.database })
+    expect(recovery.eggTransfers[0]).toMatchObject({
+      state: 'accepted',
+      canAccept: false,
+      canTransfer: false,
+      canRevoke: false,
+      recovery: { state: 'pending', pendingSinceCampaignMinute: 100 },
+    })
+    expect(recovery.notifications).toEqual({ projectRequests: 0, transferInvitations: 0, readyTransfers: 0, total: 0 })
+    expect(createSqlitePokemonEggRepository(seeded.database).get(EGG_ID)?.revision).toBe(0)
   })
 
   it('rejects malformed, enriched, accessor-backed, or mismatched consent evidence', () => {

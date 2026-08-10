@@ -34,6 +34,7 @@ export const BREEDING_OPERATION_COMMAND_KINDS = Object.freeze([
   'cancel-breeding-project',
   'create-source-egg',
   'transfer-egg',
+  'settle-egg-transfer-consent',
   'advance-egg-incubation',
   'set-egg-incubation-pause',
   'apply-egg-warmer-capability',
@@ -99,6 +100,7 @@ export interface ProduceEggPayloadV1 { readonly projectId: BreedingProjectId, re
 export interface CancelBreedingProjectPayloadV1 { readonly projectId: BreedingProjectId, readonly reasonId: string }
 export interface CreateSourceEggPayloadV1 { readonly eggId: PokemonEggId, readonly ownerTrainerSlug: string, readonly source: Exclude<PokemonEggSourceV1, { readonly kind: 'breeding' }>, readonly speciesOptionId: BreedingOfferOptionId, readonly resolutions: BreedingOfferResolutionRequestV1 }
 export interface TransferEggPayloadV1 { readonly eggId: PokemonEggId, readonly destinationTrainerSlug: string, readonly consentEvidenceIds: readonly [PokemonEggTransferConsentId, PokemonEggTransferConsentId] }
+export interface SettleEggTransferConsentPayloadV1 { readonly consentId: PokemonEggTransferConsentId, readonly reasonId: 'breeding.egg-transfer-consent.revoked' | 'breeding.egg-transfer-consent.expired' }
 export interface AdvanceEggIncubationPayloadV1 { readonly eggId: PokemonEggId, readonly throughClockRevision: number, readonly throughCampaignMinute: number }
 export interface SetEggIncubationPausePayloadV1 { readonly eggId: PokemonEggId, readonly paused: boolean, readonly reasonId: string | null }
 export interface ApplyEggWarmerCapabilityPayloadV1 { readonly eggId: PokemonEggId, readonly sourcePokemonSheetSlug: string, readonly expectedSourcePokemonSheetRevision: number, readonly requestReductionRoll: true }
@@ -121,6 +123,7 @@ export interface BreedingCommandPayloadByKind {
   readonly 'cancel-breeding-project': CancelBreedingProjectPayloadV1
   readonly 'create-source-egg': CreateSourceEggPayloadV1
   readonly 'transfer-egg': TransferEggPayloadV1
+  readonly 'settle-egg-transfer-consent': SettleEggTransferConsentPayloadV1
   readonly 'advance-egg-incubation': AdvanceEggIncubationPayloadV1
   readonly 'set-egg-incubation-pause': SetEggIncubationPausePayloadV1
   readonly 'apply-egg-warmer-capability': ApplyEggWarmerCapabilityPayloadV1
@@ -147,7 +150,7 @@ export type BreedingOperationCommandV1 = {
 
 export const BREEDING_OPERATION_OUTCOME_KINDS = Object.freeze([
   'previewed', 'project-created', 'consent-granted', 'consent-revoked', 'project-progressed', 'check-resolved',
-  'egg-produced', 'project-cancelled', 'source-egg-created', 'egg-transferred', 'egg-progressed', 'egg-pause-set',
+  'egg-produced', 'project-cancelled', 'source-egg-created', 'egg-transferred', 'egg-transfer-consent-settled', 'egg-progressed', 'egg-pause-set',
   'egg-warmer-applied', 'egg-ready', 'hatch-started', 'hatch-special-resolved', 'hatched', 'egg-cancelled', 'clock-advanced',
   'inheritance-recorded', 'operation-recovered',
 ] as const)
@@ -347,6 +350,7 @@ const parsePayload = (kind: BreedingOperationCommandKind, value: unknown, path: 
   if (kind === 'cancel-breeding-project') { const x = exact(row, ['projectId', 'reasonId'], path); return Object.freeze({ projectId: projectId(x.projectId, `${path}.projectId`), reasonId: reason(x.reasonId, `${path}.reasonId`) }) }
   if (kind === 'create-source-egg') { const x = exact(row, ['eggId', 'ownerTrainerSlug', 'source', 'speciesOptionId', 'resolutions'], path); const source = parseSource(x.source, `${path}.source`); if (source.kind === 'breeding') fail('breeding.operation.invalid-invariant', `${path}.source`, 'must be a parentless Egg source.'); return Object.freeze({ eggId: eggId(x.eggId, `${path}.eggId`), ownerTrainerSlug: slug(x.ownerTrainerSlug, `${path}.ownerTrainerSlug`), source, speciesOptionId: optionId(x.speciesOptionId, `${path}.speciesOptionId`), resolutions: parseResolutions(x.resolutions, `${path}.resolutions`) }) as CreateSourceEggPayloadV1 }
   if (kind === 'transfer-egg') { const x = exact(row, ['eggId', 'destinationTrainerSlug', 'consentEvidenceIds'], path); const consentEvidenceIds = array(x.consentEvidenceIds, `${path}.consentEvidenceIds`, 2).map((value, index) => transferConsentId(value, `${path}.consentEvidenceIds[${index}]`)); if (consentEvidenceIds.length !== 2) fail('breeding.operation.invalid-invariant', `${path}.consentEvidenceIds`, 'must contain exactly the source gift and recipient acceptance IDs.'); sortedUniqueStrings(consentEvidenceIds, `${path}.consentEvidenceIds`); return Object.freeze({ eggId: eggId(x.eggId, `${path}.eggId`), destinationTrainerSlug: slug(x.destinationTrainerSlug, `${path}.destinationTrainerSlug`), consentEvidenceIds: Object.freeze(consentEvidenceIds) as readonly [PokemonEggTransferConsentId, PokemonEggTransferConsentId] }) }
+  if (kind === 'settle-egg-transfer-consent') { const x = exact(row, ['consentId', 'reasonId'], path); if (x.reasonId !== 'breeding.egg-transfer-consent.revoked' && x.reasonId !== 'breeding.egg-transfer-consent.expired') fail('breeding.operation.invalid-document', `${path}.reasonId`, 'must be a closed Egg-transfer consent settlement reason.'); return Object.freeze({ consentId: transferConsentId(x.consentId, `${path}.consentId`), reasonId: x.reasonId }) as SettleEggTransferConsentPayloadV1 }
   if (kind === 'advance-egg-incubation') { const x = exact(row, ['eggId', 'throughClockRevision', 'throughCampaignMinute'], path); return Object.freeze({ eggId: eggId(x.eggId, `${path}.eggId`), throughClockRevision: integer(x.throughClockRevision, `${path}.throughClockRevision`), throughCampaignMinute: integer(x.throughCampaignMinute, `${path}.throughCampaignMinute`) }) }
   if (kind === 'set-egg-incubation-pause') { const x = exact(row, ['eggId', 'paused', 'reasonId'], path); if (typeof x.paused !== 'boolean' || (x.paused !== (x.reasonId !== null))) fail('breeding.operation.invalid-invariant', path, 'pause reason must exist exactly when pausing.'); return Object.freeze({ eggId: eggId(x.eggId, `${path}.eggId`), paused: x.paused, reasonId: x.reasonId === null ? null : reason(x.reasonId, `${path}.reasonId`) }) as SetEggIncubationPausePayloadV1 }
   if (kind === 'apply-egg-warmer-capability') { const x = exact(row, ['eggId', 'sourcePokemonSheetSlug', 'expectedSourcePokemonSheetRevision', 'requestReductionRoll'], path); if (x.requestReductionRoll !== true) fail('breeding.operation.invalid-invariant', `${path}.requestReductionRoll`, 'must request exactly one server-owned d10 reduction roll.'); return Object.freeze({ eggId: eggId(x.eggId, `${path}.eggId`), sourcePokemonSheetSlug: slug(x.sourcePokemonSheetSlug, `${path}.sourcePokemonSheetSlug`), expectedSourcePokemonSheetRevision: integer(x.expectedSourcePokemonSheetRevision, `${path}.expectedSourcePokemonSheetRevision`, 0, 2_147_483_647), requestReductionRoll: true }) as ApplyEggWarmerCapabilityPayloadV1 }
@@ -414,6 +418,11 @@ const validateScopeCoverage = (kind: BreedingOperationCommandKind, payload: Bree
     }
     return
   }
+  if (kind === 'settle-egg-transfer-consent') {
+    const p = payload as SettleEggTransferConsentPayloadV1
+    requireScope(scopes.length === 1, 'command.scopes', 'Egg-transfer consent settlement must declare exactly one consent scope.')
+    return requireScope(hasScope(scopes, scope => scope.kind === 'egg-transfer-consent' && scope.consentId === p.consentId && scope.expectedRevision === 0), 'command.scopes', 'must include the active transfer consent scope at revision zero.')
+  }
   if (['advance-egg-incubation', 'set-egg-incubation-pause', 'apply-egg-warmer-capability', 'mark-egg-ready', 'begin-hatch', 'resolve-hatch-special', 'cancel-egg'].includes(kind)) {
     const p = payload as AdvanceEggIncubationPayloadV1 | SetEggIncubationPausePayloadV1 | ApplyEggWarmerCapabilityPayloadV1 | MarkEggReadyPayloadV1 | BeginHatchPayloadV1 | ResolveHatchSpecialPayloadV1 | CancelEggPayloadV1
     requireScope(scopes.length === 1, 'command.scopes', 'Egg mutation must declare exactly one Egg scope.')
@@ -473,7 +482,7 @@ const parseAggregateRefs = (value: unknown, path: string): readonly BreedingOper
   return Object.freeze(refs)
 }
 const OUTCOME_BY_COMMAND: Readonly<Record<BreedingOperationCommandKind, BreedingOperationOutcomeKind>> = Object.freeze({
-  'preview-breeding': 'previewed', 'create-breeding-project': 'project-created', 'grant-breeding-consent': 'consent-granted', 'revoke-breeding-consent': 'consent-revoked', 'advance-breeding-project-time': 'project-progressed', 'resolve-breeding-check': 'check-resolved', 'produce-egg': 'egg-produced', 'cancel-breeding-project': 'project-cancelled', 'create-source-egg': 'source-egg-created', 'transfer-egg': 'egg-transferred', 'advance-egg-incubation': 'egg-progressed', 'set-egg-incubation-pause': 'egg-pause-set', 'apply-egg-warmer-capability': 'egg-warmer-applied', 'mark-egg-ready': 'egg-ready', 'begin-hatch': 'hatch-started', 'resolve-hatch-special': 'hatch-special-resolved', 'complete-hatch': 'hatched', 'cancel-egg': 'egg-cancelled', 'advance-campaign-clock': 'clock-advanced', 'record-inheritance-learning': 'inheritance-recorded', 'recover-breeding-operation': 'operation-recovered',
+  'preview-breeding': 'previewed', 'create-breeding-project': 'project-created', 'grant-breeding-consent': 'consent-granted', 'revoke-breeding-consent': 'consent-revoked', 'advance-breeding-project-time': 'project-progressed', 'resolve-breeding-check': 'check-resolved', 'produce-egg': 'egg-produced', 'cancel-breeding-project': 'project-cancelled', 'create-source-egg': 'source-egg-created', 'transfer-egg': 'egg-transferred', 'settle-egg-transfer-consent': 'egg-transfer-consent-settled', 'advance-egg-incubation': 'egg-progressed', 'set-egg-incubation-pause': 'egg-pause-set', 'apply-egg-warmer-capability': 'egg-warmer-applied', 'mark-egg-ready': 'egg-ready', 'begin-hatch': 'hatch-started', 'resolve-hatch-special': 'hatch-special-resolved', 'complete-hatch': 'hatched', 'cancel-egg': 'egg-cancelled', 'advance-campaign-clock': 'clock-advanced', 'record-inheritance-learning': 'inheritance-recorded', 'recover-breeding-operation': 'operation-recovered',
 })
 export const parseBreedingOperationResultV1 = (value: unknown, path = 'result'): BreedingOperationResultV1 => {
   const root = record(value, path)

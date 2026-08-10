@@ -539,10 +539,10 @@ export const validateBreedingProjectSetupV1 = (
 
   const parentControls = parents.map(value => value.parentControl) as unknown as readonly [BreedingParentControlEvidenceV1, BreedingParentControlEvidenceV1]
   const crossOwner = parentControls.some(value => value.ownerTrainerSlug !== command.payload.ownerTrainerSlug)
-  if (actor.role === 'player' && command.commandKind === 'create-breeding-project' && crossOwner) {
+  if (command.commandKind === 'create-breeding-project' && crossOwner) {
     if (parentFactsValues.length > 0 || maturityValues.length > 0
       || input.roleAdjudication !== null || input.roleOffer !== null) {
-      return fail('breeding.setup.extraneous-evidence', 'Awaiting-consent setup rejects private mechanics adjudications before consent.')
+      return fail('breeding.setup.extraneous-evidence', 'Awaiting-consent setup rejects private mechanics adjudications before consent, including for an audited GM setup override.')
     }
     return validationResult({
       ...base,

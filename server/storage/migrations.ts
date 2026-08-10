@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 27
+export const LATEST_STORAGE_SCHEMA_VERSION = 28
 
 export interface StorageMigration {
   readonly version: number
@@ -900,6 +900,11 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     name: 'store external Species acquisition source settlements without forging breeding commands',
     up: createTrainerSpeciesAcquisitionSourceOperationTable,
   },
+  {
+    version: 28,
+    name: 'store replay-safe Egg transfer-consent revocation and expiry operations',
+    up: addPokemonEggTransferConsentSettlementOperationKind,
+  },
 ]
 
 function createTrainerSpeciesAcquisitionSourceOperationTable(connection: DatabaseSync): void {
@@ -1073,6 +1078,60 @@ function addBreedingEggWarmerCapabilityOperationKind(connection: DatabaseSync): 
   `)
 }
 
+function addPokemonEggTransferConsentSettlementOperationKind(connection: DatabaseSync): void {
+  const row = connection.prepare(`
+    SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'breeding_operations'
+  `).get() as { readonly sql?: unknown } | undefined
+  const sql = row?.sql
+  if (typeof sql !== 'string') {
+    throw new Error('Storage migration v28 requires the authoritative breeding_operations table')
+  }
+  if (sql.includes('settle-egg-transfer-consent')) return
+  const before = "'create-source-egg', 'transfer-egg',\n        'advance-egg-incubation'"
+  if (!sql.includes(before) || !sql.includes('apply-egg-warmer-capability')) {
+    throw new Error('Storage migration v28 requires the exact row-preserving v27 breeding_operations definition')
+  }
+  const foreignKeys = connection.prepare('PRAGMA foreign_keys').get()?.foreign_keys
+  if (foreignKeys !== 0) throw new Error('Storage migration v28 requires the migration runner to suspend foreign-key actions during the operation-table rebuild')
+  connection.exec(`
+    CREATE TABLE breeding_operations_v28 (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_kind TEXT NOT NULL CHECK (command_kind IN (
+        'preview-breeding', 'create-breeding-project', 'grant-breeding-consent',
+        'revoke-breeding-consent', 'advance-breeding-project-time', 'resolve-breeding-check',
+        'produce-egg', 'cancel-breeding-project', 'create-source-egg', 'transfer-egg',
+        'settle-egg-transfer-consent', 'advance-egg-incubation', 'set-egg-incubation-pause',
+        'apply-egg-warmer-capability', 'mark-egg-ready', 'begin-hatch', 'resolve-hatch-special',
+        'complete-hatch', 'cancel-egg', 'advance-campaign-clock', 'record-inheritance-learning',
+        'recover-breeding-operation'
+      )),
+      command_json TEXT NOT NULL CHECK (json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 32768),
+      status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
+      result_json TEXT CHECK (result_json IS NULL OR json_valid(result_json)),
+      result_definition_sha256 TEXT CHECK (result_definition_sha256 IS NULL OR length(result_definition_sha256) = 64),
+      created_at_campaign_minute INTEGER NOT NULL CHECK (created_at_campaign_minute >= 0),
+      settled_at_campaign_minute INTEGER CHECK (settled_at_campaign_minute IS NULL OR settled_at_campaign_minute >= created_at_campaign_minute),
+      CHECK (
+        (status = 'pending' AND result_json IS NULL AND result_definition_sha256 IS NULL AND settled_at_campaign_minute IS NULL)
+        OR
+        (status IN ('accepted', 'rejected') AND result_json IS NOT NULL AND result_definition_sha256 IS NOT NULL AND settled_at_campaign_minute IS NOT NULL)
+      )
+    );
+    INSERT INTO breeding_operations_v28 (
+      operation_id, command_sha256, command_kind, command_json, status, result_json,
+      result_definition_sha256, created_at_campaign_minute, settled_at_campaign_minute
+    ) SELECT
+      operation_id, command_sha256, command_kind, command_json, status, result_json,
+      result_definition_sha256, created_at_campaign_minute, settled_at_campaign_minute
+    FROM breeding_operations;
+    DROP TABLE breeding_operations;
+    ALTER TABLE breeding_operations_v28 RENAME TO breeding_operations;
+    CREATE INDEX breeding_operations_status_created_idx
+      ON breeding_operations (status, created_at_campaign_minute, operation_id);
+  `)
+}
+
 const readPragmaUserVersion = (connection: DatabaseSync): number => {
   const row = connection.prepare('PRAGMA user_version').get()
   const version = row?.user_version
@@ -1119,7 +1178,7 @@ export const applyStorageMigrations = (connection: DatabaseSync): StorageMigrati
 
   const appliedVersions: number[] = []
   const foreignKeysBefore = connection.prepare('PRAGMA foreign_keys').get()?.foreign_keys
-  const suspendForeignKeyActions = fromVersion < 27 && foreignKeysBefore === 1
+  const suspendForeignKeyActions = fromVersion < 28 && foreignKeysBefore === 1
   if (suspendForeignKeyActions) connection.exec('PRAGMA foreign_keys = OFF')
   connection.exec('BEGIN IMMEDIATE')
   try {
@@ -1135,7 +1194,7 @@ export const applyStorageMigrations = (connection: DatabaseSync): StorageMigrati
     if (suspendForeignKeyActions) {
       connection.exec('PRAGMA foreign_keys = ON')
       const violations = connection.prepare('PRAGMA foreign_key_check').all()
-      if (violations.length !== 0) throw new Error('Storage migration v25/v26/v27 produced foreign-key violations')
+      if (violations.length !== 0) throw new Error('Storage migration v25/v26/v27/v28 produced foreign-key violations')
     }
     return {
       fromVersion,

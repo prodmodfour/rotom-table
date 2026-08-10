@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
+  "definitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932",
   "definition": {
     "version": 1,
     "sharedAccessPath": "shared/breeding/realtimeAccess.ts",
@@ -121,9 +121,9 @@
     },
     "bindings": {
       "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
-      "projectionContractDefinitionSha256": "2177141c8935978d0066bcdeea992b8c55a167bf0b4d93b32cd981b01e9eb3ce",
-      "operationContractDefinitionSha256": "3a3e1a3bb2dbe3981621b0ed62f373341098ebcc0574a6685c4121aa81da8a75",
-      "storageSchemaDefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89"
+      "projectionContractDefinitionSha256": "86816da9419b5392f5a6122ccf982d7ed7587c027896ef19f3fe2efba33af812",
+      "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
+      "storageSchemaDefinitionSha256": "0da2fb267112523d86bc1d248080a782d1778d02eacece447e91ca64c412a934"
     }
   }
 }

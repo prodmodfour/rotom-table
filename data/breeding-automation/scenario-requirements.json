@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 76,
+    "covered": 77,
     "in-progress": 1,
-    "planned": 13,
+    "planned": 12,
     "blocked": 0
   },
   "requirements": [
@@ -1904,9 +1904,34 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
-      "acceptanceFixtureIds": []
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/consent-workflow-presentation-contract.json",
+        "data/breeding-automation/storage-schema-v28.json",
+        "shared/breeding/consentWorkflow.ts",
+        "server/domain/breeding/consentWorkflow.ts",
+        "server/domain/breeding/authorization.ts",
+        "server/domain/breeding/operations.ts",
+        "server/useCases/manageBreedingConsentWorkflow.ts",
+        "server/api/breeding/consent.post.ts",
+        "src/composables/breeding/useBreedingConsentWorkflow.ts",
+        "src/components/breeding/BreedingConsentCenter.vue",
+        "src/pages/breeding/index.vue",
+        "tests/shared/breedingConsentWorkflowContract.test.ts",
+        "tests/server/breedingConsentWorkflowRoute.test.ts",
+        "tests/server/breedingEggTransfer.test.ts",
+        "tests/server/breedingProjectChoices.test.ts",
+        "tests/composables/breeding/useBreedingConsentWorkflow.test.ts",
+        "tests/components/breedingConsentCenter.test.ts",
+        "tests/server/breedingStorageMigrations.test.ts",
+        "docs/breeding/workshop.md",
+        "docs/breeding/security-and-privacy.md",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-cross-owner-consent-v1"
+      ]
     },
     {
       "id": "breeding:BR-078",
@@ -1918,7 +1943,7 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"

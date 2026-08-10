@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0",
+  "definitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea",
   "definition": {
     "version": 1,
     "coordinatorPath": "server/useCases/executeBreedingTransaction.ts",
@@ -86,12 +86,12 @@
       "publicationFailure": "never-delete-or-roll-back-durable-row"
     },
     "bindings": {
-      "operationLedgerContractDefinitionSha256": "0ddc9e1d73013c055dbc84b3b2175591db2a302efd05010dce631fc6d985894a",
-      "repositoryContractDefinitionSha256": "d15c11f9f360d1ebd603feee8ec1506be9262d58f20bc9f753f5af979fa823b5",
-      "initializedPokemonSheetContractDefinitionSha256": "12891b11fb06b97cdfb2add56677781ee9e3d3697733e1bb3f8bae9311e56983",
-      "speciesAcquisitionRewardContractDefinitionSha256": "a3323f91d56eb8ced5428250c3bc2756140c1048fac794aaff1c0805aaed64ae",
-      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
-      "storageSchemaDefinitionSha256": "696d5e9139086dfeef0eae60340d871ffb685cd0814349e05094b4b074b75a89"
+      "operationLedgerContractDefinitionSha256": "f7869b1ea099d9ae4e2542324abf6d3a98284d2f0c93c289192cdb65293cdbfe",
+      "repositoryContractDefinitionSha256": "a49fbb1583b2eb417a781a11c2f843d072fec219a78a61cae885d77e721b1c7f",
+      "initializedPokemonSheetContractDefinitionSha256": "b3a5c4d326b6c744adbf6748a37dd8a7e8d4479fbef1dca74cf9507dc3caec23",
+      "speciesAcquisitionRewardContractDefinitionSha256": "e2b7ec11b3b9ba2a9eb602ae6b31a3d4c6d7536562c6d7805b4447d5404ab90c",
+      "realtimeContractDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932",
+      "storageSchemaDefinitionSha256": "0da2fb267112523d86bc1d248080a782d1778d02eacece447e91ca64c412a934"
     }
   }
 }

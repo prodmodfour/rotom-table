@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "9e0321b55c19ad91f8f8f76cbf6b53603077b55ddbc3233cbbc44b5af19ea80c",
+  "definitionSha256": "26e99b5cd606e5c2b02bfd6145ba04a0e2704819ab42b1ff967e7e80868237e2",
   "definition": {
     "version": 1,
     "useCasePath": "server/useCases/completePokemonEggHatch.ts",
@@ -59,10 +59,10 @@
       "realtimeAccess": "Egg-owner-GM-and-sheet-access-only"
     },
     "bindings": {
-      "hatchCompletionContractDefinitionSha256": "0a1d03867ff10ae647a00a17db06770f4928e063adb7de103f7f8384c8e9a635",
-      "hatchSpeciesAcquisitionContractDefinitionSha256": "091df3fa764164e3468e95761c1b9dbaec69f6f95d139561769be7d25af31385",
-      "realtimeContractDefinitionSha256": "b2a94b08c8e6214c08ee86979792e5ef50f1654d22853d770e69e4046781ea67",
-      "transactionCoordinatorContractDefinitionSha256": "906a4f776cbf3049e0efbe92497d9ed4f7dc6cfcccab719e83b0efdea62164d0"
+      "hatchCompletionContractDefinitionSha256": "1867892d039355a3e6e6fd128a5f0e853d02e4ead538850adfc78f816e631d84",
+      "hatchSpeciesAcquisitionContractDefinitionSha256": "7dbefbb099dddb2686e4b759945760c2eb4cbf2fd44df3fa338a50ad24006aa9",
+      "realtimeContractDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932",
+      "transactionCoordinatorContractDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea"
     },
     "acceptance": {
       "focusedCases": 12,

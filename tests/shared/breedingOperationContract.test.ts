@@ -74,6 +74,10 @@ const cases: Record<BreedingOperationCommandKind, { readonly payload: Record<str
       { kind: 'egg-transfer-consent', consentId: transferConsent(2), expectedRevision: 0 },
     ],
   },
+  'settle-egg-transfer-consent': {
+    payload: { consentId: transferConsent(1), reasonId: 'breeding.egg-transfer-consent.revoked' },
+    scopes: [{ kind: 'egg-transfer-consent', consentId: transferConsent(1), expectedRevision: 0 }],
+  },
   'advance-egg-incubation': { payload: { eggId: egg, throughClockRevision: 5, throughCampaignMinute: 300 }, scopes: [eggScope()] },
   'set-egg-incubation-pause': { payload: { eggId: egg, paused: true, reasonId: 'breeding.egg.paused' }, scopes: [eggScope()] },
   'apply-egg-warmer-capability': { payload: { eggId: egg, sourcePokemonSheetSlug: 'pokemon-fire', expectedSourcePokemonSheetRevision: 4, requestReductionRoll: true }, scopes: [eggScope()] },
@@ -119,7 +123,7 @@ describe('Breeding operation contract', () => {
     expect(policy.definition.hash.material).toBe('entire-strictly-parsed-command-envelope')
   })
 
-  it('strictly parses and freezes all 21 command kinds with canonical scopes', () => {
+  it('strictly parses and freezes all 22 command kinds with canonical scopes', () => {
     for (const [index, kind] of BREEDING_OPERATION_COMMAND_KINDS.entries()) {
       const parsed = parseBreedingOperationCommandV1(command(kind, index + 1))
       expect(parsed.commandKind).toBe(kind)
