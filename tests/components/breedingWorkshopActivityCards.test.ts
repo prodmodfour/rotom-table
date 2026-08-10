@@ -93,6 +93,23 @@ describe('Breeding Workshop activity cards', () => {
     expect(text).toContain('Participating parent · waiting')
   })
 
+  it('opens a keyboard-reachable hatch decision from current ready Egg authority', async () => {
+    const readyEgg: BreedingWorkshopEggCardV1 = {
+      ...egg,
+      status: 'ready',
+      revision: 3,
+      progress: { ...egg.progress, stage: 'ready', accumulatedCampaignMinutes: 1_200, percent: 100 },
+      updatedAtCampaignMinute: 40,
+      statusChangedAtCampaignMinute: 40,
+      history: [...egg.history, { kind: 'egg-ready', campaignMinute: 40 }],
+    }
+    const wrapper = mountCards({ projection: projection({ projects: [], eggs: [readyEgg] }) })
+    const button = wrapper.findAll('button').find(candidate => candidate.text().includes('Open hatch decision'))!
+    expect(button.attributes('disabled')).toBeUndefined()
+    await button.trigger('click')
+    expect(wrapper.emitted('requestHatch')).toEqual([[readyEgg.eggId, readyEgg.revision]])
+  })
+
   it('opens a keyboard-reachable transfer handoff without optimistic ownership change', async () => {
     const wrapper = mountCards()
     const transfer = wrapper.findAll('details').find(detail => detail.text().includes('Transfer Egg'))!

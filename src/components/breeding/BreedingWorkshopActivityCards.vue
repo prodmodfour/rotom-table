@@ -25,6 +25,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   retry: []
   requestTransfer: [eggId: string, revision: number]
+  requestHatch: [eggId: string, revision: number]
 }>()
 const transferNotice = ref<string | null>(null)
 const hasActivity = computed(() => Boolean(
@@ -55,6 +56,12 @@ const requestTransfer = (card: BreedingWorkshopEggCardV1): void => {
     ? `Transfer setup opened for the ${card.speciesName} Egg. Ownership will not change until both owners give current consent.`
     : `Transfer review opened for the ${card.speciesName} Egg. Refresh after either owner changes the private consent.`
   emit('requestTransfer', card.eggId, card.revision)
+}
+const hatchActionLabel = (card: BreedingWorkshopEggCardV1): string => {
+  if (card.status === 'ready') return 'Open hatch decision'
+  if (card.status === 'awaiting-special-adjudication') return 'Review hatch decision'
+  if (card.status === 'hatching') return 'Continue hatch'
+  return 'View hatched child'
 }
 </script>
 
@@ -254,6 +261,25 @@ const requestTransfer = (card: BreedingWorkshopEggCardV1): void => {
                 </button>
               </div>
             </aside>
+
+            <div
+              v-if="['ready', 'awaiting-special-adjudication', 'hatching', 'hatched'].includes(card.status)"
+              class="breeding-card__hatch"
+            >
+              <p v-if="card.status === 'ready'">The Egg is ready for an explicit, server-authorized hatch decision.</p>
+              <p v-else-if="card.status === 'awaiting-special-adjudication'">A role-projected special hatch decision is pending.</p>
+              <p v-else-if="card.status === 'hatching'">The accepted hatch can continue to final child reveal.</p>
+              <p v-else>The accepted child reveal is available from durable hatch state.</p>
+              <button
+                type="button"
+                class="breeding-activity-button"
+                :disabled="card.recovery.state === 'pending'"
+                @click="emit('requestHatch', card.eggId, card.revision)"
+              >
+                <PhEgg :size="18" weight="fill" aria-hidden="true" />
+                {{ hatchActionLabel(card) }}
+              </button>
+            </div>
 
             <details class="breeding-card__transfer" :class="{ 'breeding-card__transfer--unavailable': card.transfer.action === 'none' }">
               <summary>
@@ -461,7 +487,9 @@ const requestTransfer = (card: BreedingWorkshopEggCardV1): void => {
 .breeding-card__recovery > svg { flex: 0 0 auto; color: var(--rt-pending); }
 .breeding-card__recovery p { margin: 0.25rem 0 0.65rem; color: var(--rt-text-muted); }
 .breeding-card__history,
-.breeding-card__transfer { border-top: 1px solid var(--rt-rule); padding-top: 0.7rem; }
+.breeding-card__transfer,
+.breeding-card__hatch { border-top: 1px solid var(--rt-rule); padding-top: 0.7rem; }
+.breeding-card__hatch p { margin-bottom: 0.65rem; color: var(--rt-text-muted); line-height: 1.5; }
 .breeding-card__history summary,
 .breeding-card__transfer summary {
   display: flex;

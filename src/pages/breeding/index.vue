@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import BreedingHatchDecisionFlow from '~/components/breeding/BreedingHatchDecisionFlow.vue'
 import BreedingProjectWizard from '~/components/breeding/BreedingProjectWizard.vue'
 import BreedingWorkshopActivityCards from '~/components/breeding/BreedingWorkshopActivityCards.vue'
 import BreedingWorkshopShell from '~/components/breeding/BreedingWorkshopShell.vue'
+import { useBreedingHatchWorkflow } from '~/composables/breeding/useBreedingHatchWorkflow'
 import { useBreedingProjectWizard } from '~/composables/breeding/useBreedingProjectWizard'
 import { useBreedingWorkshop } from '~/composables/breeding/useBreedingWorkshop'
 import { useBreedingWorkshopActivity } from '~/composables/breeding/useBreedingWorkshopActivity'
@@ -14,6 +16,7 @@ useHead({
 
 const workshop = useBreedingWorkshop()
 const activity = useBreedingWorkshopActivity()
+const hatchWorkflow = useBreedingHatchWorkflow()
 const projectWizard = useBreedingProjectWizard()
 let initialized = false
 
@@ -29,10 +32,12 @@ onMounted(async () => {
 })
 
 watch(workshop.selectedOwnershipContext, () => {
+  hatchWorkflow.close()
   if (initialized) void loadSelectedActivity()
 })
 watch(workshop.selectedProfileId, () => {
   projectWizard.close()
+  hatchWorkflow.close()
   activity.clear()
   if (initialized) void workshop.reloadForProfile()
 })
@@ -41,6 +46,15 @@ watch(() => projectWizard.choices.value?.confirmation.status, (status, previous)
     void workshop.reload().then(loadSelectedActivity)
   }
 })
+watch(() => hatchWorkflow.projection.value?.transition, (transition) => {
+  if (transition && transition !== 'none') void loadSelectedActivity()
+})
+const openHatch = (eggId: string, revision: number): void => {
+  const selected = workshop.selectedOwnershipContext.value
+  if (selected?.availability === 'available') {
+    void hatchWorkflow.openFor(selected.trainerSheetSlug, eggId, revision)
+  }
+}
 </script>
 
 <template>
@@ -64,6 +78,19 @@ watch(() => projectWizard.choices.value?.confirmation.status, (status, previous)
       :loading="activity.loading.value"
       :error="activity.error.value"
       @retry="activity.reload"
+      @request-hatch="openHatch"
+    />
+    <BreedingHatchDecisionFlow
+      :open="hatchWorkflow.open.value"
+      :projection="hatchWorkflow.projection.value"
+      :loading="hatchWorkflow.loading.value"
+      :submitting="hatchWorkflow.submitting.value"
+      :error="hatchWorkflow.error.value"
+      @close="hatchWorkflow.close"
+      @retry="hatchWorkflow.retry"
+      @begin="hatchWorkflow.begin"
+      @resolve-special="hatchWorkflow.resolveSpecial"
+      @complete="hatchWorkflow.complete"
     />
     <BreedingProjectWizard
       :open="projectWizard.open.value"

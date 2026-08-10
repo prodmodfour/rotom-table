@@ -212,6 +212,7 @@ for (const path of [
   'data/breeding-automation/project-guidance-presentation-contract.json',
   'data/breeding-automation/project-choices-presentation-contract.json',
   'data/breeding-automation/workshop-activity-presentation-contract.json',
+  'data/breeding-automation/hatch-workflow-presentation-contract.json',
   'data/breeding-automation/campaign-operation-ledger-contract.json',
   'data/breeding-automation/campaign-clock-contract.json',
   'data/breeding-automation/realtime-contract.json',
@@ -437,6 +438,24 @@ assert(workshopActivityContract.definition?.presentation?.nativeProgress === tru
   && workshopActivityContract.definition?.presentation?.minimumControlHeightPx === 44
   && workshopActivityContract.definition?.presentation?.keyboardOperable === true
   && workshopActivityContract.definition?.presentation?.reducedMotion === 'honored', 'Workshop activity accessibility contract drifted')
+const hatchWorkflowContract = json<Record<string, any>>('data/breeding-automation/hatch-workflow-presentation-contract.json')
+assert(hatchWorkflowContract.contractId === 'rotom-breeding-hatch-workflow-presentation-v1'
+  && hatchWorkflowContract.definition?.ticket === 'BR-075'
+  && hatchWorkflowContract.definition?.scope?.apiRoute === '/api/breeding/hatch'
+  && hatchWorkflowContract.definition?.scope?.clientMechanicsAuthority === 'none', 'Hatch workflow presentation identity or authority drifted')
+assert(hatchWorkflowContract.definition?.requestAuthority?.browserSuppliedMechanics === 'forbidden'
+  && hatchWorkflowContract.definition?.requestAuthority?.mutationConfirmation === 'explicit-true'
+  && hatchWorkflowContract.definition?.mechanicsReuse?.parallelMutationPath === 'forbidden'
+  && hatchWorkflowContract.definition?.mechanicsReuse?.randomRetry === 'reuse-one-persisted-roll-never-redraw', 'Hatch workflow request or mechanics reuse boundary drifted')
+assert(hatchWorkflowContract.definition?.specialPrivacy?.ownerPending === 'state-and-waiting-message-only'
+  && hatchWorkflowContract.definition?.specialPrivacy?.automaticShiny === false
+  && hatchWorkflowContract.definition?.specialPrivacy?.automaticNatureChange === false
+  && hatchWorkflowContract.definition?.childReveal?.operationAndEvidenceIdentity === 'forbidden', 'Hatch workflow role privacy or reveal boundary drifted')
+assert(hatchWorkflowContract.definition?.presentation?.modalSemantics === 'labelled-aria-modal-dialog'
+  && hatchWorkflowContract.definition?.presentation?.minimumControlHeightPx === 44
+  && hatchWorkflowContract.definition?.presentation?.nativeGmRadioGroup === true
+  && hatchWorkflowContract.definition?.presentation?.separateConfirmation === true
+  && hatchWorkflowContract.definition?.presentation?.reducedMotion === 'reveal-animation-disabled', 'Hatch workflow accessibility contract drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'
   && eggTransferContract.definition?.clientAuthority === 'none', 'Egg transfer contract identity or authority drifted')
@@ -967,6 +986,18 @@ for (const path of [
   'tests/composables/breeding/useBreedingWorkshopActivity.test.ts',
   'tests/components/breedingWorkshopActivityCards.test.ts',
   'data/breeding-automation/workshop-activity-presentation-contract.json',
+  'shared/breeding/hatchWorkflow.ts',
+  'server/domain/breeding/hatchWorkflow.ts',
+  'server/useCases/manageBreedingHatchWorkflow.ts',
+  'server/api/breeding/hatch.post.ts',
+  'src/composables/breeding/useBreedingHatchWorkflow.ts',
+  'src/components/breeding/BreedingHatchDecisionFlow.vue',
+  'tests/shared/breedingHatchWorkflowContract.test.ts',
+  'tests/server/breedingHatchWorkflow.test.ts',
+  'tests/server/breedingHatchWorkflowRoute.test.ts',
+  'tests/composables/breeding/useBreedingHatchWorkflow.test.ts',
+  'tests/components/breedingHatchDecisionFlow.test.ts',
+  'data/breeding-automation/hatch-workflow-presentation-contract.json',
   'docs/breeding/workshop.md',
   'shared/breeding/fossilEgg.ts',
   'server/domain/breeding/fossilEgg.ts',
