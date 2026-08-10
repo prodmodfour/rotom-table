@@ -18,18 +18,26 @@ import {
   type BreedingProjectGuidanceProjectionV1,
   type BreedingProjectGuidanceReasonId,
 } from '#shared/breeding/projectGuidance'
+import type {
+  BreedingProjectChoiceMessageId,
+  BreedingProjectChoiceOptionV1,
+  BreedingProjectChoicesProjectionV1,
+  BreedingProjectTraitChoiceAuthorityV1,
+} from '#shared/breeding/projectChoices'
 import { BREEDING_PROJECT_WIZARD_STEPS } from '~/composables/breeding/useBreedingProjectWizard'
 
 const props = defineProps<{
   open: boolean
   projection: BreedingProjectWizardProjectionV1 | null
   guidance: BreedingProjectGuidanceProjectionV1 | null
+  choices?: BreedingProjectChoicesProjectionV1 | null
   ownershipContexts: readonly BreedingWorkshopOwnershipContextV1[]
   destinationTrainerSlug: string | null
   breederTrainerSlug: string | null
   selectedParentSlugs: ReadonlySet<string>
   activeStep: number
   loading: boolean
+  confirming?: boolean
   error: string | null
   canReview: boolean
 }>()
@@ -40,6 +48,8 @@ const emit = defineEmits<{
   selectDestination: [trainerSheetSlug: string]
   selectBreeder: [trainerSheetSlug: string]
   toggleParent: [pokemonSheetSlug: string]
+  selectOption: [optionId: string, siblingOptionIds: readonly string[]]
+  confirmProject: []
   next: []
   previous: []
 }>()
@@ -56,6 +66,8 @@ const applicableReasons = computed(() => props.guidance?.applicableReasonIds.map
   reasonId => breedingProjectGuidanceReason(reasonId),
 ) ?? [])
 const sourceContributions = computed(() => props.guidance?.sourceContributions ?? [])
+const skillOptions = computed(() => props.choices?.skillChoice.options ?? [])
+const roleOptions = computed(() => props.choices?.parentRoleChoice.options ?? [])
 const nextDisabled = computed(() => props.loading
   || (props.activeStep === 2 && !props.canReview)
   || props.activeStep >= BREEDING_PROJECT_WIZARD_STEPS.length - 1)
@@ -92,6 +104,36 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
   ].filter((value): value is string => value !== null)
   return values.length > 0 ? values.join(' · ') : 'Details unavailable'
 }
+const selectChoice = (option: BreedingProjectChoiceOptionV1, siblings: readonly BreedingProjectChoiceOptionV1[]): void => {
+  emit('selectOption', option.optionId, siblings.map(entry => entry.optionId))
+}
+const traitLabel = (choice: BreedingProjectTraitChoiceAuthorityV1): string => ({
+  nature: 'Nature',
+  ability: 'Ability',
+  gender: 'Gender',
+})[choice.traitKind]
+const traitStatus = (choice: BreedingProjectTraitChoiceAuthorityV1): string => choice.status === 'choice-authorised'
+  ? `Choice authorised at ${choice.requiredRank}`
+  : choice.status === 'random-only'
+    ? `Random resolution · requires ${choice.requiredRank}`
+    : 'Unavailable until current Breeder authority resolves'
+const confirmationMessages: Readonly<Record<BreedingProjectChoiceMessageId, string>> = Object.freeze({
+  'breeding.project-choices.selection-incomplete': 'Complete the current Trainer and parent selections.',
+  'breeding.project-choices.cross-owner-consent-required': 'Cross-owner Projects require a separate private consent workflow before mechanics can be resolved.',
+  'breeding.project-choices.breeder-choice-required': 'Choose the current Dilettante Skill before confirming.',
+  'breeding.project-choices.breeder-unavailable': 'Current Breeder authority is unavailable.',
+  'breeding.project-choices.creation-rejected': 'Current Project creation authority rejected this confirmation.',
+  'breeding.project-choices.maturity-review-required': 'Every parent requires current GM maturity confirmation.',
+  'breeding.project-choices.parent-role-review-required': 'A current GM parent-role decision is required.',
+  'breeding.project-choices.current-validation-required': 'Current setup validation is unavailable.',
+  'breeding.project-choices.ready-to-confirm': 'Explicit confirmation will rebuild authority and create this Project.',
+  'breeding.project-choices.project-created': 'Project created. Its first 240 campaign minutes are now in progress.',
+  'breeding.project-choices.project-awaiting-consent': 'Project created and awaiting the required owner consent.',
+})
+const confirmationMessage = computed(() => {
+  const messageId = props.choices?.confirmation.messageId
+  return messageId ? confirmationMessages[messageId] : 'Current server validation is required.'
+})
 </script>
 
 <template>
@@ -208,6 +250,24 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
               <p v-else>Provides {{ source.contributionIds.join(' and ') }}.</p>
             </article>
           </section>
+
+          <fieldset
+            v-if="choices?.skillChoice.status === 'required' || choices?.skillChoice.status === 'selected'"
+            class="breeding-project-wizard__choice-group"
+            :disabled="loading"
+          >
+            <legend>Dilettante Breeder Skill</legend>
+            <p>Dilettante requires one current mandated Skill. Only the opaque server options below are accepted.</p>
+            <label v-for="option in skillOptions" :key="option.optionId">
+              <input
+                type="radio"
+                name="breeding-project-skill-choice"
+                :checked="option.selected"
+                @change="selectChoice(option, skillOptions)"
+              >
+              <span><strong>{{ option.label }}</strong><small>{{ option.description }}</small></span>
+            </label>
+          </fieldset>
         </section>
 
         <section v-else-if="activeStep === 2" aria-labelledby="wizard-parents-title">
@@ -321,6 +381,65 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
             </article>
           </section>
 
+          <section v-if="choices" class="breeding-project-wizard__final-choices" aria-labelledby="wizard-final-choices-title">
+            <h3 id="wizard-final-choices-title">Current server-issued choices</h3>
+
+            <div class="breeding-project-wizard__trait-grid" aria-label="Egg production trait authority">
+              <article v-for="trait in choices.traitChoices" :key="trait.traitKind">
+                <strong>{{ traitLabel(trait) }}</strong>
+                <p>{{ traitStatus(trait) }}</p>
+                <small>Resolved at Egg production, never from browser mechanics.</small>
+              </article>
+            </div>
+
+            <fieldset
+              v-for="maturity in choices.maturityChoices"
+              :key="maturity.parentOrdinal"
+              class="breeding-project-wizard__choice-group"
+              :disabled="loading || maturity.status === 'confirmed' || maturity.status === 'unavailable'"
+            >
+              <legend>{{ maturity.parentLabel }} maturity</legend>
+              <p v-if="maturity.status === 'confirmed'">Current audited GM confirmation is recorded.</p>
+              <p v-else-if="maturity.status === 'unavailable'">A GM must review this exact parent revision.</p>
+              <label v-else-if="maturity.option">
+                <input
+                  type="checkbox"
+                  :checked="maturity.option.selected"
+                  @change="selectChoice(maturity.option, [maturity.option])"
+                >
+                <span><strong>{{ maturity.option.label }}</strong><small>{{ maturity.option.description }}</small></span>
+              </label>
+            </fieldset>
+
+            <fieldset
+              v-if="choices.parentRoleChoice.status !== 'not-required'"
+              class="breeding-project-wizard__choice-group"
+              :disabled="loading || choices.parentRoleChoice.status === 'unavailable'"
+            >
+              <legend>Parent roles</legend>
+              <p v-if="choices.parentRoleChoice.status === 'unavailable'">A GM must resolve parent roles without exposing private mechanics.</p>
+              <label v-for="option in roleOptions" v-else :key="option.optionId">
+                <input
+                  type="radio"
+                  name="breeding-project-parent-role"
+                  :checked="option.selected"
+                  @change="selectChoice(option, roleOptions)"
+                >
+                <span><strong>{{ option.label }}</strong><small>{{ option.description }}</small></span>
+              </label>
+            </fieldset>
+
+            <details class="breeding-project-wizard__campaign-settings">
+              <summary>Current campaign settings</summary>
+              <dl>
+                <div v-for="setting in choices.campaignSettings" :key="setting.campaignOptionId">
+                  <dt>{{ setting.label }}</dt>
+                  <dd>{{ setting.valueLabel }}</dd>
+                </div>
+              </dl>
+            </details>
+          </section>
+
           <div class="breeding-project-wizard__timeline" aria-labelledby="wizard-timeline-title">
             <PhClock :size="24" weight="duotone" aria-hidden="true" />
             <div>
@@ -354,13 +473,21 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
             </dl>
           </section>
 
-          <div class="breeding-project-wizard__confirmation">
-            <p role="status">
-              No project has been created. Final choices, consent, and current server validation are still required.
-            </p>
-            <button type="button" class="breeding-project-wizard__button" disabled>
-              Create project
+          <div
+            class="breeding-project-wizard__confirmation"
+            :class="{ 'is-created': choices?.confirmation.status === 'created' }"
+          >
+            <p role="status" aria-live="polite">{{ confirmationMessage }}</p>
+            <button
+              v-if="choices?.confirmation.status !== 'created'"
+              type="button"
+              class="breeding-project-wizard__button"
+              :disabled="loading || confirming || !choices?.confirmation.canConfirm"
+              @click="emit('confirmProject')"
+            >
+              {{ confirming ? 'Creating project…' : 'Confirm and create project' }}
             </button>
+            <strong v-else>Created</strong>
           </div>
         </section>
       </div>
@@ -718,6 +845,120 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
   padding-left: 1.25rem;
 }
 
+.breeding-project-wizard__choice-group,
+.breeding-project-wizard__final-choices,
+.breeding-project-wizard__campaign-settings {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border: 1px solid var(--rt-rule);
+  border-radius: var(--rt-radius-small);
+  background: var(--rt-surface-1);
+}
+
+.breeding-project-wizard__choice-group {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.breeding-project-wizard__choice-group legend {
+  padding-inline: 0.3rem;
+  color: var(--rt-text-strong);
+  font-weight: 700;
+}
+
+.breeding-project-wizard__choice-group > p {
+  margin: 0;
+  color: var(--rt-text-muted);
+  line-height: 1.45;
+}
+
+.breeding-project-wizard__choice-group label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-height: 44px;
+  padding: 0.55rem;
+  border: 1px solid var(--rt-rule);
+  border-radius: var(--rt-radius-small);
+  cursor: pointer;
+}
+
+.breeding-project-wizard__choice-group input {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+  accent-color: var(--rt-brand);
+}
+
+.breeding-project-wizard__choice-group span,
+.breeding-project-wizard__choice-group small {
+  display: block;
+}
+
+.breeding-project-wizard__choice-group small,
+.breeding-project-wizard__trait-grid small {
+  margin-top: 0.2rem;
+  color: var(--rt-text-muted);
+  line-height: 1.4;
+}
+
+.breeding-project-wizard__trait-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.breeding-project-wizard__trait-grid article {
+  padding: 0.7rem;
+  border: 1px solid var(--rt-rule);
+  border-radius: var(--rt-radius-small);
+  background: var(--rt-surface-2);
+}
+
+.breeding-project-wizard__trait-grid p {
+  margin: 0.35rem 0 0;
+  color: var(--rt-text-strong);
+  font-size: 0.85rem;
+}
+
+.breeding-project-wizard__campaign-settings summary {
+  min-height: 44px;
+  color: var(--rt-text-strong);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.breeding-project-wizard__campaign-settings dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.breeding-project-wizard__campaign-settings dl > div {
+  padding: 0.5rem;
+  background: var(--rt-surface-2);
+}
+
+.breeding-project-wizard__campaign-settings dt {
+  color: var(--rt-text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.breeding-project-wizard__campaign-settings dd {
+  margin: 0.2rem 0 0;
+  color: var(--rt-text-strong);
+}
+
+.breeding-project-wizard__confirmation.is-created {
+  padding: 0.75rem;
+  border: 1px solid var(--rt-success);
+  border-radius: var(--rt-radius-small);
+  background: var(--rt-surface-1);
+}
+
 .breeding-project-wizard__diagnostics dl {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -779,7 +1020,8 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
 .breeding-project-wizard__button:focus-visible,
 .breeding-project-wizard__icon-button:focus-visible,
 .breeding-project-wizard__field select:focus-visible,
-.breeding-project-wizard__parent:has(input:focus-visible) {
+.breeding-project-wizard__parent:has(input:focus-visible),
+.breeding-project-wizard__choice-group label:has(input:focus-visible) {
   outline: 3px solid var(--rt-focus);
   outline-offset: 2px;
 }
@@ -796,6 +1038,8 @@ const parentMeta = (candidate: (typeof candidates.value)[number]): string => {
 
   .breeding-project-wizard__parents,
   .breeding-project-wizard__summary,
+  .breeding-project-wizard__trait-grid,
+  .breeding-project-wizard__campaign-settings dl,
   .breeding-project-wizard__diagnostics dl {
     grid-template-columns: 1fr;
   }

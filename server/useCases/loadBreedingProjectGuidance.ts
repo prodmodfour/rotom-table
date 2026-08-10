@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import type { AuthRole } from '#shared/auth'
+import type { BreedingActorAuthorityV1 } from '#shared/breeding/authorization'
 import { BREEDING_BREEDER_EDGE_CONTRIBUTION_IDS } from '#shared/breeding/breederEdgeHandoff'
 import {
   BREEDING_PROJECT_GUIDANCE_CUSTOM_REASON_IDS,
@@ -11,7 +12,6 @@ import {
 } from '#shared/breeding/projectGuidance'
 import {
   createBreedingTrainerControlEvidenceV1,
-  type BreedingActorAuthorityV1,
 } from '../domain/breeding/authorization'
 import {
   BreedingBreederEdgeHandoffAuthorityError,
@@ -31,6 +31,7 @@ import {
 } from './resolveBreedingFeatureProviderHandoff'
 import {
   loadBreedingProjectWizardAuthority,
+  type LoadedBreedingProjectWizardAuthorityV1,
   type LoadBreedingProjectWizardDependencies,
 } from './loadBreedingProjectWizard'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
@@ -46,6 +47,10 @@ export interface LoadBreedingProjectGuidanceDependencies extends LoadBreedingPro
   readonly resolveCurrentFeatureProviderHandoff?: typeof resolveCurrentBreedingFeatureProviderHandoff
   readonly resolveCurrentBreederEdgeHandoff?: typeof resolveCurrentBreedingBreederEdgeHandoff
   readonly validateCurrentGmAuthority?: (actor: BreedingActorAuthorityV1) => boolean
+}
+export interface LoadedBreedingProjectGuidanceAuthorityV1 {
+  readonly projection: BreedingProjectGuidanceProjectionV1
+  readonly wizardAuthority: LoadedBreedingProjectWizardAuthorityV1
 }
 
 const CUSTOM_REASONS = new Set<string>(BREEDING_PROJECT_GUIDANCE_CUSTOM_REASON_IDS)
@@ -94,10 +99,10 @@ const gmVerifier = (
  * diagnostics to one current BR-071 wizard projection. It does not create
  * read sets, offers, consent, adjudications, rolls, Projects, or Eggs.
  */
-export const loadBreedingProjectGuidance = (
+export const loadBreedingProjectGuidanceAuthority = (
   input: LoadBreedingProjectGuidanceInput,
   dependencies: LoadBreedingProjectGuidanceDependencies = {},
-): BreedingProjectGuidanceProjectionV1 => {
+): LoadedBreedingProjectGuidanceAuthorityV1 => {
   const authority = loadBreedingProjectWizardAuthority(input, dependencies)
   const { projection: wizard, request, actorAuthority: actor } = authority
   const trainer = authority.sheetRepository.get('trainer', request.breederTrainerSlug)
@@ -246,10 +251,16 @@ export const loadBreedingProjectGuidance = (
     finalValidationStatus: 'required-before-creation' as const,
   }) : null
 
-  return createBreedingProjectGuidanceProjectionV1({
+  const projection = createBreedingProjectGuidanceProjectionV1({
     wizard,
     applicableReasonIds,
     sourceContributions,
     gmDiagnostics,
   })
+  return Object.freeze({ projection, wizardAuthority: authority })
 }
+
+export const loadBreedingProjectGuidance = (
+  input: LoadBreedingProjectGuidanceInput,
+  dependencies: LoadBreedingProjectGuidanceDependencies = {},
+): BreedingProjectGuidanceProjectionV1 => loadBreedingProjectGuidanceAuthority(input, dependencies).projection

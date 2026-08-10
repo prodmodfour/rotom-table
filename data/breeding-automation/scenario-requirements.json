@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 72,
+    "covered": 73,
     "in-progress": 1,
-    "planned": 17,
+    "planned": 16,
     "blocked": 0
   },
   "requirements": [
@@ -1765,8 +1765,28 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/project-choices-presentation-contract.json",
+        "shared/breeding/projectChoices.ts",
+        "server/domain/breeding/projectChoices.ts",
+        "server/domain/breeding/currentReferences.ts",
+        "server/useCases/loadBreedingProjectChoices.ts",
+        "server/api/breeding/projects/wizard/choices.post.ts",
+        "src/composables/breeding/useBreedingProjectWizard.ts",
+        "src/components/breeding/BreedingProjectWizard.vue",
+        "src/pages/breeding/index.vue",
+        "tests/shared/breedingProjectChoicesContract.test.ts",
+        "tests/server/breedingCurrentReferences.test.ts",
+        "tests/server/breedingProjectChoices.test.ts",
+        "tests/server/breedingProjectChoicesRoute.test.ts",
+        "tests/composables/breeding/useBreedingProjectWizard.test.ts",
+        "tests/components/breedingProjectWizard.test.ts",
+        "docs/breeding/workshop.md",
+        "docs/breeding/security-and-privacy.md",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -1779,7 +1799,7 @@
         "component-or-nuxt-test",
         "accessibility-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": [
         "breeding-cross-owner-consent-v1"

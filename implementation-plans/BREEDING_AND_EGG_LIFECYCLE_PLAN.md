@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: BR-073`
+`CURRENT_TICKET: BR-074`
 
 `BLOCKED_BY: done/ENCOUNTER_UI_UX_PLAN.md — PLAN_STATUS: DONE`
 
@@ -463,7 +463,7 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ## Progress snapshot
 
-- Plan tickets: **72 DONE / 90 total**
+- Plan tickets: **73 DONE / 90 total**
 - Frozen breeding source inventory: **30 hash-bound runtime, contract, product, documentary, and parser records**
 - Recorded ruleset/adjudications: **`ptu-1.05-breeding-v1` / 20 accepted conflict decisions / 15 typed campaign options**
 - Compiled species specs: **862 runtime Species / 407 complete Families**
@@ -665,8 +665,9 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
   - Evidence: Project-wizard presentation contract `f7f12c4069c5afccc4c3d16f5263239aac7dbeeccc5fd693fa56ce7903c34849` and runtime policy `acd52811cf25b325ca38a3c5a39b4af3faf4b0a711227b31ee29c6f535e7cdc4` bind the four-step destination, Breeder, parent, and review flow to `POST /api/breeding/projects/wizard`. The server rebuilds selected-Profile or GM Trainer authority, current campaign time and options, actor authority, roster ownership, exact Pokémon revisions, and BR-020 parent discovery; requests carry selectors only and cannot claim mechanics, consent, facilities, time, or creation authority. Strict self-hashed projections expose bounded Trainer and safe parent presentation, same-owner or review-required consent status, and the 240-minute / DC 12 / 240-minute campaign-only timeline. The responsive keyboard and touch UI covers loading, retry, empty and unavailable parents, selection count, Profile resets, visible focus, reduced motion, and an explicit non-mutating review whose final creation action remains disabled pending current server choices, consent, validation, and confirmation. Focused shared/server/route/composable/component tests and refreshed authority-fixture regressions pass with checker, lint, typecheck, and production build.
 - [x] **BR-072 — Implement compatibility explanations, unavailable reasons, source contributions, and GM diagnostics** — `DONE`
   - Evidence: Project-guidance presentation contract `1acbcb6fc06614fbb0e4f9f91acf5ef5fc436d840af0506137bc5b4d6318d9e5` and runtime policy `b38f33eac65d66d9a033caf3ba81a013857c666dda16e67de5d126962ad39c1b` layer a strict, security-bound, self-hashed guidance projection over the exact current BR-071 wizard. A closed app-owned catalog explains every BR-020 candidate and pair reason plus selection, consent, maturity, Breeder, Dilettante, and final-validation states without browser mechanics inference. Current provider handoffs project only bounded Breeder/Dilettante contribution status and, for an active direct Breeder, the mandated Skill/rank/check total; malformed, stale, ambiguous, faulting, or Promise-like providers fail closed without evidence leakage. Owner views receive no diagnostics; GM views receive only bounded counts and policy/status enums with no Trainer, Pokémon, provider, operation, Project, Egg, consent, or hash identity, and cross-owner private mechanics remain unresolved before consent. Native reason disclosures, source cards, review guidance, and a responsive GM panel remain keyboard/touch accessible. Forty-one focused guidance/wizard/workshop checks, 546 broad Breeding checks after authority-fixture refresh, checker, lint, and typecheck pass.
-- [ ] **BR-073 — Implement rank-authorised Nature, Ability, Gender, campaign-option, and confirmation choices** — `IN_PROGRESS`
-- [ ] **BR-074 — Implement project and Egg cards with progress, status, history, recovery, and transfer actions** — `TODO`
+- [x] **BR-073 — Implement rank-authorised Nature, Ability, Gender, campaign-option, and confirmation choices** — `DONE`
+  - Evidence: Project-choice presentation contract `52d31dcb6f1247651a11a4124c64d4173144a8dfc59a403f004fe4490b9d88f3` and runtime policy `f944325acc20b3234a390d19aead71c5dbd4c618c9637d5120bbc02d4dc45866` add strict `POST /api/breeding/projects/wizard/choices` authority over the exact BR-072 guidance. Requests carry only current selectors, one opaque draft ID, sorted opaque server option IDs, and explicit confirmation; Nature/Adept, Ability/Expert, and Gender/Master permissions derive from the current direct-Breeder or Dilettante handoff while canonical traits remain deferred to Egg production. All 15 current campaign settings, Dilettante Skill, GM maturity, and bounded role options are server-issued. Confirmation rebuilds current Profile/GM control, sheets/rosters, clock/options, app-owned references, providers/dependencies, authorization/overrides, persisted adjudications/offers, and BR-042 setup validation before delegating to the existing atomic initial-progress transaction. Same-owner creation starts one revision-zero Project at zero of 240 campaign minutes; retries create no duplicate Project, adjudication, event, publication, or roll. Cross-owner selection stops before private mechanics pending BR-077. Twenty-eight focused contract/reference/use-case/route/composable/component checks and 102 authority-fixture regressions pass with changed-file lint and clean diff validation; the five semantic-registry-bound immutable fixtures were rehashed transitively.
+- [ ] **BR-074 — Implement project and Egg cards with progress, status, history, recovery, and transfer actions** — `IN_PROGRESS`
 - [ ] **BR-075 — Implement the hatch decision flow, special adjudication, child reveal, and accepted presentation choreography** — `TODO`
 - [ ] **BR-076 — Integrate child destination, team-limit explanations, box linkage, Trainer pages, and sheet navigation** — `TODO`
 - [ ] **BR-077 — Implement cross-owner consent, revocation, notifications, private views, and GM override UX** — `TODO`

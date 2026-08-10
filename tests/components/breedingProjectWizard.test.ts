@@ -7,6 +7,8 @@ import BreedingProjectWizard from '../../src/components/breeding/BreedingProject
 import type { BreedingWorkshopOwnershipContextV1 } from '../../shared/breeding/workshop'
 import { createBreedingProjectWizardProjectionV1 } from '../../server/domain/breeding/projectWizard'
 import { createBreedingProjectGuidanceProjectionV1 } from '../../server/domain/breeding/projectGuidance'
+import { createBreedingProjectChoicesProjectionV1 } from '../../server/domain/breeding/projectChoices'
+import { BREEDING_CAMPAIGN_OPTION_IDS } from '../../server/domain/breeding/campaignOptions'
 
 const owner: BreedingWorkshopOwnershipContextV1 = {
   trainerSheetSlug: 'trainer-owner',
@@ -92,6 +94,46 @@ const guidance = (selected: boolean) => createBreedingProjectGuidanceProjectionV
     reasonId: null,
   }],
   gmDiagnostics: null,
+})
+const choicesGuidance = () => createBreedingProjectGuidanceProjectionV1({
+  wizard: projection(true),
+  applicableReasonIds: [
+    'breeding.project-guidance.maturity-confirmation-required',
+    'breeding.project-guidance.pair-requires-final-validation',
+  ],
+  sourceContributions: [{
+    sourceKind: 'trainer-edge',
+    sourceCanonicalId: 'Breeder',
+    status: 'active',
+    contributionIds: ['breeding-project-request', 'breeder-dc12-timeline'],
+    skillApplication: { skillId: 'pokemon-education', rank: 'Adept', skillTotal: 7 },
+    reasonId: null,
+  }],
+  gmDiagnostics: null,
+})
+const choices = () => createBreedingProjectChoicesProjectionV1({
+  guidance: choicesGuidance(),
+  skillChoice: { status: 'not-required', options: [] },
+  traitChoices: [
+    { traitKind: 'nature', requiredRank: 'Adept', effectiveRank: 'Adept', status: 'choice-authorised', resolutionCheckpoint: 'egg-production' },
+    { traitKind: 'ability', requiredRank: 'Expert', effectiveRank: 'Adept', status: 'random-only', resolutionCheckpoint: 'egg-production' },
+    { traitKind: 'gender', requiredRank: 'Master', effectiveRank: 'Adept', status: 'random-only', resolutionCheckpoint: 'egg-production' },
+  ],
+  campaignSettings: [...BREEDING_CAMPAIGN_OPTION_IDS].sort().map(campaignOptionId => ({
+    campaignOptionId,
+    label: campaignOptionId === 'breeding.maturity-policy' ? 'Maturity' : campaignOptionId,
+    valueLabel: 'Current',
+  })),
+  maturityChoices: [
+    { parentOrdinal: 1, parentLabel: 'Leaf', status: 'confirmed', option: null },
+    { parentOrdinal: 2, parentLabel: 'Bloom', status: 'confirmed', option: null },
+  ],
+  parentRoleChoice: { status: 'not-required', options: [] },
+  confirmation: {
+    status: 'ready', setupStatus: 'ready', canConfirm: true,
+    explicitConfirmationRequired: true,
+    messageId: 'breeding.project-choices.ready-to-confirm', project: null,
+  },
 })
 const unavailableProjection = () => {
   const base = projection(false)
@@ -258,10 +300,36 @@ describe('Breeding Project wizard', () => {
     expect(wrapper.text()).toContain('240 initial campaign minutes')
     expect(wrapper.text()).toContain('Breeder check at DC 12')
     expect(wrapper.text()).toContain('Only the campaign clock advances this timeline')
-    expect(wrapper.text()).toContain('current server validation are still required')
+    expect(wrapper.text()).toContain('Current server validation is required')
     expect(wrapper.text()).toContain('GM maturity confirmation is required')
-    const create = wrapper.findAll('button').find(button => button.text().includes('Create project'))
+    const create = wrapper.findAll('button').find(button => button.text().includes('Confirm and create project'))
     expect(create?.attributes('disabled')).toBeDefined()
+  })
+
+  it('renders rank gates, current campaign settings, and explicit server confirmation accessibly', async () => {
+    const currentChoices = choices()
+    const wrapper = mountWizard({
+      projection: currentChoices.guidance.wizard,
+      guidance: currentChoices.guidance,
+      choices: currentChoices,
+      selectedParentSlugs: new Set(['pokemon-parent-a', 'pokemon-parent-b']),
+      activeStep: 3,
+      canReview: true,
+    })
+    expect(wrapper.get('#wizard-final-choices-title').text()).toBe('Current server-issued choices')
+    expect(wrapper.text()).toContain('Nature')
+    expect(wrapper.text()).toContain('Choice authorised at Adept')
+    expect(wrapper.text()).toContain('Ability')
+    expect(wrapper.text()).toContain('Random resolution · requires Expert')
+    expect(wrapper.text()).toContain('Gender')
+    expect(wrapper.text()).toContain('Resolved at Egg production, never from browser mechanics')
+    const settings = wrapper.get('.breeding-project-wizard__campaign-settings')
+    expect(settings.get('summary').text()).toBe('Current campaign settings')
+    expect(settings.findAll('dt')).toHaveLength(15)
+    const create = wrapper.findAll('button').find(button => button.text().includes('Confirm and create project'))!
+    expect(create.attributes('disabled')).toBeUndefined()
+    await create.trigger('click')
+    expect(wrapper.emitted('confirmProject')).toEqual([[]])
   })
 
   it('shows bounded diagnostics to the GM audience without aggregate identifiers', () => {
