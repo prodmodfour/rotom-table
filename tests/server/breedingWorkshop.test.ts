@@ -1,6 +1,11 @@
+import { performance } from 'node:perf_hooks'
 import { afterEach, describe, expect, it } from 'vitest'
 import workshopContractJson from '../../data/breeding-automation/workshop-presentation-contract.json'
 import type { PlayerProfile } from '../../shared/playerProfiles'
+import {
+  BREEDING_PERFORMANCE_BUDGET_POLICY_V1,
+  breedingPerformanceJsonUtf8Bytes,
+} from '../../shared/breeding/performanceBudgets'
 import {
   BREEDING_WORKSHOP_CONTEXT_PAGE_LIMIT,
   type BreedingWorkshopProjectionV1,
@@ -162,10 +167,18 @@ describe('BR-070 Breeding Workshop server projection', () => {
     for (let index = 0; index <= BREEDING_WORKSHOP_CONTEXT_PAGE_LIMIT; index += 1) {
       saveTrainer(database, `trainer-${String(index).padStart(3, '0')}`)
     }
+    const startedAt = performance.now()
     const first = loadBreedingWorkshop({
       role: 'gm', playerProfile: null, query: query(),
     }, { database })
+    const elapsed = performance.now() - startedAt
     expect(first.ownershipContexts).toHaveLength(BREEDING_WORKSHOP_CONTEXT_PAGE_LIMIT)
+    expect(breedingPerformanceJsonUtf8Bytes(first)).toBeLessThanOrEqual(
+      BREEDING_PERFORMANCE_BUDGET_POLICY_V1.workshop.maximumProjectionUtf8Bytes,
+    )
+    expect(elapsed).toBeLessThanOrEqual(
+      BREEDING_PERFORMANCE_BUDGET_POLICY_V1.workshop.maximumElapsedMilliseconds,
+    )
     expect(first.nextOwnershipCursor).toBe('trainer-099')
 
     const second = loadBreedingWorkshop({
@@ -231,6 +244,20 @@ describe('BR-070 Breeding Workshop server projection', () => {
         database,
         getByRef: () => null,
         list: () => sparseRows as never,
+      },
+    })).toThrowError(expect.objectContaining({ statusCode: 409 }))
+
+    const oversizedDirectory = Array.from({
+      length: BREEDING_PERFORMANCE_BUDGET_POLICY_V1.workshop.maximumAuthorizedTrainers + 1,
+    }, (_, index) => ({ kind: 'trainer', slug: `trainer-overflow-${index}` }))
+    expect(() => loadBreedingWorkshop({
+      role: 'gm', playerProfile: null, query: query(),
+    }, {
+      database,
+      sheetRepository: {
+        database,
+        getByRef: () => null,
+        list: () => oversizedDirectory as never,
       },
     })).toThrowError(expect.objectContaining({ statusCode: 409 }))
 

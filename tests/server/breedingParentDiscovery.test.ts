@@ -1,3 +1,4 @@
+import { performance } from 'node:perf_hooks'
 import { describe, expect, it } from 'vitest'
 import rulesetJson from '../../data/breeding-automation/ruleset.json'
 import {
@@ -8,6 +9,10 @@ import {
 } from '../../shared/breeding/parentDiscovery'
 import { parseBreedingOperationCommandV1 } from '../../shared/breeding/operations'
 import type { PlayerProfile } from '../../shared/playerProfiles'
+import {
+  BREEDING_PERFORMANCE_BUDGET_POLICY_V1,
+  breedingPerformanceJsonUtf8Bytes,
+} from '../../shared/breeding/performanceBudgets'
 import { createBreedingActorAuthorityV1 } from '../../server/domain/breeding/authorization'
 import { DEFAULT_BREEDING_CAMPAIGN_OPTION_SNAPSHOT } from '../../server/domain/breeding/campaignOptions'
 import {
@@ -323,6 +328,97 @@ describe('authorized Breeding parent discovery and safe previews', () => {
     })
     expect(JSON.stringify(projection)).not.toMatch(/profile_parent01|consent|override|secret-arena/iu)
   })
+
+  it('projects the maximum 64-Trainer and 2,048-candidate preview inside its release budgets', () => {
+    const budget = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview
+    const trainers: BreedingParentDiscoveryStoredSheet[] = []
+    const pokemon: BreedingParentDiscoveryStoredSheet[] = []
+    for (let trainerIndex = 0; trainerIndex < budget.maximumProjectedTrainers; trainerIndex += 1) {
+      const trainerSlug = `trainer-performance-${String(trainerIndex).padStart(2, '0')}`
+      const boxedPokemon: string[] = []
+      const candidatesPerTrainer = budget.maximumProjectedCandidates / budget.maximumProjectedTrainers
+      for (let pokemonIndex = 0; pokemonIndex < candidatesPerTrainer; pokemonIndex += 1) {
+        const pokemonSlug = `${trainerSlug}-pokemon-${String(pokemonIndex).padStart(2, '0')}`
+        boxedPokemon.push(pokemonSlug)
+        pokemon.push(row('pokemon', pokemonSlug, 1, {
+          slug: pokemonSlug,
+          nickname: `Candidate ${trainerIndex}-${pokemonIndex}`,
+          species: 'Bulbasaur',
+          gender: pokemonIndex % 2 === 0 ? 'Female' : 'Male',
+          level: 25,
+        }))
+      }
+      trainers.push(row('trainer', trainerSlug, 1, {
+        slug: trainerSlug,
+        currentTeam: [],
+        boxedPokemon,
+      }))
+    }
+    const storedRows = [...trainers, ...pokemon]
+    const startedAt = performance.now()
+    const projection = discoverBreedingParentsV1({
+      sheets: reader(storedRows),
+      actorAuthority: actor({ role: 'gm', value: 86 }),
+      profile: null,
+      campaignOptions: DEFAULT_BREEDING_CAMPAIGN_OPTION_SNAPSHOT,
+      atCampaignMinute: 120,
+      filter: filter({ trainerSheetSlug: null }),
+      selection: selection(),
+    })
+    const elapsed = performance.now() - startedAt
+
+    expect(projection.trainerSheets).toHaveLength(budget.maximumProjectedTrainers)
+    expect(projection.trainerSheets.flatMap(value => value.candidates))
+      .toHaveLength(budget.maximumProjectedCandidates)
+    expect(breedingPerformanceJsonUtf8Bytes(projection))
+      .toBeLessThanOrEqual(budget.maximumProjectionUtf8Bytes)
+    expect(elapsed).toBeLessThanOrEqual(budget.maximumElapsedMilliseconds)
+
+    const overflowPokemonSlug = 'trainer-performance-00-pokemon-overflow'
+    const overflowTrainer = trainers[0]!
+    const overflowDocument = overflowTrainer.document as Record<string, unknown>
+    const candidateOverflowRows = [
+      ...storedRows.filter(value => value !== overflowTrainer),
+      row('trainer', overflowTrainer.slug, overflowTrainer.revision, {
+        ...overflowDocument,
+        boxedPokemon: [...(overflowDocument.boxedPokemon as string[]), overflowPokemonSlug],
+      }),
+      row('pokemon', overflowPokemonSlug, 1, {
+        slug: overflowPokemonSlug,
+        nickname: 'Overflow Candidate',
+        species: 'Bulbasaur',
+        gender: 'Female',
+        level: 25,
+      }),
+    ]
+    expect(() => discoverBreedingParentsV1({
+      sheets: reader(candidateOverflowRows),
+      actorAuthority: actor({ role: 'gm', value: 87 }),
+      profile: null,
+      campaignOptions: DEFAULT_BREEDING_CAMPAIGN_OPTION_SNAPSHOT,
+      atCampaignMinute: 120,
+      filter: filter({ trainerSheetSlug: null }),
+      selection: selection(),
+    })).toThrowError(expect.objectContaining({ code: 'breeding.parent-discovery.limit-exceeded' }))
+
+    const trainerOverflowRows = [
+      ...storedRows,
+      row('trainer', 'trainer-performance-overflow', 1, {
+        slug: 'trainer-performance-overflow',
+        currentTeam: [],
+        boxedPokemon: [],
+      }),
+    ]
+    expect(() => discoverBreedingParentsV1({
+      sheets: reader(trainerOverflowRows),
+      actorAuthority: actor({ role: 'gm', value: 88 }),
+      profile: null,
+      campaignOptions: DEFAULT_BREEDING_CAMPAIGN_OPTION_SNAPSHOT,
+      atCampaignMinute: 120,
+      filter: filter({ trainerSheetSlug: null }),
+      selection: selection(),
+    })).toThrowError(expect.objectContaining({ code: 'breeding.parent-discovery.limit-exceeded' }))
+  }, 15_000)
 
   it('fails closed for stale actors, Profile drift, IDOR Trainer filters, ambiguous links, and corrupt rosters', () => {
     expect(() => discoverBreedingParentsV1(ownerInput({ atCampaignMinute: 121 })))

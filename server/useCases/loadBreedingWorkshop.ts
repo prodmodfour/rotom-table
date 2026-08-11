@@ -20,6 +20,7 @@ import {
   type SheetRepository,
 } from '../storage/sheetRepository'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { BREEDING_PERFORMANCE_BUDGET_POLICY_V1 } from '#shared/breeding/performanceBudgets'
 
 export class LoadBreedingWorkshopError extends UseCaseHttpError<400 | 403 | 409> {}
 
@@ -54,7 +55,7 @@ export interface LoadBreedingWorkshopDependencies {
   readonly clockRepository?: WorkshopClockRepository
 }
 
-const MAX_AUTHORIZED_TRAINERS = 4096
+const MAX_AUTHORIZED_TRAINERS = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.workshop.maximumAuthorizedTrainers
 const FORMAT_CONTROLS = /[\u200b-\u200f\u202a-\u202e\u2066-\u2069]/gu
 const CONTROLS = /[\u0000-\u001f\u007f]/gu
 const compare = (left: string, right: string): number => (

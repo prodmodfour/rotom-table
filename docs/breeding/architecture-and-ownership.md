@@ -408,6 +408,12 @@ The archive parser enforces the 64 MiB UTF-8 envelope, canonical chunks, self-ha
 
 Integrity diagnostics are bounded detection, not mutation authority. Orphan repair preserves the source database and applies an approved known-good backup through the ordinary atomic clean-target restore path; direct deletion, relinking, inference, or partial row repair is forbidden. Post-restore and post-restart diagnostics must be clean before cutover. Reviewed migration packages bind source hashes, sizes, privacy classes, tool and reviewer evidence, and the exact result archive. Legacy lineage fields remain compatibility-only unless they bind an existing origin, while legacy map metadata remains quarantine-only with no runtime result.
 
+### BR-086 performance release boundary
+
+`shared/breeding/performanceBudgets.ts` freezes policy `46406165df3222083bff40d85dfcdc1cbc4088c28d1c758db3fc037831a1961d`. It centralizes the existing deterministic work envelopes: 407 Families and 862 Species, at most 64 projected Trainers and 2,048 preview candidates, 100 Eggs per campaign-clock batch, 100 Workshop contexts per page, and bounded UTF-8 preview, audience-projection, and Workshop output. The owning runtimes consume those constants directly; oversized output fails before publication.
+
+Elapsed ceilings are release tests, never runtime clocks or mechanics authority. Each timed case uses the monotonic Node performance clock, one worker, no file parallelism, and excludes module loading and fixture construction. The gates execute a complete registry lookup, the maximum preview, one 100-Egg atomic batch, 1,000 server-built public projections, and a 100-context Workshop page. A slow gate blocks release but cannot alter campaign time, credit, random results, retries, authorization, consent, aggregate state, or projection privacy.
+
 ## Prohibited alternate authorities
 
 - third sheet kind for Eggs;

@@ -5,8 +5,9 @@ import {
   type PokemonEggId,
 } from './ids'
 import { BREEDING_OPERATION_REJECTION_REASON_IDS, type BreedingOperationRejectionReasonId } from './operations'
+import { BREEDING_PERFORMANCE_BUDGET_POLICY_V1 } from './performanceBudgets'
 
-export const BREEDING_CAMPAIGN_CLOCK_EGG_BATCH_MAXIMUM = 100 as const
+export const BREEDING_CAMPAIGN_CLOCK_EGG_BATCH_MAXIMUM = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.batchClock.maximumEggsPerBatch
 
 export interface BreedingCampaignClockEggBatchEntryV1 {
   readonly eggId: PokemonEggId

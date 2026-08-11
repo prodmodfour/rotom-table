@@ -18,10 +18,11 @@ import {
 } from '#shared/breeding/ids'
 import { isCanonicalBreedingSpeciesId } from './canonicalIds'
 import { BREEDING_SPEC_IDENTITY_REGISTRY } from './specSchemaContext'
+import { BREEDING_PERFORMANCE_BUDGET_POLICY_V1 } from '#shared/breeding/performanceBudgets'
 
 export const COMPILED_BREEDING_REGISTRY_SCHEMA_VERSION = 1 as const
-export const COMPILED_BREEDING_SPECIES_COUNT = 862 as const
-export const COMPILED_BREEDING_FAMILY_COUNT = 407 as const
+export const COMPILED_BREEDING_SPECIES_COUNT = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.registry.maximumSpecies
+export const COMPILED_BREEDING_FAMILY_COUNT = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.registry.maximumFamilies
 
 const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex')
 const definitionSha256 = (value: unknown): string => sha256(stableJsonStringify(value))

@@ -6,6 +6,10 @@ import { POKEMON_EGG_SOURCE_KINDS, POKEMON_EGG_STATUSES } from '../shared/breedi
 import { BREEDING_OPERATION_COMMAND_KINDS, BREEDING_OPERATION_OUTCOME_KINDS, BREEDING_OPERATION_SCOPE_KINDS } from '../shared/breeding/operations'
 import { BREEDING_PROJECT_STATUSES } from '../shared/breeding/project'
 import { BREEDING_PROJECTION_AUDIENCES } from '../shared/breeding/projections'
+import {
+  BREEDING_PERFORMANCE_BUDGET_POLICY_DEFINITION_SHA256,
+  BREEDING_PERFORMANCE_BUDGET_POLICY_V1,
+} from '../shared/breeding/performanceBudgets'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const failures: string[] = []
@@ -23,6 +27,20 @@ const stable = (value: unknown): string => {
 }
 const json = <T>(path: string): T => JSON.parse(readFileSync(resolve(ROOT, path), 'utf8')) as T
 const hashObject = (path: string): string => execFileSync('git', ['hash-object', path], { cwd: ROOT, encoding: 'utf8' }).trim()
+assert(
+  sha256(stable(BREEDING_PERFORMANCE_BUDGET_POLICY_V1))
+    === BREEDING_PERFORMANCE_BUDGET_POLICY_DEFINITION_SHA256,
+  'breeding performance budget policy hash drifted',
+)
+assert(BREEDING_PERFORMANCE_BUDGET_POLICY_V1.registry.maximumFamilies === 407
+  && BREEDING_PERFORMANCE_BUDGET_POLICY_V1.registry.maximumSpecies === 862
+  && BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview.maximumProjectedTrainers === 64
+  && BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview.maximumProjectedCandidates === 2048
+  && BREEDING_PERFORMANCE_BUDGET_POLICY_V1.batchClock.maximumEggsPerBatch === 100
+  && BREEDING_PERFORMANCE_BUDGET_POLICY_V1.workshop.maximumContextsPerPage === 100
+  && BREEDING_PERFORMANCE_BUDGET_POLICY_V1.projection.maximumProjectionUtf8Bytes <= 2 * 1024 * 1024,
+'breeding performance budget release envelope drifted')
+
 const recursivelyListJson = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
   .flatMap(entry => entry.isDirectory()
     ? recursivelyListJson(join(directory, entry.name))
@@ -1400,6 +1418,11 @@ for (const path of [
   'server/useCases/manageBreedingArchives.ts',
   'tests/server/breedingArchiveReleaseAcceptance.test.ts',
   'tests/server/breedingArchiveReleaseCertification.test.ts',
+  'shared/breeding/performanceBudgets.ts',
+  'tests/shared/breedingPerformanceBudgets.test.ts',
+  'tests/server/breedingParentDiscovery.test.ts',
+  'tests/server/breedingCampaignClockBatch.test.ts',
+  'tests/server/breedingWorkshop.test.ts',
   'server/security/breedingRequestBody.ts',
   'server/security/breedingWriteRateLimit.ts',
   'tests/server/breedingRequestBody.test.ts',

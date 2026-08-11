@@ -3,10 +3,11 @@ import { stableJsonStringify } from '../automation/stableJson'
 import { cloneStrictJson, deepFreezeStrictJson, type StrictJsonObject } from '../automation/strictJson'
 import { isSlug } from '../paths'
 import { computeRulesetSourceSha256 } from '../ruleset/sourceHash'
+import { BREEDING_PERFORMANCE_BUDGET_POLICY_V1 } from './performanceBudgets'
 
 export const BREEDING_WORKSHOP_PATH = '/breeding' as const
 export const BREEDING_WORKSHOP_API_PATH = '/api/breeding/workshop' as const
-export const BREEDING_WORKSHOP_CONTEXT_PAGE_LIMIT = 100 as const
+export const BREEDING_WORKSHOP_CONTEXT_PAGE_LIMIT = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.workshop.maximumContextsPerPage
 
 export type BreedingWorkshopAudience = 'gm' | 'owner'
 export type BreedingWorkshopOwnershipAvailability = 'available' | 'unavailable'

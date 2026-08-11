@@ -36,6 +36,10 @@ import {
   compiledBreedingSpeciesSpec,
 } from '../domain/breeding/registry'
 import type { BreedingSpeciesSpecV1 } from '#shared/breeding/specs'
+import {
+  BREEDING_PERFORMANCE_BUDGET_POLICY_V1,
+  breedingPerformanceOutputFitsBudget,
+} from '#shared/breeding/performanceBudgets'
 
 export interface BreedingParentDiscoveryStoredSheet {
   readonly kind: SheetKind
@@ -85,10 +89,10 @@ interface TrainerAuthority {
   readonly candidates: readonly CandidateAuthority[]
 }
 
-const MAX_STORED_TRAINERS = 4096
-const MAX_PROJECTED_TRAINERS = 64
-const MAX_ROSTER_ENTRIES = 512
-const MAX_PROJECTED_CANDIDATES = 2048
+const MAX_STORED_TRAINERS = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview.maximumStoredTrainers
+const MAX_PROJECTED_TRAINERS = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview.maximumProjectedTrainers
+const MAX_ROSTER_ENTRIES = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview.maximumRosterEntriesPerTrainer
+const MAX_PROJECTED_CANDIDATES = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview.maximumProjectedCandidates
 const speciesBySourceName = new Map(BREEDING_CANONICAL_SPECIES.map(row => [row.sourceName, row]))
 const compare = (left: string, right: string): number => left < right ? -1 : left > right ? 1 : 0
 const sha256 = (value: unknown): string => createHash('sha256')
@@ -465,7 +469,7 @@ export const discoverBreedingParentsV1 = (
         minute,
       })
     : null
-  return parseBreedingParentDiscoveryProjectionV1({
+  const projection = parseBreedingParentDiscoveryProjectionV1({
     schemaVersion: 1,
     audience: actor.role === 'gm' ? 'gm' : 'owner',
     generatedAtCampaignMinute: minute,
@@ -477,4 +481,8 @@ export const discoverBreedingParentsV1 = (
     selectedParentRefs: selection.parentRefs,
     compatibilityPreview,
   })
+  if (!breedingPerformanceOutputFitsBudget('preview', projection)) {
+    return fail('breeding.parent-discovery.limit-exceeded', 'Parent discovery projection exceeds the release budget.')
+  }
+  return projection
 }

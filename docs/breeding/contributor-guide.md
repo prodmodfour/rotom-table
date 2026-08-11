@@ -118,6 +118,12 @@ Keep archive dependency and transaction hooks synchronous. Preserve the 64 MiB p
 
 Orphan diagnostics do not grant mutation authority. Acceptance for a repair must demonstrate preservation of the corrupt source, rejection of unsafe in-place new-campaign replacement, atomic restore of a reviewed known-good backup to a clean target, clean post-restore diagnostics, restart persistence, and a durable receipt. Update `archive-contract.json`, `archive-storage-runtime-contract.json`, `archive-release-certification.json`, semantic closure, the registry, checker assertions, and focused archive tests together.
 
+## Performance budget changes
+
+Keep registry, parent-preview, campaign-clock batch, role-projection, and Workshop limits in `shared/breeding/performanceBudgets.ts`; owning runtimes must consume those values rather than duplicate literals. Cardinality and UTF-8 output envelopes are deterministic admission controls. Monotonic elapsed ceilings are release tests only and must never enter a command, read set, campaign clock, transaction, retry decision, or audience projection.
+
+A budget change requires a measured maximum-cardinality fixture, a reason the existing bound cannot be retained, privacy/output-size review, focused single-worker evidence, and synchronized scenario/checker documentation. Do not hide a regression by warming caches inside the measured interval, excluding serialization or transaction settlement, lowering fixture cardinality, or raising a ceiling without review.
+
 ## Tests
 
 During implementation, prefer focused single-worker Vitest commands:

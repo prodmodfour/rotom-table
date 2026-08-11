@@ -28,6 +28,9 @@ import type { BreedingActorAuthorityV1, BreedingTrainerControlEvidenceV1 } from 
 import { parseAuthoritativeBreedingActorAuthorityV1, parseAuthoritativeBreedingAuthorizationReceiptV1, parseAuthoritativeBreedingParentControlEvidenceV1, parseAuthoritativeBreedingTrainerControlEvidenceV1 } from './authorization'
 import { parseAuthoritativeBreedingCheckRecordV1, parseAuthoritativeBreedingConsentRecordV1, parseAuthoritativeBreedingGmAdjudicationRecordV1, parseAuthoritativeBreedingOptionOfferRecordV1, parseAuthoritativeBreedingRollRecordV1 } from './ledgers'
 import { parseAuthoritativeBreedingOperationReadSetV1 } from './readSets'
+import {
+  breedingPerformanceOutputFitsBudget,
+} from '#shared/breeding/performanceBudgets'
 
 export type BreedingProjectionAuthorityErrorCode = 'breeding.projection.hash-mismatch' | 'breeding.projection.unauthorized' | 'breeding.projection.invalid-source'
 export class BreedingProjectionAuthorityError extends Error { readonly code: BreedingProjectionAuthorityErrorCode; readonly path: string; constructor(code: BreedingProjectionAuthorityErrorCode, path: string, message: string) { super(`${path}: ${message}`); this.name = 'BreedingProjectionAuthorityError'; this.code = code; this.path = path } }
@@ -37,7 +40,16 @@ const equal = (left: unknown, right: unknown): boolean => stableJsonStringify(le
 const compare = (left: string, right: string): number => left < right ? -1 : left > right ? 1 : 0
 const withoutProjectionHash = <Value extends { readonly projectionDefinitionSha256: string }>(value: Value): Omit<Value, 'projectionDefinitionSha256'> => { const { projectionDefinitionSha256: _hash, ...definition } = value; return definition }
 export const breedingProjectionDefinitionSha256 = (value: BreedingPresentationProjectionV1): string => sha256(withoutProjectionHash(value))
-export const parseAuthoritativeBreedingPresentationProjectionV1 = (value: unknown, path = 'projection'): BreedingPresentationProjectionV1 => { const parsed = parseBreedingPresentationProjectionV1(value, path); if (breedingProjectionDefinitionSha256(parsed) !== parsed.projectionDefinitionSha256) fail('breeding.projection.hash-mismatch', `${path}.projectionDefinitionSha256`, 'does not match the strict audience projection.'); return parsed }
+export const parseAuthoritativeBreedingPresentationProjectionV1 = (value: unknown, path = 'projection'): BreedingPresentationProjectionV1 => {
+  const parsed = parseBreedingPresentationProjectionV1(value, path)
+  if (!breedingPerformanceOutputFitsBudget('projection', parsed)) {
+    fail('breeding.projection.invalid-source', path, 'exceeds the release projection byte budget.')
+  }
+  if (breedingProjectionDefinitionSha256(parsed) !== parsed.projectionDefinitionSha256) {
+    fail('breeding.projection.hash-mismatch', `${path}.projectionDefinitionSha256`, 'does not match the strict audience projection.')
+  }
+  return parsed
+}
 const build = <Value extends BreedingPresentationProjectionV1>(definitionValue: Omit<Value, 'schemaVersion' | 'projectionDefinitionSha256'>, parser: (value: unknown) => Value): Value => {
   const { schemaVersion: _schemaVersion, projectionDefinitionSha256: _projectionDefinitionSha256, ...input } = definitionValue as typeof definitionValue & { readonly schemaVersion?: unknown, readonly projectionDefinitionSha256?: unknown }
   const definition = { schemaVersion: 1 as const, ...input }

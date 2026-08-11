@@ -382,6 +382,21 @@ Migration packages require exact observed source ID, SHA-256, byte size, privacy
 
 An integrity report detects an orphan; it does not authorize row editing. Preserve the affected database, stop writes, and retain the bounded report. Never delete, relink, or synthesize the orphan in place. Repair by validating a reviewed known-good backup and atomically restoring it to a clean campaign target. Run integrity diagnostics there, require `healthy` and `backupReady`, restart the target, rerun diagnostics, and retain the restore receipt before any cutover.
 
+## BR-086 performance release checks
+
+Run the BR-086 gates with one worker and no file parallelism:
+
+```bash
+npx vitest run \
+  tests/shared/breedingPerformanceBudgets.test.ts \
+  tests/server/breedingParentDiscovery.test.ts \
+  tests/server/breedingCampaignClockBatch.test.ts \
+  tests/server/breedingWorkshop.test.ts \
+  --maxWorkers=1 --no-file-parallelism
+```
+
+The timed interval excludes imports and fixture setup. It includes only the bounded registry lookup, preview resolution/projection, 100-Egg batch settlement, projection sweep, or Workshop query/projection. A failure is a release incident: retain the command, runner load, test name, and elapsed value; investigate query count, repeated parsing, serialization, or unbounded traversal. Do not raise a threshold, reduce fixture cardinality, split an atomic operation, bypass output admission, or use wall time to advance campaign state. The performance policy is availability evidence only and never authorizes mechanics or retries.
+
 ## Recovery principles
 
 1. Retry the exact command with the same operation ID and bytes.

@@ -1,6 +1,9 @@
 import { createHash } from 'node:crypto'
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import {
+  breedingPerformanceOutputFitsBudget,
+} from '#shared/breeding/performanceBudgets'
+import {
   BREEDING_WORKSHOP_API_PATH,
   BREEDING_WORKSHOP_CONTEXT_PAGE_LIMIT,
   BREEDING_WORKSHOP_PATH,
@@ -56,6 +59,12 @@ export const parseAuthoritativeBreedingWorkshopProjectionV1 = (
   path = 'workshop',
 ): BreedingWorkshopProjectionV1 => {
   const projection = parseBreedingWorkshopProjectionV1(value, path)
+  if (!breedingPerformanceOutputFitsBudget('workshop', projection)) {
+    throw new BreedingWorkshopProjectionAuthorityError(
+      'breeding.workshop.invalid-definition',
+      'Breeding Workshop projection exceeds the release byte budget.',
+    )
+  }
   if (projection.securityPolicyDefinitionSha256 !== BREEDING_WORKSHOP_SECURITY_POLICY_DEFINITION_SHA256) {
     throw new BreedingWorkshopProjectionAuthorityError(
       'breeding.workshop.security-policy-mismatch',

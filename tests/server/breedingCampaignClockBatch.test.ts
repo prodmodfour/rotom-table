@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { performance } from 'node:perf_hooks'
 import { afterEach, describe, expect, it } from 'vitest'
 import authorityJson from '../fixtures/breeding/egg-production-cross-owner-authority-v1.json'
 import eggContractJson from '../../data/breeding-automation/egg-contract.json'
@@ -9,6 +10,7 @@ import hatchDurationPolicyJson from '../../data/breeding-automation/hatch-durati
 import rulesetJson from '../../data/breeding-automation/ruleset.json'
 import { stableJsonStringify } from '../../shared/automation/stableJson'
 import { parseBreedingCampaignClockEggBatchProjectionV1 } from '../../shared/breeding/campaignClockBatch'
+import { BREEDING_PERFORMANCE_BUDGET_POLICY_V1 } from '../../shared/breeding/performanceBudgets'
 import type { PokemonEggDocumentV1 } from '../../shared/breeding/egg'
 import { parseBreedingOperationCommandV1 } from '../../shared/breeding/operations'
 import { createBreedingActorAuthorityV1 } from '../../server/domain/breeding/authorization'
@@ -312,16 +314,23 @@ describe('campaign-clock incubation batching', () => {
     const seeded = seed(Array.from({ length: 101 }, (_, index) => ({ value: index + 20 })))
     const firstCommand = batchCommand(seeded.database, 200, 110)
     expect(firstCommand.scopes).toHaveLength(101)
+    const startedAt = performance.now()
     const first = advanceBreedingCampaignClockIncubationBatch(
       request(firstCommand, 100),
       options(seeded.database),
     )
+    const elapsed = performance.now() - startedAt
     expect(first.projection).toMatchObject({
       clockRevision: 2,
       campaignMinute: 110,
       hasMoreDueEggs: true,
     })
-    expect(first.projection.entries).toHaveLength(100)
+    expect(first.projection.entries).toHaveLength(
+      BREEDING_PERFORMANCE_BUDGET_POLICY_V1.batchClock.maximumEggsPerBatch,
+    )
+    expect(elapsed).toBeLessThanOrEqual(
+      BREEDING_PERFORMANCE_BUDGET_POLICY_V1.batchClock.maximumElapsedMilliseconds,
+    )
     expect(eventCount(seeded.database)).toBe(400)
 
     const continuation = batchCommand(seeded.database, 201, 110)
