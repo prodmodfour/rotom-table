@@ -3,6 +3,10 @@ import { expect, test, type APIResponse, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { createEmptyEncounterState } from '../../shared/moveAutomation/encounterState'
 
+// Package-pinned Chromium still has bounded glyph antialiasing variance across
+// Linux CI hosts. Keep tolerance well below a material visual/layout change.
+const MAX_RASTER_DIFF_PIXEL_RATIO = 0.002
+
 const performanceBudgets = JSON.parse(readFileSync(
   new URL('../../data/encounter-workspace/performance-budgets.json', import.meta.url),
   'utf8',
@@ -193,6 +197,7 @@ test('participant fixture supports turn, group expansion, screen-reader hierarch
   await expect(tacticalLens).toHaveScreenshot('encounter-workspace-tactical-lens.png', {
     animations: 'disabled',
     caret: 'hide',
+    maxDiffPixelRatio: MAX_RASTER_DIFF_PIXEL_RATIO,
   })
   await tacticalFrameElement.evaluate(element => { element.style.visibility = 'visible' })
   if (mobile) {
@@ -242,6 +247,7 @@ test('participant fixture supports turn, group expansion, screen-reader hierarch
   await expect(page.locator('.encounter-workspace-shell')).toHaveScreenshot('encounter-workspace-participants.png', {
     animations: 'disabled',
     caret: 'hide',
+    maxDiffPixelRatio: MAX_RASTER_DIFF_PIXEL_RATIO,
   })
 
   await page.getByRole('button', { name: 'Display' }).click()
@@ -267,6 +273,7 @@ test('participant fixture supports turn, group expansion, screen-reader hierarch
     await expect(page.locator('.encounter-workspace-shell')).toHaveScreenshot('encounter-workspace-table-display.png', {
       animations: 'disabled',
       caret: 'hide',
+      maxDiffPixelRatio: MAX_RASTER_DIFF_PIXEL_RATIO,
     })
   }
 

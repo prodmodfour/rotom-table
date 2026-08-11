@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
+// Package-pinned Chromium still has bounded glyph antialiasing variance across
+// Linux CI hosts. Keep tolerance well below a material visual/layout change.
+const MAX_RASTER_DIFF_PIXEL_RATIO = 0.002
+
 const openGallery = async (page: import('@playwright/test').Page) => {
   await page.context().addCookies([{
     name: 'rotom-role',
@@ -27,12 +31,15 @@ test('gallery renders versioned contexts, states, densities, and primitive anato
 
   await expect(page.locator('#tokens')).toHaveScreenshot('encounter-tokens-and-themes.png', {
     animations: 'disabled',
+    maxDiffPixelRatio: MAX_RASTER_DIFF_PIXEL_RATIO,
   })
   await expect(page.locator('#components')).toHaveScreenshot('encounter-component-primitives.png', {
     animations: 'disabled',
+    maxDiffPixelRatio: MAX_RASTER_DIFF_PIXEL_RATIO,
   })
   await expect(page.locator('#states')).toHaveScreenshot('encounter-visual-states.png', {
     animations: 'disabled',
+    maxDiffPixelRatio: MAX_RASTER_DIFF_PIXEL_RATIO,
   })
 })
 
