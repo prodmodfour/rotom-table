@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 82,
+    "covered": 83,
     "in-progress": 1,
-    "planned": 7,
+    "planned": 6,
     "blocked": 0
   },
   "requirements": [
@@ -2118,10 +2118,30 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/resilience-certification.json",
+        "data/breeding-automation/hatch-resilience-contract.json",
+        "data/breeding-automation/persistence-conformance-contract.json",
+        "data/breeding-automation/lifecycle-recovery-contract.json",
+        "tests/server/breedingResilienceCertification.test.ts",
+        "tests/server/breedingTransactionCoordinator.test.ts",
+        "tests/server/breedingPersistenceConformance.test.ts",
+        "tests/server/breedingProjectInitialProgress.test.ts",
+        "tests/server/breedingProjectCheck.test.ts",
+        "tests/server/breedingEggProduction.test.ts",
+        "tests/server/breedingLifecycleRecovery.test.ts",
+        "tests/server/breedingIncubation.test.ts",
+        "tests/server/breedingCampaignClockBatch.test.ts",
+        "tests/server/breedingEggTransfer.test.ts",
+        "tests/server/breedingHatchCompletion.test.ts",
+        "tests/server/breedingArchiveManager.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": [
-        "breeding-hatch-recovery-privacy-history-v1"
+        "breeding-hatch-recovery-privacy-history-v1",
+        "breeding-inheritance-incubation-special-v1"
       ]
     },
     {
@@ -2134,7 +2154,7 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"

@@ -36,8 +36,8 @@ describe('breeding semantic closure manifest', () => {
       definitionSha256: hash(manifest.definition),
     })
     expect(manifest.definition).toMatchObject({ ticket: 'BR-080', status: 'strict-closed' })
-    expect(registry.definition.artifacts).toHaveLength(103)
-    expect(manifest.definition.semanticRegistry.expectedArtifactCountIncludingThisManifest).toBe(103)
+    expect(registry.definition.artifacts).toHaveLength(104)
+    expect(manifest.definition.semanticRegistry.expectedArtifactCountIncludingThisManifest).toBe(104)
 
     const artifactIds = registry.definition.artifacts.map((artifact: any) => artifact.id)
     const artifactPaths = registry.definition.artifacts.map((artifact: any) => artifact.path)
@@ -62,6 +62,11 @@ describe('breeding semantic closure manifest', () => {
     expect(manifest.definition.eggs.statuses).toEqual(POKEMON_EGG_STATUSES)
     expect(manifest.definition.eggs.sourceKinds).toEqual(POKEMON_EGG_SOURCE_KINDS)
     expect(manifest.definition.operations.commandKinds).toEqual(BREEDING_OPERATION_COMMAND_KINDS)
+    expect(manifest.definition.operations).toMatchObject({
+      resilienceCertificationOwner: 'BR-083',
+      resilienceCertificationStatus: 'certified-current-semantics',
+      artifactIds: expect.arrayContaining(['breeding-resilience-certification']),
+    })
     expect(manifest.definition.operations.outcomeCount).toBe(BREEDING_OPERATION_OUTCOME_KINDS.length)
     expect(manifest.definition.operations.scopeCount).toBe(BREEDING_OPERATION_SCOPE_KINDS.length)
     expect(manifest.definition.projections.audiences).toEqual(BREEDING_PROJECTION_AUDIENCES)

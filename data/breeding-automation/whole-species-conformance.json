@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "873c4dd55aa908883cce89503ec1f052af5ec808014a07f07cbfe692645f1797",
+  "definitionSha256": "e6de8da2c755b51a7d31e7a7c4a3448b7f4c2a8bababc8bcd0050ca658e14c61",
   "definition": {
     "ticket": "BR-081",
     "status": "certified",
@@ -94,7 +94,7 @@
       "result": "pass"
     },
     "bindings": {
-      "semanticClosureDefinitionSha256": "4e61a062050313478ab67b1aa5d002d5968aecdc6bd48eb7decd72b55b054ac1",
+      "semanticClosureDefinitionSha256": "aac6c158203a3921d750fdf7eca7c3901bf9cd2bdf9f3f7a2be401b6b3c548b7",
       "pureRulesConformanceDefinitionSha256": "e6cb7f6c284730e213730aeaa1c3cd20297f4c612c82113c267a9c6ebffd6d77",
       "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
       "compatibilityPolicyDefinitionSha256": "6a38a2ea1cf38b4d331a638ef94be2b9d1b6fb2781c668eedc84f0a6dcd7a34f",

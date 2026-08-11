@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "registryId": "breeding-semantic-registry-v1",
-  "definitionSha256": "0b8bfb9e8f307893fdb614083c29e9b21322d146fe5820c66ac22189d50ebecd",
+  "definitionSha256": "f3bc30c9b4a5dd219db8abd4064a5fa46c716b567cf11f44056a5ba7a3a396ee",
   "definition": {
     "activePlanPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
     "donePlanPath": "implementation-plans/done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
@@ -838,7 +838,7 @@
         "kind": "registry",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "4e61a062050313478ab67b1aa5d002d5968aecdc6bd48eb7decd72b55b054ac1"
+        "expectedDefinitionSha256": "aac6c158203a3921d750fdf7eca7c3901bf9cd2bdf9f3f7a2be401b6b3c548b7"
       },
       {
         "id": "breeding-whole-species-conformance",
@@ -847,7 +847,7 @@
         "kind": "report",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "873c4dd55aa908883cce89503ec1f052af5ec808014a07f07cbfe692645f1797"
+        "expectedDefinitionSha256": "e6de8da2c755b51a7d31e7a7c4a3448b7f4c2a8bababc8bcd0050ca658e14c61"
       },
       {
         "id": "breeding-interaction-certification",
@@ -856,7 +856,16 @@
         "kind": "report",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "f1e35d6055908744a10b3bf1f04e5cb810042ff03b13ca1f1a209c7be1ee757a"
+        "expectedDefinitionSha256": "6f0f973c22dd3911b6f6f0a521c23158df3edac8878750d754e7000470bb2fd9"
+      },
+      {
+        "id": "breeding-resilience-certification",
+        "path": "data/breeding-automation/resilience-certification.json",
+        "ownerTicket": "BR-083",
+        "kind": "report",
+        "binding": "definition-field",
+        "definitionHashField": "definitionSha256",
+        "expectedDefinitionSha256": "0826317d1b9ced6f20d3a7e2af3bbcd5ee80549b786620e2c618d5021ddf39b9"
       },
       {
         "id": "scenario-requirements",

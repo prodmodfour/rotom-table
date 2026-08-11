@@ -1,0 +1,802 @@
+{
+  "schemaVersion": 1,
+  "reportId": "ptu-1.05-breeding-resilience-certification-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "0826317d1b9ced6f20d3a7e2af3bbcd5ee80549b786620e2c618d5021ddf39b9",
+  "definition": {
+    "ticket": "BR-083",
+    "status": "certified",
+    "certificationScope": {
+      "included": "operation-reservation-through-terminal-settlement-restart-replay-and-publication",
+      "deferredToBR085": "legacy-migration-export-import-reference-version-and-orphan-repair-release-acceptance",
+      "databaseAuthority": "one-SQLite-campaign-file-with-BEGIN-IMMEDIATE-and-optimistic-revisions",
+      "phaseOne": "durable-command-read-set-receipt-roll-and-offer-evidence-before-mechanics-application",
+      "phaseTwo": "one-caller-owned-synchronous-transaction-for-all-aggregate-ledger-and-realtime-participants",
+      "exactRetry": "same-command-and-immutable-evidence-only-no-reroll-remutation-or-republication",
+      "pendingRecovery": "explicit-current-authority-only",
+      "randomness": "persist-before-application-and-reuse-after-failure",
+      "campaignTime": "sole-correction-cooldown-expiry-and-progress-authority"
+    },
+    "dimensions": [
+      "transaction-failure-injection",
+      "concurrency",
+      "idempotency",
+      "correction",
+      "abandonment",
+      "disaster-recovery"
+    ],
+    "operationCoverage": {
+      "commandKinds": [
+        "preview-breeding",
+        "create-breeding-project",
+        "grant-breeding-consent",
+        "revoke-breeding-consent",
+        "advance-breeding-project-time",
+        "resolve-breeding-check",
+        "produce-egg",
+        "cancel-breeding-project",
+        "create-source-egg",
+        "transfer-egg",
+        "settle-egg-transfer-consent",
+        "advance-egg-incubation",
+        "set-egg-incubation-pause",
+        "apply-egg-warmer-capability",
+        "mark-egg-ready",
+        "begin-hatch",
+        "resolve-hatch-special",
+        "complete-hatch",
+        "cancel-egg",
+        "advance-campaign-clock",
+        "record-inheritance-learning",
+        "recover-breeding-operation"
+      ],
+      "outcomeKinds": [
+        "previewed",
+        "project-created",
+        "consent-granted",
+        "consent-revoked",
+        "project-progressed",
+        "check-resolved",
+        "egg-produced",
+        "project-cancelled",
+        "source-egg-created",
+        "egg-transferred",
+        "egg-transfer-consent-settled",
+        "egg-progressed",
+        "egg-pause-set",
+        "egg-warmer-applied",
+        "egg-ready",
+        "hatch-started",
+        "hatch-special-resolved",
+        "hatched",
+        "egg-cancelled",
+        "clock-advanced",
+        "inheritance-recorded",
+        "operation-recovered"
+      ],
+      "dispositions": [
+        {
+          "commandKind": "preview-breeding",
+          "certificationStatus": "projection-only-non-mutating",
+          "owningSurfaceId": "preview-and-project-creation"
+        },
+        {
+          "commandKind": "create-breeding-project",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "preview-and-project-creation"
+        },
+        {
+          "commandKind": "grant-breeding-consent",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "preview-and-project-creation"
+        },
+        {
+          "commandKind": "revoke-breeding-consent",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "project-correction-and-abandonment"
+        },
+        {
+          "commandKind": "advance-breeding-project-time",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "project-time-check-and-production"
+        },
+        {
+          "commandKind": "resolve-breeding-check",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "project-time-check-and-production"
+        },
+        {
+          "commandKind": "produce-egg",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "project-time-check-and-production"
+        },
+        {
+          "commandKind": "cancel-breeding-project",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "project-correction-and-abandonment"
+        },
+        {
+          "commandKind": "create-source-egg",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "alternate-source-egg-creation"
+        },
+        {
+          "commandKind": "transfer-egg",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "egg-transfer-and-consent-settlement"
+        },
+        {
+          "commandKind": "settle-egg-transfer-consent",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "egg-transfer-and-consent-settlement"
+        },
+        {
+          "commandKind": "advance-egg-incubation",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "incubation-pause-warmer-and-readiness-correction"
+        },
+        {
+          "commandKind": "set-egg-incubation-pause",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "incubation-pause-warmer-and-readiness-correction"
+        },
+        {
+          "commandKind": "apply-egg-warmer-capability",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "incubation-pause-warmer-and-readiness-correction"
+        },
+        {
+          "commandKind": "mark-egg-ready",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "incubation-pause-warmer-and-readiness-correction"
+        },
+        {
+          "commandKind": "begin-hatch",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "hatch-special-and-completion"
+        },
+        {
+          "commandKind": "resolve-hatch-special",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "hatch-special-and-completion"
+        },
+        {
+          "commandKind": "complete-hatch",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "hatch-special-and-completion"
+        },
+        {
+          "commandKind": "cancel-egg",
+          "certificationStatus": "declared-fail-closed-no-owning-reducer",
+          "owningSurfaceId": "declared-egg-cancellation-boundary"
+        },
+        {
+          "commandKind": "advance-campaign-clock",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "campaign-clock-and-bounded-egg-batch"
+        },
+        {
+          "commandKind": "record-inheritance-learning",
+          "certificationStatus": "active-transactional-runtime",
+          "owningSurfaceId": "inheritance-learning"
+        },
+        {
+          "commandKind": "recover-breeding-operation",
+          "certificationStatus": "active-recovery-controller",
+          "owningSurfaceId": "operation-recovery-controller"
+        }
+      ],
+      "activeTransactionalCount": 20,
+      "projectionOnlyCount": 1,
+      "failClosedDeclaredCount": 1
+    },
+    "surfaces": [
+      {
+        "surfaceId": "generic-operation-ledger-and-transaction-coordinator",
+        "operationKinds": [],
+        "runtimePaths": [
+          "server/useCases/executeCampaignOperation.ts",
+          "server/useCases/executeBreedingTransaction.ts",
+          "server/storage/breedingOperationRepository.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingOperationRepository.test.ts",
+          "tests/server/breedingTransactionCoordinator.test.ts",
+          "tests/server/breedingPersistenceConformance.test.ts"
+        ],
+        "certifiedRecovery": "phase-one reservation survives; every phase-two participant rolls back; explicit resume reuses exact evidence; terminal retry bypasses mechanics; publication follows commit"
+      },
+      {
+        "surfaceId": "preview-and-project-creation",
+        "operationKinds": [
+          "preview-breeding",
+          "create-breeding-project",
+          "grant-breeding-consent"
+        ],
+        "runtimePaths": [
+          "server/domain/breeding/projectOffers.ts",
+          "server/useCases/manageBreedingProjectInitialTime.ts",
+          "server/useCases/manageBreedingConsentWorkflow.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingProjectCampaignOffers.test.ts",
+          "tests/server/breedingProjectInitialProgress.test.ts",
+          "tests/server/breedingConsentWorkflowRoute.test.ts"
+        ],
+        "certifiedRecovery": "preview remains deterministic and non-mutating; creation and consent retain one recoverable reservation and exact Project successor authority"
+      },
+      {
+        "surfaceId": "project-time-check-and-production",
+        "operationKinds": [
+          "advance-breeding-project-time",
+          "resolve-breeding-check",
+          "produce-egg"
+        ],
+        "runtimePaths": [
+          "server/useCases/manageBreedingProjectInitialTime.ts",
+          "server/useCases/resolveBreedingProjectCheck.ts",
+          "server/useCases/advanceBreedingProjectAdditionalTime.ts",
+          "server/useCases/produceBreedingProjectEgg.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingProjectInitialProgress.test.ts",
+          "tests/server/breedingProjectCheck.test.ts",
+          "tests/server/breedingProjectAdditionalProgress.test.ts",
+          "tests/server/breedingEggProduction.test.ts"
+        ],
+        "certifiedRecovery": "credited prefixes, one d20, offspring rolls, offers, Project successor, and Egg insertion are idempotent and transactionally recoverable"
+      },
+      {
+        "surfaceId": "project-correction-and-abandonment",
+        "operationKinds": [
+          "revoke-breeding-consent",
+          "cancel-breeding-project"
+        ],
+        "runtimePaths": [
+          "server/useCases/manageBreedingLifecycleRecovery.ts",
+          "server/useCases/recoverBreedingOperation.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingLifecycleRecovery.test.ts"
+        ],
+        "certifiedRecovery": "revocation, expiry, cancellation, conflict, and abandonment are monotonic audited successors; recovery retains target evidence and cannot become consent"
+      },
+      {
+        "surfaceId": "alternate-source-egg-creation",
+        "operationKinds": [
+          "create-source-egg"
+        ],
+        "runtimePaths": [
+          "server/useCases/createBreedingFossilEgg.ts",
+          "server/useCases/createBreedingGmEgg.ts",
+          "server/useCases/createBreedingArtificialEgg.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFossilEgg.test.ts",
+          "tests/server/breedingGmEgg.test.ts",
+          "tests/server/breedingArtificialEgg.test.ts"
+        ],
+        "certifiedRecovery": "source costs, inventory custody, offers, and persisted duration or Gender rolls roll back and resume through the ordinary Egg pipeline without redraw"
+      },
+      {
+        "surfaceId": "egg-transfer-and-consent-settlement",
+        "operationKinds": [
+          "transfer-egg",
+          "settle-egg-transfer-consent"
+        ],
+        "runtimePaths": [
+          "server/useCases/managePokemonEggTransferConsent.ts",
+          "server/useCases/transferPokemonEggOwnership.ts",
+          "server/useCases/manageBreedingConsentWorkflow.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingEggTransfer.test.ts",
+          "tests/server/breedingConsentWorkflowRoute.test.ts"
+        ],
+        "certifiedRecovery": "dual consent, ownership successor, consent settlement, result, and realtime rows commit together; stale concurrent gifts and exact retries cannot transfer twice"
+      },
+      {
+        "surfaceId": "incubation-pause-warmer-and-readiness-correction",
+        "operationKinds": [
+          "advance-egg-incubation",
+          "set-egg-incubation-pause",
+          "apply-egg-warmer-capability",
+          "mark-egg-ready"
+        ],
+        "runtimePaths": [
+          "server/useCases/managePokemonEggIncubation.ts",
+          "server/useCases/applyPokemonEggWarmerCapability.ts",
+          "server/useCases/markPokemonEggReady.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingIncubation.test.ts"
+        ],
+        "certifiedRecovery": "segments, pause state, one warmer d10, cooldown, audited correction, Egg successor, and refreshes remain atomic and restart-persistent"
+      },
+      {
+        "surfaceId": "hatch-special-and-completion",
+        "operationKinds": [
+          "begin-hatch",
+          "resolve-hatch-special",
+          "complete-hatch"
+        ],
+        "runtimePaths": [
+          "server/useCases/managePokemonEggHatchSpecial.ts",
+          "server/useCases/completePokemonEggHatch.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingHatchSpecial.test.ts",
+          "tests/server/breedingHatchCompletion.test.ts"
+        ],
+        "certifiedRecovery": "one persisted d100, bounded adjudication, child, Trainer link, history, lineage, Egg settlement, and events converge to one winner across rollback, restart, and stale races"
+      },
+      {
+        "surfaceId": "declared-egg-cancellation-boundary",
+        "operationKinds": [
+          "cancel-egg"
+        ],
+        "runtimePaths": [
+          "shared/breeding/operations.ts",
+          "server/domain/breeding/readSets.ts"
+        ],
+        "evidencePaths": [
+          "tests/shared/breedingOperationContract.test.ts",
+          "tests/server/breedingChildSheetConstruction.test.ts"
+        ],
+        "certifiedRecovery": "the strict command remains declared but has no owning mutation reducer; it therefore fails closed and cannot be inferred from direct field edits or generic lifecycle commands"
+      },
+      {
+        "surfaceId": "campaign-clock-and-bounded-egg-batch",
+        "operationKinds": [
+          "advance-campaign-clock"
+        ],
+        "runtimePaths": [
+          "server/useCases/advanceBreedingCampaignClock.ts",
+          "server/useCases/advanceBreedingCampaignClockBatch.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/campaignClock.test.ts",
+          "tests/server/breedingCampaignClockBatch.test.ts"
+        ],
+        "certifiedRecovery": "competing revisions serialize, 100-Egg pages preserve completed prefixes, pending children resume, and no interval is double credited"
+      },
+      {
+        "surfaceId": "inheritance-learning",
+        "operationKinds": [
+          "record-inheritance-learning"
+        ],
+        "runtimePaths": [
+          "server/useCases/recordPokemonInheritanceLearning.ts",
+          "server/domain/breeding/inheritanceLearning.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/recordPokemonInheritanceLearning.test.ts",
+          "tests/server/breedingInheritanceLearning.test.ts"
+        ],
+        "certifiedRecovery": "sheet revision, offer consumption, provenance record, terminal result, and refreshes are one transaction; exact retry cannot learn or publish twice"
+      },
+      {
+        "surfaceId": "operation-recovery-controller",
+        "operationKinds": [
+          "recover-breeding-operation"
+        ],
+        "runtimePaths": [
+          "server/useCases/recoverBreedingOperation.ts",
+          "server/useCases/manageBreedingLifecycleRecovery.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingLifecycleRecovery.test.ts"
+        ],
+        "certifiedRecovery": "inspect is read-only; resume dispatches exact current target authority; abandon settles without deleting evidence; publication retry cannot rerun mechanics"
+      },
+      {
+        "surfaceId": "archive-restart-and-realtime-disaster-recovery",
+        "operationKinds": [],
+        "runtimePaths": [
+          "server/useCases/manageBreedingArchives.ts",
+          "server/realtime/breedingRealtime.ts",
+          "server/storage/realtimeEventRepository.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingArchiveManager.test.ts",
+          "tests/server/breedingRealtime.test.ts",
+          "tests/server/breedingHatchCompletion.test.ts"
+        ],
+        "certifiedRecovery": "strict backup restore is atomic, restart reparses durable evidence, replay gaps require snapshots, and post-commit publisher failure cannot undo accepted state"
+      }
+    ],
+    "hazardMatrix": [
+      {
+        "dimension": "transaction-failure-injection",
+        "cases": [
+          {
+            "caseId": "coordinator-project-event-rollback",
+            "evidencePath": "tests/server/breedingTransactionCoordinator.test.ts",
+            "requiredNeedle": "rolls Project and event rows back together",
+            "expectedOutcome": "Project and events roll back while pending evidence remains"
+          },
+          {
+            "caseId": "coordinator-hatch-participant-rollback",
+            "evidencePath": "tests/server/breedingTransactionCoordinator.test.ts",
+            "requiredNeedle": "atomically rolls back and recovers Egg, child, Trainer, acquisition history, operation, and events",
+            "expectedOutcome": "all hatch participants roll back and recover"
+          },
+          {
+            "caseId": "project-initial-progress-rollback",
+            "evidencePath": "tests/server/breedingProjectInitialProgress.test.ts",
+            "requiredNeedle": "rolls project, evidence, and realtime rows back on settlement failure",
+            "expectedOutcome": "one pending command resumes without recredit"
+          },
+          {
+            "caseId": "project-check-roll-retention",
+            "evidencePath": "tests/server/breedingProjectCheck.test.ts",
+            "requiredNeedle": "retains the pending operation, authority, and one roll across phase-2 failure",
+            "expectedOutcome": "one persisted d20 is reused"
+          },
+          {
+            "caseId": "egg-production-offer-rollback",
+            "evidencePath": "tests/server/breedingEggProduction.test.ts",
+            "requiredNeedle": "rolls back offer consumption together with the Egg and Project",
+            "expectedOutcome": "offer, Egg, Project, result, and events stay atomic"
+          },
+          {
+            "caseId": "incubation-segment-rollback",
+            "evidencePath": "tests/server/breedingIncubation.test.ts",
+            "requiredNeedle": "rolls back Egg, segment, result, and realtime rows together",
+            "expectedOutcome": "segment and Egg resume once"
+          },
+          {
+            "caseId": "transfer-rollback",
+            "evidencePath": "tests/server/breedingEggTransfer.test.ts",
+            "requiredNeedle": "rolls back Egg, consent, result, and realtime rows together",
+            "expectedOutcome": "ownership and dual consent never partially settle"
+          },
+          {
+            "caseId": "hatch-post-child-rollback",
+            "evidencePath": "tests/server/breedingHatchCompletion.test.ts",
+            "requiredNeedle": "rolls an injected post-child failure back",
+            "expectedOutcome": "no placeholder or partial child survives"
+          },
+          {
+            "caseId": "archive-every-injection-point",
+            "evidencePath": "tests/server/breedingArchiveManager.test.ts",
+            "requiredNeedle": "rolls back archive, request, replacement, and receipt together at every restore injection point",
+            "expectedOutcome": "restore is all or nothing"
+          }
+        ]
+      },
+      {
+        "dimension": "concurrency",
+        "cases": [
+          {
+            "caseId": "clock-competing-revisions",
+            "evidencePath": "tests/server/campaignClock.test.ts",
+            "requiredNeedle": "serializes competing expected revisions so only the first operation advances",
+            "expectedOutcome": "one accepted clock writer"
+          },
+          {
+            "caseId": "cross-connection-clock-retry",
+            "evidencePath": "tests/server/breedingPersistenceConformance.test.ts",
+            "requiredNeedle": "serializes two database connections into one accepted clock write",
+            "expectedOutcome": "winner, exact retry, and stale rejection converge"
+          },
+          {
+            "caseId": "hatch-two-connection-race",
+            "evidencePath": "tests/server/breedingHatchCompletion.test.ts",
+            "requiredNeedle": "allows only one of two stale concurrent hatch commands across SQLite connections",
+            "expectedOutcome": "one child and one terminal Egg"
+          },
+          {
+            "caseId": "hatch-pending-loser",
+            "evidencePath": "tests/server/breedingHatchCompletion.test.ts",
+            "requiredNeedle": "settles a recoverable pending loser as stale after another hatch wins",
+            "expectedOutcome": "loser settles without writes or publication"
+          },
+          {
+            "caseId": "gift-active-consent-race",
+            "evidencePath": "tests/server/breedingEggTransfer.test.ts",
+            "requiredNeedle": "serializes competing active gifts",
+            "expectedOutcome": "only one current gift scope survives"
+          },
+          {
+            "caseId": "archive-cross-connection-identity",
+            "evidencePath": "tests/server/breedingPersistenceConformance.test.ts",
+            "requiredNeedle": "makes archive exact replay, changed identity collision, and failed-export rollback visible across connections",
+            "expectedOutcome": "all connections observe one durable identity"
+          }
+        ]
+      },
+      {
+        "dimension": "idempotency",
+        "cases": [
+          {
+            "caseId": "project-initial-exact-retry",
+            "evidencePath": "tests/server/breedingProjectInitialProgress.test.ts",
+            "requiredNeedle": "returns the same terminal operation without reaccrual",
+            "expectedOutcome": "no duplicate progress or event"
+          },
+          {
+            "caseId": "check-exact-retry",
+            "evidencePath": "tests/server/breedingProjectCheck.test.ts",
+            "requiredNeedle": "returns an exact retry without drawing",
+            "expectedOutcome": "no second d20 or Project revision"
+          },
+          {
+            "caseId": "egg-production-exact-retry",
+            "evidencePath": "tests/server/breedingEggProduction.test.ts",
+            "requiredNeedle": "returns exact retry without rerolling, revising aggregates, or republishing",
+            "expectedOutcome": "no duplicate Egg or roll"
+          },
+          {
+            "caseId": "fossil-exact-retry",
+            "evidencePath": "tests/server/breedingFossilEgg.test.ts",
+            "requiredNeedle": "reuses one persisted duration roll and never redraws on exact retry",
+            "expectedOutcome": "one source cost and roll"
+          },
+          {
+            "caseId": "artificial-exact-retry",
+            "evidencePath": "tests/server/breedingArtificialEgg.test.ts",
+            "requiredNeedle": "recovers without redraw, and retries silently",
+            "expectedOutcome": "one cost and no publication replay"
+          },
+          {
+            "caseId": "incubation-exact-retry",
+            "evidencePath": "tests/server/breedingIncubation.test.ts",
+            "requiredNeedle": "commits Egg, immutable segment result, operation result, and four privacy-scoped refreshes exactly once",
+            "expectedOutcome": "one segment and one successor"
+          },
+          {
+            "caseId": "transfer-exact-retry",
+            "evidencePath": "tests/server/breedingEggTransfer.test.ts",
+            "requiredNeedle": "preserves mechanics, and retries silently",
+            "expectedOutcome": "ownership changes exactly once"
+          },
+          {
+            "caseId": "hatch-exact-retry",
+            "evidencePath": "tests/server/breedingHatchCompletion.test.ts",
+            "requiredNeedle": "returns an authority-revalidated, publication-silent exact retry",
+            "expectedOutcome": "child and lineage are not recreated"
+          },
+          {
+            "caseId": "inheritance-exact-retry",
+            "evidencePath": "tests/server/recordPokemonInheritanceLearning.test.ts",
+            "requiredNeedle": "atomically commits one sheet revision, lineage record, consumed offer, operation, and restricted refreshes",
+            "expectedOutcome": "one checkpoint mutation"
+          },
+          {
+            "caseId": "clock-parent-child-dedupe",
+            "evidencePath": "tests/server/breedingCampaignClockBatch.test.ts",
+            "requiredNeedle": "dedupes exact parent and child retries",
+            "expectedOutcome": "no interval or Egg is processed twice"
+          }
+        ]
+      },
+      {
+        "dimension": "correction",
+        "cases": [
+          {
+            "caseId": "gm-readiness-correction",
+            "evidencePath": "tests/server/breedingIncubation.test.ts",
+            "requiredNeedle": "atomically accepts one audited GM correction",
+            "expectedOutcome": "totals and target stay immutable while ready status advances"
+          },
+          {
+            "caseId": "correction-closed-reason",
+            "evidencePath": "tests/server/breedingIncubation.test.ts",
+            "requiredNeedle": "requires a closed reason and one self-targeted GM override",
+            "expectedOutcome": "no direct elapsed-field editing"
+          },
+          {
+            "caseId": "consent-expiry-equality",
+            "evidencePath": "tests/server/breedingLifecycleRecovery.test.ts",
+            "requiredNeedle": "expires a Project exactly at consent equality",
+            "expectedOutcome": "campaign time alone settles expiry"
+          },
+          {
+            "caseId": "parent-revision-interruption",
+            "evidencePath": "tests/server/breedingProjectInitialProgress.test.ts",
+            "requiredNeedle": "allows parent revision refresh only through interruption",
+            "expectedOutcome": "credited prefix remains and authority is rebuilt"
+          },
+          {
+            "caseId": "realtime-gap-correction",
+            "evidencePath": "tests/server/breedingRealtime.test.ts",
+            "requiredNeedle": "fails closed on replay gaps, and replaces from a fresh snapshot",
+            "expectedOutcome": "client state is replaced rather than mechanics replayed"
+          }
+        ]
+      },
+      {
+        "dimension": "abandonment",
+        "cases": [
+          {
+            "caseId": "project-gm-abandonment",
+            "evidencePath": "tests/server/breedingLifecycleRecovery.test.ts",
+            "requiredNeedle": "supports audited GM abandonment without treating override as consent",
+            "expectedOutcome": "terminal Project and consent authority remain distinct"
+          },
+          {
+            "caseId": "pending-operation-abandonment",
+            "evidencePath": "tests/server/breedingLifecycleRecovery.test.ts",
+            "requiredNeedle": "abandons pending operations without exposing command payloads or deleting phase-one audit state",
+            "expectedOutcome": "target evidence and rolls remain durable"
+          },
+          {
+            "caseId": "crash-convergence",
+            "evidencePath": "tests/server/breedingLifecycleRecovery.test.ts",
+            "requiredNeedle": "converges after a crash between target settlement and recovery audit",
+            "expectedOutcome": "target dispatcher is not invoked twice"
+          },
+          {
+            "caseId": "publication-recovery-failure",
+            "evidencePath": "tests/server/breedingLifecycleRecovery.test.ts",
+            "requiredNeedle": "audits callback failure through explicit pending recovery",
+            "expectedOutcome": "failed recovery remains pending"
+          },
+          {
+            "caseId": "terminal-project-immutability",
+            "evidencePath": "tests/server/breedingLifecycleRecovery.test.ts",
+            "requiredNeedle": "cancels an active Project atomically",
+            "expectedOutcome": "terminal successor exact-retries without another revision"
+          }
+        ]
+      },
+      {
+        "dimension": "disaster-recovery",
+        "cases": [
+          {
+            "caseId": "project-restart",
+            "evidencePath": "tests/server/breedingProjectInitialProgress.test.ts",
+            "requiredNeedle": "survives process-style database restart",
+            "expectedOutcome": "terminal operation remains exact without reaccrual"
+          },
+          {
+            "caseId": "check-restart-no-redraw",
+            "evidencePath": "tests/server/breedingProjectCheck.test.ts",
+            "requiredNeedle": "survives file-database restart and exact-retries without redrawing",
+            "expectedOutcome": "one d20 survives"
+          },
+          {
+            "caseId": "egg-production-restart",
+            "evidencePath": "tests/server/breedingEggProduction.test.ts",
+            "requiredNeedle": "survives restart with one Egg, one Project successor, immutable rolls, and one terminal operation",
+            "expectedOutcome": "accepted production is complete"
+          },
+          {
+            "caseId": "incubation-restart",
+            "evidencePath": "tests/server/breedingIncubation.test.ts",
+            "requiredNeedle": "retains exact segment and operation evidence across a file-database restart",
+            "expectedOutcome": "segment evidence reparses strictly"
+          },
+          {
+            "caseId": "batch-prefix-recovery",
+            "evidencePath": "tests/server/breedingCampaignClockBatch.test.ts",
+            "requiredNeedle": "recovers a durable child prefix without reprocessing earlier Eggs",
+            "expectedOutcome": "bounded prefix converges"
+          },
+          {
+            "caseId": "hatch-restart-replay-gap",
+            "evidencePath": "tests/server/breedingHatchCompletion.test.ts",
+            "requiredNeedle": "recovers a pending hatch after process restart and exposes a replay gap without replaying mechanics",
+            "expectedOutcome": "one hatch remains authoritative"
+          },
+          {
+            "caseId": "archive-backup-restart",
+            "evidencePath": "tests/server/breedingArchiveManager.test.ts",
+            "requiredNeedle": "creates a complete immutable backup, stores exact replay, and survives restart",
+            "expectedOutcome": "backup identity is durable"
+          },
+          {
+            "caseId": "archive-restore-restart",
+            "evidencePath": "tests/server/breedingArchiveManager.test.ts",
+            "requiredNeedle": "restores one strict backup atomically, writes its receipt, exactly replays, and survives restart",
+            "expectedOutcome": "restore and receipt are atomic"
+          },
+          {
+            "caseId": "publisher-failure-retention",
+            "evidencePath": "tests/server/breedingHatchCompletion.test.ts",
+            "requiredNeedle": "leaves accepted state durable when a publisher fails",
+            "expectedOutcome": "publication failure cannot undo mechanics"
+          },
+          {
+            "caseId": "realtime-restart-dedupe",
+            "evidencePath": "tests/server/breedingRealtime.test.ts",
+            "requiredNeedle": "persists exact descriptors across restart and retains deterministic dedupe replay",
+            "expectedOutcome": "access descriptors and sequence identity survive"
+          }
+        ]
+      }
+    ],
+    "atomicParticipantFamilies": [
+      "Project",
+      "Egg",
+      "Trainer-sheet",
+      "initialized-child-sheet",
+      "Species-acquisition-history",
+      "lineage",
+      "consent",
+      "transfer-consent",
+      "campaign-clock",
+      "roll",
+      "check",
+      "offer",
+      "adjudication",
+      "incubation-segment",
+      "operation-evidence",
+      "terminal-result",
+      "archive",
+      "restore-receipt",
+      "realtime-event"
+    ],
+    "recoveryInvariants": [
+      "no-accepted-partial-transaction",
+      "pending-is-not-terminal-success-and-never-runs-without-explicit-current-authority",
+      "same-operation-id-with-different-command-is-a-collision",
+      "terminal-retry-revalidates-current-participant-or-gm-authority",
+      "stale-loser-never-overwrites-current-aggregate",
+      "abandonment-never-deletes-command-read-set-receipt-roll-or-offer-evidence",
+      "correction-never-edits-accumulated-progress-or-frozen-target-directly",
+      "post-commit-publication-failure-never-rolls-back-authoritative-state",
+      "replay-gap-requires-current-projection-and-never-mechanics-replay",
+      "restart-reparses-strict-self-hashed-durable-state-before-use"
+    ],
+    "bindings": {
+      "semanticClosureDefinitionSha256": "aac6c158203a3921d750fdf7eca7c3901bf9cd2bdf9f3f7a2be401b6b3c548b7",
+      "wholeSpeciesConformanceDefinitionSha256": "e6de8da2c755b51a7d31e7a7c4a3448b7f4c2a8bababc8bcd0050ca658e14c61",
+      "interactionCertificationDefinitionSha256": "6f0f973c22dd3911b6f6f0a521c23158df3edac8878750d754e7000470bb2fd9",
+      "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
+      "campaignOperationLedgerContractDefinitionSha256": "f7869b1ea099d9ae4e2542324abf6d3a98284d2f0c93c289192cdb65293cdbfe",
+      "transactionCoordinatorContractDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea",
+      "persistenceConformanceContractDefinitionSha256": "9abb1a658849fdd2b13d2fce57e6da74489f7ab58aeece1ec52b8f3094eaeb85",
+      "hatchResilienceContractDefinitionSha256": "26e99b5cd606e5c2b02bfd6145ba04a0e2704819ab42b1ff967e7e80868237e2",
+      "lifecycleRecoveryContractDefinitionSha256": "7f7ba2107f99512a936b962ff9a38a04156f78af9a7cde43b700abcc71f3e5cc",
+      "readinessCorrectionContractDefinitionSha256": "8b816f636c17993d52a8ceeb935f20a5ca96be4e2cffdd00f362506ddb3b623d",
+      "campaignClockBatchContractDefinitionSha256": "864229e166052b554bae577e4ab839c95c670762ff2a73ad262a7f0bf3492bbb",
+      "archiveRuntimeContractDefinitionSha256": "500c5b07a93b92fc1d6a642b5c8124483c1d2106c12bc073e7b4766394b25e77",
+      "realtimeContractDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932",
+      "eggTransferContractDefinitionSha256": "35eb7497732ad71dbda180a5c132bb0534f89f85a8eda2e1acb5cf2f9968cb31",
+      "inheritanceLearningContractDefinitionSha256": "13f6d6f3af88188e5409c58d297c7f24fcdcb018eee054d8dd57d63d276a6172"
+    },
+    "summary": {
+      "commandKindsCertified": 22,
+      "activeTransactionalCommands": 19,
+      "activeRecoveryControllers": 1,
+      "projectionOnlyCommands": 1,
+      "declaredFailClosedCommands": 1,
+      "surfacesCertified": 13,
+      "hazardDimensionsCertified": 6,
+      "hazardCasesCertified": 45,
+      "result": "pass"
+    },
+    "evidencePaths": [
+      "tests/server/breedingArchiveManager.test.ts",
+      "tests/server/breedingArtificialEgg.test.ts",
+      "tests/server/breedingCampaignClockBatch.test.ts",
+      "tests/server/breedingChildSheetConstruction.test.ts",
+      "tests/server/breedingConsentWorkflowRoute.test.ts",
+      "tests/server/breedingEggProduction.test.ts",
+      "tests/server/breedingEggTransfer.test.ts",
+      "tests/server/breedingFossilEgg.test.ts",
+      "tests/server/breedingGmEgg.test.ts",
+      "tests/server/breedingHatchCompletion.test.ts",
+      "tests/server/breedingHatchSpecial.test.ts",
+      "tests/server/breedingIncubation.test.ts",
+      "tests/server/breedingInheritanceLearning.test.ts",
+      "tests/server/breedingLifecycleRecovery.test.ts",
+      "tests/server/breedingOperationRepository.test.ts",
+      "tests/server/breedingPersistenceConformance.test.ts",
+      "tests/server/breedingProjectAdditionalProgress.test.ts",
+      "tests/server/breedingProjectCampaignOffers.test.ts",
+      "tests/server/breedingProjectCheck.test.ts",
+      "tests/server/breedingProjectInitialProgress.test.ts",
+      "tests/server/breedingRealtime.test.ts",
+      "tests/server/breedingResilienceCertification.test.ts",
+      "tests/server/breedingTransactionCoordinator.test.ts",
+      "tests/server/campaignClock.test.ts",
+      "tests/server/recordPokemonInheritanceLearning.test.ts",
+      "tests/shared/breedingOperationContract.test.ts"
+    ]
+  }
+}

@@ -356,6 +356,14 @@ Treat `data/breeding-automation/interaction-certification.json` as an acceptance
 
 When an interaction fails, identify its owning boundary before recovery. Do not apply a post-hatch tutoring handoff through the inheritance reducer, infer a form from a name, alias an item to a facility, substitute GM authority for provider use consumption, or patch a fossil/artificial child after hatch. Resume the exact pending operation so persisted rolls, source costs, slot accounting, and campaign-time prefixes are reused. Run the interaction certification test and breeding checker after any provider, canonical reference, form, permanent-Move, Baby Template, fossil, or campaign-clock change.
 
+## BR-083 transaction and disaster-recovery checks
+
+Use `data/breeding-automation/resilience-certification.json` to identify the owning operation surface and exact focused recovery evidence. A phase-one `pending` row is an expected durable reservation, not partial success. Resume only through current exact participant or GM authority. Never change the command, redraw a persisted roll, recreate an offer, delete evidence, or manually finish an aggregate. A different command under the same operation ID is a collision.
+
+For a concurrent stale loser, preserve its terminal rejection or pending audit and inspect the accepted winner; do not force the loser through. For a GM correction, use the closed correction operation without editing target or accumulated progress. For abandonment, retain command, read set, receipt, rolls, and offers. After restart, require strict reparsing before dispatch. After a realtime replay gap, replace from a current projection. A publisher failure after commit is a delivery incident, not a mechanics rollback.
+
+The declared `cancel-egg` command has no owning reducer and must remain unavailable. `preview-breeding` is non-mutating. Backup/restore is exercised here only as an operational failure boundary; BR-085 remains the release acceptance owner for legacy migration, export/import, reference versions, backup/restore, and orphan repair.
+
 ## Recovery principles
 
 1. Retry the exact command with the same operation ID and bytes.

@@ -272,6 +272,7 @@ for (const path of [
   'data/breeding-automation/fossil-egg-contract.json',
   'data/breeding-automation/gm-egg-contract.json',
   'data/breeding-automation/interaction-certification.json',
+  'data/breeding-automation/resilience-certification.json',
 ]) {
   const document = json<Record<string, any>>(path)
   assert(document.rulesetId === ruleset.rulesetId, `${path} ruleset ID drifted`)
@@ -787,7 +788,10 @@ assert(operationClosure?.contractId === operationDocumentContract.contractId
   && JSON.stringify(operationClosure?.commandKinds) === JSON.stringify(BREEDING_OPERATION_COMMAND_KINDS)
   && JSON.stringify(operationClosure?.commandKinds) === JSON.stringify(operationDocumentContract.definition?.command?.commandKinds)
   && operationClosure?.outcomeCount === BREEDING_OPERATION_OUTCOME_KINDS.length
-  && operationClosure?.scopeCount === BREEDING_OPERATION_SCOPE_KINDS.length, 'breeding operation manifest closure drifted')
+  && operationClosure?.scopeCount === BREEDING_OPERATION_SCOPE_KINDS.length
+  && operationClosure?.resilienceCertificationOwner === 'BR-083'
+  && operationClosure?.resilienceCertificationStatus === 'certified-current-semantics'
+  && operationClosure?.artifactIds?.includes('breeding-resilience-certification'), 'breeding operation manifest closure drifted')
 const projectionDocumentContract = json<Record<string, any>>('data/breeding-automation/projection-contract.json')
 const projectionClosure = semanticClosure.definition?.projections
 assert(projectionClosure?.contractId === projectionDocumentContract.contractId
@@ -874,6 +878,42 @@ assert(interactionCertification.definition?.bindings?.semanticClosureDefinitionS
   && interactionCertification.definition?.certificationSemantics?.facilityRegistry === 'empty-no-authority'
   && interactionCertification.definition?.negativeBoundaries?.includes('this-ones-special-provider-force-cannot-execute-without-durable-use-consumption')
   && interactionCertification.definition?.negativeBoundaries?.includes('post-hatch-feature-handoffs-cannot-forge-inherited-origin-or-bypass-permanent-move-authority'), 'breeding interaction certification authority boundary drifted')
+
+const resilienceCertification = json<Record<string, any>>('data/breeding-automation/resilience-certification.json')
+assert(resilienceCertification.reportId === 'ptu-1.05-breeding-resilience-certification-v1'
+  && resilienceCertification.rulesetDefinitionSha256 === ruleset.definitionSha256
+  && resilienceCertification.sourceManifestSha256 === sourceManifestSha256
+  && resilienceCertification.definition?.ticket === 'BR-083'
+  && resilienceCertification.definition?.status === 'certified', 'breeding resilience certification identity drifted')
+assert(JSON.stringify(resilienceCertification.definition?.operationCoverage?.commandKinds) === JSON.stringify(BREEDING_OPERATION_COMMAND_KINDS)
+  && JSON.stringify(resilienceCertification.definition?.operationCoverage?.outcomeKinds) === JSON.stringify(BREEDING_OPERATION_OUTCOME_KINDS)
+  && resilienceCertification.definition?.operationCoverage?.dispositions?.length === BREEDING_OPERATION_COMMAND_KINDS.length
+  && new Set(resilienceCertification.definition.operationCoverage.dispositions.map((row: any) => row.commandKind)).size === BREEDING_OPERATION_COMMAND_KINDS.length, 'breeding resilience command closure drifted')
+assert(JSON.stringify(resilienceCertification.definition?.dimensions) === JSON.stringify(['transaction-failure-injection','concurrency','idempotency','correction','abandonment','disaster-recovery'])
+  && resilienceCertification.definition?.surfaces?.length === 13
+  && resilienceCertification.definition?.hazardMatrix?.length === 6
+  && resilienceCertification.definition?.hazardMatrix?.reduce((sum: number, row: any) => sum + row.cases.length, 0) === 45
+  && resilienceCertification.definition?.summary?.commandKindsCertified === 22
+  && resilienceCertification.definition?.summary?.activeTransactionalCommands === 19
+  && resilienceCertification.definition?.summary?.activeRecoveryControllers === 1
+  && resilienceCertification.definition?.summary?.projectionOnlyCommands === 1
+  && resilienceCertification.definition?.summary?.declaredFailClosedCommands === 1
+  && resilienceCertification.definition?.summary?.result === 'pass', 'breeding resilience certification result drifted')
+assert(resilienceCertification.definition?.bindings?.semanticClosureDefinitionSha256 === semanticClosure.definitionSha256
+  && resilienceCertification.definition?.bindings?.wholeSpeciesConformanceDefinitionSha256 === wholeSpeciesConformance.definitionSha256
+  && resilienceCertification.definition?.bindings?.interactionCertificationDefinitionSha256 === interactionCertification.definitionSha256
+  && resilienceCertification.definition?.bindings?.operationContractDefinitionSha256 === operationDocumentContract.definitionSha256
+  && resilienceCertification.definition?.certificationScope?.pendingRecovery === 'explicit-current-authority-only'
+  && resilienceCertification.definition?.certificationScope?.randomness === 'persist-before-application-and-reuse-after-failure'
+  && resilienceCertification.definition?.recoveryInvariants?.includes('no-accepted-partial-transaction')
+  && resilienceCertification.definition?.recoveryInvariants?.includes('abandonment-never-deletes-command-read-set-receipt-roll-or-offer-evidence'), 'breeding resilience authority or recovery boundary drifted')
+assert(resilienceCertification.definition.surfaces.every((row: any) => Array.isArray(row.runtimePaths)
+  && row.runtimePaths.length > 0 && row.runtimePaths.every((path: string) => existsSync(resolve(ROOT, path)))
+  && Array.isArray(row.evidencePaths) && row.evidencePaths.length > 0 && row.evidencePaths.every((path: string) => existsSync(resolve(ROOT, path)))), 'breeding resilience surface evidence is missing')
+assert(resilienceCertification.definition.hazardMatrix.every((hazard: any) => hazard.cases.every((row: any) => {
+  if (!existsSync(resolve(ROOT, row.evidencePath))) return false
+  return readFileSync(resolve(ROOT, row.evidencePath), 'utf8').includes(row.requiredNeedle)
+})), 'breeding resilience focused assertion evidence drifted')
 
 const planPath = existsSync(resolve(ROOT, registry.definition.activePlanPath))
   ? registry.definition.activePlanPath
@@ -1268,6 +1308,8 @@ for (const path of [
   'data/breeding-automation/gm-egg-contract.json',
   'data/breeding-automation/interaction-certification.json',
   'tests/server/breedingInteractionCertification.test.ts',
+  'data/breeding-automation/resilience-certification.json',
+  'tests/server/breedingResilienceCertification.test.ts',
   'docs/adrs/018-authoritative-breeding-and-egg-runtime.md',
   'docs/breeding/architecture-and-ownership.md',
   'docs/breeding/contributor-guide.md',

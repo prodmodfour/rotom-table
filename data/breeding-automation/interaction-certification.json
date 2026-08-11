@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "f1e35d6055908744a10b3bf1f04e5cb810042ff03b13ca1f1a209c7be1ee757a",
+  "definitionSha256": "6f0f973c22dd3911b6f6f0a521c23158df3edac8878750d754e7000470bb2fd9",
   "definition": {
     "ticket": "BR-082",
     "status": "certified",
@@ -868,8 +868,8 @@
       "browser-wall-map-encounter-and-process-time-never-credit-progress-or-expiry"
     ],
     "bindings": {
-      "semanticClosureDefinitionSha256": "4e61a062050313478ab67b1aa5d002d5968aecdc6bd48eb7decd72b55b054ac1",
-      "wholeSpeciesConformanceDefinitionSha256": "873c4dd55aa908883cce89503ec1f052af5ec808014a07f07cbfe692645f1797",
+      "semanticClosureDefinitionSha256": "aac6c158203a3921d750fdf7eca7c3901bf9cd2bdf9f3f7a2be401b6b3c548b7",
+      "wholeSpeciesConformanceDefinitionSha256": "e6de8da2c755b51a7d31e7a7c4a3448b7f4c2a8bababc8bcd0050ca658e14c61",
       "breederEdgeHandoffContractDefinitionSha256": "6d00f0adbf87c5751d1f5df6973325b29c78b9636f1fcf92d55b038299dcf55e",
       "featureProviderHandoffContractDefinitionSha256": "fdc100e73b51ad2179d2069a6b36b7d9ecf3d441b6d5ed0e0a5fe743714b9479",
       "modifierProviderHandoffContractDefinitionSha256": "1a4fc68d36348e1b7c7d95983bfb224d971096756e569d278d54fe0676703216",

@@ -13,11 +13,11 @@
     ],
     "gmOverrideIds": [],
     "operationId": "breeding-operation:v1:00000000000000000000000000000014",
-    "readSetDefinitionSha256": "d45d68e88b0e8928dbb9108d5ff40b1e3e2a0af551f8b15ef47dc0c613b58efd",
+    "readSetDefinitionSha256": "59a62c88b39ec492db82aa4ce73cad071e195fc7488103cd6a1ebdb1cc0d2ad2",
     "reasonId": "breeding.authorization.authorized",
     "schemaVersion": 1,
     "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
-    "definitionSha256": "92625ba0858645349cd918be8468a762ce84730c5054c0f13e4ec86fdc06e9e5"
+    "definitionSha256": "00c0905a2cad72b20d493f81ae80bcfc8b4907776807bc67c989e36e200c5340"
   },
   "breeder": {
     "capturedAtCampaignMinute": 600,
@@ -409,9 +409,9 @@
       "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
       "rulesetId": "ptu-1.05-breeding-v1",
       "schemaVersion": 1,
-      "semanticRegistryDefinitionSha256": "0b8bfb9e8f307893fdb614083c29e9b21322d146fe5820c66ac22189d50ebecd",
+      "semanticRegistryDefinitionSha256": "f3bc30c9b4a5dd219db8abd4064a5fa46c716b567cf11f44056a5ba7a3a396ee",
       "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-      "definitionSha256": "4c1e4c8fd4b2cf9f7cc2117fa19426ed316010119b7bf59300c4816d727cbdb4"
+      "definitionSha256": "50b5204b31b745f88b94f01bcdeed62f373ded10505f5b282234ba187a8108b1"
     },
     "resources": [
       {
@@ -517,7 +517,7 @@
         "kind": "pokemon-egg"
       }
     ],
-    "definitionSha256": "d45d68e88b0e8928dbb9108d5ff40b1e3e2a0af551f8b15ef47dc0c613b58efd"
+    "definitionSha256": "59a62c88b39ec492db82aa4ce73cad071e195fc7488103cd6a1ebdb1cc0d2ad2"
   },
   "roleOverride": null,
   "roleOverrideEvidenceDefinitionSha256": null

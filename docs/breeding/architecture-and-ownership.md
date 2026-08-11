@@ -386,6 +386,14 @@ The acceptance matrix covers Edge, Feature, item, Ability, capability, Move, for
 
 Fossil and Playing God creation continue through the ordinary durable Egg, incubation, hatch-special, child, lineage, and acquisition pipeline. Baby Template remains a derived server-owned overlay that never mutates Species JSON. Campaign time remains the sole progress, cooldown, expiry, and recovery clock. The certification binds rollback/resume evidence for item and Capability incubation, fossil and artificial creation, inheritance learning, and bounded campaign-clock prefixes; retained rolls are reused and exact retries do not duplicate credit or publication.
 
+### BR-083 transaction and disaster-recovery certification boundary
+
+`resilience-certification.json` certifies the operation path from durable phase-one reservation through synchronous phase-two settlement, restart, replay, and post-commit publication. All 22 strict command kinds are classified exactly once: 19 use active transactional reducers, `recover-breeding-operation` is the active recovery controller, `preview-breeding` is non-mutating, and the declared `cancel-egg` command remains fail closed because no owning mutation reducer exists. Declaration never supplies execution authority.
+
+Phase one may retain the exact command, read set, receipt, offers, adjudications, and persisted rolls after a fault. Phase two owns every aggregate, ledger, archive receipt, and realtime row in one caller-owned transaction. A stale competitor cannot overwrite current state; a pending operation cannot resume without current exact authority; a terminal retry cannot rerun mechanics or publication. Correction uses typed monotonic successors and campaign time, never direct progress edits. Abandonment settles the target audit while preserving all phase-one evidence.
+
+The six certified hazards are transaction failure injection, concurrency, idempotency, correction, abandonment, and operational disaster recovery. Cross-connection clock, consent, archive, and hatch races converge to one winner. Restart reparses strict durable evidence; bounded batch prefixes resume without processing prior Eggs; replay gaps require a fresh projection rather than mechanics replay; publisher failure leaves accepted state intact. BR-085 still owns final legacy migration, export/import, reference-version, backup/restore, and orphan-repair release acceptance.
+
 ## Prohibited alternate authorities
 
 - third sheet kind for Eggs;
