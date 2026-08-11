@@ -5,6 +5,7 @@ import { LoadBreedingProjectChoicesError } from '../../server/useCases/loadBreed
 const mocks = vi.hoisted(() => ({
   loadBreedingProjectChoices: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
+  enforceRate: vi.fn(),
 }))
 vi.mock('../../server/useCases/loadBreedingProjectChoices', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../server/useCases/loadBreedingProjectChoices')>()
@@ -13,6 +14,10 @@ vi.mock('../../server/useCases/loadBreedingProjectChoices', async (importOrigina
 vi.mock('../../server/policies/playerProfilePolicy', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../server/policies/playerProfilePolicy')>()
   return { ...original, resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy }
+})
+vi.mock('../../server/security/breedingWriteRateLimit', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../server/security/breedingWriteRateLimit')>()
+  return { ...original, enforceBreedingWriteRateLimit: mocks.enforceRate }
 })
 
 const route = (await import('../../server/api/breeding/projects/wizard/choices.post')).default
@@ -79,6 +84,9 @@ describe('BR-073 Breeding Project choices API route', () => {
     expect(mocks.resolvePlayerProfileForPolicy).toHaveBeenCalledWith('profile_owner000')
     expect(mocks.loadBreedingProjectChoices).toHaveBeenCalledWith({
       role: 'player', playerProfile, request,
+    })
+    expect(mocks.enforceRate).toHaveBeenCalledWith(expect.anything(), {
+      role: 'player', profileId: 'profile_owner000',
     })
   })
 

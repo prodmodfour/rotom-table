@@ -1,6 +1,12 @@
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import { parseBreedingProjectIdSyntax, type BreedingProjectId } from '#shared/breeding/ids'
-import { BREEDING_PROJECT_STATUSES, parseBreedingProjectDocumentV1, type BreedingProjectDocumentV1, type BreedingProjectStatus } from '#shared/breeding/project'
+import {
+  BREEDING_PROJECT_ACTIVE_STATUSES,
+  BREEDING_PROJECT_STATUSES,
+  parseBreedingProjectDocumentV1,
+  type BreedingProjectDocumentV1,
+  type BreedingProjectStatus,
+} from '#shared/breeding/project'
 import { isSlug } from '#shared/paths'
 import { validateBreedingProjectRevisionSuccessor } from '../domain/breeding/projectLifecycle'
 import { getRotomDatabase, type RotomDatabase } from './database'
@@ -48,6 +54,7 @@ const SELECT = `
   FROM breeding_projects
 `
 const STATUS_SET = new Set<string>(BREEDING_PROJECT_STATUSES)
+const ACTIVE_STATUS_PLACEHOLDERS = BREEDING_PROJECT_ACTIVE_STATUSES.map(() => '?').join(', ')
 const projectId = (value: unknown): BreedingProjectId => parseBreedingProjectIdSyntax(value) ?? (() => { throw new Error('projectId must be a breeding project ID.') })()
 const slug = (value: unknown, label: string): string => isSlug(value) && value.length <= 160 ? value : (() => { throw new Error(`${label} must be a canonical bounded sheet slug.`) })()
 const rowToProject = (row: BreedingProjectRow): BreedingProjectDocumentV1 => {
@@ -104,13 +111,42 @@ export const createSqliteBreedingProjectRepository = (database: RotomDatabase = 
       throw new BreedingRepositoryIdentityCollisionError('Breeding project', document.projectId)
     }
     try {
-      database.connection.prepare(`
+      const parentA = document.parentRefs[0].pokemonSheetSlug
+      const parentB = document.parentRefs[1].pokemonSheetSlug
+      const result = database.connection.prepare(`
         INSERT INTO breeding_projects (
           project_id, document_json, revision, status, owner_trainer_slug, breeder_trainer_slug,
           parent_a_slug, parent_b_slug, produced_egg_id, last_operation_id,
           created_at_campaign_minute, updated_at_campaign_minute
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(document.projectId, stableJsonStringify(document), document.revision, document.status, document.ownerTrainerSlug, document.breederTrainerSlug, document.parentRefs[0].pokemonSheetSlug, document.parentRefs[1].pokemonSheetSlug, document.producedEggId, document.lastOperationId, document.createdAtCampaignMinute, document.updatedAtCampaignMinute)
+        )
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        WHERE NOT EXISTS (
+          SELECT 1 FROM breeding_projects
+          WHERE status IN (${ACTIVE_STATUS_PLACEHOLDERS})
+            AND (parent_a_slug IN (?, ?) OR parent_b_slug IN (?, ?))
+        )
+      `).run(
+        document.projectId,
+        stableJsonStringify(document),
+        document.revision,
+        document.status,
+        document.ownerTrainerSlug,
+        document.breederTrainerSlug,
+        parentA,
+        parentB,
+        document.producedEggId,
+        document.lastOperationId,
+        document.createdAtCampaignMinute,
+        document.updatedAtCampaignMinute,
+        ...BREEDING_PROJECT_ACTIVE_STATUSES,
+        parentA,
+        parentB,
+        parentA,
+        parentB,
+      )
+      if (Number(result.changes) !== 1) {
+        throw new Error('A breeding parent may belong to at most one active Project.')
+      }
     }
     catch (error) {
       const raced = get(document.projectId)

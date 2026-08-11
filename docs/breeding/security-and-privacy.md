@@ -173,6 +173,14 @@ A breeding project has exactly two parents, at most two consent records, and a p
 
 Negative, unsafe, duplicate, over-bound, and unknown-field input is rejected.
 
+### BR-084 executable certification
+
+`data/breeding-automation/security-certification.json` binds all five audiences, 22 privacy fields, seven Workshop API surfaces, 13 reviewed threats, 22 abuse controls, and the authorization, consent, information-flow, malformed-input, and audit matrices to current runtime paths and focused assertions. It is an acceptance report, not a new authorization or mechanics source.
+
+Every Breeding POST reads at most 32 KiB of valid UTF-8 JSON before its closed request parser runs. Declared and observed byte overflow returns a bounded 413 without echoing input. Confirmed Project creation, non-inspection hatch actions, and non-view consent actions then pass through request admission: 30 attempted writes per selected player Profile per fixed minute and a conservative 120-write authenticated GM process-session bucket. Exhaustion returns only 429 plus `Retry-After`; it cannot advance campaign time, alter an operation, consume an option, redraw randomness, or change exact-retry evidence. Clock regression and rate-key exhaustion fail closed, and expired buckets are pruned within a fixed 4,096-key memory bound.
+
+The current authentication boundary exposes no client-safe unique GM session identifier, so the GM bucket is deliberately process-wide and stricter than a per-session allowance. A browser header, cookie payload, Profile selector, or aggregate ID never chooses a rate key. Repository list defaults and maxima are 25 and 100, and active Project insertion atomically rejects a parent already present in another active Project.
+
 ## Audit and failure behavior
 
 Mutations record operation and command hashes, actor and role, aggregate revisions, authorization and consent evidence, ruleset/source/provider hashes, roll and choice identities, GM override reason IDs, terminal results, and event identities.

@@ -4,13 +4,13 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "aac6c158203a3921d750fdf7eca7c3901bf9cd2bdf9f3f7a2be401b6b3c548b7",
+  "definitionSha256": "718a6e4507fa3aa930be47ac596a05c44e80a792bd64b1fe87fc815c551ac625",
   "definition": {
     "ticket": "BR-080",
     "status": "strict-closed",
     "semanticRegistry": {
       "registryId": "breeding-semantic-registry-v1",
-      "expectedArtifactCountIncludingThisManifest": 104,
+      "expectedArtifactCountIncludingThisManifest": 105,
       "dataDirectoryPolicy": "every-json-file-exactly-once-registered-except-registry-self",
       "duplicateArtifactIdPolicy": "reject",
       "duplicateArtifactPathPolicy": "reject",
@@ -209,9 +209,12 @@
         "breeding-hatch-destination-presentation-contract",
         "breeding-consent-workflow-presentation-contract",
         "breeding-workshop-interaction-acceptance",
-        "breeding-workshop-browser-acceptance"
+        "breeding-workshop-browser-acceptance",
+        "breeding-security-certification"
       ],
-      "clientHashOrShapeDriftPolicy": "reject-and-clear-stale-view"
+      "clientHashOrShapeDriftPolicy": "reject-and-clear-stale-view",
+      "securityCertificationOwner": "BR-084",
+      "securityCertificationStatus": "certified-current-information-flow"
     },
     "interactions": {
       "inventoryId": "ptu-1.05-breeding-modifier-inventory-v1",

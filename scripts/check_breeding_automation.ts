@@ -273,6 +273,7 @@ for (const path of [
   'data/breeding-automation/gm-egg-contract.json',
   'data/breeding-automation/interaction-certification.json',
   'data/breeding-automation/resilience-certification.json',
+  'data/breeding-automation/security-certification.json',
 ]) {
   const document = json<Record<string, any>>(path)
   assert(document.rulesetId === ruleset.rulesetId, `${path} ruleset ID drifted`)
@@ -798,7 +799,10 @@ assert(projectionClosure?.contractId === projectionDocumentContract.contractId
   && projectionClosure?.contractDefinitionSha256 === projectionDocumentContract.definitionSha256
   && JSON.stringify(projectionClosure?.audiences) === JSON.stringify(BREEDING_PROJECTION_AUDIENCES)
   && JSON.stringify(projectionClosure?.audiences) === JSON.stringify(projectionDocumentContract.definition?.audiences)
-  && projectionClosure?.clientHashOrShapeDriftPolicy === 'reject-and-clear-stale-view', 'breeding projection manifest closure drifted')
+  && projectionClosure?.clientHashOrShapeDriftPolicy === 'reject-and-clear-stale-view'
+  && projectionClosure?.securityCertificationOwner === 'BR-084'
+  && projectionClosure?.securityCertificationStatus === 'certified-current-information-flow'
+  && projectionClosure?.artifactIds?.includes('breeding-security-certification'), 'breeding projection manifest closure drifted')
 const interactionClosure = semanticClosure.definition?.interactions
 assert(interactionClosure?.inventoryId === modifierInventoryContract.inventoryId
   && interactionClosure?.inventoryDefinitionSha256 === modifierInventoryContract.definitionSha256
@@ -914,6 +918,50 @@ assert(resilienceCertification.definition.hazardMatrix.every((hazard: any) => ha
   if (!existsSync(resolve(ROOT, row.evidencePath))) return false
   return readFileSync(resolve(ROOT, row.evidencePath), 'utf8').includes(row.requiredNeedle)
 })), 'breeding resilience focused assertion evidence drifted')
+
+const securityCertification = json<Record<string, any>>('data/breeding-automation/security-certification.json')
+const securityPolicyForCertification = json<Record<string, any>>('data/breeding-automation/security-policy.json')
+assert(securityCertification.reportId === 'ptu-1.05-breeding-security-certification-v1'
+  && securityCertification.rulesetDefinitionSha256 === ruleset.definitionSha256
+  && securityCertification.sourceManifestSha256 === sourceManifestSha256
+  && securityCertification.definition?.ticket === 'BR-084'
+  && securityCertification.definition?.status === 'certified'
+  && JSON.stringify(securityCertification.definition?.dimensions) === JSON.stringify(['authorization','consent','privacy','information-flow','malformed-input','abuse']), 'breeding security certification identity drifted')
+assert(securityCertification.definition?.bindings?.semanticClosureDefinitionSha256 === semanticClosure.definitionSha256
+  && securityCertification.definition?.bindings?.wholeSpeciesConformanceDefinitionSha256 === wholeSpeciesConformance.definitionSha256
+  && securityCertification.definition?.bindings?.interactionCertificationDefinitionSha256 === interactionCertification.definitionSha256
+  && securityCertification.definition?.bindings?.resilienceCertificationDefinitionSha256 === resilienceCertification.definitionSha256
+  && securityCertification.definition?.bindings?.securityPolicyDefinitionSha256 === securityPolicyForCertification.definitionSha256, 'breeding security certification authority binding drifted')
+assert(JSON.stringify(securityCertification.definition?.audiences?.map((row: any) => ({ id: row.id, requiresAuthentication: row.requiresAuthentication, authority: row.authority }))) === JSON.stringify(securityPolicyForCertification.definition?.audiences)
+  && securityCertification.definition?.privacyFieldCoverage?.length === securityPolicyForCertification.definition?.privacyFields?.length
+  && securityCertification.definition?.threatCoverage?.length === securityPolicyForCertification.definition?.threats?.length
+  && securityCertification.definition?.auditCoverage?.length === securityPolicyForCertification.definition?.auditRequirements?.length
+  && securityCertification.definition?.abuseControls?.length === Object.keys(securityPolicyForCertification.definition?.abuseLimits ?? {}).length, 'breeding security policy coverage drifted')
+assert(securityCertification.definition?.apiSurfaces?.length === 7
+  && securityCertification.definition?.authorizationSurfaces?.length === 8
+  && securityCertification.definition?.consentCases?.length === 11
+  && securityCertification.definition?.informationFlows?.length === 9
+  && securityCertification.definition?.malformedInputCoverage?.length === 14
+  && securityCertification.definition?.summary?.result === 'pass', 'breeding security certification result drifted')
+const securityEvidenceRows = [
+  ...(securityCertification.definition?.audiences ?? []),
+  ...(securityCertification.definition?.apiSurfaces ?? []),
+  ...(securityCertification.definition?.authorizationSurfaces ?? []),
+  ...(securityCertification.definition?.consentCases ?? []),
+  ...(securityCertification.definition?.privacyFieldCoverage ?? []),
+  ...(securityCertification.definition?.informationFlows ?? []),
+  ...(securityCertification.definition?.threatCoverage ?? []),
+  ...(securityCertification.definition?.malformedInputCoverage ?? []),
+  ...(securityCertification.definition?.abuseControls ?? []),
+  ...(securityCertification.definition?.auditCoverage ?? []),
+]
+assert(securityEvidenceRows.every((row: any) => typeof row.evidencePath === 'string'
+  && typeof row.requiredNeedle === 'string'
+  && existsSync(resolve(ROOT, row.evidencePath))
+  && readFileSync(resolve(ROOT, row.evidencePath), 'utf8').includes(row.requiredNeedle)), 'breeding security focused assertion evidence drifted')
+assert([...(securityCertification.definition?.authorizationSurfaces ?? []), ...(securityCertification.definition?.informationFlows ?? []), ...(securityCertification.definition?.abuseControls ?? [])]
+  .every((row: any) => Array.isArray(row.runtimePaths) && row.runtimePaths.length > 0
+    && row.runtimePaths.every((path: string) => existsSync(resolve(ROOT, path)))), 'breeding security runtime evidence is missing')
 
 const planPath = existsSync(resolve(ROOT, registry.definition.activePlanPath))
   ? registry.definition.activePlanPath
@@ -1310,6 +1358,12 @@ for (const path of [
   'tests/server/breedingInteractionCertification.test.ts',
   'data/breeding-automation/resilience-certification.json',
   'tests/server/breedingResilienceCertification.test.ts',
+  'data/breeding-automation/security-certification.json',
+  'server/security/breedingRequestBody.ts',
+  'server/security/breedingWriteRateLimit.ts',
+  'tests/server/breedingRequestBody.test.ts',
+  'tests/server/breedingWriteRateLimit.test.ts',
+  'tests/server/breedingSecurityCertification.test.ts',
   'docs/adrs/018-authoritative-breeding-and-egg-runtime.md',
   'docs/breeding/architecture-and-ownership.md',
   'docs/breeding/contributor-guide.md',

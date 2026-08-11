@@ -394,6 +394,12 @@ Phase one may retain the exact command, read set, receipt, offers, adjudications
 
 The six certified hazards are transaction failure injection, concurrency, idempotency, correction, abandonment, and operational disaster recovery. Cross-connection clock, consent, archive, and hatch races converge to one winner. Restart reparses strict durable evidence; bounded batch prefixes resume without processing prior Eggs; replay gaps require a fresh projection rather than mechanics replay; publisher failure leaves accepted state intact. BR-085 still owns final legacy migration, export/import, reference-version, backup/restore, and orphan-repair release acceptance.
 
+### BR-084 security and information-flow certification boundary
+
+`security-certification.json` closes authorization, consent, privacy, information flow, malformed input, and abuse against the current BR-080 semantic closure and BR-081–BR-083 reports. It registers evidence only; `security-policy.json`, strict contracts, current repositories, and owning use cases remain authoritative. The five audience schemas are server-built and structurally distinct. Project consent and the two Egg-transfer consents remain separate positive participant authorities, and GM authority substitutes for none of them.
+
+All five Breeding POST handlers share one 32 KiB UTF-8 JSON ingress before exact request parsing. Only confirmed Project creation, hatch mutation intents, and consent mutation intents enter the bounded write limiter; previews and reads are non-mutating. Rate admission is process-local availability protection, not campaign or operation authority. It cannot settle evidence, affect deterministic replay, or confer control. Active Project insertion uses one atomic conditional SQLite statement so a parent cannot enter two active Projects even across serialized writers. Repository pagination defaults to 25 and caps at 100.
+
 ## Prohibited alternate authorities
 
 - third sheet kind for Eggs;

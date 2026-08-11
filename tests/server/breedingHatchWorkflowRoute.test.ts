@@ -2,7 +2,7 @@ import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ManageBreedingHatchWorkflowError } from '../../server/useCases/manageBreedingHatchWorkflow'
 
-const mocks = vi.hoisted(() => ({ manage: vi.fn(), resolveProfile: vi.fn() }))
+const mocks = vi.hoisted(() => ({ manage: vi.fn(), resolveProfile: vi.fn(), enforceRate: vi.fn() }))
 vi.mock('../../server/useCases/manageBreedingHatchWorkflow', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../server/useCases/manageBreedingHatchWorkflow')>()
   return { ...original, manageBreedingHatchWorkflow: mocks.manage }
@@ -10,6 +10,10 @@ vi.mock('../../server/useCases/manageBreedingHatchWorkflow', async (importOrigin
 vi.mock('../../server/policies/playerProfilePolicy', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../server/policies/playerProfilePolicy')>()
   return { ...original, resolvePlayerProfileForPolicy: mocks.resolveProfile }
+})
+vi.mock('../../server/security/breedingWriteRateLimit', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../server/security/breedingWriteRateLimit')>()
+  return { ...original, enforceBreedingWriteRateLimit: mocks.enforceRate }
 })
 const route = (await import('../../server/api/breeding/hatch.post')).default
 type RouteHandler = EventHandler<EventHandlerRequest, unknown>
@@ -40,6 +44,19 @@ describe('BR-075 hatch workflow API route', () => {
     await expect(invoke('gm', body())).resolves.toEqual({ schemaVersion: 1, stage: 'ready' })
     expect(mocks.resolveProfile).not.toHaveBeenCalled()
     expect(mocks.manage).toHaveBeenCalledWith({ role: 'gm', playerProfile: null, request: body() })
+    expect(mocks.enforceRate).not.toHaveBeenCalled()
+  })
+
+  it('admits a confirmed hatch mutation through the GM write-rate boundary', async () => {
+    const request = {
+      ...body(),
+      intent: 'begin',
+      destinationOptionId: `option:v1:${'7'.repeat(32)}`,
+      confirmed: true,
+    }
+    await invoke('gm', request)
+    expect(mocks.enforceRate).toHaveBeenCalledWith(expect.anything(), { role: 'gm', profileId: null })
+    expect(mocks.manage).toHaveBeenCalledWith({ role: 'gm', playerProfile: null, request })
   })
 
   it('resolves the selected player Profile before use-case authorization', async () => {

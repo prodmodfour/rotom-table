@@ -364,6 +364,14 @@ For a concurrent stale loser, preserve its terminal rejection or pending audit a
 
 The declared `cancel-egg` command has no owning reducer and must remain unavailable. `preview-breeding` is non-mutating. Backup/restore is exercised here only as an operational failure boundary; BR-085 remains the release acceptance owner for legacy migration, export/import, reference versions, backup/restore, and orphan repair.
 
+## BR-084 security and abuse checks
+
+Use `data/breeding-automation/security-certification.json` to trace an audience, API route, privacy field, threat, malformed-input class, abuse limit, or audit requirement to its runtime and exact focused assertion. Do not treat the report as access evidence. A valid request still rebuilds current role, selected Profile, Trainer control, revisions, consent, options, and operation authority.
+
+A 413 means the Breeding POST exceeded the 32 KiB JSON boundary or declared contradictory body length. Do not split one command, bypass the route, or copy the rejected body into diagnostics. A 429 carries only `Retry-After`; wait for that admission window and retry the same selector request. Never change an operation ID, redraw, recreate an offer, advance campaign time, or manually apply a result in response to throttling. The GM bucket is intentionally conservative and shared by the authenticated liveplay process because no client-selected value may become a session authority.
+
+Repeated 400, 403, 409, 413, or 429 responses should be investigated using bounded route, role, status, and hashed identity metadata only. Do not collect request bodies, Profile IDs, parent sheets, consent records, options, rolls, cookies, or exports. If active Project creation reports that a parent is already active, resolve or cancel the current Project through its ordinary audited workflow; never edit the parent columns or Project JSON.
+
 ## Recovery principles
 
 1. Retry the exact command with the same operation ID and bytes.

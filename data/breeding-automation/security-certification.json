@@ -1,0 +1,1347 @@
+{
+  "schemaVersion": 1,
+  "reportId": "ptu-1.05-breeding-security-certification-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "e254f56f6a56340d062e30371a4be2c52d60131c074194356523eaa24bb5bfaa",
+  "definition": {
+    "ticket": "BR-084",
+    "status": "certified",
+    "certificationScope": {
+      "included": "authorization-consent-privacy-information-flow-malformed-input-and-abuse",
+      "authority": "current-authenticated-role-selected-Profile-controlled-Trainer-and-revision-bound-aggregate-only",
+      "privacy": "separate-server-built-audience-schemas-never-CSS-hiding",
+      "consent": "Project-participation-and-Egg-transfer-consents-are-distinct-positive-current-and-nonsubstitutable",
+      "informationFlow": "selector-only-ingress-role-projected-egress-refresh-only-realtime-and-presentation-only-browser-storage",
+      "malformedInput": "strict-plain-dense-exact-bounded-self-hashed-current-authority-or-reject",
+      "abuse": "bounded-ingress-storage-cardinality-pagination-rate-and-retry-retention",
+      "rateLimitAuthority": "request-admission-only-never-campaign-time-mechanics-randomness-or-exact-retry-authority",
+      "gmRateBoundary": "one-conservative-authenticated-liveplay-process-session-bucket-because-no-weaker-client-selected-session-key-is-accepted"
+    },
+    "dimensions": [
+      "authorization",
+      "consent",
+      "privacy",
+      "information-flow",
+      "malformed-input",
+      "abuse"
+    ],
+    "bindings": {
+      "semanticClosureDefinitionSha256": "718a6e4507fa3aa930be47ac596a05c44e80a792bd64b1fe87fc815c551ac625",
+      "wholeSpeciesConformanceDefinitionSha256": "07701bebb2d646a877fe47fe6964afcf4a30fe3e21f31773965f7f35fa7afbb7",
+      "interactionCertificationDefinitionSha256": "93041fbf371c9b063232d174e16135d8ec5c231496d64c360a4abc6184344998",
+      "resilienceCertificationDefinitionSha256": "54c2d9ecbe5a9d23aac82ffac41b06cdd3632513a88a04e2077265047502e0c2",
+      "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
+      "authorizationContractDefinitionSha256": "2ae8a4ad9dcea11042dbdcc6ba71a6c87f00578b42d5699407e4eae643e55dd4",
+      "projectionContractDefinitionSha256": "86816da9419b5392f5a6122ccf982d7ed7587c027896ef19f3fe2efba33af812",
+      "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
+      "consentWorkflowPresentationContractDefinitionSha256": "a450b7d354f462ff46ec0feb2ca79e337c87514df67f6191640cafbfc7b0ae81",
+      "eggTransferContractDefinitionSha256": "35eb7497732ad71dbda180a5c132bb0534f89f85a8eda2e1acb5cf2f9968cb31",
+      "realtimeContractDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932",
+      "archiveContractDefinitionSha256": "791c7236517655fb02eaa598865bd51b9391173be39b8eea6b0995da67af11e2"
+    },
+    "audiences": [
+      {
+        "id": "public",
+        "requiresAuthentication": false,
+        "authority": "none",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "projects public summaries without raw IDs, identities, revisions, exact time, or mechanics",
+        "schemaPolicy": "structurally-separate-closed-projection"
+      },
+      {
+        "id": "owner",
+        "requiresAuthentication": true,
+        "authority": "controlled-owner-trainer-only",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "gives the owner workflow facts while structurally hiding the participating parent and raw checks",
+        "schemaPolicy": "structurally-separate-closed-projection"
+      },
+      {
+        "id": "participating-owner",
+        "requiresAuthentication": true,
+        "authority": "controlled-consented-parent-only",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "limits participating owners to their parent, consent request, and own contribution attribution",
+        "schemaPolicy": "structurally-separate-closed-projection"
+      },
+      {
+        "id": "gm",
+        "requiresAuthentication": true,
+        "authority": "campaign-gm",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "gives full strict mechanics only to GM and hash-only traces only to diagnostic operators",
+        "schemaPolicy": "structurally-separate-closed-projection"
+      },
+      {
+        "id": "diagnostic",
+        "requiresAuthentication": true,
+        "authority": "authorized-operator",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "gives full strict mechanics only to GM and hash-only traces only to diagnostic operators",
+        "schemaPolicy": "structurally-separate-closed-projection"
+      }
+    ],
+    "apiSurfaces": [
+      {
+        "route": "/api/breeding/consent",
+        "method": "POST",
+        "operationClass": "view-or-confirmed-mutation",
+        "requestParser": "parseBreedingConsentWorkflowRequestV1",
+        "mutationAdmission": "every-non-view-intent",
+        "runtimePath": "server/api/breeding/consent.post.ts",
+        "evidencePath": "tests/server/breedingConsentWorkflowRoute.test.ts",
+        "requiredNeedle": "admits a strict confirmed mutation through the GM write-rate boundary"
+      },
+      {
+        "route": "/api/breeding/hatch",
+        "method": "POST",
+        "operationClass": "inspect-or-confirmed-mutation",
+        "requestParser": "parseBreedingHatchWorkflowRequestV1",
+        "mutationAdmission": "every-non-inspect-intent",
+        "runtimePath": "server/api/breeding/hatch.post.ts",
+        "evidencePath": "tests/server/breedingHatchWorkflowRoute.test.ts",
+        "requiredNeedle": "admits a confirmed hatch mutation through the GM write-rate boundary"
+      },
+      {
+        "route": "/api/breeding/projects/wizard",
+        "method": "POST",
+        "operationClass": "non-mutating-current-preview",
+        "requestParser": "parseBreedingProjectWizardRequestV1",
+        "mutationAdmission": "not-applicable",
+        "runtimePath": "server/api/breeding/projects/wizard.post.ts",
+        "evidencePath": "tests/server/breedingProjectWizardRoute.test.ts",
+        "requiredNeedle": "requires authentication and forwards a closed GM request without a Profile"
+      },
+      {
+        "route": "/api/breeding/projects/wizard/choices",
+        "method": "POST",
+        "operationClass": "preview-or-confirmed-project-creation",
+        "requestParser": "parseBreedingProjectChoicesRequestV1",
+        "mutationAdmission": "confirmed-true-only",
+        "runtimePath": "server/api/breeding/projects/wizard/choices.post.ts",
+        "evidencePath": "tests/server/breedingProjectChoicesRoute.test.ts",
+        "requiredNeedle": "resolves the exact selected Profile for a player confirmation"
+      },
+      {
+        "route": "/api/breeding/projects/wizard/guidance",
+        "method": "POST",
+        "operationClass": "non-mutating-current-guidance",
+        "requestParser": "parseBreedingProjectWizardRequestV1",
+        "mutationAdmission": "not-applicable",
+        "runtimePath": "server/api/breeding/projects/wizard/guidance.post.ts",
+        "evidencePath": "tests/server/breedingProjectGuidanceRoute.test.ts",
+        "requiredNeedle": "requires authentication and forwards closed GM selectors without a Profile"
+      },
+      {
+        "route": "/api/breeding/workshop",
+        "method": "GET",
+        "operationClass": "role-projected-read",
+        "requestParser": "parseBreedingWorkshopQueryV1",
+        "mutationAdmission": "not-applicable",
+        "runtimePath": "server/api/breeding/workshop.get.ts",
+        "evidencePath": "tests/server/breedingWorkshopRoute.test.ts",
+        "requiredNeedle": "requires authentication and forwards only the closed GM ownership query"
+      },
+      {
+        "route": "/api/breeding/workshop/activity",
+        "method": "GET",
+        "operationClass": "role-projected-read",
+        "requestParser": "parseBreedingWorkshopActivityRequestV1",
+        "mutationAdmission": "not-applicable",
+        "runtimePath": "server/api/breeding/workshop/activity.get.ts",
+        "evidencePath": "tests/server/breedingWorkshopActivityRoute.test.ts",
+        "requiredNeedle": "requires authentication and forwards a closed GM Trainer selector"
+      }
+    ],
+    "authorizationSurfaces": [
+      {
+        "surfaceId": "actor-trainer-parent-and-breeder-authority",
+        "runtimePaths": [
+          "server/domain/breeding/authorization.ts",
+          "shared/breeding/authorization.ts"
+        ],
+        "evidencePath": "tests/shared/breedingAuthorizationContract.test.ts",
+        "requiredNeedle": "authorizes same-owner setup only with exact actor, owner, breeder, parent, read-set, and Edge evidence",
+        "certifiedBoundary": "exact-command-profile-trainer-parent-revision-read-set-and-provider-evidence"
+      },
+      {
+        "surfaceId": "workshop-trainer-context",
+        "runtimePaths": [
+          "server/useCases/loadBreedingWorkshop.ts"
+        ],
+        "evidencePath": "tests/server/breedingWorkshop.test.ts",
+        "requiredNeedle": "shows players only exact Profile-linked Trainers and rejects foreign selection",
+        "certifiedBoundary": "players-see-only-selected-Profile-linked-Trainers-GM-directory-cursor-never-authorizes"
+      },
+      {
+        "surfaceId": "project-wizard-parent-discovery",
+        "runtimePaths": [
+          "server/useCases/loadBreedingProjectWizard.ts",
+          "server/useCases/discoverBreedingParents.ts"
+        ],
+        "evidencePath": "tests/server/breedingProjectWizard.test.ts",
+        "requiredNeedle": "rejects stale Profiles, hidden parents, malformed authority, and cross-database repositories",
+        "certifiedBoundary": "current-destination-context-and-roster-membership-only"
+      },
+      {
+        "surfaceId": "project-confirmation",
+        "runtimePaths": [
+          "server/useCases/loadBreedingProjectChoices.ts"
+        ],
+        "evidencePath": "tests/server/breedingProjectChoices.test.ts",
+        "requiredNeedle": "lets an authorised player explicitly create under the current minimum-Level policy and rejects stale parent revisions",
+        "certifiedBoundary": "rebuild-current-profile-trainers-parents-options-providers-and-one-database-authority-before-create"
+      },
+      {
+        "surfaceId": "consent-lifecycle",
+        "runtimePaths": [
+          "server/useCases/manageBreedingConsentWorkflow.ts",
+          "server/useCases/manageBreedingLifecycleRecovery.ts"
+        ],
+        "evidencePath": "tests/server/breedingLifecycleRecovery.test.ts",
+        "requiredNeedle": "fails closed on unauthorized lifecycle reasons, stale clocks, enriched authority, and accessor-backed requests before mutation",
+        "certifiedBoundary": "participant-owned-revision-and-campaign-time-bound-grant-revocation-or-expiry"
+      },
+      {
+        "surfaceId": "egg-hatch-owner",
+        "runtimePaths": [
+          "server/useCases/manageBreedingHatchWorkflow.ts",
+          "server/useCases/completePokemonEggHatch.ts"
+        ],
+        "evidencePath": "tests/server/breedingHatchWorkflow.test.ts",
+        "requiredNeedle": "fails closed on stale, enriched, cross-owner, and non-GM special requests",
+        "certifiedBoundary": "current-Egg-owner-Trainer-control-or-command-bound-GM-authority"
+      },
+      {
+        "surfaceId": "egg-transfer-participants",
+        "runtimePaths": [
+          "server/useCases/managePokemonEggTransferConsent.ts",
+          "server/useCases/transferPokemonEggOwnership.ts"
+        ],
+        "evidencePath": "tests/server/breedingEggTransfer.test.ts",
+        "requiredNeedle": "grants each participant consent only through current Profile control and supports targeted polling",
+        "certifiedBoundary": "source-and-recipient-control-checked-independently-without-GM-substitution"
+      },
+      {
+        "surfaceId": "realtime-delivery-and-adoption",
+        "runtimePaths": [
+          "server/realtime/breedingRealtime.ts",
+          "server/realtime/realtimeEventAccessPolicy.ts"
+        ],
+        "evidencePath": "tests/server/breedingRealtime.test.ts",
+        "requiredNeedle": "requires exact audience-event binding and direct selected-Profile Trainer control",
+        "certifiedBoundary": "visibility-before-control-and-current-audience-descriptor-match"
+      }
+    ],
+    "consentCases": [
+      {
+        "caseId": "same-owner-current-control",
+        "evidencePath": "tests/shared/breedingAuthorizationContract.test.ts",
+        "requiredNeedle": "authorizes same-owner setup only with exact actor, owner, breeder, parent, read-set, and Edge evidence",
+        "certifiedOutcome": "same-owner setup requires exact current control but no fabricated consent"
+      },
+      {
+        "caseId": "cross-owner-no-private-preview",
+        "evidencePath": "tests/shared/breedingAuthorizationContract.test.ts",
+        "requiredNeedle": "denies cross-owner mechanics preview before a consent-bearing project exists",
+        "certifiedOutcome": "private mechanics remain unresolved before consent"
+      },
+      {
+        "caseId": "cross-owner-awaiting-project",
+        "evidencePath": "tests/server/breedingProjectInitialProgress.test.ts",
+        "requiredNeedle": "creates a cross-owner Project only as awaiting consent with no started clock or private projection",
+        "certifiedOutcome": "creation starts no clock and stores no accepted mechanics"
+      },
+      {
+        "caseId": "positive-exact-later-operation",
+        "evidencePath": "tests/shared/breedingAuthorizationContract.test.ts",
+        "requiredNeedle": "creates an awaiting-consent project, then revalidates positive consent for the exact later operation",
+        "certifiedOutcome": "grant binds current Project parent revision Profile scopes operation and command hash"
+      },
+      {
+        "caseId": "production-transactional-recheck",
+        "evidencePath": "tests/server/breedingEggProduction.test.ts",
+        "requiredNeedle": "revalidates current positive cross-owner consent transactionally without projecting private parent facts",
+        "certifiedOutcome": "Egg acceptance requires current positive evidence inside settlement"
+      },
+      {
+        "caseId": "participant-revocation",
+        "evidencePath": "tests/server/breedingLifecycleRecovery.test.ts",
+        "requiredNeedle": "revokes positive cross-owner consent and checkpoints the active Project in one rollback-safe transaction",
+        "certifiedOutcome": "revocation blocks later use and preserves audit"
+      },
+      {
+        "caseId": "campaign-time-expiry",
+        "evidencePath": "tests/server/breedingLifecycleRecovery.test.ts",
+        "requiredNeedle": "expires a Project exactly at consent equality and supports audited GM abandonment without treating override as consent",
+        "certifiedOutcome": "campaign time alone settles expiry at equality"
+      },
+      {
+        "caseId": "gm-project-nonsubstitution",
+        "evidencePath": "tests/server/breedingProductionSnapshots.test.ts",
+        "requiredNeedle": "requires current positive cross-owner consent reads even when GM override IDs are present",
+        "certifiedOutcome": "GM setup override never replaces participant consent"
+      },
+      {
+        "caseId": "dual-egg-transfer-consent",
+        "evidencePath": "tests/server/breedingEggTransfer.test.ts",
+        "requiredNeedle": "atomically transfers one current Egg, consumes both consents, preserves mechanics, and retries silently",
+        "certifiedOutcome": "source-gift and recipient-acceptance are independently positive and consumed once"
+      },
+      {
+        "caseId": "gm-transfer-nonsubstitution",
+        "evidencePath": "tests/server/breedingEggTransfer.test.ts",
+        "requiredNeedle": "orchestrates private source offer, recipient acceptance, and atomic ownership transfer without GM consent substitution",
+        "certifiedOutcome": "GM authority creates neither participant approval"
+      },
+      {
+        "caseId": "post-acceptance-immutability",
+        "evidencePath": "tests/server/breedingParentSourceChange.test.ts",
+        "requiredNeedle": "preserves an accepted Egg byte-for-byte for every later parent and source change",
+        "certifiedOutcome": "revocation or parent changes never rewrite an accepted Egg"
+      }
+    ],
+    "privacyFieldCoverage": [
+      {
+        "privacyFieldId": "public-summary",
+        "audiences": [
+          "public",
+          "owner",
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "campaign-configured-bounded-summary-only",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "projects public summaries without raw IDs, identities, revisions, exact time, or mechanics",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "coarse-lifecycle-status",
+        "audiences": [
+          "public",
+          "owner",
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "public-safe-enum-only",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "projects public summaries without raw IDs, identities, revisions, exact time, or mechanics",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "project-id",
+        "audiences": [
+          "owner",
+          "participating-owner",
+          "gm",
+          "diagnostic"
+        ],
+        "rule": "diagnostic-may-see-hash-only",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "binds five structurally separate audience schemas and keyed identity policy",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "egg-id",
+        "audiences": [
+          "owner",
+          "gm",
+          "diagnostic"
+        ],
+        "rule": "diagnostic-may-see-hash-only",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "binds five structurally separate audience schemas and keyed identity policy",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "owner-trainer-identity",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "never-implied-by-public-summary",
+        "evidencePath": "tests/server/breedingWorkshopActivity.test.ts",
+        "requiredNeedle": "projects owner progress, human traits, bounded history, and transfer action with cross-owner redaction",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "breeder-identity",
+        "audiences": [
+          "owner",
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "only-when-required-for-consent-or-owned-workflow",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "gives the owner workflow facts while structurally hiding the participating parent and raw checks",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "own-parent-safe-summary",
+        "audiences": [
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "participant-receives-only-their-controlled-parent",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "limits participating owners to their parent, consent request, and own contribution attribution",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "other-parent-identity",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "never-in-participant-projection-without-separate-authorized-reveal",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "gives the owner workflow facts while structurally hiding the participating parent and raw checks",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "full-parent-snapshots",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "immutable-private-mechanics",
+        "evidencePath": "tests/server/breedingProductionSnapshots.test.ts",
+        "requiredNeedle": "emits only a bounded owner/GM summary and never projects private snapshot mechanics or identities",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "consent-request",
+        "audiences": [
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "project-purpose-own-parent-revision-scopes-and-expiry-only",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "limits participating owners to their parent, consent request, and own contribution attribution",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "consenting-profile-identity",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "not-shared-across-participants",
+        "evidencePath": "tests/server/breedingWorkshopActivity.test.ts",
+        "requiredNeedle": "projects an active dual-consent transfer without Profile, consent, or evidence identity",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "exact-project-timeline",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "campaign-minute-values",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "gives the owner workflow facts while structurally hiding the participating parent and raw checks",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "exact-incubation-progress",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "participant-and-public-receive-coarse-status-only",
+        "evidencePath": "tests/server/breedingIncubation.test.ts",
+        "requiredNeedle": "requires exact owner control or one command-bound GM override and limits progress queries to current viewers",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "trait-choice-offers",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "server-issued-options-for-authorized-chooser-only",
+        "evidencePath": "tests/server/breedingProjectChoices.test.ts",
+        "requiredNeedle": "issues rank-bound traits and explicit GM maturity choices, then creates one replay-safe Project",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "resolved-offspring-traits",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "other-views-require-separate-sheet-or-campaign-reveal-authority",
+        "evidencePath": "tests/server/breedingHatchWorkflow.test.ts",
+        "requiredNeedle": "inspects, begins, completes, reveals, and exactly replays without duplicate mutation",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "inheritance-candidates",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "owner-sees-candidates-without-private-other-parent-attribution",
+        "evidencePath": "tests/server/breedingInheritanceCandidates.test.ts",
+        "requiredNeedle": "deduplicates by canonical Move ID while retaining every parent, pathway, and evidence row",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "own-inheritance-attribution",
+        "audiences": [
+          "participating-owner",
+          "gm"
+        ],
+        "rule": "participant-sees-only-own-parent-contributions",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "limits participating owners to their parent, consent request, and own contribution attribution",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "full-inheritance-provenance",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "includes-all-parent-and-pathway-evidence",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "gives full strict mechanics only to GM and hash-only traces only to diagnostic operators",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "raw-rolls-and-checks",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "owner-receives-bounded-explanation-not-private-inputs",
+        "evidencePath": "tests/server/breedingHatchWorkflow.test.ts",
+        "requiredNeedle": "redacts a triggered roll from owners and permits only the GM bounded option",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "gm-overrides-and-notes",
+        "audiences": [
+          "gm"
+        ],
+        "rule": "never-public-or-player-projected",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "gives full strict mechanics only to GM and hash-only traces only to diagnostic operators",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "definition-hashes-and-traces",
+        "audiences": [
+          "gm",
+          "diagnostic"
+        ],
+        "rule": "diagnostic-has-no-sheet-command-choice-or-note-payload",
+        "evidencePath": "tests/shared/breedingProjectionContract.test.ts",
+        "requiredNeedle": "gives full strict mechanics only to GM and hash-only traces only to diagnostic operators",
+        "certificationStatus": "structurally-enforced"
+      },
+      {
+        "privacyFieldId": "recovery-state",
+        "audiences": [
+          "owner",
+          "gm"
+        ],
+        "rule": "owner-receives-safe-actionable-status-only",
+        "evidencePath": "tests/server/breedingLifecycleRecovery.test.ts",
+        "requiredNeedle": "inspects and abandons pending operations without exposing command payloads or deleting phase-one audit state",
+        "certificationStatus": "structurally-enforced"
+      }
+    ],
+    "informationFlows": [
+      {
+        "flowId": "browser-to-http-selector-ingress",
+        "direction": "untrusted-browser-to-server",
+        "allowedPayload": "strict-role-profile-context-selectors-opaque-options-and-explicit-confirmation-only",
+        "forbiddenPayload": "commands-rolls-read-sets-receipts-provider-mechanics-or-authority-claims",
+        "runtimePaths": [
+          "server/api/breeding/consent.post.ts",
+          "server/api/breeding/hatch.post.ts",
+          "server/api/breeding/projects/wizard.post.ts",
+          "server/api/breeding/projects/wizard/choices.post.ts",
+          "server/api/breeding/projects/wizard/guidance.post.ts"
+        ],
+        "evidencePath": "tests/e2e/breeding-workshop.spec.ts",
+        "requiredNeedle": "for (const forbidden of ['command', 'scopes', 'readSet', 'receipt', 'roll', 'mechanics'])"
+      },
+      {
+        "flowId": "server-to-workshop-context",
+        "direction": "server-to-authorized-browser",
+        "allowedPayload": "bounded-current-Trainer-contexts-and-coarse-activity-flags",
+        "forbiddenPayload": "aggregate-identities-private-mechanics-or-cross-Profile-Trainers",
+        "runtimePaths": [
+          "server/useCases/loadBreedingWorkshop.ts",
+          "shared/breeding/workshop.ts"
+        ],
+        "evidencePath": "tests/server/breedingWorkshop.test.ts",
+        "requiredNeedle": "projects GM activity as booleans without aggregate identities or mechanics"
+      },
+      {
+        "flowId": "server-to-owner-activity",
+        "direction": "server-to-owner-or-GM",
+        "allowedPayload": "role-specific-bounded-cards-history-actions-and-recovery",
+        "forbiddenPayload": "cross-owner-identities-Profile-consent-operation-roll-or-receipt-evidence",
+        "runtimePaths": [
+          "server/useCases/loadBreedingWorkshopActivity.ts",
+          "shared/breeding/workshopActivity.ts"
+        ],
+        "evidencePath": "tests/server/breedingWorkshopActivity.test.ts",
+        "requiredNeedle": "allows current GM cards to identify participating parents without exposing mechanics evidence"
+      },
+      {
+        "flowId": "server-to-project-guidance",
+        "direction": "server-to-owner-or-GM",
+        "allowedPayload": "owner-guidance-or-bounded-GM-count-and-enum-diagnostics",
+        "forbiddenPayload": "provider-failure-parent-identity-hash-or-private-mechanic-diagnostics-to-owner",
+        "runtimePaths": [
+          "server/useCases/loadBreedingProjectGuidance.ts",
+          "shared/breeding/projectGuidance.ts"
+        ],
+        "evidencePath": "tests/server/breedingProjectGuidance.test.ts",
+        "requiredNeedle": "gives only GMs bounded topology, candidate, policy, facility, and final-validation diagnostics"
+      },
+      {
+        "flowId": "server-to-private-consent-center",
+        "direction": "server-to-exact-participant-or-GM",
+        "allowedPayload": "own-request-coarse-counterpart-state-and-bounded-notification-counts",
+        "forbiddenPayload": "counterpart-identity-private-choice-aggregate-evidence-or-GM-consent-substitution",
+        "runtimePaths": [
+          "server/useCases/manageBreedingConsentWorkflow.ts",
+          "shared/breeding/consentWorkflow.ts"
+        ],
+        "evidencePath": "tests/server/breedingEggTransfer.test.ts",
+        "requiredNeedle": "creates linked positive consents and projects only coarse targeted invitation state"
+      },
+      {
+        "flowId": "server-to-hatch-decision",
+        "direction": "server-to-owner-or-GM",
+        "allowedPayload": "owner-stage-destination-and-reveal-or-GM-bounded-special-review",
+        "forbiddenPayload": "raw-roll-to-owner-roster-identities-command-or-authority-evidence",
+        "runtimePaths": [
+          "server/useCases/manageBreedingHatchWorkflow.ts",
+          "shared/breeding/hatchWorkflow.ts"
+        ],
+        "evidencePath": "tests/server/breedingHatchWorkflow.test.ts",
+        "requiredNeedle": "redacts a triggered roll from owners and permits only the GM bounded option"
+      },
+      {
+        "flowId": "persisted-realtime-to-client",
+        "direction": "committed-server-log-to-authorized-client",
+        "allowedPayload": "refresh-only-hashed-aggregate-descriptor-revision-kind-and-audience-scope",
+        "forbiddenPayload": "parent-consent-Profile-roll-choice-lineage-sheet-or-command-payload",
+        "runtimePaths": [
+          "shared/breeding/realtime.ts",
+          "server/realtime/breedingRealtime.ts"
+        ],
+        "evidencePath": "tests/server/breedingRealtime.test.ts",
+        "requiredNeedle": "builds one bounded, refresh-only event per exact audience descriptor"
+      },
+      {
+        "flowId": "browser-local-persistence",
+        "direction": "browser-memory-to-browser-storage",
+        "allowedPayload": "selected-Profile-identity-and-presentation-preferences-only",
+        "forbiddenPayload": "aggregate-command-consent-provider-roll-mechanics-or-private-projection-cache",
+        "runtimePaths": [
+          "src/composables/breeding/useBreedingWorkshop.ts",
+          "src/utils/playerProfileSelectionStorage.ts"
+        ],
+        "evidencePath": "tests/e2e/breeding-workshop.spec.ts",
+        "requiredNeedle": "const persisted = await page.evaluate(() => JSON.stringify(localStorage))"
+      },
+      {
+        "flowId": "archive-export-and-restore",
+        "direction": "database-to-portable-envelope-or-GM-restore",
+        "allowedPayload": "owner-presentation-only-export-or-GM-bound-digest-backup",
+        "forbiddenPayload": "owner-backup-authority-or-unreviewed-private-record-injection",
+        "runtimePaths": [
+          "shared/breeding/archives.ts",
+          "server/domain/breeding/archives.ts",
+          "server/useCases/manageBreedingArchives.ts"
+        ],
+        "evidencePath": "tests/shared/breedingArchiveContract.test.ts",
+        "requiredNeedle": "keeps owner exports projection-only and privacy-safe under adversarial record injection"
+      }
+    ],
+    "threatCoverage": [
+      {
+        "threatId": "breeding.threat.idor",
+        "assets": [
+          "projects",
+          "eggs",
+          "parents",
+          "consents",
+          "children"
+        ],
+        "mitigations": [
+          "audience-projected-repository-queries",
+          "control-and-visibility-recheck",
+          "opaque-stable-ids"
+        ],
+        "evidencePath": "tests/server/breedingWorkshop.test.ts",
+        "requiredNeedle": "shows players only exact Profile-linked Trainers and rejects foreign selection",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.cross-owner-without-consent",
+        "assets": [
+          "parents",
+          "lineage"
+        ],
+        "mitigations": [
+          "positive-revision-bound-consent",
+          "transactional-consent-recheck",
+          "audited-gm-override"
+        ],
+        "evidencePath": "tests/shared/breedingAuthorizationContract.test.ts",
+        "requiredNeedle": "denies cross-owner mechanics preview before a consent-bearing project exists",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.hidden-parent-leak",
+        "assets": [
+          "private-sheets",
+          "moves",
+          "providers",
+          "ownership"
+        ],
+        "mitigations": [
+          "separate-audience-schemas",
+          "own-parent-only-projection",
+          "redacted-inheritance-attribution"
+        ],
+        "evidencePath": "tests/server/breedingWorkshopActivity.test.ts",
+        "requiredNeedle": "projects owner progress, human traits, bounded history, and transfer action with cross-owner redaction",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.client-mechanics-injection",
+        "assets": [
+          "traits",
+          "species",
+          "moves",
+          "time",
+          "rewards"
+        ],
+        "mitigations": [
+          "exact-command-parsers",
+          "server-issued-option-ids",
+          "server-owned-state-plans"
+        ],
+        "evidencePath": "tests/server/breedingProjectChoicesRoute.test.ts",
+        "requiredNeedle": "rejects mechanics claims, unknown fields, duplicates, sparse values, and malformed confirmation",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.reroll-or-replay",
+        "assets": [
+          "checks",
+          "rolls",
+          "choices",
+          "spends"
+        ],
+        "mitigations": [
+          "operation-command-hash",
+          "persisted-roll-ledger",
+          "exact-retry-result"
+        ],
+        "evidencePath": "tests/server/breedingEggProduction.test.ts",
+        "requiredNeedle": "returns exact retry without rerolling, revising aggregates, or republishing",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.operation-id-collision",
+        "assets": [
+          "operation-ledger"
+        ],
+        "mitigations": [
+          "reject-different-command-hash",
+          "bounded-stable-operation-id"
+        ],
+        "evidencePath": "tests/shared/breedingOperationContract.test.ts",
+        "requiredNeedle": "hashes the complete parsed semantic command and rejects operation-ID intent drift",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.concurrent-double-hatch",
+        "assets": [
+          "egg",
+          "child-sheet",
+          "trainer-reward"
+        ],
+        "mitigations": [
+          "expected-revision",
+          "single-sqlite-transaction",
+          "unique-egg-child-link",
+          "stored-terminal-result"
+        ],
+        "evidencePath": "tests/server/breedingHatchCompletion.test.ts",
+        "requiredNeedle": "allows only one of two stale concurrent hatch commands across SQLite connections",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.stale-consent-toctou",
+        "assets": [
+          "consent",
+          "parents"
+        ],
+        "mitigations": [
+          "parent-revision-snapshot",
+          "transactional-read-set",
+          "recheck-before-egg-acceptance"
+        ],
+        "evidencePath": "tests/server/breedingProductionSnapshots.test.ts",
+        "requiredNeedle": "requires current positive cross-owner consent reads even when GM override IDs are present",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.realtime-or-export-leak",
+        "assets": [
+          "private-mechanics",
+          "profile-identities"
+        ],
+        "mitigations": [
+          "refresh-signals-only",
+          "audience-filter-before-persist-or-send",
+          "gm-only-private-export"
+        ],
+        "evidencePath": "tests/server/breedingRealtime.test.ts",
+        "requiredNeedle": "builds one bounded, refresh-only event per exact audience descriptor",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.restore-tampering",
+        "assets": [
+          "lineage",
+          "rolls",
+          "operations",
+          "rewards"
+        ],
+        "mitigations": [
+          "digest-envelope",
+          "referential-validation",
+          "duplicate-identity-rejection",
+          "ruleset-availability-check"
+        ],
+        "evidencePath": "tests/shared/breedingArchiveContract.test.ts",
+        "requiredNeedle": "rejects non-plain, accessor-backed, sparse, enriched, duplicate, and hash-drifted documents",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.legacy-authority-confusion",
+        "assets": [
+          "egg-authority",
+          "lineage"
+        ],
+        "mitigations": [
+          "reject-map-metadata-eggs",
+          "legacy-fields-projection-only",
+          "one-egg-repository"
+        ],
+        "evidencePath": "tests/shared/breedingArchiveContract.test.ts",
+        "requiredNeedle": "source-hash-binds migrations and quarantines legacy map metadata without runtime output",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.resource-exhaustion",
+        "assets": [
+          "server-memory",
+          "sqlite",
+          "realtime"
+        ],
+        "mitigations": [
+          "closed-bounds",
+          "pagination",
+          "single-worker-maintenance-checks",
+          "rate-limits"
+        ],
+        "evidencePath": "tests/server/breedingWriteRateLimit.test.ts",
+        "requiredNeedle": "bounds bucket memory, fails closed for a new key, and prunes only expired windows",
+        "certificationStatus": "covered"
+      },
+      {
+        "threatId": "breeding.threat.parent-change-after-acceptance",
+        "assets": [
+          "accepted-egg-blueprint"
+        ],
+        "mitigations": [
+          "immutable-parent-snapshots",
+          "definition-hashes",
+          "no-retroactive-reconciliation"
+        ],
+        "evidencePath": "tests/server/breedingParentSourceChange.test.ts",
+        "requiredNeedle": "preserves an accepted Egg byte-for-byte for every later parent and source change",
+        "certificationStatus": "covered"
+      }
+    ],
+    "malformedInputCoverage": [
+      {
+        "caseId": "unknown-object-field",
+        "evidencePath": "tests/shared/breedingOperationContract.test.ts",
+        "requiredNeedle": "rejects unknown fields, roll values, underdeclared or noncanonical scopes, and self-recovery",
+        "expectedOutcome": "reject-before-authority-or-mutation"
+      },
+      {
+        "caseId": "accessor-backed-object",
+        "evidencePath": "tests/shared/breedingOperationContract.test.ts",
+        "requiredNeedle": "rejects accessors, unsafe identities, malformed versions, and enriched arrays",
+        "expectedOutcome": "reject-without-invoking-getter"
+      },
+      {
+        "caseId": "sparse-or-enriched-array",
+        "evidencePath": "tests/shared/breedingWorkshopContract.test.ts",
+        "requiredNeedle": "rejects enriched, accessor-backed, sparse, unsorted, and overfull pages",
+        "expectedOutcome": "reject-before-projection-adoption"
+      },
+      {
+        "caseId": "unknown-schema-version",
+        "evidencePath": "tests/shared/breedingArchiveContract.test.ts",
+        "requiredNeedle": "rejects unknown versions at every portable boundary",
+        "expectedOutcome": "reject-without-fallback"
+      },
+      {
+        "caseId": "unsafe-identifier-control-or-traversal",
+        "evidencePath": "tests/shared/breedingArchiveContract.test.ts",
+        "requiredNeedle": "enforces byte limits and rejects unsafe identifiers, traversal, controls, and unbounded source metadata",
+        "expectedOutcome": "reject-without-echoing-private-input"
+      },
+      {
+        "caseId": "duplicate-list-identity",
+        "evidencePath": "tests/shared/breedingOperationContract.test.ts",
+        "requiredNeedle": "rejects unknown fields, roll values, underdeclared or noncanonical scopes, and self-recovery",
+        "expectedOutcome": "reject-noncanonical-or-duplicate-scopes"
+      },
+      {
+        "caseId": "hash-or-definition-drift",
+        "evidencePath": "tests/server/breedingProductionSnapshots.test.ts",
+        "requiredNeedle": "fails closed on stale parent revisions, source hashes, compiled specs, roles, and Move-provider evidence",
+        "expectedOutcome": "reject-before-Egg-acceptance"
+      },
+      {
+        "caseId": "stale-revision-or-clock",
+        "evidencePath": "tests/server/breedingEggProduction.test.ts",
+        "requiredNeedle": "rejects a stale campaign-clock read before drawing or creating lifecycle authority",
+        "expectedOutcome": "persist-no-roll-and-create-no-Egg"
+      },
+      {
+        "caseId": "Promise-like-or-asynchronous-provider",
+        "evidencePath": "tests/server/breedingEggTransfer.test.ts",
+        "requiredNeedle": "fails closed at expiry equality, on stale Trainer authority, and on Promise-like control providers",
+        "expectedOutcome": "reject-synchronous-authority-gap"
+      },
+      {
+        "caseId": "stored-row-column-or-JSON-drift",
+        "evidencePath": "tests/server/breedingRepositories.test.ts",
+        "requiredNeedle": "fails closed on column drift and non-canonical stored JSON without exposing the payload",
+        "expectedOutcome": "raise-bounded-corruption-error"
+      },
+      {
+        "caseId": "client-mechanics-claim",
+        "evidencePath": "tests/server/breedingProjectChoicesRoute.test.ts",
+        "requiredNeedle": "rejects mechanics claims, unknown fields, duplicates, sparse values, and malformed confirmation",
+        "expectedOutcome": "reject-at-HTTP-boundary"
+      },
+      {
+        "caseId": "role-Profile-or-cross-owner-contradiction",
+        "evidencePath": "tests/server/breedingHatchWorkflow.test.ts",
+        "requiredNeedle": "fails closed on stale, enriched, cross-owner, and non-GM special requests",
+        "expectedOutcome": "reject-before-special-or-hatch-mutation"
+      },
+      {
+        "caseId": "overfull-page-or-choice-list",
+        "evidencePath": "tests/shared/breedingWorkshopContract.test.ts",
+        "requiredNeedle": "rejects enriched, accessor-backed, sparse, unsorted, and overfull pages",
+        "expectedOutcome": "reject-over-limit-projection"
+      },
+      {
+        "caseId": "deterministic-fuzzed-snapshot-or-identity",
+        "evidencePath": "tests/server/breedingPureRulesConformance.test.ts",
+        "requiredNeedle": "fuzzes strict snapshots and identity boundaries with a fixed 2,048-case seed",
+        "expectedOutcome": "all-fixed-seed-malformations-fail-closed"
+      }
+    ],
+    "abuseControls": [
+      {
+        "limitId": "commandJsonBytes",
+        "policyValue": 32768,
+        "enforcementKind": "bounded-JSON-ingress-and-durable-command-storage",
+        "runtimePaths": [
+          "server/security/breedingRequestBody.ts",
+          "server/storage/breedingOperationRepository.ts"
+        ],
+        "evidencePath": "tests/server/breedingRequestBody.test.ts",
+        "requiredNeedle": "accepts strict UTF-8 JSON through the exact policy byte limit",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "realtimeEventJsonBytes",
+        "policyValue": 4096,
+        "enforcementKind": "canonical-realtime-event-byte-limit",
+        "runtimePaths": [
+          "shared/breeding/realtime.ts"
+        ],
+        "evidencePath": "tests/server/breedingRealtime.test.ts",
+        "requiredNeedle": "builds one bounded, refresh-only event per exact audience descriptor",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "exportEnvelopeBytes",
+        "policyValue": 67108864,
+        "enforcementKind": "archive-envelope-byte-limit",
+        "runtimePaths": [
+          "shared/breeding/archives.ts",
+          "server/domain/breeding/archives.ts"
+        ],
+        "evidencePath": "tests/shared/breedingArchiveContract.test.ts",
+        "requiredNeedle": "enforces byte limits and rejects unsafe identifiers, traversal, controls, and unbounded source metadata",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "stableIdCharacters",
+        "policyValue": 160,
+        "enforcementKind": "strict-bounded-identity-parsers",
+        "runtimePaths": [
+          "shared/breeding/ids.ts",
+          "shared/breeding/operations.ts"
+        ],
+        "evidencePath": "tests/shared/breedingOperationContract.test.ts",
+        "requiredNeedle": "rejects accessors, unsafe identities, malformed versions, and enriched arrays",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "boundedNarrativeCharacters",
+        "policyValue": 500,
+        "enforcementKind": "closed-schema-no-client-narrative-authority",
+        "runtimePaths": [
+          "shared/breeding/projections.ts",
+          "shared/breeding/operations.ts"
+        ],
+        "evidencePath": "tests/server/breedingConsentWorkflowRoute.test.ts",
+        "requiredNeedle": "rejects enriched, contradictory, unconfirmed, and malformed mutation requests",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "parentsPerBreedingProject",
+        "policyValue": 2,
+        "enforcementKind": "strict-two-parent-tuples",
+        "runtimePaths": [
+          "shared/breeding/project.ts",
+          "shared/breeding/operations.ts"
+        ],
+        "evidencePath": "tests/server/breedingProjectSetupValidation.test.ts",
+        "requiredNeedle": "composes current ownership, minimum-Level maturity, no-facility policy, and compatibility into ready authority",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "consentsPerBreedingProject",
+        "policyValue": 2,
+        "enforcementKind": "cross-owner-parent-count-and-consent-array-bound",
+        "runtimePaths": [
+          "server/useCases/produceBreedingProjectEgg.ts",
+          "server/domain/breeding/productionSnapshots.ts"
+        ],
+        "evidencePath": "tests/server/breedingEggProduction.test.ts",
+        "requiredNeedle": "revalidates current positive cross-owner consent transactionally without projecting private parent facts",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "activeProjectsPerParent",
+        "policyValue": 1,
+        "enforcementKind": "atomic-active-parent-project-admission",
+        "runtimePaths": [
+          "server/storage/breedingProjectRepository.ts"
+        ],
+        "evidencePath": "tests/server/breedingRepositories.test.ts",
+        "requiredNeedle": "strictly stores, lists, exactly replays, and optimistically replaces projects",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "serverIssuedOptionsPerChoice",
+        "policyValue": 64,
+        "enforcementKind": "strict-offer-option-limit",
+        "runtimePaths": [
+          "shared/breeding/ledgers.ts",
+          "shared/breeding/projections.ts"
+        ],
+        "evidencePath": "tests/shared/breedingLedgerContract.test.ts",
+        "requiredNeedle": "rejects missing, extra, contradictory, out-of-range, or duplicate roll evidence",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "effectiveMovesPerParent",
+        "policyValue": 64,
+        "enforcementKind": "strict-effective-Move-snapshot-limit",
+        "runtimePaths": [
+          "server/domain/breeding/inheritanceCandidates.ts"
+        ],
+        "evidencePath": "tests/server/breedingInheritanceCandidates.test.ts",
+        "requiredNeedle": "fails closed on unknown canonical IDs, duplicate provenance, and closed limits",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "inheritanceCandidatesPerEgg",
+        "policyValue": 256,
+        "enforcementKind": "strict-Egg-candidate-limit",
+        "runtimePaths": [
+          "shared/breeding/egg.ts"
+        ],
+        "evidencePath": "tests/server/breedingInheritanceCandidates.test.ts",
+        "requiredNeedle": "fails closed on unknown canonical IDs, duplicate provenance, and closed limits",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "definitionHashesPerAggregate",
+        "policyValue": 256,
+        "enforcementKind": "strict-Egg-definition-hash-limit",
+        "runtimePaths": [
+          "shared/breeding/egg.ts"
+        ],
+        "evidencePath": "tests/shared/pokemonEggContract.test.ts",
+        "requiredNeedle": "rejects enriched, malformed, contradictory, legacy, or auto-Shiny documents",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "operationRolls",
+        "policyValue": 32,
+        "enforcementKind": "roll-ordinal-and-repository-row-limit",
+        "runtimePaths": [
+          "shared/breeding/ledgers.ts",
+          "server/storage/breedingRollRepository.ts"
+        ],
+        "evidencePath": "tests/shared/breedingLedgerContract.test.ts",
+        "requiredNeedle": "rejects missing, extra, contradictory, out-of-range, or duplicate roll evidence",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "pageSizeDefault",
+        "policyValue": 25,
+        "enforcementKind": "repository-default-page-size",
+        "runtimePaths": [
+          "server/storage/breedingRepositorySupport.ts"
+        ],
+        "evidencePath": "tests/server/breedingRepositories.test.ts",
+        "requiredNeedle": "binds strict parsing, optimistic replacement, exact replay, privacy, and caller-owned transaction policy",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "pageSizeMaximum",
+        "policyValue": 100,
+        "enforcementKind": "repository-maximum-page-size",
+        "runtimePaths": [
+          "server/storage/breedingRepositorySupport.ts",
+          "shared/breeding/workshop.ts"
+        ],
+        "evidencePath": "tests/shared/breedingWorkshopContract.test.ts",
+        "requiredNeedle": "rejects enriched, accessor-backed, sparse, unsorted, and overfull pages",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "writeCommandsPerProfilePerMinute",
+        "policyValue": 30,
+        "enforcementKind": "per-Profile-fixed-window-request-admission",
+        "runtimePaths": [
+          "server/security/breedingWriteRateLimit.ts"
+        ],
+        "evidencePath": "tests/server/breedingWriteRateLimit.test.ts",
+        "requiredNeedle": "binds the exact security-policy limits and rejects excess player writes with a bounded retry",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "gmWriteCommandsPerSessionPerMinute",
+        "policyValue": 120,
+        "enforcementKind": "conservative-process-session-fixed-window-request-admission",
+        "runtimePaths": [
+          "server/security/breedingWriteRateLimit.ts"
+        ],
+        "evidencePath": "tests/server/breedingWriteRateLimit.test.ts",
+        "requiredNeedle": "isolates player Profile buckets and applies the stricter aggregate GM-session bucket",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "consentMaximumCampaignMinutes",
+        "policyValue": 525600,
+        "enforcementKind": "strict-campaign-horizon-parser",
+        "runtimePaths": [
+          "shared/breeding/ledgers.ts"
+        ],
+        "evidencePath": "tests/shared/breedingLedgerContract.test.ts",
+        "requiredNeedle": "self-hashes, detaches, replays exact identities, and rejects changed identity facts",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "exactRetryRetention",
+        "policyValue": "permanent-with-campaign-data",
+        "enforcementKind": "durable-ledger-retention-with-campaign-data",
+        "runtimePaths": [
+          "server/storage/breedingOperationRepository.ts",
+          "server/storage/breedingOperationEvidenceRepository.ts"
+        ],
+        "evidencePath": "tests/server/breedingOperationRepository.test.ts",
+        "requiredNeedle": "retains pending commands across restart and bounds recovery listings",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "negativeOrUnsafeInteger",
+        "policyValue": "reject",
+        "enforcementKind": "strict-safe-integer-rejection",
+        "runtimePaths": [
+          "shared/breeding/operations.ts",
+          "server/storage/breedingRepositorySupport.ts"
+        ],
+        "evidencePath": "tests/shared/breedingOperationContract.test.ts",
+        "requiredNeedle": "rejects accessors, unsafe identities, malformed versions, and enriched arrays",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "unknownObjectField",
+        "policyValue": "reject",
+        "enforcementKind": "exact-own-enumerable-field-rejection",
+        "runtimePaths": [
+          "shared/breeding/operations.ts",
+          "shared/breeding/projections.ts"
+        ],
+        "evidencePath": "tests/shared/breedingOperationContract.test.ts",
+        "requiredNeedle": "rejects unknown fields, roll values, underdeclared or noncanonical scopes, and self-recovery",
+        "certificationStatus": "active"
+      },
+      {
+        "limitId": "duplicateListIdentity",
+        "policyValue": "reject",
+        "enforcementKind": "canonical-sorted-unique-list-rejection",
+        "runtimePaths": [
+          "shared/breeding/operations.ts",
+          "shared/breeding/ledgers.ts"
+        ],
+        "evidencePath": "tests/shared/breedingLedgerContract.test.ts",
+        "requiredNeedle": "rejects missing, extra, contradictory, out-of-range, or duplicate roll evidence",
+        "certificationStatus": "active"
+      }
+    ],
+    "auditCoverage": [
+      {
+        "requirementId": "operation-id-and-command-hash",
+        "evidencePath": "tests/shared/breedingOperationContract.test.ts",
+        "requiredNeedle": "hashes the complete parsed semantic command and rejects operation-ID intent drift",
+        "certificationStatus": "durable-and-bound"
+      },
+      {
+        "requirementId": "actor-profile-and-role",
+        "evidencePath": "tests/shared/breedingAuthorizationContract.test.ts",
+        "requiredNeedle": "rejects actor drift, invented Breeder labels, unknown fields, and hash tampering",
+        "certificationStatus": "durable-and-bound"
+      },
+      {
+        "requirementId": "aggregate-id-and-revisions",
+        "evidencePath": "tests/server/breedingTransactionCoordinator.test.ts",
+        "requiredNeedle": "rolls Project and event rows back together",
+        "certificationStatus": "durable-and-bound"
+      },
+      {
+        "requirementId": "authorization-and-consent-evidence",
+        "evidencePath": "tests/server/breedingEggProduction.test.ts",
+        "requiredNeedle": "revalidates current positive cross-owner consent transactionally without projecting private parent facts",
+        "certificationStatus": "durable-and-bound"
+      },
+      {
+        "requirementId": "ruleset-source-and-provider-hashes",
+        "evidencePath": "tests/server/breedingInteractionCertification.test.ts",
+        "requiredNeedle": "certifies every reviewed inventory row exactly once against its app-owned canonical record",
+        "certificationStatus": "durable-and-bound"
+      },
+      {
+        "requirementId": "roll-and-choice-identities",
+        "evidencePath": "tests/shared/breedingLedgerContract.test.ts",
+        "requiredNeedle": "rejects missing, extra, contradictory, out-of-range, or duplicate roll evidence",
+        "certificationStatus": "durable-and-bound"
+      },
+      {
+        "requirementId": "gm-override-reason-id",
+        "evidencePath": "tests/shared/breedingAuthorizationContract.test.ts",
+        "requiredNeedle": "requires command-bound, reasoned, target-typed GM override evidence",
+        "certificationStatus": "durable-and-bound"
+      },
+      {
+        "requirementId": "terminal-result-and-event-identities",
+        "evidencePath": "tests/server/breedingTransactionCoordinator.test.ts",
+        "requiredNeedle": "atomically rolls back and recovers Egg, child, Trainer, acquisition history, operation, and events",
+        "certificationStatus": "durable-and-bound"
+      }
+    ],
+    "failurePolicies": {
+      "authorization": "not-found-or-forbidden-without-existence-oracle",
+      "consent": "stable-unavailable-reason-with-own-parent-only-context",
+      "staleRevision": "safe-current-projection-only",
+      "rateLimit": "retry-after-without-private-state",
+      "projectionContradiction": "fail-closed-and-refresh",
+      "replayGap": "replace-from-authoritative-audience-projection"
+    },
+    "invariants": [
+      "authentication-precedes-every-Breeding-API-projection-or-mutation",
+      "Profile-selection-never-authorizes-a-Trainer-unless-current-control-is-rebuilt",
+      "GM-authority-never-substitutes-positive-Project-or-Egg-transfer-consent",
+      "private-mechanics-never-cross-owner-before-consent-or-accepted-Egg-authority",
+      "owner-participant-GM-diagnostic-and-public-projections-are-structurally-distinct",
+      "realtime-and-local-storage-never-carry-mechanics-or-private-authority",
+      "unknown-enriched-accessor-backed-sparse-stale-duplicate-unsafe-or-asynchronous-input-fails-closed",
+      "write-rate-admission-cannot-alter-campaign-time-operation-evidence-randomness-or-terminal-retry",
+      "rate-limit-failure-contains-only-429-and-Retry-After",
+      "one-parent-cannot-enter-two-active-Projects"
+    ],
+    "evidencePaths": [
+      "tests/e2e/breeding-workshop.spec.ts",
+      "tests/server/breedingConsentWorkflowRoute.test.ts",
+      "tests/server/breedingEggProduction.test.ts",
+      "tests/server/breedingEggTransfer.test.ts",
+      "tests/server/breedingHatchCompletion.test.ts",
+      "tests/server/breedingHatchWorkflow.test.ts",
+      "tests/server/breedingHatchWorkflowRoute.test.ts",
+      "tests/server/breedingIncubation.test.ts",
+      "tests/server/breedingInheritanceCandidates.test.ts",
+      "tests/server/breedingInteractionCertification.test.ts",
+      "tests/server/breedingLifecycleRecovery.test.ts",
+      "tests/server/breedingOperationRepository.test.ts",
+      "tests/server/breedingParentSourceChange.test.ts",
+      "tests/server/breedingProductionSnapshots.test.ts",
+      "tests/server/breedingProjectChoices.test.ts",
+      "tests/server/breedingProjectChoicesRoute.test.ts",
+      "tests/server/breedingProjectGuidance.test.ts",
+      "tests/server/breedingProjectGuidanceRoute.test.ts",
+      "tests/server/breedingProjectInitialProgress.test.ts",
+      "tests/server/breedingProjectSetupValidation.test.ts",
+      "tests/server/breedingProjectWizard.test.ts",
+      "tests/server/breedingProjectWizardRoute.test.ts",
+      "tests/server/breedingPureRulesConformance.test.ts",
+      "tests/server/breedingRealtime.test.ts",
+      "tests/server/breedingRepositories.test.ts",
+      "tests/server/breedingRequestBody.test.ts",
+      "tests/server/breedingSecurityCertification.test.ts",
+      "tests/server/breedingTransactionCoordinator.test.ts",
+      "tests/server/breedingWorkshop.test.ts",
+      "tests/server/breedingWorkshopActivity.test.ts",
+      "tests/server/breedingWorkshopActivityRoute.test.ts",
+      "tests/server/breedingWorkshopRoute.test.ts",
+      "tests/server/breedingWriteRateLimit.test.ts",
+      "tests/shared/breedingArchiveContract.test.ts",
+      "tests/shared/breedingAuthorizationContract.test.ts",
+      "tests/shared/breedingLedgerContract.test.ts",
+      "tests/shared/breedingOperationContract.test.ts",
+      "tests/shared/breedingProjectionContract.test.ts",
+      "tests/shared/breedingWorkshopContract.test.ts",
+      "tests/shared/pokemonEggContract.test.ts"
+    ],
+    "summary": {
+      "dimensionsCertified": 6,
+      "audiencesCertified": 5,
+      "apiSurfacesCertified": 7,
+      "authorizationSurfacesCertified": 8,
+      "consentCasesCertified": 11,
+      "privacyFieldsCertified": 22,
+      "informationFlowsCertified": 9,
+      "threatsCertified": 13,
+      "malformedInputClassesCertified": 14,
+      "abuseControlsCertified": 22,
+      "auditRequirementsCertified": 8,
+      "result": "pass"
+    }
+  }
+}

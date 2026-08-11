@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 83,
+    "covered": 84,
     "in-progress": 1,
-    "planned": 6,
+    "planned": 5,
     "blocked": 0
   },
   "requirements": [
@@ -2154,8 +2154,24 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/security-policy.json",
+        "data/breeding-automation/security-certification.json",
+        "server/security/breedingRequestBody.ts",
+        "server/security/breedingWriteRateLimit.ts",
+        "tests/server/breedingRequestBody.test.ts",
+        "tests/server/breedingWriteRateLimit.test.ts",
+        "tests/server/breedingSecurityCertification.test.ts",
+        "tests/shared/breedingAuthorizationContract.test.ts",
+        "tests/shared/breedingProjectionContract.test.ts",
+        "tests/server/breedingEggTransfer.test.ts",
+        "tests/server/breedingRealtime.test.ts",
+        "tests/shared/breedingArchiveContract.test.ts",
+        "tests/server/breedingRepositories.test.ts",
+        "docs/breeding/security-and-privacy.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"
       ]
@@ -2170,7 +2186,7 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

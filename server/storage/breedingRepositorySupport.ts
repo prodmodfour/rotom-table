@@ -1,5 +1,6 @@
 import { stableJsonStringify } from '#shared/automation/stableJson'
 
+export const BREEDING_REPOSITORY_PAGE_SIZE_DEFAULT = 25 as const
 export const BREEDING_REPOSITORY_PAGE_SIZE_MAXIMUM = 100 as const
 
 export class BreedingRepositoryCorruptionError extends Error {
@@ -43,7 +44,7 @@ export const parseBreedingRepositoryCampaignMinute = (value: unknown, label: str
   return Number(value)
 }
 
-export const parseBreedingRepositoryLimit = (value: unknown = BREEDING_REPOSITORY_PAGE_SIZE_MAXIMUM): number => {
+export const parseBreedingRepositoryLimit = (value: unknown = BREEDING_REPOSITORY_PAGE_SIZE_DEFAULT): number => {
   if (!Number.isSafeInteger(value) || Number(value) < 1 || Number(value) > BREEDING_REPOSITORY_PAGE_SIZE_MAXIMUM) {
     throw new Error(`Breeding repository limit must be a safe integer from 1 through ${BREEDING_REPOSITORY_PAGE_SIZE_MAXIMUM}.`)
   }

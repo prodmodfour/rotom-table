@@ -19,7 +19,13 @@ import { createSqliteBreedingProjectRepository } from '../../server/storage/bree
 import { createSqlitePokemonEggRepository } from '../../server/storage/pokemonEggRepository'
 import { createSqliteBreedingConsentRepository } from '../../server/storage/breedingConsentRepository'
 import { createSqliteTrainerSpeciesAcquisitionRepository } from '../../server/storage/trainerSpeciesAcquisitionRepository'
-import { BreedingRepositoryCorruptionError, BreedingRepositoryIdentityCollisionError } from '../../server/storage/breedingRepositorySupport'
+import {
+  BREEDING_REPOSITORY_PAGE_SIZE_DEFAULT,
+  BREEDING_REPOSITORY_PAGE_SIZE_MAXIMUM,
+  BreedingRepositoryCorruptionError,
+  BreedingRepositoryIdentityCollisionError,
+  parseBreedingRepositoryLimit,
+} from '../../server/storage/breedingRepositorySupport'
 
 const databases: RotomDatabase[] = []
 const tempRoots: string[] = []
@@ -153,6 +159,10 @@ describe('breeding aggregate repositories', () => {
     expect(policy.definition.replace).toMatchObject({ expectedRevision: 'required-safe-integer', compareAndSwap: 'UPDATE-WHERE-identity-and-expected-revision', outcomes: ['applied', 'missing', 'stale'] })
     expect(policy.definition.transaction).toMatchObject({ owner: 'use-case', repositoryBeginsIndependentTransaction: false, callerOwnedSQLiteTransactionParticipation: true })
     expect(policy.definition.authority).toMatchObject({ mapDependency: 'none', encounterDependency: 'none', eggSheetKind: 'none', legacyFields: 'none' })
+    expect(BREEDING_REPOSITORY_PAGE_SIZE_DEFAULT).toBe(25)
+    expect(BREEDING_REPOSITORY_PAGE_SIZE_MAXIMUM).toBe(100)
+    expect(parseBreedingRepositoryLimit()).toBe(25)
+    expect(() => parseBreedingRepositoryLimit(101)).toThrow('safe integer from 1 through 100')
   })
 
   it('strictly stores, lists, exactly replays, and optimistically replaces projects', () => {
@@ -169,6 +179,9 @@ describe('breeding aggregate repositories', () => {
     expect(repository.replace({ expectedRevision: 0, document: next })).toEqual({ kind: 'stale', expectedRevision: 0, currentRevision: 1 })
     expect(repository.replace({ expectedRevision: 0, document: { ...next, projectId: projectId(99) } as any })).toEqual({ kind: 'missing', expectedRevision: 0, currentRevision: null })
     expect(() => repository.insert(project(initial.projectId, op(1), 'trainer-other'))).toThrow(BreedingRepositoryIdentityCollisionError)
+    insertOperation(database, 7)
+    expect(() => repository.insert(project(projectId(2), op(7))))
+      .toThrow('A breeding parent may belong to at most one active Project.')
   })
 
   it('strictly stores canonical Eggs and applies only legal optimistic successors', () => {

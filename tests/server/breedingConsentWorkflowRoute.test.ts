@@ -2,7 +2,7 @@ import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ManageBreedingConsentWorkflowError } from '../../server/useCases/manageBreedingConsentWorkflow'
 
-const mocks = vi.hoisted(() => ({ manage: vi.fn(), resolveProfile: vi.fn() }))
+const mocks = vi.hoisted(() => ({ manage: vi.fn(), resolveProfile: vi.fn(), enforceRate: vi.fn() }))
 vi.mock('../../server/useCases/manageBreedingConsentWorkflow', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../server/useCases/manageBreedingConsentWorkflow')>()
   return { ...original, manageBreedingConsentWorkflow: mocks.manage }
@@ -10,6 +10,10 @@ vi.mock('../../server/useCases/manageBreedingConsentWorkflow', async (importOrig
 vi.mock('../../server/policies/playerProfilePolicy', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../server/policies/playerProfilePolicy')>()
   return { ...original, resolvePlayerProfileForPolicy: mocks.resolveProfile }
+})
+vi.mock('../../server/security/breedingWriteRateLimit', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../server/security/breedingWriteRateLimit')>()
+  return { ...original, enforceBreedingWriteRateLimit: mocks.enforceRate }
 })
 const route = (await import('../../server/api/breeding/consent.post')).default
 type RouteHandler = EventHandler<EventHandlerRequest, unknown>
@@ -50,6 +54,21 @@ describe('BR-077 private consent workflow API route', () => {
     await expect(invoke('gm', body())).resolves.toEqual({ schemaVersion: 1, audience: 'player' })
     expect(mocks.resolveProfile).not.toHaveBeenCalled()
     expect(mocks.manage).toHaveBeenCalledWith({ role: 'gm', playerProfile: null, request: body() })
+    expect(mocks.enforceRate).not.toHaveBeenCalled()
+  })
+
+  it('admits a strict confirmed mutation through the GM write-rate boundary', async () => {
+    const request = {
+      ...body(),
+      intent: 'grant-project-consent',
+      projectId: `breeding-project:v1:${'7'.repeat(32)}`,
+      expectedProjectRevision: 1,
+      parentSheetSlug: 'pokemon-parent',
+      confirmed: true,
+    }
+    await invoke('gm', request)
+    expect(mocks.enforceRate).toHaveBeenCalledWith(expect.anything(), { role: 'gm', profileId: null })
+    expect(mocks.manage).toHaveBeenCalledWith({ role: 'gm', playerProfile: null, request })
   })
 
   it('resolves the selected Profile before player authorization', async () => {

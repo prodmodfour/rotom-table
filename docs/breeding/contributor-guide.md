@@ -104,6 +104,12 @@ Implement separate public, owner, participating-owner, GM, and diagnostic parser
 
 Fixture data must set `synthetic: true` and `containsCampaignData: false`. Do not commit campaign databases, exports, auth state, traces with private payloads, or local browser storage.
 
+## Security and abuse boundaries
+
+Keep every Breeding POST on `readBreedingJsonRequestBody`; do not call `readBody` directly or raise the 32 KiB policy limit locally. A new mutation intent must use `enforceBreedingWriteRateLimit` only after strict parsing and authenticated Profile resolution, while reads and previews must remain outside write admission. Rate limiting is availability protection only: never use its wall clock, counters, or key as campaign time, command evidence, authorization, randomness, or exact-retry state. A rejection may expose only the bounded status and `Retry-After`.
+
+When adding a list, identity, narrative, option, Move snapshot, candidate, hash, roll, or consent field, bind it to the matching `security-policy.json` abuse limit and add malformed/over-limit evidence. Preserve repository page defaults of 25 and maximum 100. Project creation must continue through atomic repository insertion so one parent cannot enter two active Projects. Update `security-certification.json`, semantic closure, checker assertions, and transitive authority fixture hashes when any audience, privacy field, route, threat, limit, or audit requirement changes.
+
 ## Tests
 
 During implementation, prefer focused single-worker Vitest commands:
