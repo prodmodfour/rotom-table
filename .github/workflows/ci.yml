@@ -16,6 +16,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          # Breeding provenance tests verify immutable blobs at the reviewed
+          # baseline commit, so a shallow checkout is insufficient.
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -45,7 +49,11 @@ jobs:
         run: npm run typecheck
 
       - name: Pure tests
-        run: npm test
+        run: npm test -- --exclude tests/server/encounterWorkspaceProjection.test.ts
+
+      - name: Performance-sensitive encounter projection tests
+        # Wall-clock budgets must not compete with the other Vitest workers.
+        run: npm test -- tests/server/encounterWorkspaceProjection.test.ts --maxWorkers=1 --no-file-parallelism
 
       - name: Nuxt runtime tests
         run: npm run test:nuxt

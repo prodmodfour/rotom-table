@@ -487,10 +487,10 @@ describe('map-backed encounter workspace projection', () => {
         },
       },
     }
-    for (let index = 0; index < 10; index += 1) {
+    for (let index = 0; index < performanceBudgets.measurement.warmupRuns; index += 1) {
       projectMapBackedEncounterWorkspace({ snapshot, policy: { audience: 'gm' } })
     }
-    const samples = Array.from({ length: 50 }, () => {
+    const samples = Array.from({ length: performanceBudgets.measurement.measuredRuns }, () => {
       const startedAt = performance.now()
       const projected = projectMapBackedEncounterWorkspace({ snapshot, policy: { audience: 'gm' } })
       expect(projected.participants).toHaveLength(256)
