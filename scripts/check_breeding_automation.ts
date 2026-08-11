@@ -10,6 +10,10 @@ import {
   BREEDING_PERFORMANCE_BUDGET_POLICY_DEFINITION_SHA256,
   BREEDING_PERFORMANCE_BUDGET_POLICY_V1,
 } from '../shared/breeding/performanceBudgets'
+import {
+  BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_DEFINITION_SHA256,
+  BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_V1,
+} from './breedingProductionAcceptance'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const failures: string[] = []
@@ -40,6 +44,25 @@ assert(BREEDING_PERFORMANCE_BUDGET_POLICY_V1.registry.maximumFamilies === 407
   && BREEDING_PERFORMANCE_BUDGET_POLICY_V1.workshop.maximumContextsPerPage === 100
   && BREEDING_PERFORMANCE_BUDGET_POLICY_V1.projection.maximumProjectionUtf8Bytes <= 2 * 1024 * 1024,
 'breeding performance budget release envelope drifted')
+assert(
+  sha256(stable(BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_V1))
+    === BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_DEFINITION_SHA256,
+  'breeding production acceptance profile hash drifted',
+)
+assert(BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_V1.ticket === 'BR-087'
+  && BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_V1.dataPolicy === 'synthetic-no-campaign-data'
+  && BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_V1.scenarios.length === 5
+  && BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_V1.releaseCommand === 'npm run test:breeding-production-acceptance',
+'breeding production acceptance profile drifted')
+for (const scenario of BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_V1.scenarios) {
+  for (const evidence of scenario.evidence) {
+    const evidencePath = resolve(ROOT, evidence.path)
+    assert(existsSync(evidencePath), `${scenario.scenarioId} production acceptance evidence is missing`)
+    if (existsSync(evidencePath)) {
+      assert(readFileSync(evidencePath, 'utf8').includes(evidence.requiredNeedle), `${scenario.scenarioId} production acceptance evidence drifted`)
+    }
+  }
+}
 
 const recursivelyListJson = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
   .flatMap(entry => entry.isDirectory()
@@ -1420,6 +1443,8 @@ for (const path of [
   'tests/server/breedingArchiveReleaseCertification.test.ts',
   'shared/breeding/performanceBudgets.ts',
   'tests/shared/breedingPerformanceBudgets.test.ts',
+  'scripts/breedingProductionAcceptance.ts',
+  'tests/server/breedingProductionLikeAcceptance.test.ts',
   'tests/server/breedingParentDiscovery.test.ts',
   'tests/server/breedingCampaignClockBatch.test.ts',
   'tests/server/breedingWorkshop.test.ts',

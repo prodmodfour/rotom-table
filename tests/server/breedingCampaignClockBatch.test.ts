@@ -310,9 +310,10 @@ describe('campaign-clock incubation batching', () => {
     expect(createSqlitePokemonEggRepository(seeded.database).get(eggId(4))?.revision).toBe(1)
   })
 
-  it('continues a bounded 100-Egg page with an equal-target command without losing or duplicating progress', () => {
+  it('continues a bounded 100-Egg page across a long timeskip without losing or duplicating progress', () => {
     const seeded = seed(Array.from({ length: 101 }, (_, index) => ({ value: index + 20 })))
-    const firstCommand = batchCommand(seeded.database, 200, 110)
+    const targetCampaignMinute = 100_100
+    const firstCommand = batchCommand(seeded.database, 200, targetCampaignMinute)
     expect(firstCommand.scopes).toHaveLength(101)
     const startedAt = performance.now()
     const first = advanceBreedingCampaignClockIncubationBatch(
@@ -322,7 +323,7 @@ describe('campaign-clock incubation batching', () => {
     const elapsed = performance.now() - startedAt
     expect(first.projection).toMatchObject({
       clockRevision: 2,
-      campaignMinute: 110,
+      campaignMinute: targetCampaignMinute,
       hasMoreDueEggs: true,
     })
     expect(first.projection.entries).toHaveLength(
@@ -333,13 +334,13 @@ describe('campaign-clock incubation batching', () => {
     )
     expect(eventCount(seeded.database)).toBe(400)
 
-    const continuation = batchCommand(seeded.database, 201, 110)
+    const continuation = batchCommand(seeded.database, 201, targetCampaignMinute)
     expect(continuation.scopes).toEqual([
       { kind: 'campaign-clock', expectedRevision: 2 },
       { kind: 'pokemon-egg', eggId: eggId(120), expectedRevision: 0 },
     ])
     const second = advanceBreedingCampaignClockIncubationBatch(
-      request(continuation, 110),
+      request(continuation, targetCampaignMinute),
       options(seeded.database),
     )
     expect(second.projection).toMatchObject({ hasMoreDueEggs: false })
@@ -347,7 +348,7 @@ describe('campaign-clock incubation batching', () => {
     expect(eventCount(seeded.database)).toBe(404)
     expect(createSqlitePokemonEggRepository(seeded.database).listIncubatingBehindClock({
       revision: 2,
-      campaignMinute: 110,
+      campaignMinute: targetCampaignMinute,
       limit: 1,
     })).toEqual([])
   })

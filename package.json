@@ -27,6 +27,7 @@
     "generate:encounter-presentation-inventory": "node scripts/generate-encounter-presentation-inventory.mjs",
     "test:nuxt": "vitest run --config vitest.nuxt.config.ts",
     "test:e2e": "playwright test",
+    "test:breeding-production-acceptance": "vitest run tests/server/breedingProductionLikeAcceptance.test.ts tests/server/breedingCampaignClockBatch.test.ts tests/server/breedingEggTransfer.test.ts tests/server/breedingHatchCompletion.test.ts --maxWorkers=1 --no-file-parallelism && playwright test tests/e2e/breeding-workshop.spec.ts --workers=1",
     "test": "vitest run",
     "test:watch": "vitest",
     "refactor:loop": "bash scripts/refactor-loop.sh",

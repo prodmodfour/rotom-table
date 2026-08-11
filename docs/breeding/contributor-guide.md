@@ -124,6 +124,10 @@ Keep registry, parent-preview, campaign-clock batch, role-projection, and Worksh
 
 A budget change requires a measured maximum-cardinality fixture, a reason the existing bound cannot be retained, privacy/output-size review, focused single-worker evidence, and synchronized scenario/checker documentation. Do not hide a regression by warming caches inside the measured interval, excluding serialization or transaction settlement, lowering fixture cardinality, or raising a ceiling without review.
 
+## Production-like acceptance changes
+
+Keep `scripts/breedingProductionAcceptance.ts`, its self-hash test, exact evidence needles, the package release command, and the operator procedure synchronized. Every acceptance input must be synthetic and every client must use ordinary authenticated role/Profile projection paths. Preserve file-backed WAL, process restart, long campaign-time skip, dual participant transfer consent, two-connection hatch contention, production Nitro, and desktop/mobile browser coverage. A narrower mock or in-memory-only replacement does not satisfy the release profile.
+
 ## Tests
 
 During implementation, prefer focused single-worker Vitest commands:

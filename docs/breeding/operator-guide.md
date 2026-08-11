@@ -397,6 +397,18 @@ npx vitest run \
 
 The timed interval excludes imports and fixture setup. It includes only the bounded registry lookup, preview resolution/projection, 100-Egg batch settlement, projection sweep, or Workshop query/projection. A failure is a release incident: retain the command, runner load, test name, and elapsed value; investigate query count, repeated parsing, serialization, or unbounded traversal. Do not raise a threshold, reduce fixture cardinality, split an atomic operation, bypass output admission, or use wall time to advance campaign state. The performance policy is availability evidence only and never authorizes mechanics or retries.
 
+## BR-087 production-like acceptance
+
+Run the exact synthetic release profile with no other validation process competing for memory:
+
+```bash
+npm run test:breeding-production-acceptance
+```
+
+The command runs file-SQLite GM/player, long-timeskip, restart, transfer, and concurrent-hatch server acceptance with one worker, then builds and starts production Nitro and runs the Workshop desktop/mobile browser suite with one worker. Keep `127.0.0.1:3017` and `.playwright-campaign` isolated. A successful run has one hatch winner, one bounded campaign-clock continuation, consumed dual transfer consent, strict restart replay, structurally private GM/player views, and no duplicate cards or serious/critical axe findings.
+
+On failure, preserve only the scenario ID, operation kind and hashed identity, SQLite/restart stage, browser project, status, and sanitized stack. Do not retain the synthetic database as campaign authority, substitute GM approval for transfer consent, replay mechanics after a terminal result, or bypass the production server with a deprecated local-host path.
+
 ## Recovery principles
 
 1. Retry the exact command with the same operation ID and bytes.

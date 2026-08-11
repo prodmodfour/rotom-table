@@ -414,6 +414,12 @@ Integrity diagnostics are bounded detection, not mutation authority. Orphan repa
 
 Elapsed ceilings are release tests, never runtime clocks or mechanics authority. Each timed case uses the monotonic Node performance clock, one worker, no file parallelism, and excludes module loading and fixture construction. The gates execute a complete registry lookup, the maximum preview, one 100-Egg atomic batch, 1,000 server-built public projections, and a 100-context Workshop page. A slow gate blocks release but cannot alter campaign time, credit, random results, retries, authorization, consent, aggregate state, or projection privacy.
 
+### BR-087 production-like acceptance boundary
+
+The synthetic production profile in `scripts/breedingProductionAcceptance.ts` is hash-bound as `0c0e565e8da7b01146b61a9ade65ae14c958662a541955a625fa99e5cf87e139`. It requires file-backed SQLite WAL, independent authenticated GM and selected-Profile player clients, the production Nitro server on `127.0.0.1:3017`, Chromium and mobile Chromium, and a fresh campaign root. It is acceptance evidence only and supplies no operation or campaign authority.
+
+The release run covers structurally distinct multi-client Workshop views across database restart, a long campaign-time skip through a deterministic 100-Egg prefix and equal-target continuation, pending batch and hatch recovery after process restart, independently positive source/recipient transfer consent, and two-connection hatch contention. The concurrent hatch converges to one child, roster link, acquisition, lineage origin, and publication set. Browser acceptance uses selector-only requests and verifies reconnect/reload privacy under production output; all data is explicitly synthetic.
+
 ## Prohibited alternate authorities
 
 - third sheet kind for Eggs;

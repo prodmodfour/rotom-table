@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 86,
+    "covered": 87,
     "in-progress": 1,
-    "planned": 3,
+    "planned": 2,
     "blocked": 0
   },
   "requirements": [
@@ -2248,8 +2248,20 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "scripts/breedingProductionAcceptance.ts",
+        "package.json",
+        "tests/server/breedingProductionLikeAcceptance.test.ts",
+        "tests/server/breedingCampaignClockBatch.test.ts",
+        "tests/server/breedingEggTransfer.test.ts",
+        "tests/server/breedingHatchCompletion.test.ts",
+        "tests/e2e/breeding-workshop.spec.ts",
+        "scripts/check_breeding_automation.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/contributor-guide.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": [
         "breeding-cross-owner-consent-v1"
       ]
@@ -2264,7 +2276,7 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

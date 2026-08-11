@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: BR-087`
+`CURRENT_TICKET: BR-088`
 
 `BLOCKED_BY: done/ENCOUNTER_UI_UX_PLAN.md — PLAN_STATUS: DONE`
 
@@ -463,7 +463,7 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ## Progress snapshot
 
-- Plan tickets: **86 DONE / 90 total**
+- Plan tickets: **87 DONE / 90 total**
 - Frozen breeding source inventory: **30 hash-bound runtime, contract, product, documentary, and parser records**
 - Recorded ruleset/adjudications: **`ptu-1.05-breeding-v1` / 20 accepted conflict decisions / 15 typed campaign options**
 - Compiled species specs: **862 runtime Species / 407 complete Families**
@@ -699,8 +699,9 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
   - Evidence: Archive release certification `2b9b90c5d2609622fb75575ba6de20617b9a3739105855ec59ddc4ec80176d98`, archive contract `9ed9362decc67b11adaf8a991341a61307b9db45467cd3679e5beda4a791b4da`, and storage-runtime contract `a793314f90ac75d33067643ca35f80633441f5dd1375f099056b917c3fa7b200` close reviewed migration, export/import, exact-reference backup/restore, and executable orphan repair. Campaign backups now preserve all 19 restorable record kinds, including exact GM override evidence, durable dual Egg-transfer consents, and external Species-acquisition source settlements without forging Breeding commands. Complete command/read-set/receipt/override chains are validated bidirectionally; generated overrides persist atomically with operation evidence. A GM-bound single-transaction restore rejects stale references and nonempty new-campaign targets, supports current-authority exact terminal retry, survives restart, and accepts exactly 64 MiB while rejecting one additional byte. Source-hash-bound migration keeps legacy lineage compatibility-only and map metadata quarantine-only. Bounded diagnostics detect orphan authority; repair preserves the corrupt source and restores a reviewed known-good backup atomically to a clean target, with clean post-restart integrity and a durable receipt. The 92-file Breeding server/shared/data checkpoint, focused 44-case archive/recovery checkpoint, certification regressions, changed-file lint, filtered typecheck, semantic registry, and checker pass.
 - [x] **BR-086 — Enforce registry, preview, batch-clock, projection, and Workshop performance budgets** — `DONE`
   - Evidence: Hash-bound release policy `46406165df3222083bff40d85dfcdc1cbc4088c28d1c758db3fc037831a1961d` centralizes deterministic limits for the exact 407-Family/862-Species registry, 4,096 stored/64 projected Trainer and 2,048-candidate preview envelopes, 100-Egg campaign-clock batches, 2 MiB audience/preview projection output, and 4,096-Trainer/100-context/128 KiB Workshop output. Owning runtimes consume the shared constants and reject over-cardinality or oversized canonical UTF-8 output before publication; elapsed gates use monotonic process time only as single-worker release evidence and never as campaign, mechanics, authorization, retry, or randomness authority. Maximum-cardinality registry, preview, batch, projection, and Workshop cases pass inside reviewed 0.75/4/5/2/3-second ceilings, with one-over rejection and 103-file/684-check Breeding regression coverage; the sole pre-ledger checker mismatch passed after synchronized status advancement. Changed-file lint and filtered typecheck report no BR-086-specific errors; the repository-wide typecheck retains its known unrelated baseline.
-- [ ] **BR-087 — Run production-like GM/player multi-client, long-timeskip, restart, transfer, and concurrent-hatch acceptance** — `IN_PROGRESS`
-- [ ] **BR-088 — Complete contributor, operator, GM, player, API, data-model, campaign-clock, and QA documentation** — `TODO`
+- [x] **BR-087 — Run production-like GM/player multi-client, long-timeskip, restart, transfer, and concurrent-hatch acceptance** — `DONE`
+  - Evidence: Synthetic production acceptance profile `0c0e565e8da7b01146b61a9ade65ae14c958662a541955a625fa99e5cf87e139` binds five release scenarios to exact executable evidence under file-backed SQLite WAL, independent authenticated GM and selected-Profile player clients, a fresh campaign root, production Nitro at `127.0.0.1:3017`, and desktop/mobile Chromium. The release command passed 34 server checks for simultaneous private views across restart, a 100-Egg long-timeskip prefix and equal-target continuation, strict batch/hatch restart recovery, dual-positive-consent ownership transfer without GM substitution, and one-winner two-connection hatch contention. The production build then passed seven Workshop browser checks with one intentional mobile matrix skip, covering multi-context privacy, selector-only requests, axe, responsive/reduced-motion behavior, reconnect/reload, no duplicate cards, and no private persistence. Checker, focused lint, profile self-hash, evidence-needle, and clean-diff validation pass; only synthetic no-campaign-data inputs were used.
+- [ ] **BR-088 — Complete contributor, operator, GM, player, API, data-model, campaign-clock, and QA documentation** — `IN_PROGRESS`
 - [ ] **BR-089 — Retire manual breeding authority, placeholder child creation, and legacy inheritance mutation paths** — `TODO`
 - [ ] **BR-090 — Record final acceptance and mark the breeding and Egg lifecycle production-authoritative** — `TODO`
   - Require source and manifest checkers, typecheck, unit/integration/Nuxt/browser/accessibility suites, build, production-like acceptance, backup/restore proof, and `scripts/quality-gate.sh`.
