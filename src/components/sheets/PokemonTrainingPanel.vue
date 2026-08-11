@@ -5,12 +5,11 @@ import {
   POKEMON_TRAINING_FEATURE_OPTIONS,
   resolvePokemonTrainingFeatureEffects,
 } from '~/utils/sheets/pokemonTrainingFeatures'
-import { pokemonEggMoveOptionsForSheet } from '~/utils/sheets/pokemonEggMoves'
 
 const skillBgRaisedCsv = defineModel<string>('skillBgRaisedCsv', { required: true })
 const skillBgLoweredCsv = defineModel<string>('skillBgLoweredCsv', { required: true })
 
-const INHERITED_LEVELS = ['20', '30', '40', '50', '60', '70', '80', '90'] as const
+const INHERITED_LEVELS = ['20', '30', '40', '50', '60', '70', '80', '90', '100'] as const
 
 const props = defineProps<{
   sheet: CharacterSheet
@@ -21,11 +20,10 @@ const props = defineProps<{
 const activeTrainingFeatureEffects = computed(() =>
   resolvePokemonTrainingFeatureEffects(props.sheet.activeTrainingFeature),
 )
-const inheritedMoveOptions = computed(() => pokemonEggMoveOptionsForSheet(props.sheet))
-
-const emit = defineEmits<{
-  setInheritedMove: [level: string, value: string | undefined]
-}>()
+const inheritedRemaining = computed(() => {
+  const value = props.sheet.inheritedRemaining
+  return Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0
+})
 </script>
 
 <template>
@@ -100,25 +98,21 @@ const emit = defineEmits<{
       </dl>
     </section>
 
-    <section class="panel-card">
-      <h2 class="panel-title">Inherited Moves</h2>
-      <dl class="inherited-grid">
+    <section class="panel-card inheritance-panel">
+      <h2 class="panel-title">Inheritance Checkpoints</h2>
+      <p class="inheritance-note">
+        Only the Breeding Workshop can settle inheritance learning. Legacy values do not establish lineage.
+      </p>
+      <dl class="inherited-grid" aria-label="Read-only inheritance checkpoints">
         <div v-for="level in INHERITED_LEVELS" :key="level">
           <dt>Lvl {{ level }}</dt>
-          <dd>
-            <EditableCell
-              :model-value="sheet.inheritedMoves?.[level]"
-              type="select"
-              :options="inheritedMoveOptions"
-              placeholder="Egg move"
-              @update:model-value="(v) => emit('setInheritedMove', level, v as string | undefined)"
-            />
-          </dd>
+          <dd>{{ sheet.inheritedMoves?.[level]?.trim() || 'Not learned' }}</dd>
         </div>
       </dl>
-      <p class="inherited-foot">
-        Remaining: <strong><EditableCell v-model="sheet.inheritedRemaining" type="number" :min="0" /></strong>
-      </p>
+      <div class="inheritance-footer">
+        <p class="inherited-foot">Remaining candidates: <strong>{{ inheritedRemaining }}</strong></p>
+        <NuxtLink class="inheritance-workshop-link" to="/breeding">Open Breeding Workshop</NuxtLink>
+      </div>
     </section>
   </div>
 </template>
@@ -204,10 +198,48 @@ const emit = defineEmits<{
   font-weight: 600;
 }
 
-.inherited-foot {
-  margin: 0.5rem 0 0;
+.inheritance-note {
+  margin: 0 0 0.65rem;
   color: var(--ink-soft);
   font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.inheritance-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem 0.8rem;
+  margin-top: 0.6rem;
+}
+
+.inherited-foot {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.inheritance-workshop-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  color: var(--ink-bright);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.inheritance-workshop-link:hover {
+  border-color: var(--accent);
+}
+
+.inheritance-workshop-link:focus-visible {
+  outline: 3px solid var(--rt-focus, var(--accent));
+  outline-offset: 2px;
 }
 
 .bg-desc {

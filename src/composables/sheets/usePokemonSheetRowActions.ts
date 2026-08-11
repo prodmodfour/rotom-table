@@ -57,17 +57,6 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     moveArrayItem(sheet.value?.movelist, fromIndex, toIndex)
   }
 
-  const addEggMove = () => {
-    if (!sheet.value) return
-    const eggMoves = sheet.value.eggMoves ?? []
-    eggMoves.push({ name: '' } as CharacterSheetMove)
-    sheet.value.eggMoves = eggMoves
-  }
-
-  const removeEggMove = (i: number) => {
-    sheet.value?.eggMoves?.splice(i, 1)
-  }
-
   const addAppliedMove = () => {
     if (!sheet.value) return
     const appliedMoves = sheet.value.appliedMoves ?? []
@@ -156,21 +145,11 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     vitamins[key] = next
   }
 
-  const setInheritedMove = (level: string, value: string | undefined) => {
-    if (!sheet.value) return
-    const inherited = sheet.value.inheritedMoves ?? {}
-    if (value && value.trim()) inherited[level] = value
-    else delete inherited[level]
-    sheet.value.inheritedMoves = inherited
-  }
-
   return {
     setHeldItemName,
     addMove,
     removeMove,
     reorderMove,
-    addEggMove,
-    removeEggMove,
     addAppliedMove,
     removeAppliedMove,
     addAbility,
@@ -184,6 +163,5 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     setVitaminFlag,
     setVitaminNumber,
     setVitaminText,
-    setInheritedMove,
   }
 }

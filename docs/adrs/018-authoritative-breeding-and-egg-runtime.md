@@ -90,7 +90,7 @@ The following remain compatibility presentation or migration inputs only:
 - editable Gender, Nature, Ability, and `babyTemplate` fields;
 - `ptu-data/generator.py` and its emitter.
 
-`map.metadata.capabilityEggs` and map-scoped Egg Warmer mutation are conflicting legacy authority. Egg Warmer becomes a typed contribution to the Egg use case, then the map metadata path is removed. Normal breeding never depends on a map route, scene, placement, initiative, or interaction mode.
+`map.metadata.capabilityEggs` and map-scoped Egg Warmer mutation were conflicting legacy authority. Egg Warmer now contributes only through the typed `apply-egg-warmer-capability` Egg operation; BR-089 removed every production map reader, writer, offer, selector, and mechanic branch. Historical keys remain quarantine-only diagnostics. Normal breeding never depends on a map route, scene, placement, initiative, or interaction mode.
 
 ### Recovery, backup, and source updates
 

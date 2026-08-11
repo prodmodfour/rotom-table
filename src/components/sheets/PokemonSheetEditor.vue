@@ -82,8 +82,6 @@ const {
   addMove,
   removeMove,
   reorderMove,
-  addEggMove,
-  removeEggMove,
   addAppliedMove,
   removeAppliedMove,
   addAbility,
@@ -97,7 +95,6 @@ const {
   setVitaminFlag,
   setVitaminNumber,
   setVitaminText,
-  setInheritedMove,
 } = usePokemonSheetRowActions(sheet)
 
 const healingModalOpen = ref(false)
@@ -192,7 +189,6 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
         :sheet="sheet"
         :tutor-points-earned="tutorPointsEarned"
         :tutor-points-left="tutorPointsLeft"
-        @set-inherited-move="setInheritedMove"
       />
 
       <!-- ============ Movelist ============ -->
@@ -249,8 +245,6 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
       v-if="activeTab === 'knownMoves'"
       :sheet="sheet"
       :unlocked-level-up-moves="unlockedLevelUpMoves"
-      @add-egg-move="addEggMove"
-      @remove-egg-move="removeEggMove"
       @add-applied-move="addAppliedMove"
       @remove-applied-move="removeAppliedMove"
     />

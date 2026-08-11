@@ -60,6 +60,10 @@ import { preservePlayerHiddenAutomationFieldsForSave } from '~/utils/sheets/poke
 import { reconcileServerOwnedBreedingBabyTemplate } from '~/utils/sheets/pokemonBabyTemplate'
 import { parseAuthoritativeBreedingBabyTemplateAuthorityV1 } from '../domain/breeding/babyTemplate'
 import { preserveServerOwnedPermanentMoveProvenance } from '../domain/breeding/permanentMoveProvenance'
+import {
+  BreedingLegacyCompatibilityValidationError,
+  preserveReadOnlyBreedingCompatibilityFields,
+} from '../domain/breeding/legacyAdapters'
 import { settleSetupSheetSpeciesAcquisitions } from './settleSetupSheetSpeciesAcquisitions'
 import {
   defaultPersistedSetupSaveRealtimeEventPublisher,
@@ -447,6 +451,26 @@ export const saveSheetUseCase = (
       if (currentMarsupialRelationship.status === 'absent' && prospective.status !== 'absent') {
         throw new SaveSheetUseCaseError(409, 'A setup save cannot forge an authoritative Marsupial relationship')
       }
+    }
+  }
+  if (input.kind === 'pokemon') {
+    try {
+      authoritativeSheet = preserveReadOnlyBreedingCompatibilityFields(
+        current.sheet as unknown as CharacterSheet,
+        authoritativeSheet as unknown as CharacterSheet,
+      ) as unknown as Record<string, unknown>
+    }
+    catch (error) {
+      if (error instanceof BreedingLegacyCompatibilityValidationError) {
+        const status = error.source === 'current' ? 409 : 400
+        throw new SaveSheetUseCaseError(
+          status,
+          error.source === 'current'
+            ? 'Stored read-only breeding compatibility data is malformed; repair is required before saving'
+            : 'Submitted Pokémon sheet must be plain data before read-only breeding fields can be preserved',
+        )
+      }
+      throw error
     }
   }
   const authoritativeInput: SaveSheetInput = { ...input, sheet: authoritativeSheet }

@@ -344,12 +344,13 @@ export interface CharacterSheet {
   tutorPoints?: CharacterSheetTutorPoints
   skillBackground?: CharacterSheetSkillBackground
 
-  /** Dictionary keyed by level (``"20"``\u2026``"90"``) of inherited move names. */
+  /** Read-only compatibility projection keyed by inheritance checkpoint Level 20 through 100. */
   inheritedMoves?: Record<string, string>
+  /** Read-only compatibility projection of server-owned remaining inheritance candidates. */
   inheritedRemaining?: number
 
   movelist?: CharacterSheetMove[]
-  /** Egg Moves this Pokémon has inherited or otherwise has available to learn. */
+  /** Read-only compatibility data; never lineage proof or a learned-Move writer. */
   eggMoves?: CharacterSheetMove[]
   /** TM/HM or Tutor moves manually recorded as applied to this Pokémon. */
   appliedMoves?: CharacterSheetAppliedMove[]

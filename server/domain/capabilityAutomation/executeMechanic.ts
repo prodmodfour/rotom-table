@@ -56,6 +56,10 @@ import {
 } from '../movement/resolveMovement'
 import { applyAuthoritativeMovementMapTransition } from '../movement/applyMovementTransition'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
+import {
+  CAPABILITY_CAMPAIGN_AGGREGATE_DELEGATION_MESSAGE,
+  capabilityActionDelegatesToCampaignAggregate,
+} from './campaignAggregateDelegation'
 import { capabilityLinkedMovementPlacementIds } from './linkedMovement'
 import { resolveCapabilityJumpPlan } from './validateSelections'
 import {
@@ -2025,26 +2029,6 @@ const executeRoll = (input: ExecuteCapabilityMechanicInput): CapabilityMechanicE
     produced.push({ kind: 'summoned-creature', canonicalId: species.species, quantity: 1, recipientSheetSlug: slug })
     note = `Alluring succeeded on separately timed check ${successfulAttempt}; a GM-selected Level ${level} ${species.species} appeared.`
   }
-  else if (input.command.actionId === 'warm-egg') {
-    const roll = input.rollDie('egg-warmer', 10)
-    rolls.push(roll)
-    const hours = roll.total === 1 ? 0 : roll.total
-    produced.push({ kind: 'hatch-time-reduction', canonicalId: 'egg-hatch-hours', quantity: hours, recipientSheetSlug: null })
-    const eggId = input.command.selections.canonicalItemId
-    const eggs = Array.isArray(input.map.metadata?.capabilityEggs)
-      ? input.map.metadata.capabilityEggs as unknown[] : []
-    let matched = false
-    const nextEggs = eggs.map((raw) => {
-      const egg = raw as Record<string, unknown>
-      if (!egg || typeof egg !== 'object' || egg.id !== eggId) return raw
-      matched = true
-      const current = Number.isSafeInteger(egg.hatchHours) ? egg.hatchHours as number : 0
-      return { ...egg, hatchHours: Math.max(0, current - hours), lastCapabilityOperationId: input.command.operationId }
-    })
-    if (!matched) throw new Error('The authoritative Egg Warmer resource disappeared.')
-    map = { ...input.map, metadata: { ...(input.map.metadata ?? {}), capabilityEggs: nextEggs } }
-    note = hours === 0 ? 'The Egg Warmer roll produced no hatch-time reduction.' : `The selected egg hatch time was reduced by ${hours} hours.`
-  }
   else if (input.command.actionId === 'roam-for-fortune') {
     const runtime = runtimeFor(input.map)
     if (runtime.tasks.some(task => task.kind === 'fortune-roam'
@@ -3222,6 +3206,9 @@ const executeCampaignTask = (input: ExecuteCapabilityMechanicInput): CapabilityM
 export const executeCapabilityMechanic = (
   input: ExecuteCapabilityMechanicInput,
 ): CapabilityMechanicExecution => {
+  if (capabilityActionDelegatesToCampaignAggregate(input.command.canonicalId, input.command.actionId)) {
+    throw new Error(CAPABILITY_CAMPAIGN_AGGREGATE_DELEGATION_MESSAGE)
+  }
   if (input.action.mechanic === 'toggle-mode') return input.command.actionId === 'ready-light-shield'
     ? {
         map: readyLivingWeaponLightShield(input), sheetMutations: [], rolls: [], produced: [], outcome: 'applied',

@@ -237,16 +237,16 @@
       "kind": "passive-projection",
       "given": "the actor owns an effective canonical capability instance",
       "when": "the authoritative encounter presentation is projected",
-      "then": "a source-labelled capability fact is emitted without creating an action offer unless reviewed context is satisfied"
+      "then": "a source-labelled capability fact is emitted without any map-scoped Egg action offer"
     },
     {
       "id": "capability:Egg Warmer:action:warm-egg",
       "canonicalId": "Egg Warmer",
-      "kind": "contextual-action",
+      "kind": "delegated-campaign-action",
       "actionId": "warm-egg",
-      "given": "the actor owns the capability and authoritative context satisfies egg",
-      "when": "the capability action is offered and declared",
-      "then": "the server revalidates ownership, context, action economy and frequency, resolves deterministic rolls, commits typed state atomically, and returns replay-safe public output"
+      "given": "one current effective source and one current first-class Egg are authorized by breeding.v1",
+      "when": "the Breeding Workshop applies the typed Egg Warmer Capability operation",
+      "then": "the breeding operation persists one command-bound d10 and updates only the Egg aggregate; map metadata supplies no authority or result"
     },
     {
       "id": "capability:Firestarter:passive",

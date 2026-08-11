@@ -93,7 +93,7 @@ Compatibility-only seams:
 - `eggGroups`, `eggMoves`, `inheritedMoves`, Gender, Nature, Abilities, and `babyTemplate` on ordinary sheets;
 - `ptu-data/generator.py` and its sheet emitter.
 
-A conflicting legacy seam exists: Egg Warmer currently targets `map.metadata.capabilityEggs` and mutates `hatchHours` through a map-scoped command. This data is not accepted Egg authority. It must become a typed contribution to `breeding.v1`, after which the map metadata path is retired.
+The baseline contained a conflicting legacy seam: Egg Warmer targeted `map.metadata.capabilityEggs` and mutated `hatchHours` through a map-scoped command. This data was never accepted Egg authority. The Capability now contributes only through the typed `breeding.v1` Egg operation, and BR-089 retired the production map metadata path while retaining quarantine-only diagnostics.
 
 Eggs remain dedicated campaign aggregates; no third sheet kind is introduced.
 

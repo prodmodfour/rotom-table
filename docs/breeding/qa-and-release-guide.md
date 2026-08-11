@@ -15,6 +15,7 @@ Run:
 ```bash
 npm run check:breeding-family-resolutions
 npm run check:breeding-compiler
+npm run check:breeding-retirement
 npm run check:breeding-automation
 ```
 

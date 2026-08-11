@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: BR-089`
+`CURRENT_TICKET: BR-090`
 
 `BLOCKED_BY: done/ENCOUNTER_UI_UX_PLAN.md — PLAN_STATUS: DONE`
 
@@ -463,7 +463,7 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ## Progress snapshot
 
-- Plan tickets: **88 DONE / 90 total**
+- Plan tickets: **89 DONE / 90 total**
 - Frozen breeding source inventory: **30 hash-bound runtime, contract, product, documentary, and parser records**
 - Recorded ruleset/adjudications: **`ptu-1.05-breeding-v1` / 20 accepted conflict decisions / 15 typed campaign options**
 - Compiled species specs: **862 runtime Species / 407 complete Families**
@@ -703,8 +703,9 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
   - Evidence: Synthetic production acceptance profile `0c0e565e8da7b01146b61a9ade65ae14c958662a541955a625fa99e5cf87e139` binds five release scenarios to exact executable evidence under file-backed SQLite WAL, independent authenticated GM and selected-Profile player clients, a fresh campaign root, production Nitro at `127.0.0.1:3017`, and desktop/mobile Chromium. The release command passed 34 server checks for simultaneous private views across restart, a 100-Egg long-timeskip prefix and equal-target continuation, strict batch/hatch restart recovery, dual-positive-consent ownership transfer without GM substitution, and one-winner two-connection hatch contention. The production build then passed seven Workshop browser checks with one intentional mobile matrix skip, covering multi-context privacy, selector-only requests, axe, responsive/reduced-motion behavior, reconnect/reload, no duplicate cards, and no private persistence. Checker, focused lint, profile self-hash, evidence-needle, and clean-diff validation pass; only synthetic no-campaign-data inputs were used.
 - [x] **BR-088 — Complete contributor, operator, GM, player, API, data-model, campaign-clock, and QA documentation** — `DONE`
   - Evidence: Documentation closure `b7c0dc3a22e73767107971694f4fb6d152e834ea5e7d57174a09fe67bea57f01` binds eight required audiences—contributor, operator, GM, player, API, data model, campaign clock, and QA—to reviewed headings, exact runtime vocabularies, all seven Workshop routes, strict request intents, current schema v28, 32 KiB/64 MiB envelopes, 12 Project/seven Egg/four source statuses, 22 commands, five audiences, the 240/DC 12/240 timeline, 100-Egg continuation, dual consent, structural privacy, atomic hatch, archive repair, performance, production acceptance, and final release commands. Four dedicated guides now cover GM/player workflows, HTTP integration, persistence/clock semantics, and QA/release; existing architecture, Workshop, security, contributor, and operator docs were cross-linked and stale planned/count/command claims removed. The six-case executable documentation closure, checker regression, focused lint, local-link validation, and clean-diff validation pass.
-- [ ] **BR-089 — Retire manual breeding authority, placeholder child creation, and legacy inheritance mutation paths** — `IN_PROGRESS`
-- [ ] **BR-090 — Record final acceptance and mark the breeding and Egg lifecycle production-authoritative** — `TODO`
+- [x] **BR-089 — Retire manual breeding authority, placeholder child creation, and legacy inheritance mutation paths** — `DONE`
+  - Evidence: Hash-bound retirement policy `d20550f41f06f9c5f47377f386a08621c2cfacf2e3c8579c44c126dd513b94fb` closes all three legacy seams. `eggMoves`, `inheritedMoves`, and `inheritedRemaining` are read-only compatibility projections across GM/player whole-sheet saves and sheet UI; strict preservation rejects malformed stored or submitted shapes, survives stale-save contention, excludes compatibility rows from learned Moves, and exposes the Level 100 checkpoint through the Workshop handoff. Egg Warmer remains an effective Capability fact but its map offer, selector, mechanic, and execution routes reject or disappear before rolls and writes; `capabilityEggs` and `hatchHours` are quarantine-only, and the current `apply-egg-warmer-capability` Egg transaction is the sole replacement. Incomplete wizard parent padding is proven ephemeral and non-persisted. Hatch completion retains one fully initialized revision-zero child insert inside the owning transaction with no generic blank-create/follow-up-save import. The 36-case retirement suite, Capability regression/checker, Breeding checker, focused lint, and changed-file typecheck filtering pass; repository-wide typecheck retains only its recorded unrelated baseline.
+- [ ] **BR-090 — Record final acceptance and mark the breeding and Egg lifecycle production-authoritative** — `IN_PROGRESS`
   - Require source and manifest checkers, typecheck, unit/integration/Nuxt/browser/accessibility suites, build, production-like acceptance, backup/restore proof, and `scripts/quality-gate.sh`.
 
 ## Decision log

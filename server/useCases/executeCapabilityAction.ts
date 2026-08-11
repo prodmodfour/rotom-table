@@ -28,6 +28,10 @@ import {
 } from '../policies/playerProfileTokenControlPolicy'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import { capabilityActorCanTakeAction } from '../domain/capabilityAutomation/actionEligibility'
+import {
+  CAPABILITY_CAMPAIGN_AGGREGATE_DELEGATION_MESSAGE,
+  capabilityActionDelegatesToCampaignAggregate,
+} from '../domain/capabilityAutomation/campaignAggregateDelegation'
 import { buildCapabilityClientCapabilityBundle } from '../domain/capabilityAutomation/clientCapabilities'
 import { resolveEffectiveCapabilities } from '../domain/capabilityAutomation/effectiveCapabilities'
 import { reconcileCapabilityRuntimeSourceLoss } from '../domain/capabilityAutomation/sourceLoss'
@@ -286,6 +290,9 @@ export const executeCapabilityActionUseCase = (
   const registry = dependencies.registry ?? CAPABILITY_AUTOMATION_RUNTIME_REGISTRY
   const storedMap = mapRepository.getBySlug(command.mapSlug) ?? fail(404, 'Capability map is missing.')
   if (!canAccessMapForRole(input.role, storedMap)) fail(403, 'Capability map is not player visible.')
+  if (capabilityActionDelegatesToCampaignAggregate(command.canonicalId, command.actionId)) {
+    fail(409, CAPABILITY_CAMPAIGN_AGGREGATE_DELEGATION_MESSAGE)
+  }
   const existing = operationRepository.find(command.operationId)
   if (existing) {
     if (existing.commandSha256 !== commandSha256) fail(409, 'Capability operation ID was reused with changed input.')

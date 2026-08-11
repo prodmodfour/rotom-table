@@ -6,6 +6,10 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { pokemonHasActiveMarsupialBabyTemplate, pokemonHasResolvedCapability, pokemonMarsupialBabyActionRestricted, resolveSkills } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
+import {
+  CAPABILITY_CAMPAIGN_AGGREGATE_DELEGATION_MESSAGE,
+  capabilityActionDelegatesToCampaignAggregate,
+} from './campaignAggregateDelegation'
 import { capabilityStandardActionRestriction } from './actionEligibility'
 import { findItem, findMove } from '~~/data/ptuReference'
 import type { TrainerInventory } from '~/types/trainerSheet'
@@ -511,6 +515,9 @@ export const validateCapabilityActionSelections = (input: {
   readonly action: CapabilityRuntimeActionSpec
   readonly now: number
 }): void => {
+  if (capabilityActionDelegatesToCampaignAggregate(input.command.canonicalId, input.command.actionId)) {
+    fail('campaign-aggregate-action-required', CAPABILITY_CAMPAIGN_AGGREGATE_DELEGATION_MESSAGE)
+  }
   const actingPlacement = input.actingPlacement ?? input.actor
   const actingSheet = input.actingSheet ?? input.actorSheet
   const activePlacementId = input.map.initiative?.activeId
@@ -1717,17 +1724,6 @@ export const validateCapabilityActionSelections = (input: {
       || input.map.placements.some(placement => placement.position.x === cell.x && placement.position.y === cell.y && placement.position.z === cell.z)) {
       fail('summon-cell-occupied', 'Gather Unown requires an unoccupied in-bounds cell.')
     }
-  }
-
-  if (input.command.actionId === 'warm-egg') {
-    const eggId = input.command.selections.canonicalItemId
-    const eggs = Array.isArray(input.map.metadata?.capabilityEggs)
-      ? input.map.metadata.capabilityEggs as unknown[] : []
-    if (!eggId || !eggs.some(raw => {
-      const egg = raw as Record<string, unknown>
-      return egg && typeof egg === 'object' && egg.id === eggId
-        && Number.isSafeInteger(egg.hatchHours) && (egg.hatchHours as number) >= 0
-    })) fail('egg-resource-missing', 'Egg Warmer requires an exact authoritative egg resource.')
   }
 
   if (input.command.actionId === 'roam-for-fortune'

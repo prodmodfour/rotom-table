@@ -43,6 +43,7 @@
     "seed:feature-automation": "python3 scripts/seed_feature_automation_manifest.py",
     "check:breeding-automation": "vite-node --config vitest.config.ts scripts/check_breeding_automation.ts",
     "check:breeding-documentation": "vitest run tests/data/breedingDocumentationClosure.test.ts --maxWorkers=1 --no-file-parallelism",
+    "check:breeding-retirement": "vitest run tests/server/breedingLegacyAuthorityRetirement.test.ts tests/server/breedingLegacyAdapters.test.ts tests/server/saveSheet.test.ts tests/components/pokemonBreedingLegacyFields.test.ts --maxWorkers=1 --no-file-parallelism",
     "check:breeding-automation-plan": "vite-node --config vitest.config.ts scripts/check_breeding_automation.ts --check-plan",
     "check:breeding-automation-complete": "vite-node --config vitest.config.ts scripts/check_breeding_automation.ts --check-plan --require-complete",
     "compile:breeding-family-resolutions": "vite-node --config vitest.config.ts scripts/build_breeding_family_resolutions.ts --write",

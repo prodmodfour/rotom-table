@@ -121,6 +121,81 @@ describe('save sheet use case', () => {
     ])
   })
 
+  it.each(['gm', 'player'] as const)(
+    'preserves read-only Egg and inheritance compatibility fields against %s whole-sheet saves',
+    (role) => {
+      const database = db()
+      const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+      const current = pokemonSheet({
+        player: true,
+        eggMoves: [{ name: 'Volt Tackle' }],
+        inheritedMoves: { '20': 'Volt Tackle' },
+        inheritedRemaining: 1,
+      })
+      sheets.saveSetupSheet('pokemon', 'pika', current)
+
+      const result = saveSheetUseCase({
+        role,
+        interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+        kind: 'pokemon',
+        slug: 'pika',
+        expectedRevision: 4,
+        sheet: pokemonSheet({
+          player: true,
+          nickname: 'Pika Prime',
+          eggMoves: [{ name: 'Present' }],
+          inheritedMoves: { '30': 'Present' },
+          inheritedRemaining: 99,
+        }),
+      }, { database, sheetRepository: sheets, now: () => 200 })
+
+      expect(result.sheet).toMatchObject({
+        nickname: 'Pika Prime',
+        eggMoves: [{ name: 'Volt Tackle' }],
+        inheritedMoves: { '20': 'Volt Tackle' },
+        inheritedRemaining: 1,
+      })
+    },
+  )
+
+  it('keeps compatibility fields immutable when two stale setup saves contend', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    sheets.saveSetupSheet('pokemon', 'pika', pokemonSheet({
+      eggMoves: [{ name: 'Volt Tackle' }],
+      inheritedMoves: { '20': 'Volt Tackle' },
+      inheritedRemaining: 1,
+    }))
+    const save = (nickname: string, move: string) => saveSheetUseCase({
+      role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon',
+      slug: 'pika',
+      expectedRevision: 4,
+      sheet: pokemonSheet({
+        nickname,
+        eggMoves: [{ name: move }],
+        inheritedMoves: { '30': move },
+        inheritedRemaining: 8,
+      }),
+    }, { database, sheetRepository: sheets, now: () => 200 })
+
+    expect(save('First winner', 'Present').sheet).toMatchObject({
+      revision: 5,
+      nickname: 'First winner',
+      eggMoves: [{ name: 'Volt Tackle' }],
+      inheritedMoves: { '20': 'Volt Tackle' },
+      inheritedRemaining: 1,
+    })
+    expect(() => save('Stale loser', 'Wish')).toThrow(SaveSheetUseCaseError)
+    expect(sheets.getByRef('pokemon', 'pika')?.sheet).toMatchObject({
+      nickname: 'First winner',
+      eggMoves: [{ name: 'Volt Tackle' }],
+      inheritedMoves: { '20': 'Volt Tackle' },
+      inheritedRemaining: 1,
+    })
+  })
+
   it('commits a changed Pokémon sheet and two durable sheet-access events', () => {
     const database = db()
     const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)

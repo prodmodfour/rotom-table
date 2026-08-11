@@ -18,6 +18,10 @@ import {
   BREEDING_DOCUMENTATION_CLOSURE_DEFINITION_SHA256,
   BREEDING_DOCUMENTATION_CLOSURE_V1,
 } from './breedingDocumentationClosure'
+import {
+  BREEDING_LEGACY_AUTHORITY_RETIREMENT_DEFINITION_SHA256,
+  BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1,
+} from './breedingLegacyAuthorityRetirement'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const failures: string[] = []
@@ -86,6 +90,44 @@ for (const category of BREEDING_DOCUMENTATION_CLOSURE_V1.categories) {
     }
   }
 }
+assert(
+  sha256(stable(BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1))
+    === BREEDING_LEGACY_AUTHORITY_RETIREMENT_DEFINITION_SHA256,
+  'breeding legacy-authority retirement hash drifted',
+)
+assert(BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.ticket === 'BR-089'
+  && BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.mapEggAuthority.status === 'retired'
+  && BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.sheetCompatibility.status === 'read-only-projection'
+  && BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.incompleteWizardSelection.persistenceAuthority === 'none'
+  && BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.incompleteWizardSelection.childCreationAuthority === 'none'
+  && BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.childCreation.placeholderWrite === 'forbidden',
+'breeding legacy-authority retirement policy drifted')
+for (const path of BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.mapEggAuthority.scannedRuntimePaths) {
+  const runtime = readFileSync(resolve(ROOT, path), 'utf8')
+  for (const key of BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.mapEggAuthority.forbiddenRuntimeKeys) {
+    assert(!runtime.includes(key), `${path} reintroduced retired map Egg key ${key}`)
+  }
+}
+const legacySheetUi = BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.sheetCompatibility.uiPaths
+  .map(path => readFileSync(resolve(ROOT, path), 'utf8')).join('\n')
+for (const writer of ['addEggMove', 'removeEggMove', 'setInheritedMove', 'v-model="sheet.inheritedRemaining"']) {
+  assert(!legacySheetUi.includes(writer), `sheet UI reintroduced retired inheritance writer ${writer}`)
+}
+const incompleteWizardSource = readFileSync(
+  resolve(ROOT, BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.incompleteWizardSelection.owner),
+  'utf8',
+)
+assert(BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.incompleteWizardSelection.identifiers
+  .every(identifier => incompleteWizardSource.includes(identifier))
+  && !incompleteWizardSource.includes('initializedPokemonSheets.create')
+  && !incompleteWizardSource.includes('createSheetUseCase')
+  && !incompleteWizardSource.includes('saveSheetUseCase'),
+'incomplete Project wizard selection padding gained persistence or child authority')
+const hatchOwnerSource = readFileSync(resolve(ROOT, BREEDING_LEGACY_AUTHORITY_RETIREMENT_V1.childCreation.hatchOwner), 'utf8')
+assert(hatchOwnerSource.includes('context.repositories.initializedPokemonSheets.create')
+  && !hatchOwnerSource.includes('createSheetUseCase')
+  && !hatchOwnerSource.includes('saveSheetUseCase'),
+'atomic hatch reintroduced placeholder child creation or follow-up save')
 
 const recursivelyListJson = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
   .flatMap(entry => entry.isDirectory()
@@ -1470,6 +1512,12 @@ for (const path of [
   'tests/server/breedingProductionLikeAcceptance.test.ts',
   'scripts/breedingDocumentationClosure.ts',
   'tests/data/breedingDocumentationClosure.test.ts',
+  'scripts/breedingLegacyAuthorityRetirement.ts',
+  'server/domain/breeding/legacyAdapters.ts',
+  'server/domain/capabilityAutomation/campaignAggregateDelegation.ts',
+  'tests/server/breedingLegacyAuthorityRetirement.test.ts',
+  'tests/server/breedingLegacyAdapters.test.ts',
+  'tests/components/pokemonBreedingLegacyFields.test.ts',
   'docs/breeding/gm-and-player-guide.md',
   'docs/breeding/api-reference.md',
   'docs/breeding/data-model-and-campaign-clock.md',

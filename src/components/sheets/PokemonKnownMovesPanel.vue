@@ -24,8 +24,6 @@ const props = defineProps<{
 const sheet = computed(() => props.sheet)
 
 const emit = defineEmits<{
-  addEggMove: []
-  removeEggMove: [index: number]
   addAppliedMove: []
   removeAppliedMove: [index: number]
 }>()
@@ -33,7 +31,7 @@ const emit = defineEmits<{
 const levelUpMoveCount = computed(() => props.unlockedLevelUpMoves.length)
 const eggMoveCount = computed(() => sheet.value.eggMoves?.length ?? 0)
 const appliedMoveCount = computed(() => sheet.value.appliedMoves?.length ?? 0)
-const knownMoveCount = computed(() => levelUpMoveCount.value + eggMoveCount.value + appliedMoveCount.value)
+const knownMoveCount = computed(() => levelUpMoveCount.value + appliedMoveCount.value)
 
 const levelUpMoveKey = (move: PokedexLevelUpMove, index: number): string => `${move.level}-${move.name}-${index}`
 
@@ -57,8 +55,8 @@ const setAppliedMoveSource = (move: CharacterSheetAppliedMove, value: EditableCe
     <div class="block known-moves-summary">
       <h2 class="block-title">Known Moves ({{ knownMoveCount }})</h2>
       <p>
-        Level-up moves unlock from the current species and level. Egg moves remain editable here, and
-        applied TM/HM or Tutor moves can be recorded manually until those systems are wired in.
+        Level-up moves unlock from the current species and level. Applied TM/HM or Tutor moves remain
+        ordinary sheet records; Egg Move compatibility data is read-only and is not counted as learned.
       </p>
     </div>
 
@@ -99,13 +97,11 @@ const setAppliedMoveSource = (move: CharacterSheetAppliedMove, value: EditableCe
       </div>
     </div>
 
-    <div class="block">
-      <h2 class="block-title">
-        Egg Moves ({{ eggMoveCount }})
-        <button type="button" class="row-add" @click="emit('addEggMove')">
-          <PhPlus :size="14" weight="bold" /> Add row
-        </button>
-      </h2>
+    <div class="block egg-move-compatibility">
+      <h2 class="block-title">Egg Move Compatibility ({{ eggMoveCount }})</h2>
+      <p class="compatibility-note">
+        Read-only compatibility data. These rows do not establish lineage or learned Moves.
+      </p>
       <div class="table-scroll">
         <table class="data-table known-moves-table">
           <thead>
@@ -115,20 +111,11 @@ const setAppliedMoveSource = (move: CharacterSheetAppliedMove, value: EditableCe
                 v-for="column in POKEMON_KNOWN_MOVE_AUTOFILL_COLUMNS"
                 :key="column.key"
               >{{ column.label }}</th>
-              <th aria-label="Row actions"></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(move, index) in sheet.eggMoves" :key="index">
-              <th class="known-move-name-col">
-                <EditableCell
-                  :model-value="move.name"
-                  type="select"
-                  :options="POKEMON_KNOWN_MOVE_NAME_OPTIONS"
-                  placeholder="Move"
-                  @update:model-value="(value) => setMoveName(move, value)"
-                />
-              </th>
+              <th class="known-move-name-col">{{ move.name || 'Unnamed compatibility Move' }}</th>
               <td
                 v-for="column in POKEMON_KNOWN_MOVE_AUTOFILL_COLUMNS"
                 :key="column.key"
@@ -137,14 +124,11 @@ const setAppliedMoveSource = (move: CharacterSheetAppliedMove, value: EditableCe
               >
                 {{ autofillValue(move, column.key) || '—' }}
               </td>
-              <td class="row-actions">
-                <button type="button" class="row-remove" title="Remove egg move" @click="emit('removeEggMove', index)">
-                  <PhX :size="14" weight="bold" />
-                </button>
-              </td>
             </tr>
             <tr v-if="!sheet.eggMoves?.length">
-              <td :colspan="POKEMON_KNOWN_MOVE_AUTOFILL_COLUMNS.length + 2" class="muted">No egg moves recorded.</td>
+              <td :colspan="POKEMON_KNOWN_MOVE_AUTOFILL_COLUMNS.length + 1" class="muted">
+                No Egg Move compatibility data recorded.
+              </td>
             </tr>
           </tbody>
         </table>
@@ -229,6 +213,14 @@ const setAppliedMoveSource = (move: CharacterSheetAppliedMove, value: EditableCe
 
 .known-moves-table {
   min-width: 84rem;
+}
+
+.compatibility-note {
+  margin: -0.15rem 0 0.65rem;
+  max-width: 70ch;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  line-height: 1.45;
 }
 
 .known-move-name-col {

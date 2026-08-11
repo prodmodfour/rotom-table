@@ -420,6 +420,14 @@ The synthetic production profile in `scripts/breedingProductionAcceptance.ts` is
 
 The release run covers structurally distinct multi-client Workshop views across database restart, a long campaign-time skip through a deterministic 100-Egg prefix and equal-target continuation, pending batch and hatch recovery after process restart, independently positive source/recipient transfer consent, and two-connection hatch contention. The concurrent hatch converges to one child, roster link, acquisition, lineage origin, and publication set. Browser acceptance uses selector-only requests and verifies reconnect/reload privacy under production output; all data is explicitly synthetic.
 
+### BR-089 legacy-authority retirement boundary
+
+`breedingLegacyAuthorityRetirement.ts` freezes policy `d20550f41f06f9c5f47377f386a08621c2cfacf2e3c8579c44c126dd513b94fb`. Egg Warmer remains an effective Capability fact, but `warm-egg` is a campaign-aggregate delegation: map projection emits no offer, direct map selection/mechanic execution rejects before randomness, and production map code contains no `capabilityEggs` or `hatchHours` reader or writer. Historical keys are detected only by archive quarantine diagnostics. The replacement is the ordinary current-authority `apply-egg-warmer-capability` Egg transaction.
+
+`eggMoves`, `inheritedMoves`, and `inheritedRemaining` remain compatibility projections for existing sheets and server-authored children. Whole-sheet GM and player saves preserve their current strict JSON values and discard create, rewrite, or delete attempts. Sheet UI is read-only, includes the Level 100 checkpoint, excludes compatibility rows from the learned-Move total, and links to the Workshop. Only atomic child construction and `recordPokemonInheritanceLearning.ts` may write these fields; typed origin and permanent-Move provenance own mechanics.
+
+The wizard's `wizard-parent-placeholder-*` references are non-persisted padding for actor authorization while a preview has fewer than two selected parents; parent discovery receives only the actual selection, and the padding has no Project, Egg, child, or repository authority. Hatching still allocates one slug and inserts one fully normalized revision-zero document through `initializedPokemonSheetRepository.ts` inside the owning hatch transaction. The hatch use case imports neither generic blank-sheet creation nor follow-up whole-sheet saving. Static drift checks, malformed-input tests, component acceptance, GM/player save tests, and a stale-save contention case prevent all three alternate paths from returning.
+
 ## Prohibited alternate authorities
 
 - third sheet kind for Eggs;

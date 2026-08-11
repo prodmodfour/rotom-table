@@ -65,6 +65,14 @@ The accepted migration is:
 
 Map metadata never becomes import authority for durable Eggs.
 
+## BR-089 retirement closure
+
+The accepted migration is complete. `server/domain/capabilityAutomation/campaignAggregateDelegation.ts` suppresses the historical `warm-egg` map offer, and the map selection, mechanic, and execution boundaries reject direct calls before randomness or mutation. Production map code contains no `capabilityEggs` or `hatchHours` reader or writer; `manageBreedingArchives.ts` is the sole quarantine diagnostic.
+
+Whole-sheet saves now preserve `eggMoves`, `inheritedMoves`, and `inheritedRemaining` from current storage through `server/domain/breeding/legacyAdapters.ts`. A browser may neither create, rewrite, nor delete those compatibility projections. The Pokémon sheet displays them read-only, includes the Level 100 checkpoint, and directs inheritance learning to the Breeding Workshop. Typed origin and permanent-Move provenance remain the only lineage and inheritance authority.
+
+The Project wizard's `wizard-parent-placeholder-*` values only pad an incomplete, non-persisted preview command used to establish actor authority; discovery still receives the actual zero-to-two selected references. They never create a child, write a repository, or enter final Project execution. Hatching still uses one complete revision-zero insert through `initializedPokemonSheetRepository.ts` inside `completePokemonEggHatch.ts`; neither generic blank-sheet creation nor a follow-up save is imported. `npm run check:breeding-retirement` and the main Breeding checker prevent all three retired paths from returning.
+
 ## Missing authorities
 
 - compiled breeding species/family registry;

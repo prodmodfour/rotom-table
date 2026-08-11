@@ -42,11 +42,14 @@ World facts that cannot be inferred from token geometry must be authored by the 
 
 - `capabilityContexts: string[]` — context identities such as `city-or-town`, `abundant-plant-life`, `scent-trail`, map-wide `deep-darkness` / `total-darkness`, placement-scoped `deep-darkness:<placementId>` / `total-darkness:<placementId>`, or an exact `suitable-mount:<rider>:<mount>` approval;
 - `capabilityWillingTargets: string[]` — exact `<actorPlacementId>:<targetPlacementId>` consent identities;
-- `capabilityEggs: { id, hatchHours }[]` — Egg Warmer resources;
 - `capabilityKeystones: { id, position, synchronizedPlacementIds }[]` — synchronized Odd Keystones;
 - `capabilityDevices: { id, position, networkId }[]` — Wired entry and connected exit points.
 
 Accepted bounded world changes, generated Unown summaries, and operation IDs are retained in metadata and the SQLite operation ledger. These are authoritative campaign records, not browser decisions.
+
+### Retired Egg map boundary
+
+Egg Warmer remains a canonical Capability, but its activated effect delegates to `breeding.v1`. The map bundle may project the effective Capability as a source-labelled fact; it never offers `warm-egg`. `map.metadata.capabilityEggs` and `hatchHours` are retired, quarantine-only legacy keys with no production reader or writer. The Breeding Workshop rebuilds one current effective Capability handoff and applies `apply-egg-warmer-capability` to a first-class Egg with campaign-time cooldown, persisted randomness, exact retry, and atomic Egg settlement.
 
 ## Physical Power loads
 
@@ -98,7 +101,7 @@ Capability providers extend existing systems rather than bypassing them. Source-
 - movement and pathfinding: valued speeds, Jump, Teleporter, Burrow upkeep, Wallclimber, Phasing, Naturewalk, mounts/fusion, size modes, Threaded, and Keystone Warp;
 - Move automation: Reach, Groundsource immunity, Stealth targeting, Invisibility/Phasing targetability, Blender/Shadow Meld Evasion, Mindlock, Darkvision/Blindsense darkness handling, Soulless, self-KO Loyalty adjudication, forms, move and Ability grants;
 - Struggle automation: Firestarter, Fountain, Freezer, Guster, Materializer, Zapper, and Telekinetic variants;
-- inventory/campaign operations: Collection Jars, daily/weekly products, Mushroom rolls, Fortune, Egg Warmer, Juicer, Planter, and Zygarde Cube tutoring;
+- inventory/campaign operations: Collection Jars, daily/weekly products, Mushroom rolls, Fortune, Juicer, Planter, and Zygarde Cube tutoring; Egg Warmer activates only through the Breeding Workshop campaign aggregate;
 - links: shared movement, carried target restrictions, As One shared fainting, Living Weapon No Guard suppression and granted Moves, and Viral Fusion substitutions.
 
 ## Operations and recovery

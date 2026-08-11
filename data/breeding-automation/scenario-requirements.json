@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 88,
+    "covered": 89,
     "in-progress": 1,
-    "planned": 1,
+    "planned": 0,
     "blocked": 0
   },
   "requirements": [
@@ -2304,8 +2304,34 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "scripts/breedingLegacyAuthorityRetirement.ts",
+        "server/domain/breeding/legacyAdapters.ts",
+        "server/domain/capabilityAutomation/campaignAggregateDelegation.ts",
+        "server/domain/capabilityAutomation/clientCapabilities.ts",
+        "server/domain/capabilityAutomation/validateSelections.ts",
+        "server/domain/capabilityAutomation/executeMechanic.ts",
+        "server/useCases/executeCapabilityAction.ts",
+        "server/useCases/saveSheet.ts",
+        "server/useCases/loadBreedingProjectWizard.ts",
+        "server/useCases/completePokemonEggHatch.ts",
+        "server/domain/breeding/childSheetConstruction.ts",
+        "server/storage/initializedPokemonSheetRepository.ts",
+        "src/components/sheets/PokemonKnownMovesPanel.vue",
+        "src/components/sheets/PokemonTrainingPanel.vue",
+        "src/components/sheets/PokemonSheetEditor.vue",
+        "src/composables/sheets/usePokemonSheetRowActions.ts",
+        "tests/server/breedingLegacyAuthorityRetirement.test.ts",
+        "tests/server/breedingLegacyAdapters.test.ts",
+        "tests/server/saveSheet.test.ts",
+        "tests/components/pokemonBreedingLegacyFields.test.ts",
+        "docs/breeding/baseline-audit.md",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md",
+        "scripts/check_breeding_automation.ts",
+        "package.json"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -2318,7 +2344,7 @@
         "quality-gate",
         "production-like-acceptance"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "registryId": "breeding-semantic-registry-v1",
-  "definitionSha256": "99f7be2785baa7642f3461c5eb9650e0c908aee9abd4304a43ec4a4d08fd4e03",
+  "definitionSha256": "afd4ec67434a0e80d3f1607df5e2062f01d714c93b915f75b6cad71d88238b76",
   "definition": {
     "activePlanPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
     "donePlanPath": "implementation-plans/done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
@@ -891,7 +891,7 @@
         "ownerTicket": "BR-008",
         "kind": "coverage",
         "binding": "live-validation",
-        "expectedSha256": "c5ddbbb5ce37140605b8c225be566bc481b8f2817a94c4cb6d4836a1a85eaaca"
+        "expectedSha256": "364891267379a94783ed2d613bef740e60d88630785107d9710064c8bf87b3b1"
       },
       {
         "id": "acceptance-fixture-index",

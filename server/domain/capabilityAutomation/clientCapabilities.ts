@@ -23,6 +23,7 @@ import {
 } from '../../policies/playerProfileTokenControlPolicy'
 import { capabilityActorCanTakeAction } from './actionEligibility'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
+import { capabilityActionDelegatesToCampaignAggregate } from './campaignAggregateDelegation'
 import { CAPABILITY_AUTOMATION_RUNTIME_REGISTRY } from './registry'
 import { computePokemonTutorPointsEarnedForSheet } from '~/utils/sheets/pokemonTutorPoints'
 import { pokemonMarsupialBabyActionRestricted, resolveSkills } from '~/utils/sheets/pokemonDerived'
@@ -135,7 +136,7 @@ const capabilitySelectionOptions = (
       ? { key: 'capabilityDevices', kind: 'device' as const }
       : actionId === 'synchronize-keystone'
         ? { key: 'capabilityKeystones', kind: 'keystone' as const }
-        : actionId === 'warm-egg' ? { key: 'capabilityEggs', kind: 'egg' as const } : null
+        : null
   const values = source ? (map.metadata as Record<string, unknown> | undefined)?.[source.key] : null
   if (!source || !Array.isArray(values)) return Object.freeze([])
   const linkedTrainerSlugs = new Set(actorLinkedTrainers.map(trainer => trainer.slug))
@@ -637,10 +638,9 @@ const contextSatisfied = (input: {
             || (Array.isArray(keystone.synchronizedPlacementIds)
               && keystone.synchronizedPlacementIds.includes(placement.id)))
       })
-    case 'egg': return contextual && Array.isArray(map.metadata?.capabilityEggs)
-      && map.metadata.capabilityEggs.some(entry => entry && typeof entry === 'object'
-        && typeof (entry as Record<string, unknown>).id === 'string'
-        && Number.isSafeInteger((entry as Record<string, unknown>).hatchHours))
+    // Egg Warmer is a campaign-aggregate action. Map context can never make
+    // an Egg authoritative or create a map-scoped execution offer.
+    case 'egg': return false
     case 'zygarde-cube-and-cells': return input.placement.sheetKind === 'pokemon'
       && input.linkedTrainers.some(trainer => trainerHasItem(trainer, 'Zygarde Cube'))
       && contextual
@@ -970,7 +970,8 @@ export const buildCapabilityClientCapabilityBundle = (
       if (!instance.effective) continue
       const runtime = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require(instance.canonicalId)
       for (const action of runtime.spec.actions) {
-        if (independentActionBlocked || action.actionId === 'ready-light-shield') continue
+        if (independentActionBlocked || action.actionId === 'ready-light-shield'
+          || capabilityActionDelegatesToCampaignAggregate(instance.canonicalId, action.actionId)) continue
         const context = action.contextPredicateId.slice(action.contextPredicateId.lastIndexOf('.') + 1)
         if (!contextSatisfied({
           context,
