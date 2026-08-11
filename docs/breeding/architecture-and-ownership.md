@@ -30,6 +30,12 @@ app-owned reference JSON + reviewed breeding artifacts
 
 The semantic registry registers every breeding JSON artifact exactly once. The checker recursively compares that registry with the data directory and rejects extras, omissions, duplicate IDs/paths, hash drift, missing implementation paths, or divergence from exported closed runtime enums. This is declaration closure, not a source of runtime facts and not permission to execute an interaction before its owning reducer certifies it.
 
+## Whole-Species conformance
+
+`data/breeding-automation/whole-species-conformance.json` records BR-081 certification against the current closure and the original pure-rules matrix. The suite traverses all 407 Family DAGs and resolves all 861 producible Species (every compiled Species except Ditto as offspring) from an authorized representative pair. It checks all 1,507 Basic Ability options, gender boundaries, representative inheritance deduplication/pathways, exact compiled hatch duration, Level 1 ordinary hatch, Family/spec self-hashes, 455 evolution edges, 15 ruleset options, 287 explicitly excluded source rows, and the established d20/2d6/d100/duration/fuzz/replay domains.
+
+This certification never fills a source gap. The 287 exclusions and all compiler diagnostics remain unavailable facts until a reviewed app-owned migration changes the compiled registry. Hatch conformance binds the lifecycle, offer, persisted special roll, frozen child construction, and atomic completion contracts; it does not infer a successful hatch from a pure helper result.
+
 ## Fact owners
 
 The invariant is one writer for every fact; all other integrations are readers or prohibited writers.

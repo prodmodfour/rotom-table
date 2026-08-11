@@ -811,6 +811,28 @@ assert(closureRuntimePaths.length === new Set(closureRuntimePaths).size
 assert(Array.isArray(projectionClosure?.apiRoutes) && projectionClosure.apiRoutes.length === 7
   && projectionClosure.apiRoutes.length === projectionClosure.apiRouteFiles.length
   && new Set(projectionClosure.apiRoutes).size === projectionClosure.apiRoutes.length, 'breeding projection API manifest is incomplete or duplicated')
+const wholeSpeciesConformance = json<Record<string, any>>('data/breeding-automation/whole-species-conformance.json')
+assert(wholeSpeciesConformance.reportId === 'ptu-1.05-breeding-whole-species-conformance-v1'
+  && wholeSpeciesConformance.rulesetDefinitionSha256 === ruleset.definitionSha256
+  && wholeSpeciesConformance.sourceManifestSha256 === sourceManifestSha256
+  && wholeSpeciesConformance.definition?.ticket === 'BR-081'
+  && wholeSpeciesConformance.definition?.status === 'certified', 'whole-Species conformance identity drifted')
+const wholeSpeciesCoverage = wholeSpeciesConformance.definition?.compiledCoverage
+assert(wholeSpeciesCoverage?.sourceRows === compilerReport.summary.sourceRecordCount
+  && wholeSpeciesCoverage?.compiledFamilies === compiledRegistry.familySpecs.length
+  && wholeSpeciesCoverage?.compiledSpecies === compiledRegistry.speciesSpecs.length
+  && wholeSpeciesCoverage?.producibleSpecies === compiledRegistry.speciesSpecs.filter((row: any) => row.speciesId !== 'ditto').length
+  && wholeSpeciesCoverage?.explicitlyExcludedSpecies === compilerReport.excludedSpecies.length
+  && wholeSpeciesCoverage?.familyEvolutionEdges === compiledRegistry.familySpecs.reduce((sum: number, row: any) => sum + row.evolutionEdges.length, 0)
+  && wholeSpeciesCoverage?.basicAbilityOptions === compiledRegistry.speciesSpecs.filter((row: any) => row.speciesId !== 'ditto').reduce((sum: number, row: any) => sum + row.basicAbilityIds.length, 0), 'whole-Species compiled coverage drifted')
+assert(wholeSpeciesConformance.definition?.bindings?.semanticClosureDefinitionSha256 === semanticClosure.definitionSha256
+  && wholeSpeciesConformance.definition?.bindings?.pureRulesConformanceDefinitionSha256 === json<Record<string, any>>('data/breeding-automation/pure-rules-conformance.json').definitionSha256
+  && wholeSpeciesConformance.definition?.bindings?.compiledRegistryDefinitionSha256 === compiledRegistry.definitionSha256
+  && wholeSpeciesConformance.definition?.ruleset?.campaignOptionCount === ruleset.definition?.campaignOptions?.length, 'whole-Species conformance binding drifted')
+assert(Array.isArray(wholeSpeciesConformance.definition?.evidencePaths)
+  && wholeSpeciesConformance.definition.evidencePaths.length === 12
+  && wholeSpeciesConformance.definition.evidencePaths.every((path: string) => existsSync(resolve(ROOT, path)))
+  && Object.values(wholeSpeciesConformance.definition?.acceptance ?? {}).every(result => result === 'pass'), 'whole-Species conformance evidence or result drifted')
 
 const planPath = existsSync(resolve(ROOT, registry.definition.activePlanPath))
   ? registry.definition.activePlanPath

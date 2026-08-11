@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "reportId": "ptu-1.05-breeding-whole-species-conformance-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "5f9f8134e914d5fc53094a9135eca318a4363fff3c545ead6147859155da47c3",
+  "definition": {
+    "ticket": "BR-081",
+    "status": "certified",
+    "scope": "all-current-compiled-species-and-families",
+    "compiledCoverage": {
+      "sourceRows": 1149,
+      "compiledFamilies": 407,
+      "compiledSpecies": 862,
+      "producibleSpecies": 861,
+      "explicitlyExcludedSpecies": 287,
+      "familyEvolutionEdges": 455,
+      "eggGroupMemberships": 1126,
+      "basicAbilityOptions": 1507,
+      "eggMoveIdentities": 3555,
+      "machineCompatibleMoveIdentities": 25838
+    },
+    "compatibility": {
+      "representativeFamilyPairs": 406,
+      "speciesOverrideResolutions": 861,
+      "ratioFamilyPair": "female-and-male-same-family-root",
+      "genderlessFamilyPair": "ditto-and-genderless-family-root",
+      "dittoAsOffspring": "forbidden",
+      "gmSpeciesOverride": "same-compiled-family-members-only",
+      "result": "pass"
+    },
+    "familyGraph": {
+      "properties": [
+        "one-family-per-compiled-species",
+        "root-and-offspring-root-membership",
+        "one-form-policy-per-member",
+        "all-edges-within-family",
+        "acyclic",
+        "every-member-reachable-from-root",
+        "strict-self-hash"
+      ],
+      "result": "pass"
+    },
+    "traits": {
+      "speciesCases": 861,
+      "basicAbilityOptionCases": 1507,
+      "orderedNatureDiceCases": 36,
+      "ratioGenderBoundaryPolicy": "direct-roll-less-than-or-equal-to-female-percent",
+      "genderlessRollPolicy": "no-roll",
+      "rankChoiceCannotExpandCanonicalInventory": true,
+      "result": "pass"
+    },
+    "inheritance": {
+      "speciesCases": 861,
+      "candidateSelection": "first-canonical-egg-or-machine-pathway-or-empty",
+      "twoParentDeduplication": true,
+      "dualPathwayProvenanceRetained": true,
+      "unknownOrDocumentaryMoveSupplementation": "forbidden",
+      "result": "pass"
+    },
+    "hatch": {
+      "durationCases": 861,
+      "ordinaryStartingLevel": 1,
+      "durationAuthority": "compiled-spec-fixed-average",
+      "lifecycleStatuses": 7,
+      "specialRollDomain": 100,
+      "specialTriggerTotals": [
+        1,
+        100
+      ],
+      "automaticShiny": false,
+      "destinationKinds": [
+        "box",
+        "team"
+      ],
+      "completeChildConstruction": "frozen-blueprint-only",
+      "atomicSettlement": "one-child-one-Trainer-link-one-origin-one-terminal-Egg",
+      "result": "pass"
+    },
+    "ruleset": {
+      "campaignOptionCount": 15,
+      "optionSnapshotSelfHash": true,
+      "unknownOptionOrValue": "reject",
+      "documentaryRuntimeSupplementation": "forbidden",
+      "missingCanonicalAuthority": "unavailable",
+      "result": "pass"
+    },
+    "determinism": {
+      "purePipelineReplays": 100,
+      "fuzzCases": 2048,
+      "internalRandomness": "none",
+      "wallProcessBrowserMapOrEncounterInput": "none",
+      "result": "pass"
+    },
+    "bindings": {
+      "semanticClosureDefinitionSha256": "d22da02cb3df4f8324ada8932361b4a919cf5098773c1b590513b4472321e7ed",
+      "pureRulesConformanceDefinitionSha256": "e6cb7f6c284730e213730aeaa1c3cd20297f4c612c82113c267a9c6ebffd6d77",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
+      "compatibilityPolicyDefinitionSha256": "6a38a2ea1cf38b4d331a638ef94be2b9d1b6fb2781c668eedc84f0a6dcd7a34f",
+      "familyGraphPolicyDefinitionSha256": "ae677fe4a6d204e05a2c500e2dc5584b88ca2a10b80546c18a30b94e7541bc76",
+      "traitResolutionPolicyDefinitionSha256": "85bbd7beabffe4f1eac3fe036ca99dc05fdbcef5a16ee3a2c053ab09954dcd72",
+      "inheritanceCandidatePolicyDefinitionSha256": "b30536b9757b436feac611ed64ed4a94eb1e5bd790b2e2fb7dd6d27c65f4b143",
+      "hatchDurationPolicyDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a",
+      "eggLifecyclePolicyDefinitionSha256": "38f3a08c73b99cb376b403c474cf7a8e485f2e7c4c59768ec03cdadfafb0403b",
+      "hatchOfferContractDefinitionSha256": "29995f835ede496af29d4ff829fa5ad7c03f2c08190a47201a7b42cc4fc96c10",
+      "hatchSpecialContractDefinitionSha256": "de3c68e70695c00a926bbae4875a017f0a790d51b778c46aa7b1a2bdf6e8e0e0",
+      "childSheetConstructionContractDefinitionSha256": "e031d7fd01540639b181e6dd8a256dc16d850897e39e6a3bf46613c6da5352f9",
+      "hatchCompletionContractDefinitionSha256": "1867892d039355a3e6e6fd128a5f0e853d02e4ead538850adfc78f816e631d84"
+    },
+    "evidencePaths": [
+      "tests/server/breedingWholeSpeciesConformance.test.ts",
+      "tests/server/breedingPureRulesConformance.test.ts",
+      "tests/server/breedingCompatibility.test.ts",
+      "tests/server/breedingOffspringResolution.test.ts",
+      "tests/server/breedingTraitResolution.test.ts",
+      "tests/server/breedingInheritanceCandidates.test.ts",
+      "tests/server/breedingEggRuleHelpers.test.ts",
+      "tests/server/breedingEggLifecyclePolicy.test.ts",
+      "tests/server/breedingHatchOffers.test.ts",
+      "tests/server/breedingHatchSpecial.test.ts",
+      "tests/server/breedingChildSheetConstruction.test.ts",
+      "tests/server/breedingHatchCompletion.test.ts"
+    ],
+    "acceptance": {
+      "compiledClosure": "pass",
+      "compatibility": "pass",
+      "familyGraph": "pass",
+      "traits": "pass",
+      "inheritance": "pass",
+      "hatch": "pass",
+      "ruleset": "pass",
+      "determinism": "pass"
+    }
+  }
+}

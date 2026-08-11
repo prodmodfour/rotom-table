@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 80,
+    "covered": 81,
     "in-progress": 1,
-    "planned": 9,
+    "planned": 8,
     "blocked": 0
   },
   "requirements": [
@@ -2048,9 +2048,32 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
-      "acceptanceFixtureIds": []
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/whole-species-conformance.json",
+        "data/breeding-automation/pure-rules-conformance.json",
+        "data/breeding-automation/compiled-registry.json",
+        "data/breeding-automation/compiler-validation-report.json",
+        "tests/server/breedingWholeSpeciesConformance.test.ts",
+        "tests/server/breedingPureRulesConformance.test.ts",
+        "tests/server/breedingCompatibility.test.ts",
+        "tests/server/breedingOffspringResolution.test.ts",
+        "tests/server/breedingTraitResolution.test.ts",
+        "tests/server/breedingInheritanceCandidates.test.ts",
+        "tests/server/breedingEggRuleHelpers.test.ts",
+        "tests/server/breedingEggLifecyclePolicy.test.ts",
+        "tests/server/breedingHatchOffers.test.ts",
+        "tests/server/breedingHatchSpecial.test.ts",
+        "tests/server/breedingChildSheetConstruction.test.ts",
+        "tests/server/breedingHatchCompletion.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-standard-compatible-project-v1",
+        "breeding-inheritance-incubation-special-v1",
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
     },
     {
       "id": "breeding:BR-082",
@@ -2062,7 +2085,7 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

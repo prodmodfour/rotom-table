@@ -4,13 +4,13 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "2987a0fc5ec0d6876a7c9ed79a9b07136c7d5b92ca155785aceeaa003723f470",
+  "definitionSha256": "d22da02cb3df4f8324ada8932361b4a919cf5098773c1b590513b4472321e7ed",
   "definition": {
     "ticket": "BR-080",
     "status": "strict-closed",
     "semanticRegistry": {
       "registryId": "breeding-semantic-registry-v1",
-      "expectedArtifactCountIncludingThisManifest": 101,
+      "expectedArtifactCountIncludingThisManifest": 102,
       "dataDirectoryPolicy": "every-json-file-exactly-once-registered-except-registry-self",
       "duplicateArtifactIdPolicy": "reject",
       "duplicateArtifactPathPolicy": "reject",

@@ -76,6 +76,7 @@ The non-strict checker verifies:
 - closed source adjudications;
 - exact 101-artifact semantic registry closure with no unregistered or duplicate breeding JSON;
 - BR-080 equality between compiled specs, Project/Egg enums, operation kinds, projection audiences/routes, the 21-entry interaction inventory, and their runtime paths;
+- BR-081 whole-Species compatibility, Family graph, trait, inheritance, hatch, ruleset, deterministic replay, and explicit exclusion totals;
 - plan/current-ticket/progress consistency;
 - scenario coverage state and dependency gates;
 - synthetic fixture privacy and canonical species references;
