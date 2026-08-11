@@ -218,11 +218,12 @@ export const evaluateBreedingCompatibility = (
       else if (!input.roleOverride) reasons.push('breeding.compatibility.role-override-required')
       else if (!validOverride(input.roleOverride)) reasons.push('breeding.compatibility.role-override-invalid')
       else {
+        const override = input.roleOverride
         parentRoles = Object.freeze(parents.map((parent, index) => assignment(
           parent,
-          input.roleOverride!.roles[index],
+          override.roles[index]!,
           'gm-override',
-          input.roleOverride!.evidenceId,
+          override.evidenceId,
         )) as [BreedingParentRoleAssignment, BreedingParentRoleAssignment])
         compatibilityKind = 'gm-role-override'
         familyContributorParentIndexes = Object.freeze([0, 1])
@@ -238,14 +239,14 @@ export const evaluateBreedingCompatibility = (
       compatibilityKind: null,
       parentRoles: null,
       sharedEggGroupIds,
-      familyContributorParentIndexes: Object.freeze([]),
+      familyContributorParentIndexes: Object.freeze([] as const),
       maturitySatisfied: Object.freeze(maturitySatisfied) as [boolean, boolean],
       optionSnapshotDefinitionSha256: input.options.definitionSha256,
     })
   }
   return Object.freeze({
     status: 'compatible',
-    reasonIds: Object.freeze([]),
+    reasonIds: Object.freeze([] as const),
     compatibilityKind,
     parentRoles,
     sharedEggGroupIds,

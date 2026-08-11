@@ -28,6 +28,8 @@ import {
   planPokemonEggHatchSpecialResolutionV1,
   projectPokemonEggHatchSpecialV1,
   PokemonEggHatchSpecialAuthorityError,
+  type BeginHatchCommandV1,
+  type ResolveHatchSpecialCommandV1,
 } from '../domain/breeding/hatchSpecial'
 import {
   assertPokemonEggHatchOfferAuthorityExactReplayV1,
@@ -473,7 +475,11 @@ export const beginPokemonEggHatchSpecial = (
     createdAtCampaignMinute: readSet.capturedAtCampaignMinute,
     settledAtCampaignMinute: readSet.capturedAtCampaignMinute,
     ...((reservation.kind === 'reserved' || options.resumePending === true) ? { resumePending: true } : {}),
-    execute: (canonical, _operation, context) => {
+    execute: (commandValue, _operation, context) => {
+      if (commandValue.commandKind !== 'begin-hatch') {
+        return fail('breeding.hatch-special-use-case.wrong-command', 'Reserved begin-hatch operation changed command kind.')
+      }
+      const canonical = commandValue as BeginHatchCommandV1
       const commandHash = createBreedingOperationCommandHash(canonical)
       const currentEgg = context.repositories.eggs.get(canonical.payload.eggId)
       if (!currentEgg) return createBreedingOperationRejectedV1({
@@ -617,7 +623,11 @@ export const resolvePokemonEggHatchSpecial = (
     createdAtCampaignMinute: readSet.capturedAtCampaignMinute,
     settledAtCampaignMinute: readSet.capturedAtCampaignMinute,
     ...((reservation.kind === 'reserved' || options.resumePending === true) ? { resumePending: true } : {}),
-    execute: (canonical, _operation, context) => {
+    execute: (commandValue, _operation, context) => {
+      if (commandValue.commandKind !== 'resolve-hatch-special') {
+        return fail('breeding.hatch-special-use-case.wrong-command', 'Reserved hatch-special resolution changed command kind.')
+      }
+      const canonical = commandValue as ResolveHatchSpecialCommandV1
       const commandHash = createBreedingOperationCommandHash(canonical)
       const currentEgg = context.repositories.eggs.get(canonical.payload.eggId)
       const currentClock = context.repositories.campaignClock.get()

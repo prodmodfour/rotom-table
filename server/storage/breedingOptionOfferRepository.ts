@@ -83,7 +83,7 @@ const rowToOffer = (row: OfferRow): BreedingOptionOfferRecordV1 => {
   assertBreedingStoredColumn(record.issuedAtCampaignMinute === issuedAt && record.expiresAtCampaignMinute === expiresAt && record.settledAtCampaignMinute === settledAt, TABLE, identity, 'campaign minutes')
   return record
 }
-const values = (record: BreedingOptionOfferRecordV1): readonly unknown[] => {
+const values = (record: BreedingOptionOfferRecordV1): readonly (string | number | null)[] => {
   const [targetKind, targetId] = targetParts(record)
   return [record.offerId, stableJsonStringify(record), record.definitionSha256, record.revision, record.status,
     record.choiceKind, targetKind, targetId, record.chooserProfileId, record.issuedOperationId,

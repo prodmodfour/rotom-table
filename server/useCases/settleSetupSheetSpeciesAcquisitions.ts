@@ -89,21 +89,36 @@ const actorAuthorityId = (
   ? 'system:gm-setup-edit'
   : fail(403, 'Species acquisition requires the selected controlling Profile'))
 
+const noSpeciesAcquisition = (
+  savedSheet: PersistedSheet,
+): SettleSetupSheetSpeciesAcquisitionsResult => Object.freeze({
+  primarySheet: savedSheet,
+  additionalUpdatedTrainerSheets: Object.freeze([]),
+  sourceOperationDefinitionSha256s: Object.freeze([]),
+})
+
 const settleEvolution = (
   input: SettleSetupSheetSpeciesAcquisitionsInput,
 ): SettleSetupSheetSpeciesAcquisitionsResult => {
-  const previousSpeciesId = breedingSpeciesIdFromSheetSpecies(input.previousSheet.sheet.species)
-  const speciesId = breedingSpeciesIdFromSheetSpecies(input.savedSheet.sheet.species)
-  if (!previousSpeciesId || !speciesId) {
+  const previousSpecies = input.previousSheet.sheet.species
+  const savedSpecies = input.savedSheet.sheet.species
+  const previousSpeciesId = breedingSpeciesIdFromSheetSpecies(previousSpecies)
+  const speciesId = breedingSpeciesIdFromSheetSpecies(savedSpecies)
+  if (!previousSpeciesId) {
+    const previousIsBlankScaffold = previousSpecies === ''
+    const savedIsBlankScaffold = savedSpecies === ''
+    if (!previousIsBlankScaffold || (!speciesId && !savedIsBlankScaffold)) {
+      return fail(409, 'Evolution acquisition requires canonical before-and-after Species authority')
+    }
+    if (exactOwner(input.database, input.savedSheet.slug, true)) {
+      return fail(409, 'An owned Pokémon cannot gain initial Species authority through a setup save')
+    }
+    return noSpeciesAcquisition(input.savedSheet)
+  }
+  if (!speciesId) {
     return fail(409, 'Evolution acquisition requires canonical before-and-after Species authority')
   }
-  if (previousSpeciesId === speciesId) {
-    return Object.freeze({
-      primarySheet: input.savedSheet,
-      additionalUpdatedTrainerSheets: Object.freeze([]),
-      sourceOperationDefinitionSha256s: Object.freeze([]),
-    })
-  }
+  if (previousSpeciesId === speciesId) return noSpeciesAcquisition(input.savedSheet)
 
   const owner = exactOwner(input.database, input.savedSheet.slug, true)
   if (!owner) {

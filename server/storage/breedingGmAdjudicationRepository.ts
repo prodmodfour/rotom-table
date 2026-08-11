@@ -92,7 +92,7 @@ const rowToRecord = (row: AdjudicationRow): BreedingGmAdjudicationRecordV1 => {
     && record.settledAtCampaignMinute === settledAt, TABLE, identity, 'campaign minutes')
   return record
 }
-const values = (record: BreedingGmAdjudicationRecordV1): readonly unknown[] => {
+const values = (record: BreedingGmAdjudicationRecordV1): readonly (string | number | null)[] => {
   const [targetKind, targetId] = targetParts(record)
   return [record.adjudicationId, stableJsonStringify(record), record.definitionSha256, record.revision,
     record.status, record.adjudicationKind, targetKind, targetId, record.offerId,

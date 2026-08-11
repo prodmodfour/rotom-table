@@ -10,9 +10,20 @@ import {
 } from '#shared/breeding/hatchSpecial'
 import type {
   BreedingGmAdjudicationRecordV1,
+  BreedingOfferOptionV1,
   BreedingOptionOfferRecordV1,
   BreedingRollRecordV1,
 } from '#shared/breeding/ledgers'
+import {
+  parseBreedingAdjudicationIdSyntax,
+  parseBreedingOfferIdSyntax,
+  parseBreedingOfferOptionIdSyntax,
+  parseBreedingRollRecordIdSyntax,
+  type BreedingAdjudicationId,
+  type BreedingOfferId,
+  type BreedingOfferOptionId,
+  type BreedingRollRecordId,
+} from '#shared/breeding/ids'
 import { parseBreedingOperationCommandV1, type BreedingOperationCommandV1 } from '#shared/breeding/operations'
 import {
   parseAuthoritativePokemonEggHatchOfferAuthorityV1,
@@ -145,20 +156,24 @@ const minute = (value: unknown): number => {
 const operationIdPart = (kind: string, operationId: string, eggId: string): string => (
   createHash('sha256').update(`${kind}\0${operationId}\0${eggId}`).digest('hex').slice(0, 32)
 )
-export const deriveBreedingHatchSpecialRollRecordIdV1 = (operationId: string, eggId: string): `breeding-roll:v1:${string}` => (
-  `breeding-roll:v1:${operationIdPart('breeding-hatch-special-roll-v1', operationId, eggId)}`
+export const deriveBreedingHatchSpecialRollRecordIdV1 = (operationId: string, eggId: string): BreedingRollRecordId => (
+  parseBreedingRollRecordIdSyntax(`breeding-roll:v1:${operationIdPart('breeding-hatch-special-roll-v1', operationId, eggId)}`)
+  ?? fail('breeding.hatch-special.invalid-request', 'Derived hatch-special roll identity is invalid.')
 )
-export const deriveBreedingHatchSpecialOfferIdV1 = (operationId: string, eggId: string): `breeding-offer:v1:${string}` => (
-  `breeding-offer:v1:${operationIdPart('breeding-hatch-special-offer-v1', operationId, eggId)}`
+export const deriveBreedingHatchSpecialOfferIdV1 = (operationId: string, eggId: string): BreedingOfferId => (
+  parseBreedingOfferIdSyntax(`breeding-offer:v1:${operationIdPart('breeding-hatch-special-offer-v1', operationId, eggId)}`)
+  ?? fail('breeding.hatch-special.invalid-request', 'Derived hatch-special offer identity is invalid.')
 )
-export const deriveBreedingHatchSpecialAdjudicationIdV1 = (operationId: string, eggId: string): `breeding-adjudication:v1:${string}` => (
-  `breeding-adjudication:v1:${operationIdPart('breeding-hatch-special-adjudication-v1', operationId, eggId)}`
+export const deriveBreedingHatchSpecialAdjudicationIdV1 = (operationId: string, eggId: string): BreedingAdjudicationId => (
+  parseBreedingAdjudicationIdSyntax(`breeding-adjudication:v1:${operationIdPart('breeding-hatch-special-adjudication-v1', operationId, eggId)}`)
+  ?? fail('breeding.hatch-special.invalid-request', 'Derived hatch-special adjudication identity is invalid.')
 )
-const deriveOptionId = (operationId: string, eggId: string, outcomeId: BreedingHatchSpecialOutcomeId): `option:v1:${string}` => (
-  `option:v1:${createHash('sha256').update(`breeding-hatch-special-option-v1\0${operationId}\0${eggId}\0${outcomeId}`).digest('hex').slice(0, 32)}`
+const deriveOptionId = (operationId: string, eggId: string, outcomeId: BreedingHatchSpecialOutcomeId): BreedingOfferOptionId => (
+  parseBreedingOfferOptionIdSyntax(`option:v1:${createHash('sha256').update(`breeding-hatch-special-option-v1\0${operationId}\0${eggId}\0${outcomeId}`).digest('hex').slice(0, 32)}`)
+  ?? fail('breeding.hatch-special.invalid-request', 'Derived hatch-special option identity is invalid.')
 )
 const outcome = (outcomeId: BreedingHatchSpecialOutcomeId) => BREEDING_HATCH_SPECIAL_OUTCOME_POLICY.outcomes.find(value => value.outcomeId === outcomeId)!
-const optionDefinitions = (operationId: string, eggId: string) => Object.freeze(
+const optionDefinitions = (operationId: string, eggId: string): readonly BreedingOfferOptionV1[] => Object.freeze(
   BREEDING_HATCH_SPECIAL_OUTCOME_IDS.map(outcomeId => {
     const definition = outcome(outcomeId)
     return Object.freeze({

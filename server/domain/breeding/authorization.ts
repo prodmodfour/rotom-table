@@ -366,6 +366,11 @@ export interface BreedingProjectSetupParentAuthorityInputV1 {
   readonly ownerTrainerControl: BreedingTrainerControlEvidenceV1 | null
   readonly consentEvidence: BreedingCrossOwnerConsentEvidenceV1 | null
 }
+type BreedingCommandOfKind<Kind extends BreedingOperationCommandV1['commandKind']> = Extract<
+  BreedingOperationCommandV1,
+  { readonly commandKind: Kind }
+>
+
 export const authorizeBreedingProjectSetupV1 = (input: {
   readonly command: unknown
   readonly readSet: unknown
@@ -377,8 +382,9 @@ export const authorizeBreedingProjectSetupV1 = (input: {
   readonly gmOverrides: readonly unknown[]
   readonly securityPolicyDefinitionSha256: string
 }): BreedingAuthorizationReceiptV1 => {
-  const command = parseBreedingOperationCommandV1(input.command)
-  if (command.commandKind !== 'preview-breeding' && command.commandKind !== 'create-breeding-project') fail('breeding.authorization.unsupported-command', 'command.commandKind', 'project setup authorization accepts preview or create only.')
+  const commandValue = parseBreedingOperationCommandV1(input.command)
+  if (commandValue.commandKind !== 'preview-breeding' && commandValue.commandKind !== 'create-breeding-project') fail('breeding.authorization.unsupported-command', 'command.commandKind', 'project setup authorization accepts preview or create only.')
+  const command = commandValue as BreedingCommandOfKind<'preview-breeding' | 'create-breeding-project'>
   const readSet = validateBreedingOperationReadSetCompleteness(command, input.readSet)
   const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
   const baseEvidence: BreedingAuthorizationEvidenceV1[] = [actor]
@@ -440,7 +446,7 @@ export const authorizeBreedingProjectSetupV1 = (input: {
     }
     if (command.commandKind !== 'create-breeding-project' || parent.verificationMode !== 'server-verified-link' || control !== null || parentInput.consentEvidence !== null) return deny(context, 'breeding.authorization.consent-required')
   }
-  if (command.commandKind === 'create-breeding-project' && (hasCrossOwnerParent !== (payload.consentPolicy === 'cross-owner-current-revision-consent'))) return deny(context, 'breeding.authorization.consent-required')
+  if (command.commandKind === 'create-breeding-project' && (hasCrossOwnerParent !== (command.payload.consentPolicy === 'cross-owner-current-revision-consent'))) return deny(context, 'breeding.authorization.consent-required')
   if (overrides.some(value => !usedOverrides.has(value.overrideId))) return deny(context, 'breeding.authorization.gm-override-invalid')
   return receipt({ ...context, evidence: baseEvidence, overrides, authorized: true, reasonId: 'breeding.authorization.authorized' })
 }
@@ -454,11 +460,12 @@ export const authorizeBreedingEggIncubationV1 = (input: {
   readonly gmOverrides: readonly unknown[]
   readonly securityPolicyDefinitionSha256: string
 }): BreedingAuthorizationReceiptV1 => {
-  const command = parseBreedingOperationCommandV1(input.command)
-  if (command.commandKind !== 'advance-egg-incubation' && command.commandKind !== 'set-egg-incubation-pause'
-    && command.commandKind !== 'apply-egg-warmer-capability') {
+  const commandValue = parseBreedingOperationCommandV1(input.command)
+  if (commandValue.commandKind !== 'advance-egg-incubation' && commandValue.commandKind !== 'set-egg-incubation-pause'
+    && commandValue.commandKind !== 'apply-egg-warmer-capability') {
     fail('breeding.authorization.unsupported-command', 'command.commandKind', 'Egg incubation authorization accepts progress, explicit pause control, or the reviewed Egg Warmer Capability operation only.')
   }
+  const command = commandValue as BreedingCommandOfKind<'advance-egg-incubation' | 'set-egg-incubation-pause' | 'apply-egg-warmer-capability'>
   const readSet = validateBreedingOperationReadSetCompleteness(command, input.readSet)
   const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
   const egg = parsePokemonEggDocumentV1(input.egg)
@@ -548,10 +555,11 @@ export const authorizeBreedingEggReadinessCorrectionV1 = (input: {
   readonly gmOverrides: readonly unknown[]
   readonly securityPolicyDefinitionSha256: string
 }): BreedingAuthorizationReceiptV1 => {
-  const command = parseBreedingOperationCommandV1(input.command)
-  if (command.commandKind !== 'mark-egg-ready') {
+  const commandValue = parseBreedingOperationCommandV1(input.command)
+  if (commandValue.commandKind !== 'mark-egg-ready') {
     fail('breeding.authorization.unsupported-command', 'command.commandKind', 'Egg readiness correction accepts mark-egg-ready only.')
   }
+  const command = commandValue as BreedingCommandOfKind<'mark-egg-ready'>
   const readSet = validateBreedingOperationReadSetCompleteness(command, input.readSet)
   const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
   const egg = parsePokemonEggDocumentV1(input.egg)
@@ -625,10 +633,11 @@ export const authorizeBreedingCampaignClockBatchV1 = (input: {
   readonly gmOverrides: readonly unknown[]
   readonly securityPolicyDefinitionSha256: string
 }): BreedingAuthorizationReceiptV1 => {
-  const command = parseBreedingOperationCommandV1(input.command)
-  if (command.commandKind !== 'advance-campaign-clock') {
+  const commandValue = parseBreedingOperationCommandV1(input.command)
+  if (commandValue.commandKind !== 'advance-campaign-clock') {
     fail('breeding.authorization.unsupported-command', 'command.commandKind', 'Campaign-clock Egg batching accepts advance-campaign-clock only.')
   }
+  const command = commandValue as BreedingCommandOfKind<'advance-campaign-clock'>
   const readSet = validateBreedingOperationReadSetCompleteness(command, input.readSet)
   const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
   const currentClock = parseCampaignClockV1(input.currentClock)
@@ -717,10 +726,11 @@ export const authorizeBreedingInheritanceLearningV1 = (input: {
   readonly gmOverrides: readonly unknown[]
   readonly securityPolicyDefinitionSha256: string
 }): BreedingAuthorizationReceiptV1 => {
-  const command = parseBreedingOperationCommandV1(input.command)
-  if (command.commandKind !== 'record-inheritance-learning') {
+  const commandValue = parseBreedingOperationCommandV1(input.command)
+  if (commandValue.commandKind !== 'record-inheritance-learning') {
     fail('breeding.authorization.unsupported-command', 'command.commandKind', 'inheritance learning authorization accepts record-inheritance-learning only.')
   }
+  const command = commandValue as BreedingCommandOfKind<'record-inheritance-learning'>
   const readSet = validateBreedingOperationReadSetCompleteness(command, input.readSet)
   const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
   const origin = parseAuthoritativePokemonBreedingOriginV1(input.origin)
@@ -791,8 +801,9 @@ export const authorizeBreedingLifecycleControlV1 = (input: {
   readonly gmOverrides: readonly unknown[]
   readonly securityPolicyDefinitionSha256: string
 }): BreedingAuthorizationReceiptV1 => {
-  const command = parseBreedingOperationCommandV1(input.command)
-  if (command.commandKind !== 'cancel-breeding-project' && command.commandKind !== 'revoke-breeding-consent' && command.commandKind !== 'recover-breeding-operation') fail('breeding.authorization.unsupported-command', 'command.commandKind', 'lifecycle control accepts Project cancellation, consent settlement, or operation recovery only.')
+  const commandValue = parseBreedingOperationCommandV1(input.command)
+  if (commandValue.commandKind !== 'cancel-breeding-project' && commandValue.commandKind !== 'revoke-breeding-consent' && commandValue.commandKind !== 'recover-breeding-operation') fail('breeding.authorization.unsupported-command', 'command.commandKind', 'lifecycle control accepts Project cancellation, consent settlement, or operation recovery only.')
+  const command = commandValue as BreedingCommandOfKind<'cancel-breeding-project' | 'revoke-breeding-consent' | 'recover-breeding-operation'>
   const readSet = validateBreedingOperationReadSetCompleteness(command, input.readSet)
   const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
   const project = input.project === null ? null : parseBreedingProjectDocumentV1(input.project)

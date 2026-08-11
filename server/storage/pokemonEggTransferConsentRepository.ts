@@ -96,7 +96,7 @@ const rowToConsent = (row: PokemonEggTransferConsentRow): PokemonEggTransferCons
   assertBreedingStoredColumn(consent.settlementOperationId === row.settlement_operation_id, TABLE, identity, 'settlement_operation_id')
   return consent
 }
-const values = (consent: PokemonEggTransferConsentV1): readonly unknown[] => [
+const values = (consent: PokemonEggTransferConsentV1): readonly (string | number | null)[] => [
   consent.consentId,
   stableJsonStringify(consent),
   consent.definitionSha256,

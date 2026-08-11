@@ -184,6 +184,54 @@ describe('BR-069 Species acquisition integrations', () => {
     }))
   })
 
+  it('allows one exact unowned blank scaffold to receive canonical Species without inferring acquisition', () => {
+    const database = open()
+    savePokemon(database, 'new-pokemon', '')
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const scaffold = sheets.getByRef('pokemon', 'new-pokemon')!
+
+    const result = save(database, {
+      kind: 'pokemon',
+      slug: 'new-pokemon',
+      expectedRevision: 0,
+      sheet: { ...scaffold.sheet, nickname: 'Encounter fixture', species: 'Pikachu' },
+      now: 200,
+    })
+
+    expect(result.sheet).toMatchObject({ slug: 'new-pokemon', species: 'Pikachu', revision: 1 })
+    expect(tableCount(database, 'trainer_species_acquisitions')).toBe(0)
+    expect(tableCount(database, 'trainer_species_acquisition_source_operations')).toBe(0)
+  })
+
+  it('rejects owned or non-canonical blank-scaffold initialization atomically', () => {
+    const ownedDatabase = open()
+    savePokemon(ownedDatabase, 'owned-blank', '')
+    saveTrainer(ownedDatabase, 'trainer-owner', { currentTeam: ['owned-blank'] })
+    const ownedSheets = createSqliteSheetRepository<Record<string, unknown>>(ownedDatabase)
+    expect(() => save(ownedDatabase, {
+      kind: 'pokemon', slug: 'owned-blank', expectedRevision: 0,
+      sheet: { ...ownedSheets.getByRef('pokemon', 'owned-blank')!.sheet, species: 'Pikachu' },
+      now: 200,
+    })).toThrow(/owned Pokémon cannot gain initial Species authority/i)
+    expect(ownedSheets.getByRef('pokemon', 'owned-blank')).toMatchObject({
+      revision: 0,
+      sheet: { species: '' },
+    })
+
+    const unknownDatabase = open()
+    savePokemon(unknownDatabase, 'unknown-blank', '')
+    const unknownSheets = createSqliteSheetRepository<Record<string, unknown>>(unknownDatabase)
+    expect(() => save(unknownDatabase, {
+      kind: 'pokemon', slug: 'unknown-blank', expectedRevision: 0,
+      sheet: { ...unknownSheets.getByRef('pokemon', 'unknown-blank')!.sheet, species: 'Missingno' },
+      now: 200,
+    })).toThrow(/canonical before-and-after Species authority/i)
+    expect(unknownSheets.getByRef('pokemon', 'unknown-blank')).toMatchObject({
+      revision: 0,
+      sheet: { species: '' },
+    })
+  })
+
   it('settles a current owned evolution with one history row, one Dex Exp, and both sheet refreshes', () => {
     const database = open()
     savePokemon(database, 'starter', 'Bulbasaur')

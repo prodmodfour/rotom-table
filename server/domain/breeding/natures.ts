@@ -24,7 +24,12 @@ const rows: BreedingNature[] = naturesJson.definition.entries.map((row, index) =
     || !STATS.has(row.lowersStatId)) {
     throw new Error(`Breeding Nature row ${index} is invalid.`)
   }
-  return Object.freeze({ ...row, id: row.id as BreedingNatureId })
+  return Object.freeze({
+    ...row,
+    id: row.id as BreedingNatureId,
+    raisesStatId: row.raisesStatId as BreedingNatureStatId,
+    lowersStatId: row.lowersStatId as BreedingNatureStatId,
+  })
 })
 if (rows.length !== BREEDING_NATURE_COUNT || new Set(rows.map(row => row.id)).size !== rows.length) {
   throw new Error('Breeding Nature catalog must contain 36 unique entries.')

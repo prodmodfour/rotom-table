@@ -27,7 +27,7 @@ export interface CreatedInitializedPokemonSheet {
   readonly revision: 0
   readonly updatedAt: number
   readonly path: string
-  readonly sheet: CharacterSheet & { readonly revision: 0, readonly folder: string, readonly updatedAt: number, readonly createdAt: number }
+  readonly sheet: CharacterSheet & Record<string, unknown> & { readonly revision: 0, readonly folder: string, readonly updatedAt: number, readonly createdAt: number }
 }
 export interface InitializedPokemonSheetRepository {
   readonly database: RotomDatabase
@@ -63,30 +63,31 @@ const fail = (field: string, message: string): never => { throw new InitializedP
 const plainJson = (value: unknown, path = 'document', seen = new Set<object>()): void => {
   if (value === null || typeof value === 'string' || typeof value === 'boolean') return
   if (typeof value === 'number') { if (!Number.isFinite(value)) fail(path, 'must contain only finite JSON numbers.'); return }
-  if (typeof value !== 'object') fail(path, 'must contain only JSON data.')
-  if (seen.has(value)) fail(path, 'cannot contain cycles.')
-  seen.add(value)
-  if (Object.getOwnPropertySymbols(value).length > 0) fail(path, 'cannot contain symbol fields.')
-  if (Array.isArray(value)) {
-    if (Object.getPrototypeOf(value) !== Array.prototype) fail(path, 'must use plain arrays.')
-    const names = Object.getOwnPropertyNames(value)
-    if (names.length !== value.length + 1 || names.some(name => name !== 'length' && !/^(0|[1-9][0-9]*)$/.test(name))) fail(path, 'cannot be sparse or enriched.')
-    for (let index = 0; index < value.length; index += 1) {
-      const descriptor = Object.getOwnPropertyDescriptor(value, String(index))
-      if (!descriptor?.enumerable || !('value' in descriptor)) fail(`${path}[${index}]`, 'must be an enumerable data entry.')
+  if (typeof value !== 'object') return fail(path, 'must contain only JSON data.')
+  const objectValue: object = value
+  if (seen.has(objectValue)) return fail(path, 'cannot contain cycles.')
+  seen.add(objectValue)
+  if (Object.getOwnPropertySymbols(objectValue).length > 0) return fail(path, 'cannot contain symbol fields.')
+  if (Array.isArray(objectValue)) {
+    if (Object.getPrototypeOf(objectValue) !== Array.prototype) return fail(path, 'must use plain arrays.')
+    const names = Object.getOwnPropertyNames(objectValue)
+    if (names.length !== objectValue.length + 1 || names.some(name => name !== 'length' && !/^(0|[1-9][0-9]*)$/.test(name))) return fail(path, 'cannot be sparse or enriched.')
+    for (let index = 0; index < objectValue.length; index += 1) {
+      const descriptor = Object.getOwnPropertyDescriptor(objectValue, String(index))
+      if (!descriptor?.enumerable || !('value' in descriptor)) return fail(`${path}[${index}]`, 'must be an enumerable data entry.')
       plainJson(descriptor.value, `${path}[${index}]`, seen)
     }
   }
   else {
-    const prototype = Object.getPrototypeOf(value)
-    if (prototype !== Object.prototype && prototype !== null) fail(path, 'must use plain objects.')
-    for (const key of Object.getOwnPropertyNames(value)) {
-      const descriptor = Object.getOwnPropertyDescriptor(value, key)
-      if (!descriptor?.enumerable || !('value' in descriptor)) fail(`${path}.${key}`, 'must be an enumerable data field.')
+    const prototype = Object.getPrototypeOf(objectValue)
+    if (prototype !== Object.prototype && prototype !== null) return fail(path, 'must use plain objects.')
+    for (const key of Object.getOwnPropertyNames(objectValue)) {
+      const descriptor = Object.getOwnPropertyDescriptor(objectValue, key)
+      if (!descriptor?.enumerable || !('value' in descriptor)) return fail(`${path}.${key}`, 'must be an enumerable data field.')
       plainJson(descriptor.value, `${path}.${key}`, seen)
     }
   }
-  seen.delete(value)
+  seen.delete(objectValue)
 }
 const safeInteger = (value: unknown, field: string, minimum = 0, maximum = Number.MAX_SAFE_INTEGER): number => {
   if (!Number.isSafeInteger(value) || Number(value) < minimum || Number(value) > maximum) fail(field, `must be a safe integer from ${minimum} through ${maximum}.`)
@@ -272,7 +273,7 @@ const assertStrictInitialChildShape = (source: CharacterSheet): void => {
   for (const [key, value] of Object.entries(scene)) finiteNumber(value, `document.scene.${key}`)
 }
 const safeText = (value: unknown, field: string, maximum = 160): string => {
-  if (typeof value !== 'string' || value.length < 1 || value.length > maximum || value.trim() !== value || /[\u0000-\u001f\u007f]/u.test(value)) fail(field, `must be trimmed control-free text of 1-${maximum} characters.`)
+  if (typeof value !== 'string' || value.length < 1 || value.length > maximum || value.trim() !== value || /[\u0000-\u001f\u007f]/u.test(value)) return fail(field, `must be trimmed control-free text of 1-${maximum} characters.`)
   return value
 }
 const normalizeRoot = (value: unknown): string => {
@@ -282,10 +283,10 @@ const normalizeRoot = (value: unknown): string => {
   return root || 'hatched-pokemon'
 }
 const candidateSlug = (root: string, index: number): string => index === 0 ? root : `${root}-${index}`
-const fullyInitializedDocument = (input: CreateInitializedPokemonSheetInput, slug: string, folder: string): CharacterSheet & { revision: 0, folder: string, updatedAt: number, createdAt: number } => {
+const fullyInitializedDocument = (input: CreateInitializedPokemonSheetInput, slug: string, folder: string): CharacterSheet & Record<string, unknown> & { revision: 0, folder: string, updatedAt: number, createdAt: number } => {
   plainJson(input.document)
   for (const field of Object.keys(input.document)) if (AUTHORITY_FIELDS.has(field)) fail(`document.${field}`, 'is assigned only by the storage authority.')
-  const source = input.document as CharacterSheet
+  const source = input.document as unknown as CharacterSheet
   assertStrictInitialChildShape(source)
   safeText(source.nickname, 'document.nickname')
   if (typeof source.species !== 'string' || !SPECIES.has(source.species)) fail('document.species', 'must be an exact app-owned Pokédex species identity.')
@@ -305,7 +306,7 @@ const fullyInitializedDocument = (input: CreateInitializedPokemonSheetInput, slu
   const assigned = { ...source, slug, folder, revision: 0 as const, createdAt: updatedAt, updatedAt }
   const normalized = normalizeCharacterSheet(JSON.parse(JSON.stringify(assigned)) as CharacterSheet) as CharacterSheet & { revision: 0, folder: string, updatedAt: number, createdAt: number }
   if (stableJsonStringify(normalized) !== stableJsonStringify(assigned)) fail('document', 'must already equal the complete current Pokémon sheet normalization; placeholder/default supplementation is forbidden.')
-  return assigned
+  return assigned as CharacterSheet & Record<string, unknown> & { revision: 0, folder: string, updatedAt: number, createdAt: number }
 }
 let savepointOrdinal = 0
 const nextSavepoint = (): string => `initialized_pokemon_sheet_${savepointOrdinal = (savepointOrdinal + 1) % 1_000_000}`

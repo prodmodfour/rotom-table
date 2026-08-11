@@ -355,7 +355,7 @@ const validateParentSnapshots = (input: {
     return fail('breeding.production-snapshot.unavailable', 'Current parent snapshots are not compatible under the frozen campaign options.')
   }
   for (let index = 0; index < 2; index += 1) {
-    const assignment = compatibility.parentRoles[index]
+    const assignment = compatibility.parentRoles[index]!
     const expectedEvidence = assignment.assignmentKind === 'gm-override'
       ? input.roleOverrideEvidenceDefinitionSha256
       : BREEDING_COMPATIBILITY_POLICY_DEFINITION_SHA256

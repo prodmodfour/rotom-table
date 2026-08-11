@@ -349,6 +349,7 @@ export const createBreedingTransactionCoordinator = (
             listByOwner: guarded('repositories.eggs.listByOwner', eggs.listByOwner.bind(eggs)),
             listBySourceProject: guarded('repositories.eggs.listBySourceProject', eggs.listBySourceProject.bind(eggs)),
             listByStatuses: guarded('repositories.eggs.listByStatuses', eggs.listByStatuses.bind(eggs)),
+            listIncubatingBehindClock: guarded('repositories.eggs.listIncubatingBehindClock', eggs.listIncubatingBehindClock.bind(eggs)),
             insert: guarded('repositories.eggs.insert', eggs.insert.bind(eggs)),
             replace: guarded('repositories.eggs.replace', eggs.replace.bind(eggs)),
           }),
@@ -441,7 +442,7 @@ export const createBreedingTransactionCoordinator = (
         })
         const context: BreedingTransactionContext = Object.freeze({
           repositories,
-          appendRealtime: (eventInputs): readonly PersistedRealtimeEvent[] => {
+          appendRealtime: (eventInputs: readonly AppendRealtimeEventInput[]): readonly PersistedRealtimeEvent[] => {
             requireActiveContext('appendRealtime')
             if (!Array.isArray(eventInputs) || eventInputs.length < 1
               || staged.length + eventInputs.length > BREEDING_TRANSACTION_REALTIME_EVENT_MAXIMUM) {

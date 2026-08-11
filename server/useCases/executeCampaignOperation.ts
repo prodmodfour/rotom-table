@@ -4,17 +4,17 @@ import type {
 } from '#shared/campaignOperations'
 import type { RotomDatabase } from '../storage/database'
 
-export interface TransactionalCampaignOperationLedgerAdapter<Command, Result, Record>
-  extends CampaignOperationLedgerAdapter<Command, Result, Record> {
+export interface TransactionalCampaignOperationLedgerAdapter<Command, Result, LedgerRecord extends { readonly command: Command }>
+  extends CampaignOperationLedgerAdapter<Command, Result, LedgerRecord> {
   readonly database: RotomDatabase
 }
-export interface ExecuteCampaignOperationInput<Command, Result, Record> {
-  readonly repository: TransactionalCampaignOperationLedgerAdapter<Command, Result, Record>
+export interface ExecuteCampaignOperationInput<Command, Result, LedgerRecord extends { readonly command: Command }> {
+  readonly repository: TransactionalCampaignOperationLedgerAdapter<Command, Result, LedgerRecord>
   readonly command: unknown
   readonly createdAtCampaignMinute: number
   readonly settledAtCampaignMinute: number | (() => number)
   readonly resumePending?: boolean
-  readonly execute: (command: Command, record: Record) => Result
+  readonly execute: (command: Command, record: LedgerRecord) => Result
   /** Failure-injection hook proving aggregate writes and terminal settlement are atomic. */
   readonly beforeSettle?: (result: Result) => void
 }
@@ -36,9 +36,9 @@ const minute = (value: number | (() => number)): number => typeof value === 'fun
  * recoverable pending evidence. Aggregate writes and the terminal result then share
  * one caller-owned SQLite transaction and savepoint. Exact retries never call execute.
  */
-export const executeCampaignOperation = <Command, Result, Record>(
-  input: ExecuteCampaignOperationInput<Command, Result, Record>,
-): CampaignOperationExecutionDecision<Record> => {
+export const executeCampaignOperation = <Command, Result, LedgerRecord extends { readonly command: Command }>(
+  input: ExecuteCampaignOperationInput<Command, Result, LedgerRecord>,
+): CampaignOperationExecutionDecision<LedgerRecord> => {
   const { repository } = input
   const reservation = repository.database.withTransaction(() => repository.reserve(input.command, input.createdAtCampaignMinute))
   if (reservation.kind === 'exact-retry') return Object.freeze({ kind: 'exact-retry', record: reservation.record })

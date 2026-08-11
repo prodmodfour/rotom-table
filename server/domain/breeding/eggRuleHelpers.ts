@@ -8,10 +8,7 @@ import {
   type BreedingCampaignOptionSnapshotV1,
   type BreedingHatchDurationVariation,
 } from './campaignOptions'
-import {
-  COMPILED_BREEDING_REGISTRY_DEFINITION_SHA256,
-  compiledBreedingSpeciesSpec,
-} from './registry'
+import { compiledBreedingSpeciesSpec } from './registry'
 
 export const BREEDING_EGG_RULE_HELPERS_POLICY_DEFINITION_SHA256 = eggRulePolicyJson.definitionSha256
 export const BREEDING_HATCH_DURATION_POLICY_DEFINITION_SHA256 = hatchDurationPolicyJson.definitionSha256
@@ -343,7 +340,7 @@ export const resolveBreedingHatchDuration = (
     speciesSpecDefinitionSha256: species.definitionSha256,
     hatchDurationPolicyDefinitionSha256: BREEDING_HATCH_DURATION_POLICY_DEFINITION_SHA256,
   })
-  return Object.freeze({ status: 'resolved', reasonIds: Object.freeze([]), ...definition, resultDefinitionSha256: hash(definition) })
+  return Object.freeze({ status: 'resolved', reasonIds: Object.freeze([] as const), ...definition, resultDefinitionSha256: hash(definition) })
 }
 
 export const resolveBreedingHatchStartingLevel = (
@@ -363,7 +360,7 @@ export const resolveBreedingHatchStartingLevel = (
     startingLevel: kind === 'fossil' ? options.values['breeding.fossil-hatch-level'] : 1,
     optionSnapshotDefinitionSha256: options.definitionSha256,
   })
-  return Object.freeze({ status: 'resolved', reasonIds: Object.freeze([]), ...definition, resultDefinitionSha256: hash(definition) })
+  return Object.freeze({ status: 'resolved', reasonIds: Object.freeze([] as const), ...definition, resultDefinitionSha256: hash(definition) })
 }
 
 const validBabyChoice = (choice: BreedingBabyTemplateChoice): boolean => (
@@ -419,7 +416,7 @@ export const resolveBreedingBabyTemplate = (
     effects,
     optionSnapshotDefinitionSha256: options.definitionSha256,
   })
-  return Object.freeze({ status: 'resolved', reasonIds: Object.freeze([]), ...definition, resultDefinitionSha256: hash(definition) })
+  return Object.freeze({ status: 'resolved', reasonIds: Object.freeze([] as const), ...definition, resultDefinitionSha256: hash(definition) })
 }
 
 const validSpecialRoll = (roll: BreedingHatchSpecialRoll): boolean => identifier(roll.rollId) && boundedInteger(roll.total, 1, 100)
@@ -447,7 +444,7 @@ export const resolveBreedingHatchSpecial = (
   const finalReasons = orderedReasons(reasons)
   if (finalReasons.length || !options || !roll) return Object.freeze({
     status: 'unavailable', reasonIds: finalReasons, isSpecial: null, workflow: null, roll: null,
-    triggerIds: Object.freeze([]), forcedByProvider: null, automaticShiny: false,
+    triggerIds: Object.freeze([] as const), forcedByProvider: null, automaticShiny: false,
     optionSnapshotDefinitionSha256: options?.definitionSha256 ?? null, resultDefinitionSha256: null,
   })
   const isSpecial = triggerIds.length > 0
@@ -460,5 +457,5 @@ export const resolveBreedingHatchSpecial = (
     automaticShiny: false as const,
     optionSnapshotDefinitionSha256: options.definitionSha256,
   })
-  return Object.freeze({ status: 'resolved', reasonIds: Object.freeze([]), ...definition, resultDefinitionSha256: hash(definition) })
+  return Object.freeze({ status: 'resolved', reasonIds: Object.freeze([] as const), ...definition, resultDefinitionSha256: hash(definition) })
 }

@@ -1,8 +1,8 @@
 # Breeding and Egg Lifecycle Implementation Plan
 
-`PLAN_STATUS: IN_PROGRESS`
+`PLAN_STATUS: DONE`
 
-`CURRENT_TICKET: BR-090`
+`CURRENT_TICKET: NONE`
 
 `BLOCKED_BY: done/ENCOUNTER_UI_UX_PLAN.md — PLAN_STATUS: DONE`
 
@@ -463,7 +463,7 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ## Progress snapshot
 
-- Plan tickets: **89 DONE / 90 total**
+- Plan tickets: **90 DONE / 90 total**
 - Frozen breeding source inventory: **30 hash-bound runtime, contract, product, documentary, and parser records**
 - Recorded ruleset/adjudications: **`ptu-1.05-breeding-v1` / 20 accepted conflict decisions / 15 typed campaign options**
 - Compiled species specs: **862 runtime Species / 407 complete Families**
@@ -495,8 +495,8 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 - Resilience certification: **22 commands classified across 13 operation surfaces; 45 transaction, concurrency, idempotency, correction, abandonment, restart, replay, and publication hazards certified**
 - Security certification: **5 audiences, 7 Workshop APIs, 22 privacy fields, 13 threats, 14 malformed-input classes, 22 abuse controls, and 8 audit requirements certified with bounded JSON and write admission active**
 - Semantic closure: **105 registered breeding artifacts; 407 Family/862 Species specs, 12 Project statuses, 7 Egg statuses/4 sources, 22 commands/outcomes, 10 scopes, 5 audiences/7 Workshop APIs, and 21 interaction identities fail closed on drift**
-- Legacy breeding authority retired: **no**
-- Blocking dependency: **none; Encounter UI/UX is complete and archived**
+- Legacy breeding authority retired: **yes; generic sheet, map capability, and placeholder child mutation paths are closed**
+- Blocking dependency: **none; all implementation-plan dependencies are complete and archived**
 
 ## Tickets
 
@@ -705,8 +705,8 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
   - Evidence: Documentation closure `b7c0dc3a22e73767107971694f4fb6d152e834ea5e7d57174a09fe67bea57f01` binds eight required audiences—contributor, operator, GM, player, API, data model, campaign clock, and QA—to reviewed headings, exact runtime vocabularies, all seven Workshop routes, strict request intents, current schema v28, 32 KiB/64 MiB envelopes, 12 Project/seven Egg/four source statuses, 22 commands, five audiences, the 240/DC 12/240 timeline, 100-Egg continuation, dual consent, structural privacy, atomic hatch, archive repair, performance, production acceptance, and final release commands. Four dedicated guides now cover GM/player workflows, HTTP integration, persistence/clock semantics, and QA/release; existing architecture, Workshop, security, contributor, and operator docs were cross-linked and stale planned/count/command claims removed. The six-case executable documentation closure, checker regression, focused lint, local-link validation, and clean-diff validation pass.
 - [x] **BR-089 — Retire manual breeding authority, placeholder child creation, and legacy inheritance mutation paths** — `DONE`
   - Evidence: Hash-bound retirement policy `d20550f41f06f9c5f47377f386a08621c2cfacf2e3c8579c44c126dd513b94fb` closes all three legacy seams. `eggMoves`, `inheritedMoves`, and `inheritedRemaining` are read-only compatibility projections across GM/player whole-sheet saves and sheet UI; strict preservation rejects malformed stored or submitted shapes, survives stale-save contention, excludes compatibility rows from learned Moves, and exposes the Level 100 checkpoint through the Workshop handoff. Egg Warmer remains an effective Capability fact but its map offer, selector, mechanic, and execution routes reject or disappear before rolls and writes; `capabilityEggs` and `hatchHours` are quarantine-only, and the current `apply-egg-warmer-capability` Egg transaction is the sole replacement. Incomplete wizard parent padding is proven ephemeral and non-persisted. Hatch completion retains one fully initialized revision-zero child insert inside the owning transaction with no generic blank-create/follow-up-save import. The 36-case retirement suite, Capability regression/checker, Breeding checker, focused lint, and changed-file typecheck filtering pass; repository-wide typecheck retains only its recorded unrelated baseline.
-- [ ] **BR-090 — Record final acceptance and mark the breeding and Egg lifecycle production-authoritative** — `IN_PROGRESS`
-  - Require source and manifest checkers, typecheck, unit/integration/Nuxt/browser/accessibility suites, build, production-like acceptance, backup/restore proof, and `scripts/quality-gate.sh`.
+- [x] **BR-090 — Record final acceptance and mark the breeding and Egg lifecycle production-authoritative** — `DONE`
+  - Evidence: Final acceptance repaired the complete 113-error/32-file Breeding TypeScript baseline and passed `nuxt typecheck` with zero errors. The strict checker certifies 90/90 archived tickets, 30 frozen sources, 20 adjudications, six fixtures, and 22 scripts; Family and compiler checks certify 480 documentary Families with 949/1,149 resolved rows and the authoritative 862-Species/407-Family registry. `npm run test:breeding-production-acceptance` passed 34 file-SQLite server checks and seven production-Nitro desktop/mobile Workshop browser checks with one intentional mobile matrix skip. The final resource-bounded `scripts/quality-gate.sh` passed 1,277 Vitest files/9,775 tests, two Nuxt files/seven tests, 33 Playwright tests with one intentional skip, all metadata/security/accessibility stages, and the production build; the initial 3 GiB typecheck attempt was resource-limited and the unchanged 5 GiB rerun passed. BR-085's 44-case backup/restore, exact-reference, replay, migration, and executable orphan-repair proof remains green in the full suite. The authoritative ledger and scenario coverage are archived at 90/90 with no unfinished dependency; Breeding and the Egg lifecycle are production-authoritative.
 
 ## Decision log
 

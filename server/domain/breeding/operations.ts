@@ -159,4 +159,4 @@ export const breedingOperationReceiptDefinitionSha256 = (value: {
   readonly aggregateRefs: readonly BreedingOperationAggregateRefV1[]
   readonly changedScopes: readonly BreedingConflictScopeV1[]
   readonly committedAtCampaignMinute: number | null
-}): string => sha256(receiptDefinition(value as BreedingOperationAcceptedV1))
+}): string => sha256(receiptDefinition(value))

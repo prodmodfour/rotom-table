@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import {
+  BREEDING_PARENT_PREVIEW_REASON_IDS,
   BREEDING_PARENT_REQUIRED_VALIDATION_IDS,
   parseBreedingParentDiscoveryFilterV1,
   parseBreedingParentDiscoveryProjectionV1,
@@ -10,6 +11,7 @@ import {
   type BreedingParentCompatibilityPreviewV1,
   type BreedingParentDiscoveryProjectionV1,
   type BreedingParentGenderId,
+  type BreedingParentPreviewReasonId,
   type BreedingParentRosterField,
 } from '#shared/breeding/parentDiscovery'
 import { normalizePlayerProfile, type PlayerProfile } from '#shared/playerProfiles'
@@ -26,7 +28,6 @@ import {
 import {
   evaluateBreedingCompatibility,
   type BreedingCompatibilityParentFacts,
-  type BreedingCompatibilityReasonId,
 } from '../domain/breeding/compatibility'
 import {
   BREEDING_CANONICAL_SPECIES,
@@ -93,6 +94,7 @@ const MAX_STORED_TRAINERS = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview.maximu
 const MAX_PROJECTED_TRAINERS = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview.maximumProjectedTrainers
 const MAX_ROSTER_ENTRIES = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview.maximumRosterEntriesPerTrainer
 const MAX_PROJECTED_CANDIDATES = BREEDING_PERFORMANCE_BUDGET_POLICY_V1.preview.maximumProjectedCandidates
+const PARENT_PREVIEW_REASON_SET = new Set<string>(BREEDING_PARENT_PREVIEW_REASON_IDS)
 const speciesBySourceName = new Map(BREEDING_CANONICAL_SPECIES.map(row => [row.sourceName, row]))
 const compare = (left: string, right: string): number => left < right ? -1 : left > right ? 1 : 0
 const sha256 = (value: unknown): string => createHash('sha256')
@@ -201,8 +203,7 @@ const candidate = (input: {
 }): CandidateAuthority => {
   const stored = input.sheets.get('pokemon', input.parentSheetSlug)
   if (!stored) {
-    return Object.freeze({
-      projection: Object.freeze({
+    const projection: BreedingParentCandidateV1 = Object.freeze({
         parentSheetSlug: input.parentSheetSlug,
         parentSheetRevision: null,
         ownerTrainerSlug: input.trainerSheetSlug,
@@ -212,13 +213,12 @@ const candidate = (input: {
         speciesId: null,
         genderId: null,
         level: null,
-        availability: Object.freeze({
-          status: 'unavailable',
-          reasonIds: Object.freeze(['breeding.parent-discovery.sheet-unavailable']),
-        }),
+      availability: Object.freeze({
+        status: 'unavailable',
+        reasonIds: Object.freeze(['breeding.parent-discovery.sheet-unavailable'] as const),
       }),
-      facts: null,
     })
+    return Object.freeze({ projection, facts: null })
   }
   if (stored.kind !== 'pokemon' || stored.slug !== input.parentSheetSlug) {
     return fail('breeding.parent-discovery.corrupt-storage', 'A consulted Pokémon sheet identity is corrupt.')
@@ -335,9 +335,7 @@ const safeCompatibilityPreview = (input: {
     if (result.status === 'unavailable') reasonIds.push(...result.reasonIds)
   }
   const safeReasons = [...new Set(reasonIds)]
-    .filter((reason): reason is BreedingCompatibilityReasonId | 'breeding.parent-preview.candidate-unavailable' => (
-      reason !== 'breeding.compatibility.maturity-unconfirmed'
-    ))
+    .filter((reason): reason is BreedingParentPreviewReasonId => PARENT_PREVIEW_REASON_SET.has(reason))
     .sort(compare)
   const previewId = `breeding-parent-preview:v1:${sha256({
     actorAuthorityDefinitionSha256: input.actorAuthorityDefinitionSha256,

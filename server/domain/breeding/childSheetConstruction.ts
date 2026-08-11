@@ -132,7 +132,7 @@ interface ReferenceAbilityRecord {
 interface ExperienceEntry { readonly level: number, readonly expNeeded: number }
 
 const pokedex = pokedexJson as readonly PokedexRecord[]
-const moves = movesJson as Readonly<Record<string, ReferenceMoveRecord>>
+const moves = movesJson as unknown as Readonly<Record<string, ReferenceMoveRecord>>
 const abilities = abilitiesJson as Readonly<Record<string, ReferenceAbilityRecord>>
 const experience = new Map((experienceJson as readonly ExperienceEntry[]).map(entry => [entry.level, entry.expNeeded]))
 const moveIdentityByName = new Map(BREEDING_CANONICAL_MOVES.map(identity => [identity.sourceName, identity]))
@@ -356,13 +356,12 @@ const completeDocument = (input: {
     return fail('breeding.child-sheet.stale-authority', 'The current species and frozen Nature cannot resolve a valid HP stat.')
   }
   draft.combat!.currentHp = computeMaxHp(draft, hp.total)
-  const detached = structuredClone(draft) as CharacterSheet & Record<string, unknown>
-  delete detached.slug
-  delete detached.revision
-  if (detached.folder !== undefined || detached.updatedAt !== undefined || detached.createdAt !== undefined) {
+  const { slug: _slug, revision: _revision, ...detached } = structuredClone(draft)
+  if (detached.folder !== undefined || (detached as Record<string, unknown>).updatedAt !== undefined
+    || (detached as Record<string, unknown>).createdAt !== undefined) {
     return fail('breeding.child-sheet.hash-mismatch', 'Sheet normalization attempted to assign storage-owned authority fields.')
   }
-  return deepFreeze(detached as InitializedHatchedPokemonDocumentV1)
+  return deepFreeze(detached as unknown as InitializedHatchedPokemonDocumentV1)
 }
 
 export const planPokemonEggChildSheetConstructionV1 = (value: unknown): PokemonEggChildSheetConstructionPlanV1 => {
@@ -432,7 +431,7 @@ export const planPokemonEggChildSheetConstructionV1 = (value: unknown): PokemonE
       providerTraits: egg.offspring.providerTraits,
       coreRuleHandoff,
     }),
-  })
+  }) as unknown as InitializedHatchedPokemonDocumentV1
   const commandHash = createBreedingOperationCommandHash(command)
   const sourceDefinitionHashes = [
     ...BREEDING_CHILD_SHEET_CONSTRUCTION_POLICY_DEFINITION.sourceDefinitionHashes,

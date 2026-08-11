@@ -16,13 +16,13 @@ export const POKEMON_EGG_TRANSITIONS: Readonly<Record<PokemonEggStatus, readonly
   hatched: Object.freeze([]),
   cancelled: Object.freeze([]),
   'invalidated-by-gm': Object.freeze([]),
-})
+} satisfies Record<PokemonEggStatus, readonly PokemonEggStatus[]>)
 export const POKEMON_EGG_SPECIAL_TRANSITIONS: Readonly<Record<PokemonEggSpecialStateId, readonly PokemonEggSpecialStateId[]>> = Object.freeze({
   'not-rolled': Object.freeze(['normal', 'pending-adjudication']),
   normal: Object.freeze([]),
   'pending-adjudication': Object.freeze(['resolved']),
   resolved: Object.freeze([]),
-})
+} satisfies Record<PokemonEggSpecialStateId, readonly PokemonEggSpecialStateId[]>)
 export type PokemonEggTransitionCode =
   | 'breeding.egg.invalid-transition'
   | 'breeding.egg.stale-revision'

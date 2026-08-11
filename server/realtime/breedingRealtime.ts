@@ -199,13 +199,21 @@ const projectionAggregateIdentity = (
     return { aggregateKind: projection.aggregateKind, aggregateId: null, revision: projection.revision }
   }
   if (projection.audience === 'gm') {
-    return {
-      aggregateKind: projection.aggregateKind,
-      aggregateId: projection.aggregateKind === 'breeding-project'
-        ? projection.document.projectId
-        : projection.document.eggId,
-      revision: projection.document.revision,
+    if (projection.aggregateKind === 'breeding-project' && 'projectId' in projection.document) {
+      return {
+        aggregateKind: projection.aggregateKind,
+        aggregateId: projection.document.projectId,
+        revision: projection.document.revision,
+      }
     }
+    if (projection.aggregateKind === 'pokemon-egg' && 'eggId' in projection.document) {
+      return {
+        aggregateKind: projection.aggregateKind,
+        aggregateId: projection.document.eggId,
+        revision: projection.document.revision,
+      }
+    }
+    throw new Error('GM Breeding projection aggregate kind and document identity disagree.')
   }
   return {
     aggregateKind: projection.aggregateKind,

@@ -92,6 +92,10 @@ export class BreedingProjectSetupAuthorityError extends Error {
 }
 
 type UnknownRecord = Record<string, unknown>
+type BreedingProjectSetupCommandV1 = Extract<
+  BreedingOperationCommandV1,
+  { readonly commandKind: 'preview-breeding' | 'create-breeding-project' }
+>
 const INPUT_FIELDS = Object.freeze([
   'command', 'readSet', 'actorAuthority', 'ownerTrainerControl', 'breederAuthority',
   'breederTrainerControl', 'parents', 'gmOverrides', 'securityPolicyDefinitionSha256',
@@ -187,7 +191,7 @@ const exactPresentResource = (input: {
 const validateParentFacts = (input: {
   readonly factsValue: unknown
   readonly parentControl: BreedingParentControlEvidenceV1
-  readonly command: BreedingOperationCommandV1
+  readonly command: BreedingProjectSetupCommandV1
   readonly parentIndex: 0 | 1
   readonly readSet: BreedingOperationReadSetV1
   readonly options: BreedingCampaignOptionSnapshotV1
@@ -306,12 +310,15 @@ const validateRoleAdjudication = (input: {
   })()
   try { validateBreedingAdjudicationOfferLink(adjudication, offer) }
   catch { return fail('breeding.setup.invalid-adjudication', 'Parent-role adjudication and bounded offer do not match.') }
+  const decision = adjudication.decision
+  if (decision?.kind !== 'option') {
+    return fail('breeding.setup.invalid-adjudication', 'Parent-role evidence must select one bounded option.')
+  }
   if (adjudication.revision !== 1 || adjudication.status !== 'resolved'
     || adjudication.adjudicationKind !== 'parent-role-override'
     || adjudication.target.kind !== 'trainer-sheet'
     || adjudication.target.sheetSlug !== input.ownerTrainerSlug
     || adjudication.target.revision !== input.ownerTrainerRevision
-    || adjudication.decision?.kind !== 'option'
     || adjudication.createdAtCampaignMinute > adjudication.settledAtCampaignMinute!
     || adjudication.settledAtCampaignMinute! > input.readSet.capturedAtCampaignMinute
     || offer.issuedAtCampaignMinute > offer.settledAtCampaignMinute!
@@ -338,7 +345,7 @@ const validateRoleAdjudication = (input: {
     || !validatesPersistedGmSettlement(input.validateResolvedGmAdjudication, { adjudication, offer })) {
     return fail('breeding.setup.invalid-adjudication', 'Parent-role evidence must bind this exact pair, owner, and read-set checkpoint.')
   }
-  const selected = offer.options.find(option => option.optionId === adjudication.decision!.optionId)
+  const selected = offer.options.find(option => option.optionId === decision.optionId)
   const canonicalValueId = selected?.canonicalValueId
   if (!selected || (canonicalValueId !== 'first-female-second-male'
     && canonicalValueId !== 'first-male-second-female')) {
@@ -386,7 +393,7 @@ const evaluateFactsCompatibility = (
   options,
   roleOverride,
 })
-const parseCommand = (value: unknown): BreedingOperationCommandV1 => {
+const parseCommand = (value: unknown): BreedingProjectSetupCommandV1 => {
   const command = (() => {
     try { return parseBreedingOperationCommandV1(value) }
     catch { return fail('breeding.setup.invalid-request', 'Project setup command is malformed.') }
@@ -394,7 +401,7 @@ const parseCommand = (value: unknown): BreedingOperationCommandV1 => {
   if (command.commandKind !== 'preview-breeding' && command.commandKind !== 'create-breeding-project') {
     return fail('breeding.setup.invalid-request', 'Project setup validation supports preview and create commands only.')
   }
-  return command
+  return command as BreedingProjectSetupCommandV1
 }
 const buildAuthority = (definition: Omit<BreedingProjectSetupValidationV1, 'definitionSha256'>): BreedingProjectSetupValidationV1 => {
   const parsed = parseBreedingProjectSetupValidationV1({

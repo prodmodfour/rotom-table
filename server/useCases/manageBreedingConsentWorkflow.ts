@@ -437,7 +437,7 @@ const grantProjectConsent = (input: {
         parentSheetRevision: currentParent.revision,
         ownerTrainerSlug: currentTrainer.slug,
         consentingProfileId: input.profile.id,
-        scopes: [...BREEDING_CONSENT_SCOPES].sort(compare) as typeof BREEDING_CONSENT_SCOPES,
+        scopes: [...BREEDING_CONSENT_SCOPES].sort(compare),
         grantedAtCampaignMinute: currentClock.campaignMinute,
         expiresAtCampaignMinute: expiresAt,
         grantOperationId: canonical.operationId,

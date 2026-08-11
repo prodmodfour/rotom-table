@@ -13,6 +13,8 @@ import {
   type BreedingGmProjectionV1,
   type BreedingOwnerEggProjectionV1,
   type BreedingOwnerProjectProjectionV1,
+  type BreedingParticipantConsentSummaryV1,
+  type BreedingParticipantParentSummaryV1,
   type BreedingParticipatingOwnerProjectionV1,
   type BreedingPresentationProjectionV1,
   type BreedingProgressBand,
@@ -158,10 +160,10 @@ export const buildBreedingParticipatingOwnerProjectionV1 = (input: {
   readonly actorAuthority: unknown
   readonly trainerControl: unknown
   readonly parentControl: unknown
-  readonly ownParentSafeSummary: { readonly pokemonSheetSlug: string, readonly sheetRevision: number, readonly displayName: string, readonly speciesId: string }
-  readonly consentRequest: { readonly consentId: string, readonly scopes: readonly string[], readonly expiresAtCampaignMinute: number | null }
+  readonly ownParentSafeSummary: BreedingParticipantParentSummaryV1
+  readonly consentRequest: Pick<BreedingParticipantConsentSummaryV1, 'consentId' | 'scopes' | 'expiresAtCampaignMinute'>
   readonly consentRecord: unknown | null
-  readonly ownContributionMoveIds: readonly string[]
+  readonly ownContributionMoveIds: readonly BreedingMoveId[]
   readonly generatedAtCampaignMinute: number
   readonly securityPolicyDefinitionSha256: string
 }): BreedingParticipatingOwnerProjectionV1 => {

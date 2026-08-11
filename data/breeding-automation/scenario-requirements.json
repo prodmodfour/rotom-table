@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "catalogId": "breeding-scenario-requirements-v1",
-  "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
+  "planPath": "implementation-plans/done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 89,
-    "in-progress": 1,
+    "covered": 90,
+    "in-progress": 0,
     "planned": 0,
     "blocked": 0
   },
@@ -2344,8 +2344,17 @@
         "quality-gate",
         "production-like-acceptance"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "scripts/check_breeding_automation.ts",
+        "scripts/quality-gate.sh",
+        "scripts/breedingProductionAcceptance.ts",
+        "tests/server/breedingProductionLikeAcceptance.test.ts",
+        "tests/server/breedingArchiveReleaseAcceptance.test.ts",
+        "tests/e2e/breeding-workshop.spec.ts",
+        "docs/breeding/qa-and-release-guide.md",
+        "implementation-plans/done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md"
+      ],
       "acceptanceFixtureIds": []
     }
   ]

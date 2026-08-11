@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import packageJson from '../../package.json'
 
 const ROOT = resolve(import.meta.dirname, '../..')
+const DONE_PLAN_PATH = 'implementation-plans/done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md'
 
 const runChecker = (...args: string[]) => spawnSync(
   'npx',
@@ -16,7 +17,7 @@ describe('breeding automation checker', () => {
   it('passes the current source, registry, plan, coverage, gate, and synthetic-fixture state', () => {
     const result = runChecker('--check-plan')
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)
-    const plan = readFileSync(resolve(ROOT, 'implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md'), 'utf8')
+    const plan = readFileSync(resolve(ROOT, DONE_PLAN_PATH), 'utf8')
     const completedTickets = plan.match(/^- \[x\] \*\*BR-\d{3} .* — `DONE`$/gm)?.length ?? 0
     expect(result.stdout).toContain(`Breeding automation check passed: ${completedTickets}/90 tickets`)
     expect(result.stdout).toContain('30 frozen sources')
@@ -24,13 +25,10 @@ describe('breeding automation checker', () => {
     expect(result.stdout).toContain('6 fixtures, 22 scripts')
   })
 
-  it('refuses complete certification while the plan is active', () => {
+  it('certifies the archived complete plan and coverage ledger', () => {
     const result = runChecker('--check-plan', '--require-complete')
-    expect(result.status).toBe(1)
-    expect(result.stderr).toContain('complete breeding plan must be archived')
-    expect(result.stderr).toContain('complete breeding plan must have PLAN_STATUS: DONE')
-    expect(result.stderr).toContain('complete breeding plan has unfinished tickets')
-    expect(result.stderr).toContain('complete breeding coverage has unfinished requirements')
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)
+    expect(result.stdout).toContain('Breeding automation check passed: 90/90 tickets')
   })
 
   it('exposes non-strict, plan, and complete commands and runs the non-strict check in the quality gate', () => {

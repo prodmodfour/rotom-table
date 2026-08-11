@@ -168,7 +168,7 @@ const integer = (value: unknown, path: string, minimum = 0, maximum = Number.MAX
   return Number(value)
 }
 
-const moves = movesJson as Readonly<Record<string, ReferenceMoveRecord>>
+const moves = movesJson as unknown as Readonly<Record<string, ReferenceMoveRecord>>
 const sourceHashes = new Map((sourceManifestJson.runtimeSources as readonly { readonly path: string, readonly sha256: string }[])
   .map(value => [value.path, value.sha256]))
 const moveSourceSha256 = sourceHashes.get('data/reference/moves.json')
@@ -758,7 +758,7 @@ const hatchOutcomeDrafts = (input: {
   for (const level of BREEDING_INHERITANCE_CHECKPOINT_LEVELS.filter(value => value <= input.egg.offspring.startingLevel)) {
     const candidate = input.egg.offspring.inheritanceCandidates.find(value => !learned.has(value.moveId))
     if (!candidate) {
-      drafts.push(Object.freeze({ checkpointLevel: level, outcome: deepFreeze({ kind: 'empty-no-candidate', candidateSetDefinitionSha256: breedingInheritanceCandidateSetDefinitionSha256(input.egg.offspring.inheritanceCandidates) }) }))
+      drafts.push(Object.freeze({ checkpointLevel: level, outcome: deepFreeze({ kind: 'empty-no-candidate' as const, candidateSetDefinitionSha256: breedingInheritanceCandidateSetDefinitionSha256(input.egg.offspring.inheritanceCandidates) }) }))
       continue
     }
     const evaluation = evaluateBreedingInheritancePrerequisiteV1({ moveId: candidate.moveId, level })

@@ -16,8 +16,8 @@ Update the owning document in the same change as behavior. BR-088's documentatio
 
 ## Start with the ledger
 
-1. Read `implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md` and `implementation-plans/plan-order.md`.
-2. Work only on `CURRENT_TICKET`; keep exactly one ticket `IN_PROGRESS`.
+1. Read the archived ledger at `implementation-plans/done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md` and `implementation-plans/plan-order.md`.
+2. The archived ledger has `CURRENT_TICKET: NONE`; any new Breeding authority work requires a reviewed successor plan rather than reopening a completed ticket.
 3. Respect the semantic gates in `data/breeding-automation/semantic-registry.json`.
 4. Update the matching row in `scenario-requirements.json` when a ticket changes state.
 5. Mark work `DONE` only after focused evidence passes.

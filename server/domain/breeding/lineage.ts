@@ -108,7 +108,7 @@ export const createBreederSnapshotV1 = (value: BreederSnapshotDefinitionV1): Bre
 )
 export const parseAuthoritativeBreederSnapshotV1 = (value: unknown, path = 'breederSnapshot'): BreederSnapshotV1 => {
   const breeder = parseBreederSnapshotV1(value, path)
-  if (!breeder) fail('breeding.lineage.hash-mismatch', path, 'cannot be null.')
+  if (breeder === null) return fail('breeding.lineage.hash-mismatch', path, 'cannot be null.')
   if (hash(withoutDefinitionHash(breeder)) !== breeder.definitionSha256) fail('breeding.lineage.hash-mismatch', `${path}.definitionSha256`, 'does not match the Breeder snapshot definition.')
   return breeder
 }

@@ -62,7 +62,7 @@ const assertCanonicalEggReferences = (document: PokemonEggDocumentV1, identity =
     if (parent.effectiveKnownMoves.some(value => !isCanonicalBreedingMoveId(value.moveId))) unavailable()
   }
   const offspringSpec = compiledBreedingSpeciesSpec(document.offspring.speciesId)
-  if (!offspringSpec || offspringSpec.familyRootSpeciesId !== document.offspring.familyRootSpeciesId || offspringSpec.definitionSha256 !== document.offspring.speciesSpecDefinitionSha256) unavailable()
+  if (!offspringSpec || offspringSpec.familyRootSpeciesId !== document.offspring.familyRootSpeciesId || offspringSpec.definitionSha256 !== document.offspring.speciesSpecDefinitionSha256) return unavailable()
   if (!breedingNature(document.offspring.nature.valueId)
     || !isCanonicalBreedingAbilityId(document.offspring.ability.valueId)
     || !offspringSpec.basicAbilityIds.includes(document.offspring.ability.valueId)) unavailable()

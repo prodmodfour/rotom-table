@@ -65,6 +65,8 @@ import {
   type BreedingTransactionExecutionDecision,
 } from './executeBreedingTransaction'
 
+type CompleteHatchCommandV1 = Extract<BreedingOperationCommandV1, { readonly commandKind: 'complete-hatch' }>
+
 export interface CompletePokemonEggHatchResultV1 {
   readonly execution: BreedingTransactionExecutionDecision
   readonly egg: PokemonEggDocumentV1 | null
@@ -195,7 +197,7 @@ const aggregateRevision = (record: BreedingOperationLedgerRecord, kind: 'pokemon
 }
 const resultFromRecord = (input: {
   readonly database: RotomDatabase, readonly execution: BreedingTransactionExecutionDecision,
-  readonly command: Extract<BreedingOperationCommandV1, { readonly commandKind: 'complete-hatch' }>, readonly audience: PokemonEggHatchCompletionAudienceV1,
+  readonly command: CompleteHatchCommandV1, readonly audience: PokemonEggHatchCompletionAudienceV1,
   readonly childPlan: PokemonEggChildSheetConstructionPlanV1 | null,
 }): CompletePokemonEggHatchResultV1 => {
   const record = input.execution.record
@@ -245,7 +247,7 @@ interface MarsupialHatchAuthority {
 const normalizedProviderName = (value: string): string => value.normalize('NFKD').replace(/[\u0300-\u036f]/gu, '').replace(/[’‘]/gu, "'").trim().replace(/\s+/gu, ' ').toLocaleLowerCase('en-US')
 const rebuildMarsupialHatchAuthority = (input: {
   readonly egg: PokemonEggDocumentV1
-  readonly command: Extract<BreedingOperationCommandV1, { readonly commandKind: 'complete-hatch' }>
+  readonly command: CompleteHatchCommandV1
   readonly readSet: BreedingOperationReadSetV1
   readonly campaignMinute: number
   readonly ownerTrainerDocument: unknown
@@ -271,7 +273,7 @@ const rebuildMarsupialHatchAuthority = (input: {
   if (motherRosterClaims !== 1) {
     return fail('breeding.hatch-completion-use-case.invalid-authority', 'The Marsupial mother must belong exactly once to the hatching Egg owner Trainer roster.')
   }
-  const motherDocument = mother.document as CharacterSheet
+  const motherDocument = mother.document as unknown as CharacterSheet
   if (mother.revision !== scope.expectedRevision || motherDocument.slug !== mother.slug || motherDocument.species !== 'Kangaskhan'
     || !Number.isSafeInteger(motherDocument.level) || Number(motherDocument.level) < 25 || pokemonHasActiveBabyTemplate(motherDocument)
     || parseCapabilityCampaignState(motherDocument.capabilityCampaignState).marsupialPouch !== null) {
@@ -279,7 +281,7 @@ const rebuildMarsupialHatchAuthority = (input: {
   }
   const existingRelationship = resolveMarsupialRelationship({
     subjectSlug: mother.slug,
-    pokemonBySlug: new Map(input.listPokemonSheets().map(sheet => [sheet.slug, sheet.document as CharacterSheet])),
+    pokemonBySlug: new Map(input.listPokemonSheets().map(sheet => [sheet.slug, sheet.document as unknown as CharacterSheet])),
   })
   if (existingRelationship.status !== 'absent') {
     return fail(
@@ -321,8 +323,9 @@ export const completePokemonEggHatch = (inputValue: unknown, options: CompletePo
   const input = strict(inputValue, ['command', 'readSet', 'authorizationReceipt', 'actorAuthority', 'ownerTrainerControl', 'currentOwnerTrainerControl', 'referenceVersions', 'childPlan', 'audience'], 'completePokemonEggHatchInput')
   if (input.audience !== 'owner' && input.audience !== 'gm') return fail('breeding.hatch-completion-use-case.invalid-request', 'Hatch-completion audience must be owner or GM.')
   const audience = input.audience
-  const command = parseBreedingOperationCommandV1(input.command)
-  if (command.commandKind !== 'complete-hatch') return fail('breeding.hatch-completion-use-case.wrong-command', 'Hatch completion accepts complete-hatch only.')
+  const commandValue = parseBreedingOperationCommandV1(input.command)
+  if (commandValue.commandKind !== 'complete-hatch') return fail('breeding.hatch-completion-use-case.wrong-command', 'Hatch completion accepts complete-hatch only.')
+  const command = commandValue as CompleteHatchCommandV1
   const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
   if ((audience === 'gm') !== (actor.role === 'gm')) return fail('breeding.hatch-completion-use-case.invalid-authority', 'Projection audience must match the authenticated actor role.')
   const references = currentReferences(input.referenceVersions, options)
@@ -394,7 +397,11 @@ export const completePokemonEggHatch = (inputValue: unknown, options: CompletePo
         createdAtCampaignMinute: existing.createdAtCampaignMinute,
         settledAtCampaignMinute: pendingClock.campaignMinute,
         resumePending: true,
-        execute: (canonical, _operation, context) => {
+        execute: (commandValue, _operation, context) => {
+          if (commandValue.commandKind !== 'complete-hatch') {
+            return fail('breeding.hatch-completion-use-case.wrong-command', 'Reserved stale hatch operation changed command kind.')
+          }
+          const canonical = commandValue as CompleteHatchCommandV1
           const currentEgg = context.repositories.eggs.get(canonical.payload.eggId)
           return createBreedingOperationRejectedV1({
             operationId: canonical.operationId,
@@ -425,7 +432,7 @@ export const completePokemonEggHatch = (inputValue: unknown, options: CompletePo
   const acquisition = createSqliteTrainerSpeciesAcquisitionRepository(database).get(trainer.slug, egg.offspring.speciesId)
   const marsupialAuthority = rebuildMarsupialHatchAuthority({
     egg, command, readSet, campaignMinute: clock.campaignMinute, ownerTrainerDocument: trainer.document,
-    getPokemonSheet: slug => createSqliteSheetRepository(database).get('pokemon', slug) as StoredSheetDocument<Record<string, unknown>> | null,
+    getPokemonSheet: slug => createSqliteSheetRepository(database).get('pokemon', slug) as unknown as StoredSheetDocument<Record<string, unknown>> | null,
     listPokemonSheets: () => createSqliteSheetRepository<Record<string, unknown>>(database).list('pokemon'),
     options,
   })
@@ -452,7 +459,11 @@ export const completePokemonEggHatch = (inputValue: unknown, options: CompletePo
     createdAtCampaignMinute: readSet.capturedAtCampaignMinute,
     settledAtCampaignMinute: readSet.capturedAtCampaignMinute,
     ...((reservation.kind === 'reserved' || options.resumePending === true) ? { resumePending: true } : {}),
-    execute: (canonical, _operation, context) => {
+    execute: (commandValue, _operation, context) => {
+      if (commandValue.commandKind !== 'complete-hatch') {
+        return fail('breeding.hatch-completion-use-case.wrong-command', 'Reserved hatch-completion operation changed command kind.')
+      }
+      const canonical = commandValue as CompleteHatchCommandV1
       const commandHash = createBreedingOperationCommandHash(canonical)
       const currentEgg = context.repositories.eggs.get(canonical.payload.eggId)
       const currentClock = context.repositories.campaignClock.get()
@@ -464,7 +475,7 @@ export const completePokemonEggHatch = (inputValue: unknown, options: CompletePo
         currentMarsupialAuthority = currentEgg && currentTrainer ? rebuildMarsupialHatchAuthority({
           egg: currentEgg, command: canonical, readSet, campaignMinute: currentClock.campaignMinute,
           ownerTrainerDocument: currentTrainer.document,
-          getPokemonSheet: slug => context.repositories.sheets.get('pokemon', slug) as StoredSheetDocument<Record<string, unknown>> | null,
+          getPokemonSheet: slug => context.repositories.sheets.get('pokemon', slug) as unknown as StoredSheetDocument<Record<string, unknown>> | null,
           listPokemonSheets: () => context.repositories.sheets.list('pokemon') as readonly StoredSheetDocument<Record<string, unknown>>[],
           options,
         }) : undefined
@@ -495,7 +506,7 @@ export const completePokemonEggHatch = (inputValue: unknown, options: CompletePo
       })
       const rebuiltPlan = planPokemonEggChildSheetConstructionV1({ egg: currentEgg, command: canonical })
       if (!same(rebuiltPlan, childPlan)) throw new Error('Atomic hatch child plan no longer matches immutable phase-1 authority.')
-      let child = context.repositories.initializedPokemonSheets.create({
+      let child: PersistedSheet = context.repositories.initializedPokemonSheets.create({
         baseSlug: rebuiltPlan.baseSlug, folder: rebuiltPlan.folder, updatedAt: options.sheetUpdatedAt, document: rebuiltPlan.document,
       })
       let linkedMother: PersistedSheet | null = null
@@ -507,9 +518,9 @@ export const completePokemonEggHatch = (inputValue: unknown, options: CompletePo
           establishedAt: currentClock.campaignMinute,
           sourceOperationId: canonical.operationId,
         })
-        const motherState = parseCapabilityCampaignState((currentMarsupialAuthority.mother.document as CharacterSheet).capabilityCampaignState)
-        const childState = parseCapabilityCampaignState((child.sheet as CharacterSheet).capabilityCampaignState)
-        const childPrivate = (child.sheet as CharacterSheet).serverPrivate
+        const motherState = parseCapabilityCampaignState((currentMarsupialAuthority.mother.document as unknown as CharacterSheet).capabilityCampaignState)
+        const childState = parseCapabilityCampaignState((child.sheet as unknown as CharacterSheet).capabilityCampaignState)
+        const childPrivate = (child.sheet as unknown as CharacterSheet).serverPrivate
         const childTraits = childPrivate?.breedingProviderTraits
         const childMarsupial = childTraits?.marsupial
         if (motherState.marsupialPouch !== null || childState.marsupialPouch !== null || !childPrivate || !childTraits || !childMarsupial) {

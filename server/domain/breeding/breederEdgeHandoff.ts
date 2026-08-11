@@ -138,7 +138,7 @@ const strictTrainerDocument = (value: unknown): StrictJsonObject => {
   if (!cloned || typeof cloned !== 'object' || Array.isArray(cloned)) {
     return fail('breeding.breeder-edge-handoff.invalid-request', 'Trainer sheet document must be one plain JSON object.')
   }
-  return cloned
+  return cloned as StrictJsonObject
 }
 const mechanicFields = (record: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(
   ['prerequisites', 'frequency', 'trigger', 'target', 'condition', 'effect', 'effects', 'text']
@@ -324,6 +324,7 @@ export const createBreedingBreederEdgeHandoffV1 = (
   const pokemonEducation = skills.find(skill => skill?.key === 'pokeEd')
   const mandatedSkill = featureResolution ? skills.find(skill => skill?.key === featureResolution!.selectedSkillKey) : pokemonEducation
   if (!pokemonEducation || !mandatedSkill || !RANKS.has(mandatedSkill.rank)
+    || mandatedSkill.rank === 'Pathetic'
     || !Number.isSafeInteger(mandatedSkill.rankValue)
     || !Number.isSafeInteger(mandatedSkill.modifier)) {
     return fail('breeding.breeder-edge-handoff.provider-failure', 'The current mandated Breeder Skill rank and check contribution must resolve to bounded integers.')
@@ -331,6 +332,7 @@ export const createBreedingBreederEdgeHandoffV1 = (
   if (!featureResolution && (pokemonEducation.rank === 'Pathetic' || pokemonEducation.rank === 'Untrained')) {
     return fail('breeding.breeder-edge-handoff.prerequisite-not-met', 'A directly acquired Breeder requires at least Novice Pokémon Education at the handoff checkpoint.')
   }
+  const canonicalRank = mandatedSkill.rank as BreedingBreederSkillApplicationV1['rank']
   const skillTotal = mandatedSkill.rankValue + mandatedSkill.modifier
   if (!Number.isSafeInteger(skillTotal) || skillTotal < -30 || skillTotal > 100) {
     return fail('breeding.breeder-edge-handoff.provider-failure', 'The mandated Breeder Skill check contribution is outside the authority bounds.')
@@ -343,7 +345,9 @@ export const createBreedingBreederEdgeHandoffV1 = (
     { breedingCapabilityAvailable: true, effectiveEdgeSet: effectiveSet },
   ))
   validateDelegatedPlan(delegatedPlan)
-  const mandatedSkillId = featureResolution ? (featureResolution.selectedSkillKey === 'generalEd' ? 'general-education' : 'perception') : 'pokemon-education'
+  const mandatedSkillId: BreedingBreederSkillApplicationV1['mandatedSkillId'] = featureResolution
+    ? (featureResolution.selectedSkillKey === 'generalEd' ? 'general-education' : 'perception')
+    : 'pokemon-education'
   const effectiveEvidence = featureResolution ? Object.freeze({
     schemaVersion: 1 as const,
     effectiveEdgeSet: effectiveSet,
@@ -359,7 +363,7 @@ export const createBreedingBreederEdgeHandoffV1 = (
     sourceKind: featureResolution ? 'dilettante-substitution' as const : 'canonical-edge' as const,
     sourceFeatureInstanceId: featureResolution ? featureSource!.sourceId : null,
     sourceFeatureContributionDefinitionSha256: featureResolution?.sourceFeatureContributionDefinitionSha256 ?? null,
-    rank: mandatedSkill.rank,
+    rank: canonicalRank,
     skillTotal,
   }
   const skillApplication: BreedingBreederSkillApplicationV1 = Object.freeze({
@@ -367,7 +371,6 @@ export const createBreedingBreederEdgeHandoffV1 = (
     definitionSha256: sha256(skillApplicationDefinition),
   })
   const breederAuthority = createBreedingBreederAuthorityEvidenceV1({
-    schemaVersion: 1,
     breederTrainerSlug: trainer.slug as string,
     breederTrainerRevision: trainer.revision as number,
     breederTrainerDefinitionSha256: sha256(document),
@@ -378,7 +381,7 @@ export const createBreedingBreederEdgeHandoffV1 = (
     edgeRecordSha256: BREEDING_BREEDER_EDGE_RECORD_SHA256,
     effectiveEdgeProjectionSha256: sha256(effectiveEvidence),
     ...(featureResolution ? { mandatedSkillId } : {}),
-    pokemonEducationRank: mandatedSkill.rank,
+    pokemonEducationRank: canonicalRank,
     pokemonEducationSkillTotal: skillTotal,
     evaluatedAtCampaignMinute: input.evaluatedAtCampaignMinute as number,
   })

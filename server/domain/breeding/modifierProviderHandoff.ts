@@ -147,7 +147,7 @@ const strictDocument = (value: unknown, label: string): StrictJsonObject => {
     failLimit: (_path, detail) => fail('breeding.modifier-provider-handoff.invalid-request', detail),
   })
   if (!cloned || typeof cloned !== 'object' || Array.isArray(cloned)) return fail('breeding.modifier-provider-handoff.invalid-request', `${label} must be one strict JSON object.`)
-  return cloned
+  return cloned as StrictJsonObject
 }
 const storedSheet = (value: unknown, label: string): { readonly slug: string, readonly revision: number, readonly document: StrictJsonObject } => {
   const row = exact(value, ['slug','revision','document'], label)
@@ -344,6 +344,7 @@ export const createBreedingEggWarmerItemHandoffV1 = (inputValue: {
     || new Set(assigned).size !== assigned.length || !assigned.includes(egg.eggId)) {
     return fail('breeding.modifier-provider-handoff.stale-authority', 'Egg Warmer custody must bind this exact owner, one stable inventory row/unit, and one through four unique assigned Eggs including the target.')
   }
+  const assignedEggIds = assigned as readonly string[]
   const matches = inventoryEntries(trainer.document as unknown as TrainerSheet).filter(row => row.id === custody.inventoryEntryId)
   const row = matches.length === 1 ? matches[0]! : null
   const quantity = row && Number.isSafeInteger(row.qty ?? 1) ? Number(row.qty ?? 1) : 0
@@ -359,7 +360,7 @@ export const createBreedingEggWarmerItemHandoffV1 = (inputValue: {
     trainerSheetDefinitionSha256: sha256(trainer.document),
     inventoryEntryId: custody.inventoryEntryId,
     unitOrdinal: custody.unitOrdinal,
-    assignedEggIds: [...assigned].sort(compare),
+    assignedEggIds: [...assignedEggIds].sort(compare),
     targetEggId: egg.eggId,
     targetEggRevision: egg.revision,
     capturedAtCampaignMinute: captured,

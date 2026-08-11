@@ -106,10 +106,11 @@ const commandAllowsRoll = (command: BreedingOperationCommandV1, roll: BreedingRo
   const request = command.payload.resolutions.requestedRollKinds[roll.operationRollOrdinal]
   if (!request || PURPOSE_BY_REQUEST[request] !== roll.purpose) return false
   if (command.commandKind === 'produce-egg') {
-    return roll.target.kind === 'breeding-project'
-      && roll.target.projectId === command.payload.projectId
+    const target = roll.target
+    return target.kind === 'breeding-project'
+      && target.projectId === command.payload.projectId
       && command.scopes.some(scope => scope.kind === 'breeding-project'
-        && scope.projectId === roll.target.projectId && scope.expectedRevision === roll.target.revision)
+        && scope.projectId === target.projectId && scope.expectedRevision === target.revision)
   }
   return roll.target.kind === 'pokemon-egg' && roll.target.eggId === command.payload.eggId && roll.target.revision === 0
 }

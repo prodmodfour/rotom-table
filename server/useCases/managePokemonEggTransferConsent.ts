@@ -137,9 +137,10 @@ export const grantPokemonEggTransferConsent = (
   if (input.role !== 'source-gift' && input.role !== 'recipient-acceptance') {
     return fail('breeding.egg-transfer-consent.invalid-request', 'role must be source-gift or recipient-acceptance.')
   }
-  if (typeof input.destinationTrainerSlug !== 'string' || !/^[a-z0-9-]+$/.test(input.destinationTrainerSlug)) {
-    return fail('breeding.egg-transfer-consent.invalid-request', 'destinationTrainerSlug must be one canonical Trainer slug.')
-  }
+  const destinationTrainerSlug = typeof input.destinationTrainerSlug === 'string'
+    && /^[a-z0-9-]+$/.test(input.destinationTrainerSlug)
+    ? input.destinationTrainerSlug
+    : fail('breeding.egg-transfer-consent.invalid-request', 'destinationTrainerSlug must be one canonical Trainer slug.')
   const sourceConsentId = input.sourceConsentId === null
     ? null
     : parsePokemonEggTransferConsentIdSyntax(input.sourceConsentId)
@@ -155,7 +156,7 @@ export const grantPokemonEggTransferConsent = (
     const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
     const control = parseAuthoritativeBreedingTrainerControlEvidenceV1(input.trainerControl)
     const sourceTrainer = currentTrainerFact(database, egg.ownerTrainerSlug)
-    const destinationTrainer = currentTrainerFact(database, input.destinationTrainerSlug)
+    const destinationTrainer = currentTrainerFact(database, destinationTrainerSlug)
     const expectedTrainer = input.role === 'source-gift' ? sourceTrainer : destinationTrainer
     if (actor.role !== 'player'
       || actor.authenticatedProfileId !== control.profileId

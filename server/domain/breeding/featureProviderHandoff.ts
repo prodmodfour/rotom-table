@@ -90,7 +90,7 @@ const strictTrainerDocument = (value: unknown): StrictJsonObject => {
     failLimit: (_path, detail) => fail('breeding.feature-provider-handoff.invalid-request', detail),
   })
   if (!cloned || typeof cloned !== 'object' || Array.isArray(cloned)) return fail('breeding.feature-provider-handoff.invalid-request', 'Trainer sheet document must be one plain JSON object.')
-  return cloned
+  return cloned as StrictJsonObject
 }
 const strictEffectiveProjection = (value: unknown): EffectiveFeatureSet => cloneStrictJson(value, 'effectiveFeatureSet', {
   limits: { depth: 24, nodes: 200_000, objectFields: 10_000, arrayEntries: 10_000, stringLength: 100_000, objectKeyLength: 240 },

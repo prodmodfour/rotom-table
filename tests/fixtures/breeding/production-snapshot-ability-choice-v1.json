@@ -10,10 +10,10 @@
     "9c6065c9cf01679003edae8c03c88dcd272201afa2fdc5abb8a68c52b3c1ed41",
     "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
     "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+    "b7fcfd26f498c5b27a4f6269cb23d8f461a63fbf9c3ea4c0d678552714d0a38b",
     "b9a97844908f9b0eb54b0db9381d63c6ca6f178d05f5b72c8312195ae2a300a4",
     "c704eb6869f8bfc5bf278856c99c0d58d71ef4d6678cb2c7e47e4d9c94713210",
-    "e39acc34e90e3ce2f9fdff0f8abd93e38fe8bf36c9204f3b4c5bd942f81b9e0a",
-    "fc01cecaec138baf46cf6b7e2305c035c425c16eff82054d05122298dcefc6fc"
+    "e39acc34e90e3ce2f9fdff0f8abd93e38fe8bf36c9204f3b4c5bd942f81b9e0a"
   ],
   "authorizationReceiptDefinitionSha256": "e24aa8acb4764c10db5ada2c9b0e33ef41992fee3bb94492df4e81fc48893592",
   "breeder": {
@@ -275,10 +275,10 @@
     "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
     "rulesetId": "ptu-1.05-breeding-v1",
     "schemaVersion": 1,
-    "semanticRegistryDefinitionSha256": "99f7be2785baa7642f3461c5eb9650e0c908aee9abd4304a43ec4a4d08fd4e03",
+    "semanticRegistryDefinitionSha256": "a1ca55f8d6dea965d05f2325db225e07fc851e46ec0e7c8d963f6cddbcc5bda9",
     "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-    "definitionSha256": "fc01cecaec138baf46cf6b7e2305c035c425c16eff82054d05122298dcefc6fc"
+    "definitionSha256": "b7fcfd26f498c5b27a4f6269cb23d8f461a63fbf9c3ea4c0d678552714d0a38b"
   },
   "schemaVersion": 1,
-  "definitionSha256": "911d099e579752a93af279f2f12431d7860b49c25344d154e4e8f1afaf9c8b83"
+  "definitionSha256": "139dbf70f606835ce0dfdd31397705bb8ae4343c4d0ed70bd24af29c7149da11"
 }

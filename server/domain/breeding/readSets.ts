@@ -114,7 +114,7 @@ const requireResource = (readSet: BreedingOperationReadSetV1, requirement: {
   const found = resource(readSet, requirement.kind, requirement.id)
   if (!found || (requirement.existence !== undefined && found.existence !== requirement.existence)
     || (requirement.revision !== undefined && found.revision !== requirement.revision) || !found.purposes.includes(requirement.purpose)) {
-    fail('breeding.read-set.incomplete', path, `must include ${requirement.existence ?? 'current'} ${requirement.kind}:${requirement.id} for ${requirement.purpose}.`)
+    return fail('breeding.read-set.incomplete', path, `must include ${requirement.existence ?? 'current'} ${requirement.kind}:${requirement.id} for ${requirement.purpose}.`)
   }
   return found
 }

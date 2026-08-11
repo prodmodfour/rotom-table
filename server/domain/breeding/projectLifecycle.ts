@@ -20,7 +20,7 @@ export const BREEDING_PROJECT_TRANSITIONS: Readonly<Record<BreedingProjectStatus
   expired: Object.freeze([]),
   abandoned: Object.freeze([]),
   conflicted: Object.freeze([]),
-})
+} satisfies Record<BreedingProjectStatus, readonly BreedingProjectStatus[]>)
 
 export type BreedingProjectTransitionCode =
   | 'breeding.project.invalid-transition'
@@ -102,11 +102,13 @@ export const validateBreedingProjectRevisionSuccessor = (
   unchanged(next.timeline.initialRequiredCampaignMinutes === current.timeline.initialRequiredCampaignMinutes, 'nextProject.timeline.initialRequiredCampaignMinutes')
   unchanged(next.timeline.additionalRequiredCampaignMinutes === current.timeline.additionalRequiredCampaignMinutes, 'nextProject.timeline.additionalRequiredCampaignMinutes')
   for (let index = 0; index < 2; index += 1) {
-    unchanged(next.parentRefs[index].pokemonSheetSlug === current.parentRefs[index].pokemonSheetSlug, `nextProject.parentRefs[${index}].pokemonSheetSlug`)
-    unchanged(next.parentRefs[index].ownerTrainerSlug === current.parentRefs[index].ownerTrainerSlug, `nextProject.parentRefs[${index}].ownerTrainerSlug`)
+    const nextParent = next.parentRefs[index]!
+    const currentParent = current.parentRefs[index]!
+    unchanged(nextParent.pokemonSheetSlug === currentParent.pokemonSheetSlug, `nextProject.parentRefs[${index}].pokemonSheetSlug`)
+    unchanged(nextParent.ownerTrainerSlug === currentParent.ownerTrainerSlug, `nextProject.parentRefs[${index}].ownerTrainerSlug`)
   }
   const parentRevisionChanged = next.parentRefs.some((parent, index) => (
-    parent.expectedSheetRevision !== current.parentRefs[index].expectedSheetRevision
+    parent.expectedSheetRevision !== current.parentRefs[index]!.expectedSheetRevision
   ))
   if (parentRevisionChanged) {
     const refreshableStatus = ['draft', 'awaiting-parent-consent', 'initial-time-in-progress', 'check-ready'].includes(current.status)
