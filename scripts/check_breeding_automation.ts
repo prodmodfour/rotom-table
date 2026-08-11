@@ -271,6 +271,7 @@ for (const path of [
   'data/breeding-automation/egg-transfer-contract.json',
   'data/breeding-automation/fossil-egg-contract.json',
   'data/breeding-automation/gm-egg-contract.json',
+  'data/breeding-automation/interaction-certification.json',
 ]) {
   const document = json<Record<string, any>>(path)
   assert(document.rulesetId === ruleset.rulesetId, `${path} ruleset ID drifted`)
@@ -799,6 +800,9 @@ assert(interactionClosure?.inventoryId === modifierInventoryContract.inventoryId
   && interactionClosure?.inventoryDefinitionSha256 === modifierInventoryContract.definitionSha256
   && interactionClosure?.entryCount === modifierInventoryContract.entryCount
   && JSON.stringify(interactionClosure?.entryIds) === JSON.stringify(modifierInventoryContract.definition?.entries?.map((row: any) => row.id))
+  && interactionClosure?.certificationOwner === 'BR-082'
+  && interactionClosure?.certificationStatus === 'certified-current-semantics'
+  && interactionClosure?.artifactIds?.includes('breeding-interaction-certification')
   && interactionClosure?.unknownInteractionPolicy === 'fail-closed-unavailable', 'breeding interaction manifest closure drifted')
 const registeredArtifactIds = new Set(registry.definition.artifacts.map(artifact => artifact.id))
 const closureSections = [specClosure, projectClosure, eggClosure, operationClosure, projectionClosure, interactionClosure]
@@ -833,6 +837,43 @@ assert(Array.isArray(wholeSpeciesConformance.definition?.evidencePaths)
   && wholeSpeciesConformance.definition.evidencePaths.length === 12
   && wholeSpeciesConformance.definition.evidencePaths.every((path: string) => existsSync(resolve(ROOT, path)))
   && Object.values(wholeSpeciesConformance.definition?.acceptance ?? {}).every(result => result === 'pass'), 'whole-Species conformance evidence or result drifted')
+
+const interactionCertification = json<Record<string, any>>('data/breeding-automation/interaction-certification.json')
+assert(interactionCertification.reportId === 'ptu-1.05-breeding-interaction-certification-v1'
+  && interactionCertification.rulesetDefinitionSha256 === ruleset.definitionSha256
+  && interactionCertification.sourceManifestSha256 === sourceManifestSha256
+  && interactionCertification.definition?.ticket === 'BR-082'
+  && interactionCertification.definition?.status === 'certified', 'breeding interaction certification identity drifted')
+const certifiedEntries = interactionCertification.definition?.entries
+assert(Array.isArray(certifiedEntries)
+  && certifiedEntries.length === modifierInventoryContract.entryCount
+  && new Set(certifiedEntries.map((row: any) => row.inventoryEntryId)).size === modifierInventoryContract.entryCount
+  && JSON.stringify(certifiedEntries.map((row: any) => row.inventoryEntryId)) === JSON.stringify(modifierInventoryContract.definition?.entries?.map((row: any) => row.id)), 'breeding interaction certification inventory closure drifted')
+assert(certifiedEntries.every((row: any, index: number) => {
+  const inventoryRow = modifierInventoryContract.definition?.entries?.[index]
+  return row.sourceKind === inventoryRow?.sourceKind
+    && row.canonicalId === inventoryRow?.canonicalId
+    && row.recordSha256 === inventoryRow?.recordSha256
+    && row.mechanicFieldsSha256 === inventoryRow?.mechanicFieldsSha256
+    && row.snapshotCheckpoint === inventoryRow?.snapshotCheckpoint
+    && JSON.stringify(row.contributionIds) === JSON.stringify(inventoryRow?.contributionIds)
+    && Array.isArray(row.runtimePaths) && row.runtimePaths.length > 0 && row.runtimePaths.every((path: string) => existsSync(resolve(ROOT, path)))
+    && Array.isArray(row.evidencePaths) && row.evidencePaths.length > 0 && row.evidencePaths.every((path: string) => existsSync(resolve(ROOT, path)))
+}), 'breeding interaction certification source, runtime, or evidence binding drifted')
+assert(JSON.stringify(interactionCertification.definition?.dimensions) === JSON.stringify(['edge','feature','item','ability','capability','move','form','fossil','baby-template','campaign-clock'])
+  && interactionCertification.definition?.crossCutting?.length === 10
+  && interactionCertification.definition?.recoveryMatrix?.length === 6
+  && interactionCertification.definition?.summary?.inventoryEntriesCertified === 21
+  && interactionCertification.definition?.summary?.activeOwningRuntime === 16
+  && interactionCertification.definition?.summary?.upstreamOperationBoundary === 4
+  && interactionCertification.definition?.summary?.failClosedNoConsumptionAuthority === 1
+  && interactionCertification.definition?.summary?.result === 'pass', 'breeding interaction certification result drifted')
+assert(interactionCertification.definition?.bindings?.semanticClosureDefinitionSha256 === semanticClosure.definitionSha256
+  && interactionCertification.definition?.bindings?.wholeSpeciesConformanceDefinitionSha256 === wholeSpeciesConformance.definitionSha256
+  && interactionCertification.definition?.certificationSemantics?.clientAuthority === 'none'
+  && interactionCertification.definition?.certificationSemantics?.facilityRegistry === 'empty-no-authority'
+  && interactionCertification.definition?.negativeBoundaries?.includes('this-ones-special-provider-force-cannot-execute-without-durable-use-consumption')
+  && interactionCertification.definition?.negativeBoundaries?.includes('post-hatch-feature-handoffs-cannot-forge-inherited-origin-or-bypass-permanent-move-authority'), 'breeding interaction certification authority boundary drifted')
 
 const planPath = existsSync(resolve(ROOT, registry.definition.activePlanPath))
   ? registry.definition.activePlanPath
@@ -1225,6 +1266,8 @@ for (const path of [
   'server/useCases/createBreedingGmEgg.ts',
   'tests/server/breedingGmEgg.test.ts',
   'data/breeding-automation/gm-egg-contract.json',
+  'data/breeding-automation/interaction-certification.json',
+  'tests/server/breedingInteractionCertification.test.ts',
   'docs/adrs/018-authoritative-breeding-and-egg-runtime.md',
   'docs/breeding/architecture-and-ownership.md',
   'docs/breeding/contributor-guide.md',

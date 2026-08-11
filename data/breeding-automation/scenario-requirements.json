@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 81,
+    "covered": 82,
     "in-progress": 1,
-    "planned": 8,
+    "planned": 7,
     "blocked": 0
   },
   "requirements": [
@@ -2085,9 +2085,28 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
-      "acceptanceFixtureIds": []
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/interaction-certification.json",
+        "data/breeding-automation/modifier-inventory.json",
+        "data/breeding-automation/semantic-closure-manifest.json",
+        "tests/server/breedingInteractionCertification.test.ts",
+        "tests/server/breedingBreederEdgeHandoff.test.ts",
+        "tests/server/breedingFeatureProviderHandoff.test.ts",
+        "tests/server/breedingModifierProviderHandoff.test.ts",
+        "tests/server/breedingFossilEgg.test.ts",
+        "tests/server/breedingArtificialEgg.test.ts",
+        "tests/server/breedingBabyTemplate.test.ts",
+        "tests/server/breedingInheritanceLearning.test.ts",
+        "tests/server/breedingCampaignClockBatch.test.ts",
+        "tests/server/breedingIncubation.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/operator-guide.md"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-inheritance-incubation-special-v1",
+        "breeding-special-source-eggs-v1"
+      ]
     },
     {
       "id": "breeding:BR-083",
@@ -2099,7 +2118,7 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": [
         "breeding-hatch-recovery-privacy-history-v1"

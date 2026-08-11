@@ -378,6 +378,14 @@ Kangaskhan production forces Marsupial and rejects a campaign-choice substitute.
 
 `artificialEgg.ts` turns Playing God evidence into an ordinary `source.kind = feature-artificial` Egg only after current Feature authority, exact Chemistry Set custody, and an atomic $3500 deduction. It freezes Level 5, a maximum one-day duration, persisted Gender/duration randomness when required, and exactly five or six Technology Education rank-bound upgrades. At most one coloration, three legal Egg/Tutor Moves, and five Base Stat Vitamins are accepted. The Chemistry Set is retained. Rollback and recovery reuse offers and rolls, exact retry spends nothing and publishes nothing, and hatch continues through the ordinary shared pipeline.
 
+### BR-082 whole-interaction certification boundary
+
+`interaction-certification.json` closes all 21 reviewed modifier-inventory rows against their exact app-owned canonical record and mechanic hashes. Sixteen rows terminate in an active owning runtime, four post-hatch tutoring Features terminate at an upstream campaign-operation boundary, and `This One’s Special, I Know It` terminates in an explicit fail-closed boundary because no durable rank-use consumption authority exists. “Certified” therefore means the current disposition is proven; it never promotes a handoff or unavailable provider into executable breeding authority.
+
+The acceptance matrix covers Edge, Feature, item, Ability, capability, Move, form, fossil, Baby Template, and campaign-clock interactions. Direct and Dilettante-granted Breeder authority remains separate from Pokémon Edge authority. Exact item rows and quantity-backed units remain custody authority. Effective Ability and Capability providers remain synchronous and server-private. Move tutoring cannot forge inherited-origin provenance or bypass six natural slots and the separate three applied TM/Tutor limit. Form results come only from the compiled root or a current Family-bounded GM offer; names and documentary text remain non-authoritative.
+
+Fossil and Playing God creation continue through the ordinary durable Egg, incubation, hatch-special, child, lineage, and acquisition pipeline. Baby Template remains a derived server-owned overlay that never mutates Species JSON. Campaign time remains the sole progress, cooldown, expiry, and recovery clock. The certification binds rollback/resume evidence for item and Capability incubation, fossil and artificial creation, inheritance learning, and bounded campaign-clock prefixes; retained rolls are reused and exact retries do not duplicate credit or publication.
+
 ## Prohibited alternate authorities
 
 - third sheet kind for Eggs;

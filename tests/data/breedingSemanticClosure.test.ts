@@ -36,8 +36,8 @@ describe('breeding semantic closure manifest', () => {
       definitionSha256: hash(manifest.definition),
     })
     expect(manifest.definition).toMatchObject({ ticket: 'BR-080', status: 'strict-closed' })
-    expect(registry.definition.artifacts).toHaveLength(101)
-    expect(manifest.definition.semanticRegistry.expectedArtifactCountIncludingThisManifest).toBe(101)
+    expect(registry.definition.artifacts).toHaveLength(103)
+    expect(manifest.definition.semanticRegistry.expectedArtifactCountIncludingThisManifest).toBe(103)
 
     const artifactIds = registry.definition.artifacts.map((artifact: any) => artifact.id)
     const artifactPaths = registry.definition.artifacts.map((artifact: any) => artifact.path)
@@ -93,6 +93,8 @@ describe('breeding semantic closure manifest', () => {
       entryCount: modifiers.entryCount,
       entryIds: modifiers.definition.entries.map((entry: any) => entry.id),
       certificationOwner: 'BR-082',
+      certificationStatus: 'certified-current-semantics',
+      artifactIds: expect.arrayContaining(['breeding-interaction-certification']),
       unknownInteractionPolicy: 'fail-closed-unavailable',
     })
   })

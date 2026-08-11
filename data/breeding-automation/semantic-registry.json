@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "registryId": "breeding-semantic-registry-v1",
-  "definitionSha256": "a970f1af464907fc5fb29004721ee3ae6939f5ed2d1bd7d1b88f87596e400106",
+  "definitionSha256": "0b8bfb9e8f307893fdb614083c29e9b21322d146fe5820c66ac22189d50ebecd",
   "definition": {
     "activePlanPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
     "donePlanPath": "implementation-plans/done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
@@ -838,7 +838,7 @@
         "kind": "registry",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "d22da02cb3df4f8324ada8932361b4a919cf5098773c1b590513b4472321e7ed"
+        "expectedDefinitionSha256": "4e61a062050313478ab67b1aa5d002d5968aecdc6bd48eb7decd72b55b054ac1"
       },
       {
         "id": "breeding-whole-species-conformance",
@@ -847,7 +847,16 @@
         "kind": "report",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "5f9f8134e914d5fc53094a9135eca318a4363fff3c545ead6147859155da47c3"
+        "expectedDefinitionSha256": "873c4dd55aa908883cce89503ec1f052af5ec808014a07f07cbfe692645f1797"
+      },
+      {
+        "id": "breeding-interaction-certification",
+        "path": "data/breeding-automation/interaction-certification.json",
+        "ownerTicket": "BR-082",
+        "kind": "report",
+        "binding": "definition-field",
+        "definitionHashField": "definitionSha256",
+        "expectedDefinitionSha256": "f1e35d6055908744a10b3bf1f04e5cb810042ff03b13ca1f1a209c7be1ee757a"
       },
       {
         "id": "scenario-requirements",

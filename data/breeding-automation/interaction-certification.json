@@ -1,0 +1,919 @@
+{
+  "schemaVersion": 1,
+  "reportId": "ptu-1.05-breeding-interaction-certification-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "f1e35d6055908744a10b3bf1f04e5cb810042ff03b13ca1f1a209c7be1ee757a",
+  "definition": {
+    "ticket": "BR-082",
+    "status": "certified",
+    "certificationSemantics": {
+      "meaning": "Each reviewed interaction is certified at its exact current owning runtime, upstream operation boundary, or explicit fail-closed boundary; certification never turns a declaration into broader authority.",
+      "statuses": [
+        "active-owning-runtime",
+        "upstream-operation-boundary",
+        "fail-closed-no-consumption-authority"
+      ],
+      "clientAuthority": "none",
+      "documentaryRuntimeUse": "forbidden",
+      "facilityRegistry": "empty-no-authority",
+      "unknownOrUnparameterizedInteraction": "fail-closed-unavailable"
+    },
+    "inventory": {
+      "inventoryId": "ptu-1.05-breeding-modifier-inventory-v1",
+      "definitionSha256": "24bb20a9d61003f540f6b410df3b0919ee49233012e45ec2dd14bfc9ed5c2dd9",
+      "entryCount": 21,
+      "categoryCounts": {
+        "trainer-edge": 2,
+        "poke-edge": 0,
+        "feature": 9,
+        "item": 3,
+        "ability": 2,
+        "capability": 2,
+        "rule": 3,
+        "facility": 0,
+        "campaign-option": 15
+      }
+    },
+    "dimensions": [
+      "edge",
+      "feature",
+      "item",
+      "ability",
+      "capability",
+      "move",
+      "form",
+      "fossil",
+      "baby-template",
+      "campaign-clock"
+    ],
+    "entries": [
+      {
+        "inventoryEntryId": "trainer-edge:Breeder",
+        "sourceKind": "trainer-edge",
+        "canonicalId": "Breeder",
+        "sourcePath": "data/reference/edges.json",
+        "recordSha256": "d303cbe8c377ec9bb2a305ee5626e3c80f9c1ebd77975623c985bce741a321f4",
+        "mechanicFieldsSha256": "c3c1c4f33bd0fb640a484f7bedddc0b2fe09839f34b06ae6d599986859ddd592",
+        "snapshotCheckpoint": "project-creation",
+        "contributionIds": [
+          "breeding-project-request",
+          "breeder-dc12-timeline"
+        ],
+        "authorityOwner": "edge-automation",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Current effective direct or Dilettante-granted Breeder authority contributes permission and the DC-12 timeline while breeding owns every Project, roll, Egg, and hatch mutation.",
+        "runtimePaths": [
+          "server/domain/breeding/breederEdgeHandoff.ts",
+          "server/useCases/resolveBreedingBreederEdgeHandoff.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingBreederEdgeHandoff.test.ts",
+          "tests/server/breedingProjectCheck.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "trainer-edge:Paleontologist",
+        "sourceKind": "trainer-edge",
+        "canonicalId": "Paleontologist",
+        "sourcePath": "data/reference/edges.json",
+        "recordSha256": "f20a7622032e7ffc001afcf64877127ecf45788ca438de6002859225d58b8a51",
+        "mechanicFieldsSha256": "4640695ebff51039628eeb9c144596c7e711ae6e0c80e41f0f675ce765574670",
+        "snapshotCheckpoint": "egg-acceptance",
+        "contributionIds": [
+          "fossil-identification",
+          "fossil-reanimation-permission"
+        ],
+        "authorityOwner": "edge-automation",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "One current effective parameter-ready Paleontologist plus its Skill prerequisite authorizes only the ordinary fossil Egg source reducer.",
+        "runtimePaths": [
+          "server/domain/breeding/fossilEgg.ts",
+          "server/useCases/createBreedingFossilEgg.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFossilEgg.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "feature:Dilettante",
+        "sourceKind": "feature",
+        "canonicalId": "Dilettante",
+        "sourcePath": "data/reference/features.json",
+        "recordSha256": "341cedeac4dfa84be1950ab99da571a2853751ccd0bc5888dd6445fd044becd0",
+        "mechanicFieldsSha256": "39b1cb88aea2336e071ac50522f81f4ef1d6f6dd63f41afd2f9fb253da7ce06b",
+        "snapshotCheckpoint": "project-creation",
+        "contributionIds": [
+          "effective-breeder-edge-grant"
+        ],
+        "authorityOwner": "feature-automation",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Only an exact current Breeder grant and one synchronous server-issued General Education or Perception choice can substitute Breeder authority.",
+        "runtimePaths": [
+          "server/domain/breeding/featureProviderHandoff.ts",
+          "server/domain/breeding/breederEdgeHandoff.ts",
+          "server/useCases/resolveBreedingFeatureProviderHandoff.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFeatureProviderHandoff.test.ts",
+          "tests/server/breedingBreederEdgeHandoff.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "feature:Egg Tutor",
+        "sourceKind": "feature",
+        "canonicalId": "Egg Tutor",
+        "sourcePath": "data/reference/features.json",
+        "recordSha256": "2e762a2cfec1b03523da58d1001f7b5b9a0ace8de03f31f81f41018400b01bf1",
+        "mechanicFieldsSha256": "b65ef1f341c7eff779f654ba3fc3bd4ff84c4c5f261849dfd9f04625c633dd31",
+        "snapshotCheckpoint": "post-hatch-operation",
+        "contributionIds": [
+          "egg-list-move-learning"
+        ],
+        "authorityOwner": "feature-automation",
+        "certificationStatus": "upstream-operation-boundary",
+        "certifiedBehavior": "The current Feature may emit a typed tutor-operation handoff, but it cannot enter the inherited-candidate ledger or bypass permanent-move, slot, compatibility, and transaction authority.",
+        "runtimePaths": [
+          "server/domain/breeding/featureProviderHandoff.ts",
+          "server/domain/featureAutomation/campaignOperations.ts",
+          "server/domain/breeding/permanentMoveProvenance.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFeatureProviderHandoff.test.ts",
+          "tests/server/featureAutomation.test.ts",
+          "tests/server/breedingInheritanceLearning.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "feature:Playing God",
+        "sourceKind": "feature",
+        "canonicalId": "Playing God",
+        "sourcePath": "data/reference/features.json",
+        "recordSha256": "9092e6a5da982bdc353953bc9299a0d0cf2709a1d8134dfc1e4829dd64d475b2",
+        "mechanicFieldsSha256": "5fefbe3c45b7576902c81769843201a141e4841cd1aa58d21dd905a0aba6adce",
+        "snapshotCheckpoint": "egg-acceptance",
+        "contributionIds": [
+          "artificial-egg-source",
+          "artificial-species-options",
+          "hatch-within-one-day",
+          "starting-level-5",
+          "nature-choice",
+          "basic-ability-choice",
+          "bounded-artificial-upgrades"
+        ],
+        "authorityOwner": "feature-automation",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Current Playing God, exact Chemistry Set custody, rank-bounded options, and the atomic cost create one ordinary Level-5 feature-artificial Egg without a parallel lifecycle.",
+        "runtimePaths": [
+          "server/domain/breeding/featureProviderHandoff.ts",
+          "server/domain/breeding/artificialEgg.ts",
+          "server/useCases/createBreedingArtificialEgg.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFeatureProviderHandoff.test.ts",
+          "tests/server/breedingArtificialEgg.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "feature:Fossil Restoration",
+        "sourceKind": "feature",
+        "canonicalId": "Fossil Restoration",
+        "sourcePath": "data/reference/features.json",
+        "recordSha256": "f0512cf94e1f0bc96b6839ac04b9e4a1e18fa3ca3517a98211f981cd84ebe90a",
+        "mechanicFieldsSha256": "8628eebbf7e327606d7b4974c4ff3d2cc6fb2b8b9f82b628eb7bbb60a67910bb",
+        "snapshotCheckpoint": "hatch-transaction",
+        "contributionIds": [
+          "fossil-tutor-point-delta-minus-2",
+          "fossil-extra-basic-or-advanced-ability"
+        ],
+        "authorityOwner": "feature-automation",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Only frozen current Restoration evidence can apply the two-Tutor-Point delta and one bounded extra Ability during ordinary fossil child construction.",
+        "runtimePaths": [
+          "server/domain/breeding/featureProviderHandoff.ts",
+          "server/domain/breeding/fossilEgg.ts",
+          "server/domain/breeding/childSheetConstruction.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFeatureProviderHandoff.test.ts",
+          "tests/server/breedingFossilEgg.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "feature:Ancient Heritage",
+        "sourceKind": "feature",
+        "canonicalId": "Ancient Heritage",
+        "sourcePath": "data/reference/features.json",
+        "recordSha256": "80b65e011e776eb2d313b41fd586fbe33c9d13f712fda0f1f287863516522cb4",
+        "mechanicFieldsSha256": "6342495089ae86de44df95f8d07272fc7448948c1b841cd9f9a1f781c611459c",
+        "snapshotCheckpoint": "post-hatch-operation",
+        "contributionIds": [
+          "fossil-ancient-power-learning"
+        ],
+        "authorityOwner": "feature-automation",
+        "certificationStatus": "upstream-operation-boundary",
+        "certifiedBehavior": "The current Feature remains an upstream typed tutor-operation boundary and cannot manufacture inherited-origin provenance or mutate a child through the breeding checkpoint reducer.",
+        "runtimePaths": [
+          "server/domain/breeding/featureProviderHandoff.ts",
+          "server/domain/featureAutomation/campaignOperations.ts",
+          "server/domain/breeding/permanentMoveProvenance.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFeatureProviderHandoff.test.ts",
+          "tests/server/featureAutomation.test.ts",
+          "tests/server/breedingInheritanceLearning.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "feature:Genetic Memory",
+        "sourceKind": "feature",
+        "canonicalId": "Genetic Memory",
+        "sourcePath": "data/reference/features.json",
+        "recordSha256": "b88360adafad2785a898ea2304cf7bbdedaec3cc38e7ebf36f8aa4a5466885d1",
+        "mechanicFieldsSha256": "2ba277c402c1c1bf6d77a70ed36e023883bdc39318b417b1cbadc5c23eaaf4b9",
+        "snapshotCheckpoint": "post-hatch-operation",
+        "contributionIds": [
+          "fossil-egg-or-tutor-move-learning"
+        ],
+        "authorityOwner": "feature-automation",
+        "certificationStatus": "upstream-operation-boundary",
+        "certifiedBehavior": "The current Feature remains an upstream typed tutor-operation boundary; fossil, Egg-list, and Tutor compatibility claims are rebuilt by their owning permanent-move authority.",
+        "runtimePaths": [
+          "server/domain/breeding/featureProviderHandoff.ts",
+          "server/domain/featureAutomation/campaignOperations.ts",
+          "server/domain/breeding/permanentMoveProvenance.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFeatureProviderHandoff.test.ts",
+          "tests/server/featureAutomation.test.ts",
+          "tests/server/breedingInheritanceLearning.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "feature:Prehistoric Bond",
+        "sourceKind": "feature",
+        "canonicalId": "Prehistoric Bond",
+        "sourcePath": "data/reference/features.json",
+        "recordSha256": "aebc6957553cf4b2858f17a75809292eeef705c4a39ed530509bbff28a2f8976",
+        "mechanicFieldsSha256": "c492b8b5348b5d0a80eee59eace2f3cfe4c1c6302e85e37d5dad1d245d44618b",
+        "snapshotCheckpoint": "hatch-transaction",
+        "contributionIds": [
+          "fossil-remnant-held-item"
+        ],
+        "authorityOwner": "feature-automation",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Restoration-dependent current Bond evidence freezes only the unique or bounded tied highest-stat fossil Held Item for ordinary child construction.",
+        "runtimePaths": [
+          "server/domain/breeding/featureProviderHandoff.ts",
+          "server/domain/breeding/fossilEgg.ts",
+          "server/domain/breeding/childSheetConstruction.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFeatureProviderHandoff.test.ts",
+          "tests/server/breedingFossilEgg.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "feature:This One’s Special, I Know It",
+        "sourceKind": "feature",
+        "canonicalId": "This One’s Special, I Know It",
+        "sourcePath": "data/reference/features.json",
+        "recordSha256": "54c416646e0a7bd5724bff4e3c599b61a0809564462f381116319471ec061801",
+        "mechanicFieldsSha256": "8d1eafd86d5628fec25d9c4dcc66175f2b2e9e4cf43b02c1d6d03c9328a0989f",
+        "snapshotCheckpoint": "begin-hatch",
+        "contributionIds": [
+          "force-bounded-special-outcome"
+        ],
+        "authorityOwner": "feature-automation",
+        "certificationStatus": "fail-closed-no-consumption-authority",
+        "certifiedBehavior": "Typed rank-bounded potential-use evidence is discoverable, but provider-forced hatch outcomes fail closed until exact durable use-consumption authority exists; GM authority cannot substitute.",
+        "runtimePaths": [
+          "server/domain/breeding/featureProviderHandoff.ts",
+          "server/domain/breeding/eggRuleHelpers.ts",
+          "server/useCases/managePokemonEggHatchSpecial.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFeatureProviderHandoff.test.ts",
+          "tests/server/breedingEggRuleHelpers.test.ts",
+          "tests/server/breedingHatchSpecial.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "feature:Tutoring",
+        "sourceKind": "feature",
+        "canonicalId": "Tutoring",
+        "sourcePath": "data/reference/features.json",
+        "recordSha256": "8a4f08ded299f11dcbcc8cb4118d6036f98853229e451eb6cf6e2867a28c169c",
+        "mechanicFieldsSha256": "fda180bce3d8d217ffbe505d1dc2d7861666f2391f565a68ef1ccf2ea1e47627",
+        "snapshotCheckpoint": "post-hatch-operation",
+        "contributionIds": [
+          "compatible-egg-move-learning"
+        ],
+        "authorityOwner": "feature-automation",
+        "certificationStatus": "upstream-operation-boundary",
+        "certifiedBehavior": "The current Feature emits only its upstream typed tutor-operation handoff and cannot bypass child compatibility, six natural slots, or applied TM/Tutor accounting.",
+        "runtimePaths": [
+          "server/domain/breeding/featureProviderHandoff.ts",
+          "server/domain/featureAutomation/campaignOperations.ts",
+          "server/domain/breeding/permanentMoveProvenance.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFeatureProviderHandoff.test.ts",
+          "tests/server/featureAutomation.test.ts",
+          "tests/server/breedingInheritanceLearning.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "item:Egg Warmer",
+        "sourceKind": "item",
+        "canonicalId": "Egg Warmer",
+        "sourcePath": "data/reference/items.json",
+        "recordSha256": "df3ffedadbf66d79df883af5e3b3240c92339814a618fb92df90bd0f56d71f6e",
+        "mechanicFieldsSha256": "ac534b2d6f10fad75ff6771b568854a3568587da143da6bd8f671166aaa353b2",
+        "snapshotCheckpoint": "campaign-clock-segment",
+        "contributionIds": [
+          "egg-capacity-4",
+          "incubation-rate-times-2"
+        ],
+        "authorityOwner": "item-custody",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "One exact quantity-backed unit covers at most four unique Eggs and doubles only campaign-clock incubation credit after current custody is rebuilt inside settlement.",
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/incubation.ts",
+          "server/useCases/managePokemonEggIncubation.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingIncubation.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "item:Reanimation Machine",
+        "sourceKind": "item",
+        "canonicalId": "Reanimation Machine",
+        "sourcePath": "data/reference/items.json",
+        "recordSha256": "204cb0545a50c32054d4210a40bac4daa6f7d018b45c32126f5833e0a2f0816f",
+        "mechanicFieldsSha256": "36252974ce967c67b480426bbc4acc51d6065ae646c73900316246fd7084c5d0",
+        "snapshotCheckpoint": "egg-acceptance",
+        "contributionIds": [
+          "fossil-reanimation-tool"
+        ],
+        "authorityOwner": "item-custody",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "One exact distinct quantity-backed machine unit authorizes fossil creation, is not consumed, and has no facility alias.",
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/fossilEgg.ts",
+          "server/useCases/createBreedingFossilEgg.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingFossilEgg.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "item:Chemistry Set",
+        "sourceKind": "item",
+        "canonicalId": "Chemistry Set",
+        "sourcePath": "data/reference/items.json",
+        "recordSha256": "c2db2e2e30eadc45e631baabbc4fd723429c3a3d88f47d4876a383786b2948fb",
+        "mechanicFieldsSha256": "a51d899e29aece879e264d3452cf4750effa978cdc918e22c68f69053b13a1af",
+        "snapshotCheckpoint": "egg-acceptance",
+        "contributionIds": [
+          "artificial-egg-required-tool"
+        ],
+        "authorityOwner": "item-custody",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Exact current Chemistry Set custody is required for Playing God artificial creation and the tool remains after atomic cost settlement.",
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/artificialEgg.ts",
+          "server/useCases/createBreedingArtificialEgg.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingArtificialEgg.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "ability:Serpent’s Mark",
+        "sourceKind": "ability",
+        "canonicalId": "Serpent’s Mark",
+        "sourcePath": "data/reference/abilities.json",
+        "recordSha256": "eb81880ced4d6f70a3f008f86ac286a29041fbda2177d18ed33a76ee00de498a",
+        "mechanicFieldsSha256": "0d40282fc02fb9f7a09e1c231da985cd285f010507d63ea88b7a956e76b20e91",
+        "snapshotCheckpoint": "egg-acceptance",
+        "contributionIds": [
+          "arbok-pattern-inheritance"
+        ],
+        "authorityOwner": "ability-automation",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Only current effective parameter-ready Arbok parent patterns enter the Egg snapshot; differing patterns consume one persisted d2 and child evidence remains server-private.",
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/offspringProduction.ts",
+          "server/domain/breeding/childSheetConstruction.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingOffspringProduction.test.ts",
+          "tests/server/breedingChildSheetConstruction.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "ability:Parental Bond",
+        "sourceKind": "ability",
+        "canonicalId": "Parental Bond",
+        "sourcePath": "data/reference/abilities.json",
+        "recordSha256": "5c5923e75e842fd8096ab51c4a81e28988e0529215ef95e164c2a1e346d47727",
+        "mechanicFieldsSha256": "e117648af6e93268a33fed6f8d56d0c25627454f7d3845ce31f8a966a05c5d7b",
+        "snapshotCheckpoint": "hatch-transaction",
+        "contributionIds": [
+          "kangaskhan-baby-template-interaction"
+        ],
+        "authorityOwner": "ability-automation",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Only a current effective Parental Bond handoff relaxes Marsupial baby action and deployment restrictions without removing the durable pouch relationship, tether, or damage reduction.",
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/babyTemplate.ts",
+          "server/domain/capabilityAutomation/marsupialRelationship.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingBabyTemplate.test.ts",
+          "tests/server/marsupialRelationship.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "capability:Egg Warmer",
+        "sourceKind": "capability",
+        "canonicalId": "Egg Warmer",
+        "sourcePath": "data/reference/capabilities.json",
+        "recordSha256": "0a1d07189484fd6eac9cea666c8b67f716897cacf43565b142996337737c423c",
+        "mechanicFieldsSha256": "391a89aa9f9e2e7c0b38ad176ceafd5a4796ae2d83d0b91871fb15ef03a01f59",
+        "snapshotCheckpoint": "incubation-operation",
+        "contributionIds": [
+          "once-per-24-hours-hatch-reduction-d10"
+        ],
+        "authorityOwner": "capability-automation",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "One current effective source persists one target-bound d10 per 1,440 campaign minutes and credits total times 60 without changing the frozen target or redrawing on retry.",
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/eggWarmerCapability.ts",
+          "server/useCases/applyPokemonEggWarmerCapability.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingIncubation.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "capability:Marsupial",
+        "sourceKind": "capability",
+        "canonicalId": "Marsupial",
+        "sourcePath": "data/reference/capabilities.json",
+        "recordSha256": "53dc93317b11e843ab462e9eec8c84e312a2cf66801f74ab208284a20b06296d",
+        "mechanicFieldsSha256": "e9246e257a7e40250c99cba62c2d3da0d3ccb702c810ab80326044109f5cf61d",
+        "snapshotCheckpoint": "hatch-transaction",
+        "contributionIds": [
+          "kangaskhan-forced-baby-template-minus-5",
+          "mother-pouch-link",
+          "level-25-template-removal"
+        ],
+        "authorityOwner": "capability-automation",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Current Marsupial authority forces the Kangaskhan minus-five template, one reciprocal pouch link, and exact Level-25 removal without affecting optional templates.",
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/babyTemplate.ts",
+          "server/domain/capabilityAutomation/marsupialRelationship.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingBabyTemplate.test.ts",
+          "tests/server/marsupialRelationship.test.ts",
+          "tests/server/capabilityAutomationEvolution.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "rule:Tutor Points",
+        "sourceKind": "rule",
+        "canonicalId": "Tutor Points",
+        "sourcePath": "data/reference/rules.json",
+        "recordSha256": "2c0b815490b1f5953d82f3cfb8c11a7d2cf65e82f8f525206fcb993967fc0277",
+        "mechanicFieldsSha256": "ae66750308d2b1d241479706da0039e49f0ca8eccdcf123c6229bc6fca0aed69",
+        "snapshotCheckpoint": "hatch-transaction",
+        "contributionIds": [
+          "hatch-starting-tutor-point-1"
+        ],
+        "authorityOwner": "rules-registry",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Ordinary hatch starts with one canonical Tutor Point; frozen Fossil Restoration alone applies its exact minus-two delta during child construction.",
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/childSheetConstruction.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingChildSheetConstruction.test.ts",
+          "tests/server/breedingFossilEgg.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "rule:Loyalty",
+        "sourceKind": "rule",
+        "canonicalId": "Loyalty",
+        "sourcePath": "data/reference/rules.json",
+        "recordSha256": "95cf2e2467ac266b285b011aac0622b52f1014ed8dfad36f42a8d1adb57e76d3",
+        "mechanicFieldsSha256": "5bba24e8d15c2380b856e60691ef5a45bd21cb8ed027e6d32f62c00386da640d",
+        "snapshotCheckpoint": "hatch-transaction",
+        "contributionIds": [
+          "bounded-starting-loyalty-offer-rank-3"
+        ],
+        "authorityOwner": "rules-registry",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Child construction rebuilds canonical starting Loyalty rank 3 from the app-owned rule and never accepts a client rank.",
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/childSheetConstruction.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingChildSheetConstruction.test.ts"
+        ]
+      },
+      {
+        "inventoryEntryId": "rule:3-TM/Tutor Move Limit",
+        "sourceKind": "rule",
+        "canonicalId": "3-TM/Tutor Move Limit",
+        "sourcePath": "data/reference/rules.json",
+        "recordSha256": "990c4866c6fa173e29d1e97505106d67ef705958a1f534a7e09916e37052ce5d",
+        "mechanicFieldsSha256": "831536e67510eac0e637ec02030dbb2727b2d8a456a42a295e951baf861cbfa6",
+        "snapshotCheckpoint": "post-hatch-operation",
+        "contributionIds": [
+          "inherited-move-natural-classification-boundary"
+        ],
+        "authorityOwner": "rules-registry",
+        "certificationStatus": "active-owning-runtime",
+        "certifiedBehavior": "Inherited learning is natural-slot provenance and cannot bypass six natural slots; reclassification frees only the separately counted applied TM/Tutor slot under exact authority.",
+        "runtimePaths": [
+          "server/domain/breeding/inheritanceLearning.ts",
+          "server/domain/breeding/permanentMoveProvenance.ts",
+          "server/useCases/recordPokemonInheritanceLearning.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingInheritanceLearning.test.ts",
+          "tests/server/recordPokemonInheritanceLearning.test.ts"
+        ]
+      }
+    ],
+    "crossCutting": [
+      {
+        "dimension": "edge",
+        "status": "certified",
+        "inventoryEntryIds": [
+          "trainer-edge:Breeder",
+          "trainer-edge:Paleontologist"
+        ],
+        "runtimePaths": [
+          "server/domain/breeding/breederEdgeHandoff.ts",
+          "server/domain/breeding/fossilEgg.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingBreederEdgeHandoff.test.ts",
+          "tests/server/breedingFossilEgg.test.ts"
+        ],
+        "invariants": [
+          "trainer-and-poke-edge-families-remain-distinct",
+          "effective-current-unsuppressed-exactly-one-provider",
+          "no-client-or-gm-manufactured-edge"
+        ]
+      },
+      {
+        "dimension": "feature",
+        "status": "certified",
+        "inventoryEntryIds": [
+          "feature:Dilettante",
+          "feature:Egg Tutor",
+          "feature:Playing God",
+          "feature:Fossil Restoration",
+          "feature:Ancient Heritage",
+          "feature:Genetic Memory",
+          "feature:Prehistoric Bond",
+          "feature:This One’s Special, I Know It",
+          "feature:Tutoring"
+        ],
+        "runtimePaths": [
+          "server/domain/breeding/featureProviderHandoff.ts",
+          "server/domain/featureAutomation/campaignOperations.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFeatureProviderHandoff.test.ts",
+          "tests/server/featureAutomation.test.ts",
+          "tests/server/breedingArtificialEgg.test.ts",
+          "tests/server/breedingFossilEgg.test.ts"
+        ],
+        "invariants": [
+          "nine-closed-current-effective-providers",
+          "handoff-does-not-spend-roll-or-mutate",
+          "downstream-reducer-or-fail-closed-boundary-required"
+        ]
+      },
+      {
+        "dimension": "item",
+        "status": "certified",
+        "inventoryEntryIds": [
+          "item:Egg Warmer",
+          "item:Reanimation Machine",
+          "item:Chemistry Set"
+        ],
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/incubation.ts",
+          "server/domain/breeding/fossilEgg.ts",
+          "server/domain/breeding/artificialEgg.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingIncubation.test.ts",
+          "tests/server/breedingFossilEgg.test.ts",
+          "tests/server/breedingArtificialEgg.test.ts"
+        ],
+        "invariants": [
+          "exact-row-and-unit-custody",
+          "quantity-and-target-bound",
+          "facility-aliases-forbidden"
+        ]
+      },
+      {
+        "dimension": "ability",
+        "status": "certified",
+        "inventoryEntryIds": [
+          "ability:Serpent’s Mark",
+          "ability:Parental Bond"
+        ],
+        "runtimePaths": [
+          "server/domain/breeding/modifierProviderHandoff.ts",
+          "server/domain/breeding/offspringProduction.ts",
+          "server/domain/breeding/babyTemplate.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingModifierProviderHandoff.test.ts",
+          "tests/server/breedingOffspringProduction.test.ts",
+          "tests/server/breedingBabyTemplate.test.ts"
+        ],
+        "invariants": [
+          "current-effective-parameter-ready-only",
+          "serpents-mark-randomness-persisted-before-application",
+          "parental-bond-does-not-create-marsupial-authority"
+        ]
+      },
+      {
+        "dimension": "capability",
+        "status": "certified",
+        "inventoryEntryIds": [
+          "capability:Egg Warmer",
+          "capability:Marsupial"
+        ],
+        "runtimePaths": [
+          "server/domain/breeding/eggWarmerCapability.ts",
+          "server/domain/breeding/babyTemplate.ts",
+          "server/domain/capabilityAutomation/marsupialRelationship.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingIncubation.test.ts",
+          "tests/server/breedingBabyTemplate.test.ts",
+          "tests/server/marsupialRelationship.test.ts",
+          "tests/server/capabilityAutomationEvolution.test.ts"
+        ],
+        "invariants": [
+          "current-effective-synchronous-provider-only",
+          "campaign-minute-cooldowns-only",
+          "reciprocal-pouch-lifecycle-exact"
+        ]
+      },
+      {
+        "dimension": "move",
+        "status": "certified",
+        "inventoryEntryIds": [
+          "feature:Egg Tutor",
+          "feature:Ancient Heritage",
+          "feature:Genetic Memory",
+          "feature:Tutoring",
+          "rule:3-TM/Tutor Move Limit"
+        ],
+        "runtimePaths": [
+          "server/domain/breeding/inheritanceCandidates.ts",
+          "server/domain/breeding/inheritanceLearning.ts",
+          "server/domain/breeding/permanentMoveProvenance.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingInheritanceCandidates.test.ts",
+          "tests/server/breedingInheritanceLearning.test.ts",
+          "tests/server/recordPokemonInheritanceLearning.test.ts"
+        ],
+        "invariants": [
+          "frozen-canonical-candidate-provenance",
+          "levels-20-through-100-gap-free",
+          "six-natural-slots-and-separate-three-applied-limit",
+          "feature-handoff-cannot-forge-origin"
+        ]
+      },
+      {
+        "dimension": "form",
+        "status": "certified",
+        "inventoryEntryIds": [],
+        "runtimePaths": [
+          "server/domain/breeding/familyResolutionBuilder.ts",
+          "server/domain/breeding/offspringResolution.ts",
+          "server/domain/breeding/registry.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFamilyResolution.test.ts",
+          "tests/server/breedingOffspringResolution.test.ts",
+          "tests/server/breedingWholeSpeciesConformance.test.ts"
+        ],
+        "invariants": [
+          "compiled-form-root-only-by-default",
+          "bounded-current-family-gm-offer-only-when-enabled",
+          "runtime-name-pattern-inference-forbidden",
+          "excluded-special-forms-fail-closed"
+        ]
+      },
+      {
+        "dimension": "fossil",
+        "status": "certified",
+        "inventoryEntryIds": [
+          "trainer-edge:Paleontologist",
+          "feature:Fossil Restoration",
+          "feature:Prehistoric Bond",
+          "item:Reanimation Machine"
+        ],
+        "runtimePaths": [
+          "server/domain/breeding/fossilEgg.ts",
+          "server/useCases/createBreedingFossilEgg.ts",
+          "server/domain/breeding/childSheetConstruction.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingFossilEgg.test.ts",
+          "tests/server/breedingHatchCompletion.test.ts"
+        ],
+        "invariants": [
+          "ordinary-durable-egg-and-hatch-pipeline",
+          "one-source-unit-consumed-machine-retained",
+          "parentless-level-10-default",
+          "accepted-source-loss-non-mutating"
+        ]
+      },
+      {
+        "dimension": "baby-template",
+        "status": "certified",
+        "inventoryEntryIds": [
+          "ability:Parental Bond",
+          "capability:Marsupial"
+        ],
+        "runtimePaths": [
+          "server/domain/breeding/babyTemplate.ts",
+          "server/domain/breeding/artificialEgg.ts",
+          "server/domain/breeding/fossilEgg.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/breedingBabyTemplate.test.ts",
+          "tests/server/breedingArtificialEgg.test.ts",
+          "tests/server/breedingFossilEgg.test.ts",
+          "tests/server/breedingHatchCompletion.test.ts"
+        ],
+        "invariants": [
+          "disabled-by-default-server-owned-choice",
+          "species-reference-data-never-mutated",
+          "level-derived-monotonic-recovery",
+          "marsupial-minus-five-through-level-24"
+        ]
+      },
+      {
+        "dimension": "campaign-clock",
+        "status": "certified",
+        "inventoryEntryIds": [
+          "item:Egg Warmer",
+          "capability:Egg Warmer"
+        ],
+        "runtimePaths": [
+          "server/domain/breeding/campaignClockBatch.ts",
+          "server/domain/breeding/incubation.ts",
+          "server/useCases/advanceBreedingCampaignClockBatch.ts"
+        ],
+        "evidencePaths": [
+          "tests/server/campaignClock.test.ts",
+          "tests/server/breedingCampaignClockBatch.test.ts",
+          "tests/server/breedingIncubation.test.ts"
+        ],
+        "invariants": [
+          "sole-lifecycle-cooldown-expiry-authority",
+          "paused-downtime-skipped",
+          "bounded-one-hundred-egg-pages",
+          "exact-retry-and-prefix-recovery-no-double-credit"
+        ]
+      }
+    ],
+    "recoveryMatrix": [
+      {
+        "interactionId": "item:Egg Warmer",
+        "failureMode": "phase-two-incubation-settlement-failure",
+        "evidencePath": "tests/server/breedingIncubation.test.ts",
+        "expectedOutcome": "pending-authority-only-then-exact-resume-without-double-credit-or-publication"
+      },
+      {
+        "interactionId": "capability:Egg Warmer",
+        "failureMode": "persisted-roll-then-settlement-failure",
+        "evidencePath": "tests/server/breedingIncubation.test.ts",
+        "expectedOutcome": "one-d10-reused-no-redraw-and-campaign-time-cooldown-preserved"
+      },
+      {
+        "interactionId": "trainer-edge:Paleontologist",
+        "failureMode": "fossil-source-transaction-interruption",
+        "evidencePath": "tests/server/breedingFossilEgg.test.ts",
+        "expectedOutcome": "source-Egg-offers-and-events-roll-back-then-resume-one-operation"
+      },
+      {
+        "interactionId": "feature:Playing God",
+        "failureMode": "artificial-source-transaction-interruption",
+        "evidencePath": "tests/server/breedingArtificialEgg.test.ts",
+        "expectedOutcome": "money-Egg-offers-and-events-roll-back-then-reuse-gender-and-duration-rolls"
+      },
+      {
+        "interactionId": "rule:3-TM/Tutor Move Limit",
+        "failureMode": "inheritance-learning-transaction-interruption",
+        "evidencePath": "tests/server/recordPokemonInheritanceLearning.test.ts",
+        "expectedOutcome": "child-offers-records-and-events-remain-atomic-and-replay-silent"
+      },
+      {
+        "interactionId": "campaign-clock",
+        "failureMode": "bounded-batch-child-prefix-interruption",
+        "evidencePath": "tests/server/breedingCampaignClockBatch.test.ts",
+        "expectedOutcome": "completed-prefix-retained-pending-child-resumed-and-no-Egg-reprocessed"
+      }
+    ],
+    "negativeBoundaries": [
+      "trainer-edge-and-poke-edge-authority-never-merge",
+      "facility-claims-remain-unavailable-without-an-app-owned-registry",
+      "this-ones-special-provider-force-cannot-execute-without-durable-use-consumption",
+      "post-hatch-feature-handoffs-cannot-forge-inherited-origin-or-bypass-permanent-move-authority",
+      "form-names-and-documentary-text-cannot-create-runtime-form-policy",
+      "client-provider-roll-mechanics-command-read-set-receipt-and-hash-claims-have-no-authority",
+      "accepted-fossil-or-artificial-eggs-never-create-parallel-incubation-hatch-or-child-paths",
+      "browser-wall-map-encounter-and-process-time-never-credit-progress-or-expiry"
+    ],
+    "bindings": {
+      "semanticClosureDefinitionSha256": "4e61a062050313478ab67b1aa5d002d5968aecdc6bd48eb7decd72b55b054ac1",
+      "wholeSpeciesConformanceDefinitionSha256": "873c4dd55aa908883cce89503ec1f052af5ec808014a07f07cbfe692645f1797",
+      "breederEdgeHandoffContractDefinitionSha256": "6d00f0adbf87c5751d1f5df6973325b29c78b9636f1fcf92d55b038299dcf55e",
+      "featureProviderHandoffContractDefinitionSha256": "fdc100e73b51ad2179d2069a6b36b7d9ecf3d441b6d5ed0e0a5fe743714b9479",
+      "modifierProviderHandoffContractDefinitionSha256": "1a4fc68d36348e1b7c7d95983bfb224d971096756e569d278d54fe0676703216",
+      "fossilEggContractDefinitionSha256": "d383983a68057f6dbea32fb2701340043c42a13809ab8542e37ac3c7fc5ec485",
+      "babyTemplateContractDefinitionSha256": "90692543ac5ccff9853599dc13002e6fa9cc2c71124543e1f593ef052fabee36",
+      "inheritanceLearningContractDefinitionSha256": "13f6d6f3af88188e5409c58d297c7f24fcdcb018eee054d8dd57d63d276a6172",
+      "campaignClockBatchContractDefinitionSha256": "864229e166052b554bae577e4ab839c95c670762ff2a73ad262a7f0bf3492bbb",
+      "familyGraphPolicyDefinitionSha256": "ae677fe4a6d204e05a2c500e2dc5584b88ca2a10b80546c18a30b94e7541bc76"
+    },
+    "summary": {
+      "inventoryEntriesCertified": 21,
+      "activeOwningRuntime": 16,
+      "upstreamOperationBoundary": 4,
+      "failClosedNoConsumptionAuthority": 1,
+      "dimensionsCertified": 10,
+      "recoveryCases": 6,
+      "result": "pass"
+    },
+    "evidencePaths": [
+      "tests/server/breedingArtificialEgg.test.ts",
+      "tests/server/breedingBabyTemplate.test.ts",
+      "tests/server/breedingBreederEdgeHandoff.test.ts",
+      "tests/server/breedingCampaignClockBatch.test.ts",
+      "tests/server/breedingChildSheetConstruction.test.ts",
+      "tests/server/breedingEggRuleHelpers.test.ts",
+      "tests/server/breedingFamilyResolution.test.ts",
+      "tests/server/breedingFeatureProviderHandoff.test.ts",
+      "tests/server/breedingFossilEgg.test.ts",
+      "tests/server/breedingHatchCompletion.test.ts",
+      "tests/server/breedingHatchSpecial.test.ts",
+      "tests/server/breedingIncubation.test.ts",
+      "tests/server/breedingInheritanceCandidates.test.ts",
+      "tests/server/breedingInheritanceLearning.test.ts",
+      "tests/server/breedingInteractionCertification.test.ts",
+      "tests/server/breedingModifierProviderHandoff.test.ts",
+      "tests/server/breedingOffspringProduction.test.ts",
+      "tests/server/breedingOffspringResolution.test.ts",
+      "tests/server/breedingProjectCheck.test.ts",
+      "tests/server/breedingWholeSpeciesConformance.test.ts",
+      "tests/server/campaignClock.test.ts",
+      "tests/server/capabilityAutomationEvolution.test.ts",
+      "tests/server/featureAutomation.test.ts",
+      "tests/server/marsupialRelationship.test.ts",
+      "tests/server/recordPokemonInheritanceLearning.test.ts"
+    ]
+  }
+}

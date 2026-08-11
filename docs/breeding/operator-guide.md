@@ -350,6 +350,12 @@ Do not apply Marsupial command or pouch protection to ordinary optional-template
 
 For Playing God, require current effective Feature parameters, exact Chemistry Set custody, at least $3500, and exact Expert/Master Technology Education rank. Persist required Gender/duration rolls before reduction, consume exactly five or six upgrade offers, deduct $3500 atomically, and leave the tool untouched. On failure, verify money, Egg, offers, operation, and events rolled back, then resume the same operation and rolls. Do not create a second artificial hatch path.
 
+## BR-082 interaction certification checks
+
+Treat `data/breeding-automation/interaction-certification.json` as an acceptance report, not a new mechanics source. Its 21 rows must continue to match `modifier-inventory.json`, canonical reference hashes, owning server paths, and focused tests exactly. The expected dispositions are 16 active owning runtimes, four upstream tutoring-operation boundaries, and one fail-closed hatch-special provider boundary.
+
+When an interaction fails, identify its owning boundary before recovery. Do not apply a post-hatch tutoring handoff through the inheritance reducer, infer a form from a name, alias an item to a facility, substitute GM authority for provider use consumption, or patch a fossil/artificial child after hatch. Resume the exact pending operation so persisted rolls, source costs, slot accounting, and campaign-time prefixes are reused. Run the interaction certification test and breeding checker after any provider, canonical reference, form, permanent-Move, Baby Template, fossil, or campaign-clock change.
+
 ## Recovery principles
 
 1. Retry the exact command with the same operation ID and bytes.
