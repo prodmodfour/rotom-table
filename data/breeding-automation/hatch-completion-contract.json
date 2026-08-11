@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "1867892d039355a3e6e6fd128a5f0e853d02e4ead538850adfc78f816e631d84",
+  "definitionSha256": "1a0277ae15447fa310c3dbf5170a9b76bfa58553174ff0bb7c7de94a1aace971",
   "definition": {
     "version": 1,
     "domainPath": "server/domain/breeding/hatchCompletion.ts",
@@ -129,14 +129,14 @@
       ]
     },
     "bindings": {
-      "runtimePolicyDefinitionSha256": "c6c377ec504e6479a7059344f4ec16d930e1eb4fdfd84cf27ff4202f9d3f7077",
-      "runtimeEvidenceDefinitionSha256": "09108d0a23470c72486e8aea9e1bade873e152d7b10711be7c889debd2f68c58",
-      "childSheetConstructionContractDefinitionSha256": "e031d7fd01540639b181e6dd8a256dc16d850897e39e6a3bf46613c6da5352f9",
-      "initializedPokemonSheetContractDefinitionSha256": "b3a5c4d326b6c744adbf6748a37dd8a7e8d4479fbef1dca74cf9507dc3caec23",
+      "runtimePolicyDefinitionSha256": "bfe57f405acca6381797570c9c17591779431457fe5d039c96a65b5c05098ae9",
+      "runtimeEvidenceDefinitionSha256": "164abe5b48c0da1d9ce9e5487e9d3d65f726c1af33adbf82794c29cb1f65a882",
+      "childSheetConstructionContractDefinitionSha256": "71ae66168034d5caeaf5d09365f87aad969d8a69cb05319b4c7d006e8188e4e2",
+      "initializedPokemonSheetContractDefinitionSha256": "6eaa21a658d6190a910aec6d990ff3d4fd032d6fb37f17000b63d0ab0b8a52a5",
       "lineageContractDefinitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1",
-      "speciesAcquisitionRewardContractDefinitionSha256": "e2b7ec11b3b9ba2a9eb602ae6b31a3d4c6d7536562c6d7805b4447d5404ab90c",
-      "transactionCoordinatorContractDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea",
-      "realtimeContractDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932"
+      "speciesAcquisitionRewardContractDefinitionSha256": "4c81568c1f1d3835e5665a00634705f729ca4182631ebefab39f767970136f71",
+      "transactionCoordinatorContractDefinitionSha256": "12ba8fb61c45c231740eed4fd30ca199583c0b12d937f6800403042d5698e18f",
+      "realtimeContractDefinitionSha256": "a6a5423e612258f5a2ce938c67562bacd5b37a8af2b908b7fce48a9a7527b370"
     },
     "tests": {
       "focused": "tests/server/breedingHatchCompletion.test.ts",

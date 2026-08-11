@@ -473,7 +473,7 @@ describe('authoritative Breeder mandated Skill check', () => {
     expect(result.execution.committedRealtimeEvents).toHaveLength(4)
     expect(publish).toHaveBeenCalledTimes(4)
     expect(createSqliteBreedingOperationEvidenceRepository(database).get(input.command.operationId))
-      .toEqual({ readSet: input.readSet, authorizationReceipt: input.receipt })
+      .toEqual({ readSet: input.readSet, authorizationReceipt: input.receipt, gmOverrides: [] })
   })
 
   it('uses exact DC boundaries and terminally fails the Project at final total 11', () => {

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import acquisitionIntegrationContractJson from '../../data/breeding-automation/species-acquisition-integration-contract.json'
+import acquisitionRewardContractJson from '../../data/breeding-automation/species-acquisition-reward-contract.json'
 import storageSchemaV27Json from '../../data/breeding-automation/storage-schema-v27.json'
 import { stableJsonStringify } from '../../shared/automation/stableJson'
 import { MAP_INTERACTION_MODES } from '../../shared/mapInteractionMode'
@@ -106,8 +107,7 @@ describe('BR-069 Species acquisition integrations', () => {
       .toBe(acquisitionIntegrationContractJson.definitionSha256)
     expect(acquisitionIntegrationContractJson.definition).toMatchObject({
       ticket: 'BR-069',
-      sharedRewardContractDefinitionSha256:
-        'a3323f91d56eb8ced5428250c3bc2756140c1048fac794aaff1c0805aaed64ae',
+      sharedRewardContractDefinitionSha256: acquisitionRewardContractJson.definitionSha256,
       runtimePolicy: {
         definitionSha256: BREEDING_SPECIES_ACQUISITION_INTEGRATION_POLICY_DEFINITION_SHA256,
         clientAuthority: 'none',
@@ -159,6 +159,18 @@ describe('BR-069 Species acquisition integrations', () => {
     })).toThrowError(expect.objectContaining({
       code: 'breeding.species-acquisition-integration.invalid-authority',
     }))
+    expect(() => createBreedingSpeciesAcquisitionSourceEvidenceV1({
+      sourceKind: 'migration',
+      sourceAuthorityKind: 'reviewed-migration',
+      sourceEventId: 'review/../private',
+      sourceAuthorityDefinitionSha256: '1'.repeat(64),
+      trainerSheetSlug: 'trainer-owner',
+      trainerRevisionBeforeReward: 0,
+      speciesId: 'bulbasaur' as never,
+      pokemonSheetSlug: null,
+      pokemonSheetRevision: null,
+      campaignMinute: 0,
+    })).toThrow(BreedingSpeciesAcquisitionIntegrationError)
     expect(() => createBreedingSpeciesAcquisitionSourceSettlementV1({
       evidence,
       outcome: 'first-acquisition-rewarded',

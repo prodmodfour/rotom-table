@@ -274,6 +274,7 @@ for (const path of [
   'data/breeding-automation/interaction-certification.json',
   'data/breeding-automation/resilience-certification.json',
   'data/breeding-automation/security-certification.json',
+  'data/breeding-automation/archive-release-certification.json',
 ]) {
   const document = json<Record<string, any>>(path)
   assert(document.rulesetId === ruleset.rulesetId, `${path} ruleset ID drifted`)
@@ -792,7 +793,10 @@ assert(operationClosure?.contractId === operationDocumentContract.contractId
   && operationClosure?.scopeCount === BREEDING_OPERATION_SCOPE_KINDS.length
   && operationClosure?.resilienceCertificationOwner === 'BR-083'
   && operationClosure?.resilienceCertificationStatus === 'certified-current-semantics'
-  && operationClosure?.artifactIds?.includes('breeding-resilience-certification'), 'breeding operation manifest closure drifted')
+  && operationClosure?.archiveReleaseCertificationOwner === 'BR-085'
+  && operationClosure?.archiveReleaseCertificationStatus === 'certified-current-archive-and-repair-semantics'
+  && operationClosure?.artifactIds?.includes('breeding-resilience-certification')
+  && operationClosure?.artifactIds?.includes('breeding-archive-release-certification'), 'breeding operation manifest closure drifted')
 const projectionDocumentContract = json<Record<string, any>>('data/breeding-automation/projection-contract.json')
 const projectionClosure = semanticClosure.definition?.projections
 assert(projectionClosure?.contractId === projectionDocumentContract.contractId
@@ -962,6 +966,36 @@ assert(securityEvidenceRows.every((row: any) => typeof row.evidencePath === 'str
 assert([...(securityCertification.definition?.authorizationSurfaces ?? []), ...(securityCertification.definition?.informationFlows ?? []), ...(securityCertification.definition?.abuseControls ?? [])]
   .every((row: any) => Array.isArray(row.runtimePaths) && row.runtimePaths.length > 0
     && row.runtimePaths.every((path: string) => existsSync(resolve(ROOT, path)))), 'breeding security runtime evidence is missing')
+
+const archiveReleaseCertification = json<Record<string, any>>('data/breeding-automation/archive-release-certification.json')
+const archiveContractForRelease = json<Record<string, any>>('data/breeding-automation/archive-contract.json')
+const archiveStorageRuntimeForRelease = json<Record<string, any>>('data/breeding-automation/archive-storage-runtime-contract.json')
+assert(archiveReleaseCertification.reportId === 'ptu-1.05-breeding-archive-release-certification-v1'
+  && archiveReleaseCertification.rulesetDefinitionSha256 === ruleset.definitionSha256
+  && archiveReleaseCertification.sourceManifestSha256 === sourceManifestSha256
+  && archiveReleaseCertification.definition?.ticket === 'BR-085'
+  && archiveReleaseCertification.definition?.status === 'certified'
+  && JSON.stringify(archiveReleaseCertification.definition?.dimensions) === JSON.stringify(['legacy-migration','export-import','backup-restore','reference-version','orphan-repair']), 'breeding archive release certification identity drifted')
+assert(archiveReleaseCertification.definition?.bindings?.semanticClosureDefinitionSha256 === semanticClosure.definitionSha256
+  && archiveReleaseCertification.definition?.bindings?.wholeSpeciesConformanceDefinitionSha256 === wholeSpeciesConformance.definitionSha256
+  && archiveReleaseCertification.definition?.bindings?.interactionCertificationDefinitionSha256 === interactionCertification.definitionSha256
+  && archiveReleaseCertification.definition?.bindings?.resilienceCertificationDefinitionSha256 === resilienceCertification.definitionSha256
+  && archiveReleaseCertification.definition?.bindings?.securityCertificationDefinitionSha256 === securityCertification.definitionSha256
+  && archiveReleaseCertification.definition?.bindings?.archiveContractDefinitionSha256 === archiveContractForRelease.definitionSha256
+  && archiveReleaseCertification.definition?.bindings?.archiveStorageRuntimeContractDefinitionSha256 === archiveStorageRuntimeForRelease.definitionSha256, 'breeding archive release authority binding drifted')
+assert(JSON.stringify(archiveReleaseCertification.definition?.archiveAuthority?.backupRecordKinds) === JSON.stringify(archiveContractForRelease.definition?.purposePolicy?.['campaign-backup']?.allowed)
+  && archiveReleaseCertification.definition?.archiveAuthority?.maximumEnvelopeBytes === 64 * 1024 * 1024
+  && archiveReleaseCertification.definition?.migrationMatrix?.length === 4
+  && archiveReleaseCertification.definition?.acceptanceCases?.length === 14
+  && archiveReleaseCertification.definition?.summary?.backupRecordKindsCertified === 19
+  && archiveReleaseCertification.definition?.summary?.result === 'pass', 'breeding archive release result drifted')
+assert(archiveReleaseCertification.definition.acceptanceCases.every((row: any) => typeof row.evidencePath === 'string'
+  && typeof row.requiredNeedle === 'string'
+  && existsSync(resolve(ROOT, row.evidencePath))
+  && readFileSync(resolve(ROOT, row.evidencePath), 'utf8').includes(row.requiredNeedle)), 'breeding archive release focused assertion evidence drifted')
+assert(archiveReleaseCertification.definition.runtimePaths.every((path: string) => existsSync(resolve(ROOT, path)))
+  && archiveReleaseCertification.definition.releaseInvariants.includes('repair-never-edits-or-deletes-orphaned-evidence-in-place')
+  && archiveReleaseCertification.definition.releaseInvariants.includes('archive-and-dependency-hooks-remain-synchronous'), 'breeding archive release runtime or repair boundary drifted')
 
 const planPath = existsSync(resolve(ROOT, registry.definition.activePlanPath))
   ? registry.definition.activePlanPath
@@ -1359,6 +1393,13 @@ for (const path of [
   'data/breeding-automation/resilience-certification.json',
   'tests/server/breedingResilienceCertification.test.ts',
   'data/breeding-automation/security-certification.json',
+  'data/breeding-automation/archive-release-certification.json',
+  'shared/breeding/speciesAcquisitionSourceSettlement.ts',
+  'server/storage/breedingArchiveStateRepository.ts',
+  'server/storage/breedingOperationEvidenceRepository.ts',
+  'server/useCases/manageBreedingArchives.ts',
+  'tests/server/breedingArchiveReleaseAcceptance.test.ts',
+  'tests/server/breedingArchiveReleaseCertification.test.ts',
   'server/security/breedingRequestBody.ts',
   'server/security/breedingWriteRateLimit.ts',
   'tests/server/breedingRequestBody.test.ts',

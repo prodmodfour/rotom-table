@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "b3a5c4d326b6c744adbf6748a37dd8a7e8d4479fbef1dca74cf9507dc3caec23",
+  "definitionSha256": "6eaa21a658d6190a910aec6d990ff3d4fd032d6fb37f17000b63d0ab0b8a52a5",
   "definition": {
     "version": 1,
     "repositoryPath": "server/storage/initializedPokemonSheetRepository.ts",
@@ -99,8 +99,8 @@
       "trainerKindCount": 1
     },
     "bindings": {
-      "storageSchemaDefinitionSha256": "0da2fb267112523d86bc1d248080a782d1778d02eacece447e91ca64c412a934",
-      "repositoryContractDefinitionSha256": "a49fbb1583b2eb417a781a11c2f843d072fec219a78a61cae885d77e721b1c7f",
+      "storageSchemaDefinitionSha256": "44dcc762abed43fd6547b4a155bdafe83ebdaf49daa1bf33812e4f009d329b8b",
+      "repositoryContractDefinitionSha256": "47a0cc081e2506e8ca9842d1125adec7fb1b8ed46439e1d663bcb4b589a823ad",
       "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
       "lineageContractDefinitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1"
     }

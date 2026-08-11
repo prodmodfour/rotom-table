@@ -294,6 +294,9 @@ export const advanceBreedingProjectAdditionalTime = (
     readSetValue: input.readSet,
     receiptValue: input.authorizationReceipt,
   })
+  if (authority.receipt.gmOverrideIds.length !== 0) {
+    return fail('breeding.additional-progress.invalid-authority', 'Additional progress does not accept unpersisted GM overrides.')
+  }
   const segment = parseAuthoritativeBreedingAdditionalProgressSegmentAuthorityV1(input.segmentAuthority)
   const dependency = authority.readSet.dependencyEvidence.find(value => (
     value.providerKind === 'system'

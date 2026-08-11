@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "95a1fc5d99dcb584f8912ee1269da09b3fd1585fea8ad9003d1b9be16e668164",
+  "definitionSha256": "5147344cef335b65ea60e3d8eb3a49c60a83d654293442b97151d7add2ac131a",
   "definition": {
     "version": 1,
     "ticket": "BR-050+BR-062",
@@ -234,13 +234,13 @@
       "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
       "authorizationContractDefinitionSha256": "2ae8a4ad9dcea11042dbdcc6ba71a6c87f00578b42d5699407e4eae643e55dd4",
       "readSetContractDefinitionSha256": "98b2b9a040aea6a95165ff88e57277a8a31dd01f8d47e12930ab035a5273f639",
-      "transactionCoordinatorContractDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea",
-      "archiveContractDefinitionSha256": "791c7236517655fb02eaa598865bd51b9391173be39b8eea6b0995da67af11e2",
-      "archiveStorageRuntimeContractDefinitionSha256": "500c5b07a93b92fc1d6a642b5c8124483c1d2106c12bc073e7b4766394b25e77",
-      "realtimeContractDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932",
+      "transactionCoordinatorContractDefinitionSha256": "12ba8fb61c45c231740eed4fd30ca199583c0b12d937f6800403042d5698e18f",
+      "archiveContractDefinitionSha256": "9ed9362decc67b11adaf8a991341a61307b9db45467cd3679e5beda4a791b4da",
+      "archiveStorageRuntimeContractDefinitionSha256": "a793314f90ac75d33067643ca35f80633441f5dd1375f099056b917c3fa7b200",
+      "realtimeContractDefinitionSha256": "a6a5423e612258f5a2ce938c67562bacd5b37a8af2b908b7fce48a9a7527b370",
       "hatchDurationPolicyDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a",
       "modifierInventoryDefinitionSha256": "24bb20a9d61003f540f6b410df3b0919ee49233012e45ec2dd14bfc9ed5c2dd9",
-      "storageSchemaV24DefinitionSha256": "fc3fe57c2b442354b590e7a28d1f368cdf15d57c344fe9d5825f201504a9bb98"
+      "storageSchemaV24DefinitionSha256": "db69d7a93e2226975b27ce7697ac9c1ad3bc11784333af0a381a520a1c2b94b3"
     }
   }
 }

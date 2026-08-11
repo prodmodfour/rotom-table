@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "500c5b07a93b92fc1d6a642b5c8124483c1d2106c12bc073e7b4766394b25e77",
+  "definitionSha256": "a793314f90ac75d33067643ca35f80633441f5dd1375f099056b917c3fa7b200",
   "definition": {
     "version": 1,
     "repositoryPaths": [
@@ -25,12 +25,12 @@
       "restartPersistence": true
     },
     "export": {
-      "campaignBackup": "complete-terminal-authority-record-set",
+      "campaignBackup": "complete-terminal-authority-record-set-including-transfer-consents-GM-overrides-and-external-acquisition-settlements",
       "gmAudit": "strict-read-only-authority-record-set",
       "ownerPortable": "server-projected-owner-and-participant-records-only",
       "ownerPortableRestore": "forbidden",
       "pendingCampaignOperation": "backup-blocker",
-      "unsupportedPrivateEvidence": "fail-closed-never-omit",
+      "unsupportedPrivateEvidence": "fail-closed-never-omit-or-reconstruct",
       "consistentSnapshot": "BEGIN-IMMEDIATE-single-connection",
       "campaignClockCheckpoint": "archive-created-minute-must-equal-authoritative-campaign-minute",
       "browserAuthority": "none"
@@ -46,9 +46,11 @@
       "failure": "rollback-all",
       "foreignKeys": "deferred-and-checked-at-top-level-commit",
       "exactRequestReplay": "return-stored-receipt-without-replacement",
-      "operationIdentity": "command-result-read-set-authorization-and-scope-records-preserved",
+      "operationIdentity": "command-result-complete-read-set-authorization-GM-override-and-scope-records-preserved",
       "projectEggCycle": "restored-inside-one-deferred-foreign-key-transaction",
-      "legacyMapMetadata": "never-imported-or-interpreted"
+      "legacyMapMetadata": "never-imported-or-interpreted",
+      "externalSpeciesAcquisition": "source-settlements-preserved-without-forged-Breeding-commands",
+      "eggTransferConsent": "dual-consent-history-preserved-exactly"
     },
     "integrity": {
       "audience": "authenticated-GM-only",
@@ -63,7 +65,10 @@
         "hatched-child-pokemon",
         "hatched-Egg-origin",
         "origin-Egg-child",
-        "acquisition-trainer"
+        "acquisition-trainer",
+        "transfer-consent-Egg-and-counterpart",
+        "external-acquisition-source-settlement",
+        "GM-override-operation"
       ],
       "backupBlockers": [
         "corrupt-authority-row",
@@ -73,7 +78,8 @@
         "unrepresentable-private-evidence"
       ],
       "legacyMapEggMetadata": "warning-only-quarantine-never-authority",
-      "report": "stable-json-SHA-256-bound"
+      "report": "stable-json-SHA-256-bound",
+      "repair": "never-edit-in-place-detect-and-atomically-restore-a-reviewed-known-good-backup-to-a-clean-target"
     },
     "strictness": {
       "nonPlainOrUnknownArchiveInput": "reject",
@@ -86,11 +92,11 @@
       "changedReplayFacts": "reject"
     },
     "bindings": {
-      "archiveContractDefinitionSha256": "791c7236517655fb02eaa598865bd51b9391173be39b8eea6b0995da67af11e2",
-      "archiveStorageSchemaV23DefinitionSha256": "236726ef662682f290cd267e988e84b87b86f9390bb74f7c59b92291c38c0803",
-      "storageSchemaV22DefinitionSha256": "0da2fb267112523d86bc1d248080a782d1778d02eacece447e91ca64c412a934",
-      "repositoryContractDefinitionSha256": "a49fbb1583b2eb417a781a11c2f843d072fec219a78a61cae885d77e721b1c7f",
-      "transactionCoordinatorDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea"
+      "archiveContractDefinitionSha256": "9ed9362decc67b11adaf8a991341a61307b9db45467cd3679e5beda4a791b4da",
+      "archiveStorageSchemaV23DefinitionSha256": "5f5e14d7afbd849818fcb6499345c1005778d17328271f0e6b2f7e90773d8ac6",
+      "storageSchemaV22DefinitionSha256": "44dcc762abed43fd6547b4a155bdafe83ebdaf49daa1bf33812e4f009d329b8b",
+      "repositoryContractDefinitionSha256": "47a0cc081e2506e8ca9842d1125adec7fb1b8ed46439e1d663bcb4b589a823ad",
+      "transactionCoordinatorDefinitionSha256": "12ba8fb61c45c231740eed4fd30ca199583c0b12d937f6800403042d5698e18f"
     }
   }
 }

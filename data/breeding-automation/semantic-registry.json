@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "registryId": "breeding-semantic-registry-v1",
-  "definitionSha256": "b93a3b5f6f5de183b72ea0cd16f1fd789a3f09910538c158f65b3e821c250447",
+  "definitionSha256": "4d4c0b4af6a8a048433793126a5665c50689bb1cb03830b1ae11d31e08ff06bd",
   "definition": {
     "activePlanPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
     "donePlanPath": "implementation-plans/done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
@@ -325,7 +325,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "791c7236517655fb02eaa598865bd51b9391173be39b8eea6b0995da67af11e2"
+        "expectedDefinitionSha256": "9ed9362decc67b11adaf8a991341a61307b9db45467cd3679e5beda4a791b4da"
       },
       {
         "id": "breeding-storage-schema-v22",
@@ -334,7 +334,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "0da2fb267112523d86bc1d248080a782d1778d02eacece447e91ca64c412a934"
+        "expectedDefinitionSha256": "44dcc762abed43fd6547b4a155bdafe83ebdaf49daa1bf33812e4f009d329b8b"
       },
       {
         "id": "breeding-repository-contract",
@@ -343,7 +343,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "a49fbb1583b2eb417a781a11c2f843d072fec219a78a61cae885d77e721b1c7f"
+        "expectedDefinitionSha256": "47a0cc081e2506e8ca9842d1125adec7fb1b8ed46439e1d663bcb4b589a823ad"
       },
       {
         "id": "initialized-pokemon-sheet-contract",
@@ -352,7 +352,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "b3a5c4d326b6c744adbf6748a37dd8a7e8d4479fbef1dca74cf9507dc3caec23"
+        "expectedDefinitionSha256": "6eaa21a658d6190a910aec6d990ff3d4fd032d6fb37f17000b63d0ab0b8a52a5"
       },
       {
         "id": "species-acquisition-reward-contract",
@@ -361,7 +361,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "e2b7ec11b3b9ba2a9eb602ae6b31a3d4c6d7536562c6d7805b4447d5404ab90c"
+        "expectedDefinitionSha256": "4c81568c1f1d3835e5665a00634705f729ca4182631ebefab39f767970136f71"
       },
       {
         "id": "campaign-operation-ledger-contract",
@@ -370,7 +370,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "f7869b1ea099d9ae4e2542324abf6d3a98284d2f0c93c289192cdb65293cdbfe"
+        "expectedDefinitionSha256": "3a2162577ce6117f7514f66b950f2faede586eee558bc639024a2f7e1bca35c3"
       },
       {
         "id": "campaign-clock-contract",
@@ -379,7 +379,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "1b3ef0bd5391d38e45c7ac2a22f774243df6bcb3219e45f000b07a293c6ecd6a"
+        "expectedDefinitionSha256": "743d425bbbfe24e679d53541e9e3c85da6be32aa89ad0af78cb2a792de169ad5"
       },
       {
         "id": "breeding-realtime-contract",
@@ -388,7 +388,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932"
+        "expectedDefinitionSha256": "a6a5423e612258f5a2ce938c67562bacd5b37a8af2b908b7fce48a9a7527b370"
       },
       {
         "id": "breeding-transaction-coordinator-contract",
@@ -397,7 +397,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea"
+        "expectedDefinitionSha256": "12ba8fb61c45c231740eed4fd30ca199583c0b12d937f6800403042d5698e18f"
       },
       {
         "id": "breeding-archive-storage-schema-v23",
@@ -406,7 +406,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "236726ef662682f290cd267e988e84b87b86f9390bb74f7c59b92291c38c0803"
+        "expectedDefinitionSha256": "5f5e14d7afbd849818fcb6499345c1005778d17328271f0e6b2f7e90773d8ac6"
       },
       {
         "id": "breeding-archive-storage-runtime-contract",
@@ -415,7 +415,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "500c5b07a93b92fc1d6a642b5c8124483c1d2106c12bc073e7b4766394b25e77"
+        "expectedDefinitionSha256": "a793314f90ac75d33067643ca35f80633441f5dd1375f099056b917c3fa7b200"
       },
       {
         "id": "breeding-persistence-conformance-contract",
@@ -424,7 +424,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "9abb1a658849fdd2b13d2fce57e6da74489f7ab58aeece1ec52b8f3094eaeb85"
+        "expectedDefinitionSha256": "02f2a200551c80ffeedc73d71dfa1fce874e6c7816a1c65ed96f25a424e0c553"
       },
       {
         "id": "breeding-project-campaign-offer-contract",
@@ -460,7 +460,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "583e3cb25379c86ac175f09f3683b0cd40955a6a27a442fbf3348c4876ac19ac"
+        "expectedDefinitionSha256": "eabe4c0a03be818cbecda4d94b5e10ed421e1e3462b9578f6c5f68c7ca4c7bdf"
       },
       {
         "id": "breeding-project-check-contract",
@@ -469,7 +469,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "8906aa02058dae374a195dd4fe5bb60237469aa23ab851bcb20d7b96a89c1650"
+        "expectedDefinitionSha256": "9e3a7cdb0f3f68e3cd25413d0d8e6bfb6cd4af38c2bdb7bb7cc6e79d246de1cf"
       },
       {
         "id": "breeding-project-additional-progress-contract",
@@ -478,7 +478,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "8a43909bdd1c478055c105c05f819710617226272acf3e83dd35767ff04f1eed"
+        "expectedDefinitionSha256": "739fef7d5e420b12955a0289b052533411fd4ce74deb82ea29e549db38871e7d"
       },
       {
         "id": "breeding-production-snapshot-contract",
@@ -487,7 +487,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "9b5ea534f6c1644948e9ac9358c80c975f3a5aa6fb3b7cc6df9712a1b8821863"
+        "expectedDefinitionSha256": "38126b7394f1bb0a09ee056664e54af5de51f12d323ef297e6f9fa007805a4e0"
       },
       {
         "id": "breeding-offspring-production-contract",
@@ -496,7 +496,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "e15f5779ee6853f7b1ec623fcc1fbedc86b2d942c1d14aaca0c53e91e1d399aa"
+        "expectedDefinitionSha256": "fbf8f38b460d3dc5b12bb9c969bea05f966a856c102bfa23ca59f940c324430f"
       },
       {
         "id": "breeding-egg-production-contract",
@@ -505,7 +505,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "5c4e08dbedd8fae6513559d4b7ecb91cc26166a0f076fa3987992eb9252c5472"
+        "expectedDefinitionSha256": "fbf3c161d25581d4a51c534973034aba5be69981838234728f2f6ceb43f117bd"
       },
       {
         "id": "breeding-lifecycle-recovery-contract",
@@ -514,7 +514,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "7f7ba2107f99512a936b962ff9a38a04156f78af9a7cde43b700abcc71f3e5cc"
+        "expectedDefinitionSha256": "c2d912cac3190afc6cdfbab68a65346cdf7ddc89275a8e88589be883ac508203"
       },
       {
         "id": "breeding-incubation-contract",
@@ -523,7 +523,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "95a1fc5d99dcb584f8912ee1269da09b3fd1585fea8ad9003d1b9be16e668164"
+        "expectedDefinitionSha256": "5147344cef335b65ea60e3d8eb3a49c60a83d654293442b97151d7add2ac131a"
       },
       {
         "id": "breeding-incubation-storage-schema-v24",
@@ -532,7 +532,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "fc3fe57c2b442354b590e7a28d1f368cdf15d57c344fe9d5825f201504a9bb98"
+        "expectedDefinitionSha256": "db69d7a93e2226975b27ce7697ac9c1ad3bc11784333af0a381a520a1c2b94b3"
       },
       {
         "id": "breeding-readiness-correction-contract",
@@ -541,7 +541,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "8b816f636c17993d52a8ceeb935f20a5ca96be4e2cffdd00f362506ddb3b623d"
+        "expectedDefinitionSha256": "c679887789650d85218d4e66fb65b703620dd8431ee12ee23bffe2f8bdabdc31"
       },
       {
         "id": "breeding-campaign-clock-incubation-batch-contract",
@@ -550,7 +550,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "864229e166052b554bae577e4ab839c95c670762ff2a73ad262a7f0bf3492bbb"
+        "expectedDefinitionSha256": "8f068d7287489a99a7e948750636310d1ed7626eb5ac95a8fe27c6911b1b7702"
       },
       {
         "id": "breeding-egg-lifecycle-policy-contract",
@@ -559,7 +559,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "38f3a08c73b99cb376b403c474cf7a8e485f2e7c4c59768ec03cdadfafb0403b"
+        "expectedDefinitionSha256": "c5d1a098da04e31478936c65787a884270f4ecd4c2f0eb4d65674828be804e42"
       },
       {
         "id": "breeding-hatch-offer-contract",
@@ -568,7 +568,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "29995f835ede496af29d4ff829fa5ad7c03f2c08190a47201a7b42cc4fc96c10"
+        "expectedDefinitionSha256": "2ae60b5b332e26247ca8ba6e9a1088c0b9c4d1178bf406fdc94fcdcb34ce9074"
       },
       {
         "id": "breeding-hatch-special-contract",
@@ -577,7 +577,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "de3c68e70695c00a926bbae4875a017f0a790d51b778c46aa7b1a2bdf6e8e0e0"
+        "expectedDefinitionSha256": "b55316c1b6f2555abb5902918df237593aac91a5e85b009b00fd80867e86f1f1"
       },
       {
         "id": "breeding-child-sheet-construction-contract",
@@ -586,7 +586,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "e031d7fd01540639b181e6dd8a256dc16d850897e39e6a3bf46613c6da5352f9"
+        "expectedDefinitionSha256": "71ae66168034d5caeaf5d09365f87aad969d8a69cb05319b4c7d006e8188e4e2"
       },
       {
         "id": "breeding-hatch-completion-contract",
@@ -595,7 +595,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "1867892d039355a3e6e6fd128a5f0e853d02e4ead538850adfc78f816e631d84"
+        "expectedDefinitionSha256": "1a0277ae15447fa310c3dbf5170a9b76bfa58553174ff0bb7c7de94a1aace971"
       },
       {
         "id": "breeding-hatch-species-acquisition-contract",
@@ -604,7 +604,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "7dbefbb099dddb2686e4b759945760c2eb4cbf2fd44df3fa338a50ad24006aa9"
+        "expectedDefinitionSha256": "91012176c3292f955b899953add467454db363bba7020ec1139019c0f980363e"
       },
       {
         "id": "breeding-hatch-resilience-contract",
@@ -613,7 +613,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "26e99b5cd606e5c2b02bfd6145ba04a0e2704819ab42b1ff967e7e80868237e2"
+        "expectedDefinitionSha256": "2b3708a60225e75aa6ca299f27e23f8c3e3c219f0b6671c11ea00163f831de80"
       },
       {
         "id": "breeding-breeder-edge-handoff-contract",
@@ -640,7 +640,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "1a4fc68d36348e1b7c7d95983bfb224d971096756e569d278d54fe0676703216"
+        "expectedDefinitionSha256": "d34801a954acd23032a623eb0ebc6c102f61a8f5726504c3091de72fd4cbdfcb"
       },
       {
         "id": "breeding-storage-schema-v25",
@@ -649,7 +649,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "766c133e38315ecba7934881243d4c156911398e86d2bfeee6de430bce8efa95"
+        "expectedDefinitionSha256": "e78af9d6e47453dd2cd12d40d5376c14b00cb1302312755f63219e2cec44f442"
       },
       {
         "id": "breeding-parent-source-change-contract",
@@ -658,7 +658,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "6ab680fca22e2907e50c802699bf240208cd692b2a9999c890b108f6342420ac"
+        "expectedDefinitionSha256": "54c38a4dce303d77c7426ab05260df5516b3951195e7386dfdb592555102ac79"
       },
       {
         "id": "breeding-storage-schema-v26",
@@ -676,7 +676,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "35eb7497732ad71dbda180a5c132bb0534f89f85a8eda2e1acb5cf2f9968cb31"
+        "expectedDefinitionSha256": "1bb127764f069102b8b194cb0b22cd55b5ca07be812d8dd669ba4947b34ec477"
       },
       {
         "id": "breeding-fossil-egg-contract",
@@ -685,7 +685,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "d383983a68057f6dbea32fb2701340043c42a13809ab8542e37ac3c7fc5ec485"
+        "expectedDefinitionSha256": "b1033dd11294a61279fb3d1dc7ae2658867c5ef6f0c2f114168db9188ede184a"
       },
       {
         "id": "breeding-gm-egg-contract",
@@ -694,7 +694,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "2b2218d367b45c0412952848f76217fb0b53114dc639b84c462ffe48b2940e37"
+        "expectedDefinitionSha256": "a63fa94ebb5b09dfcfff0ee51e6843dbd51a88606eea901db30eedd619ac5a59"
       },
       {
         "id": "breeding-baby-template-contract",
@@ -703,7 +703,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "90692543ac5ccff9853599dc13002e6fa9cc2c71124543e1f593ef052fabee36"
+        "expectedDefinitionSha256": "dbb43efa89d123201fbe9fff91f735616d1d41b34c2eeb0b486e903ba0307965"
       },
       {
         "id": "breeding-inheritance-learning-contract",
@@ -712,7 +712,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "13f6d6f3af88188e5409c58d297c7f24fcdcb018eee054d8dd57d63d276a6172"
+        "expectedDefinitionSha256": "e9f8a9c0f8bad1d3e0b7d5701a6906c6465cd156df97869ce8f366889f86c645"
       },
       {
         "id": "breeding-storage-schema-v27",
@@ -730,7 +730,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "410da6cb8968f2a093dc6297f62d1e4a25ae6523d8f78bb19c70b8368b19d707"
+        "expectedDefinitionSha256": "a01553a9bbf484e386419e921a9ae7e675721a3c5b2fcd4e6071f55609428595"
       },
       {
         "id": "breeding-workshop-presentation-contract",
@@ -766,7 +766,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "4d20bd9571e0323507eb5f6a4131e67963307b882c4895dc608f4f8848f390d9"
+        "expectedDefinitionSha256": "145f931b82d9317089fcd9decfa435728af3f38f5dd97c2d4157d8cb1a68a369"
       },
       {
         "id": "breeding-workshop-activity-presentation-contract",
@@ -775,7 +775,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "3388880101205852ee45a2356ad2a92e695c2169edd3c00e359da3c05b50847e"
+        "expectedDefinitionSha256": "e6a3b789361900bd0559ee1ecec4525d779349cf4d7761e14ec4c3f782aef7e5"
       },
       {
         "id": "breeding-hatch-workflow-presentation-contract",
@@ -784,7 +784,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "d304eb0305b6a41f6683a3a4f386b83e35b4d6932ad3bed66efda1e2c141b221"
+        "expectedDefinitionSha256": "46bc3318b5736458876bc47ed912568e3135ab7540be82397e5844f49234fafe"
       },
       {
         "id": "breeding-hatch-destination-presentation-contract",
@@ -811,7 +811,7 @@
         "kind": "schema",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "a450b7d354f462ff46ec0feb2ca79e337c87514df67f6191640cafbfc7b0ae81"
+        "expectedDefinitionSha256": "bf24ec5cdf17d1d653e734c2b4f1581541237959809d3b8c9c31af40255b12d7"
       },
       {
         "id": "breeding-workshop-interaction-acceptance",
@@ -820,7 +820,7 @@
         "kind": "report",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "b68242ba84122c5c0b45b3b9017ef1ea452fdd0396f9855a3a9f0908a4912c85"
+        "expectedDefinitionSha256": "a1e850b887a118f8e1174a706d3d43f1d1db3920b3668d3f9da4159c060ac7fe"
       },
       {
         "id": "breeding-workshop-browser-acceptance",
@@ -829,7 +829,7 @@
         "kind": "report",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "b17d69450b062d5052481b9351077c555eb131eb8bae792a7a84dcc40dc8de9c"
+        "expectedDefinitionSha256": "a7b29238b78706703abc5887a2e282f3bce3d71723ae37c1350773c75f05f415"
       },
       {
         "id": "breeding-semantic-closure-manifest",
@@ -838,7 +838,7 @@
         "kind": "registry",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "718a6e4507fa3aa930be47ac596a05c44e80a792bd64b1fe87fc815c551ac625"
+        "expectedDefinitionSha256": "e2aebbec4467726aaceff7f93c8ddad5cfc3fbca0b169b6660f98b3309aa8679"
       },
       {
         "id": "breeding-whole-species-conformance",
@@ -847,7 +847,7 @@
         "kind": "report",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "07701bebb2d646a877fe47fe6964afcf4a30fe3e21f31773965f7f35fa7afbb7"
+        "expectedDefinitionSha256": "5cd575dcd96d2a6ecb2f96e89915e2a586a51564b32e98da2ab7d1c305f1a2ad"
       },
       {
         "id": "breeding-interaction-certification",
@@ -856,7 +856,7 @@
         "kind": "report",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "93041fbf371c9b063232d174e16135d8ec5c231496d64c360a4abc6184344998"
+        "expectedDefinitionSha256": "fdfc3d47bd08e1b96def88a0a9edbeeaa12ef14f504042be2006bb58b20e4980"
       },
       {
         "id": "breeding-resilience-certification",
@@ -865,7 +865,7 @@
         "kind": "report",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "54c2d9ecbe5a9d23aac82ffac41b06cdd3632513a88a04e2077265047502e0c2"
+        "expectedDefinitionSha256": "cc0ce19dde910b1d2f71789a891e3e987ef3fd31f5de71cbb9ec56b40f242457"
       },
       {
         "id": "breeding-security-certification",
@@ -874,7 +874,16 @@
         "kind": "report",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "e254f56f6a56340d062e30371a4be2c52d60131c074194356523eaa24bb5bfaa"
+        "expectedDefinitionSha256": "3b9ab99b4888ed91055d9fed73ea8a440f8b3241cd7991409be5fb3f49e5bf75"
+      },
+      {
+        "id": "breeding-archive-release-certification",
+        "path": "data/breeding-automation/archive-release-certification.json",
+        "ownerTicket": "BR-085",
+        "kind": "report",
+        "binding": "definition-field",
+        "definitionHashField": "definitionSha256",
+        "expectedDefinitionSha256": "2b9b90c5d2609622fb75575ba6de20617b9a3739105855ec59ddc4ec80176d98"
       },
       {
         "id": "scenario-requirements",
@@ -882,7 +891,7 @@
         "ownerTicket": "BR-008",
         "kind": "coverage",
         "binding": "live-validation",
-        "expectedSha256": "7a2e5401ebf8a302d1a181be16c3abe959305430b03bc2a6f843f6c6894a756d"
+        "expectedSha256": "6c768e707b91fc001d90a23c747ff7bffac18239df8efa17ede6c3d1431bb6e4"
       },
       {
         "id": "acceptance-fixture-index",

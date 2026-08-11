@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 84,
+    "covered": 85,
     "in-progress": 1,
-    "planned": 5,
+    "planned": 4,
     "blocked": 0
   },
   "requirements": [
@@ -2186,8 +2186,25 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/archive-release-certification.json",
+        "data/breeding-automation/archive-contract.json",
+        "data/breeding-automation/archive-storage-runtime-contract.json",
+        "shared/breeding/speciesAcquisitionSourceSettlement.ts",
+        "server/domain/breeding/archives.ts",
+        "server/storage/breedingArchiveStateRepository.ts",
+        "server/storage/breedingOperationEvidenceRepository.ts",
+        "server/useCases/manageBreedingArchives.ts",
+        "tests/shared/breedingArchiveContract.test.ts",
+        "tests/server/breedingArchiveManager.test.ts",
+        "tests/server/breedingArchiveReleaseAcceptance.test.ts",
+        "tests/server/breedingCampaignClockBatch.test.ts",
+        "tests/server/breedingArchiveReleaseCertification.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/contributor-guide.md",
+        "docs/breeding/operator-guide.md"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -2200,7 +2217,7 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

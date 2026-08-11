@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "29995f835ede496af29d4ff829fa5ad7c03f2c08190a47201a7b42cc4fc96c10",
+  "definitionSha256": "2ae60b5b332e26247ca8ba6e9a1088c0b9c4d1178bf406fdc94fcdcb34ce9074",
   "definition": {
     "version": 1,
     "ticket": "BR-054",
@@ -172,7 +172,7 @@
     },
     "bindings": {
       "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
-      "eggLifecyclePolicyContractDefinitionSha256": "38f3a08c73b99cb376b403c474cf7a8e485f2e7c4c59768ec03cdadfafb0403b",
+      "eggLifecyclePolicyContractDefinitionSha256": "c5d1a098da04e31478936c65787a884270f4ecd4c2f0eb4d65674828be804e42",
       "projectCampaignOfferContractDefinitionSha256": "73578fbb9fa2fa421c96a4531b95182810573694861976345293332421b2d4ff",
       "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
       "authorizationContractDefinitionSha256": "2ae8a4ad9dcea11042dbdcc6ba71a6c87f00578b42d5699407e4eae643e55dd4",

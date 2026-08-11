@@ -202,6 +202,22 @@ describe('Breeding archive repository and transaction manager', () => {
       currentCheckpointArchiveId: null,
     })).toMatchObject({ kind: 'exact-replay', archive, receipt: restored.receipt })
 
+    target.withTransaction(() => {
+      createSqliteBreedingOperationRepository(target).reserve(command(90), 0)
+      target.connection.prepare(`
+        UPDATE campaign_clock
+        SET revision = 1, campaign_minute = 5, last_operation_id = ?
+        WHERE singleton = 1
+      `).run(operationId(90))
+    })
+    expect(service.restoreCampaign({
+      envelope,
+      request: structuredClone(request),
+      actorAuthority: actor(5),
+      currentReferenceVersions: references(),
+      currentCheckpointArchiveId: null,
+    })).toMatchObject({ kind: 'exact-replay', archive, receipt: restored.receipt })
+
     target.close()
     databases.splice(databases.indexOf(target), 1)
     const reopened = open(path)

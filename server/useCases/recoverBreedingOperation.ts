@@ -79,10 +79,11 @@ const projection = (record: BreedingOperationLedgerRecord): BreedingOperationRec
   if (command.commandKind !== 'recover-breeding-operation') return fail('breeding.lifecycle-recovery.wrong-command', 'Stored recovery operation changed command kind.')
   return projectBreedingOperationRecoveryV1({ recoveryOperationId: command.operationId, targetOperationId: command.payload.targetOperationId, action: command.payload.action, executionStatus: record.status, completedAtCampaignMinute: record.settledAtCampaignMinute })
 }
-const requireEvidenceReplay = (input: { readonly database: RotomDatabase, readonly operationId: string, readonly readSet: BreedingOperationReadSetV1, readonly receipt: BreedingAuthorizationReceiptV1 }): void => {
+const requireEvidenceReplay = (input: { readonly database: RotomDatabase, readonly operationId: string, readonly readSet: BreedingOperationReadSetV1, readonly receipt: BreedingAuthorizationReceiptV1, readonly gmOverrides: readonly unknown[] }): void => {
   const operation = createSqliteBreedingOperationRepository(input.database).get(input.operationId)
   const evidence = createSqliteBreedingOperationEvidenceRepository(input.database).get(input.operationId)
-  if (evidence && (!same(evidence.readSet, input.readSet) || !same(evidence.authorizationReceipt, input.receipt))) return fail('breeding.lifecycle-recovery.invalid-authority', 'Recovery operation identity is bound to different immutable evidence.')
+  if (evidence && (!same(evidence.readSet, input.readSet) || !same(evidence.authorizationReceipt, input.receipt)
+    || !same(evidence.gmOverrides, input.gmOverrides))) return fail('breeding.lifecycle-recovery.invalid-authority', 'Recovery operation identity is bound to different immutable evidence.')
   if (operation && operation.status !== 'pending' && !evidence) return fail('breeding.lifecycle-recovery.invalid-authority', 'Terminal recovery operation is missing immutable authority evidence.')
 }
 const beforeSettle = (callback: RecoverBreedingOperationOptions['beforeSettle'], result: BreedingOperationResultV1): void => {
@@ -112,14 +113,14 @@ export const recoverBreedingOperation = (input: RecoverBreedingOperationInputV1,
   const operations = createSqliteBreedingOperationRepository(database)
   const evidence = createSqliteBreedingOperationEvidenceRepository(database)
   const clockRepository = createSqliteCampaignClockRepository(database)
-  requireEvidenceReplay({ database, operationId: command.operationId, readSet, receipt })
+  requireEvidenceReplay({ database, operationId: command.operationId, readSet, receipt, gmOverrides: overrides })
   const reservation = database.withTransaction(() => operations.reserve(command, readSet.capturedAtCampaignMinute))
   if (reservation.kind === 'exact-retry') return Object.freeze({ execution: execution('exact-retry', reservation.record), projection: projection(reservation.record) })
   if (reservation.kind === 'pending' && options.resumePending !== true) return Object.freeze({ execution: execution('pending', reservation.record), projection: projection(reservation.record) })
 
   let initialTarget: BreedingOperationLedgerRecord | null = null
   const preflightTerminal = database.withTransaction((): BreedingOperationLedgerRecord | null => {
-    evidence.insert({ command, readSet, authorizationReceipt: receipt })
+    evidence.insert({ command, readSet, authorizationReceipt: receipt, gmOverrides: overrides })
     const clock = clockRepository.get()
     const target = operations.get(command.payload.targetOperationId)
     const hash = createBreedingOperationCommandHash(command)
@@ -171,7 +172,7 @@ export const recoverBreedingOperation = (input: RecoverBreedingOperationInputV1,
     beforeSettle(options.beforeSettle, result)
     return operations.settle(command, result, readSet.capturedAtCampaignMinute).record
   })
-  requireEvidenceReplay({ database, operationId: command.operationId, readSet, receipt })
+  requireEvidenceReplay({ database, operationId: command.operationId, readSet, receipt, gmOverrides: overrides })
   return Object.freeze({ execution: execution('executed', terminal), projection: projection(terminal) })
 }
 

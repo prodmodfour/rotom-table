@@ -25,7 +25,6 @@ import {
   type BreedingArchiveRepository,
 } from '../storage/breedingArchiveRepository'
 import {
-  BreedingArchiveStateError,
   createSqliteBreedingArchiveStateRepository,
   type BreedingArchiveRecordCollection,
   type BreedingArchiveStateRepository,
@@ -67,9 +66,11 @@ export type BreedingIntegrityDiagnosticCode =
   | 'breeding.integrity.missing-child-pokemon'
   | 'breeding.integrity.missing-origin'
   | 'breeding.integrity.orphan-origin'
+  | 'breeding.integrity.orphan-transfer-consent'
+  | 'breeding.integrity.orphan-source-settlement'
+  | 'breeding.integrity.orphan-gm-override'
   | 'breeding.integrity.missing-acquisition-trainer'
   | 'breeding.integrity.legacy-map-egg-metadata'
-  | 'breeding.integrity.archive-v1-override-gap'
 
 export interface BreedingIntegrityDiagnosticV1 {
   readonly code: BreedingIntegrityDiagnosticCode
@@ -304,6 +305,21 @@ interface OriginLinkRow {
   readonly egg_id: unknown
   readonly child_sheet_slug: unknown
 }
+interface TransferConsentLinkRow {
+  readonly consent_id: unknown
+  readonly egg_id: unknown
+  readonly role: unknown
+  readonly counterpart_consent_id: unknown
+}
+interface SourceSettlementLinkRow {
+  readonly operation_id: unknown
+  readonly trainer_sheet_slug: unknown
+  readonly species_id: unknown
+}
+interface GmOverrideLinkRow {
+  readonly override_id: unknown
+  readonly operation_id: unknown
+}
 const rowText = (value: unknown): string => typeof value === 'string' ? value : String(value)
 
 export const createBreedingArchiveManager = (
@@ -431,37 +447,41 @@ export const createBreedingArchiveManager = (
     const request = parseAuthoritativeBreedingArchiveImportRequestV1(input.request)
     const actor = parseAuthoritativeBreedingActorAuthorityV1(input.actorAuthority)
     const references = parseAuthoritativeBreedingReferenceVersionSnapshotV1(input.currentReferenceVersions)
-    const replayActor = authorizeCurrentGm({
-      actorAuthority: actor,
-      minute: request.requestedAtCampaignMinute,
-      authorizeGm: dependencies.authorizeGm,
-    })
-    if (request.actorAuthorityDefinitionSha256 !== replayActor.definitionSha256) {
-      throw new BreedingArchiveManagerError(
-        'breeding.archive-manager.unauthorized',
-        'Restore request must bind the exact current authenticated GM authority.',
-      )
-    }
-    const existingReceipt = archiveRepository.getRestoreReceipt(request.requestId)
-    if (existingReceipt) {
-      const existingRequest = archiveRepository.getImportRequest(request.requestId)
-      const existingArchive = archiveRepository.getArchive(archive.archiveId)
-      if (stableJsonStringify(existingRequest) !== stableJsonStringify(request)
-        || stableJsonStringify(existingArchive) !== stableJsonStringify(archive)) {
-        // The strict repositories provide the canonical identity-collision error.
-        return withImmediateTransaction(database, () => {
+    return withImmediateTransaction(database, () => {
+      const existingReceipt = archiveRepository.getRestoreReceipt(request.requestId)
+      if (existingReceipt) {
+        authorizeCurrentGm({
+          actorAuthority: actor,
+          minute: clockRepository.get().campaignMinute,
+          authorizeGm: dependencies.authorizeGm,
+        })
+        const existingRequest = archiveRepository.getImportRequest(request.requestId)
+        const existingArchive = archiveRepository.getArchive(archive.archiveId)
+        if (stableJsonStringify(existingRequest) !== stableJsonStringify(request)
+          || stableJsonStringify(existingArchive) !== stableJsonStringify(archive)) {
+          // Preserve the strict repository collision while rolling back every attempted write.
           archiveRepository.insertArchive(archive)
           archiveRepository.insertImportRequest(request)
           throw new BreedingArchiveManagerError(
             'breeding.archive-manager.stale-checkpoint',
             'Restore replay identities are already bound to different facts.',
           )
-        })
+        }
+        return freeze({ kind: 'exact-replay', archive: existingArchive!, receipt: existingReceipt })
       }
-      return freeze({ kind: 'exact-replay', archive: existingArchive!, receipt: existingReceipt })
-    }
 
-    return withImmediateTransaction(database, () => {
+      const requestActor = authorizeCurrentGm({
+        actorAuthority: actor,
+        minute: request.requestedAtCampaignMinute,
+        authorizeGm: dependencies.authorizeGm,
+      })
+      if (request.actorAuthorityDefinitionSha256 !== requestActor.definitionSha256) {
+        throw new BreedingArchiveManagerError(
+          'breeding.archive-manager.unauthorized',
+          'Restore request must bind the exact authenticated GM authority at creation.',
+        )
+      }
+
       const clock = clockRepository.get()
       strictHash(request.targetCampaignIdentitySha256, 'targetCampaignIdentitySha256')
 
@@ -574,11 +594,6 @@ export const createBreedingArchiveManager = (
         'breeding.integrity.corrupt-authority-row',
         'error', error.table, error.identity, error.field,
       )
-      else if (error instanceof BreedingArchiveStateError
-        && error.code === 'breeding.archive.unsupported-row') add(
-        'breeding.integrity.archive-v1-override-gap',
-        'error', error.table, 'stored-row', null,
-      )
       else throw error
     }
 
@@ -631,6 +646,57 @@ export const createBreedingArchiveManager = (
       `).get(egg, child)
       if (!linked) add('breeding.integrity.orphan-origin', 'error', 'pokemon-breeding-origin', id, egg)
       if (!hasSheet('pokemon', child)) add('breeding.integrity.missing-child-pokemon', 'error', 'pokemon-breeding-origin', id, child)
+    }
+
+    const transferConsentRows = database.connection.prepare(`
+      SELECT consent_id, egg_id, role,
+             json_extract(document_json, '$.counterpartConsentId') AS counterpart_consent_id
+      FROM pokemon_egg_transfer_consents
+      ORDER BY consent_id
+    `).all() as unknown as TransferConsentLinkRow[]
+    for (const row of transferConsentRows) {
+      const id = rowText(row.consent_id)
+      const egg = rowText(row.egg_id)
+      const eggExists = database.connection.prepare('SELECT 1 FROM pokemon_eggs WHERE egg_id = ?').get(egg)
+      if (!eggExists) add('breeding.integrity.orphan-transfer-consent', 'error', 'egg-transfer-consent', id, egg)
+      if (row.role === 'recipient-acceptance') {
+        const counterpart = rowText(row.counterpart_consent_id)
+        const sourceExists = database.connection.prepare(`
+          SELECT 1 FROM pokemon_egg_transfer_consents
+          WHERE consent_id = ? AND role = 'source-gift' AND egg_id = ?
+        `).get(counterpart, egg)
+        if (!sourceExists) add('breeding.integrity.orphan-transfer-consent', 'error', 'egg-transfer-consent', id, counterpart)
+      }
+    }
+
+    const sourceSettlementRows = database.connection.prepare(`
+      SELECT operation_id, trainer_sheet_slug, species_id
+      FROM trainer_species_acquisition_source_operations
+      ORDER BY operation_id
+    `).all() as unknown as SourceSettlementLinkRow[]
+    for (const row of sourceSettlementRows) {
+      const id = rowText(row.operation_id)
+      const trainer = rowText(row.trainer_sheet_slug)
+      const species = rowText(row.species_id)
+      const acquisitionExists = database.connection.prepare(`
+        SELECT 1 FROM trainer_species_acquisitions
+        WHERE trainer_sheet_slug = ? AND species_id = ?
+      `).get(trainer, species)
+      if (!acquisitionExists) add(
+        'breeding.integrity.orphan-source-settlement',
+        'error', 'species-acquisition-source-settlement', id, `${trainer}/${species}`,
+      )
+    }
+
+    const overrideRows = database.connection.prepare(`
+      SELECT override_id, operation_id FROM breeding_gm_overrides ORDER BY override_id
+    `).all() as unknown as GmOverrideLinkRow[]
+    for (const row of overrideRows) {
+      const id = rowText(row.override_id)
+      const operation = rowText(row.operation_id)
+      if (!database.connection.prepare('SELECT 1 FROM breeding_operations WHERE operation_id = ?').get(operation)) {
+        add('breeding.integrity.orphan-gm-override', 'error', 'breeding-gm-override', id, operation)
+      }
     }
 
     const acquisitions = database.connection.prepare(`

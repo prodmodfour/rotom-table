@@ -272,7 +272,12 @@ export const recordPokemonInheritanceLearning = (inputValue: unknown, options: R
   const receipt = exactReceipt(input.authorizationReceipt, expectedReceipt)
   const reservation = database.withTransaction(() => {
     const decision = operations.reserve(command, clock.campaignMinute)
-    if (decision.kind === 'reserved' || options.resumePending === true) createSqliteBreedingOperationEvidenceRepository(database).insert({ command, readSet, authorizationReceipt: receipt })
+    if (decision.kind === 'reserved' || options.resumePending === true) createSqliteBreedingOperationEvidenceRepository(database).insert({
+      command,
+      readSet,
+      authorizationReceipt: receipt,
+      gmOverrides,
+    })
     return decision
   })
   if (reservation.kind === 'exact-retry') return resultFromRecord({ database, execution: exactRetryExecution(reservation.record), command, plan: null, audience })

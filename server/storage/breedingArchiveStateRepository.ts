@@ -26,12 +26,15 @@ import {
 } from '#shared/breeding/operations'
 import type { BreedingOperationReadSetV1 } from '#shared/breeding/readSets'
 import type { BreedingIncubationSegmentResultV1 } from '#shared/breeding/incubation'
+import type { PokemonEggTransferConsentV1 } from '#shared/breeding/eggTransfer'
+import type { BreedingSpeciesAcquisitionSourceSettlementDocumentV1 } from '#shared/breeding/speciesAcquisitionSourceSettlement'
 import {
   createBreedingCampaignClockArchiveRecordV1,
   parseAuthoritativeBreedingSpeciesAcquisitionArchiveRecordV1,
 } from '../domain/breeding/archives'
 import {
   parseAuthoritativeBreedingAuthorizationReceiptV1,
+  parseAuthoritativeBreedingGmOverrideEvidenceV1,
 } from '../domain/breeding/authorization'
 import {
   parseAuthoritativeBreedingCheckRecordV1,
@@ -44,6 +47,8 @@ import {
   parseAuthoritativePokemonBreedingOriginV1,
 } from '../domain/breeding/lineage'
 import { createBreedingOperationCommandHash } from '../domain/breeding/operations'
+import { parseAuthoritativePokemonEggTransferConsentV1 } from '../domain/breeding/eggTransfer'
+import { parseBreedingSpeciesAcquisitionSourceSettlementV1 } from '../domain/breeding/speciesAcquisitionIntegration'
 import { parseAuthoritativeBreedingOperationReadSetV1 } from '../domain/breeding/readSets'
 import { createSqliteBreedingConsentRepository } from './breedingConsentRepository'
 import { createSqliteBreedingIncubationSegmentRepository } from './breedingIncubationSegmentRepository'
@@ -75,7 +80,6 @@ export interface BreedingArchiveStateRepository {
 
 export type BreedingArchiveStateErrorCode =
   | 'breeding.archive.pending-operation'
-  | 'breeding.archive.unsupported-row'
   | 'breeding.archive.transaction-required'
   | 'breeding.archive.restore-records'
 
@@ -110,14 +114,18 @@ const AUTHORITY_TABLES = Object.freeze([
   'breeding_option_offers',
   'breeding_projects',
   'breeding_read_sets',
+  'pokemon_egg_transfer_consents',
   'breeding_rolls',
   'pokemon_breeding_origins',
   'pokemon_eggs',
   'trainer_species_acquisitions',
+  'trainer_species_acquisition_source_operations',
 ] as const)
 const DELETE_ORDER = Object.freeze([
+  'trainer_species_acquisition_source_operations',
   'breeding_inheritance_learning_records',
   'breeding_incubation_segments',
+  'pokemon_egg_transfer_consents',
   'pokemon_breeding_origins',
   'trainer_species_acquisitions',
   'breeding_gm_adjudications',
@@ -249,7 +257,46 @@ export const createSqliteBreedingArchiveStateRepository = (
     set('project', projectRecords)
     set('egg', eggRecords)
     set('consent', consentRecords)
+    set('egg-transfer-consent', readJsonRecords({
+      database,
+      table: 'pokemon_egg_transfer_consents',
+      identityColumn: 'consent_id',
+      jsonColumn: 'document_json',
+      parse: parseAuthoritativePokemonEggTransferConsentV1,
+      identity: value => value.consentId,
+      definitionSha256: value => value.definitionSha256,
+      validateColumns: (row, value, identity) => {
+        assertBreedingStoredColumn(value.revision === row.revision, 'pokemon_egg_transfer_consents', identity, 'revision')
+        assertBreedingStoredColumn(value.status === row.status, 'pokemon_egg_transfer_consents', identity, 'status')
+        assertBreedingStoredColumn(value.role === row.role, 'pokemon_egg_transfer_consents', identity, 'role')
+        assertBreedingStoredColumn(value.eggId === row.egg_id, 'pokemon_egg_transfer_consents', identity, 'egg_id')
+        assertBreedingStoredColumn(value.eggRevision === row.egg_revision, 'pokemon_egg_transfer_consents', identity, 'egg_revision')
+        assertBreedingStoredColumn(value.sourceTrainerSlug === row.source_trainer_slug, 'pokemon_egg_transfer_consents', identity, 'source_trainer_slug')
+        assertBreedingStoredColumn(value.destinationTrainerSlug === row.destination_trainer_slug, 'pokemon_egg_transfer_consents', identity, 'destination_trainer_slug')
+        assertBreedingStoredColumn(value.consentingProfileId === row.consenting_profile_id, 'pokemon_egg_transfer_consents', identity, 'consenting_profile_id')
+        assertBreedingStoredColumn(value.expiresAtCampaignMinute === row.expires_at_campaign_minute, 'pokemon_egg_transfer_consents', identity, 'expires_at_campaign_minute')
+        assertBreedingStoredColumn(value.settlementOperationId === row.settlement_operation_id, 'pokemon_egg_transfer_consents', identity, 'settlement_operation_id')
+      },
+    }))
     set('species-acquisition', acquisitionRecords)
+    set('species-acquisition-source-settlement', readJsonRecords({
+      database,
+      table: 'trainer_species_acquisition_source_operations',
+      identityColumn: 'operation_id',
+      jsonColumn: 'record_json',
+      parse: parseBreedingSpeciesAcquisitionSourceSettlementV1,
+      identity: value => value.evidence.operationId,
+      definitionSha256: value => value.definitionSha256,
+      validateColumns: (row, value, identity) => {
+        assertBreedingStoredColumn(value.evidence.sourceKind === row.source_kind, 'trainer_species_acquisition_source_operations', identity, 'source_kind')
+        assertBreedingStoredColumn(value.evidence.sourceEventId === row.source_event_id, 'trainer_species_acquisition_source_operations', identity, 'source_event_id')
+        assertBreedingStoredColumn(value.evidence.trainerSheetSlug === row.trainer_sheet_slug, 'trainer_species_acquisition_source_operations', identity, 'trainer_sheet_slug')
+        assertBreedingStoredColumn(value.evidence.speciesId === row.species_id, 'trainer_species_acquisition_source_operations', identity, 'species_id')
+        assertBreedingStoredColumn(value.settledAtCampaignMinute === row.settled_at_campaign_minute, 'trainer_species_acquisition_source_operations', identity, 'settled_at_campaign_minute')
+        assertBreedingStoredColumn(value.outcome === row.outcome, 'trainer_species_acquisition_source_operations', identity, 'outcome')
+        assertBreedingStoredColumn(value.appliedRewardAmount === row.applied_reward_amount, 'trainer_species_acquisition_source_operations', identity, 'applied_reward_amount')
+      },
+    }))
     set('incubation-segment', rowsById(database, 'breeding_incubation_segments', 'operation_id')
       .map(identity => incubationSegments.get(identity) ?? (() => {
         throw new BreedingRepositoryCorruptionError('breeding_incubation_segments', identity, 'read visibility')
@@ -361,18 +408,21 @@ export const createSqliteBreedingArchiveStateRepository = (
       },
     }))
 
-    const overrideCount = Number((database.connection.prepare(`
-      SELECT COUNT(*) AS count FROM breeding_gm_overrides
-    `).get() as { count: number }).count)
-    if (overrideCount > 0) {
-      // The frozen v1 archive contract has no GM-override record kind. Omitting
-      // these private authorization records would manufacture an incomplete audit.
-      throw new BreedingArchiveStateError(
-        'breeding.archive.unsupported-row',
-        'breeding_gm_overrides',
-        'v1 cannot export stored GM override evidence without loss.',
-      )
-    }
+    set('gm-override', readJsonRecords({
+      database,
+      table: 'breeding_gm_overrides',
+      identityColumn: 'override_id',
+      jsonColumn: 'document_json',
+      parse: parseAuthoritativeBreedingGmOverrideEvidenceV1,
+      identity: value => value.overrideId,
+      definitionSha256: value => value.definitionSha256,
+      validateColumns: (row, value, identity) => {
+        assertBreedingStoredColumn(value.operationId === row.operation_id, 'breeding_gm_overrides', identity, 'operation_id')
+        assertBreedingStoredColumn(value.commandSha256 === row.command_sha256, 'breeding_gm_overrides', identity, 'command_sha256')
+        assertBreedingStoredColumn(value.overrideKind === row.override_kind, 'breeding_gm_overrides', identity, 'override_kind')
+        assertBreedingStoredColumn(value.createdAtCampaignMinute === row.created_at_campaign_minute, 'breeding_gm_overrides', identity, 'created_at_campaign_minute')
+      },
+    }))
 
     const commands: BreedingOperationCommandV1[] = []
     const results: BreedingOperationResultV1[] = []
@@ -554,6 +604,20 @@ export const createSqliteBreedingArchiveStateRepository = (
       consent.settledAtCampaignMinute,
     )
 
+    for (const consent of recordsOf<PokemonEggTransferConsentV1>(archive, 'egg-transfer-consent')) database.connection.prepare(`
+      INSERT INTO pokemon_egg_transfer_consents (
+        consent_id, document_json, definition_sha256, revision, status, role, egg_id,
+        egg_revision, source_trainer_slug, destination_trainer_slug, consenting_profile_id,
+        expires_at_campaign_minute, settlement_operation_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      consent.consentId, stableJsonStringify(consent), consent.definitionSha256,
+      consent.revision, consent.status, consent.role, consent.eggId,
+      consent.eggRevision, consent.sourceTrainerSlug, consent.destinationTrainerSlug,
+      consent.consentingProfileId, consent.expiresAtCampaignMinute,
+      consent.settlementOperationId,
+    )
+
     for (const roll of recordsOf<BreedingRollRecordV1>(archive, 'roll')) database.connection.prepare(`
       INSERT INTO breeding_rolls (
         roll_record_id, operation_id, operation_roll_ordinal, command_sha256,
@@ -635,10 +699,7 @@ export const createSqliteBreedingArchiveStateRepository = (
       receipt.definitionSha256, receipt.evaluatedAtCampaignMinute,
     )
 
-    // v1 campaign backups have no GM-override record kind. Validation rejects
-    // exporting any nonempty override table, so a restorable archive is exactly empty here.
-    const overrides: readonly BreedingGmOverrideEvidenceV1[] = []
-    for (const override of overrides) database.connection.prepare(`
+    for (const override of recordsOf<BreedingGmOverrideEvidenceV1>(archive, 'gm-override')) database.connection.prepare(`
       INSERT INTO breeding_gm_overrides (
         override_id, operation_id, command_sha256, override_kind,
         document_json, definition_sha256, created_at_campaign_minute
@@ -683,6 +744,20 @@ export const createSqliteBreedingArchiveStateRepository = (
       acquisition.firstAcquiredAtCampaignMinute, acquisition.sourceEggId,
       acquisition.operationId, stableJsonStringify(acquisition),
       acquisition.definitionSha256,
+    )
+
+    for (const settlement of recordsOf<BreedingSpeciesAcquisitionSourceSettlementDocumentV1>(archive, 'species-acquisition-source-settlement')) database.connection.prepare(`
+      INSERT INTO trainer_species_acquisition_source_operations (
+        operation_id, source_kind, source_event_id, trainer_sheet_slug, species_id,
+        settled_at_campaign_minute, outcome, applied_reward_amount,
+        record_json, definition_sha256
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      settlement.evidence.operationId, settlement.evidence.sourceKind,
+      settlement.evidence.sourceEventId, settlement.evidence.trainerSheetSlug,
+      settlement.evidence.speciesId, settlement.settledAtCampaignMinute,
+      settlement.outcome, settlement.appliedRewardAmount,
+      stableJsonStringify(settlement), settlement.definitionSha256,
     )
 
     const clocks = recordsOf<BreedingCampaignClockArchiveRecordV1>(archive, 'campaign-clock')

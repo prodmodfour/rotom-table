@@ -65,15 +65,17 @@ export class ManageBreedingLifecycleError extends Error {
   constructor(code: ManageBreedingLifecycleErrorCode, message: string) { super(message); this.name = 'ManageBreedingLifecycleError'; this.code = code }
 }
 const fail = (code: ManageBreedingLifecycleErrorCode, message: string): never => { throw new ManageBreedingLifecycleError(code, message) }
-const assertStrictInput = (value: unknown): asserts value is ManageBreedingLifecycleInputV1 => {
+const assertStrictInput: (value: unknown) => asserts value is ManageBreedingLifecycleInputV1 = value => {
   if (!value || typeof value !== 'object' || Array.isArray(value) || (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) || Object.getOwnPropertySymbols(value).length > 0) return fail('breeding.lifecycle-recovery.invalid-request', 'Lifecycle input must be a plain data object without symbols.')
   const fields = ['command', 'readSet', 'authorizationReceipt', 'actorAuthority', 'trainerControl', 'gmOverrides', 'audience']
   const row = value as Record<string, unknown>; const allowed = new Set(fields)
   if (fields.some(field => !Object.hasOwn(row, field)) || Object.keys(row).some(field => !allowed.has(field))) return fail('breeding.lifecycle-recovery.invalid-request', 'Lifecycle input must contain exactly the declared fields.')
   for (const field of fields) { const descriptor = Object.getOwnPropertyDescriptor(row, field); if (!descriptor?.enumerable || !('value' in descriptor)) return fail('breeding.lifecycle-recovery.invalid-request', `Lifecycle input ${field} must be an enumerable data field.`) }
 }
-const assertStrictArray = (value: unknown, maximum: number, label: string): asserts value is readonly unknown[] => {
-  if (!Array.isArray(value) || value.length > maximum || Object.getOwnPropertySymbols(value).length > 0 || Object.keys(value).some(key => !/^(0|[1-9][0-9]*)$/.test(key))) return fail('breeding.lifecycle-recovery.invalid-request', `${label} must be a strict array of at most ${maximum} entries.`)
+const assertStrictArray: (value: unknown, maximum: number, label: string) => asserts value is readonly unknown[] = (value, maximum, label) => {
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || value.length > maximum || Object.getOwnPropertySymbols(value).length > 0) return fail('breeding.lifecycle-recovery.invalid-request', `${label} must be a strict array of at most ${maximum} entries.`)
+  const names = Object.getOwnPropertyNames(value)
+  if (names.length !== value.length + 1 || names.some(name => name !== 'length' && !/^(0|[1-9][0-9]*)$/u.test(name))) return fail('breeding.lifecycle-recovery.invalid-request', `${label} must not contain enriched fields.`)
   for (let index = 0; index < value.length; index += 1) { const descriptor = Object.getOwnPropertyDescriptor(value, String(index)); if (!descriptor?.enumerable || !('value' in descriptor)) return fail('breeding.lifecycle-recovery.invalid-request', `${label} must not be sparse or accessor-backed.`) }
 }
 const sha256 = (value: unknown): string => createHash('sha256').update(stableJsonStringify(value)).digest('hex')
@@ -150,7 +152,12 @@ export const manageBreedingLifecycle = (input: ManageBreedingLifecycleInputV1, o
     settledAtCampaignMinute: readSet.capturedAtCampaignMinute,
     ...(options.resumePending === true ? { resumePending: true } : {}),
     execute: (canonical, _operation, context) => {
-      context.repositories.operationEvidence.insert({ command: canonical, readSet, authorizationReceipt: receipt })
+      context.repositories.operationEvidence.insert({
+        command: canonical,
+        readSet,
+        authorizationReceipt: receipt,
+        gmOverrides: input.gmOverrides,
+      })
       const hash = createBreedingOperationCommandHash(canonical)
       const clock = context.repositories.campaignClock.get()
       const project = context.repositories.projects.get(projectId)
@@ -195,7 +202,7 @@ export const manageBreedingLifecycle = (input: ManageBreedingLifecycleInputV1, o
         if (projectChanged) throw new BreedingLifecycleRecoveryAuthorityError('breeding.lifecycle-recovery.stale-authority', 'consent', 'Consent changed after the Project checkpoint; roll back the entire phase.')
         return createBreedingOperationRejectedV1({ operationId: canonical.operationId, commandHash: hash, commandKind: canonical.commandKind, reasonId: 'breeding.operation.stale-revision', currentAggregateRefs: [{ kind: 'breeding-project', id: project.projectId, revision: project.revision }], conflictingScopes: canonical.scopes })
       }
-      if (projectChanged) appendProjectRefresh({ project: settledProject, commandKind: canonical.commandKind, context, options })
+      if (projectChanged) appendProjectRefresh({ project: settledProject, commandKind: 'revoke-breeding-consent', context, options })
       return createBreedingOperationAcceptedV1({ operationId: canonical.operationId, commandHash: hash, commandKind: canonical.commandKind, outcomeKind: 'consent-revoked', aggregateRefs: [{ kind: 'breeding-project', id: settledProject.projectId, revision: settledProject.revision }, { kind: 'parent-consent', id: consent.consentId, revision: consent.revision }], changedScopes: projectChanged ? canonical.scopes : canonical.scopes.filter(scope => scope.kind === 'parent-consent'), committedAtCampaignMinute: clock.campaignMinute })
     },
     ...(options.beforeSettle ? { beforeSettle: options.beforeSettle } : {}),

@@ -1,7 +1,10 @@
 import { createHash } from 'node:crypto'
 import securityPolicyJson from '../../data/breeding-automation/security-policy.json'
 import { stableJsonStringify } from '#shared/automation/stableJson'
-import type { BreedingAuthorizationReceiptV1 } from '#shared/breeding/authorization'
+import type {
+  BreedingAuthorizationReceiptV1,
+  BreedingGmOverrideEvidenceV1,
+} from '#shared/breeding/authorization'
 import type { BreedingParentControlEvidenceV1 } from '#shared/breeding/authorization'
 import type { BreedingInitialProgressProjectionV1 } from '#shared/breeding/projectInitialProgress'
 import type { BreedingOperationResultV1 } from '#shared/breeding/operations'
@@ -13,6 +16,7 @@ import type { BreedingProjectDocumentV1 } from '#shared/breeding/project'
 import type { BreedingOperationReadSetV1, BreedingReadResourceV1 } from '#shared/breeding/readSets'
 import {
   parseAuthoritativeBreedingAuthorizationReceiptV1,
+  parseAuthoritativeBreedingGmOverrideEvidenceV1,
   parseAuthoritativeBreedingParentControlEvidenceV1,
 } from '../domain/breeding/authorization'
 import {
@@ -183,11 +187,13 @@ const requireExactPersistedOperationEvidence = (input: {
   readonly command: BreedingOperationCommandV1
   readonly readSet: BreedingOperationReadSetV1
   readonly receipt: BreedingAuthorizationReceiptV1
+  readonly gmOverrides: readonly BreedingGmOverrideEvidenceV1[]
 }): void => {
   const operation = createSqliteBreedingOperationRepository(input.database).get(input.command.operationId)
   const evidence = createSqliteBreedingOperationEvidenceRepository(input.database).get(input.command.operationId)
   if (evidence && (stableJsonStringify(evidence.readSet) !== stableJsonStringify(input.readSet)
-    || stableJsonStringify(evidence.authorizationReceipt) !== stableJsonStringify(input.receipt))) {
+    || stableJsonStringify(evidence.authorizationReceipt) !== stableJsonStringify(input.receipt)
+    || stableJsonStringify(evidence.gmOverrides) !== stableJsonStringify(input.gmOverrides))) {
     fail('breeding.initial-progress.invalid-authority', 'An existing operation identity is bound to different immutable authority evidence.')
   }
   if (operation && operation.status !== 'pending' && !evidence) {
@@ -217,6 +223,7 @@ export const createBreedingProjectFromValidatedSetup = (input: {
   readonly authorizationReceipt: unknown
   readonly setupValidation: unknown
   readonly parentControls: readonly [unknown, unknown]
+  readonly gmOverrides?: readonly unknown[]
   readonly audience: 'gm' | 'owner'
 }, options: BreedingProjectInitialTimeOptions): BreedingProjectInitialTimeExecutionResultV1 => {
   const command = parseBreedingOperationCommandV1(input.command)
@@ -228,6 +235,13 @@ export const createBreedingProjectFromValidatedSetup = (input: {
     readSetValue: input.readSet,
     receiptValue: input.authorizationReceipt,
   })
+  const gmOverrides = Object.freeze((input.gmOverrides ?? []).map((value, index) => (
+    parseAuthoritativeBreedingGmOverrideEvidenceV1(value, `gmOverrides[${index}]`)
+  )).sort((left, right) => left.overrideId < right.overrideId ? -1 : left.overrideId > right.overrideId ? 1 : 0))
+  if (stableJsonStringify(gmOverrides.map(value => value.overrideId))
+    !== stableJsonStringify(authority.receipt.gmOverrideIds)) {
+    return fail('breeding.initial-progress.invalid-authority', 'Creation must retain every exact GM override named by its authorization receipt.')
+  }
   const setup = parseAuthoritativeBreedingProjectSetupValidationV1(input.setupValidation)
   const parentControls = input.parentControls.map((value, index) => (
     parseAuthoritativeBreedingParentControlEvidenceV1(value, `parentControls[${index}]`)
@@ -252,6 +266,7 @@ export const createBreedingProjectFromValidatedSetup = (input: {
     command,
     readSet: authority.readSet,
     receipt: authority.receipt,
+    gmOverrides,
   })
   const execution = coordinator.execute({
     command,
@@ -263,6 +278,7 @@ export const createBreedingProjectFromValidatedSetup = (input: {
         command: canonical,
         readSet: authority.readSet,
         authorizationReceipt: authority.receipt,
+        gmOverrides,
       })
       const clock = context.repositories.campaignClock.get()
       const commandSha256 = createBreedingOperationCommandHash(canonical)
@@ -308,6 +324,7 @@ export const createBreedingProjectFromValidatedSetup = (input: {
     command,
     readSet: authority.readSet,
     receipt: authority.receipt,
+    gmOverrides,
   })
   return resultAfterExecution({ database, execution, projectId: proposed.projectId, audience: input.audience })
 }
@@ -328,6 +345,9 @@ export const advanceBreedingProjectInitialTime = (input: {
     readSetValue: input.readSet,
     receiptValue: input.authorizationReceipt,
   })
+  if (authority.receipt.gmOverrideIds.length !== 0) {
+    return fail('breeding.initial-progress.invalid-authority', 'Progress operations do not accept unpersisted GM overrides.')
+  }
   const segment = parseAuthoritativeBreedingInitialProgressSegmentAuthorityV1(input.segmentAuthority)
   const segmentDependency = authority.readSet.dependencyEvidence.find(value => (
     value.providerKind === 'system'
@@ -349,6 +369,7 @@ export const advanceBreedingProjectInitialTime = (input: {
     command,
     readSet: authority.readSet,
     receipt: authority.receipt,
+    gmOverrides: [],
   })
   const execution = coordinator.execute({
     command,
@@ -469,6 +490,7 @@ export const advanceBreedingProjectInitialTime = (input: {
     command,
     readSet: authority.readSet,
     receipt: authority.receipt,
+    gmOverrides: [],
   })
   return resultAfterExecution({ database, execution, projectId: segment.projectId, audience: input.audience })
 }

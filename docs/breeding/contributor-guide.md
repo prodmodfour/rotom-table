@@ -110,6 +110,14 @@ Keep every Breeding POST on `readBreedingJsonRequestBody`; do not call `readBody
 
 When adding a list, identity, narrative, option, Move snapshot, candidate, hash, roll, or consent field, bind it to the matching `security-policy.json` abuse limit and add malformed/over-limit evidence. Preserve repository page defaults of 25 and maximum 100. Project creation must continue through atomic repository insertion so one parent cannot enter two active Projects. Update `security-certification.json`, semantic closure, checker assertions, and transitive authority fixture hashes when any audience, privacy field, route, threat, limit, or audit requirement changes.
 
+## Archive and migration changes
+
+A new durable Breeding authority row is incomplete until campaign backup export, authoritative parsing, stable record identity, cross-link validation, foreign-key-safe atomic restore, strict restart reparse, diagnostics, and release certification all cover it. Never omit an unsupported private row and never recreate it from another record during restore. Authorization receipts require every referenced GM override; external Species acquisitions require their terminal source settlement without adding a fake Breeding command; Egg transfers require their exact durable consent history.
+
+Keep archive dependency and transaction hooks synchronous. Preserve the 64 MiB pre-parse envelope bound, 1,000-record chunks, exact reference snapshots, empty-target rule, replacement checkpoint, and immutable request/receipt replay. Migration output must bind exact source hashes, sizes, privacy classes, tool and reviewer evidence. Legacy fields cannot manufacture lineage, and map metadata cannot become runtime Egg authority.
+
+Orphan diagnostics do not grant mutation authority. Acceptance for a repair must demonstrate preservation of the corrupt source, rejection of unsafe in-place new-campaign replacement, atomic restore of a reviewed known-good backup to a clean target, clean post-restore diagnostics, restart persistence, and a durable receipt. Update `archive-contract.json`, `archive-storage-runtime-contract.json`, `archive-release-certification.json`, semantic closure, the registry, checker assertions, and focused archive tests together.
+
 ## Tests
 
 During implementation, prefer focused single-worker Vitest commands:

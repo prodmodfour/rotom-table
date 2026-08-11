@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "fc3fe57c2b442354b590e7a28d1f368cdf15d57c344fe9d5825f201504a9bb98",
+  "definitionSha256": "db69d7a93e2226975b27ce7697ac9c1ad3bc11784333af0a381a520a1c2b94b3",
   "definition": {
     "version": 24,
     "migrationName": "store immutable authoritative Egg incubation segment results",
@@ -38,7 +38,7 @@
     },
     "bindings": {
       "hatchDurationPolicyDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a",
-      "transactionCoordinatorDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea"
+      "transactionCoordinatorDefinitionSha256": "12ba8fb61c45c231740eed4fd30ca199583c0b12d937f6800403042d5698e18f"
     }
   }
 }

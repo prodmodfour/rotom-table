@@ -450,7 +450,7 @@ describe('durable Breeding Project initial four-hour progress', () => {
     expect(result.execution.committedRealtimeEvents).toHaveLength(4)
     expect(publish).toHaveBeenCalledTimes(4)
     expect(createSqliteBreedingOperationEvidenceRepository(database).get(input.command.operationId))
-      .toEqual({ readSet: input.readSet, authorizationReceipt: input.receipt })
+      .toEqual({ readSet: input.readSet, authorizationReceipt: input.receipt, gmOverrides: [] })
     expect(JSON.stringify(result.projection)).not.toMatch(/project:v1|pokemon-parent|trainer-|profile|definitionSha256|consent/iu)
 
     const replay = createBreedingProjectFromValidatedSetup({
@@ -729,7 +729,7 @@ describe('durable Breeding Project initial four-hour progress', () => {
       timeline: { initialAccumulatedCampaignMinutes: 100, lastAppliedClockMinute: 100 },
     })
     expect(createSqliteBreedingOperationEvidenceRepository(database).get(first.input.command.operationId))
-      .toEqual({ readSet: first.input.readSet, authorizationReceipt: first.input.receipt })
+      .toEqual({ readSet: first.input.readSet, authorizationReceipt: first.input.receipt, gmOverrides: [] })
     const replay = advanceBreedingProjectInitialTime({
       command: first.input.command,
       readSet: first.input.readSet,
@@ -761,7 +761,7 @@ describe('durable Breeding Project initial four-hour progress', () => {
       readSet: input.readSet,
       authorizationReceipt: input.receipt,
     }))
-    expect(replay).toEqual({ readSet: input.readSet, authorizationReceipt: input.receipt })
+    expect(replay).toEqual({ readSet: input.readSet, authorizationReceipt: input.receipt, gmOverrides: [] })
     expect(() => database.withTransaction(() => repository.insert({
       command: input.command,
       readSet: input.readSet,

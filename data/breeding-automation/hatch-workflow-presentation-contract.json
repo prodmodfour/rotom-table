@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "d304eb0305b6a41f6683a3a4f386b83e35b4d6932ad3bed66efda1e2c141b221",
+  "definitionSha256": "46bc3318b5736458876bc47ed912568e3135ab7540be82397e5844f49234fafe",
   "definition": {
     "ticket": "BR-075",
     "scope": {
@@ -139,13 +139,13 @@
     },
     "bindings": {
       "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
-      "hatchOfferContractDefinitionSha256": "29995f835ede496af29d4ff829fa5ad7c03f2c08190a47201a7b42cc4fc96c10",
-      "hatchSpecialContractDefinitionSha256": "de3c68e70695c00a926bbae4875a017f0a790d51b778c46aa7b1a2bdf6e8e0e0",
-      "hatchCompletionContractDefinitionSha256": "1867892d039355a3e6e6fd128a5f0e853d02e4ead538850adfc78f816e631d84",
-      "initializedPokemonSheetContractDefinitionSha256": "b3a5c4d326b6c744adbf6748a37dd8a7e8d4479fbef1dca74cf9507dc3caec23",
+      "hatchOfferContractDefinitionSha256": "2ae60b5b332e26247ca8ba6e9a1088c0b9c4d1178bf406fdc94fcdcb34ce9074",
+      "hatchSpecialContractDefinitionSha256": "b55316c1b6f2555abb5902918df237593aac91a5e85b009b00fd80867e86f1f1",
+      "hatchCompletionContractDefinitionSha256": "1a0277ae15447fa310c3dbf5170a9b76bfa58553174ff0bb7c7de94a1aace971",
+      "initializedPokemonSheetContractDefinitionSha256": "6eaa21a658d6190a910aec6d990ff3d4fd032d6fb37f17000b63d0ab0b8a52a5",
       "lineageContractDefinitionSha256": "91dc2f7b6be75811642c48e4f1328ee1eb792f0abd096e74bed8fccc9fb180e1",
-      "speciesAcquisitionRewardContractDefinitionSha256": "e2b7ec11b3b9ba2a9eb602ae6b31a3d4c6d7536562c6d7805b4447d5404ab90c",
-      "workshopActivityPresentationContractDefinitionSha256": "3388880101205852ee45a2356ad2a92e695c2169edd3c00e359da3c05b50847e"
+      "speciesAcquisitionRewardContractDefinitionSha256": "4c81568c1f1d3835e5665a00634705f729ca4182631ebefab39f767970136f71",
+      "workshopActivityPresentationContractDefinitionSha256": "e6a3b789361900bd0559ee1ecec4525d779349cf4d7761e14ec4c3f782aef7e5"
     },
     "verification": {
       "sharedContractTest": "tests/shared/breedingHatchWorkflowContract.test.ts",

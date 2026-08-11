@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "reportId": "ptu-1.05-breeding-archive-release-certification-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "2b9b90c5d2609622fb75575ba6de20617b9a3739105855ec59ddc4ec80176d98",
+  "definition": {
+    "ticket": "BR-085",
+    "status": "certified",
+    "certificationScope": {
+      "included": "legacy-migration-export-import-backup-restore-reference-version-and-orphan-repair-release-acceptance",
+      "migration": "reviewed-source-hash-tool-hash-reviewer-and-exact-result-archive-bound",
+      "export": "GM-only-single-snapshot-complete-private-authority-or-fail-closed",
+      "restore": "GM-bound-current-reference-matched-single-BEGIN-IMMEDIATE-clean-target-or-exact-checkpoint",
+      "orphanRepair": "detect-preserve-source-and-atomically-restore-reviewed-known-good-backup-to-clean-target-never-in-place-row-edit",
+      "campaignTime": "sole-request-checkpoint-retry-authority",
+      "legacyLineage": "compatibility-only-unless-an-existing-authoritative-origin-is-exactly-bound",
+      "mapMetadata": "quarantine-only-never-runtime-Egg-lineage-or-map-authority"
+    },
+    "dimensions": [
+      "legacy-migration",
+      "export-import",
+      "backup-restore",
+      "reference-version",
+      "orphan-repair"
+    ],
+    "bindings": {
+      "semanticClosureDefinitionSha256": "e2aebbec4467726aaceff7f93c8ddad5cfc3fbca0b169b6660f98b3309aa8679",
+      "wholeSpeciesConformanceDefinitionSha256": "5cd575dcd96d2a6ecb2f96e89915e2a586a51564b32e98da2ab7d1c305f1a2ad",
+      "interactionCertificationDefinitionSha256": "fdfc3d47bd08e1b96def88a0a9edbeeaa12ef14f504042be2006bb58b20e4980",
+      "resilienceCertificationDefinitionSha256": "cc0ce19dde910b1d2f71789a891e3e987ef3fd31f5de71cbb9ec56b40f242457",
+      "securityCertificationDefinitionSha256": "3b9ab99b4888ed91055d9fed73ea8a440f8b3241cd7991409be5fb3f49e5bf75",
+      "archiveContractDefinitionSha256": "9ed9362decc67b11adaf8a991341a61307b9db45467cd3679e5beda4a791b4da",
+      "archiveStorageRuntimeContractDefinitionSha256": "a793314f90ac75d33067643ca35f80633441f5dd1375f099056b917c3fa7b200",
+      "storageSchemaV28DefinitionSha256": "a9ab42f40b0094c2659c091b4b5ba1edde9ce3281e45a689680b65d0a6011802"
+    },
+    "archiveAuthority": {
+      "maximumEnvelopeBytes": 67108864,
+      "maximumChunks": 4096,
+      "maximumRecordsPerChunk": 1000,
+      "stableIdentity": "archive-request-receipt-migration-review-and-record-identities-exact-replay-only",
+      "backupRecordKinds": [
+        "adjudication",
+        "authorization-receipt",
+        "campaign-clock",
+        "check",
+        "consent",
+        "egg",
+        "egg-transfer-consent",
+        "gm-override",
+        "incubation-segment",
+        "inheritance-learning",
+        "offer",
+        "operation-command",
+        "operation-result",
+        "origin",
+        "project",
+        "read-set",
+        "roll",
+        "species-acquisition",
+        "species-acquisition-source-settlement"
+      ],
+      "requiredPrivateFamilies": [
+        "dual-Egg-transfer-consent-history",
+        "GM-override-evidence",
+        "external-species-acquisition-source-settlement",
+        "command-result-complete-read-set-receipt-chain",
+        "roll-check-offer-adjudication-ledgers",
+        "Egg-origin-inheritance-and-acquisition-history"
+      ],
+      "externalAcquisitionPolicy": "preserve-terminal-source-settlement-never-forge-Breeding-command",
+      "replacementPolicy": "exact-current-checkpoint-and-current-authority-only",
+      "newCampaignPolicy": "empty-authoritative-target-only"
+    },
+    "migrationMatrix": [
+      {
+        "kind": "archive-schema-upgrade",
+        "resultPolicy": "exact-v1-campaign-backup-required"
+      },
+      {
+        "kind": "legacy-lineage-review",
+        "resultPolicy": "compatibility-reject-or-attach-existing-origin-only"
+      },
+      {
+        "kind": "legacy-map-metadata-quarantine",
+        "resultPolicy": "null-result-no-runtime-records"
+      },
+      {
+        "kind": "pre-breeding-campaign-audit",
+        "resultPolicy": "reviewed-result-or-null-only"
+      }
+    ],
+    "acceptanceCases": [
+      {
+        "caseId": "complete-private-authority-round-trip",
+        "evidencePath": "tests/server/breedingArchiveReleaseAcceptance.test.ts",
+        "requiredNeedle": "round-trips every private durable authority family without omitting overrides, transfer consent, or external acquisition settlement",
+        "certifiedOutcome": "all-private-record-families-export-restore-and-reexport-with-identical-kind-digests"
+      },
+      {
+        "caseId": "exact-64-MiB-boundary",
+        "evidencePath": "tests/server/breedingArchiveReleaseAcceptance.test.ts",
+        "requiredNeedle": "accepts exactly the 64 MiB UTF-8 envelope boundary",
+        "certifiedOutcome": "67108864-bytes-accepted-one-more-byte-rejected-before-parse"
+      },
+      {
+        "caseId": "stale-reference-prewrite-rejection",
+        "evidencePath": "tests/server/breedingArchiveReleaseAcceptance.test.ts",
+        "requiredNeedle": "rejects stale reference authority before writes",
+        "certifiedOutcome": "archive-request-receipt-and-state-remain-empty"
+      },
+      {
+        "caseId": "reviewed-migration-application",
+        "evidencePath": "tests/server/breedingArchiveReleaseAcceptance.test.ts",
+        "requiredNeedle": "source-hash-validates a reviewed legacy migration and applies only its exact result archive",
+        "certifiedOutcome": "observed-source-tool-reviewer-review-and-result-hashes-all-required"
+      },
+      {
+        "caseId": "executable-orphan-repair",
+        "evidencePath": "tests/server/breedingArchiveReleaseAcceptance.test.ts",
+        "requiredNeedle": "detects an orphan, refuses unsafe in-place new-campaign repair, and repairs through an atomic clean-target restore",
+        "certifiedOutcome": "orphan-detected-corrupt-target-preserved-clean-target-restored-and-restart-clean"
+      },
+      {
+        "caseId": "synchronous-dependency-validation",
+        "evidencePath": "tests/server/breedingArchiveReleaseAcceptance.test.ts",
+        "requiredNeedle": "keeps record dependency validation synchronous and covers every declared backup record kind",
+        "certifiedOutcome": "Promise-like-validator-rejected-with-no-writes"
+      },
+      {
+        "caseId": "atomic-restore-injection",
+        "evidencePath": "tests/server/breedingArchiveManager.test.ts",
+        "requiredNeedle": "rolls back archive, request, replacement, and receipt together at every restore injection point",
+        "certifiedOutcome": "all-restore-participants-roll-back"
+      },
+      {
+        "caseId": "restart-and-current-authority-retry",
+        "evidencePath": "tests/server/breedingArchiveManager.test.ts",
+        "requiredNeedle": "restores one strict backup atomically, writes its receipt, exactly replays, and survives restart",
+        "certifiedOutcome": "terminal-retry-reauthorizes-current-GM-and-reuses-immutable-receipt"
+      },
+      {
+        "caseId": "integrity-and-quarantine-diagnostics",
+        "evidencePath": "tests/server/breedingArchiveManager.test.ts",
+        "requiredNeedle": "reports strict integrity, orphan links, pending recovery, and quarantined legacy map metadata",
+        "certifiedOutcome": "bounded-hash-only-diagnostics-block-backup-on-errors"
+      },
+      {
+        "caseId": "legacy-lineage-fail-closed",
+        "evidencePath": "tests/shared/breedingArchiveContract.test.ts",
+        "requiredNeedle": "preserves legacy Move fields as compatibility data without manufacturing lineage",
+        "certifiedOutcome": "legacy-fields-cannot-create-parents-or-origin"
+      },
+      {
+        "caseId": "map-metadata-quarantine",
+        "evidencePath": "tests/shared/breedingArchiveContract.test.ts",
+        "requiredNeedle": "source-hash-binds migrations and quarantines legacy map metadata without runtime output",
+        "certifiedOutcome": "legacy-map-metadata-has-null-result-and-no-Egg-authority"
+      },
+      {
+        "caseId": "strict-portable-envelope",
+        "evidencePath": "tests/shared/breedingArchiveContract.test.ts",
+        "requiredNeedle": "rejects non-plain, accessor-backed, sparse, enriched, duplicate, and hash-drifted documents",
+        "certifiedOutcome": "ambiguous-input-rejected"
+      },
+      {
+        "caseId": "immutable-identity-replay",
+        "evidencePath": "tests/shared/breedingArchiveContract.test.ts",
+        "requiredNeedle": "allows exact identity replay only and rejects changed archive, request, receipt, review, and migration facts",
+        "certifiedOutcome": "stable-identities-never-rebound"
+      },
+      {
+        "caseId": "durable-generated-GM-overrides",
+        "evidencePath": "tests/server/breedingCampaignClockBatch.test.ts",
+        "requiredNeedle": "discovers a canonical multi-Egg page and advances credited and paused downtime through durable child operations",
+        "certifiedOutcome": "parent-and-child-receipt-override-identities-persist-together"
+      }
+    ],
+    "releaseInvariants": [
+      "backup-never-omits-or-reconstructs-private-authority",
+      "every-archived-command-retains-one-complete-read-set-result-receipt-and-referenced-overrides",
+      "external-acquisition-settlements-never-create-fake-Breeding-commands",
+      "restore-requires-exact-current-app-owned-reference-snapshot",
+      "new-campaign-restore-never-overwrites-nonempty-authority",
+      "terminal-retry-revalidates-current-GM-without-replacing-immutable-request-or-receipt",
+      "repair-never-edits-or-deletes-orphaned-evidence-in-place",
+      "legacy-map-metadata-remains-quarantine-only",
+      "archive-and-dependency-hooks-remain-synchronous"
+    ],
+    "runtimePaths": [
+      "shared/breeding/archives.ts",
+      "shared/breeding/speciesAcquisitionSourceSettlement.ts",
+      "server/domain/breeding/archives.ts",
+      "server/domain/breeding/speciesAcquisitionIntegration.ts",
+      "server/storage/breedingArchiveRepository.ts",
+      "server/storage/breedingArchiveStateRepository.ts",
+      "server/storage/breedingOperationEvidenceRepository.ts",
+      "server/useCases/manageBreedingArchives.ts"
+    ],
+    "summary": {
+      "dimensionsCertified": 5,
+      "backupRecordKindsCertified": 19,
+      "migrationKindsCertified": 4,
+      "acceptanceCases": 14,
+      "result": "pass"
+    }
+  }
+}

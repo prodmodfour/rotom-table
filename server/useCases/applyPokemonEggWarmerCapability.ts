@@ -207,7 +207,12 @@ export const applyPokemonEggWarmerCapability = (inputValue: unknown, options: Ap
   let preparedRoll: BreedingRollRecordV1 | null = null
   database.withTransaction(() => {
     operations.reserve(command, clock.campaignMinute)
-    evidenceRepository.insert({ command, readSet, authorizationReceipt: submittedReceipt })
+    evidenceRepository.insert({
+      command,
+      readSet,
+      authorizationReceipt: submittedReceipt,
+      gmOverrides: input.gmOverrides as readonly unknown[],
+    })
     const existingRolls = rolls.listByOperation(command.operationId)
     if (existingRolls.length > 0) { preparedRoll = existingRolls.length === 1 ? existingRolls[0]! : null; return }
     const latest = rolls.findLatestEggWarmerCapabilityBySource({ sourcePokemonSheetSlug: source.slug, excludeOperationId: command.operationId })

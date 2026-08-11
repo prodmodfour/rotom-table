@@ -404,7 +404,12 @@ export const managePokemonEggIncubation = (
   }
   database.withTransaction(() => {
     operationRepository.reserve(command, readSet.capturedAtCampaignMinute)
-    evidenceRepository.insert({ command, readSet, authorizationReceipt: receipt })
+    evidenceRepository.insert({
+      command,
+      readSet,
+      authorizationReceipt: receipt,
+      gmOverrides: input.gmOverrides,
+    })
   })
   const shouldResume = existing === null || options.resumePending === true
   const execution = coordinator.execute({

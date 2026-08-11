@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "7f7ba2107f99512a936b962ff9a38a04156f78af9a7cde43b700abcc71f3e5cc",
+  "definitionSha256": "c2d912cac3190afc6cdfbab68a65346cdf7ddc89275a8e88589be883ac508203",
   "definition": {
     "version": 1,
     "ticket": "BR-049",
@@ -195,10 +195,10 @@
       "authorizationContractDefinitionSha256": "2ae8a4ad9dcea11042dbdcc6ba71a6c87f00578b42d5699407e4eae643e55dd4",
       "projectContractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
       "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
-      "campaignOperationLedgerContractDefinitionSha256": "f7869b1ea099d9ae4e2542324abf6d3a98284d2f0c93c289192cdb65293cdbfe",
-      "transactionCoordinatorContractDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea",
-      "realtimeContractDefinitionSha256": "1085e2851572601051945547ea96c55c8280069691c1b8b15c9f84503d7bd932",
-      "eggProductionContractDefinitionSha256": "5c4e08dbedd8fae6513559d4b7ecb91cc26166a0f076fa3987992eb9252c5472"
+      "campaignOperationLedgerContractDefinitionSha256": "3a2162577ce6117f7514f66b950f2faede586eee558bc639024a2f7e1bca35c3",
+      "transactionCoordinatorContractDefinitionSha256": "12ba8fb61c45c231740eed4fd30ca199583c0b12d937f6800403042d5698e18f",
+      "realtimeContractDefinitionSha256": "a6a5423e612258f5a2ce938c67562bacd5b37a8af2b908b7fce48a9a7527b370",
+      "eggProductionContractDefinitionSha256": "fbf3c161d25581d4a51c534973034aba5be69981838234728f2f6ceb43f117bd"
     }
   }
 }

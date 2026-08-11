@@ -4,13 +4,13 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "718a6e4507fa3aa930be47ac596a05c44e80a792bd64b1fe87fc815c551ac625",
+  "definitionSha256": "e2aebbec4467726aaceff7f93c8ddad5cfc3fbca0b169b6660f98b3309aa8679",
   "definition": {
     "ticket": "BR-080",
     "status": "strict-closed",
     "semanticRegistry": {
       "registryId": "breeding-semantic-registry-v1",
-      "expectedArtifactCountIncludingThisManifest": 105,
+      "expectedArtifactCountIncludingThisManifest": 106,
       "dataDirectoryPolicy": "every-json-file-exactly-once-registered-except-registry-self",
       "duplicateArtifactIdPolicy": "reject",
       "duplicateArtifactPathPolicy": "reject",
@@ -156,11 +156,14 @@
         "breeding-authorization-contract",
         "campaign-operation-ledger-contract",
         "breeding-transaction-coordinator-contract",
-        "breeding-resilience-certification"
+        "breeding-resilience-certification",
+        "breeding-archive-release-certification"
       ],
       "unparameterizedOrUnknownCommandPolicy": "reject",
       "resilienceCertificationOwner": "BR-083",
-      "resilienceCertificationStatus": "certified-current-semantics"
+      "resilienceCertificationStatus": "certified-current-semantics",
+      "archiveReleaseCertificationOwner": "BR-085",
+      "archiveReleaseCertificationStatus": "certified-current-archive-and-repair-semantics"
     },
     "projections": {
       "contractId": "ptu-1.05-breeding-presentation-projections-v1",

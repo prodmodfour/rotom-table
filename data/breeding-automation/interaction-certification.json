@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "93041fbf371c9b063232d174e16135d8ec5c231496d64c360a4abc6184344998",
+  "definitionSha256": "fdfc3d47bd08e1b96def88a0a9edbeeaa12ef14f504042be2006bb58b20e4980",
   "definition": {
     "ticket": "BR-082",
     "status": "certified",
@@ -868,15 +868,15 @@
       "browser-wall-map-encounter-and-process-time-never-credit-progress-or-expiry"
     ],
     "bindings": {
-      "semanticClosureDefinitionSha256": "718a6e4507fa3aa930be47ac596a05c44e80a792bd64b1fe87fc815c551ac625",
-      "wholeSpeciesConformanceDefinitionSha256": "07701bebb2d646a877fe47fe6964afcf4a30fe3e21f31773965f7f35fa7afbb7",
+      "semanticClosureDefinitionSha256": "e2aebbec4467726aaceff7f93c8ddad5cfc3fbca0b169b6660f98b3309aa8679",
+      "wholeSpeciesConformanceDefinitionSha256": "5cd575dcd96d2a6ecb2f96e89915e2a586a51564b32e98da2ab7d1c305f1a2ad",
       "breederEdgeHandoffContractDefinitionSha256": "6d00f0adbf87c5751d1f5df6973325b29c78b9636f1fcf92d55b038299dcf55e",
       "featureProviderHandoffContractDefinitionSha256": "fdc100e73b51ad2179d2069a6b36b7d9ecf3d441b6d5ed0e0a5fe743714b9479",
-      "modifierProviderHandoffContractDefinitionSha256": "1a4fc68d36348e1b7c7d95983bfb224d971096756e569d278d54fe0676703216",
-      "fossilEggContractDefinitionSha256": "d383983a68057f6dbea32fb2701340043c42a13809ab8542e37ac3c7fc5ec485",
-      "babyTemplateContractDefinitionSha256": "90692543ac5ccff9853599dc13002e6fa9cc2c71124543e1f593ef052fabee36",
-      "inheritanceLearningContractDefinitionSha256": "13f6d6f3af88188e5409c58d297c7f24fcdcb018eee054d8dd57d63d276a6172",
-      "campaignClockBatchContractDefinitionSha256": "864229e166052b554bae577e4ab839c95c670762ff2a73ad262a7f0bf3492bbb",
+      "modifierProviderHandoffContractDefinitionSha256": "d34801a954acd23032a623eb0ebc6c102f61a8f5726504c3091de72fd4cbdfcb",
+      "fossilEggContractDefinitionSha256": "b1033dd11294a61279fb3d1dc7ae2658867c5ef6f0c2f114168db9188ede184a",
+      "babyTemplateContractDefinitionSha256": "dbb43efa89d123201fbe9fff91f735616d1d41b34c2eeb0b486e903ba0307965",
+      "inheritanceLearningContractDefinitionSha256": "e9f8a9c0f8bad1d3e0b7d5701a6906c6465cd156df97869ce8f366889f86c645",
+      "campaignClockBatchContractDefinitionSha256": "8f068d7287489a99a7e948750636310d1ed7626eb5ac95a8fe27c6911b1b7702",
       "familyGraphPolicyDefinitionSha256": "ae677fe4a6d204e05a2c500e2dc5584b88ca2a10b80546c18a30b94e7541bc76"
     },
     "summary": {

@@ -249,6 +249,17 @@ describe('campaign-clock incubation batching', () => {
       revision: 1, incubation: { accumulatedCampaignMinutes: 0, lastAppliedClockRevision: 2, paused: true },
     })
     expect(eventCount(seeded.database)).toBe(8)
+    const evidenceRepository = createSqliteBreedingOperationEvidenceRepository(seeded.database)
+    const persistedOverrides = [
+      evidenceRepository.get(command.operationId),
+      ...command.scopes.filter(scope => scope.kind === 'pokemon-egg').map(scope => (
+        evidenceRepository.get(deriveBreedingCampaignClockBatchChildOperationIdV1(command.operationId, scope.eggId))
+      )),
+    ]
+    expect(persistedOverrides.every(evidence => evidence?.gmOverrides.length === 1)).toBe(true)
+    expect(persistedOverrides.every(evidence => (
+      evidence?.authorizationReceipt.gmOverrideIds[0] === evidence?.gmOverrides[0]?.overrideId
+    ))).toBe(true)
     expect(JSON.stringify(result.projection)).not.toMatch(/species|nature|ability|gender|parentSheet|breeder|profile|definition|sha256|receipt|readSet/iu)
   })
 

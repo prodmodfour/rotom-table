@@ -362,7 +362,7 @@ Use `data/breeding-automation/resilience-certification.json` to identify the own
 
 For a concurrent stale loser, preserve its terminal rejection or pending audit and inspect the accepted winner; do not force the loser through. For a GM correction, use the closed correction operation without editing target or accumulated progress. For abandonment, retain command, read set, receipt, rolls, and offers. After restart, require strict reparsing before dispatch. After a realtime replay gap, replace from a current projection. A publisher failure after commit is a delivery incident, not a mechanics rollback.
 
-The declared `cancel-egg` command has no owning reducer and must remain unavailable. `preview-breeding` is non-mutating. Backup/restore is exercised here only as an operational failure boundary; BR-085 remains the release acceptance owner for legacy migration, export/import, reference versions, backup/restore, and orphan repair.
+The declared `cancel-egg` command has no owning reducer and must remain unavailable. `preview-breeding` is non-mutating. BR-083 exercises backup/restore only as an operational failure boundary; the BR-085 archive release procedure below owns migration, exact-reference restore, and orphan repair.
 
 ## BR-084 security and abuse checks
 
@@ -371,6 +371,16 @@ Use `data/breeding-automation/security-certification.json` to trace an audience,
 A 413 means the Breeding POST exceeded the 32 KiB JSON boundary or declared contradictory body length. Do not split one command, bypass the route, or copy the rejected body into diagnostics. A 429 carries only `Retry-After`; wait for that admission window and retry the same selector request. Never change an operation ID, redraw, recreate an offer, advance campaign time, or manually apply a result in response to throttling. The GM bucket is intentionally conservative and shared by the authenticated liveplay process because no client-selected value may become a session authority.
 
 Repeated 400, 403, 409, 413, or 429 responses should be investigated using bounded route, role, status, and hashed identity metadata only. Do not collect request bodies, Profile IDs, parent sheets, consent records, options, rolls, cookies, or exports. If active Project creation reports that a parent is already active, resolve or cancel the current Project through its ordinary audited workflow; never edit the parent columns or Project JSON.
+
+## BR-085 archive and migration release checks
+
+Use `data/breeding-automation/archive-release-certification.json` as the acceptance index, not as restore authority. A campaign backup is complete only when it preserves every terminal command/result/complete-read-set/receipt chain, every referenced GM override, both durable Egg-transfer consent roles, external Species-acquisition source settlements, Eggs, Projects, origins, inheritance records, rolls, offers, checks, adjudications, and the exact campaign-clock checkpoint. External acquisition evidence keeps its dedicated operation identity; never manufacture a Breeding command to make an archive link pass.
+
+Before restore, verify the envelope is at most 64 MiB of valid UTF-8 strict JSON, every chunk and record hash is exact, the current app-owned reference snapshot matches byte-semantically, and the request binds a currently authenticated GM. `restore-new-campaign` requires an empty authoritative target. Replacement requires the exact persisted current backup checkpoint and unchanged campaign authority. A terminal retry may occur after campaign time advances, but it must reauthorize the current GM and return the immutable stored request/receipt without replacing state again.
+
+Migration packages require exact observed source ID, SHA-256, byte size, privacy class, migration-tool hash, reviewer evidence, and any lineage-review evidence. Legacy Egg/inherited Move fields remain compatibility data. They may attach only an already-authoritative exact origin; they cannot create parents, lineage, an Egg, or a child. Legacy map Egg metadata is quarantine-only and must have no result archive.
+
+An integrity report detects an orphan; it does not authorize row editing. Preserve the affected database, stop writes, and retain the bounded report. Never delete, relink, or synthesize the orphan in place. Repair by validating a reviewed known-good backup and atomically restoring it to a clean campaign target. Run integrity diagnostics there, require `healthy` and `backupReady`, restart the target, rerun diagnostics, and retain the restore receipt before any cutover.
 
 ## Recovery principles
 
@@ -390,9 +400,9 @@ Revoke only through the authoritative operation. Revocation before Egg acceptanc
 
 ## Backup and restore
 
-Use only the versioned digest-bearing campaign export. Restore into isolated state first. Validation must reject missing rulesets, duplicate operation IDs with contradictory commands, duplicate Egg-child links, dangling project/Egg/Trainer references, duplicate acquisition keys, and invalid revisions before accepting authority.
+Use only the versioned digest-bearing campaign export. Restore into isolated clean state first. Validation must reject missing rulesets, incomplete operation evidence, missing GM overrides, missing transfer-consent counterparts, missing external acquisition settlements, duplicate operation IDs with contradictory commands, duplicate Egg-child links, dangling project/Egg/Trainer references, duplicate acquisition keys, and invalid revisions before accepting authority.
 
-After restore, run repository consistency, exact-retry, projection privacy, and checker validation. Do not trigger rerolls or reconstruct lineage from sheet fields.
+After restore, run SQLite and foreign-key integrity, strict repository reparse, archive cross-link validation, exact-retry, projection privacy, and checker validation before restart; repeat integrity checks after restart. Do not trigger rerolls, reconstruct evidence, infer acquisition history, or reconstruct lineage from sheet fields.
 
 ## Rollback
 

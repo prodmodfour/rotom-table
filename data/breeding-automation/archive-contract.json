@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "791c7236517655fb02eaa598865bd51b9391173be39b8eea6b0995da67af11e2",
+  "definitionSha256": "9ed9362decc67b11adaf8a991341a61307b9db45467cd3679e5beda4a791b4da",
   "definition": {
     "version": 1,
     "archive": {
@@ -54,7 +54,10 @@
         "check",
         "consent",
         "egg",
+        "egg-transfer-consent",
+        "gm-override",
         "gm-projection",
+        "incubation-segment",
         "inheritance-learning",
         "offer",
         "operation-command",
@@ -65,7 +68,8 @@
         "project",
         "read-set",
         "roll",
-        "species-acquisition"
+        "species-acquisition",
+        "species-acquisition-source-settlement"
       ],
       "chunkId": "chunk:v1:<zero-padded-index>:<record-kind>",
       "batching": "exactly-1000-records-per-non-final-kind-chunk"
@@ -92,7 +96,11 @@
           "check",
           "consent",
           "egg",
+          "egg-transfer-consent",
+          "gm-override",
+          "incubation-segment",
           "inheritance-learning",
+          "offer",
           "operation-command",
           "operation-result",
           "origin",
@@ -100,7 +108,7 @@
           "read-set",
           "roll",
           "species-acquisition",
-          "offer"
+          "species-acquisition-source-settlement"
         ],
         "restorable": true,
         "authority": "complete-atomic-campaign-backup"
@@ -126,7 +134,7 @@
         "operationId",
         "definitionSha256"
       ],
-      "allOtherRecords": "strict-existing-v1-contracts",
+      "allOtherRecords": "strict-existing-v1-contracts-including-transfer-consent-GM-override-and-external-source-settlement",
       "clockCardinality": 1,
       "operationCardinality": "one-terminal-result-per-command",
       "crossLinks": [
@@ -134,10 +142,13 @@
         "breeding-Egg-project",
         "origin-hatched-Egg-child",
         "learning-origin-Egg-child",
-        "acquisition-source-kind-and-Egg"
+        "hatch-acquisition-Egg-operation",
+        "external-acquisition-source-settlement-without-forged-Breeding-command",
+        "transfer-consent-Egg-counterpart-and-typed-settlement-command",
+        "GM-override-command-and-authorization-receipt"
       ],
       "mapMetadataRecordKind": "forbidden",
-      "operationEvidence": "one-exact-command-result-complete-read-set-authorization-receipt-chain-per-operation",
+      "operationEvidence": "one-exact-command-result-complete-read-set-authorization-receipt-and-every-referenced-GM-override-chain-per-operation",
       "clockCheckpoint": "exactly-one-clock-at-archive-created-campaign-minute",
       "hatchOrigin": "exactly-one-origin-per-hatched-Egg-and-child"
     },
@@ -268,7 +279,9 @@
       "mapEncounterDependency": "none",
       "legacyMapEggAuthority": "none",
       "recordDependencyValidation": "required-server-validation-of-canonical-membership-and-external-campaign-links-for-every-record",
-      "identityReplay": "archive-request-receipt-migration-and-review-identities-allow-exact-stable-JSON-replay-only"
+      "identityReplay": "archive-request-receipt-migration-and-review-identities-allow-exact-stable-JSON-replay-only",
+      "externalAcquisitionEvidence": "preserve-self-hashed-terminal-source-settlement-never-forge-Breeding-command",
+      "transferConsentEvidence": "preserve-exact-current-and-terminal-dual-consent-records"
     },
     "bindings": {
       "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",

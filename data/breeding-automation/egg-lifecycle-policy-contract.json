@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "38f3a08c73b99cb376b403c474cf7a8e485f2e7c4c59768ec03cdadfafb0403b",
+  "definitionSha256": "c5d1a098da04e31478936c65787a884270f4ecd4c2f0eb4d65674828be804e42",
   "definition": {
     "version": 1,
     "ticket": "BR-053",
@@ -179,8 +179,8 @@
       "eggContractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
       "hatchDurationPolicyDefinitionSha256": "e9213cfd40afe1fb39e95adc6affec59a56d6e064d3678a46a50dbf274717b9a",
       "incubationContractDefinitionSha256": "d9aed047dfc2e06166e33e284e91a27c483e456f3dfa56c2b0a123c5382cf587",
-      "readinessCorrectionContractDefinitionSha256": "8b816f636c17993d52a8ceeb935f20a5ca96be4e2cffdd00f362506ddb3b623d",
-      "campaignClockBatchContractDefinitionSha256": "864229e166052b554bae577e4ab839c95c670762ff2a73ad262a7f0bf3492bbb",
+      "readinessCorrectionContractDefinitionSha256": "c679887789650d85218d4e66fb65b703620dd8431ee12ee23bffe2f8bdabdc31",
+      "campaignClockBatchContractDefinitionSha256": "8f068d7287489a99a7e948750636310d1ed7626eb5ac95a8fe27c6911b1b7702",
       "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
       "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5"
     }

@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "3388880101205852ee45a2356ad2a92e695c2169edd3c00e359da3c05b50847e",
+  "definitionSha256": "e6a3b789361900bd0559ee1ecec4525d779349cf4d7761e14ec4c3f782aef7e5",
   "definition": {
     "ticket": "BR-074",
     "scope": {
@@ -102,8 +102,8 @@
     "bindings": {
       "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
       "projectionContractDefinitionSha256": "86816da9419b5392f5a6122ccf982d7ed7587c027896ef19f3fe2efba33af812",
-      "eggTransferContractDefinitionSha256": "35eb7497732ad71dbda180a5c132bb0534f89f85a8eda2e1acb5cf2f9968cb31",
-      "lifecycleRecoveryContractDefinitionSha256": "7f7ba2107f99512a936b962ff9a38a04156f78af9a7cde43b700abcc71f3e5cc",
+      "eggTransferContractDefinitionSha256": "1bb127764f069102b8b194cb0b22cd55b5ca07be812d8dd669ba4947b34ec477",
+      "lifecycleRecoveryContractDefinitionSha256": "c2d912cac3190afc6cdfbab68a65346cdf7ddc89275a8e88589be883ac508203",
       "workshopPresentationContractDefinitionSha256": "64ef9869977653c06cd7229dfc7a27f38f8db9a9a1e1adf4877a241c15314cc4"
     },
     "verification": {

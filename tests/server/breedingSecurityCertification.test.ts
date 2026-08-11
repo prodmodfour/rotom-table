@@ -96,7 +96,7 @@ describe('BR-084 breeding security certification', () => {
       securityCertificationStatus: 'certified-current-information-flow',
       artifactIds: expect.arrayContaining(['breeding-security-certification']),
     })
-    expect(semanticClosureJson.definition.semanticRegistry.expectedArtifactCountIncludingThisManifest).toBe(105)
+    expect(semanticClosureJson.definition.semanticRegistry.expectedArtifactCountIncludingThisManifest).toBe(106)
   })
 
   it('certifies all five audiences and all 22 privacy fields as structurally separate schemas', () => {

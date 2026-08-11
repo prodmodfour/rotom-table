@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "9abb1a658849fdd2b13d2fce57e6da74489f7ab58aeece1ec52b8f3094eaeb85",
+  "definitionSha256": "02f2a200551c80ffeedc73d71dfa1fce874e6c7816a1c65ed96f25a424e0c553",
   "definition": {
     "version": 1,
     "phase": 4,
@@ -123,13 +123,13 @@
       "diffCheck": "required"
     },
     "bindings": {
-      "storageSchemaV22DefinitionSha256": "0da2fb267112523d86bc1d248080a782d1778d02eacece447e91ca64c412a934",
-      "archiveStorageSchemaV23DefinitionSha256": "236726ef662682f290cd267e988e84b87b86f9390bb74f7c59b92291c38c0803",
-      "repositoryContractDefinitionSha256": "a49fbb1583b2eb417a781a11c2f843d072fec219a78a61cae885d77e721b1c7f",
-      "operationLedgerContractDefinitionSha256": "f7869b1ea099d9ae4e2542324abf6d3a98284d2f0c93c289192cdb65293cdbfe",
-      "campaignClockContractDefinitionSha256": "1b3ef0bd5391d38e45c7ac2a22f774243df6bcb3219e45f000b07a293c6ecd6a",
-      "transactionCoordinatorDefinitionSha256": "88ecb3938b35fa1c3bf9247e389cfd85b879d7acbc50f242ad5923993bd1f3ea",
-      "archiveStorageRuntimeDefinitionSha256": "500c5b07a93b92fc1d6a642b5c8124483c1d2106c12bc073e7b4766394b25e77"
+      "storageSchemaV22DefinitionSha256": "44dcc762abed43fd6547b4a155bdafe83ebdaf49daa1bf33812e4f009d329b8b",
+      "archiveStorageSchemaV23DefinitionSha256": "5f5e14d7afbd849818fcb6499345c1005778d17328271f0e6b2f7e90773d8ac6",
+      "repositoryContractDefinitionSha256": "47a0cc081e2506e8ca9842d1125adec7fb1b8ed46439e1d663bcb4b589a823ad",
+      "operationLedgerContractDefinitionSha256": "3a2162577ce6117f7514f66b950f2faede586eee558bc639024a2f7e1bca35c3",
+      "campaignClockContractDefinitionSha256": "743d425bbbfe24e679d53541e9e3c85da6be32aa89ad0af78cb2a792de169ad5",
+      "transactionCoordinatorDefinitionSha256": "12ba8fb61c45c231740eed4fd30ca199583c0b12d937f6800403042d5698e18f",
+      "archiveStorageRuntimeDefinitionSha256": "a793314f90ac75d33067643ca35f80633441f5dd1375f099056b917c3fa7b200"
     }
   }
 }

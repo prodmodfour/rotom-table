@@ -247,7 +247,7 @@ const createParentAuthority = (input: {
   readonly referenceVersions: BreedingReferenceVersionSnapshotV1
   readonly clock: ReturnType<ReturnType<typeof createSqliteCampaignClockRepository>['get']>
   readonly eggs: readonly PokemonEggDocumentV1[]
-}): { readonly readSet: BreedingOperationReadSetV1, readonly receipt: BreedingAuthorizationReceiptV1 } => {
+}): { readonly readSet: BreedingOperationReadSetV1, readonly receipt: BreedingAuthorizationReceiptV1, readonly overrides: readonly unknown[] } => {
   const dependency = batchDependency()
   const readSet = createBreedingOperationReadSetV1({
     readSetId: deriveBreedingCampaignClockBatchParentReadSetIdV1(input.command.operationId),
@@ -292,7 +292,7 @@ const createParentAuthority = (input: {
   if (!receipt.authorized) {
     return fail('breeding.clock-batch-use-case.invalid-authority', 'Parent batch authorization failed closed.')
   }
-  return Object.freeze({ readSet, receipt })
+  return Object.freeze({ readSet, receipt, overrides: Object.freeze([override]) })
 }
 
 const childCommand = (input: {
@@ -473,7 +473,12 @@ export const advanceBreedingCampaignClockIncubationBatch = (
     }
     database.withTransaction(() => {
       operationRepository.reserve(command, currentClock.campaignMinute)
-      evidenceRepository.insert({ command, readSet: attempted.readSet, authorizationReceipt: attempted.receipt })
+      evidenceRepository.insert({
+        command,
+        readSet: attempted.readSet,
+        authorizationReceipt: attempted.receipt,
+        gmOverrides: attempted.overrides,
+      })
     })
   }
   else if (!parentEvidence) {

@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "766c133e38315ecba7934881243d4c156911398e86d2bfeee6de430bce8efa95",
+  "definitionSha256": "e78af9d6e47453dd2cd12d40d5376c14b00cb1302312755f63219e2cec44f442",
   "definition": {
     "version": 25,
     "migrationName": "allow authoritative Egg Warmer Capability breeding operations without rewriting v24 rows",
@@ -46,9 +46,9 @@
       "rollback": "v24-byte-equivalent"
     },
     "bindings": {
-      "priorIncubationStorageSchemaDefinitionSha256": "fc3fe57c2b442354b590e7a28d1f368cdf15d57c344fe9d5825f201504a9bb98",
+      "priorIncubationStorageSchemaDefinitionSha256": "db69d7a93e2226975b27ce7697ac9c1ad3bc11784333af0a381a520a1c2b94b3",
       "operationContractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
-      "modifierProviderHandoffContractDefinitionSha256": "1a4fc68d36348e1b7c7d95983bfb224d971096756e569d278d54fe0676703216"
+      "modifierProviderHandoffContractDefinitionSha256": "d34801a954acd23032a623eb0ebc6c102f61a8f5726504c3091de72fd4cbdfcb"
     },
     "paths": {
       "application": "server/storage/migrations.ts",

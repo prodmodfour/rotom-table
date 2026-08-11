@@ -468,7 +468,7 @@ describe('durable additional Breeding Project progress', () => {
     expect(result.execution.committedRealtimeEvents).toHaveLength(4)
     expect(publish).toHaveBeenCalledTimes(4)
     expect(createSqliteBreedingOperationEvidenceRepository(database).get(input.command.operationId))
-      .toEqual({ readSet: input.readSet, authorizationReceipt: input.receipt })
+      .toEqual({ readSet: input.readSet, authorizationReceipt: input.receipt, gmOverrides: [] })
   })
 
   it('accumulates across durable commands and records the exact readiness threshold under overshoot', () => {

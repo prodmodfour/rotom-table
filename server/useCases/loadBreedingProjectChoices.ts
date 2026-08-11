@@ -885,7 +885,12 @@ const settleMaturity = (input: {
     createdAtCampaignMinute: context.readSet.capturedAtCampaignMinute,
     settledAtCampaignMinute: context.readSet.capturedAtCampaignMinute,
     execute: (canonical, _operation, tx) => {
-      tx.repositories.operationEvidence.insert({ command: canonical, readSet: context.readSet, authorizationReceipt: context.receipt })
+      tx.repositories.operationEvidence.insert({
+        command: canonical,
+        readSet: context.readSet,
+        authorizationReceipt: context.receipt,
+        gmOverrides: context.gmOverrides,
+      })
       tx.repositories.gmAdjudications.insert(canonicalPending)
       const replacement = tx.repositories.gmAdjudications.replace({ expectedRevision: 0, record: resolved })
       if (replacement.kind !== 'applied') throw new Error('Maturity adjudication changed during settlement.')
@@ -1007,7 +1012,12 @@ const settleRole = (input: {
     createdAtCampaignMinute: context.readSet.capturedAtCampaignMinute,
     settledAtCampaignMinute: context.readSet.capturedAtCampaignMinute,
     execute: (canonical, _operation, tx) => {
-      tx.repositories.operationEvidence.insert({ command: canonical, readSet: context.readSet, authorizationReceipt: context.receipt })
+      tx.repositories.operationEvidence.insert({
+        command: canonical,
+        readSet: context.readSet,
+        authorizationReceipt: context.receipt,
+        gmOverrides: context.gmOverrides,
+      })
       tx.repositories.optionOffers.insert(activeOffer)
       tx.repositories.gmAdjudications.insert(pending)
       if (tx.repositories.optionOffers.replace({ expectedRevision: 0, record: consumedOffer }).kind !== 'applied'
@@ -1219,6 +1229,7 @@ export const loadBreedingProjectChoices = (
         authorizationReceipt: current.receipt,
         setupValidation: setup.authority,
         parentControls: current.parents.map(parent => parent.parentControl) as unknown as readonly [unknown, unknown],
+        gmOverrides: current.gmOverrides,
         audience: input.role === 'gm' ? 'gm' : 'owner',
       }, {
         database: wizardAuthority.database,
@@ -1479,6 +1490,7 @@ export const loadBreedingProjectChoices = (
       authorizationReceipt: current.receipt,
       setupValidation: setup.authority,
       parentControls: current.parents.map(parent => parent.parentControl) as unknown as readonly [unknown, unknown],
+      gmOverrides: current.gmOverrides,
       audience: input.role === 'gm' ? 'gm' : 'owner',
     }, {
       database: wizardAuthority.database,

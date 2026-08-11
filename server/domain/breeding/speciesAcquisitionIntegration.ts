@@ -84,7 +84,13 @@ const exact = (value: unknown, fields: readonly string[], path: string): Record<
 const integer = (value: unknown, field: string): number => Number.isSafeInteger(value) && Number(value) >= 0 && Number(value) < Number.MAX_SAFE_INTEGER ? Number(value) : fail('breeding.species-acquisition-integration.invalid-input', field, 'must be a bounded safe nonnegative integer.')
 const slug = (value: unknown, field: string): string => isSlug(value) && value.length <= 160 ? value : fail('breeding.species-acquisition-integration.invalid-input', field, 'must be a canonical bounded slug.')
 const hash = (value: unknown, field: string): string => typeof value === 'string' && SHA256.test(value) ? value : fail('breeding.species-acquisition-integration.invalid-input', field, 'must be a lowercase SHA-256 digest.')
-const eventId = (value: unknown, field: string): string => typeof value === 'string' && SOURCE_EVENT_ID.test(value) ? value : fail('breeding.species-acquisition-integration.invalid-input', field, 'must be a bounded typed source-event ID.')
+const eventId = (value: unknown, field: string): string => typeof value === 'string'
+  && SOURCE_EVENT_ID.test(value)
+  && !value.includes('..')
+  && !value.includes('//')
+  && !value.endsWith('/')
+  ? value
+  : fail('breeding.species-acquisition-integration.invalid-input', field, 'must be a bounded traversal-safe typed source-event ID.')
 const AUTHORITY_BY_SOURCE: Readonly<Record<ExternalTrainerSpeciesAcquisitionSourceKind, BreedingSpeciesAcquisitionSourceAuthorityKind>> = Object.freeze({ capture: 'live-play-capture', evolution: 'pokemon-evolution', trade: 'pokemon-trade', migration: 'reviewed-migration', 'gm-reviewed': 'gm-reviewed' })
 const SOURCE_KINDS = new Set<string>(Object.keys(AUTHORITY_BY_SOURCE))
 const AUTHORITY_KINDS = new Set<string>(Object.values(AUTHORITY_BY_SOURCE))
