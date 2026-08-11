@@ -1,7 +1,6 @@
 {
   "acceptedDefinitionHashes": [
     "102281e3ab1e145b9cb06851b3ee16596ac131d9e74d47450325d1c7bfba0678",
-    "45fd53e7dc65d11451d6765eae7fbfd31633a8dfece1eb52ee2fa8ecb7f385d5",
     "55bf3d0007bf1a22bdb81f594c80aae8f64752c90923344a2592964dc1fac2f6",
     "59be29067d9bfcd1d4f62033c9a4f1ea8e5a8289d8e3946c311234bbeeed8eee",
     "6389ae015a6532faf0043a64a5ddbfe0359747083674b4b8ad8ab506f6939a51",
@@ -13,7 +12,8 @@
     "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
     "b9a97844908f9b0eb54b0db9381d63c6ca6f178d05f5b72c8312195ae2a300a4",
     "c704eb6869f8bfc5bf278856c99c0d58d71ef4d6678cb2c7e47e4d9c94713210",
-    "e39acc34e90e3ce2f9fdff0f8abd93e38fe8bf36c9204f3b4c5bd942f81b9e0a"
+    "e39acc34e90e3ce2f9fdff0f8abd93e38fe8bf36c9204f3b4c5bd942f81b9e0a",
+    "fc01cecaec138baf46cf6b7e2305c035c425c16eff82054d05122298dcefc6fc"
   ],
   "authorizationReceiptDefinitionSha256": "51faa5ccb296ac2ad18a4c4561c825cefcb44c77f122693e7a94a4673d0ebdfe",
   "breeder": {
@@ -275,10 +275,10 @@
     "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
     "rulesetId": "ptu-1.05-breeding-v1",
     "schemaVersion": 1,
-    "semanticRegistryDefinitionSha256": "acfff0114e7db857734c4e362bec9d1808baccab84079036e4f623fb6fddc72c",
+    "semanticRegistryDefinitionSha256": "99f7be2785baa7642f3461c5eb9650e0c908aee9abd4304a43ec4a4d08fd4e03",
     "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-    "definitionSha256": "45fd53e7dc65d11451d6765eae7fbfd31633a8dfece1eb52ee2fa8ecb7f385d5"
+    "definitionSha256": "fc01cecaec138baf46cf6b7e2305c035c425c16eff82054d05122298dcefc6fc"
   },
   "schemaVersion": 1,
-  "definitionSha256": "24a93a68713225b1ddcba037895f5c05d6d1a5739668fe3a06055c97ebdbb594"
+  "definitionSha256": "a24df30d196191597efebc367d2118b700ca78f65a2d1b033a367ade401b47a7"
 }

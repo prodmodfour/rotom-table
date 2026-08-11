@@ -4,7 +4,7 @@ The executable policy inventory is `data/breeding-automation/security-policy.jso
 
 ## Trust boundary
 
-Breeding is a campaign operation. A browser may request a preview, choose a server-issued option, grant narrowly scoped consent, or submit an exact-retry command. It may not submit species resolution, parent roles, traits, inheritance, elapsed time, a child patch, rewards, provider effects, or authority claims.
+Breeding is a campaign operation. A browser may request a preview, choose a server-issued option, grant narrowly scoped consent, or retry the same selector intent after reconnect. It may not submit an operation command, species resolution, parent roles, traits, inheritance, elapsed time, a child patch, rewards, provider effects, or authority claims.
 
 The server owns:
 

@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 87,
+    "covered": 88,
     "in-progress": 1,
-    "planned": 2,
+    "planned": 1,
     "blocked": 0
   },
   "requirements": [
@@ -2276,8 +2276,22 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "scripts/breedingDocumentationClosure.ts",
+        "tests/data/breedingDocumentationClosure.test.ts",
+        "docs/breeding/contributor-guide.md",
+        "docs/breeding/operator-guide.md",
+        "docs/breeding/gm-and-player-guide.md",
+        "docs/breeding/api-reference.md",
+        "docs/breeding/data-model-and-campaign-clock.md",
+        "docs/breeding/qa-and-release-guide.md",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/security-and-privacy.md",
+        "docs/breeding/workshop.md",
+        "scripts/check_breeding_automation.ts",
+        "package.json"
+      ],
       "acceptanceFixtureIds": []
     },
     {
@@ -2290,7 +2304,7 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

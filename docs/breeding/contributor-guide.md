@@ -1,5 +1,19 @@
 # Breeding contributor guide
 
+## Documentation map
+
+- Architecture and fact ownership: `docs/breeding/architecture-and-ownership.md`
+- Accessibility and table-distance acceptance: `docs/breeding/accessibility-responsive-and-table-distance.md`
+- Strict data model and campaign clock: `docs/breeding/data-model-and-campaign-clock.md`
+- Browser/API contracts: `docs/breeding/api-reference.md`
+- Player and GM workflows: `docs/breeding/gm-and-player-guide.md`
+- Security and privacy: `docs/breeding/security-and-privacy.md`
+- Workshop presentation: `docs/breeding/workshop.md`
+- Operations and incidents: `docs/breeding/operator-guide.md`
+- QA and release: `docs/breeding/qa-and-release-guide.md`
+
+Update the owning document in the same change as behavior. BR-088's documentation closure test rejects route, vocabulary, timeline, status, cross-link, and release-command drift.
+
 ## Start with the ledger
 
 1. Read `implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md` and `implementation-plans/plan-order.md`.
@@ -135,6 +149,12 @@ During implementation, prefer focused single-worker Vitest commands:
 ```bash
 npx vitest run path/to/test.ts --maxWorkers=1 --no-file-parallelism
 npm run check:breeding-automation
+```
+
+For documentation closure, run:
+
+```bash
+npm run check:breeding-documentation
 ```
 
 Add the earliest applicable evidence:

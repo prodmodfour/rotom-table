@@ -14,6 +14,10 @@ import {
   BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_DEFINITION_SHA256,
   BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_V1,
 } from './breedingProductionAcceptance'
+import {
+  BREEDING_DOCUMENTATION_CLOSURE_DEFINITION_SHA256,
+  BREEDING_DOCUMENTATION_CLOSURE_V1,
+} from './breedingDocumentationClosure'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const failures: string[] = []
@@ -60,6 +64,25 @@ for (const scenario of BREEDING_PRODUCTION_ACCEPTANCE_PROFILE_V1.scenarios) {
     assert(existsSync(evidencePath), `${scenario.scenarioId} production acceptance evidence is missing`)
     if (existsSync(evidencePath)) {
       assert(readFileSync(evidencePath, 'utf8').includes(evidence.requiredNeedle), `${scenario.scenarioId} production acceptance evidence drifted`)
+    }
+  }
+}
+assert(
+  sha256(stable(BREEDING_DOCUMENTATION_CLOSURE_V1))
+    === BREEDING_DOCUMENTATION_CLOSURE_DEFINITION_SHA256,
+  'breeding documentation closure hash drifted',
+)
+assert(BREEDING_DOCUMENTATION_CLOSURE_V1.ticket === 'BR-088'
+  && BREEDING_DOCUMENTATION_CLOSURE_V1.categories.length === 8
+  && BREEDING_DOCUMENTATION_CLOSURE_V1.runtimeBindings.workshopApiCount === 7,
+'breeding documentation closure profile drifted')
+for (const category of BREEDING_DOCUMENTATION_CLOSURE_V1.categories) {
+  const documentationPath = resolve(ROOT, category.path)
+  assert(existsSync(documentationPath), `${category.categoryId} breeding documentation is missing`)
+  if (existsSync(documentationPath)) {
+    const documentation = readFileSync(documentationPath, 'utf8')
+    for (const heading of category.requiredHeadings) {
+      assert(documentation.includes(heading), `${category.categoryId} breeding documentation heading drifted: ${heading}`)
     }
   }
 }
@@ -1445,6 +1468,12 @@ for (const path of [
   'tests/shared/breedingPerformanceBudgets.test.ts',
   'scripts/breedingProductionAcceptance.ts',
   'tests/server/breedingProductionLikeAcceptance.test.ts',
+  'scripts/breedingDocumentationClosure.ts',
+  'tests/data/breedingDocumentationClosure.test.ts',
+  'docs/breeding/gm-and-player-guide.md',
+  'docs/breeding/api-reference.md',
+  'docs/breeding/data-model-and-campaign-clock.md',
+  'docs/breeding/qa-and-release-guide.md',
   'tests/server/breedingParentDiscovery.test.ts',
   'tests/server/breedingCampaignClockBatch.test.ts',
   'tests/server/breedingWorkshop.test.ts',

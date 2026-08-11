@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: BR-088`
+`CURRENT_TICKET: BR-089`
 
 `BLOCKED_BY: done/ENCOUNTER_UI_UX_PLAN.md — PLAN_STATUS: DONE`
 
@@ -463,7 +463,7 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ## Progress snapshot
 
-- Plan tickets: **87 DONE / 90 total**
+- Plan tickets: **88 DONE / 90 total**
 - Frozen breeding source inventory: **30 hash-bound runtime, contract, product, documentary, and parser records**
 - Recorded ruleset/adjudications: **`ptu-1.05-breeding-v1` / 20 accepted conflict decisions / 15 typed campaign options**
 - Compiled species specs: **862 runtime Species / 407 complete Families**
@@ -701,8 +701,9 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
   - Evidence: Hash-bound release policy `46406165df3222083bff40d85dfcdc1cbc4088c28d1c758db3fc037831a1961d` centralizes deterministic limits for the exact 407-Family/862-Species registry, 4,096 stored/64 projected Trainer and 2,048-candidate preview envelopes, 100-Egg campaign-clock batches, 2 MiB audience/preview projection output, and 4,096-Trainer/100-context/128 KiB Workshop output. Owning runtimes consume the shared constants and reject over-cardinality or oversized canonical UTF-8 output before publication; elapsed gates use monotonic process time only as single-worker release evidence and never as campaign, mechanics, authorization, retry, or randomness authority. Maximum-cardinality registry, preview, batch, projection, and Workshop cases pass inside reviewed 0.75/4/5/2/3-second ceilings, with one-over rejection and 103-file/684-check Breeding regression coverage; the sole pre-ledger checker mismatch passed after synchronized status advancement. Changed-file lint and filtered typecheck report no BR-086-specific errors; the repository-wide typecheck retains its known unrelated baseline.
 - [x] **BR-087 — Run production-like GM/player multi-client, long-timeskip, restart, transfer, and concurrent-hatch acceptance** — `DONE`
   - Evidence: Synthetic production acceptance profile `0c0e565e8da7b01146b61a9ade65ae14c958662a541955a625fa99e5cf87e139` binds five release scenarios to exact executable evidence under file-backed SQLite WAL, independent authenticated GM and selected-Profile player clients, a fresh campaign root, production Nitro at `127.0.0.1:3017`, and desktop/mobile Chromium. The release command passed 34 server checks for simultaneous private views across restart, a 100-Egg long-timeskip prefix and equal-target continuation, strict batch/hatch restart recovery, dual-positive-consent ownership transfer without GM substitution, and one-winner two-connection hatch contention. The production build then passed seven Workshop browser checks with one intentional mobile matrix skip, covering multi-context privacy, selector-only requests, axe, responsive/reduced-motion behavior, reconnect/reload, no duplicate cards, and no private persistence. Checker, focused lint, profile self-hash, evidence-needle, and clean-diff validation pass; only synthetic no-campaign-data inputs were used.
-- [ ] **BR-088 — Complete contributor, operator, GM, player, API, data-model, campaign-clock, and QA documentation** — `IN_PROGRESS`
-- [ ] **BR-089 — Retire manual breeding authority, placeholder child creation, and legacy inheritance mutation paths** — `TODO`
+- [x] **BR-088 — Complete contributor, operator, GM, player, API, data-model, campaign-clock, and QA documentation** — `DONE`
+  - Evidence: Documentation closure `b7c0dc3a22e73767107971694f4fb6d152e834ea5e7d57174a09fe67bea57f01` binds eight required audiences—contributor, operator, GM, player, API, data model, campaign clock, and QA—to reviewed headings, exact runtime vocabularies, all seven Workshop routes, strict request intents, current schema v28, 32 KiB/64 MiB envelopes, 12 Project/seven Egg/four source statuses, 22 commands, five audiences, the 240/DC 12/240 timeline, 100-Egg continuation, dual consent, structural privacy, atomic hatch, archive repair, performance, production acceptance, and final release commands. Four dedicated guides now cover GM/player workflows, HTTP integration, persistence/clock semantics, and QA/release; existing architecture, Workshop, security, contributor, and operator docs were cross-linked and stale planned/count/command claims removed. The six-case executable documentation closure, checker regression, focused lint, local-link validation, and clean-diff validation pass.
+- [ ] **BR-089 — Retire manual breeding authority, placeholder child creation, and legacy inheritance mutation paths** — `IN_PROGRESS`
 - [ ] **BR-090 — Record final acceptance and mark the breeding and Egg lifecycle production-authoritative** — `TODO`
   - Require source and manifest checkers, typecheck, unit/integration/Nuxt/browser/accessibility suites, build, production-like acceptance, backup/restore proof, and `scripts/quality-gate.sh`.
 

@@ -26,7 +26,7 @@ app-owned reference JSON + reviewed breeding artifacts
 - all Egg statuses and four source kinds to the dedicated Egg parser, lifecycle, and repository;
 - all 22 operation commands, 22 outcomes, and 10 conflict-scope kinds to the operation/coordinator boundary;
 - all five base projection audiences and seven Workshop API routes to strict server projection and browser-adoption paths; and
-- all 21 reviewed modifier/provider interaction identities to their owning handoff contracts, pending whole-interaction certification in BR-082.
+- all 21 reviewed modifier/provider interaction identities to their owning handoff contracts and current BR-082 interaction certification.
 
 The semantic registry registers every breeding JSON artifact exactly once. The checker recursively compares that registry with the data directory and rejects extras, omissions, duplicate IDs/paths, hash drift, missing implementation paths, or divergence from exported closed runtime enums. This is declaration closure, not a source of runtime facts and not permission to execute an interaction before its owning reducer certifies it.
 
@@ -59,11 +59,11 @@ The invariant is one writer for every fact; all other integrations are readers o
 | Projection | server audience projector | Vue/CSS filtering |
 | Realtime | durable event log after commit | component or pre-commit publisher |
 
-The full 22-row register, readers, prohibited writers, owner tickets, and existing/planned status are in the JSON map.
+The full 22-row register, readers, prohibited writers, owner tickets, and current implementation status are in the JSON map.
 
 ## Aggregate repositories
 
-Planned dedicated repositories own projects, Eggs, campaign clock, operations, consent, and species acquisition. The existing sheet repository remains the only Trainer/Pokémon sheet store. Eggs do not add a sheet kind.
+Dedicated repositories own Projects, Eggs, campaign clock, operations, consent, and Species acquisition. The existing sheet repository remains the only Trainer/Pokémon sheet store. Eggs do not add a sheet kind.
 
 Repository methods accept a caller-owned SQLite connection when participating in a larger transaction. A use case, not a repository helper, owns the transaction boundary and complete read set.
 
