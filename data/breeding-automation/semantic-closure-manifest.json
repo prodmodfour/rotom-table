@@ -1,0 +1,273 @@
+{
+  "schemaVersion": 1,
+  "manifestId": "ptu-1.05-breeding-semantic-closure-v1",
+  "rulesetId": "ptu-1.05-breeding-v1",
+  "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
+  "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
+  "definitionSha256": "2987a0fc5ec0d6876a7c9ed79a9b07136c7d5b92ca155785aceeaa003723f470",
+  "definition": {
+    "ticket": "BR-080",
+    "status": "strict-closed",
+    "semanticRegistry": {
+      "registryId": "breeding-semantic-registry-v1",
+      "expectedArtifactCountIncludingThisManifest": 101,
+      "dataDirectoryPolicy": "every-json-file-exactly-once-registered-except-registry-self",
+      "duplicateArtifactIdPolicy": "reject",
+      "duplicateArtifactPathPolicy": "reject",
+      "unknownArtifactPolicy": "reject",
+      "missingArtifactPolicy": "reject",
+      "hashDriftPolicy": "reject"
+    },
+    "breedingSpecs": {
+      "schemaId": "ptu-1.05-breeding-spec-schemas-v1",
+      "schemaDefinitionSha256": "a47dbd490e0485ce1adef9a823a9d76c27c12496e56c72dbfdd2f0f7bdb6163e",
+      "compiledRegistryId": "ptu-1.05-breeding-compiled-registry-v1",
+      "compiledRegistryDefinitionSha256": "9dbed65a2270afccef8b35f523e7ab4e5d35bb67f66529fc2e78102f0f7f673e",
+      "familyCount": 407,
+      "speciesCount": 862,
+      "producibleSpeciesCount": 861,
+      "runtimeParsers": [
+        "parseCanonicalBreedingFamilySpecV1",
+        "parseCanonicalBreedingSpeciesSpecV1"
+      ],
+      "runtimePaths": [
+        "shared/breeding/specs.ts",
+        "server/domain/breeding/specSchemaContext.ts",
+        "server/domain/breeding/registry.ts",
+        "server/domain/breeding/compiler.ts"
+      ],
+      "artifactIds": [
+        "spec-schemas",
+        "compiler-definition",
+        "family-resolutions",
+        "compiled-registry",
+        "compiler-validation-report"
+      ],
+      "unknownOrIncompleteSpecPolicy": "fail-closed-not-emitted"
+    },
+    "projects": {
+      "contractId": "ptu-1.05-breeding-project-document-v1",
+      "contractDefinitionSha256": "89c077b9852f64d80b1c5fb3d920d04609c04f55acb0906f291bba8217c67d4e",
+      "schemaVersion": 1,
+      "statuses": [
+        "draft",
+        "awaiting-parent-consent",
+        "initial-time-in-progress",
+        "check-ready",
+        "additional-time-in-progress",
+        "ready-to-produce",
+        "egg-produced",
+        "check-failed",
+        "cancelled",
+        "expired",
+        "abandoned",
+        "conflicted"
+      ],
+      "runtimePaths": [
+        "shared/breeding/project.ts",
+        "server/domain/breeding/projectLifecycle.ts",
+        "server/storage/breedingProjectRepository.ts"
+      ],
+      "artifactIds": [
+        "breeding-project-contract",
+        "breeding-project-setup-validation-contract",
+        "breeding-project-initial-progress-contract",
+        "breeding-project-check-contract",
+        "breeding-project-additional-progress-contract",
+        "breeding-lifecycle-recovery-contract"
+      ],
+      "parallelAggregateAuthority": "forbidden"
+    },
+    "eggs": {
+      "contractId": "ptu-1.05-pokemon-egg-document-v1",
+      "contractDefinitionSha256": "c9f659633235009e82e13fd1f98a7a3883a5484a3db53fb3eae73083470d36b2",
+      "schemaVersion": 1,
+      "statuses": [
+        "incubating",
+        "ready",
+        "awaiting-special-adjudication",
+        "hatching",
+        "hatched",
+        "cancelled",
+        "invalidated-by-gm"
+      ],
+      "sourceKinds": [
+        "breeding",
+        "fossil",
+        "gm",
+        "feature-artificial"
+      ],
+      "runtimePaths": [
+        "shared/breeding/egg.ts",
+        "server/domain/breeding/eggLifecycle.ts",
+        "server/storage/pokemonEggRepository.ts"
+      ],
+      "artifactIds": [
+        "pokemon-egg-contract",
+        "breeding-egg-production-contract",
+        "breeding-incubation-contract",
+        "breeding-egg-lifecycle-policy-contract",
+        "breeding-hatch-offer-contract",
+        "breeding-hatch-special-contract",
+        "breeding-hatch-completion-contract"
+      ],
+      "preHatchSheetInventoryOrMapAuthority": "forbidden"
+    },
+    "operations": {
+      "contractId": "ptu-1.05-breeding-operation-contract-v1",
+      "contractDefinitionSha256": "391eacdd340d44249755e0db6911b8de4068dee17ce9fa3ff03d3ba736f8739c",
+      "schemaVersion": 1,
+      "commandKinds": [
+        "preview-breeding",
+        "create-breeding-project",
+        "grant-breeding-consent",
+        "revoke-breeding-consent",
+        "advance-breeding-project-time",
+        "resolve-breeding-check",
+        "produce-egg",
+        "cancel-breeding-project",
+        "create-source-egg",
+        "transfer-egg",
+        "settle-egg-transfer-consent",
+        "advance-egg-incubation",
+        "set-egg-incubation-pause",
+        "apply-egg-warmer-capability",
+        "mark-egg-ready",
+        "begin-hatch",
+        "resolve-hatch-special",
+        "complete-hatch",
+        "cancel-egg",
+        "advance-campaign-clock",
+        "record-inheritance-learning",
+        "recover-breeding-operation"
+      ],
+      "outcomeCount": 22,
+      "scopeCount": 10,
+      "runtimePaths": [
+        "shared/breeding/operations.ts",
+        "server/domain/breeding/operations.ts",
+        "server/storage/breedingOperationRepository.ts",
+        "server/useCases/executeBreedingTransaction.ts"
+      ],
+      "artifactIds": [
+        "breeding-operation-contract",
+        "breeding-ledger-contract",
+        "breeding-read-set-contract",
+        "breeding-authorization-contract",
+        "campaign-operation-ledger-contract",
+        "breeding-transaction-coordinator-contract"
+      ],
+      "unparameterizedOrUnknownCommandPolicy": "reject"
+    },
+    "projections": {
+      "contractId": "ptu-1.05-breeding-presentation-projections-v1",
+      "contractDefinitionSha256": "86816da9419b5392f5a6122ccf982d7ed7587c027896ef19f3fe2efba33af812",
+      "audiences": [
+        "diagnostic",
+        "gm",
+        "owner",
+        "participating-owner",
+        "public"
+      ],
+      "apiRoutes": [
+        "/api/breeding/consent",
+        "/api/breeding/hatch",
+        "/api/breeding/projects/wizard",
+        "/api/breeding/projects/wizard/choices",
+        "/api/breeding/projects/wizard/guidance",
+        "/api/breeding/workshop",
+        "/api/breeding/workshop/activity"
+      ],
+      "apiRouteFiles": [
+        "server/api/breeding/consent.post.ts",
+        "server/api/breeding/hatch.post.ts",
+        "server/api/breeding/projects/wizard.post.ts",
+        "server/api/breeding/projects/wizard/choices.post.ts",
+        "server/api/breeding/projects/wizard/guidance.post.ts",
+        "server/api/breeding/workshop.get.ts",
+        "server/api/breeding/workshop/activity.get.ts"
+      ],
+      "runtimePaths": [
+        "shared/breeding/projections.ts",
+        "server/domain/breeding/projections.ts",
+        "shared/breeding/workshop.ts",
+        "shared/breeding/workshopActivity.ts",
+        "shared/breeding/consentWorkflow.ts",
+        "shared/breeding/hatchWorkflow.ts"
+      ],
+      "artifactIds": [
+        "breeding-projection-contract",
+        "breeding-workshop-presentation-contract",
+        "breeding-project-wizard-presentation-contract",
+        "breeding-project-guidance-presentation-contract",
+        "breeding-project-choices-presentation-contract",
+        "breeding-workshop-activity-presentation-contract",
+        "breeding-hatch-workflow-presentation-contract",
+        "breeding-hatch-destination-presentation-contract",
+        "breeding-consent-workflow-presentation-contract",
+        "breeding-workshop-interaction-acceptance",
+        "breeding-workshop-browser-acceptance"
+      ],
+      "clientHashOrShapeDriftPolicy": "reject-and-clear-stale-view"
+    },
+    "interactions": {
+      "inventoryId": "ptu-1.05-breeding-modifier-inventory-v1",
+      "inventoryDefinitionSha256": "24bb20a9d61003f540f6b410df3b0919ee49233012e45ec2dd14bfc9ed5c2dd9",
+      "entryCount": 21,
+      "entryIds": [
+        "trainer-edge:Breeder",
+        "trainer-edge:Paleontologist",
+        "feature:Dilettante",
+        "feature:Egg Tutor",
+        "feature:Playing God",
+        "feature:Fossil Restoration",
+        "feature:Ancient Heritage",
+        "feature:Genetic Memory",
+        "feature:Prehistoric Bond",
+        "feature:This One’s Special, I Know It",
+        "feature:Tutoring",
+        "item:Egg Warmer",
+        "item:Reanimation Machine",
+        "item:Chemistry Set",
+        "ability:Serpent’s Mark",
+        "ability:Parental Bond",
+        "capability:Egg Warmer",
+        "capability:Marsupial",
+        "rule:Tutor Points",
+        "rule:Loyalty",
+        "rule:3-TM/Tutor Move Limit"
+      ],
+      "runtimePaths": [
+        "server/domain/breeding/breederEdgeHandoff.ts",
+        "server/domain/breeding/featureProviderHandoff.ts",
+        "server/domain/breeding/modifierProviderHandoff.ts",
+        "server/domain/breeding/fossilEgg.ts",
+        "server/domain/breeding/babyTemplate.ts",
+        "server/domain/breeding/inheritanceLearning.ts"
+      ],
+      "artifactIds": [
+        "modifier-inventory",
+        "breeding-breeder-edge-handoff-contract",
+        "breeding-feature-provider-handoff-contract",
+        "breeding-modifier-provider-handoff-contract",
+        "breeding-fossil-egg-contract",
+        "breeding-baby-template-contract",
+        "breeding-inheritance-learning-contract"
+      ],
+      "certificationOwner": "BR-082",
+      "closureMeaning": "every-reviewed-interaction-is-declared-exactly-once-not-yet-a-release-certification",
+      "unknownInteractionPolicy": "fail-closed-unavailable"
+    },
+    "invariants": [
+      "all-manifest-arrays-bounded-ordered-and-unique",
+      "all-runtime-and-artifact-paths-exist",
+      "all-artifact-ids-resolve-exactly-once",
+      "runtime-closed-enums-equal-manifest-values-exactly",
+      "contract-identities-and-definition-hashes-match",
+      "compiled-spec-counts-and-hashes-match",
+      "modifier-inventory-identities-match-exactly",
+      "browser-or-sheet-fields-never-establish-authority",
+      "unknown-unregistered-or-duplicate-semantics-fail-closed"
+    ]
+  }
+}

@@ -33,8 +33,9 @@ export const POKEMON_EGG_ACTIVE_STATUSES = Object.freeze([
 ] as const)
 export const POKEMON_EGG_SETTLED_STATUSES = Object.freeze(['hatched', 'cancelled', 'invalidated-by-gm'] as const)
 export const POKEMON_EGG_TERMINAL_NON_HATCH_STATUSES = Object.freeze(['cancelled', 'invalidated-by-gm'] as const)
+export const POKEMON_EGG_SOURCE_KINDS = Object.freeze(['breeding', 'fossil', 'gm', 'feature-artificial'] as const)
 export type PokemonEggStatus = typeof POKEMON_EGG_STATUSES[number]
-export type PokemonEggSourceKind = 'breeding' | 'fossil' | 'gm' | 'feature-artificial'
+export type PokemonEggSourceKind = typeof POKEMON_EGG_SOURCE_KINDS[number]
 export type PokemonEggGenderId = 'female' | 'male' | 'genderless'
 export type PokemonEducationRank = 'Untrained' | 'Novice' | 'Adept' | 'Expert' | 'Master'
 export const POKEMON_EGG_GM_PROVENANCE_KINDS = Object.freeze(['gm-authored','mysterious','campaign-gift','imported'] as const)

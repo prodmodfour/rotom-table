@@ -1,7 +1,11 @@
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { join, relative, resolve } from 'node:path'
+import { POKEMON_EGG_SOURCE_KINDS, POKEMON_EGG_STATUSES } from '../shared/breeding/egg'
+import { BREEDING_OPERATION_COMMAND_KINDS, BREEDING_OPERATION_OUTCOME_KINDS, BREEDING_OPERATION_SCOPE_KINDS } from '../shared/breeding/operations'
+import { BREEDING_PROJECT_STATUSES } from '../shared/breeding/project'
+import { BREEDING_PROJECTION_AUDIENCES } from '../shared/breeding/projections'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const failures: string[] = []
@@ -19,6 +23,12 @@ const stable = (value: unknown): string => {
 }
 const json = <T>(path: string): T => JSON.parse(readFileSync(resolve(ROOT, path), 'utf8')) as T
 const hashObject = (path: string): string => execFileSync('git', ['hash-object', path], { cwd: ROOT, encoding: 'utf8' }).trim()
+const recursivelyListJson = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+  .flatMap(entry => entry.isDirectory()
+    ? recursivelyListJson(join(directory, entry.name))
+    : entry.isFile() && entry.name.endsWith('.json') ? [join(directory, entry.name)] : [])
+  .map(path => relative(ROOT, path).replaceAll('\\', '/'))
+  .sort()
 
 interface ArtifactRecord {
   id: string
@@ -123,6 +133,7 @@ assert(registry.schemaVersion === 1 && registry.registryId === 'breeding-semanti
 assert(sha256(stable(registry.definition)) === registry.definitionSha256, 'semantic registry definition hash drifted')
 assert(registry.definition.planTicketPrefix === 'BR-' && registry.definition.planTicketCount === 90, 'semantic registry plan contract drifted')
 assert(new Set(registry.definition.artifacts.map(artifact => artifact.id)).size === registry.definition.artifacts.length, 'semantic registry artifact IDs are duplicated')
+assert(new Set(registry.definition.artifacts.map(artifact => artifact.path)).size === registry.definition.artifacts.length, 'semantic registry artifact paths are duplicated')
 const registeredArtifactKinds = new Set(registry.definition.vocabularies.artifactKinds)
 
 for (const artifact of registry.definition.artifacts) {
@@ -142,6 +153,13 @@ for (const artifact of registry.definition.artifacts) {
   }
   else assert(artifact.binding === 'live-validation', `${artifact.id} has an unknown binding`)
 }
+const registeredBreedingJsonPaths = registry.definition.artifacts
+  .map(artifact => artifact.path)
+  .filter(path => path.startsWith('data/breeding-automation/') && path.endsWith('.json'))
+  .concat('data/breeding-automation/semantic-registry.json')
+  .sort()
+const actualBreedingJsonPaths = recursivelyListJson(resolve(ROOT, 'data/breeding-automation'))
+assert(JSON.stringify(actualBreedingJsonPaths) === JSON.stringify(registeredBreedingJsonPaths), 'breeding data directory contains an unregistered, duplicate, or missing JSON artifact')
 
 const sourceManifestPath = 'data/breeding-automation/source-manifest.json'
 const sourceManifest = json<SourceManifest>(sourceManifestPath)
@@ -732,6 +750,67 @@ assert(compilerReport.summary?.compiledSpeciesCount === compiledRegistry.species
 assert(compilerReport.summary?.compiledSpeciesCount + compilerReport.summary?.excludedSpeciesCount === 1_149, 'breeding compiler inclusion closure drifted')
 assert(Array.isArray(compilerReport.diagnostics) && compilerReport.summary?.errorCount + compilerReport.summary?.warningCount === compilerReport.diagnostics.length, 'breeding compiler diagnostic counts drifted')
 assert(compilerReport.diagnostics.every((diagnostic: Record<string, unknown>) => !Object.hasOwn(diagnostic, 'rawValue')), 'breeding compiler diagnostics expose raw values')
+
+const semanticClosure = json<Record<string, any>>('data/breeding-automation/semantic-closure-manifest.json')
+assert(semanticClosure.manifestId === 'ptu-1.05-breeding-semantic-closure-v1'
+  && semanticClosure.rulesetDefinitionSha256 === ruleset.definitionSha256
+  && semanticClosure.sourceManifestSha256 === sourceManifestSha256
+  && semanticClosure.definition?.ticket === 'BR-080'
+  && semanticClosure.definition?.status === 'strict-closed', 'breeding semantic-closure manifest identity drifted')
+assert(semanticClosure.definition?.semanticRegistry?.registryId === registry.registryId
+  && semanticClosure.definition?.semanticRegistry?.expectedArtifactCountIncludingThisManifest === registry.definition.artifacts.length
+  && semanticClosure.definition?.semanticRegistry?.dataDirectoryPolicy === 'every-json-file-exactly-once-registered-except-registry-self', 'breeding semantic-registry closure policy drifted')
+const specClosure = semanticClosure.definition?.breedingSpecs
+assert(specClosure?.schemaDefinitionSha256 === json<Record<string, any>>('data/breeding-automation/spec-schemas.json').definitionSha256
+  && specClosure?.compiledRegistryDefinitionSha256 === compiledRegistry.definitionSha256
+  && specClosure?.familyCount === compiledRegistry.familySpecs.length
+  && specClosure?.speciesCount === compiledRegistry.speciesSpecs.length
+  && specClosure?.producibleSpeciesCount === compiledRegistry.speciesSpecs.filter((row: any) => row.speciesId !== 'ditto').length
+  && JSON.stringify(specClosure?.runtimeParsers) === JSON.stringify(['parseCanonicalBreedingFamilySpecV1', 'parseCanonicalBreedingSpeciesSpecV1']), 'breeding Species/Family manifest closure drifted')
+const projectDocumentContract = json<Record<string, any>>('data/breeding-automation/project-contract.json')
+const projectClosure = semanticClosure.definition?.projects
+assert(projectClosure?.contractId === projectDocumentContract.contractId
+  && projectClosure?.contractDefinitionSha256 === projectDocumentContract.definitionSha256
+  && JSON.stringify(projectClosure?.statuses) === JSON.stringify(BREEDING_PROJECT_STATUSES), 'breeding Project manifest closure drifted')
+const eggDocumentContract = json<Record<string, any>>('data/breeding-automation/egg-contract.json')
+const eggClosure = semanticClosure.definition?.eggs
+assert(eggClosure?.contractId === eggDocumentContract.contractId
+  && eggClosure?.contractDefinitionSha256 === eggDocumentContract.definitionSha256
+  && JSON.stringify(eggClosure?.statuses) === JSON.stringify(POKEMON_EGG_STATUSES)
+  && JSON.stringify(eggClosure?.sourceKinds) === JSON.stringify(POKEMON_EGG_SOURCE_KINDS)
+  && eggClosure?.preHatchSheetInventoryOrMapAuthority === 'forbidden', 'Pokémon Egg manifest closure drifted')
+const operationDocumentContract = json<Record<string, any>>('data/breeding-automation/operation-contract.json')
+const operationClosure = semanticClosure.definition?.operations
+assert(operationClosure?.contractId === operationDocumentContract.contractId
+  && operationClosure?.contractDefinitionSha256 === operationDocumentContract.definitionSha256
+  && JSON.stringify(operationClosure?.commandKinds) === JSON.stringify(BREEDING_OPERATION_COMMAND_KINDS)
+  && JSON.stringify(operationClosure?.commandKinds) === JSON.stringify(operationDocumentContract.definition?.command?.commandKinds)
+  && operationClosure?.outcomeCount === BREEDING_OPERATION_OUTCOME_KINDS.length
+  && operationClosure?.scopeCount === BREEDING_OPERATION_SCOPE_KINDS.length, 'breeding operation manifest closure drifted')
+const projectionDocumentContract = json<Record<string, any>>('data/breeding-automation/projection-contract.json')
+const projectionClosure = semanticClosure.definition?.projections
+assert(projectionClosure?.contractId === projectionDocumentContract.contractId
+  && projectionClosure?.contractDefinitionSha256 === projectionDocumentContract.definitionSha256
+  && JSON.stringify(projectionClosure?.audiences) === JSON.stringify(BREEDING_PROJECTION_AUDIENCES)
+  && JSON.stringify(projectionClosure?.audiences) === JSON.stringify(projectionDocumentContract.definition?.audiences)
+  && projectionClosure?.clientHashOrShapeDriftPolicy === 'reject-and-clear-stale-view', 'breeding projection manifest closure drifted')
+const interactionClosure = semanticClosure.definition?.interactions
+assert(interactionClosure?.inventoryId === modifierInventoryContract.inventoryId
+  && interactionClosure?.inventoryDefinitionSha256 === modifierInventoryContract.definitionSha256
+  && interactionClosure?.entryCount === modifierInventoryContract.entryCount
+  && JSON.stringify(interactionClosure?.entryIds) === JSON.stringify(modifierInventoryContract.definition?.entries?.map((row: any) => row.id))
+  && interactionClosure?.unknownInteractionPolicy === 'fail-closed-unavailable', 'breeding interaction manifest closure drifted')
+const registeredArtifactIds = new Set(registry.definition.artifacts.map(artifact => artifact.id))
+const closureSections = [specClosure, projectClosure, eggClosure, operationClosure, projectionClosure, interactionClosure]
+assert(closureSections.every(section => Array.isArray(section?.artifactIds)
+  && section.artifactIds.length === new Set(section.artifactIds).size
+  && section.artifactIds.every((id: string) => registeredArtifactIds.has(id))), 'breeding semantic-closure artifact binding is missing, duplicated, or unknown')
+const closureRuntimePaths = closureSections.flatMap(section => section?.runtimePaths ?? []).concat(projectionClosure?.apiRouteFiles ?? [])
+assert(closureRuntimePaths.length === new Set(closureRuntimePaths).size
+  && closureRuntimePaths.every((path: string) => typeof path === 'string' && existsSync(resolve(ROOT, path))), 'breeding semantic-closure runtime path is missing or duplicated')
+assert(Array.isArray(projectionClosure?.apiRoutes) && projectionClosure.apiRoutes.length === 7
+  && projectionClosure.apiRoutes.length === projectionClosure.apiRouteFiles.length
+  && new Set(projectionClosure.apiRoutes).size === projectionClosure.apiRoutes.length, 'breeding projection API manifest is incomplete or duplicated')
 
 const planPath = existsSync(resolve(ROOT, registry.definition.activePlanPath))
   ? registry.definition.activePlanPath

@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: BR-080`
+`CURRENT_TICKET: BR-081`
 
 `BLOCKED_BY: done/ENCOUNTER_UI_UX_PLAN.md — PLAN_STATUS: DONE`
 
@@ -463,7 +463,7 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ## Progress snapshot
 
-- Plan tickets: **79 DONE / 90 total**
+- Plan tickets: **80 DONE / 90 total**
 - Frozen breeding source inventory: **30 hash-bound runtime, contract, product, documentary, and parser records**
 - Recorded ruleset/adjudications: **`ptu-1.05-breeding-v1` / 20 accepted conflict decisions / 15 typed campaign options**
 - Compiled species specs: **862 runtime Species / 407 complete Families**
@@ -491,7 +491,8 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 - Successful exactly-once hatch scenarios: **2 focused box/team destination scenarios**
 - Feature/Edge interaction certification: **direct and current Dilettante-granted `Breeder` handoffs active; nine Feature providers emit strict typed checkpoint evidence; facilities remain fail-closed**
 - Fossil-created Eggs: **current GM source designation, Paleontologist/Skill/Reanimation Machine authority, bounded Level-10 blueprint traits, Restoration/Bond child effects, atomic source consumption, and shared incubation/hatch pipeline active**
-- Workshop UI and accessibility acceptance: **campaign route, role-projected ownership directory, verified Project wizard/choices, owner/GM Project and Egg cards, private cross-owner Project and Egg-transfer consent, role-projected hatch decisions, current team/Box capacity choices, bounded GM special review, atomic accepted linkage, child/Trainer navigation, recovery, and exact-replay choreography active; component interaction acceptance active; real-browser certification pending**
+- Workshop UI and accessibility acceptance: **campaign route, role-projected ownership directory, verified Project wizard/choices, owner/GM Project and Egg cards, private cross-owner Project and Egg-transfer consent, role-projected hatch decisions, current team/Box capacity choices, bounded GM special review, atomic accepted linkage, child/Trainer navigation, recovery, exact-replay choreography, component interaction acceptance, and production-browser/Nuxt/axe/privacy certification active**
+- Semantic closure: **101 registered breeding artifacts; 407 Family/862 Species specs, 12 Project statuses, 7 Egg statuses/4 sources, 22 commands/outcomes, 10 scopes, 5 audiences/7 Workshop APIs, and 21 interaction identities fail closed on drift**
 - Legacy breeding authority retired: **no**
 - Blocking dependency: **none; Encounter UI/UX is complete and archived**
 
@@ -682,8 +683,9 @@ No Vue component may create privacy by merely hiding fields from a shared over-b
 
 ### Phase 9 — Whole-system certification, migration, observability, and release
 
-- [ ] **BR-080 — Enforce strict breeding-spec, project, Egg, operation, projection, and interaction manifest closure** — `IN_PROGRESS`
-- [ ] **BR-081 — Run whole-species compatibility, family, trait, inheritance, hatch, and ruleset conformance suites** — `TODO`
+- [x] **BR-080 — Enforce strict breeding-spec, project, Egg, operation, projection, and interaction manifest closure** — `DONE`
+  - Evidence: Semantic-closure manifest `2987a0fc5ec0d6876a7c9ed79a9b07136c7d5b92ca155785aceeaa003723f470` and registry `d4705726173c27e40d42fa931b6a87ddee4b54c7fc3a0990baef4982ea8122fd` close all six declared dimensions without becoming a second runtime authority. The checker recursively requires every `data/breeding-automation/**/*.json` artifact exactly once among 101 registry rows (except the registry self), rejects duplicate IDs/paths and hash drift, and verifies every manifest artifact and implementation path. Runtime equality binds all 407 Families/862 Species, 12 Project statuses, seven Egg statuses/four source kinds, 22 command/outcome kinds, 10 conflict scopes, five base audiences, seven Workshop APIs, and all 21 reviewed interaction IDs to their strict exported enums and owning contract hashes. Unknown/incomplete specs, commands, interactions, files, routes, paths, or client shape/hash drift fail closed; interaction declaration remains separate from BR-082 mechanics certification. Forty-three focused compiler/aggregate/operation/projection/checker closure checks pass, changed-file lint and checker pass, and all five semantic-registry-bound authority fixtures were rehashed transitively.
+- [ ] **BR-081 — Run whole-species compatibility, family, trait, inheritance, hatch, and ruleset conformance suites** — `IN_PROGRESS`
 - [ ] **BR-082 — Certify Edge, Feature, item, Ability, capability, move, form, fossil, Baby Template, and campaign-clock interactions** — `TODO`
 - [ ] **BR-083 — Complete transaction failure injection, concurrency, idempotency, correction, abandonment, and disaster-recovery validation** — `TODO`
 - [ ] **BR-084 — Complete authorization, consent, privacy, information-flow, malformed-input, and abuse testing** — `TODO`

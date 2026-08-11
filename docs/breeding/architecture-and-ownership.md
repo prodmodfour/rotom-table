@@ -17,6 +17,19 @@ app-owned reference JSON + reviewed breeding artifacts
   -> audience-specific Workshop projection + refresh-only realtime
 ```
 
+## Strict semantic closure
+
+`data/breeding-automation/semantic-closure-manifest.json` is the executable BR-080 inventory above the individual contracts. It binds:
+
+- all 407 compiled Families and 862 Species specs to the strict schema and compiled registry;
+- all Project statuses to the one Project parser, lifecycle, and repository;
+- all Egg statuses and four source kinds to the dedicated Egg parser, lifecycle, and repository;
+- all 22 operation commands, 22 outcomes, and 10 conflict-scope kinds to the operation/coordinator boundary;
+- all five base projection audiences and seven Workshop API routes to strict server projection and browser-adoption paths; and
+- all 21 reviewed modifier/provider interaction identities to their owning handoff contracts, pending whole-interaction certification in BR-082.
+
+The semantic registry registers every breeding JSON artifact exactly once. The checker recursively compares that registry with the data directory and rejects extras, omissions, duplicate IDs/paths, hash drift, missing implementation paths, or divergence from exported closed runtime enums. This is declaration closure, not a source of runtime facts and not permission to execute an interaction before its owning reducer certifies it.
+
 ## Fact owners
 
 The invariant is one writer for every fact; all other integrations are readers or prohibited writers.

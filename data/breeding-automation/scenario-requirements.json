@@ -4,9 +4,9 @@
   "planPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
   "requirementCount": 90,
   "coverageCounts": {
-    "covered": 79,
+    "covered": 80,
     "in-progress": 1,
-    "planned": 10,
+    "planned": 9,
     "blocked": 0
   },
   "requirements": [
@@ -2012,9 +2012,31 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "in-progress",
-      "evidencePaths": [],
-      "acceptanceFixtureIds": []
+      "coverageStatus": "covered",
+      "evidencePaths": [
+        "data/breeding-automation/semantic-closure-manifest.json",
+        "data/breeding-automation/semantic-registry.json",
+        "scripts/check_breeding_automation.ts",
+        "shared/breeding/project.ts",
+        "shared/breeding/egg.ts",
+        "shared/breeding/operations.ts",
+        "shared/breeding/projections.ts",
+        "tests/data/breedingSemanticClosure.test.ts",
+        "tests/scripts/breedingAutomationChecker.test.ts",
+        "tests/server/breedingCompiler.test.ts",
+        "tests/server/breedingPersistenceConformance.test.ts",
+        "tests/shared/breedingProjectContract.test.ts",
+        "tests/shared/pokemonEggContract.test.ts",
+        "tests/shared/breedingOperationContract.test.ts",
+        "tests/shared/breedingProjectionContract.test.ts",
+        "docs/breeding/architecture-and-ownership.md",
+        "docs/breeding/contributor-guide.md",
+        "docs/breeding/operator-guide.md"
+      ],
+      "acceptanceFixtureIds": [
+        "breeding-standard-compatible-project-v1",
+        "breeding-hatch-recovery-privacy-history-v1"
+      ]
     },
     {
       "id": "breeding:BR-081",
@@ -2026,7 +2048,7 @@
         "acceptance-test",
         "recovery-or-concurrency-test"
       ],
-      "coverageStatus": "planned",
+      "coverageStatus": "in-progress",
       "evidencePaths": [],
       "acceptanceFixtureIds": []
     },

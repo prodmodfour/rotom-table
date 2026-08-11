@@ -40,6 +40,21 @@ Do not use web search to establish PTU identities, inventories, rule text, or me
 - Emit diagnostics for every excluded input; never silently repair it.
 - Add focused boundary and property tests.
 
+## Semantic manifest closure
+
+`data/breeding-automation/semantic-closure-manifest.json` closes the six runtime dimensions owned by BR-080: compiled breeding specs, Projects, Eggs, operations, projections, and reviewed interactions. It does not replace the semantic registry; it binds each dimension to the exact runtime enums, contract hashes, artifact IDs, implementation paths, and current counts.
+
+Every JSON file below `data/breeding-automation/` must be registered exactly once in `semantic-registry.json`, except that registry's own file. Adding an unregistered file, duplicate path, unknown command/status/audience/source kind, missing runtime path, or unclassified modifier must make `npm run check:breeding-automation` fail. When intentionally extending a closed dimension:
+
+1. add or change the strict runtime contract and parser first;
+2. update the owning artifact and all transitive definition hashes;
+3. update the closure manifest's exact enum, path, count, and artifact bindings;
+4. register the artifact exactly once;
+5. rehash semantic-registry-bound fixtures from the dependency leaves upward; and
+6. add a focused closure regression before advancing the ledger.
+
+Do not weaken the checker with an ignore pattern or generic `other` value. BR-080 closure proves complete declaration, while BR-082 separately certifies each declared interaction's mechanics.
+
 ## Adding a provider
 
 1. Add the canonical provider to `modifier-inventory.json` with exact record and mechanic-field hashes.

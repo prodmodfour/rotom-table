@@ -74,12 +74,14 @@ The non-strict checker verifies:
 - all frozen source bytes, SHA-256 values, and Git blobs;
 - ruleset and dependent definition-hash links;
 - closed source adjudications;
+- exact 101-artifact semantic registry closure with no unregistered or duplicate breeding JSON;
+- BR-080 equality between compiled specs, Project/Egg enums, operation kinds, projection audiences/routes, the 21-entry interaction inventory, and their runtime paths;
 - plan/current-ticket/progress consistency;
 - scenario coverage state and dependency gates;
 - synthetic fixture privacy and canonical species references;
 - required checker and evidence artifacts.
 
-A hash failure is not repaired by editing the expected hash alone. Determine whether the source change is intended, review its semantic impact, create or update the source-bound migration/adjudication, then update every dependent definition and test.
+A hash failure is not repaired by editing the expected hash alone. Determine whether the source change is intended, review its semantic impact, create or update the source-bound migration/adjudication, then update every dependent definition and test. An unregistered-file or enum-closure failure likewise cannot be waived: either remove the unintended artifact/value or add its strict contract, runtime owner, closure-manifest entry, semantic-registry row, dependency hashes, and focused evidence.
 
 ## Source-gap handling
 
