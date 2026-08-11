@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "registryId": "breeding-semantic-registry-v1",
-  "definitionSha256": "a1ca55f8d6dea965d05f2325db225e07fc851e46ec0e7c8d963f6cddbcc5bda9",
+  "definitionSha256": "244be767083c8cbc8e339885c4574ef0cd3b4a018bfd2add2385891a20bd80d7",
   "definition": {
     "activePlanPath": "implementation-plans/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
     "donePlanPath": "implementation-plans/done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md",
@@ -829,7 +829,7 @@
         "kind": "report",
         "binding": "definition-field",
         "definitionHashField": "definitionSha256",
-        "expectedDefinitionSha256": "a7b29238b78706703abc5887a2e282f3bce3d71723ae37c1350773c75f05f415"
+        "expectedDefinitionSha256": "32136ba9113e19e6892de8209f941ea5e81093cd4df51ab32cd70bd4e76328a1"
       },
       {
         "id": "breeding-semantic-closure-manifest",

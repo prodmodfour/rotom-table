@@ -4,7 +4,7 @@
   "rulesetId": "ptu-1.05-breeding-v1",
   "rulesetDefinitionSha256": "ab778e2ca678e8f823b78c2f2bec883ec6796b730d4996e24e5c07d40f6fea02",
   "sourceManifestSha256": "fddf4a3cb4a3806eab4e65b6b8090a0cc42beb261353060b8d9492806d965bb7",
-  "definitionSha256": "a7b29238b78706703abc5887a2e282f3bce3d71723ae37c1350773c75f05f415",
+  "definitionSha256": "32136ba9113e19e6892de8209f941ea5e81093cd4df51ab32cd70bd4e76328a1",
   "definition": {
     "ticket": "BR-079",
     "context": "Workshop",
@@ -146,11 +146,11 @@
       "baselines": [
         {
           "path": "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-chromium-linux.png",
-          "contentSha256": "40dd9f00f339dab4717a296243272828d16f9b5b71b7927beded9442813a929d"
+          "contentSha256": "aca3f821761ad55e027512dc76aaf8efe3bc97a7de62c6c6c0c0b00c580423df"
         },
         {
           "path": "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-mobile-chromium-linux.png",
-          "contentSha256": "20e45808b9dd5af2548410790d5db7354a6973d757dd841dc3a8df7be547a9be"
+          "contentSha256": "e33635203711752c6f4f2808b14d9a214241e66e5e65774d96dcd601ecb817df"
         },
         {
           "path": "tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-hatch-decision-chromium-linux.png",
