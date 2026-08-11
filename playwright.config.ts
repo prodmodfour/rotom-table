@@ -1,9 +1,4 @@
-import { existsSync } from 'node:fs'
 import { defineConfig, devices } from '@playwright/test'
-
-const localChrome = !process.env.CI && existsSync('/usr/bin/google-chrome')
-  ? '/usr/bin/google-chrome'
-  : undefined
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -16,8 +11,9 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:3017',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    // Keep screenshot authority on Playwright's package-pinned Chromium locally
+    // and in CI; an independently updated system Chrome changes font metrics.
     video: process.env.CI ? 'retain-on-failure' : 'off',
-    ...(localChrome ? { launchOptions: { executablePath: localChrome } } : {}),
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
