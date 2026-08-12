@@ -11,3 +11,4 @@ The plans are implemented in the following dependency order. Each plan's own led
 | 5 | [Feature Automation](done/FEATURE_AUTOMATION_PLAN.md) | `DONE` | Complete and archived: 444 native-complete Features across 30 reviewed cohorts. |
 | 6 | [Encounter UI and UX](done/ENCOUNTER_UI_UX_PLAN.md) | `DONE` | Complete and archived: role-projected cockpit, Encounter Documents and Builder, tactical lens, Director workflows, accessibility, performance, rollout, and aggregate-only UX metrics. |
 | 7 | [Breeding and Egg Lifecycle](done/BREEDING_AND_EGG_LIFECYCLE_PLAN.md) | `DONE` | Complete and archived: production-authoritative Breeding Workshop, durable Egg lifecycle, exact-replay mechanics, migration/recovery, accessibility, and release certification across all 90 tickets. |
+| 8 | [Complete Play Loop](COMPLETE_PLAY_LOOP_PLAN.md) | `TODO` | Active: P8-001 — audit the current end-to-end campaign play loop; 0 of 100 tickets complete. |
