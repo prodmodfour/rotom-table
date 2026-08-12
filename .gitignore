@@ -11,6 +11,7 @@ node_modules
 playwright-report/
 test-results/
 .pi/logs/
+.pi/artifacts/
 .pi/refactor-loop.lock/
 __pycache__/
 *.pyc

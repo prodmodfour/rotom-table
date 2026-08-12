@@ -20,6 +20,11 @@ This workspace has limited shared memory. Repeated or concurrent TypeScript, Vit
 ## Liveplay
 This is a liveplay-only app. Local hosting is deprecated. All implemented features must work in liveplay.
 
+## UI design workflow
+
+- Whenever work touches visible or interactive UI—including Vue/Nuxt pages and components, CSS, layout, responsive behavior, accessibility presentation, interaction states, or three.js visuals—read and follow `.pi/skills/ui-design-workflow/SKILL.md` before editing.
+- For substantive visible changes, use the skill's resource-capped Codex image-generation wrapper to create and inspect a target-state mockup before implementation unless the user explicitly opts out. Load the skill even when a provably non-visual UI-adjacent change does not require image generation.
+
 ## Authoritative PTU reference data
 
 Treat only these app-owned JSON files as the canonical runtime reference sources:
