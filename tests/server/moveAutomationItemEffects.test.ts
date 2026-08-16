@@ -38,6 +38,14 @@ import {
   creatureRuleOverlayEncounterEffectFixture,
 } from '../fixtures/moveAutomation/encounterEffects'
 import { createDigestionBuffTradeEffect } from '../../server/domain/moveAutomation/digestionBuffTrade'
+import { createEmptySheetEquipmentState } from '#shared/itemAutomation/equipment'
+import { activeEquipmentState } from '../fixtures/equipment'
+import {
+  createDigestionBuffTradeOperations,
+  ITEM_DIGESTION_TRADE_EFFECT_REASON,
+  ITEM_DIGESTION_TRADE_HEAL_REASON,
+  resolveReviewedDigestionBuffTrades,
+} from '../../server/domain/itemAutomation/digestionBuffTrade'
 
 const actorId = 'item-actor'
 const firstTargetId = 'item-target-one'
@@ -102,6 +110,14 @@ const sheet = (
       selections: [],
     },
   })),
+  equipmentState: held
+    ? activeEquipmentState({
+        ownerKind: 'pokemon',
+        ownerSlug: slug,
+        slotId: 'held',
+        canonicalItemId: held.split(',').at(-1)!.trim(),
+      })
+    : createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: slug }),
   ...(held ? { items: { held } } : {}),
 })
 
@@ -921,7 +937,7 @@ describe('shared authoritative item effect interpreter', () => {
     })
   })
 
-  it('restores recorded quantity to a legal destination and makes destruction explicit', () => {
+  it('fails closed when held-item restoration lacks serialized authority and makes destruction explicit', () => {
     const map = mapFixture()
     const historicalSheets = sheetsFixture({ actorHeld: 'Leftovers' })
     const historicalResources = resourcesFor({
@@ -945,7 +961,7 @@ describe('shared authoritative item effect interpreter', () => {
       requirements: [],
       consumedItems: [consumedRecord],
     })
-    const restored = interpretAndPlan({
+    expect(() => interpretAndPlan({
       map,
       sheets: emptySheets,
       resources: restoreResources,
@@ -960,16 +976,10 @@ describe('shared authoritative item effect interpreter', () => {
           onUnavailable: 'reject',
         },
       }), [actorId])],
-    })
-    expect(restored.plan.sheetWrites[0]?.nextSheet).toMatchObject({
-      items: { held: 'Leftovers' },
-    })
-    expect(restored.plan.operationResults[0]).toMatchObject({
-      kind: 'restore-consumed',
-      quantityPolicy: 'restore-consumed',
-      quantityEffects: [{ canonicalItemId: 'leftovers', delta: 1 }],
-    })
-    expect(restored.plan.availableConsumedItems).toEqual([])
+    })).toThrowError(expect.objectContaining({
+      name: MoveItemMutationError.name,
+      code: 'unsupported-location',
+    }))
 
     const destroySheets = sheetsFixture({ firstHeld: 'Iron Ball' })
     const destroyResources = resourcesFor({
@@ -1153,6 +1163,7 @@ describe('shared authoritative item effect interpreter', () => {
     expect((digested.sheetWrites[0]?.nextSheet as CharacterSheet).items).toEqual({})
     expect(digested.operationResults[0]).toMatchObject({
       kind: 'digest-buff',
+      digestedCanonicalItemId: 'candy-bar',
       quantityPolicy: 'conserve',
       quantityEffects: [{ canonicalItemId: 'candy-bar', delta: 0 }],
     })
@@ -1167,6 +1178,52 @@ describe('shared authoritative item effect interpreter', () => {
       tags: expect.arrayContaining(['digestion-buff-trade']),
     }])
     expect(storedActor.items?.digestionFood).toBe('Candy Bar')
+    expect(resolveReviewedDigestionBuffTrades(digestInterpretation)).toEqual([{
+      operationId: 'item.stuff-cheeks-digest',
+      canonicalItemId: 'Candy Bar',
+      recipientIds: [actorId],
+      sheetKind: 'pokemon',
+      sheetSlug: 'item-actor-sheet',
+    }])
+    expect(createDigestionBuffTradeOperations({ interpretation: digestInterpretation })).toEqual([
+      expect.objectContaining({
+        recipientIds: [actorId],
+        operation: expect.objectContaining({ kind: 'heal', reasonCode: ITEM_DIGESTION_TRADE_HEAL_REASON }),
+      }),
+    ])
+  })
+
+  it('materializes Leftovers as authoritative encounter-duration turn-start healing', () => {
+    const map = mapFixture()
+    const initialSheets = sheetsFixture()
+    initialSheets.get('item-actor-sheet')!.items = { digestionFood: 'Leftovers' }
+    const digestOperation = operation({
+      id: 'item.leftovers-digest', recipients: 'actor', payload: {
+        action: 'digest-buff', canonicalItemIds: null, onUnavailable: 'reject',
+      },
+    })
+    const interpretation = interpretMoveItemEffects({
+      context: contextFor({ map, sheets: initialSheets }),
+      operations: [emission(digestOperation, [actorId])], resolvedItemChoices: [],
+    })
+    expect(resolveReviewedDigestionBuffTrades(interpretation)).toEqual([{
+      operationId: 'item.leftovers-digest', canonicalItemId: 'Leftovers', recipientIds: [actorId],
+      sheetKind: 'pokemon', sheetSlug: 'item-actor-sheet',
+    }])
+    expect(createDigestionBuffTradeOperations({ interpretation })).toEqual([
+      expect.objectContaining({
+        recipientIds: [actorId],
+        operation: expect.objectContaining({
+          kind: 'temporary-effect', reasonCode: ITEM_DIGESTION_TRADE_EFFECT_REASON,
+          payload: expect.objectContaining({
+            definition: expect.objectContaining({
+              duration: { kind: 'encounter', remaining: null },
+              payload: expect.objectContaining({ value: 1 }),
+            }),
+          }),
+        }),
+      }),
+    ])
   })
 
   it('blocks digestion-buff trades only for an exact active Unnerve marker', () => {

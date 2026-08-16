@@ -59,6 +59,8 @@ export interface UseEditableSheetReturn<T> {
   saveNow: () => Promise<void>
   /** Cancel any pending debounced save. */
   cancelPendingSave: () => void
+  /** Replace local state with a complete server-accepted sheet document. */
+  adoptAuthoritativeSheet: (nextSheet: T) => void
 }
 
 interface SaveSheetResponse<T> {
@@ -173,6 +175,20 @@ export function useEditableSheet<T extends { slug: string; revision?: number }>(
     autosave.cancelPendingSave()
   }
 
+  const adoptAuthoritativeSheet = (nextSheet: T): void => {
+    const incoming = deepCloneJson(nextSheet)
+    autosave.cancelPendingSave()
+    // Invalidate any stale autosave response. Callers coordinate this only
+    // from a clean sheet boundary; accepted mechanical authority then wins.
+    autosave.guard.begin()
+    autosave.snapshot.markClean(incoming)
+    sheet.value = incoming
+    slugSyncBaselineDisplayName = displayNameFor(incoming)
+    saveError.value = null
+    saveStatus.value = 'saved'
+    if (incoming.slug) subscribeToSheetSlug(incoming.slug)
+  }
+
   const performSave = async () => {
     const payload = toPersistedPayload(sheet.value)
     const payloadJson = stablePersistableSheetJson(sheet.value)
@@ -267,5 +283,5 @@ export function useEditableSheet<T extends { slug: string; revision?: number }>(
     })
   }
 
-  return { sheet, saveStatus, saveError, renamedTo, saveNow, cancelPendingSave }
+  return { sheet, saveStatus, saveError, renamedTo, saveNow, cancelPendingSave, adoptAuthoritativeSheet }
 }

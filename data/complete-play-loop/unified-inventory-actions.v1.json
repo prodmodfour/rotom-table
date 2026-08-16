@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-061",
+  "status": "interface-contract-only",
+  "authority": "This contract routes safe inventory intents only. It grants no mechanics, identity, ownership, custody, compatibility, quantity, destination, or mutation authority.",
+  "runtimeContract": "shared/itemAutomation/inventoryActions.ts",
+  "actions": [
+    {
+      "kind": "use",
+      "executionMode": "command",
+      "handoff": "item-operation",
+      "sourceKinds": ["trainer-inventory", "group-inventory"],
+      "quantityMode": "fixed",
+      "destinationMode": "required",
+      "destinationKinds": ["item-target"],
+      "confirmationMode": "action-submit"
+    },
+    {
+      "kind": "equip",
+      "executionMode": "command",
+      "handoff": "equipment-operation",
+      "sourceKinds": ["trainer-inventory", "group-inventory"],
+      "quantityMode": "fixed",
+      "destinationMode": "required",
+      "destinationKinds": ["trainer-equipment"],
+      "confirmationMode": "action-submit"
+    },
+    {
+      "kind": "unequip",
+      "executionMode": "command",
+      "handoff": "equipment-operation",
+      "sourceKinds": ["trainer-equipment"],
+      "quantityMode": "fixed",
+      "destinationMode": "required",
+      "destinationKinds": ["trainer-inventory", "group-inventory"],
+      "confirmationMode": "action-submit"
+    },
+    {
+      "kind": "give",
+      "executionMode": "command",
+      "handoff": "equipment-operation",
+      "sourceKinds": ["trainer-inventory", "group-inventory"],
+      "quantityMode": "fixed",
+      "destinationMode": "required",
+      "destinationKinds": ["pokemon-equipment"],
+      "confirmationMode": "action-submit"
+    },
+    {
+      "kind": "take",
+      "executionMode": "command",
+      "handoff": "equipment-operation",
+      "sourceKinds": ["pokemon-equipment"],
+      "quantityMode": "fixed",
+      "destinationMode": "required",
+      "destinationKinds": ["trainer-inventory", "group-inventory"],
+      "confirmationMode": "action-submit"
+    },
+    {
+      "kind": "transfer",
+      "executionMode": "command",
+      "handoff": "inventory-transfer",
+      "sourceKinds": ["trainer-inventory", "group-inventory"],
+      "quantityMode": "bounded",
+      "destinationMode": "required",
+      "destinationKinds": ["trainer-inventory", "group-inventory"],
+      "confirmationMode": "action-submit"
+    },
+    {
+      "kind": "split",
+      "executionMode": "command",
+      "handoff": "inventory-stack-operation",
+      "sourceKinds": ["trainer-inventory", "group-inventory"],
+      "quantityMode": "bounded",
+      "destinationMode": "server-determined",
+      "destinationKinds": ["same-container"],
+      "confirmationMode": "action-submit"
+    },
+    {
+      "kind": "merge",
+      "executionMode": "command",
+      "handoff": "inventory-stack-operation",
+      "sourceKinds": ["trainer-inventory", "group-inventory"],
+      "quantityMode": "whole-stack",
+      "destinationMode": "required",
+      "destinationKinds": ["same-container"],
+      "confirmationMode": "action-submit"
+    },
+    {
+      "kind": "discard",
+      "executionMode": "command",
+      "handoff": "inventory-stack-operation",
+      "sourceKinds": ["trainer-inventory", "group-inventory"],
+      "quantityMode": "bounded",
+      "destinationMode": "none",
+      "destinationKinds": [],
+      "confirmationMode": "explicit-choice"
+    },
+    {
+      "kind": "inspect",
+      "executionMode": "navigation",
+      "handoff": "inspect-navigation",
+      "sourceKinds": ["trainer-inventory", "group-inventory", "trainer-equipment", "pokemon-equipment"],
+      "quantityMode": "none",
+      "destinationMode": "none",
+      "destinationKinds": [],
+      "confirmationMode": "none"
+    },
+    {
+      "kind": "guided-adjudication",
+      "executionMode": "command",
+      "handoff": "guided-adjudication",
+      "sourceKinds": ["trainer-inventory", "group-inventory", "trainer-equipment", "pokemon-equipment"],
+      "quantityMode": "fixed",
+      "destinationMode": "server-determined",
+      "destinationKinds": ["guided-queue"],
+      "confirmationMode": "guided-settlement"
+    }
+  ],
+  "offerContract": {
+    "sourceIdentity": "opaque offer-local source selection plus a safe presentation row label; never a row, serialized-item, operation, profile, or provenance identity",
+    "authority": "authenticated role plus bounded server-issued checks; all must be satisfied for an enabled action",
+    "revisions": "source requirements are exact; every selected destination contributes its exact requirements",
+    "quantity": "none, one fixed value, a bounded current range, or the exact whole current stack",
+    "destinations": "none, optional, required from bounded current options, or server-determined",
+    "consequences": "safe labels state inventory, custody, mechanical, guided, and irreversible effects without private evidence",
+    "navigation": "inspect is app-relative navigation and cannot be submitted as a mutation"
+  },
+  "declarationContract": {
+    "clientFields": [
+      "operationId",
+      "offerId",
+      "action",
+      "sourceSelectionId",
+      "quantity",
+      "destinationId",
+      "confirmationOptionId",
+      "expectedRevisions"
+    ],
+    "exactMatch": "action, source, quantity, selected destination, irreversible confirmation, and the complete revision set must match one current offer",
+    "commitBoundary": "matching an offer is not commit authorization; the owning handoff reloads every resource and revalidates all mechanics before mutation",
+    "replay": "the owning journal supplies principal-bound command hashing, compare-and-swap settlement, terminal replay, and realtime publication"
+  },
+  "privacy": {
+    "forbiddenProjectionFields": [
+      "profileId",
+      "rowId",
+      "sourceInstanceId",
+      "serializedInstanceId",
+      "operationId",
+      "canonicalDefinitionSha256",
+      "ownershipEvidence",
+      "privateNotes",
+      "provenance"
+    ],
+    "labels": "container, section, source, destination, consequence, and unavailable labels must be bounded safe presentation text"
+  },
+  "failurePolicy": [
+    "unknown action, source, destination, consequence, or handoff fails closed",
+    "unknown or missing fields fail closed",
+    "duplicate offer, destination, or revision identities fail closed",
+    "stale, missing, added, or changed revisions fail closed",
+    "disabled authority or destination options fail closed",
+    "whole-item and whole-stack quantities cannot be partially submitted",
+    "irreversible discard requires the exact server-issued confirmation",
+    "guided settlement cannot be replaced by freeform client mechanics",
+    "exact offer matching never bypasses authoritative commit-time revalidation"
+  ]
+}

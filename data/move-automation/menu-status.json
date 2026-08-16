@@ -1982,6 +1982,16 @@
       "manualSteps": []
     },
     {
+      "canonicalId": "Facade",
+      "displayName": "Facade",
+      "baseStatus": "complete",
+      "interactionStatus": "unassessed",
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
+    },
+    {
       "canonicalId": "Fairy Lock",
       "displayName": "Fairy Lock",
       "baseStatus": "complete",
@@ -2034,16 +2044,6 @@
     {
       "canonicalId": "False Swipe",
       "displayName": "False Swipe",
-      "baseStatus": "complete",
-      "interactionStatus": "unassessed",
-      "runtimeKind": "movespec-v2",
-      "blockerCodes": [],
-      "limitations": [],
-      "manualSteps": []
-    },
-    {
-      "canonicalId": "Façade",
-      "displayName": "Façade",
       "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "movespec-v2",

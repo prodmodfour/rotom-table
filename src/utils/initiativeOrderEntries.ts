@@ -11,8 +11,10 @@ import {
   conditionAdjustedInitiative,
 } from '~/utils/sheetConditionEffects'
 import { sheetAbilityNames } from '~/utils/sheetAbilities'
-import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
-import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
+import {
+  projectedEquipmentContributionDelta,
+  projectedEquipmentContributionSources,
+} from '~/utils/equipmentContributionProjection'
 import { pokemonTrainingFeatureInitiativeBonus } from '~/utils/sheets/pokemonTrainingFeatures'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerStats } from '~/utils/sheets/trainerDerived'
@@ -88,6 +90,11 @@ const trainerDisplayName = (
   placement: Pick<SheetPlacement, 'sheetSlug'>,
 ): string => rawString(sheet.name) ?? placement.sheetSlug
 
+export interface InitiativeEquipmentStatOperation {
+  readonly operation: 'add' | 'set' | 'multiply-floor'
+  readonly value: number
+}
+
 export interface InitiativeOrderEntryOptions {
   /** Server-owned Magic Room query result for this placement's relevant item scope. */
   readonly itemEffectsSuppressed?: boolean
@@ -95,6 +102,10 @@ export interface InitiativeOrderEntryOptions {
   readonly initiativeMultiplier?: 1 | 2
   /** Exact authoritative post-multiplier Ability/effect offset. */
   readonly initiativeOffset?: number
+  /** Hash-current equipment operations applied to Speed after Combat Stages. */
+  readonly equipmentSpeedOperations?: readonly InitiativeEquipmentStatOperation[]
+  /** Exact hash-current equipment Initiative bonus; bypasses descriptive labels. */
+  readonly equipmentInitiativeBonus?: number
   /** Effective Early Bird adds one half of the same staged Speed used by Initiative. */
   readonly earlyBirdSpeedBonus?: boolean
   /** Effective Base Speed adjustment applied before Combat Stages. */
@@ -106,6 +117,23 @@ export interface InitiativeOrderEntryOptions {
   /** Exact effective ability names used only for condition-derived initiative rules. */
   readonly conditionAbilityNames?: readonly string[]
 }
+
+const projectedEquipmentSpeedOperations = (
+  sheet: CharacterSheet | TrainerSheet,
+): readonly InitiativeEquipmentStatOperation[] => projectedEquipmentContributionSources({
+  sheet,
+  metric: 'stat-after-stages',
+  targetId: 'spd',
+}).map(source => ({ operation: source.operation, value: source.value }))
+
+const applyEquipmentSpeedOperations = (
+  base: number,
+  operations: readonly InitiativeEquipmentStatOperation[] | undefined,
+): number => (operations ?? []).reduce((value, operation) => {
+  if (operation.operation === 'add') return value + operation.value
+  if (operation.operation === 'multiply-floor') return Math.floor(value * operation.value)
+  return operation.value
+}, base)
 
 export const pokemonInitiativeOrderEntry = (
   placement: SheetPlacement,
@@ -124,10 +152,15 @@ export const pokemonInitiativeOrderEntry = (
     'spd',
     { abilities },
   ) + (options.speedCombatStageOffset ?? 0))
-  const speed = applyCombatStageToStat(baseSpeed, speedCombatStage)
-  const initiativeItemBonus = options.itemEffectsSuppressed
-    ? 0
-    : sheetItemsInitiativeBonus(pokemonHeldItemNames(sheet))
+  const speed = applyEquipmentSpeedOperations(
+    applyCombatStageToStat(baseSpeed, speedCombatStage),
+    options.equipmentSpeedOperations
+      ?? (options.itemEffectsSuppressed ? [] : projectedEquipmentSpeedOperations(sheet)),
+  )
+  const initiativeItemBonus = options.equipmentInitiativeBonus
+    ?? (options.itemEffectsSuppressed
+      ? 0
+      : projectedEquipmentContributionDelta({ sheet, metric: 'initiative', targetId: 'all' }))
   const initiativeTrainingBonus = pokemonTrainingFeatureInitiativeBonus(sheet.activeTrainingFeature)
   const baseInitiative = speed + initiativeItemBonus + initiativeTrainingBonus
   const initiative = normalizeInitiativeValue(placement.initiative)
@@ -160,11 +193,15 @@ export const trainerInitiativeOrderEntry = (
     'spd',
     { abilities },
   )
-  const speed = applyCombatStageToStat(baseSpeed, speedCombatStage)
-  const initiativeItemBonus = sheetItemsInitiativeBonus(trainerEquippedItemNames(
-    sheet,
-    { includeAccessory: !options.itemEffectsSuppressed },
-  ))
+  const speed = applyEquipmentSpeedOperations(
+    applyCombatStageToStat(baseSpeed, speedCombatStage),
+    options.equipmentSpeedOperations
+      ?? (options.itemEffectsSuppressed ? [] : projectedEquipmentSpeedOperations(sheet)),
+  )
+  const initiativeItemBonus = options.equipmentInitiativeBonus
+    ?? (options.itemEffectsSuppressed
+      ? 0
+      : projectedEquipmentContributionDelta({ sheet, metric: 'initiative', targetId: 'all' }))
   const initiative = normalizeInitiativeValue(placement.initiative)
 
   return {

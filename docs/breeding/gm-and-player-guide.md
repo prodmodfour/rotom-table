@@ -74,6 +74,12 @@ Egg transfer uses a separate two-party agreement:
 
 Project consent cannot replace transfer consent. GM authority substitutes for neither participant. Ownership changes only after the atomic server result; do not rely on an optimistic card change. Incubation and the accepted offspring blueprint remain unchanged by transfer.
 
+### Assign an Egg Warmer
+
+The item-tools panel shows current owned incubating Eggs and opaque reusable-unit choices. Select one Egg Warmer and at most four Eggs, then save the exact assignment. Assignment itself adds no progress. On each accepted campaign day, an assigned Egg receives the reviewed 2× hatch-rate credit only while the same owner, inventory unit, Egg custody, and campaign checkpoint remain current. Removing or moving the tool fails closed to the ordinary rate rather than preserving a stale bonus.
+
+If an assignment response is uncertain, use **Retry exact command** before any other item action. The browser retains only that one exact Profile-bound command in session storage; switching Profile does not transfer retry authority.
+
 ### Hatch an Egg
 
 A ready Egg presents a fresh hatch flow:
@@ -97,7 +103,7 @@ Use GM diagnostics only to identify bounded status and policy classes. Do not co
 
 ### Advance campaign time
 
-Campaign time is the only lifecycle clock. Advance it through the authoritative campaign-clock operation. A long skip processes at most 100 due Eggs per deterministic page; continue at the same target minute until `hasMoreDueEggs` is false. Do not split credit manually or edit Project/Egg JSON.
+Campaign time is the only lifecycle clock. The campaign-day action advances exactly 1,440 campaign minutes and settles every due Egg atomically; one Egg failure rolls the whole day back. The lower-level Breeding batch operation retains its deterministic 100-Egg continuation pages for operator workflows. Do not split credit manually or edit Project/Egg JSON.
 
 Each Project and Egg uses its last applied clock revision/minute. Paused intervals are auditable and receive skipped rather than credited minutes. Overflow beyond an Egg's readiness threshold is retained in its incubation segment; it does not produce extra lifecycle credit.
 
@@ -109,7 +115,9 @@ GM overrides are durable, bounded, operation-bound evidence. They do not permit 
 
 ### Alternate Egg sources
 
-Fossil, GM-authored, mysterious, campaign-gift, imported, and Playing God Eggs use reviewed server operations and the ordinary Egg/incubation/hatch pipeline. They do not create inventory Eggs or pre-hatch Pokémon sheets. Imported provenance must remain source-hash- and review-bound. Legacy map metadata remains quarantine-only.
+The item-tools panel exposes only the reviewed native inventory workflows. For Fossil restoration, select one explicit source unit, one exact Reanimation Machine, and the restored Species, review current server-issued choices, then confirm. Acceptance consumes only the selected source; the machine remains reusable. For an Artificial Egg, current Playing God authority supplies the Species, one exact Chemistry Set must remain in custody, and $3,500 is spent at acceptance; the Chemistry Set remains reusable.
+
+Both results are ordinary incubating Eggs in the shared Egg/incubation/hatch pipeline. A preview is inert, stale choices fail closed, and only a GM may confirm either source workflow. Other GM-authored, mysterious, campaign-gift, and imported Eggs continue to require their reviewed server operations. No source workflow creates an inventory Egg or pre-hatch Pokémon sheet. Imported provenance must remain source-hash- and review-bound. Legacy map metadata remains quarantine-only.
 
 ### Hatch special review
 
@@ -130,7 +138,7 @@ A GM may create reviewed cross-owner setup, inspect safe status, recover authori
 
 ## Shared-table privacy
 
-On a shared display, use player/public presentation rather than GM diagnostics. Player views structurally omit participating-parent identity, private mechanics, evidence, raw operation data, and hidden options. Privacy is enforced by server schemas, not CSS. Browser storage retains only selected Profile presentation; it must not retain Project IDs, Egg IDs, consent, choices, mechanics, or operation payloads.
+On a shared display, use player/public presentation rather than GM diagnostics. Player views structurally omit participating-parent identity, private mechanics, evidence, raw operation data, and hidden options. Privacy is enforced by server schemas, not CSS. Browser storage retains selected Profile presentation and, only while a breeding-item result is uncertain, one exact Profile-bound command in session storage. It must not retain Project IDs, Egg IDs, consent, choices, mechanics, or any other operation payload.
 
 ## Actions that are never valid
 
@@ -138,7 +146,7 @@ Neither a player nor a GM may:
 
 - count wall-clock time as breeding or incubation progress;
 - use a map token, inventory row, sheet flag, legacy field, or local storage as Egg authority;
-- submit a command, roll, read set, receipt, provider evidence, or resolved mechanic through a Workshop API;
+- manually fabricate or enrich an operation command, roll, read set, receipt, provider evidence, or resolved mechanic for a Workshop API;
 - create or link a child before accepted hatch completion;
 - infer Species acquisition from a roster or edit `dexExp` directly;
 - redraw on retry, replace an operation ID, or delete pending evidence;

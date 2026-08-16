@@ -6,7 +6,7 @@ import { formatMoveDamageDisplay, type MoveDamageDisplayValues } from '~/utils/m
 import { SHEET_MOVE_NAME_OPTIONS, formatLookupValue, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import type { PokemonSheetMoveLookupRow } from '~/composables/sheets/usePokemonSheetDerived'
 
-defineProps<{
+const props = defineProps<{
   moveRows: readonly PokemonSheetMoveLookupRow[]
 }>()
 
@@ -35,7 +35,14 @@ const {
   onMoveRowDrop,
   onMoveRowDragEnd,
   reorderMoveRowByOffset,
-} = useSheetMoveRowDragReorder((fromIndex, toIndex) => emit('reorderMove', fromIndex, toIndex))
+} = useSheetMoveRowDragReorder((fromIndex, toIndex) => {
+  const lower = Math.min(fromIndex, toIndex)
+  const upper = Math.max(fromIndex, toIndex)
+  if (props.moveRows.some(row => row.sheetIndex !== null
+    && row.sheetIndex >= lower && row.sheetIndex <= upper
+    && row.move.itemMoveLearningLocked === true)) return
+  emit('reorderMove', fromIndex, toIndex)
+})
 </script>
 
 <template>
@@ -85,7 +92,7 @@ const {
           >
             <td class="move-reorder-cell">
               <button
-                v-if="canDragMoveRow(row)"
+                v-if="canDragMoveRow(row) && row.move.itemMoveLearningLocked !== true"
                 type="button"
                 class="move-drag-handle"
                 draggable="true"
@@ -106,10 +113,15 @@ const {
                 type="select"
                 placeholder="Move"
                 :options="SHEET_MOVE_NAME_OPTIONS"
-                :readonly="row.automatic"
+                :readonly="row.automatic || row.move.itemMoveLearningLocked === true"
                 @update:model-value="(v) => setLookupMoveName(row.move, v)"
               />
               <span v-if="row.automatic" class="move-auto-badge" title="Auto-added from Struggle rules and capabilities">auto</span>
+              <span
+                v-else-if="row.move.itemMoveLearningLocked === true"
+                class="move-auto-badge"
+                title="Managed by an accepted TM/HM training operation"
+              >trained</span>
             </td>
             <td>
               <TypeBadge v-if="row.reference?.type" :type="row.reference.type" size="xs" />
@@ -144,7 +156,7 @@ const {
             </td>
             <td class="row-actions">
               <button
-                v-if="!row.automatic"
+                v-if="!row.automatic && row.move.itemMoveLearningLocked !== true"
                 type="button"
                 class="row-remove"
                 title="Remove move"
@@ -152,7 +164,11 @@ const {
               >
                 <PhX :size="14" weight="bold" />
               </button>
-              <span v-else class="row-auto-note" title="Auto-added from Struggle rules and capabilities">Auto</span>
+              <span
+                v-else
+                class="row-auto-note"
+                :title="row.move.itemMoveLearningLocked === true ? 'Replace this Move through an authoritative Move-learning item action.' : 'Auto-added from Struggle rules and capabilities'"
+              >{{ row.move.itemMoveLearningLocked === true ? 'Trained' : 'Auto' }}</span>
             </td>
           </tr>
           <tr v-if="!moveRows.length">

@@ -64,6 +64,7 @@ import type {
   EncounterContributionRow,
   EncounterCorrectionPresentation,
   EncounterDerivedFactValue,
+  EncounterFormChangePreview,
   EncounterGridCell,
   EncounterHistoryEntry,
   EncounterInteractionResponseIntent,
@@ -466,24 +467,103 @@ const parseIntentDescriptor = (value: unknown, path: string): EncounterActionInt
 }
 
 const parseActionSelectionOption = (value: unknown, path: string) => {
-  const input = record(value, path)
-  exact(input, ['kind', 'value', 'label'], path)
+  const parsed = record(value, path)
+  const hasRequirementId = Object.hasOwn(parsed, 'requirementId')
+  const hasCosts = Object.hasOwn(parsed, 'costs')
+  const hasDisabled = Object.hasOwn(parsed, 'disabled')
+  const hasUnavailableReason = Object.hasOwn(parsed, 'unavailableReason')
+  const input: UnknownRecord = {
+    ...parsed,
+    requirementId: hasRequirementId ? parsed.requirementId : null,
+    description: Object.hasOwn(parsed, 'description') ? parsed.description : null,
+    costs: hasCosts ? parsed.costs : [],
+    disabled: hasDisabled ? parsed.disabled : false,
+    unavailableReason: hasUnavailableReason ? parsed.unavailableReason : null,
+  }
+  exact(input, ['kind', 'requirementId', 'value', 'label', 'description', 'costs', 'disabled', 'unavailableReason'], path)
+  const costs = boundedArray(input.costs, `${path}.costs`, 16)
+    .map((cost, index) => parseCost(cost, `${path}.costs[${index}]`))
+  const disabled = boolean(input.disabled, `${path}.disabled`)
+  const unavailableReason = input.unavailableReason === null
+    ? null
+    : parseReason(input.unavailableReason, `${path}.unavailableReason`)
+  if (disabled !== (unavailableReason !== null)) {
+    fail('inconsistent-contract', path, 'disabled selection options require exactly one safe unavailable reason.')
+  }
   return Object.freeze({
-    kind: enumValue<'object' | 'device' | 'keystone' | 'egg' | 'trainer'>(
-      input.kind, set(['object', 'device', 'keystone', 'egg', 'trainer'] as const), `${path}.kind`,
+    kind: enumValue<'object' | 'device' | 'keystone' | 'egg' | 'trainer' | 'participant'>(
+      input.kind, set(['object', 'device', 'keystone', 'egg', 'trainer', 'participant'] as const), `${path}.kind`,
     ),
+    ...(hasRequirementId ? { requirementId: stableId(input.requirementId, `${path}.requirementId`) } : {}),
     value: stableId(input.value, `${path}.value`),
     label: requiredText(input.label, `${path}.label`, ENCOUNTER_PRESENTATION_LIMITS.labelLength),
+    description: nullableText(input.description, `${path}.description`, ENCOUNTER_PRESENTATION_LIMITS.descriptionLength),
+    ...(hasCosts ? { costs: Object.freeze(costs) } : {}),
+    ...(hasDisabled ? { disabled } : {}),
+    ...(hasUnavailableReason ? { unavailableReason } : {}),
+  })
+}
+
+const parseFormChangePreview = (value: unknown, path: string): EncounterFormChangePreview => {
+  const input = record(value, path)
+  exact(input, [
+    'kind', 'fromFormLabel', 'toFormLabel', 'fromTypes', 'toTypes', 'abilityLabel',
+    'abilityRequiresChoice', 'statDeltas', 'durationLabel', 'reversalLabel',
+    'acceptanceBoundaryLabel',
+  ], path)
+  if (input.kind !== 'item-form-change' || input.durationLabel !== 'Scene') {
+    fail('inconsistent-contract', path, 'has unsupported form-change semantics.')
+  }
+  const parseTypes = (raw: unknown, listPath: string): readonly string[] => {
+    const values = boundedArray(raw, listPath, 2)
+      .map((entry, index) => requiredText(entry, `${listPath}[${index}]`, 40))
+    unique(values, listPath)
+    if (values.length < 1) fail('inconsistent-contract', listPath, 'must contain at least one Type.')
+    return Object.freeze(values)
+  }
+  const statIds = set(['atk', 'def', 'satk', 'sdef', 'spd'] as const)
+  const statDeltas = boundedArray(input.statDeltas, `${path}.statDeltas`, 5).map((entry, index) => {
+    const statPath = `${path}.statDeltas[${index}]`
+    const row = record(entry, statPath)
+    exact(row, ['statId', 'label', 'delta'], statPath)
+    return Object.freeze({
+      statId: enumValue<'atk' | 'def' | 'satk' | 'sdef' | 'spd'>(row.statId, statIds, `${statPath}.statId`),
+      label: requiredText(row.label, `${statPath}.label`, 80),
+      delta: safeInteger(row.delta, `${statPath}.delta`, -20, 20),
+    })
+  })
+  if (statDeltas.length !== 5) fail('inconsistent-contract', `${path}.statDeltas`, 'must contain all five non-HP Stats.')
+  unique(statDeltas.map(row => row.statId), `${path}.statDeltas`)
+  return Object.freeze({
+    kind: 'item-form-change',
+    fromFormLabel: requiredText(input.fromFormLabel, `${path}.fromFormLabel`, 120),
+    toFormLabel: requiredText(input.toFormLabel, `${path}.toFormLabel`, 120),
+    fromTypes: parseTypes(input.fromTypes, `${path}.fromTypes`),
+    toTypes: parseTypes(input.toTypes, `${path}.toTypes`),
+    abilityLabel: requiredText(input.abilityLabel, `${path}.abilityLabel`, 120),
+    abilityRequiresChoice: boolean(input.abilityRequiresChoice, `${path}.abilityRequiresChoice`),
+    statDeltas: Object.freeze(statDeltas),
+    durationLabel: 'Scene',
+    reversalLabel: requiredText(input.reversalLabel, `${path}.reversalLabel`, ENCOUNTER_PRESENTATION_LIMITS.descriptionLength),
+    acceptanceBoundaryLabel: requiredText(input.acceptanceBoundaryLabel, `${path}.acceptanceBoundaryLabel`, ENCOUNTER_PRESENTATION_LIMITS.descriptionLength),
   })
 }
 
 const parseActionOffer = (value: unknown, path: string): EncounterActionOffer => {
   const parsedInput = record(value, path)
-  const input = Object.hasOwn(parsedInput, 'selectionOptions') ? parsedInput : { ...parsedInput, selectionOptions: [] }
+  const hasSourceContextLabel = Object.hasOwn(parsedInput, 'sourceContextLabel')
+  const hasFormChangePreview = Object.hasOwn(parsedInput, 'formChangePreview')
+  const input: UnknownRecord = {
+    ...parsedInput,
+    selectionOptions: Object.hasOwn(parsedInput, 'selectionOptions') ? parsedInput.selectionOptions : [],
+    sourceContextLabel: hasSourceContextLabel ? parsedInput.sourceContextLabel : null,
+    formChangePreview: hasFormChangePreview ? parsedInput.formChangePreview : null,
+  }
   exact(input, [
     'schemaVersion', 'offerId', 'mapSlug', 'mapRevision', 'actor', 'source', 'roles',
     'group', 'groupOrder', 'offerOrder', 'timing', 'costs', 'targeting', 'usage',
-    'availability', 'presentation', 'intent', 'selectionOptions',
+    'availability', 'presentation', 'intent', 'sourceContextLabel', 'selectionOptions',
+    'formChangePreview',
   ], path)
   parseSchemaVersion(input.schemaVersion, `${path}.schemaVersion`)
   const roles = boundedArray(input.roles, `${path}.roles`, ENCOUNTER_INTERACTION_ROLES.length)
@@ -500,7 +580,11 @@ const parseActionOffer = (value: unknown, path: string): EncounterActionOffer =>
   const intent = parseIntentDescriptor(input.intent, `${path}.intent`)
   const selectionOptions = boundedArray(input.selectionOptions, `${path}.selectionOptions`, ENCOUNTER_PRESENTATION_LIMITS.choicesPerInteraction)
     .map((option, index) => parseActionSelectionOption(option, `${path}.selectionOptions[${index}]`))
-  unique(selectionOptions.map(option => `${option.kind}:${option.value}`), `${path}.selectionOptions`)
+  unique(selectionOptions.map(option => `${option.requirementId ?? ''}:${option.kind}:${option.value}`), `${path}.selectionOptions`)
+  const requirementIds = new Set(targeting.map(target => target.requirementId))
+  if (selectionOptions.some(option => option.requirementId !== undefined && !requirementIds.has(option.requirementId))) {
+    fail('inconsistent-contract', `${path}.selectionOptions`, 'references an unknown targeting requirement.')
+  }
   const hasSpatial = targeting.some(target => target.requiresSpatialInput)
   if ((intent.input === 'spatial') !== hasSpatial) {
     fail('inconsistent-contract', `${path}.intent.input`, 'spatial intent must match spatial targeting.')
@@ -523,7 +607,15 @@ const parseActionOffer = (value: unknown, path: string): EncounterActionOffer =>
     availability: parseAvailability(input.availability, `${path}.availability`),
     presentation: parseCopy(input.presentation, `${path}.presentation`),
     intent,
+    ...(hasSourceContextLabel ? {
+      sourceContextLabel: nullableText(input.sourceContextLabel, `${path}.sourceContextLabel`, ENCOUNTER_PRESENTATION_LIMITS.descriptionLength),
+    } : {}),
     selectionOptions: Object.freeze(selectionOptions),
+    ...(hasFormChangePreview ? {
+      formChangePreview: input.formChangePreview === null
+        ? null
+        : parseFormChangePreview(input.formChangePreview, `${path}.formChangePreview`),
+    } : {}),
   })
 }
 

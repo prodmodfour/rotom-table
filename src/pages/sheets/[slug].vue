@@ -18,6 +18,8 @@ import {
   sheetApiProfileContext,
 } from '~/utils/sheetApiRequests'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { TrainerEquipmentAcceptedResult } from '~/composables/sheets/useTrainerEquipmentOperations'
+import type { ItemGuidedAcceptedResult } from '~/composables/items/useItemGuidedAdjudication'
 
 // ---------------------------------------------------------------------------
 // Load the authoritative SQLite-backed sheet for this URL, then deep-clone +
@@ -48,6 +50,7 @@ const {
   data: runtimeSheetResult,
   error: runtimeSheetError,
   status: runtimeSheetStatus,
+  refresh: refreshRuntimeSheet,
 } = await useFetch<{ sheet: CharacterSheet } | null>(SHEET_API_PATHS.load, {
   default: () => null,
   immediate: true,
@@ -63,6 +66,8 @@ const {
   saveStatus,
   saveError,
   renamedTo,
+  saveNow,
+  adoptAuthoritativeSheet,
 } = useEditableSheetResource<CharacterSheet>({
   baseSheet,
   kind: 'pokemon',
@@ -81,6 +86,27 @@ useSheetRenameUrlSync({
   initialSlug: slug,
   renamedTo,
 })
+
+const prepareEquipmentAction = async (): Promise<void> => {
+  await saveNow()
+  if (saveStatus.value === 'error') throw new Error(saveError.value ?? 'Save the Pokémon sheet before changing equipment lifecycle state.')
+}
+const adoptAcceptedEquipmentResult = async (
+  response: TrainerEquipmentAcceptedResult | ItemGuidedAcceptedResult,
+): Promise<void> => {
+  let accepted = response.sheets.find(value => value.kind === 'pokemon' && value.slug === slug)
+  if (!accepted) {
+    await refreshRuntimeSheet()
+    const refreshed = runtimeSheetResult.value?.sheet ?? null
+    if (refreshed) adoptAuthoritativeSheet(refreshed)
+    return
+  }
+  adoptAuthoritativeSheet({
+    ...accepted.sheet,
+    slug: accepted.slug,
+    revision: accepted.revision,
+  } as unknown as CharacterSheet)
+}
 
 const sheetFolder = computed(() => sheet.value?.folder ?? '')
 const sheetLoadErrorMessage = computed(() => {
@@ -177,6 +203,10 @@ useHead(() => ({
       :sheet="sheet"
       :capabilities="editorCapabilities"
       :accent-color="linkedTrainerAccentColor"
+      :save-status="saveStatus"
+      :profile-id="selectedProfileId"
+      :prepare-equipment-action="prepareEquipmentAction"
+      @equipment-accepted="adoptAcceptedEquipmentResult"
     />
 
     <template #not-found>

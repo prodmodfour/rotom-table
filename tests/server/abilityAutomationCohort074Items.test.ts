@@ -5,6 +5,7 @@ import type { TabletopMap } from '~/types/map'
 import type { MoveItemMutation } from '../../server/domain/moveAutomation/itemMutationTypes'
 import { planMoveItemMutations } from '../../server/domain/moveAutomation/planItemMutations'
 import { creatureRuleOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
+import { activePokemonHeldEquipmentState } from '../fixtures/equipment'
 
 const ability = (canonicalId: string) => ({
   name: canonicalId,
@@ -29,6 +30,9 @@ const actorSheet = (input: {
   level: 20,
   revision: input.revision ?? 3,
   abilities: input.ability ? [ability('Honey Paws')] : [],
+  equipmentState: activePokemonHeldEquipmentState({
+    ownerSlug: 'actor', canonicalItemIds: [input.held],
+  }),
   items: {
     held: input.held,
     ...(input.digestionFood ? { digestionFood: input.digestionFood } : {}),
@@ -104,7 +108,9 @@ const storeOperation = (revision: number): MoveItemMutation => ({
   source: {
     schemaVersion: 1,
     kind: 'pokemon-held',
-    itemId: 'held:1',
+    itemId: activePokemonHeldEquipmentState({
+      ownerSlug: 'actor', canonicalItemIds: ['Honey'],
+    }).instances[0]!.instanceId,
     canonicalItemId: 'honey',
     owner: owner(revision),
     quantity: 1,

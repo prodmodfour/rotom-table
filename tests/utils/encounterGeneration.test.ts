@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildEncounterGenerateRequestBody,
+  buildEncounterSpawnRequestBody,
   clampEncounterGenerateCount,
   coerceTableKeyForRegion,
   errorMessageForEncounterGenerate,
@@ -65,6 +66,19 @@ describe('encounter generation helpers', () => {
       outRoot: 'data/sheets/wild',
       preview: true,
     })
+  })
+
+  it('carries exact route-Repel Trainer and campaign-clock authority into generation and spawn', () => {
+    const exploration = { trainerSlug: 'explorer', trainerRevision: 3, campaignClockRevision: 2 }
+    expect(buildEncounterGenerateRequestBody({
+      region: 'vale', tableKey: 'river', countMin: 2, countMax: 2,
+      outRoot: 'data/sheets/wild', preview: true,
+      rolled: [{ species: 'Magikarp', level: 5, roll: 1 }], exploration,
+    })).toMatchObject({ exploration })
+    expect(buildEncounterSpawnRequestBody({
+      region: 'vale', tableKey: 'river', countMin: 2, countMax: 2,
+      outRoot: 'data/sheets/wild', mapSlug: 'route-map', exploration,
+    })).toMatchObject({ exploration, mapSlug: 'route-map', preview: false })
   })
 
   it('toggles open generated files without mutating the original set', () => {

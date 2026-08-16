@@ -55,8 +55,8 @@ const setAppliedMoveSource = (move: CharacterSheetAppliedMove, value: EditableCe
     <div class="block known-moves-summary">
       <h2 class="block-title">Known Moves ({{ knownMoveCount }})</h2>
       <p>
-        Level-up moves unlock from the current species and level. Applied TM/HM or Tutor moves remain
-        ordinary sheet records; Egg Move compatibility data is read-only and is not counted as learned.
+        Level-up moves unlock from the current species and level. Accepted item-trained rows are
+        read-only and replaced through Item Actions; Egg Move compatibility remains reference-only.
       </p>
     </div>
 
@@ -164,6 +164,7 @@ const setAppliedMoveSource = (move: CharacterSheetAppliedMove, value: EditableCe
                   :options="POKEMON_KNOWN_MOVE_SOURCE_OPTIONS"
                   :format="pokemonAppliedMoveSourceLabel"
                   :allow-empty-option="false"
+                  :readonly="move.itemMoveLearningLocked === true"
                   @update:model-value="(value) => setAppliedMoveSource(move, value)"
                 />
               </td>
@@ -173,8 +174,14 @@ const setAppliedMoveSource = (move: CharacterSheetAppliedMove, value: EditableCe
                   type="select"
                   :options="POKEMON_KNOWN_MOVE_NAME_OPTIONS"
                   placeholder="Move"
+                  :readonly="move.itemMoveLearningLocked === true"
                   @update:model-value="(value) => setMoveName(move, value)"
                 />
+                <span
+                  v-if="move.itemMoveLearningLocked === true"
+                  class="trained-badge"
+                  title="Managed by an accepted TM/HM training operation"
+                >trained</span>
               </th>
               <td
                 v-for="column in POKEMON_KNOWN_MOVE_AUTOFILL_COLUMNS"
@@ -185,9 +192,16 @@ const setAppliedMoveSource = (move: CharacterSheetAppliedMove, value: EditableCe
                 {{ autofillValue(move, column.key) || '—' }}
               </td>
               <td class="row-actions">
-                <button type="button" class="row-remove" title="Remove applied move" @click="emit('removeAppliedMove', index)">
+                <button
+                  v-if="move.itemMoveLearningLocked !== true"
+                  type="button"
+                  class="row-remove"
+                  title="Remove applied move"
+                  @click="emit('removeAppliedMove', index)"
+                >
                   <PhX :size="14" weight="bold" />
                 </button>
+                <span v-else class="trained-row-note">Item Action</span>
               </td>
             </tr>
             <tr v-if="!sheet.appliedMoves?.length">
@@ -236,5 +250,26 @@ const setAppliedMoveSource = (move: CharacterSheetAppliedMove, value: EditableCe
 
 .auto-fill-col {
   min-width: 8rem;
+}
+
+.trained-badge,
+.trained-row-note {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  margin-top: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.trained-row-note {
+  margin-top: 0;
+  white-space: nowrap;
 }
 </style>

@@ -27,6 +27,7 @@ import {
   recordActivelyCommandedPokemon,
 } from './activePokemonCommands'
 import { clearPhysicalPowerLoadsForPlacements } from '../capabilityAutomation/physicalPower'
+import { rebindItemDigestionEffectsForPlacement } from '../itemAutomation/digestionEffectIdentity'
 import { removeCapabilityPresenceGroup } from '../capabilityAutomation/presenceLifecycle'
 
 export type MoveSwitchPlanningErrorCode =
@@ -282,16 +283,22 @@ export const planAuthoritativeMoveSwitch = (input: {
     transferPolicy: 'expire',
     suppression: { sources: [] },
   }, 'moveSwitch.entryEffect') : null
+  const sentOutReboundEffects = sentOutPlacement
+    ? rebindItemDigestionEffectsForPlacement({
+        effects: lifecycle.state.effects,
+        placement: sentOutPlacement,
+      })
+    : lifecycle.state.effects
   const nextEncounterState = entryEffect ? parseEncounterState({
     ...lifecycle.state,
     effects: [
-      ...lifecycle.state.effects.filter(effect => !(
+      ...sentOutReboundEffects.filter(effect => !(
         effect.tags.includes('encounter-entry')
         && effect.affected.placementIds.includes(sentOutPlacement!.id)
       )),
       entryEffect,
     ],
-  }) : lifecycle.state
+  }) : parseEncounterState({ ...lifecycle.state, effects: sentOutReboundEffects })
   let nextMap = mapWithTemporaryHpForPlacement(
     clearPhysicalPowerLoadsForPlacements(previousMap, new Set([recalled.id])),
     recalled.id,

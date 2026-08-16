@@ -228,7 +228,11 @@ export const loadLiveTableSnapshotUseCase = (
     const encounterPresentation = buildEncounterPresentationProjection({
       role: input.role,
       playerProfile: input.playerProfile,
-      map: projectedMap,
+      // The presentation builder is a privacy boundary: derive curated public
+      // mechanics from the authoritative map, then return projectedMap below.
+      // Passing the already-redacted map would erase active form authority and
+      // produce stale offers/status for player reconnects.
+      map: authoritativeMap,
       mapRevision: authoritativeRevision,
       pokemonSheets: projectedPokemonSheets,
       trainerSheets: projectedTrainerSheets,

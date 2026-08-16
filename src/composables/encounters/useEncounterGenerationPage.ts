@@ -21,6 +21,7 @@ import {
   toggleOpenGenerateFile,
   type EncounterGenerateRequestBody,
   type EncounterGenerateResult,
+  type EncounterGenerationExplorationAuthorityInput,
   type EncounterSpawnRequestBody,
 } from '~/utils/encounterGeneration'
 import { getClientId } from '~/utils/clientId'
@@ -39,6 +40,8 @@ export interface UseEncounterGenerationPageOptions {
   fetchSpawn?: (body: EncounterSpawnRequestBody) => Promise<EncounterGenerateResult>
   clientId?: () => string
   random?: () => number
+  explorationAuthority?: MaybeRefOrGetter<EncounterGenerationExplorationAuthorityInput | null>
+  commandsBlocked?: MaybeRefOrGetter<boolean>
 }
 
 export const useEncounterGenerationPage = ({
@@ -50,6 +53,8 @@ export const useEncounterGenerationPage = ({
   fetchSpawn = (body) => useApiClient().postJson<EncounterGenerateResult>(ENCOUNTER_API_PATHS.spawn, body),
   clientId = getClientId,
   random = Math.random,
+  explorationAuthority = null,
+  commandsBlocked = false,
 }: UseEncounterGenerationPageOptions) => {
   const allTables = computed(() => Array.from(toValue(entries)))
   const allMaps = computed(() => Array.from(toValue(maps)))
@@ -82,6 +87,8 @@ export const useEncounterGenerationPage = ({
   const tablesForRegion = computed(() => tablesInRegionFromEntries(allTables.value, region.value))
   const selectedTable = computed(() => findEncounterTableInEntries(allTables.value, region.value, tableKey.value))
   const selectedSpawnMap = computed(() => allMaps.value.find((map) => map.slug === spawnMapSlug.value) ?? null)
+  const currentExplorationAuthority = computed(() => toValue(explorationAuthority))
+  const blocked = computed(() => toValue(commandsBlocked))
 
   watch(allMaps, (next) => {
     if (next.length === 0) return
@@ -130,7 +137,7 @@ export const useEncounterGenerationPage = ({
   }
 
   const generate = async () => {
-    if (!selectedTable.value || busy.value) return
+    if (!selectedTable.value || busy.value || blocked.value) return
     generating.value = true
     error.value = null
     result.value = null
@@ -143,6 +150,7 @@ export const useEncounterGenerationPage = ({
         outRoot: outRoot.value,
         preview: preview.value,
         rolled: rolledPreview.value,
+        exploration: currentExplorationAuthority.value,
       })))
     } catch (err: unknown) {
       error.value = errorMessageForEncounterGenerate(err)
@@ -152,7 +160,7 @@ export const useEncounterGenerationPage = ({
   }
 
   const spawn = async () => {
-    if (!selectedTable.value || !selectedSpawnMap.value || preview.value || busy.value) return
+    if (!selectedTable.value || !selectedSpawnMap.value || preview.value || busy.value || blocked.value) return
     spawning.value = true
     error.value = null
     result.value = null
@@ -166,6 +174,7 @@ export const useEncounterGenerationPage = ({
         mapSlug: spawnMapSlug.value,
         clientId: clientId(),
         rolled: rolledPreview.value,
+        exploration: currentExplorationAuthority.value,
       })))
     } catch (err: unknown) {
       error.value = errorMessageForEncounterGenerate(err)
@@ -174,7 +183,7 @@ export const useEncounterGenerationPage = ({
     }
   }
 
-  const canSpawn = computed(() => Boolean(selectedTable.value && selectedSpawnMap.value && !preview.value))
+  const canSpawn = computed(() => Boolean(selectedTable.value && selectedSpawnMap.value && !preview.value && !blocked.value))
 
   const openFiles = ref<Set<string>>(new Set())
   const toggleFile = (name: string) => {
@@ -203,6 +212,8 @@ export const useEncounterGenerationPage = ({
     tablesForRegion,
     selectedTable,
     selectedSpawnMap,
+    currentExplorationAuthority,
+    blocked,
     rolledPreview,
     rollPreview,
     generating,

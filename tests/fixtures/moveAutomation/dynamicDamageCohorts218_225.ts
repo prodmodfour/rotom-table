@@ -93,7 +93,7 @@ export const MA_218_225_SCENARIOS_BY_MOVE: Readonly<Record<
     scenarioId: "electro-ball.v2-reviewed-conformance",
     evidenceClasses: ["hit", "miss", "crit", "immunity", "retry", "multi-resource-conflict", "enemy"],
   }],
-  "Façade": [{
+  Facade: [{
     scenarioId: "fac-ade.v2-reviewed-conformance",
     evidenceClasses: ["hit", "miss", "crit", "immunity", "retry", "multi-resource-conflict", "enemy", "threshold-pass", "threshold-fail"],
   }],

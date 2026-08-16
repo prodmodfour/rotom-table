@@ -49,9 +49,9 @@ import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { MovementCapabilityTraits } from '~/types/movement'
 import { resolveEffectiveCapabilities } from '../capabilityAutomation/effectiveCapabilities'
-import { resolveWielderWeaponProfile } from '../capabilityAutomation/wielder'
 import {
   resolveCapabilityWeaponMoveGrants,
+  resolveEquipmentWeaponAttackSources,
   resolveLivingWeaponAttackSources,
 } from '../capabilityAutomation/weaponMoveGrants'
 import { CAPABILITY_WEAPON_MOVE_RUNTIMES } from '../capabilityAutomation/weaponMoveRuntime'
@@ -210,6 +210,22 @@ import {
   aa083PoltergeistFormForSpecies,
 } from '#shared/abilityAutomation/aa083'
 import { aa083PoisonHealActive } from '../abilityAutomation/mechanics/aa083LifecycleIntegration'
+import {
+  createMoveEquipmentContributionQueries,
+  type AuthoritativeMoveEquipmentContributionQueries,
+} from './equipmentContributionQueries'
+import {
+  createEncounterEquipmentGrantQueries,
+  createMoveEquipmentGrantQueries,
+  type AuthoritativeMoveEquipmentGrantQueries,
+} from './equipmentGrantQueries'
+import {
+  createMoveEquipmentEventProviderQueries,
+  type AuthoritativeMoveEquipmentEventProviderQueries,
+} from './equipmentEventProviderQueries'
+import { activeReviewedItemFormChange } from '../itemAutomation/formChanges'
+import { encounterCreatureRuleProfileForToken } from '~/utils/encounterCreatureRules'
+import { pokemonTypeId } from '#shared/pokemonTypes'
 
 export interface AuthoritativeMoveSheetRead {
   readonly kind: SheetKind
@@ -301,6 +317,11 @@ export interface AuthoritativeMoveContextQueries {
   readonly itemRules: AuthoritativeMoveItemRuleQueries
   /** Private normalized item identities; never projected to accepted wire results. */
   readonly items: AuthoritativeMoveItemResourceQueries
+  /** Hash-current active equipment modifiers, resolved from authoritative whole-item state. */
+  readonly equipment: AuthoritativeMoveEquipmentContributionQueries
+  readonly equipmentGrants: AuthoritativeMoveEquipmentGrantQueries
+  /** Active, hash-current passive subscriptions from authoritative equipment. */
+  readonly equipmentProviders?: AuthoritativeMoveEquipmentEventProviderQueries
   readonly resources: AuthoritativeMoveResourceQueries
   readonly rooms: AuthoritativeMoveRoomQueries
   readonly stats: AuthoritativeMoveStatQueries
@@ -665,6 +686,10 @@ export const buildAuthoritativeMoveRulesContext = (
     )))
   })
   const projectedAbilitiesByPlacement = new Map<string, readonly AuthoritativeEffectiveAbility[]>()
+  const presentationEquipmentGrants = createEncounterEquipmentGrantQueries({
+    map,
+    sheets: resolvedSheets,
+  })
   for (const placement of basePlacementSnapshot.placements) {
     const sheet = sheetByRef.get(sheetReadKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
     const sheetAbilityInstances = sheet ? resolveSheetAndEdgeAbilityInstances(sheet.sheet) : []
@@ -704,8 +729,40 @@ export const buildAuthoritativeMoveRulesContext = (
         parameterData: selectedInstance?.parameterData ?? null,
       }]
     })
+    const equipmentAbilityOrdinals = new Map<string, number>()
+    const equipmentAbilityInstances = (presentationEquipmentGrants.resolve(placement.id)?.active ?? [])
+      .flatMap((entry) => {
+        if (entry.grant.kind !== 'ability') return []
+        const ordinal = (equipmentAbilityOrdinals.get(entry.grant.grantId) ?? 0) + 1
+        equipmentAbilityOrdinals.set(entry.grant.grantId, ordinal)
+        return [{
+          instanceId: `equipment-grant:${placement.id}:${entry.grant.grantId}:${ordinal}`,
+          canonicalId: entry.grant.canonicalId,
+          parameterStatus: 'not-parameterized' as const,
+          parameterData: null,
+        }]
+      })
+    const itemFormChange = sheet?.kind === 'pokemon'
+      ? activeReviewedItemFormChange({
+          map,
+          placementId: placement.id,
+          pokemonSheet: sheet.sheet as CharacterSheet,
+        })
+      : null
+    const itemFormAbilityInstances = itemFormChange ? [{
+      instanceId: `item-form-change:${placement.id}:${itemFormChange.entry.abilityId.toLocaleLowerCase('en-US').replaceAll(' ', '-')}`,
+      canonicalId: itemFormChange.entry.abilityId,
+      parameterStatus: 'not-parameterized' as const,
+      parameterData: null,
+    }] : []
     const projected = projectAuthoritativeEffectiveAbilities({
-      baseAbilities: [...sheetAbilityInstances, ...soullessWonderGuard, ...asOneAbilities],
+      baseAbilities: [
+        ...sheetAbilityInstances,
+        ...soullessWonderGuard,
+        ...asOneAbilities,
+        ...equipmentAbilityInstances,
+        ...itemFormAbilityInstances,
+      ],
       species: sheet?.kind === 'pokemon' ? (sheet.sheet as CharacterSheet).species : null,
       target: {
         placementId: placement.id,
@@ -1231,7 +1288,31 @@ export const buildAuthoritativeMoveRulesContext = (
             })
           })()
         : iceFaceToken
-    let capabilityFormToken = capabilityHpToken
+    const itemFormChange = placement?.sheetKind === 'pokemon'
+      ? activeReviewedItemFormChange({
+          map,
+          placementId: token.id,
+          pokemonSheet: resolvedSheet?.sheet as CharacterSheet ?? null,
+        })
+      : null
+    let capabilityFormToken: SpawnedPokemon = itemFormChange ? detachedFrozenJson({
+      ...capabilityHpToken,
+      atk: Math.max(1, capabilityHpToken.atk + itemFormChange.form.statDeltas.atk),
+      def: Math.max(1, capabilityHpToken.def + itemFormChange.form.statDeltas.def),
+      satk: Math.max(1, capabilityHpToken.satk + itemFormChange.form.statDeltas.satk),
+      sdef: Math.max(1, capabilityHpToken.sdef + itemFormChange.form.statDeltas.sdef),
+      ...(typeof capabilityHpToken.spd === 'number'
+        ? { spd: Math.max(1, capabilityHpToken.spd + itemFormChange.form.statDeltas.spd) }
+        : {}),
+      ...(itemFormChange.form.types ? { defenderTypes: [...itemFormChange.form.types] } : {}),
+      creatureRules: {
+        ...encounterCreatureRuleProfileForToken(capabilityHpToken),
+        ...(itemFormChange.form.types ? {
+          typeIds: itemFormChange.form.types.map(type => pokemonTypeId(type)!),
+        } : {}),
+        formId: itemFormChange.form.formId,
+      },
+    }) : capabilityHpToken
     const activeCapabilityModes = map.encounterState?.capabilityRuntime?.modes.filter(mode => (
       mode.actorPlacementId === token.id
       && effectiveCapabilityInstanceIds.has(mode.capabilityInstanceId)
@@ -1737,6 +1818,22 @@ export const buildAuthoritativeMoveRulesContext = (
     ),
   })
   const itemResourceQueries = createAuthoritativeMoveItemResourceQueries(itemResources)
+  const equipmentQueryInput = {
+    placements,
+    sheets: resolvedSheets,
+    itemEffects,
+    recordSheetRead: readSet.recordPlacement,
+    isTransformed: (placementId: string) => (
+      map.encounterState?.abilityTransformations?.entries.some(snapshot => (
+        snapshot.placementId === placementId && snapshot.kind === 'transformation'
+      )) === true
+    ),
+  }
+  const equipment = createMoveEquipmentContributionQueries({
+    ...equipmentQueryInput,
+  })
+  const equipmentGrants = createMoveEquipmentGrantQueries(equipmentQueryInput)
+  const equipmentProviders = createMoveEquipmentEventProviderQueries(equipmentQueryInput)
   const itemRules = createMoveAutomationItemRuleResolver({
     placements,
     sheets: resolvedSheets,
@@ -1793,6 +1890,25 @@ export const buildAuthoritativeMoveRulesContext = (
     hasActivePoisonHeal: placementId => abilityQueries.has(placementId, 'Poison Heal')
       && aa083PoisonHealActive(map, placementId),
     resolveStatOverlay: (placement, stat) => rooms.statOverlay({ placement, stat }),
+    resolveEquipmentCombatStageDefault: (placementId, stage) => equipment.metric({
+      placementId,
+      metric: 'combat-stage-default',
+      targetId: stage,
+      base: 0,
+    })?.final ?? 0,
+    resolvePostStageEquipmentStat: (placementId, stat, value) => {
+      const targetId = ({
+        attack: 'atk', 'special-attack': 'satk', defense: 'def',
+        'special-defense': 'sdef', speed: 'spd',
+      } as const)[stat as 'attack' | 'special-attack' | 'defense' | 'special-defense' | 'speed']
+      if (!targetId) return value
+      return equipment.metric({
+        placementId,
+        metric: 'stat-after-stages',
+        targetId,
+        base: value,
+      })?.final ?? value
+    },
     recordSheetRead: readSet.recordPlacement,
   })
   const targetStates = createMoveAutomationTargetStateResolver({
@@ -2042,6 +2158,9 @@ export const buildAuthoritativeMoveRulesContext = (
     itemEffects,
     itemRules,
     items: itemResourceQueries,
+    equipment,
+    equipmentGrants,
+    equipmentProviders,
     resources,
     rooms,
     stats,
@@ -2073,13 +2192,7 @@ export const buildAuthoritativeMoveRulesContext = (
           message: `${moveName} requires effective ${requiredCapability}.`,
         }
       }
-      const wielderWeapon = actorSheet.kind === 'pokemon'
-        && effectiveActorCapabilities.some(instance => instance.canonicalId === 'Wielder')
-        ? resolveWielderWeaponProfile({
-            heldItemName: (actorSheet.sheet as CharacterSheet).items?.held,
-            size: actorToken.size,
-          })
-        : null
+      const resolvedActorEquipmentGrants = equipmentGrants.resolve(actorPlacement.id)
       const capabilityWeaponInput = {
         map,
         placement: actorPlacement,
@@ -2088,22 +2201,30 @@ export const buildAuthoritativeMoveRulesContext = (
         pokemonSheets: sheetLookup.pokemon,
         trainerSheets: sheetLookup.trainer,
         tokenForPlacement: (placementId: string) => tokenById.get(placementId) ?? null,
+        ...(resolvedActorEquipmentGrants ? { equipmentGrants: resolvedActorEquipmentGrants } : {}),
       }
       const capabilityWeaponGrants = resolveCapabilityWeaponMoveGrants(capabilityWeaponInput)
       const livingWeaponAttackSources = resolveLivingWeaponAttackSources(capabilityWeaponInput)
-      const sourcedStruggleEntries = livingWeaponAttackSources.flatMap(source => (
-        source.actorIsWielder
-          ? moveEntriesForPlacement(actorPlacement, sheetLookup, {
-              encounterEffects: map.encounterState?.effects ?? [],
-              abilityConnectionNames: abilityQueries.activeForPlacement(actorPlacement.id)
-                .map(ability => ability.canonicalId),
-            }).filter(entry => isStruggleAttackMoveName(entry.move.name)).map(entry => ({
+      const equipmentWeaponAttackSources = resolveEquipmentWeaponAttackSources(capabilityWeaponInput)
+      const baseStruggleEntries = moveEntriesForPlacement(actorPlacement, sheetLookup, {
+        encounterEffects: map.encounterState?.effects ?? [],
+        abilityConnectionNames: abilityQueries.activeForPlacement(actorPlacement.id)
+          .map(ability => ability.canonicalId),
+      }).filter(entry => isStruggleAttackMoveName(entry.move.name))
+      const sourcedStruggleEntries = [
+        ...equipmentWeaponAttackSources.flatMap(source => baseStruggleEntries.map(entry => ({
+          ...entry,
+          attackSourceId: source.attackSourceId,
+          attackSourceLabel: source.attackSourceLabel,
+        }))),
+        ...livingWeaponAttackSources.flatMap(source => source.actorIsWielder
+          ? baseStruggleEntries.map(entry => ({
               ...entry,
               attackSourceId: source.attackSourceId,
               attackSourceLabel: source.attackSourceLabel,
             }))
-          : []
-      ))
+          : []),
+      ]
       const grantedMoveNames = [
         ...grantedMoveNamesForActor(),
         ...capabilityWeaponGrants.map(grant => grant.canonicalId),
@@ -2162,30 +2283,6 @@ export const buildAuthoritativeMoveRulesContext = (
             }),
       }
       let resolved = resolveCanonicalMoveEntryForPlacement(moveResolutionInput)
-      if (resolved.ok && wielderWeapon
-        && !resolved.entry.sourceEntry.attackSourceId
-        && isStruggleAttackMoveName(moveName)) {
-        const rankedDamageBase = struggleDamageBaseForCombatRank(
-          moveName, resolved.entry.script.damageBase, actorToken.combatSkillRankValue,
-        )
-        const rankedAc = struggleAccuracyForCombatRank(
-          moveName, resolved.entry.script.ac, actorToken.combatSkillRankValue,
-        )
-        const damageBase = rankedDamageBase === null
-          ? null : rankedDamageBase + wielderWeapon.damageBaseBonus
-        const ac = rankedAc === null
-          ? null : Number(rankedAc) + wielderWeapon.accuracyCheckPenalty
-        const range = wielderWeapon.grantsReach && /\bmelee\b/i.test(resolved.entry.script.range)
-          ? `${['large', 'huge', 'gigantic'].includes(actorToken.size.trim().toLocaleLowerCase('en-US')) ? 3 : 2}, 1 Target`
-          : resolved.entry.script.range
-        resolved = {
-          ...resolved,
-          entry: {
-            ...resolved.entry,
-            script: { ...resolved.entry.script, damageBase, ac, range },
-          },
-        }
-      }
       let selectedLivingWeaponSource: (typeof livingWeaponAttackSources)[number] | null = null
       if (resolved.ok) {
         const resolvedCanonicalMoveName = resolved.entry.canonicalMoveName
@@ -2193,11 +2290,15 @@ export const buildAuthoritativeMoveRulesContext = (
         const matchingLivingWeaponSources = selectedAttackSourceId
           ? livingWeaponAttackSources.filter(source => source.attackSourceId === selectedAttackSourceId)
           : []
-        if (selectedAttackSourceId && matchingLivingWeaponSources.length !== 1) {
+        const matchingEquipmentWeaponSources = selectedAttackSourceId
+          ? equipmentWeaponAttackSources.filter(source => source.attackSourceId === selectedAttackSourceId)
+          : []
+        const matchingSourceCount = matchingLivingWeaponSources.length + matchingEquipmentWeaponSources.length
+        if (selectedAttackSourceId && matchingSourceCount !== 1) {
           return detachedFrozenJson({
             ok: false,
             reason: 'attack-source-invalid',
-            message: `${moveName.trim() || 'Move'} no longer resolves to one exact Living Weapon source.`,
+            message: `${moveName.trim() || 'Move'} no longer resolves to one exact effective weapon source.`,
           })
         }
         selectedLivingWeaponSource = matchingLivingWeaponSources[0] ?? null
@@ -2212,12 +2313,24 @@ export const buildAuthoritativeMoveRulesContext = (
           grant.canonicalId === resolvedCanonicalMoveName
           && grant.attackSourceId === selectedAttackSourceId
         ))
-        if (weaponGrant) {
-          const damageBase = resolved.entry.script.damageBase === null
-            ? null : resolved.entry.script.damageBase + weaponGrant.damageBaseBonus
-          const ac = resolved.entry.script.ac === null
-            ? null : Number(resolved.entry.script.ac) + weaponGrant.accuracyCheckPenalty
-          const range = weaponGrant.grantsReach && /\bmelee\b/i.test(resolved.entry.script.range)
+        const struggleWeaponProfile = matchingEquipmentWeaponSources[0]?.profile ?? null
+        const weaponModifier = weaponGrant ?? struggleWeaponProfile
+        if (weaponModifier) {
+          const baseDamage = struggleWeaponProfile && isStruggleAttackMoveName(moveName)
+            ? struggleDamageBaseForCombatRank(
+                moveName, resolved.entry.script.damageBase, actorToken.combatSkillRankValue,
+              )
+            : resolved.entry.script.damageBase
+          const baseAc = struggleWeaponProfile && isStruggleAttackMoveName(moveName)
+            ? struggleAccuracyForCombatRank(
+                moveName, resolved.entry.script.ac, actorToken.combatSkillRankValue,
+              )
+            : resolved.entry.script.ac
+          const damageBase = baseDamage === null
+            ? null : baseDamage + weaponModifier.damageBaseBonus
+          const ac = baseAc === null
+            ? null : Number(baseAc) + weaponModifier.accuracyCheckPenalty
+          const range = weaponModifier.grantsReach && /\bmelee\b/i.test(resolved.entry.script.range)
             ? `${['large', 'huge', 'gigantic'].includes(actorToken.size.trim().toLocaleLowerCase('en-US')) ? 3 : 2}, ${resolved.entry.script.targetCount === 2 ? '2 Targets' : '1 Target'}`
             : resolved.entry.script.range
           resolved = {

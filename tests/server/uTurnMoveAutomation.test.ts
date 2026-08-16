@@ -700,7 +700,7 @@ describe('U-Turn accepted durable switching saga', () => {
     const mapBefore = deepCloneJson(stuck.maps.getBySlug('u-turn-arena'))
     const sheetsBefore = deepCloneJson(stuck.sheets.list())
     const rejected = await declare(stuck, 'op_u_turn_stuck')
-    expect(rejected.result).toMatchObject({ ok: false, reason: 'invalid' })
+    expect(rejected.result).toMatchObject({ ok: false, reason: 'conflict' })
     expect(stuck.maps.getBySlug('u-turn-arena')).toEqual(mapBefore)
     expect(stuck.sheets.list()).toEqual(sheetsBefore)
     expect(stuck.drawCount()).toBe(0)

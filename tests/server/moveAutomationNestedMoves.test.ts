@@ -796,7 +796,7 @@ describe('reviewed nested MoveSpec execution', () => {
     const context = contextFor({
       registry,
       random: [0, 0.99],
-      actorMovelist: ['Scratch', 'Swords Dance'],
+      actorMovelist: ['Tackle', 'Scratch', 'Swords Dance'],
     })
 
     const result = executeMoveSpec({
@@ -869,7 +869,7 @@ describe('reviewed nested MoveSpec execution', () => {
     const context = contextFor({
       registry: registryFor(parentDefinition, childDefinition),
       random: [0],
-      actorMovelist: ['Scratch', 'Swords Dance'],
+      actorMovelist: ['Tackle', 'Scratch', 'Swords Dance'],
       effects: [{
         ...moveListOverlayEncounterEffectFixture({
           action: 'disable',

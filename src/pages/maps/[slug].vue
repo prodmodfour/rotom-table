@@ -93,13 +93,13 @@ import {
 import {
   emptyEncounterPresentationProjection,
   parseEncounterActionDeclarationIntent,
-  parseEncounterActionOffer,
   parseEncounterInteractionResponseIntent,
   type EncounterActionOffer,
   type EncounterPendingInteractionAuthorizedView,
   type EncounterPresentationProjection,
 } from '#shared/encounterPresentation'
 import { isPendingMoveDeclarationResult } from '#shared/moveAutomation/pendingResolution'
+import { parseAuthorizedItemActionOffer } from '#shared/itemAutomation/projection'
 import { parseMoveAttackSourceId } from '#shared/moveAutomation/attackSource'
 import {
   aa080EntityIsActive,
@@ -142,9 +142,8 @@ import { clearCombatLogMetadata, countCombatLogMessages } from '~/utils/combatLo
 import { buildLivePlayBatchPendingLabel } from '~/utils/livePlayBatchCommandUi'
 import { textValueFromEvent } from '~/utils/domEvents'
 import {
-  applyPokeballCaptureOutcomeToPokemonSheet,
-  applyPokeballCaptureOutcomeToTrainerSheet,
   type PokeballCaptureOutcomeEvent,
+  type TokenPokeballOption,
 } from '~/utils/pokeballCapture'
 import { normalizeMapSceneName, MAP_SCENE_NAME_MAX_LENGTH } from '~/utils/mapSceneState'
 import { setTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
@@ -163,7 +162,6 @@ import {
 } from '~/utils/livePlayPredictions'
 import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption'
 import { routeSlugParam } from '~/utils/routeParams'
-import type { CharacterSheet } from '~/types/characterSheet'
 import type { TokenAbilityUseReference } from '~/utils/mapTokenAbilities'
 import type { TokenMoveUseReference } from '~/utils/mapTokenMoves'
 import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
@@ -175,7 +173,6 @@ import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/
 import type { MoveAutomationTargetingOverlayState } from '~/types/moveAutomation'
 import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { LivePlayMovementIntent } from '~/types/livePlayUi'
-import type { TrainerSheet } from '~/types/trainerSheet'
 
 definePageMeta({
   hasPageSpecificGmAdminPanel: true,
@@ -2081,7 +2078,6 @@ const {
   modifyCombatStages: modifyCombatStagesViaSetupSheetSave,
   modifyConditions: modifyConditionsViaSetupSheetSave,
   grantExperience: grantExperienceViaSetupSheetSave,
-  updatePlacedSheet,
 } = useTokenSheetMutations({
   map,
   sheetLookup,
@@ -2305,6 +2301,7 @@ const {
   spawnedPokemon: renderedSpawnedPokemon,
   pokemonBySlug,
   trainerBySlug,
+  encounterPresentation,
   canEditMap,
   canControlPlacement,
   modifyHp: modifyHpFromScene,
@@ -2401,48 +2398,17 @@ const {
 } = orderActionPanel
 expireActiveOrdersLocallyAfterInitiativeAdvance = orderActionPanel.expireActiveOrdersLocallyAfterInitiativeAdvance
 
-const applyPokeballCaptureOutcomeForSetupEdit = async (event: PokeballCaptureOutcomeEvent) => {
-  const sheetUpdated = await updatePlacedSheet(
-    event.trainerId,
-    (kind, sheet) => {
-      if (kind !== 'trainer') return sheet
-      const updated = deepCloneJson(sheet as TrainerSheet)
-      applyPokeballCaptureOutcomeToTrainerSheet(updated, event)
-      return updated
-    },
-    'throwPokeball',
-  )
-
-  if (sheetUpdated && event.result.success) {
-    const targetUpdated = await updatePlacedSheet(
-      event.targetId,
-      (kind, sheet) => {
-        if (kind !== 'pokemon') return sheet
-        const updated = deepCloneJson(sheet as CharacterSheet)
-        applyPokeballCaptureOutcomeToPokemonSheet(updated, event)
-        return updated
-      },
-      'capturePokeball',
-      { allowAnyTarget: true },
-    )
-
-    if (targetUpdated) {
-      deletePlacement(event.targetId)
-      if (selectedId.value === event.targetId) clearSelection()
-    }
-  }
-}
-
 const dispatchPokeballCaptureAttempt = async (request: {
   trainerId: string
   targetId: string
-  pokeballName: string
+  pokeball: TokenPokeballOption
 }): Promise<PokeballCaptureOutcomeEvent | false | undefined> => {
   if (isSetupEditMode()) return undefined
   const result = await livePlayCommands.throwPokeball({
     trainerPlacementId: request.trainerId,
     targetPlacementId: request.targetId,
-    pokeballName: request.pokeballName,
+    sourceInstanceId: request.pokeball.sourceInstanceId,
+    source: request.pokeball.source,
   })
   if (!result.dispatched || !result.response?.capture) return false
   const capture = result.response.capture
@@ -2466,7 +2432,6 @@ const {
   pokemonBySlug,
   trainerBySlug,
   canControlPlacement,
-  applyCaptureOutcome: applyPokeballCaptureOutcomeForSetupEdit,
   dispatchCaptureAttempt: dispatchPokeballCaptureAttempt,
   onBeforePokeballThrow: (event) => showActionSplash({
     userId: event.userId,
@@ -2691,7 +2656,7 @@ const openMoveAutomationFromContext = (payload: { id: string } & TokenMoveUseRef
   openMoveAutomationPanel(payload)
 }
 
-const openPokeballCaptureFromContext = (payload: { id: string; pokeballName: string }) => {
+const openPokeballCaptureFromContext = (payload: { id: string; sourceInstanceId: string }) => {
   if (moveAutomationDispatchInFlight()) return
   clearRemotePokeballCapture()
   cancelMoveAutomationTargeting()
@@ -2835,7 +2800,7 @@ const activateEncounterOffer = async (projectedOffer: EncounterActionOffer): Pro
   })
   let offer: EncounterActionOffer
   try {
-    offer = parseEncounterActionOffer(await encounterActionApi.postJson(MAP_API_PATHS.declareEncounterAction, {
+    offer = parseAuthorizedItemActionOffer(await encounterActionApi.postJson(MAP_API_PATHS.declareEncounterAction, {
       intent: declaration,
       ...(isPlayer.value && selectedProfileId.value ? { profileId: selectedProfileId.value } : {}),
     }))
@@ -2898,13 +2863,10 @@ const activateEncounterOffer = async (projectedOffer: EncounterActionOffer): Pro
     return
   }
   if (offer.intent.actionId === 'capture.throw') {
-    const pokeball = encounterPresentation.value.affordances.find(affordance => (
-      affordance.actor?.participantId === id
-      && affordance.source.sourceKind === 'item'
-      && /ball/i.test(affordance.source.displayName)
-      && affordance.availability.status === 'available'
-    ))
-    if (pokeball) openPokeballCaptureFromContext({ id, pokeballName: pokeball.source.displayName })
+    const pokeball = rawTokenPokeballOptionsById.value[id]?.[0]
+    if (pokeball && offer.availability.status === 'available') {
+      openPokeballCaptureFromContext({ id, sourceInstanceId: pokeball.sourceInstanceId })
+    }
     return
   }
   selectPokemon(id)

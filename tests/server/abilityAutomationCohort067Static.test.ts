@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { activePokemonHeldEquipmentState } from '../fixtures/equipment'
+import { splitSheetItemNames } from '~/utils/sheetItemNames'
 import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
@@ -18,10 +20,10 @@ import {
   planAuthoritativeMoveState,
   planAuthoritativeMoveStateExecution,
 } from '../../server/domain/planAuthoritativeMoveState'
+import { resolveAuthoritativeMoveItemResources } from '../../server/domain/moveAutomation/itemResources'
 import { isAuthoritativePendingMoveResolution } from '../../server/domain/resolveAuthoritativeMove'
 import { resumeMoveSpec } from '../../server/domain/moveAutomation/resumeSpec'
 import { planResumedMoveState } from '../../server/domain/moveAutomation/planResumedMoveState'
-import { resolveAuthoritativeMoveItemResources } from '../../server/domain/moveAutomation/itemResources'
 
 const ability = (canonicalId: string) => ({
   name: canonicalId,
@@ -43,6 +45,10 @@ const sheet = (input: {
   abilities: input.ability ? [ability(input.ability)] : [],
   movelist: input.move ? [{ name: input.move }] : [],
   items: input.held ? { held: input.held } : {},
+  equipmentState: activePokemonHeldEquipmentState({
+    ownerSlug: input.slug,
+    canonicalItemIds: splitSheetItemNames(input.held),
+  }),
   stats: {
     hp: { added: 45 }, atk: { added: 25 }, def: { added: 25 },
     satk: { added: 25 }, sdef: { added: 25 }, spd: { added: 25 },
@@ -175,6 +181,7 @@ describe('AA-067 static abilities', () => {
     })
     const actor = planned.sheetWrites.find(write => write.slug === 'actor')?.nextSheet as CharacterSheet
     expect(actor.items?.held).toBe('Leftovers')
+    expect(actor.equipmentState?.instances).toHaveLength(1)
     expect(planned.nextMap.encounterState?.groundItems).toContainEqual(expect.objectContaining({
       canonicalItemName: 'Iron Ball', ownerPlacementId: 'actor',
     }))

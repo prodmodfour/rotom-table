@@ -1,6 +1,6 @@
+import { createHash } from 'node:crypto'
 import {
   capabilityWeaponMove,
-  capabilityWeaponMoveName,
   livingWeaponMoveNames,
   type CapabilityWeaponMoveName,
 } from '#shared/capabilityAutomation/weaponMoves'
@@ -11,8 +11,15 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { TokenSheetMoveEntry } from '~/utils/mapTokenMoves'
+import type {
+  EquipmentMoveGrantV1,
+  EquipmentWeaponProfileGrantV1,
+} from '#shared/itemAutomation/equipmentGrants'
+import type {
+  ResolvedEquipmentGrant,
+  ResolveEquipmentGrantsResult,
+} from '../itemAutomation/equipmentGrants'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
-import { resolveWielderWeaponProfile, type WielderWeaponProfile } from './wielder'
 import {
   livingWeaponAttackSourceId,
   livingWeaponAttackSourceLabel,
@@ -28,6 +35,14 @@ export interface CapabilityWeaponMoveGrant {
   readonly damageBaseBonus: number
   readonly accuracyCheckPenalty: number
   readonly grantsReach: boolean
+}
+
+export interface EquipmentWeaponAttackSource {
+  readonly attackSourceId: MoveAttackSourceId
+  readonly attackSourceLabel: string
+  readonly sourceId: string
+  readonly canonicalItemId: string
+  readonly profile: EquipmentWeaponProfileGrantV1
 }
 
 export interface LivingWeaponAttackSource {
@@ -49,6 +64,8 @@ export interface ResolveCapabilityWeaponMoveGrantsInput {
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
   readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
   readonly tokenForPlacement: (placementId: string) => SpawnedPokemon | null
+  /** Current hash- and suppression-validated equipment grants. Omission grants nothing. */
+  readonly equipmentGrants?: ResolveEquipmentGrantsResult
 }
 
 const placementSheet = (
@@ -103,24 +120,78 @@ const grantFor = (input: {
   })
 }
 
-const itemGrant = (
-  profile: WielderWeaponProfile,
-  rank: number,
-): CapabilityWeaponMoveGrant | null => {
-  if (rank < 4 || !profile.adeptMoveName) return null
-  const canonicalId = capabilityWeaponMoveName(profile.adeptMoveName)
-  if (!canonicalId) return null
-  return grantFor({
-    canonicalId,
-    sourceKind: 'wielder-item',
-    sourceId: profile.canonicalItemName,
-    attackSourceId: null,
-    attackSourceLabel: null,
-    damageBaseBonus: profile.damageBaseBonus,
-    accuracyCheckPenalty: profile.accuracyCheckPenalty,
-    grantsReach: profile.grantsReach,
-  })
+const equipmentAttackSourceId = (input: {
+  readonly mapSlug: string
+  readonly placementId: string
+  readonly instanceId: string
+  readonly grantId: string
+}): MoveAttackSourceId => `attack-source.v1.${createHash('sha256')
+  .update(['equipment-weapon-source.v1', input.mapSlug, input.placementId, input.instanceId, input.grantId].join('\u0000'))
+  .digest('hex')}`
+
+const pokemonSizeAllowsProfile = (
+  profile: EquipmentWeaponProfileGrantV1,
+  size: string | null | undefined,
+): boolean => {
+  const normalized = size?.trim().toLocaleLowerCase('en-US') ?? ''
+  return profile.pokemonWielderSizePolicy === 'small-only'
+    ? normalized === 'small'
+    : profile.pokemonWielderSizePolicy === 'medium-plus'
+      ? ['medium', 'large', 'huge', 'gigantic'].includes(normalized)
+      : false
 }
+
+const activeEquipmentProfiles = (
+  input: ResolveCapabilityWeaponMoveGrantsInput,
+  hasWielder: boolean,
+): readonly { readonly source: ResolvedEquipmentGrant; readonly profile: EquipmentWeaponProfileGrantV1 }[] => (
+  input.equipmentGrants?.active.flatMap((source) => {
+    if (source.grant.kind !== 'weapon-profile' || source.grant.executionStatus !== 'native') return []
+    if (input.placement.sheetKind === 'trainer') return [{ source, profile: source.grant }]
+    return hasWielder && pokemonSizeAllowsProfile(source.grant, input.token.size)
+      ? [{ source, profile: source.grant }]
+      : []
+  }) ?? []
+)
+
+/** Exact current equipment weapon selectors, opaque outside server authority. */
+export const resolveEquipmentWeaponAttackSources = (
+  input: ResolveCapabilityWeaponMoveGrantsInput,
+): readonly EquipmentWeaponAttackSource[] => {
+  const hasWielder = input.placement.sheetKind === 'pokemon'
+    && resolveEffectiveCapabilities({
+      map: input.map,
+      placement: input.placement,
+      sheet: input.sheet,
+      sheets: { pokemon: input.pokemonSheets, trainer: input.trainerSheets },
+    }).instances.some(instance => instance.effective && instance.canonicalId === 'Wielder')
+  return Object.freeze(activeEquipmentProfiles(input, hasWielder).map(({ source, profile }) => {
+    const attackSourceId = equipmentAttackSourceId({
+      mapSlug: input.map.slug,
+      placementId: input.placement.id,
+      instanceId: source.instanceId,
+      grantId: profile.grantId,
+    })
+    return Object.freeze({
+      attackSourceId,
+      attackSourceLabel: source.canonicalItemId,
+      sourceId: source.instanceId,
+      canonicalItemId: source.canonicalItemId,
+      profile,
+    })
+  }))
+}
+
+const eligibleEquipmentMoveGrant = (input: {
+  readonly placementKind: SheetPlacement['sheetKind']
+  readonly rank: number
+  readonly hasWielder: boolean
+  readonly move: EquipmentMoveGrantV1
+}): boolean => input.move.executionStatus === 'native'
+  && input.rank >= input.move.minimumCombatRank
+  && (input.placementKind === 'trainer'
+    ? input.move.trainerEligible
+    : input.hasWielder && input.move.pokemonWielderEligible)
 
 /** Resolve every exact current Living Weapon source for one acting placement. */
 export const resolveLivingWeaponAttackSources = (
@@ -167,19 +238,40 @@ export const resolveCapabilityWeaponMoveGrants = (
   input: ResolveCapabilityWeaponMoveGrantsInput,
 ): readonly CapabilityWeaponMoveGrant[] => {
   const grants: CapabilityWeaponMoveGrant[] = []
-  if (input.placement.sheetKind === 'pokemon') {
-    const hasWielder = resolveEffectiveCapabilities({
+  const hasWielder = input.placement.sheetKind === 'pokemon'
+    && resolveEffectiveCapabilities({
       map: input.map,
       placement: input.placement,
       sheet: input.sheet,
       sheets: { pokemon: input.pokemonSheets, trainer: input.trainerSheets },
     }).instances.some(instance => instance.effective && instance.canonicalId === 'Wielder')
-    const profile = hasWielder ? resolveWielderWeaponProfile({
-      heldItemName: (input.sheet as CharacterSheet).items?.held,
-      size: input.token.size,
-    }) : null
-    const grant = profile ? itemGrant(profile, input.token.combatSkillRankValue ?? 0) : null
-    if (grant) grants.push(grant)
+  const profiles = activeEquipmentProfiles(input, hasWielder)
+  const profileByInstance = new Map(profiles.map(entry => [entry.source.instanceId, entry.profile]))
+  for (const source of input.equipmentGrants?.active ?? []) {
+    if (source.grant.kind !== 'move' || !eligibleEquipmentMoveGrant({
+      placementKind: input.placement.sheetKind,
+      rank: input.token.combatSkillRankValue ?? 0,
+      hasWielder,
+      move: source.grant,
+    })) continue
+    const profile = profileByInstance.get(source.instanceId)
+    if (!profile) continue
+    const attackSourceId = equipmentAttackSourceId({
+      mapSlug: input.map.slug,
+      placementId: input.placement.id,
+      instanceId: source.instanceId,
+      grantId: profile.grantId,
+    })
+    grants.push(grantFor({
+      canonicalId: source.grant.canonicalId as CapabilityWeaponMoveName,
+      sourceKind: 'wielder-item',
+      sourceId: source.instanceId,
+      attackSourceId,
+      attackSourceLabel: source.canonicalItemId,
+      damageBaseBonus: profile.damageBaseBonus,
+      accuracyCheckPenalty: profile.accuracyCheckPenalty,
+      grantsReach: profile.grantsReach,
+    }))
   }
 
   for (const source of resolveLivingWeaponAttackSources(input)) {

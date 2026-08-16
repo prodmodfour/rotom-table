@@ -159,7 +159,7 @@ const strictDocument = (value: unknown, label: string): StrictJsonObject => {
     failLimit: (_path, detail) => fail('breeding.fossil-egg.invalid-request', detail),
   })
   if (!cloned || typeof cloned !== 'object' || Array.isArray(cloned)) return fail('breeding.fossil-egg.invalid-request', `${label} must be one strict JSON object.`)
-  return cloned
+  return cloned as StrictJsonObject
 }
 const storedTrainer = (value: unknown, label: string): { readonly slug: string, readonly revision: number, readonly document: StrictJsonObject } => {
   const row = exact(value, ['slug','revision','document'], label)

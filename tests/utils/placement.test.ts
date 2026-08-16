@@ -5,6 +5,7 @@ import { moveAutomationUserAccuracy } from '~/utils/moveAutomationAccuracy'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { activeEquipmentState } from '../fixtures/equipment'
 
 describe('placement helpers', () => {
   it('copies sheet ability names, gender, skill ranks, and accuracy context onto spawned tokens for automation', () => {
@@ -19,6 +20,9 @@ describe('placement helpers', () => {
       combatStages: { acc: 2 },
       activeTrainingFeature: 'Focused Training',
       items: { held: 'Luck Incense' },
+      equipmentState: activeEquipmentState({
+        ownerKind: 'pokemon', ownerSlug: 'pika', slotId: 'held', canonicalItemId: 'luck-incense',
+      }),
     }
     const placement: SheetPlacement = {
       id: 'placement-1',

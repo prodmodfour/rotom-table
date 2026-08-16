@@ -35,6 +35,18 @@ export interface EncounterGenerateResult {
   /** Actual count selected for this generation. Older servers omit this. */
   count?: number
   spawn?: EncounterSpawnSummary
+  routeRepel?: {
+    itemLabel: string
+    maximumAffectedWildLevel: 15 | 25 | 35
+    expiresAtCampaignMinute: number
+    repelledRolls: number
+  } | null
+}
+
+export interface EncounterGenerationExplorationAuthorityInput {
+  trainerSlug: string
+  trainerRevision: number
+  campaignClockRevision: number
 }
 
 export interface EncounterGenerateRequestBody {
@@ -48,6 +60,8 @@ export interface EncounterGenerateRequestBody {
   preview: boolean
   /** Exact Pokémon already shown in the roll preview; omitted by older clients. */
   rolled?: RolledEncounter[]
+  /** Exact active route-Repel authority selected from a current Trainer projection. */
+  exploration?: EncounterGenerationExplorationAuthorityInput
 }
 
 export interface EncounterSpawnRequestBody extends EncounterGenerateRequestBody {
@@ -136,6 +150,7 @@ export const buildEncounterGenerateRequestBody = (
     outRoot: string
     preview: boolean
     rolled?: readonly RolledEncounter[]
+    exploration?: EncounterGenerationExplorationAuthorityInput | null
   },
 ): EncounterGenerateRequestBody => {
   const countRange = normalizeEncounterGenerateCountRange(options.countMin, options.countMax)
@@ -148,6 +163,7 @@ export const buildEncounterGenerateRequestBody = (
     outRoot: options.outRoot,
     preview: options.preview,
     ...(rolled !== undefined ? { rolled } : {}),
+    ...(options.exploration ? { exploration: { ...options.exploration } } : {}),
   }
 }
 
@@ -161,6 +177,7 @@ export const buildEncounterSpawnRequestBody = (
     mapSlug: string
     clientId?: string
     rolled?: readonly RolledEncounter[]
+    exploration?: EncounterGenerationExplorationAuthorityInput | null
   },
 ): EncounterSpawnRequestBody => ({
   ...buildEncounterGenerateRequestBody({
@@ -171,6 +188,7 @@ export const buildEncounterSpawnRequestBody = (
     outRoot: options.outRoot,
     preview: false,
     ...(options.rolled !== undefined ? { rolled: options.rolled } : {}),
+    ...(options.exploration ? { exploration: options.exploration } : {}),
   }),
   mapSlug: options.mapSlug,
   ...(options.clientId ? { clientId: options.clientId } : {}),

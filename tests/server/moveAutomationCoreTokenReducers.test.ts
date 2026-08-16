@@ -39,6 +39,7 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { normalizeCombatStages } from '~/utils/combatStages'
 import { conditionEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
+import { createItemTemporaryCombatEffect } from '../../server/domain/itemAutomation/combatEffects'
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
   id,
@@ -2368,6 +2369,47 @@ describe('MoveSpec core token effect reducers', () => {
       reasonCode: 'condition-operation-trigger-not-met',
       changedFields: [],
     })
+  })
+
+  it('applies Guard Spec only to move-authored stage reductions and records the item blocker', () => {
+    const guardedMap = mapFixture()
+    guardedMap.encounterState = {
+      ...createEmptyEncounterState(),
+      effects: [createItemTemporaryCombatEffect({
+        operationId: 'op_item_guard_spec_fixture',
+        canonicalItemId: 'Guard Spec',
+        sourcePlacementId: 'actor-token',
+        targetPlacementId: 'target-token',
+        family: 'move-stage-reduction-immunity',
+        amount: 5,
+        duration: { kind: 'turns', amount: 5 },
+        stackPolicy: 'refresh',
+        map: guardedMap,
+      })],
+    }
+    const moveReduction = emission(operation('operation.guard-spec-lower', 'combat-stage', {
+      action: 'modify', stage: 'def', value: -2,
+    }))
+    const accuracyReduction = emission(operation('operation.guard-spec-accuracy', 'combat-stage', {
+      action: 'modify', stage: 'acc', value: -1,
+    }))
+    const blocked = reduce([moveReduction, accuracyReduction], 'Normal', buildContext(guardedMap))
+    expect(blocked.operationResults[0]).toMatchObject({
+      outcome: 'prevented',
+      recipients: [{
+        reasonCode: 'combat-stage-immunity',
+        blockers: [{ subject: 'def', source: 'Guard Spec' }],
+      }],
+    })
+    expect(blocked.operationResults[1]).toMatchObject({
+      outcome: 'prevented',
+      recipients: [{ blockers: [{ subject: 'acc', source: 'Guard Spec' }] }],
+    })
+
+    const lifecycleAuthored = structuredClone(moveReduction)
+    lifecycleAuthored.operation.source = { kind: 'lifecycle-event', id: 'event.guard-spec-fixture' }
+    const allowed = reduce([lifecycleAuthored], 'Normal', buildContext(guardedMap))
+    expect(allowed.operationResults[0]?.outcome).toBe('applied')
   })
 
   it('preserves condition/stage immunity and cap no-ops in the audit trace', () => {

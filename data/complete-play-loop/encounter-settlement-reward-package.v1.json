@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-074",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-reward-package-v1",
+  "sourceEvidence": {
+    "settlementDocumentModelSha256": "bd6751d716f1b2f40552c95208141844b87da83453a0ea16610a0835b1bfb849",
+    "settlementDocumentContractSha256": "4f8183f4de3b29fdb2dc66b2e3bc67a25377b554eebe879eebc2a6744c54da02",
+    "eligibilityContractSha256": "b05b3ead31780e3a4548d73fe304d4ff6944b4871b763ba2e227192413bf02b1",
+    "consequenceSnapshotContractSha256": "b9d1722c18d214dbbc9f2710b18cee46a39d8806f8413ae83af156016c31f122",
+    "rewardPackageModelSha256": "fda6c7a6e00dfd7de7992f1d3e241a3b6c8053d4f16ca033a40e64d80dff87c7"
+  },
+  "rewardKinds": ["experience", "money", "item", "capture", "narrative"],
+  "itemKinds": {
+    "stack": "positive quantity with one canonical definition authority",
+    "serializedEquipment": "exactly one whole item with one exact equipment definition authority and one whole allocation/write"
+  },
+  "narrative": {
+    "publicOrOwnerReward": "bounded accepted fact projected only to its declared audience",
+    "gmNote": "a narrative line with gm visibility; it remains server-private and never becomes hidden mechanics",
+    "freeformMechanics": "forbidden"
+  },
+  "destinationRules": {
+    "experience": ["group", "side", "participant", "pokemon-sheet"],
+    "money": ["group", "side", "participant", "trainer-inventory", "group-inventory"],
+    "item": ["group", "side", "participant", "trainer-inventory", "group-inventory"],
+    "capture": ["participant", "profile"],
+    "narrative": ["group", "side", "participant", "profile"]
+  },
+  "methodRules": {
+    "experience": ["fixed", "weighted", "individual"],
+    "money": ["fixed", "weighted", "individual"],
+    "item": ["fixed", "whole"],
+    "capture": ["whole"],
+    "narrative": ["whole"]
+  },
+  "allocationRules": {
+    "exactTotals": "Non-excluded allocation amounts must sum exactly to the reward amount or quantity; capture and narrative each have an exact amount of one.",
+    "whole": "A whole method is the only non-excluded allocation for its line and carries the complete amount.",
+    "serializedAndCapture": "Exactly one whole allocation and exactly one contributing amount-one write with capacity cost one; explicit non-contributing related writes have amount and capacity cost zero.",
+    "excluded": "Excluded rewards have no active allocations or writes.",
+    "pending": "Missing, under-, over-, denied, stale, unsupported, capacity-exceeding, or incompletely previewed allocations remain present and pending."
+  },
+  "authoritySnapshot": {
+    "completenessLiteral": "authoritative-current",
+    "destinationIdentity": "one unique current kind and id with an exact revision",
+    "permission": "one source-authority-backed allowed or denied result; denied requires a stable private reason",
+    "capacityMetrics": ["unbounded", "quantity", "slots", "team-slots", "fact-slots"],
+    "capacityRule": "All declared writes to one destination are summed before comparing non-negative capacity cost with current used and limit values.",
+    "foreignAuthority": "A destination or write not referenced by one current allocation is rejected."
+  },
+  "writePreview": {
+    "fields": [
+      "experience",
+      "money",
+      "inventory-stack",
+      "serialized-equipment",
+      "capture-destination",
+      "narrative-fact"
+    ],
+    "requiredFields": [
+      "stable private source-write identity",
+      "allocation identity",
+      "exact target authority and revision",
+      "owned write field",
+      "non-negative amount plus an explicit counts-toward-allocation marker",
+      "non-negative capacity cost",
+      "deterministic next revision"
+    ],
+    "aggregateRule": "Every active allocation has one or more exact previews whose contributing positive amounts sum to that allocation. A source-owned related aggregate mutation may use an explicit non-contributing zero amount. Duplicate source writes or duplicate allocation target fields are rejected.",
+    "mechanicsRule": "A preview describes the complete intended write boundary; P8-075 through P8-078 source providers still calculate and apply their own mechanics."
+  },
+  "validationIssueKinds": [
+    "unallocated",
+    "amount-mismatch",
+    "unsupported-destination",
+    "unsupported-method",
+    "stale-destination",
+    "permission-denied",
+    "capacity-exceeded",
+    "missing-write-preview",
+    "write-preview-mismatch"
+  ],
+  "readiness": {
+    "eligible": "Every non-excluded line is exactly allocated, every allocation is ready, all permissions and revisions are current, capacity fits in aggregate, and every write is previewed.",
+    "blocked": "Any validation issue leaves its allocation proposed and reward pending.",
+    "emptyPackage": "A package with no reward lines is ready and requires no writes.",
+    "terminalRule": "Committed, cancelled, applied, committing, completed, or cancelled state cannot be re-planned."
+  },
+  "ownership": {
+    "plannerOwns": [
+      "closed destination and method compatibility",
+      "exact allocation-total validation",
+      "complete private write-preview validation",
+      "aggregate capacity and permission preflight",
+      "ready versus pending package projection"
+    ],
+    "plannerDoesNotOwn": [
+      "experience or level mechanics",
+      "money or inventory mutation",
+      "serialized equipment creation",
+      "capture team or box mutation",
+      "objective or narrative fact mutation",
+      "atomic settlement persistence or publication"
+    ]
+  },
+  "privacy": {
+    "storedPlan": "server-private",
+    "forbiddenPublicEvidence": [
+      "destination revision",
+      "permission authority or denied reason identity",
+      "capacity values",
+      "source-write identity",
+      "target authority identity or revision",
+      "Profile identity",
+      "GM note text outside GM projection"
+    ],
+    "projectionRule": "Later role projections expose safe labels, quantities, audience-correct notes, capacity outcomes, and disabled reasons without raw authority."
+  },
+  "evidence": {
+    "runtime": "server/domain/encounterSettlement/rewardPackage.ts",
+    "tests": "tests/server/encounterSettlementRewardPackage.test.ts",
+    "documentation": "docs/encounter-settlement-reward-package.md"
+  }
+}

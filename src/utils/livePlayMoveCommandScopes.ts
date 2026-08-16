@@ -62,6 +62,7 @@ const ACTOR_SHEET_FIELDS = [
   'items',
   'inventory',
   'equipmentSlots',
+  'equipmentState',
 ] as const
 
 const TARGET_SHEET_FIELDS = [
@@ -71,6 +72,7 @@ const TARGET_SHEET_FIELDS = [
   'items',
   'inventory',
   'equipmentSlots',
+  'equipmentState',
 ] as const
 
 const placementById = (map: TabletopMap): Map<string, SheetPlacement> => {

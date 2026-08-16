@@ -1,5 +1,7 @@
+import { createHash } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
+import { parseCampaignDayOperationCommandV1 } from '#shared/campaignDay'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
@@ -9,11 +11,31 @@ import { createSqliteSheetRepository } from '../../server/storage/sheetRepositor
 import { createSqliteMapRepository } from '../../server/storage/mapRepository'
 import { createSqliteMapInteractionModeRepository } from '../../server/storage/mapInteractionModeRepository'
 import { createSqliteRealtimeEventRepository } from '../../server/storage/realtimeEventRepository'
+import { createSqliteCampaignClockRepository } from '../../server/storage/campaignClockRepository'
+import { createSqliteCampaignDayOperationRepository } from '../../server/storage/campaignDayOperationRepository'
+import { createSqliteBreedingOperationRepository } from '../../server/storage/breedingOperationRepository'
+import { createSqlitePokemonEggRepository } from '../../server/storage/pokemonEggRepository'
+import { createSqliteBreedingIncubationSegmentRepository } from '../../server/storage/breedingIncubationSegmentRepository'
+import { createSqliteBreedingArchiveStateRepository } from '../../server/storage/breedingArchiveStateRepository'
 import { advanceCampaignDayUseCase } from '../../server/useCases/advanceCampaignDay'
+import { createPokemonEggOffspringBlueprintV1, parseAuthoritativePokemonEggDocumentV1 } from '../../server/domain/breeding/lineage'
+import { compiledBreedingSpeciesSpec } from '../../server/domain/breeding/registry'
+import { createBreedingOperationAcceptedV1, createBreedingOperationCommandHash } from '../../server/domain/breeding/operations'
+import { parseBreedingOperationCommandV1 } from '#shared/breeding/operations'
+import eggContractJson from '../../data/breeding-automation/egg-contract.json'
+import hatchDurationPolicyJson from '../../data/breeding-automation/hatch-duration-policy.json'
+import rulesetJson from '../../data/breeding-automation/ruleset.json'
 import { resolveEffectiveCapabilities } from '../../server/domain/capabilityAutomation/effectiveCapabilities'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import { computePokemonHealingVitals } from '~/utils/sheets/healing'
+import { parseItemMedicalTreatmentState } from '#shared/itemAutomation/medicalTreatments'
+import { applyBandageTreatment } from '../../server/domain/itemAutomation/medicalTreatments'
+import { ITEM_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/itemAutomation/registry'
+import { startItemRouteLure } from '../../server/domain/itemAutomation/exploration'
+import { ITEM_EXPLORATION_CLOCK_REALTIME_EVENT_TYPE } from '#shared/itemAutomation/exploration'
+import { parseItemReBreatherState } from '#shared/itemAutomation/guidedAdjudication'
+import { activeEquipmentState } from '../fixtures/equipment'
 
 let databases: RotomDatabase[] = []
 const db = () => {
@@ -58,6 +80,158 @@ const changedTrainer = (revision = 3) => ({
   ap: { spent: 2 },
   revision,
 })
+
+const campaignDayCommand = (hex: string) => parseCampaignDayOperationCommandV1({
+  schemaVersion: 1,
+  operationId: `campaign-day:v1:${hex.repeat(32)}`,
+  kind: 'advance-one-day',
+  days: 1,
+})
+
+const campaignTimeEffect = (input: {
+  readonly id: string
+  readonly startedAtCampaignMinute: number
+  readonly durationMinutes: number
+}) => parseEncounterEffect({
+  id: input.id,
+  kind: 'condition',
+  source: { operationId: `operation.${input.id}`, moveId: 'item.daily-duration', placementId: 'clock-target' },
+  affected: { placementIds: ['clock-target'], sideIds: [], cells: [] },
+  createdRound: 1,
+  createdTurn: 0,
+  duration: {
+    kind: 'campaign-time',
+    remaining: null,
+    startedAtCampaignMinute: input.startedAtCampaignMinute,
+    expiresAtCampaignMinute: input.startedAtCampaignMinute + input.durationMinutes,
+    durationMinutes: input.durationMinutes,
+  },
+  stacks: 1,
+  charges: null,
+  stackPolicy: { kind: 'replace', maxStacks: null },
+  chargePolicy: { kind: 'none', amount: null },
+  tags: ['item', 'campaign-time'],
+  payload: { conditionId: 'sleep', action: 'apply', saveTiming: 'end-turn' },
+  dispel: { policy: 'matching-tags', tags: ['item'] },
+  transferPolicy: 'expire',
+  suppression: { sources: [] },
+})
+
+const breedingRuleset = Object.freeze({
+  rulesetId: rulesetJson.rulesetId,
+  definitionSha256: rulesetJson.definitionSha256,
+})
+const breedingOperationId = (value: number): string => (
+  `breeding-operation:v1:${value.toString(16).padStart(32, '0')}`
+)
+const pokemonEggId = (value: number): string => (
+  `pokemon-egg:v1:${value.toString(16).padStart(32, '0')}`
+)
+const breedingOptionId = (value: number): string => (
+  `option:v1:${value.toString(16).padStart(32, '0')}`
+)
+const seedCampaignDayEgg = (
+  database: RotomDatabase,
+  value: number,
+  paused: boolean,
+): string => {
+  const eggId = pokemonEggId(value)
+  const source = parseBreedingOperationCommandV1({
+    schemaVersion: 1,
+    operationId: breedingOperationId(value),
+    commandKind: 'create-source-egg',
+    actor: { profileId: 'campaign-gm', selectedTrainerSlug: null },
+    ruleset: breedingRuleset,
+    scopes: [{ kind: 'pokemon-egg', eggId, expectedRevision: null }],
+    payload: {
+      eggId,
+      ownerTrainerSlug: `trainer-owner-${value}`,
+      source: {
+        kind: 'gm',
+        reasonId: 'breeding.egg-source.reviewed',
+        evidenceDefinitionSha256: 'e'.repeat(64),
+      },
+      speciesOptionId: breedingOptionId(value),
+      resolutions: { selectedOptionIds: [], requestedRollKinds: [] },
+    },
+  })
+  const species = compiledBreedingSpeciesSpec('bulbasaur')!
+  const blueprint = createPokemonEggOffspringBlueprintV1({
+    schemaVersion: 1,
+    speciesId: species.speciesId,
+    familyRootSpeciesId: species.familyRootSpeciesId,
+    speciesSpecDefinitionSha256: species.definitionSha256,
+    nature: { valueId: 'cuddly', resolutionKind: 'fixed', rollRecordId: null, optionId: null, choiceEvidenceId: null },
+    ability: { valueId: species.basicAbilityIds[0]!, resolutionKind: 'fixed', rollRecordId: null, optionId: null, choiceEvidenceId: null },
+    gender: { valueId: 'female', resolutionKind: 'fixed', rollRecordId: null, optionId: null, choiceEvidenceId: null },
+    inheritanceCandidates: [],
+    startingLevel: 1,
+    babyTemplate: { applied: false, choiceOptionId: null, choiceEvidenceId: null, effects: null },
+  })
+  const durationResultDefinitionSha256 = createHash('sha256')
+    .update(`campaign-day-duration-${value}`)
+    .digest('hex')
+  const document = parseAuthoritativePokemonEggDocumentV1({
+    schemaVersion: 1,
+    eggId,
+    revision: 0,
+    status: 'incubating',
+    ownerTrainerSlug: `trainer-owner-${value}`,
+    source: { kind: 'gm', reasonId: 'breeding.egg-source.reviewed', evidenceDefinitionSha256: 'e'.repeat(64) },
+    ruleset: breedingRuleset,
+    definitionHashes: [
+      blueprint.definitionSha256,
+      durationResultDefinitionSha256,
+      eggContractJson.definitionSha256,
+      hatchDurationPolicyJson.definitionSha256,
+      breedingRuleset.definitionSha256,
+    ].sort(),
+    parents: [],
+    breeder: null,
+    offspring: blueprint,
+    incubation: {
+      averageCampaignMinutes: 6_000,
+      targetCampaignMinutes: 6_000,
+      accumulatedCampaignMinutes: 0,
+      variationPolicyId: 'fixed-average',
+      durationResultDefinitionSha256,
+      lastAppliedClockRevision: 0,
+      lastAppliedClockMinute: 0,
+      readyAtCampaignMinute: null,
+      readinessKind: null,
+      readyOperationId: null,
+      paused,
+      pauseReasonId: paused ? 'breeding.incubation-pause.gm-maintenance' : null,
+      pauseOperationId: paused ? source.operationId : null,
+    },
+    special: {
+      state: 'not-rolled', rollRecordId: null, rollTotal: null, triggerIds: [],
+      adjudicationId: null, outcomeId: null, automaticShiny: false,
+    },
+    hatchOperationId: null,
+    childSheetSlug: null,
+    terminal: null,
+    createdAtCampaignMinute: 0,
+    updatedAtCampaignMinute: 0,
+    statusChangedAtCampaignMinute: 0,
+    lastOperationId: source.operationId,
+  })
+  database.withTransaction(() => {
+    const operations = createSqliteBreedingOperationRepository(database)
+    operations.reserve(source, 0)
+    createSqlitePokemonEggRepository(database).insert(document)
+    operations.settle(source, createBreedingOperationAcceptedV1({
+      operationId: source.operationId,
+      commandHash: createBreedingOperationCommandHash(source),
+      commandKind: source.commandKind,
+      outcomeKind: 'source-egg-created',
+      aggregateRefs: [{ kind: 'pokemon-egg', id: eggId, revision: 0 }],
+      changedScopes: source.scopes,
+      committedAtCampaignMinute: 0,
+    }), 0)
+  })
+  return eggId
+}
 
 const unchangedPokemon = () => ({
   slug: 'calm',
@@ -111,6 +285,87 @@ describe('advanceCampaignDayUseCase', () => {
     })
     expect(realtime.readAfter({ afterSequence: 0 }).events).toEqual(result.realtimeEvents)
     expect(published).toEqual(result.realtimeEvents)
+  })
+
+  it('publishes an owner-authorized clock refresh for durable exploration projections even when sheet state is unchanged', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const realtime = createSqliteRealtimeEventRepository({ database, clock: () => 999 })
+    const route = startItemRouteLure({
+      current: null,
+      definition: ITEM_AUTOMATION_RUNTIME_REGISTRY.require('Bait'),
+      sourceOperationId: 'item-source-operation:00000001',
+      sourceInstanceId: 'item-instance:trainer:explorer:foodStuff:bait-row',
+      campaignMinute: 0,
+    })
+    sheets.saveSetupSheet('trainer', 'explorer', {
+      slug: 'explorer', name: 'Explorer', level: 10, revision: 3,
+      serverPrivate: { itemExploration: route.state },
+    })
+
+    const result = advanceCampaignDayUseCase({ command: campaignDayCommand('a'), clientId: 'clock-client' }, {
+      database, sheetRepository: sheets, realtimeEventRepository: realtime, now: () => 525,
+      publishPersistedRealtimeEvent: () => {},
+    })
+    const refresh = result.realtimeEvents.find(event => (
+      event.event.type === ITEM_EXPLORATION_CLOCK_REALTIME_EVENT_TYPE
+    ))
+    expect(refresh).toMatchObject({
+      access: { kind: 'sheet-access', sheetKind: 'trainer', sheetSlug: 'explorer' },
+      event: {
+        channel: 'sheet:trainer:explorer',
+        type: ITEM_EXPLORATION_CLOCK_REALTIME_EVENT_TYPE,
+        clientId: 'clock-client',
+        data: {
+          schemaVersion: 1, trainerSlug: 'explorer',
+          campaignClockRevision: 1, campaignMinute: 1440,
+        },
+      },
+    })
+    expect(JSON.stringify(refresh)).not.toContain('sourceOperationId')
+    expect(JSON.stringify(refresh)).not.toContain('canonicalDefinitionSha256')
+  })
+
+  it('settles due Bandages boundaries in the same campaign-clock and sheet transaction', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const base = changedPokemon() as unknown as CharacterSheet
+    const treated = applyBandageTreatment({
+      sheetKind: 'pokemon', sheet: base, targetSlug: 'pika',
+      operationId: `sheet-item:v1:${'8'.repeat(32)}`,
+      canonicalDefinitionSha256: ITEM_AUTOMATION_RUNTIME_REGISTRY.require('Bandages').definitionSha256,
+      campaignMinute: 0,
+    }) as CharacterSheet
+    sheets.saveSetupSheet('pokemon', 'pika', treated as unknown as Record<string, unknown>)
+
+    const result = advanceCampaignDayUseCase({ command: campaignDayCommand('b') }, {
+      database, sheetRepository: sheets, now: () => 550,
+      publishPersistedRealtimeEvent: () => {},
+    })
+    expect(result.campaignClock).toMatchObject({ previousCampaignMinute: 0, campaignMinute: 1440 })
+    const accepted = sheets.getByRef('pokemon', 'pika')!.sheet as unknown as CharacterSheet
+    expect(parseItemMedicalTreatmentState(accepted.itemMedicalTreatments).entries[0]).toMatchObject({
+      status: 'completed', ticksApplied: 12, injuryRemoved: true,
+      terminalReason: 'full-duration', terminalCampaignMinute: 360,
+    })
+    expect(accepted.combat).toMatchObject({ injuries: 0, currentHp: computePokemonHealingVitals(accepted).maxHp })
+  })
+
+  it('rejects malformed campaign-day identity before changing the singleton clock', () => {
+    const database = db()
+    expect(() => advanceCampaignDayUseCase({
+      command: {
+        schemaVersion: 1,
+        operationId: 'campaign-day:v1:not-hex',
+        kind: 'advance-one-day',
+        days: 1,
+      },
+    }, { database })).toThrow(expect.objectContaining({ statusCode: 400 }))
+    expect(createSqliteCampaignClockRepository(database).get()).toMatchObject({
+      revision: 0, campaignMinute: 0, lastOperationId: null,
+    })
+    expect(database.connection.prepare('SELECT COUNT(*) AS count FROM campaign_day_operations').get())
+      .toEqual({ count: 0 })
   })
 
   it('rolls back every sheet when one planned sheet is stale', () => {
@@ -559,7 +814,436 @@ describe('advanceCampaignDayUseCase', () => {
     expect(maps.getBySlug('arena')?.temporaryHitPoints).toBeUndefined()
   })
 
-  it('does nothing durable for a no-op campaign day', () => {
+  it('atomically advances the singleton clock, expires due effects on every persisted map, and replays one logical day', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const maps = createSqliteMapRepository<TabletopMap>(database)
+    const modes = createSqliteMapInteractionModeRepository(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const clock = createSqliteCampaignClockRepository(database)
+    const operations = createSqliteCampaignDayOperationRepository(database)
+    const state = createEmptyEncounterState()
+    maps.saveSetupMap({
+      schemaVersion: 2,
+      slug: 'archive-map',
+      name: 'Archive Map',
+      folder: '',
+      revision: 7,
+      dimensions: { x: 4, y: 2, z: 4 },
+      playerVisible: false,
+      voxels: [],
+      placements: [],
+      lights: [],
+      initiative: { activeId: null, round: 1 },
+      encounterState: {
+        ...state,
+        effects: [
+          campaignTimeEffect({ id: 'effect.daily.one', startedAtCampaignMinute: 0, durationMinutes: 1_440 }),
+          campaignTimeEffect({ id: 'effect.daily.two', startedAtCampaignMinute: 0, durationMinutes: 2_880 }),
+        ],
+      },
+    })
+    modes.set({
+      slug: 'archive-map',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      updatedAt: 101,
+    })
+    expect(modes.get('archive-map').interactionMode).toBe(MAP_INTERACTION_MODES.SETUP_EDIT)
+    const command = campaignDayCommand('a')
+    const first = advanceCampaignDayUseCase({ command, clientId: 'gm-client' }, {
+      database, sheetRepository: sheets, mapRepository: maps, modeRepository: modes,
+      realtimeEventRepository: realtime, campaignClockRepository: clock,
+      campaignDayOperationRepository: operations, now: () => 1_000,
+      publishPersistedRealtimeEvent: () => {},
+    })
+
+    expect(first).toMatchObject({
+      ok: true,
+      operationId: command.operationId,
+      replayed: false,
+      campaignClock: {
+        previousRevision: 0,
+        revision: 1,
+        previousCampaignMinute: 0,
+        campaignMinute: 1_440,
+        minutesAdvanced: 1_440,
+        clockOperationId: expect.stringMatching(/^breeding-operation:v1:[0-9a-f]{32}$/),
+      },
+      expiredEffects: [{
+        mapSlug: 'archive-map',
+        effectId: 'effect.daily.one',
+        durationKind: 'campaign-time',
+        expiresAtCampaignMinute: 1_440,
+      }],
+    })
+    expect(clock.get()).toMatchObject({ revision: 1, campaignMinute: 1_440 })
+    expect(maps.getBySlug('archive-map')).toMatchObject({
+      revision: 8,
+      encounterState: { effects: [{ id: 'effect.daily.two' }] },
+    })
+    const { replayed: _replayed, realtimeEvents: _events, paths: _paths, ...acceptedEvidence } = first
+    expect(operations.get(command.operationId)?.result).toEqual(acceptedEvidence)
+    expect(database.connection.prepare(`
+      SELECT status, command_kind FROM breeding_operations WHERE operation_id = ?
+    `).get(first.campaignClock.clockOperationId)).toEqual({
+      status: 'accepted', command_kind: 'advance-campaign-clock',
+    })
+
+    const eventCount = realtime.readAfter({ afterSequence: 0 }).events.length
+    const replay = advanceCampaignDayUseCase({ command, clientId: 'other-client' }, {
+      database, sheetRepository: sheets, mapRepository: maps, modeRepository: modes,
+      realtimeEventRepository: realtime, campaignClockRepository: clock,
+      campaignDayOperationRepository: operations, now: () => 9_999,
+      publishPersistedRealtimeEvent: () => {},
+    })
+    expect(replay).toEqual({
+      ...first,
+      replayed: true,
+      realtimeEvents: [],
+      paths: [],
+    })
+    expect(clock.get()).toMatchObject({ revision: 1, campaignMinute: 1_440 })
+    expect(maps.getBySlug('archive-map')?.revision).toBe(8)
+    expect(realtime.readAfter({ afterSequence: 0 }).events).toHaveLength(eventCount)
+
+    const second = advanceCampaignDayUseCase({ command: campaignDayCommand('b') }, {
+      database, sheetRepository: sheets, mapRepository: maps, modeRepository: modes,
+      realtimeEventRepository: realtime, campaignClockRepository: clock,
+      campaignDayOperationRepository: operations, now: () => 2_000,
+      publishPersistedRealtimeEvent: () => {},
+    })
+    expect(second.campaignClock).toMatchObject({
+      previousRevision: 1, revision: 2,
+      previousCampaignMinute: 1_440, campaignMinute: 2_880,
+    })
+    expect(second.expiredEffects.map(value => value.effectId)).toEqual(['effect.daily.two'])
+    expect(maps.getBySlug('archive-map')).toMatchObject({ revision: 9, encounterState: { effects: [] } })
+  })
+
+  it('materializes expired Re-Breather equipment state during the one-day campaign-clock transaction', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const maps = createSqliteMapRepository<TabletopMap>(database)
+    const modes = createSqliteMapInteractionModeRepository(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const clock = createSqliteCampaignClockRepository(database)
+    const operations = createSqliteCampaignDayOperationRepository(database)
+    const baseEquipment = activeEquipmentState({
+      ownerKind: 'trainer', ownerSlug: 'brock', slotId: 'head', canonicalItemId: 'Re-Breather',
+    })
+    const activeState = parseItemReBreatherState({
+      schemaVersion: 1, mode: 'active', activeFromCampaignMinute: 0, activeUntilCampaignMinute: 60,
+      refillStartedAtCampaignMinute: null, refillCompletesAtCampaignMinute: null,
+      lastTransition: {
+        requestId: 'item-guided:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', transition: 'activated', campaignMinute: 0,
+      },
+    })
+    sheets.save({
+      kind: 'trainer', slug: 'brock', revision: 3, updatedAt: 10,
+      document: {
+        ...changedTrainer(),
+        equipmentState: {
+          ...baseEquipment,
+          instances: baseEquipment.instances.map(instance => ({
+            ...instance, serializedState: { ...instance.serializedState, reBreather: activeState },
+          })),
+        },
+      },
+    })
+    advanceCampaignDayUseCase({ command: campaignDayCommand('d') }, {
+      database, sheetRepository: sheets, mapRepository: maps, modeRepository: modes,
+      realtimeEventRepository: realtime, campaignClockRepository: clock,
+      campaignDayOperationRepository: operations, now: () => 1_000,
+      publishPersistedRealtimeEvent: () => {},
+    })
+    const persisted = sheets.getByRef('trainer', 'brock')!.sheet as any
+    expect(parseItemReBreatherState(persisted.equipmentState.instances[0].serializedState.reBreather)).toMatchObject({
+      mode: 'depleted', activeFromCampaignMinute: null, activeUntilCampaignMinute: null,
+      lastTransition: { transition: 'depleted', campaignMinute: 60 },
+    })
+    expect(persisted.equipmentState).toMatchObject({ revision: baseEquipment.revision + 1 })
+  })
+
+  it('atomically reconciles credited and paused Eggs with daily expiry and exact replay', () => {
+    const database = db()
+    const creditedEggId = seedCampaignDayEgg(database, 301, false)
+    const pausedEggId = seedCampaignDayEgg(database, 302, true)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const operations = createSqliteCampaignDayOperationRepository(database)
+    const command = campaignDayCommand('c')
+
+    const first = advanceCampaignDayUseCase({ command }, {
+      database,
+      realtimeEventRepository: realtime,
+      campaignDayOperationRepository: operations,
+      now: () => 50_000,
+      publishPersistedRealtimeEvent: () => {},
+    })
+
+    expect(first.campaignClock).toMatchObject({
+      reconciledEggs: 2,
+      creditedEggCampaignMinutes: 1_440,
+      skippedPausedEggCampaignMinutes: 1_440,
+      eggBatchComplete: true,
+    })
+    const eggs = createSqlitePokemonEggRepository(database)
+    expect(eggs.get(creditedEggId)).toMatchObject({
+      revision: 1,
+      incubation: {
+        accumulatedCampaignMinutes: 1_440,
+        lastAppliedClockRevision: 1,
+        lastAppliedClockMinute: 1_440,
+        paused: false,
+      },
+    })
+    expect(eggs.get(pausedEggId)).toMatchObject({
+      revision: 1,
+      incubation: {
+        accumulatedCampaignMinutes: 0,
+        lastAppliedClockRevision: 1,
+        lastAppliedClockMinute: 1_440,
+        paused: true,
+      },
+    })
+    const eggOperationRows = database.connection.prepare(`
+      SELECT operation_id, status FROM breeding_operations
+      WHERE command_kind = 'advance-egg-incubation'
+      ORDER BY operation_id
+    `).all() as Array<{ readonly operation_id: string, readonly status: string }>
+    expect(eggOperationRows).toHaveLength(2)
+    expect(eggOperationRows.every(row => row.status === 'accepted')).toBe(true)
+    const segments = createSqliteBreedingIncubationSegmentRepository(database)
+    expect(eggOperationRows.map(row => segments.get(row.operation_id))).toMatchObject([
+      expect.objectContaining({ throughClockRevision: 1, throughCampaignMinute: 1_440 }),
+      expect.objectContaining({ throughClockRevision: 1, throughCampaignMinute: 1_440 }),
+    ])
+    expect(realtime.readAfter({ afterSequence: 0 }).events).toHaveLength(8)
+    const archiveRecords = createSqliteBreedingArchiveStateRepository(database)
+      .readRecords({ purpose: 'campaign-backup' })
+    const archivedCommands = archiveRecords['operation-command'] ?? []
+    const archivedResults = archiveRecords['operation-result'] ?? []
+    expect(archivedCommands.some(record => (
+      'operationId' in record && record.operationId === first.campaignClock.clockOperationId
+    ))).toBe(true)
+    expect(eggOperationRows.every(row => archivedCommands.some(record => (
+      'operationId' in record && record.operationId === row.operation_id
+    )))).toBe(true)
+    expect(eggOperationRows.every(row => archivedResults.some(record => (
+      'operationId' in record && record.operationId === row.operation_id
+    )))).toBe(true)
+
+    const replay = advanceCampaignDayUseCase({ command }, {
+      database,
+      realtimeEventRepository: realtime,
+      campaignDayOperationRepository: operations,
+      now: () => 99_000,
+      publishPersistedRealtimeEvent: () => {},
+    })
+    expect(replay).toEqual({ ...first, replayed: true, realtimeEvents: [], paths: [] })
+    expect(eggs.get(creditedEggId)?.revision).toBe(1)
+    expect(eggs.get(pausedEggId)?.revision).toBe(1)
+    expect(realtime.readAfter({ afterSequence: 0 }).events).toHaveLength(8)
+  })
+
+  it('credits an exact assigned Egg Warmer item unit at twice the campaign-day hatch rate', () => {
+    const database = db()
+    const eggId = seedCampaignDayEgg(database, 304, false)
+    const trainerSlug = 'trainer-owner-304'
+    createSqliteSheetRepository<Record<string, unknown>>(database).saveSetupSheet('trainer', trainerSlug, {
+      slug: trainerSlug,
+      name: 'Warmer Keeper',
+      level: 10,
+      currentTeam: [],
+      boxedPokemon: [],
+      inventory: { keyItems: [{ id: 'egg-warmer-row', name: 'Egg Warmer', qty: 1 }] },
+      serverPrivate: {
+        itemBreeding: {
+          schemaVersion: 1,
+          eggWarmerAssignments: [{
+            inventoryEntryId: 'egg-warmer-row',
+            unitOrdinal: 0,
+            eggIds: [eggId],
+            assignedAtCampaignMinute: 0,
+            lastOperationId: `item-breeding:v1:${'a'.repeat(32)}`,
+          }],
+        },
+      },
+    })
+
+    const result = advanceCampaignDayUseCase({ command: campaignDayCommand('e') }, {
+      database,
+      now: () => 3_040,
+      publishPersistedRealtimeEvent: () => {},
+    })
+
+    expect(result.campaignClock).toMatchObject({
+      reconciledEggs: 1,
+      creditedEggCampaignMinutes: 2_880,
+      skippedPausedEggCampaignMinutes: 0,
+    })
+    expect(createSqlitePokemonEggRepository(database).get(eggId)).toMatchObject({
+      revision: 1,
+      incubation: { accumulatedCampaignMinutes: 2_880, lastAppliedClockRevision: 1 },
+    })
+    expect(createSqliteBreedingIncubationSegmentRepository(database).listByEgg(eggId)[0]).toMatchObject({
+      elapsedCampaignMinutes: 1_440,
+      creditedCampaignMinutes: 2_880,
+      modifierMode: 'authoritative-rate',
+    })
+  })
+
+  it('fails closed to the ordinary rate when assigned Egg Warmer custody is no longer current', () => {
+    const database = db()
+    const eggId = seedCampaignDayEgg(database, 305, false)
+    const trainerSlug = 'trainer-owner-305'
+    createSqliteSheetRepository<Record<string, unknown>>(database).saveSetupSheet('trainer', trainerSlug, {
+      slug: trainerSlug,
+      name: 'Former Warmer Keeper',
+      level: 10,
+      currentTeam: [],
+      boxedPokemon: [],
+      inventory: { keyItems: [] },
+      serverPrivate: {
+        itemBreeding: {
+          schemaVersion: 1,
+          eggWarmerAssignments: [{
+            inventoryEntryId: 'missing-warmer-row',
+            unitOrdinal: 0,
+            eggIds: [eggId],
+            assignedAtCampaignMinute: 0,
+            lastOperationId: `item-breeding:v1:${'b'.repeat(32)}`,
+          }],
+        },
+      },
+    })
+
+    const result = advanceCampaignDayUseCase({ command: campaignDayCommand('f') }, {
+      database,
+      now: () => 3_050,
+      publishPersistedRealtimeEvent: () => {},
+    })
+
+    expect(result.campaignClock.creditedEggCampaignMinutes).toBe(1_440)
+    expect(createSqlitePokemonEggRepository(database).get(eggId)?.incubation.accumulatedCampaignMinutes).toBe(1_440)
+    expect(createSqliteBreedingIncubationSegmentRepository(database).listByEgg(eggId)[0]).toMatchObject({
+      elapsedCampaignMinutes: 1_440,
+      creditedCampaignMinutes: 1_440,
+      modifierMode: 'base-rate-only',
+    })
+  })
+
+  it('reconciles every due Egg beyond the ordinary 100-Egg continuation page in one accepted day', () => {
+    const database = db()
+    const eggIds = Array.from({ length: 101 }, (_, index) => (
+      seedCampaignDayEgg(database, 1_000 + index, index === 100)
+    ))
+    const command = campaignDayCommand('e')
+
+    const result = advanceCampaignDayUseCase({ command }, {
+      database,
+      now: () => 55_000,
+      publishPersistedRealtimeEvent: () => {},
+    })
+
+    expect(result.campaignClock).toMatchObject({
+      reconciledEggs: 101,
+      creditedEggCampaignMinutes: 100 * 1_440,
+      skippedPausedEggCampaignMinutes: 1_440,
+      eggBatchComplete: true,
+    })
+    const eggs = createSqlitePokemonEggRepository(database)
+    expect(eggs.listIncubatingBehindClock({ revision: 1, campaignMinute: 1_440, limit: 100 }))
+      .toEqual([])
+    expect(eggIds.every(eggId => (
+      eggs.get(eggId)?.incubation.lastAppliedClockRevision === 1
+      && eggs.get(eggId)?.incubation.lastAppliedClockMinute === 1_440
+    ))).toBe(true)
+    expect(database.connection.prepare(`
+      SELECT COUNT(*) AS count FROM breeding_operations
+      WHERE command_kind = 'advance-egg-incubation' AND status = 'accepted'
+    `).get()).toEqual({ count: 101 })
+  })
+
+  it('rolls back the clock, Egg checkpoints, receipt, and realtime when Egg settlement fails', () => {
+    const database = db()
+    const eggId = seedCampaignDayEgg(database, 303, false)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const operations = createSqliteCampaignDayOperationRepository(database)
+    const command = campaignDayCommand('d')
+    database.connection.exec(`
+      CREATE TRIGGER reject_campaign_day_egg_segment
+      BEFORE INSERT ON breeding_incubation_segments
+      BEGIN
+        SELECT RAISE(ABORT, 'campaign-day-egg-segment-failure');
+      END;
+    `)
+
+    expect(() => advanceCampaignDayUseCase({ command }, {
+      database,
+      realtimeEventRepository: realtime,
+      campaignDayOperationRepository: operations,
+      now: () => 60_000,
+      publishPersistedRealtimeEvent: () => {},
+    })).toThrow('campaign-day-egg-segment-failure')
+
+    expect(createSqliteCampaignClockRepository(database).get()).toMatchObject({
+      revision: 0, campaignMinute: 0, lastOperationId: null,
+    })
+    expect(createSqlitePokemonEggRepository(database).get(eggId)).toMatchObject({
+      revision: 0,
+      incubation: { accumulatedCampaignMinutes: 0, lastAppliedClockRevision: 0 },
+    })
+    expect(operations.get(command.operationId)).toBeNull()
+    expect(database.connection.prepare(`
+      SELECT COUNT(*) AS count FROM breeding_operations
+      WHERE command_kind IN ('advance-campaign-clock', 'advance-egg-incubation')
+    `).get()).toEqual({ count: 0 })
+    expect(realtime.readAfter({ afterSequence: 0 }).events).toEqual([])
+  })
+
+  it('keeps trusted direct-call identity deterministic at a fixed timestamp and advances on the successor clock', () => {
+    const database = db()
+    const operations = createSqliteCampaignDayOperationRepository(database)
+    const dependencies = {
+      database,
+      campaignDayOperationRepository: operations,
+      now: () => 42_000,
+      publishPersistedRealtimeEvent: () => {},
+    }
+
+    const first = advanceCampaignDayUseCase({}, dependencies)
+    const stored = operations.get(first.operationId)
+    expect(stored).not.toBeNull()
+    expect(first.operationId).toMatch(/^campaign-day:v1:[0-9a-f]{32}$/)
+    expect(stored?.command.operationId).toBe(first.operationId)
+
+    const exact = advanceCampaignDayUseCase({ command: stored!.command }, dependencies)
+    expect(exact).toEqual({ ...first, replayed: true, realtimeEvents: [], paths: [] })
+
+    const successor = advanceCampaignDayUseCase({}, dependencies)
+    expect(successor.operationId).not.toBe(first.operationId)
+    expect(successor.campaignClock).toMatchObject({
+      previousRevision: 1, revision: 2,
+      previousCampaignMinute: 1_440, campaignMinute: 2_880,
+    })
+  })
+
+  it('rejects mixed-database repositories before planning the atomic day', () => {
+    const database = db()
+    const foreign = db()
+    expect(() => advanceCampaignDayUseCase({}, {
+      database,
+      campaignClockRepository: createSqliteCampaignClockRepository(foreign),
+    })).toThrow('Campaign-day clock repository must use the same RotomDatabase as the transaction')
+    expect(createSqliteCampaignClockRepository(database).get()).toMatchObject({
+      revision: 0, campaignMinute: 0, lastOperationId: null,
+    })
+    expect(createSqliteCampaignClockRepository(foreign).get()).toMatchObject({
+      revision: 0, campaignMinute: 0, lastOperationId: null,
+    })
+  })
+
+  it('advances clock authority even when sheet and effect reconciliation is otherwise a no-op', () => {
     const database = db()
     const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
     const realtime = createSqliteRealtimeEventRepository({ database })
@@ -572,7 +1256,19 @@ describe('advanceCampaignDayUseCase', () => {
       publishPersistedRealtimeEvent: publish,
     })
 
-    expect(result).toMatchObject({ ok: true, totalSheets: 0, updatedSheets: 0 })
+    expect(result).toMatchObject({
+      ok: true,
+      totalSheets: 0,
+      updatedSheets: 0,
+      replayed: false,
+      campaignClock: {
+        previousRevision: 0, revision: 1,
+        previousCampaignMinute: 0, campaignMinute: 1_440,
+      },
+    })
+    expect(createSqliteCampaignClockRepository(database).get()).toMatchObject({
+      revision: 1, campaignMinute: 1_440,
+    })
     expect(result.realtimeEvents).toEqual([])
     expect(result.paths).toEqual([])
     expect(publish).not.toHaveBeenCalled()

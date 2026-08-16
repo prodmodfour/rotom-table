@@ -41,6 +41,7 @@ const EditableCellStub = defineComponent({
     min: { type: Number, default: undefined },
     placeholder: { type: String, default: '' },
     multiline: { type: Boolean, default: false },
+    accessibleLabel: { type: String, default: '' },
   },
   emits: ['update:modelValue'],
   template: `
@@ -51,6 +52,7 @@ const EditableCellStub = defineComponent({
       :data-min="min ?? ''"
       :data-placeholder="placeholder"
       :data-multiline="multiline ? 'true' : 'false'"
+      :data-accessible-label="accessibleLabel"
       @click="$emit('update:modelValue', 7)"
     >
       {{ modelValue ?? placeholder ?? '—' }}
@@ -78,18 +80,28 @@ describe('InventoryItemTable', () => {
         namePlaceholder: 'Item',
         variant: 'standard',
         itemNameOptions: [{ value: 'Potion', label: 'Medicine' }],
+        selectedRowIndex: 0,
       },
       global: mountGlobal,
     })
 
     expect(wrapper.find('.block-title').text()).toContain('Medical Kit')
+    expect(wrapper.get('tbody tr').classes()).toContain('is-source-selected')
+    expect(wrapper.get('tbody tr').attributes('aria-current')).toBe('true')
+    expect(wrapper.get('.inventory-selected-source-label').text()).toBe('Selected source')
+    expect(wrapper.get('table').attributes('aria-labelledby')).toBe(wrapper.get('.block-title h2').attributes('id'))
+    expect(wrapper.findAll('thead th').every(heading => heading.attributes('scope') === 'col')).toBe(true)
+    expect(wrapper.get('tbody th').attributes('scope')).toBe('row')
+    expect(wrapper.findAll('tbody [data-label]').map(cell => cell.attributes('data-label'))).toEqual([
+      'Name', 'Qty', 'Cost', 'Description', 'Actions',
+    ])
     expect(wrapper.find('.name-cell-stub').attributes('data-options-count')).toBe('1')
     expect(wrapper.findAll('thead th').map((heading) => heading.text())).toEqual([
       'Name',
       'Qty',
       'Cost',
       'Description',
-      '',
+      'Actions',
     ])
 
     await wrapper.find('.name-cell-stub').trigger('click')
@@ -97,10 +109,47 @@ describe('InventoryItemTable', () => {
     await wrapper.find('.row-add').trigger('click')
     await wrapper.find('.row-remove').trigger('click')
 
+    expect(wrapper.findAll('.editable-cell-stub').map(cell => cell.attributes('data-accessible-label'))).toEqual([
+      'quantity for Custom Brew',
+      'cost for Custom Brew',
+      'description for Custom Brew',
+    ])
     expect(items[0]?.qty).toBe(7)
     expect(wrapper.emitted('setItemName')).toEqual([[items[0], 'Potion']])
     expect(wrapper.emitted('addItem')).toEqual([['medicalKit']])
     expect(wrapper.emitted('removeItem')).toEqual([['medicalKit', 0]])
+  })
+
+  it('renders serialized custody as one locked whole item without an unsafe remove action', async () => {
+    const items: InventoryEntry[] = [{
+      name: 'First Aid Kit',
+      serializedEquipment: {
+        schemaVersion: 1,
+        instanceId: `equipped-item:v1:${'a'.repeat(32)}`,
+        revision: 2,
+        canonicalItemId: 'First Aid Kit',
+        canonicalRecordSha256: 'b'.repeat(64),
+        equipmentDefinitionSha256: null,
+        configuration: null,
+        state: { charges: 3 },
+      },
+    }]
+    const wrapper = mount(InventoryItemTable, {
+      props: {
+        sectionKey: 'medicalKit', title: 'Medical Kit', items,
+        namePlaceholder: 'Item', variant: 'standard',
+      },
+      global: mountGlobal,
+    })
+    expect(wrapper.text()).toContain('First Aid Kit')
+    expect(wrapper.text()).toContain('Whole item')
+    expect(wrapper.find('.name-cell-stub').exists()).toBe(false)
+    expect(wrapper.find('tbody td').text()).toContain('1')
+    const remove = wrapper.get('.row-remove')
+    expect(remove.attributes('disabled')).toBeDefined()
+    expect(remove.attributes('title')).toContain('authoritative equipment or transfer action')
+    await remove.trigger('click')
+    expect(wrapper.emitted('removeItem')).toBeUndefined()
   })
 
   it('renders read-only rows without trainer editing controls or row actions', () => {
@@ -152,7 +201,7 @@ describe('InventoryItemTable', () => {
       'Cost',
       'Mod',
       'Description',
-      '',
+      'Actions',
     ])
     expect(pokeBalls.findAll('.editable-cell-stub').map((cell) => cell.attributes('data-type'))).toEqual([
       'number',
@@ -177,7 +226,7 @@ describe('InventoryItemTable', () => {
       'Slot',
       'Cost',
       'Description',
-      '',
+      'Actions',
     ])
     expect(equipment.findAll('.editable-cell-stub').map((cell) => cell.attributes('data-placeholder'))).toEqual([
       'Body',

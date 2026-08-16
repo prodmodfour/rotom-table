@@ -15,6 +15,7 @@ import type {
   MoveDirectHpEffectOperation,
   MoveEffectOperation,
   MoveHealEffectOperation,
+  MoveTemporaryEffectOperation,
 } from '#shared/moveAutomation/effects'
 import { parseEncounterState, type EncounterState } from '#shared/moveAutomation/encounterState'
 import { normalizeRevision } from '#shared/sessionRevisions'
@@ -33,6 +34,7 @@ import {
   type AuthoritativeMoveSheetRead,
 } from './context'
 import {
+  ENCOUNTER_LIFECYCLE_LIMITS,
   reduceEncounterLifecycle,
   type EncounterLifecycleReductionResult,
   type EncounterLifecycleTriggerHandler,
@@ -51,6 +53,7 @@ import type {
   MoveResolvedCoreTokenEffectOperation,
 } from './reducers/coreTokenEffectTypes'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
+import { reduceMoveTemporaryEffect } from './reducers/mapTemporaryEffects'
 import {
   createGrassyTerrainLifecycleHandler,
   terrainLifecycleRecipientIds,
@@ -147,11 +150,20 @@ import {
 import { resolveSkills } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import { parseSkillDiceValue } from '~/utils/skillRanks'
+import { createItemCombatStageEncounterLifecycleHandler } from '../itemAutomation/lifecycle'
+import {
+  createItemDigestionEncounterLifecycleHandler,
+  isItemDigestionTurnHealingOperation,
+} from '../itemAutomation/digestionBuffTrade'
+import { createEquipmentProviderEncounterLifecycleHandler } from '../itemAutomation/equipmentProviderLifecycle'
+import { createEncounterEquipmentEventProviderQueries } from './equipmentEventProviderQueries'
+import { createEquipmentFaintProtectionQueries } from './equipmentProviderMechanics'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
   | 'active-placement-not-ordered'
   | 'turn-sequence-limit-exceeded'
+  | 'invalid-handler'
   | 'unsupported-operation'
   | 'operation-source-missing'
   | 'operation-recipient-unavailable'
@@ -470,6 +482,21 @@ const recipientsForOperation = (input: {
       'operation-source-missing',
       `Lifecycle operation ${operation.id} references unavailable event ${operation.source.id}.`,
     )
+    if (operation.kind === 'temporary-effect' && operation.payload.action === 'add') {
+      const ownerTags = operation.payload.definition.tags.filter(tag => (
+        tag.startsWith('equipment-provider-owner:')
+      ))
+      if (ownerTags.length === 1) {
+        const placementId = ownerTags[0]!.slice('equipment-provider-owner:'.length)
+        if (!input.map.placements.some(placement => placement.id === placementId)) {
+          return fail(
+            'operation-recipient-unavailable',
+            `Lifecycle operation ${operation.id} references unavailable equipment provider owner ${placementId}.`,
+          )
+        }
+        return [placementId]
+      }
+    }
     if (event.kind === 'turn-start' || event.kind === 'turn-end') {
       return [event.placementId]
     }
@@ -477,6 +504,7 @@ const recipientsForOperation = (input: {
       (
         event.kind === 'scene-start'
         || event.kind === 'scene-end'
+        || event.kind === 'encounter-end'
         || event.kind === 'round-start'
         || event.kind === 'round-end'
       )
@@ -499,6 +527,10 @@ const recipientsForOperation = (input: {
 const isLifecycleCoreOperation = (
   operation: MoveEffectOperation,
 ): operation is LifecycleCoreOperation => LIFECYCLE_CORE_OPERATION_KINDS.has(operation.kind)
+
+const isLifecycleTemporaryOperation = (
+  operation: MoveEffectOperation,
+): operation is MoveTemporaryEffectOperation => operation.kind === 'temporary-effect'
 
 const vortexKnockoutCleanupEvents = (input: {
   readonly reduction: EncounterLifecycleReductionResult
@@ -684,6 +716,23 @@ export const planEncounterLifecycle = (
   const loadSheets = (): EncounterLifecycleSheetSnapshots => (
     loadedSheets ??= input.loadSheets()
   )
+  const equipmentProviderHandler = events.some(event => (
+    event.kind === 'turn-start' || event.kind === 'scene-start'
+  ))
+    ? (() => {
+        const snapshots = loadSheets()
+        return createEquipmentProviderEncounterLifecycleHandler({
+          placementIds: lifecycleMap.placements.map(placement => placement.id),
+          queries: createEncounterEquipmentEventProviderQueries({
+            map: lifecycleMap,
+            sheets: [
+              ...[...snapshots.pokemonSheets].map(([slug, sheet]) => ({ kind: 'pokemon' as const, slug, sheet })),
+              ...[...snapshots.trainerSheets].map(([slug, sheet]) => ({ kind: 'trainer' as const, slug, sheet })),
+            ],
+          }),
+        })
+      })()
+    : null
   const hasAa083LifecycleEffects = previousEncounterState.effects.some(effect => (
     effect.tags.includes('aa083-perish-count') || effect.tags.includes('aa083-poison-heal-active')
   ))
@@ -958,11 +1007,14 @@ export const planEncounterLifecycle = (
       if (effective) activeCapabilityModeEffectIds.add(mode.id)
     }
   }
-  // Registered handlers retain caller order. Built-in encounter effects run
+  // Registered handlers retain caller order. Every applicable built-in runs
   // next, followed by weather and terrain; field transitions remain event-local
-  // and last.
-  const handlers = [
-    ...(input.handlers ?? []),
+  // and last. Reserve the exact built-in count—including item and equipment
+  // handlers—before invoking the pure reducer so callers cannot crowd out authority.
+  const builtInHandlers: EncounterLifecycleTriggerHandler[] = [
+    createItemCombatStageEncounterLifecycleHandler(),
+    createItemDigestionEncounterLifecycleHandler(),
+    ...(equipmentProviderHandler ? [equipmentProviderHandler] : []),
     ...(leechSeedTurnStart
       ? [createAa078LeechSeedLifecycleHandler({ liquidOozeTickByPlacementId })]
       : []),
@@ -1009,6 +1061,15 @@ export const planEncounterLifecycle = (
     ...(weatherHandler ? [weatherHandler] : []),
     ...(terrainHandler ? [terrainHandler] : []),
   ]
+  const callerHandlers = input.handlers ?? []
+  const callerHandlerLimit = ENCOUNTER_LIFECYCLE_LIMITS.handlers - builtInHandlers.length
+  if (callerHandlers.length > callerHandlerLimit) {
+    return fail(
+      'invalid-handler',
+      `Initiative lifecycle supports at most ${callerHandlerLimit} caller trigger handlers after reserving ${builtInHandlers.length} built-in handlers.`,
+    )
+  }
+  const handlers = [...callerHandlers, ...builtInHandlers]
   const random = createAuthoritativeMoveRandom(input.random)
   const reduction = reduceEncounterLifecycle(
     previousEncounterState,
@@ -1020,7 +1081,7 @@ export const planEncounterLifecycle = (
   const recipientsByOperationId = new Map<string, readonly string[]>()
 
   for (const operation of reduction.operations) {
-    if (!isLifecycleCoreOperation(operation)) {
+    if (!isLifecycleCoreOperation(operation) && !isLifecycleTemporaryOperation(operation)) {
       return fail(
         'unsupported-operation',
         `Initiative lifecycle operation ${operation.id} of kind ${operation.kind} has no immediate reducer.`,
@@ -1037,9 +1098,10 @@ export const planEncounterLifecycle = (
   const operationRecipientIds = new Set(
     [...recipientsByOperationId.values()].flatMap(ids => [...ids]),
   )
+  let lifecycleOperationState = reduction.state
   let nextMap: TabletopMap = {
     ...lifecycleMap,
-    encounterState: deepCloneJson(reduction.state),
+    encounterState: deepCloneJson(lifecycleOperationState),
     fieldEffects: projectGlobalFieldZonesToMapEffects({
       previous: previousFieldEffects,
       state: reduction.state,
@@ -1060,10 +1122,10 @@ export const planEncounterLifecycle = (
       'operation-sheet-unavailable',
       'Initiative lifecycle operations have no recipient with an authoritative backing sheet.',
     )
-    const context = buildAuthoritativeMoveRulesContext({
-      // Trigger operations resolve against the boundary snapshot. Encounter
-      // cleanup is persisted afterward from `reduction.state`.
-      map: lifecycleMap,
+    const buildOperationContext = (map: TabletopMap) => buildAuthoritativeMoveRulesContext({
+      // Trigger operations resolve against the boundary snapshot. Accepted
+      // lifecycle temporary effects are composed before core sheet operations.
+      map,
       pokemonSheets,
       trainerSheets,
       intent: {
@@ -1075,12 +1137,29 @@ export const planEncounterLifecycle = (
       candidatePlacementIds: lifecycleMap.placements.map(placement => placement.id),
       selectedPlacementIds: [...operationRecipientIds],
       random: () => 0.5,
+      randomRoller: random,
       time: input.time,
       ...(input.abilityRuntimeRegistry
         ? { abilityRuntimeRegistry: input.abilityRuntimeRegistry }
         : {}),
     })
+    const temporaryContext = buildOperationContext(lifecycleMap)
     for (const operation of reduction.operations) {
+      if (!isLifecycleTemporaryOperation(operation)) continue
+      lifecycleOperationState = reduceMoveTemporaryEffect({
+        context: temporaryContext,
+        previous: lifecycleOperationState,
+        operation,
+        recipientIds: recipientsByOperationId.get(operation.id) ?? [],
+      }).current
+    }
+    nextMap.encounterState = deepCloneJson(lifecycleOperationState)
+    const context = buildOperationContext({
+      ...lifecycleMap,
+      encounterState: deepCloneJson(lifecycleOperationState),
+    })
+    for (const operation of reduction.operations) {
+      if (!isLifecycleCoreOperation(operation)) continue
       const conditionRecipients = aa065CorrosiveToxinsLifecycleRecipientIds({
         context,
         operation,
@@ -1116,18 +1195,24 @@ export const planEncounterLifecycle = (
         operation,
         candidateRecipientIds: aa080Recipients,
       })
+      const digestionRecipients = isItemDigestionTurnHealingOperation(operation)
+        ? remainingRecipients.filter(placementId => (
+            operation.source.kind === 'encounter-effect'
+            && effects.get(operation.source.id)?.affected.placementIds.includes(placementId)
+          ))
+        : remainingRecipients
       recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
         context,
         operation,
-        candidateRecipientIds: remainingRecipients,
+        candidateRecipientIds: digestionRecipients,
       }))
     }
-    const emissions: MoveResolvedCoreTokenEffectOperation[] = reduction.operations.map(
-      operation => ({
-        operation: operation as LifecycleCoreOperation,
+    const emissions: MoveResolvedCoreTokenEffectOperation[] = reduction.operations
+      .filter(isLifecycleCoreOperation)
+      .map(operation => ({
+        operation,
         recipientIds: [...(recipientsByOperationId.get(operation.id) ?? [])],
-      }),
-    )
+      }))
     const standardImmunities = createStandardMoveCoreTokenEffectImmunityQueries({
       moveType: null,
       context,
@@ -1135,6 +1220,7 @@ export const planEncounterLifecycle = (
     const core = reduceMoveCoreTokenOperationState({
       context,
       operations: emissions,
+      faintProtection: createEquipmentFaintProtectionQueries({ context }),
       dynamicRecipients: EMPTY_DYNAMIC_RECIPIENTS,
       immunities: createVortexLifecycleImmunityQueries({
         effects: [...effects.values()],
@@ -1164,6 +1250,11 @@ export const planEncounterLifecycle = (
         else nextMap.temporaryHitPoints = deepCloneJson(change.current)
         continue
       }
+      if (change.kind === 'encounter-state') {
+        lifecycleOperationState = parseEncounterState(change.current)
+        nextMap.encounterState = deepCloneJson(lifecycleOperationState)
+        continue
+      }
       if (change.kind === 'sheet-state') {
         writes.push(sheetWriteFromChange({
           map: lifecycleMap,
@@ -1182,11 +1273,11 @@ export const planEncounterLifecycle = (
 
   const cleanupEvents = vortexKnockoutCleanupEvents({ reduction, operationResults })
   const cleanupReduction = cleanupEvents.length > 0
-    ? reduceEncounterLifecycle(reduction.state, cleanupEvents, [], random)
+    ? reduceEncounterLifecycle(lifecycleOperationState, cleanupEvents, [], random)
     : null
   const reductions = cleanupReduction ? [reduction, cleanupReduction] : [reduction]
   const plannedEvents = cleanupReduction ? [...events, ...cleanupEvents] : events
-  let currentEncounterState = cleanupReduction?.state ?? reduction.state
+  let currentEncounterState = cleanupReduction?.state ?? lifecycleOperationState
   for (const event of plannedEvents) {
     let abilityEvent: AbilityEffectLifecycleEvent | null = null
     if (event.kind === 'turn-start' || event.kind === 'turn-end') {

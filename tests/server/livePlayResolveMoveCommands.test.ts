@@ -15,6 +15,7 @@ import {
   type RegisteredAllyAreaMoveName,
 } from '../fixtures/moveAutomation/allyAreaLegacyV1'
 import { transformationEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
+import { activePokemonHeldEquipmentState } from '../fixtures/equipment'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import {
@@ -160,6 +161,7 @@ const pokemonSheet = (slug: string, moves: CharacterSheetMove[] = [], overrides:
   level: 20,
   movelist: moves,
   revision: 2,
+  equipmentState: activePokemonHeldEquipmentState({ ownerSlug: slug, canonicalItemIds: [] }),
   ...overrides,
 })
 
@@ -1752,6 +1754,9 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       targetASheet: {
         player: false,
         items: { held: 'Leftovers', itemDescription: 'Private held-item note' },
+        equipmentState: activePokemonHeldEquipmentState({
+          ownerSlug: 'target-a', canonicalItemIds: ['Leftovers'],
+        }),
       },
     })
     const map = harness.maps.getBySlug('arena')!

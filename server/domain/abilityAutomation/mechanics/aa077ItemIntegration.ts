@@ -1,13 +1,13 @@
 import { createHash } from 'node:crypto'
 import { normalizeRevision } from '#shared/sessionRevisions'
-import { parseMoveItemReference, type MoveItemReference } from '#shared/moveAutomation/items'
+import type { MoveItemReference } from '#shared/moveAutomation/items'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { splitSheetItemNames } from '~/utils/sheetItemNames'
 import type { AuthoritativeAbilityContext } from '../context'
 import { resolveMoveAutomationItemRuleIdentity } from '../../moveAutomation/itemRuleData'
 import { planMoveItemMutations } from '../../moveAutomation/planItemMutations'
+import { authoritativeEquippedItemReferences } from '../../moveAutomation/itemResources'
 import type { MoveItemMutation } from '../../moveAutomation/itemMutationTypes'
 import { createMoveStateChangePlan, type MoveStateChangePlan } from '../../moveAutomation/plan'
 
@@ -18,49 +18,27 @@ export interface Aa077VoluntaryDropSlot {
   readonly reference: MoveItemReference
 }
 
-const sourceOwner = (
-  kind: 'pokemon' | 'trainer',
-  slug: string,
-  revision: number,
-) => ({ kind: 'sheet' as const, sheetKind: kind, slug, revision: normalizeRevision(revision) })
-
 /** Enumerate bounded opaque equipped slots; item names remain server-side. */
 export const aa077VoluntaryDropSlots = (input: {
   readonly sheetKind: 'pokemon' | 'trainer'
   readonly sheet: CharacterSheet | TrainerSheet
   readonly onlyCanonicalItemId?: string
 }): readonly Aa077VoluntaryDropSlot[] => {
-  const revision = normalizeRevision(input.sheet.revision)
-  const names = input.sheetKind === 'pokemon'
-    ? splitSheetItemNames((input.sheet as CharacterSheet).items?.held)
-    : splitSheetItemNames((input.sheet as TrainerSheet).equipmentSlots?.accessory)
-  return Object.freeze(names.flatMap((name, index) => {
-    const identity = resolveMoveAutomationItemRuleIdentity(name)
+  const references = authoritativeEquippedItemReferences({
+    id: `ability-item-owner:${input.sheet.slug}`,
+    sheetKind: input.sheetKind,
+    sheetSlug: input.sheet.slug,
+    position: { x: 0, y: 0, z: 0 },
+  }, input.sheet).filter(reference => (
+    input.sheetKind === 'pokemon'
+      ? reference.kind === 'pokemon-held'
+      : reference.kind === 'trainer-equipment-slot' && reference.slot === 'accessory'
+  ))
+  return Object.freeze(references.flatMap((reference, index) => {
+    const identity = resolveMoveAutomationItemRuleIdentity(reference.canonicalItemId)
     if (!identity || (input.onlyCanonicalItemId && identity.canonicalItemId !== input.onlyCanonicalItemId)) {
       return []
     }
-    const reference = parseMoveItemReference(input.sheetKind === 'pokemon'
-      ? {
-          schemaVersion: 1,
-          kind: 'pokemon-held',
-          itemId: `held:${index + 1}`,
-          canonicalItemId: identity.canonicalItemId,
-          owner: sourceOwner('pokemon', input.sheet.slug, revision),
-          quantity: 1,
-          stack: 'singleton',
-          equip: 'pokemon-held',
-        }
-      : {
-          schemaVersion: 1,
-          kind: 'trainer-equipment-slot',
-          itemId: `slot:accessory:${index + 1}`,
-          canonicalItemId: identity.canonicalItemId,
-          owner: sourceOwner('trainer', input.sheet.slug, revision),
-          slot: 'accessory',
-          quantity: 1,
-          stack: 'singleton',
-          equip: 'trainer-slot',
-        })
     return [{
       branchId: `equipped.${index + 1}`,
       canonicalItemId: identity.canonicalItemId,

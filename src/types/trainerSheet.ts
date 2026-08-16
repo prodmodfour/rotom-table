@@ -7,8 +7,23 @@ import type { FeatureInstanceData } from '#shared/featureAutomation/instances'
 import type { FeatureApState, FeatureRuntimeState, FeatureUsageLedger } from '#shared/featureAutomation/state'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { BreedingInheritancePermanentMoveProvenanceV1 } from '#shared/breeding/lineage'
+import type { ItemBreedingStateV1 } from '#shared/breeding/itemWorkflows'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
+import type {
+  SerializedEquipmentInventoryStateV1,
+  SheetEquipmentProjectionV1,
+  SheetEquipmentStateV1,
+} from '#shared/itemAutomation/equipment'
+import type { EquipmentContributionProjectionV1 } from '#shared/itemAutomation/equipmentContributions'
+import type { ItemMedicalTreatmentProjectionV1, ItemMedicalTreatmentStateV1 } from '#shared/itemAutomation/medicalTreatments'
+import type { ItemMachineUsageStateV1 } from '#shared/itemAutomation/moveLearning'
+import type { ItemGuidedCampaignToolStateV1 } from '#shared/itemAutomation/guidedAdjudication'
+import type {
+  ItemExplorationProjectionV1,
+  ItemExplorationStateV1,
+  ItemShardInventoryVariantV1,
+} from '#shared/itemAutomation/exploration'
 
 /**
  * Schema for a Trainer character sheet, modelled on the PTU "Fancy" trainer
@@ -252,8 +267,12 @@ export interface InventoryEntry {
   description?: string
   /** Pokéballs only — modifier value (e.g. "x4"). */
   mod?: string
-  /** Equipment only — slot label. */
+  /** Equipment only — legacy descriptive slot label. */
   slot?: string
+  /** Server-owned whole-item identity and bounded item-specific state. Stack rows omit this field. */
+  serializedEquipment?: SerializedEquipmentInventoryStateV1
+  /** Server-authored structured identity for canonical rows whose reviewed variant cannot be inferred from name or prose. */
+  itemVariant?: ItemShardInventoryVariantV1
 }
 
 export interface TrainerInventory {
@@ -278,9 +297,25 @@ export interface TrainerEquipmentSlots {
 /* Top-level sheet                                                    */
 /* ------------------------------------------------------------------ */
 
+/** Server-authored Trainer evidence; never accepted from or projected to clients. */
+export interface TrainerSheetServerPrivate {
+  /** Latest accepted campaign-day use for each reusable HM source. */
+  itemMachineUsage?: ItemMachineUsageStateV1
+  /** Durable private Bait, Fishing Lure, Repel, Dowsing, and Shard-color authority. */
+  itemExploration?: ItemExplorationStateV1
+  /** Durable exact Egg Warmer item-unit assignments for the shared Egg lifecycle. */
+  itemBreeding?: ItemBreedingStateV1
+  /** Private bounded receipts for accepted interpretive campaign-tool uses. */
+  itemGuidedCampaignTools?: ItemGuidedCampaignToolStateV1
+}
+
 export interface TrainerSheet {
   /** Server-owned document revision used for command conflict control. */
   revision?: number
+  /** Server-authored persistence timestamp carried by authoritative runtime projections. */
+  updatedAt?: number
+  /** Durable server-only mechanic evidence, preserved across whole-sheet saves. */
+  serverPrivate?: TrainerSheetServerPrivate
   /** URL slug for the sheet's subpage (``/sheets/trainers/<slug>``). */
   slug: string
   /** Logical SQLite library folder label for grouping on the sheets index. */
@@ -382,7 +417,19 @@ export interface TrainerSheet {
   /** Free-form wishlist labels. */
   wishlist?: string[]
 
-  /** Inventory + equipped gear. */
+  /** Inventory + legacy descriptive equipped gear. */
   inventory?: TrainerInventory
   equipmentSlots?: TrainerEquipmentSlots
+  /** Explicit server-authoritative equipment state. Legacy slot strings never contribute through this document. */
+  equipmentState?: SheetEquipmentStateV1
+  /** Player-safe projection; source inventory provenance and command evidence are omitted. */
+  equipmentProjection?: SheetEquipmentProjectionV1
+  /** Non-persisted server-authored base/source/cap/final effective equipment values. */
+  equipmentContributionProjection?: EquipmentContributionProjectionV1
+  /** Durable campaign-minute medical treatment lifecycle; only authoritative item and time operations may write it. */
+  itemMedicalTreatments?: ItemMedicalTreatmentStateV1
+  /** Player-safe, non-authoritative treatment status derived from private lifecycle evidence. */
+  itemMedicalTreatmentProjection?: readonly ItemMedicalTreatmentProjectionV1[]
+  /** Player-safe exploration timing and outcome projection; private provenance is omitted. */
+  itemExplorationProjection?: ItemExplorationProjectionV1
 }

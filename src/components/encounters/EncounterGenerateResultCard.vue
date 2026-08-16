@@ -39,6 +39,15 @@ const generatorFileLabel = (placement: EncounterSpawnedPlacement): string | null
       :spawn="result.spawn"
     />
 
+    <div v-if="result.routeRepel" class="route-repel-result" role="status">
+      <strong>{{ result.routeRepel.itemLabel }} applied</strong>
+      <span>
+        {{ result.routeRepel.repelledRolls }} of {{ count }} reviewed roll{{ count === 1 ? '' : 's' }} at
+        Level {{ result.routeRepel.maximumAffectedWildLevel }} or lower {{ result.routeRepel.repelledRolls === 1 ? 'was' : 'were' }} repelled.
+      </span>
+      <small>Ward authority remains active through campaign minute {{ result.routeRepel.expiresAtCampaignMinute.toLocaleString() }}.</small>
+    </div>
+
     <EncounterGenerateResultFiles
       :files="result.files"
       :preview="result.preview"
@@ -76,6 +85,18 @@ const generatorFileLabel = (placement: EncounterSpawnedPlacement): string | null
   box-shadow: var(--shadow-card);
   padding: 1.1rem 1.2rem;
 }
+
+.route-repel-result {
+  display: grid;
+  gap: 0.2rem;
+  margin-block: 0.85rem;
+  border-inline-start: 3px solid var(--rt-pending);
+  background: var(--paper-inset);
+  padding: 0.65rem 0.75rem;
+}
+.route-repel-result strong { color: var(--rt-pending); }
+.route-repel-result span { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.45; }
+.route-repel-result small { color: var(--ink-muted); font-size: 0.72rem; }
 
 .spawn-results {
   margin-top: 0.85rem;

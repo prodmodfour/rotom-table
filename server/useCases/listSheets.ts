@@ -8,6 +8,7 @@ import {
   type PlayerAccessMarkerOptions,
   type PlayerSheetAccessPredicate,
 } from './authorizeSheetList'
+import { projectSheetEquipmentContributions } from '../utils/sheetPrivacy'
 import {
   sqliteSheetRepository,
   type SheetRepository,
@@ -71,7 +72,7 @@ export const listSheetsUseCase = (
   const pokemonSheets = listPokemonSheets()
   const trainerSheets = listTrainerSheets()
 
-  return authorizeSheetList({
+  const authorized = authorizeSheetList({
     role: input.role,
     playerProfile: input.playerProfile,
     canAccessPlayerSheet: input.canAccessPlayerSheet,
@@ -79,4 +80,16 @@ export const listSheetsUseCase = (
     pokemonSheets,
     trainerSheets,
   })
+
+  if (input.role === 'player') return authorized
+  return {
+    pokemonSheets: authorized.pokemonSheets.map((sheet) => projectSheetEquipmentContributions(
+      'pokemon',
+      sheet as unknown as Record<string, unknown>,
+    ) as unknown as CharacterSheet),
+    trainerSheets: authorized.trainerSheets.map((sheet) => projectSheetEquipmentContributions(
+      'trainer',
+      sheet as unknown as Record<string, unknown>,
+    ) as unknown as TrainerSheet),
+  }
 }

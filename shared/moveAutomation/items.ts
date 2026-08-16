@@ -441,17 +441,12 @@ const assertSemantics = (input: {
     )
   }
 
-  if (input.section !== undefined) {
-    const expectedStack: MoveItemStackKind = input.section === 'equipment'
-      ? 'singleton'
-      : 'stackable'
-    if (input.stack !== expectedStack) {
-      fail(
-        'inconsistent-item-reference',
-        `${input.path}.stack`,
-        `${input.section} inventory rows must use ${expectedStack} semantics.`,
-      )
-    }
+  if (input.section === 'equipment' && input.stack !== 'singleton') {
+    fail(
+      'inconsistent-item-reference',
+      `${input.path}.stack`,
+      'equipment inventory rows must use singleton semantics.',
+    )
   }
 }
 

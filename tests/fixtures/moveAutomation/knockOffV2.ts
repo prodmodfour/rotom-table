@@ -3,6 +3,11 @@ import {
   type ResolveMoveIntent,
 } from '#shared/livePlayMoveResolution'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import {
+  createEmptySheetEquipmentState,
+  parseSheetEquipmentStateForOwner,
+  type TrainerEquipmentSlotId,
+} from '#shared/itemAutomation/equipment'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -13,6 +18,8 @@ import type {
 } from '~~/server/domain/moveAutomation/registry'
 import { KNOCK_OFF_MOVE_SPEC } from '~~/server/domain/moveAutomation/specs/knockOff'
 import { validateMoveSpec } from '~~/server/domain/moveAutomation/validateSpec'
+import { splitSheetItemNames } from '~/utils/sheetItemNames'
+import { activeEquipmentState, activePokemonHeldEquipmentState } from '../equipment'
 
 export const KNOCK_OFF_ACTOR_PLACEMENT_ID = 'knock-off-actor'
 export const KNOCK_OFF_TARGET_PLACEMENT_ID = 'knock-off-target'
@@ -114,6 +121,10 @@ const pokemonSheet = (input: {
   types: input.species === 'Machop' ? ['Fighting'] : ['Normal'],
   movelist: [...(input.moves ?? [])],
   items: input.heldItems ? { held: input.heldItems } : {},
+  equipmentState: activePokemonHeldEquipmentState({
+    ownerSlug: input.slug,
+    canonicalItemIds: splitSheetItemNames(input.heldItems),
+  }),
   capabilities: { overland: 6 },
   stats: {
     hp: { added: 20 },
@@ -126,6 +137,31 @@ const pokemonSheet = (input: {
   combatStages: { acc: 0 },
   combat: { currentHp: 100, injuries: 0, conditions: [] },
 })
+
+const trainerEquipmentState = (
+  ownerSlug: string,
+  slots: TrainerSheet['equipmentSlots'],
+) => {
+  const base = createEmptySheetEquipmentState({ ownerKind: 'trainer', ownerSlug })
+  const equipped = Object.entries(slots ?? {}).flatMap(([slotId, canonicalItemId]) => (
+    typeof canonicalItemId === 'string' && canonicalItemId.trim()
+      ? [activeEquipmentState({
+          ownerKind: 'trainer', ownerSlug, slotId: slotId as TrainerEquipmentSlotId, canonicalItemId,
+        })]
+      : []
+  ))
+  const instances = equipped.flatMap(state => state.instances)
+  return parseSheetEquipmentStateForOwner({
+    ...base,
+    slots: base.slots.map(slot => ({
+      ...slot,
+      instanceId: equipped.find(state => (
+        state.slots.find(candidate => candidate.slotId === slot.slotId)?.instanceId
+      ))?.instances[0]?.instanceId ?? null,
+    })),
+    instances,
+  }, { kind: 'trainer', slug: ownerSlug })
+}
 
 export const knockOffV2Fixture = (
   options: KnockOffV2FixtureOptions = {},
@@ -202,6 +238,10 @@ export const knockOffV2Fixture = (
       conditions: [],
       capabilities: { overland: 6 },
       equipmentSlots: { ...options.targetTrainerEquipmentSlots },
+      equipmentState: trainerEquipmentState(
+        KNOCK_OFF_TARGET_TRAINER_SLUG,
+        options.targetTrainerEquipmentSlots,
+      ),
     })
   }
   else {

@@ -1,5 +1,7 @@
 import { isSlug } from '#shared/paths'
 import { normalizeRevision } from '#shared/sessionRevisions'
+import { parseSerializedEquipmentInventoryState } from '#shared/itemAutomation/equipment'
+import { parseItemShardInventoryVariant } from '#shared/itemAutomation/exploration'
 import type { InventoryEntry } from '~/types/trainerSheet'
 import { TRAINER_INVENTORY_SECTIONS } from '~/utils/sheets/trainerInventorySections'
 import type { TrainerInventoryKey } from '~/utils/sheets/trainerInventorySections'
@@ -183,10 +185,16 @@ const normalizeGroupInventoryEntry = (
     name: trimString(source.name) ?? '',
   }
 
-  if (sectionUsesQuantity(section) && Object.hasOwn(source, 'qty')) {
+  if (Object.hasOwn(source, 'serializedEquipment')) {
+    entry.serializedEquipment = parseSerializedEquipmentInventoryState(source.serializedEquipment)
+    if (Object.hasOwn(source, 'itemVariant')) throw new Error('Serialized equipment cannot also carry stack item variant authority.')
+  }
+  else if (sectionUsesQuantity(section) && Object.hasOwn(source, 'qty')) {
     entry.qty = coerceSafeNonNegativeInteger(source.qty)
   }
-
+  if (!Object.hasOwn(source, 'serializedEquipment') && Object.hasOwn(source, 'itemVariant')) {
+    entry.itemVariant = parseItemShardInventoryVariant(source.itemVariant)
+  }
   for (const field of ['cost', 'description', 'mod', 'slot'] as const) {
     if (Object.hasOwn(source, field)) normalizeEntryOptionalStringField(entry, field, source[field])
   }
@@ -219,7 +227,7 @@ export const normalizeGroupInventory = (
     fallbackRowIdCounter: 0,
   }
 
-  return Object.fromEntries(
+  const inventory = Object.fromEntries(
     GROUP_INVENTORY_SECTION_KEYS.map((section) => [
       section,
       sectionRowsFromUnknown(source[section]).map((entry, index) => (
@@ -227,6 +235,12 @@ export const normalizeGroupInventory = (
       )),
     ]),
   ) as GroupInventory
+  const serializedIds = GROUP_INVENTORY_SECTION_KEYS.flatMap(section => inventory[section]
+    .flatMap(entry => entry.serializedEquipment?.instanceId ? [entry.serializedEquipment.instanceId] : []))
+  if (new Set(serializedIds).size !== serializedIds.length) {
+    throw new Error('Group inventory contains a duplicate serialized equipment identity.')
+  }
+  return inventory
 }
 
 export const normalizeGroupInventoryDocument = (

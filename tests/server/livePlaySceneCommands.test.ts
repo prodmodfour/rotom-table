@@ -16,6 +16,17 @@ import { createSceneLifecycleEvents } from '~~/server/domain/moveAutomation/plan
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import type { TabletopMap } from '~/types/map'
+import {
+  applyItemFormChangeCandidate,
+  resolveItemFormChangeCandidate,
+} from '~~/server/domain/itemAutomation/formChanges'
+import {
+  FORM_CHANGE_POKEMON_PLACEMENT_ID,
+  FORM_CHANGE_TRAINER_PLACEMENT_ID,
+  createFormChangeMap,
+  createFormChangePokemon,
+  createFormChangeTrainer,
+} from '../fixtures/itemFormChanges'
 
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
@@ -151,6 +162,51 @@ describe('live-play scene commands', () => {
         current: null,
       },
     })
+  })
+
+  it('publishes exact Mega form initiative reversal so connected clients converge at Scene end', async () => {
+    const pokemon = createFormChangePokemon('mega-mewtwo-y', {
+      species: 'Mewtwo', types: ['Psychic'], abilities: [{ name: 'Pressure' }],
+    })
+    const trainer = createFormChangeTrainer()
+    const sourceMap = createFormChangeMap({
+      slug: 'arena', revision: 4,
+      initiative: { activeId: FORM_CHANGE_POKEMON_PLACEMENT_ID, round: 2 },
+    })
+    const candidate = resolveItemFormChangeCandidate({
+      map: sourceMap,
+      actorPlacementId: FORM_CHANGE_POKEMON_PLACEMENT_ID,
+      targetPlacementId: FORM_CHANGE_POKEMON_PLACEMENT_ID,
+      sheets: {
+        pokemon: new Map([[pokemon.slug, pokemon]]),
+        trainer: new Map([[trainer.slug, trainer]]),
+      },
+    })
+    const activeMap = applyItemFormChangeCandidate({
+      map: sourceMap, candidate, operationId: 'operation-live-scene-mega', acceptedAt: 5_200,
+    })
+    expect(activeMap.placements.find(row => row.id === FORM_CHANGE_POKEMON_PLACEMENT_ID)?.initiative).toBe(14)
+    const remote = structuredClone(activeMap)
+    const harness = createHarness(activeMap)
+    const response = await execute(harness, setSceneCommand({
+      opId: 'op_end_mega_scene', payload: { name: null },
+    }))
+    const patches = acceptedPatches(response)
+    expect(patches[0]?.payload).toMatchObject({
+      lifecycle: {
+        placementInitiativeChanges: [{
+          placementId: FORM_CHANGE_POKEMON_PLACEMENT_ID, previous: 14, current: 13,
+        }],
+      },
+    })
+    expect(harness.storedMap.encounterState?.itemFormChanges?.entries).toEqual([])
+    expect(harness.storedMap.placements.find(row => row.id === FORM_CHANGE_POKEMON_PLACEMENT_ID)?.initiative).toBe(13)
+    expect(applyLivePlayPatchesToMap({
+      map: remote, mapSlug: 'arena', previousRevision: 4, revision: 5, patches,
+    })).toMatchObject({ ok: true, applied: true })
+    expect(remote.encounterState?.itemFormChanges?.entries).toEqual([])
+    expect(remote.placements.find(row => row.id === FORM_CHANGE_POKEMON_PLACEMENT_ID)?.initiative).toBe(13)
+    expect(remote.placements.find(row => row.id === FORM_CHANGE_TRAINER_PLACEMENT_ID)?.initiative).toBe(14)
   })
 
   it('expires scene effects and clears every scene-local resource and compatibility prompt', async () => {

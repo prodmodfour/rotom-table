@@ -23,7 +23,18 @@ export const trainerFeatureApMaximum = (sheet: TrainerSheet): number => Math.max
 export const resolveTrainerFeatureApState = (sheet: TrainerSheet): FeatureApState => {
   if (sheet.featureApState?.schemaVersion === 1) return normalizedFeatureApState(sheet.featureApState, trainerFeatureApMaximum(sheet))
   const state = emptyFeatureApState(trainerFeatureApMaximum(sheet))
-  return Object.freeze({ ...state, spent: Math.max(0, Math.floor(sheet.ap?.spent ?? 0)), bindings: Object.freeze((sheet.ap?.bound ?? 0) > 0 ? [{ bindingId: 'legacy:bound', sourceInstanceId: 'legacy', canonicalId: 'legacy', amount: Math.floor(sheet.ap!.bound!), release: 'manual', createdAt: 0 }] : []), drains: Object.freeze((sheet.ap?.drained ?? 0) > 0 ? [{ drainId: 'legacy:drained', sourceInstanceId: 'legacy', canonicalId: 'legacy', amount: Math.floor(sheet.ap!.drained!), recovery: 'extended-rest', createdAt: 0 }] : []) })
+  return Object.freeze({
+    ...state,
+    spent: Math.max(0, Math.floor(sheet.ap?.spent ?? 0)),
+    bindings: Object.freeze((sheet.ap?.bound ?? 0) > 0 ? [{
+      bindingId: 'legacy:bound', sourceInstanceId: 'legacy', canonicalId: 'legacy',
+      amount: Math.floor(sheet.ap!.bound!), release: 'manual' as const, createdAt: 0,
+    }] : []),
+    drains: Object.freeze((sheet.ap?.drained ?? 0) > 0 ? [{
+      drainId: 'legacy:drained', sourceInstanceId: 'legacy', canonicalId: 'legacy',
+      amount: Math.floor(sheet.ap!.drained!), recovery: 'extended-rest' as const, createdAt: 0,
+    }] : []),
+  })
 }
 const usageScope = (frequency: FeatureFrequencyDefinition, scope: FeatureResourceScope): { scope: 'round' | 'scene' | 'day' | 'campaign', scopeId: string } | null => {
   if (frequency.mode === 'eot') return scope.roundNumber !== null ? { scope: 'round', scopeId: `round:${scope.roundNumber}` } : null
@@ -49,7 +60,12 @@ export const settleFeatureDeclarationResources = (input: {
   const usageKey = usageScope(input.frequency, input.scope)
   if ((input.frequency.mode === 'scene' && !input.scope.sceneId) || (input.frequency.mode === 'daily' && !input.scope.dayId) || (input.frequency.mode === 'eot' && input.scope.roundNumber === null)) return { accepted: false, code: 'feature.frequency.scope-missing', apState: ap, usage }
   const used = usageKey ? usage.entries.filter(entry => entry.sourceInstanceId === input.sourceInstanceId && entry.scope === usageKey.scope && entry.scopeId === usageKey.scopeId && (!input.scope.targetId || entry.targetId === input.scope.targetId)).reduce((sum, entry) => sum + entry.uses, 0) : 0
-  if (input.frequency.mode === 'eot' && input.scope.roundNumber !== null && usage.entries.some(entry => entry.sourceInstanceId === input.sourceInstanceId && entry.scope === 'round' && entry.scopeId === `round:${input.scope.roundNumber - 1}`)) return { accepted: false, code: 'feature.frequency.eot', apState: ap, usage }
+  const roundNumber = input.scope.roundNumber
+  if (input.frequency.mode === 'eot' && roundNumber !== null && usage.entries.some(entry => (
+    entry.sourceInstanceId === input.sourceInstanceId
+    && entry.scope === 'round'
+    && entry.scopeId === `round:${roundNumber - 1}`
+  ))) return { accepted: false, code: 'feature.frequency.eot', apState: ap, usage }
   const usageLimit = input.frequency.mode === 'eot' ? 1 : input.frequency.uses
   if (usageKey && usageLimit !== null && used >= usageLimit) return { accepted: false, code: 'feature.frequency.exhausted', apState: ap, usage }
   const payment = input.frequency.payment

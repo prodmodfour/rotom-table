@@ -11,6 +11,7 @@ import {
   type SetScenePayload,
 } from '#shared/livePlayCommands'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
+import { createEmptyEncounterState, parseEncounterState } from '#shared/moveAutomation/encounterState'
 import type { AuthRole } from '#shared/auth'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { MapSceneState, SheetKind, TabletopMap } from '~/types/map'
@@ -314,6 +315,14 @@ const applySceneChange = (
 ): AppliedSceneChange => {
   const payload = expectSetScenePayload(command.payload)
   const previous = activeSceneState(context.map)
+  const encounterState = parseEncounterState(context.map.encounterState ?? createEmptyEncounterState())
+  if ((encounterState.itemExploration?.repelPositioning.length ?? 0) > 0) {
+    rejectLivePlayCommand(
+      'conflict',
+      'Scene changes are unavailable while direct Repel positioning is pending.',
+      { currentRevision: normalizeRevision(context.map.revision) },
+    )
+  }
   const boundaryTime = sceneBoundaryTimestamp(context.map, previous, timestamp)
   const current = payload.name === null
     ? null
@@ -407,6 +416,9 @@ const sceneLifecyclePatchPayload = (
   currentMoveUsage: lifecycle.currentMoveUsage === undefined
     ? null
     : deepCloneJson(lifecycle.currentMoveUsage),
+  ...(lifecycle.placementInitiativeChanges.length > 0
+    ? { placementInitiativeChanges: deepCloneJson(lifecycle.placementInitiativeChanges) }
+    : {}),
 })
 
 const commandPatch = (

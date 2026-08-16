@@ -8,6 +8,8 @@ import { actorControlledMapPlacementIds } from '../policies/playerProfileTokenCo
 import { projectMapBackedEncounterWorkspace } from '../domain/encounterWorkspace/projection'
 import { loadLiveTableSnapshotUseCase } from './loadLiveTableSnapshot'
 import { createSqliteEncounterDocumentRepository } from '../storage/encounterDocumentRepository'
+import { createSqliteItemOperationRepository, type StoredItemOperationRecord } from '../storage/itemOperationRepository'
+import { projectItemOperationPresentations } from '../domain/itemAutomation/presentation'
 
 export interface LoadEncounterWorkspaceInput {
   readonly role: AuthRole
@@ -26,6 +28,7 @@ export interface LoadEncounterWorkspaceDependencies {
   }) => LiveTableSnapshot
   readonly loadEncounterDocument?: (encounterId: string) => EncounterDocument | null
   readonly findEncounterDocumentByMap?: (mapSlug: string) => EncounterDocument | null
+  readonly listItemOperations?: (mapSlug: string) => readonly StoredItemOperationRecord[]
 }
 
 export const resolveEncounterWorkspaceAudience = (
@@ -54,6 +57,11 @@ export const loadEncounterWorkspaceUseCase = (
     : null
   const loadEncounterDocument = dependencies.loadEncounterDocument ?? ((encounterId: string) => repository?.get(encounterId) ?? null)
   const findEncounterDocumentByMap = dependencies.findEncounterDocumentByMap ?? ((mapSlug: string) => repository?.findByMapSlug(mapSlug) ?? null)
+  const itemRepository = dependencies.loadSnapshot && !dependencies.listItemOperations
+    ? null
+    : createSqliteItemOperationRepository()
+  const listItemOperations = dependencies.listItemOperations
+    ?? ((mapSlug: string) => itemRepository?.listForMap(mapSlug, 200) ?? [])
   let encounterDocument = requestedId ? loadEncounterDocument(requestedId) : null
   const snapshot = loadSnapshot({
     role: input.role,
@@ -98,13 +106,50 @@ export const loadEncounterWorkspaceUseCase = (
       hiddenParticipantCountsBySide[placement.sideId] = (hiddenParticipantCountsBySide[placement.sideId] ?? 0) + 1
     }
   }
+  const itemPresentations = projectItemOperationPresentations({
+    records: listItemOperations(snapshot.map.slug),
+    audience,
+    role: input.role,
+    playerProfile: input.playerProfile,
+    map: snapshot.map,
+    pokemonSheets: snapshot.pokemonSheets,
+    trainerSheets: snapshot.trainerSheets,
+  })
+  const pendingById = new Map(snapshot.encounterPresentation.pending.map(value => [value.interactionId, value]))
+  for (const pending of itemPresentations.pending) pendingById.set(pending.interactionId, pending)
+  const acceptedByOperation = new Map(snapshot.encounterPresentation.accepted.map(value => [value.operationId, value]))
+  for (const accepted of itemPresentations.accepted) acceptedByOperation.set(accepted.operationId, accepted)
+  const projectedPending = [...pendingById.values()]
+  const projectedAccepted = [...acceptedByOperation.values()]
+    .sort((left, right) => left.revision - right.revision || left.presentationId.localeCompare(right.presentationId))
+    .slice(-100)
+  const itemProjectionIdentity = [
+    ...projectedPending.map(value => value.interactionId),
+    ...projectedAccepted.map(value => value.presentationId),
+  ].sort((left, right) => left.localeCompare(right)).join(':') || 'none'
+  const projectedSnapshot: LiveTableSnapshot = {
+    ...snapshot,
+    encounterPresentation: {
+      ...snapshot.encounterPresentation,
+      projectionId: `${snapshot.encounterPresentation.projectionId}:items:${itemProjectionIdentity}`,
+      pending: projectedPending,
+      accepted: projectedAccepted,
+    },
+  }
+  const authorizedInteractionIds = [
+    ...itemPresentations.authorizedInteractionIds,
+    ...snapshot.encounterPresentation.pending.flatMap(pending => (
+      pending.projection === 'actor-owner' || pending.projection === 'responder-owner' ? [pending.interactionId] : []
+    )),
+  ]
   return projectMapBackedEncounterWorkspace({
     encounterDocument,
-    snapshot,
+    snapshot: projectedSnapshot,
     policy: {
       audience,
       visibleParticipantIds,
       controlledParticipantIds,
+      authorizedInteractionIds,
       hiddenParticipantCountsBySide,
       canUseExactGeometry: audience !== 'public',
     },

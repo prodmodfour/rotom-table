@@ -1,0 +1,2934 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-092",
+  "status": "reviewed",
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "policySha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b",
+  "runtimeProseParsing": false,
+  "cohortMemberLimit": 32,
+  "cohortCount": 18,
+  "itemCount": 348,
+  "implementationStateCounts": {
+    "guided": 40,
+    "native": 204,
+    "passive": 104
+  },
+  "providerCounts": {
+    "machine-move": 106,
+    "evolution": 24,
+    "permanent-advancement": 10,
+    "exploration": 7,
+    "breeding": 3,
+    "guided-adjudication": 6,
+    "equipment": 104,
+    "core-item-spec": 29,
+    "capture": 25,
+    "interpretive-campaign-tool": 34,
+    "canonical-data-defect": 0
+  },
+  "registrySha256": "43c2dae4f0e6dc3bcb6767cfc09c7d5ef76f38b5e5a3f82b114827e70dd088e8",
+  "cohorts": [
+    {
+      "cohortId": "machine-move-01",
+      "sequence": 1,
+      "providerId": "machine-move",
+      "implementationState": "native",
+      "memberCount": 32,
+      "sourceFingerprint": "9b21c7dc6ec7d8b5a10bd1ef5225c8039573a16fda08e9593a3d82c5ee1a7f78",
+      "members": [
+        {
+          "canonicalId": "TM 01 - Hone Claws",
+          "recordSha256": "ea2d4383cb5038c928f59acd3b1da50c1d4e435b9b97bfde561fa37b221282b0",
+          "effectSha256": "0c2a02953ccc53108fae578323491986af0e07f0ba6e205aa36d62d9447fa26d"
+        },
+        {
+          "canonicalId": "TM 26 - Earthquake",
+          "recordSha256": "32f1b8d726a429e6a1b5a1bff2653127836636c61074b661649666f50aaab63d",
+          "effectSha256": "e1f8f3dadaee49bcadd7d8ac4bab02d7ed5e40177cad7aa3c0762e3e4bc9e3a2"
+        },
+        {
+          "canonicalId": "TM 51 - Steel Wing",
+          "recordSha256": "f8ed03e376147c1af0104995862de1370cb9413f7c720490c980bb72abb712ab",
+          "effectSha256": "964949248849832d38cf05b8c4bcd03c79ea4d12bd9d017649eccf038917e55e"
+        },
+        {
+          "canonicalId": "TM 76 - Struggle Bug",
+          "recordSha256": "0731709c939073dfc543a0362eb000fc0f902333e451ebedc2b831b557398a40",
+          "effectSha256": "a6cc3658046eb25b9541fcdda72f5817318af22e78ead73fe77b8f5b98c9dfe6"
+        },
+        {
+          "canonicalId": "TM 02 - Dragon Claw",
+          "recordSha256": "b73944eae38584178b450d3b0b54898165d020456c0218d156bed3fca7b617b6",
+          "effectSha256": "12d03576514b21569535e46e6d57fece10ec1c1e2b42aa8ce62cb7352e32d0ab"
+        },
+        {
+          "canonicalId": "TM 27 - Return",
+          "recordSha256": "59f72f665a2964fccf7d9e158cdf84e21e8b1eac4be8e99a214668a34f780978",
+          "effectSha256": "8e5b94795572e4bc81ff382edbc94b6ca1abec269c3d1125aa5ea901e36fb1f5"
+        },
+        {
+          "canonicalId": "TM 52 - Focus Blast",
+          "recordSha256": "5ac916894d96188c164cab7f9d7838afde8d744753a14977d8eb93be60e0554b",
+          "effectSha256": "8bcb1852728b3b7dbccb3b1812a485587e1eb1474430e20ef0a4276e5bfe719f"
+        },
+        {
+          "canonicalId": "TM 77 - Psych Up",
+          "recordSha256": "6798234c4d7aa3065da71069ff9e4774922d346d0071e099692548b4e4ebde68",
+          "effectSha256": "00de8f075196536b1c57502f714fc2a5b7f1b7ff25f57c0c7a334248dff6c3fb"
+        },
+        {
+          "canonicalId": "TM 03 - Psyshock",
+          "recordSha256": "e8af43fe82cac21693e0ed9c1f0f09ae72b3e8fe3f45ffca81b92183c53b091b",
+          "effectSha256": "ddeef628ccad1310399ddba0c48f30903058787856d89f28141521bafce74342"
+        },
+        {
+          "canonicalId": "TM 28 - Dig",
+          "recordSha256": "3b3e45eee3671668c1e4e6a63fd5a4fc39ef06b43b83bcb08c0d93d38198e339",
+          "effectSha256": "3b33f83e02e583db5a6f0e0b5636b62a4f2585d2556dd0e8697e66249a43f97c"
+        },
+        {
+          "canonicalId": "TM 53 - Energy Ball",
+          "recordSha256": "20c66f1776663558825d1eae9f840df8ed5f079cb30f61fdbe54e1d0b47a381c",
+          "effectSha256": "b9f372bdc5eb354b157b1911a48bca260f4d192a539d6835d626679bdcfdd86b"
+        },
+        {
+          "canonicalId": "TM 78 - Bulldoze",
+          "recordSha256": "af4cd11c7720f6ec06e1e28755a304ccd3f0ba05190fb0b35a468d8df887946c",
+          "effectSha256": "ee6f3be063bd993722c1e3121cb8ce619bb9143fcb4e7957c8df2947fe845fd2"
+        },
+        {
+          "canonicalId": "TM 04 - Calm Mind",
+          "recordSha256": "69b4a847821d685b4ec991e2236adac815ce7137988527a842deb3d6daeab55d",
+          "effectSha256": "705b2bef3b2e9783d644da7c60fbc52e1a5c70015d1af03463064bfdeaa4a6dc"
+        },
+        {
+          "canonicalId": "TM 29 - Psychic",
+          "recordSha256": "d1dfab1c3aa5119af53d5f3efac863042436d6563ea4084a9e7c04bc8471eac6",
+          "effectSha256": "acafa8034e44e775c82ed3be76b9a3eee894ab9537b3be5302b8654fafff96e1"
+        },
+        {
+          "canonicalId": "TM 54 - False Swipe",
+          "recordSha256": "ebb15b8853ca39f477bd74a49565c43706ea091086357646ed41278681fe89f3",
+          "effectSha256": "8f4daecaa6005b153b5dd216daf187175921be99a3d41b96bfe08b1982ef6fb6"
+        },
+        {
+          "canonicalId": "TM 79 - Frost Breath",
+          "recordSha256": "694d4c882c176ab536bf090a752b35be7c88a85f835c4c5f19591dbb55af90bf",
+          "effectSha256": "5212d5d90622770dcb94457e9feff0f4b5fcdeaeca693428daf040a23ee1d33b"
+        },
+        {
+          "canonicalId": "TM 05 - Roar",
+          "recordSha256": "077f45108cf4e533103d815ea250acdca261cbb5aa4d76a1932f1d3c5959bb30",
+          "effectSha256": "4208a8dd09729a81601dd9d4e5ca0b266bd37f84c1431fb35cc508c6a29febc6"
+        },
+        {
+          "canonicalId": "TM 30 - Shadow Ball",
+          "recordSha256": "88b49dea67b269e7bad3308c16e9734d19fe6076578009cc300fb29bedd6cc45",
+          "effectSha256": "50e23a7bae2f39d838565b9430f15d873cbc09fc70e1ec58eb4ee77e7f3e225d"
+        },
+        {
+          "canonicalId": "TM 55 - Scald",
+          "recordSha256": "9310a5c1dd563ed5b4a68fb9e5299c54c7247dada3e9b1f3d0240851c8904d22",
+          "effectSha256": "42dbbf166e01c90bd7ddbdfc94f003389a4cce6ca6c2cd0d1c99ee374381e28f"
+        },
+        {
+          "canonicalId": "TM 80 - Rock Slide",
+          "recordSha256": "a882928f08276e1bef9f5ebe95733b523d2f4320b0091855b88bfb3d8c3aea7f",
+          "effectSha256": "eeb58e603763c65061ce6ba0e092c1169f7eb7dcc25ba59e7c0918d86896d063"
+        },
+        {
+          "canonicalId": "TM 06 - Toxic",
+          "recordSha256": "dc708886ca4609c8c0274fa4b382f79a5693051c2b6b12a24dc1c3130c41404f",
+          "effectSha256": "605e9f2b74774ad6fd70f0d93393e7b7bf43d862ae1a8e825a09411616b82dbd"
+        },
+        {
+          "canonicalId": "TM 31 - Brick Break",
+          "recordSha256": "f3742db232c70a81f56ec9729997f38d96cb8729de848527ea9d62f2f6fc958e",
+          "effectSha256": "a4c179bc7458dd588acaede09c4e9f8e2f0f590999c340950a3a3af1eddc8ea6"
+        },
+        {
+          "canonicalId": "TM 56 - Fling",
+          "recordSha256": "1264b1838a2c741f2b8138ccddd6fb6261a14d723b62c6e21a72297231a8f0ff",
+          "effectSha256": "c3ecc45be965ced0790bf17d872b65a3f6420712cfd229c0db47dc52e06f9a61"
+        },
+        {
+          "canonicalId": "TM 81 - X-Scissor",
+          "recordSha256": "eee0df01c87a188539101777973f7e8cc9a5ca741f547bdd30d961fb5d313ccb",
+          "effectSha256": "6e97bb14a28a7187368ffcc35b4fe891077df1c123dea844db4fa5d389e8c95a"
+        },
+        {
+          "canonicalId": "TM 07 - Hail",
+          "recordSha256": "2d8c656456ee4739b11a65014cfa5f224f0cf80d0f694129e0ea6928da4a5287",
+          "effectSha256": "b210dca216b0a5d4b56ce11d780056dec9d37940e7db3ae3a48bfd2c200aff98"
+        },
+        {
+          "canonicalId": "TM 32 - Double Team",
+          "recordSha256": "69303867046d096cadf625a143c78012cbb70b755f7828304bd7e20a18ea6c10",
+          "effectSha256": "5439c3d8f5c2f07ed2cb5fd58afb54817940f273c69277af50eead512bd5b451"
+        },
+        {
+          "canonicalId": "TM 57 - Charge Beam",
+          "recordSha256": "a7df70217e14775524d3017b64cf2d93dedc37e89a249483c0886cca64522e36",
+          "effectSha256": "f9130ac2cbbe8295784dd35bac25840c20b6b0622b1dd870171f3fbbdff02b2d"
+        },
+        {
+          "canonicalId": "TM 82 - Dragon Tail",
+          "recordSha256": "e02ae99b374952f792c8e2e467b734c30928992dbdcf2da11681661cda9869df",
+          "effectSha256": "7764b72fbdf56383ca1cd50f931853d1f6d8d16a20a53622c9cd866828814351"
+        },
+        {
+          "canonicalId": "TM 08 - Bulk Up",
+          "recordSha256": "c0aeeb2d30dcfacece3a7f1946646044c8fbee6a4f9fdd2f6275648f89307b68",
+          "effectSha256": "a33f0e79201eb79bb99e9c84aa883c0e78733b367a7b77b1c563f49f189c7182"
+        },
+        {
+          "canonicalId": "TM 33 - Reflect",
+          "recordSha256": "a3dcca5c06e7c168ae67d658c69c7e66d979a9bb4a89eb2408d194bb51e54fdb",
+          "effectSha256": "207239941d25401305eb8fefdd3fc7f144949b4362eb6a4fd8f398f341ddcc87"
+        },
+        {
+          "canonicalId": "TM 58 - Sky Drop",
+          "recordSha256": "7892dd782701c5a62da2df798efa512e1ab5246753a49f8904b3fa99ecd5c17c",
+          "effectSha256": "4757af1025e7dea706e72f32505343691aaf3825c44a18d68613ebdba9b2783b"
+        },
+        {
+          "canonicalId": "TM 83 - Infestation",
+          "recordSha256": "a4939cd0f248462c976782d7bfa4193f2b19eb160eb415d57006727bd687fdda",
+          "effectSha256": "8290a91b3834951d1d51578b5dc51c5c7568559021d15a72423d52a5e0c9d3fe"
+        }
+      ],
+      "providerRequirements": [
+        "exact machine and Move identity",
+        "owned Pokémon compatibility",
+        "durable Extended Action",
+        "atomic Tutor Point and inventory settlement"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/move-learning-items.v1.json",
+          "sha256": "c679cfe04a8e37c4007ed6054309141aa3c03d2938a3885da53eca9e480473b4"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/moveLearning.ts",
+          "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d"
+        },
+        {
+          "path": "tests/integration/machineMoveLearningOperation.test.ts",
+          "sha256": "3d7c322aa594446ee2104164d168c437476f7c7b7760cd37b825de21487039f2"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/TrainerItemExtendedActionCard.vue",
+          "sha256": "0abbc6ff05f2e6ec04306087114a742ac41c57b5a2d52cfcb0535f85ab90cf54"
+        },
+        {
+          "path": "tests/e2e/machine-move-learning.spec.ts",
+          "sha256": "07a30dc326ff3288f99cfb88c5aaacc5eb530d0d146ce5b2596a2fecb1eb93e4"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/itemExtendedActionRepository.ts",
+          "sha256": "04ba15bdb89dd5bbbb267a959f4a5fd235230a6c1d0e1dc5cbb7b74f14769e0f"
+        },
+        {
+          "path": "tests/integration/machineMoveLearningExtendedActions.test.ts",
+          "sha256": "5ab96b2c8b091de4fa831a962385b5405bf0d633278f3e78dd5a39e0b18a2a83"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "machine-move-02",
+      "sequence": 2,
+      "providerId": "machine-move",
+      "implementationState": "native",
+      "memberCount": 32,
+      "sourceFingerprint": "363f04740dd757bbe7c9c425f1e65995fb34d90cc7a4091cb3be9397198b0cd9",
+      "members": [
+        {
+          "canonicalId": "TM 09 - Venoshock",
+          "recordSha256": "ceec6768f0fe72c6dcf8837b4664ab86360ea33d6b6005cf36ec9845a97cdf0b",
+          "effectSha256": "d203a54c958621c355c8a2a14fa2e3a25c4cc92b154da6ab2f4448c18829810b"
+        },
+        {
+          "canonicalId": "TM 34 - Sludge Wave",
+          "recordSha256": "51e45595ac400846df97a4bb6de068c79a97cc2a66513281700395ad508541ef",
+          "effectSha256": "a908a9eba102aed6740084daa428d5426e02f84b98d3e15e2d061f115f46a2bb"
+        },
+        {
+          "canonicalId": "TM 59 - Incinerate",
+          "recordSha256": "abecf9fe4fd3821d09e061d23144c16b269f96e109374beafcc790700503a8be",
+          "effectSha256": "c7f17d8e947e1d997d83288e595133c97a5e3b831c54f89132ca57a0b630fd0a"
+        },
+        {
+          "canonicalId": "TM 84 - Poison Jab",
+          "recordSha256": "eb50fef51f7122b9f1eab601f27ed9b51f57d96b1420d9fd718d77df7d8ab7e7",
+          "effectSha256": "4b604f27194c1536008f88ac4f217069ec8adaccd40c65caa3a63e98d548de09"
+        },
+        {
+          "canonicalId": "TM 10 - Hidden Power",
+          "recordSha256": "f80d85146809764d165cad44a92eb1ef2361f3c077ad452a836675f4004bcd33",
+          "effectSha256": "b2fab5eb302383328ddc1b7f039285478b33dbd93cc81e01d4491f6bbfede0f9"
+        },
+        {
+          "canonicalId": "TM 35 - Flamethrower",
+          "recordSha256": "611c5f6e8a655ecd44b33e1804c775ff2c82baafe6966b637dc7fe8d7708d53f",
+          "effectSha256": "6cca7eb9202bd76479c59ee72ae0e67badb2914f57f2226a2b5eafccb3052609"
+        },
+        {
+          "canonicalId": "TM 60 - Quash",
+          "recordSha256": "5f7853cce5cb955341a7b5865ef7b75b0c940cc69129b1a534484386b7b8d624",
+          "effectSha256": "5adc63b82cf18e49eb613f2aabd6dede2c07337f608bda3199c0e0249366355e"
+        },
+        {
+          "canonicalId": "TM 85 - Dream Eater",
+          "recordSha256": "1e1c0e471b2952a2f7baaaa4ab36c490c3d6cc43810dfc7887134b9032d66aae",
+          "effectSha256": "a799d6cae7efa75eaecf885943adae38f5e615220d91199fa406847880c58a51"
+        },
+        {
+          "canonicalId": "TM 11 - Sunny Day",
+          "recordSha256": "c09da65435a0bad22723ae35b185c78c0124e1c4d86b31327a33c65bc431a8d0",
+          "effectSha256": "d77d0c8b056bb4d8fd8b8454fb2569c3c35c10dc53d0317bdbe9654b9212d5e7"
+        },
+        {
+          "canonicalId": "TM 36 - Sludge Bomb",
+          "recordSha256": "63287f03c5ce526b73424e158b218ece2c453404eee8cba3327f02a5e9a9182b",
+          "effectSha256": "b004524d4fceb262439a350110de04ea802e06c0f7b9238b783a814b678dada3"
+        },
+        {
+          "canonicalId": "TM 61 - Will-O-Wisp",
+          "recordSha256": "d1b4de0739202c054a55fb208ccde44d5d953ba12a0a14a0fef2a30124b1ac80",
+          "effectSha256": "2090a6654662786f1e05815cca79db15e2c633cb725ff686ea8cde93976d5673"
+        },
+        {
+          "canonicalId": "TM 86 - Grass Knot",
+          "recordSha256": "b59c68b2913d0877d9e1a5722215e193113320ccb127b9a1ade6e1be206900cc",
+          "effectSha256": "0c18614a1c6de282c361203be3262abcd4bdeabae3b8f66cc5d1d82c2028268e"
+        },
+        {
+          "canonicalId": "TM 12 - Taunt",
+          "recordSha256": "3a622e5ec7590c6ca10b2f5d22c212f5933f52d44570f5b4313cdaffd2d7e6eb",
+          "effectSha256": "cdb41ac270a79af30a52691d4591c8a66e248497540183fd71af1f401d49c907"
+        },
+        {
+          "canonicalId": "TM 37 - Sandstorm",
+          "recordSha256": "de71cf3c773e53797989e081542faac4fa557fa9314685f84b826f3aa5004fc4",
+          "effectSha256": "89ff0243e05bad160deb9cdd0c59ee1dffe513956ff5b9d332fe9cc1dd8e1fde"
+        },
+        {
+          "canonicalId": "TM 62 - Acrobatics",
+          "recordSha256": "60154df7d577e5089f8ecc07c24863a6a6dceba5dfc6765b8a14804208127c54",
+          "effectSha256": "766be459b0fec84531378bc2d57d1034e5f6d46512dbf79c8558563bd4dd1806"
+        },
+        {
+          "canonicalId": "TM 87 - Swagger",
+          "recordSha256": "540faae7ece0c9211ef1c378e52784216cc4db4011a33913f92a880b02669c30",
+          "effectSha256": "933668e33d24118be45c256d541eab98464168a8e549cc88a56edff959579d7b"
+        },
+        {
+          "canonicalId": "TM 13 - Ice Beam",
+          "recordSha256": "65d07819a4587555f4785f7ea27ec47cf2ed5860370b0c99ae33c0c4d0bce671",
+          "effectSha256": "6936b7e79de5501ba3fc85a31d1e61adb756e07cc51d65f5f5b1e2ffbf2bc0f5"
+        },
+        {
+          "canonicalId": "TM 38 - Fire Blast",
+          "recordSha256": "d7a2e7b19473eea330397d34e8ba8f17d50c867aff6eedd9d999b000b0b0f4bb",
+          "effectSha256": "47bc930edc6bb9a8a137d22aa58d4d94c29fc5229207613b3dd3b0b50cee77a5"
+        },
+        {
+          "canonicalId": "TM 63 - Embargo",
+          "recordSha256": "e03be3cc562477cf72ebf343a3ed22b7352d7cc257007328ec730ae8b200711a",
+          "effectSha256": "5de452a2c99f7c5b924a9671e6e7a04ed1e7d421092f24860e043517b5d560a5"
+        },
+        {
+          "canonicalId": "TM 88 - Sleep Talk",
+          "recordSha256": "73ef3f0607e101881a41fd46bef6f83fe96d2b3b9d5f9a47bb8fe41988cb346f",
+          "effectSha256": "a2c39c278b2c01be712898298330b102e0b2e69fd528707b821f365c18cc0ef9"
+        },
+        {
+          "canonicalId": "TM 14 - Blizzard",
+          "recordSha256": "64631bb8f3fb304dd21dce6d794a3ca538e20d067564f19bcf1719364b1ebf50",
+          "effectSha256": "010b0ae1a167406ae93108247e68b889632673ad1259c6801c8f2ae6483e81e5"
+        },
+        {
+          "canonicalId": "TM 39 - Rock Tomb",
+          "recordSha256": "a5cfb387010769b00f0b4551cc308496fda0d6196dcbcd85fb7fd95e4005e456",
+          "effectSha256": "14f7128360c3ec50eb0a676d045871c113cb926e73c566451700f4763f4a2816"
+        },
+        {
+          "canonicalId": "TM 64 - Explosion",
+          "recordSha256": "942a5a2359fbf9ca425275f52316d57c27a30cfab9173fc8f08f9d473e47cf23",
+          "effectSha256": "9410afd2578d90d3be1e45c4e77fefa1765fddebca5386e6929a9f7503e19dae"
+        },
+        {
+          "canonicalId": "TM 89 - U-Turn",
+          "recordSha256": "967dd548dbbdc942555ba5ded4136e8233193b195d8c8dee2ad47ba64549e54f",
+          "effectSha256": "eecca38e3d730631279c9b076597f0a90f437e9ad3169690fb4374c165f4bb78"
+        },
+        {
+          "canonicalId": "TM 15 - Hyper Beam",
+          "recordSha256": "32a980a8e0e255d186b9638bf21b59806b384f84da04c5a0b642aebc5b6765d7",
+          "effectSha256": "b4930f12644ef45fc7c7c7d4e008321da4bc4f885795d8db320d235cbc5738cf"
+        },
+        {
+          "canonicalId": "TM 40 - Aerial Ace",
+          "recordSha256": "7e80be2f80e954c52c30fb1db7c4ac4817c439d707ac1dafdb62f69904a3ff0a",
+          "effectSha256": "e91eeb2a607f2d840dfd65209736780df98232f2026b13ca2917c5181f723ed7"
+        },
+        {
+          "canonicalId": "TM 65 - Shadow Claw",
+          "recordSha256": "cc4f604147cf07cd5ea4f981967b2958c4e69b8cbc476830ea5361a83fcad7b1",
+          "effectSha256": "c4af47f7e44627775b7e288e72544544a2eaf5a04212b66c7a9f63891d34b5c5"
+        },
+        {
+          "canonicalId": "TM 90 - Substitute",
+          "recordSha256": "5c9ccbae6e840ca52111ecb5b08e7a2964871f76a6ef9e71e53e60cfc2a197ae",
+          "effectSha256": "c9ed997df982802553a21976337088aebf1b91ecef73b7b8ea04a6fd4932fdd2"
+        },
+        {
+          "canonicalId": "TM 16 - Light Screen",
+          "recordSha256": "e5b82557b0e58ab288f88b7bcd1be5ea6bb3ad9f82354d497709ddef41206591",
+          "effectSha256": "0ad1d20a443f76f0c3ebe1e1ab5afe98dfd38cc6f552c0af44733c4e1ce99b1c"
+        },
+        {
+          "canonicalId": "TM 41 - Torment",
+          "recordSha256": "e90f76482ccee6b07150bac6a9f1befed4e88c66d777952248233462479552a5",
+          "effectSha256": "95adad0962707cb6ef2afe6d0f70e16d2eb0c472f428ea1fe423502de84874cb"
+        },
+        {
+          "canonicalId": "TM 66 - Payback",
+          "recordSha256": "bac86f58718d5424c31c676d682616229b20daf42803dcc86d8a9b8a497cafe1",
+          "effectSha256": "739311bd858245cf79fc92e43e8b85fa39383f9b630ceaf592995062117d69e8"
+        },
+        {
+          "canonicalId": "TM 91 - Flash Cannon",
+          "recordSha256": "c67b81ee8791b0d479b7d3b813004f2f00330de9e56e744d285b13349e44c93e",
+          "effectSha256": "cdc42791e866f6597c5399f49abc253f9feee726b7620148dc86355d53e46ff7"
+        }
+      ],
+      "providerRequirements": [
+        "exact machine and Move identity",
+        "owned Pokémon compatibility",
+        "durable Extended Action",
+        "atomic Tutor Point and inventory settlement"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/move-learning-items.v1.json",
+          "sha256": "c679cfe04a8e37c4007ed6054309141aa3c03d2938a3885da53eca9e480473b4"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/moveLearning.ts",
+          "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d"
+        },
+        {
+          "path": "tests/integration/machineMoveLearningOperation.test.ts",
+          "sha256": "3d7c322aa594446ee2104164d168c437476f7c7b7760cd37b825de21487039f2"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/TrainerItemExtendedActionCard.vue",
+          "sha256": "0abbc6ff05f2e6ec04306087114a742ac41c57b5a2d52cfcb0535f85ab90cf54"
+        },
+        {
+          "path": "tests/e2e/machine-move-learning.spec.ts",
+          "sha256": "07a30dc326ff3288f99cfb88c5aaacc5eb530d0d146ce5b2596a2fecb1eb93e4"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/itemExtendedActionRepository.ts",
+          "sha256": "04ba15bdb89dd5bbbb267a959f4a5fd235230a6c1d0e1dc5cbb7b74f14769e0f"
+        },
+        {
+          "path": "tests/integration/machineMoveLearningExtendedActions.test.ts",
+          "sha256": "5ab96b2c8b091de4fa831a962385b5405bf0d633278f3e78dd5a39e0b18a2a83"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "machine-move-03",
+      "sequence": 3,
+      "providerId": "machine-move",
+      "implementationState": "native",
+      "memberCount": 32,
+      "sourceFingerprint": "570b1bad0c98116fa29cb18967f42eb61827e07fcb5c84ef0dc2af4890637ba9",
+      "members": [
+        {
+          "canonicalId": "TM 17 - Protect",
+          "recordSha256": "27a79af5bbeb380ef00ae6870c6ebf0a26b4d99a6d90d585adb45a552e766916",
+          "effectSha256": "3bb7df44a36503e8e1343619bdcf057d84ccd0dcb5c49a435069abd836ee17e8"
+        },
+        {
+          "canonicalId": "TM 42 - Facade",
+          "recordSha256": "fc000103f33291199c04aadbc594e7deae96ad351dea40a8fc5893be6a6849f8",
+          "effectSha256": "5ce5fca43c517713e21b998a4e72485ed0677f6c2c3b41ac2b7f7e5eb75197bb"
+        },
+        {
+          "canonicalId": "TM 67 - Retaliate",
+          "recordSha256": "adafc9f8590360466da202467bad86625697256eabc0e5d5da6ae6d20e1efe11",
+          "effectSha256": "a97699e062cab9abc90e04678df6fcda9d09f1aacdb61a6d55992e138b10eaf0"
+        },
+        {
+          "canonicalId": "TM 92 - Trick Room",
+          "recordSha256": "fd277fec6b9e195367d07c8ad71d7ff904c724492c86c435fa0a8f25ae4a3f48",
+          "effectSha256": "be128036b09ba6009443cfd46ee3d58d85b6a0f29f5ace505fecc2293918f2f8"
+        },
+        {
+          "canonicalId": "TM 18 - Rain Dance",
+          "recordSha256": "cc666b9ae3c0057a133b4e462102fbf15cc154b7f50ac4ae1b6a8eec5579617b",
+          "effectSha256": "b7c36ab3c0662381283f6933442e99c97ff7081c03361d57a7d8c96d49f8c0f8"
+        },
+        {
+          "canonicalId": "TM 43 - Flame Charge",
+          "recordSha256": "1a17489f727cf41f113aab7b375507e0a346270e8072a829ff4bb30717e406fc",
+          "effectSha256": "6bb4a48829a190538519b9e69c03daf4a8a0178f145c62a095351b48e5380429"
+        },
+        {
+          "canonicalId": "TM 68 - Giga Impact",
+          "recordSha256": "f4ce5b20e33ee743b82e7cfc091410f7d32c602977f414e90ffac3381c6ca9e1",
+          "effectSha256": "e18522f18835d3d5e277ccae996d316f9f9e279bd0f0a6ed6eaf829cf591156c"
+        },
+        {
+          "canonicalId": "TM 93 - Wild Charge",
+          "recordSha256": "7015d4f49a317432ef6b74753061f0e6e8e38388466c8c61ca05bf6a77afe77a",
+          "effectSha256": "12cc092f9637f59bfcecdb56cdadca57dd55cfb1f4bb9a87871177b41bdeb6f9"
+        },
+        {
+          "canonicalId": "TM 19 - Roost",
+          "recordSha256": "cb4d8fb8db9fd0c5c7602f8e9eb378423aab6a6f3373f54cb1a89a04edbda224",
+          "effectSha256": "8854f5e7c913f28e7e808dfc110ff8598ab5f3cf8c116545a5bd4dd4d2583920"
+        },
+        {
+          "canonicalId": "TM 44 - Rest",
+          "recordSha256": "d82d388625520c6b3a9bec45b91c2b40cd8e10f6248e51220010fbdef78066bc",
+          "effectSha256": "eda6c807d25da49b4034e6eebb13b3c2d081f75ba3d75c6346d5654c54de16c5"
+        },
+        {
+          "canonicalId": "TM 69 - Rock Polish",
+          "recordSha256": "2d115197b7afa50efc4bf464c0069418c5e605277323da31a20ff81d14a52f2e",
+          "effectSha256": "39f7f914efe7f0bb23baa1481b4ba64931744d618835b86c716901806a12b711"
+        },
+        {
+          "canonicalId": "TM 94 - Rock Smash",
+          "recordSha256": "479318d6291235c43c75f6565ab189e6ad12eefc1be49ae88d4186a1ac50ba3f",
+          "effectSha256": "91e3df1aa00e4bcb4fc1672d76c5a46a743006d10b8af76a6fa82651484e551e"
+        },
+        {
+          "canonicalId": "TM 20 - Safeguard",
+          "recordSha256": "d0d9e30c4c892e34a8d72b0927083a49d2c2239b8a8a3709cdcd35e39f9f895a",
+          "effectSha256": "e8700a9e138e17577c6457453dc540c97a0b5b144dd19a263d43f1fc7711d2a1"
+        },
+        {
+          "canonicalId": "TM 45 - Attract",
+          "recordSha256": "340759b8aa43a6addbc6f29fef532d48e989005984f71d364081d997ebcbfeff",
+          "effectSha256": "7f9dc872542548ca93220c79526b8d8e1dc46cd4405ccf96ae7df6385a942272"
+        },
+        {
+          "canonicalId": "TM 70 - Flash",
+          "recordSha256": "96b7b296abfec9a5c428caf12b93c2864b0ecaed65f5d78f2d1d0f7066bc6bb0",
+          "effectSha256": "12981bc0260482d45dc8cb51538788090a48adea1c45d1ac0a1b2f7096950366"
+        },
+        {
+          "canonicalId": "TM 95 - Snarl",
+          "recordSha256": "e85f184ca28999ad3f3aa6dbbdb3003298e9d804f29dcda3368b459dcb11dbf7",
+          "effectSha256": "cccbbdb8265f1c0d87c483986b3f891f79f38b0b4e4477ecf9f4274788c9a6af"
+        },
+        {
+          "canonicalId": "TM 21 - Frustration",
+          "recordSha256": "08e15c972a8fea5d4516f02fac1524bcbc2cc764ef10a4e85aab7608d859b11e",
+          "effectSha256": "569e5264b88730f48dab378d1ea41ab26c74cc0cfb42ec5704ed36d1f274dc7b"
+        },
+        {
+          "canonicalId": "TM 46 - Thief",
+          "recordSha256": "499d4ec435294eb1a9255b74feb960fa10653a69b9c4e68c615ca6c280fe1e61",
+          "effectSha256": "bc4fe409a88ed15e71738282af32660d9b9b8346795d0379d3abf6c00f6e8d3f"
+        },
+        {
+          "canonicalId": "TM 71 - Stone Edge",
+          "recordSha256": "a6d3a024cbee74ff5d916dba25d89e1263629493601bd18a6f85c4aec3439ffb",
+          "effectSha256": "63ac2bd31e5ac34c13b4df2dcdfa2eeb8921d472396cd23ed2841e747e682bdd"
+        },
+        {
+          "canonicalId": "TM 96 - Nature Power",
+          "recordSha256": "30a6eed62c04d1593705c15157ba5bde2248e148cbdbf24637cb081c4790920c",
+          "effectSha256": "0e132415b9b38c642c06e840d4188df0b1a9dcf822977abe601a5314221936cb"
+        },
+        {
+          "canonicalId": "TM 22 - Solarbeam",
+          "recordSha256": "27670326fb675f5104823d45b59600818638b2bb31aa53c33db2215e2aee1902",
+          "effectSha256": "15896fe1ee29ad79bc0ba9abfe14154c21e5c5d1eef8483674f33ef10f33d087"
+        },
+        {
+          "canonicalId": "TM 47 - Low Sweep",
+          "recordSha256": "b3701857d1ed93229185fa5d9c722b71290546d274a75dad4158c71873d3e930",
+          "effectSha256": "d3aea70995b0ce6b17b325e73294fff31026bf1ca9535669b1b29a5a6cb9e795"
+        },
+        {
+          "canonicalId": "TM 72 - Volt Switch",
+          "recordSha256": "5abfa6a950dc7ec60f231f720d5243dcdb06687ba0f739a9b7e3d66a65609860",
+          "effectSha256": "e8d54667ce214a3a4c94e913c118ae9fbca6bd587984e90402bcc2d4b41ad306"
+        },
+        {
+          "canonicalId": "TM 97 - Dark Pulse",
+          "recordSha256": "854347c7605e0602c71d8918124a8f96fc5823a29a0bd865a1e4473b8a2f5f5c",
+          "effectSha256": "b7c8f3438614282d2e5ba454092451983a4e948f67d54cce5fe6bf59ccfb6105"
+        },
+        {
+          "canonicalId": "TM 23 - Smack Down",
+          "recordSha256": "89ced6ae166394d02c803024ccda8f1d785d6e4c99c75d17d5898dfdfde7ff34",
+          "effectSha256": "75c233e5f3a14b08be825ccacb6f379d6f4b59ff3f0f4af7b92212e121cff54f"
+        },
+        {
+          "canonicalId": "TM 48 - Round",
+          "recordSha256": "12dca321155227445dc935ff4610fca9b43e3d33e59cac5ed6e722976078fe79",
+          "effectSha256": "a9b7d25b7dbb0ae28b377f1d3ad04c7b53c5c45d38cf2a51ec6901c198b971a1"
+        },
+        {
+          "canonicalId": "TM 73 - Thunder Wave",
+          "recordSha256": "fdc43dd7529b59c427ae83c3e17068e83a342d951d9144d3e37f940eecd0fd56",
+          "effectSha256": "6bcbfcffeefb1467187a654967df6b5c1b4a445a20caed11354179b8f876fef4"
+        },
+        {
+          "canonicalId": "TM 98 - Power-Up Punch",
+          "recordSha256": "1c7f7d59f2f21c8444eab0dc3e371bb480324d43bb3ce8f53ddec1b8b4fe15cf",
+          "effectSha256": "e1d16c7551379133a8ec64086df4e9402933aa4f706c2b14118c264762ba68c0"
+        },
+        {
+          "canonicalId": "TM 24 - Thunderbolt",
+          "recordSha256": "58a5ff641844ffef487a1af3f1bfff2f240c63210e7850804cd4d5b2b4f5e607",
+          "effectSha256": "1175b08cded325d75adc4a69f96d3d2bf7d6047d9e5d64d3263256fc3403bee2"
+        },
+        {
+          "canonicalId": "TM 49 - Echoed Voice",
+          "recordSha256": "044f41d5d22bb741a71245c640c880644ff7cb42c354db646cfc1b1754869ffc",
+          "effectSha256": "f5a782bf5e8ba3008e7b1697d69bd0838556e9a76e59508069c389b0a9591288"
+        },
+        {
+          "canonicalId": "TM 74 - Gyro Ball",
+          "recordSha256": "02a4d19531f879dd01935473e4c7ac80acfff379f48ff4f70756f942bb0a0c90",
+          "effectSha256": "55af172b5f51fcfac5acfba9c190aa4b3a6e4956117b677969a5b7a494ea6b0b"
+        },
+        {
+          "canonicalId": "TM 99 - Dazzling Gleam",
+          "recordSha256": "1bea443345c2ffadd87524a7fdaebc9e663131b8d3fc33fb7138a82d99cd45d8",
+          "effectSha256": "b996817b1891039699ac9452a25919df6dab893729106464f729cef244c49c12"
+        }
+      ],
+      "providerRequirements": [
+        "exact machine and Move identity",
+        "owned Pokémon compatibility",
+        "durable Extended Action",
+        "atomic Tutor Point and inventory settlement"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/move-learning-items.v1.json",
+          "sha256": "c679cfe04a8e37c4007ed6054309141aa3c03d2938a3885da53eca9e480473b4"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/moveLearning.ts",
+          "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d"
+        },
+        {
+          "path": "tests/integration/machineMoveLearningOperation.test.ts",
+          "sha256": "3d7c322aa594446ee2104164d168c437476f7c7b7760cd37b825de21487039f2"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/TrainerItemExtendedActionCard.vue",
+          "sha256": "0abbc6ff05f2e6ec04306087114a742ac41c57b5a2d52cfcb0535f85ab90cf54"
+        },
+        {
+          "path": "tests/e2e/machine-move-learning.spec.ts",
+          "sha256": "07a30dc326ff3288f99cfb88c5aaacc5eb530d0d146ce5b2596a2fecb1eb93e4"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/itemExtendedActionRepository.ts",
+          "sha256": "04ba15bdb89dd5bbbb267a959f4a5fd235230a6c1d0e1dc5cbb7b74f14769e0f"
+        },
+        {
+          "path": "tests/integration/machineMoveLearningExtendedActions.test.ts",
+          "sha256": "5ab96b2c8b091de4fa831a962385b5405bf0d633278f3e78dd5a39e0b18a2a83"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "machine-move-04",
+      "sequence": 4,
+      "providerId": "machine-move",
+      "implementationState": "native",
+      "memberCount": 10,
+      "sourceFingerprint": "14c0d454d903beef6d0b351c13e0f55445429ac0681146600b16b06ea572a30b",
+      "members": [
+        {
+          "canonicalId": "TM 25 - Thunder",
+          "recordSha256": "0df1d87e17b9f6985d4988c19766f72c53232fb055f2ae1c4ece04aecc28019d",
+          "effectSha256": "f9cd72336a23cc316ecd27ca81e07cf1075f10bb7a818516abc686c63daba41d"
+        },
+        {
+          "canonicalId": "TM 50 - Overheat",
+          "recordSha256": "fbdc276bde52929f25e327c227245142656e73073aad1c4a5a1eeccc484fa211",
+          "effectSha256": "89bb20eec3e85138f60b29fd13713db208d3106d26d5e62964ea7f5d3abe1d3f"
+        },
+        {
+          "canonicalId": "TM 75 - Swords Dance",
+          "recordSha256": "f48e288d77f297c0eed0505e7005fe5033d250b33a23e58582f5e4a1ca1f5d5e",
+          "effectSha256": "58425f1369cc2675fe0f2a195b8c10a851734d23aa485b1cd885165c4b88b600"
+        },
+        {
+          "canonicalId": "TM 100 - Confide",
+          "recordSha256": "0571b836543b6fe60e45f69dbe2d89b25043003c4e7bb0a0d937b839c2cd19c1",
+          "effectSha256": "e63d73b279b39fe5ad91571fc08b4dd1879a69990239f568e866d263b1963790"
+        },
+        {
+          "canonicalId": "HM A1 - Cut",
+          "recordSha256": "4e5e1fe3de1721ec2708f5ef1e00005534e66d79a39d0df3c517e07f2d8098ec",
+          "effectSha256": "bd6496b024ab1f961f1e4edbb90281d7e683cb91c436cf8649892032562635c5"
+        },
+        {
+          "canonicalId": "HM A2 - Fly",
+          "recordSha256": "d4d34e80f0fc42ff35fe1e37f196579976d16515792da67fe79361d35c38e524",
+          "effectSha256": "712c94fed85f258890bd2b05b59bc877a205db13def75606dd7fcb7bfc577cb4"
+        },
+        {
+          "canonicalId": "HM A3 - Surf",
+          "recordSha256": "b9fd6f2ca49d3474068e8ee2922d6b11947277557b4d108c20635296d3977270",
+          "effectSha256": "a010e353d8e5800e09031ee60bab6d0889ebf48894df91590c9fac066864f135"
+        },
+        {
+          "canonicalId": "HM A4 - Strength",
+          "recordSha256": "ec58aa9ad14a71bf15938b5303c820e9dbeef37b7334e38334daaf4bccce6820",
+          "effectSha256": "de1474ebf108f1f3633036ec627d8cf6a30f6f4d9db26dae04f5484197ca1678"
+        },
+        {
+          "canonicalId": "HM A5 - Waterfall",
+          "recordSha256": "4e97511e887c4631e0895d88cb81df0d08123a1cd7b27edbcd7c3b6194d215d5",
+          "effectSha256": "9407833c78f5dcf87e967f8d8677b65431e4662a938ecf99e7418604e0cf7b34"
+        },
+        {
+          "canonicalId": "HM A6 - Dive",
+          "recordSha256": "10db391786818311dde0c9ae11845a1531f7a439a4e5c3dcfd53341946ab0e1c",
+          "effectSha256": "0bfa69a6a73aabbc9ce7cdc6456348d5bba4ff0976d1870e8f45c18ba0a03c59"
+        }
+      ],
+      "providerRequirements": [
+        "exact machine and Move identity",
+        "owned Pokémon compatibility",
+        "durable Extended Action",
+        "atomic Tutor Point and inventory settlement"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/move-learning-items.v1.json",
+          "sha256": "c679cfe04a8e37c4007ed6054309141aa3c03d2938a3885da53eca9e480473b4"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/moveLearning.ts",
+          "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d"
+        },
+        {
+          "path": "tests/integration/machineMoveLearningOperation.test.ts",
+          "sha256": "3d7c322aa594446ee2104164d168c437476f7c7b7760cd37b825de21487039f2"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/TrainerItemExtendedActionCard.vue",
+          "sha256": "0abbc6ff05f2e6ec04306087114a742ac41c57b5a2d52cfcb0535f85ab90cf54"
+        },
+        {
+          "path": "tests/e2e/machine-move-learning.spec.ts",
+          "sha256": "07a30dc326ff3288f99cfb88c5aaacc5eb530d0d146ce5b2596a2fecb1eb93e4"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/itemExtendedActionRepository.ts",
+          "sha256": "04ba15bdb89dd5bbbb267a959f4a5fd235230a6c1d0e1dc5cbb7b74f14769e0f"
+        },
+        {
+          "path": "tests/integration/machineMoveLearningExtendedActions.test.ts",
+          "sha256": "5ab96b2c8b091de4fa831a962385b5405bf0d633278f3e78dd5a39e0b18a2a83"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "evolution",
+      "sequence": 5,
+      "providerId": "evolution",
+      "implementationState": "native",
+      "memberCount": 24,
+      "sourceFingerprint": "768671c351f75bcf015e837e3cce6c49285f285cdc7f12333054da62bbd38f25",
+      "members": [
+        {
+          "canonicalId": "King’s Rock",
+          "recordSha256": "2d279cde96e6abb56db70fc0ed3974ba5ef05f9b49ee6ea7b19578a7a5dccf09",
+          "effectSha256": "47b5551e24ce69d65d2f65d931aed3ba1298601de5fd3542eac2ac558e3d5d2c"
+        },
+        {
+          "canonicalId": "Razor Claw",
+          "recordSha256": "42ae81b9c1e179ab549ba174bb4372c72bb6666dddae476e9e04e6f227ba1691",
+          "effectSha256": "25e6ef0f4554be5919ace74f41eb4ed6ae66045160a58c327136eba0ead6e09a"
+        },
+        {
+          "canonicalId": "Razor Fang",
+          "recordSha256": "72e2e7d52afb8dcd3ea6d3f28903284ddabe57c89f8343c79e79680f2200a010",
+          "effectSha256": "68e50de0872633bc48d3ac35503f0895184d73df97c2c48b0c0362ab1abba06f"
+        },
+        {
+          "canonicalId": "Fire Stone",
+          "recordSha256": "18b4fb594137a3fb1f8b58a2100826d7822b96f9a28e659235ac91ed01f48c67",
+          "effectSha256": "521a5808787d17da8e0cc1c5bd8a9e8a5d8dd73466fd53800a617f12d14d2aef"
+        },
+        {
+          "canonicalId": "Water Stone",
+          "recordSha256": "b85e759ead25eaf9539345f7d88b341eda3c13867ce17514676095d02b088f53",
+          "effectSha256": "021155855b7744e16fe04c93419fa709b49035223229048280ca2f0168489fa9"
+        },
+        {
+          "canonicalId": "Thunder Stone",
+          "recordSha256": "f76bff0bb30233cd29d890ea35be2e0737d28d2ab5584be818aba39f89097cfa",
+          "effectSha256": "6f434a8e35d07b9f0791fd7ce23c389472e029b820cd8d360a4b6cef262218f3"
+        },
+        {
+          "canonicalId": "Leaf Stone",
+          "recordSha256": "712771e5d4c78f1946d9f3251c459e6655f0625605094c4c60538c035771a8fd",
+          "effectSha256": "75c2d991efd55126eb6eeac6ea55e4ac95b953d19a6453a7c2367f34b349bd61"
+        },
+        {
+          "canonicalId": "Moon Stone",
+          "recordSha256": "1d13cb65f1f0abe094298adf96f3ccbbc51dce3b349577cee1d6e4f9cd9f9d4d",
+          "effectSha256": "c90291d3245336ab00bbb95128aa81495166ae4850ae66e045cbfffc9f0fac29"
+        },
+        {
+          "canonicalId": "Sun Stone",
+          "recordSha256": "0dd2ca077496b933c327e568c0dd880562d503a4ec9f9e04d5b92477dac9f920",
+          "effectSha256": "0ffd7e259c0a0fbed4c08d8c9ca916524ab1ca68a5fff63b3666757d4ecff8e6"
+        },
+        {
+          "canonicalId": "Shiny Stone",
+          "recordSha256": "72d8e4c14e44cdfceb84347c90283eca1ae6299f4cc60b0ae4321fb824f53cea",
+          "effectSha256": "6ac1e5005cc0bed9341d17fea78e0d7fa1ee85f4b06ced3e856aa25063dec932"
+        },
+        {
+          "canonicalId": "Dusk Stone",
+          "recordSha256": "0bf76a47e027d546387c3555be41457afb52d9a79bce438d32f4acd1d69644cd",
+          "effectSha256": "7eb2df183dcdc9adf38ab7affe53f66dd5f297059a0d504a52ae9905eece7f4d"
+        },
+        {
+          "canonicalId": "Dawn Stone",
+          "recordSha256": "5ede5a06401afdc51fbe78e15d6032f4c45b5ca485c86e81aede0b47c84ebddb",
+          "effectSha256": "c870fb4f2844810fcd53dbf81584ae7a361833e15bb1294c8bdfded2713572c9"
+        },
+        {
+          "canonicalId": "Deepseascale/Deepseatooth",
+          "recordSha256": "0197d6d5dc014c698692a887856bdba3d0caeb377dfb69cfd428fe36fa209745",
+          "effectSha256": "5107aa33935477866f21d9436fdda399127ee58efabd670317c52a00cf9ebc78"
+        },
+        {
+          "canonicalId": "Dragon Scale",
+          "recordSha256": "8b0aff095f534fb8bb89d761d9e1bcae3478fc1071c343fbff9633c7a6a2cfd8",
+          "effectSha256": "c59b924fd42a5963a5df504fe41808e42ad961afea72f199a7cd6b8903317d82"
+        },
+        {
+          "canonicalId": "Dubious Disc",
+          "recordSha256": "853054c640cd7fcba3c6307dc1a1543d2b702957cd6c9e932e1cca927b7cb9a5",
+          "effectSha256": "16431023d0630862c3330e1fcdb44793414d71b4832f9b8f3aff9d0ce3c60783"
+        },
+        {
+          "canonicalId": "Electirizer",
+          "recordSha256": "7cfd5337bb3e3d5f5a3ac7a933b5845ccd7adb6e8fc27e386ad272151735bba2",
+          "effectSha256": "f14eaa19e1103bd49c3c9a75409b8a65b809c51f225d6320f125ceb901a27eb1"
+        },
+        {
+          "canonicalId": "Oval Stone",
+          "recordSha256": "72202db969b9463a02e551ba3d145a41af6a76aa660a78890eeb5aed5fc8e4c4",
+          "effectSha256": "83956faf2590a716ab562e702fe00707294def5a1f4879f89cc10549c5d76ee6"
+        },
+        {
+          "canonicalId": "Magmarizer",
+          "recordSha256": "fbdd7c230c1fd75871544a7c60028b48181dadb870486b9018bb4e5f7071f49c",
+          "effectSha256": "fdfe27f5cff6d7e362fdc2db621d98e4549f8628fb7356fc3fefa28817a877e0"
+        },
+        {
+          "canonicalId": "Metal Coat",
+          "recordSha256": "b3df330a23cf15f72eb72e489c3a353d14c5fe6d5b348c071569024b4e5d51ce",
+          "effectSha256": "6ead0e9b6aaacea225ffc3656c89c37a05c4552a4e3b11580b88cb91f27f8c14"
+        },
+        {
+          "canonicalId": "Protector",
+          "recordSha256": "a34625b1decd93e074abd6772d61d4c0d27d7579aa07cc580222ccd2199b3dfb",
+          "effectSha256": "9601bccf04206beae7d00900a8957fe0652272cd40e57830f46b403241011a85"
+        },
+        {
+          "canonicalId": "Reaper Cloth",
+          "recordSha256": "9a0909c9e0199f9376f987b1932aa13854917f851a766b5189d804822127fc8f",
+          "effectSha256": "219ac448531fd97bd9353be915967d1459661cd105bf87277c6b5c3f20563b3d"
+        },
+        {
+          "canonicalId": "Sachet",
+          "recordSha256": "23b1349f3e56fe767b6a1b072091bd4be2bfc131c97ab698d257923a22b84daf",
+          "effectSha256": "3b8b672344c1f90a03528bb3c64f4e451b48b06758ddff73c2dcc34894b418d4"
+        },
+        {
+          "canonicalId": "Up-Grade",
+          "recordSha256": "7d610abd00d58290c801224e8b02a109d2cb8387f35ee8aa9bb2ef099cbc5468",
+          "effectSha256": "26260a6191de034e47f59a1c32eba8aafc1c9e66ffbad6e3c2ec68c3dc45956f"
+        },
+        {
+          "canonicalId": "Whipped Dream",
+          "recordSha256": "0fa438b3466b50ae2c68f0c33a3a5e521de8fc86c5407dfe1e531f7def20c914",
+          "effectSha256": "96f13b6bca2acd6e1a9aab3ce371c429851084396588f2010e3262df6a2e802a"
+        }
+      ],
+      "providerRequirements": [
+        "exact reviewed transition",
+        "owned Pokémon authority",
+        "irreversible confirmation",
+        "atomic species and inventory settlement"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/evolution-items.v1.json",
+          "sha256": "043ec5a957eee39ad3264a39c806568c60e205814a3527db87d41a63e3e2ec2d"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/evolution.ts",
+          "sha256": "be082b324180fcb567ce876608b30f6de5a7a85b79ae48ae160576cde89e6b51"
+        },
+        {
+          "path": "tests/integration/evolutionItemOperation.test.ts",
+          "sha256": "55de0752ab3c9cb4e8771b8e11ae6d9f6f483c8ad2882ead50f716e2b89968ed"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/PokemonEvolutionAttentionCard.vue",
+          "sha256": "450a05065d7c407e81631518c1db291cae3e6c1488ec767069decc82cf3fe186"
+        },
+        {
+          "path": "tests/e2e/evolution-items.spec.ts",
+          "sha256": "900e658251c5a12fa2f20b537779582046bdd98cfc936e2914a20afd42b8ac7a"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/itemOperationRepository.ts",
+          "sha256": "c9a65ea5807e132955f42e2951fee7b4b328d1d55d2c96d62b5c013e6d672d0d"
+        },
+        {
+          "path": "tests/integration/evolutionItemSheetAction.test.ts",
+          "sha256": "6375bbc516827c2d70a55f6c81a487c298af2f94ddec9a715a19dfec846c3ff5"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "permanent-advancement",
+      "sequence": 6,
+      "providerId": "permanent-advancement",
+      "implementationState": "native",
+      "memberCount": 10,
+      "sourceFingerprint": "a880079ba4a6ef338ef44b062dd3b30caedcc1415aa8fe9fcdb37f7dc6a1c4c5",
+      "members": [
+        {
+          "canonicalId": "HP Up",
+          "recordSha256": "0c6ea9d7eddb11c99cb643b0e7b4b5d7db32c545d1471e3a7bfff5152df0b674",
+          "effectSha256": "a0dd2c9f9c2e67c812a0046435b9ca99e73e7faa7ac2affd098247e3b8e92af2"
+        },
+        {
+          "canonicalId": "Protein",
+          "recordSha256": "108e4d271496c7b37b85a53f3ee6fddc1897ffcae002162fefc153608bb21d14",
+          "effectSha256": "3bbcf06d2b97b72683725f396c2e1f3f97c14680c8bc3a7e0de2162305babbe9"
+        },
+        {
+          "canonicalId": "Iron",
+          "recordSha256": "23b34e017cf79adef8fdbcbbda473879b14a36f97631282dd51d7dcc035db68a",
+          "effectSha256": "9d1c5eb480ea6ea69ae4c3f1265312c1870378cb9225004298b65d411345bc4c"
+        },
+        {
+          "canonicalId": "Calcium",
+          "recordSha256": "2f03326d8643b7deee5c40eae6b91afd0f64d0445a11b0dfbacdd6a10659fb24",
+          "effectSha256": "bb529d31e5a4ec6327bea456b88960db2ff333ef737e5f29a59176247e4ecbc1"
+        },
+        {
+          "canonicalId": "Zinc",
+          "recordSha256": "ef2d11283860f4d83e8d4d9c518106a99e8a99fcdc8e59217f5ba65235107128",
+          "effectSha256": "1ef2d33200a34142f5d30641be8f223621fc12fdd41de4b1eb2b088b13b7cdbe"
+        },
+        {
+          "canonicalId": "Carbos",
+          "recordSha256": "61724998a9cd3b3f1f765bcd715aa26c545f7347deb01a8c04c8dcc19f1626b3",
+          "effectSha256": "7323b53631df9cbc8a86e2fadd451e4e44346676774d636acbacadbbd135ab2a"
+        },
+        {
+          "canonicalId": "Heart Booster",
+          "recordSha256": "621cef40364bfff8e0685c895258215a64814c96f292dc4382d337c191b56344",
+          "effectSha256": "1b69b4866a0947ad07ef6395173bbb19007552fe94cf665b26effd7d2314e483"
+        },
+        {
+          "canonicalId": "PP Up",
+          "recordSha256": "8a361ac67582b1e35264a29c12772fa441fd7b6ad5517ff15279412b739cb3ed",
+          "effectSha256": "fb432601ea2527b9be3109b03d1be1069a5a2f60a3f64cd99e3ec0e80b547e53"
+        },
+        {
+          "canonicalId": "Rare Candy",
+          "recordSha256": "e42f36f859e6e97e31539713413e8eb1481f4905cdbebe93b6fc56c2ab89fe09",
+          "effectSha256": "ec0ea96f1ac517c32031c0353711b9b5c015484189d074368b873fc5739a3b41"
+        },
+        {
+          "canonicalId": "Stat Suppressants",
+          "recordSha256": "9972b4c3630144787de4bf3d96c1916f94d06d4c38e32b2bac731cd6229caa79",
+          "effectSha256": "5cb5bd49d735a03a46367e04727f69d14c8f42c687bbf03a0acc78c0c1aaf659"
+        }
+      ],
+      "providerRequirements": [
+        "exact owned Pokémon",
+        "bounded opaque choice",
+        "durable Extended Action",
+        "atomic provenance and inventory settlement"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/permanent-advancement-items.v1.json",
+          "sha256": "d93002e513202855ac152cec31b295e5d8ea333141fcada77044bdacee0ae7c6"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/permanentAdvancement.ts",
+          "sha256": "dd9fde87ad0942699823cc5e7ac5ca586ff211b82de481554225b0bf13defc83"
+        },
+        {
+          "path": "tests/integration/permanentAdvancementExtendedActions.test.ts",
+          "sha256": "233c7e1d74907b12578c9f4f591a1fbe43ad39c19bdfbd893890ff9353af00fc"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/TrainerItemExtendedActionCard.vue",
+          "sha256": "0abbc6ff05f2e6ec04306087114a742ac41c57b5a2d52cfcb0535f85ab90cf54"
+        },
+        {
+          "path": "tests/e2e/permanent-advancement-items.spec.ts",
+          "sha256": "2476ab6177f67fb4ff90e3db4a54544771dc02cc36cd5cec5d192d856fa8cca4"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/itemExtendedActionRepository.ts",
+          "sha256": "04ba15bdb89dd5bbbb267a959f4a5fd235230a6c1d0e1dc5cbb7b74f14769e0f"
+        },
+        {
+          "path": "tests/integration/permanentAdvancementExtendedActions.test.ts",
+          "sha256": "233c7e1d74907b12578c9f4f591a1fbe43ad39c19bdfbd893890ff9353af00fc"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "exploration",
+      "sequence": 7,
+      "providerId": "exploration",
+      "implementationState": "native",
+      "memberCount": 7,
+      "sourceFingerprint": "0540caf1c24adafdd8cd09db69021ad701a4796d10497db83923eb1f26d625ff",
+      "members": [
+        {
+          "canonicalId": "Bait",
+          "recordSha256": "706ae0593e7c60700bf323c27add5c567419382b836c613dc59e4eb90e6bb974",
+          "effectSha256": "6d31ef5cfe914fa8698ebffd3eef619760db64714f891418f1ad77d800546fd0"
+        },
+        {
+          "canonicalId": "Fishing Lure",
+          "recordSha256": "1d3bc0f19699942a54d0fc846697e54a9b2f42191df6ce07b79459f1e088e51d",
+          "effectSha256": "baa876cd329a1b0adf8b304188a2bbc9201c258859c2757191843746136f40c8"
+        },
+        {
+          "canonicalId": "Repel",
+          "recordSha256": "5cd812ed6e57b00c3ac2458a926840b5ceb1c224280f61697bdf8b42e8cf22c3",
+          "effectSha256": "3a25e145ce858c76884f73e4570133c116d4ab40391a07bbc6d6a9244d600031"
+        },
+        {
+          "canonicalId": "Super Repel",
+          "recordSha256": "d0b98322254e52c90eac3117a27205bf0740961c06d34d232f9dd4f6dd9995af",
+          "effectSha256": "807978441123caaa975c9e2c315edd7f720cc0adde990d7ab6964551476ff21f"
+        },
+        {
+          "canonicalId": "Max Repel",
+          "recordSha256": "3f06df2e453624c181441a9d7a47e60bd4f553813e7c277367a4a75b75794cc1",
+          "effectSha256": "12ebb2d4f5be75885b4a9b79ee1335c9a76d44f8433b73388f4d1700062beefe"
+        },
+        {
+          "canonicalId": "Honey",
+          "recordSha256": "e7c0323191b8981a12885c7b78f21276e75f6e82a3d39e64b48ec10d3cd3655d",
+          "effectSha256": "88d25ac0ab28eeb82bcb88d3bacefff279a345a3c9d87e0a450c9e88a093075d"
+        },
+        {
+          "canonicalId": "Dowsing Rod",
+          "recordSha256": "1c244a85abc4b87585f066a7e8f0d036b82c8091505536de104edc89c8b6f4c3",
+          "effectSha256": "8ca1af9e7e01fea6fbb8d3b3d2bc2a187a774370e22e31f1a6557b092eed056d"
+        }
+      ],
+      "providerRequirements": [
+        "exact Trainer source",
+        "server campaign clock or encounter authority",
+        "bounded random evidence",
+        "atomic inventory and activity settlement"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/exploration-items.v1.json",
+          "sha256": "acbecd1b8378308dea13fb1c14035dea49f4fb3b47c4d6709fc0545e733f895e"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/exploration.ts",
+          "sha256": "83e0123d2ed83e738ceccebd96331d38b6dde2427880ea88f5d6cb29ea801d3f"
+        },
+        {
+          "path": "tests/integration/itemExplorationOperation.test.ts",
+          "sha256": "69413663da322c6b8017f64e983858b93c6de29c879c3cfccfb5f3c49b42caa1"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/TrainerExplorationActivityCard.vue",
+          "sha256": "7f172f2f1b2db7133b82ede4d62a4bd9f56cc234ba8223d800d1cd301023c3a2"
+        },
+        {
+          "path": "tests/e2e/exploration-items.spec.ts",
+          "sha256": "63a285b0a6707cd536585d66d00a7b74b42b9778bc08614e87016d83bf01f345"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/itemExplorationOperationRepository.ts",
+          "sha256": "d82a0f63faa6605b507cd282c8f372c1ca2d0794521b5f76dd71220749a9bf02"
+        },
+        {
+          "path": "tests/integration/itemExplorationMultiClient.test.ts",
+          "sha256": "cfb77c196e7e2473521da4024943de2582195c5fa7ecd6c87c1a2e2507b78b60"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "breeding",
+      "sequence": 8,
+      "providerId": "breeding",
+      "implementationState": "native",
+      "memberCount": 3,
+      "sourceFingerprint": "58cc761029915d48c61451747b9c0bdc93bf7864c9e727cee31fdf5ca576b040",
+      "members": [
+        {
+          "canonicalId": "Chemistry Set",
+          "recordSha256": "c2db2e2e30eadc45e631baabbc4fd723429c3a3d88f47d4876a383786b2948fb",
+          "effectSha256": "57b4e51e160ae22a32f870c557d9059a99496a3faa63ce46d9b8aa8635043fa9"
+        },
+        {
+          "canonicalId": "Egg Warmer",
+          "recordSha256": "df3ffedadbf66d79df883af5e3b3240c92339814a618fb92df90bd0f56d71f6e",
+          "effectSha256": "9b7be45b13e6e14b5b42d30847f34bfa62d3399ffdc85cb121298d3e43b22539"
+        },
+        {
+          "canonicalId": "Reanimation Machine",
+          "recordSha256": "204cb0545a50c32054d4210a40bac4daa6f7d018b45c32126f5833e0a2f0816f",
+          "effectSha256": "69ea338b7b5ceaf85c233e1330c86b70b1925359cc0164f96350d2abfab5c9a7"
+        }
+      ],
+      "providerRequirements": [
+        "exact Trainer or GM authority",
+        "shared Egg lifecycle",
+        "principal-bound operation evidence",
+        "atomic inventory and Egg settlement"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/breeding-items.v1.json",
+          "sha256": "32519279975960e1b5b4e71324499b84598fe5b6f553b448cb1859df95337150"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/breeding/itemWorkflows.ts",
+          "sha256": "ddf1bcf3e023e6b398082b37cb28d94b7058476952b34bad9f3c7ba54e9a7b33"
+        },
+        {
+          "path": "tests/server/itemBreedingWorkflows.test.ts",
+          "sha256": "0f0851173847df0d12da3c02380441b2306f4cf8c8d3786fa57161c37fab3bc3"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/breeding/BreedingItemWorkflowPanel.vue",
+          "sha256": "4e50fa098fbb7a816f5e3e21ff85fd71a5ae031d06789287ba003adc6cf2368d"
+        },
+        {
+          "path": "tests/e2e/breeding-workshop.spec.ts",
+          "sha256": "14a827f401fe7af29a255573f080f77f4236782e85271c567026e1bdcf67a123"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/itemBreedingOperationRepository.ts",
+          "sha256": "014805a1021295ea296a054d0935bc25e17efe836f70590f13b7c940d36bf80a"
+        },
+        {
+          "path": "tests/server/itemBreedingOperationRepository.test.ts",
+          "sha256": "afdecff7e816e1bafe68cdec3f260077e29ca6d5e49431ba6b5bfe1088ecc361"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "guided-adjudication",
+      "sequence": 9,
+      "providerId": "guided-adjudication",
+      "implementationState": "guided",
+      "memberCount": 6,
+      "sourceFingerprint": "9e0345365acde8a88660fdf39d9ec747b3bf8e975119c5b1cd9d494815e6a5db",
+      "members": [
+        {
+          "canonicalId": "Energy Powder",
+          "recordSha256": "3b0000c7cd66b0fb1bc189cdaaec9f543cccfc1434ac27a14694d09c16c36766",
+          "effectSha256": "c68cb9632fcaad6b760ad838ebdb50d9c9f939d8e68691a7e85bdc9358c2fdc7"
+        },
+        {
+          "canonicalId": "Energy Root",
+          "recordSha256": "90927d2686a26def6f0a944b9016b42f6000fd4729c05e32a5793dc115eafc1c",
+          "effectSha256": "a047e9787deebaf0e2de2555e57f96a63d9e54139f2c6f043428bd3646740c8e"
+        },
+        {
+          "canonicalId": "Heal Powder",
+          "recordSha256": "bbfcd8a4b59cddab6f62d82fb9439c534aa0204588041bb50b77dd4cc437a6f2",
+          "effectSha256": "74c5914101f6d79fde48104bbf5c0c504876abc96a911cc3ffcfe3bb4549a168"
+        },
+        {
+          "canonicalId": "Revival Herb",
+          "recordSha256": "80304913ad6c05920a78ee1bb28f9fb69f40379bcbd57922f632f0b7c8745f56",
+          "effectSha256": "3eb135d45f6f704829b860599140b600464372cd5369952e071df57971af2b8e"
+        },
+        {
+          "canonicalId": "Poultices",
+          "recordSha256": "2879a8aab33a5d520ee3ee0772a497ed35b8fc4629b2f64e0a81a61f5463975f",
+          "effectSha256": "c767e3eb294e64a433ac29ba2fd94441d7615a90b7db4ba7ff9c197d76fc8f8a"
+        },
+        {
+          "canonicalId": "Re-Breather",
+          "recordSha256": "bd89163a1ce43a68c9146d994dca483a128c40055df90179dcf94cdb1dc86f58",
+          "effectSha256": "3a17063af913749c5366d21ab9148d14f00fa7130aab369be48de1fc6f72cc0d"
+        }
+      ],
+      "providerRequirements": [
+        "bounded GM decision",
+        "exact eligibility and timing",
+        "reservation or equipment binding",
+        "private durable decision receipt"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/guided-item-adjudications.v1.json",
+          "sha256": "a9e60cf27b038a9bc31848228ccb12ae70774b12ceb96d96eb533fa9716c8cf2"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/guidedAdjudication.ts",
+          "sha256": "6dcd019ef9656fc8048566e2017ec580a1acb290ec7bb6e0f7c6f31fb0c92e5e"
+        },
+        {
+          "path": "tests/server/itemGuidedAdjudication.test.ts",
+          "sha256": "a277fc26bb30b54513b610ce21c6e14a66b5d0f51d533d39235275dfc6ae6b62"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+          "sha256": "eac1ea2fde7a7d1aaa1f628bdd600408f971a94f2413c1a0a15b7731ef62b332"
+        },
+        {
+          "path": "tests/e2e/guided-item-adjudication.spec.ts",
+          "sha256": "d8a18c08aceea8b8094bf444a8b7a3e3dceea4b8fd61e541fccdde720b5a20d5"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/itemGuidedRequestRepository.ts",
+          "sha256": "8d85468685d099b155a224d50cc21d43bf0ea775eff2caecaad07e95364ec8bd"
+        },
+        {
+          "path": "tests/server/itemGuidedRequestRepository.test.ts",
+          "sha256": "9becdf2d9bfa530d767ac64e05547abed013e04211d3c81a63de5846e56d1bd6"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "equipment-01",
+      "sequence": 10,
+      "providerId": "equipment",
+      "implementationState": "passive",
+      "memberCount": 32,
+      "sourceFingerprint": "c45fb8dde66530f6cc55f5897a044e77c74361ba358d38ddbab7fa15863a5911",
+      "members": [
+        {
+          "canonicalId": "Kitchen Knife",
+          "recordSha256": "d81a88d66e2445a3abd34c2fcde4b0eecb336e15c600fae98a3ee3031278be91",
+          "effectSha256": "33e795dd1f22cf115a28fe60c5758f3673a0523025dec1bb34b2b33626c2e781"
+        },
+        {
+          "canonicalId": "Baseball Bat",
+          "recordSha256": "7253402b5610e49a67ea1a2071ca5a4d4d2e24174ad0cf9aa860f5ae295d7471",
+          "effectSha256": "240097aa2e96736d205aefdda3eac298382ecda83db9cc9edec1c362cec90a1d"
+        },
+        {
+          "canonicalId": "Weighted Rope",
+          "recordSha256": "ab7e21588efe79f3361bf1fdbf0e43070c167477043f9a5cea338fe0df450fc4",
+          "effectSha256": "0c511715a3fa84055745706bb42b61d919caeab989f70347f5a643b1f71a77f4"
+        },
+        {
+          "canonicalId": "Slingshot",
+          "recordSha256": "df9b35c6b10d84a236a98b526e862018612fb0d8b6ec3afd4258c507a4f98e61",
+          "effectSha256": "72aadba7ffa32d09fdab64f7ca67d4bb511e92c704edecb3554d2e7f6565ddac"
+        },
+        {
+          "canonicalId": "Survival Knife",
+          "recordSha256": "eba363fcbaf6115538dbd63d779b0a15b1d905c41014867c645efed0043c0d7d",
+          "effectSha256": "83c200969f45ff8043de9f2d03fc60bbdb1f229cc87bdf254cf51666d4089ad0"
+        },
+        {
+          "canonicalId": "Quarterstaff",
+          "recordSha256": "ad4d967bb0139e8f19d9c5603681e2e4c5d0a52be0cd05307424bb5c453e6a3f",
+          "effectSha256": "3b1227b3c1d99d8327fb0d7b6ea1c70d47e5d28cee2df90959604f81570fd345"
+        },
+        {
+          "canonicalId": "Throwing Hammers",
+          "recordSha256": "aeb5e26662fe2d9f567985703a749d9440c1bfdfab662d277a3d563942287135",
+          "effectSha256": "e1110a32677ee5cf24d29ee1f221bf804cdc92497c1fb5f5006559bfe61d2d84"
+        },
+        {
+          "canonicalId": "Hunting Bow",
+          "recordSha256": "320526c83a714ee1259de012f23e9677061bb0a69ba6c6a73dafb4f2783dc8a9",
+          "effectSha256": "51160f517dbfd4064496fa777474fbdc166355f49143cbb15a003ea71d4bd956"
+        },
+        {
+          "canonicalId": "Honed Claws",
+          "recordSha256": "dc99a5c88ba1cca7d5583bde11468386c81c3f3f23dcd8e263f661b452697774",
+          "effectSha256": "2ef5675c2593637c78f8232900b7a9191d124519f36fdf37db4afc951410ebfe"
+        },
+        {
+          "canonicalId": "Meteor Masher",
+          "recordSha256": "991f575b4949d945686068d5e8a491e75d26af6f2c91fcafe207e4b74077310c",
+          "effectSha256": "fed9a2afba3677fa7fd7ebc8185301a22803c4b912eb72ec7d615e4adca52ca1"
+        },
+        {
+          "canonicalId": "Super Lucky Throwing Stars",
+          "recordSha256": "a8089e5384500e64e63cb0876de85521eabe104c2bd3f93a879b52e1a6861245",
+          "effectSha256": "bd327a758ad2add72ca089030e38e2c6aa23a5ef97d180421a554f8d0954b8af"
+        },
+        {
+          "canonicalId": "Twin-Needled Bow",
+          "recordSha256": "afa5ea75c223c7b5c9b7b1c54d171e355f5ccf88825e6290598bb2c9596e8fa6",
+          "effectSha256": "49cdfecfbcc3422a6eaa8e01575f324a37c9268022516e711b4bbf8b3a7729b3"
+        },
+        {
+          "canonicalId": "Light Armor",
+          "recordSha256": "d2b98b9b199ad0b297ddf9ca78f3f51fea13ce1b6e99cacf714abe9dd516d075",
+          "effectSha256": "2f5209f1ec2c45dcb2f07dbd62d948e779bdeb3e89e7614e0c1abd6fa4e2777d"
+        },
+        {
+          "canonicalId": "Heavy Armor",
+          "recordSha256": "d872a47b92cc35b3fe64800660f1756a0660ba3628b5a5473b303471c3c37563",
+          "effectSha256": "3b14b817717581883ff41101222c28e3e54c89caee671a39e96127c995a37060"
+        },
+        {
+          "canonicalId": "Fancy Clothes",
+          "recordSha256": "1bd69a7221f797dc32e2c738a1f8c0f204bf3b492556ba5ced745db435f0e2d6",
+          "effectSha256": "79fb8105cb0f8b6729b2b0e47dc104f4c1aedf8e35ef0a64362db869430fc118"
+        },
+        {
+          "canonicalId": "Stealth Clothes",
+          "recordSha256": "6bbdb74255c031e728ad8ff7f8f9f360d974c128201cb5df4a2b2643e567039e",
+          "effectSha256": "df6b53d4aa5da5207da6e182264259dc9ede2116d6cf0a22327f9edfb39f9232"
+        },
+        {
+          "canonicalId": "Dark Vision Goggles",
+          "recordSha256": "3cc6520de29d843b73c055f4e28e0e33d496843f57d2100c3d9594163c168a78",
+          "effectSha256": "ef319efe5e2218464a25e833c9b0d072287e4423c9116161a0046d053da5f725"
+        },
+        {
+          "canonicalId": "Gas Mask",
+          "recordSha256": "4fb60266e4ab1a66f8b1410011c18c6c9550ec0dc21e176b240b210e96845438",
+          "effectSha256": "4867f2c8400a25b850efa56dd8255a0f59c836f67feee79b0ec73f90144a72fa"
+        },
+        {
+          "canonicalId": "Helmet",
+          "recordSha256": "82f6fa0739b607c9d35923c3bdc98875d2b56abd0629e7d717a0e5a9cf41cd05",
+          "effectSha256": "bc4373be1b31ed103e54ebcb238b74bcf0bbe9f5ab7b96082a0318bd2094b1b6"
+        },
+        {
+          "canonicalId": "Sunglasses",
+          "recordSha256": "aad587fa10e70c4cdcd0718995229d9da23128bc309917f6a19949d1f4370921",
+          "effectSha256": "7f4649cb99e8d98ea9eae9741164ab932bcf8a852239ced5faa24551e48ef354"
+        },
+        {
+          "canonicalId": "Snow Boots",
+          "recordSha256": "5c49d584d33172115c6ed56578a0093cba11c8276733e9c09f4e3cb5bd15aa53",
+          "effectSha256": "aab738d5932be91dd0f065d5a7f2a70258165b53fbfb6a7a77e79d8c414e0832"
+        },
+        {
+          "canonicalId": "Running Shoes",
+          "recordSha256": "f7c206dc3fc2a92291f6aa883ed1332285aba72a079d994fe2296ea134e9a35a",
+          "effectSha256": "4635e9c6a0e0fb19b82bf19aa99d624888dba55000e1fcb1cb6b1845bcf0c312"
+        },
+        {
+          "canonicalId": "Flippers",
+          "recordSha256": "35f3e4e7a5c5de23b473a8999ea2d238b5cc363a054cb1ade39575d1b1075d29",
+          "effectSha256": "95c3b97532b438136516dc20817f95b66078471fad28d312a1ca32a1a8b04398"
+        },
+        {
+          "canonicalId": "Jungle Boots",
+          "recordSha256": "0aca938e2fc0b75783758032c54b4b699f3ed0f9b64eb03e930f18beb5a8a4f4",
+          "effectSha256": "a1514b16c647c46e255283301efc2275d707ac741537381e9bd7d0410151b90c"
+        },
+        {
+          "canonicalId": "Old Rod",
+          "recordSha256": "473540938809b0d0737602e79624bbf26e3839ebe4b062131aac89388f9abb9a",
+          "effectSha256": "ae2b6632d0633c93f7cedcc557323bc8725f1e38ce3fc6bf7074a2f370306f67"
+        },
+        {
+          "canonicalId": "Good Rod",
+          "recordSha256": "492c0d769ce53153da3183e5bc36c3f8e4cb55debccb160b2676a03c84a212ba",
+          "effectSha256": "54f3841793a1e03973a01c74a437f904856de231fb003f5dbaa5946648085fb2"
+        },
+        {
+          "canonicalId": "Super Rod",
+          "recordSha256": "99591c7c8c9727043b9775a8a3afb1a84447fe3ae9ba0dc5a5c498266bd53cf4",
+          "effectSha256": "7f195390bc9a48fb2d7174d9df90e521fcc347a45178536b81eb03f12ab046a9"
+        },
+        {
+          "canonicalId": "Glue Cannon",
+          "recordSha256": "c3507876510e140833d2f37710cb718975c2d29711f284515bfedbbd6f5b6a3c",
+          "effectSha256": "3c0abd57211b672b96855a99014c19d2ed43f646548bb521edc7ca7686fea850"
+        },
+        {
+          "canonicalId": "Hand Net",
+          "recordSha256": "c99acb256d88a1621f70fa81d3578e1ae4c53d3885fee9ae05811c31f17be28c",
+          "effectSha256": "5f19150c5e738f7a2aaf2fd0a46398b05aeaa5bfbc8c8aa97d784fd35df814ce"
+        },
+        {
+          "canonicalId": "Weighted Nets",
+          "recordSha256": "a20cdda73043b07266a7ec1288c72b700ef04744c3ecfe5c59e3e4928a8d7d29",
+          "effectSha256": "7bd9d5efd64ada8881ffeb2864a1293281d8845fcb37add487210e86a1d58459"
+        },
+        {
+          "canonicalId": "Light Shield",
+          "recordSha256": "6b3c5542b0274e5ce0fd0140950a7994ba9e722512a1bcba3bfcb80e57899187",
+          "effectSha256": "0eb3cd06ed401e1558ddcf83510cca511a5d94ef83e53707f1e3d724760fef11"
+        },
+        {
+          "canonicalId": "Heavy Shield",
+          "recordSha256": "6322060de0415f8983072aa954fa8a65e77d22a2a0f006f2d8f0d93f6a70f799",
+          "effectSha256": "1ef805c579b6c1632528455ebaefeb539c5a6fcbe1ca48e28f590d1345fb4a57"
+        }
+      ],
+      "providerRequirements": [
+        "exact serialized custody",
+        "effective compatibility",
+        "typed contribution, grant, or reviewed inert disposition",
+        "source-loss and suppression lifecycle"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/equipment-definitions.v1.json",
+          "sha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/equipmentContributionRegistry.ts",
+          "sha256": "a4f4862a96611ae988f81701dbcedfcc309d05193d8651547dcd3ca18da16d63"
+        },
+        {
+          "path": "tests/server/itemAutomationEquipmentContributions.test.ts",
+          "sha256": "e14a83d6c2afc8d9a9cb559332486e19dd32a69a8eff544f915d2e30b15b862d"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/EquipmentContributionInspector.vue",
+          "sha256": "e702ca0de14bd8990cf73b63dfb37412038352e39fd633a627c5deb8c49af0d2"
+        },
+        {
+          "path": "tests/components/equipmentContributionInspector.test.ts",
+          "sha256": "187db6a499e8627162a8d153c45a9d28c8061c911f800e7053a0b16c81410f16"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/equipmentOperationRepository.ts",
+          "sha256": "19119b42d2a536da378c5372d831d07adcae0ecae2864d8237cd20f69bd41412"
+        },
+        {
+          "path": "tests/integration/equipmentMultiClientLifecycle.test.ts",
+          "sha256": "42e2e1db6f36670dd70f25ab38d26131d9b287d16bc54391d40b821935c7c7af"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "equipment-02",
+      "sequence": 11,
+      "providerId": "equipment",
+      "implementationState": "passive",
+      "memberCount": 32,
+      "sourceFingerprint": "2bd209d6e0c8ccdbca7f464b22d210f3ada82f68e1b39e3a0dfbd237441e7ca3",
+      "members": [
+        {
+          "canonicalId": "Wonder Launcher",
+          "recordSha256": "8679405ba60ea75d3c602b36d47eafaf378defe18cc66726a74917c5ed20d4a8",
+          "effectSha256": "9be7b1aa760538379978a6d790af90f04bef82f693d020d85809eae8cb8f1b93"
+        },
+        {
+          "canonicalId": "Focus",
+          "recordSha256": "c5a348b2c00cd888253681101e6bb76023dd1f004dca2cb7c167adc0eb94fb89",
+          "effectSha256": "7929d85d39eb10e8677b8fbd209e9a85a47dc21007f7c26d6f32119fa90746c3"
+        },
+        {
+          "canonicalId": "Snag Machine",
+          "recordSha256": "21b4ab1aad7af502d333782ab0ddd72e681e59230c2957948e6f3fbf4687aee2",
+          "effectSha256": "67c134a4e04d33db46ec9a0b5ba51568d643deec1d025f3eca24eba67af1ddbe"
+        },
+        {
+          "canonicalId": "Mega Ring",
+          "recordSha256": "4477ebf9aaa6deeaa150fab2d5c2a2af2c2867dd07649cb8b758c192d8b9fa4d",
+          "effectSha256": "dc1e1dc747815d4b82373998aafe848cf9bcd4268bd91e27853b33ec42b083b6"
+        },
+        {
+          "canonicalId": "Big Root",
+          "recordSha256": "735d037af1ec14084ae3a0cc8eda0e445874a0ec14dce590a2bd42ea14d4cce5",
+          "effectSha256": "0563756567bf7e9dc377250ad2957400cb45b0f194280bd96a7f7a17700b8cd0"
+        },
+        {
+          "canonicalId": "Bright Powder",
+          "recordSha256": "7ae9e09a2d19298be1c906a9bfd5997be29ad81c38a1ba21cc7dfa77e74ca6bf",
+          "effectSha256": "089430c0227346a7fb212010d1882c67d3c49fc2db08e2f88590dc99fdf84ee5"
+        },
+        {
+          "canonicalId": "Choice Item",
+          "recordSha256": "4781acbe03189cab30d2b4e8186651f78c73f2179d5964b6408dfda4d24d15f6",
+          "effectSha256": "acf2c7e46ac2d5b2fabf92c0f28d7344f49ea4e051cb705070726315d5ac2dbd"
+        },
+        {
+          "canonicalId": "Contest Accessory",
+          "recordSha256": "b859f9835c3978186cba6459164b4baa7652588d2ab5e1248fa2e4c007200662",
+          "effectSha256": "579b94f5b9684f65f7cddf943f22e3957dce56ca43ef6febcea15d97987af1a2"
+        },
+        {
+          "canonicalId": "Contest Fashion",
+          "recordSha256": "14e59f707a78b7cb56adf657ae1cf30b127ff03e897e35526e9c3ae349298ef2",
+          "effectSha256": "4e8a600530586d392875fb624061e2334c9e3678204d036c9588876d86945792"
+        },
+        {
+          "canonicalId": "Everstone",
+          "recordSha256": "6414c9d8bac382ad284d370ed83823cd231c47ed78be2588e4bd62cad1e7465c",
+          "effectSha256": "2f56802b803cb94f2edb6741c2f5d9bf974c432788d1cd904e20296b72d1d4f4"
+        },
+        {
+          "canonicalId": "Eviolite",
+          "recordSha256": "3442e28c12b37bc65d6cfd2aeb5139c35a9b080febb7a087875dfdfef802c33e",
+          "effectSha256": "b7ee7d9372e9f956f692484cce5f68607b25a0213be69f5066ffb27a7cd1fd84"
+        },
+        {
+          "canonicalId": "Expert Belt",
+          "recordSha256": "d0c139b0e7472719a650514766d633af756c968a9d1f7afa26d2f4be16249fe5",
+          "effectSha256": "c40fc09cce7a170074b1fe35e02c90c7ab43e08f9709570b0f426b78c9aabca9"
+        },
+        {
+          "canonicalId": "Flame Orb",
+          "recordSha256": "a93e0e2e46ce6a327109b484b03a40ab895e7b783f2fbbf2a1dd6638a2e0ce36",
+          "effectSha256": "d49d34bbb737a7dcce7024eb224678633fbeb8b95f927bbd2f764fcbe73c9fab"
+        },
+        {
+          "canonicalId": "Focus Band",
+          "recordSha256": "7749c6124a8dc390bc17338866282e4058dbbcc91856b1c1781cd4e1fca44f25",
+          "effectSha256": "4192a31c834a21ee46ea21692b52363acf2ff3020b646d754c573b3b6a4a4487"
+        },
+        {
+          "canonicalId": "Focus Sash",
+          "recordSha256": "fa2d1eb758b452f2c199427b9cfa41c533685fb6cb670dcf8e16cdb65bff2f21",
+          "effectSha256": "2f19e014c4afbd3f2738d55ba89f7905a661f11217186b4c0b78e6c2427910c8"
+        },
+        {
+          "canonicalId": "Full Incense",
+          "recordSha256": "1aabb92b7ca9a8c3812945b2f3227d11868079f8edb99bb191ac72b3c89d6203",
+          "effectSha256": "4e9a1208fbe6d9b0f2344c3318d7dbf60ac6cc191281c1c6f28e9ece4f943f1b"
+        },
+        {
+          "canonicalId": "Go-Goggles",
+          "recordSha256": "cc93a51acc84f2d791cf5fcef00d0c928f9be71556f1a7c5ee071af6dcc0e13a",
+          "effectSha256": "988bb639b32a0278bf4efbc86154abc64644cedd3be4ab2fb3745ff9395043b8"
+        },
+        {
+          "canonicalId": "Iron Ball",
+          "recordSha256": "25782335d2eafe7000f0b43c30a4c492d39fffdaa8f930fc24dc8fd8d8703d61",
+          "effectSha256": "7e6ae3995ec1566659a58b72e96f2a376563dafe74b4b1a8dbf51b4e5e061479"
+        },
+        {
+          "canonicalId": "Lagging Item",
+          "recordSha256": "7ac569130f16abe92b4bed2017c629e829680dd73471d919befc800623fce3c0",
+          "effectSha256": "9555ae2ac27baa605b3ff4928c7c8095b9bd429c5d24b4e3c1c3a07a90257848"
+        },
+        {
+          "canonicalId": "Lax Incense",
+          "recordSha256": "95a833fb49ea84ab07dcdc82aa28e0c57ef6ef9cf3ec2d409dbc42c66e657318",
+          "effectSha256": "7d19c3fdbd24981fcab50c92e45e6bb22d44223e2ebefa3974827af6d2d23c53"
+        },
+        {
+          "canonicalId": "Life Orb",
+          "recordSha256": "9e329371536b6c08698e84acef7ea6159b70df7341ab48cf49501835f7eb2a89",
+          "effectSha256": "3d3ff7be3f6e7dab21ca7ec2fe353bae59e9031c7db5f15744bca180799d691e"
+        },
+        {
+          "canonicalId": "Luck Incense",
+          "recordSha256": "bd6aed3800991cb08520ba96e5eb1626874e0e44cdd6ef4d77beeb249f91a628",
+          "effectSha256": "1270416097ab6a05a3939607728e59af4330ee9ce04b70a951d15eca28d48f9f"
+        },
+        {
+          "canonicalId": "Quick Claw",
+          "recordSha256": "cedb293481faa9f304b9bb3518f4c2f9e8c3d465b87bfb4e507a3e66ed739c7e",
+          "effectSha256": "090fee50d1d19585ad43b51b6efa82ef14faba3ffcef172d71c7003bc60ebbf8"
+        },
+        {
+          "canonicalId": "Safety Goggles",
+          "recordSha256": "6c4b0e64a1ca6c8cc84778c7043e915f5a755cde2b9d7a4c79acea61c07cbef9",
+          "effectSha256": "1b481dca663dee48fc5c53b744ecd2c2e77cdda97d9ff48479486fd380335d88"
+        },
+        {
+          "canonicalId": "Shell Bell",
+          "recordSha256": "e4f70060810b9cf2fe05ff5d5d00fe03ebbc7d02a5473d874e45a4ecad1d29bb",
+          "effectSha256": "aecb46523e3773dc868bafc5e7996361d4a078324686b0f1c692efa88882ed98"
+        },
+        {
+          "canonicalId": "Shock Collar",
+          "recordSha256": "130403cf76a1514068f30b49789a0fe7fec07ac2cc6e02d356250616ee9facc9",
+          "effectSha256": "473d344fa9168452e806d2d2069bae2110e790a0eb00125cae7e2bff26abf282"
+        },
+        {
+          "canonicalId": "Stat Boosters",
+          "recordSha256": "84c7ed35db2c319d78b364d779b94bf91156d5229370624463762dc618fc0211",
+          "effectSha256": "b8f1e8aebac1b4228477f15affb66540dfce029eefd266ab7664156b9540763b"
+        },
+        {
+          "canonicalId": "Toxic Orb",
+          "recordSha256": "41e09ce92867a89e6202c3082a170c7fd6372a9e26836adf65a79c9278c51305",
+          "effectSha256": "63598e9d6608b3db09c87252b760e30090eb449aef4ffd89249f836873bd2ab7"
+        },
+        {
+          "canonicalId": "Normal Type Booster",
+          "recordSha256": "3c844ad3eaf89e5415bdf242a7a8f8335ba364e723988e94044d05c41bdc837a",
+          "effectSha256": "7c5b91e1a2fa713985016064889037ab17e13b54e7438d51dfa94d408aeda895"
+        },
+        {
+          "canonicalId": "Fire Type Booster",
+          "recordSha256": "e4122626bb3ee55471e9c13f0d4abe126bd41d6a47010c5ec21cbf2dbe401c84",
+          "effectSha256": "9c616407af4bbe2a65282fecde1a7441e177fd392f09f23a356f9d5b0223a263"
+        },
+        {
+          "canonicalId": "Water Type Booster",
+          "recordSha256": "cef02b7f1307e7a2c362d91fadeaf14b4dd6f056d2c110e20dd14c130b816fd6",
+          "effectSha256": "621d2dfd796cc9add2eca2bd326b015a0880d5adbbd2ec0f554caebb97d90fed"
+        },
+        {
+          "canonicalId": "Electric Type Booster",
+          "recordSha256": "470a83d821f7016d28ff7b641b40c7018e452b8632888f6c0748427c4a733bd2",
+          "effectSha256": "155f917904bf99ecf5045cf244602c093fca8e7e7e66eddb644b918c33307ce8"
+        }
+      ],
+      "providerRequirements": [
+        "exact serialized custody",
+        "effective compatibility",
+        "typed contribution, grant, or reviewed inert disposition",
+        "source-loss and suppression lifecycle"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/equipment-definitions.v1.json",
+          "sha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/equipmentContributionRegistry.ts",
+          "sha256": "a4f4862a96611ae988f81701dbcedfcc309d05193d8651547dcd3ca18da16d63"
+        },
+        {
+          "path": "tests/server/itemAutomationEquipmentContributions.test.ts",
+          "sha256": "e14a83d6c2afc8d9a9cb559332486e19dd32a69a8eff544f915d2e30b15b862d"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/EquipmentContributionInspector.vue",
+          "sha256": "e702ca0de14bd8990cf73b63dfb37412038352e39fd633a627c5deb8c49af0d2"
+        },
+        {
+          "path": "tests/components/equipmentContributionInspector.test.ts",
+          "sha256": "187db6a499e8627162a8d153c45a9d28c8061c911f800e7053a0b16c81410f16"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/equipmentOperationRepository.ts",
+          "sha256": "19119b42d2a536da378c5372d831d07adcae0ecae2864d8237cd20f69bd41412"
+        },
+        {
+          "path": "tests/integration/equipmentMultiClientLifecycle.test.ts",
+          "sha256": "42e2e1db6f36670dd70f25ab38d26131d9b287d16bc54391d40b821935c7c7af"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "equipment-03",
+      "sequence": 12,
+      "providerId": "equipment",
+      "implementationState": "passive",
+      "memberCount": 32,
+      "sourceFingerprint": "c8040edc2ecd9a351306fad2ff8a5a827ad6ba16a1b1730209bd19ef3a8816c4",
+      "members": [
+        {
+          "canonicalId": "Grass Type Booster",
+          "recordSha256": "873c8a1b598a4a3935fde9e10eb3565ca0fdacfd33e763ef5f7e75b3be0b5c9f",
+          "effectSha256": "0b3e466fa0c07ad8c1986d9c4714f431f0c9f151953fbf3d7e636cd592b0e407"
+        },
+        {
+          "canonicalId": "Ice Type Booster",
+          "recordSha256": "23ab0939775e209425d4c909a51fcaa97b81900726a4d3beb4b4f1244cb1d119",
+          "effectSha256": "0daa5e4593a6ec21807e1a7f1df185a8b78c27edbc1e1a7baab451f51dccb7ad"
+        },
+        {
+          "canonicalId": "Fighting Type Booster",
+          "recordSha256": "a4d9443b2acb69bd1323029b9979d688ba052b676610823417b50ca4a7290d25",
+          "effectSha256": "ae10d5c353ef8aeb7f28e986c369b3ef8897dd1370f21cea1c334fc62a2254dc"
+        },
+        {
+          "canonicalId": "Poison Type Booster",
+          "recordSha256": "a5abddc6c997141c01e7cda72f8f8d863c0e163de4e44d208b9bf034240f2406",
+          "effectSha256": "41ab6450b000595301a375ce03ec900eec4942c9b4c410571391ae48b2410dc3"
+        },
+        {
+          "canonicalId": "Ground Type Booster",
+          "recordSha256": "b72c9d0aefe8c336e01cc62a8ac40b8962235e218566e70ab6f26688a3ca4681",
+          "effectSha256": "469bb59da362e79154aab276fbbaec0d29bb1ec1acea486e2fceabf93b171e59"
+        },
+        {
+          "canonicalId": "Flying Type Booster",
+          "recordSha256": "d0ddb98cabad7055d9d898bd1bf21dda722be528710efdda00509c91c40a2929",
+          "effectSha256": "e7b35e439ffecc2bad36a287d691d683b61ce431bffd31acb45fb17d9a4976e1"
+        },
+        {
+          "canonicalId": "Psychic Type Booster",
+          "recordSha256": "4235aa20e82fa8070ce2f8f6e752f8ae225e43fc701b995a850263070c58c590",
+          "effectSha256": "2ca889744dc0ca2f3b9efa3a2181e2fa87449563ab085fcfbc3f6538752f4e77"
+        },
+        {
+          "canonicalId": "Bug Type Booster",
+          "recordSha256": "78b66e5dc2bdf9a15c8c8de6351044667abd4f030ba75652963a9f6c2d04a64b",
+          "effectSha256": "f706590ac21fc17d397c990ea5c0bf89d11028ab77280c53bd29f4a4c7e6f8b4"
+        },
+        {
+          "canonicalId": "Rock Type Booster",
+          "recordSha256": "45b95fb4f9d342f6d8dc74cc2d17092c2d6fd1a4edfde9adcf3f623c0b62b7e9",
+          "effectSha256": "a4838644344e2bc5b99b8b3fa5fa11776c7629898005cc5a4152cc427573661e"
+        },
+        {
+          "canonicalId": "Ghost Type Booster",
+          "recordSha256": "c84facfc2a47226fc45af03e5eb99eef8789179c04c29843c1fa6d4589288fb9",
+          "effectSha256": "cc34b1db8e3311507f276f00518c7d86037b28eecdef05e2f0c1bed1146b1b81"
+        },
+        {
+          "canonicalId": "Dragon Type Booster",
+          "recordSha256": "76126ba07509c641f0603e3c73135e245e6022b44b7c9186309a030eb0499c17",
+          "effectSha256": "dc461a5ed010b51a693db8305c49f45f657459f73225c83000cda645016907ff"
+        },
+        {
+          "canonicalId": "Dark Type Booster",
+          "recordSha256": "4177196271651e55617d4a4e07c21fb21a0be5ede30c385f467146da939312d5",
+          "effectSha256": "6b3f0631992c43b60fe4b80f93e52a72f12aa9bba471ef1b135f7d77ec237b60"
+        },
+        {
+          "canonicalId": "Steel Type Booster",
+          "recordSha256": "7418e03809220b73c8ac282478003b134c79df41198ad2405feac61268925959",
+          "effectSha256": "b87914b24feff60a0ace0c69b2cacdcbd7df6fa6fa41e8c41f06dc87719e645f"
+        },
+        {
+          "canonicalId": "Fairy Type Booster",
+          "recordSha256": "71115bd7ac9eaf34bee896538d0837f382eb41fbf1d454fc071a02d3c900175c",
+          "effectSha256": "9ce40702260c7247fea9fd9d2c304fc0c6c76016f6303fe79a9b89c5e593e6b8"
+        },
+        {
+          "canonicalId": "Normal Type Brace",
+          "recordSha256": "7ef72b425e8b3ccbd0ac2ad1e68e4f42351af4fc1bdbe54e1f7f196ff8e091e9",
+          "effectSha256": "a80288b444c026f65c52747487dad6ccc149af23aea5863220b40473c5c7858a"
+        },
+        {
+          "canonicalId": "Fire Type Brace",
+          "recordSha256": "86c950c3bbb5ee925b664fcba1c5c0ba651754892a525548e6aa33e5eb894e37",
+          "effectSha256": "2e71f7217c42e5ac457cfbaa30a7d75f15e246eae6c63e3eaf98546228c19354"
+        },
+        {
+          "canonicalId": "Water Type Brace",
+          "recordSha256": "c98861d1176f135c47769b2f3d681d7edfe202a95bb9059c9dd364e9192e8a11",
+          "effectSha256": "42b1b93695a4f959c492d5f277e941167e07b68e981671964260aa292e8e7ece"
+        },
+        {
+          "canonicalId": "Electric Type Brace",
+          "recordSha256": "ac7165873896068928d8a1664b595a6013067596dc7da74763a497ece24a6bb5",
+          "effectSha256": "123df69b2aa6110d60a6ea96cb99fb3ff96fe15f54aacb680eac7f9115e76387"
+        },
+        {
+          "canonicalId": "Grass Type Brace",
+          "recordSha256": "43d22c8fefa5b842f65c2055b841cebb8c5446d510bd73662bf991b5b80271b6",
+          "effectSha256": "e9ca7f278c004186be20f4c970630e71f7da2a6af78bd09cbba4e34d6e6ca235"
+        },
+        {
+          "canonicalId": "Ice Type Brace",
+          "recordSha256": "50a03f3ab1a6975885b55dfefedee0e0aa54b0ab3c33b1ecf22de7bfeafd4b81",
+          "effectSha256": "114efb362314586cf3f3f77756254b2ac4703bf821ada6b3e0335cc53af8186d"
+        },
+        {
+          "canonicalId": "Fighting Type Brace",
+          "recordSha256": "807d2040982408b9225e31f0d6f9fc68a4e0a3a903fc2209af2a1aa279ea2027",
+          "effectSha256": "7ed1f0432577bd83d773d82a249a13711cd599ef952af38b50229161fe1cc78f"
+        },
+        {
+          "canonicalId": "Poison Type Brace",
+          "recordSha256": "093421437f80230246d412706b6c8f7e8940d0016216a82f693489ea33716e77",
+          "effectSha256": "8c216a70ada5d95838c12795dda0eecf6f75c54b13a4cb0ec4893399a2e2a32a"
+        },
+        {
+          "canonicalId": "Ground Type Brace",
+          "recordSha256": "5527c058d1ed1d4458706eed1bda9b53c5f944612768c3813850c0494fc1174b",
+          "effectSha256": "c0d7e995b764a2db2d2f8d27813724ad2fed30f4e40304e4a83f48a135160f63"
+        },
+        {
+          "canonicalId": "Flying Type Brace",
+          "recordSha256": "ffa360c35a6738ec05f7706f5b751e39633bcd1c098c72f026ac7ed083287501",
+          "effectSha256": "6c2b9ac980294e75ccb45a1575943293d64b72c2fa3ea25ada88b1cfc11deb47"
+        },
+        {
+          "canonicalId": "Psychic Type Brace",
+          "recordSha256": "99a3d855aa6c217e888bdb70bde7667c9de4a93908afd0513ebbe8ac3866259b",
+          "effectSha256": "fa43b7cadf538bea3c48b4f05904d49a513467abeccd30bf8673d432ab057746"
+        },
+        {
+          "canonicalId": "Bug Type Brace",
+          "recordSha256": "a9fa6482ab24564c24c809f8b13a8456b8211db7b52a656e7fb540875e07464a",
+          "effectSha256": "89f5b5339c4fb2e00c36992e0e7389359d3cfd7195cfa18bcd2443a4b0597b6d"
+        },
+        {
+          "canonicalId": "Rock Type Brace",
+          "recordSha256": "732a6b22dc838473e0285bab566c1f5a4bdaf60bf8fb44740249220e37237c07",
+          "effectSha256": "fdbc0871cbb1ccbb246abc10b928b4dd9de29e771d144f5091403ef0bcb4fe5b"
+        },
+        {
+          "canonicalId": "Ghost Type Brace",
+          "recordSha256": "b80b60814041feede6e6cf7a06c2e2c947a0a6a08aa90355bb9259d0065a8eb7",
+          "effectSha256": "052ef04aed6300fe8ae8c0ffe592ac1b9b287919a7f0aacd3befb11a43c50935"
+        },
+        {
+          "canonicalId": "Dragon Type Brace",
+          "recordSha256": "ac2198ab69404f9e56e6d56bcaebb3936182ebd3962abcd820e301c98a005435",
+          "effectSha256": "458d9ac282b62b132f9ef90e3a4ccc1f17313cb57e384354dea272e85ad6639f"
+        },
+        {
+          "canonicalId": "Dark Type Brace",
+          "recordSha256": "2a9e8774149b898fb87d21f339c6a79d9de28998fc1ce19cee5bfaa360a8e859",
+          "effectSha256": "6707a730022eb988398ba99fbcd5d1eb2e3be96f88136c19bbc086d0023184f2"
+        },
+        {
+          "canonicalId": "Steel Type Brace",
+          "recordSha256": "5d69a6686709d8b30cdf36dcdcf60c801879e937645782eee877d93d0774b46c",
+          "effectSha256": "94dd5ee6b61f6cb40a8b0225332adeb69effb4c7864d1891af96d22ddcd2c364"
+        },
+        {
+          "canonicalId": "Fairy Type Brace",
+          "recordSha256": "a80c0b9fc24dffa46658a64347961a340f4a369502c7067a5cc5edd0bfd1a913",
+          "effectSha256": "e832425f06d833b8b2230a3d420524ddfd98912f8f48b1c05ec0d107244bbbaa"
+        }
+      ],
+      "providerRequirements": [
+        "exact serialized custody",
+        "effective compatibility",
+        "typed contribution, grant, or reviewed inert disposition",
+        "source-loss and suppression lifecycle"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/equipment-definitions.v1.json",
+          "sha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/equipmentContributionRegistry.ts",
+          "sha256": "a4f4862a96611ae988f81701dbcedfcc309d05193d8651547dcd3ca18da16d63"
+        },
+        {
+          "path": "tests/server/itemAutomationEquipmentContributions.test.ts",
+          "sha256": "e14a83d6c2afc8d9a9cb559332486e19dd32a69a8eff544f915d2e30b15b862d"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/EquipmentContributionInspector.vue",
+          "sha256": "e702ca0de14bd8990cf73b63dfb37412038352e39fd633a627c5deb8c49af0d2"
+        },
+        {
+          "path": "tests/components/equipmentContributionInspector.test.ts",
+          "sha256": "187db6a499e8627162a8d153c45a9d28c8061c911f800e7053a0b16c81410f16"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/equipmentOperationRepository.ts",
+          "sha256": "19119b42d2a536da378c5372d831d07adcae0ecae2864d8237cd20f69bd41412"
+        },
+        {
+          "path": "tests/integration/equipmentMultiClientLifecycle.test.ts",
+          "sha256": "42e2e1db6f36670dd70f25ab38d26131d9b287d16bc54391d40b821935c7c7af"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "equipment-04",
+      "sequence": 13,
+      "providerId": "equipment",
+      "implementationState": "passive",
+      "memberCount": 8,
+      "sourceFingerprint": "be26d503e771ba4d7de489752533e0ba9ce441ba896eb577bf5700d5c636f41a",
+      "members": [
+        {
+          "canonicalId": "Winter Cloak",
+          "recordSha256": "192756eba39b76dee425c50bb3d48bf0fd7ba23bb3ab25752645a50e05a22f64",
+          "effectSha256": "08904954c05cd6de5aadcbd3629dde1a90a9f60426158f18d031591d97929ec4"
+        },
+        {
+          "canonicalId": "Type Gem",
+          "recordSha256": "921023bdcfc789fc45b0b04445649e8e01b5db909cd0c87b5b6e92d10043619f",
+          "effectSha256": "9ddee9c725079d8bc77daaef0ceac3c1a32d6563395330bcf3d243a9294125ba"
+        },
+        {
+          "canonicalId": "Type Plate",
+          "recordSha256": "d7b6d8b56826de1156e8dbcd006ac3002cd12dd6a766a9708a0c51f8d0c5f865",
+          "effectSha256": "a9953a25a0364c374ae8e7107ee251e56ff934db82bbe381cfa824b20bd439d3"
+        },
+        {
+          "canonicalId": "Mega Stone",
+          "recordSha256": "a8851a58e1b5ffd2771bb231a95184011534a20ff39a8e19a2c82e02f69d9e10",
+          "effectSha256": "1ddc9acd234dce6c0466d4c49eac5f69363d5dc1eb0230c5ad10d38691baa55c"
+        },
+        {
+          "canonicalId": "Metal Powder",
+          "recordSha256": "9d2cc7fa549a607db7a825b59ae5312cc7771942541972d8b8a9e7224ad86a9b",
+          "effectSha256": "2c5954e2371790272db7b73fddedd4be689a75d29661683870ec414992e4145f"
+        },
+        {
+          "canonicalId": "Rare Leek",
+          "recordSha256": "499bf8dacf42f24dac404a9ec49372e2f4c8a844a6a8dc05020c207e44ae06c5",
+          "effectSha256": "20a35243a08610ddf7d97cf4a2918ddee8306e9a55145cbdda34397035a3ab0b"
+        },
+        {
+          "canonicalId": "Thick Club",
+          "recordSha256": "f3a0f5724bbb5d398bf919f2b0195705e8629187eebbda32bffdc25142e235b9",
+          "effectSha256": "63fd35bad7d85904a7df7e48824499036829154a817cf6899b617a3a1f051ec8"
+        },
+        {
+          "canonicalId": "Pink Pearl",
+          "recordSha256": "fe0cd46e9eab3391e2bc01fd68001acc092aa2409e2a1c8bdfe10cac4538dc10",
+          "effectSha256": "0948a63f52d5f0593add05c0e1444c51deffeb369e660bc1d6df3655bee3c975"
+        }
+      ],
+      "providerRequirements": [
+        "exact serialized custody",
+        "effective compatibility",
+        "typed contribution, grant, or reviewed inert disposition",
+        "source-loss and suppression lifecycle"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/equipment-definitions.v1.json",
+          "sha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/equipmentContributionRegistry.ts",
+          "sha256": "a4f4862a96611ae988f81701dbcedfcc309d05193d8651547dcd3ca18da16d63"
+        },
+        {
+          "path": "tests/server/itemAutomationEquipmentContributions.test.ts",
+          "sha256": "e14a83d6c2afc8d9a9cb559332486e19dd32a69a8eff544f915d2e30b15b862d"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/EquipmentContributionInspector.vue",
+          "sha256": "e702ca0de14bd8990cf73b63dfb37412038352e39fd633a627c5deb8c49af0d2"
+        },
+        {
+          "path": "tests/components/equipmentContributionInspector.test.ts",
+          "sha256": "187db6a499e8627162a8d153c45a9d28c8061c911f800e7053a0b16c81410f16"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/equipmentOperationRepository.ts",
+          "sha256": "19119b42d2a536da378c5372d831d07adcae0ecae2864d8237cd20f69bd41412"
+        },
+        {
+          "path": "tests/integration/equipmentMultiClientLifecycle.test.ts",
+          "sha256": "42e2e1db6f36670dd70f25ab38d26131d9b287d16bc54391d40b821935c7c7af"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "core-item-spec",
+      "sequence": 14,
+      "providerId": "core-item-spec",
+      "implementationState": "native",
+      "memberCount": 29,
+      "sourceFingerprint": "dfffd7a886d6fee394789533907c5bcadc074b6a4eb0568c555e6bad31a29d75",
+      "members": [
+        {
+          "canonicalId": "First Aid Kit",
+          "recordSha256": "731805bff0ae72a26eeaa18f5b57cd8d00225b156787e66cebe8c57e49d9b2c6",
+          "effectSha256": "0ed195fba099f940ca0fab9c40b2fee65ccf408164b674f833ed0d037300ae08"
+        },
+        {
+          "canonicalId": "Potion",
+          "recordSha256": "f928b100dad5c642441e401404a3edefbd127efbaebe92c646f899297a8a1b84",
+          "effectSha256": "7a0184848bd7c3e0558e4562ee942163fd010d11cb38f0737a5503edeb5d0705"
+        },
+        {
+          "canonicalId": "Super Potion",
+          "recordSha256": "4ff68dc1e6998ab96b1d6919c56bba5ebc162e814d4b9e4456b6623293e39c16",
+          "effectSha256": "cc63fb483954f9d3fa7d81ce6fa4444c6b0f2e11b7f6a15f86d91c64fbc4e7e4"
+        },
+        {
+          "canonicalId": "Hyper Potion",
+          "recordSha256": "775d3b5aa2f9fd88cf3b95e98164bbc47537b2ee267343c6022011912c26afd8",
+          "effectSha256": "b967c78f7a9366f239110b7f923eb235af069b99f9976544bd32612b656f2f9f"
+        },
+        {
+          "canonicalId": "Antidote",
+          "recordSha256": "12f14c28fdd54025d0f974db5e407cf75795a660dd562e2dccee3a853bebcaa8",
+          "effectSha256": "60c0c75bf7db4f80b2cda3f3a6df4ab17181761c222c6ed19f47d4e9d900f718"
+        },
+        {
+          "canonicalId": "Paralyze Heal",
+          "recordSha256": "c1751ce0c906945e80bf1b673dd8b871e268d17c4a47a3eaf8cf7eb1eda903a0",
+          "effectSha256": "922c8cb8c8f64ceba4e4aaff0e6a7c4bec8260b5d397366086b14de5dfe8422d"
+        },
+        {
+          "canonicalId": "Burn Heal",
+          "recordSha256": "04a44fe7189ee68725eaef239c8b69ead905fd8100fab469f13711b0ae1c4bb8",
+          "effectSha256": "37478e488049cacbe4cabb55dafff29fe2937b5213f152be5821c8abc7d8ce46"
+        },
+        {
+          "canonicalId": "Ice Heal",
+          "recordSha256": "2da4b83844f394b75cfc6754a2eb90bbc01f61075f7aed93ca2e29ea54ef0988",
+          "effectSha256": "2dbae421a9575b33325af81ea22d7306e73c59844dd45d8b0f1a97c331ef5349"
+        },
+        {
+          "canonicalId": "Full Heal",
+          "recordSha256": "2f656f56f70940b8c70940f3d8af6609cdfdf8b129f918c9c4fe5c64c583564b",
+          "effectSha256": "6ce6f68cc710a740f091e0f289177f5c08bfb36fb864da2b8ab413f0a25a50fe"
+        },
+        {
+          "canonicalId": "Full Restore",
+          "recordSha256": "30303f34169650bd239454e5f1993f15cce5e713d80cf3d860a96b671045932a",
+          "effectSha256": "53b53fc118d08fb303cb0f2c48ed5a98d9b35cfae8f303ebfc520a1524265521"
+        },
+        {
+          "canonicalId": "Revive",
+          "recordSha256": "d14d58ea7afb04023ed0a70ae6c8aa7eb659238b3ae655ed072f683ed022c928",
+          "effectSha256": "fbe63449c507f9f2e48b953d23e7011c29e3f0485cb4cd2050d2653cb266af57"
+        },
+        {
+          "canonicalId": "X Attack",
+          "recordSha256": "b728be8813586b0c93d02cc78bcce8c337f7767fbac4f72bd5b62bcdee13f985",
+          "effectSha256": "311d06985d028a08b001d2fe4c7523493d7e1f187684ff1d6a688e0a1c7ba6d2"
+        },
+        {
+          "canonicalId": "X Defend",
+          "recordSha256": "3f8ed958cc55d7ba975db6a59985acf7b89da2792e24673a9a6e4951e668d8d4",
+          "effectSha256": "3dcf66e4fe60d22364cf7e8da7b11b47413787118f28d0bd63f524ce4378a6ef"
+        },
+        {
+          "canonicalId": "X Special",
+          "recordSha256": "5ac7311d3ac7de16f680dbd1033a4aa4210d6ae0870780637b1ea17c96a30174",
+          "effectSha256": "14bf4f449b0941c848c90fcf171d0fbcf875307c66e298180b084ef56157c2bc"
+        },
+        {
+          "canonicalId": "X Sp. Def",
+          "recordSha256": "1cec9fb419ed77a3db9cd6e49707787723b704003a7da633929de84f38dc2980",
+          "effectSha256": "824efb1c2858c1ddf7e667e84858c999980ca453ed0dd40fc8f9e0f3b30a0a6c"
+        },
+        {
+          "canonicalId": "X Speed",
+          "recordSha256": "98064f8ddb922df95f45d088e2eca3193765b599835e5d5c670c1bbdaa068a15",
+          "effectSha256": "84ba66cfa526dd00c4aee786734307d6ae04dd799eaead9929e92a3d8162e69b"
+        },
+        {
+          "canonicalId": "Dire Hit",
+          "recordSha256": "59b189980b39c2cb2fca6ea2fdf870a7f5f6ceadc8fb2efa271252ac3546d230",
+          "effectSha256": "105b0f9de108cbfadca313b257c9e696ceb533c9573cb5ffedd771188c9b878c"
+        },
+        {
+          "canonicalId": "X Accuracy",
+          "recordSha256": "0d24617746e1972bc328da6a9c286f41c650b326a5375232457231d2131d3951",
+          "effectSha256": "0e20e16cc0c3d7dbcf4324d6dcd4e1f6ed24c91c8fc6db2b370214d26db1dd71"
+        },
+        {
+          "canonicalId": "Guard Spec",
+          "recordSha256": "c50c8ae489b2a6d33c3bb8cf0fd461053dff5e5a9174c810564a84713b76cdc1",
+          "effectSha256": "6759228267c37e3bbe0df7774648e3aa060e30bafa716570c5fa2e637cdf495a"
+        },
+        {
+          "canonicalId": "Bandages",
+          "recordSha256": "8d9423b246471aaf32e89d1a67a6c6734c5ca76496903ab8e0210f05b949cb62",
+          "effectSha256": "9018603e5421cb714a3901fe1a9bb24ac781a12c6f1c61bd63b1d9456487ee8e"
+        },
+        {
+          "canonicalId": "Candy Bar",
+          "recordSha256": "ea5203bebbb7ffa970fe23cc8c856ae978c8cb10d0e9d88ebc0fe076342277a9",
+          "effectSha256": "ec7de31bba3c3ad76327c6510fc0e9955c6077ae4e08517e5586bc3c0b59d1c3"
+        },
+        {
+          "canonicalId": "Leftovers",
+          "recordSha256": "b40b88f89e4f4168c60523c43f20fd85def53aa9dee44de5ec24977a688a119c",
+          "effectSha256": "6d2f2b6aca6ae3dabfa5e8429fb69c558e450a86dbc2a651b877038830a37442"
+        },
+        {
+          "canonicalId": "Black Sludge",
+          "recordSha256": "507c203bcd29d275c94b06e9a6efb0247e36277a92e3f5b66a6f1667a27fd250",
+          "effectSha256": "1c8bc08ec3299790b9d97ea86962bddec8e490a101f44b25c66b93ff7f64c3a3"
+        },
+        {
+          "canonicalId": "Enriched Water",
+          "recordSha256": "d0945ee2402a0d424a3ccc296e2cb9fef01ad98ed1476356553aaf46285ed8cd",
+          "effectSha256": "88eb15dbd228c9c82f8e6d9f5f13334343a36adf08acff0f7691e3604eaad112"
+        },
+        {
+          "canonicalId": "Shuckle’s Berry Juice",
+          "recordSha256": "10b49ba5902cdfbcd4ad481db75f301e5170bab50c490eb54a500a2e8b6ce271",
+          "effectSha256": "2c946f6881e6ff9df1dbb2a258731f425e990a9fa5cd66c593d9c8506b4b9da8"
+        },
+        {
+          "canonicalId": "Super Soda Pop",
+          "recordSha256": "f3a5e66b6df768e9ba97b1a81bbd331d68d8acf3d770ee7f9218aff147f1e894",
+          "effectSha256": "2c946f6881e6ff9df1dbb2a258731f425e990a9fa5cd66c593d9c8506b4b9da8"
+        },
+        {
+          "canonicalId": "Sparkling Lemonade",
+          "recordSha256": "fc3fb783321b65eaa7df2264831229c6c118a31eef8fba4fa9a50642f1409905",
+          "effectSha256": "5dc1b87bbf0d5e6e3b400a591bae3f69bcd901ce0d9b9f29c830a8d666e3f056"
+        },
+        {
+          "canonicalId": "MooMoo Milk",
+          "recordSha256": "6c84237a4146fe7d28af44e2d211da7ab50feea7fb679ae41bbb6a3c62d6adb1",
+          "effectSha256": "0acdb73f618aaf72fe45d6e561dacfa893583311206e96a4fe8d319bc74be88a"
+        },
+        {
+          "canonicalId": "Mental Herb",
+          "recordSha256": "e886075bbde411e7d95cf627ca5252260647c4ffa0186a9c5eb225919ab3992a",
+          "effectSha256": "e07908eb51bff097f6ba197152987fbc743a9f1f28bdae0680d7fb56324a0fa9"
+        }
+      ],
+      "providerRequirements": [
+        "versioned ItemSpec",
+        "server-owned target and choice authority",
+        "atomic item operation",
+        "exact replay and correction evidence"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/specs.v1.json",
+          "sha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/registry.ts",
+          "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+        },
+        {
+          "path": "tests/server/executeItemOperation.test.ts",
+          "sha256": "f09fcc737a6391a873d84a13d79bafc59715a108787717d9fd0fe7ffb20ed93a"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/sheets/TrainerSheetItemDecision.vue",
+          "sha256": "cee47390c891cb10efbe37d8140f8728f44fb77aa54c4e90ba766dda02ae7cbc"
+        },
+        {
+          "path": "tests/components/trainerSheetItemActions.test.ts",
+          "sha256": "f0b02fcb1e28d0bb5811d1fedd852e4ba09409b8c8cef81848a6c442b3d68892"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/useCases/recoverItemOperation.ts",
+          "sha256": "6e0f49a3e063a03a047e96a713767ce52964bcf96be5e2ea1ef7530f6ee81a0a"
+        },
+        {
+          "path": "tests/integration/outOfEncounterItemRecovery.test.ts",
+          "sha256": "df18a1c8e64e037092ba76c8338cce26466ffc51079ac8c8e70de22f7feed2d7"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "capture",
+      "sequence": 15,
+      "providerId": "capture",
+      "implementationState": "native",
+      "memberCount": 25,
+      "sourceFingerprint": "cb424d6a109bef955e2cc4fadee2fc8c5e90563cf15710e5bb415faa24684b23",
+      "members": [
+        {
+          "canonicalId": "Basic Ball",
+          "recordSha256": "e64e7964dca92ea931d068fe0cf8433fe2c18ffa4572a7d736327b4d75291703",
+          "effectSha256": "4fb2363d395f95879f883bddbcc23e226e4c848eb98aeba4b25a264f124c1863"
+        },
+        {
+          "canonicalId": "Great Ball",
+          "recordSha256": "66c2535d7ebbbb57e36e6bc37e386cd16d05ab85eb85906b39bc3816a9110d66",
+          "effectSha256": "cc4eebc665f797956d4d1b1ef13ae3061c37ad6bc5da86cd1ed872b1e58e8cd9"
+        },
+        {
+          "canonicalId": "Ultra Ball",
+          "recordSha256": "aec705d784349ffebd569e72508fa9b955e8deebadeb57ce20ee84e737210b88",
+          "effectSha256": "8cd74bedd2a5c24bc90726ac55ee531b6a8024a774ace8a0b9e8ac092fc6947e"
+        },
+        {
+          "canonicalId": "Master Ball",
+          "recordSha256": "5c9d7aa84cf915d48abe8ce6f94ddad7fae2e60b73d72b648c43a8c0a5e0e25e",
+          "effectSha256": "9073cd2b4f558e5cc050194b37a09b5a533ca578b7467658d81605b81f366fae"
+        },
+        {
+          "canonicalId": "Safari Ball",
+          "recordSha256": "131f37c0f4b5fd1158d9b6032ab81d42f4070ec5137124c1b7aebea76a08707d",
+          "effectSha256": "fa749b978d503a21b32a7272fee027d2b76b62cda6ce53241b9f9188d30fbee3"
+        },
+        {
+          "canonicalId": "Level Ball",
+          "recordSha256": "0319685e2f32ef3a88626e877dd3a1c07117ee565a67ffee617682338f7b749d",
+          "effectSha256": "60708123bca71e023ff1edafd293e5c7943c659724c5a0aae3f31db8714bc6ae"
+        },
+        {
+          "canonicalId": "Lure Ball",
+          "recordSha256": "40a02ab37168b1a42aab92acb2afa707bb77218ed09371732d41a31a76120cc5",
+          "effectSha256": "b50055b7cdf60e073aa034b7b090b3df4a215cd240f2c8c42939c384dbf196f9"
+        },
+        {
+          "canonicalId": "Moon Ball",
+          "recordSha256": "24f0d1f17476c5c250e424e2f80cfa1d2a7ea719a00bc794e34faa08270c4b3d",
+          "effectSha256": "33372b40c12d6505d71d9dc7559788bde392595548eab4495d8e14345e5991db"
+        },
+        {
+          "canonicalId": "Friend Ball",
+          "recordSha256": "c1c2df7f31739a5e08c5692b582d17a905389170b2e0b1ae4c7348f5fa308f3b",
+          "effectSha256": "9b7421b943fba6e3c4fa05b15dc25cd241850d2a23ecd298faae9c8009c8d057"
+        },
+        {
+          "canonicalId": "Love Ball",
+          "recordSha256": "eea5e4e03d154fc09883b272d01014ad5644da2632bd7d49f132638f0a2810d7",
+          "effectSha256": "5f817632e5094df25a17a3a8163bf9a318c68ef3dd4b6a954cb42643bbf853a8"
+        },
+        {
+          "canonicalId": "Heavy Ball",
+          "recordSha256": "5b4e8ec86bf971188ebc6d2535cfe4f05ed24518ea40bfd3855e0a06e07c90ff",
+          "effectSha256": "ea3fc6784c0b1fa9dabb7ac380d5515f874c760dda59edc561729262a77e9904"
+        },
+        {
+          "canonicalId": "Fast Ball",
+          "recordSha256": "adb03c27b32bdd8c1af7be3eb0e07b6869941edc698cf39e1932f76c1b4bb707",
+          "effectSha256": "062cb11b419b8405982014d3cb37f9e6c266b1702e7695a56661950af9572b90"
+        },
+        {
+          "canonicalId": "Sport Ball",
+          "recordSha256": "666eeb06f3ba79f90242003fdf684594880d654bf90776186c46afc9f953ed21",
+          "effectSha256": "fa749b978d503a21b32a7272fee027d2b76b62cda6ce53241b9f9188d30fbee3"
+        },
+        {
+          "canonicalId": "Premier Ball",
+          "recordSha256": "41417c53936e11e7be9ba07f5357a2825c1e15639c635e80622eeb3b55338075",
+          "effectSha256": "e2bc0d64f785a4257c84a47f4660852caa3cd085e35ce3506311cd32060adb59"
+        },
+        {
+          "canonicalId": "Repeat Ball",
+          "recordSha256": "c8309d90423c5c44653ffc27fa085638130af9f5b5aa0a9824bad1d182f8806c",
+          "effectSha256": "1602ab9b686ebebdb02ccbf09b002096f8bbbaf7eedb5d03a1b62120202ca268"
+        },
+        {
+          "canonicalId": "Timer Ball",
+          "recordSha256": "019b5c5788563b6205ad357a0e94b8e9f043623f9397f7877b5ded5e895f58e2",
+          "effectSha256": "57f2adbab7aa12d924a69694d897b1ab1e3b76aa92f645ebfc096eedd5fc689c"
+        },
+        {
+          "canonicalId": "Nest Ball",
+          "recordSha256": "7527d017393c33bc228416043673458fe3c1ed36bfbe7eb2c12295a57291dd5b",
+          "effectSha256": "a4670b07869052d5f1ec5c725aff54a15860c225d3692ad5eb0c3d9fb10a211e"
+        },
+        {
+          "canonicalId": "Net Ball",
+          "recordSha256": "9b481b720a22c6c8bf7d8ca3c797c2e030d2363a32318828f45364da3404a964",
+          "effectSha256": "252a2da3b40a388b2083f96d6c12003ce26d13f10e3228f6a4c735a261965534"
+        },
+        {
+          "canonicalId": "Dive Ball",
+          "recordSha256": "32f6d5c4fc2323e6f3d3ac08e9a06a6418a7ea1112410bb446cbc6956f3f970e",
+          "effectSha256": "992d6137b8f4d79f84384aad84b606c9f2b45d3c41fd6bc765ea4b9fbc32b358"
+        },
+        {
+          "canonicalId": "Luxury Ball",
+          "recordSha256": "22e2c36d897edd899b2e2ccc5924a51c5c73accfd7ea9a37d8bfe28215343496",
+          "effectSha256": "83f5102cd1a9938661d51633ad1c74e343b6635b63a5f992e6239fd719c5ae12"
+        },
+        {
+          "canonicalId": "Heal Ball",
+          "recordSha256": "a59aaa9c3351b5c7b157858bcabd7a86d8a0a1e3485b8ce55c50f1b9222d8fb5",
+          "effectSha256": "2f42e7c8ea93a1deada43346c1cd9ce74fbbf067a62e2b9fdd4c76f7cb92d0a3"
+        },
+        {
+          "canonicalId": "Quick Ball",
+          "recordSha256": "54fde85788f1f9670427ff8fbc622f7596b2ecfc41301c5ad68b18f5a33ddc3d",
+          "effectSha256": "4aeb8725df8c5fc795416d5b9afd35e8fde7e830c6b90b2e868da4ed791d136a"
+        },
+        {
+          "canonicalId": "Dusk Ball",
+          "recordSha256": "5174bfb6a9f4c07ddfd90ce9c007fe033ab8b01ae02583ef3645a55e9e79b096",
+          "effectSha256": "ca4dab95868d732626a2488900b37e6a9141c636d2b0ce4968df535bedc9d627"
+        },
+        {
+          "canonicalId": "Cherish Ball",
+          "recordSha256": "7a02089951a000699d4d2ceb88f817a334ed77397261d12ba2c354b9a506f84c",
+          "effectSha256": "0b31a6aac27f4f151ea1084f0f74bab323f2b4eab8fafa7a2fe0b3bf9b82add0"
+        },
+        {
+          "canonicalId": "Park Ball",
+          "recordSha256": "039fb9e64854f3ea3f825262ce69c32b6faac513ab27ebbf37d631cab6b18fda",
+          "effectSha256": "0c33e0823b0a845e302cdb917cd74c3d9d2ee9db75fa2be49327a6031f740819"
+        }
+      ],
+      "providerRequirements": [
+        "exact stable source-row identity",
+        "structured canonical Ball modifier provider",
+        "shared immutable command receipt",
+        "atomic capture and consumption settlement"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/capture-pokeballs.v1.json",
+          "sha256": "0fb778b5e67ef36e28d4c18c7ca6ea7c3dc4ad716604c876e58684970410ae10"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "src/utils/pokeballCapture.ts",
+          "sha256": "0a307591d48619ef0ef36c217242366c270149d4724ca6d07405e2918dcdc373"
+        },
+        {
+          "path": "server/useCases/applyThrowPokeballCommand.ts",
+          "sha256": "30f2e7987b316e2812bc0d4be81ddcc029c92ccc80ba3f0249cdfd80c23534b9"
+        },
+        {
+          "path": "tests/utils/pokeballCapture.test.ts",
+          "sha256": "5baaf85c684a8ae1d285a42ea795c2d2fbc0e63eb54329be08415b250c588bee"
+        },
+        {
+          "path": "tests/server/throwPokeballCommand.test.ts",
+          "sha256": "c5dad7e88f5eeb7246256481e9c254d05bd751ab9304ea38dbc81260a5599ee9"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/composables/map-editor/usePokeballCapturePanel.ts",
+          "sha256": "21d86d017e6b718fe0ed3ff068e7a638a0925ebeb3b6087ecb6bb17085ff4541"
+        },
+        {
+          "path": "src/composables/map-editor/useLivePlayCommands.ts",
+          "sha256": "f17c5ced4736ce6ca72a53493cf90fc1fb1b86e3d331c7c3da87414502a47217"
+        },
+        {
+          "path": "tests/composables/map-editor/usePokeballCapturePanel.test.ts",
+          "sha256": "a22227adfe02556be423ba3ff3581a70e2a85d075b8411b058e9c0c9e2b37de9"
+        },
+        {
+          "path": "tests/composables/map-editor/useLivePlayCommands.test.ts",
+          "sha256": "ccc0500429856f4a4f3e961337d492cb3177b5f4b78edc5951a1cad38c28e67d"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/livePlay/sqliteCommandExecutor.ts",
+          "sha256": "b1589ed4bd91ada0a89f0964fdda6543b5c8124112f37b375989ff9a716ed686"
+        },
+        {
+          "path": "tests/server/livePlayCommandArchitecture.test.ts",
+          "sha256": "b3a68e2b822430a98af25f1aa930172994b66ca655fb71b0e95a432aefa81cff"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "interpretive-campaign-tool-field-and-camp-tools",
+      "sequence": 16,
+      "providerId": "interpretive-campaign-tool",
+      "implementationState": "guided",
+      "memberCount": 11,
+      "sourceFingerprint": "2307c6a3cec17fabac5addacc7114d950d23ecb4b53cf91319724cbc933dc954",
+      "members": [
+        {
+          "canonicalId": "Collection Jar",
+          "recordSha256": "3886cdec04def35e9106a6f929b0a170dce7d84ae4f3db35a2720c88918b1caf",
+          "effectSha256": "5bcc91c88c3d8260c3b1f55df8dfbc3f4260c1c4b4ab24214668484875f11da3"
+        },
+        {
+          "canonicalId": "Saddle",
+          "recordSha256": "ef4615d7166fa93e886f0bafc405e0f8d9e1b4dbdc3222cabfab3e0c8b953ba2",
+          "effectSha256": "4723d81acdb97f5c8b930770f29686259186a2f505d1235f2d9e28ebbfe57b9a"
+        },
+        {
+          "canonicalId": "Sleeping Bag",
+          "recordSha256": "1d1dd225dc7b7b5781dc93e07c822c4452cfc29458d890f41fb3880d6fc7b9a9",
+          "effectSha256": "93d4d024ed0170f6145a4e15c1252572688c3f7d3a51da7a5274a50a9014a488"
+        },
+        {
+          "canonicalId": "Tents",
+          "recordSha256": "d36e642629784eba3cbf5d04a610c11052913e4f3bb2d275c5025a1758c9a0f3",
+          "effectSha256": "8b3c93531b548ce6aa8a9cb6312a33fbae1e096c4ac97a3182a2870672bea102"
+        },
+        {
+          "canonicalId": "Lighter",
+          "recordSha256": "3c3707486218dccb15a5f3bc9fc586f7ff457e21a838a1aab82f038dfdb5bead",
+          "effectSha256": "77ed9587fc46920583ead1b2af68d2b43ad044e9b4d92be0b230ff75f48fbe0f"
+        },
+        {
+          "canonicalId": "Flashlight",
+          "recordSha256": "4740ff42506a33fef0b5b7f47f3b56e65988c79613729d90727127b123be01a2",
+          "effectSha256": "8732b10c7e05ed4c0a5b4a9bcd1d7313fd43a134e39c540fcccb76f251490b84"
+        },
+        {
+          "canonicalId": "Water Filter",
+          "recordSha256": "cb8f52158ae61b4494dbc035d83e46ff2faf84173f0e316a31d0449ef4aaea31",
+          "effectSha256": "88741db358892954a9d5ed3f61ca9aaf16784c389a8fb95db1a1f28a2a1b49fc"
+        },
+        {
+          "canonicalId": "Rope",
+          "recordSha256": "57e38b4b00498e0fb0c05e081100955841235ca980c5eba2e82713586e98d326",
+          "effectSha256": "c426515d51056849a71527a5c23dabd5f1160c03e07fc7b2992f852c8d6e4303"
+        },
+        {
+          "canonicalId": "Basic Rope",
+          "recordSha256": "073b2e19058c12307fa601076f1bdc17456e51c1e71b584d79a10422986e1bd6",
+          "effectSha256": "6ba777bbf2165e83703dab50d4fb5fa609d89f0722bd676ed21c553b0d9cf034"
+        },
+        {
+          "canonicalId": "Utility Rope",
+          "recordSha256": "61c54f8a07b383896ba1a48b7f9b86785b6c65c59814edfbc4b91965904311d1",
+          "effectSha256": "afa47803fc09ed6b0b580edeb086126256379d9d3e269d4ec6dd94bd6f259a80"
+        },
+        {
+          "canonicalId": "Sturdy Rope",
+          "recordSha256": "9476d84aab963557367520df3e993c8dfbb45d5f3971ddcc190000bddc8e4907",
+          "effectSha256": "012c923949b77bd74cea97a13ea4cb9fd3c81a3fe6fcb96930962d55ce210800"
+        }
+      ],
+      "providerRequirements": [
+        "reviewed bounded guided template",
+        "exact source and actor authority",
+        "explicit consumption or reusable disposition",
+        "private durable GM receipt"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/guided-catalog-items.v1.json",
+          "sha256": "8e669d3a49f235d464b933ac86638f291b7dbf08981899236c059129c1b7602e"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/registry.ts",
+          "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+        },
+        {
+          "path": "server/useCases/manageItemGuidedAdjudication.ts",
+          "sha256": "2eb9819ff1ab99b1b2c58f800ced38d3c5f030f0401e60fbe224d03c7099b563"
+        },
+        {
+          "path": "tests/server/itemAutomationSpec.test.ts",
+          "sha256": "5323f710cf7da7ac3248ea191fe428dba47dce9966eda82a368f6e546911445d"
+        },
+        {
+          "path": "tests/server/itemGuidedAdjudication.test.ts",
+          "sha256": "a277fc26bb30b54513b610ce21c6e14a66b5d0f51d533d39235275dfc6ae6b62"
+        },
+        {
+          "path": "tests/integration/guidedCatalogSheetItems.test.ts",
+          "sha256": "cbd464bd6975675596dfc8e2e8a0ae61459da24738f4e658a625079ec12b6291"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/inventory/InventoryItemTable.vue",
+          "sha256": "8581c8c44a50755283d7f951fa4dfaa6b06054460ed8ab0a8fcbddc0d6d5dfc9"
+        },
+        {
+          "path": "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+          "sha256": "eac1ea2fde7a7d1aaa1f628bdd600408f971a94f2413c1a0a15b7731ef62b332"
+        },
+        {
+          "path": "tests/components/campaignGuidedItemAdjudication.test.ts",
+          "sha256": "540f8472fbf3a383ef2816c89db5e82349c29f49e7164466da58b331c1fabc83"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/useCases/recoverItemOperation.ts",
+          "sha256": "6e0f49a3e063a03a047e96a713767ce52964bcf96be5e2ea1ef7530f6ee81a0a"
+        },
+        {
+          "path": "tests/server/itemRecoveryRoute.test.ts",
+          "sha256": "d622ce66de1d71f71124c476acd371973e54286224a6269fe25c2a66139a4146"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "interpretive-campaign-tool-crafting-and-care-tools",
+      "sequence": 17,
+      "providerId": "interpretive-campaign-tool",
+      "implementationState": "guided",
+      "memberCount": 15,
+      "sourceFingerprint": "4ea27390397397d6dd00dd48f5dc3c9d9a5cd234d23b80dbfbaa93e027eef4be",
+      "members": [
+        {
+          "canonicalId": "Mulch",
+          "recordSha256": "bb37fd74aa6e94715953a02c58bfea416be23661f9f53c3cf5a0a05d6bae80c5",
+          "effectSha256": "6fe636537d7c6b6b0a472ce53631df1799bf18a6ebf7f3af4d9abc65060f2554"
+        },
+        {
+          "canonicalId": "Red Apricorns",
+          "recordSha256": "4dcbb4da99f13a8872b4e2b863f2d494154d55952dff8eeae3ac15fe438dfacb",
+          "effectSha256": "fd407af8339ae0530560e1f58452801822b4bcad83b684b0089566c788982e86"
+        },
+        {
+          "canonicalId": "Yellow Apricorns",
+          "recordSha256": "a75a3b08455cdb9606cfbb18a01dc132c14c1daa8e0d8667ffd30aca556224b0",
+          "effectSha256": "ad77e24d9f5538d434ba3a8a60261bb7c1a3346bb823c83adcb708317308c0b1"
+        },
+        {
+          "canonicalId": "Blue Apricorns",
+          "recordSha256": "7b359dc2b3144854c510629eb9fdd7c75982ae8f451e28c41542a26c84305be0",
+          "effectSha256": "10c3fa11c7008444d0966e598c0d89f7ee4bb48fcc88a9e8d121f9010cc50e17"
+        },
+        {
+          "canonicalId": "Green Apricorns",
+          "recordSha256": "37d0ab6dd40697cd33f04ff5a0efa0b6a31025c3b04b64c9a574c9d94cc9ba10",
+          "effectSha256": "0bd34fade6d29720809fbc4c6825ae71fe99c1c08d017f32ca6f9b6b5d01e5b9"
+        },
+        {
+          "canonicalId": "Pink Apricorns",
+          "recordSha256": "c5f26da94f95e54e5a2f2c2532361f8709a275ef1a1adaa550d3702c53ef4f07",
+          "effectSha256": "8f18cb7ff16ad2a6d9fb8a2681873100ca1fff3246f24c807dd7f6db5334dacc"
+        },
+        {
+          "canonicalId": "White Apricorns",
+          "recordSha256": "f2d3a31014e9510f33c0f0ad693475112f663a2f6749de4464101d565530cc0c",
+          "effectSha256": "60f5f9441768f1ae16e53a1f82f2ad2b7914b8a9685d42bb4dbd5c60393bbb0e"
+        },
+        {
+          "canonicalId": "Black Apricorns",
+          "recordSha256": "6bd1d4d7789342fe6e6661d5ad6b78f03134537aa9ec758b7ec5c175b80bfecb",
+          "effectSha256": "adab8d4ffae1c197c73e29730de8f0dbdb9daeb6af1d9d6633e124b986f79259"
+        },
+        {
+          "canonicalId": "Cooking Set",
+          "recordSha256": "2d28dadb3e101479178301f1e83c7b9f96ad7226c863c05b86f4d22b8b5dd5c9",
+          "effectSha256": "d13d5f279d84609561abe2077ac0b5448a94bc292b5734811f39806c93be129a"
+        },
+        {
+          "canonicalId": "Poffin Mixer",
+          "recordSha256": "595e1f1154a03c5929cd5564ac1a63cef6e195a0a6d94ff50b3ca70782c65970",
+          "effectSha256": "4276be0bdb8788b4eb8615ac0f246488087d25eeee8ea21bf5a153659c4b6a29"
+        },
+        {
+          "canonicalId": "Poké Ball Tool Box",
+          "recordSha256": "0fa466cef9bd739de534664e3cb1977076308f536bff89198e4f97a7d3cb0603",
+          "effectSha256": "fbad186aed2bb633a373e7f194500942feb4623653dd3d68f5f6dd5b8cfa782d"
+        },
+        {
+          "canonicalId": "Portable Grower / Berry Planter",
+          "recordSha256": "8a262bea18dd7da25a3aa6dbadd36c601e7535960d223e9db5bf5a520f4110a7",
+          "effectSha256": "47d77a5ce6849b4e37cd28ad8ce0ffe55afd86a901fb681a1e1bc20cf953812d"
+        },
+        {
+          "canonicalId": "Shards",
+          "recordSha256": "ec5bf72105f2a42742e20fbe3ade5a407007b3fb350df9020ae6900d64818c38",
+          "effectSha256": "016c2dabeae5b453220731bd38b53697020f20e33d3e5788a093693e9ca566ca"
+        },
+        {
+          "canonicalId": "Groomer’s Kit",
+          "recordSha256": "fd85aeeb0d45f6f30f22f8e9288d3015f30a3e550ed37ce1af1218c72b32177e",
+          "effectSha256": "b3240790ea5595537b99f7f60d1aa6a8b0b3093cf32a8ff3bf6af48475a499a9"
+        },
+        {
+          "canonicalId": "Heart Scale",
+          "recordSha256": "64042b3dcc4d55ed6144039afda6c9a83a1ce3e4bd7503070af37860943fec66",
+          "effectSha256": "764e31e847e3717b789ae0791983d5f88deaa534e771bc9a89319055ed89a41d"
+        }
+      ],
+      "providerRequirements": [
+        "reviewed bounded guided template",
+        "exact source and actor authority",
+        "explicit consumption or reusable disposition",
+        "private durable GM receipt"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/guided-catalog-items.v1.json",
+          "sha256": "8e669d3a49f235d464b933ac86638f291b7dbf08981899236c059129c1b7602e"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/registry.ts",
+          "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+        },
+        {
+          "path": "server/useCases/manageItemGuidedAdjudication.ts",
+          "sha256": "2eb9819ff1ab99b1b2c58f800ced38d3c5f030f0401e60fbe224d03c7099b563"
+        },
+        {
+          "path": "tests/server/itemAutomationSpec.test.ts",
+          "sha256": "5323f710cf7da7ac3248ea191fe428dba47dce9966eda82a368f6e546911445d"
+        },
+        {
+          "path": "tests/server/itemGuidedAdjudication.test.ts",
+          "sha256": "a277fc26bb30b54513b610ce21c6e14a66b5d0f51d533d39235275dfc6ae6b62"
+        },
+        {
+          "path": "tests/integration/guidedCatalogSheetItems.test.ts",
+          "sha256": "cbd464bd6975675596dfc8e2e8a0ae61459da24738f4e658a625079ec12b6291"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/inventory/InventoryItemTable.vue",
+          "sha256": "8581c8c44a50755283d7f951fa4dfaa6b06054460ed8ab0a8fcbddc0d6d5dfc9"
+        },
+        {
+          "path": "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+          "sha256": "eac1ea2fde7a7d1aaa1f628bdd600408f971a94f2413c1a0a15b7731ef62b332"
+        },
+        {
+          "path": "tests/components/campaignGuidedItemAdjudication.test.ts",
+          "sha256": "540f8472fbf3a383ef2816c89db5e82349c29f49e7164466da58b331c1fabc83"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/useCases/recoverItemOperation.ts",
+          "sha256": "6e0f49a3e063a03a047e96a713767ce52964bcf96be5e2ea1ef7530f6ee81a0a"
+        },
+        {
+          "path": "tests/server/itemRecoveryRoute.test.ts",
+          "sha256": "d622ce66de1d71f71124c476acd371973e54286224a6269fe25c2a66139a4146"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "interpretive-campaign-tool-interpretive-combat-tools",
+      "sequence": 18,
+      "providerId": "interpretive-campaign-tool",
+      "implementationState": "guided",
+      "memberCount": 8,
+      "sourceFingerprint": "6567074aee17746f7121338f49030cd0395dd72007cb0b620f6eaca258399c6e",
+      "members": [
+        {
+          "canonicalId": "Power Herb",
+          "recordSha256": "5696acf06621a9d514c909d302ca063318e8a8ec29719eaa4f5b7c5df1fc8407",
+          "effectSha256": "3013aaf22468b1276fd80815ae750c494bb146cd1e0abbb61748b673e279145a"
+        },
+        {
+          "canonicalId": "White Herb",
+          "recordSha256": "2353157d4b2c3d646877a4320af73e6ea247382da44c70ce8a533d531076efd5",
+          "effectSha256": "7780cfa95c2357a1aa4bb18d2c3390ff9849790759137d9103ecc0275e8efe1f"
+        },
+        {
+          "canonicalId": "Caltrops",
+          "recordSha256": "e6a4a46e152f658b072c11cde887fbf580eb4ece86d8681a704f6793f80c7bde",
+          "effectSha256": "e2154cafc4737825f3cbe92012f067b6f30168a8b4fa2cc3a70bfbc9143faf7a"
+        },
+        {
+          "canonicalId": "Dream Mist",
+          "recordSha256": "469ed76a5fe4cb2ce6417004eb0094b3b7074e9bd1a7ee4102ec3bac0fa34e0f",
+          "effectSha256": "7dd741890a6a0b7a90d86c859a8c28c96aa9ebea561ff6dd793a41092e09c9a8"
+        },
+        {
+          "canonicalId": "Magic Flute",
+          "recordSha256": "045491364bdf1d2440d8ef12e3cda4023f729617a67d14bac2d6e7ada3d71c3d",
+          "effectSha256": "d4d45056c456aca7d9d4b56910643dd2ab10c7b1310950cdea12c11505748da7"
+        },
+        {
+          "canonicalId": "Cleanse Tags",
+          "recordSha256": "230e4e5c6670e68ca5ec9a72269fd4ca1e1f10f9cd598cb9a8aae76f474ff0e1",
+          "effectSha256": "7b572570a02643b27ca56ce2df4bcc6cfe761008c454936ab0fa7cc156025ebb"
+        },
+        {
+          "canonicalId": "Toxic Caltrops",
+          "recordSha256": "bb1698758e73b9321616356c39dee3604198b92ecfd3dfa987f5b4d1183d6b34",
+          "effectSha256": "a1c7033a09768a2d053fc1c441beebd329d477877077990e40ab95fb47cb3ac2"
+        },
+        {
+          "canonicalId": "Smoke Ball",
+          "recordSha256": "8f3b51665bf2645790e4c63423f413b96afa8f4aee68796e8f8612830a76663e",
+          "effectSha256": "22d3509803883e451ba752477e700a174a87d6a42a38a18463bd7809862eaca3"
+        }
+      ],
+      "providerRequirements": [
+        "reviewed bounded guided template",
+        "exact source and actor authority",
+        "explicit consumption or reusable disposition",
+        "private durable GM receipt"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+        },
+        {
+          "path": "data/complete-play-loop/guided-catalog-items.v1.json",
+          "sha256": "8e669d3a49f235d464b933ac86638f291b7dbf08981899236c059129c1b7602e"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/domain/itemAutomation/registry.ts",
+          "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+        },
+        {
+          "path": "server/useCases/manageItemGuidedAdjudication.ts",
+          "sha256": "2eb9819ff1ab99b1b2c58f800ced38d3c5f030f0401e60fbe224d03c7099b563"
+        },
+        {
+          "path": "tests/server/itemAutomationSpec.test.ts",
+          "sha256": "5323f710cf7da7ac3248ea191fe428dba47dce9966eda82a368f6e546911445d"
+        },
+        {
+          "path": "tests/server/itemGuidedAdjudication.test.ts",
+          "sha256": "a277fc26bb30b54513b610ce21c6e14a66b5d0f51d533d39235275dfc6ae6b62"
+        },
+        {
+          "path": "tests/integration/guidedCatalogSheetItems.test.ts",
+          "sha256": "cbd464bd6975675596dfc8e2e8a0ae61459da24738f4e658a625079ec12b6291"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/inventory/InventoryItemTable.vue",
+          "sha256": "8581c8c44a50755283d7f951fa4dfaa6b06054460ed8ab0a8fcbddc0d6d5dfc9"
+        },
+        {
+          "path": "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+          "sha256": "eac1ea2fde7a7d1aaa1f628bdd600408f971a94f2413c1a0a15b7731ef62b332"
+        },
+        {
+          "path": "tests/components/campaignGuidedItemAdjudication.test.ts",
+          "sha256": "540f8472fbf3a383ef2816c89db5e82349c29f49e7164466da58b331c1fabc83"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/useCases/recoverItemOperation.ts",
+          "sha256": "6e0f49a3e063a03a047e96a713767ce52964bcf96be5e2ea1ef7530f6ee81a0a"
+        },
+        {
+          "path": "tests/server/itemRecoveryRoute.test.ts",
+          "sha256": "d622ce66de1d71f71124c476acd371973e54286224a6269fe25c2a66139a4146"
+        }
+      ],
+      "unresolvedRequirements": []
+    }
+  ]
+}

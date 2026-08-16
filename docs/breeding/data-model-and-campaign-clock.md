@@ -87,7 +87,7 @@ Operation IDs are replay keys, not user-generated authorization. Reusing one wit
 
 ## SQLite persistence map
 
-The current schema is version 28. Core tables are grouped by responsibility:
+The current application runtime schema is version 44. The standalone offline import migrator remains intentionally version 28: it creates the reviewed Breeding import boundary, then application migrations 29 through 44 run when the runtime opens that database. Schema 39 adds the bounded guided-item request journal, schema 40 adds the replay-safe unified inventory-action declaration/result journal, schema 41 preserves those rows while admitting split, merge, and discard action kinds, schema 42 adds the atomic encounter-settlement journal, immutable history facts, and authority-linked attention sources, schema 43 adds immutable authority-linked settlement corrections, and schema 44 preserves guided-request rows while admitting the bounded campaign-tool adjudication request kind; none creates a second Egg lifecycle. Core tables are grouped by responsibility:
 
 ### Aggregates and lifecycle
 
@@ -116,6 +116,9 @@ The current schema is version 28. Core tables are grouped by responsibility:
 - `breeding_read_sets` — immutable complete current observations.
 - `breeding_authorization_receipts` — exact authorization decision/evidence links.
 - `breeding_gm_overrides` — strict bounded override documents referenced by receipts.
+- `item_breeding_operations` — principal-bound exact command/result/evidence replay for Egg Warmer, Fossil restoration, and Artificial Egg orchestration.
+- `inventory_action_operations` — principal-bound pending/accepted declarations, private owning-handoff commands, atomic bidirectional Trainer/group transfer receipts, and replay-safe authoritative results for unified equip, give, and transfer actions.
+- Trainer `sheets.serverPrivate.itemBreeding` — private exact Egg Warmer unit/Egg assignment authority; public and owner sheet projections omit it.
 
 ### Clock, delivery, and archives
 
@@ -137,9 +140,15 @@ Project creation settles current setup validation, consent state, adjudications/
 
 Production revalidates the Project, check/timeline, parents or accepted snapshots, current references, options, offers, provider evidence, and rolls. It consumes offers, inserts one Egg, advances the Project to `egg-produced`, settles the operation, and publishes restricted refreshes atomically.
 
+### Breeding-item orchestration
+
+Egg Warmer assignment updates one Trainer's private exact unit/Egg custody state and its replay receipt together. Campaign-day incubation independently revalidates that unit, current owner, assigned Egg, contribution evidence, and campaign checkpoint; missing custody fails closed to the base rate. Fossil and Artificial Egg workflows adapt the existing source-Egg transaction boundary: only accepted Fossil restoration consumes its exact source, all three tools remain reusable, and every created Egg enters `pokemon_eggs` through the shared lifecycle rather than a parallel offspring path.
+
 ### Campaign-clock batch
 
-One parent operation advances the singleton clock once. Up to 100 due Eggs are handled in canonical order through deterministic child operation IDs. Each child transaction writes the Egg successor, one incubation segment, operation evidence/result, GM override evidence, and refreshes. A fault may leave a durable completed prefix; continuation at the same target minute reuses that prefix and handles only remaining due Eggs.
+The dedicated Breeding batch command advances the singleton clock once. Up to 100 due Eggs are handled in canonical order through deterministic child operation IDs. Each child transaction writes the Egg successor, one incubation segment, operation evidence/result, GM override evidence, and refreshes. A fault may leave a durable completed prefix; continuation at the same target minute reuses that prefix and handles only remaining due Eggs.
+
+The campaign-day command is a stricter orchestration boundary: one reviewed day advances exactly 1,440 campaign minutes and atomically settles the clock, campaign-day sheet recovery, live-map timed effects, and every Egg behind the exact successor checkpoint. It may reuse the same deterministic Breeding child evidence, but it cannot accept a partial Egg prefix or report completion while any due Egg remains. Any Egg or aggregate failure rolls the whole campaign-day operation back; an exact retry replays the accepted receipt without writes or publication.
 
 ### Ownership transfer
 
@@ -176,9 +185,9 @@ Readiness correction is GM-audited and monotonic. It cannot use wall time or sil
 
 ### Long skips and bounded continuation
 
-Discovery selects at most 100 incubating Eggs behind the target clock in canonical Egg-ID order. `hasMoreDueEggs: true` means the GM/operator must issue a fresh equal-target command using the new clock revision and exact remaining scopes. Equal-target continuation is valid because the singleton minute is already current while remaining Eggs still have older checkpoints.
+The dedicated Breeding batch workflow selects at most 100 incubating Eggs behind the target clock in canonical Egg-ID order. `hasMoreDueEggs: true` means the GM/operator must issue a fresh equal-target command using the new clock revision and exact remaining scopes. Equal-target continuation is valid because the singleton minute is already current while remaining Eggs still have older checkpoints.
 
-Never increase the 100-Egg page ad hoc, process children out of order, or start one nested transaction around all child operations. Prefix recovery is part of the durable model.
+Never increase that Breeding batch page ad hoc, process children out of order, or start one nested transaction around its child operations. Prefix recovery is part of the dedicated batch model. The campaign-day command has a different reviewed contract: it discovers all Eggs due at its exact successor checkpoint before mutation and either commits every child inside the global day transaction or commits none.
 
 ### Expiry and cooldown
 

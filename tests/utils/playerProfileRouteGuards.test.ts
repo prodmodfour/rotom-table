@@ -33,6 +33,7 @@ describe('player profile-aware route guards', () => {
     expect(isPlayerProfileOptionalPath(MAP_LIBRARY_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(`${MAP_LIBRARY_PATH}?folder=routes`)).toBe(true)
     expect(isPlayerProfileOptionalPath(ENCOUNTER_LIBRARY_PATH)).toBe(true)
+    expect(isPlayerProfileOptionalPath(CAMPAIGN_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(BREEDING_WORKSHOP_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(GROUP_INVENTORY_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(`${GROUP_INVENTORY_PATH}?tab=medicalKit`)).toBe(true)
@@ -131,6 +132,7 @@ describe('player profile-aware route guards', () => {
     for (const path of [
       '/maps',
       '/play',
+      CAMPAIGN_PATH,
       BREEDING_WORKSHOP_PATH,
       GROUP_INVENTORY_PATH,
       PLAYER_TRAINER_PORTAL_PATH,
@@ -172,14 +174,6 @@ describe('player profile-aware route guards', () => {
 
   it('keeps GM-only routes blocked for players regardless of selected profile state', () => {
     for (const hasSelectedPlayerProfile of [false, true]) {
-      expect(resolveProfileAwareRouteGuard({
-        path: CAMPAIGN_PATH,
-        fullPath: CAMPAIGN_PATH,
-        hasRole: true,
-        isPlayer: true,
-        hasSelectedPlayerProfile,
-      })).toEqual({ type: 'redirect', location: DEFAULT_LOGIN_REDIRECT })
-
       expect(resolveProfileAwareRouteGuard({
         path: PLAYER_PROFILE_MANAGEMENT_PATH,
         fullPath: PLAYER_PROFILE_MANAGEMENT_PATH,

@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-090",
+  "status": "implemented",
+  "endpoint": {
+    "method": "GET",
+    "path": "/api/campaign/continuation",
+    "requiresAuthenticatedRole": true,
+    "acceptedQueryFields": [
+      "profileId"
+    ],
+    "resolvesSelectedProfileOnServer": true,
+    "returnsWholeContentAddressedSnapshot": true
+  },
+  "authority": {
+    "recordLimitPerCollection": 10000,
+    "singleSqliteTransaction": true,
+    "attentionUsesOneCompleteAuthoritySnapshot": true,
+    "encounterUsesRoleFilteredWorkspaceAuthority": true,
+    "settlementRequiresVisibleEncounterAuthority": true,
+    "playerEggsRequireDirectLinkedTrainerAuthority": true,
+    "gmEggsAreCampaignWide": true,
+    "playerSettlementGateCountProjected": false,
+    "duplicateCurrentIdentityFails": true,
+    "partialOrDisappearingReadFails": true
+  },
+  "hierarchy": [
+    "active-encounter-resumption",
+    "unfinished-settlement-resumption",
+    "highest-priority-recommended-action",
+    "grouped-attention",
+    "open-work-summary",
+    "gm-next-day-secondary-tool",
+    "gm-guided-item-queue"
+  ],
+  "attentionGroups": [
+    "needs-a-decision",
+    "recovery-and-care",
+    "growth-and-training",
+    "team-captures-and-eggs",
+    "equipment"
+  ],
+  "projectionPrivacy": {
+    "profileIdentityRendered": false,
+    "profileDisplayNameRendered": false,
+    "eggIdentityRendered": false,
+    "settlementIdentityRendered": false,
+    "operationOrRequestIdentityRendered": false,
+    "attentionActionDecisionOrSourceIdentityRendered": false,
+    "hashOrProvenanceRendered": false,
+    "privateCanonicalChoicesRendered": false,
+    "serverIssuedAppRelativeHandoffsOnly": true
+  },
+  "roleAccess": {
+    "campaignPageAvailableToGm": true,
+    "campaignPageAvailableToPlayer": true,
+    "playerWithoutProfileGetsSafeEmptyOwnerProjection": true,
+    "nextDayToolGmOnly": true,
+    "guidedAdjudicationGmOnly": true
+  },
+  "realtime": {
+    "strategy": "whole-dashboard-snapshot-reload",
+    "localRowOrCounterMerge": false,
+    "latestRequestGenerationWins": true,
+    "principalContextChangeClearsSnapshot": true,
+    "oldProfileResponseIgnored": true,
+    "equalSnapshotRetainsIdentity": true,
+    "burstReloadsCoalesced": true,
+    "campaignAttentionInvalidates": true,
+    "sheetInvalidates": true,
+    "encounterLibraryInvalidates": true,
+    "breedingInvalidates": true,
+    "reconnectReplayOrReconcileReloads": true,
+    "failedRefreshRetainsLastCompleteSnapshot": true
+  },
+  "design": {
+    "context": "workshop",
+    "selectedMockup": ".pi/artifacts/ui-mockups/campaign-continuation-dashboard/v002.png",
+    "selectedMockupScore": "10/10",
+    "desktopWorkToRailRatio": "2:1",
+    "singleNotchedRecommendation": true,
+    "redEmphasisReservedForRecommendedRoute": true,
+    "nextDayIsSecondary": true,
+    "minimumControlPixels": 44,
+    "mobileMinimumWidthPixels": 320,
+    "semanticRegionsHeadingsListsAndDefinitionList": true,
+    "reducedMotionIndependent": true
+  },
+  "failClosed": [
+    "unknown-projection-field",
+    "external-route",
+    "malformed-content-addressed-snapshot",
+    "divergent-egg-state-total",
+    "authority-overflow",
+    "duplicate-authority-identity",
+    "settlement-without-visible-encounter",
+    "selected-profile-drift",
+    "role-scope-mismatch",
+    "out-of-order-response",
+    "old-principal-response"
+  ],
+  "sources": {
+    "projectionContract": {
+      "path": "shared/campaignContinuation.ts",
+      "sha256": "0e7c2870d5a94a5735b0616802038305470358f39d18c4432cb36832fbbc05ae"
+    },
+    "authorityProjection": {
+      "path": "server/useCases/loadCampaignContinuation.ts",
+      "sha256": "f5b4322458de6204f2144e3814c878c23a184be08941a8820227efd0db6d190c"
+    },
+    "apiRoute": {
+      "path": "server/api/campaign/continuation.get.ts",
+      "sha256": "625c48d712526b5bef119da74451b85470fa5abcfb47c7117b95f37fae2a574e"
+    },
+    "snapshotReconciler": {
+      "path": "src/utils/campaignContinuationSnapshot.ts",
+      "sha256": "d87a5eea9ec40d1d9810905b8b150fd23629e6a64df4ee1bb749f7b6d2e9ba43"
+    },
+    "dashboardLoader": {
+      "path": "src/composables/campaign/useCampaignContinuationDashboard.ts",
+      "sha256": "5c314637620b883b3a9b419a333e258bfd5fa8fc5d584e2caad5677062e6f17b"
+    },
+    "dashboardComponent": {
+      "path": "src/components/campaign/CampaignContinuationDashboard.vue",
+      "sha256": "050cad265b2aa20b94f1abb192427cea5f20ff6a244f069f828321c1e05a8c0e"
+    },
+    "campaignPage": {
+      "path": "src/pages/campaign.vue",
+      "sha256": "e7f6c31e79db339e20e5fb5e77a62635241de9f0fa6c593f5877555c6cf0d4d7"
+    },
+    "navigationPolicy": {
+      "path": "src/utils/appNavigation.ts",
+      "sha256": "9abf580a571df6f4416dea63bc1680c52892c9cd520f8473ea5a11b9fdfeacf1"
+    },
+    "roleRoutePolicy": {
+      "path": "src/utils/appRoutes.ts",
+      "sha256": "c4ebe5ed0b4b72a346e2820f96d6919b40079a47e9895e41203fbe3469f5a750"
+    },
+    "profileRoutePolicy": {
+      "path": "src/utils/playerProfileRouteGuards.ts",
+      "sha256": "28953815614892304b520c09b308b8c48ee355283acd2a2a17bc53f2ce988204"
+    },
+    "projectionContractTests": {
+      "path": "tests/shared/campaignContinuation.test.ts",
+      "sha256": "2ee2d93ef1d9137fa604302ef00bbd0cb1849b7eb03525b31ab4a0bcd884dbb0"
+    },
+    "authorityProjectionTests": {
+      "path": "tests/server/campaignContinuation.test.ts",
+      "sha256": "c4effab179cf304046ba00416a1c08c5b2d3e583c49fd8f77b8e343c99d65c4d"
+    },
+    "componentTests": {
+      "path": "tests/components/campaignContinuationDashboard.test.ts",
+      "sha256": "1ad7ed4c8e1f430929b85981d072ddf79afe70a2a58f60dfacb28ed140ab435b"
+    },
+    "snapshotReconcilerTests": {
+      "path": "tests/utils/campaignContinuationSnapshot.test.ts",
+      "sha256": "b587a78459fa6be1ab4c33a3a77ffefe53a37b35e582844fcc99b2cf246949fe"
+    },
+    "profileRouteTests": {
+      "path": "tests/utils/playerProfileRouteGuards.test.ts",
+      "sha256": "eb7f89cac04b06c3d12a7beb6817b7b37bf4e11b8e2e6d60cbf247e6d7f6dae0"
+    },
+    "browserTests": {
+      "path": "tests/e2e/campaign-continuation-dashboard.spec.ts",
+      "sha256": "67546e45447b0b8c697153e8ccab5860f944fc2a40ef081ef187ffb2c6968968"
+    },
+    "documentation": {
+      "path": "docs/campaign-continuation-dashboard.md",
+      "sha256": "7cf2825ae5fcc0c9f2f20a54460f1d791be0aa44a660c8bb3bc06b59b0e2da59"
+    },
+    "selectedMockup": {
+      "path": ".pi/artifacts/ui-mockups/campaign-continuation-dashboard/v002.png",
+      "sha256": "08388bb3e070740a968977b2145751926ffe1eda0452fa38bde90a67104b0828"
+    },
+    "desktopEvidence": {
+      "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/chromium-open.png",
+      "sha256": "05b2a8470592e5b9ed30703f93ae4480734779865a0430b47a280634f0a0f39c"
+    },
+    "mobileEvidence": {
+      "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/mobile-chromium-open.png",
+      "sha256": "18847fc46d6b4d2b2cf9401dc8ce84ef2acd608c8f1636b526251f5292c0d96a"
+    },
+    "mobile320Evidence": {
+      "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/mobile-chromium-320-resolved.png",
+      "sha256": "8737293fc853e7fb63de7ef5f552e70935b129fb7019cbf76171c1ded6608633"
+    },
+    "visualReview": {
+      "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/review.md",
+      "sha256": "fe42414dad6a82bbc804181fc29c2b7445eb2c7d7ca047098ce13a206759ecda"
+    }
+  },
+  "validation": {
+    "focusedTests": "57 passed",
+    "productionBuild": "passed",
+    "browserProjects": [
+      "chromium",
+      "mobile-chromium"
+    ],
+    "browserTests": "4 passed",
+    "seriousOrCriticalAxeViolations": 0,
+    "desktopColumns": 2,
+    "mobileColumns": 1,
+    "mobile320HorizontalOverflow": false,
+    "typecheck": "passed",
+    "eslint": "passed"
+  }
+}

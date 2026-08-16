@@ -1,6 +1,9 @@
 export const API_EVENTS_PATH = '/api/events' as const
 
 export const CAMPAIGN_API_PATHS = {
+  attention: '/api/campaign/attention',
+  continuation: '/api/campaign/continuation',
+  nextDayPreflight: '/api/campaign/next-day/preflight',
   nextDay: '/api/campaign/next-day',
 } as const
 
@@ -18,6 +21,7 @@ export const SHOP_API_PATHS = {
   save: '/api/shops/save',
   deleteShop: '/api/shops/delete',
   checkout: '/api/shops/checkout',
+  postCheckoutActions: '/api/shops/post-checkout-actions',
 } as const
 
 export const SESSION_API_PATHS = {
@@ -37,6 +41,12 @@ export const PLAYER_PROFILE_API_PATHS = {
   update: '/api/player-profiles/update',
 } as const
 
+export const ENCOUNTER_SETTLEMENT_API_PATHS = {
+  prepareFinish: '/api/encounter-settlements/finish/prepare',
+  commitFinish: '/api/encounter-settlements/finish/commit',
+  operationStatus: '/api/encounter-settlements/operations/status',
+} as const
+
 export const ENCOUNTER_WORKSPACE_API_PATHS = {
   list: '/api/encounter-workspace/list',
   load: '/api/encounter-workspace/load',
@@ -45,6 +55,34 @@ export const ENCOUNTER_WORKSPACE_API_PATHS = {
   directorCommand: '/api/encounter-documents/director-command',
   launch: '/api/encounter-documents/launch',
   export: '/api/encounter-documents/export',
+} as const
+
+export const EQUIPMENT_API_PATHS = {
+  operations: '/api/equipment/operations',
+} as const
+
+export const INVENTORY_ACTION_API_PATHS = {
+  actions: '/api/inventory/actions',
+  execute: '/api/inventory/actions/execute',
+  history: '/api/inventory/history',
+} as const
+
+export const BREEDING_API_PATHS = {
+  items: '/api/breeding/items',
+} as const
+
+export const ITEM_API_PATHS = {
+  use: '/api/items/use',
+  resume: '/api/items/resume',
+  recover: '/api/items/recover',
+  sheetActions: '/api/items/sheet-actions',
+  declareSheetAction: '/api/items/sheet-actions/declare',
+  groupActions: '/api/items/group-actions',
+  declareGroupAction: '/api/items/group-actions/declare',
+  extendedActions: '/api/items/extended-actions',
+  formChanges: '/api/items/form-changes',
+  exploration: '/api/items/exploration',
+  guided: '/api/items/guided',
 } as const
 
 export const MAP_API_PATHS = {
@@ -97,6 +135,8 @@ export const MAP_API_PATHS = {
   clearFieldEffects: '/api/maps/field-effects/clear',
   tickFieldEffectDurations: '/api/maps/field-effects/tick',
   setScene: '/api/maps/scene/set',
+  endEncounter: '/api/maps/encounter/end',
+  dismissEncounterEffect: '/api/maps/encounter/effects/dismiss',
   updateAttackOfOpportunity: '/api/maps/attack-of-opportunity/update',
   updateStartTurnModal: '/api/maps/start-turn-modal/update',
   useManeuver: '/api/maps/tokens/use-maneuver',

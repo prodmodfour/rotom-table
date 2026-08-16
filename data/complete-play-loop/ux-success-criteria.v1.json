@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-008",
+  "privacy": "aggregate-only; never record campaign identity, canonical item payload, source row ID, target identity, private choice, notes, or operation ID",
+  "criteria": [
+    { "id": "action-discovery", "measure": "median time from actor selection to legal item offer activation", "budget": "<= 15 seconds in canonical fixture" },
+    { "id": "screen-count", "measure": "distinct product surfaces needed for the restorative vertical slice", "budget": "<= 3, with no direct sheet repair" },
+    { "id": "correction-rate", "measure": "accepted item operations requiring GM correction", "budget": "< 2% in aggregate acceptance samples" },
+    { "id": "double-consumption", "measure": "duplicate consumption across retry/reconnect/tab echo", "budget": "0" },
+    { "id": "reconnect-recovery", "measure": "time from reconnect to authoritative terminal status", "budget": "<= 5 seconds at p95 in fixture" },
+    { "id": "settlement-completion", "measure": "time to settle simple trainer duel", "budget": "<= 2 minutes with no sheet visits" },
+    { "id": "outstanding-work-discovery", "measure": "users locating the next required attention item", "budget": ">= 90% without help in acceptance" },
+    { "id": "mobile-use", "measure": "critical flow at 320 CSS px and touch", "budget": "no horizontal page scroll; all primary targets >= 44px" },
+    { "id": "table-distance", "measure": "blocking decision and accepted outcome readability", "budget": "primary headline and state remain identifiable at 200% zoom and table display fixture" }
+  ]
+}

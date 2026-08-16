@@ -28,7 +28,7 @@ import {
 import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 import { resolveTrainerCapabilities } from '~/utils/sheets/trainerDerived'
 import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
-import { authoritativeEquippedItemReferences } from '../moveAutomation/itemResources'
+import { createEncounterEquipmentGrantQueries } from '../moveAutomation/equipmentGrantQueries'
 import { activeEncounterTransformation } from '#shared/moveAutomation/transformationEffects'
 import {
   catalogEntryForPokemonSheet,
@@ -453,13 +453,6 @@ const effectCandidates = (
   return { grants, suppressions }
 }
 
-const EQUIPPED_ITEM_CAPABILITY_GRANTS: Readonly<Record<string, readonly string[]>> = Object.freeze({
-  'dark-vision-goggles': Object.freeze(['Darkvision']),
-  'jungle-boots': Object.freeze(['Naturewalk (Forest)']),
-  're-breather': Object.freeze(['Gilled']),
-  'snow-boots': Object.freeze(['Naturewalk (Tundra)']),
-})
-
 const combineParameters = (candidates: readonly Candidate[]): CapabilityParameters => {
   const selected = [...candidates].sort((left, right) => right.source.precedence - left.source.precedence)[0]!
   if (selected.parsed.canonicalId === 'Naturewalk') {
@@ -508,19 +501,33 @@ export const resolveEffectiveCapabilities = (input: {
     : input.placement.sheetKind === 'pokemon'
       ? pokemonCandidates(input.placement, input.sheet as CharacterSheet)
       : trainerCandidates(input.placement, input.sheet as TrainerSheet)))]
-  for (const reference of authoritativeEquippedItemReferences(input.placement, input.sheet)) {
-    for (const label of EQUIPPED_ITEM_CAPABILITY_GRANTS[reference.canonicalItemId] ?? []) {
-      base.push({
-        parsed: parseCapabilityLabel(label),
-        value: null,
-        source: source(
-          'item-grant',
-          `item:${input.placement.id}:${reference.itemId}:${reference.canonicalItemId}`,
-          375,
-          reference.canonicalItemId,
-        ),
-      })
-    }
+  const equipmentSheets = input.sheets
+    ? [
+        ...[...input.sheets.pokemon].map(([slug, sheet]) => ({ kind: 'pokemon' as const, slug, sheet })),
+        ...[...input.sheets.trainer].map(([slug, sheet]) => ({ kind: 'trainer' as const, slug, sheet })),
+      ]
+    : [{ kind: input.placement.sheetKind, slug: input.placement.sheetSlug, sheet: input.sheet }]
+  const equipmentGrants = createEncounterEquipmentGrantQueries({
+    map: input.map,
+    sheets: equipmentSheets,
+  }).resolve(input.placement.id)?.active.flatMap(entry => (
+    entry.grant.kind === 'capability' ? [{ ...entry, grant: entry.grant }] : []
+  )) ?? []
+  const equipmentOrdinalByGrant = new Map<string, number>()
+  for (const entry of equipmentGrants) {
+    const ordinal = (equipmentOrdinalByGrant.get(entry.grant.grantId) ?? 0) + 1
+    equipmentOrdinalByGrant.set(entry.grant.grantId, ordinal)
+    const label = entry.grant.parameterLabel ?? entry.grant.canonicalId
+    base.push({
+      parsed: parseCapabilityLabel(label),
+      value: null,
+      source: source(
+        'item-grant',
+        `equipment:${input.placement.id}:${entry.grant.grantId}:${ordinal}`,
+        375,
+        entry.canonicalItemId,
+      ),
+    })
   }
   const effectiveAbilityIds = runtimeAbilityIds
   if (effectiveAbilityIds.includes('Illusion')) base.push({

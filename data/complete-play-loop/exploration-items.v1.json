@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-057",
+  "status": "reviewed-native",
+  "canonicalAuthority": {
+    "rules": {
+      "path": "data/reference/rules.json",
+      "fileSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142",
+      "recordSha256": "3b520452e7a8e8b3c2b8a766ebe1f5bd2bd0f72f7c202dca7829f4af34155561",
+      "migrationId": "rule-data-exploration-item-mechanics-v1",
+      "catalogSuccessorMigrationIds": [
+        "rule-data-pokemon-advancement-choices-v1",
+        "rule-data-trainer-advancement-choices-v1"
+      ]
+    },
+    "items": {
+      "path": "data/reference/items.json",
+      "fileSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+      "shardsRecordSha256": "ec5bf72105f2a42742e20fbe3ade5a407007b3fb350df9020ae6900d64818c38"
+    },
+    "features": {
+      "path": "data/reference/features.json",
+      "fileSha256": "27d0f2bee4db96ebfb0c431cce9ea5222fe3d2d9fe9ead32507c46b51a9d77c4",
+      "crystalResonanceRecordSha256": "43cb50c2d025caaf7678d6057110732af9b1930ed358d91dfeb184a378a0644c"
+    },
+    "specs": {
+      "path": "data/complete-play-loop/specs.v1.json",
+      "fileSha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe"
+    },
+    "runtimeDocumentaryParsingForbidden": true
+  },
+  "reviewedTranscription": {
+    "path": "scripts/reviewed-data/exploration-items.v1.json",
+    "fileSha256": "c9f023bd817a4f4468f4dc172f470b7a201c60e73892cbf81a7152d932c18a75",
+    "runtimeAuthority": false,
+    "reviewStatus": "accepted",
+    "reviewMethod": "Transcribed the exact app-owned Bait, Fishing Lure, Honey, Repel-family, and Dowsing Rod rules into bounded identities, timing, rolls, limits, durations, and explicit GM-owned outcomes. Route encounter species and direct Repel positioning remain bounded adjudication; runtime never parses documentary prose."
+  },
+  "sourceEvidence": [
+    {
+      "subject": "bait",
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [
+        [
+          195,
+          210
+        ]
+      ],
+      "excerptSha256": "320bf0ccf04946b7329c3b3f2c8e4de5516d198abecbc8569aaf1b68b7b20a72",
+      "pages": [
+        274
+      ]
+    },
+    {
+      "subject": "fishing-lure",
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [
+        [
+          221,
+          225
+        ]
+      ],
+      "excerptSha256": "9fb90630c0dd2a41208e204c0aaa40dd320a3d346e23c54fef95a9e92de20d2b",
+      "pages": [
+        274
+      ]
+    },
+    {
+      "subject": "honey",
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [
+        [
+          501,
+          508
+        ]
+      ],
+      "excerptSha256": "9fa2cd8c2c6f4cdbda118e36d82c8195499859cbd485c9b429240dbac88170fe",
+      "pages": [
+        278
+      ]
+    },
+    {
+      "subject": "repels",
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [
+        [
+          274,
+          301
+        ]
+      ],
+      "excerptSha256": "59d52a59407092ca0031059aa04253c86ece88f91b1d7248caf7f05cb4702cbb",
+      "pages": [
+        275
+      ]
+    },
+    {
+      "subject": "dowsing-rod",
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [
+        [
+          1117,
+          1131
+        ]
+      ],
+      "excerptSha256": "1d40dcdc01cd8ca9485cea9b4d252fa291a893d199f9d5e344569f176f5e049f",
+      "pages": [
+        284
+      ]
+    }
+  ],
+  "policy": {
+    "routeLureClock": "campaign-minute-checks-at-fifteen-minute-boundaries",
+    "routeEncounter": "bounded-gm-comparable-party-level-prompt",
+    "wildIdentity": "exact-map-wild-placement-only",
+    "repelPositioning": "server-hit-and-forfeit-with-bounded-gm-positioning-prompt",
+    "dowsingArea": "gm-confirmed-route-cave-or-outside-area",
+    "dowsingRewards": "atomic-color-preserving-shard-inventory-grants",
+    "privacy": "public-consequence-owner-or-gm-detail-private-provenance",
+    "replay": "exact-command-idempotency-and-current-authority-revalidation"
+  },
+  "itemCount": 7,
+  "items": [
+    {
+      "canonicalId": "Bait",
+      "recordSha256": "706ae0593e7c60700bf323c27add5c567419382b836c613dc59e4eb90e6bb974",
+      "effectSha256": "6d31ef5cfe914fa8698ebffd3eef619760db64714f891418f1ad77d800546fd0",
+      "reviewedEffect": {
+        "kind": "use-bait",
+        "lure": {
+          "checkIntervalMinutes": 15,
+          "successMinimum": 15,
+          "maximumAttempts": 3,
+          "dieSides": 20,
+          "encounterSelection": "gm-comparable-party-level"
+        },
+        "distraction": {
+          "timing": "standard-action",
+          "target": "exact-wild-pokemon",
+          "focusDc": 12,
+          "failureConsequence": "forfeit-next-standard-action"
+        }
+      }
+    },
+    {
+      "canonicalId": "Fishing Lure",
+      "recordSha256": "1d3bc0f19699942a54d0fc846697e54a9b2f42191df6ce07b79459f1e088e51d",
+      "effectSha256": "baa876cd329a1b0adf8b304188a2bbc9201c258859c2757191843746136f40c8",
+      "reviewedEffect": {
+        "kind": "start-route-lure",
+        "lure": {
+          "checkIntervalMinutes": 15,
+          "successMinimum": 15,
+          "maximumAttempts": 3,
+          "dieSides": 20,
+          "encounterSelection": "gm-comparable-party-level"
+        },
+        "reusable": true,
+        "lossPolicy": "never-automatic-bounded-gm-adjudication"
+      }
+    },
+    {
+      "canonicalId": "Honey",
+      "recordSha256": "e7c0323191b8981a12885c7b78f21276e75f6e82a3d39e64b48ec10d3cd3655d",
+      "effectSha256": "88d25ac0ab28eeb82bcb88d3bacefff279a345a3c9d87e0a450c9e88a093075d",
+      "reviewedEffect": {
+        "kind": "use-snack-or-bait",
+        "buffKind": "fixed-heal",
+        "amount": 5,
+        "denominator": null,
+        "requiredPokemonType": null,
+        "lure": {
+          "checkIntervalMinutes": 15,
+          "successMinimum": 15,
+          "maximumAttempts": 3,
+          "dieSides": 20,
+          "encounterSelection": "gm-comparable-party-level"
+        },
+        "distraction": {
+          "timing": "standard-action",
+          "target": "exact-wild-pokemon",
+          "focusDc": 12,
+          "failureConsequence": "forfeit-next-standard-action"
+        }
+      }
+    },
+    {
+      "canonicalId": "Repel",
+      "recordSha256": "5cd812ed6e57b00c3ac2458a926840b5ceb1c224280f61697bdf8b42e8cf22c3",
+      "effectSha256": "3a25e145ce858c76884f73e4570133c116d4ab40391a07bbc6d6a9244d600031",
+      "reviewedEffect": {
+        "kind": "use-repel",
+        "durationMinutes": 60,
+        "maximumAffectedWildLevel": 15,
+        "directBaseAc": 6,
+        "positioningAuthority": "bounded-gm-prompt-after-server-owned-hit"
+      }
+    },
+    {
+      "canonicalId": "Super Repel",
+      "recordSha256": "d0b98322254e52c90eac3117a27205bf0740961c06d34d232f9dd4f6dd9995af",
+      "effectSha256": "807978441123caaa975c9e2c315edd7f720cc0adde990d7ab6964551476ff21f",
+      "reviewedEffect": {
+        "kind": "use-repel",
+        "durationMinutes": 120,
+        "maximumAffectedWildLevel": 25,
+        "directBaseAc": 6,
+        "positioningAuthority": "bounded-gm-prompt-after-server-owned-hit"
+      }
+    },
+    {
+      "canonicalId": "Max Repel",
+      "recordSha256": "3f06df2e453624c181441a9d7a47e60bd4f553813e7c277367a4a75b75794cc1",
+      "effectSha256": "12ebb2d4f5be75885b4a9b79ee1335c9a76d44f8433b73388f4d1700062beefe",
+      "reviewedEffect": {
+        "kind": "use-repel",
+        "durationMinutes": 300,
+        "maximumAffectedWildLevel": 35,
+        "directBaseAc": 6,
+        "positioningAuthority": "bounded-gm-prompt-after-server-owned-hit"
+      }
+    },
+    {
+      "canonicalId": "Dowsing Rod",
+      "recordSha256": "1c244a85abc4b87585f066a7e8f0d036b82c8091505536de104edc89c8b6f4c3",
+      "effectSha256": "8ca1af9e7e01fea6fbb8d3b3d2bc2a187a774370e22e31f1a6557b092eed056d",
+      "reviewedEffect": {
+        "kind": "search-for-shards",
+        "searchMinutes": 10,
+        "dailyUses": "floor-occult-education-rank-divided-by-two",
+        "baseDice": "occult-education-rank-d6",
+        "terrainBonusDice": 1,
+        "skillStuntDowsingBonusDice": 1,
+        "crystalResonanceBonusDice": 3,
+        "successMinimum": 4,
+        "rerollOn": 6,
+        "shardColors": [
+          "Red",
+          "Orange",
+          "Yellow",
+          "Green",
+          "Blue",
+          "Violet"
+        ],
+        "areaAuthority": "bounded-gm-confirmation"
+      }
+    }
+  ]
+}

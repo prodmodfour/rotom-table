@@ -286,6 +286,12 @@ describe('versioned breeding ruleset and source adjudications', () => {
       }
     }
 
+    // The closed Breeding baseline intentionally retains its original Façade
+    // source identity. P8-001's reviewed successor normalized that one key to
+    // Facade and therefore resolves the baseline's 947 documentary references
+    // without silently rewriting the historical audit.
+    expect([...unknownMachineMoveLabels]).toEqual([])
+    expect(unknownMachineMoveAssignments).toBe(0)
     expect(audit.canonicalDataDiagnostics).toEqual({
       pokedexRecordCount: pokedex.length,
       completeLegacyShapeRecordCount: pokedex.filter(row => row.source_gen !== undefined).length,
@@ -299,8 +305,8 @@ describe('versioned breeding ruleset and source adjudications', () => {
       missingBasicAbilityRecordCount: pokedex.filter(row => !row.abilities?.basic?.length).length,
       unknownAbilityLabelCount: unknownAbilityLabels.size,
       unknownAbilityAssignmentCount: unknownAbilityAssignments,
-      unknownMachineMoveLabels: [...unknownMachineMoveLabels].sort(),
-      unknownMachineMoveAssignmentCount: unknownMachineMoveAssignments,
+      unknownMachineMoveLabels: ['Facade'],
+      unknownMachineMoveAssignmentCount: 947,
     })
   })
 })

@@ -17,6 +17,7 @@ const props = defineProps<{
   items?: InventoryEntry[]
   namePlaceholder: string
   variant: TrainerInventoryTableVariant
+  selectedRowIndex?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -42,8 +43,13 @@ const forwardRemoveItem = (key: TrainerInventoryKey, index: number) => emit('rem
     :name-placeholder="namePlaceholder"
     :variant="variant"
     :item-name-options="itemNameOptions"
+    :selected-row-index="selectedRowIndex"
     @add-item="forwardAddItem"
     @remove-item="forwardRemoveItem"
     @set-item-name="setItemName"
-  />
+  >
+    <template #rowActions="slotProps">
+      <slot name="rowActions" v-bind="slotProps" />
+    </template>
+  </InventoryItemTable>
 </template>

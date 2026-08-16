@@ -1,11 +1,13 @@
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
+import { itemInventoryInstanceId } from '#shared/itemAutomation/inventory'
 import { validateSlug } from '#shared/paths'
 import { isRevision } from '#shared/sessionRevisions'
 import type { GroupInventoryDocument, GroupInventorySectionKey } from '~/types/groupInventory'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   InventoryTransferError,
+  createInventoryTransferRowId,
   isGroupInventorySectionKey,
   transferInventoryItem,
   type InventoryTransferInventory,
@@ -20,6 +22,7 @@ import {
   type PersistedSheet,
   type SheetRepository,
 } from '../storage/sheetRepository'
+import { createSqliteItemOperationRepository, type ItemOperationRepository } from '../storage/itemOperationRepository'
 import {
   createSqliteRealtimeEventRepository,
   type RealtimeEventRepository,
@@ -37,6 +40,11 @@ import {
 } from '../realtime/persistedBatchPublication'
 import { authorizeGroupInventoryTrainerTransfer } from '../policies/groupInventoryTransferPolicy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { projectGroupInventoryForPlayer } from '../utils/groupInventoryPrivacy'
+import {
+  projectSheetEquipmentContributions,
+  redactSheetRecordForPlayer,
+} from '../utils/sheetPrivacy'
 
 export class TransferGroupInventoryToTrainerUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -70,8 +78,11 @@ export interface TransferGroupInventoryToTrainerDependencies {
   readonly groupInventoryRepository?: TransferGroupInventoryRepository
   readonly sheetRepository?: TransferTrainerSheetRepository
   readonly realtimeEventRepository?: TransferGroupInventoryRealtimeEventRepository
+  readonly itemOperationRepository?: Pick<ItemOperationRepository, 'reservedQuantity'> & { readonly database?: RotomDatabase }
   readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
   readonly reportAfterCommitPublicationFailure?: PersistedRealtimePublicationFailureReporter
+  /** Optional atomic adapter receipt; invoked with raw authoritative resources before commit. */
+  readonly onAcceptedInTransaction?: (result: TransferGroupInventoryToTrainerResult) => void
   readonly now?: () => number
 }
 
@@ -89,7 +100,9 @@ const databaseFromDependencies = (dependencies: TransferGroupInventoryToTrainerD
   const groupInventoryDatabase = dependencies.groupInventoryRepository?.database
   const sheetDatabase = dependencies.sheetRepository?.database
   const realtimeDatabase = dependencies.realtimeEventRepository?.database
-  const database = dependencies.database ?? groupInventoryDatabase ?? sheetDatabase ?? realtimeDatabase ?? getRotomDatabase()
+  const itemOperationDatabase = dependencies.itemOperationRepository?.database
+  const database = dependencies.database ?? groupInventoryDatabase ?? sheetDatabase
+    ?? realtimeDatabase ?? itemOperationDatabase ?? getRotomDatabase()
 
   if (groupInventoryDatabase && groupInventoryDatabase !== database) {
     throw new Error('Group inventory transfer repository must use the same RotomDatabase as the transfer transaction')
@@ -99,6 +112,9 @@ const databaseFromDependencies = (dependencies: TransferGroupInventoryToTrainerD
   }
   if (realtimeDatabase && realtimeDatabase !== database) {
     throw new Error('Group inventory transfer realtime event repository must use the same RotomDatabase as the transfer transaction')
+  }
+  if (itemOperationDatabase && itemOperationDatabase !== database) {
+    throw new Error('Group inventory transfer item-operation repository must use the same RotomDatabase as the transfer transaction')
   }
 
   return database
@@ -184,6 +200,8 @@ export const transferGroupInventoryToTrainerUseCase = (
     ?? createSqliteSheetRepository<Record<string, unknown>>(database)
   const realtimeEventRepository = dependencies.realtimeEventRepository
     ?? createSqliteRealtimeEventRepository({ database })
+  const itemOperationRepository = dependencies.itemOperationRepository
+    ?? createSqliteItemOperationRepository({ database })
   const now = dependencies.now ?? Date.now
 
   const transactionResult = database.withTransaction(() => {
@@ -192,6 +210,22 @@ export const transferGroupInventoryToTrainerUseCase = (
       throw new TransferGroupInventoryToTrainerUseCaseError(404, `Group inventory ${groupSlug} not found`)
     }
     assertCurrentRevision(groupInventory.revision, groupRevision, `Group inventory ${groupSlug}`)
+    const matchingRows = groupInventory.inventory[section].filter(row => row.id === itemId)
+    if (matchingRows.length === 1) {
+      const sourceRow = matchingRows[0]!
+      const sourceQuantity = sourceRow.serializedEquipment !== undefined || section === 'equipment'
+        ? 1
+        : (sourceRow.qty ?? 1)
+      const reserved = itemOperationRepository.reservedQuantity(itemInventoryInstanceId({
+        containerKind: 'group', containerSlug: groupSlug, section, rowId: itemId,
+      }))
+      if (reserved > 0 && Number.isSafeInteger(input.quantity) && Number(input.quantity) > sourceQuantity - reserved) {
+        throw new TransferGroupInventoryToTrainerUseCaseError(
+          409,
+          'The transfer source does not have enough unreserved quantity.',
+        )
+      }
+    }
 
     const trainer = sheetRepository.getByRef('trainer', trainerSlug)
     if (!trainer) {
@@ -207,6 +241,7 @@ export const transferGroupInventoryToTrainerUseCase = (
         section,
         sourceRowId: itemId,
         quantity: input.quantity,
+        createTargetRowId: createInventoryTransferRowId,
       })
     } catch (error) {
       if (error instanceof InventoryTransferError) throw mapTransferError(error)
@@ -274,6 +309,11 @@ export const transferGroupInventoryToTrainerUseCase = (
         operation: 'transfer-to-trainer',
       }),
     ])
+    dependencies.onAcceptedInTransaction?.({
+      ok: true,
+      groupInventory: authoritativeGroupInventory,
+      trainerSheet,
+    })
 
     return {
       ok: true as const,
@@ -290,9 +330,22 @@ export const transferGroupInventoryToTrainerUseCase = (
     reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultPersistedRealtimePublicationFailureReporter,
   })
 
+  if (input.role === 'player') {
+    return {
+      ok: true,
+      groupInventory: projectGroupInventoryForPlayer(transactionResult.groupInventory),
+      trainerSheet: {
+        ...transactionResult.trainerSheet,
+        sheet: redactSheetRecordForPlayer('trainer', transactionResult.trainerSheet.sheet),
+      },
+    }
+  }
   return {
     ok: true,
     groupInventory: transactionResult.groupInventory,
-    trainerSheet: transactionResult.trainerSheet,
+    trainerSheet: {
+      ...transactionResult.trainerSheet,
+      sheet: projectSheetEquipmentContributions('trainer', transactionResult.trainerSheet.sheet),
+    },
   }
 }

@@ -16,7 +16,7 @@
  * is dropped from the JSON, mirroring how the renderer handles missing
  * numeric values (em-dash / 0 fallback).
  */
-import { computed } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useEditableCellSession } from '~/composables/editable-cell/useEditableCellSession'
 import {
   resolveEditableCellDisplay,
@@ -52,6 +52,8 @@ interface Props {
   commitOnInput?: boolean
   /** Allow displayed value to wrap onto multiple lines. */
   multiline?: boolean
+  /** Human-readable field name for keyboard and screen-reader editing. */
+  accessibleLabel?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -66,6 +68,7 @@ const props = withDefaults(defineProps<Props>(), {
   max: undefined,
   commitOnInput: true,
   multiline: false,
+  accessibleLabel: undefined,
 })
 
 const emit = defineEmits<{
@@ -78,6 +81,11 @@ const displayState = computed(() => resolveEditableCellDisplay(props.modelValue,
   placeholder: props.placeholder,
   emptyText: props.emptyText,
 }))
+
+const root = ref<HTMLElement | null>(null)
+const triggerLabel = computed(() => props.accessibleLabel
+  ? `Edit ${props.accessibleLabel}: ${displayState.value.displayValue || displayState.value.emptyLabel}`
+  : undefined)
 
 const {
   editing,
@@ -97,6 +105,30 @@ const {
   onCommit: (value) => emit('commit', value),
 })
 
+const restoreTriggerFocus = async (): Promise<void> => {
+  await nextTick()
+  root.value?.focus()
+}
+const commitFromEditor = (source: 'blur' | 'change' | 'keyboard'): void => {
+  commit()
+  if (source !== 'blur') void restoreTriggerFocus()
+}
+const cancelFromEditor = (): void => {
+  cancel()
+  void restoreTriggerFocus()
+}
+const beginFromPointer = (event: MouseEvent): void => {
+  if (editing.value) return
+  const target = event.target
+  if (target instanceof Element && target.closest('input, select, textarea')) return
+  beginEdit()
+}
+const beginFromKeyboard = (event: KeyboardEvent): void => {
+  if (event.target !== event.currentTarget || editing.value || (event.key !== 'Enter' && event.key !== ' ')) return
+  event.preventDefault()
+  beginEdit()
+}
+
 // External modelValue changes during display are picked up automatically by
 // the displayValue computed. We don't reset draft here — beginEdit() always
 // reinitialises it when entering edit mode, and resetting while editing
@@ -105,6 +137,7 @@ const {
 
 <template>
   <span
+    ref="root"
     class="editable-cell"
     :class="{
       'editable-cell--editing': editing,
@@ -112,7 +145,11 @@ const {
       'editable-cell--empty': displayState.empty,
       'editable-cell--multiline': multiline,
     }"
-    @click="!editing && beginEdit()"
+    :role="!readonly && !editing ? 'button' : undefined"
+    :tabindex="!readonly && !editing ? 0 : undefined"
+    :aria-label="!readonly && !editing ? triggerLabel : undefined"
+    @click="beginFromPointer"
+    @keydown="beginFromKeyboard"
   >
     <EditableCellDisplay
       v-if="!editing"
@@ -135,9 +172,10 @@ const {
         :allow-empty-option="allowEmptyOption"
         :min="min"
         :max="max"
+        :accessible-label="accessibleLabel"
         @input="onEditorInput"
-        @commit="commit"
-        @cancel="cancel"
+        @commit="commitFromEditor"
+        @cancel="cancelFromEditor"
       />
     </template>
   </span>
@@ -166,6 +204,12 @@ const {
   box-shadow: inset 0 -1px 0 rgba(var(--accent-rgb), 0.45);
 }
 
+.editable-cell:focus-visible:not(.editable-cell--readonly):not(.editable-cell--editing) {
+  background: rgba(var(--accent-rgb), 0.08);
+  outline: 2px solid var(--rt-focus, var(--accent));
+  outline-offset: 2px;
+}
+
 .editable-cell--editing {
   padding: 0;
   margin: 0;
@@ -180,5 +224,9 @@ const {
 .editable-cell--readonly:hover {
   background: transparent;
   box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editable-cell { transition: none; }
 }
 </style>

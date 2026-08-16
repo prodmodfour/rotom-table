@@ -276,6 +276,13 @@ const resolvedSkillSource = (
     }
   }
 
+  modifier = context.queries.equipment.metric({
+    placementId,
+    metric: 'skill-check-modifier',
+    targetId: source.skill,
+    base: modifier,
+  })?.final ?? modifier
+
   if (
     !Number.isSafeInteger(dice)
     || dice < 1

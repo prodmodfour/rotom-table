@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptySheetEquipmentState } from '#shared/itemAutomation/equipment'
+import { activeEquipmentState } from '../fixtures/equipment'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import { parseMoveEffectOperation, type MoveDamageEffectOperation } from '#shared/moveAutomation/effects'
 import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
@@ -51,6 +53,9 @@ const sheet = (input: {
   types: ['Normal'],
   abilities: (input.abilities ?? []).map(ability),
   movelist: input.move ? [{ name: input.move }] : [],
+  equipmentState: input.held
+    ? activeEquipmentState({ ownerKind: 'pokemon', ownerSlug: input.slug, slotId: 'held', canonicalItemId: input.held })
+    : createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: input.slug }),
   ...(input.held ? { items: { held: input.held } } : {}),
   ...(input.levitate === undefined ? {} : { capabilities: { levitate: input.levitate } }),
   stats: {

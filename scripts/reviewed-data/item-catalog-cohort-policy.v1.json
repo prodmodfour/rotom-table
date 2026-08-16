@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "complete-play-loop-item-catalog-cohorts-v1",
+  "status": "reviewed",
+  "maximumMembersPerCohort": 32,
+  "runtimeProseParsing": false,
+  "precedence": [
+    "machine-move",
+    "evolution",
+    "permanent-advancement",
+    "exploration",
+    "breeding",
+    "guided-adjudication",
+    "equipment",
+    "core-item-spec",
+    "capture",
+    "interpretive-campaign-tool",
+    "canonical-data-defect"
+  ],
+  "providers": {
+    "machine-move": {
+      "implementationState": "native",
+      "sourceRegistry": "data/complete-play-loop/move-learning-items.v1.json",
+      "providerRequirements": [
+        "exact machine and Move identity",
+        "owned Pokémon compatibility",
+        "durable Extended Action",
+        "atomic Tutor Point and inventory settlement"
+      ],
+      "executableEvidence": [
+        "server/domain/itemAutomation/moveLearning.ts",
+        "tests/integration/machineMoveLearningOperation.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/sheets/TrainerItemExtendedActionCard.vue",
+        "tests/e2e/machine-move-learning.spec.ts"
+      ],
+      "recoveryEvidence": [
+        "server/storage/itemExtendedActionRepository.ts",
+        "tests/integration/machineMoveLearningExtendedActions.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "evolution": {
+      "implementationState": "native",
+      "sourceRegistry": "data/complete-play-loop/evolution-items.v1.json",
+      "providerRequirements": [
+        "exact reviewed transition",
+        "owned Pokémon authority",
+        "irreversible confirmation",
+        "atomic species and inventory settlement"
+      ],
+      "executableEvidence": [
+        "server/domain/itemAutomation/evolution.ts",
+        "tests/integration/evolutionItemOperation.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/sheets/PokemonEvolutionAttentionCard.vue",
+        "tests/e2e/evolution-items.spec.ts"
+      ],
+      "recoveryEvidence": [
+        "server/storage/itemOperationRepository.ts",
+        "tests/integration/evolutionItemSheetAction.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "permanent-advancement": {
+      "implementationState": "native",
+      "sourceRegistry": "data/complete-play-loop/permanent-advancement-items.v1.json",
+      "providerRequirements": [
+        "exact owned Pokémon",
+        "bounded opaque choice",
+        "durable Extended Action",
+        "atomic provenance and inventory settlement"
+      ],
+      "executableEvidence": [
+        "server/domain/itemAutomation/permanentAdvancement.ts",
+        "tests/integration/permanentAdvancementExtendedActions.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/sheets/TrainerItemExtendedActionCard.vue",
+        "tests/e2e/permanent-advancement-items.spec.ts"
+      ],
+      "recoveryEvidence": [
+        "server/storage/itemExtendedActionRepository.ts",
+        "tests/integration/permanentAdvancementExtendedActions.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "exploration": {
+      "implementationState": "native",
+      "sourceRegistry": "data/complete-play-loop/exploration-items.v1.json",
+      "providerRequirements": [
+        "exact Trainer source",
+        "server campaign clock or encounter authority",
+        "bounded random evidence",
+        "atomic inventory and activity settlement"
+      ],
+      "executableEvidence": [
+        "server/domain/itemAutomation/exploration.ts",
+        "tests/integration/itemExplorationOperation.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/sheets/TrainerExplorationActivityCard.vue",
+        "tests/e2e/exploration-items.spec.ts"
+      ],
+      "recoveryEvidence": [
+        "server/storage/itemExplorationOperationRepository.ts",
+        "tests/integration/itemExplorationMultiClient.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "breeding": {
+      "implementationState": "native",
+      "sourceRegistry": "data/complete-play-loop/breeding-items.v1.json",
+      "providerRequirements": [
+        "exact Trainer or GM authority",
+        "shared Egg lifecycle",
+        "principal-bound operation evidence",
+        "atomic inventory and Egg settlement"
+      ],
+      "executableEvidence": [
+        "server/domain/breeding/itemWorkflows.ts",
+        "tests/server/itemBreedingWorkflows.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/breeding/BreedingItemWorkflowPanel.vue",
+        "tests/e2e/breeding-workshop.spec.ts"
+      ],
+      "recoveryEvidence": [
+        "server/storage/itemBreedingOperationRepository.ts",
+        "tests/server/itemBreedingOperationRepository.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "guided-adjudication": {
+      "implementationState": "guided",
+      "sourceRegistry": "data/complete-play-loop/guided-item-adjudications.v1.json",
+      "providerRequirements": [
+        "bounded GM decision",
+        "exact eligibility and timing",
+        "reservation or equipment binding",
+        "private durable decision receipt"
+      ],
+      "executableEvidence": [
+        "server/domain/itemAutomation/guidedAdjudication.ts",
+        "tests/server/itemGuidedAdjudication.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+        "tests/e2e/guided-item-adjudication.spec.ts"
+      ],
+      "recoveryEvidence": [
+        "server/storage/itemGuidedRequestRepository.ts",
+        "tests/server/itemGuidedRequestRepository.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "equipment": {
+      "implementationState": "passive",
+      "sourceRegistry": "data/complete-play-loop/equipment-definitions.v1.json",
+      "providerRequirements": [
+        "exact serialized custody",
+        "effective compatibility",
+        "typed contribution, grant, or reviewed inert disposition",
+        "source-loss and suppression lifecycle"
+      ],
+      "executableEvidence": [
+        "server/domain/itemAutomation/equipmentContributionRegistry.ts",
+        "tests/server/itemAutomationEquipmentContributions.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/sheets/EquipmentContributionInspector.vue",
+        "tests/components/equipmentContributionInspector.test.ts"
+      ],
+      "recoveryEvidence": [
+        "server/storage/equipmentOperationRepository.ts",
+        "tests/integration/equipmentMultiClientLifecycle.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "core-item-spec": {
+      "implementationState": "native",
+      "sourceRegistry": "data/complete-play-loop/specs.v1.json",
+      "providerRequirements": [
+        "versioned ItemSpec",
+        "server-owned target and choice authority",
+        "atomic item operation",
+        "exact replay and correction evidence"
+      ],
+      "executableEvidence": [
+        "server/domain/itemAutomation/registry.ts",
+        "tests/server/executeItemOperation.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/sheets/TrainerSheetItemDecision.vue",
+        "tests/components/trainerSheetItemActions.test.ts"
+      ],
+      "recoveryEvidence": [
+        "server/useCases/recoverItemOperation.ts",
+        "tests/integration/outOfEncounterItemRecovery.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "capture": {
+      "implementationState": "native",
+      "sourceRegistry": "data/complete-play-loop/capture-pokeballs.v1.json",
+      "providerRequirements": [
+        "exact stable source-row identity",
+        "structured canonical Ball modifier provider",
+        "shared immutable command receipt",
+        "atomic capture and consumption settlement"
+      ],
+      "executableEvidence": [
+        "src/utils/pokeballCapture.ts",
+        "server/useCases/applyThrowPokeballCommand.ts",
+        "tests/utils/pokeballCapture.test.ts",
+        "tests/server/throwPokeballCommand.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/composables/map-editor/usePokeballCapturePanel.ts",
+        "src/composables/map-editor/useLivePlayCommands.ts",
+        "tests/composables/map-editor/usePokeballCapturePanel.test.ts",
+        "tests/composables/map-editor/useLivePlayCommands.test.ts"
+      ],
+      "recoveryEvidence": [
+        "server/livePlay/sqliteCommandExecutor.ts",
+        "tests/server/livePlayCommandArchitecture.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "interpretive-campaign-tool": {
+      "implementationState": "guided",
+      "sourceRegistry": "data/complete-play-loop/guided-catalog-items.v1.json",
+      "providerRequirements": [
+        "reviewed bounded guided template",
+        "exact source and actor authority",
+        "explicit consumption or reusable disposition",
+        "private durable GM receipt"
+      ],
+      "executableEvidence": [
+        "server/domain/itemAutomation/registry.ts",
+        "server/useCases/manageItemGuidedAdjudication.ts",
+        "tests/server/itemAutomationSpec.test.ts",
+        "tests/server/itemGuidedAdjudication.test.ts",
+        "tests/integration/guidedCatalogSheetItems.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/inventory/InventoryItemTable.vue",
+        "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+        "tests/components/campaignGuidedItemAdjudication.test.ts"
+      ],
+      "recoveryEvidence": [
+        "server/useCases/recoverItemOperation.ts",
+        "tests/server/itemRecoveryRoute.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "canonical-data-defect": {
+      "implementationState": "native",
+      "sourceRegistry": "data/complete-play-loop/canonical-data-remediation.v1.json",
+      "providerRequirements": [
+        "reviewed source-hash-bound structured canonical repair",
+        "versioned ItemSpec",
+        "atomic inventory and effect settlement",
+        "exact recovery evidence"
+      ],
+      "executableEvidence": [
+        "server/domain/itemAutomation/registry.ts",
+        "tests/server/itemAutomationSpec.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/sheets/TrainerSheetItemDecision.vue",
+        "tests/components/trainerSheetItemActions.test.ts"
+      ],
+      "recoveryEvidence": [
+        "server/useCases/recoverItemOperation.ts",
+        "tests/integration/outOfEncounterItemRecovery.test.ts"
+      ],
+      "unresolvedRequirements": []
+    }
+  },
+  "interpretiveCampaignToolGroups": {
+    "field-and-camp-tools": [
+      "Collection Jar",
+      "Saddle",
+      "Sleeping Bag",
+      "Tents",
+      "Lighter",
+      "Flashlight",
+      "Water Filter",
+      "Rope",
+      "Basic Rope",
+      "Utility Rope",
+      "Sturdy Rope"
+    ],
+    "crafting-and-care-tools": [
+      "Mulch",
+      "Red Apricorns",
+      "Yellow Apricorns",
+      "Blue Apricorns",
+      "Green Apricorns",
+      "Pink Apricorns",
+      "White Apricorns",
+      "Black Apricorns",
+      "Cooking Set",
+      "Poffin Mixer",
+      "Poké Ball Tool Box",
+      "Portable Grower / Berry Planter",
+      "Shards",
+      "Groomer’s Kit",
+      "Heart Scale"
+    ],
+    "interpretive-combat-tools": [
+      "Power Herb",
+      "White Herb",
+      "Caltrops",
+      "Dream Mist",
+      "Magic Flute",
+      "Cleanse Tags",
+      "Toxic Caltrops",
+      "Smoke Ball"
+    ]
+  },
+  "canonicalDataDefectItems": [
+    "Black Sludge"
+  ]
+}

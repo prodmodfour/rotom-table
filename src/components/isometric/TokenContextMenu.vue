@@ -56,7 +56,7 @@ const emit = defineEmits<{
   (event: 'use-ability', ability: TokenAbilityUseReference): void
   (event: 'use-order', orderName?: string | null): void
   (event: 'send-out-pokemon', pokemonSlug: string): void
-  (event: 'throw-pokeball', pokeballName: string): void
+  (event: 'throw-pokeball', sourceInstanceId: string): void
   (event: 'deal-damage'): void
   (event: 'delete'): void
 }>()
@@ -854,12 +854,12 @@ watch(orders, (nextOrders) => {
         <div class="pokeball-submenu" role="menu" aria-label="Poké Balls">
           <button
             v-for="ball in pokeballs"
-            :key="ball.name"
+            :key="ball.sourceInstanceId"
             type="button"
             class="pokeball-submenu__item"
             role="menuitem"
             :title="ball.description"
-            @click.stop="emit('throw-pokeball', ball.name)"
+            @click.stop="emit('throw-pokeball', ball.sourceInstanceId)"
           >
             <ItemSprite :item="ball.name" size="sm" />
             <span class="pokeball-submenu__text">

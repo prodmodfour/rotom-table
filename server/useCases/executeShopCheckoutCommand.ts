@@ -1,5 +1,6 @@
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
+import { SHOP_POST_CHECKOUT_LIMITS } from '#shared/shopPostCheckout'
 import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import type {
   LivePlayCommandRejectionReason,
@@ -11,7 +12,7 @@ import type {
   ShopCheckoutLivePlayCommand,
   ShopCheckoutPaymentSource,
 } from '#shared/livePlayCommands'
-import type { GroupInventoryDocument } from '~/types/groupInventory'
+import { createGroupInventoryRowId, type GroupInventoryDocument } from '~/types/groupInventory'
 import type { MapShopInterface, SheetPlacement, TabletopMap } from '~/types/map'
 import {
   appendShopPurchaseAuditEntry,
@@ -21,12 +22,16 @@ import {
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   ShopCheckoutCalculationError,
-  applyShopCheckoutDeliveryToGroupInventory,
-  applyShopCheckoutDeliveryToTrainerSheet,
   calculateShopCheckout,
+  mergeShopCheckoutEntriesIntoInventoryWithSources,
   subtractShopCheckoutMoney,
+  type ShopCheckoutDeliveredInventorySource,
 } from '~/utils/shopCheckout'
-import type { InventoryTransferTargetRowIdGenerator } from '~/utils/groupInventoryTransfers'
+import {
+  createInventoryTransferRowId,
+  type InventoryTransferTargetRowIdGenerator,
+} from '~/utils/groupInventoryTransfers'
+import { createShopCheckoutContinuationReceipt } from '../domain/shopPostCheckout'
 import {
   LivePlayCommandRejectionError,
   rejectLivePlayCommand,
@@ -161,6 +166,7 @@ interface AppliedShopCheckoutDocuments {
   readonly participants: LoadedCheckoutParticipantMap
   readonly totalPrice: number
   readonly lines: ShopCheckoutCommandAccepted['lines']
+  readonly deliveredSources: readonly ShopCheckoutDeliveredInventorySource[]
 }
 
 interface PersistedShopCheckoutDocuments {
@@ -745,22 +751,18 @@ const applyDelivery = (
   target: LoadedCheckoutParticipant,
   purchasedEntries: ReturnType<typeof calculateShopCheckout>['purchasedEntries'],
   dependencies: ShopCheckoutCommandDependencySet,
-): void => {
-  if (target.kind === 'trainer') {
-    target.nextDocument = applyShopCheckoutDeliveryToTrainerSheet({
-      trainerSheet: target.nextDocument,
-      purchasedEntries,
-    })
-    return
-  }
-
-  target.nextDocument = applyShopCheckoutDeliveryToGroupInventory({
-    groupInventory: target.nextDocument,
+): readonly ShopCheckoutDeliveredInventorySource[] => {
+  const delivery = mergeShopCheckoutEntriesIntoInventoryWithSources({
+    inventory: target.nextDocument.inventory,
     purchasedEntries,
-    ...(dependencies.createGroupInventoryRowId
-      ? { createTargetRowId: dependencies.createGroupInventoryRowId }
-      : {}),
+    createTargetRowId: dependencies.createGroupInventoryRowId
+      ?? (target.kind === 'trainer' ? createInventoryTransferRowId : createGroupInventoryRowId),
   })
+  target.nextDocument = {
+    ...target.nextDocument,
+    inventory: delivery.inventory,
+  } as typeof target.nextDocument
+  return delivery.sources
 }
 
 const applyCheckout = (
@@ -774,13 +776,18 @@ const applyCheckout = (
   })
 
   applyPayment(paymentParticipant(loaded.participants, command.payload.paymentSource), calculation.totalPrice)
-  applyDelivery(deliveryParticipant(loaded.participants, command.payload.deliveryTarget), calculation.purchasedEntries, dependencies)
+  const deliveredSources = applyDelivery(
+    deliveryParticipant(loaded.participants, command.payload.deliveryTarget),
+    calculation.purchasedEntries,
+    dependencies,
+  )
 
   return {
     shop: calculation.shop,
     participants: loaded.participants,
     totalPrice: calculation.totalPrice,
     lines: calculation.lines,
+    deliveredSources,
   }
 }
 
@@ -946,21 +953,45 @@ const withPurchaseAuditEntry = (
   ),
 })
 
+const persistedDeliveryTarget = (
+  command: ShopCheckoutLivePlayCommand,
+  persisted: PersistedShopCheckoutDocuments,
+): TrainerSheet | GroupInventoryDocument => {
+  const target = command.payload.deliveryTarget
+  const document = target.kind === 'trainer'
+    ? persisted.trainerSheets.find(sheet => sheet.slug === target.slug)
+    : persisted.groupInventories.find(group => group.slug === target.slug)
+  if (!document) throw new Error('Shop checkout persisted result lost its exact delivery target.')
+  return document
+}
+
 const acceptedResult = (
   command: ShopCheckoutLivePlayCommand,
   loaded: LoadedShopCheckoutDocuments,
   applied: AppliedShopCheckoutDocuments,
   persisted: PersistedShopCheckoutDocuments,
-): ShopCheckoutCommandAccepted => ({
-  ok: true,
-  opId: command.opId,
-  shopSlug: command.payload.shopSlug,
-  previousShopRevision: loaded.shop.revision,
-  shopRevision: persisted.shop.revision,
-  totalPrice: applied.totalPrice,
-  lines: applied.lines,
-  documents: changedDocuments(persisted),
-})
+): ShopCheckoutCommandAccepted => {
+  const canProjectBoundedContinuations = applied.deliveredSources.length > 0
+    && applied.deliveredSources.length <= SHOP_POST_CHECKOUT_LIMITS.continuations
+  return {
+    ok: true,
+    opId: command.opId,
+    shopSlug: command.payload.shopSlug,
+    previousShopRevision: loaded.shop.revision,
+    shopRevision: persisted.shop.revision,
+    totalPrice: applied.totalPrice,
+    lines: applied.lines,
+    documents: changedDocuments(persisted),
+    ...(canProjectBoundedContinuations ? {
+      postCheckout: createShopCheckoutContinuationReceipt({
+        operationId: command.opId,
+        target: command.payload.deliveryTarget,
+        targetDocument: persistedDeliveryTarget(command, persisted),
+        sources: applied.deliveredSources,
+      }),
+    } : {}),
+  }
+}
 
 const storeTerminalResult = (
   command: ShopCheckoutLivePlayCommand,

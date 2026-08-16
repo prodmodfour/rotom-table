@@ -54,7 +54,7 @@ describe('group inventory transfer helpers', () => {
     expect(findGroupInventoryRowById(inventory, 'keyItems', 'missing-row')).toBeNull()
   })
 
-  it('partially decrements stackable source rows and merges targets by normalized item name without mutating inputs', () => {
+  it('partially decrements stacks without fuzzy or metadata-losing target merges', () => {
     const sourceInventory: InventoryTransferInventory = {
       ...emptyInventory(),
       pokemonItems: [
@@ -89,7 +89,8 @@ describe('group inventory transfer helpers', () => {
       { id: 'group-potion-row', name: 'Potion', qty: 2, cost: '$200', description: 'Heals 20 Hit Points' },
     ])
     expect(result.targetInventory.pokemonItems).toEqual([
-      { name: 'pótîon', qty: 5, description: 'Existing trainer notes' },
+      { name: 'pótîon', qty: 2, description: 'Existing trainer notes' },
+      { name: 'Potion', qty: 3, cost: '$200', description: 'Heals 20 Hit Points' },
     ])
     expect(sourceInventory).toEqual(sourceBefore)
     expect(targetInventory).toEqual(targetBefore)
@@ -136,6 +137,74 @@ describe('group inventory transfer helpers', () => {
       { name: 'Safety Goggles', slot: 'Accessory' },
       { name: 'Safety Goggles', slot: 'Head', cost: 500 },
     ])
+  })
+
+  it('preserves serialized identity and state as a whole row in quantity sections without merging', () => {
+    const serializedEquipment = {
+      schemaVersion: 1 as const,
+      instanceId: `equipped-item:v1:${'a'.repeat(32)}`,
+      revision: 3,
+      canonicalItemId: 'Quick Claw',
+      canonicalRecordSha256: 'b'.repeat(64),
+      equipmentDefinitionSha256: 'c'.repeat(64),
+      configuration: null,
+      activity: { status: 'active' as const, reasons: [] },
+      state: { charges: 2 },
+    }
+    const result = transferInventoryItem({
+      sourceInventory: {
+        ...emptyInventory(),
+        pokemonItems: [{ id: 'serialized-claw', name: 'Quick Claw', qty: 99, serializedEquipment }],
+      },
+      targetInventory: {
+        ...emptyInventory(),
+        pokemonItems: [{ id: 'claw-stack', name: 'Quick Claw', qty: 4 }],
+      },
+      section: 'pokemonItems',
+      sourceRowId: 'serialized-claw',
+      quantity: 1,
+      createTargetRowId: () => 'moved-claw',
+    })
+    const movedSerializedEquipment = { ...serializedEquipment, revision: 4 }
+    expect(result.sourceInventory.pokemonItems).toEqual([])
+    expect(result.targetInventory.pokemonItems).toEqual([
+      { id: 'claw-stack', name: 'Quick Claw', qty: 4 },
+      { id: 'moved-claw', name: 'Quick Claw', serializedEquipment: movedSerializedEquipment },
+    ])
+    expect(result.transferredEntry).toEqual({
+      name: 'Quick Claw', serializedEquipment: movedSerializedEquipment,
+    })
+    expect(serializedEquipment.revision).toBe(3)
+    expectTransferError(() => transferInventoryItem({
+      sourceInventory: {
+        ...emptyInventory(),
+        pokemonItems: [{ id: 'serialized-claw', name: 'Quick Claw', serializedEquipment }],
+      },
+      targetInventory: emptyInventory(),
+      section: 'pokemonItems', sourceRowId: 'serialized-claw', quantity: 2,
+    }), 'equipment-partial-transfer')
+    expectTransferError(() => transferInventoryItem({
+      sourceInventory: {
+        ...emptyInventory(),
+        pokemonItems: [{ id: 'serialized-claw', name: 'Quick Claw', serializedEquipment }],
+      },
+      targetInventory: {
+        ...emptyInventory(),
+        equipment: [{ id: 'duplicate-claw', name: 'Quick Claw', serializedEquipment }],
+      },
+      section: 'pokemonItems', sourceRowId: 'serialized-claw', quantity: 1,
+    }), 'invalid-serialized-state')
+    expectTransferError(() => transferInventoryItem({
+      sourceInventory: {
+        ...emptyInventory(),
+        pokemonItems: [{
+          id: 'serialized-claw', name: 'Quick Claw',
+          serializedEquipment: { ...serializedEquipment, revision: Number.MAX_SAFE_INTEGER },
+        }],
+      },
+      targetInventory: emptyInventory(),
+      section: 'pokemonItems', sourceRowId: 'serialized-claw', quantity: 1,
+    }), 'invalid-serialized-state')
   })
 
   it('rejects invalid transfer quantities before changing inventory snapshots', () => {
@@ -191,7 +260,7 @@ describe('group inventory transfer helpers', () => {
     }), 'insufficient-quantity')
   })
 
-  it('normalizes item identities consistently for stack merging', () => {
+  it('keeps fuzzy display-name variants as separate stacks', () => {
     expect(normalizeInventoryItemNameIdentity('  Poké   Ball  ')).toBe('poke ball')
     expect(normalizeInventoryItemNameIdentity('Poke Ball')).toBe('poke ball')
 
@@ -202,7 +271,8 @@ describe('group inventory transfer helpers', () => {
     })
 
     expect(mergedRows).toEqual([
-      { name: 'Poké Ball', qty: 5, mod: '+0' },
+      { name: 'Poké Ball', qty: 1, mod: '+0' },
+      { name: 'poke   ball', qty: 4, mod: '+0' },
     ])
   })
 

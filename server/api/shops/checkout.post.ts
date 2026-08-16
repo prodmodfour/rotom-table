@@ -16,6 +16,11 @@ import {
   type ExecuteShopCheckoutCommandUseCaseResponse,
 } from '../../useCases/executeShopCheckoutCommand'
 import { redactShopForPlayer, redactUnknownShopRecordForPlayer } from '../../utils/shopPrivacy'
+import {
+  projectSheetEquipmentContributions,
+  redactSheetRecordForPlayer,
+} from '../../utils/sheetPrivacy'
+import { projectGroupInventoryForPlayer } from '../../utils/groupInventoryPrivacy'
 
 type ShopCheckoutRouteBody = Record<string, unknown>
 
@@ -28,13 +33,31 @@ const requireShopCheckoutCommandEnvelope = (
   return body
 }
 
-const redactAcceptedResultForPlayer = (
+const projectTrainerSheetForRole = (role: AuthRole, sheet: Record<string, unknown>) => (
+  role === 'player'
+    ? redactSheetRecordForPlayer('trainer', sheet)
+    : projectSheetEquipmentContributions('trainer', sheet)
+)
+
+const projectAcceptedResultForRole = (
   result: ShopCheckoutCommandAccepted,
+  role: AuthRole,
 ): ShopCheckoutCommandAccepted => ({
   ...result,
   documents: {
     ...result.documents,
-    shop: redactShopForPlayer(result.documents.shop),
+    shop: role === 'player' ? redactShopForPlayer(result.documents.shop) : result.documents.shop,
+    ...(result.documents.groupInventories ? {
+      groupInventories: role === 'player'
+        ? result.documents.groupInventories.map(projectGroupInventoryForPlayer)
+        : result.documents.groupInventories,
+    } : {}),
+    ...(result.documents.trainerSheets ? {
+      trainerSheets: result.documents.trainerSheets.map(sheet => projectTrainerSheetForRole(
+        role,
+        sheet as unknown as Record<string, unknown>,
+      ) as unknown as typeof sheet),
+    } : {}),
   },
 })
 
@@ -47,31 +70,41 @@ const redactRejectedResultForPlayer = (
     : { currentState: redactUnknownShopRecordForPlayer(result.currentState) }),
 })
 
-const redactResultForPlayer = (result: ShopCheckoutCommandResult): ShopCheckoutCommandResult => {
+const projectResultForRole = (
+  result: ShopCheckoutCommandResult,
+  role: AuthRole,
+): ShopCheckoutCommandResult => {
   if (result.ok === true && 'duplicate' in result) {
     return {
       ...result,
-      original: redactResultForPlayer(result.original) as ShopCheckoutCommandAccepted | ShopCheckoutCommandRejected,
+      original: projectResultForRole(
+        result.original,
+        role,
+      ) as ShopCheckoutCommandAccepted | ShopCheckoutCommandRejected,
     }
   }
 
-  if (result.ok === true) return redactAcceptedResultForPlayer(result)
-  return redactRejectedResultForPlayer(result)
+  if (result.ok === true) return projectAcceptedResultForRole(result, role)
+  return role === 'player' ? redactRejectedResultForPlayer(result) : result
 }
 
-const responseResultForRole = (
-  role: AuthRole,
-  result: ShopCheckoutCommandResult,
-): ShopCheckoutCommandResult => (role === 'player' ? redactResultForPlayer(result) : result)
-
 const routeResponse = (response: ExecuteShopCheckoutCommandUseCaseResponse, role: AuthRole) => {
-  const result = responseResultForRole(role, response.result)
+  const result = projectResultForRole(response.result, role)
   if (!result.ok) return result
   return {
     ...result,
     ...(response.shop === undefined ? {} : { shop: role === 'player' ? redactShopForPlayer(response.shop) : response.shop }),
-    ...(response.groupInventories === undefined ? {} : { groupInventories: response.groupInventories }),
-    ...(response.trainerSheets === undefined ? {} : { trainerSheets: response.trainerSheets }),
+    ...(response.groupInventories === undefined ? {} : {
+      groupInventories: role === 'player'
+        ? response.groupInventories.map(projectGroupInventoryForPlayer)
+        : response.groupInventories,
+    }),
+    ...(response.trainerSheets === undefined ? {} : {
+      trainerSheets: response.trainerSheets.map(sheet => projectTrainerSheetForRole(
+        role,
+        sheet as unknown as Record<string, unknown>,
+      )),
+    }),
   }
 }
 

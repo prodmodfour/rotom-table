@@ -54,6 +54,13 @@ const effectForEvent = () => {
 const validEvents = (): Record<string, unknown>[] => [
   { ...common('scene-start'), sceneId: 'scene.encounter.1' },
   { ...common('scene-end'), sceneId: 'scene.encounter.1' },
+  { ...common('encounter-end'), encounterId: 'encounter.arena.1' },
+  {
+    ...common('campaign-time-advanced'),
+    previousCampaignMinute: 1_440,
+    campaignMinute: 2_880,
+    clockRevision: 2,
+  },
   { ...common('round-start'), round: 2 },
   { ...common('round-end'), round: 2 },
   {
@@ -198,6 +205,8 @@ describe('authoritative encounter events', () => {
     expect(ENCOUNTER_EVENT_KINDS).toEqual([
       'scene-start',
       'scene-end',
+      'encounter-end',
+      'campaign-time-advanced',
       'round-start',
       'round-end',
       'turn-start',
@@ -227,13 +236,14 @@ describe('authoritative encounter events', () => {
     expect(parsed).toEqual(input)
     expect(JSON.parse(JSON.stringify(parsed))).toEqual(parsed)
     expect(parsed).not.toBe(input)
-    expect(parsed[6]).not.toBe(input[6])
-    expect(parsed[6]?.kind === 'move-declared' && parsed[6].move)
-      .not.toBe(input[6]?.move)
+    const moveDeclaredIndex = parsed.findIndex(event => event.kind === 'move-declared')
+    expect(parsed[moveDeclaredIndex]).not.toBe(input[moveDeclaredIndex])
+    expect(parsed[moveDeclaredIndex]?.kind === 'move-declared' && parsed[moveDeclaredIndex].move)
+      .not.toBe(input[moveDeclaredIndex]?.move)
     parsed.forEach(event => expectDeeplyFrozen(event))
 
-    ;(input[6]?.targetPlacementIds as string[])[0] = 'changed-target'
-    expect(parsed[6]?.kind === 'move-declared' && parsed[6].targetPlacementIds)
+    ;(input[moveDeclaredIndex]?.targetPlacementIds as string[])[0] = 'changed-target'
+    expect(parsed[moveDeclaredIndex]?.kind === 'move-declared' && parsed[moveDeclaredIndex].targetPlacementIds)
       .toEqual(['target-token'])
   })
 
@@ -280,6 +290,36 @@ describe('authoritative encounter events', () => {
       ...event,
       schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION + 1,
     }, 'unsupported-schema-version', 'encounterEvent.schemaVersion')
+  })
+
+  it('requires exact authoritative encounter and forward campaign-clock boundary evidence', () => {
+    const ended = eventOfKind('encounter-end')
+    expect(parseEncounterEvent(ended)).toMatchObject({
+      kind: 'encounter-end', encounterId: 'encounter.arena.1',
+    })
+    expectEventError({ ...ended, mapSlug: 'arena' }, 'invalid-encounter-event', 'encounterEvent')
+    expectEventError({ ...ended, encounterId: '' }, 'invalid-encounter-event', 'encounterEvent.encounterId')
+
+    const clock = eventOfKind('campaign-time-advanced')
+    expect(parseEncounterEvent(clock)).toMatchObject({
+      previousCampaignMinute: 1_440, campaignMinute: 2_880, clockRevision: 2,
+    })
+    expectEventError({
+      ...clock,
+      campaignMinute: 1_440,
+    }, 'invalid-encounter-event', 'encounterEvent.campaignMinute')
+    expectEventError({
+      ...clock,
+      previousCampaignMinute: -1,
+    }, 'limit-exceeded', 'encounterEvent.previousCampaignMinute')
+    expectEventError({
+      ...clock,
+      clockRevision: 0,
+    }, 'limit-exceeded', 'encounterEvent.clockRevision')
+    expectEventError({
+      ...clock,
+      elapsedWallMilliseconds: 86_400_000,
+    }, 'invalid-encounter-event', 'encounterEvent')
   })
 
   it('provides no generic payload or arbitrary state-patch escape hatch', () => {

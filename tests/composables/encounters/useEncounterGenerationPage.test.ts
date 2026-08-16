@@ -159,6 +159,30 @@ describe('useEncounterGenerationPage', () => {
     expect(page.spawning.value).toBe(false)
   })
 
+  it('binds current route-Repel authority and blocks generation while that authority is unresolved', async () => {
+    const exploration = ref({ trainerSlug: 'explorer', trainerRevision: 3, campaignClockRevision: 2 })
+    const blocked = ref(false)
+    const fetchGenerate = vi.fn(async (body: EncounterGenerateRequestBody) => result(body))
+    const fetchSpawn = vi.fn(async (body: EncounterSpawnRequestBody) => result(body))
+    const page = useEncounterGenerationPage({
+      query: { region: firstEntry!.region, table: firstEntry!.key, map: 'forest-map' },
+      maps, explorationAuthority: exploration, commandsBlocked: blocked,
+      fetchGenerate, fetchSpawn, random: avoidNothing,
+    })
+    await page.generate()
+    await page.spawn()
+    expect(fetchGenerate).toHaveBeenCalledWith(expect.objectContaining({ exploration: exploration.value }))
+    expect(fetchSpawn).toHaveBeenCalledWith(expect.objectContaining({ exploration: exploration.value }))
+
+    blocked.value = true
+    await nextTick()
+    await page.generate()
+    await page.spawn()
+    expect(fetchGenerate).toHaveBeenCalledTimes(1)
+    expect(fetchSpawn).toHaveBeenCalledTimes(1)
+    expect(page.canSpawn.value).toBe(false)
+  })
+
   it('does not spawn while preview-only is enabled', async () => {
     const fetchSpawn = vi.fn(async (body: EncounterSpawnRequestBody) => result(body))
     const page = useEncounterGenerationPage({

@@ -20,6 +20,8 @@ export const ENCOUNTER_EFFECT_LIFECYCLE_EVENT_KINDS = [
   'round-start',
   'round-end',
   'scene-end',
+  'encounter-end',
+  'campaign-time-advanced',
   'effect-triggered',
   'effect-removed',
 ] as const
@@ -48,6 +50,17 @@ export interface EncounterEffectSceneEndLifecycleEvent {
   readonly kind: 'scene-end'
 }
 
+export interface EncounterEffectEncounterEndLifecycleEvent {
+  readonly kind: 'encounter-end'
+}
+
+export interface EncounterEffectCampaignTimeAdvancedLifecycleEvent {
+  readonly kind: 'campaign-time-advanced'
+  readonly previousCampaignMinute: number
+  readonly campaignMinute: number
+  readonly clockRevision: number
+}
+
 export interface EncounterEffectTriggeredLifecycleEvent {
   readonly kind: 'effect-triggered'
   readonly effectId: string
@@ -63,6 +76,8 @@ export type EncounterEffectLifecycleEvent =
   | EncounterEffectTurnLifecycleEvent
   | EncounterEffectRoundLifecycleEvent
   | EncounterEffectSceneEndLifecycleEvent
+  | EncounterEffectEncounterEndLifecycleEvent
+  | EncounterEffectCampaignTimeAdvancedLifecycleEvent
   | EncounterEffectTriggeredLifecycleEvent
   | EncounterEffectRemovedLifecycleEvent
 
@@ -90,6 +105,8 @@ export type EncounterEffectLifecycleReasonCode =
   | 'effect-max-stacks-reached'
   | 'effect-duration-decremented'
   | 'effect-duration-expired'
+  | 'effect-encounter-ended'
+  | 'effect-campaign-time-expired'
   | 'effect-triggered-expiry'
   | 'effect-charge-consumed'
   | 'effect-charges-depleted'
@@ -174,6 +191,14 @@ const assertLifecycleEvent = (event: EncounterEffectLifecycleEvent): void => {
   if (event.kind === 'turn-start' || event.kind === 'turn-end') {
     assertBoundedId(event.placementId, 'Effect lifecycle turn placementId')
     if (event.sideId !== undefined) assertBoundedId(event.sideId, 'Effect lifecycle turn sideId')
+    return
+  }
+  if (event.kind === 'campaign-time-advanced') {
+    if (!Number.isSafeInteger(event.previousCampaignMinute) || event.previousCampaignMinute < 0
+      || !Number.isSafeInteger(event.campaignMinute) || event.campaignMinute <= event.previousCampaignMinute
+      || !Number.isSafeInteger(event.clockRevision) || event.clockRevision < 1) {
+      fail('invalid-event', 'Campaign-time lifecycle events require a forward minute and positive clock revision.')
+    }
     return
   }
   if (event.kind === 'effect-triggered' || event.kind === 'effect-removed') {
@@ -458,6 +483,24 @@ const advanceEffects = (
       outcome = {
         effect: null,
         transition: transition('expired', 'effect-duration-expired', effect, null),
+      }
+    }
+    else if (event.kind === 'encounter-end' && (
+      effect.duration.kind === 'encounter'
+      || effect.duration.kind === 'turns'
+      || effect.duration.kind === 'rounds'
+    )) {
+      outcome = {
+        effect: null,
+        transition: transition('expired', 'effect-encounter-ended', effect, null),
+      }
+    }
+    else if (event.kind === 'campaign-time-advanced'
+      && effect.duration.kind === 'campaign-time'
+      && effect.duration.expiresAtCampaignMinute <= event.campaignMinute) {
+      outcome = {
+        effect: null,
+        transition: transition('expired', 'effect-campaign-time-expired', effect, null),
       }
     }
 

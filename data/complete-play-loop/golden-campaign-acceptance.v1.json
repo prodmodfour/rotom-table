@@ -1,0 +1,383 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-098",
+  "status": "accepted",
+  "canonicalFixtureCount": 21,
+  "directStorageRepairAllowed": false,
+  "fixtureSeedPolicy": {
+    "preJourneyDeterministicSeedAllowed": true,
+    "seedIsAcceptanceOutcomeRepair": false,
+    "onlyStorageSeedHarness": "tests/e2e/finish-encounter.spec.ts#seedSettlementDraft",
+    "afterFirstRuntimeCommandDirectStorageWritesAllowed": false
+  },
+  "requiredRoles": [
+    "gm",
+    "player-owner"
+  ],
+  "requiredPhases": [
+    "acquire",
+    "transfer",
+    "equip-or-use",
+    "encounter",
+    "capture",
+    "finish",
+    "reward",
+    "advancement",
+    "treatment",
+    "next-day",
+    "next-scene"
+  ],
+  "campaigns": [
+    {
+      "campaignId": "restorative-capture-golden",
+      "roles": [
+        "gm",
+        "player-owner"
+      ],
+      "itemFixtures": [
+        "healing-potion-encounter",
+        "condition-antidote",
+        "revival-revive",
+        "temporary-stage-x-attack",
+        "food-snack-leftovers",
+        "shop-purchase-restorative",
+        "wonder-launcher-x-item-delivery"
+      ],
+      "settlementFixtures": [
+        "simple-trainer-duel"
+      ],
+      "phases": [
+        "acquire",
+        "transfer",
+        "equip-or-use",
+        "encounter",
+        "capture",
+        "finish",
+        "reward",
+        "advancement",
+        "treatment",
+        "next-day",
+        "next-scene"
+      ],
+      "manualRepairRequired": false
+    },
+    {
+      "campaignId": "equipment-loot-advancement-golden",
+      "roles": [
+        "gm",
+        "player-owner"
+      ],
+      "itemFixtures": [
+        "equipment-light-armor",
+        "held-passive-bright-powder-source-loss",
+        "permanent-stat-vitamins",
+        "permanent-pp-up-choice",
+        "permanent-rare-candy",
+        "permanent-stat-suppressant-consent"
+      ],
+      "settlementFixtures": [
+        "capture-team-overflow",
+        "loot-heavy"
+      ],
+      "phases": [
+        "acquire",
+        "transfer",
+        "equip-or-use",
+        "encounter",
+        "capture",
+        "finish",
+        "reward",
+        "advancement",
+        "treatment",
+        "next-day",
+        "next-scene"
+      ],
+      "manualRepairRequired": false
+    },
+    {
+      "campaignId": "injury-reconnect-golden",
+      "roles": [
+        "gm",
+        "player-owner"
+      ],
+      "itemFixtures": [
+        "group-inventory-concurrency",
+        "extended-first-aid-kit",
+        "extended-bandages-treatment"
+      ],
+      "settlementFixtures": [
+        "injury-heavy",
+        "reconnect-during-settlement"
+      ],
+      "phases": [
+        "acquire",
+        "transfer",
+        "equip-or-use",
+        "encounter",
+        "capture",
+        "finish",
+        "reward",
+        "advancement",
+        "treatment",
+        "next-day",
+        "next-scene"
+      ],
+      "manualRepairRequired": false
+    }
+  ],
+  "phaseEvidence": {
+    "acquire": [
+      "tests/integration/shopPlayerShoppingEndToEnd.test.ts",
+      "tests/e2e/commerce-item-loop-certification.spec.ts"
+    ],
+    "transfer": [
+      "tests/integration/groupInventoryItemReservationRecovery.test.ts",
+      "tests/e2e/commerce-item-loop-certification.spec.ts"
+    ],
+    "equip-or-use": [
+      "tests/integration/equipmentMultiClientLifecycle.test.ts",
+      "tests/integration/restorativeConsumableVerticalSlice.test.ts",
+      "tests/e2e/commerce-item-loop-certification.spec.ts"
+    ],
+    "encounter": [
+      "tests/integration/restorativeConsumableVerticalSlice.test.ts",
+      "tests/e2e/commerce-item-loop-certification.spec.ts"
+    ],
+    "capture": [
+      "tests/server/throwPokeballCommand.test.ts",
+      "tests/composables/map-editor/usePokeballCapturePanel.test.ts"
+    ],
+    "finish": [
+      "tests/server/commitEncounterSettlement.test.ts",
+      "tests/e2e/finish-encounter.spec.ts"
+    ],
+    "reward": [
+      "tests/server/encounterSettlementAtomicCommit.test.ts",
+      "tests/e2e/finish-encounter.spec.ts"
+    ],
+    "advancement": [
+      "tests/server/campaignAttentionAdvancementDetector.test.ts",
+      "tests/server/campaignAttentionPokemonChoiceDetector.test.ts",
+      "tests/server/campaignAttentionTrainerChoiceDetector.test.ts",
+      "tests/e2e/campaign-continuation-dashboard.spec.ts"
+    ],
+    "treatment": [
+      "tests/server/campaignAttentionRecoveryDetector.test.ts",
+      "tests/e2e/medical-extended-actions.spec.ts"
+    ],
+    "next-day": [
+      "tests/server/advanceCampaignDay.test.ts",
+      "tests/e2e/campaign-day-continuation.spec.ts"
+    ],
+    "next-scene": [
+      "tests/server/livePlaySceneLifecycle.test.ts",
+      "tests/e2e/campaign-day-continuation.spec.ts"
+    ]
+  },
+  "productionLiveplayEvidence": [
+    {
+      "journey": "commerce-item-loop",
+      "projects": [
+        "chromium",
+        "mobile-chromium"
+      ],
+      "gmAndPlayer": true,
+      "manualRepair": false,
+      "report": ".pi/artifacts/ui-validation/commerce-item-loop/browser-report.json"
+    },
+    {
+      "journey": "finish-encounter",
+      "projects": [
+        "chromium",
+        "mobile-chromium"
+      ],
+      "gmAndPlayer": true,
+      "manualRepair": false,
+      "report": ".pi/artifacts/ui-validation/finish-encounter/review.md"
+    },
+    {
+      "journey": "campaign-continuation",
+      "projects": [
+        "chromium",
+        "mobile-chromium"
+      ],
+      "gmAndPlayer": true,
+      "manualRepair": false,
+      "report": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/review.md"
+    },
+    {
+      "journey": "campaign-day-next-scene",
+      "projects": [
+        "chromium",
+        "mobile-chromium"
+      ],
+      "gmAndPlayer": true,
+      "manualRepair": false,
+      "report": ".pi/artifacts/ui-validation/campaign-day-continuation/review.md"
+    }
+  ],
+  "continuityAssertions": {
+    "acceptedReceiptsDriveNextAuthority": true,
+    "exactRowsNeverReidentifiedByName": true,
+    "settlementIsAtomic": true,
+    "attentionIsRoleScoped": true,
+    "nextDayRequiresReviewedPreflight": true,
+    "nextSceneLoadsFreshAuthority": true,
+    "replayNeverDuplicates": true,
+    "privateEvidenceNeverRendered": true
+  },
+  "validation": {
+    "fixtureCoverage": "21 of 21 exactly once",
+    "focusedTests": "113 passed",
+    "productionBrowserProjects": "8 passed inherited immutable evidence",
+    "typecheck": "passed P8-096",
+    "productionBuild": "passed P8-096",
+    "gitDiffCheck": "passed"
+  },
+  "sourceEvidence": [
+    {
+      "path": "data/reference/items.json",
+      "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+    },
+    {
+      "path": "data/complete-play-loop/fixtures/index.v1.json",
+      "sha256": "6d145f66c4a09f43b4eca1d4ab8a299bbc8297c95a62e0d3d8d3f5ace7540e02"
+    },
+    {
+      "path": "data/complete-play-loop/fixtures/items.v1.json",
+      "sha256": "6f39b19879bec3c9006c307ab01835d03dd4973ed8fc359349c60064829817cb"
+    },
+    {
+      "path": "data/complete-play-loop/fixtures/settlements.v1.json",
+      "sha256": "5ca134e3edef10db08888fb6d7403f47a97092e72bfd1235be9867ce5e68553e"
+    },
+    {
+      "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "sha256": "be82c8f9975056f894bf9b8cf78780869afcd71ef7f2bccfbe0cae88adaac1a0"
+    },
+    {
+      "path": "data/complete-play-loop/commerce-item-loop-certification.v1.json",
+      "sha256": "bf1741e56272989d7a4e21e8e99a67d60a0c0ea362e233d805565eee092feaec"
+    },
+    {
+      "path": "data/complete-play-loop/finish-encounter-experience.v1.json",
+      "sha256": "c057097c8ed0d577abf8fd0be590723833f029ea5ea78a6499a7b44c7e0c8927"
+    },
+    {
+      "path": "data/complete-play-loop/campaign-continuation-dashboard.v1.json",
+      "sha256": "19a9f1931102be0acca5cf0f957cce99729ff3a559532ddc229c29ed6840bb7f"
+    },
+    {
+      "path": "data/complete-play-loop/campaign-day-continuation.v1.json",
+      "sha256": "d46eb94cb3d86fa441917e4559eac05d7fd31b16fa08e8d9b94e3159ebfe473e"
+    },
+    {
+      "path": "tests/integration/shopPlayerShoppingEndToEnd.test.ts",
+      "sha256": "c27f3f8b603b674302ac9b301e15d85ead91409564bb401671839202da2f2649"
+    },
+    {
+      "path": "tests/e2e/commerce-item-loop-certification.spec.ts",
+      "sha256": "a8e1ebac428b7d1a19251b54e212ed41abadcf8445d0162ff9721e57f57581bb"
+    },
+    {
+      "path": "tests/integration/groupInventoryItemReservationRecovery.test.ts",
+      "sha256": "e5115f12bd16eb97233630ff19d2438cc15f2bae6dafa99315e514c69dc55be8"
+    },
+    {
+      "path": "tests/integration/equipmentMultiClientLifecycle.test.ts",
+      "sha256": "42e2e1db6f36670dd70f25ab38d26131d9b287d16bc54391d40b821935c7c7af"
+    },
+    {
+      "path": "tests/integration/restorativeConsumableVerticalSlice.test.ts",
+      "sha256": "0019695690a7c792f935bde319ec69afed4426de1eea0b2294dcafbdca8c3bb2"
+    },
+    {
+      "path": "tests/server/throwPokeballCommand.test.ts",
+      "sha256": "c5dad7e88f5eeb7246256481e9c254d05bd751ab9304ea38dbc81260a5599ee9"
+    },
+    {
+      "path": "tests/composables/map-editor/usePokeballCapturePanel.test.ts",
+      "sha256": "a22227adfe02556be423ba3ff3581a70e2a85d075b8411b058e9c0c9e2b37de9"
+    },
+    {
+      "path": "tests/server/commitEncounterSettlement.test.ts",
+      "sha256": "0f9be0ffdc828e23f9ae9d3fc5ea2a59f019fb189ccf88f1ed96580df553a886"
+    },
+    {
+      "path": "tests/e2e/finish-encounter.spec.ts",
+      "sha256": "4bd26345126aa9a544cd1c8d18a2e868feaa9ae22793745d4a078a7cebe4cad4"
+    },
+    {
+      "path": "tests/server/encounterSettlementAtomicCommit.test.ts",
+      "sha256": "d7a66e80e78bf353878fbfaf99642b3fa5ea74b8f596dbb80eaf681a2c5770c0"
+    },
+    {
+      "path": "tests/server/campaignAttentionAdvancementDetector.test.ts",
+      "sha256": "5aa19c91ebc3fb7321a96088ba67cc8249b3826fc30f3a1a152c8e4cf0d6a2b5"
+    },
+    {
+      "path": "tests/server/campaignAttentionPokemonChoiceDetector.test.ts",
+      "sha256": "d570dbde0e08dbcdb7f05ee4baba4d2a7918a424e85a3cc235e5c6963055e21b"
+    },
+    {
+      "path": "tests/server/campaignAttentionTrainerChoiceDetector.test.ts",
+      "sha256": "ebc3d6f6c0177ebad8d59b884e8692544cf58f1773f27e8375b9672094b8df32"
+    },
+    {
+      "path": "tests/e2e/campaign-continuation-dashboard.spec.ts",
+      "sha256": "67546e45447b0b8c697153e8ccab5860f944fc2a40ef081ef187ffb2c6968968"
+    },
+    {
+      "path": "tests/server/campaignAttentionRecoveryDetector.test.ts",
+      "sha256": "8075abe36e95b05b5536505879777539b8ad4fbfbddf1515ca67862af8906059"
+    },
+    {
+      "path": "tests/e2e/medical-extended-actions.spec.ts",
+      "sha256": "bf5d31d8d43b51c4897ef9f2df4a1a1793d433ce08d96d95c8adf196d4b4b3ed"
+    },
+    {
+      "path": "tests/server/advanceCampaignDay.test.ts",
+      "sha256": "2cc46f071e30830950aa3c6dfdb29bf147462178b77f7a3bcebd0520423233bf"
+    },
+    {
+      "path": "tests/e2e/campaign-day-continuation.spec.ts",
+      "sha256": "01e6907e3355b3e7f1a9c120c9ccfefcb6392f740de59d757be09600347caead"
+    },
+    {
+      "path": "tests/server/livePlaySceneLifecycle.test.ts",
+      "sha256": "308ed792a867a731c2908a759753455a6a585985c382a4129462ef74d049d6b4"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/commerce-item-loop/browser-report.json",
+      "sha256": "ec84990fd8cb20679df60f88a188d51337e673d8c91afdca8f7501934a9f350f"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/finish-encounter/review.md",
+      "sha256": "eb96131261101845f443beff2216fe785d1538b731a1e4da7cb3d001b1b93645"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/review.md",
+      "sha256": "fe42414dad6a82bbc804181fc29c2b7445eb2c7d7ca047098ce13a206759ecda"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/campaign-day-continuation/review.md",
+      "sha256": "b41b62377896a13a86e58b1604435095cd46e7a5d46a22f642153bdc5b7912a6"
+    },
+    {
+      "path": "tests/integration/completePlayLoopGoldenCampaigns.test.ts",
+      "sha256": "ff463eb048f76eba7944f5d83f27721ca87daca011fda51433e44458009764c4"
+    },
+    {
+      "path": "docs/complete-play-loop-golden-campaigns.md",
+      "sha256": "1c3dbd19975fdcfc3b07c81b73d1afc8d206f4f7a1f7899fce6f0db77ad9af8e"
+    },
+    {
+      "path": "package.json",
+      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+    }
+  ]
+}

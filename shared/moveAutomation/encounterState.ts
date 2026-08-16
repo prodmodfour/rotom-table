@@ -11,6 +11,21 @@ import {
   type AbilityEventReceiptState,
 } from '../abilityAutomation/eventReceipts'
 import {
+  EquipmentProviderReceiptValidationError,
+  createEmptyEquipmentProviderReceiptState,
+  parseEquipmentProviderReceiptState,
+  type EquipmentProviderReceiptStateV1,
+} from '../itemAutomation/equipmentProviderReceipts'
+import {
+  ITEM_FORM_CHANGE_LIMITS,
+  parseItemFormChangeState,
+  type ItemFormChangeStateV1,
+} from '../itemAutomation/formChanges'
+import {
+  parseItemExplorationEncounterState,
+  type ItemExplorationEncounterStateV1,
+} from '../itemAutomation/exploration'
+import {
   AbilityTransformationValidationError,
   createEmptyAbilityTransformationState,
   parseAbilityTransformationState,
@@ -157,6 +172,8 @@ export const ENCOUNTER_STATE_LIMITS = Object.freeze({
   zones: ENCOUNTER_ZONE_LIMITS.count,
   groundItems: MAP_GROUND_ITEM_LIMITS.count,
   pendingResolutionSummaries: PENDING_MOVE_RESOLUTION_SUMMARY_LIMITS.responseWindows,
+  itemFormChanges: ITEM_FORM_CHANGE_LIMITS.entries,
+  itemExploration: 32,
 })
 
 export type EmptyEncounterStateDirectory = Readonly<Record<string, never>>
@@ -173,11 +190,17 @@ export interface EncounterState {
   readonly abilityEffectLifecycle?: AbilityEffectLifecycleState
   readonly abilityOwnedState?: AbilityOwnedState
   readonly abilityEventReceipts?: AbilityEventReceiptState
+  /** Opaque, replay-safe passive equipment trigger receipts. */
+  readonly equipmentProviderReceipts?: EquipmentProviderReceiptStateV1
   readonly abilityReactionAvailability?: AbilityReactionAvailabilityLedger
   readonly abilityEntities?: AbilityEntityState
   readonly abilityTransformations?: AbilityTransformationState
   /** Typed, bounded, map-owned modes, links, tasks, and scene usage for canonical Capabilities. */
   readonly capabilityRuntime?: CapabilityRuntimeState
+  /** Private source/provenance authority for active item-driven form overlays. */
+  readonly itemFormChanges?: ItemFormChangeStateV1
+  /** Private direct-Repel hit and GM positioning authority. */
+  readonly itemExploration?: ItemExplorationEncounterStateV1
   readonly zones: readonly EncounterZone[]
   /** Map-owned dropped/thrown item stacks with bounded authoritative provenance. */
   readonly groundItems: readonly MapGroundItem[]
@@ -217,10 +240,13 @@ const ENCOUNTER_STATE_FIELDS = [
   'abilityEffectLifecycle',
   'abilityOwnedState',
   'abilityEventReceipts',
+  'equipmentProviderReceipts',
   'abilityReactionAvailability',
   'abilityEntities',
   'abilityTransformations',
   'capabilityRuntime',
+  'itemFormChanges',
+  'itemExploration',
   'zones',
   'groundItems',
   'pendingResolutionSummaries',
@@ -235,10 +261,13 @@ const REQUIRED_ENCOUNTER_STATE_FIELDS = ENCOUNTER_STATE_FIELDS.filter(
     && field !== 'abilityEffectLifecycle'
     && field !== 'abilityOwnedState'
     && field !== 'abilityEventReceipts'
+    && field !== 'equipmentProviderReceipts'
     && field !== 'abilityReactionAvailability'
     && field !== 'abilityEntities'
     && field !== 'abilityTransformations'
-    && field !== 'capabilityRuntime',
+    && field !== 'capabilityRuntime'
+    && field !== 'itemFormChanges'
+    && field !== 'itemExploration',
 )
 
 const LIST_CONTAINER_KEYS = [
@@ -528,6 +557,18 @@ const parseAbilityEventReceipts = (value: unknown): AbilityEventReceiptState => 
   }
 }
 
+const parseEquipmentProviderReceipts = (value: unknown): EquipmentProviderReceiptStateV1 => {
+  try {
+    return parseEquipmentProviderReceiptState(value, 'encounterState.equipmentProviderReceipts')
+  }
+  catch (error) {
+    if (error instanceof EquipmentProviderReceiptValidationError) {
+      fail('invalid-encounter-state', error.path, error.message.slice(error.path.length + 2))
+    }
+    throw error
+  }
+}
+
 const parseAbilityReactionAvailability = (
   value: unknown,
 ): AbilityReactionAvailabilityLedger => {
@@ -770,6 +811,7 @@ export const createEmptyEncounterState = (): EncounterState => ({
   abilityEffectLifecycle: createEmptyAbilityEffectLifecycleState(),
   abilityOwnedState: createEmptyAbilityOwnedState(),
   abilityEventReceipts: createEmptyAbilityEventReceiptState(),
+  equipmentProviderReceipts: createEmptyEquipmentProviderReceiptState(),
   abilityReactionAvailability: createEmptyAbilityReactionAvailabilityLedger(),
   abilityEntities: createEmptyAbilityEntityState(),
   abilityTransformations: createEmptyAbilityTransformationState(),
@@ -826,6 +868,9 @@ export const parseEncounterState = (value: unknown): EncounterState => {
     abilityEventReceipts: parseAbilityEventReceipts(
       value.abilityEventReceipts ?? createEmptyAbilityEventReceiptState(),
     ),
+    equipmentProviderReceipts: parseEquipmentProviderReceipts(
+      value.equipmentProviderReceipts ?? createEmptyEquipmentProviderReceiptState(),
+    ),
     abilityReactionAvailability: parseAbilityReactionAvailability(
       value.abilityReactionAvailability ?? createEmptyAbilityReactionAvailabilityLedger(),
     ),
@@ -838,6 +883,12 @@ export const parseEncounterState = (value: unknown): EncounterState => {
     capabilityRuntime: parseCapabilityRuntime(
       value.capabilityRuntime ?? createEmptyCapabilityRuntimeState(),
     ),
+    ...(value.itemFormChanges === undefined
+      ? {}
+      : { itemFormChanges: parseItemFormChangeState(value.itemFormChanges) }),
+    ...(value.itemExploration === undefined
+      ? {}
+      : { itemExploration: parseItemExplorationEncounterState(value.itemExploration) }),
     zones: parseEncounterZoneList(value.zones, sides),
     groundItems: parseGroundItemList(value.groundItems ?? [], sides),
     pendingResolutionSummaries: parsePendingResolutionSummaries(

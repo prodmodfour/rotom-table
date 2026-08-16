@@ -197,14 +197,20 @@ describe('SQLite campaign migration script', () => {
     expect(sheets.getByRef('pokemon', 'pikachu')).toMatchObject({
       kind: 'pokemon',
       slug: 'pikachu',
-      revision: 6,
-      sheet: { slug: 'pikachu', nickname: 'Pika', revision: 6, updatedAt: 1_700_000_000_600 },
+      revision: 7,
+      sheet: {
+        slug: 'pikachu', nickname: 'Pika', revision: 7, updatedAt: 1_700_000_000_601,
+        equipmentState: { schemaVersion: 1, owner: { kind: 'pokemon', slug: 'pikachu' } },
+      },
     })
     expect(sheets.getByRef('trainer', 'brock')).toMatchObject({
       kind: 'trainer',
       slug: 'brock',
-      revision: 0,
-      sheet: { slug: 'brock', name: 'Brock', revision: 0 },
+      revision: 1,
+      sheet: {
+        slug: 'brock', name: 'Brock', revision: 1,
+        equipmentState: { schemaVersion: 1, owner: { kind: 'trainer', slug: 'brock' } },
+      },
     })
     expect(groupInventories.get(GROUP_INVENTORY_MAIN_SLUG)?.document).toMatchObject({
       slug: GROUP_INVENTORY_MAIN_SLUG,

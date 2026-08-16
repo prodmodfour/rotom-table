@@ -12,6 +12,7 @@ import { projectCapabilityAutomationMapForPlayer } from '../../server/domain/cap
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { activeEquipmentState } from '../fixtures/equipment'
 
 const actor: SheetPlacement = {
   id: 'rayquaza-token', sheetKind: 'pokemon', sheetSlug: 'rayquaza', position: { x: 1, y: 0, z: 1 },
@@ -27,7 +28,11 @@ const rayquaza = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
 const targetSheet: CharacterSheet = { slug: 'target', nickname: 'Target', species: 'Pikachu', level: 10 }
 const trainer = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => ({
   slug: 'trainer', name: 'Trainer', level: 20, currentTeam: ['rayquaza'],
-  equipmentSlots: { accessory: 'Mega Ring' }, ...overrides,
+  equipmentSlots: { accessory: 'Mega Ring' },
+  equipmentState: activeEquipmentState({
+    ownerKind: 'trainer', ownerSlug: 'trainer', slotId: 'accessory', canonicalItemId: 'Mega Ring',
+  }),
+  ...overrides,
 })
 const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2, id: 'map', slug: 'arena', name: 'Arena', revision: 1, updatedAt: 1_000,
@@ -97,7 +102,9 @@ describe('Delta Evolution authoritative Mega pathway', () => {
   it('requires the active Scene, Dragon Ascent, exact linked Mega Ring, and one Ring use per Scene', () => {
     expect(() => validate(request({ map: mapFixture({ activeScene: null }) }))).toThrowError(CapabilitySelectionValidationError)
     expect(() => validate(request({ pokemon: rayquaza({ movelist: [] }) }))).toThrow(/Dragon Ascent/i)
-    expect(() => validate(request({ trainer: trainer({ equipmentSlots: { accessory: 'Mega Bracelet' } }) }))).toThrow(/Mega Ring/i)
+    expect(() => validate(request({ trainer: trainer({
+      equipmentSlots: { accessory: 'Mega Bracelet' }, equipmentState: undefined,
+    }) }))).toThrow(/Mega Ring/i)
     expect(() => validate(request({ map: mapFixture({ activeScene: { name: 'Broken', startedAt: -1 } }) }))).toThrow(/Scene start identity/i)
     expect(() => validate(request({ map: mapFixture({ metadata: {
       capabilityMegaEvolutionUses: [{ trainerSlug: 'trainer', actorPlacementId: actor.id, sceneStartedAt: 500 }],
@@ -117,6 +124,8 @@ describe('Delta Evolution authoritative Mega pathway', () => {
     expect(result.map.metadata?.capabilityMegaEvolutionUses).toContainEqual(expect.objectContaining({
       trainerSlug: 'trainer', actorPlacementId: actor.id, sceneStartedAt: 500,
       sourceOperationId: 'operation-mega-evolve',
+      ringInstanceId: expect.stringMatching(/^equipped-item:v1:/),
+      ringInstanceRevision: 0,
     }))
 
     const after = context(result.map, input.pokemon, input.linkedTrainer)

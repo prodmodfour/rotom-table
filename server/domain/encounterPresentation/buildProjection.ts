@@ -34,7 +34,7 @@ import {
 } from '#shared/encounterPresentation'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { PendingMoveResponseWindowList } from '#shared/moveAutomation/responseViews'
-import { toSlug, findAbility, findItem, findMove } from '~~/data/ptuReference'
+import { toSlug, findAbility, findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap, SheetPlacement } from '~/types/map'
 import type { TrainerSheet, InventoryEntry } from '~/types/trainerSheet'
@@ -55,8 +55,11 @@ import { canonicalFeatureReference } from '#shared/featureAutomation/catalog'
 import { resolveEffectiveFeatures } from '../featureAutomation/effectiveFeatures'
 import {
   resolveCapabilityWeaponMoveGrants,
+  resolveEquipmentWeaponAttackSources,
   resolveLivingWeaponAttackSources,
 } from '../capabilityAutomation/weaponMoveGrants'
+import type { ResolveEquipmentGrantsResult } from '../itemAutomation/equipmentGrants'
+import { createEncounterEquipmentGrantQueries } from '../moveAutomation/equipmentGrantQueries'
 import { capabilityWeaponMoveName } from '#shared/capabilityAutomation/weaponMoves'
 import { placementToSpawned } from '~/utils/placement'
 import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
@@ -64,6 +67,9 @@ import { pendingEncounterInteractionsFromMoveResponses } from './pendingAdapters
 import { resolveEffectiveEdges } from '../edgeAutomation/effectiveEdges'
 import { canonicalEdgeReference } from '#shared/edgeAutomation/catalog'
 import { edgeChoiceValues } from '#shared/edgeAutomation/instances'
+import { projectEncounterItemOffers } from '../itemAutomation/encounterOffers'
+import { projectEncounterItemFormChangeOffers } from '../itemAutomation/formChangeOffers'
+import { activeReviewedItemFormChange } from '../itemAutomation/formChanges'
 
 export interface BuildEncounterPresentationProjectionInput {
   readonly role: AuthRole
@@ -179,6 +185,12 @@ const participantForPlacement = (
   const pokemon = placement.sheetKind === 'pokemon' ? pokemonBySlug.get(placement.sheetSlug) : null
   const trainer = placement.sheetKind === 'trainer' ? trainerBySlug.get(placement.sheetSlug) : null
   const side = placement.sideId ? map.encounterState?.sides[placement.sideId] : null
+  const activeItemForm = pokemon ? (() => {
+    try {
+      return activeReviewedItemFormChange({ map, placementId: placement.id, pokemonSheet: pokemon })?.form.displayName ?? null
+    }
+    catch { return null }
+  })() : null
   return {
     participantId: placement.id,
     displayName: pokemon?.nickname?.trim() || pokemon?.species?.trim() || trainer?.name?.trim() || 'Participant',
@@ -192,6 +204,7 @@ const participantForPlacement = (
         ? pokemon?.combat?.conditions ?? []
         : trainer?.conditions ?? []),
       ...capabilityPresentationStatusLabels(map, placement.id),
+      ...(activeItemForm ? [activeItemForm] : []),
     ].map(label => label.trim()).filter(Boolean))].slice(0, 32),
   }
 }
@@ -405,6 +418,7 @@ const moveOffers = (input: {
   readonly sheet: CharacterSheet | TrainerSheet
   readonly pokemonBySlug: ReadonlyMap<string, CharacterSheet>
   readonly trainerBySlug: ReadonlyMap<string, TrainerSheet>
+  readonly equipmentGrants: ResolveEquipmentGrantsResult | null
 }): EncounterActionOffer[] => {
   const sheets = {
     pokemon: new Map(input.pokemonBySlug),
@@ -423,18 +437,28 @@ const moveOffers = (input: {
     pokemonSheets: sheets.pokemon,
     trainerSheets: sheets.trainer,
     tokenForPlacement,
+    ...(input.equipmentGrants ? { equipmentGrants: input.equipmentGrants } : {}),
   } : null
   const weaponGrants = weaponInput ? resolveCapabilityWeaponMoveGrants(weaponInput) : []
+  const equipmentWeaponSources = weaponInput ? resolveEquipmentWeaponAttackSources(weaponInput) : []
   const livingWeaponSources = weaponInput ? resolveLivingWeaponAttackSources(weaponInput) : []
   const encounterEffects = input.map.encounterState?.effects ?? []
   const baseEntries = moveEntriesForPlacement(input.placement, sheets, { encounterEffects })
-  const sourcedStruggleEntries = livingWeaponSources.flatMap(source => source.actorIsWielder
-    ? baseEntries.filter(entry => isStruggleAttackMoveName(entry.move.name)).map(entry => ({
-        ...entry,
-        attackSourceId: source.attackSourceId,
-        attackSourceLabel: source.attackSourceLabel,
-      }))
-    : [])
+  const baseStruggleEntries = baseEntries.filter(entry => isStruggleAttackMoveName(entry.move.name))
+  const sourcedStruggleEntries = [
+    ...equipmentWeaponSources.flatMap(source => baseStruggleEntries.map(entry => ({
+      ...entry,
+      attackSourceId: source.attackSourceId,
+      attackSourceLabel: source.attackSourceLabel,
+    }))),
+    ...livingWeaponSources.flatMap(source => source.actorIsWielder
+      ? baseStruggleEntries.map(entry => ({
+          ...entry,
+          attackSourceId: source.attackSourceId,
+          attackSourceLabel: source.attackSourceLabel,
+        }))
+      : []),
+  ]
   return moveEntriesForPlacement(input.placement, sheets, {
     encounterEffects,
     additionalMoveEntries: [
@@ -464,9 +488,14 @@ const moveOffers = (input: {
     grant.canonicalId === capabilityWeaponMoveName(name)
     && grant.attackSourceId === (entry.attackSourceId ?? null)
   ))
-  const hasReach = weaponGrant?.grantsReach === true || resolveEffectiveCapabilities({
+  const equipmentWeaponSource = equipmentWeaponSources.find(source => (
+    source.attackSourceId === (entry.attackSourceId ?? null)
+  ))
+  const hasReach = weaponGrant?.grantsReach === true
+    || equipmentWeaponSource?.profile.grantsReach === true
+    || resolveEffectiveCapabilities({
     map: input.map, placement: input.placement, sheet: input.sheet, sheets,
-  }).instances.some(instance => instance.effective && instance.canonicalId === 'Reach')
+    }).instances.some(instance => instance.effective && instance.canonicalId === 'Reach')
   const reachMeters = token && /^(?:large|huge|gigantic)$/i.test(token.size ?? '') ? 3 : 2
   const targeting = targetingFromRange(range).map(summary => hasReach && /\bmelee\b/i.test(range ?? '')
     ? { ...summary, rangeLabel: `${reachMeters} meters (Reach)` } : summary)
@@ -830,6 +859,166 @@ const boundedCapabilityDescription = (value: string | null | undefined): string 
   return normalized.length <= 500 ? normalized : `${normalized.slice(0, 499).trimEnd()}…`
 }
 
+const equipmentGrantTargeting = (
+  kind: 'self' | 'participant' | 'item' | 'move' | 'cell',
+): readonly EncounterTargetingSummary[] => [{
+  requirementId: `equipment-${kind}`,
+  kind,
+  minSelections: kind === 'self' ? 0 : 1,
+  maxSelections: 1,
+  rangeLabel: null,
+  relationshipLabel: kind === 'self' ? 'Self' : null,
+  requiresLineOfSight: false,
+  requiresSpatialInput: kind === 'cell',
+}]
+
+const equipmentGrantLabel = (
+  grant: ResolveEquipmentGrantsResult['active'][number]['grant'],
+): string => {
+  if (grant.kind === 'weapon-profile') return `${grant.weaponClass.split('-').join(' ')} weapon`
+  if (grant.kind === 'move') return `${grant.canonicalId} (${grant.minimumCombatRank === 4 ? 'Adept' : 'Master'} Combat)`
+  if (grant.kind === 'capability') return grant.parameterLabel ?? grant.canonicalId
+  if (grant.kind === 'ability') return `${grant.canonicalId} Ability`
+  return grant.label
+}
+
+const equipmentGrantPresentation = (input: {
+  readonly map: TabletopMap
+  readonly mapRevision: number
+  readonly participant: EncounterParticipantPresentationRef
+  readonly resolved: ResolveEquipmentGrantsResult
+  readonly offerOrderBase: number
+}): {
+  readonly offers: readonly EncounterActionOffer[]
+  readonly passives: readonly EncounterPassiveSummary[]
+  readonly affordances: readonly EncounterContextualAffordance[]
+} => {
+  const grouped = new Map<string, ResolveEquipmentGrantsResult['active'][number][]>()
+  for (const entry of input.resolved.active) {
+    const current = grouped.get(entry.instanceId) ?? []
+    current.push(entry)
+    grouped.set(entry.instanceId, current)
+  }
+  const groups = [...grouped.values()].sort((left, right) => (
+    left[0]!.canonicalItemId.localeCompare(right[0]!.canonicalItemId)
+      || left[0]!.instanceId.localeCompare(right[0]!.instanceId)
+  ))
+  const offers: EncounterActionOffer[] = []
+  const passives: EncounterPassiveSummary[] = []
+  const affordances: EncounterContextualAffordance[] = []
+  for (const [sourceIndex, entries] of groups.entries()) {
+    const canonicalItemId = entries[0]!.canonicalItemId
+    // Projection-local ordinal references are intentionally unrelated to serialized identity.
+    const projectedSourceId = `equipment-source:${input.participant.participantId}:${sourceIndex + 1}`
+    const source = sourceRef({
+      kind: 'item',
+      canonicalId: canonicalItemId,
+      displayName: canonicalItemId,
+      instanceId: projectedSourceId,
+    })
+    const nativeWeaponProfile = entries.some(entry => (
+      entry.grant.kind === 'weapon-profile' && entry.grant.executionStatus === 'native'
+    ))
+    const facts = entries.map((entry, factIndex): EncounterPassiveFact => ({
+      factId: encounterPresentationStableId(
+        'fact', input.participant.participantId, projectedSourceId, entry.grant.grantId, String(factIndex),
+      ),
+      factKey: encounterPresentationStableId('equipment-grant', entry.grant.grantId),
+      value: booleanFact(
+        entry.grant.kind === 'weapon-profile'
+          ? entry.grant.executionStatus === 'native'
+          : entry.grant.kind === 'move'
+            ? entry.grant.executionStatus === 'native' && nativeWeaponProfile
+            : true,
+      ),
+      label: equipmentGrantLabel(entry.grant),
+    }))
+    passives.push(passiveSummary({
+      map: input.map,
+      participant: input.participant,
+      source,
+      facts,
+      description: `Current reviewed rule source: ${facts.map(fact => fact.label).join(', ')}`,
+    }))
+    for (const [grantIndex, entry] of entries.entries()) {
+      const grant = entry.grant
+      const moveUnavailable = grant.kind === 'move'
+        && (grant.executionStatus === 'definition-missing' || !nativeWeaponProfile)
+      const profileUnavailable = grant.kind === 'weapon-profile'
+        && grant.executionStatus === 'definition-missing'
+      if (grant.kind === 'action' && grant.executionStatus === 'native') continue
+      if (grant.kind !== 'action' && !moveUnavailable && !profileUnavailable) continue
+      const unavailableDiagnostic = grant.kind === 'move'
+        ? grant.executionStatus === 'definition-missing'
+          ? `${grant.canonicalId} has no reviewed executable Move definition.`
+          : `${grant.canonicalId} has no reviewed executable weapon profile.`
+        : grant.kind === 'weapon-profile'
+          ? `${canonicalItemId} has no reviewed executable ${grant.weaponClass.split('-').join(' ')} attack profile.`
+          : `${grant.label} has no reviewed executable action definition yet.`
+      const actionId = grant.kind === 'move'
+        ? `equipment.move:${grant.grantId}`
+        : grant.kind === 'weapon-profile'
+          ? `equipment.weapon:${grant.grantId}`
+          : `equipment.action:${grant.actionId}`
+      const targeting = grant.kind === 'action'
+        ? equipmentGrantTargeting(grant.targetKind)
+        : equipmentGrantTargeting('participant')
+      const timing = grant.kind === 'action'
+        ? timingFromText(`${grant.timing} action`)
+        : timingFromText('standard action')
+      const group: EncounterActionOffer['group'] = grant.kind === 'move' || grant.kind === 'weapon-profile' ? 'attack'
+        : grant.targetKind === 'item' ? 'inventory'
+          : grant.targetKind === 'cell' ? 'field' : 'support'
+      const offer = makeOffer({
+        map: input.map,
+        mapRevision: input.mapRevision,
+        actor: input.participant,
+        source,
+        roles: grant.kind === 'action'
+          ? [grant.interactionRole]
+          : ['activated-action'],
+        group,
+        groupOrder: grant.kind === 'move' || grant.kind === 'weapon-profile' ? 10 : 42,
+        offerOrder: input.offerOrderBase + sourceIndex * 20 + grantIndex,
+        timing,
+        targeting,
+        availability: encounterUnavailable(encounterAvailabilityReason('action.unsupported', {
+          sources: [source],
+        })),
+        copy: presentation(
+          grant.kind === 'move' ? grant.canonicalId
+            : grant.kind === 'weapon-profile' ? `Use ${canonicalItemId} as a weapon` : grant.label,
+          {
+          description: unavailableDiagnostic,
+          iconKey: 'source.item',
+            tone: 'warning',
+          },
+        ),
+        actionId,
+      })
+      offers.push(offer)
+      if (grant.kind === 'action' && grant.interactionRole === 'contextual-affordance') {
+        affordances.push({
+          schemaVersion: ENCOUNTER_PRESENTATION_SCHEMA_VERSION,
+          affordanceId: encounterPresentationStableId(
+            'affordance', input.map.slug, input.participant.participantId, projectedSourceId, grant.grantId,
+          ),
+          contextKind: grant.targetKind === 'cell' ? 'terrain'
+            : grant.targetKind === 'item' ? 'inventory'
+              : grant.targetKind === 'self' || grant.targetKind === 'participant' ? 'participant' : 'encounter',
+          contextId: grant.targetKind === 'self' ? input.participant.participantId : grant.actionId,
+          source,
+          actor: input.participant,
+          linkedOfferId: offer.offerId,
+          availability: offer.availability,
+          presentation: offer.presentation,
+        })
+      }
+    }
+  }
+  return { offers, passives, affordances }
+}
+
 const capabilityPresentation = (input: {
   readonly map: TabletopMap
   readonly mapRevision: number
@@ -1107,36 +1296,6 @@ const inventoryEntries = (sheet: TrainerSheet): InventoryEntry[] => Object.value
   .flatMap(entries => entries ?? [])
   .filter(entry => entry.name.trim().length > 0 && (entry.qty ?? 1) > 0)
 
-const inventoryAffordances = (input: {
-  readonly map: TabletopMap
-  readonly mapRevision: number
-  readonly participant: EncounterParticipantPresentationRef
-  readonly sheet: TrainerSheet
-}): EncounterContextualAffordance[] => inventoryEntries(input.sheet).map((entry, index) => {
-  const reference = findItem(entry.name)
-  const name = reference?.name ?? entry.name
-  return {
-    schemaVersion: ENCOUNTER_PRESENTATION_SCHEMA_VERSION,
-    affordanceId: encounterPresentationStableId('affordance', input.map.slug, input.participant.participantId, 'item', name, String(index)),
-    contextKind: 'inventory',
-    contextId: encounterPresentationStableId('inventory', input.sheet.slug, entry.id ?? String(index)),
-    source: sourceRef({
-      kind: 'item',
-      canonicalId: name,
-      instanceId: entry.id
-        ? encounterPresentationStableId('item', input.sheet.slug, entry.id)
-        : null,
-    }),
-    actor: input.participant,
-    linkedOfferId: null,
-    availability: encounterAvailable(),
-    presentation: presentation(name, {
-      description: `${entry.qty ?? 1} available`,
-      iconKey: 'source.item',
-    }),
-  }
-})
-
 const systemOffers = (input: {
   readonly map: TabletopMap
   readonly mapRevision: number
@@ -1257,6 +1416,13 @@ export const buildEncounterPresentationProjection = (
 ): EncounterPresentationProjection => {
   const pokemonBySlug = new Map(input.pokemonSheets.map(sheet => [sheet.slug, sheet]))
   const trainerBySlug = new Map(input.trainerSheets.map(sheet => [sheet.slug, sheet]))
+  const equipmentGrantQueries = createEncounterEquipmentGrantQueries({
+    map: input.map,
+    sheets: [
+      ...input.pokemonSheets.map(sheet => ({ kind: 'pokemon' as const, slug: sheet.slug, sheet })),
+      ...input.trainerSheets.map(sheet => ({ kind: 'trainer' as const, slug: sheet.slug, sheet })),
+    ],
+  })
   const linkedTrainerSheets = playerProfileLinkedTrainerSheetsForTokenControl(
     input.playerProfile,
     slug => trainerBySlug.get(slug),
@@ -1300,6 +1466,57 @@ export const buildEncounterPresentationProjection = (
   const offers: EncounterActionOffer[] = [...ability.offers]
   const passives: EncounterPassiveSummary[] = [...ability.passives]
   const affordances: EncounterContextualAffordance[] = []
+  // An accepted form is public encounter mechanics even when the transformed
+  // participant has no current action offer. Project only reviewed effective
+  // data; immutable source instances, revisions, hashes, and operation identity
+  // remain solely in encounterState and are redacted from players.
+  for (const placement of input.map.placements) {
+    if (placement.sheetKind !== 'pokemon') continue
+    const pokemon = pokemonBySlug.get(placement.sheetSlug)
+    const participant = participants.get(placement.id)
+    if (!pokemon || !participant) continue
+    const activeForm = activeReviewedItemFormChange({
+      map: input.map, placementId: placement.id, pokemonSheet: pokemon,
+    })
+    if (!activeForm) continue
+    const types = activeForm.form.types ?? pokemon.types ?? []
+    const statDeltas = Object.entries(activeForm.form.statDeltas)
+      .filter(([, value]) => value !== 0)
+      .map(([stat, value]) => `${stat.toUpperCase()} ${value > 0 ? '+' : ''}${value}`)
+    const projectedSourceId = `active-item-form:${placement.id}`
+    passives.push(passiveSummary({
+      map: input.map,
+      participant,
+      source: sourceRef({
+        kind: 'system',
+        canonicalId: 'item-form-change.mega-evolution',
+        displayName: activeForm.form.displayName,
+        instanceId: projectedSourceId,
+      }),
+      facts: [{
+        factId: encounterPresentationStableId('fact', placement.id, projectedSourceId, 'form'),
+        factKey: 'effective-form',
+        value: textFact(activeForm.form.displayName),
+        label: `Form: ${activeForm.form.displayName}`,
+      }, {
+        factId: encounterPresentationStableId('fact', placement.id, projectedSourceId, 'types'),
+        factKey: 'effective-types',
+        value: textFact(types.join(' / ')),
+        label: `Types: ${types.join(' / ')}`,
+      }, {
+        factId: encounterPresentationStableId('fact', placement.id, projectedSourceId, 'ability'),
+        factKey: 'effective-ability',
+        value: textFact(activeForm.entry.abilityId),
+        label: `Ability: ${activeForm.entry.abilityId}`,
+      }, {
+        factId: encounterPresentationStableId('fact', placement.id, projectedSourceId, 'stats'),
+        factKey: 'effective-stat-deltas',
+        value: textFact(statDeltas.length > 0 ? statDeltas.join(', ') : 'No non-HP Stat change'),
+        label: statDeltas.length > 0 ? `Stat changes: ${statDeltas.join(', ')}` : 'No non-HP Stat change',
+      }],
+      description: 'Active until this Scene ends; HP and permanent sheet identity are unchanged.',
+    }))
+  }
   let offerBase = 1_000
   for (const placement of input.map.placements) {
     if (!controlledIds.has(placement.id)) continue
@@ -1308,6 +1525,7 @@ export const buildEncounterPresentationProjection = (
       ? pokemonBySlug.get(placement.sheetSlug)
       : trainerBySlug.get(placement.sheetSlug)
     if (!actor || !sheet) continue
+    const resolvedEquipmentGrants = equipmentGrantQueries.resolve(placement.id)
     offers.push(...moveOffers({
       map: input.map,
       mapRevision: input.mapRevision,
@@ -1316,7 +1534,20 @@ export const buildEncounterPresentationProjection = (
       sheet,
       pokemonBySlug,
       trainerBySlug,
+      equipmentGrants: resolvedEquipmentGrants,
     }))
+    if (resolvedEquipmentGrants) {
+      const equipment = equipmentGrantPresentation({
+        map: input.map,
+        mapRevision: input.mapRevision,
+        participant: actor,
+        resolved: resolvedEquipmentGrants,
+        offerOrderBase: offerBase + 70,
+      })
+      offers.push(...equipment.offers)
+      passives.push(...equipment.passives)
+      affordances.push(...equipment.affordances)
+    }
     offers.push(...maneuverOffers({
       map: input.map,
       mapRevision: input.mapRevision,
@@ -1350,13 +1581,34 @@ export const buildEncounterPresentationProjection = (
     })
     offers.push(...featureEdge.offers)
     passives.push(...featureEdge.passives)
-    const trainerSheet = placement.sheetKind === 'trainer' ? sheet as TrainerSheet : null
-    if (trainerSheet) affordances.push(...inventoryAffordances({
+    const itemFormChanges = projectEncounterItemFormChangeOffers({
       map: input.map,
       mapRevision: input.mapRevision,
-      participant: actor,
-      sheet: trainerSheet,
-    }))
+      actor,
+      sheets: { pokemon: pokemonBySlug, trainer: trainerBySlug },
+      participants,
+      ...(input.role === 'player' ? {
+        permittedTrainerSourceSlugs: new Set(linkedTrainerSheets.map(trainer => trainer.slug)),
+      } : {}),
+      offerOrderBase: offerBase + 40,
+    })
+    offers.push(...itemFormChanges.offers)
+    affordances.push(...itemFormChanges.affordances)
+    const trainerSheet = placement.sheetKind === 'trainer' ? sheet as TrainerSheet : null
+    if (trainerSheet) {
+      const itemProjection = projectEncounterItemOffers({
+        map: input.map,
+        mapRevision: input.mapRevision,
+        actor,
+        trainerSheet,
+        pokemonSheets: input.pokemonSheets,
+        trainerSheets: input.trainerSheets,
+        equipmentGrants: resolvedEquipmentGrants,
+        offerOrderBase: offerBase + 50,
+      })
+      offers.push(...itemProjection.offers)
+      affordances.push(...itemProjection.affordances)
+    }
     offers.push(...systemOffers({
       map: input.map,
       mapRevision: input.mapRevision,

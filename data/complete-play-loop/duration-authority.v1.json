@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "authorityId": "complete-play-loop-item-duration-authority-v1",
+  "status": "reviewed",
+  "campaignClock": {
+    "authority": "singleton-campaign-clock",
+    "unit": "campaign-minute",
+    "campaignMinutesPerDay": 1440,
+    "allowedInputs": [
+      "campaign-clock-repository"
+    ],
+    "forbiddenInputs": [
+      "browser-clock",
+      "wall-clock",
+      "process-uptime",
+      "scene-time",
+      "encounter-time",
+      "initiative-time",
+      "timezone-or-calendar"
+    ],
+    "expiryRepresentation": "absolute-start-plus-duration-campaign-minute",
+    "dailyAdvance": {
+      "operationIdentity": "durable-campaign-day-v1-command",
+      "atomicBoundary": "clock-sheet-map-effect-and-all-due-Egg-checkpoints",
+      "eggDiscovery": "all-incubating-Eggs-behind-the-exact-successor-clock-checkpoint",
+      "eggProgress": "base-rate-authoritative-incubation-reducer",
+      "pausedEggTime": "skipped-never-credited",
+      "replay": "accepted-receipt-no-write-no-republication",
+      "archive": "clock-and-Egg-operations-retain-terminal-command-result-read-set-receipt-and-segment-evidence",
+      "correction": "no-clock-rewind-or-in-place-receipt-edit; downstream correction requires a separately authorized compensating operation"
+    },
+    "sourceEvidence": [
+      {
+        "path": "data/breeding-automation/campaign-clock-contract.json",
+        "sha256": "2a1d6a2dd918df34e9f8058758e909579f6067bbba9d7327a93d9b8701aecd1e"
+      },
+      {
+        "path": "data/breeding-automation/hatch-duration-policy.json",
+        "sha256": "56578c840a7a518dc57ec3a49c9e80e3acf617d4b541ed6f0935ea40afa8ca38"
+      },
+      {
+        "path": "data/breeding-automation/ruleset.json",
+        "sha256": "e33d629f871bfcde02a426df14cb525a45d56f932f4dfbaab6d0819bd8ae5364"
+      }
+    ]
+  },
+  "boundaries": {
+    "turns": "authoritative-initiative-turn-boundary",
+    "rounds": "authoritative-initiative-round-boundary",
+    "scene": "scene-end",
+    "encounter": "encounter-end",
+    "daily": "campaign-time-advanced",
+    "explicit-dismissal": "effect-removed"
+  },
+  "cleanup": {
+    "switchOrRecall": "effect-transfer-policy",
+    "encounterEndAlsoExpires": [
+      "turns",
+      "rounds",
+      "encounter"
+    ],
+    "pendingResolutionGuard": "durable-item-and-move-authority-plus-public-summary",
+    "reconnectAndRestart": "authoritative-map-reload-and-revisioned-lifecycle-patch",
+    "correction": "exact-accepted-before-and-after-evidence; refuse-after-lifecycle-successor; never-resurrect-expired-effect",
+    "sceneAndEncounterAreDistinct": true,
+    "lifecycleBudgetBypassAllowed": false
+  }
+}

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createEmptyEncounterState, parseEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptySheetEquipmentState } from '#shared/itemAutomation/equipment'
+import { activeEquipmentState } from '../fixtures/equipment'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import { beginAbilityDeclarationUseCase } from '../../server/useCases/beginAbilityDeclaration'
 import { resolveAbilityDeclarationUseCase } from '../../server/useCases/resolveAbilityDeclaration'
@@ -35,6 +37,7 @@ const sheet = (input: { slug: string; canonicalId?: string; hp?: number; stage?:
   },
   combatStages: { atk: input.stage ?? 0, def: input.stage ?? 0, satk: input.stage ?? 0, sdef: input.stage ?? 0, spd: input.stage ?? 0, acc: 0 },
   combat: { currentHp: input.hp ?? 150, injuries: 0, conditions: [] },
+  equipmentState: createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: input.slug }),
 })
 const battleMap = (slug: string): TabletopMap => {
   const encounter = createEmptyEncounterState()
@@ -199,6 +202,9 @@ describe('AA-065 activated and presence-backed abilities', () => {
       ...sheet({ slug: 'actor', canonicalId: 'Cud Chew' }),
       movelist: [{ name: 'Natural Gift' }],
       items: { held: 'Cheri Berry' },
+      equipmentState: activeEquipmentState({
+        ownerKind: 'pokemon', ownerSlug: 'actor', slotId: 'held', canonicalItemId: 'Cheri Berry',
+      }),
     } as CharacterSheet
     const pokemonSheets = new Map([
       ['actor', actor],

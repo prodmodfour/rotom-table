@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import BreedingConsentCenter from '~/components/breeding/BreedingConsentCenter.vue'
 import BreedingHatchDecisionFlow from '~/components/breeding/BreedingHatchDecisionFlow.vue'
+import BreedingItemWorkflowPanel from '~/components/breeding/BreedingItemWorkflowPanel.vue'
 import BreedingProjectWizard from '~/components/breeding/BreedingProjectWizard.vue'
 import BreedingWorkshopActivityCards from '~/components/breeding/BreedingWorkshopActivityCards.vue'
 import BreedingWorkshopShell from '~/components/breeding/BreedingWorkshopShell.vue'
 import { useBreedingConsentWorkflow } from '~/composables/breeding/useBreedingConsentWorkflow'
 import { useBreedingHatchWorkflow } from '~/composables/breeding/useBreedingHatchWorkflow'
+import { useBreedingItemWorkflows } from '~/composables/breeding/useBreedingItemWorkflows'
 import { useBreedingProjectWizard } from '~/composables/breeding/useBreedingProjectWizard'
 import { useBreedingWorkshop } from '~/composables/breeding/useBreedingWorkshop'
 import { useBreedingWorkshopActivity } from '~/composables/breeding/useBreedingWorkshopActivity'
@@ -21,6 +23,14 @@ const activity = useBreedingWorkshopActivity()
 const consent = useBreedingConsentWorkflow()
 const hatchWorkflow = useBreedingHatchWorkflow()
 const projectWizard = useBreedingProjectWizard()
+const selectedTrainerSlug = computed(() => {
+  const selected = workshop.selectedOwnershipContext.value
+  return selected?.availability === 'available' ? selected.trainerSheetSlug : null
+})
+const itemWorkflows = useBreedingItemWorkflows({
+  trainerSheetSlug: selectedTrainerSlug,
+  profileId: workshop.selectedProfileId,
+})
 let initialized = false
 
 const loadSelectedData = async (): Promise<void> => {
@@ -55,6 +65,11 @@ watch(() => projectWizard.choices.value?.confirmation.status, (status, previous)
 watch(() => hatchWorkflow.projection.value?.transition, (transition) => {
   if (transition && transition !== 'none') void loadSelectedData()
 })
+watch(() => itemWorkflows.lastResult.value?.operationId, (operationId, previous) => {
+  if (operationId && operationId !== previous && itemWorkflows.lastResult.value?.egg) {
+    void Promise.all([workshop.reload(), activity.reload()])
+  }
+})
 watch(() => consent.projection.value?.transition, (transition) => {
   if (transition && transition !== 'none' && transition !== 'exact-replay') {
     void Promise.all([workshop.reload(), activity.reload()])
@@ -85,6 +100,20 @@ const openHatch = (eggId: string, revision: number): void => {
       @select-ownership="workshop.selectOwnershipContext"
       @load-more="workshop.loadMoreOwnershipContexts"
       @start-project="startProject"
+    />
+    <BreedingItemWorkflowPanel
+      v-if="workshop.selectedOwnershipContext.value?.availability === 'available'"
+      :projection="itemWorkflows.projection.value"
+      :preview="itemWorkflows.preview.value"
+      :status="itemWorkflows.status.value"
+      :message="itemWorkflows.message.value"
+      @retry="itemWorkflows.retryExact"
+      @dismiss="itemWorkflows.dismiss"
+      @save-warmer="itemWorkflows.saveWarmerAssignment"
+      @preview-fossil="itemWorkflows.previewFossil"
+      @preview-artificial="itemWorkflows.previewArtificial"
+      @commit-preview="itemWorkflows.commitPreview"
+      @cancel-preview="itemWorkflows.cancelPreview"
     />
     <BreedingWorkshopActivityCards
       v-if="workshop.selectedOwnershipContext.value?.availability === 'available'"

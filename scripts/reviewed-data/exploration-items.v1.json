@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-057",
+  "reviewStatus": "accepted",
+  "reviewMethod": "Transcribed the exact app-owned Bait, Fishing Lure, Honey, Repel-family, and Dowsing Rod rules into bounded identities, timing, rolls, limits, durations, and explicit GM-owned outcomes. Route encounter species and direct Repel positioning remain bounded adjudication; runtime never parses documentary prose.",
+  "mechanics": {
+    "actorKind": "trainer",
+    "bait": {
+      "canonicalId": "Bait",
+      "consumptionQuantity": 1,
+      "routeLure": {
+        "checkIntervalMinutes": 15,
+        "successMinimum": 15,
+        "maximumAttempts": 3,
+        "dieSides": 20,
+        "encounterSelection": "gm-comparable-party-level"
+      },
+      "wildDistraction": {
+        "timing": "standard-action",
+        "target": "exact-wild-pokemon",
+        "focusDc": 12,
+        "failureConsequence": "forfeit-next-standard-action"
+      }
+    },
+    "fishingLure": {
+      "canonicalId": "Fishing Lure",
+      "routeLureMechanics": "same-as-bait",
+      "reusable": true,
+      "lossPolicy": "never-automatic-bounded-gm-adjudication"
+    },
+    "honey": {
+      "canonicalId": "Honey",
+      "snackMechanicsRetained": true,
+      "baitMechanics": "same-as-bait"
+    },
+    "repels": [
+      {
+        "canonicalId": "Repel",
+        "durationMinutes": 60,
+        "maximumAffectedWildLevel": 15
+      },
+      {
+        "canonicalId": "Super Repel",
+        "durationMinutes": 120,
+        "maximumAffectedWildLevel": 25
+      },
+      {
+        "canonicalId": "Max Repel",
+        "durationMinutes": 300,
+        "maximumAffectedWildLevel": 35
+      }
+    ],
+    "repelDirect": {
+      "timing": "standard-action",
+      "target": "exact-wild-pokemon-at-or-below-item-level",
+      "accuracyCheck": {
+        "baseAc": 6,
+        "attackClass": "status",
+        "evasion": "speed"
+      },
+      "hitConsequence": {
+        "movement": "immediate-interrupt-shift-away-as-far-as-able",
+        "nextAction": "forfeit-next-shift-action",
+        "positioningAuthority": "bounded-gm-prompt-after-server-owned-hit"
+      }
+    },
+    "dowsingRod": {
+      "canonicalId": "Dowsing Rod",
+      "searchMinutes": 10,
+      "allowedAreas": [
+        "route",
+        "cave",
+        "outside"
+      ],
+      "dailyUses": "floor-occult-education-rank-divided-by-two",
+      "baseDice": "occult-education-rank-d6",
+      "terrainBonusDice": 1,
+      "terrainKinds": [
+        "beach",
+        "cave",
+        "desert",
+        "sandy-or-rocky"
+      ],
+      "skillStuntDowsingBonusDice": 1,
+      "crystalResonanceBonusDice": 3,
+      "successMinimum": 4,
+      "rerollOn": 6,
+      "shardColors": [
+        "Red",
+        "Orange",
+        "Yellow",
+        "Green",
+        "Blue",
+        "Violet"
+      ],
+      "areaAuthority": "bounded-gm-confirmation"
+    }
+  },
+  "sourceEvidence": [
+    {
+      "subject": "bait",
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [[195, 210]],
+      "excerptSha256": "320bf0ccf04946b7329c3b3f2c8e4de5516d198abecbc8569aaf1b68b7b20a72",
+      "pages": [274]
+    },
+    {
+      "subject": "fishing-lure",
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [[221, 225]],
+      "excerptSha256": "9fb90630c0dd2a41208e204c0aaa40dd320a3d346e23c54fef95a9e92de20d2b",
+      "pages": [274]
+    },
+    {
+      "subject": "honey",
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [[501, 508]],
+      "excerptSha256": "9fa2cd8c2c6f4cdbda118e36d82c8195499859cbd485c9b429240dbac88170fe",
+      "pages": [278]
+    },
+    {
+      "subject": "repels",
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [[274, 301]],
+      "excerptSha256": "59d52a59407092ca0031059aa04253c86ece88f91b1d7248caf7f05cb4702cbb",
+      "pages": [275]
+    },
+    {
+      "subject": "dowsing-rod",
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [[1117, 1131]],
+      "excerptSha256": "1d40dcdc01cd8ca9485cea9b4d252fa291a893d199f9d5e344569f176f5e049f",
+      "pages": [284]
+    }
+  ]
+}

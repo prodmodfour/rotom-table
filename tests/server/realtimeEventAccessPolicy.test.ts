@@ -30,6 +30,8 @@ import {
 import { createPendingMoveResolutionFixture } from '../fixtures/moveAutomation/pendingResolution'
 import { projectAbilityAutomationJsonForPlayer } from '../../server/domain/abilityAutomation/realtimeProjection'
 import { projectCapabilityAutomationJsonForPlayer } from '../../server/domain/capabilityAutomation/realtimeProjection'
+import { activeEquipmentState } from '../fixtures/equipment'
+import { redactRealtimeEventForPrincipal } from '../../server/realtime/realtimeEventRedaction'
 
 const map = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
@@ -178,6 +180,24 @@ describe('realtime event map access policy', () => {
     const deps = dependencies({ maps: [map({ slug: 'arena', playerVisible: true })] })
 
     expect(evaluate({ kind: 'map-access', mapSlug: 'arena' }, player(), deps)).toEqual({ allowed: true })
+  })
+
+  it('allows a visible-map item presentation invalidation without carrying private operation data', () => {
+    const deps = dependencies({ maps: [map({ slug: 'arena', playerVisible: true })] })
+    const event = persistedEvent(1, { kind: 'map-access', mapSlug: 'arena' }, {
+      channel: 'map:arena',
+      type: 'item-operation-presentation-invalidated',
+      revision: 4,
+      data: { mapSlug: 'arena' },
+    })
+    const result = filterRealtimeEventsForPrincipal({ events: [event], principal: player(), dependencies: deps })
+    expect(result.allowed).toHaveLength(1)
+    expect(result.denied).toEqual([])
+    const json = JSON.stringify(result.allowed[0]?.event)
+    expect(json).not.toContain('operationId')
+    expect(json).not.toContain('sourceInstanceId')
+    expect(json).not.toContain('targetIds')
+    expect(json).not.toContain('choices')
   })
 
   it('denies a player hidden map events', () => {
@@ -425,6 +445,43 @@ describe('realtime event sheet access policy', () => {
     expect(JSON.stringify(owner.allowed[0])).toContain('Sturdy')
   })
 
+  it('derives current privacy-safe equipment contributions for GM and player sheet events', () => {
+    const visible = pokemon({
+      slug: 'quick-pika',
+      stats: { spd: { base: 12 } },
+      equipmentState: activeEquipmentState({
+        ownerKind: 'pokemon', ownerSlug: 'quick-pika', slotId: 'held', canonicalItemId: 'Quick Claw',
+      }),
+    })
+    const deps = dependencies({ pokemonSheets: [visible] })
+    const event = persistedEvent(
+      1,
+      { kind: 'sheet-access', sheetKind: 'pokemon', sheetSlug: visible.slug },
+      { data: { kind: 'pokemon', slug: visible.slug, sheet: visible } },
+    )
+    const gmEvent = redactRealtimeEventForPrincipal(event.event, gm, deps)
+    const playerEvent = redactRealtimeEventForPrincipal(
+      event.event,
+      player({
+        playerProfile: profile('profile_owner000', [
+          { sheetKind: 'pokemon', sheetSlug: visible.slug },
+        ]),
+      }),
+      deps,
+    )
+
+    for (const projected of [gmEvent, playerEvent]) {
+      const serialized = JSON.stringify(projected)
+      expect(serialized).toContain('equipmentContributionProjection')
+      expect(serialized).toContain('Quick Claw')
+      expect(serialized).toContain('initiative:all')
+    }
+    const playerSerialized = JSON.stringify(playerEvent)
+    expect(playerSerialized).not.toContain('canonicalRecordSha256')
+    expect(playerSerialized).not.toContain('equipmentDefinitionSha256')
+    expect(playerSerialized).not.toContain('equipped-item:v1:')
+  })
+
   it('does not trust payload or sheet runtime marker fields to grant access', () => {
     const deps = dependencies({
       pokemonSheets: [pokemon({
@@ -458,6 +515,14 @@ describe('realtime event group inventory access policy', () => {
 
     expect(evaluate({ kind: 'group-inventory-access', groupSlug: 'main' }, gm, deps)).toEqual({ allowed: true })
     expect(evaluate({ kind: 'group-inventory-access', groupSlug: 'main' }, player(), deps)).toEqual({ allowed: true })
+  })
+
+  it('keeps additional existing group inventories GM-only', () => {
+    const deps = dependencies({ groupInventorySlugs: ['gm-private-stash'] })
+    expect(evaluate({ kind: 'group-inventory-access', groupSlug: 'gm-private-stash' }, gm, deps))
+      .toEqual({ allowed: true })
+    expect(evaluate({ kind: 'group-inventory-access', groupSlug: 'gm-private-stash' }, player(), deps))
+      .toEqual({ allowed: false, reason: 'group-inventory-not-found' })
   })
 
   it('denies missing group inventory update records', () => {
@@ -650,6 +715,35 @@ describe('realtime event access architecture boundaries', () => {
         ...createEmptyCapabilityRuntimeState(),
         tasks: [{ private: 'task-authority' }],
       },
+      itemExploration: {
+        schemaVersion: 1,
+        repelPositioning: [{
+          decisionId: 'item-repel-position:v1:99999999999999999999999999999999',
+          sourceOperationId: 'private-repel-operation',
+          canonicalItemId: 'Repel', canonicalDefinitionSha256: '9'.repeat(64),
+          sourceInstanceId: 'private-repel-source', sourcePlacementId: 'actor-token',
+          targetPlacementId: 'wild-token', maximumAffectedWildLevel: 15,
+          accuracy: { naturalRoll: 20, userAccuracy: 0, targetSpeedEvasion: 0, accuracyCheck: 6, hit: true },
+          status: 'pending-position',
+        }],
+      },
+      itemFormChanges: {
+        schemaVersion: 1,
+        entries: [{
+          entryId: 'item-form-change:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          placementId: 'actor-token', pokemonSheetSlug: 'actor', trainerSheetSlug: 'trainer',
+          formId: 'mega-charizard-x', ruleRecordSha256: 'd'.repeat(64),
+          formRecordSha256: 'a'.repeat(64), baseSpeciesRecordSha256: 'b'.repeat(64),
+          abilityRecordSha256: 'c'.repeat(64),
+          abilityId: 'Tough Claws', duration: { kind: 'scene', sceneStartedAt: 100 },
+          sourceKind: 'mega-ring-and-stone', ringInstanceId: 'private-ring-instance',
+          ringInstanceRevision: 0, ringCanonicalRecordSha256: 'e'.repeat(64),
+          ringEquipmentDefinitionSha256: 'f'.repeat(64), stoneInstanceId: 'private-stone-instance',
+          stoneInstanceRevision: 0, stoneCanonicalRecordSha256: '1'.repeat(64),
+          stoneEquipmentDefinitionSha256: '2'.repeat(64),
+          sourceOperationId: 'private-form-operation', acceptedAt: 101,
+        }],
+      },
     }
     const projected = projectCapabilityAutomationJsonForPlayer({
       patches: [{ payload: { encounterState } }],
@@ -664,6 +758,13 @@ describe('realtime event access architecture boundaries', () => {
     expect(JSON.stringify(projected)).not.toContain('task-authority')
     expect(JSON.stringify(projected)).not.toContain('capabilityUsage')
     expect(JSON.stringify(projected)).not.toContain('capabilityCampaignState')
+    expect(JSON.stringify(projected)).not.toContain('private-ring-instance')
+    expect(JSON.stringify(projected)).not.toContain('private-stone-instance')
+    expect(JSON.stringify(projected)).not.toContain('private-form-operation')
+    expect(JSON.stringify(projected)).not.toContain('itemFormChanges')
+    expect(JSON.stringify(projected)).not.toContain('private-repel-operation')
+    expect(JSON.stringify(projected)).not.toContain('private-repel-source')
+    expect(JSON.stringify(projected)).not.toContain('itemExploration')
     expect(JSON.stringify(projected)).toContain('Living Weapon')
   })
 

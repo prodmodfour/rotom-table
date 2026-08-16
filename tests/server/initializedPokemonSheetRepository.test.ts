@@ -103,7 +103,7 @@ describe('atomic initialized Pokémon sheet repository', () => {
     database = open(path)
     const persisted = rows(database)
     expect(persisted).toHaveLength(1)
-    expect(JSON.parse(String(persisted[0]?.document_json))).toMatchObject({ slug: 'sprout', species: 'Bulbasaur', revision: 0 })
+    expect(JSON.parse(String(persisted[0]?.document_json))).toMatchObject({ slug: 'sprout', species: 'Bulbasaur', revision: 1 })
   })
 
   it('rejects placeholders, unknown authority, non-canonical facts, and enriched input before any write', () => {

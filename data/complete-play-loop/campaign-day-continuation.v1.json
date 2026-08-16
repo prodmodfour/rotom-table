@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-091",
+  "status": "implemented",
+  "endpoints": {
+    "preflight": {
+      "method": "POST",
+      "path": "/api/campaign/next-day/preflight",
+      "gmOnly": true,
+      "exactCommandFields": [
+        "schemaVersion",
+        "operationId",
+        "kind",
+        "days"
+      ]
+    },
+    "commit": {
+      "method": "POST",
+      "path": "/api/campaign/next-day",
+      "gmOnly": true,
+      "exactCommandFields": [
+        "schemaVersion",
+        "operationId",
+        "kind",
+        "days",
+        "preflightId",
+        "clientId"
+      ]
+    }
+  },
+  "authority": {
+    "collectionLimit": 10000,
+    "affectedSheetLimit": 100,
+    "blockerLimit": 32,
+    "preflightIdentityIsContentAddressed": true,
+    "coversCommandClockContinuationProfilesSheetsMapsEggsAndAttentionSources": true,
+    "productionUseCaseRunsInsideSavepoint": true,
+    "dryRunPublishesRealtime": false,
+    "dryRunLeavesDurableWrites": false,
+    "commitRevalidatesInsideWriteTransaction": true,
+    "clockSheetMapAndEggRevisionsRechecked": true,
+    "atomicRecoveryClockEggEffectAndOperationCommit": true
+  },
+  "blockers": [
+    "active-encounter",
+    "unfinished-settlement",
+    "blocking-campaign-attention"
+  ],
+  "impact": {
+    "aggregateRecoveryCounts": true,
+    "typedAffectedSheetChanges": [
+      "hit-points",
+      "injury",
+      "conditions",
+      "daily-moves",
+      "trainer-ap",
+      "daily-resources"
+    ],
+    "safeAppRelativeSheetHandoffs": true,
+    "postflightUsesAcceptedResult": true,
+    "remainingAttentionReloadsWholeDashboard": true
+  },
+  "privacy": {
+    "preflightIdentityRendered": false,
+    "operationOrRequestIdentityRendered": false,
+    "profileIdentityOrDisplayNameRendered": false,
+    "eggIdentityRendered": false,
+    "sourceEventRevisionHashOrProvenanceRendered": false,
+    "privateTreatmentEvidenceRendered": false,
+    "canonicalChoiceListsRendered": false
+  },
+  "recovery": {
+    "strictPendingStorageSchema": true,
+    "explicitConfirmationRequired": true,
+    "mutationStartsOnlyFromReadyBoundary": true,
+    "unknownOutcomeRetainsExactCommand": true,
+    "reconnectNeverAutomaticallyReplays": true,
+    "acceptedStatusCheckIsExplicit": true,
+    "crossTabRetainedCommandLossFailsClosed": true,
+    "delayedResponsesAreGenerationGuarded": true,
+    "offlineCheckAndCommitDisabled": true,
+    "staleAuthorityRequiresFreshReview": true
+  },
+  "accessibilityAndDesign": {
+    "selectedMockup": ".pi/artifacts/ui-mockups/campaign-day-preflight/v003.png",
+    "selectedMockupScore": "9/10",
+    "generatedPortraitsImplemented": false,
+    "nativeModalFocusContainment": true,
+    "escapeAndCloseReturnOriginFocus": true,
+    "closeDisabledDuringCommit": true,
+    "minimumControlPixels": 44,
+    "mobileMinimumWidthPixels": 320,
+    "pageHorizontalOverflow": false,
+    "reducedMotionIndependent": true,
+    "seriousOrCriticalAxeViolations": 0
+  },
+  "continuationJourney": [
+    "atomic-encounter-settlement",
+    "authoritative-decisions",
+    "authoritative-treatment",
+    "reviewed-next-day",
+    "fresh-remaining-attention",
+    "next-scene-from-current-authority"
+  ],
+  "failClosed": [
+    "unknown-command-or-projection-field",
+    "malformed-operation-or-preflight-identity",
+    "non-gm-role",
+    "active-encounter",
+    "unfinished-settlement",
+    "blocking-attention",
+    "authority-collection-overflow",
+    "duplicate-or-partial-authority",
+    "changed-preflight-authority",
+    "changed-clock-sheet-map-or-egg-revision",
+    "unretained-command",
+    "cross-tab-command-loss",
+    "offline-commit",
+    "uncertain-result-without-status-check"
+  ],
+  "sources": {
+    "preflightContract": {
+      "path": "shared/campaignDayPreflight.ts",
+      "sha256": "568df6da045d888fc8d6844dbc0f0f924c134a0939143edb2c4e3e000aeec012"
+    },
+    "campaignDayResultContract": {
+      "path": "shared/campaignDay.ts",
+      "sha256": "23c267e9ae8954d27d444cbd8328a1d00722f5cf65bb587e3df89ca8713fe04d"
+    },
+    "authorityDigest": {
+      "path": "server/domain/campaignDay/preflightAuthority.ts",
+      "sha256": "176d588d8c940556a373579ee5bfe37bf224d11a38a7de6b01e8c61727f86555"
+    },
+    "preflightUseCase": {
+      "path": "server/useCases/prepareCampaignDay.ts",
+      "sha256": "86606953e6720643f974717d6e29567a922233fb54693ff32781851c4d4d7324"
+    },
+    "guardedCommitUseCase": {
+      "path": "server/useCases/advanceCampaignDayAfterPreflight.ts",
+      "sha256": "4e1432fa4329f43e790c60f67eff735a762b8c44acb4b6f1cab5335d0406f53d"
+    },
+    "atomicCampaignDayUseCase": {
+      "path": "server/useCases/advanceCampaignDay.ts",
+      "sha256": "41e2008840da28daf6d419bafa73c1d3da753bd01eea51c495f24741c14a3051"
+    },
+    "operationRepository": {
+      "path": "server/storage/campaignDayOperationRepository.ts",
+      "sha256": "a2a31e4b613d496104d80f361fb1200d5ca602506303782c3f55298fe9801cd6"
+    },
+    "preflightRoute": {
+      "path": "server/api/campaign/next-day/preflight.post.ts",
+      "sha256": "2c2ea5b32008fb411b52c98ff34b651958480a2adbd82697559e4c254a62b215"
+    },
+    "commitRoute": {
+      "path": "server/api/campaign/next-day.post.ts",
+      "sha256": "0a24ec5c230aa1743145d1a2b9150aaf58a76558b8d8cbdcc057a3707b9374ef"
+    },
+    "pendingStorage": {
+      "path": "src/utils/campaignDayOperationStorage.ts",
+      "sha256": "43a828d758b4207f57b2b56bf79ba09ed596fd88b4a645071a6d0edfbcc4ca81"
+    },
+    "clientController": {
+      "path": "src/composables/campaign/useCampaignDayPreflight.ts",
+      "sha256": "5a566e417f09ebc0465d7ecf72f88b1b663f658c7a279e8e1f0a53ea6f1d73cd"
+    },
+    "dialog": {
+      "path": "src/components/campaign/CampaignDayPreflightDialog.vue",
+      "sha256": "f55edcf886b496adb9a04d4b8aa4ff7387eb8fb730fd42f0a1b4c3b69f384c76"
+    },
+    "campaignPage": {
+      "path": "src/pages/campaign.vue",
+      "sha256": "e7f6c31e79db339e20e5fb5e77a62635241de9f0fa6c593f5877555c6cf0d4d7"
+    },
+    "preflightContractTests": {
+      "path": "tests/shared/campaignDayPreflight.test.ts",
+      "sha256": "d184f354da4077457d5367bc7279017b083a6c99f24d470dc1dc37682416e659"
+    },
+    "campaignDayResultTests": {
+      "path": "tests/shared/campaignDay.test.ts",
+      "sha256": "27e2ed0ef2c9aff2c067da54ed2c432873a03d44e1a9ff7269747e93e8ee3952"
+    },
+    "preflightUseCaseTests": {
+      "path": "tests/server/campaignDayPreflight.test.ts",
+      "sha256": "d5eadb4469ec3ea0ae6d966dbc850ec86c874e347c89d87f92ce2a6f73d9dc11"
+    },
+    "preflightRouteTests": {
+      "path": "tests/server/campaignDayPreflightRoute.test.ts",
+      "sha256": "898c41532f0af1332f99186e6fe82f27ad610a896d2f44a1a245cc2ba864d699"
+    },
+    "commitRouteTests": {
+      "path": "tests/server/campaignNextDayRoute.test.ts",
+      "sha256": "cfd7adf7446d1916a94e0bbd1afd80e3cddf88362cd6af87099084a2d7508803"
+    },
+    "clientControllerTests": {
+      "path": "tests/composables/campaign/useCampaignDayPreflight.test.ts",
+      "sha256": "4a5048175eb39fcfc294d1b91add095d1ab643414375d6944c3bc9d4c7480cb9"
+    },
+    "dialogTests": {
+      "path": "tests/components/campaignDayPreflightDialog.test.ts",
+      "sha256": "91df9d7a43a7c15b4052dfd9fdf3205a1dfa5295d2345bd49f7e82623ad67f9e"
+    },
+    "browserTests": {
+      "path": "tests/e2e/campaign-day-continuation.spec.ts",
+      "sha256": "01e6907e3355b3e7f1a9c120c9ccfefcb6392f740de59d757be09600347caead"
+    },
+    "documentation": {
+      "path": "docs/campaign-day-continuation.md",
+      "sha256": "524938657405399ec58534fb0dbe5fe8213eb3363a197ee0a18be83a683c856e"
+    },
+    "selectedMockup": {
+      "path": ".pi/artifacts/ui-mockups/campaign-day-preflight/v003.png",
+      "sha256": "7160da33fe7c8eb17f3bdfe9e6ec51b02a106f67e44b7874f08203b47e48d6b6"
+    },
+    "desktopReadyEvidence": {
+      "path": ".pi/artifacts/ui-validation/campaign-day-continuation/chromium-ready.png",
+      "sha256": "8fe4347aedbf50f85be3ef8999745a12f191df9bfd334f11cd2a45ea1ba645ca"
+    },
+    "desktopAcceptedEvidence": {
+      "path": ".pi/artifacts/ui-validation/campaign-day-continuation/chromium-accepted.png",
+      "sha256": "18a10876f6485fe7edecbac1029de47188a55499c446db35eecca4e5148c81f2"
+    },
+    "mobileReadyEvidence": {
+      "path": ".pi/artifacts/ui-validation/campaign-day-continuation/mobile-chromium-ready.png",
+      "sha256": "7746543ad6368f013401f6bcecd2c684b6d2dc7ce60385b9333812373c901567"
+    },
+    "mobileAcceptedEvidence": {
+      "path": ".pi/artifacts/ui-validation/campaign-day-continuation/mobile-chromium-accepted.png",
+      "sha256": "f6148c7ec1abcf8fe818c6269446f2e37eb5f0f97984e4538a28c2b24a8273e3"
+    },
+    "visualReview": {
+      "path": ".pi/artifacts/ui-validation/campaign-day-continuation/review.md",
+      "sha256": "b41b62377896a13a86e58b1604435095cd46e7a5d46a22f642153bdc5b7912a6"
+    },
+    "settlementJourneyEvidence": {
+      "path": "tests/e2e/finish-encounter.spec.ts",
+      "sha256": "4bd26345126aa9a544cd1c8d18a2e868feaa9ae22793745d4a078a7cebe4cad4"
+    },
+    "recoveryDecisionEvidence": {
+      "path": "tests/server/campaignAttentionRecoveryDetector.test.ts",
+      "sha256": "8075abe36e95b05b5536505879777539b8ad4fbfbddf1515ca67862af8906059"
+    },
+    "roleProjectionEvidence": {
+      "path": "tests/server/campaignAttentionProjection.test.ts",
+      "sha256": "a81dfea9fdba42bd45ca88eb7f7af00dee857bbcf2f4731552ee3b5f86de4468"
+    },
+    "treatmentJourneyEvidence": {
+      "path": "tests/e2e/medical-extended-actions.spec.ts",
+      "sha256": "bf5d31d8d43b51c4897ef9f2df4a1a1793d433ce08d96d95c8adf196d4b4b3ed"
+    },
+    "nextSceneEvidence": {
+      "path": "tests/server/livePlaySceneLifecycle.test.ts",
+      "sha256": "308ed792a867a731c2908a759753455a6a585985c382a4129462ef74d049d6b4"
+    }
+  },
+  "validation": {
+    "focusedTests": "77 passed",
+    "productionBuild": "passed",
+    "browserProjects": [
+      "chromium",
+      "mobile-chromium"
+    ],
+    "browserTests": "2 passed",
+    "mobileWidthPixels": 320,
+    "seriousOrCriticalAxeViolations": 0,
+    "typecheck": "passed",
+    "eslint": "passed",
+    "gitDiffCheck": "passed"
+  }
+}

@@ -277,6 +277,8 @@ export interface MoveItemQuantityEffect {
 export interface MoveItemMutationOperationResult {
   readonly operationId: string
   readonly kind: MoveItemMutationKind
+  /** Exact canonical buff traded by digest-buff; null for every other mutation. */
+  readonly digestedCanonicalItemId: string | null
   readonly quantityPolicy: MoveItemQuantityPolicy
   readonly quantityEffects: readonly MoveItemQuantityEffect[]
   readonly resourceScopes: readonly MoveItemMutationResourceScope[]
@@ -292,7 +294,7 @@ export interface MoveItemSheetResourceReduction {
   readonly current: CharacterSheet | TrainerSheet
   readonly changedFields: readonly Extract<
     MoveSheetStateField,
-    'items' | 'inventory' | 'equipmentSlots' | 'digestion' | 'abilityUsage' | 'berryStorage'
+    'items' | 'inventory' | 'equipmentSlots' | 'equipmentState' | 'digestion' | 'abilityUsage' | 'berryStorage'
   >[]
   readonly operationIds: readonly string[]
   readonly reasonCodes: readonly string[]

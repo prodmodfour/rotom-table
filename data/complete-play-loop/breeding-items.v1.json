@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-058",
+  "status": "reviewed-native",
+  "canonicalAuthority": {
+    "items": {
+      "path": "data/reference/items.json",
+      "fileSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+    },
+    "breedingArtifacts": {
+      "modifierInventory": {
+        "path": "data/breeding-automation/modifier-inventory.json",
+        "fileSha256": "297007e546dc9afe12dbe4622557ccba9c6bca9f1d8b0fec2c631d5a270d761d",
+        "definitionSha256": "24bb20a9d61003f540f6b410df3b0919ee49233012e45ec2dd14bfc9ed5c2dd9"
+      },
+      "modifierProviderHandoff": {
+        "path": "data/breeding-automation/modifier-provider-handoff-contract.json",
+        "fileSha256": "2add92cbab9e68f611eb0c6e162edab342918ffc5ba95ec1077f9f76b56fe25b",
+        "definitionSha256": "d34801a954acd23032a623eb0ebc6c102f61a8f5726504c3091de72fd4cbdfcb"
+      },
+      "fossilEgg": {
+        "path": "data/breeding-automation/fossil-egg-contract.json",
+        "fileSha256": "554c3a9ea6188237ca6cea8b7ae4e6250bb057e09dfa77a515e360301f0b54a3",
+        "definitionSha256": "b1033dd11294a61279fb3d1dc7ae2658867c5ef6f0c2f114168db9188ede184a"
+      },
+      "babyTemplateAndArtificialEgg": {
+        "path": "data/breeding-automation/baby-template-contract.json",
+        "fileSha256": "3fd683dcb175c3b7586f81022a54e9c3177850c756057eba33f87a8e911a50f6",
+        "definitionSha256": "dbb43efa89d123201fbe9fff91f735616d1d41b34c2eeb0b486e903ba0307965"
+      },
+      "interactionCertification": {
+        "path": "data/breeding-automation/interaction-certification.json",
+        "fileSha256": "0f358622e6cb94b579f53535265df947f65f1f65011a0eeb1fb1aff9fa660aac",
+        "definitionSha256": "fdfc3d47bd08e1b96def88a0a9edbeeaa12ef14f504042be2006bb58b20e4980"
+      },
+      "sourceAdjudications": {
+        "path": "data/breeding-automation/source-adjudications.json",
+        "fileSha256": "762e166f93ec3019150c9c6c36e4433c352781a51181cf3181964a45a2a5f0a7"
+      }
+    },
+    "fossilSourceAdjudicationId": "BR-SRC-012",
+    "runtimeDocumentaryParsingForbidden": true
+  },
+  "reviewedIntegration": {
+    "path": "scripts/reviewed-data/breeding-items.v1.json",
+    "fileSha256": "82756f7e7e5d7adc8fd7aee59df8931f738d839532f8a60a7814e577d3802841",
+    "runtimeAuthority": false,
+    "reviewStatus": "accepted-existing-structured-authority",
+    "reviewMethod": "Cross-checked canonical item records against the completed Breeding and Egg Lifecycle modifier inventory, source adjudications, fossil Egg contract, Baby Template and artificial Egg contract boundary, and interaction certification. No documentary text is runtime authority."
+  },
+  "runtimePolicies": {
+    "authority": "server-rebuilds-current-item-feature-edge-skill-egg-and-campaign-authority",
+    "assignment": "one-exact-warmer-unit-up-to-four-current-owned-incubating-eggs",
+    "consumption": "fossil-source-only-at-accepted-restoration",
+    "reusableTools": "warmer-machine-and-chemistry-set-remain-in-inventory",
+    "provenance": "existing-breeding-read-sets-receipts-provider-traits-and-source-authority",
+    "recovery": "exact-principal-bound-operation-replay-without-redraw-or-double-cost",
+    "privacy": "safe-human-labels-only-no-hashes-row-ids-rolls-or-private-provider-evidence",
+    "parallelOffspringPath": "forbidden"
+  },
+  "itemCount": 3,
+  "items": [
+    {
+      "canonicalId": "Egg Warmer",
+      "recordSha256": "df3ffedadbf66d79df883af5e3b3240c92339814a618fb92df90bd0f56d71f6e",
+      "effectSha256": "9b7be45b13e6e14b5b42d30847f34bfa62d3399ffdc85cb121298d3e43b22539",
+      "modifierInventoryEntryId": "item:Egg Warmer",
+      "modifierMechanicFieldsSha256": "ac534b2d6f10fad75ff6771b568854a3568587da143da6bd8f671166aaa353b2",
+      "operation": "assign-incubating-eggs",
+      "contexts": [
+        "campaign",
+        "workshop"
+      ],
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reusable": true
+      },
+      "mechanics": {
+        "capacity": 4,
+        "campaignProgressRateNumerator": 2,
+        "campaignProgressRateDenominator": 1,
+        "providerId": "item.egg-warmer"
+      }
+    },
+    {
+      "canonicalId": "Reanimation Machine",
+      "recordSha256": "204cb0545a50c32054d4210a40bac4daa6f7d018b45c32126f5833e0a2f0816f",
+      "effectSha256": "69ea338b7b5ceaf85c233e1330c86b70b1925359cc0164f96350d2abfab5c9a7",
+      "modifierInventoryEntryId": "item:Reanimation Machine",
+      "modifierMechanicFieldsSha256": "36252974ce967c67b480426bbc4acc51d6065ae646c73900316246fd7084c5d0",
+      "operation": "restore-fossil-egg",
+      "contexts": [
+        "campaign",
+        "workshop"
+      ],
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reusable": true
+      },
+      "mechanics": {
+        "fossilSourceConsumption": 1,
+        "fossilSourceAuthority": "gm-designated-exact-inventory-unit",
+        "providerId": "item.reanimation-machine",
+        "offspringPipeline": "shared-pokemon-egg-document-v1"
+      }
+    },
+    {
+      "canonicalId": "Chemistry Set",
+      "recordSha256": "c2db2e2e30eadc45e631baabbc4fd723429c3a3d88f47d4876a383786b2948fb",
+      "effectSha256": "57b4e51e160ae22a32f870c557d9059a99496a3faa63ce46d9b8aa8635043fa9",
+      "modifierInventoryEntryId": "item:Chemistry Set",
+      "modifierMechanicFieldsSha256": "a51d899e29aece879e264d3452cf4750effa978cdc918e22c68f69053b13a1af",
+      "operation": "create-playing-god-artificial-egg",
+      "contexts": [
+        "campaign",
+        "workshop"
+      ],
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reusable": true
+      },
+      "mechanics": {
+        "moneyCost": 3500,
+        "requiredFeatureId": "Playing God",
+        "providerId": "item.chemistry-set",
+        "offspringPipeline": "shared-pokemon-egg-document-v1"
+      }
+    }
+  ]
+}

@@ -34,6 +34,7 @@ const strikeEvent = (timing: 'accuracy-resolved' | 'damage-resolved' = 'damage-r
     defenderPlacementId: 'defender-token',
     timing,
     accuracyOutcome: 'hit',
+    naturalAccuracyRoll: 19,
     rangeContext: 'melee',
     makesContact: true,
     directness: 'direct',
@@ -211,6 +212,7 @@ describe('authoritative strike and damage events', () => {
     const prevented = strikeEvent()
     Object.assign(prevented.payload, {
       accuracyOutcome: 'prevented',
+      naturalAccuracyRoll: null,
       critical: false,
       effectiveness: 'immune',
       effectivenessMultiplier: 0,

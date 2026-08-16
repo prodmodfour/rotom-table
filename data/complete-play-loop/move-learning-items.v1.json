@@ -1,0 +1,1990 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-054",
+  "status": "reviewed-native",
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "canonicalAuthority": {
+    "items": {
+      "path": "data/reference/items.json",
+      "fileSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+    },
+    "rules": {
+      "path": "data/reference/rules.json",
+      "fileSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142",
+      "machineRuleRecordSha256": "4660d7ac403b12cd107c68fee363bb89568664b507d7366c58263e3e7ceeee61",
+      "tmTutorLimitRecordSha256": "990c4866c6fa173e29d1e97505106d67ef705958a1f534a7e09916e37052ce5d",
+      "tutorPointsRecordSha256": "2c0b815490b1f5953d82f3cfb8c11a7d2cf65e82f8f525206fcb993967fc0277",
+      "migrationId": "rule-data-machine-move-learning-mechanics-v1",
+      "catalogSuccessorMigrationIds": [
+        "rule-data-evolution-item-mechanics-v1",
+        "rule-data-item-form-change-mechanics-v1",
+        "rule-data-exploration-item-mechanics-v1",
+        "rule-data-pokemon-advancement-choices-v1",
+        "rule-data-trainer-advancement-choices-v1"
+      ]
+    },
+    "moves": {
+      "path": "data/reference/moves.json",
+      "fileSha256": "418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e",
+      "moveAuthoritySha256": "441e38497e5943a933a550d1f24ddb8b771052f07cddf61caf6645c6142de93e",
+      "facadeMigrationId": "move-data-facade-identity-normalization-v1"
+    },
+    "pokedex": {
+      "path": "data/reference/pokedex.json",
+      "fileSha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696",
+      "machineCompatibilityAuthoritySha256": "bc2bc6c671f56897ba61ccc810a0e71e8f4b9f3001382934057e47bc8c6b2a42"
+    },
+    "clusterMind": {
+      "path": "data/reference/abilities.json",
+      "fileSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+      "recordSha256": "ef6469ee15bcad69e21991c28b13eb3d8004301e0b96f3a36fbcc962c2a176ed"
+    },
+    "runtimeDocumentaryParsingForbidden": true
+  },
+  "sourceEvidence": [
+    {
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [
+        [
+          2160,
+          2168
+        ]
+      ],
+      "excerptSha256": "de51ed3efa6aa2f4382829bd7b0b36891eac1fa5393ddeb44bfc096ee7837da1",
+      "pages": [
+        300
+      ]
+    },
+    {
+      "path": "books/markdown/core/05-pokemon.md",
+      "fileSha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3",
+      "gitBlob": "4ead8eb5ac53f9eca9de8c721579d1568d6f0bdc",
+      "lineRanges": [
+        [
+          421,
+          442
+        ],
+        [
+          576,
+          590
+        ]
+      ],
+      "excerptSha256": "73c25a6b28d946c5b6df31f30d5cd5820c1c1de48f6ee94ac969c75b39150727",
+      "pages": [
+        200,
+        202
+      ]
+    }
+  ],
+  "roster": {
+    "total": 106,
+    "tms": 100,
+    "hms": 6,
+    "items": [
+      {
+        "canonicalId": "HM A1 - Cut",
+        "machineKind": "HM",
+        "machineNumber": "01",
+        "moveId": "Cut",
+        "canonicalRecordSha256": "4e5e1fe3de1721ec2708f5ef1e00005534e66d79a39d0df3c517e07f2d8098ec",
+        "canonicalEffectSha256": "bd6496b024ab1f961f1e4edbb90281d7e683cb91c436cf8649892032562635c5",
+        "moveRecordSha256": "daa62b3740f860affdce9c2c59dc23e279ff1c2dc5f904ac6de17fc1ae370adc",
+        "compatibleSpeciesCount": 264,
+        "compatibleSpeciesSha256": "9d0ab8407359f0bc583455ffc46eded5ada824acadc78c32d3c65e1852699067",
+        "consumption": {
+          "phase": "never",
+          "quantity": 0,
+          "reusable": true
+        },
+        "dailyUseLimit": 1
+      },
+      {
+        "canonicalId": "HM A2 - Fly",
+        "machineKind": "HM",
+        "machineNumber": "02",
+        "moveId": "Fly",
+        "canonicalRecordSha256": "d4d34e80f0fc42ff35fe1e37f196579976d16515792da67fe79361d35c38e524",
+        "canonicalEffectSha256": "712c94fed85f258890bd2b05b59bc877a205db13def75606dd7fcb7bfc577cb4",
+        "moveRecordSha256": "38a9651e4febd01423146b67155df5046663bc5fb79e6599bbe84982382fc828",
+        "compatibleSpeciesCount": 96,
+        "compatibleSpeciesSha256": "70891221fe958579d99211152cf35c0d2a53cde64e69bf6008b6af0f21b706a0",
+        "consumption": {
+          "phase": "never",
+          "quantity": 0,
+          "reusable": true
+        },
+        "dailyUseLimit": 1
+      },
+      {
+        "canonicalId": "HM A3 - Surf",
+        "machineKind": "HM",
+        "machineNumber": "03",
+        "moveId": "Surf",
+        "canonicalRecordSha256": "b9fd6f2ca49d3474068e8ee2922d6b11947277557b4d108c20635296d3977270",
+        "canonicalEffectSha256": "a010e353d8e5800e09031ee60bab6d0889ebf48894df91590c9fac066864f135",
+        "moveRecordSha256": "155f467b4199532a02d812bc95858dc7284d9111574beed6f5c16f00266dba9c",
+        "compatibleSpeciesCount": 188,
+        "compatibleSpeciesSha256": "3fc1aaec41f53696ba274ffcd1db19d866d681e58909951a3e806a8e86488208",
+        "consumption": {
+          "phase": "never",
+          "quantity": 0,
+          "reusable": true
+        },
+        "dailyUseLimit": 1
+      },
+      {
+        "canonicalId": "HM A4 - Strength",
+        "machineKind": "HM",
+        "machineNumber": "04",
+        "moveId": "Strength",
+        "canonicalRecordSha256": "ec58aa9ad14a71bf15938b5303c820e9dbeef37b7334e38334daaf4bccce6820",
+        "canonicalEffectSha256": "de1474ebf108f1f3633036ec627d8cf6a30f6f4d9db26dae04f5484197ca1678",
+        "moveRecordSha256": "e5f50bcae52b44798a316eae4a91eada5401b159692d731f6884e45183c46127",
+        "compatibleSpeciesCount": 352,
+        "compatibleSpeciesSha256": "d7742bfecb2fb3e6f6a2283da39c272c7adb0a2ef6af919d34e6473894a05589",
+        "consumption": {
+          "phase": "never",
+          "quantity": 0,
+          "reusable": true
+        },
+        "dailyUseLimit": 1
+      },
+      {
+        "canonicalId": "HM A5 - Waterfall",
+        "machineKind": "HM",
+        "machineNumber": "05",
+        "moveId": "Waterfall",
+        "canonicalRecordSha256": "4e97511e887c4631e0895d88cb81df0d08123a1cd7b27edbcd7c3b6194d215d5",
+        "canonicalEffectSha256": "9407833c78f5dcf87e967f8d8677b65431e4662a938ecf99e7418604e0cf7b34",
+        "moveRecordSha256": "c884d847d40c530e8f04d8fa28ee0c78080af72ddc19c876d83124848dea15d9",
+        "compatibleSpeciesCount": 116,
+        "compatibleSpeciesSha256": "d529029977edc8f9084be9bd655b545a316decd54d9cabcad97559a21fabca36",
+        "consumption": {
+          "phase": "never",
+          "quantity": 0,
+          "reusable": true
+        },
+        "dailyUseLimit": 1
+      },
+      {
+        "canonicalId": "HM A6 - Dive",
+        "machineKind": "HM",
+        "machineNumber": "06",
+        "moveId": "Dive",
+        "canonicalRecordSha256": "10db391786818311dde0c9ae11845a1531f7a439a4e5c3dcfd53341946ab0e1c",
+        "canonicalEffectSha256": "0bfa69a6a73aabbc9ce7cdc6456348d5bba4ff0976d1870e8f45c18ba0a03c59",
+        "moveRecordSha256": "742cb09dff9d555be8d6e47ba2dcb1fe5b9032c36b44c1fdab847aa124b35d51",
+        "compatibleSpeciesCount": 107,
+        "compatibleSpeciesSha256": "c2d7374d6c26f23d39ab40a7705d050ac37a1cb39e3d721e70f59b6c52d665ac",
+        "consumption": {
+          "phase": "never",
+          "quantity": 0,
+          "reusable": true
+        },
+        "dailyUseLimit": 1
+      },
+      {
+        "canonicalId": "TM 01 - Hone Claws",
+        "machineKind": "TM",
+        "machineNumber": "01",
+        "moveId": "Hone Claws",
+        "canonicalRecordSha256": "ea2d4383cb5038c928f59acd3b1da50c1d4e435b9b97bfde561fa37b221282b0",
+        "canonicalEffectSha256": "0c2a02953ccc53108fae578323491986af0e07f0ba6e205aa36d62d9447fa26d",
+        "moveRecordSha256": "74b3c64a5183d0a0af00c13d3b9ecc657ddee3a7b844293e0486ea7dd2e75a1f",
+        "compatibleSpeciesCount": 157,
+        "compatibleSpeciesSha256": "b03b79fa1f8539b1475c5982843f5e9c1a460229c5d2e03210b96fc05800d2f9",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 02 - Dragon Claw",
+        "machineKind": "TM",
+        "machineNumber": "02",
+        "moveId": "Dragon Claw",
+        "canonicalRecordSha256": "b73944eae38584178b450d3b0b54898165d020456c0218d156bed3fca7b617b6",
+        "canonicalEffectSha256": "12d03576514b21569535e46e6d57fece10ec1c1e2b42aa8ce62cb7352e32d0ab",
+        "moveRecordSha256": "b7d4be46fe223c91ba5e2e1c65bfadd0df3f37e4350fe2ef5105aaf335ba5acf",
+        "compatibleSpeciesCount": 67,
+        "compatibleSpeciesSha256": "aa0cc45c74db1cee104d50865d75680cdeac5d3e20f3de9fdcc4a861c07c1b57",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 03 - Psyshock",
+        "machineKind": "TM",
+        "machineNumber": "03",
+        "moveId": "Psyshock",
+        "canonicalRecordSha256": "e8af43fe82cac21693e0ed9c1f0f09ae72b3e8fe3f45ffca81b92183c53b091b",
+        "canonicalEffectSha256": "ddeef628ccad1310399ddba0c48f30903058787856d89f28141521bafce74342",
+        "moveRecordSha256": "ae4410b45e4d7eb7310748ac5c9ccf6f11b0ae7fe62c4ad83fabe130c9885562",
+        "compatibleSpeciesCount": 123,
+        "compatibleSpeciesSha256": "bb437bae1464b4313b4a64c78f5d449acf4cd9ea752cd8341e63d8fd71ab8512",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 04 - Calm Mind",
+        "machineKind": "TM",
+        "machineNumber": "04",
+        "moveId": "Calm Mind",
+        "canonicalRecordSha256": "69b4a847821d685b4ec991e2236adac815ce7137988527a842deb3d6daeab55d",
+        "canonicalEffectSha256": "705b2bef3b2e9783d644da7c60fbc52e1a5c70015d1af03463064bfdeaa4a6dc",
+        "moveRecordSha256": "aa9708035c6bda3398de6b9330445bbdd84fc28533f8b1f2f577f019894e7b14",
+        "compatibleSpeciesCount": 204,
+        "compatibleSpeciesSha256": "0223f06bcfa432393088123549be5e0f70d87d55b6e11ef6d55d8b925ee11f74",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 05 - Roar",
+        "machineKind": "TM",
+        "machineNumber": "05",
+        "moveId": "Roar",
+        "canonicalRecordSha256": "077f45108cf4e533103d815ea250acdca261cbb5aa4d76a1932f1d3c5959bb30",
+        "canonicalEffectSha256": "4208a8dd09729a81601dd9d4e5ca0b266bd37f84c1431fb35cc508c6a29febc6",
+        "moveRecordSha256": "7ce0ac472256bc7f23f6255ea36f163f34ae19650a151b0a7e727b938da99b04",
+        "compatibleSpeciesCount": 196,
+        "compatibleSpeciesSha256": "90fa2a77e6ec26af222b1d0744162bec111c1db485658ac46e64856c22bd9c05",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 06 - Toxic",
+        "machineKind": "TM",
+        "machineNumber": "06",
+        "moveId": "Toxic",
+        "canonicalRecordSha256": "dc708886ca4609c8c0274fa4b382f79a5693051c2b6b12a24dc1c3130c41404f",
+        "canonicalEffectSha256": "605e9f2b74774ad6fd70f0d93393e7b7bf43d862ae1a8e825a09411616b82dbd",
+        "moveRecordSha256": "c9af82c5ae5104cc19b0fc470ba46067516e231ae6054bda90cc44c3f5a41d62",
+        "compatibleSpeciesCount": 950,
+        "compatibleSpeciesSha256": "a4c9dea3f9614ffd37a36a969f417c3325ce6c19788e8f0b94fb03c356cd80b8",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 07 - Hail",
+        "machineKind": "TM",
+        "machineNumber": "07",
+        "moveId": "Hail",
+        "canonicalRecordSha256": "2d8c656456ee4739b11a65014cfa5f224f0cf80d0f694129e0ea6928da4a5287",
+        "canonicalEffectSha256": "b210dca216b0a5d4b56ce11d780056dec9d37940e7db3ae3a48bfd2c200aff98",
+        "moveRecordSha256": "08969b74f6535a7f30bc2f903fa37c52da4b8c2ff85eebc46afc7fbf9a34a447",
+        "compatibleSpeciesCount": 173,
+        "compatibleSpeciesSha256": "d7b2c4781806313862de71e912c4c53b65fa72005b1d008cc3857428ad550532",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 08 - Bulk Up",
+        "machineKind": "TM",
+        "machineNumber": "08",
+        "moveId": "Bulk Up",
+        "canonicalRecordSha256": "c0aeeb2d30dcfacece3a7f1946646044c8fbee6a4f9fdd2f6275648f89307b68",
+        "canonicalEffectSha256": "a33f0e79201eb79bb99e9c84aa883c0e78733b367a7b77b1c563f49f189c7182",
+        "moveRecordSha256": "bcd7e849e56321c33394e865593de41c3a3d69989569c3e1be0fc26e9fa35072",
+        "compatibleSpeciesCount": 114,
+        "compatibleSpeciesSha256": "62dcd120acc6a396a6cc2a37d828558b5163ee303886296bf6a4b6a81b11194d",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 09 - Venoshock",
+        "machineKind": "TM",
+        "machineNumber": "09",
+        "moveId": "Venoshock",
+        "canonicalRecordSha256": "ceec6768f0fe72c6dcf8837b4664ab86360ea33d6b6005cf36ec9845a97cdf0b",
+        "canonicalEffectSha256": "d203a54c958621c355c8a2a14fa2e3a25c4cc92b154da6ab2f4448c18829810b",
+        "moveRecordSha256": "599a426db911c48dde47c0f0ea90d0db0c4177c8f5df7cb18b865df23c7e24e3",
+        "compatibleSpeciesCount": 105,
+        "compatibleSpeciesSha256": "307392a00e47e6bd07ba65105379fcc9eca688e7b7c94c69ee4ff67d068975ab",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 10 - Hidden Power",
+        "machineKind": "TM",
+        "machineNumber": "10",
+        "moveId": "Hidden Power",
+        "canonicalRecordSha256": "f80d85146809764d165cad44a92eb1ef2361f3c077ad452a836675f4004bcd33",
+        "canonicalEffectSha256": "b2fab5eb302383328ddc1b7f039285478b33dbd93cc81e01d4491f6bbfede0f9",
+        "moveRecordSha256": "8b9de36a45aeda01152fab45da3e96049553a7bb556f5a01e6524a929028b6a0",
+        "compatibleSpeciesCount": 950,
+        "compatibleSpeciesSha256": "d56d4d10399ec3cf52790769f53d68dad355f957cd3715f2c5adb5222eea043d",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 100 - Confide",
+        "machineKind": "TM",
+        "machineNumber": "100",
+        "moveId": "Confide",
+        "canonicalRecordSha256": "0571b836543b6fe60e45f69dbe2d89b25043003c4e7bb0a0d937b839c2cd19c1",
+        "canonicalEffectSha256": "e63d73b279b39fe5ad91571fc08b4dd1879a69990239f568e866d263b1963790",
+        "moveRecordSha256": "d2c890ff20aeaa6a55f9c601a3951784f475cd81b3c186f17e3561b4155350b4",
+        "compatibleSpeciesCount": 514,
+        "compatibleSpeciesSha256": "55d3e60bd165ca2463bb8a75919fb3757703bd11c7878f4cc7bdca9b7c40a865",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 11 - Sunny Day",
+        "machineKind": "TM",
+        "machineNumber": "11",
+        "moveId": "Sunny Day",
+        "canonicalRecordSha256": "c09da65435a0bad22723ae35b185c78c0124e1c4d86b31327a33c65bc431a8d0",
+        "canonicalEffectSha256": "d77d0c8b056bb4d8fd8b8454fb2569c3c35c10dc53d0317bdbe9654b9212d5e7",
+        "moveRecordSha256": "9a520b7bb6a62621cae25ea70393919eecb5db74dfdcf841fd945b63cce95aa2",
+        "compatibleSpeciesCount": 596,
+        "compatibleSpeciesSha256": "0a6d8cf1170a1a59d431ca9bfbed3ae59054cbf1a88a0d13a730c640c8ee4b0c",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 12 - Taunt",
+        "machineKind": "TM",
+        "machineNumber": "12",
+        "moveId": "Taunt",
+        "canonicalRecordSha256": "3a622e5ec7590c6ca10b2f5d22c212f5933f52d44570f5b4313cdaffd2d7e6eb",
+        "canonicalEffectSha256": "cdb41ac270a79af30a52691d4591c8a66e248497540183fd71af1f401d49c907",
+        "moveRecordSha256": "b925f0e584f8d861dc66a3e6c6b454da13fd7a039de18f0f736d220548d7c944",
+        "compatibleSpeciesCount": 296,
+        "compatibleSpeciesSha256": "3afee130236d1e722f05e689971408b5eb4d68cc15c7c8bd8a30d17f8d081a69",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 13 - Ice Beam",
+        "machineKind": "TM",
+        "machineNumber": "13",
+        "moveId": "Ice Beam",
+        "canonicalRecordSha256": "65d07819a4587555f4785f7ea27ec47cf2ed5860370b0c99ae33c0c4d0bce671",
+        "canonicalEffectSha256": "6936b7e79de5501ba3fc85a31d1e61adb756e07cc51d65f5f5b1e2ffbf2bc0f5",
+        "moveRecordSha256": "e2182c5029bf8720dc76f8b15656d5ddc75f131b3e33f8d28670bf44f88ee3e4",
+        "compatibleSpeciesCount": 281,
+        "compatibleSpeciesSha256": "285c29808208a4fd93117fee76f2bd1207729f43b572f0872cfaada064003ba0",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 14 - Blizzard",
+        "machineKind": "TM",
+        "machineNumber": "14",
+        "moveId": "Blizzard",
+        "canonicalRecordSha256": "64631bb8f3fb304dd21dce6d794a3ca538e20d067564f19bcf1719364b1ebf50",
+        "canonicalEffectSha256": "010b0ae1a167406ae93108247e68b889632673ad1259c6801c8f2ae6483e81e5",
+        "moveRecordSha256": "88f29f524604ad48d7dc0aaea0801cd1ddda89cee71a0734177bf3834ba353f5",
+        "compatibleSpeciesCount": 253,
+        "compatibleSpeciesSha256": "10a0298227ed0bbc0d2597c53811f8dffab68e5cbf99da06d640ab5086ebe756",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 15 - Hyper Beam",
+        "machineKind": "TM",
+        "machineNumber": "15",
+        "moveId": "Hyper Beam",
+        "canonicalRecordSha256": "32a980a8e0e255d186b9638bf21b59806b384f84da04c5a0b642aebc5b6765d7",
+        "canonicalEffectSha256": "b4930f12644ef45fc7c7c7d4e008321da4bc4f885795d8db320d235cbc5738cf",
+        "moveRecordSha256": "ab8dd43025afa0869a28c6b402002059e88f9e4e45d4a3d3080640d4df7f149f",
+        "compatibleSpeciesCount": 487,
+        "compatibleSpeciesSha256": "bbf1e2450e10ff2ac666ce3716bd60bf1770fde6b2bcaff8ed61dc666d2f681d",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 16 - Light Screen",
+        "machineKind": "TM",
+        "machineNumber": "16",
+        "moveId": "Light Screen",
+        "canonicalRecordSha256": "e5b82557b0e58ab288f88b7bcd1be5ea6bb3ad9f82354d497709ddef41206591",
+        "canonicalEffectSha256": "0ad1d20a443f76f0c3ebe1e1ab5afe98dfd38cc6f552c0af44733c4e1ce99b1c",
+        "moveRecordSha256": "01df228375113f8bd406f1d4df5b58830bcb2c510f585e8a8b404489c517c6f7",
+        "compatibleSpeciesCount": 291,
+        "compatibleSpeciesSha256": "ca7e367e1dff38c2b2de7d58bf03994adfc057c71352f5c7f2c4420c502d6f70",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 17 - Protect",
+        "machineKind": "TM",
+        "machineNumber": "17",
+        "moveId": "Protect",
+        "canonicalRecordSha256": "27a79af5bbeb380ef00ae6870c6ebf0a26b4d99a6d90d585adb45a552e766916",
+        "canonicalEffectSha256": "3bb7df44a36503e8e1343619bdcf057d84ccd0dcb5c49a435069abd836ee17e8",
+        "moveRecordSha256": "a74ecd0869c9686d6751a79b1bd0fd2e55c72f70a9c5c617a59252d5f45d3401",
+        "compatibleSpeciesCount": 950,
+        "compatibleSpeciesSha256": "d190453d178721e8bf8ab4ae413851e52a2c7576d903be308f3fa5777e461989",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 18 - Rain Dance",
+        "machineKind": "TM",
+        "machineNumber": "18",
+        "moveId": "Rain Dance",
+        "canonicalRecordSha256": "cc666b9ae3c0057a133b4e462102fbf15cc154b7f50ac4ae1b6a8eec5579617b",
+        "canonicalEffectSha256": "b7c36ab3c0662381283f6933442e99c97ff7081c03361d57a7d8c96d49f8c0f8",
+        "moveRecordSha256": "9e77639ef6315ab14242d8b1b1fff4ebc4a775b24f31cb88994a4f39784bc9a2",
+        "compatibleSpeciesCount": 591,
+        "compatibleSpeciesSha256": "b9dadd8622f6442fa6825fd0e17b74a565035ea98699f49d1d9594487b64c155",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 19 - Roost",
+        "machineKind": "TM",
+        "machineNumber": "19",
+        "moveId": "Roost",
+        "canonicalRecordSha256": "cb4d8fb8db9fd0c5c7602f8e9eb378423aab6a6f3373f54cb1a89a04edbda224",
+        "canonicalEffectSha256": "8854f5e7c913f28e7e808dfc110ff8598ab5f3cf8c116545a5bd4dd4d2583920",
+        "moveRecordSha256": "d40076add32c7d7893798c42a939e9e3ce6a84316cee77d41ec988c426df8b80",
+        "compatibleSpeciesCount": 114,
+        "compatibleSpeciesSha256": "cf987c20347197b88f550b4d0edb82d4461f26110d77a3171cf5f07609245ae8",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 20 - Safeguard",
+        "machineKind": "TM",
+        "machineNumber": "20",
+        "moveId": "Safeguard",
+        "canonicalRecordSha256": "d0d9e30c4c892e34a8d72b0927083a49d2c2239b8a8a3709cdcd35e39f9f895a",
+        "canonicalEffectSha256": "e8700a9e138e17577c6457453dc540c97a0b5b144dd19a263d43f1fc7711d2a1",
+        "moveRecordSha256": "4aecbfef35fc84d299487e69740b60b8ab3ec2b3e45f3b2e36bb6f758be6b08d",
+        "compatibleSpeciesCount": 288,
+        "compatibleSpeciesSha256": "7447c2fb49a425dc402a21225349556df794fcfd57dad65d1efcf984a4445971",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 21 - Frustration",
+        "machineKind": "TM",
+        "machineNumber": "21",
+        "moveId": "Frustration",
+        "canonicalRecordSha256": "08e15c972a8fea5d4516f02fac1524bcbc2cc764ef10a4e85aab7608d859b11e",
+        "canonicalEffectSha256": "569e5264b88730f48dab378d1ea41ab26c74cc0cfb42ec5704ed36d1f274dc7b",
+        "moveRecordSha256": "a0b0c5f19682ebabfc161598c2779a47fdcf59b453200f066c6190f9acb0ae89",
+        "compatibleSpeciesCount": 948,
+        "compatibleSpeciesSha256": "b335741da5b7119c2410bcb7fffab7e93197a3913c73097490153624f2852bf4",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 22 - Solarbeam",
+        "machineKind": "TM",
+        "machineNumber": "22",
+        "moveId": "Solar Beam",
+        "canonicalRecordSha256": "27670326fb675f5104823d45b59600818638b2bb31aa53c33db2215e2aee1902",
+        "canonicalEffectSha256": "15896fe1ee29ad79bc0ba9abfe14154c21e5c5d1eef8483674f33ef10f33d087",
+        "moveRecordSha256": "8e781387b7058e685a7fa5d839cf1fefd89e2cfd625fa2674cbd7d9d3c1f6080",
+        "compatibleSpeciesCount": 298,
+        "compatibleSpeciesSha256": "ebcf08da458043082c51bf0588e40de2795fb77589b79816151c8182f079a3c5",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 23 - Smack Down",
+        "machineKind": "TM",
+        "machineNumber": "23",
+        "moveId": "Smack Down",
+        "canonicalRecordSha256": "89ced6ae166394d02c803024ccda8f1d785d6e4c99c75d17d5898dfdfde7ff34",
+        "canonicalEffectSha256": "75c233e5f3a14b08be825ccacb6f379d6f4b59ff3f0f4af7b92212e121cff54f",
+        "moveRecordSha256": "c2d4d1a4f00a54810f50dacef87adae219f47f912dafb0f2e18ef4fc50586226",
+        "compatibleSpeciesCount": 121,
+        "compatibleSpeciesSha256": "a66151fd6b82275087733d2d1979f4227636f5e7ce126a06302f155a7b2f55f2",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 24 - Thunderbolt",
+        "machineKind": "TM",
+        "machineNumber": "24",
+        "moveId": "Thunderbolt",
+        "canonicalRecordSha256": "58a5ff641844ffef487a1af3f1bfff2f240c63210e7850804cd4d5b2b4f5e607",
+        "canonicalEffectSha256": "1175b08cded325d75adc4a69f96d3d2bf7d6047d9e5d64d3263256fc3403bee2",
+        "moveRecordSha256": "044a133c587f28d081dfa6f663f25b9894be94a5071580b44d6f2f8e3fd29c41",
+        "compatibleSpeciesCount": 254,
+        "compatibleSpeciesSha256": "1d61c4f236f7ec048cfdac1ab8f09de71860fc33f1220336e70621b948b93f7f",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 25 - Thunder",
+        "machineKind": "TM",
+        "machineNumber": "25",
+        "moveId": "Thunder",
+        "canonicalRecordSha256": "0df1d87e17b9f6985d4988c19766f72c53232fb055f2ae1c4ece04aecc28019d",
+        "canonicalEffectSha256": "f9cd72336a23cc316ecd27ca81e07cf1075f10bb7a818516abc686c63daba41d",
+        "moveRecordSha256": "c44954d04a298861226da145aa143b17f12704cd63a18e6c4d58d32787393fb9",
+        "compatibleSpeciesCount": 212,
+        "compatibleSpeciesSha256": "2036efd56c29891bd4fd6781ce78f51cb30c6359e5886e4a76b222fe3e4d451a",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 26 - Earthquake",
+        "machineKind": "TM",
+        "machineNumber": "26",
+        "moveId": "Earthquake",
+        "canonicalRecordSha256": "32f1b8d726a429e6a1b5a1bff2653127836636c61074b661649666f50aaab63d",
+        "canonicalEffectSha256": "e1f8f3dadaee49bcadd7d8ac4bab02d7ed5e40177cad7aa3c0762e3e4bc9e3a2",
+        "moveRecordSha256": "769e4dd4b95af4177abbb86e4cad6f69a02c2233f3edcdecd0dcf82d1d822d84",
+        "compatibleSpeciesCount": 280,
+        "compatibleSpeciesSha256": "89437e7a276257f3629e605bf9c77ff5c6d9781e0056322e9c10b29f5716de49",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 27 - Return",
+        "machineKind": "TM",
+        "machineNumber": "27",
+        "moveId": "Return",
+        "canonicalRecordSha256": "59f72f665a2964fccf7d9e158cdf84e21e8b1eac4be8e99a214668a34f780978",
+        "canonicalEffectSha256": "8e5b94795572e4bc81ff382edbc94b6ca1abec269c3d1125aa5ea901e36fb1f5",
+        "moveRecordSha256": "260ccff72454609fbc63d408823da9c2f5cc0bc1b3ccbef4d19d3b7bcba90724",
+        "compatibleSpeciesCount": 951,
+        "compatibleSpeciesSha256": "b21a73df93d19ebe6e91a03d75473fc5c2c564783b5911b9035582175cebaf79",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 28 - Dig",
+        "machineKind": "TM",
+        "machineNumber": "28",
+        "moveId": "Dig",
+        "canonicalRecordSha256": "3b3e45eee3671668c1e4e6a63fd5a4fc39ef06b43b83bcb08c0d93d38198e339",
+        "canonicalEffectSha256": "3b33f83e02e583db5a6f0e0b5636b62a4f2585d2556dd0e8697e66249a43f97c",
+        "moveRecordSha256": "c4847d43d74e5cd56cf60ac1cd83c0dd57ea4701803ba59956cec69286e54b74",
+        "compatibleSpeciesCount": 293,
+        "compatibleSpeciesSha256": "182a0835b5095de50b947dd99062525e568d95dcf69b7ff3e38b8f40c4fa6c90",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 29 - Psychic",
+        "machineKind": "TM",
+        "machineNumber": "29",
+        "moveId": "Psychic",
+        "canonicalRecordSha256": "d1dfab1c3aa5119af53d5f3efac863042436d6563ea4084a9e7c04bc8471eac6",
+        "canonicalEffectSha256": "acafa8034e44e775c82ed3be76b9a3eee894ab9537b3be5302b8654fafff96e1",
+        "moveRecordSha256": "8726d20d3f5021b01ec3ab6558213ab855dc2ae3a000f3d06d71262a0089b6ae",
+        "compatibleSpeciesCount": 248,
+        "compatibleSpeciesSha256": "15afa43d0a944b7f9bd783f36dafbb74a748568debe7b9e1e1ff6dc10c79eae5",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 30 - Shadow Ball",
+        "machineKind": "TM",
+        "machineNumber": "30",
+        "moveId": "Shadow Ball",
+        "canonicalRecordSha256": "88b49dea67b269e7bad3308c16e9734d19fe6076578009cc300fb29bedd6cc45",
+        "canonicalEffectSha256": "50e23a7bae2f39d838565b9430f15d873cbc09fc70e1ec58eb4ee77e7f3e225d",
+        "moveRecordSha256": "2287ce9ec8d3d06d59c446911f2f3350f576d413ecdc05c307eb0f5680bd01aa",
+        "compatibleSpeciesCount": 305,
+        "compatibleSpeciesSha256": "971ffb54965ec4822a61023e547f000d93d1acea540786c5ddbf6d00f603946b",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 31 - Brick Break",
+        "machineKind": "TM",
+        "machineNumber": "31",
+        "moveId": "Brick Break",
+        "canonicalRecordSha256": "f3742db232c70a81f56ec9729997f38d96cb8729de848527ea9d62f2f6fc958e",
+        "canonicalEffectSha256": "a4c179bc7458dd588acaede09c4e9f8e2f0f590999c340950a3a3af1eddc8ea6",
+        "moveRecordSha256": "07b4e9eb68b415c76e540bca5ab024da71ad093444dd825e17e6af1eaceab5c5",
+        "compatibleSpeciesCount": 319,
+        "compatibleSpeciesSha256": "6f5a144dbb761d27f3d40918062989b4317174ac05a6dc81e279b33073f4294e",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 32 - Double Team",
+        "machineKind": "TM",
+        "machineNumber": "32",
+        "moveId": "Double Team",
+        "canonicalRecordSha256": "69303867046d096cadf625a143c78012cbb70b755f7828304bd7e20a18ea6c10",
+        "canonicalEffectSha256": "5439c3d8f5c2f07ed2cb5fd58afb54817940f273c69277af50eead512bd5b451",
+        "moveRecordSha256": "1769f77f74601dad525c6ac8664a62aac04076f9f0d898a81e7ed7ea26547c77",
+        "compatibleSpeciesCount": 951,
+        "compatibleSpeciesSha256": "3e22502407f1a510c2401f689778dfb4d14234b788aba46ffbf32f954431c3da",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 33 - Reflect",
+        "machineKind": "TM",
+        "machineNumber": "33",
+        "moveId": "Reflect",
+        "canonicalRecordSha256": "a3dcca5c06e7c168ae67d658c69c7e66d979a9bb4a89eb2408d194bb51e54fdb",
+        "canonicalEffectSha256": "207239941d25401305eb8fefdd3fc7f144949b4362eb6a4fd8f398f341ddcc87",
+        "moveRecordSha256": "d4097957ac032a3bb476d065796e0ea44cc23c7124b892abb61ba491494bae80",
+        "compatibleSpeciesCount": 214,
+        "compatibleSpeciesSha256": "d5a4dffbcc9623c9b412bb8b92212fd0c71d625c40ef54bd290558d3f6456cad",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 34 - Sludge Wave",
+        "machineKind": "TM",
+        "machineNumber": "34",
+        "moveId": "Sludge Wave",
+        "canonicalRecordSha256": "51e45595ac400846df97a4bb6de068c79a97cc2a66513281700395ad508541ef",
+        "canonicalEffectSha256": "a908a9eba102aed6740084daa428d5426e02f84b98d3e15e2d061f115f46a2bb",
+        "moveRecordSha256": "5bc1f59279a51ba838ad95aeff1c3ea645de6d8736346f5195c98b55edd347a9",
+        "compatibleSpeciesCount": 72,
+        "compatibleSpeciesSha256": "f06fe68e8ecd3fab881e3c3bc1d17496e4138f7d9a4d8069eadb0351e21afaea",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 35 - Flamethrower",
+        "machineKind": "TM",
+        "machineNumber": "35",
+        "moveId": "Flamethrower",
+        "canonicalRecordSha256": "611c5f6e8a655ecd44b33e1804c775ff2c82baafe6966b637dc7fe8d7708d53f",
+        "canonicalEffectSha256": "6cca7eb9202bd76479c59ee72ae0e67badb2914f57f2226a2b5eafccb3052609",
+        "moveRecordSha256": "9336a3fcdf056fe5a1110f4c52fd9d2f57b4a8018c827b8c188236e77778a35e",
+        "compatibleSpeciesCount": 200,
+        "compatibleSpeciesSha256": "1c6ab86b5c4e27e44f4c3d00eb0fd45f7f3519be62f103f9f033575ba3e3fc9d",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 36 - Sludge Bomb",
+        "machineKind": "TM",
+        "machineNumber": "36",
+        "moveId": "Sludge Bomb",
+        "canonicalRecordSha256": "63287f03c5ce526b73424e158b218ece2c453404eee8cba3327f02a5e9a9182b",
+        "canonicalEffectSha256": "b004524d4fceb262439a350110de04ea802e06c0f7b9238b783a814b678dada3",
+        "moveRecordSha256": "d01681f36085078583f161fdb6a0f5838a6bcbec87f02b70b2e835e7f450784b",
+        "compatibleSpeciesCount": 160,
+        "compatibleSpeciesSha256": "68dd8fd66bf0446ce0ee8382c62a01383247e71cd5621798abbbb71280f56772",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 37 - Sandstorm",
+        "machineKind": "TM",
+        "machineNumber": "37",
+        "moveId": "Sandstorm",
+        "canonicalRecordSha256": "de71cf3c773e53797989e081542faac4fa557fa9314685f84b826f3aa5004fc4",
+        "canonicalEffectSha256": "89ff0243e05bad160deb9cdd0c59ee1dffe513956ff5b9d332fe9cc1dd8e1fde",
+        "moveRecordSha256": "ddfa441ec65dab071787ac7f583a041f0ec006ac4511fecb0ec33ed59a80d0e4",
+        "compatibleSpeciesCount": 200,
+        "compatibleSpeciesSha256": "1001a60021d08b3027951e391a14c19dce4834ac44433736133c545375d9a86b",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 38 - Fire Blast",
+        "machineKind": "TM",
+        "machineNumber": "38",
+        "moveId": "Fire Blast",
+        "canonicalRecordSha256": "d7a2e7b19473eea330397d34e8ba8f17d50c867aff6eedd9d999b000b0b0f4bb",
+        "canonicalEffectSha256": "47bc930edc6bb9a8a137d22aa58d4d94c29fc5229207613b3dd3b0b50cee77a5",
+        "moveRecordSha256": "ccae075edc0fc5c655f213b127dbaa6c5adf165b0e010e4fc7f8f03544aa65d3",
+        "compatibleSpeciesCount": 180,
+        "compatibleSpeciesSha256": "a68dc06b7fcbc5d77219f694f9db5a2e83a187e4a299898cd0f5285d99e7ead1",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 39 - Rock Tomb",
+        "machineKind": "TM",
+        "machineNumber": "39",
+        "moveId": "Rock Tomb",
+        "canonicalRecordSha256": "a5cfb387010769b00f0b4551cc308496fda0d6196dcbcd85fb7fd95e4005e456",
+        "canonicalEffectSha256": "14f7128360c3ec50eb0a676d045871c113cb926e73c566451700f4763f4a2816",
+        "moveRecordSha256": "60f9ac9b979a574e73f2faa6957dfdf38f9a2042313035e77b38ea349d9f2e4e",
+        "compatibleSpeciesCount": 365,
+        "compatibleSpeciesSha256": "26e3c61928c49110b9d3293fa45792e1c8a9a5e09b14e1e9941b2405822bde9f",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 40 - Aerial Ace",
+        "machineKind": "TM",
+        "machineNumber": "40",
+        "moveId": "Aerial Ace",
+        "canonicalRecordSha256": "7e80be2f80e954c52c30fb1db7c4ac4817c439d707ac1dafdb62f69904a3ff0a",
+        "canonicalEffectSha256": "e91eeb2a607f2d840dfd65209736780df98232f2026b13ca2917c5181f723ed7",
+        "moveRecordSha256": "9bc51cfcec1509ee6e5ea184dbc562a07586efb1a363f8f307c69f39827f51b4",
+        "compatibleSpeciesCount": 303,
+        "compatibleSpeciesSha256": "932c47272b397f599631e76a97c2a6f3bcb3238d269502f7bbfa7c25942a5bd5",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 41 - Torment",
+        "machineKind": "TM",
+        "machineNumber": "41",
+        "moveId": "Torment",
+        "canonicalRecordSha256": "e90f76482ccee6b07150bac6a9f1befed4e88c66d777952248233462479552a5",
+        "canonicalEffectSha256": "95adad0962707cb6ef2afe6d0f70e16d2eb0c472f428ea1fe423502de84874cb",
+        "moveRecordSha256": "6132c621d4ebf3f918115ba3e594431054a7bc07bb7a66e249f6ab8d5254fd0e",
+        "compatibleSpeciesCount": 193,
+        "compatibleSpeciesSha256": "5b0eded1b45213578f941c3412ac40dca997d7178b73a5e6daf47239d6593f3c",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 42 - Facade",
+        "machineKind": "TM",
+        "machineNumber": "42",
+        "moveId": "Facade",
+        "canonicalRecordSha256": "fc000103f33291199c04aadbc594e7deae96ad351dea40a8fc5893be6a6849f8",
+        "canonicalEffectSha256": "5ce5fca43c517713e21b998a4e72485ed0677f6c2c3b41ac2b7f7e5eb75197bb",
+        "moveRecordSha256": "b26f4a5f2e31b96ed7e725ebfca8f6787aae83d41d55687cc0bb3b31063b22d1",
+        "compatibleSpeciesCount": 947,
+        "compatibleSpeciesSha256": "56cf71f4f44edb06445161f675bc7cb07eab662505f0e0ddef170dda623b9e78",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 43 - Flame Charge",
+        "machineKind": "TM",
+        "machineNumber": "43",
+        "moveId": "Flame Charge",
+        "canonicalRecordSha256": "1a17489f727cf41f113aab7b375507e0a346270e8072a829ff4bb30717e406fc",
+        "canonicalEffectSha256": "6bb4a48829a190538519b9e69c03daf4a8a0178f145c62a095351b48e5380429",
+        "moveRecordSha256": "c96777652e9b338ca47f7d0d466a9947b724fa3913e8b10bd9ac9d8fef196e46",
+        "compatibleSpeciesCount": 83,
+        "compatibleSpeciesSha256": "e4cedf45153da3bcf828efda3d00c706044cb3d4c6e85d98d78f69ca275705ee",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 44 - Rest",
+        "machineKind": "TM",
+        "machineNumber": "44",
+        "moveId": "Rest",
+        "canonicalRecordSha256": "d82d388625520c6b3a9bec45b91c2b40cd8e10f6248e51220010fbdef78066bc",
+        "canonicalEffectSha256": "eda6c807d25da49b4034e6eebb13b3c2d081f75ba3d75c6346d5654c54de16c5",
+        "moveRecordSha256": "b6d706fd81f953eaf17776dc1faa838774206b1097d4f550fcca7b31c4773cbc",
+        "compatibleSpeciesCount": 944,
+        "compatibleSpeciesSha256": "7db83a1a83383cb6f890263fcb0e150d99a278f6cf961fcd2f3ff4ab5d7d038a",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 45 - Attract",
+        "machineKind": "TM",
+        "machineNumber": "45",
+        "moveId": "Attract",
+        "canonicalRecordSha256": "340759b8aa43a6addbc6f29fef532d48e989005984f71d364081d997ebcbfeff",
+        "canonicalEffectSha256": "7f9dc872542548ca93220c79526b8d8e1dc46cd4405ccf96ae7df6385a942272",
+        "moveRecordSha256": "43d80855aabfd959ed063a091520b89405c27746b99945dbb87e31a018529d90",
+        "compatibleSpeciesCount": 818,
+        "compatibleSpeciesSha256": "b2d85dfbaec2d062bb9cedc118adfed45048f7268ae12701cf41855f681acf12",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 46 - Thief",
+        "machineKind": "TM",
+        "machineNumber": "46",
+        "moveId": "Thief",
+        "canonicalRecordSha256": "499d4ec435294eb1a9255b74feb960fa10653a69b9c4e68c615ca6c280fe1e61",
+        "canonicalEffectSha256": "bc4fe409a88ed15e71738282af32660d9b9b8346795d0379d3abf6c00f6e8d3f",
+        "moveRecordSha256": "72873a96b3c4e412c2da2497625153ae6fa212e3754b4c9f4743e8c07b194999",
+        "compatibleSpeciesCount": 361,
+        "compatibleSpeciesSha256": "f9efa8cb43dd6bbc4be5114281d76a5dfa2be44a836d77e05fc2ad64a8234b2a",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 47 - Low Sweep",
+        "machineKind": "TM",
+        "machineNumber": "47",
+        "moveId": "Low Sweep",
+        "canonicalRecordSha256": "b3701857d1ed93229185fa5d9c722b71290546d274a75dad4158c71873d3e930",
+        "canonicalEffectSha256": "d3aea70995b0ce6b17b325e73294fff31026bf1ca9535669b1b29a5a6cb9e795",
+        "moveRecordSha256": "a03b403adff4333b9e4cdfa3083952eda7a6ece54f990346a220ea9dd66be349",
+        "compatibleSpeciesCount": 107,
+        "compatibleSpeciesSha256": "4f0514a014160f82737eec483946897c362226e27931acf9509d67a5fcf8b8ad",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 48 - Round",
+        "machineKind": "TM",
+        "machineNumber": "48",
+        "moveId": "Round",
+        "canonicalRecordSha256": "12dca321155227445dc935ff4610fca9b43e3d33e59cac5ed6e722976078fe79",
+        "canonicalEffectSha256": "a9b7d25b7dbb0ae28b377f1d3ad04c7b53c5c45d38cf2a51ec6901c198b971a1",
+        "moveRecordSha256": "517c7c933a3409c6d7251552852667e0eb806fd1929e4f73328a53ea41a89b54",
+        "compatibleSpeciesCount": 948,
+        "compatibleSpeciesSha256": "12d78a5163ba757f69b6245d618f2a1c8ebd552c774dcde40280fc484b9947e1",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 49 - Echoed Voice",
+        "machineKind": "TM",
+        "machineNumber": "49",
+        "moveId": "Echoed Voice",
+        "canonicalRecordSha256": "044f41d5d22bb741a71245c640c880644ff7cb42c354db646cfc1b1754869ffc",
+        "canonicalEffectSha256": "f5a782bf5e8ba3008e7b1697d69bd0838556e9a76e59508069c389b0a9591288",
+        "moveRecordSha256": "f848e3563c2c96c491c6ed18a20d79fa8564998349ac70b775942731f639a5e9",
+        "compatibleSpeciesCount": 230,
+        "compatibleSpeciesSha256": "12940b2bde97d11bcd3ad774a0fdb3c234694eef3693495f7ab78a0d0dfdd15b",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 50 - Overheat",
+        "machineKind": "TM",
+        "machineNumber": "50",
+        "moveId": "Overheat",
+        "canonicalRecordSha256": "fbdc276bde52929f25e327c227245142656e73073aad1c4a5a1eeccc484fa211",
+        "canonicalEffectSha256": "89bb20eec3e85138f60b29fd13713db208d3106d26d5e62964ea7f5d3abe1d3f",
+        "moveRecordSha256": "cf8054eb72909ae8f710c46f6bac13f297cd429321f7346c4ab0a4a65ff56321",
+        "compatibleSpeciesCount": 89,
+        "compatibleSpeciesSha256": "032a4899d4bbb76732c5aa0f22a7a1bf9b169ea6e4860bfd53a152453cdb1815",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 51 - Steel Wing",
+        "machineKind": "TM",
+        "machineNumber": "51",
+        "moveId": "Steel Wing",
+        "canonicalRecordSha256": "f8ed03e376147c1af0104995862de1370cb9413f7c720490c980bb72abb712ab",
+        "canonicalEffectSha256": "964949248849832d38cf05b8c4bcd03c79ea4d12bd9d017649eccf038917e55e",
+        "moveRecordSha256": "e359328199dc6c9867677ab7a2fef290f5fd3a33680650ada84a71d94d44343f",
+        "compatibleSpeciesCount": 101,
+        "compatibleSpeciesSha256": "7351dd4ac1872011d12ca20658cc593e1f9319c25385137667d1ef0db41f24cf",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 52 - Focus Blast",
+        "machineKind": "TM",
+        "machineNumber": "52",
+        "moveId": "Focus Blast",
+        "canonicalRecordSha256": "5ac916894d96188c164cab7f9d7838afde8d744753a14977d8eb93be60e0554b",
+        "canonicalEffectSha256": "8bcb1852728b3b7dbccb3b1812a485587e1eb1474430e20ef0a4276e5bfe719f",
+        "moveRecordSha256": "4befbb4154707c73177112f01aa966f92792ea4c82ac333f619054e59ce16d9c",
+        "compatibleSpeciesCount": 218,
+        "compatibleSpeciesSha256": "b59690d39b18ae6090ef9152429cd1279cfa07a47cd6722418a306712c9b30bb",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 53 - Energy Ball",
+        "machineKind": "TM",
+        "machineNumber": "53",
+        "moveId": "Energy Ball",
+        "canonicalRecordSha256": "20c66f1776663558825d1eae9f840df8ed5f079cb30f61fdbe54e1d0b47a381c",
+        "canonicalEffectSha256": "b9f372bdc5eb354b157b1911a48bca260f4d192a539d6835d626679bdcfdd86b",
+        "moveRecordSha256": "426d13241fa9d8f6d814a9a24962e102abf2cde14485085a0d82d2481e5f1057",
+        "compatibleSpeciesCount": 222,
+        "compatibleSpeciesSha256": "1945b70d68fc513be21393ab3b25857ab9e7bd593c6d9ac77f81eb95809149e1",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 54 - False Swipe",
+        "machineKind": "TM",
+        "machineNumber": "54",
+        "moveId": "False Swipe",
+        "canonicalRecordSha256": "ebb15b8853ca39f477bd74a49565c43706ea091086357646ed41278681fe89f3",
+        "canonicalEffectSha256": "8f4daecaa6005b153b5dd216daf187175921be99a3d41b96bfe08b1982ef6fb6",
+        "moveRecordSha256": "0210ca3e0980838d05365eaed524841b47f1d8b4af5e87db22e99602fc618efb",
+        "compatibleSpeciesCount": 91,
+        "compatibleSpeciesSha256": "01c538582afe14da4ce6f24ec33f4b59a084710c0e248876b834f81cd12ca1f0",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 55 - Scald",
+        "machineKind": "TM",
+        "machineNumber": "55",
+        "moveId": "Scald",
+        "canonicalRecordSha256": "9310a5c1dd563ed5b4a68fb9e5299c54c7247dada3e9b1f3d0240851c8904d22",
+        "canonicalEffectSha256": "42dbbf166e01c90bd7ddbdfc94f003389a4cce6ca6c2cd0d1c99ee374381e28f",
+        "moveRecordSha256": "dd61ddf4f14d2a3b95c2c9ad79c0aa5afe3bd2631023c6440fea795a4af8fc70",
+        "compatibleSpeciesCount": 152,
+        "compatibleSpeciesSha256": "a73495db26f53f25f42463d233d728eb37e2637732e0cb5326a64329d1cd9201",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 56 - Fling",
+        "machineKind": "TM",
+        "machineNumber": "56",
+        "moveId": "Fling",
+        "canonicalRecordSha256": "1264b1838a2c741f2b8138ccddd6fb6261a14d723b62c6e21a72297231a8f0ff",
+        "canonicalEffectSha256": "c3ecc45be965ced0790bf17d872b65a3f6420712cfd229c0db47dc52e06f9a61",
+        "moveRecordSha256": "82b98d9ba38d8432f7248920f233e596740f38d9dc84df129ddb282be81b0492",
+        "compatibleSpeciesCount": 354,
+        "compatibleSpeciesSha256": "e76a8bcba07e72a8e70637aaa9d8464c16f6ff40587607f7badb0599ed3457e5",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 57 - Charge Beam",
+        "machineKind": "TM",
+        "machineNumber": "57",
+        "moveId": "Charge Beam",
+        "canonicalRecordSha256": "a7df70217e14775524d3017b64cf2d93dedc37e89a249483c0886cca64522e36",
+        "canonicalEffectSha256": "f9130ac2cbbe8295784dd35bac25840c20b6b0622b1dd870171f3fbbdff02b2d",
+        "moveRecordSha256": "6e6bde0dc1c5fa196bf1584da52aa940ac8baf42ab79c4777e72c9f79c2bb700",
+        "compatibleSpeciesCount": 179,
+        "compatibleSpeciesSha256": "6ce6895b404c20770b3912e5e67941daee547912326571c4cce8a1308edc703a",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 58 - Sky Drop",
+        "machineKind": "TM",
+        "machineNumber": "58",
+        "moveId": "Sky Drop",
+        "canonicalRecordSha256": "7892dd782701c5a62da2df798efa512e1ab5246753a49f8904b3fa99ecd5c17c",
+        "canonicalEffectSha256": "4757af1025e7dea706e72f32505343691aaf3825c44a18d68613ebdba9b2783b",
+        "moveRecordSha256": "e467de931578b497de8a8ffc1c7f83abf50638c14aa005cff18f6b4c51063aaf",
+        "compatibleSpeciesCount": 27,
+        "compatibleSpeciesSha256": "1946fcd54805d9f67843545ebd5c2092fac78bdc1c1e6146d2189a1c831f4577",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 59 - Incinerate",
+        "machineKind": "TM",
+        "machineNumber": "59",
+        "moveId": "Incinerate",
+        "canonicalRecordSha256": "abecf9fe4fd3821d09e061d23144c16b269f96e109374beafcc790700503a8be",
+        "canonicalEffectSha256": "c7f17d8e947e1d997d83288e595133c97a5e3b831c54f89132ca57a0b630fd0a",
+        "moveRecordSha256": "f3511968521df2fd0afce1fd213192625f1cfc76649108810c8b09910063221d",
+        "compatibleSpeciesCount": 174,
+        "compatibleSpeciesSha256": "6bf3ae07a4c943b77c260809a284287d195865792c7a5b5c4d2c5a73e0f65a02",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 60 - Quash",
+        "machineKind": "TM",
+        "machineNumber": "60",
+        "moveId": "Quash",
+        "canonicalRecordSha256": "5f7853cce5cb955341a7b5865ef7b75b0c940cc69129b1a534484386b7b8d624",
+        "canonicalEffectSha256": "5adc63b82cf18e49eb613f2aabd6dede2c07337f608bda3199c0e0249366355e",
+        "moveRecordSha256": "9f9f29083627e2753643822d3df5db5869d9ce1e699ef05e6334fbf3cca17b9f",
+        "compatibleSpeciesCount": 38,
+        "compatibleSpeciesSha256": "bc2e7d2c5f3d86cf2f1d9afc058ceb2cdf561085718fa36213c3e56049a742ca",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 61 - Will-O-Wisp",
+        "machineKind": "TM",
+        "machineNumber": "61",
+        "moveId": "Will-O-Wisp",
+        "canonicalRecordSha256": "d1b4de0739202c054a55fb208ccde44d5d953ba12a0a14a0fef2a30124b1ac80",
+        "canonicalEffectSha256": "2090a6654662786f1e05815cca79db15e2c633cb725ff686ea8cde93976d5673",
+        "moveRecordSha256": "22b5ebfbc94d9994128463dfafc26bd5c980d05bb0ced79d9606b26ee78c4f1e",
+        "compatibleSpeciesCount": 121,
+        "compatibleSpeciesSha256": "148421cccfded6a48267d3e503c5354a3a03ba1473d937fa573f4cc6a29a2af3",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 62 - Acrobatics",
+        "machineKind": "TM",
+        "machineNumber": "62",
+        "moveId": "Acrobatics",
+        "canonicalRecordSha256": "60154df7d577e5089f8ecc07c24863a6a6dceba5dfc6765b8a14804208127c54",
+        "canonicalEffectSha256": "766be459b0fec84531378bc2d57d1034e5f6d46512dbf79c8558563bd4dd1806",
+        "moveRecordSha256": "8f5efe419a67a5a69b348dd72dd0223543196d79d3b6fb372ab59916e3daa5e1",
+        "compatibleSpeciesCount": 121,
+        "compatibleSpeciesSha256": "75cb69417fb27bf3645dabf90f8219d99de36b71a9d1e38a91a23a36c387ebf5",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 63 - Embargo",
+        "machineKind": "TM",
+        "machineNumber": "63",
+        "moveId": "Embargo",
+        "canonicalRecordSha256": "e03be3cc562477cf72ebf343a3ed22b7352d7cc257007328ec730ae8b200711a",
+        "canonicalEffectSha256": "5de452a2c99f7c5b924a9671e6e7a04ed1e7d421092f24860e043517b5d560a5",
+        "moveRecordSha256": "1e962ff304c052393332d2ec2ea49daf94805cf8497702ba4864f72e89abd14d",
+        "compatibleSpeciesCount": 99,
+        "compatibleSpeciesSha256": "71fbbfa3e6900792234809d7ca2bc0b46299c720f0d7637a2d0d168650c5746c",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 64 - Explosion",
+        "machineKind": "TM",
+        "machineNumber": "64",
+        "moveId": "Explosion",
+        "canonicalRecordSha256": "942a5a2359fbf9ca425275f52316d57c27a30cfab9173fc8f08f9d473e47cf23",
+        "canonicalEffectSha256": "9410afd2578d90d3be1e45c4e77fefa1765fddebca5386e6929a9f7503e19dae",
+        "moveRecordSha256": "1141095ffec1986ed38b4741d9f91ce491b3cab4917363fb6ead969de10f39b6",
+        "compatibleSpeciesCount": 103,
+        "compatibleSpeciesSha256": "5bca1560114cc5589c84a3dcbd9b14caac43d5ed02bb565a159255474aea75bb",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 65 - Shadow Claw",
+        "machineKind": "TM",
+        "machineNumber": "65",
+        "moveId": "Shadow Claw",
+        "canonicalRecordSha256": "cc4f604147cf07cd5ea4f981967b2958c4e69b8cbc476830ea5361a83fcad7b1",
+        "canonicalEffectSha256": "c4af47f7e44627775b7e288e72544544a2eaf5a04212b66c7a9f63891d34b5c5",
+        "moveRecordSha256": "c3a9d8f54f9b67a1ca106c49dd88fd8977af12b9e2c5fb86bb9672dee935492a",
+        "compatibleSpeciesCount": 178,
+        "compatibleSpeciesSha256": "52acc27528f2f9fa5eb6c93c9bb82905bfcfb377f42c8b0aa7dbd3370a644248",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 66 - Payback",
+        "machineKind": "TM",
+        "machineNumber": "66",
+        "moveId": "Payback",
+        "canonicalRecordSha256": "bac86f58718d5424c31c676d682616229b20daf42803dcc86d8a9b8a497cafe1",
+        "canonicalEffectSha256": "739311bd858245cf79fc92e43e8b85fa39383f9b630ceaf592995062117d69e8",
+        "moveRecordSha256": "ef5baba4019a07b254a9e5cafb931b5de3adc30e1fd1d811ec80037516ae0ed4",
+        "compatibleSpeciesCount": 293,
+        "compatibleSpeciesSha256": "d3553693d0c2f7539c1b8db5b408834d09d3209eddfcb8af7d2bd7d3bc4eddf2",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 67 - Retaliate",
+        "machineKind": "TM",
+        "machineNumber": "67",
+        "moveId": "Retaliate",
+        "canonicalRecordSha256": "adafc9f8590360466da202467bad86625697256eabc0e5d5da6ae6d20e1efe11",
+        "canonicalEffectSha256": "a97699e062cab9abc90e04678df6fcda9d09f1aacdb61a6d55992e138b10eaf0",
+        "moveRecordSha256": "370d2d5a6f76c5a24849c412da6afe80dda24f0093b2de1d462c54971eb85978",
+        "compatibleSpeciesCount": 177,
+        "compatibleSpeciesSha256": "9a5a877e0e3ccabb1ba5d4ae7d05a7d12fa36d09126d5dd9167a3e38c0584d73",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 68 - Giga Impact",
+        "machineKind": "TM",
+        "machineNumber": "68",
+        "moveId": "Giga Impact",
+        "canonicalRecordSha256": "f4ce5b20e33ee743b82e7cfc091410f7d32c602977f414e90ffac3381c6ca9e1",
+        "canonicalEffectSha256": "e18522f18835d3d5e277ccae996d316f9f9e279bd0f0a6ed6eaf829cf591156c",
+        "moveRecordSha256": "3db9c402d9129426c3ba903bf940296a7a38c07c8aab384c6c2d7c27a6ec9273",
+        "compatibleSpeciesCount": 499,
+        "compatibleSpeciesSha256": "bf0d5d5845fc6edeb2d81be72e2ee6269a81945209f4980706fa2887ab80ea18",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 69 - Rock Polish",
+        "machineKind": "TM",
+        "machineNumber": "69",
+        "moveId": "Rock Polish",
+        "canonicalRecordSha256": "2d115197b7afa50efc4bf464c0069418c5e605277323da31a20ff81d14a52f2e",
+        "canonicalEffectSha256": "39f7f914efe7f0bb23baa1481b4ba64931744d618835b86c716901806a12b711",
+        "moveRecordSha256": "65d07102b1630111a87ff8a1298b1a9025f102a796b7c57d09a65273c88e795a",
+        "compatibleSpeciesCount": 112,
+        "compatibleSpeciesSha256": "d6d8a6a9e87d8da5e129c679f395daeecfcc1a73fc1a8db5cbcbe6cb279d3086",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 70 - Flash",
+        "machineKind": "TM",
+        "machineNumber": "70",
+        "moveId": "Flash",
+        "canonicalRecordSha256": "96b7b296abfec9a5c428caf12b93c2864b0ecaed65f5d78f2d1d0f7066bc6bb0",
+        "canonicalEffectSha256": "12981bc0260482d45dc8cb51538788090a48adea1c45d1ac0a1b2f7096950366",
+        "moveRecordSha256": "b9b5e421f27b976123110a2a8bfa39266011e86e68b475e6d7fb5b701f46e12a",
+        "compatibleSpeciesCount": 308,
+        "compatibleSpeciesSha256": "31cd32917bd6d69ef3769411dad4d0dfee8d3f9f6fd2d9c94eb055ed16c132f0",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 71 - Stone Edge",
+        "machineKind": "TM",
+        "machineNumber": "71",
+        "moveId": "Stone Edge",
+        "canonicalRecordSha256": "a6d3a024cbee74ff5d916dba25d89e1263629493601bd18a6f85c4aec3439ffb",
+        "canonicalEffectSha256": "63ac2bd31e5ac34c13b4df2dcdfa2eeb8921d472396cd23ed2841e747e682bdd",
+        "moveRecordSha256": "6a1f90a93546e75411a49232a856574633df2dd6ee54ee0b4088f9546f7606d5",
+        "compatibleSpeciesCount": 205,
+        "compatibleSpeciesSha256": "fe7f82f2f76291bb405aed90a02b20e7527475748d4a36141eab26af2542886c",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 72 - Volt Switch",
+        "machineKind": "TM",
+        "machineNumber": "72",
+        "moveId": "Volt Switch",
+        "canonicalRecordSha256": "5abfa6a950dc7ec60f231f720d5243dcdb06687ba0f739a9b7e3d66a65609860",
+        "canonicalEffectSha256": "e8d54667ce214a3a4c94e913c118ae9fbca6bd587984e90402bcc2d4b41ad306",
+        "moveRecordSha256": "1ff7821b948c7c2252effbe872707b506fd400e0f401922c8ed71f4f3133d189",
+        "compatibleSpeciesCount": 66,
+        "compatibleSpeciesSha256": "7050e2a4d9fdcf01701aded393c6d08613477fcb4b60849c051e6e5ca0e195eb",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 73 - Thunder Wave",
+        "machineKind": "TM",
+        "machineNumber": "73",
+        "moveId": "Thunder Wave",
+        "canonicalRecordSha256": "fdc43dd7529b59c427ae83c3e17068e83a342d951d9144d3e37f940eecd0fd56",
+        "canonicalEffectSha256": "6bcbfcffeefb1467187a654967df6b5c1b4a445a20caed11354179b8f876fef4",
+        "moveRecordSha256": "c910c91dc3c9ac10905e5bd57f56997eb170ca60f34b4f4873cbbe9bd6d8c071",
+        "compatibleSpeciesCount": 255,
+        "compatibleSpeciesSha256": "4a27d1f2be8ab48e58b3ff68b8cfa635edf22313f0a9e085c704f8d4af2015aa",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 74 - Gyro Ball",
+        "machineKind": "TM",
+        "machineNumber": "74",
+        "moveId": "Gyro Ball",
+        "canonicalRecordSha256": "02a4d19531f879dd01935473e4c7ac80acfff379f48ff4f70756f942bb0a0c90",
+        "canonicalEffectSha256": "55af172b5f51fcfac5acfba9c190aa4b3a6e4956117b677969a5b7a494ea6b0b",
+        "moveRecordSha256": "57a4bd947ce6a4892825262ccf2bb67def2112d9cbc0c30a9c9b2d71ab1f3c51",
+        "compatibleSpeciesCount": 116,
+        "compatibleSpeciesSha256": "9a14239446d382685238ba9451dd518737559f1910697243de803f8c53256dcf",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 75 - Swords Dance",
+        "machineKind": "TM",
+        "machineNumber": "75",
+        "moveId": "Swords Dance",
+        "canonicalRecordSha256": "f48e288d77f297c0eed0505e7005fe5033d250b33a23e58582f5e4a1ca1f5d5e",
+        "canonicalEffectSha256": "58425f1369cc2675fe0f2a195b8c10a851734d23aa485b1cd885165c4b88b600",
+        "moveRecordSha256": "e9fbc022400aa34f01c442d912bb2cc11e60c529ce073b81bc7890ca7b3a209d",
+        "compatibleSpeciesCount": 230,
+        "compatibleSpeciesSha256": "a8ae608ec313997dcc435b480c47d600e4ac54e71ea47230c55e5c454d5c09d2",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 76 - Struggle Bug",
+        "machineKind": "TM",
+        "machineNumber": "76",
+        "moveId": "Struggle Bug",
+        "canonicalRecordSha256": "0731709c939073dfc543a0362eb000fc0f902333e451ebedc2b831b557398a40",
+        "canonicalEffectSha256": "a6cc3658046eb25b9541fcdda72f5817318af22e78ead73fe77b8f5b98c9dfe6",
+        "moveRecordSha256": "292b2bf5b1774472e774f61d0a5ff2c2afd5c5c3f3102115234982171770f175",
+        "compatibleSpeciesCount": 61,
+        "compatibleSpeciesSha256": "1d7505a35b853090cf777179c0868cffa4f3073d6f686185ee7b325c31c16e66",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 77 - Psych Up",
+        "machineKind": "TM",
+        "machineNumber": "77",
+        "moveId": "Psych Up",
+        "canonicalRecordSha256": "6798234c4d7aa3065da71069ff9e4774922d346d0071e099692548b4e4ebde68",
+        "canonicalEffectSha256": "00de8f075196536b1c57502f714fc2a5b7f1b7ff25f57c0c7a334248dff6c3fb",
+        "moveRecordSha256": "7c5fe2d20f0b0311eb4363663f9c94e1ef91b7240830788be4a360de206079ef",
+        "compatibleSpeciesCount": 263,
+        "compatibleSpeciesSha256": "aaa8d160a77624f4c94ea83b21bba867e7c3447ea44e3cc1eca70ca10289bb5e",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 78 - Bulldoze",
+        "machineKind": "TM",
+        "machineNumber": "78",
+        "moveId": "Bulldoze",
+        "canonicalRecordSha256": "af4cd11c7720f6ec06e1e28755a304ccd3f0ba05190fb0b35a468d8df887946c",
+        "canonicalEffectSha256": "ee6f3be063bd993722c1e3121cb8ce619bb9143fcb4e7957c8df2947fe845fd2",
+        "moveRecordSha256": "5f3b440768b529d42d1ec6eec225a13d46caf6e06a7d32e52073631600b245d2",
+        "compatibleSpeciesCount": 307,
+        "compatibleSpeciesSha256": "197409b71d3900297d5a7d00f94d63aaa2122ef97cb9ad5fb45b2856d760a3ce",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 79 - Frost Breath",
+        "machineKind": "TM",
+        "machineNumber": "79",
+        "moveId": "Frost Breath",
+        "canonicalRecordSha256": "694d4c882c176ab536bf090a752b35be7c88a85f835c4c5f19591dbb55af90bf",
+        "canonicalEffectSha256": "5212d5d90622770dcb94457e9feff0f4b5fcdeaeca693428daf040a23ee1d33b",
+        "moveRecordSha256": "d02f26ab29ea5f9026c9f9c7840c0835cd83697732b0294e68be7c6bb3d509f5",
+        "compatibleSpeciesCount": 40,
+        "compatibleSpeciesSha256": "a367730efc5508bcd4cca21dcbea3c8e4bce421d7da3428e2bea9b2368319abd",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 80 - Rock Slide",
+        "machineKind": "TM",
+        "machineNumber": "80",
+        "moveId": "Rock Slide",
+        "canonicalRecordSha256": "a882928f08276e1bef9f5ebe95733b523d2f4320b0091855b88bfb3d8c3aea7f",
+        "canonicalEffectSha256": "eeb58e603763c65061ce6ba0e092c1169f7eb7dcc25ba59e7c0918d86896d063",
+        "moveRecordSha256": "a2631460cb714c28d4562190109f5139d117c6c15bce66ba56054cec2444e6d2",
+        "compatibleSpeciesCount": 368,
+        "compatibleSpeciesSha256": "8adf3ff458aabeea1ca1be693280f3b50a72d2f6d59244116b2a7e7cdafe6be4",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 81 - X-Scissor",
+        "machineKind": "TM",
+        "machineNumber": "81",
+        "moveId": "X-Scissor",
+        "canonicalRecordSha256": "eee0df01c87a188539101777973f7e8cc9a5ca741f547bdd30d961fb5d313ccb",
+        "canonicalEffectSha256": "6e97bb14a28a7187368ffcc35b4fe891077df1c123dea844db4fa5d389e8c95a",
+        "moveRecordSha256": "a42d84ec723916dec7c4e20e23f5139df3ccbffeea7408fc7697ce8bba8333f3",
+        "compatibleSpeciesCount": 95,
+        "compatibleSpeciesSha256": "7a12aa3d954cd55b3b73381d9f7ac2b63f4eb087c435b3f3e34ff8a77f9f7745",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 82 - Dragon Tail",
+        "machineKind": "TM",
+        "machineNumber": "82",
+        "moveId": "Dragon Tail",
+        "canonicalRecordSha256": "e02ae99b374952f792c8e2e467b734c30928992dbdcf2da11681661cda9869df",
+        "canonicalEffectSha256": "7764b72fbdf56383ca1cd50f931853d1f6d8d16a20a53622c9cd866828814351",
+        "moveRecordSha256": "955f50782267178a888189d9a9804d54203d320c40e7fca63ddac7ed0d36a054",
+        "compatibleSpeciesCount": 85,
+        "compatibleSpeciesSha256": "0b45d4f501620a3132e18ddd208c8285d0dd0dbcf585b87dcf5edc8af6f62a0f",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 83 - Infestation",
+        "machineKind": "TM",
+        "machineNumber": "83",
+        "moveId": "Infestation",
+        "canonicalRecordSha256": "a4939cd0f248462c976782d7bfa4193f2b19eb160eb415d57006727bd687fdda",
+        "canonicalEffectSha256": "8290a91b3834951d1d51578b5dc51c5c7568559021d15a72423d52a5e0c9d3fe",
+        "moveRecordSha256": "4015e62ed6400b783fe83a5954e6639c48c07226deae35f6d586d5a516464ab7",
+        "compatibleSpeciesCount": 112,
+        "compatibleSpeciesSha256": "476d278e53723557fa79ad9afc493fca430727a9bddec71268d41a34e7d16317",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 84 - Poison Jab",
+        "machineKind": "TM",
+        "machineNumber": "84",
+        "moveId": "Poison Jab",
+        "canonicalRecordSha256": "eb50fef51f7122b9f1eab601f27ed9b51f57d96b1420d9fd718d77df7d8ab7e7",
+        "canonicalEffectSha256": "4b604f27194c1536008f88ac4f217069ec8adaccd40c65caa3a63e98d548de09",
+        "moveRecordSha256": "0856d0ea2f4d856c9b7202450d729cb8799d9ce24f178341d505b0d720e604a3",
+        "compatibleSpeciesCount": 158,
+        "compatibleSpeciesSha256": "e0259667f0e7d175f2d5a5f4ab7b83bd2b7676b362077dafd2f30faeb9481499",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 85 - Dream Eater",
+        "machineKind": "TM",
+        "machineNumber": "85",
+        "moveId": "Dream Eater",
+        "canonicalRecordSha256": "1e1c0e471b2952a2f7baaaa4ab36c490c3d6cc43810dfc7887134b9032d66aae",
+        "canonicalEffectSha256": "a799d6cae7efa75eaecf885943adae38f5e615220d91199fa406847880c58a51",
+        "moveRecordSha256": "842f707b20ffcc033014cdd463e5f7c0cb3ab58cbc1c542dddb489ac3a9a5d42",
+        "compatibleSpeciesCount": 192,
+        "compatibleSpeciesSha256": "4db787c332ada23002f06a32b2817e5cfdfb304d353496b18739ccaa9061a361",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 86 - Grass Knot",
+        "machineKind": "TM",
+        "machineNumber": "86",
+        "moveId": "Grass Knot",
+        "canonicalRecordSha256": "b59c68b2913d0877d9e1a5722215e193113320ccb127b9a1ade6e1be206900cc",
+        "canonicalEffectSha256": "0c18614a1c6de282c361203be3262abcd4bdeabae3b8f66cc5d1d82c2028268e",
+        "moveRecordSha256": "677783ba0d915241218fa6ce366ebe089b49763d28521260968ab3a84ff46eb5",
+        "compatibleSpeciesCount": 318,
+        "compatibleSpeciesSha256": "bac62f6651bf1c7ffd13e39cfb230a76b43edb79032af20f9a62b1b0caf80cc6",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 87 - Swagger",
+        "machineKind": "TM",
+        "machineNumber": "87",
+        "moveId": "Swagger",
+        "canonicalRecordSha256": "540faae7ece0c9211ef1c378e52784216cc4db4011a33913f92a880b02669c30",
+        "canonicalEffectSha256": "933668e33d24118be45c256d541eab98464168a8e549cc88a56edff959579d7b",
+        "moveRecordSha256": "190361ec4679940aadf7130f366942b5de00d2427ea9a014fb5720c4fa3944cc",
+        "compatibleSpeciesCount": 947,
+        "compatibleSpeciesSha256": "1cf982243f6c28ee54110caf67bb65223c542b3032f892b6040383dc3f95296b",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 88 - Sleep Talk",
+        "machineKind": "TM",
+        "machineNumber": "88",
+        "moveId": "Sleep Talk",
+        "canonicalRecordSha256": "73ef3f0607e101881a41fd46bef6f83fe96d2b3b9d5f9a47bb8fe41988cb346f",
+        "canonicalEffectSha256": "a2c39c278b2c01be712898298330b102e0b2e69fd528707b821f365c18cc0ef9",
+        "moveRecordSha256": "90e2665a0660b12bb85d47f30c54cbf03c52cd0c7378d4fd540821e3f260bfdb",
+        "compatibleSpeciesCount": 952,
+        "compatibleSpeciesSha256": "23cb38ed2e28c4bfa9ddd7e73e629785a9c0c449d4149daecf72dbdbea62f1f6",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 89 - U-Turn",
+        "machineKind": "TM",
+        "machineNumber": "89",
+        "moveId": "U-Turn",
+        "canonicalRecordSha256": "967dd548dbbdc942555ba5ded4136e8233193b195d8c8dee2ad47ba64549e54f",
+        "canonicalEffectSha256": "eecca38e3d730631279c9b076597f0a90f437e9ad3169690fb4374c165f4bb78",
+        "moveRecordSha256": "35efd52a4b167fb16edd1de1e48fd0ed52369cf382d806192c4586e15d0c4ea1",
+        "compatibleSpeciesCount": 188,
+        "compatibleSpeciesSha256": "6769a224c84257131d07a515fae1eb8c75524f9d7ded31a9913b609f25ae0736",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 90 - Substitute",
+        "machineKind": "TM",
+        "machineNumber": "90",
+        "moveId": "Substitute",
+        "canonicalRecordSha256": "5c9ccbae6e840ca52111ecb5b08e7a2964871f76a6ef9e71e53e60cfc2a197ae",
+        "canonicalEffectSha256": "c9ed997df982802553a21976337088aebf1b91ecef73b7b8ea04a6fd4932fdd2",
+        "moveRecordSha256": "0a05ac49ac8ac3adfeb9ff5a26117c0a05fb5898f2283bec90d91a2dbaad01a5",
+        "compatibleSpeciesCount": 952,
+        "compatibleSpeciesSha256": "23cb38ed2e28c4bfa9ddd7e73e629785a9c0c449d4149daecf72dbdbea62f1f6",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 91 - Flash Cannon",
+        "machineKind": "TM",
+        "machineNumber": "91",
+        "moveId": "Flash Cannon",
+        "canonicalRecordSha256": "c67b81ee8791b0d479b7d3b813004f2f00330de9e56e744d285b13349e44c93e",
+        "canonicalEffectSha256": "cdc42791e866f6597c5399f49abc253f9feee726b7620148dc86355d53e46ff7",
+        "moveRecordSha256": "0d498855a6200b6e145dc5f189fec28371b3a397dc6afa239b87a288e76e2736",
+        "compatibleSpeciesCount": 109,
+        "compatibleSpeciesSha256": "607cbdf4db9f71c2593187814a5ca1b82fa8fc7b8c85e21275d617c6ee3a2a77",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 92 - Trick Room",
+        "machineKind": "TM",
+        "machineNumber": "92",
+        "moveId": "Trick Room",
+        "canonicalRecordSha256": "fd277fec6b9e195367d07c8ad71d7ff904c724492c86c435fa0a8f25ae4a3f48",
+        "canonicalEffectSha256": "be128036b09ba6009443cfd46ee3d58d85b6a0f29f5ace505fecc2293918f2f8",
+        "moveRecordSha256": "7b5df92c90fd2c8b0cce7c1b253299910f6d3b017eb8f3a759c484253a00433d",
+        "compatibleSpeciesCount": 134,
+        "compatibleSpeciesSha256": "3c00bd5a3b77da45da33abf8debc27f5ba18b93cdee1dc36e23a379f7ca7508a",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 93 - Wild Charge",
+        "machineKind": "TM",
+        "machineNumber": "93",
+        "moveId": "Wild Charge",
+        "canonicalRecordSha256": "7015d4f49a317432ef6b74753061f0e6e8e38388466c8c61ca05bf6a77afe77a",
+        "canonicalEffectSha256": "12cc092f9637f59bfcecdb56cdadca57dd55cfb1f4bb9a87871177b41bdeb6f9",
+        "moveRecordSha256": "732b76ad5239beae2d2054c2d8eb8fc0c1c9b5bebcd0f44163284c9708ca0f1b",
+        "compatibleSpeciesCount": 112,
+        "compatibleSpeciesSha256": "2fd61957be16f296b4560c0c0eb99b1e4bccd982666c2f190e9da6cf0b713b97",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 94 - Rock Smash",
+        "machineKind": "TM",
+        "machineNumber": "94",
+        "moveId": "Rock Smash",
+        "canonicalRecordSha256": "479318d6291235c43c75f6565ab189e6ad12eefc1be49ae88d4186a1ac50ba3f",
+        "canonicalEffectSha256": "91e3df1aa00e4bcb4fc1672d76c5a46a743006d10b8af76a6fa82651484e551e",
+        "moveRecordSha256": "88f14ef26d589218374b90b9e113b162568dac38da953e673138e7fe62da27a9",
+        "compatibleSpeciesCount": 410,
+        "compatibleSpeciesSha256": "b10caa06a5f74a7f400b92044e8a7fa61f19d93986b6cc394654da0ff0a10c8c",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 95 - Snarl",
+        "machineKind": "TM",
+        "machineNumber": "95",
+        "moveId": "Snarl",
+        "canonicalRecordSha256": "e85f184ca28999ad3f3aa6dbbdb3003298e9d804f29dcda3368b459dcb11dbf7",
+        "canonicalEffectSha256": "cccbbdb8265f1c0d87c483986b3f891f79f38b0b4e4477ecf9f4274788c9a6af",
+        "moveRecordSha256": "ac9eeed374a7e89c0e0c7530f10ef0247102435a5340a442054eedd70c2cf579",
+        "compatibleSpeciesCount": 99,
+        "compatibleSpeciesSha256": "0e40824f18f941c3e803c20f6b57cef5f7a8adee8eecaf52a6724e88bb4d9e9d",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 96 - Nature Power",
+        "machineKind": "TM",
+        "machineNumber": "96",
+        "moveId": "Nature Power",
+        "canonicalRecordSha256": "30a6eed62c04d1593705c15157ba5bde2248e148cbdbf24637cb081c4790920c",
+        "canonicalEffectSha256": "0e132415b9b38c642c06e840d4188df0b1a9dcf822977abe601a5314221936cb",
+        "moveRecordSha256": "59cc37d3405cfcd9d3ccb98dfbcffc3b881030aaa5514dcf187d002681daa0ac",
+        "compatibleSpeciesCount": 139,
+        "compatibleSpeciesSha256": "5d271af068cd8b86df4bf2975a47ad5a0bc1a749ea0696fe16c412e8dc8ff928",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 97 - Dark Pulse",
+        "machineKind": "TM",
+        "machineNumber": "97",
+        "moveId": "Dark Pulse",
+        "canonicalRecordSha256": "854347c7605e0602c71d8918124a8f96fc5823a29a0bd865a1e4473b8a2f5f5c",
+        "canonicalEffectSha256": "b7c8f3438614282d2e5ba454092451983a4e948f67d54cce5fe6bf59ccfb6105",
+        "moveRecordSha256": "25edac8efc3be123a210d9ab647c1897d0f15ab854365d822d0ed0838c79f86d",
+        "compatibleSpeciesCount": 168,
+        "compatibleSpeciesSha256": "057d4f8e4e31411bacffa87751aad4775037af3328105abafe11b1854e7c4309",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 98 - Power-Up Punch",
+        "machineKind": "TM",
+        "machineNumber": "98",
+        "moveId": "Power-Up Punch",
+        "canonicalRecordSha256": "1c7f7d59f2f21c8444eab0dc3e371bb480324d43bb3ce8f53ddec1b8b4fe15cf",
+        "canonicalEffectSha256": "e1d16c7551379133a8ec64086df4e9402933aa4f706c2b14118c264762ba68c0",
+        "moveRecordSha256": "631c4652bfbefd727c32eed677fdf1636b85fe4800b830d19c01ebae94681186",
+        "compatibleSpeciesCount": 210,
+        "compatibleSpeciesSha256": "b34d7d96b09fc2cbbdefc265ca45ab257ce93631f98dea2082c605315c6ac92b",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      },
+      {
+        "canonicalId": "TM 99 - Dazzling Gleam",
+        "machineKind": "TM",
+        "machineNumber": "99",
+        "moveId": "Dazzling Gleam",
+        "canonicalRecordSha256": "1bea443345c2ffadd87524a7fdaebc9e663131b8d3fc33fb7138a82d99cd45d8",
+        "canonicalEffectSha256": "b996817b1891039699ac9452a25919df6dab893729106464f729cef244c49c12",
+        "moveRecordSha256": "8c62248e3c47aef0d04a5b24f252f63f6614d560fa8d53f82c2a529462780f99",
+        "compatibleSpeciesCount": 130,
+        "compatibleSpeciesSha256": "8c870d377b8a91babfedec062a4bbf90d02404f2a8bdfd06146645ea5f3e9440",
+        "consumption": {
+          "phase": "extended-action-completion",
+          "quantity": 1,
+          "reusable": false
+        },
+        "dailyUseLimit": null
+      }
+    ]
+  },
+  "mechanics": {
+    "actorKind": "trainer",
+    "targetKind": "one-owned-pokemon",
+    "trainingMinutes": 60,
+    "activeMoveMaximum": 6,
+    "clusterMindAdditionalSlots": 2,
+    "machineTutorMoveMaximum": 3,
+    "naturalSources": [
+      "currently unlocked level-up Moves",
+      "canonical Tutor Moves marked (N)"
+    ],
+    "naturalization": "a TM/Tutor Move stops counting once its current Level grants a level-up opportunity",
+    "tutorPointCost": 1,
+    "countedSlotReplacementCost": 0,
+    "unCountedSlotReplacementCost": 1,
+    "knownMoveAuthority": "union of movelist and appliedMoves",
+    "compatibility": "one exact species tm_hm_moves entry matching kind, zero-padded number, and canonical Move ID",
+    "duplicates": "reject across active and applied records",
+    "tm": "consume one only at accepted completion",
+    "hm": "retain source and write one latest private use receipt per campaign day",
+    "eggMovePolicy": "species Egg Move compatibility alone is reference-only and never establishes a learned Natural Move"
+  },
+  "choices": {
+    "target": "one currently owned Pokémon",
+    "replacement": "one opaque target-and-revision-bound active Move or one open-slot option",
+    "confirmation": "one exact persisted confirmation",
+    "retry": "reuse persisted choices; never regenerate accepted choices",
+    "stale": "fail closed before any write"
+  },
+  "state": {
+    "pokemon": "CharacterSheet.serverPrivate.itemMoveLearning immutable application ledger plus owner-safe read-only row markers",
+    "trainer": "TrainerSheet.serverPrivate.itemMachineUsage latest reusable-source campaign-day receipts",
+    "projection": "serverPrivate state, digests, source identities, operation identities, and ownership evidence are removed from GM/player/realtime projections",
+    "setupSave": "preserve server-private state and item-controlled movelist/appliedMoves rows; reject marker forgery"
+  },
+  "execution": {
+    "start": "persist target and exact choices; apply no Move, Tutor Point, source, usage, or sheet mechanics",
+    "interrupt": "terminal activity receipt only; apply no mechanics",
+    "completion": "fresh source, ownership, campaign clock, definition, target revision, compatibility, duplicate, limit, Tutor Point, and exact-choice reauthorization; atomically settle every write",
+    "tmWrites": [
+      "source consumption",
+      "target Move rows",
+      "Tutor Points",
+      "target provenance",
+      "operation/activity receipts",
+      "realtime events"
+    ],
+    "hmWrites": [
+      "target Move rows",
+      "Tutor Points",
+      "target provenance",
+      "actor daily-use receipt",
+      "operation/activity receipts",
+      "realtime events"
+    ],
+    "replay": "return persisted result without consumption, Move duplication, Tutor Point duplication, or another HM use receipt",
+    "completionBoundary": "the explicit durable completion command certifies the reviewed about-one-hour interval; start/interruption are inert and the workflow never advances campaign time itself"
+  },
+  "implementation": {
+    "spec": "shared/itemAutomation/spec.ts",
+    "state": "shared/itemAutomation/moveLearning.ts",
+    "registry": "server/domain/itemAutomation/registry.ts",
+    "mechanics": "server/domain/itemAutomation/moveLearning.ts",
+    "planner": "server/domain/itemAutomation/planner.ts",
+    "reducer": "server/domain/itemAutomation/reducer.ts",
+    "conformance": "server/domain/itemAutomation/conformance.ts",
+    "offers": "server/domain/itemAutomation/sheetActionOffers.ts",
+    "extendedActions": "server/useCases/manageItemExtendedAction.ts",
+    "privacy": "server/utils/sheetPrivacy.ts",
+    "setupSave": "src/utils/sheets/pokemonMoveLearning.ts",
+    "client": [
+      "src/components/sheets/TrainerSheetItemDecision.vue",
+      "src/components/sheets/TrainerItemExtendedActionCard.vue",
+      "src/components/sheets/PokemonMovesPanel.vue",
+      "src/components/sheets/PokemonKnownMovesPanel.vue"
+    ],
+    "mockup": ".pi/artifacts/ui-mockups/machine-move-learning/v001.png"
+  },
+  "tests": [
+    "tests/data/completePlayLoopMoveLearning.test.ts",
+    "tests/server/itemMoveLearning.test.ts",
+    "tests/server/saveSheet.test.ts",
+    "tests/integration/machineMoveLearningOperation.test.ts",
+    "tests/integration/machineMoveLearningExtendedActions.test.ts",
+    "tests/components/trainerSheetItemActions.test.ts",
+    "tests/components/pokemonBreedingLegacyFields.test.ts",
+    "tests/e2e/machine-move-learning.spec.ts"
+  ],
+  "certification": {
+    "status": "certified",
+    "validated": [
+      "106 of 106 canonical TM/HM rows registered and source-hash-bound",
+      "96 focused authority, transaction, replay, privacy, save-protection, integration, and component tests",
+      "343 broad item-loop regression tests",
+      "desktop Chromium production journey with axe validation",
+      "mobile Chromium production journey with one-column reflow validation",
+      "Nuxt typecheck and focused ESLint",
+      "generated item inventory, Move automation, and Breeding successor checks"
+    ]
+  }
+}

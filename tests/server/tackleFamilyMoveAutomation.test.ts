@@ -99,7 +99,7 @@ describe('Tackle native automation', () => {
         expect(statuses).toEqual(['rejected', 'rejected', 'rejected'])
         expect(result.committedDocuments.operationResult).toMatchObject({
           ok: false,
-          reason: 'invalid',
+          reason: 'conflict',
         })
         expect(result.committedDocuments.map).toMatchObject({ revision: 7 })
         expect(result.committedDocuments.sheets.pokemon.actor).toMatchObject({

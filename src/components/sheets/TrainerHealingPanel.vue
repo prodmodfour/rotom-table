@@ -119,6 +119,8 @@ const restoreAp = () => restoreTrainerAp(props.sheet, props.maxAp)
       </div>
     </div>
 
+    <MedicalTreatmentStatusCard :treatments="sheet.itemMedicalTreatmentProjection" />
+
     <div class="healing-grid">
       <section class="healing-block">
         <h3>HP recovery</h3>

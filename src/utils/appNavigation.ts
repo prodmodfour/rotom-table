@@ -31,7 +31,7 @@ export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: ENCOUNTER_LIBRARY_PATH, label: 'Play' },
   { path: MAP_LIBRARY_PATH, label: 'Workshop' },
   { path: BREEDING_WORKSHOP_PATH, label: 'Breeding' },
-  { path: CAMPAIGN_PATH, label: 'Campaign', gmOnly: true },
+  { path: CAMPAIGN_PATH, label: 'Campaign' },
   { path: GROUP_INVENTORY_PATH, label: 'Group Inventory' },
   { path: SHOP_LIBRARY_PATH, label: 'Shops' },
   { path: POKEDEX_PATH, label: 'Pokédex' },

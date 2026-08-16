@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "pokemon-advancement-choices:v1",
+  "status": "reviewed",
+  "source": {
+    "path": "books/markdown/core/05-pokemon.md",
+    "sha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3"
+  },
+  "target": {
+    "path": "data/reference/rules.json",
+    "baseSha256": "ff0e220165887fec69ce11f70c0db84210ae289a51145196fe885fe0937ce0a8",
+    "ruleKey": "Pokémon Advancement Choices"
+  },
+  "reviewDecision": {
+    "runtimeUsesDocumentaryText": false,
+    "runtimeUsesOnlyStructuredRule": true,
+    "ambiguousOrConditionalEvolutionFailsClosed": true,
+    "irreversibleChoiceIsAutomatic": false
+  },
+  "rule": {
+    "name": "Pokémon Advancement Choices",
+    "category": "Advancement Rule",
+    "text": "Reviewed structured authority for event-bound natural Move opportunities, Ability milestones, optional level evolution, form branches, and post-evolution review. Runtime detection uses pokemonAdvancementChoiceMechanics only; documentary text remains provenance.",
+    "aliases": [
+      "Pokémon Level-Up Choices",
+      "Pokemon Advancement Choices"
+    ],
+    "source": "books/markdown/core/05-pokemon.md",
+    "pokemonAdvancementChoiceMechanics": {
+      "schemaVersion": 1,
+      "sourceEventPolicy": "immutable-level-threshold-event",
+      "moveLearning": {
+        "candidateSource": "pokedex.level_up_moves",
+        "candidateLevelPolicy": "greater-than-before-and-at-most-after",
+        "activeMoveMaximum": 6,
+        "clusterMindAdditionalSlots": 2,
+        "replacementRequiredAtMaximum": true,
+        "currentExactCanonicalRowResolves": true,
+        "authoritativeResolutionSources": [
+          "item-move-learning",
+          "breeding-permanent-move",
+          "settlement-attention-resolution"
+        ]
+      },
+      "abilityMilestones": [
+        {
+          "level": 1,
+          "ordinal": 1,
+          "tiers": ["basic"]
+        },
+        {
+          "level": 20,
+          "ordinal": 2,
+          "tiers": ["basic", "advanced"]
+        },
+        {
+          "level": 40,
+          "ordinal": 3,
+          "tiers": ["basic", "advanced", "high"]
+        }
+      ],
+      "abilityResolution": {
+        "currentExactCanonicalRowsResolveOrdinals": true,
+        "itemEvolutionMappingsResolveOrdinals": true,
+        "settlementAttentionResolutionResolvesEvent": true
+      },
+      "evolution": {
+        "candidateSource": "pokedex.evolutions",
+        "optional": true,
+        "nextStageOnly": true,
+        "candidateRecordStageMustMatch": true,
+        "candidateLevelPolicy": "greater-than-before-and-at-most-after",
+        "conditionPolicy": "no-condition-field",
+        "itemTransitionPolicy": "exclude-reviewed-item-transition-pairs",
+        "multipleCanonicalCandidates": "explicit-form-choice",
+        "malformedOrUnsupportedCandidate": "provider-unavailable"
+      },
+      "postEvolution": {
+        "source": "server-private-item-evolution-application",
+        "reviewStatAllocation": true,
+        "reviewMoveOpportunities": true,
+        "reviewInactiveEquipment": true,
+        "abilityMappingsAreResolved": true,
+        "currentAuthorityCanClearCompletedWork": true
+      },
+      "formChoice": {
+        "genericInferenceFromSpeciesName": false,
+        "itemFormOperationResolutionSuppressesDuplicate": true
+      }
+    }
+  }
+}

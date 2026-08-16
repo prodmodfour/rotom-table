@@ -12,6 +12,7 @@ import initializedSheetContractJson from '../../data/breeding-automation/initial
 import securityPolicyJson from '../../data/breeding-automation/security-policy.json'
 import rulesetJson from '../../data/breeding-automation/ruleset.json'
 import { stableJsonStringify } from '../../shared/automation/stableJson'
+import { createEmptySheetEquipmentState } from '../../shared/itemAutomation/equipment'
 import type { PlayerProfile } from '../../shared/playerProfiles'
 import { parseBreedingOperationCommandV1 } from '../../shared/breeding/operations'
 import { breedingDependencyEvidenceKey } from '../../shared/breeding/readSets'
@@ -86,6 +87,7 @@ const profile: PlayerProfile = {
 const trainerDocument = (team: readonly string[] = [], boxed: readonly string[] = []) => ({
   slug: 'trainer-owner', name: 'Owner', level: 10, dexExp: 7,
   currentTeam: [...team], boxedPokemon: [...boxed],
+  equipmentState: createEmptySheetEquipmentState({ ownerKind: 'trainer', ownerSlug: 'trainer-owner' }),
 })
 const beginCommand = (destination: 'box' | 'team') => parseBreedingOperationCommandV1({
   schemaVersion: 1, operationId: operationId(10), commandKind: 'begin-hatch',
@@ -517,7 +519,10 @@ describe('BR-057 atomic Pokémon Egg hatch completion', () => {
     expect(() => completePokemonEggHatch(input(auth), options(seeded.database, { beforeSettle: () => { throw new Error('restart') } }))).toThrow('restart')
     seeded.database.close(); databases.splice(databases.indexOf(seeded.database), 1)
     const database = openRotomDatabase({ path, enableWal: true }); databases.push(database)
-    const recovered = completePokemonEggHatch(input(auth), options(database, { resumePending: true }))
+    const recovered = completePokemonEggHatch(
+      input(auth, currentControl(database, auth.command)),
+      options(database, { resumePending: true }),
+    )
     expect(recovered.execution.kind).toBe('executed')
     expect(createSqlitePokemonEggRepository(database).get(EGG_ID)?.status).toBe('hatched')
     expect(count(database, 'sheets')).toBe(2)

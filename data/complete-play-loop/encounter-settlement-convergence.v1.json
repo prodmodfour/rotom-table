@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-081",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-convergence-v1",
+  "storageSchemaVersion": 44,
+  "sourceEvidence": {
+    "settlementDocumentModelSha256": "bd6751d716f1b2f40552c95208141844b87da83453a0ea16610a0835b1bfb849",
+    "projectionContractSha256": "4b2161215a715c83933159d914eb6ec9c37b0987cdf884a3871c5259e2509e99",
+    "projectionRuntimeSha256": "77d01438cc98b44a7224432979c0d8a55868648ea00b3b70b2febc09cb72ecca",
+    "correctionCommandSha256": "e685de107aeef709abca375009408a082644f740eb4afff9daf94ea846b870d0",
+    "correctionRuntimeSha256": "197228c7324b19d7ed65d26b7b7435806211769bb64bee12a7295181c2d86a0c",
+    "settlementRepositorySha256": "ba885a6bf1bebaeb977d93f51979e59b00c24f625538530f8098e240c399f57b",
+    "correctionRepositorySha256": "e9240875429cc21169719e49a8a86eaf7abff824d25fd8a260bb80f36d1405d0",
+    "commitUseCaseSha256": "346f45b5e0e309a6b2f3b752ea68baf8c5d5e34faf019e04e3197dba6a4968c7",
+    "correctionUseCaseSha256": "55cf8d68770dcd348c8e9a826b0f29f5aa73175eee26a0824b2f1b3780aae17b",
+    "loadUseCaseSha256": "a1c9cd5c4b5858797249980aae55530a5bc7ba068b62b142e55e201fe78697c3",
+    "recoveryUseCaseSha256": "eb3f39452ee39d3377104e7b1c5f5784c2ef9d30e7fc33f9103f97d285276cce",
+    "settlementRealtimeSha256": "8f4c9d602dee9e706a6a0570549f1fdfbb53c702f13d2401662309db7ed9567a",
+    "realtimeAccessPolicySha256": "c815c93a56b726fabe4b44b926e4af6217988028541d8ef07b8854bf90d39b1e",
+    "groupAccessPolicySha256": "8a93d510a3d8ee8f576f4c2c48672825790cf264a544b80026e999ed698d6f6f",
+    "loadRouteSha256": "e2441fdd726fccc5cdb9e4493f81d5045fbeb7ecfe07d649ad25e23af64c51d1",
+    "recoveryRouteSha256": "685b8cc49b06b18ccfb8009c7fbbd29cf48c7380609ed02cb0d7358605aaefa0",
+    "storageMigrationsSha256": "fa869c20dfaf59fb2996e79310d0f849b3c74ac012d15983217313562714136a"
+  },
+  "projection": {
+    "audiences": ["public", "owner", "gm"],
+    "currentAuthority": "Every load rechecks current map access, selected Profile sheet authority, current Trainer roster links, and the explicit shared-group policy before projection.",
+    "public": "Public loads expose public reward amounts, public gate kinds and resolutions, cleanup categories, aggregate counts, completion, and allowlisted public history only.",
+    "owner": "Owner loads add only current participant, destination, and history subjects authorized by exact Profile-linked sheet or player-facing shared-group authority.",
+    "gm": "GM loads may include private narrative summaries and exact consequence fields and snapshots, but still omit internal orchestration identities.",
+    "staleDraft": "An expected-revision mismatch returns the current safe projection with freshness stale-draft and never rebases or submits the old draft.",
+    "groupCustody": "Only the player-facing main group inventory grants player destination-owner authority; another existing group row remains GM custody."
+  },
+  "privacy": {
+    "forbiddenByDefault": [
+      "operation identities",
+      "settlement, reward, allocation, receipt, decision, and fact identities",
+      "source row and serialized equipment identities",
+      "Profile identities and principal keys",
+      "authority revisions and definition hashes",
+      "private notes outside their explicit audience",
+      "stored commands, plans, evidence, and provenance"
+    ],
+    "historyAllowlist": "Each history kind is rebuilt from a closed detail allowlist; stored payload objects are never returned directly.",
+    "privateRewards": "GM-only reward lines and narrative notes are absent from public and unauthorized owner JSON, history, and realtime payloads.",
+    "correctionSummary": "A visible correction exposes only closed reason code, successor settlement revision, and correction campaign minute."
+  },
+  "realtime": {
+    "transactionalJournal": "Settlement and correction events are appended in the same SQLite transaction as accepted state and evidence.",
+    "postCommitPublication": "Publication runs after commit; a publisher failure is reported while durable replay remains authoritative.",
+    "eventKinds": ["encounter-settlement-updated", "encounter-settlement-corrected"],
+    "audienceRows": ["public map-access", "GM-only", "participant sheet-access", "authorized shared-group access"],
+    "deliveryRule": "Current resource access and settlement projection audience are both checked on live SSE delivery and replay.",
+    "gmConvergence": "GM delivery excludes public and owner variants so a later redacted event cannot replace the GM projection.",
+    "ownerConvergence": "Owner events signal the accepted revision; the current role-safe load is canonical when one Profile aggregates several sheet authorities."
+  },
+  "correction": {
+    "authorization": "Only a GM may accept a correction offer built from one complete current owning-mechanics authority snapshot.",
+    "eligibleSource": "One existing accepted non-completion, non-cancelled receipt may be superseded once.",
+    "closedReasonCodes": [
+      "reward-adjusted",
+      "capture-corrected",
+      "outcome-corrected",
+      "cleanup-corrected",
+      "clerical-corrected",
+      "authority-linked"
+    ],
+    "appendOnly": "Correction adds one accepted decision, linked correction receipt, settlement revision, and private operation row; original receipts and history remain unchanged.",
+    "offerBinding": "The hash-bound offer includes source receipt, reason, settlement revision, owning authority reference and definition hash, campaign minute, GM principal, and exact successor document.",
+    "lockedRevalidation": "Under the SQLite write lock, settlement, offer, authority, and campaign minute must still match before one revision is written.",
+    "exactReplay": "The same strict command and principal replays the durable result across restart without reauthorization, another write, or another publication."
+  },
+  "recovery": {
+    "load": "Current load restores role-safe settlement, bounded history, visible corrections, and stale-draft status after reconnect or restart.",
+    "operationStatus": "GM-only status accepts exactly one retained strict command and returns only accepted safe metadata or unknown with explicit-only retry.",
+    "noAutomaticReplay": "Reconnect never submits a retained commit or correction command. Unknown status requires a fresh explicit user action.",
+    "identityConflict": "Changed principals, changed commands, malformed evidence, and operation identities present in both journals fail closed without revealing prior data."
+  },
+  "immutableAudit": {
+    "commit": "Command, complete plan, authority hash, result, history, and attention rows remain bound to the exact accepted commit evidence.",
+    "correction": "Command, source receipt, closed reason, complete offer, authority hash, and result remain bound to the exact accepted correction evidence.",
+    "readVerification": "Repository reads recompute plan or offer hashes and compare history and attention payloads with accepted operation evidence.",
+    "crossJournalUniqueness": "Commit and correction repositories reject an operation identity already present in the other journal.",
+    "storage": "Schema 43 adds immutable authority-linked correction rows; schema 44 preserves them while widening only the bounded guided-item request kind."
+  },
+  "tests": {
+    "projectionAndRealtime": "tests/server/encounterSettlementProjection.test.ts",
+    "correction": "tests/server/encounterSettlementCorrection.test.ts",
+    "loadAndRecovery": "tests/server/encounterSettlementRecovery.test.ts",
+    "routes": "tests/server/encounterSettlementRoutes.test.ts",
+    "atomicRepository": "tests/server/encounterSettlementRepository.test.ts",
+    "commitUseCase": "tests/server/commitEncounterSettlement.test.ts",
+    "realtimePolicy": "tests/server/realtimeEventAccessPolicy.test.ts",
+    "groupPolicy": "tests/server/groupInventoryLoadRoute.test.ts",
+    "migration": "tests/server/realtimeEventMigrations.test.ts",
+    "contract": "tests/data/completePlayLoopEncounterSettlementConvergence.test.ts"
+  },
+  "documentation": "docs/encounter-settlement-convergence.md"
+}

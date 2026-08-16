@@ -6,6 +6,9 @@ import {
   type GroupInventoryEntryId,
   type GroupInventorySectionKey,
 } from '~/types/groupInventory'
+import { parseSerializedEquipmentInventoryState } from '#shared/itemAutomation/equipment'
+import { parseItemShardInventoryVariant } from '#shared/itemAutomation/exploration'
+import { normalizeItemAliasIdentity } from '#shared/itemAutomation/identity'
 import type { InventoryEntry } from '~/types/trainerSheet'
 
 export type InventoryTransferErrorCode =
@@ -15,6 +18,8 @@ export type InventoryTransferErrorCode =
   | 'insufficient-quantity'
   | 'equipment-partial-transfer'
   | 'invalid-row-id'
+  | 'invalid-serialized-state'
+  | 'invalid-item-variant'
   | 'insufficient-money'
 
 export class InventoryTransferError extends Error {
@@ -43,6 +48,15 @@ export interface InventoryTransferTargetRowIdContext {
 }
 
 export type InventoryTransferTargetRowIdGenerator = (context: InventoryTransferTargetRowIdContext) => string
+
+let fallbackInventoryRowIdCounter = 0
+
+export const createInventoryTransferRowId: InventoryTransferTargetRowIdGenerator = ({ section }) => {
+  const uuid = globalThis.crypto?.randomUUID?.()
+  if (uuid) return `item-${section}-${uuid}`
+  fallbackInventoryRowIdCounter = (fallbackInventoryRowIdCounter + 1) % Number.MAX_SAFE_INTEGER
+  return `item-${section}-${Date.now().toString(36)}-${fallbackInventoryRowIdCounter.toString(36)}`
+}
 
 export interface FoundGroupInventoryRow {
   readonly section: GroupInventorySectionKey
@@ -130,7 +144,30 @@ const assertGroupInventorySectionKey = (section: GroupInventorySectionKey): void
 
 export const inventoryTransferSectionUsesQuantity = (section: GroupInventorySectionKey): boolean => section !== 'equipment'
 
+export const inventoryTransferEntryUsesQuantity = (
+  section: GroupInventorySectionKey,
+  entry: Pick<InventoryEntry, 'serializedEquipment'>,
+): boolean => inventoryTransferSectionUsesQuantity(section) && entry.serializedEquipment === undefined
+
 const normalizeDisplayText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+
+export const inventoryTransferEntriesCanMerge = (
+  section: GroupInventorySectionKey,
+  left: InventoryTransferEntry,
+  right: InventoryTransferEntry,
+): boolean => {
+  if (!inventoryTransferEntryUsesQuantity(section, left)
+    || !inventoryTransferEntryUsesQuantity(section, right)) return false
+  const leftIdentity = normalizeItemAliasIdentity(left.name)
+  return Boolean(leftIdentity)
+    && leftIdentity === normalizeItemAliasIdentity(right.name)
+    && left.cost === right.cost
+    && left.description === right.description
+    && left.mod === right.mod
+    && left.slot === right.slot
+    && left.itemVariant?.kind === right.itemVariant?.kind
+    && left.itemVariant?.color === right.itemVariant?.color
+}
 
 export const normalizeInventoryItemNameIdentity = (value: unknown): string => (
   normalizeDisplayText(value)
@@ -206,7 +243,19 @@ const cloneInventoryTransferEntry = (
     if (rowId) clone.id = rowId
   }
 
-  if (inventoryTransferSectionUsesQuantity(section) && entry.qty !== undefined) {
+  if (entry.serializedEquipment !== undefined) {
+    try { clone.serializedEquipment = parseSerializedEquipmentInventoryState(entry.serializedEquipment) }
+    catch {
+      throw new InventoryTransferError('invalid-serialized-state', 'Serialized equipment state is malformed.')
+    }
+  }
+  if (entry.itemVariant !== undefined) {
+    try { clone.itemVariant = parseItemShardInventoryVariant(entry.itemVariant) }
+    catch {
+      throw new InventoryTransferError('invalid-item-variant', 'Structured item variant state is malformed.')
+    }
+  }
+  if (entry.serializedEquipment === undefined && inventoryTransferSectionUsesQuantity(section) && entry.qty !== undefined) {
     clone.qty = coerceStoredNonNegativeInteger(entry.qty)
   }
 
@@ -226,6 +275,41 @@ const completeTransferInventory = (inventory: InventoryTransferInventory | null 
     ]),
   ) as InventoryTransferSnapshot
 )
+
+const advanceSerializedCustodyRevision = (
+  entry: InventoryTransferEntry,
+): InventoryTransferEntry => {
+  const serialized = entry.serializedEquipment
+  if (!serialized) return entry
+  if (!Number.isSafeInteger(serialized.revision) || serialized.revision >= Number.MAX_SAFE_INTEGER) {
+    throw new InventoryTransferError(
+      'invalid-serialized-state',
+      'Serialized equipment revision cannot advance within the safe integer range.',
+    )
+  }
+  return {
+    ...entry,
+    serializedEquipment: parseSerializedEquipmentInventoryState({
+      ...serialized,
+      revision: serialized.revision + 1,
+    }),
+  }
+}
+
+const serializedEquipmentIds = (inventory: InventoryTransferSnapshot): Set<string> => {
+  const ids = new Set<string>()
+  for (const section of GROUP_INVENTORY_SECTION_KEYS) {
+    for (const entry of inventory[section]) {
+      const id = entry.serializedEquipment?.instanceId
+      if (!id) continue
+      if (ids.has(id)) {
+        throw new InventoryTransferError('invalid-serialized-state', 'Serialized equipment identity is duplicated in inventory.')
+      }
+      ids.add(id)
+    }
+  }
+  return ids
+}
 
 const isGroupInventoryDocumentSource = (
   source: GroupInventory | Pick<GroupInventoryDocument, 'inventory'>,
@@ -300,9 +384,9 @@ export const decrementOrRemoveInventorySourceRow = (
     throw new InventoryTransferError('missing-row', 'The requested source inventory row was not found.')
   }
 
-  if (!inventoryTransferSectionUsesQuantity(input.section)) {
+  if (!inventoryTransferEntryUsesQuantity(input.section, sourceEntry)) {
     if (quantity !== 1) {
-      throw new InventoryTransferError('equipment-partial-transfer', 'Equipment transfers must move the whole row.')
+      throw new InventoryTransferError('equipment-partial-transfer', 'Serialized equipment transfers must move the whole row.')
     }
 
     return {
@@ -361,14 +445,22 @@ export const mergeInventoryEntryIntoSection = (
 ): InventoryTransferEntry[] => {
   assertGroupInventorySectionKey(input.section)
   const rows = (input.rows ?? []).map((entry) => cloneInventoryTransferEntry(entry, input.section, { keepRowId: true }))
+  const existingSerializedIds = rows.flatMap(row => row.serializedEquipment?.instanceId ? [row.serializedEquipment.instanceId] : [])
+  if (new Set(existingSerializedIds).size !== existingSerializedIds.length) {
+    throw new InventoryTransferError('invalid-serialized-state', 'Serialized equipment identity is duplicated at the destination.')
+  }
 
-  if (!inventoryTransferSectionUsesQuantity(input.section)) {
+  if (!inventoryTransferEntryUsesQuantity(input.section, input.entry)) {
     const quantity = input.quantity === undefined ? 1 : requirePositiveSafeInteger(input.quantity, 'Equipment transfer quantity')
     if (quantity !== 1) {
-      throw new InventoryTransferError('equipment-partial-transfer', 'Equipment transfers must move the whole row.')
+      throw new InventoryTransferError('equipment-partial-transfer', 'Serialized equipment transfers must move the whole row.')
     }
 
     const transferredEntry = cloneInventoryTransferEntry(input.entry, input.section)
+    const serializedId = transferredEntry.serializedEquipment?.instanceId
+    if (serializedId && rows.some(row => row.serializedEquipment?.instanceId === serializedId)) {
+      throw new InventoryTransferError('invalid-serialized-state', 'Serialized equipment identity already exists at the destination.')
+    }
     return [
       ...rows,
       appendEntryWithOptionalRowId(rows, input.section, transferredEntry, input.createTargetRowId),
@@ -386,10 +478,7 @@ export const mergeInventoryEntryIntoSection = (
     ...cloneInventoryTransferEntry(input.entry, input.section),
     qty: quantity,
   }
-  const transferredIdentity = normalizeInventoryItemNameIdentity(transferredEntry.name)
-  const targetIndex = transferredIdentity
-    ? rows.findIndex((row) => normalizeInventoryItemNameIdentity(row.name) === transferredIdentity)
-    : -1
+  const targetIndex = rows.findIndex(row => inventoryTransferEntriesCanMerge(input.section, row, transferredEntry))
 
   if (targetIndex >= 0) {
     return rows.map((entry, index) => (
@@ -409,6 +498,11 @@ export const transferInventoryItem = (input: TransferInventoryItemInput): Transf
   assertGroupInventorySectionKey(input.section)
   const sourceInventory = completeTransferInventory(input.sourceInventory)
   const targetInventory = completeTransferInventory(input.targetInventory)
+  const sourceSerializedIds = serializedEquipmentIds(sourceInventory)
+  const targetSerializedIds = serializedEquipmentIds(targetInventory)
+  if ([...sourceSerializedIds].some(id => targetSerializedIds.has(id))) {
+    throw new InventoryTransferError('invalid-serialized-state', 'Serialized equipment identity already exists in both inventories.')
+  }
   const sourceRows = sourceInventory[input.section]
   const rowIndex = sourceRowIndexBySelector(input, sourceRows)
   const sourceUpdate = decrementOrRemoveInventorySourceRow({
@@ -417,10 +511,11 @@ export const transferInventoryItem = (input: TransferInventoryItemInput): Transf
     rowIndex,
     quantity: input.quantity,
   })
+  const transferredEntry = advanceSerializedCustodyRevision(sourceUpdate.transferredEntry)
   const targetRows = mergeInventoryEntryIntoSection({
     section: input.section,
     rows: targetInventory[input.section],
-    entry: sourceUpdate.transferredEntry,
+    entry: transferredEntry,
     createTargetRowId: input.createTargetRowId,
   })
 
@@ -433,7 +528,7 @@ export const transferInventoryItem = (input: TransferInventoryItemInput): Transf
       ...targetInventory,
       [input.section]: targetRows,
     },
-    transferredEntry: sourceUpdate.transferredEntry,
+    transferredEntry,
     removedSourceRow: sourceUpdate.removedSourceRow,
   }
 }

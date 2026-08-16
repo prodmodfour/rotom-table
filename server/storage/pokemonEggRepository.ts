@@ -40,6 +40,8 @@ export interface PokemonEggRepository {
   listBySourceProject(projectId: string, limit?: number): readonly PokemonEggDocumentV1[]
   listByStatuses(statuses: readonly PokemonEggStatus[], limit?: number): readonly PokemonEggDocumentV1[]
   listIncubatingBehindClock(input: { readonly revision: number, readonly campaignMinute: number, readonly limit?: number }): readonly PokemonEggDocumentV1[]
+  /** Campaign-day settlement only: reads every due Egg or fails before mutation. */
+  listAllIncubatingBehindClock(input: { readonly revision: number, readonly campaignMinute: number }): readonly PokemonEggDocumentV1[]
   insert(document: PokemonEggDocumentV1): PokemonEggDocumentV1
   replace(input: { readonly expectedRevision: number, readonly document: PokemonEggDocumentV1 }): BreedingRepositoryReplaceResult<PokemonEggDocumentV1>
 }
@@ -123,11 +125,7 @@ export const createSqlitePokemonEggRepository = (database: RotomDatabase = getRo
     const statuses = parseStatuses(statusInput); const limit = parseBreedingRepositoryLimit(limitInput); const placeholders = statuses.map(() => '?').join(', ')
     return (database.connection.prepare(`${SELECT} WHERE status IN (${placeholders}) ORDER BY updated_at_campaign_minute ASC, egg_id ASC LIMIT ?`).all(...statuses, limit) as unknown as PokemonEggRow[]).map(rowToEgg)
   }
-  const listIncubatingBehindClock: PokemonEggRepository['listIncubatingBehindClock'] = input => {
-    const revision = parseBreedingRepositoryRevision(input.revision, 'clockRevision')
-    const campaignMinute = parseBreedingRepositoryCampaignMinute(input.campaignMinute, 'campaignMinute')
-    const limit = parseBreedingRepositoryLimit(input.limit)
-    return (database.connection.prepare(`${SELECT}
+  const incubatingBehindClockWhere = `
       WHERE status = 'incubating'
         AND (
           json_extract(document_json, '$.incubation.lastAppliedClockRevision') < ?
@@ -136,9 +134,28 @@ export const createSqlitePokemonEggRepository = (database: RotomDatabase = getRo
             AND json_extract(document_json, '$.incubation.lastAppliedClockMinute') < ?
           )
         )
+  `
+  const behindClockParameters = (input: {
+    readonly revision: number
+    readonly campaignMinute: number
+  }): readonly [number, number, number] => {
+    const revision = parseBreedingRepositoryRevision(input.revision, 'clockRevision')
+    const campaignMinute = parseBreedingRepositoryCampaignMinute(input.campaignMinute, 'campaignMinute')
+    return [revision, revision, campaignMinute]
+  }
+  const listIncubatingBehindClock: PokemonEggRepository['listIncubatingBehindClock'] = input => {
+    const parameters = behindClockParameters(input)
+    const limit = parseBreedingRepositoryLimit(input.limit)
+    return (database.connection.prepare(`${SELECT}${incubatingBehindClockWhere}
       ORDER BY egg_id ASC
       LIMIT ?
-    `).all(revision, revision, campaignMinute, limit) as unknown as PokemonEggRow[]).map(rowToEgg)
+    `).all(...parameters, limit) as unknown as PokemonEggRow[]).map(rowToEgg)
+  }
+  const listAllIncubatingBehindClock: PokemonEggRepository['listAllIncubatingBehindClock'] = input => {
+    const parameters = behindClockParameters(input)
+    return (database.connection.prepare(`${SELECT}${incubatingBehindClockWhere}
+      ORDER BY egg_id ASC
+    `).all(...parameters) as unknown as PokemonEggRow[]).map(rowToEgg)
   }
   const insert = (input: PokemonEggDocumentV1): PokemonEggDocumentV1 => {
     const document = assertCanonicalEggReferences(parseAuthoritativePokemonEggDocumentV1(input))
@@ -185,5 +202,8 @@ export const createSqlitePokemonEggRepository = (database: RotomDatabase = getRo
     const raced = get(document.eggId)
     return raced ? Object.freeze({ kind: 'stale', expectedRevision, currentRevision: raced.revision }) : Object.freeze({ kind: 'missing', expectedRevision, currentRevision: null })
   }
-  return Object.freeze({ database, get, listByOwner, listBySourceProject, listByStatuses, listIncubatingBehindClock, insert, replace })
+  return Object.freeze({
+    database, get, listByOwner, listBySourceProject, listByStatuses,
+    listIncubatingBehindClock, listAllIncubatingBehindClock, insert, replace,
+  })
 }

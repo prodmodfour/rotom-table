@@ -2,7 +2,7 @@
 
 ## Scope and trust boundary
 
-These endpoints support the liveplay Breeding Workshop. They accept role context and selectors only. They do not accept resolved mechanics, commands, scopes, rolls, read sets, receipts, consent claims, provider evidence, child documents, campaign-time credit, or aggregate patches.
+These endpoints support the liveplay Breeding Workshop. They accept role context and selectors only, except that the breeding-item mutation endpoint accepts one strict, revision-bound operation envelope containing opaque server-issued option identities. No endpoint accepts resolved mechanics, scopes, rolls, read sets, receipts, consent claims, provider evidence, child documents, campaign-time credit, or aggregate patches.
 
 Every endpoint requires the existing authenticated campaign role. A player request resolves `profileId` through the current selected Profile policy. A GM request must not adopt a player Profile. IDs and expected revisions are conflict selectors, not authorization.
 
@@ -31,7 +31,7 @@ Use `Content-Type: application/json`. Do not send a full Project, Egg, Pokémon 
 
 ### Responses
 
-Success returns the endpoint's strict audience projection as JSON. Projection schemas are server-built, bounded, security-policy-bound, and self-hashed. Clients must parse the exact schema and verify its digest before adoption. Never merge a GM response into a player view.
+Success returns the endpoint's strict audience projection as JSON. Projection schemas are server-built, bounded, and security-policy-bound. Clients must parse the exact schema and, where that schema declares a projection digest, verify it before adoption. Never merge a GM response into a player view.
 
 Mutation responses may report a durable recovery state or exact replay. Treat either as authoritative presentation; do not infer or re-execute mechanics in the client.
 
@@ -53,6 +53,8 @@ The write limiter permits 30 writes per minute for one player Profile and 120 pe
 | --- | --- | --- | --- |
 | `GET` | `/api/breeding/workshop` | Bounded authorized Trainer contexts and safe empty state | No |
 | `GET` | `/api/breeding/workshop/activity` | Current Project/Egg cards for one authorized Trainer | No |
+| `GET` | `/api/breeding/items` | Current role-projected Egg Warmer, restoration, and Artificial Egg options | No |
+| `POST` | `/api/breeding/items` | Preview source-Egg choices or submit one exact item operation | Only operation kinds; previews are inert |
 | `POST` | `/api/breeding/projects/wizard` | Current non-mutating wizard and parent preview | No |
 | `POST` | `/api/breeding/projects/wizard/guidance` | Current safe explanations and GM-only bounded diagnostics | No |
 | `POST` | `/api/breeding/projects/wizard/choices` | Server-issued choices; explicit confirmed Project creation | Only when `confirmed: true` |
@@ -94,6 +96,24 @@ It does not contain aggregate IDs, parents, Species, consent, choices, mechanics
 `BreedingWorkshopActivityProjectionV1` returns the authorized Trainer summary, up to 50 recent owner Projects and 50 owner Eggs, truncation flags, bounded history, current campaign progress, transfer presentation, recovery summaries, security-policy hash, and projection hash.
 
 Owner Project cards structurally hide a participating parent's identity. GM cards may include current parent references for adjudication but still omit Profile, command, roll, read-set, receipt, and provider evidence.
+
+## `GET /api/breeding/items` and `POST /api/breeding/items`
+
+### GET query and projection
+
+A player supplies exact `profileId` and `trainerSheetSlug`; a GM supplies only `trainerSheetSlug`. `ItemBreedingWorkflowProjectionV1` contains safe labels and opaque option IDs for exact reusable Egg Warmer units, current owned incubating Eggs, GM-designated restoration sources, Reanimation Machines, reviewed Species, and Chemistry Sets. It includes current Trainer revision, campaign minute, capacity/rate, exact consumption, cost, availability, and concise unavailable reasons. Inventory row IDs, unit ordinals, Egg IDs, hashes, private feature evidence, and operation evidence are never projected.
+
+### POST preview and mutation
+
+`preview-fossil` and `preview-artificial` requests are mechanically inert. They bind one operation ID, Trainer revision, and current opaque source/tool/Species options, then return exact current bounded choices. A preview never reserves, consumes, spends, creates, or advances anything.
+
+Mutation kinds are `assign-egg-warmer`, `restore-fossil`, and `create-artificial-egg`. The client returns only the exact operation ID, Trainer slug/revision, opaque source options, and sorted selected option IDs issued by the current projection/preview. The server rebuilds item identity, custody, ownership, feature/Skill authority, money, campaign time, offers, and all shared Egg read sets before settlement.
+
+- An Egg Warmer assigns one exact reusable unit to at most four current owned incubating Eggs. While custody remains current, campaign-day incubation credits the reviewed 2× rate.
+- Fossil restoration is GM-only, consumes exactly one explicitly selected source unit at accepted settlement, preserves the Reanimation Machine, and creates an ordinary incubating Egg through the shared lifecycle.
+- Artificial Egg creation is GM-only, requires exact Playing God authority, one current Chemistry Set, and $3,500; the Chemistry Set remains reusable and the result uses the shared Egg lifecycle.
+
+Mutations enter write admission. One exact command is retained only in session storage while its response is uncertain; competing commands remain blocked until exact replay or a definitive 4xx rejection. The operation ID is an idempotency key, not authorization, and changed replay input is rejected.
 
 ## Wizard selector request
 
@@ -255,8 +275,8 @@ Every mutation intent requires exact selectors and `confirmed: true`. GM cancell
 
 ## Realtime and caching
 
-Breeding mutations publish restricted refresh notifications, not full mechanics payloads. On a refresh or replay gap, discard stale local projection state and call the relevant GET/POST inspection endpoint again. Do not cache a server-issued option beyond the projection/draft/revision that issued it. Do not persist consent, Project, Egg, option, command, or mechanic data in browser storage.
+Breeding mutations publish restricted refresh notifications, not full mechanics payloads. On a refresh or replay gap, discard stale local projection state and call the relevant GET/POST inspection endpoint again. Do not cache a server-issued option beyond the projection/draft/revision that issued it. Do not persist consent, Project, Egg, options, or mechanics in browser storage. The sole command exception is one exact uncertain breeding-item operation in session storage for profile-bound retry; clear it only after an exact response or definitive rejection.
 
 ## Non-HTTP operational surfaces
 
-Campaign-clock advancement, archive restore, integrity diagnostics, reviewed alternate-source Egg creation, and low-level operation recovery are server/operator use cases, not public browser APIs. Do not expose them by copying internal commands into a new route. Any future route requires a strict selector schema, current authorization, privacy projection, abuse admission, transaction/retry evidence, documentation, and acceptance coverage.
+Campaign-clock advancement, archive restore, integrity diagnostics, and low-level operation recovery are server/operator use cases, not public browser APIs. Do not expose them by copying internal commands into a new route. Any future route requires a strict selector schema, current authorization, privacy projection, abuse admission, transaction/retry evidence, documentation, and acceptance coverage.

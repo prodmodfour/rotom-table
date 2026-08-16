@@ -1,4 +1,5 @@
 import { validateSlug } from '#shared/paths'
+import { parseItemShardInventoryVariant } from '#shared/itemAutomation/exploration'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import {
   GROUP_INVENTORY_MAIN_SLUG,
@@ -190,6 +191,113 @@ const semanticGroupInventorySnapshot = (document: GroupInventoryDocument): Recor
   return snapshot
 }
 
+const preserveSerializedEquipmentForSetupSave = (
+  candidateInput: unknown,
+  current: GroupInventoryDocument,
+): unknown => {
+  const candidate = documentSourceRecord(cloneStoredJson(candidateInput))
+  const candidateInventory = isRecord(candidate.inventory) ? candidate.inventory : {}
+  const currentInventory = current.inventory as unknown as Record<string, unknown>
+  const serializedLocations = new Map<string, string>()
+  for (const [section, value] of Object.entries(currentInventory)) {
+    if (!Array.isArray(value)) continue
+    for (const entry of value) {
+      if (!isRecord(entry) || typeof entry.id !== 'string' || !Object.hasOwn(entry, 'serializedEquipment')) continue
+      serializedLocations.set(entry.id, section)
+    }
+  }
+
+  const nextInventory: Record<string, unknown> = Object.fromEntries(Object.entries(candidateInventory).map(([section, value]) => [
+    section,
+    Array.isArray(value) ? value.flatMap((entry) => {
+      if (!isRecord(entry)) return [entry]
+      const row = { ...entry }
+      if (typeof row.id === 'string' && serializedLocations.has(row.id)
+        && serializedLocations.get(row.id) !== section) return []
+      delete row.serializedEquipment
+      return [row]
+    }) : value,
+  ]))
+
+  for (const [section, currentValue] of Object.entries(currentInventory)) {
+    if (!Array.isArray(currentValue)) continue
+    const authoritative = new Map<string, Record<string, unknown>>()
+    for (const entry of currentValue) {
+      if (!isRecord(entry) || typeof entry.id !== 'string' || !Object.hasOwn(entry, 'serializedEquipment')) continue
+      authoritative.set(entry.id, entry)
+    }
+    if (authoritative.size === 0) continue
+    const candidateRows = Array.isArray(nextInventory[section]) ? nextInventory[section] as unknown[] : []
+    const seen = new Set<string>()
+    const protectedRows = candidateRows.map((entry) => {
+      if (!isRecord(entry)) return entry
+      const row = { ...entry }
+      const id = typeof row.id === 'string' ? row.id : null
+      const serverRow = id ? authoritative.get(id) : undefined
+      if (!serverRow) return row
+      if (seen.has(id!)) throw new Error(`Serialized equipment row ${id} is duplicated in setup save.`)
+      seen.add(id!)
+      row.name = serverRow.name
+      row.serializedEquipment = serverRow.serializedEquipment
+      delete row.qty
+      return row
+    })
+    for (const [id, serverRow] of authoritative) {
+      if (!seen.has(id)) protectedRows.push(cloneStoredJson(serverRow))
+    }
+    nextInventory[section] = protectedRows
+  }
+
+  candidate.inventory = nextInventory
+  return candidate
+}
+
+const preserveItemVariantsForSetupSave = (
+  candidateInput: unknown,
+  current: GroupInventoryDocument,
+): unknown => {
+  const candidate = documentSourceRecord(cloneStoredJson(candidateInput))
+  const candidateInventory = isRecord(candidate.inventory) ? candidate.inventory : {}
+  const currentInventory = current.inventory as unknown as Record<string, unknown>
+  const authoritative = new Map<string, { readonly section: string, readonly row: Record<string, unknown> }>()
+  for (const [section, value] of Object.entries(currentInventory)) {
+    if (!Array.isArray(value)) continue
+    for (const entry of value) {
+      if (!isRecord(entry) || typeof entry.id !== 'string' || entry.itemVariant === undefined) continue
+      parseItemShardInventoryVariant(entry.itemVariant)
+      if (authoritative.has(entry.id)) throw new Error(`Structured item variant row ${entry.id} is duplicated.`)
+      authoritative.set(entry.id, { section, row: entry })
+    }
+  }
+  const nextInventory: Record<string, unknown> = {}
+  const seen = new Set<string>()
+  for (const [section, value] of Object.entries(candidateInventory)) {
+    if (!Array.isArray(value)) {
+      nextInventory[section] = value
+      continue
+    }
+    nextInventory[section] = value.flatMap((entry) => {
+      if (!isRecord(entry)) return [entry]
+      const row = { ...entry }
+      const id = typeof row.id === 'string' ? row.id : null
+      const server = id ? authoritative.get(id) : undefined
+      if (row.itemVariant !== undefined && !server) delete row.itemVariant
+      if (!server) return [row]
+      if (server.section !== section) return []
+      if (seen.has(id!)) throw new Error(`Structured item variant row ${id} is duplicated in setup save.`)
+      seen.add(id!)
+      return [cloneStoredJson(server.row)]
+    })
+  }
+  for (const [id, server] of authoritative) {
+    if (seen.has(id)) continue
+    const rows = Array.isArray(nextInventory[server.section]) ? nextInventory[server.section] as unknown[] : []
+    nextInventory[server.section] = [...rows, cloneStoredJson(server.row)]
+  }
+  candidate.inventory = nextInventory
+  return candidate
+}
+
 export const createSqliteGroupInventoryRepository = (
   database: RotomDatabase = getRotomDatabase(),
 ): GroupInventoryRepository => {
@@ -291,7 +399,12 @@ export const createSqliteGroupInventoryRepository = (
 
       if (current.revision !== expectedRevision) return { stale: true, current }
 
-      const candidate = normalizeGroupInventoryForStorage(input.document, `setup group inventory ${slug}`, {
+      const candidate = normalizeGroupInventoryForStorage(
+        preserveItemVariantsForSetupSave(
+          preserveSerializedEquipmentForSetupSave(input.document, current),
+          current,
+        ),
+        `setup group inventory ${slug}`, {
         slug,
         revision: current.revision,
         updatedAt: current.updatedAt,

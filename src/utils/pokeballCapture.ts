@@ -1,5 +1,7 @@
 import pokedexData from '~~/data/reference/pokedex.json'
-import { findItem, toSlug } from '~~/data/ptuReference'
+import capturePokeballsJson from '~~/data/complete-play-loop/capture-pokeballs.v1.json'
+import evolutionItemsJson from '~~/data/complete-play-loop/evolution-items.v1.json'
+import { findItem } from '~~/data/ptuReference'
 import { moveAutomationTargetsInRange } from '~/utils/moveAutomationRange'
 import {
   moveAutomationHitChanceTone,
@@ -12,6 +14,7 @@ import {
   resolveMoveAutomationAccuracyRoll,
 } from '~/utils/moveAutomationResolution'
 import { resolveTrainerCapabilities } from '~/utils/sheets/trainerDerived'
+import { computeMaxHp, resolveStats } from '~/utils/sheets/pokemonDerived'
 import { setPokemonCaughtBall } from '~/utils/sheets/pokemonCaughtBall'
 import {
   conditionBaseName,
@@ -21,8 +24,10 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { MoveAutomationScript, MoveAutomationTargetHitChance } from '~/types/moveAutomation'
 import type { PokedexRecord, SpawnedPokemon } from '~/types/pokemon'
+import type { TabletopMap } from '~/types/map'
 import type { InventoryEntry, TrainerInventory, TrainerSheet } from '~/types/trainerSheet'
 import type { PtuItem } from '~/types/ptuReference'
+import { itemInventoryInstanceId, type ItemInventorySection } from '#shared/itemAutomation/inventory'
 
 export const POKEBALL_THROW_AC = 6
 export const POKEBALL_THROW_MOVE_NAME = 'Throw Poké Ball'
@@ -34,7 +39,52 @@ const pokedexBySpecies = new Map<string, PokedexRecord>(
   (pokedexData as PokedexRecord[]).map((entry) => [entry.species, entry]),
 )
 
+interface CapturePokeballPolicyV1 {
+  readonly canonicalId: string
+  readonly canonicalRecordSha256: string
+  readonly canonicalEffectSha256: string
+  readonly baseModifier: number
+  readonly condition: Readonly<Record<string, unknown>> & {
+    readonly kind: string
+    readonly authority: 'automatic' | 'unavailable-with-reason'
+    readonly unavailableReason?: string
+  }
+  readonly postCapture: Readonly<Record<string, unknown>> & {
+    readonly kind: string
+    readonly authority: 'automatic' | 'unavailable-with-reason'
+    readonly unavailableReason?: string
+  }
+}
+const capturePokeballContract = capturePokeballsJson as unknown as {
+  readonly schemaVersion: 1
+  readonly ticket: 'P8-093'
+  readonly status: 'reviewed-native'
+  readonly runtimeProseParsing: false
+  readonly itemCount: 25
+  readonly items: readonly CapturePokeballPolicyV1[]
+}
+const capturePokeballPolicies = new Map(capturePokeballContract.items.map(row => [row.canonicalId, row]))
+if (capturePokeballContract.schemaVersion !== 1 || capturePokeballContract.ticket !== 'P8-093'
+  || capturePokeballContract.status !== 'reviewed-native'
+  || capturePokeballContract.runtimeProseParsing !== false
+  || capturePokeballContract.itemCount !== 25
+  || capturePokeballPolicies.size !== capturePokeballContract.itemCount) {
+  throw new Error('Reviewed structured Poké Ball provider contract is incomplete or duplicated.')
+}
+const evolutionStoneSpecies = new Set((evolutionItemsJson as unknown as {
+  readonly items: readonly { readonly transitions: readonly { readonly fromSpecies: string }[] }[]
+}).items.flatMap(item => item.transitions.map(transition => transition.fromSpecies.toLocaleLowerCase('en-US'))))
+
 export interface TokenPokeballOption {
+  /** Opaque exact inventory-row authority used by the throw command; never render this value. */
+  sourceInstanceId: string
+  source: {
+    kind: 'trainer'
+    slug: string
+    section: ItemInventorySection
+    rowId: string
+    expectedRevision: number
+  }
   name: string
   quantity: number
   rollModifier: number
@@ -186,8 +236,6 @@ export const appendPokeballCaptureLogEntry = (
   return next
 }
 
-const ballKey = (name: string): string => toSlug(name)
-
 const POKEBALL_INVENTORY_SECTION_ORDER = [
   'pokeBalls',
   'keyItems',
@@ -202,43 +250,18 @@ const finiteNumber = (value: unknown): number | null => {
   return Number.isFinite(numeric) ? numeric : null
 }
 
-const parseIntegerModifier = (value: unknown): number | null => {
-  if (typeof value !== 'string' && typeof value !== 'number') return null
-  const match = String(value).match(/[+-]?\d+/)
-  if (!match) return null
-  const parsed = Number(match[0])
-  return Number.isFinite(parsed) ? parsed : null
-}
-
-const parseCaptureModifierFromText = (value: string | null | undefined): number | null => {
-  if (!value) return null
-  const match = value.match(/Capture Modifier\s*([+-]\d+)/i)
-  if (!match) return null
-  return parseIntegerModifier(match[1])
-}
-
-const parseCaptureModifier = (entry: InventoryEntry, item: PtuItem | null): number => (
-  parseIntegerModifier(entry.mod)
-  ?? parseCaptureModifierFromText(entry.description)
-  ?? parseCaptureModifierFromText(item?.effects.join(' '))
-  ?? 0
+const capturePolicyFor = (item: PtuItem | null): CapturePokeballPolicyV1 | null => (
+  item ? capturePokeballPolicies.get(item.name) ?? null : null
 )
 
-const itemSearchText = (item: PtuItem | null): string => [
-  item?.name,
-  ...(item?.categories ?? []),
-  ...(item?.effects ?? []),
-  ...(item?.sections ?? []),
-  ...(item?.aliases ?? []),
-].filter(Boolean).join(' ')
-
-const isPokeballInventoryEntry = (entry: InventoryEntry, item: PtuItem | null): boolean => {
-  if (item?.categories.some((category) => /pok[eé]\s*ball/i.test(category))) return true
-  if (/Capture Modifier/i.test(itemSearchText(item))) return true
-  if (/Capture Modifier/i.test(entry.description ?? '')) return true
-  if (/ball/i.test(entry.name) && entry.mod != null) return true
-  return false
+const parseCaptureModifier = (item: PtuItem | null): number | null => {
+  const policy = capturePolicyFor(item)
+  return policy && Number.isSafeInteger(policy.baseModifier) ? policy.baseModifier : null
 }
+
+const isPokeballInventoryEntry = (_entry: InventoryEntry, item: PtuItem | null): boolean => (
+  item?.categories.includes('Poké Ball') === true && capturePolicyFor(item) !== null
+)
 
 const normalizeQuantity = (value: unknown): number => {
   const numeric = finiteNumber(value)
@@ -267,46 +290,62 @@ export const resolvePokeballItem = (name: string | null | undefined): PtuItem | 
   return null
 }
 
-const trainerInventoryEntriesForPokeballs = (sheet: TrainerSheet | null | undefined): InventoryEntry[] => {
+interface TrainerPokeballInventoryRow {
+  readonly section: ItemInventorySection
+  readonly entry: InventoryEntry
+}
+
+const trainerInventoryEntriesForPokeballs = (
+  sheet: TrainerSheet | null | undefined,
+): TrainerPokeballInventoryRow[] => {
   const inventory = sheet?.inventory
   if (!inventory) return []
-  return POKEBALL_INVENTORY_SECTION_ORDER.flatMap((section) => inventory[section] ?? [])
+  return POKEBALL_INVENTORY_SECTION_ORDER.flatMap(section => (
+    (inventory[section] ?? []).map(entry => ({ section, entry }))
+  ))
 }
 
 export const buildTrainerPokeballOptions = (sheet: TrainerSheet | null | undefined): TokenPokeballOption[] => {
-  const entries = trainerInventoryEntriesForPokeballs(sheet)
-  const merged = new Map<string, TokenPokeballOption>()
+  const slug = sheet?.slug?.trim()
+  const revision = Number(sheet?.revision)
+  if (!slug || !Number.isSafeInteger(revision) || revision < 0) return []
+  const options: TokenPokeballOption[] = []
 
-  for (const entry of entries) {
+  for (const { section, entry } of trainerInventoryEntriesForPokeballs(sheet)) {
+    const rowId = entry.id?.trim()
     const name = entry.name?.trim()
-    if (!name) continue
+    if (!rowId || !name) continue
     const quantity = normalizeQuantity(entry.qty)
     if (quantity <= 0) continue
 
     const item = resolvePokeballItem(name)
     if (!isPokeballInventoryEntry(entry, item)) continue
 
-    const rollModifier = parseCaptureModifier(entry, item)
+    const rollModifier = parseCaptureModifier(item)
+    if (rollModifier === null) continue
     const optionName = item?.name ?? name
-    const key = ballKey(optionName)
-    const previous = merged.get(key)
-    if (previous) {
-      previous.quantity += quantity
-      continue
+    const source = {
+      kind: 'trainer' as const,
+      slug,
+      section,
+      rowId,
+      expectedRevision: revision,
     }
-
-    const description = entry.description?.trim() || item?.effects.join(' ') || ''
-    merged.set(key, {
+    options.push({
+      sourceInstanceId: itemInventoryInstanceId({
+        containerKind: 'trainer', containerSlug: slug, section, rowId,
+      }),
+      source,
       name: optionName,
       quantity,
       rollModifier,
       modifierLabel: signed(rollModifier),
-      description,
+      description: entry.description?.trim() || item?.effects.join(' ') || '',
       item,
     })
   }
 
-  return [...merged.values()]
+  return options
 }
 
 export const createPokeballThrowScript = (rangeMeters: number): MoveAutomationScript => ({
@@ -398,74 +437,119 @@ const trainerOwnsSpecies = (options: {
   return false
 }
 
+const activelyCommandedPokemonSheet = (options: {
+  readonly map?: TabletopMap | null
+  readonly trainerPlacementId: string
+  readonly pokemonBySlug?: ReadonlyMap<string, CharacterSheet>
+}): CharacterSheet | null => {
+  const map = options.map
+  if (!map?.encounterState || !options.pokemonBySlug) return null
+  const placements = map.placements.filter(placement => placement.sheetKind === 'pokemon')
+  const matches = placements.filter(placement => map.encounterState!.effects.some(effect => (
+    effect.kind === 'capability'
+    && effect.tags.includes('encounter-active-pokemon-command')
+    && effect.source.placementId === options.trainerPlacementId
+    && effect.affected.placementIds.length === 1
+    && effect.affected.placementIds[0] === placement.id
+    && effect.suppression.sources.length === 0
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+  )))
+  return matches.length === 1 ? options.pokemonBySlug.get(matches[0]!.sheetSlug) ?? null : null
+}
+
+const normalizedGender = (sheet: CharacterSheet | null | undefined): 'male' | 'female' | null => {
+  const gender = sheet?.gender?.trim().toLocaleLowerCase('en-US')
+  return gender === 'male' || gender === 'female' ? gender : null
+}
+
+const sameEvolutionLine = (
+  first: CharacterSheet,
+  second: CharacterSheet,
+): boolean => {
+  const firstLine = new Set((getPokedexEntry(first.species)?.evolutions ?? [])
+    .map(entry => entry.species.trim().toLocaleLowerCase('en-US')))
+  const secondLine = new Set((getPokedexEntry(second.species)?.evolutions ?? [])
+    .map(entry => entry.species.trim().toLocaleLowerCase('en-US')))
+  return firstLine.size > 0 && [...firstLine].some(species => secondLine.has(species))
+}
+
 const automatedConditionalBallModifiers = (options: {
-  pokeballName: string
+  policy: CapturePokeballPolicyV1
   trainer: TrainerSheet
+  trainerPlacementId: string
   target: SpawnedPokemon
   targetSheet: CharacterSheet | null | undefined
   pokemonBySlug?: ReadonlyMap<string, CharacterSheet>
   currentRound?: number | null
+  map?: TabletopMap | null
 }): PokeballCaptureBreakdownLine[] => {
-  const key = ballKey(options.pokeballName)
-  const lines: PokeballCaptureBreakdownLine[] = []
-
-  if (key === 'nest-ball' && options.target.level < 10) {
-    lines.push({ label: 'Nest Ball target below Level 10', value: -20 })
+  const condition = options.policy.condition
+  if (condition.authority !== 'automatic' || condition.kind === 'none') return []
+  const modifier = finiteNumber(condition.modifier)
+  if (condition.kind === 'target-level-below'
+    && modifier !== null && options.target.level < Number(condition.threshold)) {
+    return [{ label: `${options.policy.canonicalId} target below Level ${condition.threshold}`, value: modifier }]
   }
-
-  if (key === 'net-ball' && options.target.defenderTypes.some((type) => /^(Water|Bug)$/i.test(type))) {
-    lines.push({ label: 'Net Ball Water/Bug target', value: -20 })
+  if (condition.kind === 'target-type' && modifier !== null && Array.isArray(condition.types)
+    && options.target.defenderTypes.some(type => (condition.types as unknown[]).includes(type))) {
+    return [{ label: `${options.policy.canonicalId} matching target Type`, value: modifier }]
   }
-
-  if (key === 'heavy-ball') {
+  if (condition.kind === 'weight-class-above-one') {
     const weight = targetWeightClass(options.target, options.targetSheet)
-    if (weight != null && weight > 1) {
-      lines.push({ label: `Heavy Ball Weight Class ${weight}`, value: -5 * Math.floor(weight - 1) })
-    }
+    const perClass = finiteNumber(condition.modifierPerClass)
+    return weight !== null && weight > 1 && perClass !== null
+      ? [{ label: `${options.policy.canonicalId} Weight Class ${weight}`, value: perClass * Math.floor(weight - 1) }]
+      : []
   }
-
-  if (key === 'fast-ball' && maxMovementCapability(options.target) > 7) {
-    lines.push({ label: 'Fast Ball target has Movement > 7', value: -20 })
+  if (condition.kind === 'movement-above-seven' && modifier !== null
+    && maxMovementCapability(options.target) > 7) {
+    return [{ label: `${options.policy.canonicalId} target has Movement above 7`, value: modifier }]
   }
-
-  if (key === 'repeat-ball' && trainerOwnsSpecies({
+  if (condition.kind === 'trainer-owns-target-species' && modifier !== null && trainerOwnsSpecies({
     trainer: options.trainer,
     targetSpecies: options.targetSheet?.species ?? options.target.species,
     pokemonBySlug: options.pokemonBySlug,
-  })) {
-    lines.push({ label: 'Repeat Ball owned species', value: -20 })
-  }
-
-  if (key === 'timer-ball') {
+  })) return [{ label: `${options.policy.canonicalId} owned species`, value: modifier }]
+  if (condition.kind === 'round-schedule' && Array.isArray(condition.modifiersByRound)) {
+    const schedule = condition.modifiersByRound.map(finiteNumber)
+    if (schedule.some(value => value === null)) return []
     const round = Math.max(1, Math.floor(options.currentRound ?? 1))
-    const penalty = round >= 4 ? 20 : round >= 3 ? 10 : round >= 2 ? 5 : 0
-    if (penalty) lines.push({ label: `Timer Ball round ${round} penalty`, value: penalty })
+    const desired = round <= schedule.length
+      ? schedule[round - 1] ?? null
+      : finiteNumber(condition.afterLast)
+    const delta = desired === null ? 0 : desired - options.policy.baseModifier
+    return delta === 0 ? [] : [{ label: `${options.policy.canonicalId} round ${round} adjustment`, value: delta }]
   }
-
-  if (key === 'quick-ball') {
-    const round = Math.max(1, Math.floor(options.currentRound ?? 1))
-    const modifier = Math.max(-20, 5 - ((round - 1) * 5))
-    // The +5 base modifier is present in item data; add only the round-to-round delta here.
-    const base = 5
-    const delta = modifier - base
-    if (delta) lines.push({ label: `Quick Ball round ${round} adjustment`, value: delta })
+  if (condition.kind === 'evolution-stone-species' && modifier !== null
+    && evolutionStoneSpecies.has((options.targetSheet?.species ?? options.target.species).toLocaleLowerCase('en-US'))) {
+    return [{ label: `${options.policy.canonicalId} Evolution Stone species`, value: modifier }]
   }
-
-  return lines
+  const active = activelyCommandedPokemonSheet({
+    map: options.map,
+    trainerPlacementId: options.trainerPlacementId,
+    pokemonBySlug: options.pokemonBySlug,
+  })
+  if (condition.kind === 'active-pokemon-relative-level' && modifier !== null && active
+    && options.target.level < Math.floor((active.level ?? 1) / 2)) {
+    return [{ label: `${options.policy.canonicalId} active-Pokémon level condition`, value: modifier }]
+  }
+  if (condition.kind === 'active-pokemon-same-line-opposite-gender' && modifier !== null
+    && active && options.targetSheet && sameEvolutionLine(active, options.targetSheet)) {
+    const activeGender = normalizedGender(active)
+    const targetGender = normalizedGender(options.targetSheet)
+    if (activeGender && targetGender && activeGender !== targetGender) {
+      return [{ label: `${options.policy.canonicalId} evolutionary-line and gender condition`, value: modifier }]
+    }
+  }
+  return []
 }
 
-const conditionalBallNotes = (pokeballName: string): string[] => {
-  const key = ballKey(pokeballName)
-  const manual: Record<string, string> = {
-    'level-ball': 'Level Ball’s active-Pokémon level condition is not inferred automatically.',
-    'lure-ball': 'Lure Ball’s bait condition is not inferred automatically.',
-    'moon-ball': 'Moon Ball’s Evolution Stone condition is not inferred automatically.',
-    'love-ball': 'Love Ball’s same evolutionary line/opposite gender condition is not inferred automatically.',
-    'dusk-ball': 'Dusk Ball’s darkness condition is not inferred automatically.',
-    'dive-ball': 'Dive Ball’s underwater/underground condition is not inferred automatically.',
-  }
-  return manual[key] ? [manual[key]] : []
-}
+const conditionalBallNotes = (policy: CapturePokeballPolicyV1): string[] => [
+  ...(policy.condition.authority === 'unavailable-with-reason' && policy.condition.unavailableReason
+    ? [`Conditional modifier unavailable: ${policy.condition.unavailableReason}`] : []),
+  ...(policy.postCapture.authority === 'unavailable-with-reason' && policy.postCapture.unavailableReason
+    ? [`Post-capture effect unavailable: ${policy.postCapture.unavailableReason}`] : []),
+]
 
 const hpCaptureRateLine = (target: SpawnedPokemon): PokeballCaptureBreakdownLine => {
   if (target.currentHp <= 0) return { label: 'HP at 0 or lower', value: 0, detail: 'Cannot be captured.' }
@@ -563,8 +647,13 @@ export const buildPokeballCaptureBreakdown = (options: {
   pokeball: TokenPokeballOption
   pokemonBySlug?: ReadonlyMap<string, CharacterSheet>
   currentRound?: number | null
+  map?: TabletopMap | null
 }): PokeballCaptureBreakdown => {
   const targetSheet = options.targetSheet ?? null
+  const policy = capturePokeballPolicies.get(options.pokeball.name)
+  if (!policy || options.pokeball.rollModifier !== policy.baseModifier) {
+    throw new Error('Poké Ball option lost its exact reviewed structured modifier authority.')
+  }
   const captureRateLines: PokeballCaptureBreakdownLine[] = [
     { label: 'Base', value: 100 },
     { label: `Target Level ${options.target.level} × 2`, value: -2 * options.target.level },
@@ -583,12 +672,14 @@ export const buildPokeballCaptureBreakdown = (options: {
   const uncatchableReason = capturable ? null : 'Pokémon at 0 HP or lower cannot be captured.'
 
   const ballConditionalLines = automatedConditionalBallModifiers({
-    pokeballName: options.pokeball.name,
+    policy,
     trainer: options.trainer,
+    trainerPlacementId: options.user.id,
     target: options.target,
     targetSheet,
     pokemonBySlug: options.pokemonBySlug,
     currentRound: options.currentRound,
+    map: options.map,
   })
   const rollModifierLines: PokeballCaptureBreakdownLine[] = [
     { label: `Trainer Level ${options.trainer.level}`, value: -Math.max(0, Math.floor(options.trainer.level ?? 0)) },
@@ -636,7 +727,7 @@ export const buildPokeballCaptureBreakdown = (options: {
     combinedChanceLabel,
     capturable,
     uncatchableReason,
-    notes: conditionalBallNotes(options.pokeball.name),
+    notes: conditionalBallNotes(policy),
   }
 }
 
@@ -650,6 +741,7 @@ export const resolvePokeballCaptureAttempt = (options: {
   pokeball: TokenPokeballOption
   pokemonBySlug?: ReadonlyMap<string, CharacterSheet>
   currentRound?: number | null
+  map?: TabletopMap | null
   random?: () => number
   now?: () => number
 }): PokeballCaptureAttemptResult => {
@@ -719,35 +811,63 @@ export const resolvePokeballCaptureAttempt = (options: {
   }
 }
 
-const entryMatchesPokeballName = (entry: InventoryEntry, pokeballName: string): boolean => {
-  const key = ballKey(pokeballName)
-  if (ballKey(entry.name) === key) return true
-  const item = resolvePokeballItem(entry.name)
-  return Boolean(item && (ballKey(item.name) === key || item.aliases.some((alias) => ballKey(alias) === key)))
-}
-
 export const applyPokeballCaptureOutcomeToPokemonSheet = (
   sheet: CharacterSheet,
   event: Pick<PokeballCaptureOutcomeEvent, 'pokeballName' | 'result'>,
 ): boolean => {
   if (!event.result.success) return false
+  const policy = capturePokeballPolicies.get(event.pokeballName)
+  if (!policy) throw new Error('Captured Pokémon lost its reviewed Poké Ball outcome authority.')
   setPokemonCaughtBall(sheet, event.pokeballName)
+  if (policy.postCapture.authority === 'automatic'
+    && policy.postCapture.kind === 'increase-starting-loyalty') {
+    const amount = finiteNumber(policy.postCapture.amount)
+    const current = sheet.loyalty === undefined ? 3 : sheet.loyalty
+    if (amount === null || !Number.isSafeInteger(current) || current < 0 || current > 6) {
+      throw new Error('Friend Ball Loyalty outcome requires current bounded Loyalty authority.')
+    }
+    sheet.loyalty = Math.min(6, current + amount)
+  }
+  if (policy.postCapture.authority === 'automatic'
+    && policy.postCapture.kind === 'heal-to-effective-maximum') {
+    const hpTotal = resolveStats(sheet).find(stat => stat.key === 'hp')?.total
+    if (!Number.isFinite(hpTotal)) throw new Error('Heal Ball outcome requires current Pokémon HP authority.')
+    sheet.combat = {
+      ...(sheet.combat ?? {}),
+      currentHp: computeMaxHp(sheet, Number(hpTotal)),
+    }
+  }
   return true
 }
 
 export const applyPokeballCaptureOutcomeToTrainerSheet = (
   sheet: TrainerSheet,
   event: Pick<PokeballCaptureOutcomeEvent, 'pokeballName' | 'targetSlug' | 'result'>,
+  source: Pick<TokenPokeballOption, 'sourceInstanceId' | 'source'>,
 ): PokeballCaptureOutcomeApplyResult => {
-  const entries = trainerInventoryEntriesForPokeballs(sheet)
-  const entry = entries.find((candidate) => entryMatchesPokeballName(candidate, event.pokeballName) && normalizeQuantity(candidate.qty) > 0)
+  const exactRows = trainerInventoryEntriesForPokeballs(sheet).filter(candidate => (
+    candidate.section === source.source.section && candidate.entry.id === source.source.rowId
+  ))
+  const expectedInstanceId = itemInventoryInstanceId({
+    containerKind: 'trainer',
+    containerSlug: sheet.slug,
+    section: source.source.section,
+    rowId: source.source.rowId,
+  })
+  const row = exactRows.length === 1 ? exactRows[0] ?? null : null
+  const item = row ? resolvePokeballItem(row.entry.name) : null
+  const validSource = source.source.kind === 'trainer'
+    && source.source.slug === sheet.slug
+    && source.source.expectedRevision === sheet.revision
+    && source.sourceInstanceId === expectedInstanceId
+    && row !== null
+    && item?.name === event.pokeballName
+    && normalizeQuantity(row.entry.qty) > 0
   let consumed = false
-  if (entry) {
-    const quantity = normalizeQuantity(entry.qty)
-    if (quantity > 0) {
-      entry.qty = quantity - 1
-      consumed = true
-    }
+  if (validSource && row) {
+    const quantity = normalizeQuantity(row.entry.qty)
+    row.entry.qty = quantity - 1
+    consumed = true
   }
 
   let roster: PokeballCaptureOutcomeApplyResult['roster'] = null

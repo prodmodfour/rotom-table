@@ -34,6 +34,7 @@ import {
   type PlayerProfileId,
 } from '#shared/playerProfiles'
 import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
+import { createEmptySheetEquipmentState } from '#shared/itemAutomation/equipment'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
@@ -151,6 +152,7 @@ const sheetFixture = (
   level: 20,
   movelist: options.actor ? [{ name: 'Ember' }] : [],
   combat: { currentHp: options.actor ? 40 : 80 },
+  equipmentState: createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: slug }),
   revision: 2,
 })
 

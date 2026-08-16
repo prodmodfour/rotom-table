@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-007",
+  "states": {
+    "native": {
+      "requires": ["canonical fingerprint", "versioned ItemSpec", "server handler", "operation-plan fixture", "authorization and privacy tests", "atomic commit", "exact replay", "projection and recovery evidence"]
+    },
+    "guided": {
+      "requires": ["canonical fingerprint", "bounded GM input", "eligibility and timing authority", "reservation/consumption policy", "decision receipt", "privacy", "retry", "correction"]
+    },
+    "passive": {
+      "requires": ["canonical fingerprint", "explicit effective equipment/held state", "derived contribution or typed subscription", "source-loss and suppression tests", "projection evidence"]
+    },
+    "reference-only": {
+      "requires": ["canonical fingerprint", "reviewed non-actionable reason", "explicit unavailable presentation"],
+      "forbiddenWhen": "The row has concrete mechanics supported by existing product authority."
+    },
+    "not-applicable": {
+      "requires": ["canonical fingerprint", "reviewed proof the row is documentary/category-only or outside owned-item semantics"]
+    },
+    "blocked": {
+      "requires": ["named missing canonical data or infrastructure", "owning remediation ticket"],
+      "finalAcceptanceAllowed": false
+    }
+  },
+  "invariants": [
+    "Exactly one state per canonical item row.",
+    "Every actionable state names evidence and a registered handler/provider.",
+    "No blocked row at final acceptance.",
+    "No actionable UI for reference-only or not-applicable rows."
+  ]
+}

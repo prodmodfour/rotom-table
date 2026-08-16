@@ -50,6 +50,7 @@ import {
   TeleporterRoundIdentityError,
 } from './teleporterRoundUse'
 import { zygardeAssemblyRecordForPlacement } from './zygardeAssembly'
+import { resolveItemFormChangeMegaRingSource } from '../itemAutomation/formChanges'
 import {
   isPhysicalPowerLoadObject,
   physicalPowerMovementLimit,
@@ -1805,19 +1806,35 @@ export const validateCapabilityActionSelections = (input: {
     const trainer = (trainerSlug
       ? linkedTrainerSheets(input.actor, input.trainerSheets).find(candidate => candidate.slug === trainerSlug)
       : null) ?? fail('mega-ring-required', 'Delta Evolution requires an exact linked Trainer wearing a Mega Ring.')
-    if (trainer.equipmentSlots?.accessory?.trim().toLocaleLowerCase('en-US') !== 'mega ring') {
-      fail('mega-ring-required', 'Delta Evolution still requires the linked Trainer to be wearing a Mega Ring.')
+    try {
+      resolveItemFormChangeMegaRingSource({
+        map: input.map,
+        trainerSheet: trainer,
+        sheets: { pokemon: input.pokemonSheets, trainer: input.trainerSheets },
+      })
+    }
+    catch {
+      fail('mega-ring-required', 'Delta Evolution requires one exact active linked Trainer Mega Ring source.')
     }
     const sceneStartedAt = activeScene.startedAt
     if (!Number.isSafeInteger(sceneStartedAt) || (sceneStartedAt ?? -1) < 0) {
       fail('mega-scene-identity-missing', 'Mega Evolution requires an authoritative Scene start identity.')
     }
-    if (Array.isArray(input.map.metadata?.capabilityMegaEvolutionUses)
+    const itemFormSceneUseSpent = input.map.encounterState?.itemFormChanges?.entries.some(entry => (
+      entry.trainerSheetSlug === trainer.slug
+      && entry.duration.kind === 'scene'
+      && entry.duration.sceneStartedAt === sceneStartedAt
+    )) === true
+    if (itemFormSceneUseSpent || (Array.isArray(input.map.metadata?.capabilityMegaEvolutionUses)
       && input.map.metadata.capabilityMegaEvolutionUses.some(raw => {
         const use = raw as Record<string, unknown>
         return use?.trainerSlug === trainer.slug && use.sceneStartedAt === sceneStartedAt
-      })) fail('mega-ring-scene-use-spent', 'This Mega Ring already supports a Mega Evolution in the current Scene.')
-    if (input.map.encounterState?.capabilityRuntime?.modes.some(mode => (
+      }))) fail('mega-ring-scene-use-spent', 'This Trainer already supports a Mega Evolution in the current Scene.')
+    if (input.map.encounterState?.itemFormChanges?.entries.some(entry => (
+      entry.placementId === input.actor.id
+      && (entry.duration.kind === 'persistent'
+        || entry.duration.sceneStartedAt === sceneStartedAt)
+    )) || input.map.encounterState?.capabilityRuntime?.modes.some(mode => (
       mode.actorPlacementId === input.actor.id
       && mode.mode === 'mega-evolved'
       && mode.capabilityInstanceId === input.command.capabilityInstanceId

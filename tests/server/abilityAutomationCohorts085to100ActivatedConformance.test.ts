@@ -13,6 +13,8 @@ import { resolveEncounterEffectRecall } from '~~/server/domain/moveAutomation/ef
 import { planEncounterMoveResourceCosts } from '~~/server/domain/moveAutomation/planMoveResources'
 import { cleanupAa085to100CurledUpForBreather } from '~~/server/domain/abilityAutomation/mechanics/aa085to100ActionIntegration'
 import { REMAINING_ABILITY_TEST_REGISTRY } from '../fixtures/abilityAutomation/remainingRegistry'
+import { activePokemonHeldEquipmentState } from '../fixtures/equipment'
+import { splitSheetItemNames } from '~/utils/sheetItemNames'
 
 const slug = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 const ability = (
@@ -54,6 +56,10 @@ const sheet = (input: {
   },
   combatStages: { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
   combat: { currentHp: input.currentHp ?? 100, injuries: 0, conditions: [...(input.conditions ?? [])] },
+  equipmentState: activePokemonHeldEquipmentState({
+    ownerSlug: input.slug,
+    canonicalItemIds: splitSheetItemNames(input.held),
+  }),
   ...(input.held ? { items: { held: input.held } } : {}),
 })
 

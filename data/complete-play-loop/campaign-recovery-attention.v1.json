@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-087",
+  "status": "implemented",
+  "limits": {
+    "sheets": 10000,
+    "itemOperations": 10000,
+    "conditionsPerSheet": 128,
+    "dailyMoveEntriesPerSheet": 512
+  },
+  "authority": {
+    "completeCurrentSheets": true,
+    "singleStrictCampaignClock": true,
+    "completeItemOperations": true,
+    "exactSheetRevision": true,
+    "usesExistingHealingAuthority": true,
+    "usesExistingCampaignDayAuthority": true,
+    "mutatesSheet": false,
+    "mutatesClock": false,
+    "parsesDocumentaryText": false,
+    "presentationCachesAreAuthority": false
+  },
+  "medicalPolicy": {
+    "activeTreatmentRequiresAcceptedOperation": true,
+    "activeTreatmentRequiresCurrentDefinitionHash": true,
+    "activeTreatmentRequiresExactCompletionSnapshot": true,
+    "activeTreatmentRequiresExactTargetRevision": true,
+    "activeTreatmentRequiresExactMechanicsPayload": true,
+    "overdueUnmaterializedTreatmentFailsClosed": true,
+    "duplicateTreatmentStartIsProjected": false,
+    "treatmentDurationMinutes": 360,
+    "dailyInjuryHealingLimit": 3,
+    "naturalInjuriesHealedPerDay": 1,
+    "naturalHpHealingBlockedAtInjuries": 5,
+    "blockingInjuryCount": 10
+  },
+  "needKinds": [
+    "fainted",
+    "injuries",
+    "critical-injuries",
+    "daily-injury-limit",
+    "hp-recovery",
+    "condition-follow-up",
+    "active-treatment",
+    "daily-move-recovery",
+    "daily-ability-recovery",
+    "daily-capability-recovery",
+    "multi-day-capability-recovery",
+    "trainer-ap-recovery",
+    "feature-rest-recovery"
+  ],
+  "explanationCodes": [
+    "malformed-current-authority",
+    "zero-or-negative-hp",
+    "hp-below-current-healing-cap",
+    "injuries-remain",
+    "five-or-more-injuries-block-natural-hp-recovery",
+    "daily-injury-healing-limit-reached",
+    "condition-or-status-follow-up-remains",
+    "accepted-treatment-is-still-in-progress",
+    "daily-move-uses-require-rest-or-day-advance",
+    "daily-ability-uses-require-day-advance",
+    "capability-use-requires-additional-day-advances",
+    "trainer-ap-requires-extended-rest",
+    "feature-state-requires-extended-rest"
+  ],
+  "projection": {
+    "audience": "owner",
+    "medicalReason": "medical-review",
+    "recoveryReason": "recovery-review",
+    "untreatedInjuryDecision": "choose-treatment",
+    "untreatedInjuryAction": "start-treatment",
+    "activeTreatmentDecision": "review-recovery",
+    "activeTreatmentAction": "review-recovery",
+    "ordinaryRecoveryDecision": "review-recovery",
+    "ordinaryRecoveryAction": "review-recovery",
+    "ordinaryUrgency": "normal",
+    "criticalUrgency": "urgent",
+    "invalidUrgency": "blocking",
+    "requiresCurrentSheetAuthority": true
+  },
+  "resourcePolicy": {
+    "dailyMoveUsage": "extended-rest-or-next-day",
+    "dailyAbilityUsage": "next-day",
+    "dailyCapabilityUsage": "next-day",
+    "weeklyCapabilityUsage": "remaining-day-advances",
+    "trainerAp": "extended-rest",
+    "featureApAndUsage": "extended-rest",
+    "edgeUsage": "strictly-validated-period-owned",
+    "freeformStatusText": "follow-up-only-never-mechanics"
+  },
+  "failClosed": [
+    "partial-read",
+    "read-overflow",
+    "duplicate-sheet-authority",
+    "duplicate-item-operation-authority",
+    "malformed-campaign-clock",
+    "invalid-sheet-revision",
+    "sheet-slug-mismatch",
+    "invalid-hp-or-injury-state",
+    "contradictory-derived-healing-state",
+    "condition-overflow",
+    "malformed-resource-ledger",
+    "foreign-ability-owner",
+    "forged-active-treatment",
+    "missing-treatment-operation",
+    "non-accepted-treatment-operation",
+    "stale-treatment-definition",
+    "mismatched-treatment-target",
+    "mismatched-treatment-payload",
+    "future-treatment-lifecycle",
+    "overdue-treatment-lifecycle"
+  ],
+  "doesNotCopy": [
+    "sheet-name",
+    "hp-value",
+    "injury-count",
+    "condition-identity",
+    "status-note",
+    "move-identity",
+    "ability-identity",
+    "capability-identity",
+    "feature-identity",
+    "ap-value",
+    "treatment-id",
+    "operation-id",
+    "item-source",
+    "profile-evidence",
+    "private-provenance"
+  ],
+  "sources": {
+    "detector": {
+      "path": "server/domain/campaignAttention/recoveryDetector.ts",
+      "sha256": "d0a284efb5042490346e66f1c264c245afb679644131a9a8eb89edd4524fd3da"
+    },
+    "attentionModel": {
+      "path": "shared/campaignAttention/model.ts",
+      "sha256": "0fd3e9494a41bda34fd209f55b26d3db7e3a90f2eb1337ecaf4ce285365552de"
+    },
+    "healingAuthority": {
+      "path": "src/utils/sheets/healing.ts",
+      "sha256": "f393393cd1a7f0e888abe65b65f60da51de047c09f1a928d8b036ff64ebba97f"
+    },
+    "campaignDayAuthority": {
+      "path": "server/useCases/advanceCampaignDay.ts",
+      "sha256": "41e2008840da28daf6d419bafa73c1d3da753bd01eea51c495f24741c14a3051"
+    },
+    "treatmentContract": {
+      "path": "shared/itemAutomation/medicalTreatments.ts",
+      "sha256": "f8b49df1c84bf3db5372d418b9afd9cf73fcc6136042b1b1536d7baf1f22967f"
+    },
+    "treatmentAuthority": {
+      "path": "server/domain/itemAutomation/medicalTreatments.ts",
+      "sha256": "4e8ed8b9a16225b9edeca1f4559fddad590c62d6acf7e0934a2ee73e4904d62d"
+    },
+    "itemRegistry": {
+      "path": "server/domain/itemAutomation/registry.ts",
+      "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+    },
+    "itemSpecs": {
+      "path": "data/complete-play-loop/specs.v1.json",
+      "sha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe"
+    },
+    "campaignClock": {
+      "path": "shared/campaignClock.ts",
+      "sha256": "6e332bb5ded6507324ae9b0ef7d94ce8b17f23d4117afb0e12ea36bb49775eca"
+    },
+    "abilityUsage": {
+      "path": "shared/abilityAutomation/resources.ts",
+      "sha256": "187f0a6e6b78efaceb5d19df2d8c8f269f55094f03db0b0837734564d1e7d924"
+    },
+    "capabilityUsage": {
+      "path": "shared/capabilityAutomation/state.ts",
+      "sha256": "3951b38c93e1487b11d4081a78bcb9dfedefc68cb09bd1be5553f329474d9e3b"
+    },
+    "featureRest": {
+      "path": "shared/featureAutomation/state.ts",
+      "sha256": "c91fd215406ab86472d8b20c6e5a8fe005c7c312fdcf152bd05bfea08ebb2c0f"
+    },
+    "edgeUsage": {
+      "path": "shared/edgeAutomation/state.ts",
+      "sha256": "8a2a14e5fdcfa10a1cb8bac1c27cf8e0050b9dea764dcb382c39f2ff0c97162a"
+    },
+    "detectorTests": {
+      "path": "tests/server/campaignAttentionRecoveryDetector.test.ts",
+      "sha256": "8075abe36e95b05b5536505879777539b8ad4fbfbddf1515ca67862af8906059"
+    },
+    "documentation": {
+      "path": "docs/campaign-recovery-attention.md",
+      "sha256": "bac96d74e214884cf032c1a448eaa37b192a9bc3f349a8656e0b62b2c9105101"
+    }
+  },
+  "validation": {
+    "focusedTests": "49 passed",
+    "typecheck": "passed",
+    "eslint": "passed",
+    "diffCheck": "passed"
+  }
+}

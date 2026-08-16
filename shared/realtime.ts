@@ -30,9 +30,30 @@ export interface RealtimeEvent<TData = unknown> {
 export const mapsChannel = 'maps'
 export const sheetsChannel = 'sheets'
 export const shopsChannel = 'shops'
+export const campaignAttentionChannel = 'campaign-attention'
+
+export const CAMPAIGN_ATTENTION_REALTIME_EVENT_TYPES = {
+  INVALIDATED: 'campaign-attention-invalidated',
+} as const
+
+export type CampaignAttentionRealtimeEventType = typeof CAMPAIGN_ATTENTION_REALTIME_EVENT_TYPES[
+  keyof typeof CAMPAIGN_ATTENTION_REALTIME_EVENT_TYPES
+]
 export const groupInventoryChannel = (slug: string): `group-inventory:${string}` => `group-inventory:${slug}`
 export const encountersChannel = 'encounters'
 export const encounterChannel = (encounterId: string): `encounter:${string}` => `encounter:${encounterId}`
+export const encounterSettlementChannel = (
+  encounterId: string,
+): `encounter-settlement:${string}` => `encounter-settlement:${encounterId}`
+
+export const ENCOUNTER_SETTLEMENT_REALTIME_EVENT_TYPES = {
+  UPDATED: 'encounter-settlement-updated',
+  CORRECTED: 'encounter-settlement-corrected',
+} as const
+
+export type EncounterSettlementRealtimeEventType = typeof ENCOUNTER_SETTLEMENT_REALTIME_EVENT_TYPES[
+  keyof typeof ENCOUNTER_SETTLEMENT_REALTIME_EVENT_TYPES
+]
 
 export const ENCOUNTER_DOCUMENT_REALTIME_EVENT_TYPES = {
   CREATED: 'encounter-document-created',

@@ -12,6 +12,7 @@ import type {
   MoveCoreTokenEffectRecipient,
 } from './reducers/coreTokenEffectTypes'
 import type { EncounterLifecycleTriggerHandler } from './reduceLifecycle'
+import { equipmentHpChangePreventionReason } from './equipmentProviderMechanics'
 import {
   createMoveAutomationWeatherResolver,
   type AuthoritativeWeatherInstance,
@@ -230,8 +231,14 @@ export const createWeatherLifecycleImmunityQueries = (input: {
   const queries: MoveCoreTokenEffectImmunityQueries = {
     directHp: (query) => {
       const weatherKind = weatherResidualKindForOperation(query.operation)
-      return weatherKind === null
-        ? input.fallback.directHp(query)
+      if (weatherKind === null) return input.fallback.directHp(query)
+      const equipmentBlocker = equipmentHpChangePreventionReason({
+        context: input.context,
+        placementId: query.recipient.placement.id,
+        reasonCode: query.operation.reasonCode,
+      })
+      return equipmentBlocker
+        ? { blockedBy: equipmentBlocker, consultedPlacementIds: [] }
         : resolveWeatherResidualImmunity({
             weatherKind,
             context: input.context,

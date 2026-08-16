@@ -33,6 +33,7 @@ vi.mock('../../server/policies/playerProfilePolicy', async (importOriginal) => {
 })
 
 const checkoutRoute = (await import('../../server/api/shops/checkout.post')).default
+const postCheckoutActionsRoute = (await import('../../server/api/shops/post-checkout-actions.post')).default
 
 type RouteHandler = EventHandler<EventHandlerRequest, unknown>
 type TestRole = 'gm' | 'player'
@@ -271,7 +272,7 @@ describe('shop checkout API route', () => {
     ])
     expect(storedShop().entries[0]?.stock).toBe(3)
     expect(storedTrainer().money).toBe(600)
-    expect(storedTrainer().inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+    expect(storedTrainer().inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 2, cost: 200 })])
     expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()
   })
 
@@ -304,8 +305,43 @@ describe('shop checkout API route', () => {
       opId: 'op_shopcheckout_route_player',
       actor: { role: 'player', profileName: 'Ash' },
     })
-    expect(storedTrainer().inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+    expect(storedTrainer().inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 2, cost: 200 })])
     expect(mocks.resolvePlayerProfileForPolicy).toHaveBeenCalledWith('profile_ash00000')
+  })
+
+  it('loads post-checkout actions only from the exact accepted receipt and selected player profile', async () => {
+    seedShop()
+    seedTrainer()
+    const selectedProfile = playerProfile(['ash'])
+    mocks.resolvePlayerProfileForPolicy.mockReturnValue(selectedProfile)
+    const accepted = await invokePostRoute(checkoutRoute, SHOP_API_PATHS.checkout, {
+      role: 'player',
+      body: {
+        ...trainerCommand({ opId: 'op_shopcheckout_route_actions' }),
+        clientId: 'player-client',
+        profileId: selectedProfile.id,
+      },
+    }) as CheckoutRouteAcceptedResponse
+    const continuationIds = accepted.postCheckout?.continuations.map(row => row.continuationId) ?? []
+    const response = await invokePostRoute(postCheckoutActionsRoute, SHOP_API_PATHS.postCheckoutActions, {
+      role: 'player',
+      body: {
+        request: {
+          schemaVersion: 1,
+          shopSlug: accepted.shopSlug,
+          checkoutOperationId: accepted.opId,
+          continuationIds,
+        },
+        profileId: selectedProfile.id,
+      },
+    }) as { readonly items: readonly { readonly actions: readonly { readonly kind: string }[] }[] }
+
+    expect(response.items).toHaveLength(1)
+    expect(response.items[0]?.actions.map(action => action.kind)).toEqual([
+      'inspect', 'use', 'equip', 'give', 'move-to-group',
+    ])
+    expect(JSON.stringify(response)).not.toContain(storedTrainer().inventory?.medicalKit[0]?.id)
+    expect(mocks.resolvePlayerProfileForPolicy).toHaveBeenLastCalledWith(selectedProfile.id)
   })
 
   it('matches use-case idempotency for duplicate operation retries', async () => {
@@ -325,7 +361,7 @@ describe('shop checkout API route', () => {
     expect(duplicate).toEqual(first)
     expect(storedShop().entries[0]?.stock).toBe(3)
     expect(storedTrainer().money).toBe(600)
-    expect(storedTrainer().inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+    expect(storedTrainer().inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 2, cost: 200 })])
   })
 
   it('returns terminal invalid, conflict, and not-found checkout results', async () => {

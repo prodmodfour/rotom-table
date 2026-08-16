@@ -39,14 +39,22 @@ const choiceKindForTarget = (kind: EncounterTargetingKind): EncounterChoiceKind 
   return null
 }
 
-const participantOption = (participant: EncounterWorkspaceParticipant): EncounterChoiceOption => ({
+const participantOption = (
+  participant: EncounterWorkspaceParticipant,
+  projected?: {
+    readonly label: string
+    readonly description?: string | null
+    readonly disabled?: boolean
+    readonly unavailableReason?: EncounterChoiceOption['unavailableReason']
+  },
+): EncounterChoiceOption => ({
   optionId: participant.participantId,
-  label: participant.displayName,
-  description: [participant.side?.label, participant.roleLabel, participant.hp
+  label: projected?.label ?? participant.displayName,
+  description: projected?.description ?? [participant.side?.label, participant.roleLabel, participant.hp
     ? `${participant.hp.current}/${participant.hp.maximum} HP`
     : null].filter(Boolean).join(' · '),
-  disabled: false,
-  unavailableReason: null,
+  disabled: projected?.disabled ?? false,
+  unavailableReason: projected?.unavailableReason ?? null,
   preview: {
     kind: 'participant',
     participant: {
@@ -72,23 +80,47 @@ const sideOption = (side: EncounterWorkspaceSide): EncounterChoiceOption => ({
 })
 
 const optionsForTarget = (input: {
-  readonly kind: EncounterTargetingKind
+  readonly target: EncounterActionOffer['targeting'][number]
   readonly offer: EncounterActionOffer
   readonly participants: readonly EncounterWorkspaceParticipant[]
   readonly sides: readonly EncounterWorkspaceSide[]
 }): EncounterChoiceOption[] => {
-  if (input.kind === 'self') {
+  const kind = input.target.kind
+  const requirementOptions = (input.offer.selectionOptions ?? []).filter(option => (
+    option.requirementId === undefined || option.requirementId === input.target.requirementId
+  ))
+  if (kind === 'self') {
     const actor = input.participants.find(participant => participant.participantId === input.offer.actor.participantId)
     return actor ? [participantOption(actor)] : []
   }
-  if (input.kind === 'participant') return input.participants.map(participantOption)
-  if (input.kind === 'side') return input.sides.map(sideOption)
-  if (input.kind === 'item' || input.kind === 'move') return (input.offer.selectionOptions ?? []).map(option => ({
+  if (kind === 'participant') {
+    const relationship = input.target.relationshipLabel?.toLowerCase() ?? ''
+    const projected = requirementOptions.filter(option => option.kind === 'participant')
+    // Item eligibility is source-owned. An empty server set is empty, never a
+    // signal for the browser to manufacture candidates from visible HP/state.
+    if (input.offer.source.sourceKind === 'item' && projected.length === 0) return []
+    const projectedById = new Map(projected.map(option => [option.value, option]))
+    return input.participants
+      .filter((participant) => {
+        if (projected.length > 0 && !projectedById.has(participant.participantId)) return false
+        if (relationship === 'self') return participant.participantId === input.offer.actor.participantId
+        if (relationship === 'controlled') return participant.controlled
+        if (relationship === 'owned') return participant.controlled
+        if (relationship === 'ally') return participant.side?.id !== null && participant.side?.id === input.offer.actor.sideId
+        if (relationship === 'foe') return participant.side?.id !== null && input.offer.actor.sideId !== null && participant.side?.id !== input.offer.actor.sideId
+        return true
+      })
+      .map(participant => participantOption(participant, projectedById.get(participant.participantId)))
+  }
+  if (kind === 'side') return input.sides.map(sideOption)
+  if (kind === 'item' || kind === 'move') return requirementOptions
+    .filter(option => option.kind !== 'participant')
+    .map(option => ({
     optionId: option.value,
     label: option.label,
-    description: null,
-    disabled: false,
-    unavailableReason: null,
+    description: option.description ?? null,
+    disabled: option.disabled ?? false,
+    unavailableReason: option.unavailableReason ?? null,
     preview: { kind: 'none' },
   }))
   return []
@@ -104,7 +136,7 @@ export const buildEncounterActionDecision = (input: {
   const choices = input.offer.targeting.flatMap((target): EncounterChoiceOffer[] => {
     const kind = choiceKindForTarget(target.kind)
     if (!kind) return []
-    const options = optionsForTarget({ kind: target.kind, ...input })
+    const options = optionsForTarget({ target, ...input })
     const self = target.kind === 'self'
     return [{
       schemaVersion: 1,
@@ -114,7 +146,7 @@ export const buildEncounterActionDecision = (input: {
       mapRevision: input.offer.mapRevision,
       choiceId: target.requirementId,
       kind,
-      prompt: target.relationshipLabel ?? `Choose ${target.kind}`,
+      prompt: target.relationshipLabel ?? `Choose ${target.kind === 'participant' ? 'target' : target.kind}`,
       helpText: [target.rangeLabel, target.requiresLineOfSight ? 'Requires line of sight' : null,
         target.requiresSpatialInput ? 'Exact geometry required' : null].filter(Boolean).join(' · ') || null,
       cardinality: { minimum: self ? 1 : target.minSelections, maximum: self ? 1 : target.maxSelections },
@@ -123,9 +155,11 @@ export const buildEncounterActionDecision = (input: {
       defaultOptionIds: self && options[0]
         ? [options[0].optionId]
         : kind === 'participant'
-          ? (input.defaultParticipantIds ?? [])
-              .filter(id => options.some(option => option.optionId === id))
-              .slice(0, target.maxSelections)
+          ? (input.offer.formChangePreview && options.length === 1
+              ? [options[0]!.optionId]
+              : (input.defaultParticipantIds ?? [])
+                  .filter(id => options.some(option => option.optionId === id))
+                  .slice(0, target.maxSelections))
           : [],
       requiresConfirmation: true,
       allowPass: target.minSelections === 0,
@@ -140,7 +174,7 @@ export const buildEncounterActionDecision = (input: {
     mapSlug: input.offer.mapSlug,
     mapRevision: input.offer.mapRevision,
     choiceId: 'resource',
-    kind: input.offer.selectionOptions.every(option => option.kind === 'trainer') ? 'participant' : 'item',
+    kind: input.offer.selectionOptions.every(option => option.kind === 'trainer' || option.kind === 'participant') ? 'participant' : 'item',
     prompt: 'Choose an authorized option',
     helpText: null,
     cardinality: { minimum: 1, maximum: 1 },
@@ -148,9 +182,9 @@ export const buildEncounterActionDecision = (input: {
     options: input.offer.selectionOptions.map(option => ({
       optionId: option.value,
       label: option.label,
-      description: option.kind,
-      disabled: false,
-      unavailableReason: null,
+      description: option.description ?? option.kind,
+      disabled: option.disabled ?? false,
+      unavailableReason: option.unavailableReason ?? null,
       preview: { kind: 'none' },
     })),
     defaultOptionIds: [],
@@ -159,11 +193,17 @@ export const buildEncounterActionDecision = (input: {
     allowCancel: true,
     expiresAt: null,
   })
+  const primaryTarget = input.offer.targeting.find(target => target.kind !== 'none')
+  const itemPrompt = input.offer.source.sourceKind === 'item' && primaryTarget
+    ? `Choose ${primaryTarget.minSelections === primaryTarget.maxSelections
+      ? primaryTarget.minSelections
+      : `${primaryTarget.minSelections}–${primaryTarget.maxSelections}`} ${primaryTarget.kind === 'participant' ? 'target' : primaryTarget.kind}${primaryTarget.maxSelections === 1 ? '' : 's'}`
+    : null
   return {
     kind: 'action',
     interactionId,
     title: input.offer.presentation.label,
-    prompt: input.offer.presentation.description ?? 'Review this action and choose its required inputs.',
+    prompt: itemPrompt ?? input.offer.presentation.description ?? 'Review this action and choose its required inputs.',
     offer: input.offer,
     choices,
     allowPass: false,

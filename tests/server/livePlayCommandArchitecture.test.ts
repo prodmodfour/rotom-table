@@ -36,6 +36,7 @@ describe('production live-play command architecture', () => {
   it('centralizes every production live-play command use case on the SQLite executor factory or an injected executor path', () => {
     expect(productionLivePlayCommandFiles.map(({ name }) => name).sort()).toEqual([
       'applyAttackOfOpportunityCommand.ts',
+      'applyLivePlayEncounterLifecycleCommand.ts',
       'applyLivePlayInitiativeCommand.ts',
       'applyLivePlayMapEffectsCommand.ts',
       'applyLivePlaySceneCommand.ts',

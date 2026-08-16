@@ -25,6 +25,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
 import { pokemonHpSnapshot } from '~/utils/sheetSpawn'
 import { deepCloneJson } from '~/utils/serialization'
+import { activePokemonHeldEquipmentState } from '../fixtures/equipment'
 import {
   KNOCK_OFF_ACTOR_PLACEMENT_ID,
   KNOCK_OFF_TARGET_PLACEMENT_ID,
@@ -389,7 +390,7 @@ describe('Knock Off durable item continuation', () => {
     expect(plan.stateChanges.changes).toContainEqual(expect.objectContaining({
       kind: 'sheet-state',
       reasonCode: 'combined-sheet-operations',
-      changedFields: ['hp', 'items'],
+      changedFields: ['hp', 'items', 'equipmentState'],
     }))
     expect(plan.sheetWrites).toEqual([
       expect.objectContaining({
@@ -397,7 +398,7 @@ describe('Knock Off durable item continuation', () => {
         slug: 'knock-off-target-sheet',
         expectedRevision: 2,
         revision: 3,
-        changedFields: ['hp', 'items'],
+        changedFields: ['hp', 'items', 'equipmentState'],
         nextSheet: expect.objectContaining({ items: {} }),
       }),
     ])
@@ -1084,6 +1085,10 @@ describe('Knock Off durable item continuation', () => {
       unavailableSheets.get('knock-off-target-sheet')!,
     )
     unavailableTarget.items = { held: 'Bright Powder' }
+    unavailableTarget.equipmentState = activePokemonHeldEquipmentState({
+      ownerSlug: unavailableTarget.slug,
+      canonicalItemIds: ['Bright Powder'],
+    })
     unavailableSheets.set(unavailableTarget.slug, unavailableTarget)
     const unavailableBefore = deepCloneJson([...unavailableSheets])
     expect(() => resumeMoveSpec({
@@ -1109,6 +1114,10 @@ describe('Knock Off durable item continuation', () => {
     const current = harness.sheets.getByRef('pokemon', 'knock-off-target-sheet')!
     const changed = deepCloneJson(current.sheet) as unknown as CharacterSheet
     changed.items = { held: 'Bright Powder' }
+    changed.equipmentState = activePokemonHeldEquipmentState({
+      ownerSlug: changed.slug,
+      canonicalItemIds: ['Bright Powder'],
+    })
     expect(harness.sheets.applyLivePlayUpdate({
       kind: 'pokemon',
       slug: current.slug,

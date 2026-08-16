@@ -10,10 +10,12 @@ import {
 import {
   ENCOUNTER_ACTION_DOCK_RECENT_LIMIT,
   encounterActionCostLabel,
+  encounterActionRecencyKey,
   encounterActionTargetLabel,
   encounterActionUsageLabel,
   filterEncounterActionOffers,
   groupEncounterActionOffers,
+  orderEncounterActionsByRecency,
   recordRecentEncounterAction,
 } from '../../shared/encounterWorkspace/actionDock'
 import {
@@ -146,6 +148,11 @@ describe('encounter action dock model', () => {
           status: 'unavailable',
           reasons: [{ code: 'source.item-unavailable', label: 'No potion remains', sources: [], diagnosticDetail: null }],
         },
+        selectionOptions: [{
+          kind: 'participant', value: 'ally:one', label: 'Ally One', description: 'At full HP.',
+          disabled: true,
+          unavailableReason: { code: 'target.invalid', label: 'That target is not eligible', sources: [], diagnosticDetail: null },
+        }],
       }),
     ]
     expect(filterEncounterActionOffers({
@@ -157,6 +164,11 @@ describe('encounter action dock model', () => {
       offers: values,
       actorParticipantId: null,
       filters: { query: 'super potion', group: 'all', availability: 'unavailable' },
+    }).map(value => value.offerId)).toEqual(['item'])
+    expect(filterEncounterActionOffers({
+      offers: values,
+      actorParticipantId: null,
+      filters: { query: 'at full hp', group: 'inventory', availability: 'unavailable' },
     }).map(value => value.offerId)).toEqual(['item'])
     expect(groupEncounterActionOffers(values).map(value => value.group)).toEqual(['attack', 'inventory'])
   })
@@ -171,6 +183,22 @@ describe('encounter action dock model', () => {
     expect(encounterActionCostLabel(offer('one'))).toBe('1 Standard Action')
     expect(encounterActionUsageLabel(offer('one'))).toBe('1/2 Scene')
     expect(encounterActionTargetLabel(offer('one'))).toContain('Range 6')
+    expect(encounterActionUsageLabel(offer('potion', {
+      source: { sourceKind: 'item', canonicalId: 'Potion', instanceId: 'item:one', displayName: 'Potion', referenceHref: null },
+      usage: { frequencyLabel: null, remaining: 2, maximum: 2, cooldownLabel: null, resetLabel: null },
+    }))).toBe('2 available')
+  })
+
+  it('keeps a recent action recognizable across authoritative map revisions without persistence', () => {
+    const first = offer('revision:7', {
+      source: { sourceKind: 'item', canonicalId: 'Potion', instanceId: 'item:stable', displayName: 'Potion', referenceHref: null },
+      intent: { actionId: 'item.use:item:stable', input: 'choices' },
+    })
+    const refreshed = { ...first, offerId: 'revision:8', mapRevision: 8 }
+    const other = offer('other', { offerOrder: -1 })
+    const recent = recordRecentEncounterAction([], encounterActionRecencyKey(first))
+    expect(orderEncounterActionsByRecency([other, refreshed], recent).map(value => value.offerId))
+      .toEqual(['revision:8', 'other'])
   })
 
   it('filters the maximum projected offer inventory inside the local interaction p95 budget', () => {
@@ -217,12 +245,69 @@ describe('encounter generic decision model', () => {
     // Fainted state is presentation, not enough information for the browser to infer target legality.
     expect(participantDecision.choices[0]?.options.find(value => value.optionId === 'target:one')?.disabled).toBe(false)
 
+    const authoritativeParticipantDecision = buildEncounterActionDecision({
+      offer: offer('authoritative-participants', {
+        selectionOptions: [{
+          kind: 'participant', value: 'ally:one', label: 'Ally One',
+          description: '10/20 HP · 20 HP requested · 10 HP restored · 10 overheal',
+          costs: [{ kind: 'item', resourceId: null, amount: 1, label: 'Consume 1 Potion' }],
+          disabled: false,
+          unavailableReason: null,
+        }, {
+          kind: 'participant', value: 'target:one', label: 'Target One',
+          description: '20/20 HP · At full HP.',
+          costs: [{ kind: 'item', resourceId: null, amount: 1, label: 'Consume 1 Potion' }],
+          disabled: true,
+          unavailableReason: {
+            code: 'target.invalid', label: 'That target is not eligible', sources: [], diagnosticDetail: null,
+          },
+        }],
+      }),
+      participants,
+      sides,
+    })
+    expect(authoritativeParticipantDecision.choices[0]?.options).toEqual([
+      expect.objectContaining({
+        optionId: 'ally:one', disabled: false,
+        description: '10/20 HP · 20 HP requested · 10 HP restored · 10 overheal',
+      }),
+      expect.objectContaining({
+        optionId: 'target:one', disabled: true,
+        description: '20/20 HP · At full HP.',
+        unavailableReason: expect.objectContaining({ code: 'target.invalid' }),
+      }),
+    ])
+    const authoritativeChoice = authoritativeParticipantDecision.choices[0]!
+    expect(toggleEncounterDecisionOption({
+      selections: initialEncounterDecisionSelections(authoritativeParticipantDecision),
+      choice: authoritativeChoice,
+      optionId: 'target:one',
+    })).toEqual({ target: [] })
+
+    const emptyItemDecision = buildEncounterActionDecision({
+      offer: offer('empty-item-targets', {
+        source: { sourceKind: 'item', canonicalId: 'Potion', instanceId: 'item:one', displayName: 'Potion', referenceHref: null },
+        selectionOptions: [],
+      }),
+      participants,
+      sides,
+    })
+    expect(emptyItemDecision.choices[0]?.options).toEqual([])
+    expect(encounterDecisionSelectionsValid(emptyItemDecision, initialEncounterDecisionSelections(emptyItemDecision))).toBe(false)
+
     const sideDecision = buildEncounterActionDecision({
       offer: offer('side', { targeting: [{ ...offer('base').targeting[0]!, kind: 'side' }] }),
       participants,
       sides,
     })
     expect(sideDecision.choices[0]?.options.map(value => value.optionId)).toEqual(['heroes', 'foes'])
+
+    const ownedDecision = buildEncounterActionDecision({
+      offer: offer('owned', { targeting: [{ ...offer('base').targeting[0]!, relationshipLabel: 'owned' }] }),
+      participants,
+      sides,
+    })
+    expect(ownedDecision.choices[0]?.options.map(value => value.optionId)).toEqual(['actor:one'])
 
     const selfDecision = buildEncounterActionDecision({
       offer: offer('self', { targeting: [{ ...offer('base').targeting[0]!, kind: 'self' }] }),

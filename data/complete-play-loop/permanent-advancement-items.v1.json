@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-053",
+  "status": "reviewed-native",
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "ruleAuthority": {
+    "canonicalPath": "data/reference/rules.json",
+    "canonicalId": "Vitamins and Related Items",
+    "fileSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142",
+    "recordSha256": "3fc60d305d0d7cf76a096a52d69d395cb20901e215249638dec4983137666dd0",
+    "migrationId": "rule-data-vitamin-advancement-mechanics-v1",
+    "migrationAfterFileSha256": "924233a88593c7178bc2e32356de55a80d2f1235c2a7825e39a097ae8690acd9",
+    "catalogSuccessorMigrationIds": [
+      "rule-data-machine-move-learning-mechanics-v1",
+      "rule-data-evolution-item-mechanics-v1",
+      "rule-data-item-form-change-mechanics-v1",
+      "rule-data-exploration-item-mechanics-v1",
+      "rule-data-pokemon-advancement-choices-v1",
+      "rule-data-trainer-advancement-choices-v1"
+    ],
+    "reviewEvidence": {
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "excerptSha256": "2692cdd0056329f4bde53a3adeab21cd3c76f97ffde33e4d801500001d755940",
+      "pages": [299]
+    },
+    "runtimeDocumentaryParsingForbidden": true
+  },
+  "items": {
+    "statVitamins": [
+      { "canonicalId": "HP Up", "stat": "hp", "recordSha256": "0c6ea9d7eddb11c99cb643b0e7b4b5d7db32c545d1471e3a7bfff5152df0b674", "effectSha256": "a0dd2c9f9c2e67c812a0046435b9ca99e73e7faa7ac2affd098247e3b8e92af2" },
+      { "canonicalId": "Protein", "stat": "atk", "recordSha256": "108e4d271496c7b37b85a53f3ee6fddc1897ffcae002162fefc153608bb21d14", "effectSha256": "3bbcf06d2b97b72683725f396c2e1f3f97c14680c8bc3a7e0de2162305babbe9" },
+      { "canonicalId": "Iron", "stat": "def", "recordSha256": "23b34e017cf79adef8fdbcbbda473879b14a36f97631282dd51d7dcc035db68a", "effectSha256": "9d1c5eb480ea6ea69ae4c3f1265312c1870378cb9225004298b65d411345bc4c" },
+      { "canonicalId": "Calcium", "stat": "satk", "recordSha256": "2f03326d8643b7deee5c40eae6b91afd0f64d0445a11b0dfbacdd6a10659fb24", "effectSha256": "bb529d31e5a4ec6327bea456b88960db2ff333ef737e5f29a59176247e4ecbc1" },
+      { "canonicalId": "Zinc", "stat": "sdef", "recordSha256": "ef2d11283860f4d83e8d4d9c518106a99e8a99fcdc8e59217f5ba65235107128", "effectSha256": "1ef2d33200a34142f5d30641be8f223621fc12fdd41de4b1eb2b088b13b7cdbe" },
+      { "canonicalId": "Carbos", "stat": "spd", "recordSha256": "61724998a9cd3b3f1f765bcd715aa26c545f7347deb01a8c04c8dcc19f1626b3", "effectSha256": "7323b53631df9cbc8a86e2fadd451e4e44346676774d636acbacadbbd135ab2a" }
+    ],
+    "heartBooster": { "canonicalId": "Heart Booster", "recordSha256": "621cef40364bfff8e0685c895258215a64814c96f292dc4382d337c191b56344", "effectSha256": "1b69b4866a0947ad07ef6395173bbb19007552fe94cf665b26effd7d2314e483", "tutorPoints": 2, "lifetimeLimit": 1, "countsAsVitamin": true },
+    "ppUp": { "canonicalId": "PP Up", "recordSha256": "8a361ac67582b1e35264a29c12772fa441fd7b6ad5517ff15279412b739cb3ed", "effectSha256": "fb432601ea2527b9be3109b03d1be1069a5a2f60a3f64cd99e3ec0e80b547e53", "lifetimeLimit": 1, "countsAsVitamin": true, "frequencyProgression": { "At-Will": null, "EOT": "At-Will", "Scene": "Scene x2", "Daily": "Daily x2", "repeatableIncrement": 1 } },
+    "rareCandy": { "canonicalId": "Rare Candy", "recordSha256": "e42f36f859e6e97e31539713413e8eb1481f4905cdbebe93b6fc56c2ab89fe09", "effectSha256": "ec0ea96f1ac517c32031c0353711b9b5c015484189d074368b873fc5739a3b41", "lifetimeLimit": 5, "maximumLevel": 100, "result": "minimum-total-experience-for-next-level" },
+    "statSuppressants": { "canonicalId": "Stat Suppressants", "recordSha256": "9972b4c3630144787de4bf3d96c1916f94d06d4c38e32b2bac731cd6229caa79", "effectSha256": "5cb5bd49d735a03a46367e04727f69d14c8f42c687bbf03a0acc78c0c1aaf659", "baseStatDelta": -1, "minimumEffectiveBaseStat": 1, "requiresExplicitOwningTrainerConsent": true, "countsAsVitamin": false }
+  },
+  "sharedVitaminLimit": {
+    "maximum": 5,
+    "counts": ["six stat Vitamins", "Heart Booster", "PP Up"],
+    "doesNotCount": ["Rare Candy", "Stat Suppressants"],
+    "authority": "durable Pokémon tracking plus immutable accepted provenance"
+  },
+  "execution": {
+    "actorKind": "trainer",
+    "targetKind": "owned-pokemon",
+    "timing": "extended",
+    "startAppliesMechanics": false,
+    "interruptAppliesMechanics": false,
+    "consumeAt": "extended-action-completion",
+    "quantity": 1,
+    "completion": "reauthorize current source, ownership, definition, target revision, limits, sheet validity, and exact persisted choices; apply sheet mutation, provenance, consumption, operation receipt, activity receipt, and realtime events in one SQLite transaction",
+    "exactReplay": "return stored receipts without reapplying, regenerating options, or consuming again",
+    "conflict": "leave the activity in progress and apply no write",
+    "choices": {
+      "transport": "opaque target-specific option identities",
+      "ppUp": ["one eligible current Move", "original frequency bound into opaque identity"],
+      "statSuppressants": ["one currently legal Base Stat", "exact owning-Trainer consent confirmation"],
+      "retryPolicy": "reuse persisted choices and never regenerate choices"
+    }
+  },
+  "sheetValidity": {
+    "statFloor": 1,
+    "baseRelations": "required after mutation",
+    "addedStatPointBudget": "must remain legal",
+    "levelExperienceConsistency": "required",
+    "spentTutorPoints": "must not exceed resulting earned Tutor Points",
+    "noOp": "reject before consumption",
+    "malformedOrStaleState": "fail closed"
+  },
+  "provenance": {
+    "contract": "shared/itemAutomation/permanentAdvancement.ts",
+    "storage": "CharacterSheet.serverPrivate.itemPermanentAdvancement",
+    "fields": ["source operation identity", "canonical item identity", "definition digest", "application kind", "selected stat or Move transition", "level transition", "server timestamp"],
+    "uniqueness": "one application per source operation identity",
+    "clientProjection": "never expose raw provenance, digests, operation identities, or ownership evidence",
+    "setupSavePolicy": "accepted item-controlled Vitamin fields and server-private state are read-only"
+  },
+  "implementation": {
+    "spec": "shared/itemAutomation/spec.ts",
+    "stateContract": "shared/itemAutomation/permanentAdvancement.ts",
+    "mechanics": "server/domain/itemAutomation/permanentAdvancement.ts",
+    "planning": "server/domain/itemAutomation/planner.ts",
+    "reducer": "server/domain/itemAutomation/reducer.ts",
+    "conformance": "server/domain/itemAutomation/conformance.ts",
+    "offers": "server/domain/itemAutomation/sheetActionOffers.ts",
+    "extendedAction": "server/useCases/manageItemExtendedAction.ts",
+    "privacy": "server/utils/sheetPrivacy.ts",
+    "client": ["src/composables/sheets/useTrainerSheetItemActions.ts", "src/components/sheets/TrainerSheetItemDecision.vue", "src/components/sheets/TrainerItemExtendedActionCard.vue"],
+    "mockup": ".pi/artifacts/ui-mockups/permanent-advancement-item/v003.png",
+    "tests": [
+      "tests/shared/itemAutomationSheetActions.test.ts",
+      "tests/server/itemAutomationSpec.test.ts",
+      "tests/server/itemPermanentAdvancement.test.ts",
+      "tests/integration/permanentAdvancementExtendedActions.test.ts",
+      "tests/composables/useTrainerSheetItemActions.test.ts",
+      "tests/components/trainerSheetItemActions.test.ts",
+      "tests/data/completePlayLoopPermanentAdvancement.test.ts",
+      "tests/e2e/permanent-advancement-items.spec.ts"
+    ]
+  },
+  "certification": {
+    "focusedMechanicsAndIntegration": {
+      "files": 49,
+      "tests": 361,
+      "workers": 1,
+      "fileParallelism": false,
+      "result": "passed"
+    },
+    "liveplayDesktopAndMobile": {
+      "spec": "tests/e2e/permanent-advancement-items.spec.ts",
+      "projects": ["chromium", "mobile-chromium"],
+      "journeysPerProject": 2,
+      "tests": 4,
+      "result": "passed",
+      "covers": ["PP-Up-choice-preview-and-completion", "Stat-Suppressant-consent-and-interruption", "start-inertness", "atomic-consumption", "private-provenance-redaction", "responsive-reflow", "axe-accessibility"]
+    },
+    "liveplayProductionBuild": "passed",
+    "nuxtTypecheck": "passed",
+    "focusedEslint": "passed",
+    "generatedInventoryCheck": "passed",
+    "breedingSuccessorCheck": "passed",
+    "gitDiffCheck": "passed",
+    "manualSheetRepairRequired": false
+  }
+}

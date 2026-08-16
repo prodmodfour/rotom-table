@@ -21,6 +21,10 @@ import {
   validateMoveResourceCostCombination,
 } from '#shared/moveAutomation/resourceCosts'
 import {
+  ITEM_BAIT_NEXT_TURN_STANDARD_FLAG_ID,
+  ITEM_REPEL_NEXT_TURN_SHIFT_FLAG_ID,
+} from '#shared/itemAutomation/exploration'
+import {
   MoveSpecValidationError,
   parseMoveSpecCostDeclarations,
   type MoveSpecCostDeclaration,
@@ -30,6 +34,7 @@ export const ENCOUNTER_REACTION_AVAILABLE_RESOURCE_ID = 'reaction.available' as 
 export const ENCOUNTER_MOVEMENT_RESOURCE_ID = 'movement' as const
 export const ENCOUNTER_ONCE_PER_TURN_RESOURCE_PREFIX = 'once-per-turn.' as const
 export const ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID = 'cost.exhaust.next-turn' as const
+export const ITEM_RESTORATIVE_NEXT_TURN_FLAG_ID = 'item.restorative.target-next-turn-forfeit' as const
 export const CAPABILITY_BURROW_NEXT_TURN_STANDARD_FLAG_ID = 'capability.burrow.next-turn-standard' as const
 export const CAPABILITY_ALLURING_NEXT_TURN_STANDARD_FLAG_ID = 'capability.alluring.next-turn-standard' as const
 export const ENCOUNTER_EXHAUST_COMMAND_FLAG_ID = 'cost.exhaust.command' as const
@@ -294,10 +299,15 @@ const setTurnWindow = (
   const forfeitsNextTurn = previous.oncePerTurnFlags.some(flag => (
     flag.id === ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID
     || flag.id === ENCOUNTER_PRIORITY_ADVANCED_NEXT_TURN_FLAG_ID
+    || flag.id === ITEM_RESTORATIVE_NEXT_TURN_FLAG_ID
   ))
   const forfeitsNextStandard = previous.oncePerTurnFlags.some(flag => (
     flag.id === CAPABILITY_BURROW_NEXT_TURN_STANDARD_FLAG_ID
       || flag.id === CAPABILITY_ALLURING_NEXT_TURN_STANDARD_FLAG_ID
+      || flag.id === ITEM_BAIT_NEXT_TURN_STANDARD_FLAG_ID
+  ))
+  const forfeitsNextShift = previous.oncePerTurnFlags.some(flag => (
+    flag.id === ITEM_REPEL_NEXT_TURN_SHIFT_FLAG_ID
   ))
   let ledger = resetLedger(previous, 'turn-start')
   if (ledger.setupExecute?.status === 'setting-up') {
@@ -312,7 +322,10 @@ const setTurnWindow = (
   if (forfeitsNextTurn) {
     ledger = spendAction(spendAction(ledger, 'standard', 1), 'shift', 1)
   }
-  else if (forfeitsNextStandard) ledger = spendAction(ledger, 'standard', 1)
+  else {
+    if (forfeitsNextStandard) ledger = spendAction(ledger, 'standard', 1)
+    if (forfeitsNextShift) ledger = spendAction(ledger, 'shift', 1)
+  }
   return withLedger(resources, {
     ...ledger,
     round: event.round,
@@ -348,6 +361,33 @@ const addFlag = (
     oncePerTurnFlags: [...ledger.oncePerTurnFlags, flag]
       .sort((left, right) => left.id.localeCompare(right.id)),
   }
+}
+
+export const scheduleExplorationNextTurnForfeit = (input: {
+  readonly resources: EncounterTurnResourceDirectory
+  readonly placementId: string
+  readonly flagId: typeof ITEM_BAIT_NEXT_TURN_STANDARD_FLAG_ID | typeof ITEM_REPEL_NEXT_TURN_SHIFT_FLAG_ID
+  readonly sourceOperationId: string
+  readonly round: number | null
+  readonly turn: number | null
+}): EncounterTurnResourceDirectory => {
+  const parsed = parseEncounterTurnResources(input.resources)
+  const ledger = parsed[input.placementId] ?? createEncounterTurnResourceLedger({
+    placementId: input.placementId,
+    round: input.round,
+    turn: input.turn,
+  })
+  if (ledger.oncePerTurnFlags.some(flag => flag.id === input.flagId)) {
+    return fail('once-per-turn-unavailable', `Placement ${input.placementId} already owes this exploration action forfeiture.`)
+  }
+  return parseEncounterTurnResources({
+    ...parsed,
+    [input.placementId]: addFlag(ledger, {
+      id: input.flagId,
+      sourceOperationId: input.sourceOperationId,
+      resetOn: ['turn-start'],
+    }),
+  })
 }
 
 const effectiveActionSpend = (
@@ -431,10 +471,15 @@ const prepareLedgerWindow = (
     const forfeitsNextTurn = ledger.oncePerTurnFlags.some(flag => (
       flag.id === ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID
       || flag.id === ENCOUNTER_PRIORITY_ADVANCED_NEXT_TURN_FLAG_ID
+      || flag.id === ITEM_RESTORATIVE_NEXT_TURN_FLAG_ID
     ))
     const forfeitsNextStandard = ledger.oncePerTurnFlags.some(flag => (
       flag.id === CAPABILITY_BURROW_NEXT_TURN_STANDARD_FLAG_ID
         || flag.id === CAPABILITY_ALLURING_NEXT_TURN_STANDARD_FLAG_ID
+        || flag.id === ITEM_BAIT_NEXT_TURN_STANDARD_FLAG_ID
+    ))
+    const forfeitsNextShift = ledger.oncePerTurnFlags.some(flag => (
+      flag.id === ITEM_REPEL_NEXT_TURN_SHIFT_FLAG_ID
     ))
     ledger = {
       ...resetLedger(ledger, 'turn-start'),
@@ -444,7 +489,10 @@ const prepareLedgerWindow = (
     if (forfeitsNextTurn) {
       ledger = spendAction(spendAction(ledger, 'standard', 1), 'shift', 1)
     }
-    else if (forfeitsNextStandard) ledger = spendAction(ledger, 'standard', 1)
+    else {
+      if (forfeitsNextStandard) ledger = spendAction(ledger, 'standard', 1)
+      if (forfeitsNextShift) ledger = spendAction(ledger, 'shift', 1)
+    }
   }
   return {
     ...ledger,
@@ -859,7 +907,7 @@ export const reduceEncounterResourceEvent = (
 ): EncounterTurnResourceDirectory => {
   let resources = parseEncounterTurnResources(resourcesValue)
 
-  if (event.kind === 'scene-start' || event.kind === 'scene-end') {
+  if (event.kind === 'scene-start' || event.kind === 'scene-end' || event.kind === 'encounter-end') {
     return deepFreeze({})
   }
   if (event.kind === 'round-start') {

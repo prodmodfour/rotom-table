@@ -22,6 +22,7 @@ describe('app navigation helpers', () => {
       '/play',
       '/maps',
       BREEDING_WORKSHOP_PATH,
+      CAMPAIGN_PATH,
       GROUP_INVENTORY_PATH,
       SHOP_LIBRARY_PATH,
       '/pokedex',

@@ -312,6 +312,7 @@ const applyMapWrite = (
 const applySheetWrites = (
   plan: AcceptedMoveCorrectionPlan,
   dependencies: Dependencies,
+  sourceOperationId: string,
 ): readonly GmMoveCorrectionSheetUpdate[] => {
   for (const write of plan.sheetWrites) {
     const result = dependencies.sheetRepository.applyLivePlayUpdate({
@@ -323,6 +324,8 @@ const applySheetWrites = (
         write.slug,
         plan.nextMap.updatedAt ?? dependencies.now(),
       ),
+      sourceOperationId,
+      ...(write.changedFields.includes('equipmentState') ? { heldItemCustodyChanged: true } : {}),
     })
     if (result === 'stale') {
       throw new AcceptedMoveCorrectionPlanError(
@@ -537,7 +540,7 @@ export const applyGmMoveCorrectionUseCase = (
       }
     }
     const authoritativeMap = applyMapWrite(plan, dependencies)
-    const sheetUpdates = applySheetWrites(plan, dependencies)
+    const sheetUpdates = applySheetWrites(plan, dependencies, currentParsed.command.opId)
     dependencies.opRepository.saveCommandResult({
       mapSlug: currentParsed.command.mapSlug,
       opId: currentParsed.command.opId,

@@ -36,6 +36,7 @@ export const LIVE_PLAY_MOVE_SHEET_CHANGED_FIELDS = [
   'items',
   'inventory',
   'equipmentSlots',
+  'equipmentState',
   'digestion',
   'abilityUsage',
   'capabilityUsage',

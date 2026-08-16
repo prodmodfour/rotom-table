@@ -5,13 +5,11 @@ import {
   POKEMON_RARE_CANDY_LIMIT,
   POKEMON_VITAMIN_LIMIT,
   POKEMON_VITAMIN_STAT_ITEMS,
-  type PokemonVitaminFlagKey,
   type PokemonVitaminNumberKey,
-  type PokemonVitaminStatCountKind,
   type PokemonVitaminSummary,
   type PokemonVitaminTextKey,
 } from '~/utils/sheets/pokemonVitamins'
-import type { CharacterSheet, StatKey } from '~/types/characterSheet'
+import type { CharacterSheet } from '~/types/characterSheet'
 
 const props = defineProps<{
   sheet: CharacterSheet
@@ -21,42 +19,20 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  setVitaminStatCount: [kind: PokemonVitaminStatCountKind, key: StatKey, value: unknown]
-  setVitaminFlag: [key: PokemonVitaminFlagKey, value: boolean]
   setVitaminNumber: [key: PokemonVitaminNumberKey, value: unknown]
   setVitaminText: [key: PokemonVitaminTextKey, value: string | undefined]
 }>()
 
-const vitaminSlotsLeftForIncrease = computed(() => Math.max(0, props.vitaminSummary.vitaminSlotsLeft))
-const canAddVitaminSlot = computed(() => props.vitaminSummary.vitaminSlotsLeft > 0)
-const moveOptions = computed(() => (
-  props.sheet.movelist
-    ?.map((move) => move.name?.trim())
-    .filter((name): name is string => Boolean(name))
-    ?? []
-))
-
-const statRows = computed(() => POKEMON_VITAMIN_STAT_ITEMS.map((item) => {
-  const vitaminCount = props.vitaminSummary.statBoosts[item.stat]
-  const suppressantCount = props.vitaminSummary.statSuppressants[item.stat]
-  return {
-    ...item,
-    vitaminCount,
-    suppressantCount,
-    netAdjustment: props.vitaminSummary.statNetAdjustments[item.stat],
-    maxVitaminCount: vitaminCount + vitaminSlotsLeftForIncrease.value,
-  }
-}))
+const statRows = computed(() => POKEMON_VITAMIN_STAT_ITEMS.map((item) => ({
+  ...item,
+  vitaminCount: props.vitaminSummary.statBoosts[item.stat],
+  suppressantCount: props.vitaminSummary.statSuppressants[item.stat],
+  netAdjustment: props.vitaminSummary.statNetAdjustments[item.stat],
+})))
 
 const vitaminLimitTone = computed(() => (
   props.vitaminSummary.exceedsVitaminLimit ? 'over' : props.vitaminSummary.vitaminSlotsLeft === 0 ? 'full' : 'ok'
 ))
-
-const checkedFromEvent = (event: Event): boolean => event.target instanceof HTMLInputElement && event.target.checked
-
-const updateVitaminFlag = (key: PokemonVitaminFlagKey, event: Event) => {
-  emit('setVitaminFlag', key, checkedFromEvent(event))
-}
 
 const formatTutorPointTotal = computed(() => {
   if (props.tutorPointsEarned == null) return '—'
@@ -71,7 +47,7 @@ const formatTutorPointTotal = computed(() => {
       <div>
         <h2 class="panel-title">Vitamins</h2>
         <p class="vitamins-panel__intro">
-          Track permanent nutrition items. Stat Vitamins raise Base Stats; stat suppressants lower Base Stats.
+          Accepted permanent items are recorded here. Start new uses from the owning Trainer’s inventory.
         </p>
       </div>
       <span :class="['vitamin-limit-badge', `vitamin-limit-badge--${vitaminLimitTone}`]">
@@ -80,7 +56,7 @@ const formatTutorPointTotal = computed(() => {
     </header>
 
     <p v-if="vitaminSummary.exceedsVitaminLimit" class="vitamins-panel__warning" role="alert">
-      This Pokémon is over the five-Vitamin lifetime limit. Existing values are still shown and applied so you can correct the sheet without losing data.
+      This Pokémon is over the five-Vitamin lifetime limit. Item use is locked until the stored legacy record is reviewed.
     </p>
 
     <div class="vitamins-table-wrap">
@@ -98,22 +74,11 @@ const formatTutorPointTotal = computed(() => {
             <th scope="row">{{ row.label }}</th>
             <td>
               <span class="item-label">{{ row.vitaminName }}</span>
-              <EditableCell
-                :model-value="row.vitaminCount"
-                type="number"
-                :min="0"
-                :max="row.maxVitaminCount"
-                @update:model-value="(value) => emit('setVitaminStatCount', 'statBoosts', row.stat, value)"
-              />
+              <strong class="authoritative-count">{{ row.vitaminCount }}</strong>
             </td>
             <td>
               <span class="item-label">{{ row.suppressantName }}</span>
-              <EditableCell
-                :model-value="row.suppressantCount"
-                type="number"
-                :min="0"
-                @update:model-value="(value) => emit('setVitaminStatCount', 'statSuppressants', row.stat, value)"
-              />
+              <strong class="authoritative-count">{{ row.suppressantCount }}</strong>
             </td>
             <td :class="['net-adjustment', { plus: row.netAdjustment > 0, minus: row.netAdjustment < 0 }]">
               {{ formatSignedModifier(row.netAdjustment) }}
@@ -123,53 +88,35 @@ const formatTutorPointTotal = computed(() => {
       </table>
     </div>
 
+    <p class="vitamins-panel__authority-note">
+      Permanent outcomes, lifetime limits, Move Frequency, Experience, and Trainer consent are server-authoritative. Sheet editing cannot rewrite them.
+    </p>
+
     <div class="vitamin-related-grid">
-      <label class="vitamin-toggle">
-        <input
-          type="checkbox"
-          :checked="vitaminSummary.heartBoosterUsed"
-          :disabled="!vitaminSummary.heartBoosterUsed && !canAddVitaminSlot"
-          @change="updateVitaminFlag('heartBooster', $event)"
-        >
+      <div class="vitamin-toggle" :class="{ 'is-used': vitaminSummary.heartBoosterUsed }">
+        <span class="vitamin-toggle__status">{{ vitaminSummary.heartBoosterUsed ? 'Used' : 'Not used' }}</span>
         <span>
           <strong>Heart Booster</strong>
           <small>+2 Tutor Points, once per Pokémon.</small>
         </span>
-      </label>
+      </div>
 
-      <label class="vitamin-toggle vitamin-toggle--pp-up">
-        <input
-          type="checkbox"
-          :checked="vitaminSummary.ppUpUsed"
-          :disabled="!vitaminSummary.ppUpUsed && !canAddVitaminSlot"
-          @change="updateVitaminFlag('ppUp', $event)"
-        >
+      <div class="vitamin-toggle vitamin-toggle--pp-up" :class="{ 'is-used': vitaminSummary.ppUpUsed }">
+        <span class="vitamin-toggle__status">{{ vitaminSummary.ppUpUsed ? 'Used' : 'Not used' }}</span>
         <span>
           <strong>PP Up</strong>
-          <small>Raises one move’s Frequency one step, once per Pokémon.</small>
+          <small>Raises one eligible Move’s Frequency, once per Pokémon.</small>
         </span>
-      </label>
+      </div>
 
       <p class="vitamin-field vitamin-field--pp-up-target">
         <strong>PP Up Move</strong>
-        <EditableCell
-          :model-value="sheet.vitamins?.ppUpMove"
-          type="text"
-          :options="moveOptions"
-          placeholder="Move boosted"
-          @update:model-value="(value) => emit('setVitaminText', 'ppUpMove', value as string | undefined)"
-        />
+        <span>{{ sheet.vitamins?.ppUpMove?.trim() || '—' }}</span>
       </p>
 
-      <p class="vitamin-field" title="Rare Candies have their own five-use lifetime limit and should be applied by editing Level/EXP when consumed.">
+      <p class="vitamin-field" title="Rare Candy use and Experience are committed together by an accepted item operation.">
         <strong>Rare Candies</strong>
-        <EditableCell
-          :model-value="vitaminSummary.rareCandies"
-          type="number"
-          :min="0"
-          :max="POKEMON_RARE_CANDY_LIMIT"
-          @update:model-value="(value) => emit('setVitaminNumber', 'rareCandies', value)"
-        />
+        <span class="authoritative-count">{{ vitaminSummary.rareCandies }} / {{ POKEMON_RARE_CANDY_LIMIT }}</span>
         <small>{{ vitaminSummary.rareCandiesLeft }} left</small>
       </p>
 
@@ -247,7 +194,8 @@ const formatTutorPointTotal = computed(() => {
 .vitamin-limit-badge--full { color: var(--accent); }
 .vitamin-limit-badge--over { color: var(--bad); }
 
-.vitamins-panel__warning {
+.vitamins-panel__warning,
+.vitamins-panel__authority-note {
   margin: 0;
   border: 1px solid rgba(184, 80, 80, 0.65);
   border-radius: 10px;
@@ -256,6 +204,14 @@ const formatTutorPointTotal = computed(() => {
   padding: 0.5rem 0.65rem;
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+.vitamins-panel__authority-note {
+  border-color: color-mix(in srgb, var(--rt-focus, var(--accent)) 50%, var(--rule));
+  background: color-mix(in srgb, var(--rt-focus, var(--accent)) 7%, var(--paper));
+  color: var(--ink-soft);
+  font-weight: 600;
+  line-height: 1.45;
 }
 
 .vitamins-table-wrap { overflow: auto; }
@@ -305,6 +261,11 @@ const formatTutorPointTotal = computed(() => {
 .net-adjustment.plus { color: var(--good); }
 .net-adjustment.minus { color: var(--bad); }
 
+.authoritative-count {
+  color: var(--ink-bright);
+  font-variant-numeric: tabular-nums;
+}
+
 .vitamin-related-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -323,20 +284,23 @@ const formatTutorPointTotal = computed(() => {
 
 .vitamin-toggle {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.55rem;
   align-items: flex-start;
-  cursor: pointer;
 }
 
-.vitamin-toggle input {
-  margin-top: 0.18rem;
-  accent-color: var(--accent);
+.vitamin-toggle__status {
+  flex: 0 0 auto;
+  border-left: 2px solid var(--rule-strong);
+  padding-left: 0.4rem;
+  color: var(--ink-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
-.vitamin-toggle input:disabled,
-.vitamin-toggle input:disabled + span {
-  cursor: not-allowed;
-  opacity: 0.55;
+.vitamin-toggle.is-used .vitamin-toggle__status {
+  border-left-color: var(--good);
+  color: var(--good);
 }
 
 .vitamin-toggle strong,

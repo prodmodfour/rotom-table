@@ -45,6 +45,10 @@ export interface MoveAutomationEvasionResolution {
 
 export interface MoveAutomationEvasionContext {
   attacker?: Pick<SpawnedPokemon, 'abilityNames'> | null
+  /** Server-projected effective Stats after stages and equipment, by Evasion candidate kind. */
+  effectiveEvasionStats?: Readonly<Partial<Record<MoveAutomationEvasionKind, number>>>
+  /** Server-projected, hash-current flat equipment Evasion by candidate kind. */
+  equipmentEvasionBonuses?: Readonly<Partial<Record<MoveAutomationEvasionKind, number>>>
   /** Server-projected active fields; retained v1 callers never author this value. */
   fieldEffects?: MapFieldEffects | null
   /** Authoritative material/voxel tags under the target's complete footprint. */
@@ -132,15 +136,16 @@ const evasionForStat = (
   stat: number | null | undefined,
   stage: number | null | undefined,
   bonus: number | null | undefined,
+  effectiveStat?: number,
 ): number => conditionAdjustedEvasion({
-  statTotal: stat,
-  combatStage: stage,
+  statTotal: effectiveStat ?? stat,
+  combatStage: effectiveStat === undefined ? stage : 0,
   bonus,
   conditions: target.conditions,
   abilities: target.abilityNames,
   statStageKey: key,
   kind,
-  applyCombatStages: true,
+  applyCombatStages: effectiveStat === undefined,
 }).total
 
 const wonderRoomApplies = (
@@ -170,8 +175,11 @@ const physicalEvasion = (
       'physical',
       wondered ? target.sdef : target.def,
       stage,
-      attackerAdjustedEvasionBonus(target.evasion?.physical, context)
-        + (target.physicalPowerLoad?.evasionPenalty ?? 0),
+      attackerAdjustedEvasionBonus(
+        (target.evasion?.physical ?? 0) + (context.equipmentEvasionBonuses?.physical ?? 0),
+        context,
+      ) + (target.physicalPowerLoad?.evasionPenalty ?? 0),
+      context.effectiveEvasionStats?.physical,
     ),
   }
 }
@@ -190,8 +198,11 @@ const specialEvasion = (
       'special',
       wondered ? target.def : target.sdef,
       wondered ? target.combatStages.def : target.combatStages.sdef,
-      attackerAdjustedEvasionBonus(target.evasion?.special, context)
-        + (target.physicalPowerLoad?.evasionPenalty ?? 0),
+      attackerAdjustedEvasionBonus(
+        (target.evasion?.special ?? 0) + (context.equipmentEvasionBonuses?.special ?? 0),
+        context,
+      ) + (target.physicalPowerLoad?.evasionPenalty ?? 0),
+      context.effectiveEvasionStats?.special,
     ),
   }
 }
@@ -208,8 +219,11 @@ const speedEvasion = (
     'speed',
     target.spd ?? 0,
     target.combatStages.spd,
-    attackerAdjustedEvasionBonus(target.evasion?.speed, context)
-      + (target.physicalPowerLoad?.evasionPenalty ?? 0),
+    attackerAdjustedEvasionBonus(
+      (target.evasion?.speed ?? 0) + (context.equipmentEvasionBonuses?.speed ?? 0),
+      context,
+    ) + (target.physicalPowerLoad?.evasionPenalty ?? 0),
+    context.effectiveEvasionStats?.speed,
   ),
 })
 

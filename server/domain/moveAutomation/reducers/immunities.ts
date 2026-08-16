@@ -38,6 +38,13 @@ import {
 } from '../../abilityAutomation/mechanics/aa080StaticIntegration'
 import { AA080_MOTOR_DRIVE_STAGE_REASON } from '../../abilityAutomation/mechanics/aa080MoveIntegration'
 import { authoritativeUnnerveBlocksTarget } from '../unnerve'
+import { itemMoveCombatStageReductionBlocker } from '../../itemAutomation/combatEffects'
+import {
+  equipmentConditionImmunityReason,
+  equipmentHpChangePreventionReason,
+  equipmentMoveImmunityReason,
+  equipmentRemovesTypeImmunity,
+} from '../equipmentProviderMechanics'
 import type {
   MoveConditionImmunityDecision,
   MoveCoreTokenEffectImmunityDecision,
@@ -212,6 +219,12 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
     operation?: MoveEffectOperation,
   ): string | null => {
     if (motorDriveBlocksOperation(recipient, operation)) return 'Motor Drive'
+    const equipment = equipmentMoveImmunityReason({
+      context: options.context,
+      placementId: recipient.placement.id,
+      script: options.moveScript,
+    })
+    if (equipment) return equipment
     const ordinary = options.moveScript
       ? moveAutomationMoveImmunitySource(options.moveScript, recipient.token)
       : null
@@ -236,8 +249,14 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       moveType: options.moveType,
     })) return 'Lightning Rod'
     if (typeSource === 'attacking' && motorDriveBlocksOperation(recipient, operation)) return 'Motor Drive'
+    const equipmentSuppressesImmunity = equipmentRemovesTypeImmunity({
+      context: options.context,
+      placementId: recipient.placement.id,
+      typeId: options.moveType,
+    })
     const effectiveLevitate = typeSource === 'attacking'
       && options.moveType.trim().toLowerCase() === 'ground'
+      && !equipmentSuppressesImmunity
       && options.context?.queries.abilities.has(recipient.placement.id, 'Levitate') === true
       && options.context.queries.gravity.groundInteraction({
         placementId: recipient.placement.id,
@@ -250,21 +269,25 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
     const passiveAbilityNames = target.abilityNames?.filter(name => (
       !['Levitate', 'Motor Drive'].includes(name.trim())
     ))
-    const defenderTypes = options.context
+    const defenderTypes = (options.context
       ? target.defenderTypes.filter(defenderType => !aa080MojoIgnoresNormalImmunity({
           context: options.context!,
           moveType: options.moveType!,
           defenderType,
         }))
-      : target.defenderTypes
+      : target.defenderTypes).filter(defenderType => (
+      !equipmentSuppressesImmunity || computeMultiplier(options.moveType!, [defenderType]) !== 0
+    ))
     const baseMultiplier = computeMultiplier(options.moveType, defenderTypes)
-    const multiplier = computeSheetAbilityAwareMultiplier(
-      options.moveType,
-      defenderTypes,
-      passiveAbilityNames,
-      target.defenderCapabilities,
-      { baseMultiplier },
-    )
+    const multiplier = equipmentSuppressesImmunity
+      ? baseMultiplier
+      : computeSheetAbilityAwareMultiplier(
+          options.moveType,
+          defenderTypes,
+          passiveAbilityNames,
+          target.defenderCapabilities,
+          { baseMultiplier },
+        )
     if (multiplier !== 0) return null
     if (baseMultiplier === 0) {
       if (typeSource === 'attacking') return `${options.moveType} type`
@@ -282,6 +305,12 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
   }
   return {
     directHp: ({ operation, recipient }) => {
+      const equipmentBlocker = equipmentHpChangePreventionReason({
+        context: options.context,
+        placementId: recipient.placement.id,
+        reasonCode: operation.reasonCode,
+      })
+      if (equipmentBlocker) return decision(equipmentBlocker)
       if (operation.reasonCode === AA073_GULP_MISSILE_HP_REASON) {
         return decision(gulpMissileAccuracyBlocker(operation))
       }
@@ -330,6 +359,13 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         conditionContext,
       )
       const canonicalCondition = normalizeConditionName(condition) ?? condition
+      const equipmentConditionBlocker = equipmentConditionImmunityReason({
+        context: options.context,
+        placementId: recipient.placement.id,
+        conditionId: canonicalCondition,
+        script: options.moveScript,
+      })
+      if (equipmentConditionBlocker) return conditionDecision(equipmentConditionBlocker, providerIds)
       const poisonCondition = canonicalCondition === 'Poisoned' || canonicalCondition === 'Badly Poisoned'
       const toxicBoostAllowsPoison = poisonCondition
         && options.context?.queries.abilities.has(recipient.placement.id, 'Toxic Boost')
@@ -430,7 +466,16 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             recipient.placement.id,
           ).relationship === 'enemy'
         : false
-      const ordinaryBlocker = moveImmunity(recipient, operation)
+      const ordinaryBlocker = itemMoveCombatStageReductionBlocker({
+        effects: options.context?.map.encounterState?.effects,
+        placementId: recipient.placement.id,
+        delta,
+        // Parser-authorized runtime operations always carry a source. A few
+        // direct immunity-query fixtures intentionally construct the older
+        // source-less shape; treat those as ordinary Move-authored effects.
+        operationSourceKind: operation.source?.kind ?? 'move',
+      })
+        ?? moveImmunity(recipient, operation)
         ?? (
           operation.payload.applyTypeImmunity
           && operation.recipients.kind !== 'actor'

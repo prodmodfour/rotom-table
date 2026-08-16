@@ -1,6 +1,7 @@
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { parseBreedingRealtimeRefreshEventV1 } from '#shared/breeding/realtime'
+import { ENCOUNTER_SETTLEMENT_REALTIME_EVENT_TYPES } from '#shared/realtime'
 import type { RealtimeEventAccess, PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -9,6 +10,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { ShopTableDocument } from '~/types/shop'
 import type { PendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
+import { canAccessGroupInventoryForRole } from '../policies/groupInventoryAccessPolicy'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import { pendingMoveResponseAuthorizationGrant } from '../policies/pendingMoveResponsePolicy'
 import { playerProfileCanAccessSheet } from '../policies/playerProfilePolicy'
@@ -62,9 +64,11 @@ export type RealtimeEventAccessDecision =
         | 'sheet-not-found'
         | 'sheet-not-accessible'
         | 'group-inventory-not-found'
+        | 'settlement-audience-not-accessible'
         | 'shop-not-found'
         | 'shop-not-accessible'
         | 'pending-move-response-not-accessible'
+        | 'player-profile-not-accessible'
         | 'breeding-not-accessible'
         | 'invalid-access'
     }
@@ -190,8 +194,12 @@ const evaluateSheetAccess = (
 
 const evaluateGroupInventoryAccess = (
   access: Extract<RealtimeEventAccess, { readonly kind: 'group-inventory-access' }>,
+  principal: RealtimeDeliveryPrincipal,
   dependencies: RealtimeEventAccessDependencies,
 ): RealtimeEventAccessDecision => {
+  if (!canAccessGroupInventoryForRole(principal.role, access.groupSlug)) {
+    return denied('group-inventory-not-found')
+  }
   const getGroupInventory = dependencies.getGroupInventory
   if (!getGroupInventory) return allowed()
 
@@ -297,6 +305,35 @@ const evaluateBreedingAccess = (
   return allowed()
 }
 
+const SETTLEMENT_EVENT_TYPES = new Set<string>(Object.values(ENCOUNTER_SETTLEMENT_REALTIME_EVENT_TYPES))
+
+const evaluateSettlementProjectionAudience = (input: {
+  readonly access: RealtimeEventAccess
+  readonly principal: RealtimeDeliveryPrincipal
+  readonly event: unknown
+}): RealtimeEventAccessDecision | null => {
+  if (!isRecord(input.event) || typeof input.event.type !== 'string'
+    || !SETTLEMENT_EVENT_TYPES.has(input.event.type)) return null
+  const data = isRecord(input.event.data) ? input.event.data : null
+  const settlement = data && isRecord(data.settlement) ? data.settlement : null
+  const audience = settlement?.audience
+  if (audience !== 'public' && audience !== 'owner' && audience !== 'gm') {
+    return denied('invalid-access')
+  }
+  const descriptorMatches = audience === 'gm'
+    ? input.access.kind === 'gm-only'
+    : audience === 'public'
+      ? input.access.kind === 'map-access'
+      : input.access.kind === 'sheet-access' || input.access.kind === 'group-inventory-access'
+  if (!descriptorMatches) return denied('invalid-access')
+  if (input.principal.role === 'gm') {
+    return audience === 'gm' ? allowed() : denied('settlement-audience-not-accessible')
+  }
+  return audience === 'gm'
+    ? denied('settlement-audience-not-accessible')
+    : null
+}
+
 /**
  * Evaluates durable event-log records only. Replay control messages are
  * connection metadata without RealtimeEventAccess and must be delivered outside
@@ -305,6 +342,12 @@ const evaluateBreedingAccess = (
 export const evaluateRealtimeEventAccess = (
   input: RealtimeEventAccessEvaluationInput,
 ): RealtimeEventAccessDecision => {
+  const settlementAudienceDecision = evaluateSettlementProjectionAudience({
+    access: input.access,
+    principal: input.principal,
+    event: input.event,
+  })
+  if (settlementAudienceDecision) return settlementAudienceDecision
   if (input.access.kind === 'gm-only') {
     return input.principal.role === 'gm' ? allowed() : denied('gm-only')
   }
@@ -315,13 +358,19 @@ export const evaluateRealtimeEventAccess = (
     return evaluateSheetAccess(input.access, input.principal, input.dependencies)
   }
   if (input.access.kind === 'group-inventory-access') {
-    return evaluateGroupInventoryAccess(input.access, input.dependencies)
+    return evaluateGroupInventoryAccess(input.access, input.principal, input.dependencies)
   }
   if (input.access.kind === 'shop-access') {
     return evaluateShopAccess(input.access, input.principal, input.dependencies)
   }
   if (input.access.kind === 'pending-move-response-access') {
     return evaluatePendingMoveResponseAccess(input.access, input.principal, input.dependencies)
+  }
+  if (input.access.kind === 'player-profile-access') {
+    return input.principal.role === 'player'
+      && input.principal.playerProfile?.id === input.access.profileId
+      ? allowed()
+      : denied('player-profile-not-accessible')
   }
   if (input.access.kind === 'breeding-access') {
     return evaluateBreedingAccess(input.access, input.principal, input.dependencies, input.event)

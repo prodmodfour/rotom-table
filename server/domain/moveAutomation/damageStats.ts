@@ -677,6 +677,45 @@ export const resolveMoveSpecDamageCalculation = (
     effectivenessMultiplier: moveType.finalMultiplier,
     critical: criticalHit.critical,
   })
+  const equipmentFacts = {
+    moveType: moveType.moveType,
+    effectivenessMultiplier: moveType.finalMultiplier,
+    criticalHit: criticalHit.critical,
+  }
+  const outgoingEquipment = options.context.queries.equipment.resolve({
+    placementId: actor.id,
+    facts: equipmentFacts,
+  })?.active.filter(contribution => (
+    contribution.metric === 'direct-damage' && contribution.targetIds.includes('all')
+  )) ?? []
+  const incomingEquipment = options.context.queries.equipment.resolve({
+    placementId: options.recipient.id,
+    facts: equipmentFacts,
+  })?.active.filter(contribution => (
+    contribution.metric === 'damage-reduction' && contribution.targetIds.includes('all')
+  )) ?? []
+  const equipmentDamageModifiers: readonly MoveDamageModifier[] = [
+    ...outgoingEquipment.map((contribution, index): MoveDamageModifier => ({
+      id: `${contribution.contributionId}.outgoing.${index}`,
+      stage: 'post-damage-modifiers',
+      priority: 40 + index,
+      source: { kind: 'equipment', id: contribution.canonicalItemId },
+      stackingGroup: contribution.contributionId,
+      reasonCode: 'equipment.direct-damage',
+      operation: 'add',
+      value: contribution.value,
+    })),
+    ...incomingEquipment.map((contribution, index): MoveDamageModifier => ({
+      id: `${contribution.contributionId}.incoming.${index}`,
+      stage: 'post-damage-modifiers',
+      priority: 140 + index,
+      source: { kind: 'equipment', id: contribution.canonicalItemId },
+      stackingGroup: contribution.contributionId,
+      reasonCode: 'equipment.damage-reduction',
+      operation: 'subtract',
+      value: contribution.value,
+    })),
+  ]
   const aa079Recipient = aa079MarvelScaleRecipient({
     context: options.context,
     recipient: options.recipient,
@@ -731,6 +770,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...faintedLivingWeaponModifiers,
         ...encounterDamageModifiers,
         ...encounterDamageReductionModifiers,
+        ...equipmentDamageModifiers,
         ...helpingHandModifiers,
         ...weather.modifiers,
         ...terrain.modifiers,

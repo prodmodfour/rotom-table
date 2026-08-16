@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-094",
+  "status": "reviewed",
+  "runtimeProseParsing": false,
+  "catalogRegistry": {
+    "catalogPath": "data/reference/items.json",
+    "cohortRegistryPath": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+    "allowedImplementationStates": ["native", "guided", "passive"],
+    "forbiddenImplementationStates": ["blocked", "reference-only", "not-applicable"]
+  },
+  "providerAuthorities": {
+    "machine-move": {
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerPaths": ["server/domain/itemAutomation/moveLearning.ts", "server/useCases/manageItemExtendedAction.ts"]
+    },
+    "evolution": {
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerPaths": ["server/domain/itemAutomation/evolution.ts", "server/useCases/executeItemOperation.ts"]
+    },
+    "permanent-advancement": {
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerPaths": ["server/domain/itemAutomation/permanentAdvancement.ts", "server/useCases/manageItemExtendedAction.ts"]
+    },
+    "exploration": {
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerPaths": ["server/domain/itemAutomation/exploration.ts", "server/useCases/executeItemExplorationOperation.ts"]
+    },
+    "breeding": {
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerPaths": ["server/domain/breeding/itemWorkflows.ts", "server/useCases/manageItemBreedingWorkflows.ts"]
+    },
+    "guided-adjudication": {
+      "implementationState": "guided",
+      "allowZeroMembers": false,
+      "ownerPaths": ["server/domain/itemAutomation/guidedAdjudication.ts", "server/useCases/manageItemGuidedAdjudication.ts"]
+    },
+    "equipment": {
+      "implementationState": "passive",
+      "allowZeroMembers": false,
+      "ownerPaths": ["server/domain/itemAutomation/equipmentDefinitionRegistry.ts", "server/useCases/executeEquipmentOperation.ts"]
+    },
+    "core-item-spec": {
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerPaths": ["server/domain/itemAutomation/registry.ts", "server/domain/itemAutomation/planner.ts", "server/domain/itemAutomation/reducer.ts"]
+    },
+    "capture": {
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerPaths": ["data/complete-play-loop/capture-pokeballs.v1.json", "server/useCases/applyThrowPokeballCommand.ts"]
+    },
+    "interpretive-campaign-tool": {
+      "implementationState": "guided",
+      "allowZeroMembers": false,
+      "ownerPaths": ["data/complete-play-loop/guided-catalog-items.v1.json", "server/useCases/manageItemGuidedAdjudication.ts"]
+    },
+    "canonical-data-defect": {
+      "implementationState": "blocked",
+      "allowZeroMembers": true,
+      "ownerPaths": ["scripts/migrate_black_sludge_acquisition_cost.py", "scripts/reviewed-data/black-sludge-acquisition-cost.v1.json"]
+    }
+  },
+  "handlerAuthorities": {
+    "item.native.v1": {
+      "implementationState": "native",
+      "ownerPaths": ["server/domain/itemAutomation/planner.ts", "server/domain/itemAutomation/reducer.ts"]
+    },
+    "item.guided.v1": {
+      "implementationState": "guided",
+      "ownerPaths": ["server/domain/itemAutomation/guidedAdjudication.ts", "server/useCases/manageItemGuidedAdjudication.ts"]
+    }
+  },
+  "mechanicalAuthoritySymbols": [
+    {
+      "symbol": "resolvePokeballCaptureAttempt",
+      "declarationPath": "src/utils/pokeballCapture.ts",
+      "allowedCallers": ["server/useCases/applyThrowPokeballCommand.ts"]
+    },
+    {
+      "symbol": "planDeterministicItemOperation",
+      "declarationPath": "server/domain/itemAutomation/planner.ts",
+      "allowedCallers": ["server/useCases/executeItemOperation.ts", "server/useCases/resumeItemOperation.ts"]
+    },
+    {
+      "symbol": "reduceItemOperationPlan",
+      "declarationPath": "server/domain/itemAutomation/reducer.ts",
+      "allowedCallers": ["server/useCases/executeItemOperation.ts", "server/useCases/resumeItemOperation.ts"]
+    },
+    {
+      "symbol": "executeItemOperationUseCase",
+      "declarationPath": "server/useCases/executeItemOperation.ts",
+      "allowedCallers": ["server/api/items/use.post.ts", "server/useCases/manageItemExtendedAction.ts"]
+    },
+    {
+      "symbol": "executeEquipmentOperation",
+      "declarationPath": "server/useCases/executeEquipmentOperation.ts",
+      "allowedCallers": ["server/api/equipment/operations.post.ts", "server/useCases/executeTrainerInventoryAction.ts"]
+    },
+    {
+      "symbol": "executeItemExplorationOperationUseCase",
+      "declarationPath": "server/useCases/executeItemExplorationOperation.ts",
+      "allowedCallers": ["server/api/items/exploration.post.ts"]
+    },
+    {
+      "symbol": "manageItemGuidedAdjudicationUseCase",
+      "declarationPath": "server/useCases/manageItemGuidedAdjudication.ts",
+      "allowedCallers": ["server/api/items/guided.post.ts"]
+    },
+    {
+      "symbol": "commitEncounterSettlement",
+      "declarationPath": "server/useCases/commitEncounterSettlement.ts",
+      "allowedCallers": ["server/useCases/finishEncounter.ts"]
+    }
+  ],
+  "clientAuthorityRules": {
+    "roots": ["src"],
+    "forbiddenImportPrefixes": ["server/", "~/../server/", "#server/"],
+    "forbiddenMutationCallbacks": ["applyCaptureOutcome"],
+    "commandBoundaryNote": "Clients may project offers and submit strict commands but cannot resolve or persist mechanics."
+  },
+  "inventoryMutationAuthorities": {
+    "assignmentPattern": "\\.inventory\\s*=(?!=)",
+    "bracketAssignmentPattern": "\\[['\"]inventory['\"]\\]\\s*=(?!=)",
+    "owners": {
+      "server/domain/abilityAutomation/mechanics/aa069Activated.ts": { "assignmentCount": 1, "kind": "pure-reducer" },
+      "server/domain/itemAutomation/equipmentMigration.ts": { "assignmentCount": 1, "kind": "transaction-planned-migration" },
+      "server/domain/itemAutomation/exploration.ts": { "assignmentCount": 1, "kind": "pure-reducer" },
+      "server/domain/itemAutomation/sourceInventory.ts": { "assignmentCount": 1, "kind": "pure-reducer" },
+      "server/storage/groupInventoryRepository.ts": { "assignmentCount": 2, "kind": "transaction-repository" },
+      "server/storage/sheetRepository.ts": { "assignmentCount": 1, "kind": "transaction-repository" },
+      "server/useCases/executeEquipmentOperation.ts": { "assignmentCount": 1, "kind": "transaction-use-case" },
+      "server/utils/sheetPrivacy.ts": { "assignmentCount": 1, "kind": "projection-redaction" }
+    }
+  },
+  "settlementFieldOwners": {
+    "schemaVersion": ["document-model"],
+    "settlementId": ["document-model", "repository"],
+    "revision": ["repository", "atomic-commit"],
+    "status": ["eligibility", "atomic-commit"],
+    "encounter": ["eligibility", "consequence-snapshot"],
+    "participants": ["eligibility", "consequence-snapshot"],
+    "unresolvedGates": ["eligibility", "consequence-snapshot"],
+    "persistentConsequences": ["consequence-snapshot", "outcomes"],
+    "rewardPackage": ["reward-package"],
+    "allocations": ["experience", "loot", "capture"],
+    "temporaryCleanup": ["cleanup"],
+    "decisions": ["eligibility", "outcomes"],
+    "receipts": ["atomic-commit"],
+    "completion": ["atomic-commit"],
+    "createdAtCampaignMinute": ["document-model", "repository"],
+    "updatedAtCampaignMinute": ["repository", "atomic-commit"]
+  },
+  "settlementProviders": {
+    "document-model": ["shared/encounterSettlement/document.ts"],
+    "repository": ["server/storage/encounterSettlementRepository.ts"],
+    "eligibility": ["server/domain/encounterSettlement/eligibility.ts"],
+    "consequence-snapshot": ["server/domain/encounterSettlement/consequenceSnapshot.ts"],
+    "reward-package": ["server/domain/encounterSettlement/rewardPackage.ts"],
+    "experience": ["server/domain/encounterSettlement/experienceAllocation.ts"],
+    "loot": ["server/domain/encounterSettlement/lootAllocation.ts"],
+    "capture": ["server/domain/encounterSettlement/captureSettlement.ts"],
+    "outcomes": ["server/domain/encounterSettlement/outcomeSettlement.ts"],
+    "cleanup": ["server/domain/encounterSettlement/temporaryCleanup.ts"],
+    "atomic-commit": ["server/domain/encounterSettlement/atomicCommit.ts", "server/useCases/commitEncounterSettlement.ts"]
+  }
+}

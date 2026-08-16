@@ -216,16 +216,16 @@ export const tackleV2SemanticScenario = (
           plan: {
             rejection: {
               source: 'error',
-              name: 'ImmediateMoveSpecResolutionError',
-              code: 'execution-rejected',
-              messageIncludes: 'tackle.dash-blocked-by-stuck',
+              name: 'AuthoritativeMoveResolutionError',
+              code: 'move-condition-blocked',
+              messageIncludes: 'blocked by Stuck',
             },
           },
           command: {
             rejection: {
               source: 'result',
-              reason: 'invalid',
-              messageIncludes: 'tackle.dash-blocked-by-stuck',
+              reason: 'conflict',
+              messageIncludes: 'blocked by Stuck',
             },
           },
         }

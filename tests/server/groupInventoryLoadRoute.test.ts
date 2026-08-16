@@ -125,6 +125,50 @@ describe('group inventory load API route', () => {
     ])
   })
 
+  it('redacts serialized identity, hashes, configuration, and state from player loads', async () => {
+    insertRawGroupInventory({
+      slug: GROUP_INVENTORY_MAIN_SLUG,
+      revision: 7,
+      updatedAt: 123,
+      money: 0,
+      inventory: {
+        equipment: [{
+          id: 'focus-row', name: 'Focus',
+          serializedEquipment: {
+            schemaVersion: 1,
+            instanceId: `equipped-item:v1:${'a'.repeat(32)}`,
+            revision: 3,
+            canonicalItemId: 'Focus',
+            canonicalRecordSha256: 'b'.repeat(64),
+            equipmentDefinitionSha256: 'c'.repeat(64),
+            configuration: {
+              schemaVersion: 1,
+              configurationId: 'equipment.focus.v1',
+              definitionSha256: 'c'.repeat(64),
+              values: { statId: 'atk' },
+            },
+            state: { charge: 2 },
+          },
+        }],
+      },
+    })
+
+    const player = await invokeRoute(loadRoute, { role: 'player' }) as GroupInventoryDocument
+    expect(player.inventory.equipment).toEqual([{ id: 'focus-row', name: 'Focus', qty: 1 }])
+    expect(JSON.stringify(player)).not.toContain('equipped-item:v1')
+    const gm = await invokeRoute(loadRoute, { role: 'gm' }) as GroupInventoryDocument
+    expect(gm.inventory.equipment[0]?.serializedEquipment).toMatchObject({
+      revision: 3,
+      configuration: {
+        schemaVersion: 1,
+        configurationId: 'equipment.focus.v1',
+        definitionSha256: 'c'.repeat(64),
+        values: { statId: 'atk' },
+      },
+      state: { charge: 2 },
+    })
+  })
+
   it('allows players to load the default shared inventory and creates it when missing', async () => {
     expect(groupInventoryCount()).toBe(0)
 
@@ -137,6 +181,23 @@ describe('group inventory load API route', () => {
     expect(Object.keys(response.inventory).sort()).toEqual([...GROUP_INVENTORY_SECTION_KEYS].sort())
     expect(Object.values(response.inventory).every((section) => Array.isArray(section))).toBe(true)
     expect(groupInventoryCount()).toBe(1)
+  })
+
+  it('keeps additional valid group slugs in GM custody', async () => {
+    await expect(invokeRoute(loadRoute, {
+      role: 'player',
+      query: { slug: 'gm-private-stash' },
+    })).rejects.toMatchObject({
+      statusCode: 404,
+      statusMessage: 'Group inventory was not found.',
+    })
+
+    expect(groupInventoryCount()).toBe(0)
+    const gm = await invokeRoute(loadRoute, {
+      role: 'gm',
+      query: { slug: 'gm-private-stash' },
+    }) as GroupInventoryDocument
+    expect(gm.slug).toBe('gm-private-stash')
   })
 
   it('rejects malformed slugs before creating an inventory document', async () => {

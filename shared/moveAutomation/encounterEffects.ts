@@ -26,6 +26,9 @@ export const ENCOUNTER_EFFECT_DURATION_KINDS = [
   'turns',
   'rounds',
   'scene',
+  'encounter',
+  'campaign-time',
+  'explicit-dismissal',
   'until-triggered',
   'permanent',
 ] as const
@@ -119,6 +122,7 @@ export const ENCOUNTER_EFFECT_LIMITS = Object.freeze({
   charges: 10_000,
   round: 1_000_000,
   turn: 1_000_000,
+  campaignMinute: Number.MAX_SAFE_INTEGER,
   coordinate: 1_000_000,
   numericMagnitude: 1_000_000,
 })
@@ -183,6 +187,26 @@ export type EncounterEffectDuration =
   | {
       /** Scene effects expire only on the authoritative scene-end event. */
       readonly kind: 'scene'
+      readonly remaining: null
+    }
+  | {
+      /** Encounter effects expire only on a distinct authoritative encounter-end event. */
+      readonly kind: 'encounter'
+      readonly remaining: null
+    }
+  | {
+      /** Campaign time is monotonic and never derived from wall/browser/process time. */
+      readonly kind: 'campaign-time'
+      /** Null keeps the generic active-effect query shape total; campaign time never decrements this field. */
+      readonly remaining: null
+      readonly startedAtCampaignMinute: number
+      readonly expiresAtCampaignMinute: number
+      /** Immutable anchor evidence; expiresAt must equal startedAt plus this amount. */
+      readonly durationMinutes: number
+    }
+  | {
+      /** Only an explicit server-authored removal operation expires this effect. */
+      readonly kind: 'explicit-dismissal'
       readonly remaining: null
     }
   | {
@@ -554,8 +578,15 @@ const LEGACY_EFFECT_FIELDS = [
 const SOURCE_FIELDS = ['operationId', 'moveId', 'placementId'] as const
 const AFFECTED_FIELDS = ['placementIds', 'sideIds', 'cells'] as const
 const CELL_FIELDS = ['x', 'y', 'z'] as const
-const DURATION_FIELDS = ['kind', 'subject', 'boundary', 'remaining'] as const
-const DURATION_REQUIRED_FIELDS = ['kind', 'remaining'] as const
+const COUNTED_DURATION_FIELDS = ['kind', 'subject', 'boundary', 'remaining'] as const
+const NULL_DURATION_FIELDS = ['kind', 'remaining'] as const
+const CAMPAIGN_TIME_DURATION_FIELDS = [
+  'kind',
+  'remaining',
+  'startedAtCampaignMinute',
+  'expiresAtCampaignMinute',
+  'durationMinutes',
+] as const
 const STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
 const CHARGE_POLICY_FIELDS = ['kind', 'amount'] as const
 const DISPEL_FIELDS = ['policy', 'tags'] as const
@@ -846,46 +877,78 @@ export const parseEncounterEffectDuration = (
   value: unknown,
   path = 'encounterEffect.duration',
 ): EncounterEffectDuration => {
-  const duration = parseExactRecord(value, DURATION_FIELDS, path, DURATION_REQUIRED_FIELDS)
+  const candidate = parseRecord(value, path)
   const kind = parseEnum<EncounterEffectDurationKind>(
-    duration.kind,
+    candidate.kind,
     DURATION_KIND_SET,
     `${path}.kind`,
-    'turns, rounds, scene, until-triggered, or permanent',
+    'turns, rounds, scene, encounter, campaign-time, explicit-dismissal, until-triggered, or permanent',
   )
-  const remaining = kind === 'turns' || kind === 'rounds'
-    ? parseInteger(
-        duration.remaining,
-        `${path}.remaining`,
-        1,
-        ENCOUNTER_EFFECT_LIMITS.turn,
-      )
-    : null
 
-  if (kind === 'turns') {
-    return {
-      kind,
-      subject: duration.subject === undefined
-        ? 'target'
-        : parseEnum<EncounterEffectTurnSubject>(
-            duration.subject,
-            TURN_SUBJECT_SET,
-            `${path}.subject`,
-            'source or target',
-          ),
-      boundary: duration.boundary === undefined
-        ? 'end'
-        : parseEnum<EncounterEffectBoundary>(
-            duration.boundary,
-            BOUNDARY_SET,
-            `${path}.boundary`,
-            'start or end',
-          ),
-      remaining: remaining!,
+  if (kind === 'campaign-time') {
+    const duration = parseExactRecord(value, CAMPAIGN_TIME_DURATION_FIELDS, path)
+    if (duration.remaining !== null) {
+      fail('invalid-encounter-effect', `${path}.remaining`, 'must be null for campaign-time durations.')
     }
+    const startedAtCampaignMinute = parseInteger(
+      duration.startedAtCampaignMinute,
+      `${path}.startedAtCampaignMinute`,
+      0,
+      ENCOUNTER_EFFECT_LIMITS.campaignMinute,
+    )
+    const durationMinutes = parseInteger(
+      duration.durationMinutes,
+      `${path}.durationMinutes`,
+      1,
+      ENCOUNTER_EFFECT_LIMITS.campaignMinute,
+    )
+    const expiresAtCampaignMinute = parseInteger(
+      duration.expiresAtCampaignMinute,
+      `${path}.expiresAtCampaignMinute`,
+      1,
+      ENCOUNTER_EFFECT_LIMITS.campaignMinute,
+    )
+    if (startedAtCampaignMinute > Number.MAX_SAFE_INTEGER - durationMinutes
+      || expiresAtCampaignMinute !== startedAtCampaignMinute + durationMinutes) {
+      fail(
+        'invalid-encounter-effect',
+        path,
+        'campaign-time expiry must exactly equal its start plus positive durationMinutes.',
+      )
+    }
+    return { kind, remaining: null, startedAtCampaignMinute, expiresAtCampaignMinute, durationMinutes }
   }
 
-  if (kind === 'rounds') {
+  if (kind === 'turns' || kind === 'rounds') {
+    const duration = parseExactRecord(value, COUNTED_DURATION_FIELDS, path, ['kind', 'remaining'])
+    const remaining = parseInteger(
+      duration.remaining,
+      `${path}.remaining`,
+      1,
+      ENCOUNTER_EFFECT_LIMITS.turn,
+    )
+    if (kind === 'turns') {
+      return {
+        kind,
+        subject: duration.subject === undefined
+          ? 'target'
+          : parseEnum<EncounterEffectTurnSubject>(
+              duration.subject,
+              TURN_SUBJECT_SET,
+              `${path}.subject`,
+              'source or target',
+            ),
+        boundary: duration.boundary === undefined
+          ? 'end'
+          : parseEnum<EncounterEffectBoundary>(
+              duration.boundary,
+              BOUNDARY_SET,
+              `${path}.boundary`,
+              'start or end',
+            ),
+        remaining,
+      }
+    }
     if (duration.subject !== undefined) {
       fail('invalid-encounter-effect', `${path}.subject`, 'is supported only for turn durations.')
     }
@@ -899,22 +962,16 @@ export const parseEncounterEffectDuration = (
             `${path}.boundary`,
             'start or end',
           ),
-      remaining: remaining!,
+      remaining,
     }
   }
 
-  if (duration.subject !== undefined || duration.boundary !== undefined) {
-    fail(
-      'invalid-encounter-effect',
-      path,
-      'scene, until-triggered, and permanent durations cannot declare turn or round boundaries.',
-    )
-  }
+  const duration = parseExactRecord(value, NULL_DURATION_FIELDS, path)
   if (duration.remaining !== null) {
     fail(
       'invalid-encounter-effect',
       `${path}.remaining`,
-      'must be null for scene, until-triggered, and permanent durations.',
+      'must be null for scene, encounter, explicit-dismissal, until-triggered, and permanent durations.',
     )
   }
   return { kind, remaining: null }

@@ -12,6 +12,7 @@ import { BREEDING_CAMPAIGN_CLOCK_EGG_BATCH_MAXIMUM } from '../../shared/breeding
 import { BREEDING_CONSENT_WORKFLOW_API_PATH, BREEDING_CONSENT_WORKFLOW_INTENTS } from '../../shared/breeding/consentWorkflow'
 import { POKEMON_EGG_SOURCE_KINDS, POKEMON_EGG_STATUSES } from '../../shared/breeding/egg'
 import { BREEDING_HATCH_WORKFLOW_API_PATH, BREEDING_HATCH_WORKFLOW_INTENTS } from '../../shared/breeding/hatchWorkflow'
+import { BREEDING_ITEM_WORKFLOW_API_PATH } from '../../shared/breeding/itemWorkflows'
 import { BREEDING_OPERATION_COMMAND_KINDS } from '../../shared/breeding/operations'
 import { BREEDING_PROJECT_STATUSES } from '../../shared/breeding/project'
 import { BREEDING_PROJECT_CHOICES_API_PATH } from '../../shared/breeding/projectChoices'
@@ -36,6 +37,7 @@ const sha256 = (value: unknown): string => createHash('sha256')
 const apiPaths = [
   BREEDING_WORKSHOP_API_PATH,
   BREEDING_WORKSHOP_ACTIVITY_API_PATH,
+  BREEDING_ITEM_WORKFLOW_API_PATH,
   BREEDING_PROJECT_WIZARD_API_PATH,
   BREEDING_PROJECT_GUIDANCE_API_PATH,
   BREEDING_PROJECT_CHOICES_API_PATH,
@@ -45,6 +47,8 @@ const apiPaths = [
 const routePaths = [
   'server/api/breeding/workshop.get.ts',
   'server/api/breeding/workshop/activity.get.ts',
+  'server/api/breeding/items.get.ts',
+  'server/api/breeding/items.post.ts',
   'server/api/breeding/projects/wizard.post.ts',
   'server/api/breeding/projects/wizard/guidance.post.ts',
   'server/api/breeding/projects/wizard/choices.post.ts',
@@ -131,7 +135,9 @@ describe('BR-088 Breeding documentation closure', () => {
     for (const audience of BREEDING_PROJECTION_AUDIENCES) {
       expect(security).toContain(`**${audienceLabels[audience]}**`)
     }
-    expect(model).toContain('version 28')
+    expect(model).toContain(`runtime schema is version ${LATEST_STORAGE_SCHEMA_VERSION}`)
+    expect(model).toContain('offline import migrator remains intentionally version 28')
+    expect(model).toContain(`application migrations 29 through ${LATEST_STORAGE_SCHEMA_VERSION}`)
     expect(model).toContain('64 MiB')
   })
 
@@ -148,6 +154,8 @@ describe('BR-088 Breeding documentation closure', () => {
     expect(model).toContain('exactly 240 credited campaign minutes')
     expect(model).toContain('DC 12')
     expect(model).toContain('at most 100')
+    expect(model).toContain('discovers all Eggs due at its exact successor checkpoint')
+    expect(model).toContain('either commits every child inside the global day transaction or commits none')
     expect(model).toContain('Wall-clock time is never')
     expect(guide).toContain('Browser time, real-world waiting, scenes, maps, encounters, time zones, and page reloads do not count.')
   })

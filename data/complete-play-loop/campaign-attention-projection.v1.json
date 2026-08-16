@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-089",
+  "status": "implemented",
+  "endpoint": {
+    "method": "GET",
+    "path": "/api/campaign/attention",
+    "requiresAuthenticatedRole": true,
+    "resolvesSelectedProfileOnServer": true,
+    "returnsCompleteSnapshot": true
+  },
+  "authority": {
+    "singleSqliteTransaction": true,
+    "recordLimitPerCollection": 10000,
+    "collections": [
+      "sheets",
+      "profiles",
+      "settlement-attention-sources",
+      "settlement-history-facts",
+      "item-operations",
+      "pokemon-eggs",
+      "breeding-origins",
+      "breeding-operations",
+      "campaign-clock"
+    ],
+    "strictOwningRepositoryHydration": true,
+    "duplicateIdentityFails": true,
+    "missingIdentityFails": true,
+    "changedSelectedProfileFails": true,
+    "partialProjectionForbidden": true
+  },
+  "relevance": {
+    "structuredSeeds": [
+      "profile-link",
+      "player-sheet-flag",
+      "trainer-roster",
+      "settlement-attention-source",
+      "immutable-capture-fact",
+      "pokemon-egg",
+      "breeding-origin"
+    ],
+    "transitiveRosterClosure": true,
+    "namesOrFoldersAuthorize": false,
+    "unownedWildOrNpcSheetCreatesWork": false
+  },
+  "providers": [
+    "settlement-source",
+    "advancement",
+    "pokemon-choice",
+    "trainer-choice",
+    "recovery",
+    "roster-ownership-equipment"
+  ],
+  "mergePolicy": {
+    "maximumItems": 10000,
+    "byteEqualDuplicateCollapsed": true,
+    "divergentDuplicateFails": true,
+    "decisionAuthorityMustMatchItem": true,
+    "actionAuthorityMustMatchItem": true,
+    "deterministicOrder": [
+      "urgency",
+      "entity-kind",
+      "entity-id",
+      "reason",
+      "created-at-campaign-minute",
+      "item-id"
+    ]
+  },
+  "projection": {
+    "schemaVersion": 1,
+    "onlyOpenItems": true,
+    "contentAddressedSnapshot": true,
+    "exactUrgencySummary": true,
+    "gm": "all-open-gm-and-owner-items",
+    "player": "owner-items-for-exact-selected-profile-authority",
+    "playerWithoutProfile": "empty-valid-owner-snapshot",
+    "publicOrMapVisibilityGrantsOwnership": false,
+    "malformedRosterGrantsIndirectAccess": false,
+    "profileIdentityProjected": false,
+    "profileDisplayNameProjected": false,
+    "profileAuthorityIncludedOnlyAsOneWaySnapshotInput": true
+  },
+  "realtime": {
+    "strategy": "complete-snapshot-reload",
+    "localItemMerge": false,
+    "localTombstones": false,
+    "latestRequestGenerationWins": true,
+    "principalContextChangeResetsState": true,
+    "equalSnapshotCannotDuplicate": true,
+    "sheetEventsInvalidate": true,
+    "channel": "campaign-attention",
+    "eventType": "campaign-attention-invalidated",
+    "profileUpdateAudiences": [
+      "gm-only",
+      "exact-player-profile-access"
+    ],
+    "accessDescriptorOnWire": false,
+    "payloadContainsProfileIdentity": false,
+    "reconnectReloadsSnapshot": true
+  },
+  "failClosed": [
+    "unknown-projection-field",
+    "malformed-snapshot-id",
+    "terminal-row-in-active-snapshot",
+    "duplicate-item-id",
+    "nondeterministic-order",
+    "summary-drift",
+    "future-item",
+    "gm-item-in-owner-scope",
+    "divergent-provider-identity",
+    "divergent-decision-authority",
+    "divergent-action-authority",
+    "partial-authority-read",
+    "authority-overflow",
+    "selected-profile-drift",
+    "malformed-indirect-roster",
+    "out-of-order-response",
+    "old-principal-response"
+  ],
+  "sources": {
+    "projectionContract": { "path": "shared/campaignAttention/projection.ts", "sha256": "477d6d81d6816831832f96eb6d7c9f2f64e849412b8fe1ef442b1b95a30b4993" },
+    "attentionModel": { "path": "shared/campaignAttention/model.ts", "sha256": "0fd3e9494a41bda34fd209f55b26d3db7e3a90f2eb1337ecaf4ce285365552de" },
+    "roleProjection": { "path": "server/domain/campaignAttention/projection.ts", "sha256": "b69333120fcd845aac637574415eaf3f6d674a512d9fe4e0f5d89509dd2d3f83" },
+    "authorityLoader": { "path": "server/useCases/loadCampaignAttention.ts", "sha256": "8f81bd35687bb5f697b6d8a3affbba884d4d23345e491f6eea210ba8e4d53df8" },
+    "apiRoute": { "path": "server/api/campaign/attention.get.ts", "sha256": "a719a5e05395ecd80577a96d5abaf13ea305f7bdca1e08f9eaab83f34c20cf18" },
+    "snapshotReconciler": { "path": "src/utils/campaignAttentionSnapshot.ts", "sha256": "e9d651c8f7c7c8650b89fbecf5492cdceccfd7583c9bc0da8593d45276bf2558" },
+    "realtimeBuilder": { "path": "server/realtime/campaignAttentionRealtime.ts", "sha256": "0156e953b786eb577dceea85c0a8e2725e4508f6114a232435e305282c53ede5" },
+    "realtimeContract": { "path": "shared/realtime.ts", "sha256": "a01492cd7ff3ff93368002de143a2762f019c410e33b71d1a0f969abf09c7072" },
+    "realtimeAccessContract": { "path": "shared/realtimeEventLog.ts", "sha256": "42ca0552267614c5a83891a3c1901472ed69e1db00a6421a8c02a4e7c9bbedc7" },
+    "realtimeAccessPolicy": { "path": "server/realtime/realtimeEventAccessPolicy.ts", "sha256": "c815c93a56b726fabe4b44b926e4af6217988028541d8ef07b8854bf90d39b1e" },
+    "profileInvalidationIntegration": { "path": "server/useCases/updatePlayerProfile.ts", "sha256": "c4185f8ecafd6a17f9ef121ae4f4e9d88da1b78af33d42cdf3cba367c7171a46" },
+    "settlementProvider": { "path": "server/domain/campaignAttention/settlementProvider.ts", "sha256": "39f6aa405b54cc39f688f0ff8deee024421a515476f769420f96328f83a6fd87" },
+    "advancementProvider": { "path": "server/domain/campaignAttention/advancementDetector.ts", "sha256": "3547325de2e8176b45009fa6d18c7d598e5edc367cd073647b7c86f31d817974" },
+    "pokemonChoiceProvider": { "path": "server/domain/campaignAttention/pokemonChoiceDetector.ts", "sha256": "3b885611bb19523591017fdfd5416b189b0d73722e6c0f91f7bfe1f94828acb2" },
+    "trainerChoiceProvider": { "path": "server/domain/campaignAttention/trainerChoiceDetector.ts", "sha256": "a60cfd25a1ecea06b2b961f30e60506fb8f06898c9c4086c661a821dd4a26ce6" },
+    "recoveryProvider": { "path": "server/domain/campaignAttention/recoveryDetector.ts", "sha256": "d0a284efb5042490346e66f1c264c245afb679644131a9a8eb89edd4524fd3da" },
+    "rosterOwnershipProvider": { "path": "server/domain/campaignAttention/rosterOwnershipDetector.ts", "sha256": "fdb31fc54a12a51137d5842df06194453d05e0b55dda9fd6b1778d8a55ee89c9" },
+    "projectionContractTests": { "path": "tests/shared/campaignAttentionProjection.test.ts", "sha256": "d5664d7cf9e696e3d10a4a01cff92181ba0d72b29f3ef5e06ca67758636ddfb1" },
+    "roleProjectionTests": { "path": "tests/server/campaignAttentionProjection.test.ts", "sha256": "a81dfea9fdba42bd45ca88eb7f7af00dee857bbcf2f4731552ee3b5f86de4468" },
+    "snapshotReconcilerTests": { "path": "tests/utils/campaignAttentionSnapshot.test.ts", "sha256": "fb42615213003df7a62edd39225798daa92db76c3e9c26ac1f77407e2ab55c98" },
+    "documentation": { "path": "docs/campaign-attention-projection.md", "sha256": "83ad59ce2bc2ed9441fadb5c005a804df7ea374b867067c127c98bd1143592b8" }
+  },
+  "validation": {
+    "focusedTests": "87 passed",
+    "productionAuthoritySmoke": "passed",
+    "typecheck": "passed",
+    "eslint": "passed",
+    "diffCheck": "passed"
+  }
+}

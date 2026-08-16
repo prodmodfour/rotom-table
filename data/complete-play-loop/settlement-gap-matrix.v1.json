@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-005",
+  "domains": [
+    { "domain": "encounter-lifecycle", "existingAuthority": "EncounterDocument lifecycle and revisioned Director commands", "orchestration": "missing", "tickets": ["P8-071", "P8-072", "P8-080"] },
+    { "domain": "hp-injuries-conditions", "existingAuthority": "server-authoritative sheet commands and campaign-day recovery", "orchestration": "missing persistent-versus-temporary snapshot", "tickets": ["P8-073", "P8-079"] },
+    { "domain": "experience", "existingAuthority": "grantExperience live-play command and canonical experience chart", "orchestration": "missing batch allocation", "tickets": ["P8-074", "P8-075"] },
+    { "domain": "money-and-loot", "existingAuthority": "trainer/group inventory and shop transaction boundaries", "orchestration": "missing reward package allocation", "tickets": ["P8-074", "P8-076"] },
+    { "domain": "captures", "existingAuthority": "specialized capture operation, sheet creation, acquisition provenance", "orchestration": "missing team/box destination settlement", "tickets": ["P8-077", "P8-088"] },
+    { "domain": "objectives-clocks-phases", "existingAuthority": "EncounterDocument", "orchestration": "missing accepted settlement outcome facts", "tickets": ["P8-078"] },
+    { "domain": "temporary-effects-resources", "existingAuthority": "map encounter state and source-owned duration contracts", "orchestration": "missing deterministic source-aware cleanup", "tickets": ["P8-073", "P8-079"] },
+    { "domain": "advancement", "existingAuthority": "sheet formulas and bounded feature/edge/move workflows", "orchestration": "missing attention records", "tickets": ["P8-083", "P8-084", "P8-085", "P8-086"] },
+    { "domain": "recovery", "existingAuthority": "campaign-day and healing use cases", "orchestration": "missing preflight/postflight and continuation", "tickets": ["P8-087", "P8-090", "P8-091"] },
+    { "domain": "replay-privacy-realtime", "existingAuthority": "operation journals and durable realtime log", "orchestration": "missing settlement-specific document and projection", "tickets": ["P8-080", "P8-081", "P8-082"] }
+  ]
+}

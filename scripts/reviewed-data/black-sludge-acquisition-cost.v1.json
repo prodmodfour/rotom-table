@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-093",
+  "reviewStatus": "accepted",
+  "migrationId": "item-black-sludge-acquisition-cost-v1",
+  "canonicalId": "Black Sludge",
+  "sourceCatalogSha256": "757d7a52a7ebc015025060bfb94273c3ad0ecd54dae98017d838529966e5d329",
+  "sourceRecordSha256": "e9556f3ccabe1ab9f705fe3c018a83471e01ec3c4dc87bd94e21e462962db67a",
+  "sourceEffectSha256": "1c8bc08ec3299790b9d97ea86962bddec8e490a101f44b25c66b93ff7f64c3a3",
+  "sourceSpecsSha256": "bf0a74b237eab416c8b082f7547edb36ceb2c32c673eba1bff7bda4b7a1e7cba",
+  "decision": {
+    "costs": ["$500"],
+    "runtimeEffect": {
+      "kind": "store-digestion-buff",
+      "buffKind": "turn-start-heal",
+      "amount": 1,
+      "denominator": 8,
+      "requiredPokemonType": "Poison"
+    },
+    "currency": "PTU dollar",
+    "amount": 500,
+    "basis": "The app-owned canonical effect text explicitly identifies Black Sludge as a $500 Snack. The migration transcribes that exact value into the existing structured costs field; runtime never parses prose."
+  }
+}

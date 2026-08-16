@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "itemFixtures": "data/complete-play-loop/fixtures/items.v1.json",
+  "settlementFixtures": "data/complete-play-loop/fixtures/settlements.v1.json",
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+}

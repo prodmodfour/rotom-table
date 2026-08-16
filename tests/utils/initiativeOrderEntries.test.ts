@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { initiativeOrderIdsForPlacements } from '~/utils/initiativeOrderEntries'
+import { activeEquipmentState } from '../fixtures/equipment'
+import { projectEquipmentContributionsForSheet } from '~~/server/domain/itemAutomation/equipmentContributionProjection'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'
 
 const placement = (id: string, sheetSlug = id, initiative?: number | null): SheetPlacement => ({
@@ -14,15 +17,21 @@ const pokemonSheet = (
   slug: string,
   speed: number,
   overrides: Record<string, unknown> = {},
-): Record<string, unknown> => ({
-  slug,
-  nickname: slug,
-  species: '',
-  level: 1,
-  stats: { spd: { base: speed } },
-  combat: { conditions: [] },
-  ...overrides,
-})
+): Record<string, unknown> => {
+  const sheet = {
+    slug,
+    nickname: slug,
+    species: '',
+    level: 1,
+    stats: { spd: { base: speed } },
+    combat: { conditions: [] },
+    ...overrides,
+  } as CharacterSheet
+  sheet.equipmentContributionProjection = projectEquipmentContributionsForSheet({
+    kind: 'pokemon', slug, sheet,
+  }) ?? undefined
+  return sheet as unknown as Record<string, unknown>
+}
 
 describe('initiativeOrderEntries', () => {
   it('matches effective UI ordering for Speed, conditions, item bonuses, and training bonuses', () => {
@@ -36,7 +45,10 @@ describe('initiativeOrderEntries', () => {
       ['bravo', pokemonSheet('bravo', 20)],
       ['zulu', pokemonSheet('zulu', 10, {
         activeTrainingFeature: 'Agility Training',
-        items: { held: 'Quick Claw' },
+        items: { held: 'Legacy text is not authority' },
+        equipmentState: activeEquipmentState({
+          ownerKind: 'pokemon', ownerSlug: 'zulu', slotId: 'held', canonicalItemId: 'Quick Claw',
+        }),
       })],
     ])
 

@@ -113,7 +113,7 @@ const definitionFor = (
   includeLaterOperation = false,
 ) => validateMoveSpec({
   schemaVersion: 2,
-  canonicalId: 'Check Test',
+  canonicalId: 'Tackle',
   version: 1,
   targeting: {
     kind: 'single-target',

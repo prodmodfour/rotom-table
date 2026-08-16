@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-072",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-eligibility-v1",
+  "sourceEvidence": {
+    "settlementDocumentModelSha256": "bd6751d716f1b2f40552c95208141844b87da83453a0ea16610a0835b1bfb849",
+    "settlementDocumentContractSha256": "4f8183f4de3b29fdb2dc66b2e3bc67a25377b554eebe879eebc2a6744c54da02",
+    "eligibilityModelSha256": "2196e0dff5f96c2f3d4ff7066c635dcfaef5bb728d1e31d647ff016b0a110248"
+  },
+  "authoritySnapshot": {
+    "completenessLiteral": "authoritative-current",
+    "required": [
+      "current encounter-document revision",
+      "current linked-map revision",
+      "current authoritative campaign minute",
+      "complete current participant and sheet references",
+      "complete current source-owned blocking fact list"
+    ],
+    "rule": "A partial, client-asserted, malformed, duplicate, or over-limit authority snapshot is rejected rather than interpreted as an empty blocker list."
+  },
+  "derivedGates": {
+    "currentSourceFacts": {
+      "pending-reaction": ["choose"],
+      "pending-resolution": ["retry-exact", "choose"],
+      "uncertain-command": ["retry-exact", "refresh"],
+      "private-choice": ["choose"],
+      "invalid-participant": ["refresh", "correct", "exclude"],
+      "unsupported-authority": ["correct", "exclude"],
+      "gm-adjudication": ["adjudicate", "correct", "exclude"]
+    },
+    "documentFacts": {
+      "open unlinked bounded decision": "private-choice, or gm-adjudication only for a gm-correction decision",
+      "decision-required consequence": "private-choice until its exact bounded decision is accepted",
+      "pending ordinary reward": "unallocated-reward",
+      "pending capture reward": "capture-destination",
+      "decision-required cleanup": "cleanup-decision until its exact bounded decision is accepted"
+    },
+    "gateIdentity": "SHA-256 over version, settlement identity, gate kind, and stable private source-fact identity",
+    "openingRevision": "Preserve the matching current gate opening revision; otherwise use the evaluated settlement revision.",
+    "ordering": "stable gate identity order",
+    "allBlocking": true
+  },
+  "revisionRules": {
+    "identityChange": "stale-snapshot with refresh only",
+    "currentRevisionBelowDraft": "revision-conflict with correction only; rollback is never treated as fresh authority",
+    "currentRevisionAboveDraft": "stale-snapshot with refresh only",
+    "participantMissingOrUnexpected": "invalid-participant",
+    "participantSheetOwnerSideRoleOrDispositionMismatch": "invalid-participant",
+    "participantRevisionBelowDraft": "revision-conflict",
+    "participantRevisionAboveDraft": "stale-snapshot",
+    "campaignMinute": "rollback is contradictory and advance is stale; browser time has no authority"
+  },
+  "gmAdjudication": {
+    "adjudicableGateKind": "gm-adjudication only",
+    "requiredDecision": {
+      "kind": "gm-correction",
+      "audience": "gm",
+      "status": "accepted",
+      "actorKind": "gm",
+      "gateSubjects": "exactly one current stable gate identity",
+      "selection": "one offered option whose value is a legal gate resolution and whose effect is the matching correct, exclude, or adjudicate/waive effect",
+      "authority": "the selected option names one exact current gate authority"
+    },
+    "requiredReceipt": {
+      "kind": "decision",
+      "audience": "gm",
+      "result": "accepted",
+      "subjects": ["exact decision identity", "exact gate identity"],
+      "time": "same authoritative campaign minute as the accepted decision"
+    },
+    "forbiddenBypasses": [
+      "required reaction",
+      "pending resolution",
+      "uncertain command",
+      "private owner choice",
+      "revision conflict",
+      "stale snapshot",
+      "invalid participant",
+      "unsupported authority",
+      "reward allocation",
+      "capture destination",
+      "cleanup decision"
+    ],
+    "rule": "GM role alone, prose, a missing receipt, a changed authority revision, a mismatched option, or a correction aimed at another gate never removes a blocker."
+  },
+  "outcomes": {
+    "eligible": "No current unresolved gate remains and the next draft status is ready.",
+    "blocked": "At least one current unresolved gate remains and the next draft status is blocked.",
+    "committing": "An existing committing settlement is not re-opened or declared eligible.",
+    "terminal": "A completed or cancelled settlement is not re-opened or declared eligible."
+  },
+  "privacy": {
+    "storage": "server-private settlement and source authority",
+    "gateProjection": "Later role projection may expose only safe blocker labels, counts, ownership, and legal actions.",
+    "forbiddenPublicEvidence": [
+      "fact identity",
+      "authority identity or revision",
+      "operation identity",
+      "receipt identity",
+      "Profile principal identity",
+      "private option identity",
+      "GM correction evidence"
+    ]
+  },
+  "evidence": {
+    "runtime": "server/domain/encounterSettlement/eligibility.ts",
+    "tests": "tests/server/encounterSettlementEligibility.test.ts",
+    "documentTests": "tests/shared/encounterSettlementDocument.test.ts",
+    "documentation": "docs/encounter-settlement-eligibility.md"
+  }
+}

@@ -350,6 +350,7 @@ export const createBreedingTransactionCoordinator = (
             listBySourceProject: guarded('repositories.eggs.listBySourceProject', eggs.listBySourceProject.bind(eggs)),
             listByStatuses: guarded('repositories.eggs.listByStatuses', eggs.listByStatuses.bind(eggs)),
             listIncubatingBehindClock: guarded('repositories.eggs.listIncubatingBehindClock', eggs.listIncubatingBehindClock.bind(eggs)),
+            listAllIncubatingBehindClock: guarded('repositories.eggs.listAllIncubatingBehindClock', eggs.listAllIncubatingBehindClock.bind(eggs)),
             insert: guarded('repositories.eggs.insert', eggs.insert.bind(eggs)),
             replace: guarded('repositories.eggs.replace', eggs.replace.bind(eggs)),
           }),

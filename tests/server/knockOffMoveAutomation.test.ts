@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import manifestJson from '../../data/move-automation/manifest.json'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { SheetPlacement, TabletopMap } from '~/types/map'
+import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { deepCloneJson } from '~/utils/serialization'
 import {
@@ -130,32 +130,9 @@ const pokemonFixture = (heldItems: string | null): KnockOffFixture => (
   knockOffV2Fixture({ heldItems })
 )
 
-const trainerTargetFixture = (equipmentSlots: TrainerSheet['equipmentSlots']): KnockOffFixture => {
-  const source = knockOffV2Fixture({ heldItems: null })
-  const map = deepCloneJson(source.map)
-  const target = map.placements.find(({ id }) => id === KNOCK_OFF_TARGET_PLACEMENT_ID)
-  if (!target) throw new Error('Knock Off fixture target is missing.')
-  const trainerSlug = 'knock-off-target-trainer'
-  Object.assign(target, {
-    sheetKind: 'trainer',
-    sheetSlug: trainerSlug,
-  } satisfies Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>)
-  const pokemonSheets = new Map(source.pokemonSheets)
-  pokemonSheets.delete('knock-off-target-sheet')
-  const trainerSheets = new Map<string, TrainerSheet>([[trainerSlug, {
-    slug: trainerSlug,
-    name: 'Knock Off Target Trainer',
-    level: 20,
-    revision: 4,
-    equipmentSlots: deepCloneJson(equipmentSlots ?? {}),
-  }]])
-  return {
-    map,
-    pokemonSheets,
-    trainerSheets,
-    intent: source.intent,
-  }
-}
+const trainerTargetFixture = (equipmentSlots: TrainerSheet['equipmentSlots']): KnockOffFixture => (
+  knockOffV2Fixture({ heldItems: null, targetTrainerEquipmentSlots: equipmentSlots })
+)
 
 const planTypedWrites = (
   fixture: KnockOffFixture,

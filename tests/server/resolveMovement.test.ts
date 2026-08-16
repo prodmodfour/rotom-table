@@ -15,6 +15,7 @@ import {
   advanceEncounterGlobalFields,
   createEncounterGlobalFieldZone,
 } from '~~/server/domain/moveAutomation/fieldLifecycle'
+import { activeEquipmentState } from '../fixtures/equipment'
 
 const pokemonSheet = (
   slug: string,
@@ -128,6 +129,74 @@ const barrier = (x: number, z: number) => parseEncounterZone({
 })
 
 describe('authoritative movement oracle', () => {
+  it('applies hash-current static equipment capability contributions', () => {
+    const trainer: TrainerSheet = {
+      slug: 'runner', name: 'Runner', level: 10,
+      capabilities: { overland: 5 },
+      equipmentState: activeEquipmentState({
+        ownerKind: 'trainer', ownerSlug: 'runner', slotId: 'feet', canonicalItemId: 'Running Shoes',
+      }),
+    }
+    const trainerPlacement: SheetPlacement = {
+      id: 'runner', sheetKind: 'trainer', sheetSlug: 'runner', position: { x: 0, y: 0, z: 0 },
+    }
+    const result = resolveMovement(input({
+      map: map([trainerPlacement]),
+      sheets: { pokemon: new Map(), trainer: new Map([['runner', trainer]]) },
+      placementId: 'runner',
+      destination: { x: 5, y: 0, z: 0 },
+    }))
+
+    expect(result).toMatchObject({ ok: true, capabilityLimit: 6, effectiveLimit: 6 })
+    if (result.ok) expect(result.capabilities.used).toContainEqual({
+      key: 'overland', label: 'Overland', speed: 6,
+    })
+  })
+
+  it('applies contextual Snow Boots and Flippers speeds to the traversed terrain', () => {
+    const trainerPlacement: SheetPlacement = {
+      id: 'terrain-runner', sheetKind: 'trainer', sheetSlug: 'terrain-runner', position: { x: 0, y: 0, z: 0 },
+    }
+    const trainerWith = (canonicalItemId: 'Snow Boots' | 'Flippers'): TrainerSheet => ({
+      slug: 'terrain-runner', name: 'Terrain Runner', level: 10,
+      capabilities: { overland: 5, swim: 2 },
+      equipmentState: activeEquipmentState({
+        ownerKind: 'trainer', ownerSlug: 'terrain-runner', slotId: 'feet', canonicalItemId,
+      }),
+    })
+    const snow = resolveMovement(input({
+      map: map([trainerPlacement], {
+        dimensions: { x: 8, y: 4, z: 8 },
+        voxels: Array.from({ length: 5 }, (_, index) => ({
+          x: index + 1, y: 0, z: 0, materialId: 'snow',
+          blocksMovement: false, tags: ['basic-terrain', 'snow'],
+        })),
+      }),
+      sheets: { pokemon: new Map(), trainer: new Map([['terrain-runner', trainerWith('Snow Boots')]]) },
+      placementId: 'terrain-runner',
+      destination: { x: 5, y: 0, z: 0 },
+    }))
+    expect(snow).toMatchObject({
+      ok: false, reasonCode: 'movement-cost-exceeds-limit', capabilityLimit: 4, effectiveLimit: 4,
+    })
+
+    const submerged = resolveMovement(input({
+      map: map([trainerPlacement], {
+        dimensions: { x: 8, y: 4, z: 8 },
+        voxels: Array.from({ length: 4 }, (_, index) => ({
+          x: index + 1, y: 0, z: 0, materialId: 'deep_water',
+        })),
+      }),
+      sheets: { pokemon: new Map(), trainer: new Map([['terrain-runner', trainerWith('Flippers')]]) },
+      placementId: 'terrain-runner',
+      destination: { x: 4, y: 0, z: 0 },
+    }))
+    expect(submerged).toMatchObject({
+      ok: true, capabilityLimit: 4, effectiveLimit: 4,
+      capabilities: { used: [{ key: 'swim', label: 'Swim', speed: 4 }] },
+    })
+  })
+
   it('derives path, PTU cost, capabilities, terrain, occupancy, and triggering steps', () => {
     const result = resolveMovement(input())
 

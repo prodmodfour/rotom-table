@@ -302,11 +302,18 @@ const isCapabilityOwnedEffect = (effect: unknown): boolean => {
 /** Remove every mechanics-only Capability lane from a public encounter value. */
 export const projectCapabilityAutomationEncounterStateForPlayer = (
   encounter: NonNullable<TabletopMap['encounterState']>,
-): NonNullable<TabletopMap['encounterState']> => ({
-  ...encounter,
-  capabilityRuntime: createEmptyCapabilityRuntimeState(),
-  effects: encounter.effects.filter(effect => !isCapabilityOwnedEffect(effect)),
-})
+): NonNullable<TabletopMap['encounterState']> => {
+  const {
+    itemFormChanges: _privateItemFormChanges,
+    itemExploration: _privateItemExploration,
+    ...publicEncounter
+  } = encounter
+  return {
+    ...publicEncounter,
+    capabilityRuntime: createEmptyCapabilityRuntimeState(),
+    effects: encounter.effects.filter(effect => !isCapabilityOwnedEffect(effect)),
+  }
+}
 
 /** Add bounded, non-authoritative physical state used by shared renderers. */
 export const projectCapabilityAutomationPresentationMap = (

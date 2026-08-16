@@ -693,7 +693,7 @@ describe('immutable authoritative move rules context', () => {
       reasonCode: 'item-effect.allowed',
     })
     expect(resolveAuthoritativeMoveUserAccuracy(afterMagicExpiry)).toMatchObject({
-      value: 3,
+      value: 2,
       heldItemEffectsSuppressed: false,
       gravityBonus: 2,
     })
@@ -711,7 +711,7 @@ describe('immutable authoritative move rules context', () => {
     }
     const removed = buildContext({ map: removedMap, pokemonSheets })
     expect(resolveAuthoritativeMoveUserAccuracy(removed)).toMatchObject({
-      value: 1,
+      value: 0,
       heldItemEffectsSuppressed: false,
       gravityBonus: 0,
     })

@@ -191,6 +191,8 @@ export interface AbilityStrikeEncounterEvent extends AbilityEncounterEventEnvelo
     readonly defenderPlacementId: string
     readonly timing: AbilityStrikeEventTiming
     readonly accuracyOutcome: AbilityStrikeAccuracyOutcome
+    /** Natural d20 accuracy result when this strike used an accuracy roll. */
+    readonly naturalAccuracyRoll: number | null
     readonly rangeContext: AbilityStrikeRangeContext
     readonly makesContact: boolean
     readonly directness: AbilityStrikeDirectness
@@ -507,7 +509,7 @@ const PAYLOAD_FIELDS: Record<AbilityEncounterEventKind, readonly string[]> = {
   strike: [
     'moveResolutionId', 'canonicalMoveId', 'moveDefinitionHash', 'sourceOperationId',
     'strikeIndex', 'strikeCount', 'attackerPlacementId', 'defenderPlacementId', 'timing',
-    'accuracyOutcome', 'rangeContext', 'makesContact', 'directness', 'moveType',
+    'accuracyOutcome', 'naturalAccuracyRoll', 'rangeContext', 'makesContact', 'directness', 'moveType',
     'damageClass', 'critical', 'effectiveness', 'effectivenessMultiplier', 'rolledDamage',
     'postDefenseDamage', 'damageReduction', 'preventedDamage', 'temporaryHpLoss',
     'hpLoss', 'totalLoss', 'preventionReasonCodes',
@@ -883,6 +885,13 @@ const parsePayload = (
       `${path}.accuracyOutcome`,
       STRIKE_ACCURACY_SET,
     )
+    const naturalAccuracyRoll = payload.naturalAccuracyRoll === null
+      ? null
+      : integer(payload.naturalAccuracyRoll, `${path}.naturalAccuracyRoll`, 1, 20)
+    if ((accuracyOutcome === 'automatic-hit' || accuracyOutcome === 'prevented')
+      && naturalAccuracyRoll !== null) {
+      fail('invalid-event', path, 'automatic or prevented accuracy cannot report a natural roll.')
+    }
     const rangeContext = enumValue<AbilityStrikeRangeContext>(
       payload.rangeContext,
       `${path}.rangeContext`,
@@ -981,6 +990,7 @@ const parsePayload = (
       defenderPlacementId: stableId(payload.defenderPlacementId, `${path}.defenderPlacementId`),
       timing,
       accuracyOutcome,
+      naturalAccuracyRoll,
       rangeContext,
       makesContact: payload.makesContact as boolean,
       directness,

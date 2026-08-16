@@ -37,7 +37,7 @@ describe('app route helpers', () => {
     expect(groupInventoryPath()).toBe('/group-inventory')
     expect(SETTINGS_PATH).toBe('/settings')
     expect(settingsPath()).toBe('/settings')
-    expect(GM_ONLY_PATH_PREFIXES).toEqual([CAMPAIGN_PATH])
+    expect(GM_ONLY_PATH_PREFIXES).toEqual([])
     expect(SESSION_LOBBY_PATH).toBe('/sessions')
     expect(sessionLobbyPath()).toBe('/sessions')
   })

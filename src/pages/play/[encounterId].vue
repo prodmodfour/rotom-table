@@ -14,13 +14,17 @@ import EncounterEventFeed, { type EncounterUncertainCommandView } from '~/compon
 import EncounterRelationshipView from '~/components/encounter/workspace/EncounterRelationshipView.vue'
 import EncounterTacticalLens from '~/components/encounter/workspace/EncounterTacticalLens.vue'
 import EncounterDirectorPanel from '~/components/encounter/workspace/EncounterDirectorPanel.vue'
+import EncounterFinishExperience from '~/components/encounter/workspace/EncounterFinishExperience.vue'
 import EncounterWorkspaceAnnouncements from '~/components/encounter/workspace/EncounterWorkspaceAnnouncements.vue'
 import EncounterWorkspaceSettings from '~/components/encounter/workspace/EncounterWorkspaceSettings.vue'
 import { useEncounterWorkspaceFeaturePolicy } from '~/composables/encounter/useEncounterWorkspaceFeaturePolicy'
 import { useEncounterWorkspaceLoader } from '~/composables/encounter/useEncounterWorkspaceLoader'
 import { useEncounterWorkspaceMetrics } from '~/composables/encounter/useEncounterWorkspaceMetrics'
 import { useEncounterWorkspacePreferences } from '~/composables/encounter/useEncounterWorkspacePreferences'
+import { useFinishEncounter } from '~/composables/encounter/useFinishEncounter'
+import type { FinishEncounterGateAction } from '#shared/encounterSettlement/finish'
 import { usePendingMoveResponses, type PendingMoveResponseDispatchResult } from '~/composables/map-editor/usePendingMoveResponses'
+import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
 import {
   parseEncounterWorkspaceDeepLink,
   reconcileEncounterWorkspaceDeepLink,
@@ -73,7 +77,14 @@ import {
 } from '#shared/livePlayCommands'
 import { battlefieldWorkshopPath, encounterLibraryPath } from '#shared/encounterWorkspace/routes'
 import { routeParamAsString } from '~/utils/routeParams'
-import { ENCOUNTER_WORKSPACE_API_PATHS, MAP_API_PATHS } from '~/utils/apiRoutes'
+import { ENCOUNTER_WORKSPACE_API_PATHS, ITEM_API_PATHS, MAP_API_PATHS } from '~/utils/apiRoutes'
+import {
+  itemCommandFromAuthorizedOffer,
+  itemFormChangeCommandFromAuthorizedOffer,
+  parseAuthorizedItemActionOffer,
+} from '#shared/itemAutomation/projection'
+import { parseItemFormChangePublicResult } from '#shared/itemAutomation/formChanges'
+import type { ItemOperationRecoveryCommandV1 } from '#shared/itemAutomation/recovery'
 import { getClientId } from '~/utils/clientId'
 
 const featurePolicy = useEncounterWorkspaceFeaturePolicy()
@@ -134,6 +145,22 @@ const directorOpen = ref(false)
 const settingsOpen = ref(false)
 const directorBusy = ref(false)
 const directorError = ref<string | null>(null)
+const finishEncounter = useFinishEncounter({
+  encounterId,
+  enabled: computed(() => Boolean(isGm.value && workspace.value?.viewer.canUseDirector)),
+})
+let finishEncounterOrigin: HTMLElement | null = null
+const encounterLifecycleCommands = useLivePlayCommands({
+  slug: encounterId.value,
+  authRole: role,
+  mapRevision,
+  livePlayCommandBlocked: loader.commandsBlocked,
+})
+const lifecycleRecoveryEntry = computed(() => encounterLifecycleCommands.outboxEntries.value.find(entry => (
+  entry.commandType === LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER
+  || entry.commandType === LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT
+)) ?? null)
+const lifecycleRecoveryBusy = ref(false)
 
 const selection = ref(emptyEncounterWorkspaceSelection())
 const machine = ref(createEncounterWorkspaceMachine())
@@ -248,6 +275,12 @@ const applyRouteDeepLink = async (): Promise<void> => {
   const id = deepLinkFocusId(reconciled)
   if (id) document.getElementById(id)?.focus({ preventScroll: false })
 }
+
+watch(mapRevision, (revision, previous) => {
+  if (revision === previous || !finishEncounter.isOpen.value || finishEncounter.busy.value
+    || finishEncounter.state.value === 'accepted') return
+  void finishEncounter.refresh()
+})
 
 watch(workspace, (nextWorkspace) => {
   if (!nextWorkspace) return
@@ -505,6 +538,9 @@ const refreshResponseWindows = async (): Promise<boolean> => {
     return false
   }
 }
+const isItemPendingInteraction = (interaction: EncounterPendingInteractionAuthorizedView): boolean => (
+  interaction.responseIdentity.windowId.startsWith('item-decision:')
+)
 const submitPendingDecision = async (
   interaction: EncounterPendingInteractionAuthorizedView,
   selections: readonly EncounterChoiceSelection[],
@@ -515,6 +551,23 @@ const submitPendingDecision = async (
   decisionError.value = null
   void uxMetrics.record('resolution-waiting', 1)
   try {
+    if (isItemPendingInteraction(interaction)) {
+      const execution = await postJson<{ readonly result: { readonly status: string, readonly exactReplay: boolean } }>(ITEM_API_PATHS.resume, {
+        command: {
+          schemaVersion: 1,
+          operationId: interaction.responseIdentity.resolutionId,
+          decisionId: interaction.responseIdentity.windowId,
+          choices: selections.map(selection => ({ choiceId: selection.choiceId, optionIds: [...selection.optionIds] })),
+        },
+        clientId: getClientId(),
+        ...(loader.selectedProfileId.value ? { profileId: loader.selectedProfileId.value } : {}),
+      })
+      if (execution.result.status !== 'accepted') throw new Error('The item decision did not reach an accepted result.')
+      actionDeclarationNotice.value = 'The item decision was applied authoritatively.'
+      await loader.refresh()
+      void uxMetrics.record('resolution-settled', 1, { terminalStatus: 'accepted' })
+      return
+    }
     if (!(await refreshResponseWindows())) return
     const selected = selections.find(selection => selection.optionIds.length > 0)
     let result: PendingMoveResponseDispatchResult
@@ -543,6 +596,10 @@ const submitPendingDecision = async (
       terminalStatus: result.dispatched ? 'accepted' : 'rejected',
     })
   }
+  catch (error) {
+    decisionError.value = error instanceof Error ? error.message : 'The pending decision was rejected.'
+    void uxMetrics.record('resolution-settled', 1, { terminalStatus: 'rejected' })
+  }
   finally {
     pendingBusyInteractionId.value = null
     decisionBusy.value = false
@@ -567,19 +624,63 @@ const submitActionDecision = async (
       actionId: offer.intent.actionId,
       selections,
     })
-    const authorizedOffer = await postJson<EncounterActionOffer>(MAP_API_PATHS.declareEncounterAction, {
+    const authorizedOffer = parseAuthorizedItemActionOffer(await postJson<unknown>(MAP_API_PATHS.declareEncounterAction, {
       intent,
       ...(loader.selectedProfileId.value ? { profileId: loader.selectedProfileId.value } : {}),
-    })
+    }))
     if (authorizedOffer.offerId !== offer.offerId
       || authorizedOffer.mapSlug !== offer.mapSlug
-      || authorizedOffer.mapRevision !== offer.mapRevision) {
+      || authorizedOffer.mapRevision !== offer.mapRevision
+      || authorizedOffer.actor.participantId !== offer.actor.participantId
+      || authorizedOffer.intent.actionId !== offer.intent.actionId
+      || authorizedOffer.source.sourceKind !== offer.source.sourceKind
+      || authorizedOffer.source.canonicalId !== offer.source.canonicalId
+      || authorizedOffer.source.instanceId !== offer.source.instanceId) {
       throw new Error('The declaration receipt did not match the selected authoritative offer.')
     }
     machine.value = transitionEncounterWorkspace(machine.value, { type: 'intent-submitted' })
+    let itemPending = false
+    if (authorizedOffer.source.sourceKind === 'item') {
+      if (authorizedOffer.itemFormChangeCommand) {
+        const command = itemFormChangeCommandFromAuthorizedOffer({
+          offer: authorizedOffer,
+          operationId: intent.intentId,
+        })
+        const execution = await postJson<{ readonly result: unknown }>(ITEM_API_PATHS.formChanges, {
+          command,
+          clientId: getClientId(),
+          ...(loader.selectedProfileId.value ? { profileId: loader.selectedProfileId.value } : {}),
+        })
+        const result = parseItemFormChangePublicResult(execution.result)
+        if (result.status !== 'accepted') throw new Error('The item form change was not accepted.')
+        actionDeclarationNotice.value = result.message
+      }
+      else {
+        const command = itemCommandFromAuthorizedOffer({
+          offer: authorizedOffer,
+          operationId: intent.intentId,
+          choices: selections.map(selection => ({ choiceId: selection.choiceId, optionIds: [...selection.optionIds] })),
+        })
+        const execution = await postJson<{ readonly result: { readonly status: string, readonly exactReplay: boolean } }>(ITEM_API_PATHS.use, {
+          command,
+          clientId: getClientId(),
+          ...(loader.selectedProfileId.value ? { profileId: loader.selectedProfileId.value } : {}),
+        })
+        if (execution.result.status !== 'accepted' && execution.result.status !== 'pending') {
+          throw new Error('The item operation was not accepted.')
+        }
+        itemPending = execution.result.status === 'pending'
+        actionDeclarationNotice.value = itemPending
+          ? `${offer.presentation.label} is waiting for an authorised decision.`
+          : `${offer.presentation.label} was applied authoritatively.`
+      }
+      await loader.refresh()
+    }
+    else {
+      actionDeclarationNotice.value = `${offer.presentation.label} was authorized at revision ${offer.mapRevision}. Final source-owned targeting and mechanics remain available in the Battlefield Workshop.`
+    }
     machine.value = transitionEncounterWorkspace(machine.value, { type: 'presentation-settled' })
-    actionDeclarationNotice.value = `${offer.presentation.label} was authorized at revision ${offer.mapRevision}. Final source-owned targeting and mechanics remain available in the Battlefield Workshop.`
-    void uxMetrics.record('resolution-settled', 1, { terminalStatus: 'accepted' })
+    if (!itemPending) void uxMetrics.record('resolution-settled', 1, { terminalStatus: 'accepted' })
     await router.push(queryForDeepLink({}))
   }
   catch (error) {
@@ -650,6 +751,69 @@ const cancelPendingById = (interactionId: string): void => {
   const interaction = pendingById(interactionId)
   if (interaction) void cancelPendingDecision(interaction)
 }
+const abandonItemDecision = async (interaction: EncounterPendingInteractionAuthorizedView): Promise<void> => {
+  decisionBusy.value = true
+  pendingBusyInteractionId.value = interaction.interactionId
+  decisionError.value = null
+  try {
+    const command: ItemOperationRecoveryCommandV1 = {
+      schemaVersion: 1,
+      operationId: interaction.responseIdentity.resolutionId,
+      action: 'abandon',
+      reason: 'The GM abandoned this unresolved item decision.',
+    }
+    const response = await postJson<{ readonly result: { readonly message: string } }>(ITEM_API_PATHS.recover, {
+      command,
+      profileId: loader.selectedProfileId.value,
+      clientId: getClientId(),
+    })
+    actionDeclarationNotice.value = response.result.message
+    await loader.refresh()
+    void uxMetrics.record('system-recovery-terminal', 1, { terminalStatus: 'cancelled' })
+  }
+  catch (error) {
+    decisionError.value = error instanceof Error ? error.message : 'The item decision could not be abandoned safely.'
+  }
+  finally {
+    pendingBusyInteractionId.value = null
+    decisionBusy.value = false
+  }
+}
+const correctItemOperation = async (operationId: string): Promise<void> => {
+  if (!workspace.value?.viewer.canUseDirector || decisionBusy.value || loader.commandsBlocked.value) return
+  const accepted = workspace.value.accepted.find(value => value.operationId === operationId
+    && value.source.sourceKind === 'item' && value.correction === null)
+  if (!accepted) {
+    decisionError.value = 'This item receipt is no longer available for correction.'
+    return
+  }
+  const confirmed = !import.meta.client || window.confirm(
+    `Correct ${accepted.headline.label}? This restores the consumed item and reverses the accepted receipt only if all affected state is unchanged.`,
+  )
+  if (!confirmed) return
+  decisionBusy.value = true
+  decisionError.value = null
+  try {
+    const command: ItemOperationRecoveryCommandV1 = {
+      schemaVersion: 1,
+      operationId,
+      action: 'correct',
+      correctionOperationId: createLivePlayOpId(),
+      reason: 'The GM corrected this accepted item use.',
+    }
+    const response = await postJson<{ readonly result: { readonly message: string } }>(ITEM_API_PATHS.recover, {
+      command,
+      clientId: getClientId(),
+    })
+    actionDeclarationNotice.value = response.result.message
+    await loader.refresh()
+    void uxMetrics.record('system-recovery-terminal', 1, { terminalStatus: 'accepted' })
+  }
+  catch (error) {
+    decisionError.value = error instanceof Error ? error.message : 'The item receipt could not be corrected safely.'
+  }
+  finally { decisionBusy.value = false }
+}
 const recoverPending = async (
   interactionId: string,
   action: EncounterPendingRecoveryAction['action'],
@@ -658,8 +822,13 @@ const recoverPending = async (
   if (!interaction || decisionBusy.value || loader.commandsBlocked.value) return
   void uxMetrics.record('system-recovery-opened', 1)
   if (action === 'cancel') {
-    cancelPendingById(interactionId)
-    void uxMetrics.record('system-recovery-terminal', 1, { terminalStatus: 'cancelled' })
+    const isItemDecision = interaction.source?.sourceKind === 'item'
+      || interaction.responseIdentity.windowId.startsWith('item-decision:')
+    if (isItemDecision) await abandonItemDecision(interaction)
+    else {
+      cancelPendingById(interactionId)
+      void uxMetrics.record('system-recovery-terminal', 1, { terminalStatus: 'cancelled' })
+    }
     return
   }
   if (action !== 'force-pass') {
@@ -827,6 +996,94 @@ const setDirectorFieldEffect = (payload: SetFieldEffectPayload): void => {
 const clearDirectorFieldEffects = (): void => {
   void issueDirectorMapCommand({ path: MAP_API_PATHS.clearFieldEffects, type: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS, lane: 'fieldEffects', payload: { category: 'all' } })
 }
+const retryDirectorLifecycleCommand = async (): Promise<void> => {
+  const entry = lifecycleRecoveryEntry.value
+  if (!entry || lifecycleRecoveryBusy.value) return
+  lifecycleRecoveryBusy.value = true
+  directorError.value = null
+  try {
+    const result = await encounterLifecycleCommands.retryOutboxCommand(entry.opId)
+    if (result.uncertain || !result.dispatched) {
+      directorError.value = result.message || 'The exact lifecycle command retry did not settle.'
+      return
+    }
+    await loader.refresh()
+  }
+  finally { lifecycleRecoveryBusy.value = false }
+}
+const checkDirectorLifecycleCommand = async (): Promise<void> => {
+  const entry = lifecycleRecoveryEntry.value
+  if (!entry || lifecycleRecoveryBusy.value) return
+  lifecycleRecoveryBusy.value = true
+  directorError.value = null
+  try {
+    const result = await encounterLifecycleCommands.checkOutboxCommandStatus(entry.opId)
+    if (result.status === 'accepted' || result.status === 'rejected') await loader.refresh()
+    else directorError.value = result.message
+  }
+  finally { lifecycleRecoveryBusy.value = false }
+}
+const issueEncounterLifecycleCommand = async (
+  action: () => Promise<{ readonly dispatched: boolean, readonly message?: string, readonly uncertain?: boolean }>,
+  fallback: string,
+): Promise<void> => {
+  if (!workspace.value?.viewer.canUseDirector || directorBusy.value || loader.commandsBlocked.value
+    || lifecycleRecoveryEntry.value) return
+  directorBusy.value = true
+  directorError.value = null
+  try {
+    const result = await action()
+    if (result.uncertain) {
+      directorError.value = result.message || 'The cleanup outcome is uncertain. Recover the exact journaled command before issuing another command.'
+      return
+    }
+    if (!result.dispatched) throw new Error(result.message || fallback)
+    await loader.refresh()
+  }
+  catch (error) {
+    directorError.value = error instanceof Error ? error.message : fallback
+  }
+  finally { directorBusy.value = false }
+}
+const dismissDirectorEffect = (dismissalRef: string): void => {
+  void issueEncounterLifecycleCommand(
+    () => encounterLifecycleCommands.dismissEncounterEffect({ effectId: dismissalRef }),
+    'The active effect could not be dismissed.',
+  )
+}
+const openFinishEncounter = async (): Promise<void> => {
+  if (!workspace.value?.viewer.canUseDirector || finishEncounter.isOpen.value) return
+  finishEncounterOrigin = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  directorOpen.value = false
+  await finishEncounter.open()
+}
+const closeFinishEncounter = async (): Promise<void> => {
+  const restoreDirectorOrigin = finishEncounterOrigin?.classList.contains('encounter-director__finish')
+    && finishEncounter.state.value !== 'accepted'
+  finishEncounter.close()
+  if (restoreDirectorOrigin) directorOpen.value = true
+  await nextTick()
+  if (restoreDirectorOrigin) await nextTick()
+  const target = finishEncounterOrigin?.isConnected
+    ? finishEncounterOrigin
+    : restoreDirectorOrigin
+      ? document.querySelector<HTMLElement>('.encounter-director__finish')
+      : document.getElementById('encounter-director-toggle')
+  target?.focus({ preventScroll: true })
+  finishEncounterOrigin = null
+}
+const handleFinishEncounterGateAction = async (action: FinishEncounterGateAction): Promise<void> => {
+  if (action === 'refresh-review') {
+    await finishEncounter.refresh()
+    return
+  }
+  await closeFinishEncounter()
+  if (action === 'open-director') await setDirectorOpen(true)
+}
+const commitFinishEncounter = async (): Promise<void> => {
+  await finishEncounter.commit()
+  if (finishEncounter.state.value === 'accepted') await loader.refresh()
+}
 const openDirectorHistory = (presentationId: string): void => {
   openAcceptedPresentation(presentationId)
   void setDirectorOpen(false)
@@ -932,7 +1189,7 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
     <EncounterWorkspaceShell
       v-if="workspace"
       :preferences="preferenceState.preferences.value"
-      :primary-decision-active="Boolean(decision || actionInspectorOffer || actionDeclarationNotice || selection.tacticalFocus)"
+      :primary-decision-active="Boolean(decision || actionInspectorOffer || actionDeclarationNotice || selection.tacticalFocus || finishEncounter.isOpen.value)"
       @update-preferences="preferenceState.update"
     >
       <template #navigation>
@@ -1047,9 +1304,22 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
               </header>
               <p>{{ actionInspectorOffer.presentation.description || 'No additional public description is projected.' }}</p>
               <p><strong>Source:</strong> {{ actionInspectorOffer.source.displayName }} · <strong>Timing:</strong> {{ actionInspectorOffer.timing.label }}</p>
-              <ul v-if="actionInspectorOffer.availability.reasons.length">
+              <p v-if="actionInspectorOffer.sourceContextLabel"><strong>From:</strong> {{ actionInspectorOffer.sourceContextLabel }}</p>
+              <p v-if="actionInspectorOffer.costs.length"><strong>Base cost:</strong> {{ actionInspectorOffer.costs.map(cost => cost.label).join(' · ') }}</p>
+              <ul v-if="actionInspectorOffer.availability.reasons.length" aria-label="Unavailable reasons">
                 <li v-for="reason in actionInspectorOffer.availability.reasons" :key="reason.code">{{ reason.label }}</li>
               </ul>
+              <section v-if="actionInspectorOffer.selectionOptions?.length" class="encounter-action-inspector__options" aria-labelledby="action-inspector-options-heading">
+                <h3 id="action-inspector-options-heading">Authorized options</h3>
+                <ul>
+                  <li v-for="option in actionInspectorOffer.selectionOptions" :key="`${option.kind}:${option.value}`" :data-unavailable="option.disabled || undefined">
+                    <strong>{{ option.label }}</strong>
+                    <span v-if="option.description">{{ option.description }}</span>
+                    <span v-if="option.unavailableReason">Unavailable · {{ option.unavailableReason.label }}</span>
+                    <small v-if="option.costs?.length">{{ option.costs.map(cost => cost.label).join(' · ') }}</small>
+                  </li>
+                </ul>
+              </section>
             </section>
             <div v-if="actionDeclarationNotice" class="encounter-action-declaration-notice" role="status">
               <p>{{ actionDeclarationNotice }}</p>
@@ -1144,8 +1414,14 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
       :workspace="workspace"
       :open="directorOpen"
       :commands-blocked="loader.commandsBlocked.value"
-      :busy="directorBusy || initiativeBusy || decisionBusy"
+      :busy="directorBusy || initiativeBusy || decisionBusy || lifecycleRecoveryBusy"
       :error="directorError"
+      :lifecycle-recovery="lifecycleRecoveryEntry ? {
+        state: lifecycleRecoveryEntry.state,
+        label: lifecycleRecoveryEntry.commandType === LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER
+          ? 'Encounter cleanup'
+          : 'Effect dismissal',
+      } : null"
       @update:open="setDirectorOpen"
       @refresh="loader.refresh()"
       @open-workshop="openDirectorWorkshop"
@@ -1167,8 +1443,32 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
       @set-scene="setDirectorScene"
       @set-field-effect="setDirectorFieldEffect"
       @clear-field-effects="clearDirectorFieldEffects"
+      @dismiss-effect="dismissDirectorEffect"
+      @finish-encounter="openFinishEncounter"
+      @retry-lifecycle="retryDirectorLifecycleCommand"
+      @check-lifecycle="checkDirectorLifecycleCommand"
       @recover="recoverPending"
+      @correct-item="correctItemOperation"
       @open-history="openDirectorHistory"
+    />
+
+    <EncounterFinishExperience
+      v-if="isGm"
+      :open="finishEncounter.isOpen.value"
+      :state="finishEncounter.state.value"
+      :view="finishEncounter.view.value"
+      :error="finishEncounter.error.value"
+      :online="finishEncounter.online.value"
+      :can-commit="finishEncounter.canCommit.value"
+      :can-retry="finishEncounter.canRetry.value"
+      :can-discard="finishEncounter.canDiscard.value"
+      @close="closeFinishEncounter"
+      @refresh="finishEncounter.refresh"
+      @commit="commitFinishEncounter"
+      @check-server="finishEncounter.checkServer"
+      @retry-exact="finishEncounter.retryExact"
+      @discard-and-review-fresh="finishEncounter.discardAndReviewFresh"
+      @gate-action="handleFinishEncounterGateAction"
     />
   </div>
 </template>
@@ -1239,6 +1539,13 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
 .encounter-action-inspector > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .encounter-action-inspector h2 { margin: 0; }
 .encounter-action-inspector > header button { width: var(--rt-touch-minimum); height: var(--rt-touch-minimum); border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); background: var(--rt-surface-2); color: var(--rt-text-strong); font: 800 1.25rem/1 var(--rt-font-interface); }
+.encounter-action-inspector__options { margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px solid var(--rt-rule); }
+.encounter-action-inspector__options h3 { margin: 0 0 0.45rem; color: var(--rt-text-strong); font-size: var(--rt-type-action-md-size); }
+.encounter-action-inspector__options ul { display: grid; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.encounter-action-inspector__options li { display: grid; gap: 0.1rem; padding: 0.55rem 0.65rem; border-left: 3px solid var(--rt-rule); background: var(--rt-surface-2); }
+.encounter-action-inspector__options li[data-unavailable='true'] { border-left-color: var(--rt-danger); }
+.encounter-action-inspector__options span,
+.encounter-action-inspector__options small { color: var(--rt-text-muted); }
 .encounter-action-declaration-notice { border-color: var(--rt-info); }
 .encounter-action-declaration-notice > p { margin-top: 0; }
 .encounter-action-declaration-notice > div { display: flex; flex-wrap: wrap; gap: 0.4rem; }

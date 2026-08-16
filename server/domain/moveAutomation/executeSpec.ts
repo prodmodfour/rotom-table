@@ -7,8 +7,12 @@ import {
   type MoveCheckEffectOperation,
   type MoveChoiceRequestEffectOperation,
   type MoveDamageEffectOperation,
+  type MoveDirectHpEffectOperation,
+  type MoveConditionEffectOperation,
   type MoveEffectOperation,
   type MoveEffectRecipientSelectorKind,
+  type MoveHealEffectOperation,
+  type MoveTemporaryEffectOperation,
   type MoveHazardEffectOperation,
   type MoveMovementRequestEffectOperation,
   type MoveNestedMoveEffectOperation,
@@ -125,6 +129,14 @@ import {
 import { orderMoveReactionOperationEntries } from './reactionOrder'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
 import { resolveMoveCoreTokenRecipient } from './reducers/coreTokenRecipients'
+import {
+  activeEquipmentProviderEffects,
+  equipmentFaintProtectionSource,
+  equipmentMoveResistanceSteps,
+  equipmentProviderFrequencyTag,
+  equipmentTypeGemActivationDescriptors,
+  primeEquipmentFaintProtectionRolls,
+} from './equipmentProviderMechanics'
 import { aa062BoneLordEmpowersMove } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064MoveIntegration'
 import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
@@ -3093,6 +3105,33 @@ const executeMoveSpecInternal = (
   const resolvedItemChoices: MoveSpecResolvedItemChoice[] = []
   const resolvedHazardCells: MoveSpecResolvedHazardCells[] = []
   const childExecutions: MoveSpecChildExecution[] = []
+  const emitEquipmentProviderOperation = (
+    operation: MoveEffectOperation,
+    recipientIds: readonly string[],
+  ): void => {
+    const frozenRecipientIds = frozenIds(recipientIds)
+    if (operation.kind === 'direct-hp'
+      && operation.payload.pool === 'hit-points'
+      && operation.payload.mode === 'lose') {
+      primeEquipmentFaintProtectionRolls({
+        context: input.context,
+        operationId: operation.id,
+        placementIds: frozenRecipientIds,
+      })
+    }
+    operations.push(Object.freeze({ operation, recipientIds: frozenRecipientIds }))
+    trace = reduceMoveResolutionTrace(trace, {
+      kind: 'operation',
+      phase: operation.phase,
+      operationId: operation.id,
+      operationKind: operation.kind,
+      recipientIds: frozenRecipientIds,
+      outcome: 'applied',
+      reasonCode: operation.reasonCode,
+      input: traceJson(operation.payload),
+      result: { status: 'emitted', sourceKind: 'equipment-provider' },
+    })
+  }
   const branchExecutions = new Map<string, ExecutedMoveBranch>()
   const responseOwnerIdsByRequestOperation = new Map<string, readonly string[]>()
   const selectedResponseOptionByRequestOperation = new Map<string, string | null>()
@@ -3272,6 +3311,7 @@ const executeMoveSpecInternal = (
   const massiveDamageInjuryTargetIds = new Set<string>()
   const endureProtectedTargetIds = new Set<string>()
   const endureTriggeredTargetIds = new Set<string>()
+  const equipmentFaintProtectionBindings = new Set<string>()
   const projectedRemainingHpByTarget = new Map<string, number>()
   const projectedHp = createMoveAutomationHpUpdateAccumulator()
   const projectedInjuriesByTarget = new Map<string, number>()
@@ -3302,6 +3342,24 @@ const executeMoveSpecInternal = (
       : base
     return mechanics
   }
+  const equipmentTypeGemActivations = equipmentTypeGemActivationDescriptors({
+    context: input.context,
+    script: getMechanics().script,
+    moveSourceId: spec.phases.flatMap(phase => phase.operations)
+      .find(operation => operation.source.kind === 'move')?.source.id
+      ?? `move.${moveSlug(spec.canonicalId)}`,
+  }).filter(entry => program.operations.some(operation => operation.id === entry.requestOperationId))
+  const activatedEquipmentTypeGems = equipmentTypeGemActivations.filter((entry) => {
+    const request = entry.operations.find(operation => operation.id === entry.requestOperationId)
+    if (!request || request.kind !== 'reaction-request') return false
+    return responseResolver.resolve({
+      requestId: request.payload.requestId,
+      options: request.payload.options,
+      allowPass: request.payload.allowPass,
+    })?.optionId === 'activate'
+  })
+  const equipmentTypeGemDamageBaseBonus = activatedEquipmentTypeGems
+    .reduce((sum, entry) => sum + entry.amount, 0)
   const dampCancelled = ['Self-Destruct', 'Explosion'].includes(spec.canonicalId)
     && aa065DampCancelsMove({
       context: input.context,
@@ -5195,6 +5253,15 @@ const executeMoveSpecInternal = (
             reasonCode: 'ability.vigor.tick-after-endure.massive-injury',
           }
         : aa082EmittedOperation
+      if (committedEmittedOperation.kind === 'direct-hp'
+        && committedEmittedOperation.payload.pool === 'hit-points'
+        && committedEmittedOperation.payload.mode === 'lose') {
+        primeEquipmentFaintProtectionRolls({
+          context: input.context,
+          operationId: committedEmittedOperation.id,
+          placementIds: recipientIds,
+        })
+      }
       operations.push(Object.freeze({
         operation: committedEmittedOperation,
         recipientIds: frozenIds(recipientIds),
@@ -5803,6 +5870,35 @@ const executeMoveSpecInternal = (
               })
             }
             const keenEye = aa076KeenEyeActive(input.context)
+            const evasionCombatStagePolicy = input.context.queries.abilities.has(
+              input.context.actor.placement.id,
+              'Unaware',
+            ) ? 'ignore-positive' as const : 'honor' as const
+            const effectiveEvasionStats = Object.fromEntries(
+              ([
+                ['physical', 'defense'],
+                ['special', 'special-defense'],
+                ['speed', 'speed'],
+              ] as const).map(([candidate, stat]) => [
+                candidate,
+                input.context.queries.stats.resolve(recipientId, {
+                  stat,
+                  combatStagePolicy: evasionCombatStagePolicy,
+                  stageModifierPolicy: 'honor',
+                })?.value ?? 0,
+              ]),
+            )
+            const equipmentEvasionBonuses = Object.fromEntries(
+              (['physical', 'special', 'speed'] as const).map(targetId => [
+                targetId,
+                input.context.queries.equipment.metric({
+                  placementId: recipientId,
+                  metric: 'evasion',
+                  targetId,
+                  base: 0,
+                })?.final ?? 0,
+              ]),
+            )
             const nonStatEvasion = keenEye
               ? 0
               : aa076InstinctEvasionBonus({ context: input.context, recipientId })
@@ -5825,6 +5921,8 @@ const executeMoveSpecInternal = (
                       context: input.context,
                       token: input.context.actor.token,
                     }),
+                    effectiveEvasionStats,
+                    equipmentEvasionBonuses,
                     fieldEffects: createMoveAutomationWeatherResolver(input.context.map, {
                       subjectPlacementId: target.id,
                       subjectOccupiedCells: gridFootprintCells(target.position, target),
@@ -6036,6 +6134,27 @@ const executeMoveSpecInternal = (
         const operationDamageClasses: ReturnType<typeof resolveMoveDamageClass>[] = []
         const operationDamageBases: MoveContextualDamageBaseResolution[] = []
         const projectedDamagedTargetIds = new Set(damagedTargetIds)
+        const actorEquipmentEffects = activeEquipmentProviderEffects(
+          input.context,
+          input.context.actor.placement.id,
+        )
+        const kingsRock = actorEquipmentEffects.some(({ provider, effect }) => (
+          effect.kind === 'apply-condition'
+          && effect.reasonCode === 'equipment.kings-rock.flinch'
+          && provider.predicate.kind === 'strike'
+        ))
+        const razorFang = actorEquipmentEffects.some(({ effect }) => (
+          effect.kind === 'add-injury'
+          && effect.reasonCode === 'equipment.razor-fang.injury'
+        ))
+        const lifeOrb = actorEquipmentEffects.some(({ effect }) => (
+          effect.kind === 'lose-max-hp-fraction'
+          && effect.reasonCode === 'equipment.life-orb.recoil'
+        ))
+        const shellBell = actorEquipmentEffects.some(({ effect }) => (
+          effect.kind === 'gain-temporary-hp-ticks'
+          && effect.reasonCode === 'equipment.shell-bell.temporary-hp'
+        ))
         const rollSummaries: Array<{
           readonly rollId: string
           readonly recipientId: string
@@ -6154,10 +6273,20 @@ const executeMoveSpecInternal = (
             steps: aa071ResistanceSources.length,
             sources: aa071ResistanceSources,
           })
+          const equipmentResistanceSteps = equipmentMoveResistanceSteps({
+            context: input.context,
+            placementId: recipientId,
+            moveName: spec.canonicalId,
+          })
+          const equipmentResolvedType = aa071ResistDamageType({
+            resolved: aa071ResolvedType,
+            steps: equipmentResistanceSteps,
+            sources: Array.from({ length: equipmentResistanceSteps }, () => 'equipment.helmet.move-resistance'),
+          })
           const aa073ResolvedType = aa073HeatproofDamageTypeOverlay({
             context: input.context,
             recipientId,
-            resolved: aa071ResolvedType,
+            resolved: equipmentResolvedType,
           })
           const aa078ResolvedType = aa078LiquidOozeDamageTypeOverlay({
             context: input.context,
@@ -6205,10 +6334,11 @@ const executeMoveSpecInternal = (
             recipientId,
             canonicalMoveId: spec.canonicalId,
             resolvedType,
-            postBoundsDamageBaseBonus: aa076IronFistDamageBaseBonus({
-              context: input.context,
-              script: getMechanics().script,
-            }) + (typeof operation.payload.damageBase === 'number'
+            postBoundsDamageBaseBonus: equipmentTypeGemDamageBaseBonus
+              + aa076IronFistDamageBaseBonus({
+                context: input.context,
+                script: getMechanics().script,
+              }) + (typeof operation.payload.damageBase === 'number'
               || !aa069DamageBaseRelevant
               ? 0
               : aa069DamageBaseBonus({
@@ -6380,11 +6510,155 @@ const executeMoveSpecInternal = (
             ordinaryKampfgeistDamageTargetIds.add(recipientId)
           }
           projectedInjuriesByTarget.set(recipientId, projectedHp.getInjuries(recipient))
+          const providerSuffix = createHash('sha256')
+            .update(`${operation.id}\u0000${recipientId}`)
+            .digest('hex').slice(0, 32)
+          if (naturalCriticalRoll !== null && naturalCriticalRoll >= 19
+            && resolvedType.finalMultiplier > 0) {
+            if (kingsRock) {
+              const flinch = parseMoveEffectOperation({
+                id: `equipment-kings-rock-flinch:v1:${providerSuffix}`,
+                kind: 'condition', source: { kind: 'operation', id: operation.id },
+                recipients: { kind: 'hit-targets' }, phase: operation.phase,
+                reasonCode: 'equipment.kings-rock.flinch',
+                payload: {
+                  action: 'apply', conditionId: 'flinched', conditionSource: null,
+                  filter: null, randomChoice: null, duration: null, saveTiming: 'canonical',
+                  stackPolicy: { kind: 'refresh', maxStacks: null },
+                  applyMoveImmunity: false, applyTypeImmunity: false,
+                },
+              }, 'executeSpec.kingsRock') as MoveConditionEffectOperation
+              emitEquipmentProviderOperation(flinch, [recipientId])
+            }
+            if (razorFang) {
+              const injury = parseMoveEffectOperation({
+                id: `equipment-razor-fang-injury:v1:${providerSuffix}`,
+                kind: 'direct-hp', source: { kind: 'operation', id: operation.id },
+                recipients: { kind: 'hit-targets' }, phase: operation.phase,
+                reasonCode: 'equipment.razor-fang.injury',
+                payload: {
+                  mode: 'lose', pool: 'hit-points', calculation: { kind: 'fixed', value: 0 },
+                  copySource: null, bounds: { minimum: 0, maximum: null }, rounding: 'floor',
+                  applyTypeImmunity: false, cost: null,
+                  injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+                },
+              }, 'executeSpec.razorFang') as MoveDirectHpEffectOperation
+              emitEquipmentProviderOperation(injury, [recipientId])
+            }
+          }
+          if (hpLoss.effectiveHpLost > 0) {
+            if (lifeOrb) {
+              const recoil = parseMoveEffectOperation({
+                id: `equipment-life-orb-recoil:v1:${providerSuffix}`,
+                kind: 'direct-hp', source: { kind: 'operation', id: operation.id },
+                recipients: { kind: 'actor' }, phase: operation.phase,
+                reasonCode: 'equipment.life-orb.recoil',
+                payload: {
+                  mode: 'lose', pool: 'hit-points',
+                  calculation: { kind: 'percent-max', percent: 6.25 }, copySource: null,
+                  bounds: { minimum: 0, maximum: null }, rounding: 'floor',
+                  applyTypeImmunity: false, cost: null,
+                  injury: { hitPointMarkers: 'apply-after-operation', massiveDamage: 'never' },
+                },
+              }, 'executeSpec.lifeOrb') as MoveDirectHpEffectOperation
+              emitEquipmentProviderOperation(recoil, [input.context.actor.placement.id])
+            }
+            if (shellBell && input.context.queries.relationships.match(
+              input.context.actor.placement.id,
+              recipientId,
+              'enemy',
+            ).matches) {
+              const temporaryHp = parseMoveEffectOperation({
+                id: `equipment-shell-bell-temp-hp:v1:${providerSuffix}`,
+                kind: 'heal', source: { kind: 'operation', id: operation.id },
+                recipients: { kind: 'actor' }, phase: operation.phase,
+                reasonCode: 'equipment.shell-bell.temporary-hp',
+                payload: {
+                  mode: 'gain', pool: 'temporary-hit-points',
+                  calculation: { kind: 'percent-max', percent: 10 },
+                  bounds: { minimum: null, maximum: null }, rounding: 'floor',
+                  injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+                },
+              }, 'executeSpec.shellBell') as MoveHealEffectOperation
+              emitEquipmentProviderOperation(temporaryHp, [input.context.actor.placement.id])
+            }
+          }
           const previousRemaining = projectedRemainingHpByTarget.get(recipientId)
             ?? recipient.currentHp + (recipient.temporaryHp ?? 0)
-          const remaining = bypassTemporaryHp
+          let remaining = bypassTemporaryHp
             ? projectedHp.get(recipient)
             : Math.max(0, previousRemaining - boundedDamageLoss)
+          const protection = remaining === 0 && boundedDamageLoss > 0
+            ? equipmentFaintProtectionSource({
+                context: input.context,
+                placementId: recipientId,
+                beforeHp: currentRealHp,
+                maximumHp: recipientMaximumHp,
+                afterHp: projectedHp.get(recipient),
+                changeKind: 'damage',
+                moveSourced: true,
+              })
+            : null
+          const unusedProtection = protection
+            && !equipmentFaintProtectionBindings.has(protection.sourceBindingSha256)
+            ? protection
+            : null
+          const protectionRoll = unusedProtection?.roll
+            ? input.context.random.roll({
+                rollId: `equipment-provider-roll:v1:${createHash('sha256')
+                  .update(`${operation.id}\u0000${recipientId}\u0000${unusedProtection.sourceBindingSha256}`)
+                  .digest('hex').slice(0, 32)}`,
+                parentEffectId: operation.id,
+                reason: unusedProtection.reasonCode,
+                formula: { kind: 'dice', count: 1, sides: unusedProtection.roll.sides, modifier: 0 },
+              })
+            : null
+          const protectionApplied = unusedProtection !== null
+            && (unusedProtection.roll === null
+              || (protectionRoll?.naturalResult ?? 0) >= unusedProtection.roll.minimum)
+          if (protectionApplied && unusedProtection) {
+            equipmentFaintProtectionBindings.add(unusedProtection.sourceBindingSha256)
+            projectedHp.set(recipient, 1)
+            remaining = 1
+            const suffix = createHash('sha256')
+              .update(`${operation.id}\u0000${recipientId}\u0000${unusedProtection.sourceBindingSha256}`)
+              .digest('hex').slice(0, 32)
+            const healOperation = parseMoveEffectOperation({
+              id: `equipment-provider-survival:v1:${suffix}`,
+              kind: 'heal', source: { kind: 'operation', id: operation.id },
+              recipients: { kind: 'attacked-targets' }, phase: operation.phase,
+              reasonCode: unusedProtection.reasonCode,
+              payload: {
+                mode: 'gain', pool: 'hit-points', calculation: { kind: 'fixed', value: 1 },
+                bounds: { minimum: 1, maximum: null }, rounding: 'floor',
+                injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+              },
+            }, 'executeSpec.equipmentFaintProtection') as MoveHealEffectOperation
+            const frequencyEffectId = `equipment-provider-frequency:v1:${suffix}`
+            const frequencyOperation = parseMoveEffectOperation({
+              id: `equipment-provider-frequency-operation:v1:${suffix}`,
+              kind: 'temporary-effect', source: { kind: 'operation', id: operation.id },
+              recipients: { kind: 'attacked-targets' }, phase: operation.phase,
+              reasonCode: 'equipment-provider.scene-frequency-consumed',
+              payload: {
+                action: 'add', effectId: frequencyEffectId, recipientScope: 'placements',
+                definition: {
+                  kind: 'capability', duration: { kind: 'scene', remaining: null },
+                  stacks: 1, charges: null, stackPolicy: { kind: 'replace', maxStacks: null },
+                  chargePolicy: { kind: 'none', amount: null },
+                  tags: [
+                    'equipment-provider-frequency',
+                    equipmentProviderFrequencyTag(unusedProtection.sourceBindingSha256),
+                  ],
+                  payload: { capabilityId: 'equipment-provider-frequency', action: 'grant', value: 1 },
+                  dispel: { policy: 'matching-tags', tags: [equipmentProviderFrequencyTag(unusedProtection.sourceBindingSha256)] },
+                  transferPolicy: 'retain',
+                },
+              },
+            }, 'executeSpec.equipmentFaintProtectionFrequency') as MoveTemporaryEffectOperation
+            emitEquipmentProviderOperation(healOperation, [recipientId])
+            emitEquipmentProviderOperation(frequencyOperation, [recipientId])
+          }
           projectedRemainingHpByTarget.set(recipientId, remaining)
           if (remaining === 0 && boundedDamageLoss > 0) {
             faintedTargetIds = canonicalPlacementIds(input.context, [...faintedTargetIds, recipientId])
@@ -6472,9 +6746,101 @@ const executeMoveSpecInternal = (
           ])),
           kampfgeistResistanceRecipientIds: selectedKampfgeistOwnerIds,
           forceActorStab: aa084ProteanStab,
+          equipmentDamageBaseBonus: equipmentTypeGemDamageBaseBonus,
           ...(skillLinkSelected ? { forcedHitCount: 5 } : {}),
         })
         multiHitExecutions.push(execution)
+        const actorEquipmentEffects = activeEquipmentProviderEffects(
+          input.context,
+          input.context.actor.placement.id,
+        )
+        const kingsRock = actorEquipmentEffects.some(({ provider, effect }) => (
+          effect.kind === 'apply-condition'
+          && effect.reasonCode === 'equipment.kings-rock.flinch'
+          && provider.predicate.kind === 'strike'
+        ))
+        const razorFang = actorEquipmentEffects.some(({ effect }) => (
+          effect.kind === 'add-injury'
+          && effect.reasonCode === 'equipment.razor-fang.injury'
+        ))
+        const lifeOrb = actorEquipmentEffects.some(({ effect }) => (
+          effect.kind === 'lose-max-hp-fraction'
+          && effect.reasonCode === 'equipment.life-orb.recoil'
+        ))
+        const shellBell = actorEquipmentEffects.some(({ effect }) => (
+          effect.kind === 'gain-temporary-hp-ticks'
+          && effect.reasonCode === 'equipment.shell-bell.temporary-hp'
+        ))
+        for (const targetResult of execution.resolution.targets) {
+          for (const strike of targetResult.strikes) {
+            const suffix = createHash('sha256')
+              .update(`${operation.id}\u0000${targetResult.targetId}\u0000${strike.hitIndex}`)
+              .digest('hex').slice(0, 32)
+            if (strike.accuracy.hit && (strike.accuracy.naturalResult ?? 0) >= 19) {
+              if (kingsRock) {
+                emitEquipmentProviderOperation(parseMoveEffectOperation({
+                  id: `equipment-kings-rock-flinch:v1:${suffix}`,
+                  kind: 'condition', source: { kind: 'operation', id: operation.id },
+                  recipients: { kind: 'hit-targets' }, phase: operation.phase,
+                  reasonCode: 'equipment.kings-rock.flinch',
+                  payload: {
+                    action: 'apply', conditionId: 'flinched', conditionSource: null,
+                    filter: null, randomChoice: null, duration: null, saveTiming: 'canonical',
+                    stackPolicy: { kind: 'refresh', maxStacks: null },
+                    applyMoveImmunity: false, applyTypeImmunity: false,
+                  },
+                }, 'executeSpec.multiHitKingsRock') as MoveConditionEffectOperation, [targetResult.targetId])
+              }
+              if (razorFang) {
+                emitEquipmentProviderOperation(parseMoveEffectOperation({
+                  id: `equipment-razor-fang-injury:v1:${suffix}`,
+                  kind: 'direct-hp', source: { kind: 'operation', id: operation.id },
+                  recipients: { kind: 'hit-targets' }, phase: operation.phase,
+                  reasonCode: 'equipment.razor-fang.injury',
+                  payload: {
+                    mode: 'lose', pool: 'hit-points', calculation: { kind: 'fixed', value: 0 },
+                    copySource: null, bounds: { minimum: 0, maximum: null }, rounding: 'floor',
+                    applyTypeImmunity: false, cost: null,
+                    injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+                  },
+                }, 'executeSpec.multiHitRazorFang') as MoveDirectHpEffectOperation, [targetResult.targetId])
+              }
+            }
+            if ((strike.damage?.effectiveHpLost ?? 0) <= 0) continue
+            if (lifeOrb) {
+              emitEquipmentProviderOperation(parseMoveEffectOperation({
+                id: `equipment-life-orb-recoil:v1:${suffix}`,
+                kind: 'direct-hp', source: { kind: 'operation', id: operation.id },
+                recipients: { kind: 'actor' }, phase: operation.phase,
+                reasonCode: 'equipment.life-orb.recoil',
+                payload: {
+                  mode: 'lose', pool: 'hit-points', calculation: { kind: 'percent-max', percent: 6.25 },
+                  copySource: null, bounds: { minimum: 0, maximum: null }, rounding: 'floor',
+                  applyTypeImmunity: false, cost: null,
+                  injury: { hitPointMarkers: 'apply-after-operation', massiveDamage: 'never' },
+                },
+              }, 'executeSpec.multiHitLifeOrb') as MoveDirectHpEffectOperation, [input.context.actor.placement.id])
+            }
+            if (shellBell && input.context.queries.relationships.match(
+              input.context.actor.placement.id,
+              targetResult.targetId,
+              'enemy',
+            ).matches) {
+              emitEquipmentProviderOperation(parseMoveEffectOperation({
+                id: `equipment-shell-bell-temp-hp:v1:${suffix}`,
+                kind: 'heal', source: { kind: 'operation', id: operation.id },
+                recipients: { kind: 'actor' }, phase: operation.phase,
+                reasonCode: 'equipment.shell-bell.temporary-hp',
+                payload: {
+                  mode: 'gain', pool: 'temporary-hit-points',
+                  calculation: { kind: 'percent-max', percent: 10 },
+                  bounds: { minimum: null, maximum: null }, rounding: 'floor',
+                  injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+                },
+              }, 'executeSpec.multiHitShellBell') as MoveHealEffectOperation, [input.context.actor.placement.id])
+            }
+          }
+        }
         if (swayReflection) {
           targetIds = canonicalPlacementIds(input.context, [
             ...targetIds.filter(id => id !== preselectedMultiSwayOwnerId),

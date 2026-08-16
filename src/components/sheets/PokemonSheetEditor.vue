@@ -9,11 +9,25 @@ import { usePokemonAddedStatsAdminAction } from '~/composables/sheets/usePokemon
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetEditorCapabilities } from '~/utils/sheetEditorCapabilities'
+import type { SaveStatus } from '~/composables/useEditableSheet'
+import type { TrainerEquipmentAcceptedResult } from '~/composables/sheets/useTrainerEquipmentOperations'
+import type { ItemGuidedAcceptedResult } from '~/composables/items/useItemGuidedAdjudication'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   sheet: CharacterSheet
   capabilities: SheetEditorCapabilities
   accentColor?: string | null
+  saveStatus?: SaveStatus
+  profileId?: string | null
+  prepareEquipmentAction?: () => Promise<void>
+}>(), {
+  accentColor: null,
+  saveStatus: 'idle',
+  profileId: null,
+  prepareEquipmentAction: undefined,
+})
+const emit = defineEmits<{
+  equipmentAccepted: [response: TrainerEquipmentAcceptedResult | ItemGuidedAcceptedResult]
 }>()
 
 const sheet = computed<CharacterSheet>(() => props.sheet)
@@ -59,7 +73,6 @@ const {
   moveRows,
   abilityRows,
   heldItemName,
-  heldItemReference,
   typeEffectivenessRows,
 } = usePokemonSheetDerived(sheet)
 
@@ -78,7 +91,6 @@ const {
 } = usePokemonSheetCsvFields({ sheet, sheetTypes, eggGroups })
 
 const {
-  setHeldItemName,
   addMove,
   removeMove,
   reorderMove,
@@ -91,8 +103,6 @@ const {
   setStat,
   setEvasionBonus,
   setAccuracyStage,
-  setVitaminStatCount,
-  setVitaminFlag,
   setVitaminNumber,
   setVitaminText,
 } = usePokemonSheetRowActions(sheet)
@@ -142,6 +152,14 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
     />
 
     <div v-if="activeTab === 'sheet'" class="pokemon-sheet__tab-panel">
+      <PokemonEvolutionAttentionCard
+        :sheet="sheet"
+        :stat-points-spent="statPointsSpent"
+        :stat-points-budget="statPointsBudget"
+        :stat-points-left="statPointsLeft"
+        :save-status="saveStatus"
+      />
+
       <!-- ============ Stats + Combat strip ============ -->
       <div class="row two-col">
         <PokemonStatsPanel
@@ -178,8 +196,11 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
       <PokemonEquipmentPanel
         :sheet="sheet"
         :held-item-name="heldItemName"
-        :held-item-reference="heldItemReference"
-        @set-held-item-name="setHeldItemName"
+        :save-status="saveStatus"
+        :profile-id="profileId"
+        :can-adjudicate-equipment="canManagePlayerAccess"
+        :prepare-equipment-action="prepareEquipmentAction"
+        @equipment-accepted="emit('equipmentAccepted', $event)"
       />
 
       <!-- ============ Tutor pts + Active Training Feature + Skill bg + Inherited ============ -->
@@ -234,8 +255,6 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
         :vitamin-summary="vitaminSummary"
         :tutor-points-earned="tutorPointsEarned"
         :tutor-points-left="tutorPointsLeft"
-        @set-vitamin-stat-count="setVitaminStatCount"
-        @set-vitamin-flag="setVitaminFlag"
         @set-vitamin-number="setVitaminNumber"
         @set-vitamin-text="setVitaminText"
       />

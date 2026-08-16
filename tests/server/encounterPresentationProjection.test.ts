@@ -24,6 +24,7 @@ import {
   ITEM_CHOICE_ACTOR_ID,
   ITEM_CHOICE_TARGET_ID,
 } from '../fixtures/moveAutomation/itemChoices'
+import { activeEquipmentState, activePokemonHeldEquipmentState } from '../fixtures/equipment'
 
 describe('server encounter presentation projection', () => {
   it('projects cross-source actions, passives, inventory affordances, and GM management offers', () => {
@@ -42,8 +43,210 @@ describe('server encounter presentation projection', () => {
     expect(kinds).toContain('initiative')
     expect(kinds).toContain('field-effect')
     expect(projection.affordances.some(affordance => affordance.source.sourceKind === 'item')).toBe(true)
+    const potion = projection.offers.find(offer => offer.source.sourceKind === 'item' && offer.source.canonicalId === 'Potion')
+    expect(potion).toMatchObject({
+      group: 'inventory',
+      availability: { status: 'available' },
+      intent: { input: 'choices' },
+      sourceContextLabel: 'Item Choice Trainer · Medical Kit',
+      costs: expect.arrayContaining([
+        expect.objectContaining({ kind: 'standard-action', amount: 1, label: '1 Standard Action' }),
+        expect.objectContaining({ kind: 'item', amount: 1, label: 'Consume 1 Potion' }),
+      ]),
+      source: { instanceId: 'item-instance:trainer:item-choice-trainer:medicalKit:private-potion-row' },
+    })
+    expect(potion?.costs.some(cost => cost.resourceId === 'item.restorative.target-next-turn-forfeit')).toBe(false)
+    expect(potion?.selectionOptions?.find(option => option.value === ITEM_CHOICE_TARGET_ID)).toMatchObject({
+      kind: 'participant', disabled: false, unavailableReason: null,
+      description: expect.stringMatching(/HP restored.*Target forfeits next Standard \+ Shift/),
+      costs: expect.arrayContaining([expect.objectContaining({
+        kind: 'resource', label: 'Target forfeits next Standard + Shift',
+      })]),
+    })
+    expect(potion?.selectionOptions?.find(option => option.value === ITEM_CHOICE_ACTOR_ID)).toMatchObject({
+      disabled: true,
+      unavailableReason: { code: 'target.invalid' },
+      costs: expect.arrayContaining([expect.objectContaining({ kind: 'full-action', label: '1 Full Action' })]),
+    })
+    expect(projection.affordances.find(affordance => affordance.source.canonicalId === 'Potion')?.linkedOfferId)
+      .toBe(potion?.offerId)
     expect(projection.offers.every(offer => offer.mapRevision === projection.mapRevision)).toBe(true)
     expect(projection.audience).toBe('gm')
+  })
+
+  it('keeps legal and full-HP restorative targets together with exact disabled copy', () => {
+    const map = createItemChoiceMap()
+    map.placements.push({
+      id: 'item-choice-full-target', sheetKind: 'pokemon', sheetSlug: 'item-choice-full-sheet',
+      position: { x: 3, y: 0, z: 1 }, sideId: 'foes',
+    })
+    const damaged = createItemChoiceTargetSheet()
+    const full = {
+      ...createItemChoiceTargetSheet(),
+      slug: 'item-choice-full-sheet',
+      nickname: 'Full Target',
+      equipmentState: activePokemonHeldEquipmentState({
+        ownerSlug: 'item-choice-full-sheet', canonicalItemIds: [],
+      }),
+      combat: { ...createItemChoiceTargetSheet().combat, currentHp: 78 },
+    }
+    const projection = buildEncounterPresentationProjection({
+      role: 'gm', map, mapRevision: 4, pokemonSheets: [damaged, full],
+      trainerSheets: [createItemChoiceTrainerSheet()], generatedAt: 100,
+    })
+    const potion = projection.offers.find(offer => offer.source.canonicalId === 'Potion')
+    expect(potion?.availability.status).toBe('available')
+    expect(potion?.selectionOptions?.find(option => option.value === ITEM_CHOICE_TARGET_ID)).toMatchObject({ disabled: false })
+    expect(potion?.selectionOptions?.find(option => option.value === 'item-choice-full-target')).toMatchObject({
+      disabled: true,
+      description: expect.stringMatching(/78\/78 HP.*At full HP\./),
+      unavailableReason: { code: 'target.invalid' },
+    })
+  })
+
+  it('projects exact curable-condition previews and disables condition items with no applicable target', () => {
+    const trainer = createItemChoiceTrainerSheet()
+    trainer.inventory!.medicalKit!.push({ id: 'full-heal-row', name: 'Full Heal', qty: 1 })
+    const poisoned = createItemChoiceTargetSheet()
+    poisoned.combat = { ...poisoned.combat, conditions: ['Badly Poisoned', 'Confused', 'Slowed'] }
+    const projection = buildEncounterPresentationProjection({
+      role: 'gm', map: createItemChoiceMap(), mapRevision: 4,
+      pokemonSheets: [poisoned], trainerSheets: [trainer], generatedAt: 100,
+    })
+    const antidote = projection.offers.find(offer => offer.source.canonicalId === 'Antidote')
+    expect(antidote?.availability).toMatchObject({ status: 'available' })
+    expect(antidote?.selectionOptions?.find(option => option.value === ITEM_CHOICE_TARGET_ID)).toMatchObject({
+      disabled: false,
+      description: expect.stringContaining('Cures: Badly Poisoned'),
+    })
+    const fullHeal = projection.offers.find(offer => offer.source.canonicalId === 'Full Heal')
+    const fullHealTarget = fullHeal?.selectionOptions?.find(option => option.value === ITEM_CHOICE_TARGET_ID)
+    expect(fullHealTarget?.description).toContain('Cures: Badly Poisoned')
+    expect(fullHealTarget?.description).not.toContain('Confused')
+    expect(fullHealTarget?.description).not.toContain('Slowed')
+
+    poisoned.combat = { ...poisoned.combat, conditions: ['Confused', 'Slowed'] }
+    const unavailable = buildEncounterPresentationProjection({
+      role: 'gm', map: createItemChoiceMap(), mapRevision: 4,
+      pokemonSheets: [poisoned], trainerSheets: [trainer], generatedAt: 100,
+    })
+    const unavailableAntidote = unavailable.offers.find(offer => offer.source.canonicalId === 'Antidote')
+    expect(unavailableAntidote?.availability).toMatchObject({ status: 'unavailable', reasons: [{ code: 'target.invalid' }] })
+    expect(unavailableAntidote?.selectionOptions?.find(option => option.value === ITEM_CHOICE_TARGET_ID)).toMatchObject({
+      disabled: true,
+      description: expect.stringContaining('No condition is within this item’s reviewed cure scope.'),
+      unavailableReason: { code: 'target.invalid' },
+    })
+  })
+
+  it('projects the Medic Training exception from canonical edge identity', () => {
+    const trainer = createItemChoiceTrainerSheet()
+    trainer.edges = [{ name: 'Medic Training' }]
+    const projection = buildEncounterPresentationProjection({
+      role: 'gm', map: createItemChoiceMap(), mapRevision: 4,
+      pokemonSheets: [createItemChoiceTargetSheet()], trainerSheets: [trainer], generatedAt: 100,
+    })
+    const potion = projection.offers.find(offer => offer.source.canonicalId === 'Potion')!
+    expect(potion.costs.some(cost => cost.label.includes('forfeits next'))).toBe(false)
+    const target = potion.selectionOptions?.find(option => option.value === ITEM_CHOICE_TARGET_ID)
+    expect(target?.description).not.toContain('forfeits next')
+    expect(target?.costs?.some(cost => cost.resourceId === 'item.restorative.target-next-turn-forfeit')).toBe(false)
+  })
+
+  it('projects native Wonder Launcher X-Item delivery with AP, range, and no target forfeiture', () => {
+    const trainer = createItemChoiceTrainerSheet()
+    trainer.skills = { ...trainer.skills, medicineEd: { rankBonus: 3 } }
+    trainer.inventory!.medicalKit!.push({ id: 'x-attack-row', name: 'X Attack', qty: 1 })
+    trainer.equipmentState = activeEquipmentState({
+      ownerKind: 'trainer', ownerSlug: trainer.slug, slotId: 'mainHand', additionalSlotIds: ['offHand'],
+      canonicalItemId: 'Wonder Launcher',
+    })
+    const map = createItemChoiceMap()
+    map.placements.push({
+      id: 'far-pokemon', sheetKind: 'pokemon', sheetSlug: 'far-pokemon-sheet',
+      position: { x: 20, y: 0, z: 1 }, sideId: 'foes',
+    })
+    const far = {
+      ...createItemChoiceTargetSheet(),
+      slug: 'far-pokemon-sheet',
+      nickname: 'Far Target',
+      equipmentState: activePokemonHeldEquipmentState({
+        ownerSlug: 'far-pokemon-sheet', canonicalItemIds: [],
+      }),
+    }
+    const projection = buildEncounterPresentationProjection({
+      role: 'gm', map, mapRevision: 4,
+      pokemonSheets: [createItemChoiceTargetSheet(), far], trainerSheets: [trainer], generatedAt: 100,
+    })
+    const launcher = projection.offers.find(offer => offer.intent.actionId.startsWith('item.use.wonder-launcher:'))
+    expect(launcher).toMatchObject({
+      source: { canonicalId: 'X Attack' },
+      timing: { kind: 'standard' },
+      availability: { status: 'available' },
+      targeting: [{ rangeLabel: '8 m' }],
+      costs: expect.arrayContaining([
+        expect.objectContaining({ kind: 'action-points', amount: 1, label: '1 AP to activate Wonder Launcher' }),
+        expect.objectContaining({ kind: 'item', amount: 1, label: 'Consume 1 X Attack' }),
+      ]),
+    })
+    const nearTarget = launcher?.selectionOptions?.find(option => option.value === ITEM_CHOICE_TARGET_ID)
+    expect(nearTarget).toMatchObject({ disabled: false, description: expect.stringContaining('target keeps its actions') })
+    expect(nearTarget?.costs?.some(cost => cost.resourceId === 'item.restorative.target-next-turn-forfeit')).toBe(false)
+    expect(launcher?.selectionOptions?.find(option => option.value === 'far-pokemon')).toMatchObject({
+      disabled: true, unavailableReason: { code: 'target.out-of-range' },
+    })
+    expect(projection.offers.some(offer => offer.intent.actionId === 'equipment.action:equipment.wonder-launcher.apply')).toBe(false)
+    expect(JSON.stringify(launcher)).not.toContain('equipped-item:v1:')
+  })
+
+  it('projects authoritative revival previews only for Fainted Pokémon targets', () => {
+    const trainer = createItemChoiceTrainerSheet()
+    trainer.inventory!.medicalKit!.push({ id: 'revive-row', name: 'Revive', qty: 1 })
+    const conscious = createItemChoiceTargetSheet()
+    const unavailable = buildEncounterPresentationProjection({
+      role: 'gm', map: createItemChoiceMap(), mapRevision: 4,
+      pokemonSheets: [conscious], trainerSheets: [trainer], generatedAt: 100,
+    })
+    const unavailableRevive = unavailable.offers.find(offer => offer.source.canonicalId === 'Revive')
+    expect(unavailableRevive?.availability).toMatchObject({
+      status: 'unavailable', reasons: [{ code: 'target.invalid' }],
+    })
+    expect(unavailableRevive?.selectionOptions?.find(option => option.value === ITEM_CHOICE_TARGET_ID)).toMatchObject({
+      disabled: true,
+      description: expect.stringContaining('Target is not Fainted.'),
+      unavailableReason: { code: 'target.invalid' },
+    })
+
+    const fainted = createItemChoiceTargetSheet()
+    fainted.combat = { ...fainted.combat, currentHp: 0, conditions: ['Fainted', 'Slowed'] }
+    const available = buildEncounterPresentationProjection({
+      role: 'gm', map: createItemChoiceMap(), mapRevision: 4,
+      pokemonSheets: [fainted], trainerSheets: [trainer], generatedAt: 100,
+    })
+    const availableRevive = available.offers.find(offer => offer.source.canonicalId === 'Revive')
+    expect(availableRevive?.availability).toMatchObject({ status: 'available' })
+    expect(availableRevive?.selectionOptions?.find(option => option.value === ITEM_CHOICE_TARGET_ID)).toMatchObject({
+      disabled: false,
+      description: expect.stringMatching(/Revives at 20 HP.*Target forfeits next Standard \+ Shift/),
+    })
+  })
+
+  it('fails item actions closed for legacy rows without stable identity while retaining an explicit affordance', () => {
+    const trainer = createItemChoiceTrainerSheet()
+    delete trainer.inventory?.medicalKit?.[0]?.id
+    const projection = buildEncounterPresentationProjection({
+      role: 'gm',
+      map: createItemChoiceMap(),
+      mapRevision: 4,
+      pokemonSheets: [createItemChoiceTargetSheet()],
+      trainerSheets: [trainer],
+      generatedAt: 100,
+    })
+    expect(projection.offers.some(offer => offer.source.sourceKind === 'item' && offer.source.canonicalId === 'Potion')).toBe(false)
+    expect(projection.affordances.find(affordance => affordance.source.canonicalId === 'Potion')).toMatchObject({
+      linkedOfferId: null,
+      availability: { status: 'unavailable', reasons: [{ code: 'action.parameters-required' }] },
+    })
   })
 
   it('adopts current role-projected identities for accepted participant references', () => {

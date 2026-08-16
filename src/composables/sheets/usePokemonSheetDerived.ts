@@ -16,12 +16,17 @@ import {
   pokemonBaseRelationWaivers,
   validateBaseRelations,
 } from '~/utils/sheets/pokemonDerived'
-import { heldItemInitiativeBonus, heldItemSpeedEvasionBonus } from '~/utils/sheetHeldItemEffects'
+import {
+  applyProjectedEquipmentContributions,
+  projectedEquipmentContributionDelta,
+} from '~/utils/equipmentContributionProjection'
+import { computeEvasionTotal, computeStatEvasion } from '~/utils/evasion'
 import {
   conditionAdjustedCombatStage,
   conditionAdjustedEvasion,
   conditionAdjustedInitiative,
   conditionCombatStageModifier,
+  conditionEvasionModifier,
   describeSheetConditionEffects,
 } from '~/utils/sheetConditionEffects'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
@@ -91,24 +96,78 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     const conditions = combatConditions.value
     const abilities = sheet.value.abilities
     return resolveStats(sheet.value).map((row) => {
-      if (row.key === 'hp') return row
+      if (row.key === 'hp') {
+        return {
+          ...row,
+          total: applyProjectedEquipmentContributions({
+            sheet: sheet.value,
+            metric: 'stat-after-stages',
+            targetId: row.key,
+            base: row.total,
+          }),
+        }
+      }
+      const equipmentDefaultStage = projectedEquipmentContributionDelta({
+        sheet: sheet.value,
+        metric: 'combat-stage-default',
+        targetId: row.key,
+      })
       const conditionStageModifier = conditionCombatStageModifier(conditions, row.key, { abilities })
-      const effectiveStage = conditionAdjustedCombatStage(row.stage, conditions, row.key, { abilities })
+      const effectiveStage = conditionAdjustedCombatStage(
+        row.stage + equipmentDefaultStage,
+        conditions,
+        row.key,
+        { abilities },
+      )
+      const stagedTotal = applyCombatStageToStatTotal(row.key, row.baseTotal, effectiveStage)
       return {
         ...row,
         conditionStageModifier,
         effectiveStage,
-        total: applyCombatStageToStatTotal(row.key, row.baseTotal, effectiveStage),
+        total: applyProjectedEquipmentContributions({
+          sheet: sheet.value,
+          metric: 'stat-after-stages',
+          targetId: row.key,
+          base: stagedTotal,
+        }),
       }
     })
   })
-  const skills = computed(() => (sheet.value ? resolveSkills(sheet.value) : []))
+  const skills = computed(() => (sheet.value ? resolveSkills(sheet.value).map((row) => {
+    const match = /^(\d+d6)(?:\s*([+-])\s*(\d+))?$/iu.exec(row.value.trim())
+    if (!match?.[1]) return row
+    const baseModifier = match[2] && match[3]
+      ? (match[2] === '-' ? -1 : 1) * Number.parseInt(match[3], 10)
+      : 0
+    const modifier = applyProjectedEquipmentContributions({
+      sheet: sheet.value,
+      metric: 'skill-check-modifier',
+      targetId: row.key,
+      base: baseModifier,
+    })
+    return { ...row, value: `${match[1]}${modifier === 0 ? '' : modifier > 0 ? `+${modifier}` : modifier}` }
+  }) : []))
   const combatSkillRankValue = computed(() =>
     parseSkillDiceRankValue(skills.value.find((skill) => skill.key === 'combat')?.value),
   )
-  const capabilities = computed(() =>
-    sheet.value ? resolveCapabilities(sheet.value) : { rows: [], naturewalk: undefined, other: [] },
-  )
+  const capabilities = computed(() => {
+    if (!sheet.value) return { rows: [], naturewalk: undefined, other: [] }
+    const resolved = resolveCapabilities(sheet.value)
+    return {
+      ...resolved,
+      rows: resolved.rows.map(row => typeof row.value === 'number'
+        ? {
+            ...row,
+            value: applyProjectedEquipmentContributions({
+              sheet: sheet.value,
+              metric: 'capability-value',
+              targetId: row.label.trim().toLocaleLowerCase('en-US'),
+              base: row.value,
+            }),
+          }
+        : row),
+    }
+  })
   const activeTrainingFeatureEffects = computed(() =>
     resolvePokemonTrainingFeatureEffects(sheet.value?.activeTrainingFeature),
   )
@@ -148,7 +207,11 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     combatConditions.value,
     { tickValue: tickValue.value, abilities: sheet.value?.abilities },
   ))
-  const initiativeItemBonus = computed(() => heldItemInitiativeBonus(sheet.value?.items?.held))
+  const initiativeItemBonus = computed(() => projectedEquipmentContributionDelta({
+    sheet: sheet.value,
+    metric: 'initiative',
+    targetId: 'all',
+  }))
   const initiativeTrainingBonus = computed(() => activeTrainingFeatureEffects.value?.initiativeBonus ?? 0)
   const initiative = computed(() =>
     conditionAdjustedInitiative(
@@ -195,13 +258,21 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     const summary = buildSheetAccuracySummary({
       stage: sheet.value?.combatStages?.acc,
       conditions: combatConditions.value,
-      heldItem: sheet.value?.items?.held,
+      includeHeldItemBonus: false,
       abilities: sheet.value?.abilities,
     })
+    const equipmentBonus = projectedEquipmentContributionDelta({
+      sheet: sheet.value,
+      metric: 'accuracy-roll',
+      targetId: 'all',
+    })
     const trainingBonus = activeTrainingFeatureEffects.value?.accuracyRollBonus ?? 0
-    return trainingBonus
-      ? { ...summary, total: summary.total + trainingBonus, trainingBonus }
-      : summary
+    return {
+      ...summary,
+      total: summary.total + equipmentBonus + trainingBonus,
+      itemBonus: equipmentBonus,
+      ...(trainingBonus ? { trainingBonus } : {}),
+    }
   })
 
   const pokemonEvasion = computed(() => {
@@ -214,51 +285,84 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     const abilityBonus = 0
     const trainingBonus = activeTrainingFeatureEffects.value?.evasionBonus ?? 0
     const trainingBonusField = trainingBonus ? { trainingBonus } : {}
-    const vsAnyItemBonus = heldItemSpeedEvasionBonus(sheet.value?.items?.held)
     const conditions = combatConditions.value
+    const equipmentEvasionBonus = (targetId: 'physical' | 'special' | 'speed') => (
+      projectedEquipmentContributionDelta({
+        sheet: sheet.value,
+        metric: 'evasion',
+        targetId,
+      })
+    )
+    const withEquipmentStat = (
+      result: ReturnType<typeof conditionAdjustedEvasion>,
+      targetId: 'def' | 'sdef' | 'spd',
+      bonus: number,
+    ) => {
+      const effectiveStat = applyProjectedEquipmentContributions({
+        sheet: sheet.value,
+        metric: 'stat-after-stages',
+        targetId,
+        base: result.effectiveStat,
+      })
+      const base = computeStatEvasion(effectiveStat)
+      return {
+        ...result,
+        effectiveStat,
+        base,
+        total: result.suppressedByCondition
+          ? 0
+          : computeEvasionTotal(base, bonus + conditionEvasionModifier(conditions)),
+      }
+    }
 
     return {
       vsAtk: {
-        ...conditionAdjustedEvasion({
+        ...withEquipmentStat(conditionAdjustedEvasion({
           statTotal: baseTotalForStat(stats.value, 'def'),
-          combatStage: sheet.value?.stats?.def?.stage,
-          bonus: vsAtkBonus + abilityBonus + trainingBonus,
+          combatStage: (sheet.value?.stats?.def?.stage ?? 0) + projectedEquipmentContributionDelta({
+            sheet: sheet.value, metric: 'combat-stage-default', targetId: 'def',
+          }),
+          bonus: vsAtkBonus + abilityBonus + trainingBonus + equipmentEvasionBonus('physical'),
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'def',
           kind: 'physical',
-        }),
+        }), 'def', vsAtkBonus + abilityBonus + trainingBonus + equipmentEvasionBonus('physical')),
         bonus: vsAtkBonus,
         abilityBonus,
         ...trainingBonusField,
       },
       vsSatk: {
-        ...conditionAdjustedEvasion({
+        ...withEquipmentStat(conditionAdjustedEvasion({
           statTotal: baseTotalForStat(stats.value, 'sdef'),
-          combatStage: sheet.value?.stats?.sdef?.stage,
-          bonus: vsSatkBonus + abilityBonus + trainingBonus,
+          combatStage: (sheet.value?.stats?.sdef?.stage ?? 0) + projectedEquipmentContributionDelta({
+            sheet: sheet.value, metric: 'combat-stage-default', targetId: 'sdef',
+          }),
+          bonus: vsSatkBonus + abilityBonus + trainingBonus + equipmentEvasionBonus('special'),
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'sdef',
           kind: 'special',
-        }),
+        }), 'sdef', vsSatkBonus + abilityBonus + trainingBonus + equipmentEvasionBonus('special')),
         bonus: vsSatkBonus,
         abilityBonus,
         ...trainingBonusField,
       },
       vsAny: {
-        ...conditionAdjustedEvasion({
+        ...withEquipmentStat(conditionAdjustedEvasion({
           statTotal: baseTotalForStat(stats.value, 'spd'),
-          combatStage: sheet.value?.stats?.spd?.stage,
-          bonus: vsAnyBonus + abilityBonus + vsAnyItemBonus + trainingBonus,
+          combatStage: (sheet.value?.stats?.spd?.stage ?? 0) + projectedEquipmentContributionDelta({
+            sheet: sheet.value, metric: 'combat-stage-default', targetId: 'spd',
+          }),
+          bonus: vsAnyBonus + abilityBonus + equipmentEvasionBonus('speed') + trainingBonus,
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'spd',
           kind: 'speed',
-        }),
+        }), 'spd', vsAnyBonus + abilityBonus + equipmentEvasionBonus('speed') + trainingBonus),
         bonus: vsAnyBonus,
         abilityBonus,
-        itemBonus: vsAnyItemBonus,
+        itemBonus: equipmentEvasionBonus('speed'),
         ...trainingBonusField,
       },
     }

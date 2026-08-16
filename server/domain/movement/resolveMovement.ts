@@ -54,6 +54,7 @@ import {
   type MovementTerrainRequirement,
 } from '~/utils/mapMovementTerrain'
 import {
+  mixedMovementCapabilityLimit,
   movementCapabilityLabel,
   movementCapabilitySpeed,
   SHIFT_MOVEMENT_CAPABILITY_KEYS,
@@ -62,6 +63,9 @@ import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { withBattlefieldZoneMovementTerrain } from '../moveAutomation/battlefieldZoneMovementTerrain'
 import { createMoveAutomationGravityResolver } from '../moveAutomation/gravity'
 import { createMoveAutomationRemainingGlobalFieldResolver } from '../moveAutomation/remainingGlobalFields'
+import { createMoveAutomationRoomResolver } from '../moveAutomation/rooms'
+import { createMoveAutomationItemEffectResolver } from '../moveAutomation/itemEffects'
+import { createMoveEquipmentContributionQueries } from '../moveAutomation/equipmentContributionQueries'
 import { aa077AdjustedToken } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import { aa085to100AdjustedToken } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
@@ -563,7 +567,13 @@ interface MovementPlacementSnapshot extends PositionedGridFootprint {
   readonly effectiveAbilityIds: readonly string[]
   readonly effectiveCapabilityIds: readonly string[]
   readonly effectiveCapabilityInstanceIds: readonly string[]
-  readonly equippedItemIds: readonly string[]
+  readonly equipmentMovementCapabilities: Readonly<{
+    default: MovementCapabilitySpeeds
+    iceOrDeepSnow: MovementCapabilitySpeeds
+    fullySubmerged: MovementCapabilitySpeeds
+    iceOrDeepSnowAndFullySubmerged: MovementCapabilitySpeeds
+    pathfinding: MovementCapabilitySpeeds
+  }>
   readonly naturewalkTerrains: readonly string[]
   readonly physicalPowerLoad: ReturnType<typeof resolvePhysicalPowerLoad>
   /** Amorphous may use a 1m traversal shape, but must reform at endpoints. */
@@ -893,6 +903,34 @@ const buildMovementSnapshots = (
   const readByKey = new Map<string, AuthoritativeMovementSheetRead>()
   const consultedPlacementIds: string[] = []
   const capabilityMovementBlockedPlacementIds = new Set<string>()
+  const rooms = createMoveAutomationRoomResolver(map)
+  const itemEffects = createMoveAutomationItemEffectResolver({
+    placements: map.placements,
+    globalFields: createMoveAutomationRemainingGlobalFieldResolver(map, rooms),
+    effects: map.encounterState?.effects ?? [],
+    suppressAllForPlacement: candidateId => {
+      const candidate = map.placements.find(entry => entry.id === candidateId)
+      const candidateSheet = candidate ? sheetForPlacement(candidate, sheets) : null
+      return Boolean(candidate && candidateSheet && effectiveRuntimeAbilityIds({
+        map,
+        placement: candidate,
+        sheet: candidateSheet,
+      }).includes('Klutz'))
+    },
+  })
+  const equipment = createMoveEquipmentContributionQueries({
+    placements: map.placements,
+    sheets: [
+      ...sheets.pokemon.entries().map(([slug, sheet]) => ({ kind: 'pokemon' as const, slug, sheet })),
+      ...sheets.trainer.entries().map(([slug, sheet]) => ({ kind: 'trainer' as const, slug, sheet })),
+    ],
+    itemEffects,
+    isTransformed: placementId => (
+      map.encounterState?.abilityTransformations?.entries.some(snapshot => (
+        snapshot.placementId === placementId && snapshot.kind === 'transformation'
+      )) === true
+    ),
+  })
   const validSymbiosisItemBindingIds = new Set(map.placements.flatMap((placement) => {
     const sheet = sheetForPlacement(placement, sheets)
     return sheet
@@ -1039,69 +1077,108 @@ const buildMovementSnapshots = (
     const clearance = activeModes.some(mode => mode.mode === 'shadow-melded')
       ? 1
       : Math.max(1, Math.ceil(getClearanceValue(token) * sizeScale))
-    let movementBaseSpeeds = { ...(token.movementCapabilities ?? {}) }
-    if (physicalPowerLoad?.speedCombatStagePenalty) {
-      const authoredSpeedStage = clampCombatStage(token.combatStages.spd)
-      const loadedSpeedStage = clampCombatStage(
-        authoredSpeedStage + physicalPowerLoad.speedCombatStagePenalty,
-      )
-      const movementDelta = speedCombatStageMovementDelta(loadedSpeedStage)
-        - speedCombatStageMovementDelta(authoredSpeedStage)
-      if (movementDelta !== 0) {
+    const projectMovementForEnvironment = (
+      environmentIds: ReadonlySet<'ice-or-deep-snow' | 'fully-submerged'>,
+    ): EffectiveMovementProfile => {
+      let movementBaseSpeeds = { ...(token.movementCapabilities ?? {}) }
+      for (const [capability, value] of Object.entries(movementBaseSpeeds)) {
+        if (value === undefined) continue
+        const resolution = equipment.metric({
+          placementId: placement.id,
+          metric: 'capability-value',
+          targetId: capability,
+          base: value,
+          ...(environmentIds.size === 0 ? {} : { facts: { environmentIds } }),
+        })
+        if (resolution) movementBaseSpeeds[capability as keyof MovementCapabilitySpeeds] = Math.max(0, resolution.final)
+      }
+      if (physicalPowerLoad?.speedCombatStagePenalty) {
+        const authoredSpeedStage = clampCombatStage(token.combatStages.spd)
+        const loadedSpeedStage = clampCombatStage(
+          authoredSpeedStage + physicalPowerLoad.speedCombatStagePenalty,
+        )
+        const movementDelta = speedCombatStageMovementDelta(loadedSpeedStage)
+          - speedCombatStageMovementDelta(authoredSpeedStage)
+        if (movementDelta !== 0) {
+          movementBaseSpeeds = Object.fromEntries(Object.entries(movementBaseSpeeds).map(([key, value]) => [
+            key,
+            value === undefined || value <= 0
+              ? value
+              : Math.max(value < 2 ? value : 2, value + movementDelta),
+          ])) as MovementCapabilitySpeeds
+        }
+      }
+      // AA-projected Slowed is introduced after the spawn base. Apply that new
+      // condition once before generic encounter movement overlays.
+      if (conditionSlowsMovement(token.conditions)
+        && (token.transformation !== undefined || !conditionSlowsMovement(nativeToken?.conditions))) {
         movementBaseSpeeds = Object.fromEntries(Object.entries(movementBaseSpeeds).map(([key, value]) => [
           key,
-          value === undefined || value <= 0
-            ? value
-            : Math.max(value < 2 ? value : 2, value + movementDelta),
+          conditionAdjustedMovementCapability(key, value, ['Slowed']),
         ])) as MovementCapabilitySpeeds
       }
-    }
-    // AA-projected Slowed is introduced after the spawn base. Apply that new
-    // condition once before generic encounter movement overlays.
-    if (conditionSlowsMovement(token.conditions)
-      && (token.transformation !== undefined || !conditionSlowsMovement(nativeToken?.conditions))) {
-      movementBaseSpeeds = Object.fromEntries(Object.entries(movementBaseSpeeds).map(([key, value]) => [
-        key,
-        conditionAdjustedMovementCapability(key, value, ['Slowed']),
-      ])) as MovementCapabilitySpeeds
-    }
-    let movement = projectEffectiveMovement({
-      sheetCapabilities: movementBaseSpeeds,
-      sheetTraits: token.movementTraits,
-      sheetConditions: token.conditions,
-      encounterEffects: map.encounterState?.effects,
-      target: {
-        placementId: placement.id,
-        ...(placement.sideId === undefined ? {} : { sideId: placement.sideId }),
-        position: placement.position,
-        base,
-        clearance,
-      },
-    })
-    // A later grant/set is not allowed to bypass effective Shift blockers.
-    // Retain owned keys at zero so blocking is distinct from suppression.
-    if (conditionBlocksShiftMovement(token.conditions)) {
-      const blockedSpeeds = Object.fromEntries(Object.entries(movement.speeds).map(([key, value]) => [
-        key,
-        ([...SHIFT_MOVEMENT_CAPABILITY_KEYS, 'teleporter'] as readonly string[]).includes(key)
-          && value !== undefined ? 0 : value,
-      ])) as MovementCapabilitySpeeds
-      const synchronized = projectEffectiveMovement({
-        sheetCapabilities: blockedSpeeds,
-        sheetTraits: movement.traits,
+      let projected = projectEffectiveMovement({
+        sheetCapabilities: movementBaseSpeeds,
+        sheetTraits: token.movementTraits,
         sheetConditions: token.conditions,
-        encounterEffects: [],
-        target: { placementId: placement.id },
+        encounterEffects: map.encounterState?.effects,
+        target: {
+          placementId: placement.id,
+          ...(placement.sideId === undefined ? {} : { sideId: placement.sideId }),
+          position: placement.position,
+          base,
+          clearance,
+        },
       })
-      movement = {
-        ...synchronized,
-        state: movement.state,
-        sourceEffectIds: movement.sourceEffectIds,
+      // A later grant/set is not allowed to bypass effective Shift blockers.
+      // Retain owned keys at zero so blocking is distinct from suppression.
+      if (conditionBlocksShiftMovement(token.conditions)) {
+        const blockedSpeeds = Object.fromEntries(Object.entries(projected.speeds).map(([key, value]) => [
+          key,
+          ([...SHIFT_MOVEMENT_CAPABILITY_KEYS, 'teleporter'] as readonly string[]).includes(key)
+            && value !== undefined ? 0 : value,
+        ])) as MovementCapabilitySpeeds
+        const synchronized = projectEffectiveMovement({
+          sheetCapabilities: blockedSpeeds,
+          sheetTraits: projected.traits,
+          sheetConditions: token.conditions,
+          encounterEffects: [],
+          target: { placementId: placement.id },
+        })
+        projected = {
+          ...synchronized,
+          state: projected.state,
+          sourceEffectIds: projected.sourceEffectIds,
+        }
       }
+      return projected
     }
-    const movementCapabilities = { ...movement.speeds }
-    const jump = { ...movement.traits.jump }
-    const phasing = movement.traits.phasing
+    const defaultMovement = projectMovementForEnvironment(new Set())
+    const iceMovement = projectMovementForEnvironment(new Set(['ice-or-deep-snow']))
+    const submergedMovement = projectMovementForEnvironment(new Set(['fully-submerged']))
+    const combinedMovement = projectMovementForEnvironment(new Set([
+      'ice-or-deep-snow', 'fully-submerged',
+    ]))
+    const movementCapabilities = { ...defaultMovement.speeds }
+    const equipmentMovementCapabilities = {
+      default: movementCapabilities,
+      iceOrDeepSnow: { ...iceMovement.speeds },
+      fullySubmerged: { ...submergedMovement.speeds },
+      iceOrDeepSnowAndFullySubmerged: { ...combinedMovement.speeds },
+      pathfinding: Object.fromEntries([...new Set([
+        ...Object.keys(defaultMovement.speeds),
+        ...Object.keys(iceMovement.speeds),
+        ...Object.keys(submergedMovement.speeds),
+        ...Object.keys(combinedMovement.speeds),
+      ])].map((key) => {
+        const values = [defaultMovement, iceMovement, submergedMovement, combinedMovement]
+          .map(profile => profile.speeds[key as keyof MovementCapabilitySpeeds])
+          .filter((value): value is number => value !== undefined)
+        return [key, values.length === 0 ? undefined : Math.max(...values)]
+      })) as MovementCapabilitySpeeds,
+    }
+    const jump = { ...defaultMovement.traits.jump }
+    const phasing = defaultMovement.traits.phasing
 
     placements.push({
       id: placement.id,
@@ -1114,7 +1191,7 @@ const buildMovementSnapshots = (
       effectiveAbilityIds,
       effectiveCapabilityIds: effectiveInstances.map(instance => instance.canonicalId),
       effectiveCapabilityInstanceIds: [...effectiveCapabilityInstanceIds],
-      equippedItemIds: authoritativeEquippedItemReferences(placement, sheet).map(reference => reference.canonicalItemId),
+      equipmentMovementCapabilities,
       naturewalkTerrains: effectiveInstances.flatMap(instance => (
         instance.canonicalId === 'Naturewalk' && instance.parameters.kind === 'terrains'
           ? [...instance.parameters.terrains] : []
@@ -1131,11 +1208,11 @@ const buildMovementSnapshots = (
         jump,
       },
       movementProfile: {
-        ...movement,
+        ...defaultMovement,
         speeds: movementCapabilities,
-        traits: { ...movement.traits, phasing, intangible, jump },
+        traits: { ...defaultMovement.traits, phasing, intangible, jump },
         ...(activeModes.some(mode => mode.mode === 'inside-machine') ? {
-          state: { ...movement.state, semiInvulnerable: 'carried' },
+          state: { ...defaultMovement.state, semiInvulnerable: 'carried' },
         } : {}),
       },
     })
@@ -1275,6 +1352,65 @@ const resolvedCapabilities = (
   available: capabilityList(mover.movementCapabilities),
   used: capabilityList(mover.movementCapabilities, usedKeys),
 })
+
+const movementPathfindingSnapshot = (
+  mover: MovementPlacementSnapshot,
+): MovementPlacementSnapshot => ({
+  ...mover,
+  movementCapabilities: mover.equipmentMovementCapabilities.pathfinding,
+})
+
+const routeTouchesVoxelTags = (input: {
+  readonly map: TabletopMap
+  readonly path: readonly GridAnchor[]
+  readonly mover: MovementPlacementSnapshot
+  readonly matches: (tags: ReadonlySet<string>) => boolean
+}): boolean => input.path.some(anchor => input.map.voxels.some((voxel) => {
+  if (voxel.x < anchor.x || voxel.x >= anchor.x + input.mover.base
+    || voxel.z < anchor.z || voxel.z >= anchor.z + input.mover.base
+    || Math.abs(voxel.y - anchor.y) > 1) return false
+  const material = getVoxelMaterialDefinition(voxel)
+  const tags = new Set([
+    ...(voxel.tags ?? []),
+    ...(material.tags ?? []),
+    voxel.materialId,
+  ].map(tag => tag.trim().toLocaleLowerCase('en-US')))
+  return input.matches(tags)
+}))
+
+const movementSnapshotForRoute = (input: {
+  readonly map: TabletopMap
+  readonly mover: MovementPlacementSnapshot
+  readonly pathResult: Pick<MovementPathResult, 'path' | 'capabilityKeys'>
+}): MovementPlacementSnapshot => {
+  const path = input.pathResult.path ?? []
+  const iceOrDeepSnow = input.pathResult.capabilityKeys.includes('overland')
+    && routeTouchesVoxelTags({
+      map: input.map,
+      path,
+      mover: input.mover,
+      matches: tags => [...tags].some(tag => /^(?:ice|snow|deep[- _]snow)$/u.test(tag)),
+    })
+  const fullySubmerged = input.pathResult.capabilityKeys.includes('swim')
+    && routeTouchesVoxelTags({
+      map: input.map,
+      path,
+      mover: input.mover,
+      matches: tags => tags.has('water') && (tags.has('deep') || tags.has('deep_water')),
+    })
+  const movementCapabilities = iceOrDeepSnow && fullySubmerged
+    ? input.mover.equipmentMovementCapabilities.iceOrDeepSnowAndFullySubmerged
+    : iceOrDeepSnow
+      ? input.mover.equipmentMovementCapabilities.iceOrDeepSnow
+      : fullySubmerged
+        ? input.mover.equipmentMovementCapabilities.fullySubmerged
+        : input.mover.equipmentMovementCapabilities.default
+  return {
+    ...input.mover,
+    movementCapabilities,
+    movementProfile: { ...input.mover.movementProfile, speeds: movementCapabilities },
+  }
+}
 
 const terrainSnapshot = (terrain: MovementAnchorTerrain): AuthoritativeMovementTerrain => ({
   requirements: [...terrain.requirements],
@@ -1611,7 +1747,7 @@ const resolvePreparedPassMovement = (
     }
 
     const pathResult = findMovementPathForPokemon({
-      pokemon: input.mover,
+      pokemon: movementPathfindingSnapshot(input.mover),
       start: input.origin,
       goal: candidate.position,
       // Pass treats crossed combatants as traversable; endpoint occupancy was
@@ -1622,10 +1758,15 @@ const resolvePreparedPassMovement = (
       groundLevelY: input.groundLevelY,
       allowedDirections: [direction],
     })
-    const capabilities = resolvedCapabilities(input.mover, pathResult.capabilityKeys)
+    const routeMover = movementSnapshotForRoute({
+      map: input.map,
+      mover: input.mover,
+      pathResult,
+    })
+    const capabilities = resolvedCapabilities(routeMover, pathResult.capabilityKeys)
     const capabilityLimit = loadAdjustedCapabilityLimit(
-      pathResult.movementLimit,
-      input.mover,
+      mixedMovementCapabilityLimit(routeMover.movementCapabilities, pathResult.capabilityKeys),
+      routeMover,
       input.map.initiative?.round,
     )
     const resolvedEffectiveLimit = capabilityLimit === null
@@ -1688,7 +1829,7 @@ const resolvePreparedPassMovement = (
     }
 
     const triggeringSteps = pathResult.steps.map(step => (
-      triggeringStep(step, input.mover, input.placements, pathResult.steps.length)
+      triggeringStep(step, routeMover, input.placements, pathResult.steps.length)
     ))
     return deepFreeze({
       ok: true,
@@ -1703,7 +1844,7 @@ const resolvePreparedPassMovement = (
       capabilityLimit,
       effectiveLimit: resolvedEffectiveLimit,
       capabilities,
-      movementProfile: input.mover.movementProfile,
+      movementProfile: routeMover.movementProfile,
       footprint: { ...input.footprint },
       occupancy,
       collision: null,
@@ -2137,7 +2278,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       }).includes('Line Charge')
     : false
   const pathResult = findMovementPathForPokemon({
-    pokemon: traversalMover,
+    pokemon: movementPathfindingSnapshot(traversalMover),
     start: origin,
     goal: destination,
     pokemons: intangibleTraversal ? [] : endpointPlacements,
@@ -2153,23 +2294,24 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     } : {}),
     ...(policy.kind === 'gm-override' ? { costLimit: policy.maximumCost } : {}),
   })
-  const pathCapabilities = resolvedCapabilities(mover, pathResult.capabilityKeys)
-  const snowBootsPenalty = mover.equippedItemIds.includes('snow-boots')
-    && pathResult.capabilityKeys.includes('overland')
-    && (pathResult.path ?? []).some(anchor => input.map.voxels.some((voxel) => {
-      if (voxel.x < anchor.x || voxel.x >= anchor.x + traversalMover.base
-        || voxel.z < anchor.z || voxel.z >= anchor.z + traversalMover.base
-        || Math.abs(voxel.y - anchor.y) > 1) return false
-      const material = getVoxelMaterialDefinition(voxel)
-      return [...(voxel.tags ?? []), ...(material.tags ?? []), voxel.materialId]
-        .some(tag => /^(?:ice|snow|deep[- ]snow)$/i.test(tag.trim()))
-    }))
-  const terrainCapabilityLimit = pathResult.movementLimit === null
-    ? null
-    : Math.max(0, pathResult.movementLimit - (snowBootsPenalty ? 1 : 0))
+  const routeTraversalMover = movementSnapshotForRoute({
+    map: input.map,
+    mover: traversalMover,
+    pathResult,
+  })
+  const routeMover: MovementPlacementSnapshot = {
+    ...mover,
+    movementCapabilities: routeTraversalMover.movementCapabilities,
+    movementProfile: routeTraversalMover.movementProfile,
+  }
+  const pathCapabilities = resolvedCapabilities(routeMover, pathResult.capabilityKeys)
+  const terrainCapabilityLimit = mixedMovementCapabilityLimit(
+    routeMover.movementCapabilities,
+    pathResult.capabilityKeys,
+  )
   const capabilityLimit = policy.kind === 'gm-override'
     ? terrainCapabilityLimit
-    : loadAdjustedCapabilityLimit(terrainCapabilityLimit, mover, input.map.initiative?.round)
+    : loadAdjustedCapabilityLimit(terrainCapabilityLimit, routeMover, input.map.initiative?.round)
   const resolvedEffectiveLimit = capabilityLimit === null
     ? null
     : effectiveLimit(capabilityLimit, policy)
@@ -2266,7 +2408,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   }
 
   const triggeringSteps = pathResult.steps.map(step => (
-    triggeringStep(step, mover, placements, pathResult.steps.length)
+    triggeringStep(step, routeMover, placements, pathResult.steps.length)
   ))
 
   const result: AuthoritativeMovementSuccess = deepFreeze({
@@ -2282,7 +2424,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     capabilityLimit,
     effectiveLimit: resolvedEffectiveLimit,
     capabilities: pathCapabilities,
-    movementProfile: mover.movementProfile,
+    movementProfile: routeMover.movementProfile,
     footprint,
     occupancy,
     collision: null,
@@ -2290,7 +2432,12 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     consultedPlacementIds,
     sheetReads: sheetReads.map(read => ({ ...read })),
   })
-  return withLinkedCompanions(enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements }))
+  return withLinkedCompanions(enforceMagnetPullMovementConstraints({
+    map: input.map,
+    result,
+    mover: routeMover,
+    placements,
+  }))
 }
 
 const DISPLACEMENT_MOVEMENT_MODE_SET = new Set<string>(

@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-067",
+  "status": "current-semantics",
+  "contract": "inventory-history-v1",
+  "authority": {
+    "model": "read-only projection of terminal authoritative operation journals",
+    "mutationAuthority": false,
+    "backfill": "existing valid terminal journals are immediately readable; no lossy duplicate history table is required",
+    "atomicity": "a receipt can exist only when its authoritative operation journal committed in the same transaction as the mutation",
+    "retryDeduplication": "one deterministic private source key per terminal operation or settlement line",
+    "delegatedDeduplication": {
+      "inventoryActionToEquipmentOperation": "the equipment journal supplies the only visible equipment fact",
+      "guidedRequestToItemOperation": "an item-backed guided request decorates the item-operation fact and is not emitted separately",
+      "multiDocumentTransfer": "one inventory-action declaration supplies one transfer fact regardless of affected document count",
+      "checkoutReplay": "the unique stored checkout operation supplies its purchased-line facts once"
+    },
+    "malformedOrConflictingSource": "fail closed without a partial history projection"
+  },
+  "categories": [
+    "purchase",
+    "transfer",
+    "item-use",
+    "equipment-change",
+    "guided-outcome",
+    "settlement-award",
+    "discard",
+    "gm-correction"
+  ],
+  "sources": [
+    "accepted shop checkout operations",
+    "accepted unified inventory actions",
+    "accepted equipment operations",
+    "accepted and corrected item operations",
+    "accepted guided adjudication requests",
+    "future authoritative settlement award lines through a private deterministic source key"
+  ],
+  "projection": {
+    "endpoint": "GET /api/inventory/history",
+    "scopes": [
+      "exact Trainer inventory",
+      "exact shared inventory"
+    ],
+    "defaultLimit": 20,
+    "maximumFacts": 50,
+    "maximumDetailsPerFact": 8,
+    "order": "occurredAt descending with a private deterministic source-key tie break",
+    "safeFields": [
+      "category",
+      "accepted timestamp",
+      "player-readable headline",
+      "safe item label and accepted quantity",
+      "generic source and destination custody labels",
+      "audience-filtered outcome and consequence labels"
+    ],
+    "forbiddenVisibleFields": [
+      "operation or request ID",
+      "stable inventory row ID",
+      "inventory or equipment instance ID",
+      "Profile ID",
+      "revision",
+      "command or definition hash",
+      "raw command, plan, evidence, provenance, or recovery payload",
+      "private notes or configuration JSON",
+      "private ownership or delegation evidence",
+      "GM-only receipt facts in player projections"
+    ],
+    "trainerAuthorization": "GM or the exact selected Profile controlling the Trainer",
+    "sharedAuthorization": "authenticated GM or player; owner-only and GM-only item facts remain audience-filtered",
+    "emptyHistory": "returns a valid empty bounded projection",
+    "sourceTruncation": "the projection marks truncated instead of silently implying completeness"
+  },
+  "interaction": {
+    "selectedMockup": ".pi/artifacts/ui-mockups/inventory-receipts-history/v005.png",
+    "selectedMockupScore": "10/10",
+    "hierarchy": "inventory remains primary at approximately 60 percent; quieter accepted activity remains secondary at approximately 40 percent",
+    "refresh": "explicit 44-pixel Refresh history control retains accepted receipts while loading or on transient failure",
+    "responsive": "inventory precedes activity in one-column reflow without page-level horizontal overflow",
+    "minimumControlHeightPx": 44,
+    "nonColourCues": [
+      "category text",
+      "category icon",
+      "headline and consequence copy",
+      "machine-readable time element",
+      "loading, empty, error, and truncation text"
+    ],
+    "optimisticMutation": false
+  },
+  "evidence": {
+    "tests": [
+      "tests/shared/itemAutomationInventoryHistory.test.ts",
+      "tests/server/inventoryHistoryProjection.test.ts",
+      "tests/server/loadInventoryHistory.test.ts",
+      "tests/server/inventoryHistoryRoute.test.ts",
+      "tests/composables/useInventoryHistory.test.ts",
+      "tests/components/inventoryHistoryPanel.test.ts",
+      "tests/e2e/inventory-history.spec.ts"
+    ],
+    "mockup": ".pi/artifacts/ui-mockups/inventory-receipts-history/v005.png"
+  }
+}

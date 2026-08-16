@@ -3,13 +3,9 @@ import type {
   TrainerStatEditableField,
 } from '~/composables/sheets/useTrainerSheetRowActions'
 import type { ResolvedTrainerStat } from '~/utils/sheets/trainerDerived'
-import type {
-  TrainerSheet,
-  TrainerStatKey,
-} from '~/types/trainerSheet'
+import type { TrainerStatKey } from '~/types/trainerSheet'
 
 defineProps<{
-  sheet: TrainerSheet
   stats: readonly ResolvedTrainerStat[]
   statPointsLeft: number
   statPointsSpent: number
@@ -18,8 +14,6 @@ defineProps<{
 
 const emit = defineEmits<{
   setStatField: [key: TrainerStatKey, field: TrainerStatEditableField, value: number | undefined]
-  addClass: []
-  removeClass: [index: number]
 }>()
 
 const forwardSetStatField = (
@@ -37,12 +31,6 @@ const forwardSetStatField = (
       :stat-points-spent="statPointsSpent"
       :stat-points-budget="statPointsBudget"
       @set-stat-field="forwardSetStatField"
-    />
-
-    <TrainerProgressPanel
-      :sheet="sheet"
-      @add-class="emit('addClass')"
-      @remove-class="emit('removeClass', $event)"
     />
   </section>
 </template>

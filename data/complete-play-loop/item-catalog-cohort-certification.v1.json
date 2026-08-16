@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-092",
+  "status": "implemented",
+  "canonicalItemCount": 348,
+  "cohortCount": 18,
+  "maximumMembersPerCohort": 32,
+  "runtimeProseParsing": false,
+  "assignment": {
+    "exactlyOneCohortPerCanonicalRow": true,
+    "unknownCanonicalIdentityFails": true,
+    "duplicateCanonicalIdentityFails": true,
+    "recordOrEffectFingerprintDriftFails": true,
+    "cohortDecisionGrantsRuntimeMechanics": false
+  },
+  "requiredEvidencePerCohort": [
+    "source-fingerprint",
+    "provider-requirements",
+    "implementation-state-decision",
+    "executable-or-explicit-fail-closed-evidence",
+    "ui-projection-evidence",
+    "recovery-evidence"
+  ],
+  "implementationStateCounts": {
+    "native": 204,
+    "guided": 40,
+    "passive": 104,
+    "blocked": 0
+  },
+  "p8093Remediation": {
+    "captureRows": 25,
+    "interpretiveToolRows": 34,
+    "canonicalDataDefectRows": 1,
+    "closedRows": 60,
+    "remainingBlockedRows": 0,
+    "blockedRowsMayPassFinalAcceptance": false
+  },
+  "failClosed": [
+    "unknown-field",
+    "unsafe-evidence-path",
+    "malformed-fingerprint",
+    "cohort-over-32-members",
+    "duplicate-cohort-or-canonical-identity",
+    "non-contiguous-sequence",
+    "divergent-counts",
+    "missing-source-executable-ui-or-recovery-evidence",
+    "blocked-decision-without-remediation",
+    "non-blocked-decision-with-remediation",
+    "canonical-catalog-drift",
+    "stale-generated-registry"
+  ],
+  "sources": {
+    "reviewedPolicy": {
+      "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+      "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+    },
+    "generator": {
+      "path": "scripts/generate_complete_play_loop_item_catalog_cohorts.py",
+      "sha256": "edf66154cd76aede7f461feb810b82c5deb1d5d9e8f1ba82b21295074c4c75a0"
+    },
+    "generatedRegistry": {
+      "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "sha256": "be82c8f9975056f894bf9b8cf78780869afcd71ef7f2bccfbe0cae88adaac1a0"
+    },
+    "strictContract": {
+      "path": "shared/itemAutomation/catalogCohorts.ts",
+      "sha256": "ec5ca1dd55f1d680555af7d9386e862f1cc00f8f1ec97c8bf328c2df12b167b2"
+    },
+    "serverRegistry": {
+      "path": "server/domain/itemAutomation/catalogCohortRegistry.ts",
+      "sha256": "350512b597453ccd90fc48dd67b586b35d9efebe9ede892b3111fb7bea9c9f54"
+    },
+    "contractTests": {
+      "path": "tests/shared/itemCatalogCohorts.test.ts",
+      "sha256": "a372d30e210e97064623bc471e2a6a74202c2acbc89fd9ea916f43a1f7107cc9"
+    },
+    "registryTests": {
+      "path": "tests/server/itemCatalogCohortRegistry.test.ts",
+      "sha256": "57ef83bef122693fbbd540d0d0b42e0993589b987c40bb6a9651cc0fc7331b3c"
+    },
+    "documentation": {
+      "path": "docs/canonical-item-catalog-cohorts.md",
+      "sha256": "e9dbaae9f1041b5da2e030010cdd0237f29bdd3255252493962c087793cdf394"
+    },
+    "completionRubric": {
+      "path": "data/complete-play-loop/completion-rubric.v1.json",
+      "sha256": "7985faf3503eb07f57fc9bb25e9c4435974e8d0dd122dde93542e83c93eb508a"
+    }
+  },
+  "validation": {
+    "generatorCheck": "passed",
+    "focusedTests": "closure suite passed",
+    "typecheck": "passed",
+    "eslint": "passed",
+    "gitDiffCheck": "passed"
+  }
+}

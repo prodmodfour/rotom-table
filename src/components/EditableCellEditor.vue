@@ -16,18 +16,22 @@ const props = withDefaults(defineProps<{
   allowEmptyOption?: boolean
   min?: number
   max?: number
+  accessibleLabel?: string
 }>(), {
   placeholder: '',
   options: () => [],
   allowEmptyOption: true,
   min: undefined,
   max: undefined,
+  accessibleLabel: undefined,
 })
+
+type EditableCellCommitSource = 'blur' | 'change' | 'keyboard'
 
 const emit = defineEmits<{
   (e: 'input'): void
-  (e: 'commit'): void
-  (e: 'cancel'): void
+  (e: 'commit', source: EditableCellCommitSource): void
+  (e: 'cancel', source: 'keyboard'): void
 }>()
 
 const inputEl = ref<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>(null)
@@ -55,7 +59,12 @@ const updateDraftFromEvent = (event: Event) => {
 
 const commitSelectFromEvent = (event: Event) => {
   updateDraftFromEvent(event)
-  emit('commit')
+  emit('commit', 'change')
+}
+
+const commitSelectFromBlur = (event: Event) => {
+  updateDraftFromEvent(event)
+  emit('commit', 'blur')
 }
 
 const onInput = (event: Event) => {
@@ -66,19 +75,19 @@ const onInput = (event: Event) => {
 const onKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     event.preventDefault()
-    emit('cancel')
+    emit('cancel', 'keyboard')
     return
   }
 
   if (event.key === 'Enter' && props.type !== 'textarea') {
     event.preventDefault()
-    emit('commit')
+    emit('commit', 'keyboard')
     return
   }
 
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && props.type === 'textarea') {
     event.preventDefault()
-    emit('commit')
+    emit('commit', 'keyboard')
   }
 }
 
@@ -93,8 +102,9 @@ defineExpose({ focusInput })
     ref="inputEl"
     :value="draft"
     class="editable-cell__input editable-cell__input--select"
+    :aria-label="accessibleLabel"
     @change="commitSelectFromEvent"
-    @blur="commitSelectFromEvent"
+    @blur="commitSelectFromBlur"
     @keydown="onKeydown"
   >
     <option v-if="allowEmptyOption" value="">{{ placeholder || '—' }}</option>
@@ -112,8 +122,9 @@ defineExpose({ focusInput })
     rows="2"
     class="editable-cell__input editable-cell__input--textarea"
     :placeholder="placeholder"
+    :aria-label="accessibleLabel"
     @input="onInput"
-    @blur="emit('commit')"
+    @blur="emit('commit', 'blur')"
     @keydown="onKeydown"
   />
 
@@ -126,10 +137,11 @@ defineExpose({ focusInput })
     :max="type === 'number' ? max : undefined"
     :placeholder="placeholder"
     :list="textSuggestionListId"
+    :aria-label="accessibleLabel"
     autocomplete="off"
     class="editable-cell__input"
     @input="onInput"
-    @blur="emit('commit')"
+    @blur="emit('commit', 'blur')"
     @keydown="onKeydown"
   />
   <datalist v-if="textSuggestionListId" :id="textSuggestionListId">
@@ -144,6 +156,7 @@ defineExpose({ focusInput })
 
 <style scoped>
 .editable-cell__input {
+  min-height: 2.75rem;
   font: inherit;
   color: inherit;
   width: 100%;
@@ -154,6 +167,13 @@ defineExpose({ focusInput })
   padding: 0.1em 0.35em;
   outline: none;
   box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
+}
+
+.editable-cell__input:focus-visible {
+  border-color: var(--rt-focus, var(--accent));
+  outline: 2px solid var(--rt-focus, var(--accent));
+  outline-offset: 2px;
+  box-shadow: none;
 }
 
 .editable-cell__input--textarea {

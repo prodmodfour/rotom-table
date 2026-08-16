@@ -24,6 +24,14 @@ import {
   createItemChoiceTargetSheet,
   createItemChoiceTrainerSheet,
 } from '../fixtures/moveAutomation/itemChoices'
+import {
+  capabilityEncounterEffectFixture,
+  conditionEncounterEffectFixture,
+} from '../fixtures/moveAutomation/encounterEffects'
+import {
+  ITEM_DIGESTION_EFFECT_TAG,
+  ITEM_DIGESTION_HEAL_CAPABILITY_PREFIX,
+} from '../../server/domain/itemAutomation/digestionBuffTrade'
 
 const snapshotFixture = (): LiveTableSnapshot => {
   const map = {
@@ -95,6 +103,88 @@ const acceptedHpChange = () => {
 }
 
 describe('map-backed encounter workspace projection', () => {
+  it('keeps private item command authority out of workspace offers until declaration', () => {
+    const snapshot = snapshotFixture()
+    const workspace = buildMapBackedEncounterWorkspace({
+      snapshot,
+      options: { audience: 'gm', controlledParticipantIds: [ITEM_CHOICE_ACTOR_ID] },
+    })
+    const item = workspace.offers.find(offer => offer.source.sourceKind === 'item' && offer.source.canonicalId === 'Potion')
+    expect(item).toBeDefined()
+    expect(item).not.toHaveProperty('itemCommand')
+    const publicSnapshot = {
+      ...snapshot,
+      encounterPresentation: { ...snapshot.encounterPresentation, offers: [] },
+    }
+    const publicWorkspace = buildMapBackedEncounterWorkspace({
+      snapshot: publicSnapshot,
+      options: { audience: 'public', controlledParticipantIds: [] },
+    })
+    expect(publicWorkspace.offers).toEqual([])
+  })
+
+  it('projects authoritative Feature AP drains instead of stale legacy AP-left fields', () => {
+    const snapshot = snapshotFixture()
+    snapshot.trainerSheets[0] = {
+      ...snapshot.trainerSheets[0]!,
+      ap: { max: 7, left: 99 },
+      featureApState: {
+        schemaVersion: 1,
+        max: 7,
+        spent: 0,
+        bindings: [],
+        drains: [{
+          drainId: 'item-ap-drain:test', sourceInstanceId: 'item:first-aid',
+          canonicalId: 'First Aid Kit', amount: 2, recovery: 'extended-rest', createdAt: 100,
+        }],
+        temporary: [],
+      },
+    }
+    const workspace = buildMapBackedEncounterWorkspace({
+      snapshot,
+      options: { audience: 'gm', controlledParticipantIds: [ITEM_CHOICE_ACTOR_ID] },
+    })
+    expect(workspace.participants.find(participant => participant.participantId === ITEM_CHOICE_ACTOR_ID)?.resources)
+      .toContainEqual({ id: 'trainer:ap', label: 'AP', current: 5, maximum: 7 })
+  })
+
+  it('uses current HP/condition authority rather than immutable KO history after revival', () => {
+    const snapshot = snapshotFixture()
+    snapshot.map.encounterState = {
+      ...snapshot.map.encounterState!,
+      history: {
+        ...snapshot.map.encounterState!.history,
+        faintedPlacementIds: [ITEM_CHOICE_TARGET_ID],
+      },
+    }
+    snapshot.pokemonSheets[0] = {
+      ...snapshot.pokemonSheets[0]!,
+      combat: { ...snapshot.pokemonSheets[0]!.combat, currentHp: 20, conditions: [] },
+    }
+    const workspace = buildMapBackedEncounterWorkspace({
+      snapshot,
+      options: { audience: 'gm', controlledParticipantIds: [ITEM_CHOICE_ACTOR_ID, ITEM_CHOICE_TARGET_ID] },
+    })
+    expect(workspace.participants.find(value => value.participantId === ITEM_CHOICE_TARGET_ID)?.fainted).toBe(false)
+    expect(workspace.turn.entries.find(value => value.participantId === ITEM_CHOICE_TARGET_ID)?.state).not.toBe('fainted')
+    expect(snapshot.map.encounterState?.history.faintedPlacementIds).toEqual([ITEM_CHOICE_TARGET_ID])
+  })
+
+  it('removes hidden participants from server-authored item target options', () => {
+    const snapshot = snapshotFixture()
+    const workspace = projectMapBackedEncounterWorkspace({
+      snapshot,
+      policy: {
+        audience: 'player-owner',
+        visibleParticipantIds: [ITEM_CHOICE_ACTOR_ID],
+        controlledParticipantIds: [ITEM_CHOICE_ACTOR_ID],
+      },
+    })
+    const potion = workspace.offers.find(offer => offer.source.canonicalId === 'Potion')
+    expect(potion?.selectionOptions?.some(option => option.value === ITEM_CHOICE_TARGET_ID)).toBe(false)
+    expect(JSON.stringify(potion)).not.toContain('Item Choice Target')
+  })
+
   it('adapts current map, sheets, sides, initiative, scene, environment, and presentation facts', () => {
     const snapshot = snapshotFixture()
     const workspace = buildMapBackedEncounterWorkspace({
@@ -169,6 +259,102 @@ describe('map-backed encounter workspace projection', () => {
     expect(publicView.participants.every(participant => participant.position === null && participant.footprint === null)).toBe(true)
     expect(publicView.sides.every(side => side.hiddenParticipantCount === null)).toBe(true)
     expect(diagnostic.viewer).toMatchObject({ audience: 'diagnostic', canUseDirector: true, canInspectDiagnostics: true })
+  })
+
+  it('projects authoritative duration summaries and opaque dismissal authority only to Director audiences', () => {
+    const base = snapshotFixture()
+    const targetTurns = {
+      ...conditionEncounterEffectFixture(),
+      id: 'private-effect-identity.turns',
+      source: {
+        operationId: 'private-operation-id', moveId: 'move.private-condition', placementId: ITEM_CHOICE_ACTOR_ID,
+      },
+      affected: { placementIds: [ITEM_CHOICE_TARGET_ID], sideIds: [], cells: [] },
+      duration: { kind: 'turns' as const, subject: 'target' as const, boundary: 'end' as const, remaining: 3 },
+    }
+    const dismissible = {
+      ...capabilityEncounterEffectFixture(),
+      id: 'private-effect-identity.dismissible',
+      source: {
+        operationId: 'another-private-operation', moveId: 'move.focus-stance', placementId: ITEM_CHOICE_ACTOR_ID,
+      },
+      affected: { placementIds: [ITEM_CHOICE_TARGET_ID], sideIds: [], cells: [] },
+      duration: { kind: 'explicit-dismissal' as const, remaining: null },
+    }
+    const campaignTime = {
+      ...conditionEncounterEffectFixture(),
+      id: 'private-effect-identity.campaign-time',
+      source: {
+        operationId: 'campaign-time-private-operation', moveId: 'item.daily', placementId: ITEM_CHOICE_ACTOR_ID,
+      },
+      affected: { placementIds: [ITEM_CHOICE_TARGET_ID], sideIds: [], cells: [] },
+      duration: {
+        kind: 'campaign-time' as const, remaining: null, startedAtCampaignMinute: 4_321,
+        expiresAtCampaignMinute: 7_201, durationMinutes: 2_880,
+      },
+    }
+    const digestion = {
+      ...capabilityEncounterEffectFixture(),
+      id: 'private-effect-identity.digestion',
+      source: { operationId: 'private-digestion-operation', moveId: 'item.leftovers', placementId: ITEM_CHOICE_TARGET_ID },
+      affected: { placementIds: [ITEM_CHOICE_TARGET_ID], sideIds: [], cells: [] },
+      duration: { kind: 'encounter' as const, remaining: null },
+      tags: [ITEM_DIGESTION_EFFECT_TAG, 'item-digestion-source:0123456789abcdef0123456789abcdef'],
+      payload: { capabilityId: `${ITEM_DIGESTION_HEAL_CAPABILITY_PREFIX}16`, action: 'grant' as const, value: 1 },
+      transferPolicy: 'retain' as const,
+    }
+    const snapshot: LiveTableSnapshot = {
+      ...base,
+      map: {
+        ...base.map,
+        encounterState: { ...base.map.encounterState!, effects: [targetTurns, dismissible, campaignTime, digestion] },
+      },
+    }
+    const visible = [ITEM_CHOICE_ACTOR_ID, ITEM_CHOICE_TARGET_ID]
+    const gm = projectMapBackedEncounterWorkspace({ snapshot, policy: { audience: 'gm' } })
+    const diagnostic = projectMapBackedEncounterWorkspace({ snapshot, policy: { audience: 'diagnostic' } })
+    const player = projectMapBackedEncounterWorkspace({
+      snapshot,
+      policy: {
+        audience: 'player-owner', visibleParticipantIds: visible,
+        controlledParticipantIds: [ITEM_CHOICE_ACTOR_ID],
+      },
+    })
+    const publicView = projectMapBackedEncounterWorkspace({
+      snapshot,
+      policy: { audience: 'public', visibleParticipantIds: visible },
+    })
+
+    expect(gm.activeEffects).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        label: 'Sleep condition', affectedLabel: 'Item Choice Target',
+        durationKind: 'turns', durationLabel: '3 target turns remaining',
+        dismissalRef: null, dismissible: false,
+      }),
+      expect.objectContaining({
+        label: 'Movement levitate', affectedLabel: 'Item Choice Target',
+        durationKind: 'explicit-dismissal', durationLabel: 'Until GM dismisses',
+        dismissalRef: expect.stringMatching(/^effect-ref:v1:[a-f0-9]{64}$/), dismissible: true,
+      }),
+      expect.objectContaining({
+        durationKind: 'campaign-time', durationLabel: 'Until campaign minute 7201',
+        dismissalRef: null, dismissible: false,
+      }),
+      expect.objectContaining({
+        label: 'Digestion Buff healing', affectedLabel: 'Item Choice Target',
+        durationKind: 'encounter', durationLabel: 'Until encounter ends',
+        dismissalRef: null, dismissible: false,
+      }),
+    ]))
+    expect(diagnostic.activeEffects).toEqual(gm.activeEffects)
+    expect(player).not.toHaveProperty('activeEffects')
+    expect(publicView).not.toHaveProperty('activeEffects')
+    const gmJson = JSON.stringify(gm.activeEffects)
+    expect(gmJson).not.toContain('private-effect-identity')
+    expect(gmJson).not.toContain('private-operation-id')
+    expect(gmJson).not.toContain('another-private-operation')
+    expect(JSON.stringify(player)).not.toContain('focus-stance')
+    expect(JSON.stringify(publicView)).not.toContain('focus-stance')
   })
 
   it('projects one private decision differently to GM, authorized responder, owner spectator, and public clients', () => {

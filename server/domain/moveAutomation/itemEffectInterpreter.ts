@@ -1028,7 +1028,9 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
       kind: 'digest-buff',
       reasonCode: input.operation.reasonCode,
       owner: destination.owner,
-      canonicalItemIds: payload.canonicalItemIds,
+      // Bind the exact authoritative stored identity now. The client may narrow
+      // eligibility, but it never supplies the identity that later mechanics use.
+      canonicalItemIds: [eligibleItemId],
       ...(payload.storageSlot === undefined ? {} : { storageSlot: payload.storageSlot }),
       ...(harvest ? { harvest } : {}),
       sourceMoveId: input.operation.source.id,
@@ -1215,6 +1217,9 @@ export const applyMoveItemEffectResultsToTrace = (input: {
         itemCount: result.itemCount,
         mutationCount: result.mutationIds.length,
         quantityEffects: reduced.flatMap(entry => entry.quantityEffects),
+        digestedCanonicalItemIds: [...new Set(reduced.flatMap(entry => (
+          entry.digestedCanonicalItemId === null ? [] : [entry.digestedCanonicalItemId]
+        )))],
         consumptionIds: [...new Set(reduced.flatMap(entry => (
           entry.consumptionId === null ? [] : [entry.consumptionId]
         )))],

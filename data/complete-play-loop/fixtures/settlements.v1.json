@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-010",
+  "fixtures": [
+    {
+      "id": "simple-trainer-duel",
+      "encounter": { "revision": 12, "lifecycle": "active", "pendingInteractions": 0 },
+      "rewards": { "experience": [{ "pokemonSlug": "fixture-pokemon", "amount": 10 }], "money": 500, "items": [] },
+      "cleanup": ["combat-stages", "encounter-frequency", "temporary-effects", "reservations"],
+      "persistent": ["hp", "injuries", "persistent-conditions", "inventory", "equipment"],
+      "attention": ["level-threshold-if-reached"],
+      "privacy": { "public": ["outcome", "cleanup-summary"], "owner": ["own-xp"], "gm": ["all-allocations", "notes"] },
+      "retry": "exact-terminal-result"
+    },
+    {
+      "id": "capture-team-overflow",
+      "encounter": { "revision": 19, "lifecycle": "active", "pendingInteractions": 0 },
+      "captures": [{ "captureOperationId": "fixture-capture", "trainerSlug": "fixture-trainer", "pokemonSlug": "fixture-capture-pokemon", "teamBefore": 6 }],
+      "expected": { "destinationDecision": "required", "captureDuplicated": false, "attentionKind": "team-overflow" },
+      "retry": "exact-terminal-result"
+    },
+    {
+      "id": "loot-heavy",
+      "encounter": { "revision": 24, "lifecycle": "active", "pendingInteractions": 0 },
+      "rewards": { "money": 3200, "items": [{ "canonicalItemId": "Potion", "quantity": 12 }, { "canonicalItemId": "Light Armor", "quantity": 1, "serialized": true }] },
+      "expected": { "unallocatedRewardsRemainPending": true, "stackMergeByCanonicalIdentity": true, "serializedIdentityPreserved": true },
+      "retry": "exact-terminal-result"
+    },
+    {
+      "id": "injury-heavy",
+      "encounter": { "revision": 31, "lifecycle": "active", "pendingInteractions": 0 },
+      "consequences": [{ "sheetSlug": "fixture-pokemon", "hp": 0, "injuries": 5, "conditions": ["Poisoned"] }],
+      "expected": { "persistentConsequencesPreserved": true, "treatmentAttention": true, "nextDayPreflightBlockerVisible": true },
+      "retry": "exact-terminal-result"
+    },
+    {
+      "id": "reconnect-during-settlement",
+      "encounter": { "revision": 40, "lifecycle": "active", "pendingInteractions": 0 },
+      "clients": ["gm-a", "gm-b", "player-owner"],
+      "expected": { "singleAcceptedCommit": true, "allClientsConverge": true, "privateRewardsRedacted": true, "uncertainClientCanQueryTerminalStatus": true },
+      "retry": "exact-terminal-result"
+    }
+  ]
+}

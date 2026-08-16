@@ -1,0 +1,2835 @@
+{
+  "schemaVersion": 1,
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "ruleEvidence": {
+    "usingItemsRecordSha256": "b28291192d6d5b498596316a5e642d486f6007087ab61fd9b58f2506d812c3f9",
+    "restorativeItemTiming": {
+      "otherTargetActionCost": "standard",
+      "otherTargetNextTurnForfeit": [
+        "standard",
+        "shift"
+      ],
+      "exceptionCanonicalEdgeId": "Medic Training",
+      "selfActionCost": "full",
+      "selfForfeit": false
+    },
+    "conditionCatalogSha256": "a3ddc1b832304df106d1e1587b3208a51b7806e5a764e773103b0f29da838fb0",
+    "loyaltyRecordSha256": "95cf2e2467ac266b285b011aac0622b52f1014ed8dfad36f42a8d1adb57e76d3",
+    "repulsiveMedicinePolicy": {
+      "items": [
+        "Energy Powder",
+        "Energy Root",
+        "Heal Powder",
+        "Revival Herb"
+      ],
+      "deterministicLoyaltyMutation": false,
+      "runtimeDisposition": "fail-closed-until-gm-attention-authority",
+      "reason": "Canonical Loyalty authority assigns persistent Repulsive Medicine consequences to GM judgment; native use may not silently omit that consequence."
+    },
+    "persistentAfflictionsRecordSha256": "6ac45922e6d35d90e6a62a5aa47d52f19318f62f6243e396ec5163c011e7746e",
+    "otherAfflictionsRecordSha256": "67ee4b0f939c0c3d110cf4d6c9661446fbfee70a0cb1fbd370385a4804ecbd3f",
+    "combatStagesRecordSha256": "02c83f25187daee76ae6b9c4c73cdca20ddee2dc302b318b4b3d1588a6c07545",
+    "xItemPolicy": {
+      "targetKind": "pokemon",
+      "directStageBounds": [
+        -6,
+        6
+      ],
+      "directStageDuration": "encounter-stage-state",
+      "directStageSwitchPolicy": "clear-on-switch-or-recall",
+      "direHit": {
+        "family": "critical-range",
+        "amount": 2,
+        "duration": "encounter",
+        "reapplication": "replace"
+      },
+      "guardSpec": {
+        "family": "move-stage-reduction-immunity",
+        "amount": 5,
+        "duration": "target-turns",
+        "reapplication": "refresh"
+      },
+      "temporarySwitchPolicy": "expire"
+    },
+    "revivalPolicy": {
+      "targetKind": "pokemon",
+      "requiresCondition": "Fainted",
+      "clearsCondition": "Fainted",
+      "fixedHpBasis": "absolute-resulting-hp",
+      "maximumRelativeBasis": "full-formula-maximum-hp",
+      "finalCap": "injury-adjusted-effective-maximum-hp",
+      "ordinaryHealingDistinct": true,
+      "zeroEffectiveMaximumPolicy": "unavailable"
+    },
+    "firstAidKitPolicy": {
+      "actorKind": "trainer",
+      "skillId": "medicineEd",
+      "dieSides": 6,
+      "timing": "extended",
+      "apCost": {
+        "mode": "drain",
+        "amount": 1,
+        "recovery": "extended-rest"
+      },
+      "healingBasis": "authoritative-skill-check-total",
+      "conditionIds": [
+        "Burned",
+        "Poisoned",
+        "Badly Poisoned",
+        "Paralysis"
+      ],
+      "reusable": true
+    },
+    "bandagePolicy": {
+      "canonicalId": "Bandages",
+      "naturalHealingRecordSha256": "7ac42082c1809abae1312661d9529cc9413ab8e34977c16dad09c9fe2e72140e",
+      "timing": "extended",
+      "durationMinutes": 360,
+      "tickMinutes": 30,
+      "healing": {
+        "basis": "full-formula-maximum-hp",
+        "numerator": 1,
+        "denominator": 8,
+        "minimum": 1,
+        "blockedAtInjuries": 5
+      },
+      "injuryAtCompletion": 1,
+      "obeyDailyInjuryLimit": true,
+      "stopOnHpLoss": true,
+      "consumptionPhase": "extended-action-completion"
+    },
+    "poulticePolicy": {
+      "canonicalId": "Poultices",
+      "nativeBandageMechanicsShared": true,
+      "loyaltyConsequenceDeterministic": false,
+      "runtimeDisposition": "fail-closed-until-guided-adjudication-P8-059"
+    },
+    "snackPolicy": {
+      "storage": "authoritative-sheet-digestion-buff",
+      "consumptionTiming": "extended-action-any-time",
+      "ordinaryCapacity": 1,
+      "gluttonyCapacity": 3,
+      "tradeLimitPerScene": 1,
+      "gluttonyTradeLimitPerScene": 3,
+      "incompatibleStacking": "reject-before-consumption",
+      "tradeAuthority": "server-owned-move-item-mutation",
+      "fixedHealing": {
+        "Candy Bar": 5,
+        "Honey": 5
+      },
+      "encounterHealing": {
+        "Leftovers": {
+          "numerator": 1,
+          "denominator": 16,
+          "boundary": "turn-start",
+          "duration": "encounter"
+        },
+        "Black Sludge": {
+          "numerator": 1,
+          "denominator": 8,
+          "boundary": "turn-start",
+          "duration": "encounter",
+          "requiredPokemonType": "Poison"
+        }
+      }
+    },
+    "permanentAdvancementPolicy": {
+      "ruleCanonicalId": "Vitamins and Related Items",
+      "ruleRecordSha256": "3fc60d305d0d7cf76a096a52d69d395cb20901e215249638dec4983137666dd0",
+      "timing": "extended",
+      "targetKind": "pokemon",
+      "consumptionPhase": "extended-action-completion",
+      "vitaminLifetimeLimit": 5,
+      "statVitamins": {
+        "HP Up": "hp",
+        "Protein": "atk",
+        "Iron": "def",
+        "Calcium": "satk",
+        "Zinc": "sdef",
+        "Carbos": "spd"
+      },
+      "heartBooster": {
+        "lifetimeLimit": 1,
+        "tutorPoints": 2
+      },
+      "ppUp": {
+        "lifetimeLimit": 1,
+        "atWillPolicy": "ineligible",
+        "eotResult": "At-Will",
+        "repeatableFrequencies": [
+          "Scene",
+          "Daily"
+        ],
+        "additionalUses": 1
+      },
+      "rareCandy": {
+        "lifetimeLimit": 5,
+        "maximumLevel": 100,
+        "experienceResult": "minimum-for-next-level"
+      },
+      "statSuppressants": {
+        "baseStatDelta": -1,
+        "minimumBaseStat": 1,
+        "consent": "owning-trainer-explicit"
+      },
+      "sheetValidity": {
+        "baseRelations": "required-after-application",
+        "statPointBudget": "must-not-exceed",
+        "provenance": "server-private-immutable-application-ledger"
+      }
+    },
+    "machineMoveLearningPolicy": {
+      "ruleCanonicalId": "TMs and HMs",
+      "ruleRecordSha256": "4660d7ac403b12cd107c68fee363bb89568664b507d7366c58263e3e7ceeee61",
+      "tmTutorLimitCanonicalId": "3-TM/Tutor Move Limit",
+      "tmTutorLimitRecordSha256": "990c4866c6fa173e29d1e97505106d67ef705958a1f534a7e09916e37052ce5d",
+      "tutorPointsCanonicalId": "Tutor Points",
+      "tutorPointsRecordSha256": "2c0b815490b1f5953d82f3cfb8c11a7d2cf65e82f8f525206fcb993967fc0277",
+      "clusterMindRecordSha256": "ef6469ee15bcad69e21991c28b13eb3d8004301e0b96f3a36fbcc962c2a176ed",
+      "machineCount": 106,
+      "timing": "extended",
+      "targetKind": "pokemon",
+      "compatibilityAuthority": "exact-species-tm_hm_moves-entry",
+      "knownMoveAuthority": "union-of-movelist-and-appliedMoves",
+      "consumptionPhase": "extended-action-completion",
+      "reusableHmUsesPerCampaignDay": 1,
+      "replacementChoice": "one-authority-projected-active-move-or-open-slot",
+      "provenance": "server-private-immutable-application-ledger",
+      "pokedexMachineAuthoritySha256": "bc2bc6c671f56897ba61ccc810a0e71e8f4b9f3001382934057e47bc8c6b2a42",
+      "moveLearningMoveAuthoritySha256": "441e38497e5943a933a550d1f24ddb8b771052f07cddf61caf6645c6142de93e"
+    },
+    "itemEvolutionPolicy": {
+      "ruleCanonicalId": "Evolutionary Items",
+      "ruleRecordSha256": "8507d5cd78a17063e57dd6356c2b4d32d3e0d0b5c29c0aad316c398f6e1381cb",
+      "itemCount": 24,
+      "transitionCount": 62,
+      "timing": "standard",
+      "targetKind": "pokemon",
+      "consumptionPhase": "accepted-use",
+      "destinationChoice": "one-authority-projected-destination",
+      "confirmation": "one-exact-explicit-confirmation",
+      "provenance": "server-private-immutable-application-ledger",
+      "restatAttention": "owner-visible-unallocated-stat-point-work",
+      "moveAttention": "owner-visible-bounded-new-form-move-opportunities"
+    },
+    "explorationItemPolicy": {
+      "ruleCanonicalId": "Exploration Items",
+      "ruleRecordSha256": "3b520452e7a8e8b3c2b8a766ebe1f5bd2bd0f72f7c202dca7829f4af34155561",
+      "actorKind": "trainer",
+      "itemIds": [
+        "Bait",
+        "Fishing Lure",
+        "Honey",
+        "Repel",
+        "Super Repel",
+        "Max Repel",
+        "Dowsing Rod"
+      ],
+      "routeLure": {
+        "checkIntervalMinutes": 15,
+        "successMinimum": 15,
+        "maximumAttempts": 3,
+        "dieSides": 20,
+        "encounterSelection": "gm-comparable-party-level"
+      },
+      "wildDistraction": {
+        "timing": "standard-action",
+        "target": "exact-wild-pokemon",
+        "focusDc": 12,
+        "failureConsequence": "forfeit-next-standard-action"
+      },
+      "fishingLure": {
+        "canonicalId": "Fishing Lure",
+        "routeLureMechanics": "same-as-bait",
+        "reusable": true,
+        "lossPolicy": "never-automatic-bounded-gm-adjudication"
+      },
+      "repels": [
+        {
+          "canonicalId": "Repel",
+          "durationMinutes": 60,
+          "maximumAffectedWildLevel": 15
+        },
+        {
+          "canonicalId": "Super Repel",
+          "durationMinutes": 120,
+          "maximumAffectedWildLevel": 25
+        },
+        {
+          "canonicalId": "Max Repel",
+          "durationMinutes": 300,
+          "maximumAffectedWildLevel": 35
+        }
+      ],
+      "repelDirect": {
+        "timing": "standard-action",
+        "target": "exact-wild-pokemon-at-or-below-item-level",
+        "accuracyCheck": {
+          "baseAc": 6,
+          "attackClass": "status",
+          "evasion": "speed"
+        },
+        "hitConsequence": {
+          "movement": "immediate-interrupt-shift-away-as-far-as-able",
+          "nextAction": "forfeit-next-shift-action",
+          "positioningAuthority": "bounded-gm-prompt-after-server-owned-hit"
+        }
+      },
+      "dowsingRod": {
+        "canonicalId": "Dowsing Rod",
+        "searchMinutes": 10,
+        "allowedAreas": [
+          "route",
+          "cave",
+          "outside"
+        ],
+        "dailyUses": "floor-occult-education-rank-divided-by-two",
+        "baseDice": "occult-education-rank-d6",
+        "terrainBonusDice": 1,
+        "terrainKinds": [
+          "beach",
+          "cave",
+          "desert",
+          "sandy-or-rocky"
+        ],
+        "skillStuntDowsingBonusDice": 1,
+        "crystalResonanceBonusDice": 3,
+        "successMinimum": 4,
+        "rerollOn": 6,
+        "shardColors": [
+          "Red",
+          "Orange",
+          "Yellow",
+          "Green",
+          "Blue",
+          "Violet"
+        ],
+        "areaAuthority": "bounded-gm-confirmation"
+      },
+      "crystalResonanceRecordSha256": "43cb50c2d025caaf7678d6057110732af9b1930ed358d91dfeb184a378a0644c",
+      "runtimeDocumentaryParsingForbidden": true
+    }
+  },
+  "specs": [
+    {
+      "canonicalId": "Antidote",
+      "recordSha256": "12f14c28fdd54025d0f974db5e407cf75795a660dd562e2dccee3a853bebcaa8",
+      "effectSha256": "60c0c75bf7db4f80b2cda3f3a6df4ab17181761c222c6ed19f47d4e9d900f718",
+      "effect": {
+        "kind": "remove-conditions",
+        "conditionIds": [
+          "Poisoned",
+          "Badly Poisoned"
+        ]
+      }
+    },
+    {
+      "canonicalId": "Bait",
+      "recordSha256": "706ae0593e7c60700bf323c27add5c567419382b836c613dc59e4eb90e6bb974",
+      "effectSha256": "6d31ef5cfe914fa8698ebffd3eef619760db64714f891418f1ad77d800546fd0",
+      "effect": {
+        "kind": "use-bait",
+        "lure": {
+          "checkIntervalMinutes": 15,
+          "successMinimum": 15,
+          "maximumAttempts": 3,
+          "dieSides": 20,
+          "encounterSelection": "gm-comparable-party-level"
+        },
+        "distraction": {
+          "timing": "standard-action",
+          "target": "exact-wild-pokemon",
+          "focusDc": 12,
+          "failureConsequence": "forfeit-next-standard-action"
+        }
+      }
+    },
+    {
+      "canonicalId": "Bandages",
+      "recordSha256": "8d9423b246471aaf32e89d1a67a6c6734c5ca76496903ab8e0210f05b949cb62",
+      "effectSha256": "9018603e5421cb714a3901fe1a9bb24ac781a12c6f1c61bd63b1d9456487ee8e",
+      "effect": {
+        "kind": "apply-medical-treatment",
+        "treatmentKind": "bandages",
+        "durationMinutes": 360,
+        "tickMinutes": 30,
+        "healingNumerator": 1,
+        "healingDenominator": 8,
+        "injuryAtCompletion": 1,
+        "stopOnHpLoss": true,
+        "obeyDailyInjuryLimit": true
+      }
+    },
+    {
+      "canonicalId": "Black Sludge",
+      "recordSha256": "507c203bcd29d275c94b06e9a6efb0247e36277a92e3f5b66a6f1667a27fd250",
+      "effectSha256": "1c8bc08ec3299790b9d97ea86962bddec8e490a101f44b25c66b93ff7f64c3a3",
+      "effect": {
+        "kind": "store-digestion-buff",
+        "buffKind": "turn-start-heal",
+        "amount": 1,
+        "denominator": 8,
+        "requiredPokemonType": "Poison"
+      }
+    },
+    {
+      "canonicalId": "Burn Heal",
+      "recordSha256": "04a44fe7189ee68725eaef239c8b69ead905fd8100fab469f13711b0ae1c4bb8",
+      "effectSha256": "37478e488049cacbe4cabb55dafff29fe2937b5213f152be5821c8abc7d8ce46",
+      "effect": {
+        "kind": "remove-conditions",
+        "conditionIds": [
+          "Burned"
+        ]
+      }
+    },
+    {
+      "canonicalId": "Calcium",
+      "recordSha256": "2f03326d8643b7deee5c40eae6b91afd0f64d0445a11b0dfbacdd6a10659fb24",
+      "effectSha256": "bb529d31e5a4ec6327bea456b88960db2ff333ef737e5f29a59176247e4ecbc1",
+      "effect": {
+        "kind": "modify-base-stat",
+        "stat": "satk",
+        "amount": 1,
+        "countsAsVitamin": true,
+        "requiresTrainerConsent": false
+      }
+    },
+    {
+      "canonicalId": "Candy Bar",
+      "recordSha256": "ea5203bebbb7ffa970fe23cc8c856ae978c8cb10d0e9d88ebc0fe076342277a9",
+      "effectSha256": "ec7de31bba3c3ad76327c6510fc0e9955c6077ae4e08517e5586bc3c0b59d1c3",
+      "effect": {
+        "kind": "store-digestion-buff",
+        "buffKind": "fixed-heal",
+        "amount": 5,
+        "denominator": null,
+        "requiredPokemonType": null
+      }
+    },
+    {
+      "canonicalId": "Carbos",
+      "recordSha256": "61724998a9cd3b3f1f765bcd715aa26c545f7347deb01a8c04c8dcc19f1626b3",
+      "effectSha256": "7323b53631df9cbc8a86e2fadd451e4e44346676774d636acbacadbbd135ab2a",
+      "effect": {
+        "kind": "modify-base-stat",
+        "stat": "spd",
+        "amount": 1,
+        "countsAsVitamin": true,
+        "requiresTrainerConsent": false
+      }
+    },
+    {
+      "canonicalId": "Dawn Stone",
+      "recordSha256": "5ede5a06401afdc51fbe78e15d6032f4c45b5ca485c86e81aede0b47c84ebddb",
+      "effectSha256": "c870fb4f2844810fcd53dbf81584ae7a361833e15bb1294c8bdfded2713572c9",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Dawn Stone"
+      }
+    },
+    {
+      "canonicalId": "Deepseascale/Deepseatooth",
+      "recordSha256": "0197d6d5dc014c698692a887856bdba3d0caeb377dfb69cfd428fe36fa209745",
+      "effectSha256": "5107aa33935477866f21d9436fdda399127ee58efabd670317c52a00cf9ebc78",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Deepseascale/Deepseatooth"
+      }
+    },
+    {
+      "canonicalId": "Dire Hit",
+      "recordSha256": "59b189980b39c2cb2fca6ea2fdf870a7f5f6ceadc8fb2efa271252ac3546d230",
+      "effectSha256": "105b0f9de108cbfadca313b257c9e696ceb533c9573cb5ffedd771188c9b878c",
+      "effect": {
+        "kind": "temporary-combat-effect",
+        "family": "critical-range",
+        "amount": 2,
+        "duration": {
+          "kind": "encounter",
+          "amount": null
+        },
+        "stackPolicy": "replace",
+        "switchPolicy": "expire"
+      }
+    },
+    {
+      "canonicalId": "Dowsing Rod",
+      "recordSha256": "1c244a85abc4b87585f066a7e8f0d036b82c8091505536de104edc89c8b6f4c3",
+      "effectSha256": "8ca1af9e7e01fea6fbb8d3b3d2bc2a187a774370e22e31f1a6557b092eed056d",
+      "effect": {
+        "kind": "search-for-shards",
+        "searchMinutes": 10,
+        "dailyUses": "floor-occult-education-rank-divided-by-two",
+        "baseDice": "occult-education-rank-d6",
+        "terrainBonusDice": 1,
+        "skillStuntDowsingBonusDice": 1,
+        "crystalResonanceBonusDice": 3,
+        "successMinimum": 4,
+        "rerollOn": 6,
+        "shardColors": [
+          "Red",
+          "Orange",
+          "Yellow",
+          "Green",
+          "Blue",
+          "Violet"
+        ],
+        "areaAuthority": "bounded-gm-confirmation"
+      }
+    },
+    {
+      "canonicalId": "Dragon Scale",
+      "recordSha256": "8b0aff095f534fb8bb89d761d9e1bcae3478fc1071c343fbff9633c7a6a2cfd8",
+      "effectSha256": "c59b924fd42a5963a5df504fe41808e42ad961afea72f199a7cd6b8903317d82",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Dragon Scale"
+      }
+    },
+    {
+      "canonicalId": "Dubious Disc",
+      "recordSha256": "853054c640cd7fcba3c6307dc1a1543d2b702957cd6c9e932e1cca927b7cb9a5",
+      "effectSha256": "16431023d0630862c3330e1fcdb44793414d71b4832f9b8f3aff9d0ce3c60783",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Dubious Disc"
+      }
+    },
+    {
+      "canonicalId": "Dusk Stone",
+      "recordSha256": "0bf76a47e027d546387c3555be41457afb52d9a79bce438d32f4acd1d69644cd",
+      "effectSha256": "7eb2df183dcdc9adf38ab7affe53f66dd5f297059a0d504a52ae9905eece7f4d",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Dusk Stone"
+      }
+    },
+    {
+      "canonicalId": "Electirizer",
+      "recordSha256": "7cfd5337bb3e3d5f5a3ac7a933b5845ccd7adb6e8fc27e386ad272151735bba2",
+      "effectSha256": "f14eaa19e1103bd49c3c9a75409b8a65b809c51f225d6320f125ceb901a27eb1",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Electirizer"
+      }
+    },
+    {
+      "canonicalId": "Energy Powder",
+      "recordSha256": "3b0000c7cd66b0fb1bc189cdaaec9f543cccfc1434ac27a14694d09c16c36766",
+      "effectSha256": "c68cb9632fcaad6b760ad838ebdb50d9c9f939d8e68691a7e85bdc9358c2fdc7",
+      "effect": {
+        "kind": "heal-hp",
+        "amount": 25
+      }
+    },
+    {
+      "canonicalId": "Energy Root",
+      "recordSha256": "90927d2686a26def6f0a944b9016b42f6000fd4729c05e32a5793dc115eafc1c",
+      "effectSha256": "a047e9787deebaf0e2de2555e57f96a63d9e54139f2c6f043428bd3646740c8e",
+      "effect": {
+        "kind": "heal-hp",
+        "amount": 70
+      }
+    },
+    {
+      "canonicalId": "Enriched Water",
+      "recordSha256": "d0945ee2402a0d424a3ccc296e2cb9fef01ad98ed1476356553aaf46285ed8cd",
+      "effectSha256": "88eb15dbd228c9c82f8e6d9f5f13334343a36adf08acff0f7691e3604eaad112",
+      "effect": {
+        "kind": "heal-hp",
+        "amount": 20
+      }
+    },
+    {
+      "canonicalId": "Fire Stone",
+      "recordSha256": "18b4fb594137a3fb1f8b58a2100826d7822b96f9a28e659235ac91ed01f48c67",
+      "effectSha256": "521a5808787d17da8e0cc1c5bd8a9e8a5d8dd73466fd53800a617f12d14d2aef",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Fire Stone"
+      }
+    },
+    {
+      "canonicalId": "First Aid Kit",
+      "recordSha256": "731805bff0ae72a26eeaa18f5b57cd8d00225b156787e66cebe8c57e49d9b2c6",
+      "effectSha256": "0ed195fba099f940ca0fab9c40b2fee65ccf408164b674f833ed0d037300ae08",
+      "effect": {
+        "kind": "skill-check-heal-and-remove",
+        "skillId": "medicineEd",
+        "dieSides": 6,
+        "apMode": "drain",
+        "apAmount": 1,
+        "conditionIds": [
+          "Burned",
+          "Poisoned",
+          "Badly Poisoned",
+          "Paralysis"
+        ]
+      }
+    },
+    {
+      "canonicalId": "Fishing Lure",
+      "recordSha256": "1d3bc0f19699942a54d0fc846697e54a9b2f42191df6ce07b79459f1e088e51d",
+      "effectSha256": "baa876cd329a1b0adf8b304188a2bbc9201c258859c2757191843746136f40c8",
+      "effect": {
+        "kind": "start-route-lure",
+        "lure": {
+          "checkIntervalMinutes": 15,
+          "successMinimum": 15,
+          "maximumAttempts": 3,
+          "dieSides": 20,
+          "encounterSelection": "gm-comparable-party-level"
+        },
+        "reusable": true,
+        "lossPolicy": "never-automatic-bounded-gm-adjudication"
+      }
+    },
+    {
+      "canonicalId": "Full Heal",
+      "recordSha256": "2f656f56f70940b8c70940f3d8af6609cdfdf8b129f918c9c4fe5c64c583564b",
+      "effectSha256": "6ce6f68cc710a740f091e0f289177f5c08bfb36fb864da2b8ab413f0a25a50fe",
+      "effect": {
+        "kind": "remove-conditions",
+        "conditionIds": [],
+        "mode": "persistent",
+        "selection": "all-applicable"
+      }
+    },
+    {
+      "canonicalId": "Full Restore",
+      "recordSha256": "30303f34169650bd239454e5f1993f15cce5e713d80cf3d860a96b671045932a",
+      "effectSha256": "53b53fc118d08fb303cb0f2c48ed5a98d9b35cfae8f303ebfc520a1524265521",
+      "effect": {
+        "kind": "heal-and-remove",
+        "amount": 80,
+        "conditionIds": [],
+        "mode": "all-status",
+        "selection": "all-applicable"
+      }
+    },
+    {
+      "canonicalId": "Guard Spec",
+      "recordSha256": "c50c8ae489b2a6d33c3bb8cf0fd461053dff5e5a9174c810564a84713b76cdc1",
+      "effectSha256": "6759228267c37e3bbe0df7774648e3aa060e30bafa716570c5fa2e637cdf495a",
+      "effect": {
+        "kind": "temporary-combat-effect",
+        "family": "move-stage-reduction-immunity",
+        "amount": 5,
+        "duration": {
+          "kind": "turns",
+          "amount": 5
+        },
+        "stackPolicy": "refresh",
+        "switchPolicy": "expire"
+      }
+    },
+    {
+      "canonicalId": "HM A1 - Cut",
+      "recordSha256": "4e5e1fe3de1721ec2708f5ef1e00005534e66d79a39d0df3c517e07f2d8098ec",
+      "effectSha256": "bd6496b024ab1f961f1e4edbb90281d7e683cb91c436cf8649892032562635c5",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "HM",
+        "machineNumber": "01",
+        "moveId": "Cut",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": 1
+      }
+    },
+    {
+      "canonicalId": "HM A2 - Fly",
+      "recordSha256": "d4d34e80f0fc42ff35fe1e37f196579976d16515792da67fe79361d35c38e524",
+      "effectSha256": "712c94fed85f258890bd2b05b59bc877a205db13def75606dd7fcb7bfc577cb4",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "HM",
+        "machineNumber": "02",
+        "moveId": "Fly",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": 1
+      }
+    },
+    {
+      "canonicalId": "HM A3 - Surf",
+      "recordSha256": "b9fd6f2ca49d3474068e8ee2922d6b11947277557b4d108c20635296d3977270",
+      "effectSha256": "a010e353d8e5800e09031ee60bab6d0889ebf48894df91590c9fac066864f135",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "HM",
+        "machineNumber": "03",
+        "moveId": "Surf",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": 1
+      }
+    },
+    {
+      "canonicalId": "HM A4 - Strength",
+      "recordSha256": "ec58aa9ad14a71bf15938b5303c820e9dbeef37b7334e38334daaf4bccce6820",
+      "effectSha256": "de1474ebf108f1f3633036ec627d8cf6a30f6f4d9db26dae04f5484197ca1678",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "HM",
+        "machineNumber": "04",
+        "moveId": "Strength",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": 1
+      }
+    },
+    {
+      "canonicalId": "HM A5 - Waterfall",
+      "recordSha256": "4e97511e887c4631e0895d88cb81df0d08123a1cd7b27edbcd7c3b6194d215d5",
+      "effectSha256": "9407833c78f5dcf87e967f8d8677b65431e4662a938ecf99e7418604e0cf7b34",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "HM",
+        "machineNumber": "05",
+        "moveId": "Waterfall",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": 1
+      }
+    },
+    {
+      "canonicalId": "HM A6 - Dive",
+      "recordSha256": "10db391786818311dde0c9ae11845a1531f7a439a4e5c3dcfd53341946ab0e1c",
+      "effectSha256": "0bfa69a6a73aabbc9ce7cdc6456348d5bba4ff0976d1870e8f45c18ba0a03c59",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "HM",
+        "machineNumber": "06",
+        "moveId": "Dive",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": 1
+      }
+    },
+    {
+      "canonicalId": "HP Up",
+      "recordSha256": "0c6ea9d7eddb11c99cb643b0e7b4b5d7db32c545d1471e3a7bfff5152df0b674",
+      "effectSha256": "a0dd2c9f9c2e67c812a0046435b9ca99e73e7faa7ac2affd098247e3b8e92af2",
+      "effect": {
+        "kind": "modify-base-stat",
+        "stat": "hp",
+        "amount": 1,
+        "countsAsVitamin": true,
+        "requiresTrainerConsent": false
+      }
+    },
+    {
+      "canonicalId": "Heal Powder",
+      "recordSha256": "bbfcd8a4b59cddab6f62d82fb9439c534aa0204588041bb50b77dd4cc437a6f2",
+      "effectSha256": "74c5914101f6d79fde48104bbf5c0c504876abc96a911cc3ffcfe3bb4549a168",
+      "effect": {
+        "kind": "remove-conditions",
+        "conditionIds": [],
+        "mode": "persistent",
+        "selection": "all-applicable"
+      }
+    },
+    {
+      "canonicalId": "Heart Booster",
+      "recordSha256": "621cef40364bfff8e0685c895258215a64814c96f292dc4382d337c191b56344",
+      "effectSha256": "1b69b4866a0947ad07ef6395173bbb19007552fe94cf665b26effd7d2314e483",
+      "effect": {
+        "kind": "grant-tutor-points",
+        "amount": 2,
+        "countsAsVitamin": true,
+        "lifetimeLimit": 1
+      }
+    },
+    {
+      "canonicalId": "Honey",
+      "recordSha256": "e7c0323191b8981a12885c7b78f21276e75f6e82a3d39e64b48ec10d3cd3655d",
+      "effectSha256": "88d25ac0ab28eeb82bcb88d3bacefff279a345a3c9d87e0a450c9e88a093075d",
+      "effect": {
+        "kind": "use-snack-or-bait",
+        "buffKind": "fixed-heal",
+        "amount": 5,
+        "denominator": null,
+        "requiredPokemonType": null,
+        "lure": {
+          "checkIntervalMinutes": 15,
+          "successMinimum": 15,
+          "maximumAttempts": 3,
+          "dieSides": 20,
+          "encounterSelection": "gm-comparable-party-level"
+        },
+        "distraction": {
+          "timing": "standard-action",
+          "target": "exact-wild-pokemon",
+          "focusDc": 12,
+          "failureConsequence": "forfeit-next-standard-action"
+        }
+      }
+    },
+    {
+      "canonicalId": "Hyper Potion",
+      "recordSha256": "775d3b5aa2f9fd88cf3b95e98164bbc47537b2ee267343c6022011912c26afd8",
+      "effectSha256": "b967c78f7a9366f239110b7f923eb235af069b99f9976544bd32612b656f2f9f",
+      "effect": {
+        "kind": "heal-hp",
+        "amount": 70
+      }
+    },
+    {
+      "canonicalId": "Ice Heal",
+      "recordSha256": "2da4b83844f394b75cfc6754a2eb90bbc01f61075f7aed93ca2e29ea54ef0988",
+      "effectSha256": "2dbae421a9575b33325af81ea22d7306e73c59844dd45d8b0f1a97c331ef5349",
+      "effect": {
+        "kind": "remove-conditions",
+        "conditionIds": [
+          "Frozen"
+        ]
+      }
+    },
+    {
+      "canonicalId": "Iron",
+      "recordSha256": "23b34e017cf79adef8fdbcbbda473879b14a36f97631282dd51d7dcc035db68a",
+      "effectSha256": "9d1c5eb480ea6ea69ae4c3f1265312c1870378cb9225004298b65d411345bc4c",
+      "effect": {
+        "kind": "modify-base-stat",
+        "stat": "def",
+        "amount": 1,
+        "countsAsVitamin": true,
+        "requiresTrainerConsent": false
+      }
+    },
+    {
+      "canonicalId": "King’s Rock",
+      "recordSha256": "2d279cde96e6abb56db70fc0ed3974ba5ef05f9b49ee6ea7b19578a7a5dccf09",
+      "effectSha256": "47b5551e24ce69d65d2f65d931aed3ba1298601de5fd3542eac2ac558e3d5d2c",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "King’s Rock"
+      }
+    },
+    {
+      "canonicalId": "Leaf Stone",
+      "recordSha256": "712771e5d4c78f1946d9f3251c459e6655f0625605094c4c60538c035771a8fd",
+      "effectSha256": "75c2d991efd55126eb6eeac6ea55e4ac95b953d19a6453a7c2367f34b349bd61",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Leaf Stone"
+      }
+    },
+    {
+      "canonicalId": "Leftovers",
+      "recordSha256": "b40b88f89e4f4168c60523c43f20fd85def53aa9dee44de5ec24977a688a119c",
+      "effectSha256": "6d2f2b6aca6ae3dabfa5e8429fb69c558e450a86dbc2a651b877038830a37442",
+      "effect": {
+        "kind": "store-digestion-buff",
+        "buffKind": "turn-start-heal",
+        "amount": 1,
+        "denominator": 16,
+        "requiredPokemonType": null
+      }
+    },
+    {
+      "canonicalId": "Magmarizer",
+      "recordSha256": "fbdd7c230c1fd75871544a7c60028b48181dadb870486b9018bb4e5f7071f49c",
+      "effectSha256": "fdfe27f5cff6d7e362fdc2db621d98e4549f8628fb7356fc3fefa28817a877e0",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Magmarizer"
+      }
+    },
+    {
+      "canonicalId": "Max Repel",
+      "recordSha256": "3f06df2e453624c181441a9d7a47e60bd4f553813e7c277367a4a75b75794cc1",
+      "effectSha256": "12ebb2d4f5be75885b4a9b79ee1335c9a76d44f8433b73388f4d1700062beefe",
+      "effect": {
+        "kind": "use-repel",
+        "durationMinutes": 300,
+        "maximumAffectedWildLevel": 35,
+        "directBaseAc": 6,
+        "positioningAuthority": "bounded-gm-prompt-after-server-owned-hit"
+      }
+    },
+    {
+      "canonicalId": "Mental Herb",
+      "recordSha256": "e886075bbde411e7d95cf627ca5252260647c4ffa0186a9c5eb225919ab3992a",
+      "effectSha256": "e07908eb51bff097f6ba197152987fbc743a9f1f28bdae0680d7fb56324a0fa9",
+      "effect": {
+        "kind": "remove-conditions",
+        "conditionIds": [],
+        "mode": "volatile",
+        "selection": "all-applicable"
+      }
+    },
+    {
+      "canonicalId": "Metal Coat",
+      "recordSha256": "b3df330a23cf15f72eb72e489c3a353d14c5fe6d5b348c071569024b4e5d51ce",
+      "effectSha256": "6ead0e9b6aaacea225ffc3656c89c37a05c4552a4e3b11580b88cb91f27f8c14",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Metal Coat"
+      }
+    },
+    {
+      "canonicalId": "MooMoo Milk",
+      "recordSha256": "6c84237a4146fe7d28af44e2d211da7ab50feea7fb679ae41bbb6a3c62d6adb1",
+      "effectSha256": "0acdb73f618aaf72fe45d6e561dacfa893583311206e96a4fe8d319bc74be88a",
+      "effect": {
+        "kind": "heal-hp",
+        "amount": 80
+      }
+    },
+    {
+      "canonicalId": "Moon Stone",
+      "recordSha256": "1d13cb65f1f0abe094298adf96f3ccbbc51dce3b349577cee1d6e4f9cd9f9d4d",
+      "effectSha256": "c90291d3245336ab00bbb95128aa81495166ae4850ae66e045cbfffc9f0fac29",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Moon Stone"
+      }
+    },
+    {
+      "canonicalId": "Oval Stone",
+      "recordSha256": "72202db969b9463a02e551ba3d145a41af6a76aa660a78890eeb5aed5fc8e4c4",
+      "effectSha256": "83956faf2590a716ab562e702fe00707294def5a1f4879f89cc10549c5d76ee6",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Oval Stone"
+      }
+    },
+    {
+      "canonicalId": "PP Up",
+      "recordSha256": "8a361ac67582b1e35264a29c12772fa441fd7b6ad5517ff15279412b739cb3ed",
+      "effectSha256": "fb432601ea2527b9be3109b03d1be1069a5a2f60a3f64cd99e3ec0e80b547e53",
+      "effect": {
+        "kind": "increase-move-frequency",
+        "countsAsVitamin": true,
+        "lifetimeLimit": 1
+      }
+    },
+    {
+      "canonicalId": "Paralyze Heal",
+      "recordSha256": "c1751ce0c906945e80bf1b673dd8b871e268d17c4a47a3eaf8cf7eb1eda903a0",
+      "effectSha256": "922c8cb8c8f64ceba4e4aaff0e6a7c4bec8260b5d397366086b14de5dfe8422d",
+      "effect": {
+        "kind": "remove-conditions",
+        "conditionIds": [
+          "Paralysis"
+        ]
+      }
+    },
+    {
+      "canonicalId": "Potion",
+      "recordSha256": "f928b100dad5c642441e401404a3edefbd127efbaebe92c646f899297a8a1b84",
+      "effectSha256": "7a0184848bd7c3e0558e4562ee942163fd010d11cb38f0737a5503edeb5d0705",
+      "effect": {
+        "kind": "heal-hp",
+        "amount": 20
+      }
+    },
+    {
+      "canonicalId": "Protector",
+      "recordSha256": "a34625b1decd93e074abd6772d61d4c0d27d7579aa07cc580222ccd2199b3dfb",
+      "effectSha256": "9601bccf04206beae7d00900a8957fe0652272cd40e57830f46b403241011a85",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Protector"
+      }
+    },
+    {
+      "canonicalId": "Protein",
+      "recordSha256": "108e4d271496c7b37b85a53f3ee6fddc1897ffcae002162fefc153608bb21d14",
+      "effectSha256": "3bbcf06d2b97b72683725f396c2e1f3f97c14680c8bc3a7e0de2162305babbe9",
+      "effect": {
+        "kind": "modify-base-stat",
+        "stat": "atk",
+        "amount": 1,
+        "countsAsVitamin": true,
+        "requiresTrainerConsent": false
+      }
+    },
+    {
+      "canonicalId": "Rare Candy",
+      "recordSha256": "e42f36f859e6e97e31539713413e8eb1481f4905cdbebe93b6fc56c2ab89fe09",
+      "effectSha256": "ec0ea96f1ac517c32031c0353711b9b5c015484189d074368b873fc5739a3b41",
+      "effect": {
+        "kind": "gain-next-level-experience",
+        "lifetimeLimit": 5,
+        "maximumLevel": 100
+      }
+    },
+    {
+      "canonicalId": "Razor Claw",
+      "recordSha256": "42ae81b9c1e179ab549ba174bb4372c72bb6666dddae476e9e04e6f227ba1691",
+      "effectSha256": "25e6ef0f4554be5919ace74f41eb4ed6ae66045160a58c327136eba0ead6e09a",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Razor Claw"
+      }
+    },
+    {
+      "canonicalId": "Razor Fang",
+      "recordSha256": "72e2e7d52afb8dcd3ea6d3f28903284ddabe57c89f8343c79e79680f2200a010",
+      "effectSha256": "68e50de0872633bc48d3ac35503f0895184d73df97c2c48b0c0362ab1abba06f",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Razor Fang"
+      }
+    },
+    {
+      "canonicalId": "Reaper Cloth",
+      "recordSha256": "9a0909c9e0199f9376f987b1932aa13854917f851a766b5189d804822127fc8f",
+      "effectSha256": "219ac448531fd97bd9353be915967d1459661cd105bf87277c6b5c3f20563b3d",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Reaper Cloth"
+      }
+    },
+    {
+      "canonicalId": "Repel",
+      "recordSha256": "5cd812ed6e57b00c3ac2458a926840b5ceb1c224280f61697bdf8b42e8cf22c3",
+      "effectSha256": "3a25e145ce858c76884f73e4570133c116d4ab40391a07bbc6d6a9244d600031",
+      "effect": {
+        "kind": "use-repel",
+        "durationMinutes": 60,
+        "maximumAffectedWildLevel": 15,
+        "directBaseAc": 6,
+        "positioningAuthority": "bounded-gm-prompt-after-server-owned-hit"
+      }
+    },
+    {
+      "canonicalId": "Revival Herb",
+      "recordSha256": "80304913ad6c05920a78ee1bb28f9fb69f40379bcbd57922f632f0b7c8745f56",
+      "effectSha256": "3eb135d45f6f704829b860599140b600464372cd5369952e071df57971af2b8e",
+      "effect": {
+        "kind": "revive",
+        "amount": {
+          "kind": "maximum-relative",
+          "numerator": 1,
+          "denominator": 2,
+          "rounding": "down",
+          "minimum": 1
+        }
+      }
+    },
+    {
+      "canonicalId": "Revive",
+      "recordSha256": "d14d58ea7afb04023ed0a70ae6c8aa7eb659238b3ae655ed072f683ed022c928",
+      "effectSha256": "fbe63449c507f9f2e48b953d23e7011c29e3f0485cb4cd2050d2653cb266af57",
+      "effect": {
+        "kind": "revive",
+        "amount": {
+          "kind": "fixed",
+          "amount": 20
+        }
+      }
+    },
+    {
+      "canonicalId": "Sachet",
+      "recordSha256": "23b1349f3e56fe767b6a1b072091bd4be2bfc131c97ab698d257923a22b84daf",
+      "effectSha256": "3b8b672344c1f90a03528bb3c64f4e451b48b06758ddff73c2dcc34894b418d4",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Sachet"
+      }
+    },
+    {
+      "canonicalId": "Shiny Stone",
+      "recordSha256": "72d8e4c14e44cdfceb84347c90283eca1ae6299f4cc60b0ae4321fb824f53cea",
+      "effectSha256": "6ac1e5005cc0bed9341d17fea78e0d7fa1ee85f4b06ced3e856aa25063dec932",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Shiny Stone"
+      }
+    },
+    {
+      "canonicalId": "Shuckle’s Berry Juice",
+      "recordSha256": "10b49ba5902cdfbcd4ad481db75f301e5170bab50c490eb54a500a2e8b6ce271",
+      "effectSha256": "2c946f6881e6ff9df1dbb2a258731f425e990a9fa5cd66c593d9c8506b4b9da8",
+      "effect": {
+        "kind": "heal-hp",
+        "amount": 30
+      }
+    },
+    {
+      "canonicalId": "Sparkling Lemonade",
+      "recordSha256": "fc3fb783321b65eaa7df2264831229c6c118a31eef8fba4fa9a50642f1409905",
+      "effectSha256": "5dc1b87bbf0d5e6e3b400a591bae3f69bcd901ce0d9b9f29c830a8d666e3f056",
+      "effect": {
+        "kind": "heal-hp",
+        "amount": 50
+      }
+    },
+    {
+      "canonicalId": "Stat Suppressants",
+      "recordSha256": "9972b4c3630144787de4bf3d96c1916f94d06d4c38e32b2bac731cd6229caa79",
+      "effectSha256": "5cb5bd49d735a03a46367e04727f69d14c8f42c687bbf03a0acc78c0c1aaf659",
+      "effect": {
+        "kind": "modify-base-stat",
+        "stat": "selected",
+        "amount": -1,
+        "countsAsVitamin": false,
+        "requiresTrainerConsent": true
+      }
+    },
+    {
+      "canonicalId": "Sun Stone",
+      "recordSha256": "0dd2ca077496b933c327e568c0dd880562d503a4ec9f9e04d5b92477dac9f920",
+      "effectSha256": "0ffd7e259c0a0fbed4c08d8c9ca916524ab1ca68a5fff63b3666757d4ecff8e6",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Sun Stone"
+      }
+    },
+    {
+      "canonicalId": "Super Potion",
+      "recordSha256": "4ff68dc1e6998ab96b1d6919c56bba5ebc162e814d4b9e4456b6623293e39c16",
+      "effectSha256": "cc63fb483954f9d3fa7d81ce6fa4444c6b0f2e11b7f6a15f86d91c64fbc4e7e4",
+      "effect": {
+        "kind": "heal-hp",
+        "amount": 35
+      }
+    },
+    {
+      "canonicalId": "Super Repel",
+      "recordSha256": "d0b98322254e52c90eac3117a27205bf0740961c06d34d232f9dd4f6dd9995af",
+      "effectSha256": "807978441123caaa975c9e2c315edd7f720cc0adde990d7ab6964551476ff21f",
+      "effect": {
+        "kind": "use-repel",
+        "durationMinutes": 120,
+        "maximumAffectedWildLevel": 25,
+        "directBaseAc": 6,
+        "positioningAuthority": "bounded-gm-prompt-after-server-owned-hit"
+      }
+    },
+    {
+      "canonicalId": "Super Soda Pop",
+      "recordSha256": "f3a5e66b6df768e9ba97b1a81bbd331d68d8acf3d770ee7f9218aff147f1e894",
+      "effectSha256": "2c946f6881e6ff9df1dbb2a258731f425e990a9fa5cd66c593d9c8506b4b9da8",
+      "effect": {
+        "kind": "heal-hp",
+        "amount": 30
+      }
+    },
+    {
+      "canonicalId": "TM 01 - Hone Claws",
+      "recordSha256": "ea2d4383cb5038c928f59acd3b1da50c1d4e435b9b97bfde561fa37b221282b0",
+      "effectSha256": "0c2a02953ccc53108fae578323491986af0e07f0ba6e205aa36d62d9447fa26d",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "01",
+        "moveId": "Hone Claws",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 02 - Dragon Claw",
+      "recordSha256": "b73944eae38584178b450d3b0b54898165d020456c0218d156bed3fca7b617b6",
+      "effectSha256": "12d03576514b21569535e46e6d57fece10ec1c1e2b42aa8ce62cb7352e32d0ab",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "02",
+        "moveId": "Dragon Claw",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 03 - Psyshock",
+      "recordSha256": "e8af43fe82cac21693e0ed9c1f0f09ae72b3e8fe3f45ffca81b92183c53b091b",
+      "effectSha256": "ddeef628ccad1310399ddba0c48f30903058787856d89f28141521bafce74342",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "03",
+        "moveId": "Psyshock",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 04 - Calm Mind",
+      "recordSha256": "69b4a847821d685b4ec991e2236adac815ce7137988527a842deb3d6daeab55d",
+      "effectSha256": "705b2bef3b2e9783d644da7c60fbc52e1a5c70015d1af03463064bfdeaa4a6dc",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "04",
+        "moveId": "Calm Mind",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 05 - Roar",
+      "recordSha256": "077f45108cf4e533103d815ea250acdca261cbb5aa4d76a1932f1d3c5959bb30",
+      "effectSha256": "4208a8dd09729a81601dd9d4e5ca0b266bd37f84c1431fb35cc508c6a29febc6",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "05",
+        "moveId": "Roar",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 06 - Toxic",
+      "recordSha256": "dc708886ca4609c8c0274fa4b382f79a5693051c2b6b12a24dc1c3130c41404f",
+      "effectSha256": "605e9f2b74774ad6fd70f0d93393e7b7bf43d862ae1a8e825a09411616b82dbd",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "06",
+        "moveId": "Toxic",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 07 - Hail",
+      "recordSha256": "2d8c656456ee4739b11a65014cfa5f224f0cf80d0f694129e0ea6928da4a5287",
+      "effectSha256": "b210dca216b0a5d4b56ce11d780056dec9d37940e7db3ae3a48bfd2c200aff98",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "07",
+        "moveId": "Hail",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 08 - Bulk Up",
+      "recordSha256": "c0aeeb2d30dcfacece3a7f1946646044c8fbee6a4f9fdd2f6275648f89307b68",
+      "effectSha256": "a33f0e79201eb79bb99e9c84aa883c0e78733b367a7b77b1c563f49f189c7182",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "08",
+        "moveId": "Bulk Up",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 09 - Venoshock",
+      "recordSha256": "ceec6768f0fe72c6dcf8837b4664ab86360ea33d6b6005cf36ec9845a97cdf0b",
+      "effectSha256": "d203a54c958621c355c8a2a14fa2e3a25c4cc92b154da6ab2f4448c18829810b",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "09",
+        "moveId": "Venoshock",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 10 - Hidden Power",
+      "recordSha256": "f80d85146809764d165cad44a92eb1ef2361f3c077ad452a836675f4004bcd33",
+      "effectSha256": "b2fab5eb302383328ddc1b7f039285478b33dbd93cc81e01d4491f6bbfede0f9",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "10",
+        "moveId": "Hidden Power",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 100 - Confide",
+      "recordSha256": "0571b836543b6fe60e45f69dbe2d89b25043003c4e7bb0a0d937b839c2cd19c1",
+      "effectSha256": "e63d73b279b39fe5ad91571fc08b4dd1879a69990239f568e866d263b1963790",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "100",
+        "moveId": "Confide",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 11 - Sunny Day",
+      "recordSha256": "c09da65435a0bad22723ae35b185c78c0124e1c4d86b31327a33c65bc431a8d0",
+      "effectSha256": "d77d0c8b056bb4d8fd8b8454fb2569c3c35c10dc53d0317bdbe9654b9212d5e7",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "11",
+        "moveId": "Sunny Day",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 12 - Taunt",
+      "recordSha256": "3a622e5ec7590c6ca10b2f5d22c212f5933f52d44570f5b4313cdaffd2d7e6eb",
+      "effectSha256": "cdb41ac270a79af30a52691d4591c8a66e248497540183fd71af1f401d49c907",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "12",
+        "moveId": "Taunt",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 13 - Ice Beam",
+      "recordSha256": "65d07819a4587555f4785f7ea27ec47cf2ed5860370b0c99ae33c0c4d0bce671",
+      "effectSha256": "6936b7e79de5501ba3fc85a31d1e61adb756e07cc51d65f5f5b1e2ffbf2bc0f5",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "13",
+        "moveId": "Ice Beam",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 14 - Blizzard",
+      "recordSha256": "64631bb8f3fb304dd21dce6d794a3ca538e20d067564f19bcf1719364b1ebf50",
+      "effectSha256": "010b0ae1a167406ae93108247e68b889632673ad1259c6801c8f2ae6483e81e5",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "14",
+        "moveId": "Blizzard",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 15 - Hyper Beam",
+      "recordSha256": "32a980a8e0e255d186b9638bf21b59806b384f84da04c5a0b642aebc5b6765d7",
+      "effectSha256": "b4930f12644ef45fc7c7c7d4e008321da4bc4f885795d8db320d235cbc5738cf",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "15",
+        "moveId": "Hyper Beam",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 16 - Light Screen",
+      "recordSha256": "e5b82557b0e58ab288f88b7bcd1be5ea6bb3ad9f82354d497709ddef41206591",
+      "effectSha256": "0ad1d20a443f76f0c3ebe1e1ab5afe98dfd38cc6f552c0af44733c4e1ce99b1c",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "16",
+        "moveId": "Light Screen",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 17 - Protect",
+      "recordSha256": "27a79af5bbeb380ef00ae6870c6ebf0a26b4d99a6d90d585adb45a552e766916",
+      "effectSha256": "3bb7df44a36503e8e1343619bdcf057d84ccd0dcb5c49a435069abd836ee17e8",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "17",
+        "moveId": "Protect",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 18 - Rain Dance",
+      "recordSha256": "cc666b9ae3c0057a133b4e462102fbf15cc154b7f50ac4ae1b6a8eec5579617b",
+      "effectSha256": "b7c36ab3c0662381283f6933442e99c97ff7081c03361d57a7d8c96d49f8c0f8",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "18",
+        "moveId": "Rain Dance",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 19 - Roost",
+      "recordSha256": "cb4d8fb8db9fd0c5c7602f8e9eb378423aab6a6f3373f54cb1a89a04edbda224",
+      "effectSha256": "8854f5e7c913f28e7e808dfc110ff8598ab5f3cf8c116545a5bd4dd4d2583920",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "19",
+        "moveId": "Roost",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 20 - Safeguard",
+      "recordSha256": "d0d9e30c4c892e34a8d72b0927083a49d2c2239b8a8a3709cdcd35e39f9f895a",
+      "effectSha256": "e8700a9e138e17577c6457453dc540c97a0b5b144dd19a263d43f1fc7711d2a1",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "20",
+        "moveId": "Safeguard",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 21 - Frustration",
+      "recordSha256": "08e15c972a8fea5d4516f02fac1524bcbc2cc764ef10a4e85aab7608d859b11e",
+      "effectSha256": "569e5264b88730f48dab378d1ea41ab26c74cc0cfb42ec5704ed36d1f274dc7b",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "21",
+        "moveId": "Frustration",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 22 - Solarbeam",
+      "recordSha256": "27670326fb675f5104823d45b59600818638b2bb31aa53c33db2215e2aee1902",
+      "effectSha256": "15896fe1ee29ad79bc0ba9abfe14154c21e5c5d1eef8483674f33ef10f33d087",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "22",
+        "moveId": "Solar Beam",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 23 - Smack Down",
+      "recordSha256": "89ced6ae166394d02c803024ccda8f1d785d6e4c99c75d17d5898dfdfde7ff34",
+      "effectSha256": "75c233e5f3a14b08be825ccacb6f379d6f4b59ff3f0f4af7b92212e121cff54f",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "23",
+        "moveId": "Smack Down",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 24 - Thunderbolt",
+      "recordSha256": "58a5ff641844ffef487a1af3f1bfff2f240c63210e7850804cd4d5b2b4f5e607",
+      "effectSha256": "1175b08cded325d75adc4a69f96d3d2bf7d6047d9e5d64d3263256fc3403bee2",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "24",
+        "moveId": "Thunderbolt",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 25 - Thunder",
+      "recordSha256": "0df1d87e17b9f6985d4988c19766f72c53232fb055f2ae1c4ece04aecc28019d",
+      "effectSha256": "f9cd72336a23cc316ecd27ca81e07cf1075f10bb7a818516abc686c63daba41d",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "25",
+        "moveId": "Thunder",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 26 - Earthquake",
+      "recordSha256": "32f1b8d726a429e6a1b5a1bff2653127836636c61074b661649666f50aaab63d",
+      "effectSha256": "e1f8f3dadaee49bcadd7d8ac4bab02d7ed5e40177cad7aa3c0762e3e4bc9e3a2",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "26",
+        "moveId": "Earthquake",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 27 - Return",
+      "recordSha256": "59f72f665a2964fccf7d9e158cdf84e21e8b1eac4be8e99a214668a34f780978",
+      "effectSha256": "8e5b94795572e4bc81ff382edbc94b6ca1abec269c3d1125aa5ea901e36fb1f5",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "27",
+        "moveId": "Return",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 28 - Dig",
+      "recordSha256": "3b3e45eee3671668c1e4e6a63fd5a4fc39ef06b43b83bcb08c0d93d38198e339",
+      "effectSha256": "3b33f83e02e583db5a6f0e0b5636b62a4f2585d2556dd0e8697e66249a43f97c",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "28",
+        "moveId": "Dig",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 29 - Psychic",
+      "recordSha256": "d1dfab1c3aa5119af53d5f3efac863042436d6563ea4084a9e7c04bc8471eac6",
+      "effectSha256": "acafa8034e44e775c82ed3be76b9a3eee894ab9537b3be5302b8654fafff96e1",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "29",
+        "moveId": "Psychic",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 30 - Shadow Ball",
+      "recordSha256": "88b49dea67b269e7bad3308c16e9734d19fe6076578009cc300fb29bedd6cc45",
+      "effectSha256": "50e23a7bae2f39d838565b9430f15d873cbc09fc70e1ec58eb4ee77e7f3e225d",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "30",
+        "moveId": "Shadow Ball",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 31 - Brick Break",
+      "recordSha256": "f3742db232c70a81f56ec9729997f38d96cb8729de848527ea9d62f2f6fc958e",
+      "effectSha256": "a4c179bc7458dd588acaede09c4e9f8e2f0f590999c340950a3a3af1eddc8ea6",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "31",
+        "moveId": "Brick Break",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 32 - Double Team",
+      "recordSha256": "69303867046d096cadf625a143c78012cbb70b755f7828304bd7e20a18ea6c10",
+      "effectSha256": "5439c3d8f5c2f07ed2cb5fd58afb54817940f273c69277af50eead512bd5b451",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "32",
+        "moveId": "Double Team",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 33 - Reflect",
+      "recordSha256": "a3dcca5c06e7c168ae67d658c69c7e66d979a9bb4a89eb2408d194bb51e54fdb",
+      "effectSha256": "207239941d25401305eb8fefdd3fc7f144949b4362eb6a4fd8f398f341ddcc87",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "33",
+        "moveId": "Reflect",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 34 - Sludge Wave",
+      "recordSha256": "51e45595ac400846df97a4bb6de068c79a97cc2a66513281700395ad508541ef",
+      "effectSha256": "a908a9eba102aed6740084daa428d5426e02f84b98d3e15e2d061f115f46a2bb",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "34",
+        "moveId": "Sludge Wave",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 35 - Flamethrower",
+      "recordSha256": "611c5f6e8a655ecd44b33e1804c775ff2c82baafe6966b637dc7fe8d7708d53f",
+      "effectSha256": "6cca7eb9202bd76479c59ee72ae0e67badb2914f57f2226a2b5eafccb3052609",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "35",
+        "moveId": "Flamethrower",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 36 - Sludge Bomb",
+      "recordSha256": "63287f03c5ce526b73424e158b218ece2c453404eee8cba3327f02a5e9a9182b",
+      "effectSha256": "b004524d4fceb262439a350110de04ea802e06c0f7b9238b783a814b678dada3",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "36",
+        "moveId": "Sludge Bomb",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 37 - Sandstorm",
+      "recordSha256": "de71cf3c773e53797989e081542faac4fa557fa9314685f84b826f3aa5004fc4",
+      "effectSha256": "89ff0243e05bad160deb9cdd0c59ee1dffe513956ff5b9d332fe9cc1dd8e1fde",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "37",
+        "moveId": "Sandstorm",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 38 - Fire Blast",
+      "recordSha256": "d7a2e7b19473eea330397d34e8ba8f17d50c867aff6eedd9d999b000b0b0f4bb",
+      "effectSha256": "47bc930edc6bb9a8a137d22aa58d4d94c29fc5229207613b3dd3b0b50cee77a5",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "38",
+        "moveId": "Fire Blast",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 39 - Rock Tomb",
+      "recordSha256": "a5cfb387010769b00f0b4551cc308496fda0d6196dcbcd85fb7fd95e4005e456",
+      "effectSha256": "14f7128360c3ec50eb0a676d045871c113cb926e73c566451700f4763f4a2816",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "39",
+        "moveId": "Rock Tomb",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 40 - Aerial Ace",
+      "recordSha256": "7e80be2f80e954c52c30fb1db7c4ac4817c439d707ac1dafdb62f69904a3ff0a",
+      "effectSha256": "e91eeb2a607f2d840dfd65209736780df98232f2026b13ca2917c5181f723ed7",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "40",
+        "moveId": "Aerial Ace",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 41 - Torment",
+      "recordSha256": "e90f76482ccee6b07150bac6a9f1befed4e88c66d777952248233462479552a5",
+      "effectSha256": "95adad0962707cb6ef2afe6d0f70e16d2eb0c472f428ea1fe423502de84874cb",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "41",
+        "moveId": "Torment",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 42 - Facade",
+      "recordSha256": "fc000103f33291199c04aadbc594e7deae96ad351dea40a8fc5893be6a6849f8",
+      "effectSha256": "5ce5fca43c517713e21b998a4e72485ed0677f6c2c3b41ac2b7f7e5eb75197bb",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "42",
+        "moveId": "Facade",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 43 - Flame Charge",
+      "recordSha256": "1a17489f727cf41f113aab7b375507e0a346270e8072a829ff4bb30717e406fc",
+      "effectSha256": "6bb4a48829a190538519b9e69c03daf4a8a0178f145c62a095351b48e5380429",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "43",
+        "moveId": "Flame Charge",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 44 - Rest",
+      "recordSha256": "d82d388625520c6b3a9bec45b91c2b40cd8e10f6248e51220010fbdef78066bc",
+      "effectSha256": "eda6c807d25da49b4034e6eebb13b3c2d081f75ba3d75c6346d5654c54de16c5",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "44",
+        "moveId": "Rest",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 45 - Attract",
+      "recordSha256": "340759b8aa43a6addbc6f29fef532d48e989005984f71d364081d997ebcbfeff",
+      "effectSha256": "7f9dc872542548ca93220c79526b8d8e1dc46cd4405ccf96ae7df6385a942272",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "45",
+        "moveId": "Attract",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 46 - Thief",
+      "recordSha256": "499d4ec435294eb1a9255b74feb960fa10653a69b9c4e68c615ca6c280fe1e61",
+      "effectSha256": "bc4fe409a88ed15e71738282af32660d9b9b8346795d0379d3abf6c00f6e8d3f",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "46",
+        "moveId": "Thief",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 47 - Low Sweep",
+      "recordSha256": "b3701857d1ed93229185fa5d9c722b71290546d274a75dad4158c71873d3e930",
+      "effectSha256": "d3aea70995b0ce6b17b325e73294fff31026bf1ca9535669b1b29a5a6cb9e795",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "47",
+        "moveId": "Low Sweep",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 48 - Round",
+      "recordSha256": "12dca321155227445dc935ff4610fca9b43e3d33e59cac5ed6e722976078fe79",
+      "effectSha256": "a9b7d25b7dbb0ae28b377f1d3ad04c7b53c5c45d38cf2a51ec6901c198b971a1",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "48",
+        "moveId": "Round",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 49 - Echoed Voice",
+      "recordSha256": "044f41d5d22bb741a71245c640c880644ff7cb42c354db646cfc1b1754869ffc",
+      "effectSha256": "f5a782bf5e8ba3008e7b1697d69bd0838556e9a76e59508069c389b0a9591288",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "49",
+        "moveId": "Echoed Voice",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 50 - Overheat",
+      "recordSha256": "fbdc276bde52929f25e327c227245142656e73073aad1c4a5a1eeccc484fa211",
+      "effectSha256": "89bb20eec3e85138f60b29fd13713db208d3106d26d5e62964ea7f5d3abe1d3f",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "50",
+        "moveId": "Overheat",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 51 - Steel Wing",
+      "recordSha256": "f8ed03e376147c1af0104995862de1370cb9413f7c720490c980bb72abb712ab",
+      "effectSha256": "964949248849832d38cf05b8c4bcd03c79ea4d12bd9d017649eccf038917e55e",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "51",
+        "moveId": "Steel Wing",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 52 - Focus Blast",
+      "recordSha256": "5ac916894d96188c164cab7f9d7838afde8d744753a14977d8eb93be60e0554b",
+      "effectSha256": "8bcb1852728b3b7dbccb3b1812a485587e1eb1474430e20ef0a4276e5bfe719f",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "52",
+        "moveId": "Focus Blast",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 53 - Energy Ball",
+      "recordSha256": "20c66f1776663558825d1eae9f840df8ed5f079cb30f61fdbe54e1d0b47a381c",
+      "effectSha256": "b9f372bdc5eb354b157b1911a48bca260f4d192a539d6835d626679bdcfdd86b",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "53",
+        "moveId": "Energy Ball",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 54 - False Swipe",
+      "recordSha256": "ebb15b8853ca39f477bd74a49565c43706ea091086357646ed41278681fe89f3",
+      "effectSha256": "8f4daecaa6005b153b5dd216daf187175921be99a3d41b96bfe08b1982ef6fb6",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "54",
+        "moveId": "False Swipe",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 55 - Scald",
+      "recordSha256": "9310a5c1dd563ed5b4a68fb9e5299c54c7247dada3e9b1f3d0240851c8904d22",
+      "effectSha256": "42dbbf166e01c90bd7ddbdfc94f003389a4cce6ca6c2cd0d1c99ee374381e28f",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "55",
+        "moveId": "Scald",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 56 - Fling",
+      "recordSha256": "1264b1838a2c741f2b8138ccddd6fb6261a14d723b62c6e21a72297231a8f0ff",
+      "effectSha256": "c3ecc45be965ced0790bf17d872b65a3f6420712cfd229c0db47dc52e06f9a61",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "56",
+        "moveId": "Fling",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 57 - Charge Beam",
+      "recordSha256": "a7df70217e14775524d3017b64cf2d93dedc37e89a249483c0886cca64522e36",
+      "effectSha256": "f9130ac2cbbe8295784dd35bac25840c20b6b0622b1dd870171f3fbbdff02b2d",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "57",
+        "moveId": "Charge Beam",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 58 - Sky Drop",
+      "recordSha256": "7892dd782701c5a62da2df798efa512e1ab5246753a49f8904b3fa99ecd5c17c",
+      "effectSha256": "4757af1025e7dea706e72f32505343691aaf3825c44a18d68613ebdba9b2783b",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "58",
+        "moveId": "Sky Drop",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 59 - Incinerate",
+      "recordSha256": "abecf9fe4fd3821d09e061d23144c16b269f96e109374beafcc790700503a8be",
+      "effectSha256": "c7f17d8e947e1d997d83288e595133c97a5e3b831c54f89132ca57a0b630fd0a",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "59",
+        "moveId": "Incinerate",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 60 - Quash",
+      "recordSha256": "5f7853cce5cb955341a7b5865ef7b75b0c940cc69129b1a534484386b7b8d624",
+      "effectSha256": "5adc63b82cf18e49eb613f2aabd6dede2c07337f608bda3199c0e0249366355e",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "60",
+        "moveId": "Quash",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 61 - Will-O-Wisp",
+      "recordSha256": "d1b4de0739202c054a55fb208ccde44d5d953ba12a0a14a0fef2a30124b1ac80",
+      "effectSha256": "2090a6654662786f1e05815cca79db15e2c633cb725ff686ea8cde93976d5673",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "61",
+        "moveId": "Will-O-Wisp",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 62 - Acrobatics",
+      "recordSha256": "60154df7d577e5089f8ecc07c24863a6a6dceba5dfc6765b8a14804208127c54",
+      "effectSha256": "766be459b0fec84531378bc2d57d1034e5f6d46512dbf79c8558563bd4dd1806",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "62",
+        "moveId": "Acrobatics",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 63 - Embargo",
+      "recordSha256": "e03be3cc562477cf72ebf343a3ed22b7352d7cc257007328ec730ae8b200711a",
+      "effectSha256": "5de452a2c99f7c5b924a9671e6e7a04ed1e7d421092f24860e043517b5d560a5",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "63",
+        "moveId": "Embargo",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 64 - Explosion",
+      "recordSha256": "942a5a2359fbf9ca425275f52316d57c27a30cfab9173fc8f08f9d473e47cf23",
+      "effectSha256": "9410afd2578d90d3be1e45c4e77fefa1765fddebca5386e6929a9f7503e19dae",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "64",
+        "moveId": "Explosion",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 65 - Shadow Claw",
+      "recordSha256": "cc4f604147cf07cd5ea4f981967b2958c4e69b8cbc476830ea5361a83fcad7b1",
+      "effectSha256": "c4af47f7e44627775b7e288e72544544a2eaf5a04212b66c7a9f63891d34b5c5",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "65",
+        "moveId": "Shadow Claw",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 66 - Payback",
+      "recordSha256": "bac86f58718d5424c31c676d682616229b20daf42803dcc86d8a9b8a497cafe1",
+      "effectSha256": "739311bd858245cf79fc92e43e8b85fa39383f9b630ceaf592995062117d69e8",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "66",
+        "moveId": "Payback",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 67 - Retaliate",
+      "recordSha256": "adafc9f8590360466da202467bad86625697256eabc0e5d5da6ae6d20e1efe11",
+      "effectSha256": "a97699e062cab9abc90e04678df6fcda9d09f1aacdb61a6d55992e138b10eaf0",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "67",
+        "moveId": "Retaliate",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 68 - Giga Impact",
+      "recordSha256": "f4ce5b20e33ee743b82e7cfc091410f7d32c602977f414e90ffac3381c6ca9e1",
+      "effectSha256": "e18522f18835d3d5e277ccae996d316f9f9e279bd0f0a6ed6eaf829cf591156c",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "68",
+        "moveId": "Giga Impact",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 69 - Rock Polish",
+      "recordSha256": "2d115197b7afa50efc4bf464c0069418c5e605277323da31a20ff81d14a52f2e",
+      "effectSha256": "39f7f914efe7f0bb23baa1481b4ba64931744d618835b86c716901806a12b711",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "69",
+        "moveId": "Rock Polish",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 70 - Flash",
+      "recordSha256": "96b7b296abfec9a5c428caf12b93c2864b0ecaed65f5d78f2d1d0f7066bc6bb0",
+      "effectSha256": "12981bc0260482d45dc8cb51538788090a48adea1c45d1ac0a1b2f7096950366",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "70",
+        "moveId": "Flash",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 71 - Stone Edge",
+      "recordSha256": "a6d3a024cbee74ff5d916dba25d89e1263629493601bd18a6f85c4aec3439ffb",
+      "effectSha256": "63ac2bd31e5ac34c13b4df2dcdfa2eeb8921d472396cd23ed2841e747e682bdd",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "71",
+        "moveId": "Stone Edge",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 72 - Volt Switch",
+      "recordSha256": "5abfa6a950dc7ec60f231f720d5243dcdb06687ba0f739a9b7e3d66a65609860",
+      "effectSha256": "e8d54667ce214a3a4c94e913c118ae9fbca6bd587984e90402bcc2d4b41ad306",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "72",
+        "moveId": "Volt Switch",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 73 - Thunder Wave",
+      "recordSha256": "fdc43dd7529b59c427ae83c3e17068e83a342d951d9144d3e37f940eecd0fd56",
+      "effectSha256": "6bcbfcffeefb1467187a654967df6b5c1b4a445a20caed11354179b8f876fef4",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "73",
+        "moveId": "Thunder Wave",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 74 - Gyro Ball",
+      "recordSha256": "02a4d19531f879dd01935473e4c7ac80acfff379f48ff4f70756f942bb0a0c90",
+      "effectSha256": "55af172b5f51fcfac5acfba9c190aa4b3a6e4956117b677969a5b7a494ea6b0b",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "74",
+        "moveId": "Gyro Ball",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 75 - Swords Dance",
+      "recordSha256": "f48e288d77f297c0eed0505e7005fe5033d250b33a23e58582f5e4a1ca1f5d5e",
+      "effectSha256": "58425f1369cc2675fe0f2a195b8c10a851734d23aa485b1cd885165c4b88b600",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "75",
+        "moveId": "Swords Dance",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 76 - Struggle Bug",
+      "recordSha256": "0731709c939073dfc543a0362eb000fc0f902333e451ebedc2b831b557398a40",
+      "effectSha256": "a6cc3658046eb25b9541fcdda72f5817318af22e78ead73fe77b8f5b98c9dfe6",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "76",
+        "moveId": "Struggle Bug",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 77 - Psych Up",
+      "recordSha256": "6798234c4d7aa3065da71069ff9e4774922d346d0071e099692548b4e4ebde68",
+      "effectSha256": "00de8f075196536b1c57502f714fc2a5b7f1b7ff25f57c0c7a334248dff6c3fb",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "77",
+        "moveId": "Psych Up",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 78 - Bulldoze",
+      "recordSha256": "af4cd11c7720f6ec06e1e28755a304ccd3f0ba05190fb0b35a468d8df887946c",
+      "effectSha256": "ee6f3be063bd993722c1e3121cb8ce619bb9143fcb4e7957c8df2947fe845fd2",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "78",
+        "moveId": "Bulldoze",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 79 - Frost Breath",
+      "recordSha256": "694d4c882c176ab536bf090a752b35be7c88a85f835c4c5f19591dbb55af90bf",
+      "effectSha256": "5212d5d90622770dcb94457e9feff0f4b5fcdeaeca693428daf040a23ee1d33b",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "79",
+        "moveId": "Frost Breath",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 80 - Rock Slide",
+      "recordSha256": "a882928f08276e1bef9f5ebe95733b523d2f4320b0091855b88bfb3d8c3aea7f",
+      "effectSha256": "eeb58e603763c65061ce6ba0e092c1169f7eb7dcc25ba59e7c0918d86896d063",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "80",
+        "moveId": "Rock Slide",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 81 - X-Scissor",
+      "recordSha256": "eee0df01c87a188539101777973f7e8cc9a5ca741f547bdd30d961fb5d313ccb",
+      "effectSha256": "6e97bb14a28a7187368ffcc35b4fe891077df1c123dea844db4fa5d389e8c95a",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "81",
+        "moveId": "X-Scissor",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 82 - Dragon Tail",
+      "recordSha256": "e02ae99b374952f792c8e2e467b734c30928992dbdcf2da11681661cda9869df",
+      "effectSha256": "7764b72fbdf56383ca1cd50f931853d1f6d8d16a20a53622c9cd866828814351",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "82",
+        "moveId": "Dragon Tail",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 83 - Infestation",
+      "recordSha256": "a4939cd0f248462c976782d7bfa4193f2b19eb160eb415d57006727bd687fdda",
+      "effectSha256": "8290a91b3834951d1d51578b5dc51c5c7568559021d15a72423d52a5e0c9d3fe",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "83",
+        "moveId": "Infestation",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 84 - Poison Jab",
+      "recordSha256": "eb50fef51f7122b9f1eab601f27ed9b51f57d96b1420d9fd718d77df7d8ab7e7",
+      "effectSha256": "4b604f27194c1536008f88ac4f217069ec8adaccd40c65caa3a63e98d548de09",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "84",
+        "moveId": "Poison Jab",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 85 - Dream Eater",
+      "recordSha256": "1e1c0e471b2952a2f7baaaa4ab36c490c3d6cc43810dfc7887134b9032d66aae",
+      "effectSha256": "a799d6cae7efa75eaecf885943adae38f5e615220d91199fa406847880c58a51",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "85",
+        "moveId": "Dream Eater",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 86 - Grass Knot",
+      "recordSha256": "b59c68b2913d0877d9e1a5722215e193113320ccb127b9a1ade6e1be206900cc",
+      "effectSha256": "0c18614a1c6de282c361203be3262abcd4bdeabae3b8f66cc5d1d82c2028268e",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "86",
+        "moveId": "Grass Knot",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 87 - Swagger",
+      "recordSha256": "540faae7ece0c9211ef1c378e52784216cc4db4011a33913f92a880b02669c30",
+      "effectSha256": "933668e33d24118be45c256d541eab98464168a8e549cc88a56edff959579d7b",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "87",
+        "moveId": "Swagger",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 88 - Sleep Talk",
+      "recordSha256": "73ef3f0607e101881a41fd46bef6f83fe96d2b3b9d5f9a47bb8fe41988cb346f",
+      "effectSha256": "a2c39c278b2c01be712898298330b102e0b2e69fd528707b821f365c18cc0ef9",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "88",
+        "moveId": "Sleep Talk",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 89 - U-Turn",
+      "recordSha256": "967dd548dbbdc942555ba5ded4136e8233193b195d8c8dee2ad47ba64549e54f",
+      "effectSha256": "eecca38e3d730631279c9b076597f0a90f437e9ad3169690fb4374c165f4bb78",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "89",
+        "moveId": "U-Turn",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 90 - Substitute",
+      "recordSha256": "5c9ccbae6e840ca52111ecb5b08e7a2964871f76a6ef9e71e53e60cfc2a197ae",
+      "effectSha256": "c9ed997df982802553a21976337088aebf1b91ecef73b7b8ea04a6fd4932fdd2",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "90",
+        "moveId": "Substitute",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 91 - Flash Cannon",
+      "recordSha256": "c67b81ee8791b0d479b7d3b813004f2f00330de9e56e744d285b13349e44c93e",
+      "effectSha256": "cdc42791e866f6597c5399f49abc253f9feee726b7620148dc86355d53e46ff7",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "91",
+        "moveId": "Flash Cannon",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 92 - Trick Room",
+      "recordSha256": "fd277fec6b9e195367d07c8ad71d7ff904c724492c86c435fa0a8f25ae4a3f48",
+      "effectSha256": "be128036b09ba6009443cfd46ee3d58d85b6a0f29f5ace505fecc2293918f2f8",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "92",
+        "moveId": "Trick Room",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 93 - Wild Charge",
+      "recordSha256": "7015d4f49a317432ef6b74753061f0e6e8e38388466c8c61ca05bf6a77afe77a",
+      "effectSha256": "12cc092f9637f59bfcecdb56cdadca57dd55cfb1f4bb9a87871177b41bdeb6f9",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "93",
+        "moveId": "Wild Charge",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 94 - Rock Smash",
+      "recordSha256": "479318d6291235c43c75f6565ab189e6ad12eefc1be49ae88d4186a1ac50ba3f",
+      "effectSha256": "91e3df1aa00e4bcb4fc1672d76c5a46a743006d10b8af76a6fa82651484e551e",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "94",
+        "moveId": "Rock Smash",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 95 - Snarl",
+      "recordSha256": "e85f184ca28999ad3f3aa6dbbdb3003298e9d804f29dcda3368b459dcb11dbf7",
+      "effectSha256": "cccbbdb8265f1c0d87c483986b3f891f79f38b0b4e4477ecf9f4274788c9a6af",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "95",
+        "moveId": "Snarl",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 96 - Nature Power",
+      "recordSha256": "30a6eed62c04d1593705c15157ba5bde2248e148cbdbf24637cb081c4790920c",
+      "effectSha256": "0e132415b9b38c642c06e840d4188df0b1a9dcf822977abe601a5314221936cb",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "96",
+        "moveId": "Nature Power",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 97 - Dark Pulse",
+      "recordSha256": "854347c7605e0602c71d8918124a8f96fc5823a29a0bd865a1e4473b8a2f5f5c",
+      "effectSha256": "b7c8f3438614282d2e5ba454092451983a4e948f67d54cce5fe6bf59ccfb6105",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "97",
+        "moveId": "Dark Pulse",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 98 - Power-Up Punch",
+      "recordSha256": "1c7f7d59f2f21c8444eab0dc3e371bb480324d43bb3ce8f53ddec1b8b4fe15cf",
+      "effectSha256": "e1d16c7551379133a8ec64086df4e9402933aa4f706c2b14118c264762ba68c0",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "98",
+        "moveId": "Power-Up Punch",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "TM 99 - Dazzling Gleam",
+      "recordSha256": "1bea443345c2ffadd87524a7fdaebc9e663131b8d3fc33fb7138a82d99cd45d8",
+      "effectSha256": "b996817b1891039699ac9452a25919df6dab893729106464f729cef244c49c12",
+      "effect": {
+        "kind": "learn-machine-move",
+        "machineKind": "TM",
+        "machineNumber": "99",
+        "moveId": "Dazzling Gleam",
+        "tutorPointCost": 1,
+        "learningMinutes": 60,
+        "activeMoveMaximum": 6,
+        "machineTutorMoveMaximum": 3,
+        "dailyUseLimit": null
+      }
+    },
+    {
+      "canonicalId": "Thunder Stone",
+      "recordSha256": "f76bff0bb30233cd29d890ea35be2e0737d28d2ab5584be818aba39f89097cfa",
+      "effectSha256": "6f434a8e35d07b9f0791fd7ce23c389472e029b820cd8d360a4b6cef262218f3",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Thunder Stone"
+      }
+    },
+    {
+      "canonicalId": "Up-Grade",
+      "recordSha256": "7d610abd00d58290c801224e8b02a109d2cb8387f35ee8aa9bb2ef099cbc5468",
+      "effectSha256": "26260a6191de034e47f59a1c32eba8aafc1c9e66ffbad6e3c2ec68c3dc45956f",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Up-Grade"
+      }
+    },
+    {
+      "canonicalId": "Water Stone",
+      "recordSha256": "b85e759ead25eaf9539345f7d88b341eda3c13867ce17514676095d02b088f53",
+      "effectSha256": "021155855b7744e16fe04c93419fa709b49035223229048280ca2f0168489fa9",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Water Stone"
+      }
+    },
+    {
+      "canonicalId": "Whipped Dream",
+      "recordSha256": "0fa438b3466b50ae2c68f0c33a3a5e521de8fc86c5407dfe1e531f7def20c914",
+      "effectSha256": "96f13b6bca2acd6e1a9aab3ce371c429851084396588f2010e3262df6a2e802a",
+      "effect": {
+        "kind": "evolve-pokemon",
+        "transitionPolicyId": "Whipped Dream"
+      }
+    },
+    {
+      "canonicalId": "X Accuracy",
+      "recordSha256": "0d24617746e1972bc328da6a9c286f41c650b326a5375232457231d2131d3951",
+      "effectSha256": "0e20e16cc0c3d7dbcf4324d6dcd4e1f6ed24c91c8fc6db2b370214d26db1dd71",
+      "effect": {
+        "kind": "modify-stage",
+        "stat": "acc",
+        "amount": 2
+      }
+    },
+    {
+      "canonicalId": "X Attack",
+      "recordSha256": "b728be8813586b0c93d02cc78bcce8c337f7767fbac4f72bd5b62bcdee13f985",
+      "effectSha256": "311d06985d028a08b001d2fe4c7523493d7e1f187684ff1d6a688e0a1c7ba6d2",
+      "effect": {
+        "kind": "modify-stage",
+        "stat": "atk",
+        "amount": 2
+      }
+    },
+    {
+      "canonicalId": "X Defend",
+      "recordSha256": "3f8ed958cc55d7ba975db6a59985acf7b89da2792e24673a9a6e4951e668d8d4",
+      "effectSha256": "3dcf66e4fe60d22364cf7e8da7b11b47413787118f28d0bd63f524ce4378a6ef",
+      "effect": {
+        "kind": "modify-stage",
+        "stat": "def",
+        "amount": 2
+      }
+    },
+    {
+      "canonicalId": "X Sp. Def",
+      "recordSha256": "1cec9fb419ed77a3db9cd6e49707787723b704003a7da633929de84f38dc2980",
+      "effectSha256": "824efb1c2858c1ddf7e667e84858c999980ca453ed0dd40fc8f9e0f3b30a0a6c",
+      "effect": {
+        "kind": "modify-stage",
+        "stat": "sdef",
+        "amount": 2
+      }
+    },
+    {
+      "canonicalId": "X Special",
+      "recordSha256": "5ac7311d3ac7de16f680dbd1033a4aa4210d6ae0870780637b1ea17c96a30174",
+      "effectSha256": "14bf4f449b0941c848c90fcf171d0fbcf875307c66e298180b084ef56157c2bc",
+      "effect": {
+        "kind": "modify-stage",
+        "stat": "satk",
+        "amount": 2
+      }
+    },
+    {
+      "canonicalId": "X Speed",
+      "recordSha256": "98064f8ddb922df95f45d088e2eca3193765b599835e5d5c670c1bbdaa068a15",
+      "effectSha256": "84ba66cfa526dd00c4aee786734307d6ae04dd799eaead9929e92a3d8162e69b",
+      "effect": {
+        "kind": "modify-stage",
+        "stat": "spd",
+        "amount": 2
+      }
+    },
+    {
+      "canonicalId": "Zinc",
+      "recordSha256": "ef2d11283860f4d83e8d4d9c518106a99e8a99fcdc8e59217f5ba65235107128",
+      "effectSha256": "1ef2d33200a34142f5d30641be8f223621fc12fdd41de4b1eb2b088b13b7cdbe",
+      "effect": {
+        "kind": "modify-base-stat",
+        "stat": "sdef",
+        "amount": 1,
+        "countsAsVitamin": true,
+        "requiresTrainerConsent": false
+      }
+    }
+  ]
+}

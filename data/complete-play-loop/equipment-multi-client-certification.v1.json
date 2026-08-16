@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-050",
+  "status": "certified",
+  "certificationTest": "tests/integration/equipmentMultiClientLifecycle.test.ts",
+  "runtimeEvidence": {
+    "equipmentDefinitionsSha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a",
+    "equipmentContributionsSha256": "dcf20f7e7992aee9ebb62c20f0b808dc3b6e4d881290128cfc23529d42079fcf",
+    "equipmentGrantsSha256": "466a621c6901a4c0d6c544deae103e82062c75c8fe32d3c84442c1e0c87836bc",
+    "equipmentEventProvidersSha256": "8edfef9137c5ee6c0df2c612715fd99d738eed7f0f394e8aeb08c4b3c69b00ee",
+    "equipmentLifecycleSha256": "fa4011cef49732b025ba9cf94990e55ff4e4ad7f753377927ce2aa20ddb509be"
+  },
+  "clients": [
+    {
+      "id": "client-a",
+      "role": "player",
+      "authority": "selected profile linked to Trainer and Pokémon"
+    },
+    {
+      "id": "client-b",
+      "role": "player",
+      "authority": "same selected profile with independently cached revisions"
+    },
+    {
+      "id": "reconnect",
+      "role": "player",
+      "authority": "fresh sheet and realtime projection"
+    }
+  ],
+  "trainerScenario": {
+    "steps": [
+      "shared group transfer to Trainer inventory",
+      "equip Light Armor",
+      "observe reviewed +5 Damage reduction contribution",
+      "exact replay without duplicate realtime publication",
+      "reject second client's stale equip command",
+      "return Light Armor and withdraw its contribution",
+      "equip Survival Knife",
+      "project native Cheap Shot and weapon passives through opaque source identity",
+      "return Survival Knife",
+      "withdraw offers and passives and reject the stale attack source"
+    ],
+    "items": [
+      "Light Armor",
+      "Survival Knife"
+    ],
+    "sourceCleanup": "fresh presentation contains neither contribution, granted Move, nor passive"
+  },
+  "pokemonScenario": {
+    "steps": [
+      "shared group transfer to Trainer Pokémon Items",
+      "give Quick Claw",
+      "observe reviewed +10 Initiative contribution",
+      "reject second client's stale give command",
+      "atomically swap Safety Goggles for Quick Claw",
+      "withdraw Initiative and activate powder-immunity provider",
+      "take Safety Goggles",
+      "withdraw future provider subscription and return both whole items to Trainer custody"
+    ],
+    "items": [
+      "Quick Claw",
+      "Safety Goggles"
+    ],
+    "sourceCleanup": "fresh Pokémon projection has no equipped instance, contribution, or provider"
+  },
+  "concurrencyAssertions": {
+    "sheetCompareAndSwap": true,
+    "equipmentCompareAndSwap": true,
+    "instanceCompareAndSwap": true,
+    "staleCommandsRejected": true,
+    "exactReplayNoDuplicateMutation": true,
+    "exactReplayNoDuplicateRealtime": true,
+    "realtimeSequencesMonotonic": true,
+    "freshReconnectConverges": true
+  },
+  "privacyAssertions": {
+    "playerSheetUsesProjection": true,
+    "attackSourceIdentityOpaque": true,
+    "equippedInstanceIdentityOmitted": true,
+    "inventorySourceIdentityOmitted": true,
+    "canonicalAndDefinitionHashesOmitted": true,
+    "serializedEquipmentOmitted": true,
+    "providerBindingOmitted": true,
+    "playerRealtimeRedacted": true
+  },
+  "failurePolicy": {
+    "staleOffer": "reauthorize-and-reject",
+    "staleValue": "fresh-projection-withdraws-source",
+    "missedRealtime": "reconnect-from-authoritative-sheet",
+    "uncertainCommand": "retry-exact-operation-id"
+  }
+}

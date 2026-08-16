@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 28
+export const LATEST_STORAGE_SCHEMA_VERSION = 44
 
 export interface StorageMigration {
   readonly version: number
@@ -764,6 +764,743 @@ const createBreedingIncubationSegmentTable = (connection: DatabaseSync): void =>
   `)
 }
 
+const createItemOperationTables = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS item_operations (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_json TEXT NOT NULL CHECK (json_valid(command_json)),
+      status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected', 'abandoned', 'corrected')),
+      canonical_item_id TEXT,
+      canonical_definition_sha256 TEXT CHECK (
+        canonical_definition_sha256 IS NULL OR length(canonical_definition_sha256) = 64
+      ),
+      plan_json TEXT CHECK (plan_json IS NULL OR json_valid(plan_json)),
+      result_json TEXT CHECK (result_json IS NULL OR json_valid(result_json)),
+      correction_of_operation_id TEXT,
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+      CHECK (
+        (status = 'pending' AND result_json IS NULL)
+        OR (status <> 'pending' AND result_json IS NOT NULL)
+      ),
+      CHECK (
+        canonical_item_id IS NULL
+        OR (length(canonical_item_id) BETWEEN 1 AND 200)
+      ),
+      CHECK (
+        correction_of_operation_id IS NULL
+        OR correction_of_operation_id <> operation_id
+      ),
+      FOREIGN KEY (correction_of_operation_id) REFERENCES item_operations (operation_id)
+        DEFERRABLE INITIALLY DEFERRED
+    );
+
+    CREATE INDEX IF NOT EXISTS item_operations_status_updated_idx
+      ON item_operations (status, updated_at, operation_id);
+    CREATE INDEX IF NOT EXISTS item_operations_canonical_item_idx
+      ON item_operations (canonical_item_id, created_at, operation_id);
+
+    CREATE TABLE IF NOT EXISTS item_operation_scopes (
+      operation_id TEXT NOT NULL,
+      scope_kind TEXT NOT NULL CHECK (scope_kind IN (
+        'map', 'encounter', 'sheet', 'group-inventory', 'equipment', 'campaign-clock'
+      )),
+      scope_key TEXT NOT NULL,
+      expected_revision INTEGER NOT NULL CHECK (expected_revision >= 0),
+      scope_json TEXT NOT NULL CHECK (json_valid(scope_json)),
+      PRIMARY KEY (operation_id, scope_kind, scope_key),
+      FOREIGN KEY (operation_id) REFERENCES item_operations (operation_id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS item_operation_scopes_conflict_idx
+      ON item_operation_scopes (scope_kind, scope_key, operation_id);
+  `)
+}
+
+const addItemPendingDecisionAndResumeEvidence = (connection: DatabaseSync): void => {
+  const table = connection.prepare(`
+    SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'item_operations'
+  `).get()
+  if (!table) throw new Error('Storage migration v30 requires the authoritative item_operations table')
+  const columns = new Set(connection.prepare(`PRAGMA table_info(item_operations)`).all().map(row => String(row.name)))
+  if (!columns.has('pending_decision_json')) {
+    connection.exec(`
+      ALTER TABLE item_operations ADD COLUMN pending_decision_json TEXT
+        CHECK (pending_decision_json IS NULL OR json_valid(pending_decision_json));
+    `)
+  }
+  if (!columns.has('resume_command_sha256')) {
+    connection.exec(`
+      ALTER TABLE item_operations ADD COLUMN resume_command_sha256 TEXT
+        CHECK (resume_command_sha256 IS NULL OR length(resume_command_sha256) = 64);
+    `)
+  }
+  if (!columns.has('resume_command_json')) {
+    connection.exec(`
+      ALTER TABLE item_operations ADD COLUMN resume_command_json TEXT
+        CHECK (resume_command_json IS NULL OR json_valid(resume_command_json));
+    `)
+  }
+  connection.exec(`
+    CREATE TRIGGER IF NOT EXISTS item_operations_resume_evidence_insert_check
+    BEFORE INSERT ON item_operations
+    WHEN (NEW.resume_command_sha256 IS NULL) <> (NEW.resume_command_json IS NULL)
+    BEGIN
+      SELECT RAISE(ABORT, 'item operation resume command evidence must be complete');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS item_operations_resume_evidence_update_check
+    BEFORE UPDATE OF resume_command_sha256, resume_command_json ON item_operations
+    WHEN (NEW.resume_command_sha256 IS NULL) <> (NEW.resume_command_json IS NULL)
+    BEGIN
+      SELECT RAISE(ABORT, 'item operation resume command evidence must be complete');
+    END;
+  `)
+}
+
+const addItemRecoveryEvidence = (connection: DatabaseSync): void => {
+  const table = connection.prepare(`
+    SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'item_operations'
+  `).get()
+  if (!table) throw new Error('Storage migration v31 requires the authoritative item_operations table')
+  const columns = new Set(connection.prepare(`PRAGMA table_info(item_operations)`).all().map(row => String(row.name)))
+  if (!columns.has('recovery_command_sha256')) {
+    connection.exec(`
+      ALTER TABLE item_operations ADD COLUMN recovery_command_sha256 TEXT
+        CHECK (recovery_command_sha256 IS NULL OR length(recovery_command_sha256) = 64);
+    `)
+  }
+  if (!columns.has('recovery_command_json')) {
+    connection.exec(`
+      ALTER TABLE item_operations ADD COLUMN recovery_command_json TEXT
+        CHECK (recovery_command_json IS NULL OR json_valid(recovery_command_json));
+    `)
+  }
+  if (!columns.has('compensation_json')) {
+    connection.exec(`
+      ALTER TABLE item_operations ADD COLUMN compensation_json TEXT
+        CHECK (compensation_json IS NULL OR json_valid(compensation_json));
+    `)
+  }
+  connection.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS item_operations_recovery_origin_idx
+      ON item_operations (correction_of_operation_id)
+      WHERE correction_of_operation_id IS NOT NULL;
+
+    CREATE TRIGGER IF NOT EXISTS item_operations_recovery_evidence_insert_check
+    BEFORE INSERT ON item_operations
+    WHEN (NEW.recovery_command_sha256 IS NULL) <> (NEW.recovery_command_json IS NULL)
+      OR ((NEW.status IN ('abandoned', 'corrected')) <> (NEW.recovery_command_json IS NOT NULL))
+      OR (NEW.status = 'corrected' AND NEW.correction_of_operation_id IS NULL)
+      OR (NEW.status <> 'corrected' AND NEW.correction_of_operation_id IS NOT NULL)
+    BEGIN
+      SELECT RAISE(ABORT, 'item operation recovery evidence must match terminal status');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS item_operations_recovery_evidence_update_check
+    BEFORE UPDATE OF status, correction_of_operation_id, recovery_command_sha256, recovery_command_json
+      ON item_operations
+    WHEN (NEW.recovery_command_sha256 IS NULL) <> (NEW.recovery_command_json IS NULL)
+      OR ((NEW.status IN ('abandoned', 'corrected')) <> (NEW.recovery_command_json IS NOT NULL))
+      OR (NEW.status = 'corrected' AND NEW.correction_of_operation_id IS NULL)
+      OR (NEW.status <> 'corrected' AND NEW.correction_of_operation_id IS NOT NULL)
+    BEGIN
+      SELECT RAISE(ABORT, 'item operation recovery evidence must match terminal status');
+    END;
+  `)
+}
+
+const createCampaignDayOperationTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS campaign_day_operations (
+      operation_id TEXT PRIMARY KEY CHECK (
+        length(operation_id) = 48
+        AND operation_id GLOB 'campaign-day:v1:[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]'
+      ),
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json)
+        AND length(CAST(command_json AS BLOB)) <= 4096
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json)
+        AND length(CAST(result_json AS BLOB)) <= 4194304
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+
+    CREATE INDEX IF NOT EXISTS campaign_day_operations_created_idx
+      ON campaign_day_operations (created_at, operation_id);
+  `)
+}
+
+const createEquipmentOperationTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS equipment_operations (
+      operation_id TEXT PRIMARY KEY CHECK (
+        length(operation_id) = 55
+        AND operation_id GLOB 'equipment-operation:v1:[0-9a-f]*'
+      ),
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_kind TEXT NOT NULL CHECK (command_kind IN ('equip', 'unequip', 'swap', 'give', 'take')),
+      actor_profile_id TEXT,
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json)
+        AND length(CAST(command_json AS BLOB)) <= 32768
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json)
+        AND length(CAST(result_json AS BLOB)) <= 4194304
+      ),
+      evidence_json TEXT NOT NULL CHECK (
+        json_valid(evidence_json)
+        AND length(CAST(evidence_json AS BLOB)) <= 8388608
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+
+    CREATE INDEX IF NOT EXISTS equipment_operations_created_idx
+      ON equipment_operations (created_at, operation_id);
+  `)
+}
+
+const createItemExtendedActionActivityTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS item_extended_action_activities (
+      activity_id TEXT PRIMARY KEY CHECK (
+        length(activity_id) = 49
+        AND activity_id GLOB 'item-activity:v1:[0-9a-f]*'
+      ),
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      status TEXT NOT NULL CHECK (status IN ('in-progress', 'completed', 'interrupted')),
+      start_operation_id TEXT NOT NULL UNIQUE CHECK (
+        length(start_operation_id) = 59
+        AND start_operation_id GLOB 'item-activity-operation:v1:[0-9a-f]*'
+      ),
+      settlement_operation_id TEXT NOT NULL UNIQUE,
+      actor_sheet_slug TEXT NOT NULL,
+      source_instance_id TEXT NOT NULL,
+      start_command_sha256 TEXT NOT NULL CHECK (length(start_command_sha256) = 64),
+      start_command_json TEXT NOT NULL CHECK (
+        json_valid(start_command_json)
+        AND length(CAST(start_command_json AS BLOB)) <= 32768
+      ),
+      terminal_operation_id TEXT UNIQUE,
+      terminal_command_sha256 TEXT,
+      terminal_command_json TEXT,
+      result_json TEXT,
+      record_json TEXT NOT NULL CHECK (
+        json_valid(record_json)
+        AND length(CAST(record_json AS BLOB)) <= 262144
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+      CHECK (
+        (status = 'in-progress' AND terminal_operation_id IS NULL
+          AND terminal_command_sha256 IS NULL AND terminal_command_json IS NULL AND result_json IS NULL)
+        OR
+        (status IN ('completed', 'interrupted') AND terminal_operation_id IS NOT NULL
+          AND terminal_command_sha256 IS NOT NULL AND terminal_command_json IS NOT NULL AND result_json IS NOT NULL)
+      ),
+      CHECK ((terminal_command_sha256 IS NULL) = (terminal_command_json IS NULL))
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS item_extended_action_actor_active_idx
+      ON item_extended_action_activities (actor_sheet_slug)
+      WHERE status = 'in-progress';
+    CREATE UNIQUE INDEX IF NOT EXISTS item_extended_action_source_active_idx
+      ON item_extended_action_activities (source_instance_id)
+      WHERE status = 'in-progress';
+    CREATE INDEX IF NOT EXISTS item_extended_action_status_updated_idx
+      ON item_extended_action_activities (status, updated_at, activity_id);
+  `)
+}
+
+const addEquipmentLifecycleOperationKinds = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE equipment_operations_v34 (
+      operation_id TEXT PRIMARY KEY CHECK (
+        length(operation_id) = 55
+        AND operation_id GLOB 'equipment-operation:v1:[0-9a-f]*'
+      ),
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_kind TEXT NOT NULL CHECK (command_kind IN (
+        'equip', 'unequip', 'swap', 'give', 'take',
+        'suppress', 'deactivate', 'break', 'restore', 'repair',
+        'damage', 'restore-durability'
+      )),
+      actor_profile_id TEXT,
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json)
+        AND length(CAST(command_json AS BLOB)) <= 32768
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json)
+        AND length(CAST(result_json AS BLOB)) <= 4194304
+      ),
+      evidence_json TEXT NOT NULL CHECK (
+        json_valid(evidence_json)
+        AND length(CAST(evidence_json AS BLOB)) <= 8388608
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+    INSERT INTO equipment_operations_v34 (
+      operation_id, command_sha256, command_kind, actor_profile_id,
+      command_json, result_json, evidence_json, created_at
+    ) SELECT
+      operation_id, command_sha256, command_kind, actor_profile_id,
+      command_json, result_json, evidence_json, created_at
+    FROM equipment_operations;
+    DROP TABLE equipment_operations;
+    ALTER TABLE equipment_operations_v34 RENAME TO equipment_operations;
+    CREATE INDEX equipment_operations_created_idx
+      ON equipment_operations (created_at, operation_id);
+  `)
+}
+
+const createItemFormChangeOperationTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE item_form_change_operations (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      principal_key TEXT NOT NULL,
+      map_slug TEXT NOT NULL,
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 65536
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 65536
+      ),
+      evidence_json TEXT NOT NULL CHECK (
+        json_valid(evidence_json) AND length(CAST(evidence_json AS BLOB)) <= 1048576
+      ),
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+    CREATE INDEX item_form_change_operations_map_revision_idx
+      ON item_form_change_operations (map_slug, result_revision, operation_id);
+  `)
+}
+
+const createItemExplorationOperationTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE item_exploration_operations (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_kind TEXT NOT NULL CHECK (command_kind IN (
+        'resolve-route-lure-check', 'settle-route-lure', 'settle-direct-repel'
+      )),
+      principal_key TEXT NOT NULL,
+      aggregate_kind TEXT NOT NULL CHECK (aggregate_kind IN ('trainer', 'map')),
+      aggregate_id TEXT NOT NULL,
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 65536
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 65536
+      ),
+      evidence_json TEXT NOT NULL CHECK (
+        json_valid(evidence_json) AND length(CAST(evidence_json AS BLOB)) <= 1048576
+      ),
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+    CREATE INDEX item_exploration_operations_aggregate_revision_idx
+      ON item_exploration_operations (
+        aggregate_kind, aggregate_id, result_revision, operation_id
+      );
+  `)
+}
+
+const createItemBreedingOperationTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE item_breeding_operations (
+      operation_id TEXT PRIMARY KEY CHECK (length(operation_id) = 49),
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_kind TEXT NOT NULL CHECK (command_kind IN (
+        'assign-egg-warmer', 'restore-fossil', 'create-artificial-egg'
+      )),
+      principal_key TEXT NOT NULL CHECK (
+        length(principal_key) BETWEEN 1 AND 160
+      ),
+      trainer_slug TEXT NOT NULL CHECK (
+        length(trainer_slug) BETWEEN 1 AND 160
+      ),
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 65536
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 65536
+      ),
+      evidence_json TEXT NOT NULL CHECK (
+        json_valid(evidence_json) AND length(CAST(evidence_json AS BLOB)) <= 1048576
+      ),
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+    CREATE INDEX item_breeding_operations_trainer_revision_idx
+      ON item_breeding_operations (trainer_slug, result_revision, operation_id);
+  `)
+}
+
+const createInventoryActionOperationTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE inventory_action_operations (
+      operation_id TEXT PRIMARY KEY CHECK (
+        operation_id GLOB 'inventory-action:v1:[0-9a-f]*' AND length(operation_id) = 52
+      ),
+      action_kind TEXT NOT NULL CHECK (action_kind IN ('equip', 'give', 'transfer')),
+      status TEXT NOT NULL CHECK (status IN ('pending', 'accepted')),
+      principal_key TEXT NOT NULL CHECK (length(principal_key) BETWEEN 1 AND 160),
+      trainer_slug TEXT NOT NULL CHECK (length(trainer_slug) BETWEEN 1 AND 200),
+      declaration_sha256 TEXT NOT NULL CHECK (length(declaration_sha256) = 64),
+      declaration_json TEXT NOT NULL CHECK (
+        json_valid(declaration_json) AND length(CAST(declaration_json AS BLOB)) <= 65536
+      ),
+      downstream_command_json TEXT CHECK (
+        downstream_command_json IS NULL OR (
+          json_valid(downstream_command_json) AND length(CAST(downstream_command_json AS BLOB)) <= 65536
+        )
+      ),
+      result_json TEXT CHECK (
+        result_json IS NULL OR (
+          json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 1048576
+        )
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+      CHECK (
+        (status = 'pending' AND result_json IS NULL)
+        OR (status = 'accepted' AND result_json IS NOT NULL)
+      )
+    );
+    CREATE INDEX inventory_action_operations_trainer_created_idx
+      ON inventory_action_operations (trainer_slug, created_at, operation_id);
+  `)
+}
+
+const addInventoryStackOperationKinds = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE inventory_action_operations_v41 (
+      operation_id TEXT PRIMARY KEY CHECK (
+        operation_id GLOB 'inventory-action:v1:[0-9a-f]*' AND length(operation_id) = 52
+      ),
+      action_kind TEXT NOT NULL CHECK (action_kind IN (
+        'equip', 'give', 'transfer', 'split', 'merge', 'discard'
+      )),
+      status TEXT NOT NULL CHECK (status IN ('pending', 'accepted')),
+      principal_key TEXT NOT NULL CHECK (length(principal_key) BETWEEN 1 AND 160),
+      trainer_slug TEXT NOT NULL CHECK (length(trainer_slug) BETWEEN 1 AND 200),
+      declaration_sha256 TEXT NOT NULL CHECK (length(declaration_sha256) = 64),
+      declaration_json TEXT NOT NULL CHECK (
+        json_valid(declaration_json) AND length(CAST(declaration_json AS BLOB)) <= 65536
+      ),
+      downstream_command_json TEXT CHECK (
+        downstream_command_json IS NULL OR (
+          json_valid(downstream_command_json) AND length(CAST(downstream_command_json AS BLOB)) <= 65536
+        )
+      ),
+      result_json TEXT CHECK (
+        result_json IS NULL OR (
+          json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 1048576
+        )
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+      CHECK (
+        (status = 'pending' AND result_json IS NULL)
+        OR (status = 'accepted' AND result_json IS NOT NULL)
+      )
+    );
+    INSERT INTO inventory_action_operations_v41 (
+      operation_id, action_kind, status, principal_key, trainer_slug,
+      declaration_sha256, declaration_json, downstream_command_json,
+      result_json, created_at, updated_at
+    ) SELECT
+      operation_id, action_kind, status, principal_key, trainer_slug,
+      declaration_sha256, declaration_json, downstream_command_json,
+      result_json, created_at, updated_at
+    FROM inventory_action_operations;
+    DROP TABLE inventory_action_operations;
+    ALTER TABLE inventory_action_operations_v41 RENAME TO inventory_action_operations;
+    CREATE INDEX inventory_action_operations_trainer_created_idx
+      ON inventory_action_operations (trainer_slug, created_at, operation_id);
+  `)
+}
+
+const createEncounterSettlementTables = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE encounter_settlements (
+      settlement_id TEXT PRIMARY KEY CHECK (length(settlement_id) BETWEEN 8 AND 200),
+      encounter_id TEXT NOT NULL UNIQUE CHECK (length(encounter_id) BETWEEN 1 AND 200),
+      status TEXT NOT NULL CHECK (status IN (
+        'draft', 'blocked', 'ready', 'committing', 'completed', 'cancelled'
+      )),
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      document_json TEXT NOT NULL CHECK (
+        json_valid(document_json) AND length(CAST(document_json AS BLOB)) <= 67108864
+      ),
+      definition_sha256 TEXT NOT NULL CHECK (length(definition_sha256) = 64),
+      created_at_campaign_minute INTEGER NOT NULL CHECK (created_at_campaign_minute >= 0),
+      updated_at_campaign_minute INTEGER NOT NULL CHECK (
+        updated_at_campaign_minute >= created_at_campaign_minute
+      ),
+      completion_operation_id TEXT UNIQUE CHECK (
+        completion_operation_id IS NULL OR length(completion_operation_id) BETWEEN 8 AND 200
+      ),
+      CHECK (
+        (status = 'completed' AND completion_operation_id IS NOT NULL)
+        OR (status <> 'completed' AND completion_operation_id IS NULL)
+      )
+    );
+    CREATE INDEX encounter_settlements_status_updated_idx
+      ON encounter_settlements (status, updated_at_campaign_minute, settlement_id);
+
+    CREATE TABLE encounter_settlement_operations (
+      operation_id TEXT PRIMARY KEY CHECK (length(operation_id) BETWEEN 8 AND 200),
+      settlement_id TEXT NOT NULL,
+      principal_key TEXT NOT NULL CHECK (length(principal_key) BETWEEN 1 AND 160),
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 65536
+      ),
+      plan_definition_sha256 TEXT NOT NULL CHECK (length(plan_definition_sha256) = 64),
+      authority_definition_sha256 TEXT NOT NULL CHECK (length(authority_definition_sha256) = 64),
+      evidence_json TEXT NOT NULL CHECK (
+        json_valid(evidence_json) AND length(CAST(evidence_json AS BLOB)) <= 67108864
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 1048576
+      ),
+      result_definition_sha256 TEXT NOT NULL CHECK (length(result_definition_sha256) = 64),
+      settlement_revision INTEGER NOT NULL CHECK (settlement_revision >= 1),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      accepted_at_campaign_minute INTEGER NOT NULL CHECK (accepted_at_campaign_minute >= 0),
+      FOREIGN KEY (settlement_id) REFERENCES encounter_settlements(settlement_id)
+        DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX encounter_settlement_operations_settlement_revision_idx
+      ON encounter_settlement_operations (settlement_id, settlement_revision, operation_id);
+
+    CREATE TABLE encounter_settlement_history_facts (
+      fact_id TEXT PRIMARY KEY CHECK (length(fact_id) BETWEEN 8 AND 200),
+      settlement_id TEXT NOT NULL,
+      operation_id TEXT NOT NULL,
+      fact_kind TEXT NOT NULL CHECK (fact_kind IN (
+        'experience-award', 'loot-award', 'capture-settled', 'outcome', 'cleanup', 'completion'
+      )),
+      audience TEXT NOT NULL CHECK (audience IN (
+        'public', 'gm', 'participant-owner', 'destination-owner'
+      )),
+      subject_kind TEXT NOT NULL CHECK (subject_kind IN (
+        'sheet', 'inventory', 'capture', 'outcome', 'cleanup', 'settlement'
+      )),
+      subject_id TEXT NOT NULL CHECK (length(subject_id) BETWEEN 1 AND 400),
+      result_code TEXT NOT NULL CHECK (length(result_code) BETWEEN 1 AND 100),
+      fact_json TEXT NOT NULL CHECK (
+        json_valid(fact_json) AND length(CAST(fact_json AS BLOB)) <= 262144
+      ),
+      created_at_campaign_minute INTEGER NOT NULL CHECK (created_at_campaign_minute >= 0),
+      FOREIGN KEY (settlement_id) REFERENCES encounter_settlements(settlement_id),
+      FOREIGN KEY (operation_id) REFERENCES encounter_settlement_operations(operation_id)
+    );
+    CREATE INDEX encounter_settlement_history_facts_settlement_idx
+      ON encounter_settlement_history_facts (
+        settlement_id, created_at_campaign_minute DESC, fact_id DESC
+      );
+    CREATE INDEX encounter_settlement_history_facts_subject_idx
+      ON encounter_settlement_history_facts (
+        subject_kind, subject_id, created_at_campaign_minute DESC, fact_id DESC
+      );
+
+    CREATE TABLE encounter_settlement_attention_sources (
+      source_id TEXT PRIMARY KEY CHECK (length(source_id) BETWEEN 8 AND 200),
+      settlement_id TEXT NOT NULL,
+      operation_id TEXT NOT NULL,
+      source_fact_id TEXT NOT NULL,
+      reason TEXT NOT NULL CHECK (reason IN (
+        'level-threshold', 'advancement-review', 'capture-review', 'medical-review',
+        'equipment-review', 'continuation-review'
+      )),
+      audience TEXT NOT NULL CHECK (audience IN ('gm', 'owner')),
+      entity_kind TEXT NOT NULL CHECK (entity_kind IN (
+        'trainer-sheet', 'pokemon-sheet', 'profile', 'campaign'
+      )),
+      entity_id TEXT NOT NULL CHECK (length(entity_id) BETWEEN 1 AND 200),
+      status TEXT NOT NULL CHECK (status IN ('open', 'resolved')),
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      source_json TEXT NOT NULL CHECK (
+        json_valid(source_json) AND length(CAST(source_json AS BLOB)) <= 65536
+      ),
+      created_at_campaign_minute INTEGER NOT NULL CHECK (created_at_campaign_minute >= 0),
+      resolved_at_campaign_minute INTEGER CHECK (
+        resolved_at_campaign_minute IS NULL OR resolved_at_campaign_minute >= created_at_campaign_minute
+      ),
+      resolution_operation_id TEXT UNIQUE CHECK (
+        resolution_operation_id IS NULL OR length(resolution_operation_id) BETWEEN 8 AND 200
+      ),
+      CHECK (
+        (status = 'open' AND revision = 0 AND resolved_at_campaign_minute IS NULL
+          AND resolution_operation_id IS NULL)
+        OR
+        (status = 'resolved' AND revision >= 1 AND resolved_at_campaign_minute IS NOT NULL
+          AND resolution_operation_id IS NOT NULL)
+      ),
+      FOREIGN KEY (settlement_id) REFERENCES encounter_settlements(settlement_id),
+      FOREIGN KEY (operation_id) REFERENCES encounter_settlement_operations(operation_id),
+      FOREIGN KEY (source_fact_id) REFERENCES encounter_settlement_history_facts(fact_id)
+    );
+    CREATE INDEX encounter_settlement_attention_sources_entity_status_idx
+      ON encounter_settlement_attention_sources (
+        entity_kind, entity_id, status, created_at_campaign_minute, source_id
+      );
+    CREATE INDEX encounter_settlement_attention_sources_status_created_idx
+      ON encounter_settlement_attention_sources (
+        status, created_at_campaign_minute, source_id
+      );
+  `)
+}
+
+const createEncounterSettlementCorrectionTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE encounter_settlement_corrections (
+      operation_id TEXT PRIMARY KEY CHECK (length(operation_id) BETWEEN 8 AND 200),
+      settlement_id TEXT NOT NULL,
+      principal_key TEXT NOT NULL CHECK (length(principal_key) BETWEEN 1 AND 160),
+      source_receipt_id TEXT NOT NULL CHECK (length(source_receipt_id) BETWEEN 8 AND 200),
+      reason_code TEXT NOT NULL CHECK (reason_code IN (
+        'reward-adjusted', 'capture-corrected', 'outcome-corrected',
+        'cleanup-corrected', 'clerical-corrected', 'authority-linked'
+      )),
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 65536
+      ),
+      offer_definition_sha256 TEXT NOT NULL CHECK (length(offer_definition_sha256) = 64),
+      authority_definition_sha256 TEXT NOT NULL CHECK (length(authority_definition_sha256) = 64),
+      evidence_json TEXT NOT NULL CHECK (
+        json_valid(evidence_json) AND length(CAST(evidence_json AS BLOB)) <= 67108864
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 65536
+      ),
+      result_definition_sha256 TEXT NOT NULL CHECK (length(result_definition_sha256) = 64),
+      settlement_revision INTEGER NOT NULL CHECK (settlement_revision >= 1),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      accepted_at_campaign_minute INTEGER NOT NULL CHECK (accepted_at_campaign_minute >= 0),
+      UNIQUE (settlement_id, source_receipt_id),
+      FOREIGN KEY (settlement_id) REFERENCES encounter_settlements(settlement_id)
+        DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX encounter_settlement_corrections_settlement_revision_idx
+      ON encounter_settlement_corrections (settlement_id, settlement_revision, operation_id);
+  `)
+}
+
+const createItemGuidedRequestTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE item_guided_requests (
+      request_id TEXT PRIMARY KEY CHECK (
+        request_id GLOB 'item-guided:v1:[0-9a-f]*' AND length(request_id) = 47
+      ),
+      request_kind TEXT NOT NULL CHECK (request_kind IN (
+        'loyalty-consequence', 're-breather-activation', 're-breather-refill'
+      )),
+      status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'cancelled')),
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      canonical_item_id TEXT NOT NULL CHECK (length(canonical_item_id) BETWEEN 1 AND 200),
+      canonical_definition_sha256 TEXT NOT NULL CHECK (length(canonical_definition_sha256) = 64),
+      declaration_principal_key TEXT NOT NULL CHECK (length(declaration_principal_key) BETWEEN 1 AND 160),
+      actor_kind TEXT NOT NULL CHECK (actor_kind IN ('trainer', 'pokemon')),
+      actor_slug TEXT NOT NULL CHECK (length(actor_slug) BETWEEN 1 AND 200),
+      target_kind TEXT NOT NULL CHECK (target_kind IN ('trainer', 'pokemon')),
+      target_slug TEXT NOT NULL CHECK (length(target_slug) BETWEEN 1 AND 200),
+      item_operation_id TEXT UNIQUE REFERENCES item_operations(operation_id),
+      declaration_operation_id TEXT NOT NULL UNIQUE CHECK (length(declaration_operation_id) BETWEEN 8 AND 200),
+      declaration_command_sha256 TEXT NOT NULL CHECK (length(declaration_command_sha256) = 64),
+      declaration_command_json TEXT NOT NULL CHECK (
+        json_valid(declaration_command_json) AND length(CAST(declaration_command_json AS BLOB)) <= 65536
+      ),
+      authority_json TEXT NOT NULL CHECK (
+        json_valid(authority_json) AND length(CAST(authority_json AS BLOB)) <= 262144
+      ),
+      terminal_principal_key TEXT CHECK (
+        terminal_principal_key IS NULL OR length(terminal_principal_key) BETWEEN 1 AND 160
+      ),
+      terminal_operation_id TEXT UNIQUE CHECK (
+        terminal_operation_id IS NULL OR length(terminal_operation_id) BETWEEN 8 AND 200
+      ),
+      terminal_command_sha256 TEXT CHECK (
+        terminal_command_sha256 IS NULL OR length(terminal_command_sha256) = 64
+      ),
+      terminal_command_json TEXT CHECK (
+        terminal_command_json IS NULL OR (
+          json_valid(terminal_command_json) AND length(CAST(terminal_command_json AS BLOB)) <= 65536
+        )
+      ),
+      outcome_option_id TEXT,
+      result_json TEXT CHECK (
+        result_json IS NULL OR (
+          json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 65536
+        )
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+      CHECK (
+        (status = 'pending' AND revision = 0 AND terminal_principal_key IS NULL
+          AND terminal_operation_id IS NULL AND terminal_command_sha256 IS NULL
+          AND terminal_command_json IS NULL AND outcome_option_id IS NULL AND result_json IS NULL)
+        OR
+        (status IN ('accepted', 'cancelled') AND revision = 1
+          AND terminal_principal_key IS NOT NULL AND terminal_operation_id IS NOT NULL
+          AND terminal_command_sha256 IS NOT NULL AND terminal_command_json IS NOT NULL
+          AND result_json IS NOT NULL
+          AND ((status = 'accepted' AND outcome_option_id IS NOT NULL)
+            OR (status = 'cancelled' AND outcome_option_id IS NULL)))
+      )
+    );
+    CREATE INDEX item_guided_requests_status_created_idx
+      ON item_guided_requests (status, created_at, request_id);
+    CREATE INDEX item_guided_requests_actor_status_idx
+      ON item_guided_requests (actor_kind, actor_slug, status, request_id);
+    CREATE INDEX item_guided_requests_target_status_idx
+      ON item_guided_requests (target_kind, target_slug, status, request_id);
+  `)
+}
+
+const addCampaignToolGuidedRequestKind = (connection: DatabaseSync): void => {
+  const row = connection.prepare(`
+    SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'item_guided_requests'
+  `).get() as { readonly sql?: unknown } | undefined
+  const sourceSql = row?.sql
+  if (typeof sourceSql !== 'string'
+    || !sourceSql.includes("'loyalty-consequence', 're-breather-activation', 're-breather-refill'")) {
+    throw new Error('Storage migration v44 requires the exact v39 guided-request table definition')
+  }
+  const destinationSql = sourceSql
+    .replace('CREATE TABLE item_guided_requests', 'CREATE TABLE item_guided_requests_v44')
+    .replace(
+      "'loyalty-consequence', 're-breather-activation', 're-breather-refill'",
+      "'loyalty-consequence', 'campaign-tool-adjudication', 're-breather-activation', 're-breather-refill'",
+    )
+  connection.exec(`
+    DROP INDEX item_guided_requests_status_created_idx;
+    DROP INDEX item_guided_requests_actor_status_idx;
+    DROP INDEX item_guided_requests_target_status_idx;
+    ${destinationSql};
+    INSERT INTO item_guided_requests_v44 SELECT * FROM item_guided_requests;
+    DROP TABLE item_guided_requests;
+    ALTER TABLE item_guided_requests_v44 RENAME TO item_guided_requests;
+    CREATE INDEX item_guided_requests_status_created_idx
+      ON item_guided_requests (status, created_at, request_id);
+    CREATE INDEX item_guided_requests_actor_status_idx
+      ON item_guided_requests (actor_kind, actor_slug, status, request_id);
+    CREATE INDEX item_guided_requests_target_status_idx
+      ON item_guided_requests (target_kind, target_slug, status, request_id);
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -904,6 +1641,86 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 28,
     name: 'store replay-safe Egg transfer-consent revocation and expiry operations',
     up: addPokemonEggTransferConsentSettlementOperationKind,
+  },
+  {
+    version: 29,
+    name: 'store authoritative replay-safe item operations and revisioned scopes',
+    up: createItemOperationTables,
+  },
+  {
+    version: 30,
+    name: 'store item pending decisions and immutable resume-command replay evidence',
+    up: addItemPendingDecisionAndResumeEvidence,
+  },
+  {
+    version: 31,
+    name: 'store immutable item correction and abandonment evidence',
+    up: addItemRecoveryEvidence,
+  },
+  {
+    version: 32,
+    name: 'store accepted replay-safe campaign-day operations',
+    up: createCampaignDayOperationTable,
+  },
+  {
+    version: 33,
+    name: 'store accepted replay-safe atomic equipment operations',
+    up: createEquipmentOperationTable,
+  },
+  {
+    version: 34,
+    name: 'store guided equipment lifecycle and durability operations',
+    up: addEquipmentLifecycleOperationKinds,
+  },
+  {
+    version: 35,
+    name: 'store durable replay-safe item Extended Action activities',
+    up: createItemExtendedActionActivityTable,
+  },
+  {
+    version: 36,
+    name: 'store replay-safe item-driven form-change operations and private evidence',
+    up: createItemFormChangeOperationTable,
+  },
+  {
+    version: 37,
+    name: 'store replay-safe exploration timing and GM positioning operations',
+    up: createItemExplorationOperationTable,
+  },
+  {
+    version: 38,
+    name: 'store replay-safe breeding item assignments and source workflows',
+    up: createItemBreedingOperationTable,
+  },
+  {
+    version: 39,
+    name: 'store bounded guided item requests and terminal adjudication evidence',
+    up: createItemGuidedRequestTable,
+  },
+  {
+    version: 40,
+    name: 'store replay-safe unified inventory action declarations and accepted results',
+    up: createInventoryActionOperationTable,
+  },
+  {
+    version: 41,
+    name: 'store split merge and discard inventory action operations',
+    up: addInventoryStackOperationKinds,
+  },
+  {
+    version: 42,
+    name: 'store atomic encounter settlements history and attention sources',
+    up: createEncounterSettlementTables,
+  },
+  {
+    version: 43,
+    name: 'store immutable authority-linked encounter settlement corrections',
+    up: createEncounterSettlementCorrectionTable,
+  },
+  {
+    version: 44,
+    name: 'admit bounded guided campaign-tool adjudication requests',
+    up: addCampaignToolGuidedRequestKind,
   },
 ]
 

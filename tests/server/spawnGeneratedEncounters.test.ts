@@ -14,6 +14,9 @@ import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeE
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { EncounterTable } from '~/types/encounterTable'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import { applyItemRepelCampaignEffect } from '../../server/domain/itemAutomation/exploration'
+import { ITEM_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/itemAutomation/registry'
 
 const databases: RotomDatabase[] = []
 
@@ -181,6 +184,82 @@ describe('spawnGeneratedEncountersUseCase', () => {
     expect(result.realtimeEvents.slice(2).every((event) => event.access.kind === 'map-access')).toBe(true)
     expect(realtime.readAfter({ afterSequence: 0 }).events).toEqual(result.realtimeEvents)
     expect(published).toEqual(result.realtimeEvents)
+  })
+
+  it('filters exact active route Repels on spawn and revalidates their authority inside the write transaction', async () => {
+    const runPokegenSheet = vi.fn(async (species: string, level: number, slugPrefix: string, sequence: number) => ({
+      ok: true,
+      stderr: '',
+      content: JSON.stringify(generatedSheet({
+        slug: `${slugPrefix}-${species.toLowerCase()}-lv${level}-${sequence}`,
+        nickname: species, species, level,
+      })),
+    }))
+    const { database, dependencies, sheets, maps } = createHarness({ runPokegenSheet })
+    database.connection.prepare('UPDATE campaign_clock SET campaign_minute = 100 WHERE singleton = 1').run()
+    const applied = applyItemRepelCampaignEffect({
+      current: null,
+      definition: ITEM_AUTOMATION_RUNTIME_REGISTRY.require('Super Repel'),
+      sourceOperationId: 'item-source-operation:00000001',
+      sourceInstanceId: 'item-instance:trainer:explorer:medicalKit:repel-row',
+      campaignMinute: 100,
+    })
+    const trainer: TrainerSheet = {
+      slug: 'explorer', name: 'Explorer', level: 10, revision: 3,
+      serverPrivate: { itemExploration: applied.state },
+    }
+    sheets.save({
+      kind: 'trainer', slug: 'explorer', revision: 3, updatedAt: 10,
+      document: trainer as unknown as Record<string, unknown>,
+    })
+    const body = {
+      ...spawnBody,
+      count: 2,
+      rolled: [
+        { species: 'Bulbasaur', level: 5, roll: 1 },
+        { species: 'Ivysaur', level: 26, roll: 2 },
+      ],
+      exploration: { trainerSlug: 'explorer', trainerRevision: 3, campaignClockRevision: 0 },
+    }
+    const result = await spawnGeneratedEncountersUseCase(body, dependencies)
+    expect(result.rolled).toEqual([{ species: 'Ivysaur', level: 26, roll: 2 }])
+    expect(result.routeRepel).toEqual({
+      itemLabel: 'Super Repel', maximumAffectedWildLevel: 25,
+      expiresAtCampaignMinute: 220, repelledRolls: 1,
+    })
+    expect(runPokegenSheet).toHaveBeenCalledOnce()
+    expect(result.spawn.spawned).toBe(1)
+    expect(maps.getBySlug('pond-map')?.placements).toHaveLength(1)
+
+    const staleHarness = createHarness({
+      runPokegenSheet: vi.fn(async (species: string, level: number, slugPrefix: string, sequence: number) => {
+        const current = createSqliteSheetRepository<Record<string, unknown>>(staleHarness.database)
+          .getByRef('trainer', 'explorer')!
+        createSqliteSheetRepository<Record<string, unknown>>(staleHarness.database).save({
+          kind: 'trainer', slug: 'explorer', revision: current.revision + 1, updatedAt: 20,
+          document: { ...current.sheet, revision: current.revision + 1 },
+        })
+        return {
+          ok: true, stderr: '',
+          content: JSON.stringify(generatedSheet({
+            slug: `${slugPrefix}-${species.toLowerCase()}-lv${level}-${sequence}`,
+            nickname: species, species, level,
+          })),
+        }
+      }),
+    })
+    staleHarness.database.connection.prepare('UPDATE campaign_clock SET campaign_minute = 100 WHERE singleton = 1').run()
+    createSqliteSheetRepository<Record<string, unknown>>(staleHarness.database).save({
+      kind: 'trainer', slug: 'explorer', revision: 3, updatedAt: 10,
+      document: trainer as unknown as Record<string, unknown>,
+    })
+    await expect(spawnGeneratedEncountersUseCase({
+      ...body,
+      rolled: [{ species: 'Ivysaur', level: 26, roll: 2 }],
+      count: 1,
+    }, staleHarness.dependencies)).rejects.toMatchObject({ statusCode: 409 })
+    expect(staleHarness.maps.getBySlug('pond-map')?.placements).toEqual([])
+    expect(staleHarness.sheets.list('pokemon')).toEqual([])
   })
 
   it('honors supplied reviewed replacement rows instead of rerolling the source table', async () => {

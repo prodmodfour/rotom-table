@@ -141,6 +141,7 @@ const pendingPublicView = (
   pending: EncounterPendingInteractionView,
 ): EncounterPendingInteractionPublicView => {
   if (pending.projection === 'public') return pending
+  const privateItemDecision = pending.source?.sourceKind === 'item'
   return {
     schemaVersion: ENCOUNTER_PRESENTATION_SCHEMA_VERSION,
     projection: 'public',
@@ -148,8 +149,8 @@ const pendingPublicView = (
     mapSlug: pending.mapSlug,
     mapRevision: pending.mapRevision,
     status: pending.status,
-    source: pending.source,
-    actor: pending.actor,
+    source: privateItemDecision ? null : pending.source,
+    actor: privateItemDecision ? null : pending.actor,
     prompt: 'Waiting for an authorised response.',
     outstandingChoiceCount: pending.choices.length,
     allowPass: pending.allowPass,
@@ -295,6 +296,12 @@ export const projectEncounterPresentation = (input: {
     .map(offer => ({
       ...offer,
       availability: redactAvailability(offer.availability, hiddenSourceKeys, diagnostic),
+      selectionOptions: (offer.selectionOptions ?? []).map(option => ({
+        ...option,
+        unavailableReason: option.unavailableReason
+          ? redactReason(option.unavailableReason, hiddenSourceKeys, diagnostic)
+          : null,
+      })),
     }))
   const offerIds = new Set(offers.map(offer => offer.offerId))
   const passives = input.source.passives

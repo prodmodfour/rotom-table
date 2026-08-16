@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-068",
+  "status": "current-semantics",
+  "contract": "inventory-conflict-recovery-v1",
+  "authority": {
+    "serverOwnedMutation": true,
+    "optimisticInventoryMutation": false,
+    "exactRetry": "reuses the one retained Profile-bound command or declaration byte-for-byte",
+    "automaticMechanicalReplay": false,
+    "reconnectBehavior": "updates connection presentation only; the user must explicitly choose exact retry",
+    "definitiveClientRejection": "a terminal 4xx clears only the matching exact retry payload",
+    "acceptedReplay": "adopts returned authoritative resources and cannot consume, move, equip, or apply the result twice",
+    "malformedRecoveryPayload": "strict parsing removes the malformed payload and never submits it"
+  },
+  "coveredFlows": [
+    "Trainer inventory Equip, Give, Transfer, Split, Merge, and Discard",
+    "shared inventory Transfer, Split, Merge, and Discard",
+    "Trainer and shared inventory item use",
+    "Trainer equipment custody and lifecycle commands",
+    "item Extended Action commands",
+    "Trainer exploration item commands"
+  ],
+  "recoveryStorage": {
+    "scope": "one exact Trainer or shared-inventory scope",
+    "durability": "strict payload is mirrored to same-tab session storage and origin-local durable storage until terminal resolution",
+    "profileBound": true,
+    "crossTab": "storage events make the matching flow uncertain in every open tab; a scope lock rejects a competing flow",
+    "browserRestart": "the exact payload is restored from durable origin-local storage and remirrored into the active tab",
+    "clearBy": "matching operation identity only",
+    "forbiddenVisibleFields": [
+      "operation or request ID",
+      "Profile ID",
+      "stable inventory row or source-instance ID",
+      "equipment-instance ID",
+      "revision or definition hash",
+      "raw command, declaration, lock, or ownership evidence"
+    ]
+  },
+  "states": {
+    "uncertain": {
+      "mutationLock": true,
+      "permittedMutation": "explicit exact retry only",
+      "offline": "exact retry stays visible but disabled with a textual reconnection reason",
+      "profileMismatch": "exact retry stays disabled until the original Profile is selected",
+      "crossTabTerminalSignal": "transition to conflict and require authoritative reload"
+    },
+    "conflict": {
+      "causes": [
+        "stale source or destination revision",
+        "moved or removed row",
+        "changed quantity or metadata",
+        "pending reservation or reusable-item lock",
+        "another tab resolved the retained command",
+        "another exact flow already owns the scope recovery lock"
+      ],
+      "permittedAction": "reload authoritative inventory without submitting a mutation",
+      "selectionPolicy": "discard stale local selection and request fresh server-issued offers only after reload"
+    },
+    "accepted": {
+      "adoption": "replace affected local resources from accepted response or authoritative reload",
+      "retryPayload": "cleared only after accepted adoption",
+      "history": "the existing authoritative journal remains the receipt source"
+    }
+  },
+  "reservations": {
+    "projection": "server-issued offers expose only unreserved quantity and textual unavailable reasons",
+    "presentation": "reserved-stack reasons are visible beside row controls rather than tooltip-only",
+    "reconciliation": "a reservation change invalidates the stale offer and requires a current projection",
+    "clientOverride": false
+  },
+  "interaction": {
+    "selectedMockup": ".pi/artifacts/ui-mockups/inventory-conflict-recovery/v002.png",
+    "selectedMockupScore": "10/10",
+    "systemLayer": "uncertainty and conflict use one matte System card, never a gameplay choice",
+    "uncertainCopy": [
+      "Recovery required",
+      "Inventory result uncertain",
+      "Inventory actions are locked until this result is resolved.",
+      "The original action is retained. No new inventory action will be created."
+    ],
+    "conflictCopy": "the selected row may have moved, changed quantity, or become reserved",
+    "minimumControlHeightPx": 44,
+    "nonColourCues": [
+      "warning, connection, shield, and lock icons",
+      "Recovery required or Reconciliation required text",
+      "Offline, Online, Locked, and disabled-reason text",
+      "amber or danger signal spine plus structural border",
+      "explicit exact-retry or authoritative-reload action label"
+    ],
+    "responsive": "inventory and System card reflow to one column without horizontal page overflow",
+    "focus": "recovery heading receives focus when state changes; enabled recovery action has a cyan focus outline"
+  },
+  "evidence": {
+    "tests": [
+      "tests/utils/inventoryRecoveryStorage.test.ts",
+      "tests/utils/inventoryActionOperationStorage.test.ts",
+      "tests/utils/groupInventoryActionOperationStorage.test.ts",
+      "tests/utils/sheetItemOperationStorage.test.ts",
+      "tests/utils/groupItemOperationStorage.test.ts",
+      "tests/utils/equipmentOperationStorage.test.ts",
+      "tests/utils/itemExtendedActionStorage.test.ts",
+      "tests/utils/itemExplorationOperationStorage.test.ts",
+      "tests/composables/useTrainerInventoryActionFlows.test.ts",
+      "tests/composables/useGroupInventoryActionFlows.test.ts",
+      "tests/composables/useTrainerSheetItemActions.test.ts",
+      "tests/composables/useGroupInventoryItemActions.test.ts",
+      "tests/composables/sheets/useTrainerEquipmentOperations.test.ts",
+      "tests/composables/useTrainerItemExtendedActions.test.ts",
+      "tests/composables/useTrainerItemExploration.test.ts",
+      "tests/components/inventoryRecoveryCard.test.ts",
+      "tests/components/inventoryActionDecision.test.ts",
+      "tests/components/groupInventoryPanel.test.ts",
+      "tests/components/trainerExplorationActivityCard.test.ts",
+      "tests/components/trainerSheetItemActions.test.ts",
+      "tests/e2e/inventory-conflict-recovery.spec.ts"
+    ],
+    "mockup": ".pi/artifacts/ui-mockups/inventory-conflict-recovery/v002.png"
+  }
+}

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptySheetEquipmentState } from '#shared/itemAutomation/equipment'
+import { activeEquipmentState } from '../fixtures/equipment'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import type { PendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -33,6 +35,9 @@ const sheet = (input: {
   slug: input.slug, nickname: input.slug, species: 'Eevee', level: 25, revision: 3,
   types: ['Normal'], abilities: (input.abilities ?? []).map(ability),
   movelist: input.move ? [{ name: input.move }] : [],
+  equipmentState: input.held
+    ? activeEquipmentState({ ownerKind: 'pokemon', ownerSlug: input.slug, slotId: 'held', canonicalItemId: input.held })
+    : createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: input.slug }),
   ...(input.held ? { items: { held: input.held } } : {}),
   stats: {
     hp: { added: 100 }, atk: { added: 45 }, def: { added: 35 },
@@ -265,6 +270,7 @@ describe('AA-079 triggered integrations', () => {
     if (!selected) throw new Error('Expected item choice.')
     const changedTarget: CharacterSheet = {
       ...declarationState.pokemonSheets.get('target')!, revision: 4, items: {},
+      equipmentState: createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: 'target' }),
     }
     const changedState = {
       ...declarationState,

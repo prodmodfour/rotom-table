@@ -136,7 +136,7 @@ afterEach(() => {
 })
 
 describe('group inventory to trainer transfer use case', () => {
-  it('atomically transfers stackable group inventory quantities into a trainer sheet', () => {
+  it('atomically transfers stacks without fuzzy or metadata-losing merges', () => {
     const database = openMemoryDatabase()
     const groupInventory = seedGroupInventory(database, groupInventoryDocument({
       revision: 3,
@@ -191,12 +191,15 @@ describe('group inventory to trainer transfer use case', () => {
       },
     })
     expect((response.trainerSheet.sheet.inventory as TrainerSheet['inventory'])?.pokemonItems).toEqual([
-      { name: 'pótîon', qty: 5, description: 'Existing trainer notes' },
+      { name: 'pótîon', qty: 2, description: 'Existing trainer notes' },
+      expect.objectContaining({
+        id: expect.any(String), name: 'Potion', qty: 3, cost: '$200',
+      }),
     ])
     expect(storedGroupInventoryJson(database)).toEqual(response.groupInventory)
-    expect((storedTrainerJson(database).inventory as TrainerSheet['inventory'])?.pokemonItems).toEqual([
-      { name: 'pótîon', qty: 5, description: 'Existing trainer notes' },
-    ])
+    expect((storedTrainerJson(database).inventory as TrainerSheet['inventory'])?.pokemonItems).toEqual(
+      (response.trainerSheet.sheet.inventory as TrainerSheet['inventory'])?.pokemonItems,
+    )
     expect(published.map((event) => event.event.channel)).toEqual([
       'group-inventory:main',
       'sheet:trainer:misty',
@@ -427,8 +430,68 @@ describe('group inventory to trainer transfer use case', () => {
     expect(response.groupInventory.revision).toBe(2)
     expect(response.trainerSheet.sheet.revision).toBe(3)
     expect((response.trainerSheet.sheet.inventory as TrainerSheet['inventory'])?.medicalKit).toEqual([
-      { name: 'Potion', qty: 1 },
+      expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 1 }),
     ])
+  })
+
+  it('keeps serialized custody evidence private in accepted player transfer responses', () => {
+    const database = openMemoryDatabase()
+    const serialized = (hex: string, name: string) => ({
+      schemaVersion: 1 as const,
+      instanceId: `equipped-item:v1:${hex.repeat(32)}`,
+      revision: 2,
+      canonicalItemId: name,
+      canonicalRecordSha256: 'b'.repeat(64),
+      equipmentDefinitionSha256: 'c'.repeat(64),
+      configuration: null,
+      activity: {
+        status: 'suppressed' as const,
+        reasons: [{ code: 'equipment.suppression.guided', sourceId: 'private-adjudication-source' }],
+      },
+      state: { durability: 5 },
+    })
+    const groupInventory = seedGroupInventory(database, groupInventoryDocument({
+      revision: 1,
+      updatedAt: 100,
+      inventory: {
+        ...emptyInventory(),
+        equipment: [
+          { id: 'armor-row', name: 'Light Armor', serializedEquipment: serialized('a', 'Light Armor') },
+          { id: 'focus-row', name: 'Focus', serializedEquipment: serialized('d', 'Focus') },
+        ],
+      },
+    }))
+    const trainer = seedTrainer(database, trainerSheetDocument(), 2, 200)
+
+    const response = transferGroupInventoryToTrainerUseCase({
+      role: 'player',
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: trainer.slug }]),
+      groupSlug: groupInventory.slug,
+      groupRevision: 1,
+      trainerSlug: trainer.slug,
+      trainerRevision: 2,
+      section: 'equipment',
+      itemId: 'armor-row',
+      quantity: 1,
+    }, { database, now: () => 300 })
+
+    expect(response.groupInventory.inventory.equipment).toEqual([
+      { id: 'focus-row', name: 'Focus', qty: 1 },
+    ])
+    expect((response.trainerSheet.sheet.inventory as TrainerSheet['inventory'])?.equipment).toEqual([
+      expect.objectContaining({ name: 'Light Armor', qty: 1 }),
+    ])
+    expect(JSON.stringify(response)).not.toContain('serializedEquipment')
+    expect(JSON.stringify(response)).not.toContain('private-adjudication-source')
+    expect((storedTrainerJson(database).inventory as TrainerSheet['inventory'])?.equipment?.[0]?.serializedEquipment)
+      .toMatchObject({
+        revision: 3,
+        activity: {
+          status: 'suppressed',
+          reasons: [{ code: 'equipment.suppression.guided', sourceId: 'private-adjudication-source' }],
+        },
+        state: { durability: 5 },
+      })
   })
 
   it('requires player transfers to include a selected profile linked to the target trainer', () => {

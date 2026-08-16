@@ -82,6 +82,8 @@ import {
 } from '~/utils/encounterInitiative'
 import { createMoveAutomationRoomResolver } from '../domain/moveAutomation/rooms'
 import { createMoveAutomationItemEffectResolver } from '../domain/moveAutomation/itemEffects'
+import { createMoveEquipmentContributionQueries } from '../domain/moveAutomation/equipmentContributionQueries'
+import { createMoveEquipmentGrantQueries } from '../domain/moveAutomation/equipmentGrantQueries'
 import { createMoveAutomationRemainingGlobalFieldResolver } from '../domain/moveAutomation/remainingGlobalFields'
 import { advanceMapGlobalFields } from '../domain/moveAutomation/fieldMapState'
 import {
@@ -91,6 +93,7 @@ import {
 } from '../domain/moveAutomation/planInitiativeLifecycle'
 import { encounterLifecyclePatchPayload } from '../domain/moveAutomation/lifecyclePatch'
 import type { EncounterLifecycleTriggerHandler } from '../domain/moveAutomation/reduceLifecycle'
+import { activeReviewedItemFormChange } from '../domain/itemAutomation/formChanges'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
 import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
@@ -686,6 +689,34 @@ const initiativeOrder = (
       }).includes('Klutz') : false
     },
   })
+  const equipment = createMoveEquipmentContributionQueries({
+    placements: map.placements,
+    sheets: [
+      ...pokemonSheets.entries().map(([slug, sheet]) => ({ kind: 'pokemon' as const, slug, sheet })),
+      ...trainerSheets.entries().map(([slug, sheet]) => ({ kind: 'trainer' as const, slug, sheet })),
+    ],
+    itemEffects,
+    recordSheetRead: (placement) => { trackedReader(placement.sheetKind, placement.sheetSlug) },
+    isTransformed: placementId => (
+      map.encounterState?.abilityTransformations?.entries.some(snapshot => (
+        snapshot.placementId === placementId && snapshot.kind === 'transformation'
+      )) === true
+    ),
+  })
+  const equipmentGrants = createMoveEquipmentGrantQueries({
+    placements: map.placements,
+    sheets: [
+      ...pokemonSheets.entries().map(([slug, sheet]) => ({ kind: 'pokemon' as const, slug, sheet })),
+      ...trainerSheets.entries().map(([slug, sheet]) => ({ kind: 'trainer' as const, slug, sheet })),
+    ],
+    itemEffects,
+    recordSheetRead: (placement) => { trackedReader(placement.sheetKind, placement.sheetSlug) },
+    isTransformed: placementId => (
+      map.encounterState?.abilityTransformations?.entries.some(snapshot => (
+        snapshot.placementId === placementId && snapshot.kind === 'transformation'
+      )) === true
+    ),
+  })
   const innerFocusPlacementIds = new Set<string>()
   const stallPlacementIds = new Set<string>()
   const calculatedEntries = initiativeOrderEntriesForPlacements(
@@ -693,11 +724,16 @@ const initiativeOrder = (
     trackedReader,
     placement => {
       const resolved = trackedReader(placement.sheetKind, placement.sheetSlug)
-      const effectiveAbilityIds = resolved ? aa077EffectiveAbilityIds({
-        map,
-        placement,
-        sheet: resolved.sheet as unknown as CharacterSheet | TrainerSheet,
-      }) : []
+      const effectiveAbilityIds = resolved ? [
+        ...aa077EffectiveAbilityIds({
+          map,
+          placement,
+          sheet: resolved.sheet as unknown as CharacterSheet | TrainerSheet,
+        }),
+        ...(equipmentGrants.resolve(placement.id)?.active.flatMap(entry => (
+          entry.grant.kind === 'ability' ? [entry.grant.canonicalId] : []
+        )) ?? []),
+      ] : []
       const innerFocus = resolved ? aa076InnerFocusProtectsInitiative({
         map,
         placement,
@@ -722,7 +758,35 @@ const initiativeOrder = (
         powerByCapabilityInstanceId: physicalPowerSourceValues(effectiveCapabilities),
       })
       const conditionAbilityNames = [...effectiveAbilityIds]
+      const itemFormSpeedOffset = resolved && placement.sheetKind === 'pokemon'
+        ? activeReviewedItemFormChange({
+            map, placementId: placement.id, pokemonSheet: resolved.sheet as unknown as CharacterSheet,
+          })?.form.statDeltas.spd ?? 0
+        : 0
+      const equipmentSpeed = equipment.metric({
+        placementId: placement.id,
+        metric: 'stat-after-stages',
+        targetId: 'spd',
+        base: 0,
+      })
+      const equipmentInitiative = equipment.metric({
+        placementId: placement.id,
+        metric: 'initiative',
+        targetId: 'all',
+        base: 0,
+      })
+      const equipmentSpeedDefaultStage = equipment.metric({
+        placementId: placement.id,
+        metric: 'combat-stage-default',
+        targetId: 'spd',
+        base: 0,
+      })?.final ?? 0
       return {
+        equipmentSpeedOperations: equipmentSpeed?.contributions.map(contribution => ({
+          operation: contribution.operation,
+          value: contribution.value,
+        })) ?? [],
+        equipmentInitiativeBonus: equipmentInitiative?.final ?? 0,
         itemEffectsSuppressed: itemEffects.resolve({
           placementId: placement.id,
           scope: placement.sheetKind === 'pokemon'
@@ -739,14 +803,15 @@ const initiativeOrder = (
               map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
             }),
           ) as 1 | 2,
-          baseSpeedOffset: aa074HeavyMetalInitiativeSpeedOffset({
+          baseSpeedOffset: itemFormSpeedOffset + aa074HeavyMetalInitiativeSpeedOffset({
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           }) + aa077LightMetalInitiativeSpeedOffset({
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           }) + (remainingProjection?.baseSpeedOffset ?? 0),
           baseSpeedMultiplier: remainingProjection?.baseSpeedMultiplier ?? 1,
         } : {}),
-        speedCombatStageOffset: (remainingProjection?.speedCombatStageOffset ?? 0)
+        speedCombatStageOffset: equipmentSpeedDefaultStage
+          + (remainingProjection?.speedCombatStageOffset ?? 0)
           + (physicalPowerLoad?.speedCombatStagePenalty ?? 0),
         earlyBirdSpeedBonus: resolved ? aa068EarlyBirdInitiativeActive({
           map,

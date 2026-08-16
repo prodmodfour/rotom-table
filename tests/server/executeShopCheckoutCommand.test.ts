@@ -335,7 +335,24 @@ describe('executeShopCheckoutCommandUseCase', () => {
     ])
     expect(response.shop?.entries[0]?.stock).toBe(3)
     expect(response.trainerSheets?.[0]).toMatchObject({ slug: 'ash', revision: 1, updatedAt: 900, money: 600 })
-    expect(response.trainerSheets?.[0]?.inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+    expect(response.trainerSheets?.[0]?.inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 2, cost: 200 })])
+    expect(response.result.postCheckout).toEqual({
+      schemaVersion: 1,
+      continuations: [{
+        continuationId: expect.stringMatching(/^shop-continuation:v1:[a-f0-9]{32}$/u),
+        itemLabel: 'Potion',
+        quantity: 2,
+        source: {
+          locationKind: 'trainer-inventory',
+          containerLabel: 'Ash inventory',
+          section: 'medicalKit',
+          sectionLabel: 'Medical Kit',
+          rowLabel: 'Row 1',
+        },
+      }],
+    })
+    const deliveredRowId = response.trainerSheets?.[0]?.inventory?.medicalKit[0]?.id
+    expect(JSON.stringify(response.result.postCheckout)).not.toContain(deliveredRowId)
     expect(storedShop(database).entries[0]?.stock).toBe(3)
     expect(storedShop(database).purchaseLog).toEqual([
       {
@@ -358,9 +375,31 @@ describe('executeShopCheckoutCommandUseCase', () => {
       },
     ])
     expect(storedTrainer(database).money).toBe(600)
-    expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 2, cost: 200 })])
     expect(createSqliteShopCheckoutOperationRepository({ database }).getOperationResult('viridian-mart', 'op_shopcheckout_success01'))
       .toEqual(response.result)
+  })
+
+  it('keeps an otherwise valid large whole-item checkout accepted when a continuation receipt would exceed its public bound', () => {
+    const database = openMemoryDatabase()
+    seedShop(database, shopDocument({
+      entries: [shopEntry({ id: 'armor-row', itemName: 'Light Armor', section: 'equipment', price: 4_000, stock: 100 })],
+    }))
+    seedTrainer(database, trainerSheet({ money: 1_000_000 }))
+    const base = trainerCommand()
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'gm',
+      command: trainerCommand({
+        opId: 'op_shopcheckout_bounded_receipt',
+        payload: { ...base.payload, lines: [{ entryId: 'armor-row', quantity: 65 }] },
+      }),
+    }, { database, now: () => 901 })
+
+    expect(response.result).toMatchObject({ ok: true, totalPrice: 260_000 })
+    if (!response.result.ok || 'duplicate' in response.result) throw new Error('Expected accepted result')
+    expect(response.result.postCheckout).toBeUndefined()
+    expect(response.trainerSheets?.[0]?.inventory?.equipment).toHaveLength(65)
+    expect(storedTrainer(database).money).toBe(740_000)
   })
 
   it('publishes trainer-only checkout realtime updates after the accepted transaction commits', () => {
@@ -583,7 +622,7 @@ describe('executeShopCheckoutCommandUseCase', () => {
       total: 400,
     })
     expect(storedTrainer(database).money).toBe(600)
-    expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 2, cost: 200 })])
     expect(operationCount(database)).toBe(1)
   })
 
@@ -611,7 +650,7 @@ describe('executeShopCheckoutCommandUseCase', () => {
     })
     expect(storedShop(database).entries[0]?.stock).toBe(3)
     expect(storedTrainer(database).money).toBe(600)
-    expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 2, cost: 200 })])
   })
 
   it('rejects map-origin checkout when the interface references a different shop', () => {
@@ -1102,7 +1141,7 @@ describe('executeShopCheckoutCommandUseCase', () => {
     expect(storedShop(database).entries[0]?.stock).toBe(3)
     expect(storedShop(database).purchaseLog?.map((entry) => entry.opId)).toEqual(['op_shopcheckout_duplicate'])
     expect(storedTrainer(database)).toMatchObject({ revision: 1, updatedAt: 1_000, money: 600 })
-    expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 2, cost: 200 })])
     expect(operationCount(database)).toBe(1)
     expect(firstRealtimeSequence).toBe(5)
   })
@@ -1134,7 +1173,7 @@ describe('executeShopCheckoutCommandUseCase', () => {
     })
     expect(storedShop(database).entries[0]?.stock).toBe(3)
     expect(storedTrainer(database).money).toBe(600)
-    expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 2, cost: 200 })])
     expect(operationCount(database)).toBe(1)
   })
 

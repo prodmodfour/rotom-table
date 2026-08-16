@@ -26,7 +26,7 @@ import {
   moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
-import { moveDashConditionUseBlock } from '~/utils/moveConditionRestrictions'
+import { moveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import { moveAutomationTargetDamageMultiplier } from '~/utils/moveAutomationTargetResolution'
 import { moveAutomationDamageAppliesOnAccuracyOutcome } from '~/utils/moveAutomationSmite'
 import { moveAutomationStatusDetailsText } from '~/utils/moveAutomationSemanticStatus'
@@ -2368,14 +2368,18 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
       `${entry.canonicalMoveName} is blocked from using Priority by Dazzling.`,
     )
   }
-  const dashBlock = retiredLegacyRuntime
-    ? moveDashConditionUseBlock(entry.script.range, context.actor.token.conditions)
-    : null
-  if (dashBlock) {
+  const conditionBlock = moveConditionUseBlock({
+    name: entry.canonicalMoveName,
+    aliases: [entry.sourceEntry.move.name, entry.script.moveName],
+    damageClass: entry.script.damageClass,
+    range: entry.script.range,
+    frequency: entry.frequency,
+  }, context.actor.token.conditions)
+  if (conditionBlock) {
     fail(
       'unauthorized-state',
       'move-condition-blocked',
-      `${entry.canonicalMoveName} is blocked by ${dashBlock.label}: ${dashBlock.reason}`,
+      `${entry.canonicalMoveName} is blocked by ${conditionBlock.label}: ${conditionBlock.reason}`,
     )
   }
   const terrainAction = context.queries.terrain.action({

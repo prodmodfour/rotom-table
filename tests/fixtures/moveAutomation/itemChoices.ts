@@ -1,4 +1,5 @@
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptySheetEquipmentState } from '#shared/itemAutomation/equipment'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
@@ -56,6 +57,9 @@ export const createItemChoiceTrainerSheet = (input: {
   level: 20,
   revision: input.revision ?? 3,
   movelist: [{ name: 'Ember' }],
+  equipmentState: createEmptySheetEquipmentState({
+    ownerKind: 'trainer', ownerSlug: 'item-choice-trainer',
+  }),
   inventory: {
     medicalKit: [
       ...(input.includePotion === false
@@ -72,6 +76,9 @@ export const createItemChoiceTargetSheet = (): CharacterSheet => ({
   species: 'Snorlax',
   level: 20,
   revision: 2,
+  equipmentState: createEmptySheetEquipmentState({
+    ownerKind: 'pokemon', ownerSlug: 'item-choice-target-sheet',
+  }),
   combat: { currentHp: 60 },
 })
 

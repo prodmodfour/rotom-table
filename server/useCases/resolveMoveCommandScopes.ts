@@ -51,6 +51,7 @@ const ACTOR_SHEET_FIELDS = new Set([
   'items',
   'inventory',
   'equipmentSlots',
+  'equipmentState',
 ])
 const RELATED_SHEET_FIELDS = new Set([
   'hp',
@@ -59,6 +60,7 @@ const RELATED_SHEET_FIELDS = new Set([
   'items',
   'inventory',
   'equipmentSlots',
+  'equipmentState',
 ])
 const RECIPIENT_MUTATION_OPERATION_KINDS = new Set<string>([
   'damage',

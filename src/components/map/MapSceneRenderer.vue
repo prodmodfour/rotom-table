@@ -120,7 +120,7 @@ const emit = defineEmits<{
   (event: 'use-ability', payload: { id: string } & TokenAbilityUseReference): void
   (event: 'use-order', payload: { id: string; orderName?: string | null }): void
   (event: 'send-out-pokemon', payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): void
-  (event: 'throw-pokeball', payload: { id: string; pokeballName: string }): void
+  (event: 'throw-pokeball', payload: { id: string; sourceInstanceId: string }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
   (event: 'preview-change', preview: PreviewState): void

@@ -63,6 +63,8 @@ const COMMAND_LABELS: Record<LivePlayMapCommandType, string> = {
   [LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN]: 'Delete token',
   [LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL]: 'Throw Poké Ball',
   [LIVE_PLAY_COMMAND_TYPES.SET_SCENE]: 'Set scene',
+  [LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER]: 'End encounter',
+  [LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT]: 'Dismiss encounter effect',
   [LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY]: 'Update attack of opportunity',
   [LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL]: 'Update start-turn prompt',
 }

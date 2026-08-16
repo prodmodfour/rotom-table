@@ -115,6 +115,8 @@ const resetDailyMoves = () => clearSheetDailyMoveUsage(props.sheet)
       </div>
     </div>
 
+    <MedicalTreatmentStatusCard :treatments="sheet.itemMedicalTreatmentProjection" />
+
     <div class="healing-grid">
       <section class="healing-block">
         <h3>HP recovery</h3>

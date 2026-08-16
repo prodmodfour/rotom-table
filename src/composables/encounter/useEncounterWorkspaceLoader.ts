@@ -9,8 +9,10 @@ import { ENCOUNTER_WORKSPACE_API_PATHS } from '~/utils/apiRoutes'
 import {
   ENCOUNTER_DOCUMENT_REALTIME_EVENT_TYPES,
   encounterChannel,
+  mapChannel,
   type RealtimeEvent,
 } from '#shared/realtime'
+import { ITEM_OPERATION_REALTIME_EVENT_TYPES } from '#shared/itemAutomation/realtime'
 import { subscribeChannel } from '~/composables/useRealtime'
 
 export type EncounterWorkspaceLoadStatus =
@@ -50,6 +52,8 @@ export const useEncounterWorkspaceLoader = (input: {
   let requestSequence = 0
   let refreshTimer: ReturnType<typeof setInterval> | null = null
   let unsubscribeEncounter: (() => void) | null = null
+  let unsubscribeMap: (() => void) | null = null
+  let subscribedMapSlug: string | null = null
 
   const load = async (source: EncounterWorkspaceAdoptionSource = 'reload'): Promise<void> => {
     const sequence = ++requestSequence
@@ -75,6 +79,7 @@ export const useEncounterWorkspaceLoader = (input: {
         return
       }
       if (plan.kind === 'adopt') workspace.value = incoming
+      subscribeMap()
       connection.value = incoming.system.connection === 'ready' ? 'connected' : 'reconnecting'
       status.value = incoming.participants.length === 0 ? 'empty' : 'ready'
     }
@@ -104,6 +109,20 @@ export const useEncounterWorkspaceLoader = (input: {
     unsubscribeEncounter?.()
     unsubscribeEncounter = subscribeChannel(encounterChannel(input.mapSlug.value), handleEncounterRealtime)
   }
+  const handleMapRealtime = (event: RealtimeEvent): void => {
+    const currentRevision = workspace.value?.source.mapRevision ?? null
+    const presentationInvalidated = event.type === ITEM_OPERATION_REALTIME_EVENT_TYPES.PRESENTATION_INVALIDATED
+    if (!presentationInvalidated && typeof event.revision === 'number' && currentRevision !== null
+      && event.revision <= currentRevision) return
+    void load('reconnect')
+  }
+  function subscribeMap(): void {
+    const mapSlug = workspace.value?.source.mapSlug ?? input.mapSlug.value
+    if (subscribedMapSlug === mapSlug && unsubscribeMap) return
+    unsubscribeMap?.()
+    subscribedMapSlug = mapSlug
+    unsubscribeMap = subscribeChannel(mapChannel(mapSlug), handleMapRealtime)
+  }
 
   const handleOnline = (): void => {
     connection.value = 'reconnecting'
@@ -121,6 +140,7 @@ export const useEncounterWorkspaceLoader = (input: {
   onMounted(async () => {
     mounted.value = true
     subscribeEncounter()
+    subscribeMap()
     if (isPlayer.value) {
       profiles.loadRememberedProfile()
       try {
@@ -145,6 +165,9 @@ export const useEncounterWorkspaceLoader = (input: {
     if (refreshTimer) clearInterval(refreshTimer)
     unsubscribeEncounter?.()
     unsubscribeEncounter = null
+    unsubscribeMap?.()
+    unsubscribeMap = null
+    subscribedMapSlug = null
     window.removeEventListener('online', handleOnline)
     window.removeEventListener('offline', handleOffline)
     document.removeEventListener('visibilitychange', handleVisibility)
@@ -152,7 +175,11 @@ export const useEncounterWorkspaceLoader = (input: {
 
   watch([input.mapSlug, () => profiles.selectedProfileId.value, input.audience ?? ref(null)], ([nextEncounterId], [previousEncounterId]) => {
     if (!mounted.value) return
-    if (nextEncounterId !== previousEncounterId) subscribeEncounter()
+    if (nextEncounterId !== previousEncounterId) {
+      subscribeEncounter()
+      subscribedMapSlug = null
+      subscribeMap()
+    }
     void load('back-forward')
   })
 

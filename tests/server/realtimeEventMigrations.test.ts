@@ -50,6 +50,12 @@ const applyMigrationsThroughVersion = (connection: DatabaseSync, version: number
     connection.exec(`PRAGMA user_version = ${migration.version}`)
   }
 }
+const applySingleMigrationVersion = (connection: DatabaseSync, version: number): void => {
+  const migration = STORAGE_MIGRATIONS.find(candidate => candidate.version === version)
+  if (!migration) throw new Error(`Missing storage migration ${version}`)
+  migration.up(connection)
+  connection.exec(`PRAGMA user_version = ${version}`)
+}
 
 const expectedTableNames = [
   'ability_declaration_offers',
@@ -71,13 +77,28 @@ const expectedTableNames = [
   'breeding_read_sets',
   'breeding_rolls',
   'campaign_clock',
+  'campaign_day_operations',
   'capability_adjudications',
   'capability_resolution_ops',
   'encounter_director_ops',
   'encounter_documents',
   'encounter_launch_ops',
+  'encounter_settlement_attention_sources',
+  'encounter_settlement_corrections',
+  'encounter_settlement_history_facts',
+  'encounter_settlement_operations',
+  'encounter_settlements',
   'encounter_ux_metric_aggregates',
+  'equipment_operations',
   'group_inventories',
+  'inventory_action_operations',
+  'item_breeding_operations',
+  'item_exploration_operations',
+  'item_extended_action_activities',
+  'item_form_change_operations',
+  'item_guided_requests',
+  'item_operation_scopes',
+  'item_operations',
   'live_play_ops',
   'map_folders',
   'map_interaction_modes',
@@ -105,17 +126,327 @@ const documentStoreTableColumns = [
 
 const expectedMigrationVersions = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
-  15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
+  15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
 ] as const
 const expectedMigrationsAfter = (version: number): number[] =>
   expectedMigrationVersions.filter(candidate => candidate > version)
 
 describe('SQLite storage migrations', () => {
   it('keeps migration versions contiguous through the declared latest schema', () => {
-    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(28)
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(44)
     expect(STORAGE_MIGRATIONS.map((migration) => migration.version))
       .toEqual(expectedMigrationVersions)
     expect(STORAGE_MIGRATIONS.at(-1)?.version).toBe(LATEST_STORAGE_SCHEMA_VERSION)
+  })
+
+  it('upgrades v39 through the unified inventory journal and stack-action extension only once', () => {
+    const connection = openMemoryConnection()
+    connection.exec('PRAGMA foreign_keys = OFF')
+    applyMigrationsThroughVersion(connection, 39)
+    connection.exec('PRAGMA foreign_keys = ON')
+    expect(tableNames(connection)).toContain('item_guided_requests')
+    expect(tableNames(connection)).not.toContain('inventory_action_operations')
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 39, toVersion: 44, appliedVersions: [40, 41, 42, 43, 44] })
+    expect(tableNames(connection)).toContain('inventory_action_operations')
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 44, toVersion: 44, appliedVersions: [] })
+  })
+
+  it('upgrades v40 inventory-action rows byte-for-byte while admitting only reviewed stack actions', () => {
+    const connection = openMemoryConnection()
+    connection.exec('PRAGMA foreign_keys = OFF')
+    applyMigrationsThroughVersion(connection, 40)
+    connection.exec('PRAGMA foreign_keys = ON')
+    const insert = (operationId: string, action: string, hash: string) => connection.prepare(`
+      INSERT INTO inventory_action_operations (
+        operation_id, action_kind, status, principal_key, trainer_slug,
+        declaration_sha256, declaration_json, downstream_command_json,
+        result_json, created_at, updated_at
+      ) VALUES (?, ?, 'pending', 'role:gm', 'ash', ?, '{}', '{}', NULL, 10, 10)
+    `).run(operationId, action, hash)
+    const existingId = `inventory-action:v1:${'1'.repeat(32)}`
+    insert(existingId, 'equip', 'a'.repeat(64))
+    const before = connection.prepare('SELECT * FROM inventory_action_operations WHERE operation_id = ?').get(existingId)
+
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 40, toVersion: 44, appliedVersions: [41, 42, 43, 44] })
+    expect(connection.prepare('SELECT * FROM inventory_action_operations WHERE operation_id = ?').get(existingId)).toEqual(before)
+    for (const [index, action] of ['split', 'merge', 'discard'].entries()) {
+      insert(`inventory-action:v1:${String(index + 2).repeat(32)}`, action, 'b'.repeat(64))
+    }
+    expect(() => insert(`inventory-action:v1:${'9'.repeat(32)}`, 'use', 'c'.repeat(64))).toThrow()
+    expect(connection.prepare(`
+      SELECT action_kind FROM inventory_action_operations ORDER BY operation_id
+    `).all().map(row => row.action_kind)).toEqual(['equip', 'split', 'merge', 'discard'])
+  })
+
+  it('adds revisioned atomic settlement, immutable history, and authority-linked attention tables at v42', () => {
+    const connection = openMemoryConnection()
+    connection.exec('PRAGMA foreign_keys = OFF')
+    applyMigrationsThroughVersion(connection, 41)
+    connection.exec('PRAGMA foreign_keys = ON')
+    expect(tableNames(connection)).not.toContain('encounter_settlements')
+
+    applySingleMigrationVersion(connection, 42)
+    expect(getStorageSchemaVersion(connection)).toBe(42)
+    expect(tableNames(connection)).toEqual(expect.arrayContaining([
+      'encounter_settlements',
+      'encounter_settlement_operations',
+      'encounter_settlement_history_facts',
+      'encounter_settlement_attention_sources',
+    ]))
+    expect(tableColumns(connection, 'encounter_settlements').map(column => column.name)).toEqual([
+      'settlement_id', 'encounter_id', 'status', 'revision', 'document_json',
+      'definition_sha256', 'created_at_campaign_minute', 'updated_at_campaign_minute',
+      'completion_operation_id',
+    ])
+    expect(indexList(connection, 'encounter_settlement_history_facts').map(index => index.name)).toEqual(expect.arrayContaining([
+      'encounter_settlement_history_facts_settlement_idx',
+      'encounter_settlement_history_facts_subject_idx',
+    ]))
+    expect(indexList(connection, 'encounter_settlement_attention_sources').map(index => index.name)).toEqual(expect.arrayContaining([
+      'encounter_settlement_attention_sources_entity_status_idx',
+      'encounter_settlement_attention_sources_status_created_idx',
+    ]))
+    expect(() => connection.prepare(`
+      INSERT INTO encounter_settlements (
+        settlement_id, encounter_id, status, revision, document_json, definition_sha256,
+        created_at_campaign_minute, updated_at_campaign_minute, completion_operation_id
+      ) VALUES ('settlement-a', 'encounter-a', 'completed', 0, '{}', ?, 0, 0, NULL)
+    `).run('a'.repeat(64))).toThrow()
+  })
+
+  it('adds immutable authority-linked settlement correction evidence at v43', () => {
+    const connection = openMemoryConnection()
+    connection.exec('PRAGMA foreign_keys = OFF')
+    applyMigrationsThroughVersion(connection, 42)
+    connection.exec('PRAGMA foreign_keys = ON')
+    expect(tableNames(connection)).not.toContain('encounter_settlement_corrections')
+
+    expect(applyStorageMigrations(connection)).toEqual({
+      fromVersion: 42,
+      toVersion: 44,
+      appliedVersions: [43, 44],
+    })
+    expect(tableColumns(connection, 'encounter_settlement_corrections').map(column => column.name)).toEqual([
+      'operation_id', 'settlement_id', 'principal_key', 'source_receipt_id', 'reason_code',
+      'command_sha256', 'command_json', 'offer_definition_sha256',
+      'authority_definition_sha256', 'evidence_json', 'result_json',
+      'result_definition_sha256', 'settlement_revision', 'created_at',
+      'accepted_at_campaign_minute',
+    ])
+    expect(indexList(connection, 'encounter_settlement_corrections').map(index => index.name))
+      .toContain('encounter_settlement_corrections_settlement_revision_idx')
+  })
+
+  it('rebuilds v43 guided requests at v44 without losing rows and admits only the reviewed campaign-tool kind', () => {
+    const connection = openMemoryConnection()
+    connection.exec('PRAGMA foreign_keys = OFF')
+    applyMigrationsThroughVersion(connection, 43)
+    connection.exec('PRAGMA foreign_keys = ON')
+    const insert = connection.prepare(`
+      INSERT INTO item_guided_requests (
+        request_id, request_kind, status, revision, canonical_item_id,
+        canonical_definition_sha256, declaration_principal_key, actor_kind, actor_slug,
+        target_kind, target_slug, item_operation_id, declaration_operation_id,
+        declaration_command_sha256, declaration_command_json, authority_json,
+        created_at, updated_at
+      ) VALUES (?, ?, 'pending', 0, ?, ?, ?, 'trainer', ?, 'trainer', ?, NULL, ?, ?, '{}', '{}', 10, 10)
+    `)
+    insert.run(
+      `item-guided:v1:${'1'.repeat(32)}`, 'loyalty-consequence', 'Energy Powder',
+      'a'.repeat(64), 'profile:ash', 'ash', 'ash', 'guided-declaration-old', 'b'.repeat(64),
+    )
+    expect(() => insert.run(
+      `item-guided:v1:${'2'.repeat(32)}`, 'campaign-tool-adjudication', 'Smoke Ball',
+      'c'.repeat(64), 'profile:ash', 'ash', 'ash', 'guided-declaration-new', 'd'.repeat(64),
+    )).toThrow()
+
+    expect(applyStorageMigrations(connection)).toEqual({
+      fromVersion: 43,
+      toVersion: 44,
+      appliedVersions: [44],
+    })
+    expect(connection.prepare(`
+      SELECT request_id, request_kind, canonical_item_id FROM item_guided_requests ORDER BY request_id
+    `).all()).toEqual([{
+      request_id: `item-guided:v1:${'1'.repeat(32)}`,
+      request_kind: 'loyalty-consequence',
+      canonical_item_id: 'Energy Powder',
+    }])
+    insert.run(
+      `item-guided:v1:${'2'.repeat(32)}`, 'campaign-tool-adjudication', 'Smoke Ball',
+      'c'.repeat(64), 'profile:ash', 'ash', 'ash', 'guided-declaration-new', 'd'.repeat(64),
+    )
+    expect(connection.prepare(`
+      SELECT request_kind FROM item_guided_requests ORDER BY request_id DESC LIMIT 1
+    `).get()).toEqual({ request_kind: 'campaign-tool-adjudication' })
+    expect((connection.prepare(`
+      SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'item_guided_requests'
+    `).get() as { sql: string }).sql).toContain("'campaign-tool-adjudication'")
+  })
+
+  it('upgrades v29 item rows with pending-decision and immutable resume evidence without rewriting history', () => {
+    const connection = openMemoryConnection()
+    connection.exec('PRAGMA foreign_keys = OFF')
+    applyMigrationsThroughVersion(connection, 29)
+    connection.exec('PRAGMA foreign_keys = ON')
+    expect(tableColumns(connection, 'item_operations').map(column => column.name)).not.toContain('pending_decision_json')
+    connection.prepare(`
+      INSERT INTO item_operations (
+        operation_id, command_sha256, command_json, status, canonical_item_id,
+        canonical_definition_sha256, plan_json, result_json, correction_of_operation_id,
+        created_at, updated_at
+      ) VALUES ('op_item_migration_0001', ?, '{}', 'pending', 'Potion', ?, '{}', NULL, NULL, 10, 10)
+    `).run('a'.repeat(64), 'b'.repeat(64))
+    connection.prepare(`
+      INSERT INTO item_operation_scopes (
+        operation_id, scope_kind, scope_key, expected_revision, scope_json
+      ) VALUES ('op_item_migration_0001', 'sheet', 'trainer:ash', 3,
+        '{"kind":"sheet","sheetKind":"trainer","id":"ash","revision":3}')
+    `).run()
+
+    expect(applyStorageMigrations(connection)).toEqual({
+      fromVersion: 29,
+      toVersion: 44,
+      appliedVersions: [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44],
+    })
+    expect(tableColumns(connection, 'item_operations').map(column => column.name).slice(-6)).toEqual([
+      'pending_decision_json', 'resume_command_sha256', 'resume_command_json',
+      'recovery_command_sha256', 'recovery_command_json', 'compensation_json',
+    ])
+    expect(connection.prepare(`
+      SELECT operation_id, command_sha256, status, canonical_item_id, created_at, updated_at
+      FROM item_operations
+    `).get()).toEqual({
+      operation_id: 'op_item_migration_0001',
+      command_sha256: 'a'.repeat(64),
+      status: 'pending',
+      canonical_item_id: 'Potion',
+      created_at: 10,
+      updated_at: 10,
+    })
+    expect(connection.prepare('SELECT operation_id, scope_key FROM item_operation_scopes').get())
+      .toEqual({ operation_id: 'op_item_migration_0001', scope_key: 'trainer:ash' })
+    expect(() => connection.prepare(`
+      UPDATE item_operations SET resume_command_sha256 = ? WHERE operation_id = 'op_item_migration_0001'
+    `).run('c'.repeat(64))).toThrow('resume command evidence must be complete')
+  })
+
+  it('adds immutable recovery and compensation evidence at v31 without rewriting v30 rows', () => {
+    const connection = openMemoryConnection()
+    connection.exec('PRAGMA foreign_keys = OFF')
+    applyMigrationsThroughVersion(connection, 30)
+    connection.exec('PRAGMA foreign_keys = ON')
+    connection.prepare(`
+      INSERT INTO item_operations (
+        operation_id, command_sha256, command_json, resume_command_sha256, resume_command_json,
+        status, canonical_item_id, canonical_definition_sha256, plan_json, pending_decision_json,
+        result_json, correction_of_operation_id, created_at, updated_at
+      ) VALUES ('op_item_v30_history_0001', ?, '{}', NULL, NULL, 'accepted', 'Potion', ?, '{}', NULL,
+        '{"schemaVersion":1,"operationId":"op_item_v30_history_0001","status":"accepted","canonicalItemId":"Potion","aggregateRefs":[],"receiptId":"legacy-receipt","exactReplay":false}',
+        NULL, 10, 20)
+    `).run('a'.repeat(64), 'b'.repeat(64))
+
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 30, toVersion: 44, appliedVersions: [31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44] })
+    expect(connection.prepare(`
+      SELECT operation_id, status, recovery_command_sha256, recovery_command_json, compensation_json
+      FROM item_operations
+    `).get()).toEqual({
+      operation_id: 'op_item_v30_history_0001', status: 'accepted',
+      recovery_command_sha256: null, recovery_command_json: null, compensation_json: null,
+    })
+    expect(() => connection.prepare(`
+      UPDATE item_operations SET status = 'abandoned', result_json = '{}'
+      WHERE operation_id = 'op_item_v30_history_0001'
+    `).run()).toThrow('recovery evidence must match terminal status')
+    expect(() => connection.prepare(`
+      UPDATE item_operations SET recovery_command_sha256 = ?
+      WHERE operation_id = 'op_item_v30_history_0001'
+    `).run('c'.repeat(64))).toThrow('recovery evidence must match terminal status')
+  })
+
+  it('adds bounded replay-safe campaign-day evidence at v32 without rewriting prior operation tables', () => {
+    const connection = openMemoryConnection()
+    connection.exec('PRAGMA foreign_keys = OFF')
+    applyMigrationsThroughVersion(connection, 31)
+    connection.exec('PRAGMA foreign_keys = ON')
+    expect(tableNames(connection)).not.toContain('campaign_day_operations')
+    connection.prepare(`
+      INSERT INTO item_operations (
+        operation_id, command_sha256, command_json, status, canonical_item_id,
+        canonical_definition_sha256, plan_json, result_json, correction_of_operation_id,
+        created_at, updated_at
+      ) VALUES ('op_item_v31_preserved', ?, '{}', 'accepted', 'Potion', ?, '{}', '{}', NULL, 10, 20)
+    `).run('a'.repeat(64), 'b'.repeat(64))
+
+    expect(applyStorageMigrations(connection)).toEqual({
+      fromVersion: 31, toVersion: 44, appliedVersions: [32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44],
+    })
+    expect(connection.prepare(`
+      SELECT operation_id, status FROM item_operations WHERE operation_id = 'op_item_v31_preserved'
+    `).get()).toEqual({ operation_id: 'op_item_v31_preserved', status: 'accepted' })
+    expect(tableColumns(connection, 'campaign_day_operations').map(column => column.name)).toEqual([
+      'operation_id', 'command_sha256', 'command_json', 'result_json', 'created_at',
+    ])
+    expect(indexList(connection, 'campaign_day_operations').map(index => index.name))
+      .toContain('campaign_day_operations_created_idx')
+    const insert = connection.prepare(`
+      INSERT INTO campaign_day_operations (
+        operation_id, command_sha256, command_json, result_json, created_at
+      ) VALUES (?, ?, '{}', '{}', 100)
+    `)
+    expect(() => insert.run(
+      'campaign-day:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'b'.repeat(64),
+    )).not.toThrow()
+    expect(() => insert.run(
+      'campaign-day:v1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'c'.repeat(64),
+    )).toThrow()
+    expect(() => connection.prepare(`
+      INSERT INTO campaign_day_operations (
+        operation_id, command_sha256, command_json, result_json, created_at
+      ) VALUES (?, ?, ?, '{}', 101)
+    `).run(
+      'campaign-day:v1:dddddddddddddddddddddddddddddddd',
+      'e'.repeat(64),
+      JSON.stringify({ payload: 'x'.repeat(5_000) }),
+    )).toThrow()
+  })
+
+  it('adds replay-safe equipment evidence at v33 and lifecycle kinds at v34 without rewriting v32 history', () => {
+    const connection = openMemoryConnection()
+    connection.exec('PRAGMA foreign_keys = OFF')
+    applyMigrationsThroughVersion(connection, 32)
+    connection.exec('PRAGMA foreign_keys = ON')
+    connection.prepare(`
+      INSERT INTO campaign_day_operations (
+        operation_id, command_sha256, command_json, result_json, created_at
+      ) VALUES (?, ?, '{}', '{}', 100)
+    `).run('campaign-day:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'b'.repeat(64))
+    expect(tableNames(connection)).not.toContain('equipment_operations')
+
+    expect(applyStorageMigrations(connection)).toEqual({
+      fromVersion: 32, toVersion: 44, appliedVersions: [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44],
+    })
+    expect(connection.prepare('SELECT operation_id FROM campaign_day_operations').get()).toEqual({
+      operation_id: 'campaign-day:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    })
+    expect(tableColumns(connection, 'equipment_operations').map(column => column.name)).toEqual([
+      'operation_id', 'command_sha256', 'command_kind', 'actor_profile_id',
+      'command_json', 'result_json', 'evidence_json', 'created_at',
+    ])
+    expect(indexList(connection, 'equipment_operations').map(index => index.name))
+      .toContain('equipment_operations_created_idx')
+    expect(() => connection.prepare(`
+      INSERT INTO equipment_operations (
+        operation_id, command_sha256, command_kind, actor_profile_id,
+        command_json, result_json, evidence_json, created_at
+      ) VALUES (?, ?, 'equip', NULL, '{}', '{}', '{}', 100)
+    `).run(`equipment-operation:v1:${'a'.repeat(32)}`, 'b'.repeat(64))).not.toThrow()
+    expect(() => connection.prepare(`
+      INSERT INTO equipment_operations (
+        operation_id, command_sha256, command_kind, actor_profile_id,
+        command_json, result_json, evidence_json, created_at
+      ) VALUES (?, ?, 'drop', NULL, '{}', '{}', '{}', 100)
+    `).run(`equipment-operation:v1:${'c'.repeat(32)}`, 'd'.repeat(64))).toThrow()
   })
 
   it('creates realtime, inventory, shop, and pending-resolution tables for a fresh database', () => {
@@ -125,10 +456,10 @@ describe('SQLite storage migrations', () => {
 
     expect(result).toMatchObject({
       fromVersion: 0,
-      toVersion: 28,
+      toVersion: 44,
       appliedVersions: expectedMigrationsAfter(0),
     })
-    expect(getStorageSchemaVersion(connection)).toBe(28)
+    expect(getStorageSchemaVersion(connection)).toBe(44)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(connection.prepare('SELECT latest_sequence, earliest_available_sequence FROM realtime_event_log_state WHERE singleton = 1').get())
       .toEqual({ latest_sequence: 0, earliest_available_sequence: 1 })
@@ -214,10 +545,10 @@ describe('SQLite storage migrations', () => {
 
     expect(result).toEqual({
       fromVersion: 4,
-      toVersion: 28,
+      toVersion: 44,
       appliedVersions: expectedMigrationsAfter(4),
     })
-    expect(getStorageSchemaVersion(connection)).toBe(28)
+    expect(getStorageSchemaVersion(connection)).toBe(44)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(connection.prepare('SELECT COUNT(*) AS count FROM maps').get()).toEqual({ count: 1 })
     expect(connection.prepare('SELECT COUNT(*) AS count FROM sheets').get()).toEqual({ count: 1 })
@@ -230,7 +561,7 @@ describe('SQLite storage migrations', () => {
     expect(connection.prepare('SELECT latest_sequence, earliest_available_sequence FROM realtime_event_log_state WHERE singleton = 1').get())
       .toEqual({ latest_sequence: 0, earliest_available_sequence: 1 })
 
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 28, toVersion: 28, appliedVersions: [] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 44, toVersion: 44, appliedVersions: [] })
   })
 
   it('upgrades schema version 6 databases with the shop table without touching existing rows', () => {
@@ -257,10 +588,10 @@ describe('SQLite storage migrations', () => {
 
     expect(result).toEqual({
       fromVersion: 6,
-      toVersion: 28,
+      toVersion: 44,
       appliedVersions: expectedMigrationsAfter(6),
     })
-    expect(getStorageSchemaVersion(connection)).toBe(28)
+    expect(getStorageSchemaVersion(connection)).toBe(44)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(tableColumns(connection, 'shop_tables')).toEqual(documentStoreTableColumns)
     expect(connection.prepare('SELECT slug, revision, updated_at FROM maps').get())
@@ -298,10 +629,10 @@ describe('SQLite storage migrations', () => {
 
     expect(result).toEqual({
       fromVersion: 7,
-      toVersion: 28,
+      toVersion: 44,
       appliedVersions: expectedMigrationsAfter(7),
     })
-    expect(getStorageSchemaVersion(connection)).toBe(28)
+    expect(getStorageSchemaVersion(connection)).toBe(44)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(connection.prepare('SELECT slug, revision, updated_at FROM shop_tables').get())
       .toEqual({ slug: 'mart', revision: 2, updated_at: 104 })
@@ -337,10 +668,10 @@ describe('SQLite storage migrations', () => {
 
     expect(result).toEqual({
       fromVersion: 8,
-      toVersion: 28,
+      toVersion: 44,
       appliedVersions: expectedMigrationsAfter(8),
     })
-    expect(getStorageSchemaVersion(connection)).toBe(28)
+    expect(getStorageSchemaVersion(connection)).toBe(44)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(connection.prepare('SELECT op_id, map_slug FROM live_play_ops').get())
       .toEqual({ op_id: 'op_beforepending1', map_slug: 'training-yard' })
@@ -360,7 +691,7 @@ describe('SQLite storage migrations', () => {
 
     expect(applyStorageMigrations(connection)).toEqual({
       fromVersion: 9,
-      toVersion: 28,
+      toVersion: 44,
       appliedVersions: expectedMigrationsAfter(9),
     })
     expect(connection.prepare(`
@@ -388,7 +719,7 @@ describe('SQLite storage migrations', () => {
 
     expect(applyStorageMigrations(connection)).toEqual({
       fromVersion: 10,
-      toVersion: 28,
+      toVersion: 44,
       appliedVersions: expectedMigrationsAfter(10),
     })
     expect(connection.prepare(`
@@ -416,7 +747,7 @@ describe('SQLite storage migrations', () => {
 
     expect(applyStorageMigrations(connection)).toEqual({
       fromVersion: 11,
-      toVersion: 28,
+      toVersion: 44,
       appliedVersions: expectedMigrationsAfter(11),
     })
     expect(connection.prepare(`
@@ -444,10 +775,10 @@ describe('SQLite storage migrations', () => {
 
     expect(result).toEqual({
       fromVersion: 5,
-      toVersion: 28,
+      toVersion: 44,
       appliedVersions: expectedMigrationsAfter(5),
     })
-    expect(getStorageSchemaVersion(connection)).toBe(28)
+    expect(getStorageSchemaVersion(connection)).toBe(44)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(tableColumns(connection, 'group_inventories')).toEqual(documentStoreTableColumns)
     expect(tableColumns(connection, 'shop_tables')).toEqual(documentStoreTableColumns)
@@ -479,7 +810,7 @@ describe('SQLite storage migrations', () => {
 
     expect(applyStorageMigrations(connection)).toEqual({
       fromVersion: 16,
-      toVersion: 28,
+      toVersion: 44,
       appliedVersions: expectedMigrationsAfter(16),
     })
     expect(connection.prepare(`
@@ -490,6 +821,6 @@ describe('SQLite storage migrations', () => {
       resolution_command_sha256: null,
       resolution_map_revision: null,
     })
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 28, toVersion: 28, appliedVersions: [] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 44, toVersion: 44, appliedVersions: [] })
   })
 })

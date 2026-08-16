@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-076",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-loot-allocation-v1",
+  "sourceEvidence": {
+    "rewardPackageContractSha256": "577ccd02ac0183799b659330202ba44049a914419e99c3d1a3bdda8cf3c219a9",
+    "lootAllocationModelSha256": "cc0049761424ea8a817f0771f53bf781518ab4b4f87db3ab66d04c1a8c3ce368",
+    "inventoryStackRulesSha256": "c666c457dfc1defd2aa94bed20feb3d078da06eb573dcbec61cac822b2181a11",
+    "inventoryMergeRulesSha256": "33ea7522b9f18893b668da64c7946132b9f4ac117e7ce5b0787037f945260087",
+    "serializedEquipmentContractSha256": "9662b573b09faadd1f47255838108bc0fd5fc61c122551d07e11b53ee3830b73",
+    "canonicalItemsSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+  },
+  "authority": {
+    "completenessLiteral": "authoritative-current",
+    "required": [
+      "one exact current money or item declaration per selected reward and destination",
+      "the exact current Trainer or group inventory document and revision",
+      "source-backed destination permission",
+      "the reward package exact item definition authority",
+      "a server-owned canonical inventory-row template"
+    ],
+    "forbidden": [
+      "client-derived balances or inventory rows",
+      "name or prose based item identity inference",
+      "stale destination revisions",
+      "duplicate reward-destination declarations",
+      "undeclared destination containers",
+      "mixed permission authority for one destination",
+      "unsafe integer amounts or balances"
+    ]
+  },
+  "money": {
+    "destinations": ["trainer-inventory", "group-inventory"],
+    "distribution": "A reward may be split across exact destinations; positive integer declarations must sum exactly to the source amount.",
+    "balance": "Each current non-negative safe-integer balance is incremented in deterministic allocation order with overflow rejection.",
+    "write": "Every contributing leaf write identifies one exact sheet or group-inventory revision and capacity cost zero."
+  },
+  "items": {
+    "destinations": ["trainer-inventory", "group-inventory"],
+    "stackMerge": "Stack rewards reuse the authoritative inventory merge predicate. Exact canonical identity, cost, description, modifier, slot, and structured variant must match before quantity is merged.",
+    "newRows": "A non-merging reward receives a deterministic settlement, reward, and destination-bound row identity.",
+    "sectionCapacity": 256,
+    "definitionRule": "The declaration definition authority must exactly match the reward package line; the row name must be the exact canonical item identity.",
+    "serializedRule": "Serialized equipment is one whole equipment-section row with quantity one, revision zero, a reviewed equipment definition, and a deterministic settlement/reward-bound whole-item identity.",
+    "duplicateRule": "Duplicate row identities or whole-item identities anywhere in a destination inventory reject the whole plan."
+  },
+  "revisionPlan": {
+    "aggregateRevision": "Every changed Trainer or group destination advances exactly once regardless of how many allocations contribute.",
+    "beforeAfterEvidence": "Each private container write retains stable-JSON SHA-256 before and after evidence and the exact source-derived next document.",
+    "staleRule": "Application rechecks every current revision and before hash, planned after hash, and next revision before exposing any applicable write.",
+    "atomicRule": "A pending, denied, stale, capacity-exceeded, duplicate, overflowed, or definition-inconsistent plan exposes no applicable writes. P8-080 persists complete plans atomically."
+  },
+  "completion": {
+    "complete": "Every non-excluded money and item line is conserved exactly across allowed declarations and has a complete private write preview.",
+    "pending": "Missing, under-allocated, over-allocated, or invalid whole-item distribution remains visibly pending and blocks application.",
+    "denied": "A denied destination retains allocation and permission evidence, produces no mutation, and blocks application.",
+    "excluded": "An explicitly excluded line requires no allocation or write.",
+    "foreignAllocation": "An existing money or item allocation not owned by this versioned provider is never replaced implicitly."
+  },
+  "ownership": {
+    "providerOwns": [
+      "money conservation and safe addition",
+      "canonical stack merge and deterministic row creation",
+      "serialized equipment identity creation",
+      "capacity and duplicate-identity validation",
+      "exact private next-container plans",
+      "stale revalidation"
+    ],
+    "providerDoesNotOwn": [
+      "settlement transaction persistence",
+      "public projection",
+      "arbitrary item definition authoring",
+      "Profile authorization policy",
+      "attention-item resolution"
+    ]
+  },
+  "privacy": {
+    "serverPrivate": [
+      "container documents and hashes",
+      "inventory row and whole-item identities",
+      "permission and definition authority",
+      "source-write identities",
+      "Profile ownership evidence"
+    ],
+    "safeProjection": "Later UI may show safe destination labels, amount, balance before and after, merged or new-row status, capacity result, and pending or denied state only."
+  },
+  "evidence": {
+    "runtime": "server/domain/encounterSettlement/lootAllocation.ts",
+    "tests": "tests/server/encounterSettlementLootAllocation.test.ts",
+    "documentation": "docs/encounter-settlement-loot-allocation.md"
+  }
+}

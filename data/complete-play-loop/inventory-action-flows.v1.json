@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-063",
+  "status": "current-semantics",
+  "contract": "unified-inventory-action-flows-v1",
+  "projection": {
+    "endpoint": "GET /api/inventory/actions",
+    "source": "current persisted Trainer or group inventory scope plus current controlled Trainer/Pokémon destinations and exact revisions",
+    "actions": [
+      "use",
+      "equip",
+      "give",
+      "transfer",
+      "inspect"
+    ],
+    "safeFields": [
+      "opaque offer/source/destination/revision requirement IDs",
+      "item and container labels",
+      "section and presentation-row labels",
+      "current quantity bounds",
+      "destination labels and unavailable reasons",
+      "reversible/correctable consequences",
+      "confirmation and owning handoff"
+    ],
+    "forbiddenFields": [
+      "inventory row ID",
+      "serialized equipment instance ID",
+      "downstream operation ID",
+      "Profile ID",
+      "command or definition hash",
+      "ownership evidence",
+      "private notes",
+      "raw provenance"
+    ]
+  },
+  "flows": [
+    {
+      "action": "use",
+      "handoff": "existing sheet item declaration and item-operation journal",
+      "behavior": "opens the existing exact target/choice decision; no parallel item mechanics path"
+    },
+    {
+      "action": "equip",
+      "handoff": "equipment operation",
+      "behavior": "moves one exact current whole item into one server-issued compatible Trainer slot and reviewed configuration; the client never authors configuration JSON"
+    },
+    {
+      "action": "give",
+      "handoff": "equipment operation",
+      "behavior": "moves one exact current whole item into one selected linked Pokémon Held Item destination and server-issued reviewed configuration when required"
+    },
+    {
+      "action": "transfer",
+      "handoff": "existing Trainer-to-group or group-to-Trainer inventory transfer",
+      "behavior": "moves one bounded quantity selected from the exact stable source row in either direction"
+    },
+    {
+      "action": "inspect",
+      "handoff": "navigation",
+      "behavior": "opens app-relative reference information and mutates nothing"
+    }
+  ],
+  "commitAuthority": {
+    "declaration": "strict schema-v1 declaration must exactly match one current server-issued offer, source, destination, quantity, confirmation, and every source/destination revision requirement",
+    "equipment": "the existing equipment operation reloads custody, reviewed definition, exact server-issued slot and configuration, compatibility, equipment state, reservations, and all affected sheet revisions before atomic commit",
+    "transfer": "the existing transfer use case reloads both inventories, stable source identity, unreserved quantity, and both revisions before one transaction",
+    "responses": "authoritative affected sheet and group documents replace local state and realtime events invalidate every other authorized client"
+  },
+  "replayAndRecovery": {
+    "journal": "inventory_action_operations",
+    "schemaMigration": 40,
+    "states": [
+      "pending",
+      "accepted"
+    ],
+    "principalBound": true,
+    "exactDeclarationHashBound": true,
+    "privateDownstreamCommandPersistedBeforeMutation": true,
+    "transferReceiptAtomicWithBothInventoryMutations": true,
+    "bothTransferDirectionsJournaled": true,
+    "equipmentDownstreamJournalReplaySafe": true,
+    "equipmentAndConfigurationDefinitionHashBound": true,
+    "clientAuthoredConfigurationRejected": true,
+    "sessionExactRetry": true,
+    "processRestartRecovery": true,
+    "changedOperationReuseRejected": true,
+    "manualRepairRequired": false
+  },
+  "interaction": {
+    "composition": "60/40 inventory and bounded decision workspace, collapsing to one column",
+    "selectedMockup": ".pi/artifacts/ui-mockups/unified-inventory-action-flows/v002.png",
+    "selectedMockupScore": "10/10",
+    "controls": "one compact rectangular action strip for Use, Equip, Give, Transfer, and Inspect; group transfers reuse the same inline decision instead of a bespoke dialog",
+    "decisionOrder": [
+      "exact safe source",
+      "bounded destination",
+      "quantity when variable",
+      "consequences",
+      "revision recheck",
+      "cancel and committed action"
+    ],
+    "uncertainBoundary": "exact retry is the only enabled decision and cancellation, refresh, and competing mutations are blocked"
+  },
+  "evidence": {
+    "tests": [
+      "tests/shared/itemAutomationInventoryActions.test.ts",
+      "tests/server/trainerInventoryActionOffers.test.ts",
+      "tests/server/groupInventoryActionOffers.test.ts",
+      "tests/server/executeTrainerInventoryAction.test.ts",
+      "tests/server/executeGroupInventoryAction.test.ts",
+      "tests/server/trainerInventoryActionRoutes.test.ts",
+      "tests/server/groupInventoryTransferToGroup.test.ts",
+      "tests/server/groupInventoryTransferToTrainer.test.ts",
+      "tests/server/equipmentOperations.test.ts",
+      "tests/composables/useTrainerInventoryActionFlows.test.ts",
+      "tests/composables/useGroupInventoryActionFlows.test.ts",
+      "tests/components/inventoryActionDecision.test.ts",
+      "tests/components/groupInventoryPanel.test.ts",
+      "tests/e2e/unified-inventory-action-flows.spec.ts"
+    ]
+  }
+}

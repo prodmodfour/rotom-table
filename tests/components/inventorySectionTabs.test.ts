@@ -2,7 +2,7 @@
  * @vitest-environment happy-dom
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { defineComponent } from 'vue'
 import InventorySectionTabs from '~/components/inventory/InventorySectionTabs.vue'
 import TrainerInventoryPanel from '~/components/sheets/TrainerInventoryPanel.vue'
@@ -30,6 +30,8 @@ const TrainerInventoryItemTableStub = defineComponent({
   `,
 })
 
+afterEach(() => document.body.replaceChildren())
+
 const completeTrainerSheet = (): TrainerSheet => ({
   slug: 'ash',
   name: 'Ash',
@@ -54,15 +56,52 @@ describe('InventorySectionTabs', () => {
           keyItems: 2,
           pokemonItems: 4,
         },
+        idPrefix: 'test-inventory',
+        panelId: 'test-inventory-panel',
       },
     })
 
-    expect(wrapper.find('nav').attributes('aria-label')).toBe('Inventory sections')
+    expect(wrapper.find('nav').attributes()).toMatchObject({
+      'aria-label': 'Inventory sections',
+      role: 'tablist',
+    })
     expect(wrapper.findAll('.inventory-subtab').map((button) => button.text().replace(/\s+/g, ' ').trim())).toEqual(
       TRAINER_INVENTORY_SECTIONS.map((section) => `${section.title}${section.key === 'keyItems' ? 2 : section.key === 'pokemonItems' ? 4 : 0}`),
     )
-    expect(wrapper.findAll('.inventory-subtab')[1]?.classes()).toContain('is-active')
-    expect(wrapper.findAll('.inventory-subtab')[1]?.attributes('aria-pressed')).toBe('true')
+    const tabs = wrapper.findAll('.inventory-subtab')
+    expect(tabs.every(tab => tab.attributes('role') === 'tab')).toBe(true)
+    expect(tabs[1]?.classes()).toContain('is-active')
+    expect(tabs[1]?.attributes()).toMatchObject({
+      id: 'test-inventory-tab-pokemonItems',
+      'aria-controls': 'test-inventory-panel',
+      'aria-selected': 'true',
+      tabindex: '0',
+    })
+    expect(tabs[0]?.attributes('tabindex')).toBe('-1')
+  })
+
+  it('moves and activates tab focus with arrow, Home, and End keys', async () => {
+    const wrapper = mount(InventorySectionTabs, {
+      attachTo: document.body,
+      props: {
+        activeSectionKey: 'keyItems',
+        counts: {},
+      },
+    })
+    const tabs = wrapper.findAll<HTMLButtonElement>('.inventory-subtab')
+    tabs[0]!.element.focus()
+
+    await tabs[0]!.trigger('keydown', { key: 'ArrowRight' })
+    expect(wrapper.emitted('update:activeSectionKey')?.at(-1)).toEqual(['pokemonItems'])
+    expect(document.activeElement).toBe(tabs[1]!.element)
+
+    await tabs[1]!.trigger('keydown', { key: 'End' })
+    expect(wrapper.emitted('update:activeSectionKey')?.at(-1)).toEqual(['equipment'])
+    expect(document.activeElement).toBe(tabs[5]!.element)
+
+    await tabs[5]!.trigger('keydown', { key: 'Home' })
+    expect(wrapper.emitted('update:activeSectionKey')?.at(-1)).toEqual(['keyItems'])
+    expect(document.activeElement).toBe(tabs[0]!.element)
   })
 
   it('emits the selected section key when a tab is clicked', async () => {
@@ -100,7 +139,11 @@ describe('TrainerInventoryPanel inventory section tabs', () => {
     await wrapper.findAll('.inventory-subtab')[2]?.trigger('click')
 
     expect(wrapper.findAll('.inventory-subtab')[2]?.classes()).toContain('is-active')
-    expect(wrapper.findAll('.inventory-subtab')[2]?.attributes('aria-pressed')).toBe('true')
+    expect(wrapper.findAll('.inventory-subtab')[2]?.attributes('aria-selected')).toBe('true')
+    expect(wrapper.get('#trainer-inventory-section-panel').attributes()).toMatchObject({
+      role: 'tabpanel',
+      'aria-labelledby': 'trainer-inventory-tab-medicalKit',
+    })
     expect(wrapper.find('.inventory-table-stub').attributes('data-section-key')).toBe('medicalKit')
     expect(wrapper.find('.inventory-table-stub h2').text()).toBe('Medical Kit')
 

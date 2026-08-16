@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "complete-play-loop-guided-catalog-items-v1",
+  "status": "reviewed",
+  "runtimeProseParsing": false,
+  "decision": {
+    "choiceId": "gm-campaign-tool-outcome",
+    "optionId": "accept-reviewed-use",
+    "optionLabel": "Accept reviewed use",
+    "decisionRole": "gm",
+    "freeformMechanics": false
+  },
+  "templates": {
+    "reusable-field-tool": {
+      "contexts": ["campaign", "sheet"],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": { "phase": "never", "quantity": 0, "reserveWhilePending": false, "refundableOnCancel": false, "reusable": true },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": ["This is an interpretive field or camp tool; no effect is inferred from its name or prose.", "The exact source must remain in current Trainer custody through acceptance."],
+      "settlementFacts": ["Record one bounded GM-approved use.", "Retain the exact reusable source row.", "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    "consumable-crafting-material": {
+      "contexts": ["campaign", "sheet"],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": { "phase": "gm-adjudication", "quantity": 1, "reserveWhilePending": true, "refundableOnCancel": true, "reusable": false },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": ["Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.", "Acceptance settles only the reviewed source disposition and durable decision receipt."],
+      "settlementFacts": ["Record one bounded GM-approved use.", "Consume one exact reserved source unit.", "Grant no unselected output or hidden character mutation."],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    "reusable-crafting-tool": {
+      "contexts": ["campaign", "sheet"],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": { "phase": "never", "quantity": 0, "reserveWhilePending": false, "refundableOnCancel": false, "reusable": true },
+      "prompt": "Confirm current legal use of this exact reusable crafting or care tool.",
+      "canonicalFacts": ["Recipe, feature, Edge, configuration, and output eligibility are bounded GM adjudication.", "The runtime never parses item prose or invents a crafted output."],
+      "settlementFacts": ["Record one bounded GM-approved use.", "Retain the exact reusable source row.", "Grant no unselected output or hidden character mutation."],
+      "presentationDescription": "Request bounded GM adjudication for this reusable crafting or care tool."
+    },
+    "consumable-combat-tool": {
+      "contexts": ["encounter", "sheet", "campaign"],
+      "timing": "standard",
+      "actionCost": "standard",
+      "consumption": { "phase": "gm-adjudication", "quantity": 1, "reserveWhilePending": true, "refundableOnCancel": true, "reusable": false },
+      "prompt": "Confirm one legal current use of this exact interpretive combat item.",
+      "canonicalFacts": ["Targeting, placement, checks, and battlefield consequences require bounded GM adjudication.", "No target, hazard, condition, Move, or modifier is inferred from the item name or prose."],
+      "settlementFacts": ["Record one bounded GM-approved use and its Standard Action boundary.", "Consume one exact reserved source unit.", "Apply no unselected target or battlefield mutation."],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication before this interpretive combat use settles."
+    },
+    "reusable-combat-tool": {
+      "contexts": ["encounter", "sheet", "campaign"],
+      "timing": "standard",
+      "actionCost": "standard",
+      "consumption": { "phase": "never", "quantity": 0, "reserveWhilePending": false, "refundableOnCancel": false, "reusable": true },
+      "prompt": "Confirm one legal current use of this exact reusable interpretive combat item.",
+      "canonicalFacts": ["Configuration, usage limits, targets, range, and consequences require bounded GM adjudication.", "No condition or area effect is inferred from the item name or prose."],
+      "settlementFacts": ["Record one bounded GM-approved use and its Standard Action boundary.", "Retain the exact reusable source row.", "Apply no unselected target or battlefield mutation."],
+      "presentationDescription": "Request bounded GM adjudication before this reusable interpretive combat use settles."
+    }
+  },
+  "items": [
+    { "canonicalId": "Collection Jar", "templateId": "reusable-field-tool" },
+    { "canonicalId": "Saddle", "templateId": "reusable-field-tool" },
+    { "canonicalId": "Sleeping Bag", "templateId": "reusable-field-tool" },
+    { "canonicalId": "Tents", "templateId": "reusable-field-tool" },
+    { "canonicalId": "Lighter", "templateId": "reusable-field-tool" },
+    { "canonicalId": "Flashlight", "templateId": "reusable-field-tool" },
+    { "canonicalId": "Water Filter", "templateId": "reusable-field-tool" },
+    { "canonicalId": "Rope", "templateId": "reusable-field-tool" },
+    { "canonicalId": "Basic Rope", "templateId": "reusable-field-tool" },
+    { "canonicalId": "Utility Rope", "templateId": "reusable-field-tool" },
+    { "canonicalId": "Sturdy Rope", "templateId": "reusable-field-tool" },
+
+    { "canonicalId": "Mulch", "templateId": "consumable-crafting-material" },
+    { "canonicalId": "Red Apricorns", "templateId": "consumable-crafting-material" },
+    { "canonicalId": "Yellow Apricorns", "templateId": "consumable-crafting-material" },
+    { "canonicalId": "Blue Apricorns", "templateId": "consumable-crafting-material" },
+    { "canonicalId": "Green Apricorns", "templateId": "consumable-crafting-material" },
+    { "canonicalId": "Pink Apricorns", "templateId": "consumable-crafting-material" },
+    { "canonicalId": "White Apricorns", "templateId": "consumable-crafting-material" },
+    { "canonicalId": "Black Apricorns", "templateId": "consumable-crafting-material" },
+    { "canonicalId": "Shards", "templateId": "consumable-crafting-material" },
+    { "canonicalId": "Heart Scale", "templateId": "consumable-crafting-material" },
+    { "canonicalId": "Cooking Set", "templateId": "reusable-crafting-tool" },
+    { "canonicalId": "Poffin Mixer", "templateId": "reusable-crafting-tool" },
+    { "canonicalId": "Poké Ball Tool Box", "templateId": "reusable-crafting-tool" },
+    { "canonicalId": "Portable Grower / Berry Planter", "templateId": "reusable-crafting-tool" },
+    { "canonicalId": "Groomer’s Kit", "templateId": "reusable-crafting-tool" },
+
+    { "canonicalId": "Power Herb", "templateId": "consumable-combat-tool" },
+    { "canonicalId": "White Herb", "templateId": "consumable-combat-tool" },
+    { "canonicalId": "Caltrops", "templateId": "consumable-combat-tool" },
+    { "canonicalId": "Dream Mist", "templateId": "consumable-combat-tool" },
+    { "canonicalId": "Cleanse Tags", "templateId": "consumable-combat-tool" },
+    { "canonicalId": "Toxic Caltrops", "templateId": "consumable-combat-tool" },
+    { "canonicalId": "Smoke Ball", "templateId": "consumable-combat-tool" },
+    { "canonicalId": "Magic Flute", "templateId": "reusable-combat-tool" }
+  ]
+}

@@ -194,10 +194,10 @@ const withStageProjection = (input: {
 }
 
 /**
- * Fold Baton Pass's simultaneous stage transfer into existing typed sheet
- * writes. The source is cleared and each bounded destination stage receives the
- * source value from the same operation-entry snapshot, so no stage is copied
- * twice and each physical sheet advances at most one revision.
+ * Fold authoritative switch stage cleanup into existing typed sheet writes.
+ * Every recalled source is cleared; Baton Pass additionally adds each bounded
+ * source stage to the replacement from the same operation-entry snapshot, so no
+ * stage is copied twice and each physical sheet advances at most one revision.
  */
 export const planMoveSwitchCombatStageTransfer = (input: {
   readonly stateChanges: readonly MoveStateChangeInput[]
@@ -239,21 +239,10 @@ export const planMoveSwitchCombatStageTransfer = (input: {
   const previousRecalledStages = stageSnapshot(recalledCurrent)
   const previousSentOutStages = stageSnapshot(sentOutCurrent)
 
-  if (input.stateTransferPolicy === 'none') {
-    return {
-      stateChanges,
-      previousRecalledStages,
-      previousSentOutStages,
-      currentRecalledStages: previousRecalledStages,
-      currentSentOutStages: previousSentOutStages,
-    }
-  }
-
   const currentRecalledStages = normalizeCombatStages()
-  const currentSentOutStages = transferredDestinationStages(
-    previousRecalledStages,
-    previousSentOutStages,
-  )
+  const currentSentOutStages = input.stateTransferPolicy === 'baton-pass'
+    ? transferredDestinationStages(previousRecalledStages, previousSentOutStages)
+    : previousSentOutStages
   const afterRecalled = withStageProjection({
     stateChanges,
     placement: input.recalledPlacement,

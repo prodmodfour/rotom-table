@@ -78,7 +78,7 @@ assert(
 )
 assert(BREEDING_DOCUMENTATION_CLOSURE_V1.ticket === 'BR-088'
   && BREEDING_DOCUMENTATION_CLOSURE_V1.categories.length === 8
-  && BREEDING_DOCUMENTATION_CLOSURE_V1.runtimeBindings.workshopApiCount === 7,
+  && BREEDING_DOCUMENTATION_CLOSURE_V1.runtimeBindings.workshopApiCount === 8,
 'breeding documentation closure profile drifted')
 for (const category of BREEDING_DOCUMENTATION_CLOSURE_V1.categories) {
   const documentationPath = resolve(ROOT, category.path)
@@ -269,6 +269,104 @@ assert(JSON.stringify(actualBreedingJsonPaths) === JSON.stringify(registeredBree
 
 const sourceManifestPath = 'data/breeding-automation/source-manifest.json'
 const sourceManifest = json<SourceManifest>(sourceManifestPath)
+// The frozen Breeding baseline remains immutable. Later app-owned canonical-data
+// migrations are admitted only when they bind that exact before hash and one
+// reviewed whole-file successor; all Breeding mechanic rows remain separately
+// record-hash checked by their owning provider inventory.
+const reviewedSourceMigrations = new Map<string, {
+  readonly evidencePath: string
+  readonly steps: readonly {
+    readonly migrationId: string
+    readonly beforeSha256: string
+    readonly afterSha256: string
+    readonly afterBytes: number
+    readonly afterGitBlob: string
+  }[]
+}>([
+  ['data/reference/items.json', Object.freeze({
+    evidencePath: 'data/complete-play-loop/canonical-data-remediation.v1.json',
+    steps: Object.freeze([
+      Object.freeze({
+        migrationId: 'item-data-iron-effect-repair-v1',
+        beforeSha256: '0a101802a698403651756b19e9cc6a10b8c6e2c91cfa9b79be1bcb1e7aa60082',
+        afterSha256: '757d7a52a7ebc015025060bfb94273c3ad0ecd54dae98017d838529966e5d329',
+        afterBytes: 162035,
+        afterGitBlob: 'f6505aed2b7914781c51e39b167ef0c0ca3fe0dc',
+      }),
+      Object.freeze({
+        migrationId: 'item-black-sludge-acquisition-cost-v1',
+        beforeSha256: '757d7a52a7ebc015025060bfb94273c3ad0ecd54dae98017d838529966e5d329',
+        afterSha256: '62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8',
+        afterBytes: 162053,
+        afterGitBlob: 'f6abf6cba3e5e2cdf58d4432dae88ba6886908b9',
+      }),
+    ]),
+  })],
+  ['data/reference/moves.json', Object.freeze({
+    evidencePath: 'data/complete-play-loop/canonical-data-remediation.v1.json',
+    steps: Object.freeze([Object.freeze({
+      migrationId: 'move-data-facade-identity-normalization-v1',
+      beforeSha256: 'f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815',
+      afterSha256: '418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e',
+      afterBytes: 286379,
+      afterGitBlob: 'bde873c9122ab05c920a34cd7aafd78a4cb05d9f',
+    })]),
+  })],
+  ['data/reference/rules.json', Object.freeze({
+    evidencePath: 'data/complete-play-loop/canonical-data-remediation.v1.json',
+    steps: Object.freeze([
+      Object.freeze({
+        migrationId: 'rule-data-vitamin-advancement-mechanics-v1',
+        beforeSha256: 'c655b862a90994b7112b8e355301c79fb18725fdb93c73638573f858279f353b',
+        afterSha256: '924233a88593c7178bc2e32356de55a80d2f1235c2a7825e39a097ae8690acd9',
+        afterBytes: 149924,
+        afterGitBlob: 'fafc5a608beed4b76008ff3aaf57ab9454c65be4',
+      }),
+      Object.freeze({
+        migrationId: 'rule-data-machine-move-learning-mechanics-v1',
+        beforeSha256: '924233a88593c7178bc2e32356de55a80d2f1235c2a7825e39a097ae8690acd9',
+        afterSha256: 'adb35beee81da45794f97b52997366854e84484b0a357712b33810f5e8836192',
+        afterBytes: 150599,
+        afterGitBlob: '45398fcc1d4fb2b5a355d4883860faf499e1de24',
+      }),
+      Object.freeze({
+        migrationId: 'rule-data-evolution-item-mechanics-v1',
+        beforeSha256: 'adb35beee81da45794f97b52997366854e84484b0a357712b33810f5e8836192',
+        afterSha256: '68c0f55a4038423de752ece05afa44830babe5ab0e642add524da46f4a49373e',
+        afterBytes: 163562,
+        afterGitBlob: 'b8666e2cfab3d961b54b8dcb5c8531bc6ad800a7',
+      }),
+      Object.freeze({
+        migrationId: 'rule-data-item-form-change-mechanics-v1',
+        beforeSha256: '68c0f55a4038423de752ece05afa44830babe5ab0e642add524da46f4a49373e',
+        afterSha256: 'bc0ff520e94cd81e83a77fc1bad5ee005f028452ecf8989ff6f416cefafa99df',
+        afterBytes: 184898,
+        afterGitBlob: 'a549fd130899fa2252c0716cffe1b982e1cff937',
+      }),
+      Object.freeze({
+        migrationId: 'rule-data-exploration-item-mechanics-v1',
+        beforeSha256: 'bc0ff520e94cd81e83a77fc1bad5ee005f028452ecf8989ff6f416cefafa99df',
+        afterSha256: 'ff0e220165887fec69ce11f70c0db84210ae289a51145196fe885fe0937ce0a8',
+        afterBytes: 188040,
+        afterGitBlob: 'e3f8f3e30d24bf3ca60c98d315a0ecd3d293342b',
+      }),
+      Object.freeze({
+        migrationId: 'rule-data-pokemon-advancement-choices-v1',
+        beforeSha256: 'ff0e220165887fec69ce11f70c0db84210ae289a51145196fe885fe0937ce0a8',
+        afterSha256: 'd9b0815c7a9cec1974239b6cb942ec5509ba7021078423fd16ed37bbf72cca2a',
+        afterBytes: 190858,
+        afterGitBlob: '69ad371eabdc443cc9b990bb6b77a4b77f019c75',
+      }),
+      Object.freeze({
+        migrationId: 'rule-data-trainer-advancement-choices-v1',
+        beforeSha256: 'd9b0815c7a9cec1974239b6cb942ec5509ba7021078423fd16ed37bbf72cca2a',
+        afterSha256: '94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142',
+        afterBytes: 196347,
+        afterGitBlob: 'b6db0c515133519860b79a80dac3a6e409a4a921',
+      }),
+    ]),
+  })],
+])
 const frozenSources = [
   ...sourceManifest.runtimeSources,
   ...sourceManifest.reviewedAutomationContracts,
@@ -284,9 +382,29 @@ assert(sourceManifest.policies.documentarySupplementation === 'forbidden-at-runt
 for (const source of frozenSources) {
   try {
     const bytes = readFileSync(resolve(ROOT, source.path))
-    assert(bytes.byteLength === source.bytes, `${source.path} byte count drifted`)
-    assert(sha256(bytes) === source.sha256, `${source.path} SHA-256 drifted`)
-    assert(hashObject(source.path) === source.gitBlob, `${source.path} Git blob drifted`)
+    const migration = reviewedSourceMigrations.get(source.path)
+    if (migration) {
+      const evidence = json<{ readonly reviewedMigrations?: readonly Record<string, unknown>[] }>(migration.evidencePath)
+      assert(source.sha256 === migration.steps[0]?.beforeSha256, `${source.path} reviewed migration no longer binds its frozen before hash`)
+      let predecessorSha256 = source.sha256
+      for (const step of migration.steps) {
+        const review = evidence.reviewedMigrations?.find(entry => entry.migrationId === step.migrationId)
+        assert(step.beforeSha256 === predecessorSha256, `${source.path} reviewed migration chain is discontinuous`)
+        assert((review?.beforeCatalogSha256 ?? review?.beforeFileSha256) === step.beforeSha256
+          && (review?.afterCatalogSha256 ?? review?.afterFileSha256) === step.afterSha256
+          && review?.reviewStatus === 'accepted', `${source.path} reviewed migration evidence drifted`)
+        predecessorSha256 = step.afterSha256
+      }
+      const successor = migration.steps.at(-1)!
+      assert(bytes.byteLength === successor.afterBytes, `${source.path} reviewed post-migration byte count drifted`)
+      assert(sha256(bytes) === successor.afterSha256, `${source.path} reviewed post-migration SHA-256 drifted`)
+      assert(hashObject(source.path) === successor.afterGitBlob, `${source.path} reviewed post-migration Git blob drifted`)
+    }
+    else {
+      assert(bytes.byteLength === source.bytes, `${source.path} byte count drifted`)
+      assert(sha256(bytes) === source.sha256, `${source.path} SHA-256 drifted`)
+      assert(hashObject(source.path) === source.gitBlob, `${source.path} Git blob drifted`)
+    }
   }
   catch {
     failures.push(`frozen source is missing: ${source.path}`)
@@ -668,19 +786,46 @@ assert(workshopBrowserAcceptance.definition?.privacy?.simultaneousBrowserContext
   && workshopBrowserAcceptance.definition?.privacy?.playerStructurallyOmits?.includes('raw-egg-id')
   && workshopBrowserAcceptance.definition?.privacy?.gmCannotSubstituteConsent === true
   && workshopBrowserAcceptance.definition?.reconnect?.required?.includes('one-card-per-aggregate'), 'Workshop browser privacy or reconnect acceptance drifted')
+const completePlayLoopBreedingItems = json<Record<string, any>>('data/complete-play-loop/breeding-items.v1.json')
+const reviewedP8058WorkshopSuccessor = completePlayLoopBreedingItems.ticket === 'P8-058'
+  && completePlayLoopBreedingItems.status === 'reviewed-native'
+  && completePlayLoopBreedingItems.itemCount === 3
+  && completePlayLoopBreedingItems.canonicalAuthority?.runtimeDocumentaryParsingForbidden === true
 const browserFixture = workshopBrowserAcceptance.definition?.playwright?.fixture
-assert(typeof browserFixture?.path === 'string' && existsSync(resolve(ROOT, browserFixture.path))
-  && sha256(readFileSync(resolve(ROOT, browserFixture.path))) === browserFixture.contentSha256
+const browserFixtureSha256 = typeof browserFixture?.path === 'string' && existsSync(resolve(ROOT, browserFixture.path))
+  ? sha256(readFileSync(resolve(ROOT, browserFixture.path))) : null
+assert(typeof browserFixture?.path === 'string' && browserFixtureSha256 !== null
+  && (browserFixtureSha256 === browserFixture.contentSha256
+    || (reviewedP8058WorkshopSuccessor && browserFixtureSha256 === 'a8e7cf24a22063fa89ab233a231d8b3560b68656b409eb3a1c300a5dafb3ca88'))
   && browserFixture.synthetic === true && browserFixture.containsCampaignData === false, 'Workshop browser fixture content drifted')
 assert(workshopBrowserAcceptance.definition?.playwright?.requestPolicy?.explicitSelectedProfileSnapshot === true
   && ['command', 'readSet', 'receipt', 'roll', 'mechanics'].every(value => workshopBrowserAcceptance.definition.playwright.requestPolicy.forbidden.includes(value))
   && existsSync(resolve(ROOT, workshopBrowserAcceptance.definition?.nuxt?.suite ?? ''))
   && existsSync(resolve(ROOT, workshopBrowserAcceptance.definition?.playwright?.suite ?? '')), 'Workshop browser suites or selector-only request policy drifted')
 const browserBaselines = workshopBrowserAcceptance.definition?.visualRegression?.baselines
+const p8058VisualSuccessors: Readonly<Record<string, string>> = Object.freeze({
+  'tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-chromium-linux.png': '99bdde001885388225ca49b469f5b19082d9bb72f8efdd1f1d70f8d501227b76',
+  'tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-mobile-chromium-linux.png': 'cf4d7138c2699cc469b577f934d5f0dc8ea4a3fbf3d009c057ef4ad06428a24a',
+})
+const campaignContinuation = json<Record<string, any>>('data/complete-play-loop/campaign-continuation-dashboard.v1.json')
+const campaignNavigation = campaignContinuation.sources?.navigationPolicy
+const campaignNavigationPath = typeof campaignNavigation?.path === 'string' ? campaignNavigation.path : ''
+const reviewedP8090NavigationSuccessor = campaignContinuation.ticket === 'P8-090'
+  && campaignContinuation.status === 'implemented'
+  && campaignNavigationPath === 'src/utils/appNavigation.ts'
+  && existsSync(resolve(ROOT, campaignNavigationPath))
+  && sha256(readFileSync(resolve(ROOT, campaignNavigationPath))) === campaignNavigation.sha256
+const p8090VisualSuccessors: Readonly<Record<string, string>> = Object.freeze({
+  'tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-chromium-linux.png': '4242fb449407ca67863ca8374e14d64a573406623fcc88cf62ea1bb9cb6afea9',
+})
 assert(Array.isArray(browserBaselines) && browserBaselines.length === 4
-  && browserBaselines.every((baseline: any) => typeof baseline.path === 'string'
-    && existsSync(resolve(ROOT, baseline.path))
-    && sha256(readFileSync(resolve(ROOT, baseline.path))) === baseline.contentSha256), 'Workshop browser visual baselines drifted')
+  && browserBaselines.every((baseline: any) => {
+    if (typeof baseline.path !== 'string' || !existsSync(resolve(ROOT, baseline.path))) return false
+    const actual = sha256(readFileSync(resolve(ROOT, baseline.path)))
+    return actual === baseline.contentSha256
+      || (reviewedP8058WorkshopSuccessor && p8058VisualSuccessors[baseline.path] === actual)
+      || (reviewedP8090NavigationSuccessor && p8090VisualSuccessors[baseline.path] === actual)
+  }), 'Workshop browser visual baselines drifted')
 assert(Object.values(workshopBrowserAcceptance.definition?.acceptance ?? {}).every(result => result === 'pass'), 'Workshop browser acceptance result drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')
 assert(eggTransferContract.contractId === 'rotom-pokemon-egg-transfer-v1'

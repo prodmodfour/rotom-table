@@ -123,6 +123,66 @@ describe('SQLite group inventory repository', () => {
     expect(repository.get()?.document).toEqual(current)
   })
 
+  it('protects serialized whole-item custody and private state from whole-document setup saves', () => {
+    const database = openMemoryDatabase()
+    const repository = createSqliteGroupInventoryRepository(database)
+    const serializedEquipment = {
+      schemaVersion: 1 as const,
+      instanceId: `equipped-item:v1:${'a'.repeat(32)}`,
+      revision: 4,
+      canonicalItemId: 'Light Armor',
+      canonicalRecordSha256: 'b'.repeat(64),
+      equipmentDefinitionSha256: 'c'.repeat(64),
+      configuration: null,
+      activity: { status: 'active' as const, reasons: [] },
+      state: { durability: 7 },
+    }
+    const current = repository.save({
+      slug: GROUP_INVENTORY_MAIN_SLUG,
+      revision: 2,
+      updatedAt: 200,
+      document: {
+        slug: GROUP_INVENTORY_MAIN_SLUG,
+        revision: 2,
+        updatedAt: 200,
+        money: 10,
+        inventory: {
+          ...emptyInventory(),
+          equipment: [{ id: 'armor-row', name: 'Light Armor', serializedEquipment }],
+        },
+      },
+    }).document
+
+    const result = repository.replaceSetupInventory({
+      expectedRevision: 2,
+      now: 300,
+      document: {
+        ...current,
+        money: 20,
+        inventory: {
+          ...emptyInventory(),
+          pokemonItems: [
+            { id: 'armor-row', name: 'Forged move', qty: 99 },
+            {
+              id: 'forged', name: 'Forged serialized item',
+              serializedEquipment: { ...serializedEquipment, instanceId: `equipped-item:v1:${'d'.repeat(32)}` },
+            },
+          ],
+        },
+      },
+    })
+
+    expect(result.stale).toBe(false)
+    if (result.stale) throw new Error('Expected setup replacement not to be stale')
+    expect(result.document.money).toBe(20)
+    expect(result.document.inventory.equipment).toEqual([
+      { id: 'armor-row', name: 'Light Armor', serializedEquipment },
+    ])
+    expect(result.document.inventory.pokemonItems).toEqual([
+      { id: 'forged', name: 'Forged serialized item' },
+    ])
+  })
+
   it('increments revision when a setup replacement changes semantic content', () => {
     const database = openMemoryDatabase()
     const repository = createSqliteGroupInventoryRepository(database)

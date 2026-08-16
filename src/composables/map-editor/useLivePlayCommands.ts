@@ -18,6 +18,7 @@ import {
   type ClearFieldEffectsPayload,
   type ClearHazardsPayload,
   type DeleteTokenPayload,
+  type DismissEncounterEffectPayload,
   type EditHazardsPayload,
   type EditTerrainVoxelsPayload,
   type GrantExperiencePayload,
@@ -43,6 +44,7 @@ import {
   type SetFieldEffectPayload,
   type SetInitiativePayload,
   type SetScenePayload,
+  type EndEncounterPayload,
   type SpawnTokenPayload,
   type ThrowPokeballPayload,
   type TickFieldEffectDurationsPayload,
@@ -353,11 +355,7 @@ export interface UseLivePlayCommandsReturn {
   deleteToken: (payload: {
     placementId: string
   }) => Promise<LivePlayCommandDispatchResult>
-  throwPokeball: (payload: {
-    trainerPlacementId: string
-    targetPlacementId: string
-    pokeballName: string
-  }) => Promise<LivePlayCommandDispatchResult>
+  throwPokeball: (payload: ThrowPokeballPayload) => Promise<LivePlayCommandDispatchResult>
   moveToken: (payload: {
     placementId: string
     position: GridAnchor
@@ -424,6 +422,8 @@ export interface UseLivePlayCommandsReturn {
     targetPlacementId?: string
   }) => Promise<LivePlayCommandDispatchResult>
   setScene: (payload: SetScenePayload) => Promise<LivePlayCommandDispatchResult>
+  endEncounter: (payload: EndEncounterPayload) => Promise<LivePlayCommandDispatchResult>
+  dismissEncounterEffect: (payload: DismissEncounterEffectPayload) => Promise<LivePlayCommandDispatchResult>
   updateAttackOfOpportunity: (payload: AttackOfOpportunityTriggerPayload) => Promise<LivePlayCommandDispatchResult>
   updateStartTurnModal: (payload: StartTurnModalStateUpdatePayload) => Promise<LivePlayCommandDispatchResult>
 }
@@ -458,6 +458,8 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_SCENE
+  | typeof LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER
+  | typeof LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY
   | typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL
 
@@ -496,6 +498,8 @@ type LivePlayClientCommandPayload =
   | LivePlayMapEffectsCommandPayload
   | ResolveMoveLivePlayCommand['payload']
   | SetScenePayload
+  | EndEncounterPayload
+  | DismissEncounterEffectPayload
   | AttackOfOpportunityTriggerPayload
   | StartTurnModalStateUpdatePayload
   | Record<string, never>
@@ -536,6 +540,8 @@ const LIVE_PLAY_COMMAND_REQUEST_PATHS = new Set<string>([
   MAP_API_PATHS.useManeuver,
   MAP_API_PATHS.useOrder,
   MAP_API_PATHS.setScene,
+  MAP_API_PATHS.endEncounter,
+  MAP_API_PATHS.dismissEncounterEffect,
   MAP_API_PATHS.updateAttackOfOpportunity,
   MAP_API_PATHS.updateStartTurnModal,
 ])
@@ -930,10 +936,6 @@ export const useLivePlayCommands = (
     kind: 'map',
     lane,
   })
-
-  const placementForPayload = (payload: LivePlayTokenCommandPayload): SheetPlacement | null => (
-    options.map?.value?.placements.find((placement) => placement.id === payload.placementId) ?? null
-  )
 
   const sheetScopeForPlacementId = (
     placementId: string,
@@ -2472,7 +2474,8 @@ export const useLivePlayCommands = (
         {
           trainerPlacementId: payload.trainerPlacementId,
           targetPlacementId: payload.targetPlacementId,
-          pokeballName: payload.pokeballName,
+          sourceInstanceId: payload.sourceInstanceId,
+          source: payload.source,
         },
         scopes,
       )
@@ -2850,6 +2853,26 @@ export const useLivePlayCommands = (
       LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
       payload,
       [mapScope('scene')],
+    ),
+  )
+
+  const endEncounter: UseLivePlayCommandsReturn['endEncounter'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.endEncounter,
+    (authContext) => commandBody(
+      authContext,
+      LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER,
+      payload,
+      [mapScope('encounter')],
+    ),
+  )
+
+  const dismissEncounterEffect: UseLivePlayCommandsReturn['dismissEncounterEffect'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.dismissEncounterEffect,
+    (authContext) => commandBody(
+      authContext,
+      LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT,
+      payload,
+      [mapScope('encounter')],
     ),
   )
 
@@ -3866,6 +3889,8 @@ export const useLivePlayCommands = (
     useManeuver,
     useOrder,
     setScene,
+    endEncounter,
+    dismissEncounterEffect,
     updateAttackOfOpportunity,
     updateStartTurnModal,
   }

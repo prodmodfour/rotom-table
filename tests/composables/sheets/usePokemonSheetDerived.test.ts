@@ -1,21 +1,39 @@
 import { computed, nextTick, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
+import { findItem } from '~~/data/ptuReference'
 import { formatLookupList, usePokemonSheetDerived } from '~/composables/sheets/usePokemonSheetDerived'
+import { createEmptySheetEquipmentState } from '#shared/itemAutomation/equipment'
+import { activeEquipmentState } from '../../fixtures/equipment'
+import { projectEquipmentContributionsForSheet } from '~~/server/domain/itemAutomation/equipmentContributionProjection'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { pokemonExperienceNeededForLevel } from '~/utils/sheets/pokemonExperience'
 import type { CharacterSheet } from '~/types/characterSheet'
 
-const makeSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
-  slug: 'test-pikachu',
-  nickname: 'Spark',
-  species: 'Pikachu',
-  level: 10,
-  combat: { currentHp: 999, evasion: { vsAnyBonus: 1 } },
-  items: { held: 'Bright Powder' },
-  movelist: [{ name: 'Thunder Shock' }],
-  tutorPoints: { earned: 3, spent: 2 },
-  ...overrides,
-})
+const makeSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => {
+  const sheet: CharacterSheet = {
+    slug: 'test-pikachu',
+    nickname: 'Spark',
+    species: 'Pikachu',
+    level: 10,
+    combat: { currentHp: 999, evasion: { vsAnyBonus: 1 } },
+    items: { held: 'Bright Powder' },
+    movelist: [{ name: 'Thunder Shock' }],
+    tutorPoints: { earned: 3, spent: 2 },
+    ...overrides,
+  }
+  if (overrides.equipmentState === undefined) {
+    const canonicalItemId = findItem(sheet.items?.held ?? '')?.name
+    sheet.equipmentState = canonicalItemId
+      ? activeEquipmentState({
+          ownerKind: 'pokemon', ownerSlug: sheet.slug, slotId: 'held', canonicalItemId,
+        })
+      : createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: sheet.slug })
+  }
+  sheet.equipmentContributionProjection = projectEquipmentContributionsForSheet({
+    kind: 'pokemon', slug: sheet.slug, sheet,
+  }) ?? undefined
+  return sheet
+}
 
 describe('usePokemonSheetDerived', () => {
   it('derives species fallbacks, sheet totals, and lookup rows', () => {

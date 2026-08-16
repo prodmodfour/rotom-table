@@ -3,6 +3,14 @@ import type { AuthRole } from '#shared/auth'
 import { groupInventoryChannel, isRealtimeEcho, sheetChannel, shopChannel, type RealtimeEvent } from '#shared/realtime'
 import { type LivePlayRandomUuidProvider, type ShopCheckoutCommandResult, type ShopCheckoutOrigin } from '#shared/livePlayCommands'
 import type { PlayerProfileId } from '#shared/playerProfiles'
+import {
+  parseShopCheckoutContinuationReceipt,
+  parseShopPostCheckoutActionProjection,
+  parseShopPostCheckoutActionRequest,
+  type ShopCheckoutContinuationReceiptV1,
+  type ShopPostCheckoutActionProjectionStatus,
+  type ShopPostCheckoutActionProjectionV1,
+} from '#shared/shopPostCheckout'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { useShopCheckoutCommands, type ShopCheckoutCommandDispatchResult, type ShopCheckoutCommandStatus } from '~/composables/shops/useShopCheckoutCommands'
 import { subscribeChannel } from '~/composables/useRealtime'
@@ -11,7 +19,7 @@ import type { ApiClient } from '~/utils/apiClient'
 import { GROUP_INVENTORY_MAIN_SLUG, type GroupInventoryDocument } from '~/types/groupInventory'
 import type { ShopEntry, ShopTableDocument } from '~/types/shop'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { GROUP_INVENTORY_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
+import { GROUP_INVENTORY_API_PATHS, SHEET_API_PATHS, SHOP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { applyGroupInventoryRealtimeEvent, type GroupInventoryRealtimeApplicationResult } from '~/utils/groupInventoryRealtime'
@@ -94,6 +102,10 @@ export interface UseShopfrontCheckoutReturn {
   readonly checkoutErrorMessage: ComputedRef<string | null>
   readonly checkoutUnavailableReason: ComputedRef<string | null>
   readonly stockChangeNotice: Ref<string | null>
+  readonly postCheckoutReceipt: Ref<ShopCheckoutContinuationReceiptV1 | null>
+  readonly postCheckoutActions: Ref<ShopPostCheckoutActionProjectionV1 | null>
+  readonly postCheckoutActionsStatus: Ref<ShopPostCheckoutActionProjectionStatus>
+  readonly postCheckoutActionsError: Ref<string | null>
   readonly canCheckout: ComputedRef<boolean>
   readonly isCheckoutBusy: ComputedRef<boolean>
   readonly pendingOutboxEntries: ReturnType<typeof useShopCheckoutCommands>['pendingOutboxEntries']
@@ -109,6 +121,8 @@ export interface UseShopfrontCheckoutReturn {
   readonly discardOutboxEntry: ReturnType<typeof useShopCheckoutCommands>['discardOutboxEntry']
   readonly clearCheckoutError: () => void
   readonly clearStockChangeNotice: () => void
+  readonly loadPostCheckoutActions: () => Promise<void>
+  readonly dismissPostCheckoutActions: () => void
   readonly handleGroupInventoryRealtimeEvent: (event: RealtimeEvent) => GroupInventoryRealtimeApplicationResult
   readonly handleTrainerSheetRealtimeEvent: (event: RealtimeEvent) => TrainerSheetRealtimeApplicationResult
   readonly handleShopCheckoutRealtimeEvent: (event: RealtimeEvent) => void
@@ -299,6 +313,12 @@ export const useShopfrontCheckout = (
   const selectedDeliveryOptionKey = ref('')
   const localCheckoutError = ref<string | null>(null)
   const stockChangeNotice = ref<string | null>(null)
+  const postCheckoutReceipt = ref<ShopCheckoutContinuationReceiptV1 | null>(null)
+  const postCheckoutActions = ref<ShopPostCheckoutActionProjectionV1 | null>(null)
+  const postCheckoutActionsStatus = ref<ShopPostCheckoutActionProjectionStatus>('idle')
+  const postCheckoutActionsError = ref<string | null>(null)
+  let postCheckoutContext: { readonly shopSlug: string, readonly operationId: string } | null = null
+  let postCheckoutLoadGeneration = 0
   let unsubscribeGroupInventoryRealtime: (() => void) | null = null
   let subscribedGroupInventorySlug: string | null = null
   let unsubscribeShopCheckoutRealtime: (() => void) | null = null
@@ -308,6 +328,55 @@ export const useShopfrontCheckout = (
   const clearCart = (): void => {
     cartQuantities.value = {}
     stockChangeNotice.value = null
+  }
+
+  const dismissPostCheckoutActions = (): void => {
+    postCheckoutLoadGeneration += 1
+    postCheckoutReceipt.value = null
+    postCheckoutActions.value = null
+    postCheckoutActionsStatus.value = 'idle'
+    postCheckoutActionsError.value = null
+    postCheckoutContext = null
+  }
+
+  const loadPostCheckoutActions = async (): Promise<void> => {
+    const receipt = postCheckoutReceipt.value
+    const context = postCheckoutContext
+    if (!receipt || !context) return
+    const loadGeneration = ++postCheckoutLoadGeneration
+    postCheckoutActionsStatus.value = 'loading'
+    postCheckoutActionsError.value = null
+    try {
+      const request = parseShopPostCheckoutActionRequest({
+        schemaVersion: 1,
+        shopSlug: context.shopSlug,
+        checkoutOperationId: context.operationId,
+        continuationIds: receipt.continuations.map(row => row.continuationId),
+      })
+      const projection = parseShopPostCheckoutActionProjection(await apiClient.postJson<unknown>(
+        SHOP_API_PATHS.postCheckoutActions,
+        {
+          request,
+          ...(options.selectedProfileId.value ? { profileId: options.selectedProfileId.value } : {}),
+        },
+      ))
+      const expectedIds = receipt.continuations.map(row => row.continuationId)
+      if (projection.items.length !== expectedIds.length
+        || projection.items.some(item => !expectedIds.includes(item.continuationId))) {
+        throw new Error('Post-checkout actions do not match the exact accepted delivery receipt.')
+      }
+      if (loadGeneration !== postCheckoutLoadGeneration) return
+      postCheckoutActions.value = projection
+      postCheckoutActionsStatus.value = 'ready'
+    }
+    catch (error) {
+      if (loadGeneration !== postCheckoutLoadGeneration) return
+      postCheckoutActions.value = null
+      postCheckoutActionsStatus.value = 'error'
+      postCheckoutActionsError.value = getErrorMessage(error, {
+        fallback: 'Exact post-checkout action options could not be loaded.',
+      })
+    }
   }
 
   const upsertTrainerSheet = (sheet: TrainerSheet): void => {
@@ -336,8 +405,15 @@ export const useShopfrontCheckout = (
       groupInventoryDocument.value = document
     },
     adoptTrainerSheet: upsertTrainerSheet,
-    onCheckoutAccepted: () => {
+    onCheckoutAccepted: (response) => {
       clearCart()
+      if (!response.postCheckout) {
+        dismissPostCheckoutActions()
+        return
+      }
+      postCheckoutReceipt.value = parseShopCheckoutContinuationReceipt(response.postCheckout)
+      postCheckoutContext = { shopSlug: response.shopSlug, operationId: response.opId }
+      void loadPostCheckoutActions()
     },
   })
 
@@ -669,6 +745,7 @@ export const useShopfrontCheckout = (
     if (!deliveryOption) return setValidationFailure('Choose an eligible delivery target.')
 
     localCheckoutError.value = null
+    dismissPostCheckoutActions()
     const result = await checkoutCommands.checkout({
       paymentSource: participantReference(paymentOption),
       deliveryTarget: participantReference(deliveryOption),
@@ -692,6 +769,9 @@ export const useShopfrontCheckout = (
 
   watch([paymentOptions, deliveryOptions], syncSelectedOptions, { immediate: true })
   watch(() => options.shop.value?.slug ?? null, syncShopCheckoutRealtimeSubscription)
+  watch(() => options.selectedProfileId.value ?? null, () => {
+    if (postCheckoutContext) void loadPostCheckoutActions()
+  })
   watch(() => groupInventoryDocument.value?.slug ?? null, syncGroupInventoryRealtimeSubscription)
   watch(
     () => trainerSheets.value.map((sheet) => sheet.slug).sort().join('\u0000'),
@@ -766,6 +846,10 @@ export const useShopfrontCheckout = (
     checkoutErrorMessage,
     checkoutUnavailableReason,
     stockChangeNotice,
+    postCheckoutReceipt,
+    postCheckoutActions,
+    postCheckoutActionsStatus,
+    postCheckoutActionsError,
     canCheckout,
     isCheckoutBusy,
     pendingOutboxEntries: checkoutCommands.pendingOutboxEntries,
@@ -781,6 +865,8 @@ export const useShopfrontCheckout = (
     discardOutboxEntry: checkoutCommands.discardOutboxEntry,
     clearCheckoutError,
     clearStockChangeNotice,
+    loadPostCheckoutActions,
+    dismissPostCheckoutActions,
     handleGroupInventoryRealtimeEvent,
     handleTrainerSheetRealtimeEvent,
     handleShopCheckoutRealtimeEvent,

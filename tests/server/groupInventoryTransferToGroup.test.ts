@@ -20,6 +20,8 @@ import {
   TransferTrainerInventoryToGroupUseCaseError,
   transferTrainerInventoryToGroupUseCase,
 } from '~~/server/useCases/transferTrainerInventoryToGroup'
+import { startItemRouteLure } from '~~/server/domain/itemAutomation/exploration'
+import { ITEM_AUTOMATION_RUNTIME_REGISTRY } from '~~/server/domain/itemAutomation/registry'
 
 const openDatabases: RotomDatabase[] = []
 
@@ -136,7 +138,7 @@ afterEach(() => {
 })
 
 describe('trainer inventory to group inventory transfer use case', () => {
-  it('atomically transfers stackable trainer inventory quantities into the group inventory', () => {
+  it('atomically transfers stacks without fuzzy or metadata-losing merges', () => {
     const database = openMemoryDatabase()
     const groupInventory = seedGroupInventory(database, groupInventoryDocument({
       revision: 3,
@@ -191,7 +193,8 @@ describe('trainer inventory to group inventory transfer use case', () => {
       updatedAt: 900,
     })
     expect(response.groupInventory.inventory.pokemonItems).toEqual([
-      { id: 'group-potion-row', name: 'pótîon', qty: 5, description: 'Existing group notes' },
+      { id: 'group-potion-row', name: 'pótîon', qty: 2, description: 'Existing group notes' },
+      expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 3, cost: '$200' }),
     ])
     expect(storedGroupInventoryJson(database)).toEqual(response.groupInventory)
     expect((storedTrainerJson(database).inventory as TrainerSheet['inventory'])?.pokemonItems).toEqual([
@@ -220,6 +223,60 @@ describe('trainer inventory to group inventory transfer use case', () => {
       timestamp: 901,
       data: { slug: GROUP_INVENTORY_MAIN_SLUG, document: response.groupInventory },
     })
+  })
+
+  it('rolls back both inventories when an atomic adapter receipt cannot be stored', () => {
+    const database = openMemoryDatabase()
+    const groupInventory = seedGroupInventory(database, groupInventoryDocument({ revision: 2 }))
+    const trainer = seedTrainer(database, trainerSheetDocument({
+      inventory: {
+        ...emptyInventory(),
+        medicalKit: [{ id: 'potion-row', name: 'Potion', qty: 2 }],
+      },
+    }), 5, 500)
+    const trainerBefore = storedTrainerJson(database)
+    const groupBefore = storedGroupInventoryJson(database)
+
+    expect(() => transferTrainerInventoryToGroupUseCase({
+      role: 'gm', trainerSlug: trainer.slug, trainerRevision: trainer.revision,
+      groupSlug: groupInventory.slug, groupRevision: groupInventory.revision,
+      section: 'medicalKit', trainerItemId: 'potion-row', quantity: 1,
+    }, {
+      database,
+      now: () => 600,
+      onAcceptedInTransaction: () => { throw new Error('receipt failed') },
+    })).toThrow('receipt failed')
+
+    expect(storedTrainerJson(database)).toEqual(trainerBefore)
+    expect(storedGroupInventoryJson(database)).toEqual(groupBefore)
+  })
+
+  it('selects one duplicate Trainer source by stable row identity and never substitutes by name or index', () => {
+    const database = openMemoryDatabase()
+    const groupInventory = seedGroupInventory(database, groupInventoryDocument({ revision: 2 }))
+    const trainer = seedTrainer(database, trainerSheetDocument({
+      inventory: {
+        ...emptyInventory(),
+        medicalKit: [
+          { id: 'potion-first', name: 'Potion', qty: 4, description: 'First stack' },
+          { id: 'potion-second', name: 'Potion', qty: 2, description: 'Selected stack' },
+        ],
+      },
+    }), 5, 500)
+
+    const response = transferTrainerInventoryToGroupUseCase({
+      role: 'gm', trainerSlug: trainer.slug, trainerRevision: trainer.revision,
+      groupSlug: groupInventory.slug, groupRevision: groupInventory.revision,
+      section: 'medicalKit', trainerItemId: 'potion-second', quantity: 2,
+    }, { database, now: () => 600 })
+
+    expect((response.trainerSheet.sheet.inventory as TrainerSheet['inventory'])?.medicalKit).toEqual([
+      { id: 'potion-first', name: 'Potion', qty: 4, description: 'First stack' },
+    ])
+    expect(response.groupInventory.inventory.medicalKit).toEqual([
+      expect.objectContaining({ name: 'Potion', qty: 2, description: 'Selected stack' }),
+    ])
+    expect(JSON.stringify(response.groupInventory.inventory.medicalKit)).not.toContain('First stack')
   })
 
   it('moves trainer equipment as whole rows into group inventory rows with stable IDs', () => {
@@ -251,6 +308,58 @@ describe('trainer inventory to group inventory transfer use case', () => {
     expect(response.groupInventory.inventory.equipment).toEqual([
       { id: 'target-equipment-0', name: 'Fishing Rod', slot: 'Main Hand', cost: '$500' },
     ])
+  })
+
+  it('locks the exact reusable Fishing Lure row while its route activity is unresolved', () => {
+    const database = openMemoryDatabase()
+    const groupInventory = seedGroupInventory(database, groupInventoryDocument({ revision: 1, updatedAt: 100 }))
+    const route = startItemRouteLure({
+      current: null,
+      definition: ITEM_AUTOMATION_RUNTIME_REGISTRY.require('Fishing Lure'),
+      sourceOperationId: 'item-source-operation:00000001',
+      sourceInstanceId: 'item-instance:trainer:misty:foodStuff:lure-row',
+      campaignMinute: 100,
+    })
+    const trainer = seedTrainer(database, trainerSheetDocument({
+      inventory: {
+        ...emptyInventory(),
+        foodStuff: [{ id: 'lure-row', name: 'Fishing Lure', qty: 1 }],
+      },
+      serverPrivate: { itemExploration: route.state },
+    }), 2, 200)
+
+    expectTransferUseCaseError(() => transferTrainerInventoryToGroupUseCase({
+      role: 'gm', trainerSlug: trainer.slug, trainerRevision: trainer.revision,
+      groupSlug: groupInventory.slug, groupRevision: groupInventory.revision,
+      section: 'foodStuff', trainerRowIndex: 0, quantity: 1,
+    }, { database, now: () => 300 }), 409, 'cannot move while its route activity remains unresolved')
+    expect((storedTrainerJson(database).inventory as TrainerSheet['inventory'])?.foodStuff)
+      .toEqual([{ id: 'lure-row', name: 'Fishing Lure', qty: 1 }])
+    expect(storedGroupInventoryJson(database).inventory.foodStuff).toEqual([])
+  })
+
+  it('refuses to transfer quantity reserved by a pending item decision', () => {
+    const database = openMemoryDatabase()
+    const groupInventory = seedGroupInventory(database, groupInventoryDocument({ revision: 1 }))
+    const trainer = seedTrainer(database, trainerSheetDocument({
+      inventory: {
+        ...emptyInventory(),
+        medicalKit: [{ id: 'reserved-potion-row', name: 'Potion', qty: 2 }],
+      },
+    }), 2, 200)
+
+    expectTransferUseCaseError(() => transferTrainerInventoryToGroupUseCase({
+      role: 'gm', trainerSlug: trainer.slug, trainerRevision: trainer.revision,
+      groupSlug: groupInventory.slug, groupRevision: groupInventory.revision,
+      section: 'medicalKit', trainerItemId: 'reserved-potion-row', quantity: 2,
+    }, {
+      database,
+      itemOperationRepository: { database, reservedQuantity: () => 1 },
+      now: () => 300,
+    }), 409, 'does not have enough unreserved quantity')
+    expect((storedTrainerJson(database).inventory as TrainerSheet['inventory'])?.medicalKit)
+      .toEqual([{ id: 'reserved-potion-row', name: 'Potion', qty: 2 }])
+    expect(storedGroupInventoryJson(database).inventory.medicalKit).toEqual([])
   })
 
   it('rejects stale trainer revisions before changing either document', () => {

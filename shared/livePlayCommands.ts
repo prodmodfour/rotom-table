@@ -20,6 +20,8 @@ import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { ShopEntrySectionKey, ShopStockValue, ShopTableDocument } from '~/types/shop'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import type { ItemInventorySection } from './itemAutomation/inventory'
+import type { ShopCheckoutContinuationReceiptV1 } from './shopPostCheckout'
 import type { AttackOfOpportunityTriggerPayload } from './attackOfOpportunityState'
 import type { StartTurnModalStateUpdatePayload } from './startTurnModalState'
 import type { ResolveMoveIntent } from './livePlayMoveResolution'
@@ -75,6 +77,8 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   DELETE_TOKEN: 'deleteToken',
   THROW_POKEBALL: 'throwPokeball',
   SET_SCENE: 'setScene',
+  END_ENCOUNTER: 'endEncounter',
+  DISMISS_ENCOUNTER_EFFECT: 'dismissEncounterEffect',
   UPDATE_ATTACK_OF_OPPORTUNITY: 'updateAttackOfOpportunity',
   UPDATE_START_TURN_MODAL: 'updateStartTurnModal',
   SHOP_CHECKOUT: 'shopCheckout',
@@ -115,6 +119,8 @@ export const LIVE_PLAY_MAP_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
   LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
   LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
+  LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER,
+  LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
   LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL,
 ] as const satisfies readonly LivePlayMapCommandType[]
@@ -139,6 +145,7 @@ export const LIVE_PLAY_PATCH_TYPES = {
   MAP_TERRAIN: 'map.terrain',
   MAP_PLACEMENTS: 'map.placements',
   MAP_SCENE: 'map.scene',
+  MAP_ENCOUNTER_LIFECYCLE: 'map.encounterLifecycle',
   MAP_METADATA: 'map.metadata',
   SHEET_FIELD: 'sheet.field',
   MOVE_STATE: 'move.state',
@@ -163,6 +170,7 @@ export const LIVE_PLAY_PATCH_TYPE_VALUES = [
   LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN,
   LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS,
   LIVE_PLAY_PATCH_TYPES.MAP_SCENE,
+  LIVE_PLAY_PATCH_TYPES.MAP_ENCOUNTER_LIFECYCLE,
   LIVE_PLAY_PATCH_TYPES.MAP_METADATA,
   LIVE_PLAY_PATCH_TYPES.SHEET_FIELD,
   LIVE_PLAY_PATCH_TYPES.MOVE_STATE,
@@ -177,6 +185,7 @@ export const LIVE_PLAY_MAP_SCOPE_LANES = [
   'terrain',
   'placements',
   'scene',
+  'encounter',
   'metadata',
 ] as const
 export type LivePlayMapScopeLane = (typeof LIVE_PLAY_MAP_SCOPE_LANES)[number]
@@ -323,7 +332,14 @@ export interface SendOutPokemonPayload {
 export interface ThrowPokeballPayload {
   readonly trainerPlacementId: string
   readonly targetPlacementId: string
-  readonly pokeballName: string
+  readonly sourceInstanceId: string
+  readonly source: {
+    readonly kind: 'trainer'
+    readonly slug: string
+    readonly section: ItemInventorySection
+    readonly rowId: string
+    readonly expectedRevision: number
+  }
 }
 
 export interface ModifyHpPayload {
@@ -456,6 +472,16 @@ export interface RemoveTerrainVoxelPayload {
 export interface SetScenePayload {
   /** Non-empty name starts/replaces the active scene; null ends it. */
   readonly name: string | null
+}
+
+export interface EndEncounterPayload {
+  /** Closed presentation/audit reason; mechanics are identical for every reason. */
+  readonly reason: 'completed' | 'cancelled' | 'gm-ended'
+}
+
+export interface DismissEncounterEffectPayload {
+  /** Exact durable effect identity. The server revalidates explicit-dismissal authority. */
+  readonly effectId: string
 }
 
 export type ShopCheckoutParticipantReference =
@@ -655,6 +681,22 @@ export type SetSceneLivePlayCommand = LivePlayCommandEnvelope<
   SetScenePayload,
   LivePlayMapScope
 >
+
+export type EndEncounterLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER,
+  EndEncounterPayload,
+  LivePlayMapScope
+>
+
+export type DismissEncounterEffectLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT,
+  DismissEncounterEffectPayload,
+  LivePlayMapScope
+>
+
+export type LivePlayEncounterLifecycleCommand =
+  | EndEncounterLivePlayCommand
+  | DismissEncounterEffectLivePlayCommand
 
 export type ModifyHpLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
@@ -987,9 +1029,17 @@ export type InitiativeLifecycleFieldTransitionSummary = EncounterLifecycleFieldT
 export type InitiativeLifecycleSheetChangeRef = EncounterLifecycleSheetChangeRef
 export type InitiativeLifecyclePatchPayload = EncounterLifecyclePatchPayload
 
+export interface ScenePlacementInitiativeChange {
+  readonly placementId: string
+  readonly previous: number | null
+  readonly current: number | null
+}
+
 export interface SceneLifecyclePatchPayload extends EncounterLifecyclePatchPayload {
   readonly previousMoveUsage: TabletopMap['moveUsage'] | null
   readonly currentMoveUsage: TabletopMap['moveUsage'] | null
+  /** Exact additive form-stat initiative reversals applied at this Scene boundary. */
+  readonly placementInitiativeChanges?: readonly ScenePlacementInitiativeChange[]
 }
 
 export interface InitiativeUpdatedPatchPayload {
@@ -1139,6 +1189,15 @@ export interface SceneUpdatedPatchPayload {
   readonly lifecycle?: SceneLifecyclePatchPayload
 }
 
+export interface EncounterDurationLifecyclePatchPayload {
+  readonly command:
+    | typeof LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER
+    | typeof LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT
+  readonly reason: EndEncounterPayload['reason'] | 'explicit-dismissal'
+  readonly effectId: string | null
+  readonly lifecycle: EncounterLifecyclePatchPayload
+}
+
 export interface TokenDeletedPatchPayload {
   readonly command: typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN | typeof LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL
   readonly placementId: string
@@ -1163,6 +1222,11 @@ export type MoveCorrectionPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MOV
 export type TokenSpawnedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS, TokenSpawnedPatchPayload, LivePlayTokenScope>
 export type TokenDeletedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS, TokenDeletedPatchPayload, LivePlayTokenScope>
 export type SceneUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_SCENE, SceneUpdatedPatchPayload, LivePlayMapScope>
+export type EncounterDurationLifecyclePatch = LivePlayPatch<
+  typeof LIVE_PLAY_PATCH_TYPES.MAP_ENCOUNTER_LIFECYCLE,
+  EncounterDurationLifecyclePatchPayload,
+  LivePlayMapScope
+>
 
 export type KnownLivePlayPatch =
   | TokenMovedPatch
@@ -1182,6 +1246,7 @@ export type KnownLivePlayPatch =
   | TokenSpawnedPatch
   | TokenDeletedPatch
   | SceneUpdatedPatch
+  | EncounterDurationLifecyclePatch
 
 export const LIVE_PLAY_COMMAND_REJECTION_REASONS = [
   'invalid',
@@ -1254,6 +1319,8 @@ export interface ShopCheckoutCommandAccepted {
   readonly totalPrice: number
   readonly lines: readonly ShopCheckoutResultLine[]
   readonly documents: ShopCheckoutChangedDocuments
+  /** Exact, presentation-safe delivered sources for optional post-checkout handoffs. */
+  readonly postCheckout?: ShopCheckoutContinuationReceiptV1
 }
 
 export interface ShopCheckoutCommandRejected {

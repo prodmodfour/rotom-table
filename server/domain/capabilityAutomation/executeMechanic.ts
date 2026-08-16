@@ -68,6 +68,7 @@ import {
 } from './teleporterRoundUse'
 import { removeCapabilityPresenceGroup } from './presenceLifecycle'
 import { CAPABILITY_ALLURING_NEXT_TURN_STANDARD_FLAG_ID } from '../moveAutomation/reduceEncounterResources'
+import { resolveItemFormChangeMegaRingSource } from '../itemAutomation/formChanges'
 import { hasPokemonCapabilityEdge } from '#shared/capabilityAutomation/pokemonEdges'
 import {
   juicerShellItemName,
@@ -643,6 +644,13 @@ const applyToggle = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
     if (!trainerSlug || !input.map.activeScene || !Number.isSafeInteger(input.map.activeScene.startedAt)) {
       throw new Error('Delta Evolution requires retained Mega Ring and Scene identities.')
     }
+    const trainer = input.trainerSheets.get(trainerSlug)
+    if (!trainer) throw new Error('Delta Evolution linked Trainer authority is unavailable.')
+    const ringSource = resolveItemFormChangeMegaRingSource({
+      map: input.map,
+      trainerSheet: trainer,
+      sheets: { pokemon: input.pokemonSheets, trainer: input.trainerSheets },
+    })
     const uses = Array.isArray(input.map.metadata?.capabilityMegaEvolutionUses)
       ? input.map.metadata.capabilityMegaEvolutionUses as unknown[] : []
     nextMap = {
@@ -654,6 +662,8 @@ const applyToggle = (input: ExecuteCapabilityMechanicInput): TabletopMap => {
           actorPlacementId: input.actorPlacement.id,
           sceneStartedAt: input.map.activeScene.startedAt,
           sourceOperationId: input.command.operationId,
+          ringInstanceId: ringSource.instanceId,
+          ringInstanceRevision: ringSource.instanceRevision,
         }],
       },
     }

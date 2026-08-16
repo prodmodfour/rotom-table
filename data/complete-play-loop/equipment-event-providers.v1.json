@@ -1,0 +1,1740 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-048",
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "equipmentDefinitionsSha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a",
+  "definitionCount": 108,
+  "providingItemCount": 22,
+  "providerCount": 27,
+  "classificationPolicy": {
+    "status": "reviewed",
+    "runtimeProseParsing": false,
+    "inactiveOrSuppressedPolicy": "withdraw-future-subscriptions-immediately",
+    "acceptedEffectPolicy": "accepted-durable-effects-survive-source-loss",
+    "eventAuthority": "typed-server-events-only",
+    "replayPolicy": "receipt-bound-no-reroll"
+  },
+  "definitions": [
+    {
+      "canonicalItemId": "Kitchen Knife",
+      "canonicalRecordSha256": "d81a88d66e2445a3abd34c2fcde4b0eecb336e15c600fae98a3ee3031278be91",
+      "equipmentDefinitionSha256": "bdd36deeb715cc6a9db58f359cb0c7ed09aa07ac63dc07f66d482df707d32098",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Baseball Bat",
+      "canonicalRecordSha256": "7253402b5610e49a67ea1a2071ca5a4d4d2e24174ad0cf9aa860f5ae295d7471",
+      "equipmentDefinitionSha256": "ae103558ae79a99933c104fc7225875871146228090666d70c1c17f9087c8ca1",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Weighted Rope",
+      "canonicalRecordSha256": "ab7e21588efe79f3361bf1fdbf0e43070c167477043f9a5cea338fe0df450fc4",
+      "equipmentDefinitionSha256": "57e0f28094d5a1908d8140c251dfb5f08d4dbd0e7913fc6beadcb0db2a56e809",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Slingshot",
+      "canonicalRecordSha256": "df9b35c6b10d84a236a98b526e862018612fb0d8b6ec3afd4258c507a4f98e61",
+      "equipmentDefinitionSha256": "579f0b2d20b620d0f8d1ed142e42c2bf6a55d1604237aa2cccd465523961feb3",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Survival Knife",
+      "canonicalRecordSha256": "eba363fcbaf6115538dbd63d779b0a15b1d905c41014867c645efed0043c0d7d",
+      "equipmentDefinitionSha256": "3d1efc7b39bb571fc4c873c778374d3ab9b2be2f83387ac9583dd899cb67c979",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Quarterstaff",
+      "canonicalRecordSha256": "ad4d967bb0139e8f19d9c5603681e2e4c5d0a52be0cd05307424bb5c453e6a3f",
+      "equipmentDefinitionSha256": "2c3adb4732ad546a11e75e70156344b68f0de7d20bb5b2994df753191518e8ca",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Throwing Hammers",
+      "canonicalRecordSha256": "aeb5e26662fe2d9f567985703a749d9440c1bfdfab662d277a3d563942287135",
+      "equipmentDefinitionSha256": "5f8e907b04230de8c1b408994b09af96d8f75ae2aa6cc102ef2db7ae3a7737be",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Hunting Bow",
+      "canonicalRecordSha256": "320526c83a714ee1259de012f23e9677061bb0a69ba6c6a73dafb4f2783dc8a9",
+      "equipmentDefinitionSha256": "287c2da0ac61de23a1eb2aa5a6d1c934d7b715ae3154cb1165ee25a8f5e06300",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Honed Claws",
+      "canonicalRecordSha256": "dc99a5c88ba1cca7d5583bde11468386c81c3f3f23dcd8e263f661b452697774",
+      "equipmentDefinitionSha256": "455c9407bd15dc3e87d436acaebd3d7364e38db4a4f79e1f22584b9e86fd9221",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Meteor Masher",
+      "canonicalRecordSha256": "991f575b4949d945686068d5e8a491e75d26af6f2c91fcafe207e4b74077310c",
+      "equipmentDefinitionSha256": "86b70e3d1f770f9921bff25910540cc47263dcc0866bb7df3c8231aad2fc226b",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Super Lucky Throwing Stars",
+      "canonicalRecordSha256": "a8089e5384500e64e63cb0876de85521eabe104c2bd3f93a879b52e1a6861245",
+      "equipmentDefinitionSha256": "6f4b0ce7a580c38c74fdb1d8f4fe94edaec423bd4adbb12aa747e4d08b7c2b5c",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Twin-Needled Bow",
+      "canonicalRecordSha256": "afa5ea75c223c7b5c9b7b1c54d171e355f5ccf88825e6290598bb2c9596e8fa6",
+      "equipmentDefinitionSha256": "5905d56b7c14d061d2c60600f591048ae11b3445e5545dd7abf0aaf05423be96",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Light Armor",
+      "canonicalRecordSha256": "d2b98b9b199ad0b297ddf9ca78f3f51fea13ce1b6e99cacf714abe9dd516d075",
+      "equipmentDefinitionSha256": "12c82a4f7b2cb06b1b9e9f73cbcd2ab35a77e64b214ba8ca823d0162ffc6969a",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Heavy Armor",
+      "canonicalRecordSha256": "d872a47b92cc35b3fe64800660f1756a0660ba3628b5a5473b303471c3c37563",
+      "equipmentDefinitionSha256": "77ea40912e3265ab9b3d76a009a3735b8fa8d3f16617f5883061fae675164995",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Fancy Clothes",
+      "canonicalRecordSha256": "1bd69a7221f797dc32e2c738a1f8c0f204bf3b492556ba5ced745db435f0e2d6",
+      "equipmentDefinitionSha256": "fd67b3ac5fcba3dbd4de75e84be5526177b02f3374e7bbcd9be704fd7a4c9d61",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Stealth Clothes",
+      "canonicalRecordSha256": "6bbdb74255c031e728ad8ff7f8f9f360d974c128201cb5df4a2b2643e567039e",
+      "equipmentDefinitionSha256": "a2b475f5bd6b86349f04e8b66dafd69199d69b1c237f23375d5aa4609fe739ca",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Dark Vision Goggles",
+      "canonicalRecordSha256": "3cc6520de29d843b73c055f4e28e0e33d496843f57d2100c3d9594163c168a78",
+      "equipmentDefinitionSha256": "e4d01191253eb50e669e7355965cd6b8ffc6d8dfe8aff9a13ce135926ac032e4",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Gas Mask",
+      "canonicalRecordSha256": "4fb60266e4ab1a66f8b1410011c18c6c9550ec0dc21e176b240b210e96845438",
+      "equipmentDefinitionSha256": "f70ed5949944fe8ef05b2d7302552c0ab078592b9a48347d92807215c1459041",
+      "providers": [
+        {
+          "providerId": "equipment.gas-mask.move-immunity",
+          "label": "Gas Mask protection",
+          "eventKind": "move",
+          "checkpoint": "pre-effect",
+          "predicate": {
+            "kind": "move",
+            "ownerRole": "target",
+            "timings": [
+              "use-started"
+            ],
+            "canonicalMoveIds": [
+              "Poison Gas",
+              "Poison Powder",
+              "Rage Powder",
+              "Sleep Powder",
+              "Smog",
+              "Smokescreen",
+              "Spore",
+              "Stun Spore",
+              "Sweet Scent"
+            ],
+            "keywordsAny": [],
+            "damageClasses": [],
+            "configuredType": false
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 80,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "prevent-move",
+            "reasonCode": "equipment.gas-mask.move-immunity"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Helmet",
+      "canonicalRecordSha256": "82f6fa0739b607c9d35923c3bdc98875d2b56abd0629e7d717a0e5a9cf41cd05",
+      "equipmentDefinitionSha256": "8c3a1b61a08f0e38643950a74b34eb53e04fa5de954425afb1232ad95c2fadf4",
+      "providers": [
+        {
+          "providerId": "equipment.helmet.move-resistance",
+          "label": "Helmet resistance",
+          "eventKind": "strike",
+          "checkpoint": "pre-effect",
+          "predicate": {
+            "kind": "strike",
+            "ownerRole": "defender",
+            "timings": [
+              "damage-resolved"
+            ],
+            "accuracyOutcomes": [
+              "hit"
+            ],
+            "directOnly": false,
+            "minimumTotalLoss": null,
+            "naturalAccuracyMinimum": null,
+            "relationship": "any",
+            "canonicalMoveIds": [
+              "Headbutt",
+              "Zen Headbutt"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 45,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "add-resistance-step",
+            "steps": 1,
+            "reasonCode": "equipment.helmet.move-resistance"
+          }
+        },
+        {
+          "providerId": "equipment.helmet.flinch-immunity",
+          "label": "Helmet flinch protection",
+          "eventKind": "condition",
+          "checkpoint": "pre-effect",
+          "predicate": {
+            "kind": "condition",
+            "ownerRole": "subject",
+            "conditionIds": [
+              "Flinch"
+            ],
+            "operations": [
+              "apply"
+            ],
+            "sourceMoveIds": [
+              "Headbutt",
+              "Zen Headbutt"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 90,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "prevent-condition",
+            "conditionId": "Flinch",
+            "reasonCode": "equipment.helmet.flinch-immunity"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Re-Breather",
+      "canonicalRecordSha256": "bd89163a1ce43a68c9146d994dca483a128c40055df90179dcf94cdb1dc86f58",
+      "equipmentDefinitionSha256": "430c0cfe2cb6a80fec61d1f2bb663cb116dec5b5c8e4c5793725fca9e44ddfdf",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Sunglasses",
+      "canonicalRecordSha256": "aad587fa10e70c4cdcd0718995229d9da23128bc309917f6a19949d1f4370921",
+      "equipmentDefinitionSha256": "1d163efc566d50d2b9c447f904aba9f58e3213942f9d78159058885b23f07d78",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Snow Boots",
+      "canonicalRecordSha256": "5c49d584d33172115c6ed56578a0093cba11c8276733e9c09f4e3cb5bd15aa53",
+      "equipmentDefinitionSha256": "c1879a43ed9bdcd57b4b6d4af5dc11d153534581b75044f1388dff0e04bf3dee",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Running Shoes",
+      "canonicalRecordSha256": "f7c206dc3fc2a92291f6aa883ed1332285aba72a079d994fe2296ea134e9a35a",
+      "equipmentDefinitionSha256": "fa3ce22f8556d543ca1816e2f4266813010e5ece7741d73cb61f9b3937124187",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Flippers",
+      "canonicalRecordSha256": "35f3e4e7a5c5de23b473a8999ea2d238b5cc363a054cb1ade39575d1b1075d29",
+      "equipmentDefinitionSha256": "ec613171a4a7b548917d05fbaaf60197382a60f214e1bb3ff00afc0a737344c2",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Jungle Boots",
+      "canonicalRecordSha256": "0aca938e2fc0b75783758032c54b4b699f3ed0f9b64eb03e930f18beb5a8a4f4",
+      "equipmentDefinitionSha256": "303f148c1f0aebdb8d4fdfdcd851c3c405c3366b60e3b1245707f968238c45de",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Old Rod",
+      "canonicalRecordSha256": "473540938809b0d0737602e79624bbf26e3839ebe4b062131aac89388f9abb9a",
+      "equipmentDefinitionSha256": "46e8fc7a1b0bf29d47ce7212bfd82d5b30a302e19a4f7e9349b40c1f0743a82d",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Good Rod",
+      "canonicalRecordSha256": "492c0d769ce53153da3183e5bc36c3f8e4cb55debccb160b2676a03c84a212ba",
+      "equipmentDefinitionSha256": "c9a9bb5b5e89b0279f34e6d37424ac630905bde9a5dc4872f497745f326e65d8",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Super Rod",
+      "canonicalRecordSha256": "99591c7c8c9727043b9775a8a3afb1a84447fe3ae9ba0dc5a5c498266bd53cf4",
+      "equipmentDefinitionSha256": "464b43c0e426c989baf27bb0f80170aa7ca7ef19407d641b346de3893f53a36c",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Glue Cannon",
+      "canonicalRecordSha256": "c3507876510e140833d2f37710cb718975c2d29711f284515bfedbbd6f5b6a3c",
+      "equipmentDefinitionSha256": "110c4574d419f38b628146e974f34321d054e29c4123945288c3e53416291154",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Hand Net",
+      "canonicalRecordSha256": "c99acb256d88a1621f70fa81d3578e1ae4c53d3885fee9ae05811c31f17be28c",
+      "equipmentDefinitionSha256": "5b42db59f71d51de5339f4904bbbaaa637a09b59b6316d8cccebfb53499fa94a",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Weighted Nets",
+      "canonicalRecordSha256": "a20cdda73043b07266a7ec1288c72b700ef04744c3ecfe5c59e3e4928a8d7d29",
+      "equipmentDefinitionSha256": "b1a79141c603898c9dbc4411773a13ef2e057e661f2eed134f0d970b64e4be44",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Light Shield",
+      "canonicalRecordSha256": "6b3c5542b0274e5ce0fd0140950a7994ba9e722512a1bcba3bfcb80e57899187",
+      "equipmentDefinitionSha256": "275e4fdacb8292a47d73d676f74ff6eaa09ced48f0bc0208441c47e7ee00c8f1",
+      "providers": [
+        {
+          "providerId": "equipment.light-shield.ready",
+          "label": "Readied Light Shield",
+          "eventKind": "action",
+          "checkpoint": "post-effect",
+          "predicate": {
+            "kind": "action",
+            "ownerRole": "actor",
+            "actionIds": [
+              "equipment.light-shield.ready"
+            ],
+            "timings": [
+              "started"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 40,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "apply-readied-shield",
+            "evasion": 4,
+            "damageReduction": 10,
+            "conditionId": "Slowed",
+            "duration": "through-next-turn",
+            "reasonCode": "equipment.light-shield.ready"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Heavy Shield",
+      "canonicalRecordSha256": "6322060de0415f8983072aa954fa8a65e77d22a2a0f006f2d8f0d93f6a70f799",
+      "equipmentDefinitionSha256": "527e7aea15841ab8956f0be3e47157f9ab92fdc78dd741b4d7a2e3f858c7c628",
+      "providers": [
+        {
+          "providerId": "equipment.heavy-shield.ready",
+          "label": "Readied Heavy Shield",
+          "eventKind": "action",
+          "checkpoint": "post-effect",
+          "predicate": {
+            "kind": "action",
+            "ownerRole": "actor",
+            "actionIds": [
+              "equipment.heavy-shield.ready"
+            ],
+            "timings": [
+              "started"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 40,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "apply-readied-shield",
+            "evasion": 6,
+            "damageReduction": 15,
+            "conditionId": "Slowed",
+            "duration": "through-next-turn",
+            "reasonCode": "equipment.heavy-shield.ready"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Wonder Launcher",
+      "canonicalRecordSha256": "8679405ba60ea75d3c602b36d47eafaf378defe18cc66726a74917c5ed20d4a8",
+      "equipmentDefinitionSha256": "76451499397408feb0a31fd6ee281a8a8f045120dcfba9cf65558d657e4f2aa0",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Focus",
+      "canonicalRecordSha256": "c5a348b2c00cd888253681101e6bb76023dd1f004dca2cb7c167adc0eb94fb89",
+      "equipmentDefinitionSha256": "e8e28782f41ba7527207de555791ca42b07eff1a515e59bc0aaba55bd264e2f3",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Snag Machine",
+      "canonicalRecordSha256": "21b4ab1aad7af502d333782ab0ddd72e681e59230c2957948e6f3fbf4687aee2",
+      "equipmentDefinitionSha256": "a08852daed8d03bc68ba91bb3086e16c76355a8331eea31d42ecee5b10bb8c65",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Mega Ring",
+      "canonicalRecordSha256": "4477ebf9aaa6deeaa150fab2d5c2a2af2c2867dd07649cb8b758c192d8b9fa4d",
+      "equipmentDefinitionSha256": "75eb8794564a7afdfabb6c861aab1d4a79e4e44c1c6025f6cb5f122282c813f1",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Big Root",
+      "canonicalRecordSha256": "735d037af1ec14084ae3a0cc8eda0e445874a0ec14dce590a2bd42ea14d4cce5",
+      "equipmentDefinitionSha256": "f65503384867f022728e47af0972f2f6e75e78aba79da22077d69dbb3ea62434",
+      "providers": [
+        {
+          "providerId": "equipment.big-root.drain-healing",
+          "label": "Big Root drain healing",
+          "eventKind": "hp",
+          "checkpoint": "pre-effect",
+          "predicate": {
+            "kind": "hp",
+            "ownerRole": "subject",
+            "changeKinds": [
+              "drain"
+            ],
+            "faintTransitions": [],
+            "beforeAtMaximum": null,
+            "reasonCodes": [],
+            "moveSourced": null
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 25,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "multiply-hp-change",
+            "changeKind": "drain",
+            "numerator": 2,
+            "denominator": 1,
+            "reasonCode": "equipment.big-root.double-drain-healing"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Bright Powder",
+      "canonicalRecordSha256": "7ae9e09a2d19298be1c906a9bfd5997be29ad81c38a1ba21cc7dfa77e74ca6bf",
+      "equipmentDefinitionSha256": "74b25f878e580e644bd7f12d1ba07e6ca9a2f3c74a372c1032cb990e5b1b8c12",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Choice Item",
+      "canonicalRecordSha256": "4781acbe03189cab30d2b4e8186651f78c73f2179d5964b6408dfda4d24d15f6",
+      "equipmentDefinitionSha256": "edb608e26487b1f2881635b30c46b36f02b2874bdd259d42e3136b720e5ae33e",
+      "providers": [
+        {
+          "providerId": "equipment.choice-item.equip-suppression",
+          "label": "Choice Item suppression",
+          "eventKind": "item",
+          "checkpoint": "after-commit",
+          "predicate": {
+            "kind": "item",
+            "ownerRole": "after",
+            "changes": [
+              "equipped"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 70,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "apply-condition",
+            "conditionId": "Suppressed",
+            "duration": "encounter",
+            "reasonCode": "equipment.choice-item.suppression"
+          }
+        },
+        {
+          "providerId": "equipment.choice-item.scene-suppression",
+          "label": "Choice Item suppression",
+          "eventKind": "lifecycle",
+          "checkpoint": "lifecycle",
+          "predicate": {
+            "kind": "lifecycle",
+            "ownerRole": "global",
+            "boundaries": [
+              "scene"
+            ],
+            "transitions": [
+              "started"
+            ]
+          },
+          "frequency": {
+            "kind": "scene",
+            "consume": "on-applied"
+          },
+          "priority": 70,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "apply-condition",
+            "conditionId": "Suppressed",
+            "duration": "encounter",
+            "reasonCode": "equipment.choice-item.suppression"
+          }
+        },
+        {
+          "providerId": "equipment.choice-item.turn-suppression",
+          "label": "Choice Item suppression",
+          "eventKind": "lifecycle",
+          "checkpoint": "lifecycle",
+          "predicate": {
+            "kind": "lifecycle",
+            "ownerRole": "subject",
+            "boundaries": [
+              "turn"
+            ],
+            "transitions": [
+              "started"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 70,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "apply-condition",
+            "conditionId": "Suppressed",
+            "duration": "encounter",
+            "reasonCode": "equipment.choice-item.suppression"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Contest Accessory",
+      "canonicalRecordSha256": "b859f9835c3978186cba6459164b4baa7652588d2ab5e1248fa2e4c007200662",
+      "equipmentDefinitionSha256": "942d1c81536c6b15e38cc580a9a2b3c2ed69a004151c98426da171c076a8f87c",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Contest Fashion",
+      "canonicalRecordSha256": "14e59f707a78b7cb56adf657ae1cf30b127ff03e897e35526e9c3ae349298ef2",
+      "equipmentDefinitionSha256": "2652b52015d48be55c289218a4121adaecacfa5096afa760a051cd947544b1ee",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Everstone",
+      "canonicalRecordSha256": "6414c9d8bac382ad284d370ed83823cd231c47ed78be2588e4bd62cad1e7465c",
+      "equipmentDefinitionSha256": "68b0c35eea9b5cde301df78cc4ab0e80cd65ca07107b96826d5587e7a371499c",
+      "providers": [
+        {
+          "providerId": "equipment.everstone.prevent-evolution",
+          "label": "Everstone evolution prevention",
+          "eventKind": "action",
+          "checkpoint": "declaration",
+          "predicate": {
+            "kind": "action",
+            "ownerRole": "target",
+            "actionIds": [
+              "evolution"
+            ],
+            "timings": [
+              "started"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 100,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "prevent-action",
+            "actionId": "evolution",
+            "reasonCode": "equipment.everstone.prevent-evolution"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Eviolite",
+      "canonicalRecordSha256": "3442e28c12b37bc65d6cfd2aeb5139c35a9b080febb7a087875dfdfef802c33e",
+      "equipmentDefinitionSha256": "3f5287a1d0c0c1ddfa806ca03b32c8e8f45cebd0a1a693971a255ca0e3dec63b",
+      "providers": [
+        {
+          "providerId": "equipment.eviolite.prevent-evolution",
+          "label": "Eviolite evolution prevention",
+          "eventKind": "action",
+          "checkpoint": "declaration",
+          "predicate": {
+            "kind": "action",
+            "ownerRole": "target",
+            "actionIds": [
+              "evolution"
+            ],
+            "timings": [
+              "started"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 100,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "prevent-action",
+            "actionId": "evolution",
+            "reasonCode": "equipment.eviolite.prevent-evolution"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Expert Belt",
+      "canonicalRecordSha256": "d0c139b0e7472719a650514766d633af756c968a9d1f7afa26d2f4be16249fe5",
+      "equipmentDefinitionSha256": "7a8bfe1efd1813c802a56a8f1c88ed47152965f5d05a824712383c2867136974",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Flame Orb",
+      "canonicalRecordSha256": "a93e0e2e46ce6a327109b484b03a40ab895e7b783f2fbbf2a1dd6638a2e0ce36",
+      "equipmentDefinitionSha256": "07e4de2543e5eb6551605d64a2b20832e8e499735337689e3f0c7274047a11b2",
+      "providers": [
+        {
+          "providerId": "equipment.flame-orb.equip-burn",
+          "label": "Flame Orb burn",
+          "eventKind": "item",
+          "checkpoint": "after-commit",
+          "predicate": {
+            "kind": "item",
+            "ownerRole": "after",
+            "changes": [
+              "equipped"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 60,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "apply-condition",
+            "conditionId": "Burned",
+            "duration": "persistent",
+            "reasonCode": "equipment.flame-orb.induced-burn"
+          }
+        },
+        {
+          "providerId": "equipment.flame-orb.turn-burn",
+          "label": "Flame Orb burn",
+          "eventKind": "lifecycle",
+          "checkpoint": "lifecycle",
+          "predicate": {
+            "kind": "lifecycle",
+            "ownerRole": "subject",
+            "boundaries": [
+              "turn"
+            ],
+            "transitions": [
+              "started"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 60,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "apply-condition",
+            "conditionId": "Burned",
+            "duration": "persistent",
+            "reasonCode": "equipment.flame-orb.induced-burn"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Focus Band",
+      "canonicalRecordSha256": "7749c6124a8dc390bc17338866282e4058dbbcc91856b1c1781cd4e1fca44f25",
+      "equipmentDefinitionSha256": "695848033ef64989545c50d28eead06f62d179b4f13ca3f804b0143d8a36bfe4",
+      "providers": [
+        {
+          "providerId": "equipment.focus-band.prevent-faint",
+          "label": "Focus Band",
+          "eventKind": "hp",
+          "checkpoint": "pre-effect",
+          "predicate": {
+            "kind": "hp",
+            "ownerRole": "subject",
+            "changeKinds": [
+              "damage",
+              "recoil",
+              "cost",
+              "set"
+            ],
+            "faintTransitions": [
+              "fainted"
+            ],
+            "beforeAtMaximum": null,
+            "reasonCodes": [],
+            "moveSourced": null
+          },
+          "frequency": {
+            "kind": "scene",
+            "consume": "on-applied"
+          },
+          "priority": 95,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "survive-at-one",
+            "roll": {
+              "sides": 20,
+              "minimum": 16
+            },
+            "requiresMoveDamageFromMaximum": false,
+            "reasonCode": "equipment.focus-band.prevent-faint"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Focus Sash",
+      "canonicalRecordSha256": "fa2d1eb758b452f2c199427b9cfa41c533685fb6cb670dcf8e16cdb65bff2f21",
+      "equipmentDefinitionSha256": "95954161a446c236699798cc6c2495c71ded7f577f91b47a852bb9937184a11e",
+      "providers": [
+        {
+          "providerId": "equipment.focus-sash.prevent-faint",
+          "label": "Focus Sash",
+          "eventKind": "hp",
+          "checkpoint": "pre-effect",
+          "predicate": {
+            "kind": "hp",
+            "ownerRole": "subject",
+            "changeKinds": [
+              "damage"
+            ],
+            "faintTransitions": [
+              "fainted"
+            ],
+            "beforeAtMaximum": true,
+            "reasonCodes": [],
+            "moveSourced": true
+          },
+          "frequency": {
+            "kind": "scene",
+            "consume": "on-applied"
+          },
+          "priority": 96,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "survive-at-one",
+            "roll": null,
+            "requiresMoveDamageFromMaximum": true,
+            "reasonCode": "equipment.focus-sash.prevent-faint"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Full Incense",
+      "canonicalRecordSha256": "1aabb92b7ca9a8c3812945b2f3227d11868079f8edb99bb191ac72b3c89d6203",
+      "equipmentDefinitionSha256": "159b65b9d99314cc17834ba16ebe5e354b45eef655ba35ff7f1262192455cc27",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Go-Goggles",
+      "canonicalRecordSha256": "cc93a51acc84f2d791cf5fcef00d0c928f9be71556f1a7c5ee071af6dcc0e13a",
+      "equipmentDefinitionSha256": "e4d71f31135371f86bc2ff78ff271a4bd45906db36c1176f102e4e02f81d8795",
+      "providers": [
+        {
+          "providerId": "equipment.go-goggles.sandstorm-immunity",
+          "label": "Go-Goggles",
+          "eventKind": "hp",
+          "checkpoint": "pre-effect",
+          "predicate": {
+            "kind": "hp",
+            "ownerRole": "subject",
+            "changeKinds": [
+              "damage"
+            ],
+            "faintTransitions": [],
+            "beforeAtMaximum": null,
+            "reasonCodes": [
+              "weather.sandstorm.round-end-residual"
+            ],
+            "moveSourced": null
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 85,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "prevent-hp-change",
+            "reasonCode": "equipment.go-goggles.sandstorm-immunity"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Iron Ball",
+      "canonicalRecordSha256": "25782335d2eafe7000f0b43c30a4c492d39fffdaa8f930fc24dc8fd8d8703d61",
+      "equipmentDefinitionSha256": "52421aac5a9c95f3c97b02c84a7584126d1410ded8f679d279b1c596f655d168",
+      "providers": [
+        {
+          "providerId": "equipment.iron-ball.ground-immunity-loss",
+          "label": "Iron Ball grounding",
+          "eventKind": "movement",
+          "checkpoint": "pre-effect",
+          "predicate": {
+            "kind": "movement",
+            "ownerRole": "subject",
+            "checkpoints": [
+              "pre-step"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 75,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "remove-type-immunity",
+            "typeId": "ground",
+            "reasonCode": "equipment.iron-ball.ground-immunity-loss"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "King’s Rock",
+      "canonicalRecordSha256": "2d279cde96e6abb56db70fc0ed3974ba5ef05f9b49ee6ea7b19578a7a5dccf09",
+      "equipmentDefinitionSha256": "e09eb7d05bc3c3b00c75d5e182517094723deb32db49a91dc256c15e62a6e613",
+      "providers": [
+        {
+          "providerId": "equipment.kings-rock.flinch",
+          "label": "King’s Rock",
+          "eventKind": "strike",
+          "checkpoint": "post-effect",
+          "predicate": {
+            "kind": "strike",
+            "ownerRole": "attacker",
+            "timings": [
+              "accuracy-resolved"
+            ],
+            "accuracyOutcomes": [
+              "hit"
+            ],
+            "directOnly": false,
+            "minimumTotalLoss": null,
+            "naturalAccuracyMinimum": 19,
+            "relationship": "any"
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 30,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "apply-condition",
+            "conditionId": "Flinch",
+            "duration": "turn",
+            "reasonCode": "equipment.kings-rock.flinch"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Lagging Item",
+      "canonicalRecordSha256": "7ac569130f16abe92b4bed2017c629e829680dd73471d919befc800623fce3c0",
+      "equipmentDefinitionSha256": "de72b11ea63b3eef5816e453d872fa234e2ac29c4360c2ded4ecf2ea070a54f7",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Lax Incense",
+      "canonicalRecordSha256": "95a833fb49ea84ab07dcdc82aa28e0c57ef6ef9cf3ec2d409dbc42c66e657318",
+      "equipmentDefinitionSha256": "57a26ff5128994580e92d2a0b29f39a78a65508aa080d7400e998c5ac35c3767",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Life Orb",
+      "canonicalRecordSha256": "9e329371536b6c08698e84acef7ea6159b70df7341ab48cf49501835f7eb2a89",
+      "equipmentDefinitionSha256": "565a7b4b8e88af0d0f144aaf2ef310afc3b43bf4d0a72fb2cfe97900f00d629d",
+      "providers": [
+        {
+          "providerId": "equipment.life-orb.recoil",
+          "label": "Life Orb recoil",
+          "eventKind": "strike",
+          "checkpoint": "post-effect",
+          "predicate": {
+            "kind": "strike",
+            "ownerRole": "attacker",
+            "timings": [
+              "damage-resolved"
+            ],
+            "accuracyOutcomes": [
+              "hit"
+            ],
+            "directOnly": true,
+            "minimumTotalLoss": 1,
+            "naturalAccuracyMinimum": null,
+            "relationship": "any"
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": -20,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "lose-max-hp-fraction",
+            "numerator": 1,
+            "denominator": 16,
+            "reasonCode": "equipment.life-orb.recoil"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Luck Incense",
+      "canonicalRecordSha256": "bd6aed3800991cb08520ba96e5eb1626874e0e44cdd6ef4d77beeb249f91a628",
+      "equipmentDefinitionSha256": "a001e3e8dbfda77f7434a0dfd5a0993e07b0ed28b4ae9eae4164aa211efa0b2b",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Quick Claw",
+      "canonicalRecordSha256": "cedb293481faa9f304b9bb3518f4c2f9e8c3d465b87bfb4e507a3e66ed739c7e",
+      "equipmentDefinitionSha256": "4595ab77b5d06dbdb810008f7fb65054ab318fae3059e7d98ea6c97ff15272de",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Razor Claw",
+      "canonicalRecordSha256": "42ae81b9c1e179ab549ba174bb4372c72bb6666dddae476e9e04e6f227ba1691",
+      "equipmentDefinitionSha256": "ef07c65276223b64fb4d7c89c5f42029cb0718a0beeabb7a5b903fc16d721bb4",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Razor Fang",
+      "canonicalRecordSha256": "72e2e7d52afb8dcd3ea6d3f28903284ddabe57c89f8343c79e79680f2200a010",
+      "equipmentDefinitionSha256": "d2effc5e896ef0ce5a4f8c93ac608edd9d8aeaeb44ec3439efafd03e2b42ba37",
+      "providers": [
+        {
+          "providerId": "equipment.razor-fang.injury",
+          "label": "Razor Fang",
+          "eventKind": "strike",
+          "checkpoint": "post-effect",
+          "predicate": {
+            "kind": "strike",
+            "ownerRole": "attacker",
+            "timings": [
+              "accuracy-resolved"
+            ],
+            "accuracyOutcomes": [
+              "hit"
+            ],
+            "directOnly": false,
+            "minimumTotalLoss": null,
+            "naturalAccuracyMinimum": 19,
+            "relationship": "any"
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 29,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "add-injury",
+            "amount": 1,
+            "reasonCode": "equipment.razor-fang.injury"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Safety Goggles",
+      "canonicalRecordSha256": "6c4b0e64a1ca6c8cc84778c7043e915f5a755cde2b9d7a4c79acea61c07cbef9",
+      "equipmentDefinitionSha256": "77c5d066a130030ab0c8cb89bdb929ad71efc15b6ecb229e5bb8b40449dd0f9e",
+      "providers": [
+        {
+          "providerId": "equipment.safety-goggles.powder-immunity",
+          "label": "Safety Goggles",
+          "eventKind": "move",
+          "checkpoint": "pre-effect",
+          "predicate": {
+            "kind": "move",
+            "ownerRole": "target",
+            "timings": [
+              "use-started"
+            ],
+            "canonicalMoveIds": [],
+            "keywordsAny": [
+              "powder"
+            ],
+            "damageClasses": [],
+            "configuredType": false
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 85,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "prevent-move",
+            "reasonCode": "equipment.safety-goggles.powder-immunity"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Shell Bell",
+      "canonicalRecordSha256": "e4f70060810b9cf2fe05ff5d5d00fe03ebbc7d02a5473d874e45a4ecad1d29bb",
+      "equipmentDefinitionSha256": "4da9b0ce68e6e48175835de96c2cb470ee9523e8a6bbe89f71a31e9b8ee77844",
+      "providers": [
+        {
+          "providerId": "equipment.shell-bell.temporary-hp",
+          "label": "Shell Bell",
+          "eventKind": "strike",
+          "checkpoint": "post-effect",
+          "predicate": {
+            "kind": "strike",
+            "ownerRole": "attacker",
+            "timings": [
+              "damage-resolved"
+            ],
+            "accuracyOutcomes": [
+              "hit"
+            ],
+            "directOnly": false,
+            "minimumTotalLoss": 1,
+            "naturalAccuracyMinimum": null,
+            "relationship": "foe"
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": -10,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "gain-temporary-hp-ticks",
+            "ticks": 1,
+            "reasonCode": "equipment.shell-bell.temporary-hp"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Shock Collar",
+      "canonicalRecordSha256": "130403cf76a1514068f30b49789a0fe7fec07ac2cc6e02d356250616ee9facc9",
+      "equipmentDefinitionSha256": "97a1b47756c25058ddf91df74dffe6ed3cedde1ad85c28b8ae3ecc4307f308b2",
+      "providers": [
+        {
+          "providerId": "equipment.shock-collar.activate",
+          "label": "Shock Collar",
+          "eventKind": "action",
+          "checkpoint": "post-effect",
+          "predicate": {
+            "kind": "action",
+            "ownerRole": "target",
+            "actionIds": [
+              "equipment.shock-collar.activate"
+            ],
+            "timings": [
+              "started"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 20,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "lose-max-hp-fraction",
+            "numerator": 1,
+            "denominator": 6,
+            "reasonCode": "equipment.shock-collar.activation"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Stat Boosters",
+      "canonicalRecordSha256": "84c7ed35db2c319d78b364d779b94bf91156d5229370624463762dc618fc0211",
+      "equipmentDefinitionSha256": "0f62d1b508575f93898a9fd89ce6392ba817f4a887c2cf282ef1bfbeadc545cf",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Toxic Orb",
+      "canonicalRecordSha256": "41e09ce92867a89e6202c3082a170c7fd6372a9e26836adf65a79c9278c51305",
+      "equipmentDefinitionSha256": "a846d99dfaeb3eed2dbe7a9526270f34709584d0bfbb4c07015626d019b89bb5",
+      "providers": [
+        {
+          "providerId": "equipment.toxic-orb.equip-poison",
+          "label": "Toxic Orb poison",
+          "eventKind": "item",
+          "checkpoint": "after-commit",
+          "predicate": {
+            "kind": "item",
+            "ownerRole": "after",
+            "changes": [
+              "equipped"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 60,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "apply-condition",
+            "conditionId": "Poisoned",
+            "duration": "persistent",
+            "reasonCode": "equipment.toxic-orb.induced-poison"
+          }
+        },
+        {
+          "providerId": "equipment.toxic-orb.turn-poison",
+          "label": "Toxic Orb poison",
+          "eventKind": "lifecycle",
+          "checkpoint": "lifecycle",
+          "predicate": {
+            "kind": "lifecycle",
+            "ownerRole": "subject",
+            "boundaries": [
+              "turn"
+            ],
+            "transitions": [
+              "started"
+            ]
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 60,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "apply-condition",
+            "conditionId": "Poisoned",
+            "duration": "persistent",
+            "reasonCode": "equipment.toxic-orb.induced-poison"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Normal Type Booster",
+      "canonicalRecordSha256": "3c844ad3eaf89e5415bdf242a7a8f8335ba364e723988e94044d05c41bdc837a",
+      "equipmentDefinitionSha256": "cb79718aa8ee39a4dc6909290745471ccfc87d4213a0fbd310b2166466bbd045",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Fire Type Booster",
+      "canonicalRecordSha256": "e4122626bb3ee55471e9c13f0d4abe126bd41d6a47010c5ec21cbf2dbe401c84",
+      "equipmentDefinitionSha256": "05756dd904417c3b6c4781a45adfc1a1ede367ff9785fd0e09485f1be68c7322",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Water Type Booster",
+      "canonicalRecordSha256": "cef02b7f1307e7a2c362d91fadeaf14b4dd6f056d2c110e20dd14c130b816fd6",
+      "equipmentDefinitionSha256": "f67c94783cd7c1483e734ac75a893e27c6e3f3bff8c26835872cc206c28db4a0",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Electric Type Booster",
+      "canonicalRecordSha256": "470a83d821f7016d28ff7b641b40c7018e452b8632888f6c0748427c4a733bd2",
+      "equipmentDefinitionSha256": "3cb7d89170341beb2690323aae9fc4cbc1f375fbbb0f08f6d754a49af1be8081",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Grass Type Booster",
+      "canonicalRecordSha256": "873c8a1b598a4a3935fde9e10eb3565ca0fdacfd33e763ef5f7e75b3be0b5c9f",
+      "equipmentDefinitionSha256": "486a9abbbd8f36b9df78ac38ebe3037b7297518f96b08f7aa29fca67da5aadf1",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Ice Type Booster",
+      "canonicalRecordSha256": "23ab0939775e209425d4c909a51fcaa97b81900726a4d3beb4b4f1244cb1d119",
+      "equipmentDefinitionSha256": "772d7b151e9139ecc0b9007f85a3b8d26cc94e47a52be11ff22618b766b7bc8b",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Fighting Type Booster",
+      "canonicalRecordSha256": "a4d9443b2acb69bd1323029b9979d688ba052b676610823417b50ca4a7290d25",
+      "equipmentDefinitionSha256": "b26a825b145ca1022e1c86a3c5cd36b6a68ed427e9fbf3e07ed8247a539d6b7b",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Poison Type Booster",
+      "canonicalRecordSha256": "a5abddc6c997141c01e7cda72f8f8d863c0e163de4e44d208b9bf034240f2406",
+      "equipmentDefinitionSha256": "297b490d43724d91c799271e2a0a754f2adcea8fa581f53a5e8feed0ba6e5043",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Ground Type Booster",
+      "canonicalRecordSha256": "b72c9d0aefe8c336e01cc62a8ac40b8962235e218566e70ab6f26688a3ca4681",
+      "equipmentDefinitionSha256": "d198c3da9e47a209405f8c5d311612e533e56f3164fc1dc3b7b4ad59025dbee5",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Flying Type Booster",
+      "canonicalRecordSha256": "d0ddb98cabad7055d9d898bd1bf21dda722be528710efdda00509c91c40a2929",
+      "equipmentDefinitionSha256": "567d149fb3a3c19a8769d68945663f07ae78cbda1f89acca22c65370f3445af5",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Psychic Type Booster",
+      "canonicalRecordSha256": "4235aa20e82fa8070ce2f8f6e752f8ae225e43fc701b995a850263070c58c590",
+      "equipmentDefinitionSha256": "7d339ff50174112a39bff361f8cebf9a5efb22e76da58d411e7cfbb66bc7490f",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Bug Type Booster",
+      "canonicalRecordSha256": "78b66e5dc2bdf9a15c8c8de6351044667abd4f030ba75652963a9f6c2d04a64b",
+      "equipmentDefinitionSha256": "19a749abe3809b979096e10a40636eb71e96b14f6868521493b71d9bd2c66cfb",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Rock Type Booster",
+      "canonicalRecordSha256": "45b95fb4f9d342f6d8dc74cc2d17092c2d6fd1a4edfde9adcf3f623c0b62b7e9",
+      "equipmentDefinitionSha256": "5314173c6b8d7a1aebfcd777ce8bc55d20c8c7d34cb9de426bb3182bb2df7e97",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Ghost Type Booster",
+      "canonicalRecordSha256": "c84facfc2a47226fc45af03e5eb99eef8789179c04c29843c1fa6d4589288fb9",
+      "equipmentDefinitionSha256": "59752a85464e1f64f60f27ad103d10230e0f0a4534808e850e956997e15944f3",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Dragon Type Booster",
+      "canonicalRecordSha256": "76126ba07509c641f0603e3c73135e245e6022b44b7c9186309a030eb0499c17",
+      "equipmentDefinitionSha256": "289264879eee507653e9ecec943ffa6fb2555cc0b53e671d6403e922ba4b0254",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Dark Type Booster",
+      "canonicalRecordSha256": "4177196271651e55617d4a4e07c21fb21a0be5ede30c385f467146da939312d5",
+      "equipmentDefinitionSha256": "64d3ddef38e6f362667b6e9074cf918d1185c2d1ac0291b89dd10118c325313c",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Steel Type Booster",
+      "canonicalRecordSha256": "7418e03809220b73c8ac282478003b134c79df41198ad2405feac61268925959",
+      "equipmentDefinitionSha256": "137048973f2bf13448eb1ec497a92de01bab770f2b6835cc6604000b37a0fbe9",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Fairy Type Booster",
+      "canonicalRecordSha256": "71115bd7ac9eaf34bee896538d0837f382eb41fbf1d454fc071a02d3c900175c",
+      "equipmentDefinitionSha256": "ece43ff54cdcac65f037acc316be24c6abb1d92991a5e97ed4668f61ae7c1302",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Normal Type Brace",
+      "canonicalRecordSha256": "7ef72b425e8b3ccbd0ac2ad1e68e4f42351af4fc1bdbe54e1f7f196ff8e091e9",
+      "equipmentDefinitionSha256": "76f1fc4cd78804d13d95b7047d0a19287d8165be657bcb10056ceffb1faa97a1",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Fire Type Brace",
+      "canonicalRecordSha256": "86c950c3bbb5ee925b664fcba1c5c0ba651754892a525548e6aa33e5eb894e37",
+      "equipmentDefinitionSha256": "f79ea58163f7ba0c167a188d69cedb1dfc99adaf232635d7e8bfd8c74c7cd015",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Water Type Brace",
+      "canonicalRecordSha256": "c98861d1176f135c47769b2f3d681d7edfe202a95bb9059c9dd364e9192e8a11",
+      "equipmentDefinitionSha256": "ff385e1cc33949660dd6406bd4f079820bdf876aa3f65191e620f3b7e9405a83",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Electric Type Brace",
+      "canonicalRecordSha256": "ac7165873896068928d8a1664b595a6013067596dc7da74763a497ece24a6bb5",
+      "equipmentDefinitionSha256": "b84ec6bd538b18a6ff69ea7827ad19548316cbd8f698c0dc12c26e2e0c6237ec",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Grass Type Brace",
+      "canonicalRecordSha256": "43d22c8fefa5b842f65c2055b841cebb8c5446d510bd73662bf991b5b80271b6",
+      "equipmentDefinitionSha256": "bc18a9ec81b4f7b82462c7e0c4fc37a56410b5fc213f7496a37246d77392cd39",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Ice Type Brace",
+      "canonicalRecordSha256": "50a03f3ab1a6975885b55dfefedee0e0aa54b0ab3c33b1ecf22de7bfeafd4b81",
+      "equipmentDefinitionSha256": "bc13f0238692f85fa12ba171eef135eb61ee73f8c2f1650f02d992ddc7322d83",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Fighting Type Brace",
+      "canonicalRecordSha256": "807d2040982408b9225e31f0d6f9fc68a4e0a3a903fc2209af2a1aa279ea2027",
+      "equipmentDefinitionSha256": "ab253c47bee79f207b80f8d0b62af1273eec2a981af3c32af8a109e776370d68",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Poison Type Brace",
+      "canonicalRecordSha256": "093421437f80230246d412706b6c8f7e8940d0016216a82f693489ea33716e77",
+      "equipmentDefinitionSha256": "f16935b4e33114dead2b98d0ba171e3cc1f7d5b7ee7818786336ec8f49c9e5c3",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Ground Type Brace",
+      "canonicalRecordSha256": "5527c058d1ed1d4458706eed1bda9b53c5f944612768c3813850c0494fc1174b",
+      "equipmentDefinitionSha256": "93f37f747a789489aa2b411771c5322a7f6b424252a67d48e25752b85aadef0e",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Flying Type Brace",
+      "canonicalRecordSha256": "ffa360c35a6738ec05f7706f5b751e39633bcd1c098c72f026ac7ed083287501",
+      "equipmentDefinitionSha256": "b732891c8898825e772c298b0e617434df1d459e7e7715c09920266263def3f9",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Psychic Type Brace",
+      "canonicalRecordSha256": "99a3d855aa6c217e888bdb70bde7667c9de4a93908afd0513ebbe8ac3866259b",
+      "equipmentDefinitionSha256": "406d242fcdfadf260da7bca71c137d8dd490eb79dcb756a08f993dc8316946dd",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Bug Type Brace",
+      "canonicalRecordSha256": "a9fa6482ab24564c24c809f8b13a8456b8211db7b52a656e7fb540875e07464a",
+      "equipmentDefinitionSha256": "9d80449e8e6f29ed56074d3adda36a97d6f201b0998f96113db23205709c3a11",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Rock Type Brace",
+      "canonicalRecordSha256": "732a6b22dc838473e0285bab566c1f5a4bdaf60bf8fb44740249220e37237c07",
+      "equipmentDefinitionSha256": "f80ca51b12459601c9372c98b64ea77bb302694ead106bfe8298d4d93e3e87db",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Ghost Type Brace",
+      "canonicalRecordSha256": "b80b60814041feede6e6cf7a06c2e2c947a0a6a08aa90355bb9259d0065a8eb7",
+      "equipmentDefinitionSha256": "fcbc8088d188ea1e919b1b4d2b3d3c124c59687ca0bcf63a5c31de449d45e591",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Dragon Type Brace",
+      "canonicalRecordSha256": "ac2198ab69404f9e56e6d56bcaebb3936182ebd3962abcd820e301c98a005435",
+      "equipmentDefinitionSha256": "a78128178a2cd98c6ebb4837fe7d056ce73c83f3c5d35e083409c2acba264962",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Dark Type Brace",
+      "canonicalRecordSha256": "2a9e8774149b898fb87d21f339c6a79d9de28998fc1ce19cee5bfaa360a8e859",
+      "equipmentDefinitionSha256": "2dea3c430bd386f093071b8c233d0bd2570266fd5e1ddab977ba58d965dba791",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Steel Type Brace",
+      "canonicalRecordSha256": "5d69a6686709d8b30cdf36dcdcf60c801879e937645782eee877d93d0774b46c",
+      "equipmentDefinitionSha256": "152ea4cfc73754d615fe760860bcf1d3f9b1aec06a9e07ebcbe9a3fbd9ceb408",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Fairy Type Brace",
+      "canonicalRecordSha256": "a80c0b9fc24dffa46658a64347961a340f4a369502c7067a5cc5edd0bfd1a913",
+      "equipmentDefinitionSha256": "cc5d1cffdbfe96f2c1c1435087a8ad026a2692d27c1f3ff6cb3a5bada83035fe",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Winter Cloak",
+      "canonicalRecordSha256": "192756eba39b76dee425c50bb3d48bf0fd7ba23bb3ab25752645a50e05a22f64",
+      "equipmentDefinitionSha256": "05e96615d8df45b0418e8bbb70c9b7486ad181108950fcc052c9276e10def4ad",
+      "providers": [
+        {
+          "providerId": "equipment.winter-cloak.hail-immunity",
+          "label": "Winter Cloak",
+          "eventKind": "hp",
+          "checkpoint": "pre-effect",
+          "predicate": {
+            "kind": "hp",
+            "ownerRole": "subject",
+            "changeKinds": [
+              "damage"
+            ],
+            "faintTransitions": [],
+            "beforeAtMaximum": null,
+            "reasonCodes": [
+              "weather.hail.round-end-residual"
+            ],
+            "moveSourced": null
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 85,
+          "response": "mandatory",
+          "choice": {
+            "kind": "automatic"
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "prevent-hp-change",
+            "reasonCode": "equipment.winter-cloak.hail-immunity"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Type Gem",
+      "canonicalRecordSha256": "921023bdcfc789fc45b0b04445649e8e01b5db909cd0c87b5b6e92d10043619f",
+      "equipmentDefinitionSha256": "c470896d9069486ac697775c411b87d5686619e2cc56df6c88544990741233c7",
+      "providers": [
+        {
+          "providerId": "equipment.type-gem.empower",
+          "label": "Type Gem",
+          "eventKind": "move",
+          "checkpoint": "declaration",
+          "predicate": {
+            "kind": "move",
+            "ownerRole": "user",
+            "timings": [
+              "declared"
+            ],
+            "canonicalMoveIds": [],
+            "keywordsAny": [],
+            "damageClasses": [
+              "physical",
+              "special"
+            ],
+            "configuredType": true
+          },
+          "frequency": {
+            "kind": "at-will",
+            "consume": "on-applied"
+          },
+          "priority": 50,
+          "response": "optional",
+          "choice": {
+            "kind": "owner-choice",
+            "options": [
+              {
+                "optionId": "activate",
+                "label": "Consume Type Gem"
+              },
+              {
+                "optionId": "pass",
+                "label": "Do not use"
+              }
+            ]
+          },
+          "privacy": {
+            "source": "owner-gm",
+            "outcome": "public"
+          },
+          "oncePerCausalChain": true,
+          "acceptedEffectSurvivesSourceLoss": true,
+          "effect": {
+            "kind": "consume-source-and-add-damage-base",
+            "amount": 3,
+            "reasonCode": "equipment.type-gem.empower"
+          }
+        }
+      ]
+    },
+    {
+      "canonicalItemId": "Type Plate",
+      "canonicalRecordSha256": "d7b6d8b56826de1156e8dbcd006ac3002cd12dd6a766a9708a0c51f8d0c5f865",
+      "equipmentDefinitionSha256": "1d36931fbf85bcd3aaf69d9dbcf14d848f48b5f4c8f0c41c14c026edc45c3b57",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Mega Stone",
+      "canonicalRecordSha256": "a8851a58e1b5ffd2771bb231a95184011534a20ff39a8e19a2c82e02f69d9e10",
+      "equipmentDefinitionSha256": "6122518228fad4b370f7e415fb6d15f262b129164c5b49fa7d5f679db812a66b",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Metal Powder",
+      "canonicalRecordSha256": "9d2cc7fa549a607db7a825b59ae5312cc7771942541972d8b8a9e7224ad86a9b",
+      "equipmentDefinitionSha256": "009805ace26f87347bcfec5e0c5e63012a7321b14b5d4a28eccd0f6583c885d7",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Rare Leek",
+      "canonicalRecordSha256": "499bf8dacf42f24dac404a9ec49372e2f4c8a844a6a8dc05020c207e44ae06c5",
+      "equipmentDefinitionSha256": "15bfe34467a7e5353d38b7f54b25b6723da32e54f539b093d2d19778ce758e54",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Thick Club",
+      "canonicalRecordSha256": "f3a0f5724bbb5d398bf919f2b0195705e8629187eebbda32bffdc25142e235b9",
+      "equipmentDefinitionSha256": "15486e39913abd650e5a6525e67ae9a79eb3f03641537e10b99acf099af6689f",
+      "providers": []
+    },
+    {
+      "canonicalItemId": "Pink Pearl",
+      "canonicalRecordSha256": "fe0cd46e9eab3391e2bc01fd68001acc092aa2409e2a1c8bdfe10cac4538dc10",
+      "equipmentDefinitionSha256": "78e162e88736dbda3d515a5de9e3a0991888626fdbdfe46cfbe48b922edab8df",
+      "providers": []
+    }
+  ]
+}

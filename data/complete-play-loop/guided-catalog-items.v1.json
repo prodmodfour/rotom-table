@@ -1,0 +1,1049 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-093",
+  "status": "reviewed",
+  "reviewId": "complete-play-loop-guided-catalog-items-v1",
+  "runtimeProseParsing": false,
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "sourceSha256": "73e4f23dc87ce2fa911c6dcb21777a2af125ed4acdac463b73f785dcd583e6c6",
+  "cohortPolicySha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b",
+  "decision": {
+    "choiceId": "gm-campaign-tool-outcome",
+    "optionId": "accept-reviewed-use",
+    "optionLabel": "Accept reviewed use",
+    "decisionRole": "gm",
+    "freeformMechanics": false
+  },
+  "itemCount": 34,
+  "registrySha256": "22ab0bcd7719c0612ffb5a486beb6475e32169b380018eebe2764cd7c8b0b783",
+  "items": [
+    {
+      "canonicalId": "Collection Jar",
+      "canonicalRecordSha256": "3886cdec04def35e9106a6f929b0a170dce7d84ae4f3db35a2720c88918b1caf",
+      "canonicalEffectSha256": "5bcc91c88c3d8260c3b1f55df8dfbc3f4260c1c4b4ab24214668484875f11da3",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Saddle",
+      "canonicalRecordSha256": "ef4615d7166fa93e886f0bafc405e0f8d9e1b4dbdc3222cabfab3e0c8b953ba2",
+      "canonicalEffectSha256": "4723d81acdb97f5c8b930770f29686259186a2f505d1235f2d9e28ebbfe57b9a",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Sleeping Bag",
+      "canonicalRecordSha256": "1d1dd225dc7b7b5781dc93e07c822c4452cfc29458d890f41fb3880d6fc7b9a9",
+      "canonicalEffectSha256": "93d4d024ed0170f6145a4e15c1252572688c3f7d3a51da7a5274a50a9014a488",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Tents",
+      "canonicalRecordSha256": "d36e642629784eba3cbf5d04a610c11052913e4f3bb2d275c5025a1758c9a0f3",
+      "canonicalEffectSha256": "8b3c93531b548ce6aa8a9cb6312a33fbae1e096c4ac97a3182a2870672bea102",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Lighter",
+      "canonicalRecordSha256": "3c3707486218dccb15a5f3bc9fc586f7ff457e21a838a1aab82f038dfdb5bead",
+      "canonicalEffectSha256": "77ed9587fc46920583ead1b2af68d2b43ad044e9b4d92be0b230ff75f48fbe0f",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Flashlight",
+      "canonicalRecordSha256": "4740ff42506a33fef0b5b7f47f3b56e65988c79613729d90727127b123be01a2",
+      "canonicalEffectSha256": "8732b10c7e05ed4c0a5b4a9bcd1d7313fd43a134e39c540fcccb76f251490b84",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Water Filter",
+      "canonicalRecordSha256": "cb8f52158ae61b4494dbc035d83e46ff2faf84173f0e316a31d0449ef4aaea31",
+      "canonicalEffectSha256": "88741db358892954a9d5ed3f61ca9aaf16784c389a8fb95db1a1f28a2a1b49fc",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Rope",
+      "canonicalRecordSha256": "57e38b4b00498e0fb0c05e081100955841235ca980c5eba2e82713586e98d326",
+      "canonicalEffectSha256": "c426515d51056849a71527a5c23dabd5f1160c03e07fc7b2992f852c8d6e4303",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Basic Rope",
+      "canonicalRecordSha256": "073b2e19058c12307fa601076f1bdc17456e51c1e71b584d79a10422986e1bd6",
+      "canonicalEffectSha256": "6ba777bbf2165e83703dab50d4fb5fa609d89f0722bd676ed21c553b0d9cf034",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Utility Rope",
+      "canonicalRecordSha256": "61c54f8a07b383896ba1a48b7f9b86785b6c65c59814edfbc4b91965904311d1",
+      "canonicalEffectSha256": "afa47803fc09ed6b0b580edeb086126256379d9d3e269d4ec6dd94bd6f259a80",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Sturdy Rope",
+      "canonicalRecordSha256": "9476d84aab963557367520df3e993c8dfbb45d5f3971ddcc190000bddc8e4907",
+      "canonicalEffectSha256": "012c923949b77bd74cea97a13ea4cb9fd3c81a3fe6fcb96930962d55ce210800",
+      "templateId": "reusable-field-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm that the current fictional use is legal for this exact field or camp tool.",
+      "canonicalFacts": [
+        "This is an interpretive field or camp tool; no effect is inferred from its name or prose.",
+        "The exact source must remain in current Trainer custody through acceptance."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Apply no automatic sheet, map, inventory-output, or campaign-clock value beyond the durable decision receipt."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable field or camp tool. The exact source is retained."
+    },
+    {
+      "canonicalId": "Mulch",
+      "canonicalRecordSha256": "bb37fd74aa6e94715953a02c58bfea416be23661f9f53c3cf5a0a05d6bae80c5",
+      "canonicalEffectSha256": "6fe636537d7c6b6b0a472ce53631df1799bf18a6ebf7f3af4d9abc65060f2554",
+      "templateId": "consumable-crafting-material",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": [
+        "Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.",
+        "Acceptance settles only the reviewed source disposition and durable decision receipt."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Consume one exact reserved source unit.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    {
+      "canonicalId": "Red Apricorns",
+      "canonicalRecordSha256": "4dcbb4da99f13a8872b4e2b863f2d494154d55952dff8eeae3ac15fe438dfacb",
+      "canonicalEffectSha256": "fd407af8339ae0530560e1f58452801822b4bcad83b684b0089566c788982e86",
+      "templateId": "consumable-crafting-material",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": [
+        "Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.",
+        "Acceptance settles only the reviewed source disposition and durable decision receipt."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Consume one exact reserved source unit.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    {
+      "canonicalId": "Yellow Apricorns",
+      "canonicalRecordSha256": "a75a3b08455cdb9606cfbb18a01dc132c14c1daa8e0d8667ffd30aca556224b0",
+      "canonicalEffectSha256": "ad77e24d9f5538d434ba3a8a60261bb7c1a3346bb823c83adcb708317308c0b1",
+      "templateId": "consumable-crafting-material",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": [
+        "Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.",
+        "Acceptance settles only the reviewed source disposition and durable decision receipt."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Consume one exact reserved source unit.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    {
+      "canonicalId": "Blue Apricorns",
+      "canonicalRecordSha256": "7b359dc2b3144854c510629eb9fdd7c75982ae8f451e28c41542a26c84305be0",
+      "canonicalEffectSha256": "10c3fa11c7008444d0966e598c0d89f7ee4bb48fcc88a9e8d121f9010cc50e17",
+      "templateId": "consumable-crafting-material",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": [
+        "Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.",
+        "Acceptance settles only the reviewed source disposition and durable decision receipt."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Consume one exact reserved source unit.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    {
+      "canonicalId": "Green Apricorns",
+      "canonicalRecordSha256": "37d0ab6dd40697cd33f04ff5a0efa0b6a31025c3b04b64c9a574c9d94cc9ba10",
+      "canonicalEffectSha256": "0bd34fade6d29720809fbc4c6825ae71fe99c1c08d017f32ca6f9b6b5d01e5b9",
+      "templateId": "consumable-crafting-material",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": [
+        "Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.",
+        "Acceptance settles only the reviewed source disposition and durable decision receipt."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Consume one exact reserved source unit.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    {
+      "canonicalId": "Pink Apricorns",
+      "canonicalRecordSha256": "c5f26da94f95e54e5a2f2c2532361f8709a275ef1a1adaa550d3702c53ef4f07",
+      "canonicalEffectSha256": "8f18cb7ff16ad2a6d9fb8a2681873100ca1fff3246f24c807dd7f6db5334dacc",
+      "templateId": "consumable-crafting-material",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": [
+        "Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.",
+        "Acceptance settles only the reviewed source disposition and durable decision receipt."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Consume one exact reserved source unit.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    {
+      "canonicalId": "White Apricorns",
+      "canonicalRecordSha256": "f2d3a31014e9510f33c0f0ad693475112f663a2f6749de4464101d565530cc0c",
+      "canonicalEffectSha256": "60f5f9441768f1ae16e53a1f82f2ad2b7914b8a9685d42bb4dbd5c60393bbb0e",
+      "templateId": "consumable-crafting-material",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": [
+        "Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.",
+        "Acceptance settles only the reviewed source disposition and durable decision receipt."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Consume one exact reserved source unit.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    {
+      "canonicalId": "Black Apricorns",
+      "canonicalRecordSha256": "6bd1d4d7789342fe6e6661d5ad6b78f03134537aa9ec758b7ec5c175b80bfecb",
+      "canonicalEffectSha256": "adab8d4ffae1c197c73e29730de8f0dbdb9daeb6af1d9d6633e124b986f79259",
+      "templateId": "consumable-crafting-material",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": [
+        "Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.",
+        "Acceptance settles only the reviewed source disposition and durable decision receipt."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Consume one exact reserved source unit.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    {
+      "canonicalId": "Shards",
+      "canonicalRecordSha256": "ec5bf72105f2a42742e20fbe3ade5a407007b3fb350df9020ae6900d64818c38",
+      "canonicalEffectSha256": "016c2dabeae5b453220731bd38b53697020f20e33d3e5788a093693e9ca566ca",
+      "templateId": "consumable-crafting-material",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": [
+        "Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.",
+        "Acceptance settles only the reviewed source disposition and durable decision receipt."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Consume one exact reserved source unit.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    {
+      "canonicalId": "Heart Scale",
+      "canonicalRecordSha256": "64042b3dcc4d55ed6144039afda6c9a83a1ce3e4bd7503070af37860943fec66",
+      "canonicalEffectSha256": "764e31e847e3717b789ae0791983d5f88deaa534e771bc9a89319055ed89a41d",
+      "templateId": "consumable-crafting-material",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact crafting or care material.",
+      "canonicalFacts": [
+        "Recipes, outputs, and prerequisites remain bounded GM adjudication; they are never inferred from canonical prose.",
+        "Acceptance settles only the reviewed source disposition and durable decision receipt."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Consume one exact reserved source unit.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication for its crafting or care use."
+    },
+    {
+      "canonicalId": "Cooking Set",
+      "canonicalRecordSha256": "2d28dadb3e101479178301f1e83c7b9f96ad7226c863c05b86f4d22b8b5dd5c9",
+      "canonicalEffectSha256": "d13d5f279d84609561abe2077ac0b5448a94bc292b5734811f39806c93be129a",
+      "templateId": "reusable-crafting-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm current legal use of this exact reusable crafting or care tool.",
+      "canonicalFacts": [
+        "Recipe, feature, Edge, configuration, and output eligibility are bounded GM adjudication.",
+        "The runtime never parses item prose or invents a crafted output."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable crafting or care tool."
+    },
+    {
+      "canonicalId": "Poffin Mixer",
+      "canonicalRecordSha256": "595e1f1154a03c5929cd5564ac1a63cef6e195a0a6d94ff50b3ca70782c65970",
+      "canonicalEffectSha256": "4276be0bdb8788b4eb8615ac0f246488087d25eeee8ea21bf5a153659c4b6a29",
+      "templateId": "reusable-crafting-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm current legal use of this exact reusable crafting or care tool.",
+      "canonicalFacts": [
+        "Recipe, feature, Edge, configuration, and output eligibility are bounded GM adjudication.",
+        "The runtime never parses item prose or invents a crafted output."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable crafting or care tool."
+    },
+    {
+      "canonicalId": "Poké Ball Tool Box",
+      "canonicalRecordSha256": "0fa466cef9bd739de534664e3cb1977076308f536bff89198e4f97a7d3cb0603",
+      "canonicalEffectSha256": "fbad186aed2bb633a373e7f194500942feb4623653dd3d68f5f6dd5b8cfa782d",
+      "templateId": "reusable-crafting-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm current legal use of this exact reusable crafting or care tool.",
+      "canonicalFacts": [
+        "Recipe, feature, Edge, configuration, and output eligibility are bounded GM adjudication.",
+        "The runtime never parses item prose or invents a crafted output."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable crafting or care tool."
+    },
+    {
+      "canonicalId": "Portable Grower / Berry Planter",
+      "canonicalRecordSha256": "8a262bea18dd7da25a3aa6dbadd36c601e7535960d223e9db5bf5a520f4110a7",
+      "canonicalEffectSha256": "47d77a5ce6849b4e37cd28ad8ce0ffe55afd86a901fb681a1e1bc20cf953812d",
+      "templateId": "reusable-crafting-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm current legal use of this exact reusable crafting or care tool.",
+      "canonicalFacts": [
+        "Recipe, feature, Edge, configuration, and output eligibility are bounded GM adjudication.",
+        "The runtime never parses item prose or invents a crafted output."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable crafting or care tool."
+    },
+    {
+      "canonicalId": "Groomer’s Kit",
+      "canonicalRecordSha256": "fd85aeeb0d45f6f30f22f8e9288d3015f30a3e550ed37ce1af1218c72b32177e",
+      "canonicalEffectSha256": "b3240790ea5595537b99f7f60d1aa6a8b0b3093cf32a8ff3bf6af48475a499a9",
+      "templateId": "reusable-crafting-tool",
+      "contexts": [
+        "campaign",
+        "sheet"
+      ],
+      "timing": "standard",
+      "actionCost": "none",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm current legal use of this exact reusable crafting or care tool.",
+      "canonicalFacts": [
+        "Recipe, feature, Edge, configuration, and output eligibility are bounded GM adjudication.",
+        "The runtime never parses item prose or invents a crafted output."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use.",
+        "Retain the exact reusable source row.",
+        "Grant no unselected output or hidden character mutation."
+      ],
+      "presentationDescription": "Request bounded GM adjudication for this reusable crafting or care tool."
+    },
+    {
+      "canonicalId": "Power Herb",
+      "canonicalRecordSha256": "5696acf06621a9d514c909d302ca063318e8a8ec29719eaa4f5b7c5df1fc8407",
+      "canonicalEffectSha256": "3013aaf22468b1276fd80815ae750c494bb146cd1e0abbb61748b673e279145a",
+      "templateId": "consumable-combat-tool",
+      "contexts": [
+        "encounter",
+        "sheet",
+        "campaign"
+      ],
+      "timing": "standard",
+      "actionCost": "standard",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact interpretive combat item.",
+      "canonicalFacts": [
+        "Targeting, placement, checks, and battlefield consequences require bounded GM adjudication.",
+        "No target, hazard, condition, Move, or modifier is inferred from the item name or prose."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use and its Standard Action boundary.",
+        "Consume one exact reserved source unit.",
+        "Apply no unselected target or battlefield mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication before this interpretive combat use settles."
+    },
+    {
+      "canonicalId": "White Herb",
+      "canonicalRecordSha256": "2353157d4b2c3d646877a4320af73e6ea247382da44c70ce8a533d531076efd5",
+      "canonicalEffectSha256": "7780cfa95c2357a1aa4bb18d2c3390ff9849790759137d9103ecc0275e8efe1f",
+      "templateId": "consumable-combat-tool",
+      "contexts": [
+        "encounter",
+        "sheet",
+        "campaign"
+      ],
+      "timing": "standard",
+      "actionCost": "standard",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact interpretive combat item.",
+      "canonicalFacts": [
+        "Targeting, placement, checks, and battlefield consequences require bounded GM adjudication.",
+        "No target, hazard, condition, Move, or modifier is inferred from the item name or prose."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use and its Standard Action boundary.",
+        "Consume one exact reserved source unit.",
+        "Apply no unselected target or battlefield mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication before this interpretive combat use settles."
+    },
+    {
+      "canonicalId": "Caltrops",
+      "canonicalRecordSha256": "e6a4a46e152f658b072c11cde887fbf580eb4ece86d8681a704f6793f80c7bde",
+      "canonicalEffectSha256": "e2154cafc4737825f3cbe92012f067b6f30168a8b4fa2cc3a70bfbc9143faf7a",
+      "templateId": "consumable-combat-tool",
+      "contexts": [
+        "encounter",
+        "sheet",
+        "campaign"
+      ],
+      "timing": "standard",
+      "actionCost": "standard",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact interpretive combat item.",
+      "canonicalFacts": [
+        "Targeting, placement, checks, and battlefield consequences require bounded GM adjudication.",
+        "No target, hazard, condition, Move, or modifier is inferred from the item name or prose."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use and its Standard Action boundary.",
+        "Consume one exact reserved source unit.",
+        "Apply no unselected target or battlefield mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication before this interpretive combat use settles."
+    },
+    {
+      "canonicalId": "Dream Mist",
+      "canonicalRecordSha256": "469ed76a5fe4cb2ce6417004eb0094b3b7074e9bd1a7ee4102ec3bac0fa34e0f",
+      "canonicalEffectSha256": "7dd741890a6a0b7a90d86c859a8c28c96aa9ebea561ff6dd793a41092e09c9a8",
+      "templateId": "consumable-combat-tool",
+      "contexts": [
+        "encounter",
+        "sheet",
+        "campaign"
+      ],
+      "timing": "standard",
+      "actionCost": "standard",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact interpretive combat item.",
+      "canonicalFacts": [
+        "Targeting, placement, checks, and battlefield consequences require bounded GM adjudication.",
+        "No target, hazard, condition, Move, or modifier is inferred from the item name or prose."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use and its Standard Action boundary.",
+        "Consume one exact reserved source unit.",
+        "Apply no unselected target or battlefield mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication before this interpretive combat use settles."
+    },
+    {
+      "canonicalId": "Cleanse Tags",
+      "canonicalRecordSha256": "230e4e5c6670e68ca5ec9a72269fd4ca1e1f10f9cd598cb9a8aae76f474ff0e1",
+      "canonicalEffectSha256": "7b572570a02643b27ca56ce2df4bcc6cfe761008c454936ab0fa7cc156025ebb",
+      "templateId": "consumable-combat-tool",
+      "contexts": [
+        "encounter",
+        "sheet",
+        "campaign"
+      ],
+      "timing": "standard",
+      "actionCost": "standard",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact interpretive combat item.",
+      "canonicalFacts": [
+        "Targeting, placement, checks, and battlefield consequences require bounded GM adjudication.",
+        "No target, hazard, condition, Move, or modifier is inferred from the item name or prose."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use and its Standard Action boundary.",
+        "Consume one exact reserved source unit.",
+        "Apply no unselected target or battlefield mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication before this interpretive combat use settles."
+    },
+    {
+      "canonicalId": "Toxic Caltrops",
+      "canonicalRecordSha256": "bb1698758e73b9321616356c39dee3604198b92ecfd3dfa987f5b4d1183d6b34",
+      "canonicalEffectSha256": "a1c7033a09768a2d053fc1c441beebd329d477877077990e40ab95fb47cb3ac2",
+      "templateId": "consumable-combat-tool",
+      "contexts": [
+        "encounter",
+        "sheet",
+        "campaign"
+      ],
+      "timing": "standard",
+      "actionCost": "standard",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact interpretive combat item.",
+      "canonicalFacts": [
+        "Targeting, placement, checks, and battlefield consequences require bounded GM adjudication.",
+        "No target, hazard, condition, Move, or modifier is inferred from the item name or prose."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use and its Standard Action boundary.",
+        "Consume one exact reserved source unit.",
+        "Apply no unselected target or battlefield mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication before this interpretive combat use settles."
+    },
+    {
+      "canonicalId": "Smoke Ball",
+      "canonicalRecordSha256": "8f3b51665bf2645790e4c63423f413b96afa8f4aee68796e8f8612830a76663e",
+      "canonicalEffectSha256": "22d3509803883e451ba752477e700a174a87d6a42a38a18463bd7809862eaca3",
+      "templateId": "consumable-combat-tool",
+      "contexts": [
+        "encounter",
+        "sheet",
+        "campaign"
+      ],
+      "timing": "standard",
+      "actionCost": "standard",
+      "consumption": {
+        "phase": "gm-adjudication",
+        "quantity": 1,
+        "reserveWhilePending": true,
+        "refundableOnCancel": true,
+        "reusable": false
+      },
+      "prompt": "Confirm one legal current use of this exact interpretive combat item.",
+      "canonicalFacts": [
+        "Targeting, placement, checks, and battlefield consequences require bounded GM adjudication.",
+        "No target, hazard, condition, Move, or modifier is inferred from the item name or prose."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use and its Standard Action boundary.",
+        "Consume one exact reserved source unit.",
+        "Apply no unselected target or battlefield mutation."
+      ],
+      "presentationDescription": "Reserve one exact unit and request bounded GM adjudication before this interpretive combat use settles."
+    },
+    {
+      "canonicalId": "Magic Flute",
+      "canonicalRecordSha256": "045491364bdf1d2440d8ef12e3cda4023f729617a67d14bac2d6e7ada3d71c3d",
+      "canonicalEffectSha256": "d4d45056c456aca7d9d4b56910643dd2ab10c7b1310950cdea12c11505748da7",
+      "templateId": "reusable-combat-tool",
+      "contexts": [
+        "encounter",
+        "sheet",
+        "campaign"
+      ],
+      "timing": "standard",
+      "actionCost": "standard",
+      "consumption": {
+        "phase": "never",
+        "quantity": 0,
+        "reserveWhilePending": false,
+        "refundableOnCancel": false,
+        "reusable": true
+      },
+      "prompt": "Confirm one legal current use of this exact reusable interpretive combat item.",
+      "canonicalFacts": [
+        "Configuration, usage limits, targets, range, and consequences require bounded GM adjudication.",
+        "No condition or area effect is inferred from the item name or prose."
+      ],
+      "settlementFacts": [
+        "Record one bounded GM-approved use and its Standard Action boundary.",
+        "Retain the exact reusable source row.",
+        "Apply no unselected target or battlefield mutation."
+      ],
+      "presentationDescription": "Request bounded GM adjudication before this reusable interpretive combat use settles."
+    }
+  ]
+}

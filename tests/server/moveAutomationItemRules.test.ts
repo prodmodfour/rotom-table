@@ -22,11 +22,13 @@ import {
   MoveAutomationItemRuleError,
 } from '~~/server/domain/moveAutomation/itemRules'
 import {
+  authoritativeEquippedItemReferences,
   resolveAuthoritativeMoveItemResources,
 } from '~~/server/domain/moveAutomation/itemResources'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { activeEquipmentState } from '../fixtures/equipment'
 
 const actorId = 'item-rule-actor'
 const targetId = 'item-rule-target'
@@ -66,6 +68,11 @@ const sheet = (input: {
       selections: [],
     },
   })),
+  ...(input.held ? {
+    equipmentState: activeEquipmentState({
+      ownerKind: 'pokemon', ownerSlug: input.slug, slotId: 'held', canonicalItemId: input.held,
+    }),
+  } : {}),
   ...(input.held || input.digestionFood || input.honeyPawsFood
     ? {
         items: {
@@ -159,6 +166,51 @@ const sheetsFixture = (actorHeld = 'Fire Type Plate') => new Map<string, Charact
     revision: 5,
   })],
 ])
+
+const symbiosisItemFixture = (): {
+  readonly map: TabletopMap
+  readonly sheets: ReadonlyMap<string, CharacterSheet>
+} => {
+  const sheets = new Map<string, CharacterSheet>([
+    ['item-rule-actor-sheet', sheet({
+      slug: 'item-rule-actor-sheet', species: 'Pikachu', held: 'Fire Type Plate', revision: 3,
+    })],
+    ['item-rule-target-sheet', sheet({
+      slug: 'item-rule-target-sheet', species: 'Rotom', held: 'Shock Drive', revision: 5,
+    })],
+  ])
+  const baseMap = mapFixture()
+  const sourcePlacement = baseMap.placements.find(candidate => candidate.id === targetId)!
+  const sharedReference = authoritativeEquippedItemReferences(
+    sourcePlacement,
+    sheets.get(sourcePlacement.sheetSlug)!,
+  )[0]!
+  const shared = parseEncounterEffect({
+    id: 'effect.symbiosis.shock-drive',
+    kind: 'capability',
+    source: { operationId: 'operation.symbiosis', moveId: 'symbiosis', placementId: targetId },
+    affected: { placementIds: [actorId], sideIds: [], cells: [] },
+    createdRound: 1,
+    createdTurn: 0,
+    duration: { kind: 'scene', remaining: null },
+    stacks: 1,
+    charges: null,
+    stackPolicy: { kind: 'independent-instance', maxStacks: null },
+    chargePolicy: { kind: 'none', amount: null },
+    tags: [
+      'ability', 'aa094-symbiosis-shared-item',
+      `aa094-symbiosis-binding:${moveItemEffectBindingId(sharedReference)}`,
+    ],
+    payload: { capabilityId: 'aa094.symbiosis.shared-held-item', action: 'grant' },
+    dispel: { policy: 'matching-tags', tags: ['aa094-symbiosis-shared-item'] },
+    transferPolicy: 'expire',
+    suppression: { sources: [] },
+  })
+  return {
+    sheets,
+    map: { ...baseMap, encounterState: { ...baseMap.encounterState!, effects: [shared] } },
+  }
+}
 
 const intent = (): ResolveMoveIntent => ({
   schemaVersion: 1,
@@ -535,8 +587,9 @@ describe('authoritative item-dependent move rules', () => {
   })
 
   it('applies opaque item-binding suppression only to the addressed contribution', () => {
-    const sheets = sheetsFixture('Fire Type Plate, Shock Drive')
-    const baseMap = mapFixture()
+    const fixture = symbiosisItemFixture()
+    const sheets = fixture.sheets
+    const baseMap = fixture.map
     const resources = resolveAuthoritativeMoveItemResources({
       map: baseMap,
       actorPlacementId: actorId,
@@ -553,7 +606,7 @@ describe('authoritative item-dependent move rules', () => {
       ...baseMap,
       encounterState: {
         ...baseMap.encounterState!,
-        effects: [parseEncounterEffect({
+        effects: [...(baseMap.encounterState?.effects ?? []), parseEncounterEffect({
           id: 'effect.item.corrosive-gas.plate',
           kind: 'item-suppression',
           source: {
@@ -596,12 +649,11 @@ describe('authoritative item-dependent move rules', () => {
       timing: 'static',
     }))).toBe('electric')
     expect((context.actor.sheet.sheet as CharacterSheet).items?.held)
-      .toBe('Fire Type Plate, Shock Drive')
+      .toBe('Fire Type Plate')
   })
 
   it('preserves typed variant identities and rejects ambiguous scalar contributions', () => {
-    const map = mapFixture()
-    const sheets = sheetsFixture('Fire Type Plate, Shock Drive')
+    const { map, sheets } = symbiosisItemFixture()
     const resources = resolveAuthoritativeMoveItemResources({
       map,
       actorPlacementId: actorId,

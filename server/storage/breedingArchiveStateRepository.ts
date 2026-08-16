@@ -444,6 +444,25 @@ export const createSqliteBreedingArchiveStateRepository = (
     set('operation-result', results)
 
     const clock = campaignClock.get()
+    if (clock.lastOperationId !== null) {
+      const clockOperation = operations.get(clock.lastOperationId)
+      if (!clockOperation || clockOperation.status !== 'accepted'
+        || clockOperation.command.commandKind !== 'advance-campaign-clock'
+        || !clockOperation.result?.ok
+        || clockOperation.result.outcomeKind !== 'clock-advanced'
+        || clockOperation.result.committedAtCampaignMinute !== clock.campaignMinute
+        || !clockOperation.result.aggregateRefs.some(reference => (
+          reference.kind === 'campaign-clock'
+          && reference.id === 'campaign-clock'
+          && reference.revision === clock.revision
+        ))) {
+        throw new BreedingRepositoryCorruptionError(
+          'campaign_clock',
+          'singleton',
+          'accepted last_operation_id clock command and result',
+        )
+      }
+    }
     const clockRecord = createBreedingCampaignClockArchiveRecordV1({
       revision: clock.revision,
       campaignMinute: clock.campaignMinute,

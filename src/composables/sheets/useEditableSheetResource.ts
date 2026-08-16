@@ -37,6 +37,8 @@ export interface EditableSheetResource<TSheet extends { slug: string; revision?:
   saveStatus: ComputedRef<SaveStatus>
   saveError: ComputedRef<string | null>
   renamedTo: ComputedRef<string | null>
+  saveNow: () => Promise<void>
+  adoptAuthoritativeSheet: (nextSheet: TSheet) => void
 }
 
 const isPlayerAccessibleSheet = (sheet: SheetEditorCapabilitySheet): boolean => (
@@ -116,6 +118,12 @@ export function useEditableSheetResource<TSheet extends { slug: string; revision
   const saveStatus = computed<SaveStatus>(() => editor.value?.saveStatus.value ?? 'idle')
   const saveError = computed<string | null>(() => editor.value?.saveError.value ?? null)
   const renamedTo = computed<string | null>(() => editor.value?.renamedTo.value ?? null)
+  const saveNow = async (): Promise<void> => {
+    await editor.value?.saveNow()
+  }
+  const adoptAuthoritativeSheet = (nextSheet: TSheet): void => {
+    editor.value?.adoptAuthoritativeSheet(nextSheet)
+  }
 
   return {
     get editor() {
@@ -126,5 +134,7 @@ export function useEditableSheetResource<TSheet extends { slug: string; revision
     saveStatus,
     saveError,
     renamedTo,
+    saveNow,
+    adoptAuthoritativeSheet,
   }
 }

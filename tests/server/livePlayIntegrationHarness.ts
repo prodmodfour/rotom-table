@@ -10,6 +10,8 @@ import {
   type ClearHazardsPayload,
   type EditTerrainVoxelsLivePlayCommand,
   type EditTerrainVoxelsPayload,
+  type DismissEncounterEffectLivePlayCommand,
+  type EndEncounterLivePlayCommand,
   type LivePlayCommandAccepted,
   type LivePlayCommandResult,
   type ModifyCombatStagesLivePlayCommand,
@@ -44,6 +46,7 @@ import type { AuthoritativeMoveRandomSource } from '~~/server/domain/moveAutomat
 import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/applyLivePlayInitiativeCommand'
 import { executeLivePlayMapEffectsCommandUseCase } from '~~/server/useCases/applyLivePlayMapEffectsCommand'
 import { executeLivePlaySceneCommandUseCase } from '~~/server/useCases/applyLivePlaySceneCommand'
+import { executeLivePlayEncounterLifecycleCommandUseCase } from '~~/server/useCases/applyLivePlayEncounterLifecycleCommand'
 import {
   executeLivePlayResolveMoveCommandUseCase,
   type LivePlayResolveMoveCommandDependencies,
@@ -369,6 +372,24 @@ export class LivePlayIntegrationHarness {
     }, this.commandDependencies())
   }
 
+  async endEncounter({ actor, command }: LivePlayCommandDispatchOptions<EndEncounterLivePlayCommand>) {
+    return await executeLivePlayEncounterLifecycleCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER,
+    }, this.commandDependencies())
+  }
+
+  async dismissEncounterEffect({ actor, command }: LivePlayCommandDispatchOptions<DismissEncounterEffectLivePlayCommand>) {
+    return await executeLivePlayEncounterLifecycleCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT,
+    }, this.commandDependencies())
+  }
+
   async clearHazards({ actor, command }: LivePlayCommandDispatchOptions<ClearHazardsLivePlayCommand>) {
     return await executeLivePlayMapEffectsCommandUseCase({
       role: actor.role,
@@ -425,6 +446,38 @@ export class LivePlayIntegrationHarness {
       command,
       expectedType: LIVE_PLAY_COMMAND_TYPES.USE_MOVE,
     }, this.commandDependencies())
+  }
+
+  endEncounterCommand(input: {
+    readonly opId: string
+    readonly baseRevision: number
+    readonly reason?: 'completed' | 'cancelled' | 'gm-ended'
+  }): EndEncounterLivePlayCommand {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId,
+      mapSlug: 'integration-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER,
+      scopes: [{ kind: 'map', lane: 'encounter' }],
+      payload: { reason: input.reason ?? 'completed' },
+    }
+  }
+
+  dismissEncounterEffectCommand(input: {
+    readonly opId: string
+    readonly baseRevision: number
+    readonly effectId: string
+  }): DismissEncounterEffectLivePlayCommand {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId,
+      mapSlug: 'integration-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT,
+      scopes: [{ kind: 'map', lane: 'encounter' }],
+      payload: { effectId: input.effectId },
+    }
   }
 
   moveTokenCommand(input: {

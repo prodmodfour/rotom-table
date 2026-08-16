@@ -18,8 +18,10 @@ import {
   conditionAdjustedCombatStage,
   conditionAdjustedInitiative,
 } from '~/utils/sheetConditionEffects'
-import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
-import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
+import {
+  equipmentProjectionSourceSuppressedByMagicRoom,
+  projectedEquipmentContributionSources,
+} from '~/utils/equipmentContributionProjection'
 import { pokemonTrainingFeatureInitiativeBonus } from '~/utils/sheets/pokemonTrainingFeatures'
 import { encounterModifiedInitiativeScore } from '~/utils/encounterInitiative'
 import { nativeChlorophyllInitiativeMultiplier } from '~/utils/nativeAbilityTokenStats'
@@ -179,20 +181,46 @@ export const useInitiativeTracker = ({
     && (kind === 'pokemon' || kind === 'trainer')
   )
 
-  const initiativeItemBonusForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
-    const suppressed = itemEffectsSuppressedForKind(kind)
-    if (kind === 'pokemon') {
-      const sheet = pokemonBySlug.value?.get(sheetSlug)
-      return sheet && !suppressed
-        ? sheetItemsInitiativeBonus(pokemonHeldItemNames(sheet))
-        : 0
-    }
-    const sheet = trainerBySlug.value?.get(sheetSlug)
-    return sheet ? sheetItemsInitiativeBonus(trainerEquippedItemNames(
+  const sheetForPlacement = (kind: InitiativeKind, sheetSlug: string) => kind === 'pokemon'
+    ? pokemonBySlug.value?.get(sheetSlug)
+    : trainerBySlug.value?.get(sheetSlug)
+
+  const equipmentSourcesForPlacement = (
+    kind: InitiativeKind,
+    sheetSlug: string,
+    metric: 'stat-after-stages' | 'combat-stage-default' | 'initiative',
+    targetId: string,
+  ) => {
+    const sheet = sheetForPlacement(kind, sheetSlug)
+    const magicRoom = itemEffectsSuppressedForKind(kind)
+    return projectedEquipmentContributionSources({
       sheet,
-      { includeAccessory: !suppressed },
-    )) : 0
+      metric,
+      targetId,
+      ...(magicRoom ? {
+        sourceFilter: source => !equipmentProjectionSourceSuppressedByMagicRoom(sheet, source),
+      } : {}),
+    })
   }
+
+  const equipmentSpeedOperationsForPlacement = (kind: InitiativeKind, sheetSlug: string) => (
+    equipmentSourcesForPlacement(kind, sheetSlug, 'stat-after-stages', 'spd')
+      .map(source => ({ operation: source.operation, value: source.value }))
+  )
+
+  const initiativeItemBonusForPlacement = (kind: InitiativeKind, sheetSlug: string): number => (
+    equipmentSourcesForPlacement(kind, sheetSlug, 'initiative', 'all')
+      .reduce((total, source) => total + source.applied, 0)
+  )
+
+  const equipmentSpeedDefaultStageForPlacement = (kind: InitiativeKind, sheetSlug: string): number => (
+    equipmentSourcesForPlacement(kind, sheetSlug, 'combat-stage-default', 'spd')
+      .reduce((value, source) => source.operation === 'add'
+        ? value + source.value
+        : source.operation === 'multiply-floor'
+          ? Math.floor(value * source.value)
+          : source.value, 0)
+  )
 
   const initiativeTrainingBonusForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
     if (kind !== 'pokemon') return 0
@@ -232,6 +260,18 @@ export const useInitiativeTracker = ({
       const token = spawnedPokemon.value.find(candidate => candidate.id === placement.id)
       const entry = initiativeOrderEntryForPlacement(placement, readInitiativeSheet, {
         itemEffectsSuppressed: itemEffectsSuppressedForKind(placement.sheetKind),
+        equipmentSpeedOperations: equipmentSpeedOperationsForPlacement(
+          placement.sheetKind,
+          placement.sheetSlug,
+        ),
+        equipmentInitiativeBonus: initiativeItemBonusForPlacement(
+          placement.sheetKind,
+          placement.sheetSlug,
+        ),
+        speedCombatStageOffset: equipmentSpeedDefaultStageForPlacement(
+          placement.sheetKind,
+          placement.sheetSlug,
+        ),
         ...(token && map.value ? {
           initiativeMultiplier: nativeChlorophyllInitiativeMultiplier(token, map.value),
         } : {}),
@@ -283,12 +323,18 @@ export const useInitiativeTracker = ({
       const placement = placements.get(pokemon.id)
       const baseSpeed = baseSpeedForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       const speedCombatStage = conditionAdjustedCombatStage(
-        pokemon.combatStages?.spd,
+        (pokemon.combatStages?.spd ?? 0)
+          + equipmentSpeedDefaultStageForPlacement(pokemon.sheetKind, pokemon.sheetSlug),
         pokemon.conditions,
         'spd',
         { abilities: pokemon.abilityNames },
       )
-      const speed = applyCombatStageToStat(baseSpeed, speedCombatStage)
+      const speed = equipmentSpeedOperationsForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
+        .reduce((value, operation) => operation.operation === 'add'
+          ? value + operation.value
+          : operation.operation === 'multiply-floor'
+            ? Math.floor(value * operation.value)
+            : operation.value, applyCombatStageToStat(baseSpeed, speedCombatStage))
       const initiativeItemBonus = initiativeItemBonusForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       const initiativeTrainingBonus = initiativeTrainingBonusForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       const baseInitiative = speed + initiativeItemBonus + initiativeTrainingBonus

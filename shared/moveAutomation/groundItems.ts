@@ -1,5 +1,11 @@
 import { isOpId } from '../sessionCommands'
 import {
+  parseEquipmentInventoryProvenance,
+  parseSerializedEquipmentInventoryState,
+  type EquipmentInventoryProvenanceV1,
+  type SerializedEquipmentInventoryStateV1,
+} from '../itemAutomation/equipment'
+import {
   MOVE_ITEM_REFERENCE_LIMITS,
   MoveItemReferenceValidationError,
   isMoveCanonicalItemId,
@@ -13,7 +19,7 @@ export const MAP_GROUND_ITEM_LIMITS = Object.freeze({
   count: 256,
   canonicalNameChars: 160,
   ownerPlacementIdChars: 200,
-  payloadChars: 2_048,
+  payloadChars: 8_192,
   quantity: MOVE_ITEM_REFERENCE_LIMITS.quantity,
 })
 
@@ -43,6 +49,10 @@ export interface MapGroundItem {
   readonly sourceOperationId: string
   readonly sideId: string | null
   readonly ownerPlacementId: string | null
+  /** Private whole-item state retained when equipped gear is knocked or thrown to the map. */
+  readonly serializedEquipment?: SerializedEquipmentInventoryStateV1
+  /** Original reviewed inventory provenance retained with serialized equipment only. */
+  readonly equipmentSource?: EquipmentInventoryProvenanceV1
 }
 
 export type MapGroundItemValidationCode =
@@ -77,6 +87,7 @@ const GROUND_ITEM_FIELDS = [
   'sideId',
   'ownerPlacementId',
 ] as const
+const GROUND_ITEM_OPTIONAL_FIELDS = ['serializedEquipment', 'equipmentSource'] as const
 const POSITION_FIELDS = ['x', 'y', 'z'] as const
 const ENCOUNTER_SIDE_ID_PATTERN = /^[a-z0-9-]+$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
@@ -259,7 +270,11 @@ export const parseMapGroundItem = (
   if (!isPlainRecord(value)) {
     return fail('invalid-ground-item', path, 'must be a plain object.')
   }
-  assertExactFields(value, GROUND_ITEM_FIELDS, path)
+  const optional = GROUND_ITEM_OPTIONAL_FIELDS.filter(field => Object.hasOwn(value, field))
+  assertExactFields(value, [...GROUND_ITEM_FIELDS, ...optional], path)
+  if ((optional.includes('serializedEquipment')) !== (optional.includes('equipmentSource'))) {
+    fail('invalid-ground-item', path, 'serialized equipment and its source provenance must be present together.')
+  }
 
   const parsed: MapGroundItem = {
     id: parseGroundItemId(value.id, `${path}.id`),
@@ -277,6 +292,10 @@ export const parseMapGroundItem = (
       value.ownerPlacementId,
       `${path}.ownerPlacementId`,
     ),
+    ...(optional.includes('serializedEquipment') ? {
+      serializedEquipment: parseSerializedEquipmentInventoryState(value.serializedEquipment),
+      equipmentSource: parseEquipmentInventoryProvenance(value.equipmentSource, `${path}.equipmentSource`),
+    } : {}),
   }
 
   if (JSON.stringify(parsed).length > MAP_GROUND_ITEM_LIMITS.payloadChars) {

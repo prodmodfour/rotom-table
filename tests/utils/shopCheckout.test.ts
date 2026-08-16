@@ -156,7 +156,7 @@ describe('shop checkout calculation helpers', () => {
     expect(trainerPaymentSource).toEqual(trainerBefore)
   })
 
-  it('delivers stackable purchases to trainer inventory by merging matching item rows', () => {
+  it('delivers stackable purchases without fuzzy or metadata-losing merges', () => {
     const shop = shopDocument([
       {
         id: 'potion-row',
@@ -189,7 +189,8 @@ describe('shop checkout calculation helpers', () => {
     })
 
     expect(deliveredTrainer.inventory?.medicalKit).toEqual([
-      { name: 'pótîon', qty: 5, description: 'Existing notes' },
+      { name: 'pótîon', qty: 2, description: 'Existing notes' },
+      { name: 'Potion', qty: 3, cost: 200, description: 'Heals 20 HP.' },
     ])
     expect(trainer).toEqual(trainerBefore)
   })

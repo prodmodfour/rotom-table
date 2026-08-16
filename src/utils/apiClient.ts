@@ -13,7 +13,7 @@ export type ApiFetch = <T = unknown>(request: string, options?: ApiFetchOptions)
 
 export interface ApiClient {
   getJson: <T = unknown>(request: string, options?: ApiGetOptions) => Promise<T>
-  postJson: <T = unknown>(request: string, body: unknown) => Promise<T>
+  postJson: <T = unknown>(request: string, body: unknown, options?: ApiGetOptions) => Promise<T>
 }
 
 export const createApiClient = (fetcher: ApiFetch): ApiClient => ({
@@ -21,8 +21,9 @@ export const createApiClient = (fetcher: ApiFetch): ApiClient => ({
     const hasParams = options.params !== undefined
     return fetcher<T>(request, hasParams ? { params: options.params } : undefined)
   },
-  postJson: <T = unknown>(request: string, body: unknown) => fetcher<T>(request, {
+  postJson: <T = unknown>(request: string, body: unknown, options: ApiGetOptions = {}) => fetcher<T>(request, {
     method: 'POST',
     body,
+    ...(options.params ? { params: options.params } : {}),
   }),
 })

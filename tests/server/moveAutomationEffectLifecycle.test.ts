@@ -193,6 +193,76 @@ describe('encounter effect lifecycle policies', () => {
     })
   })
 
+  it('separates encounter, explicit-dismissal, and absolute campaign-time expiry', () => {
+    const base = conditionEncounterEffectFixture()
+    const effects = [
+      effectFrom(base, { id: 'effect.encounter', duration: { kind: 'encounter', remaining: null }, ...uncharged }),
+      effectFrom(base, { id: 'effect.turn', duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 4 }, ...uncharged }),
+      effectFrom(base, { id: 'effect.round', duration: { kind: 'rounds', boundary: 'end', remaining: 3 }, ...uncharged }),
+      effectFrom(base, { id: 'effect.scene-only', duration: { kind: 'scene', remaining: null }, ...uncharged }),
+      effectFrom(base, { id: 'effect.dismiss', duration: { kind: 'explicit-dismissal', remaining: null }, ...uncharged }),
+      effectFrom(base, {
+        id: 'effect.campaign-due',
+        duration: { kind: 'campaign-time', remaining: null, startedAtCampaignMinute: 100, expiresAtCampaignMinute: 1_540, durationMinutes: 1_440 },
+        ...uncharged,
+      }),
+      effectFrom(base, {
+        id: 'effect.campaign-future',
+        duration: { kind: 'campaign-time', remaining: null, startedAtCampaignMinute: 100, expiresAtCampaignMinute: 2_980, durationMinutes: 2_880 },
+        ...uncharged,
+      }),
+      effectFrom(base, { id: 'effect.permanent-boundary', duration: permanent, ...uncharged }),
+    ]
+
+    const encounterEnded = applyEncounterEffectLifecycleEvent(
+      { effects },
+      { kind: 'encounter-end' },
+    )
+    expect(encounterEnded.effects.map(effect => effect.id)).toEqual([
+      'effect.scene-only',
+      'effect.dismiss',
+      'effect.campaign-due',
+      'effect.campaign-future',
+      'effect.permanent-boundary',
+    ])
+    expect(encounterEnded.transitions.map(entry => entry.reasonCode)).toEqual([
+      'effect-encounter-ended',
+      'effect-encounter-ended',
+      'effect-encounter-ended',
+    ])
+
+    const clockAdvanced = applyEncounterEffectLifecycleEvent(
+      encounterEnded,
+      { kind: 'campaign-time-advanced', previousCampaignMinute: 100, campaignMinute: 1_540, clockRevision: 1 },
+    )
+    expect(clockAdvanced.effects.map(effect => effect.id)).toEqual([
+      'effect.scene-only',
+      'effect.dismiss',
+      'effect.campaign-future',
+      'effect.permanent-boundary',
+    ])
+    expect(clockAdvanced.transitions).toMatchObject([{
+      kind: 'expired',
+      reasonCode: 'effect-campaign-time-expired',
+      previous: { id: 'effect.campaign-due' },
+    }])
+
+    const unrelatedRemoval = applyEncounterEffectLifecycleEvent(
+      clockAdvanced,
+      { kind: 'effect-removed', effectId: 'effect.missing' },
+    )
+    expect(unrelatedRemoval.changed).toBe(false)
+    const dismissed = applyEncounterEffectLifecycleEvent(
+      clockAdvanced,
+      { kind: 'effect-removed', effectId: 'effect.dismiss' },
+    )
+    expect(dismissed.effects.map(effect => effect.id)).not.toContain('effect.dismiss')
+    expect(() => applyEncounterEffectLifecycleEvent(
+      dismissed,
+      { kind: 'campaign-time-advanced', previousCampaignMinute: 200, campaignMinute: 200, clockRevision: 2 },
+    )).toThrow('Campaign-time lifecycle events require a forward minute and positive clock revision.')
+  })
+
   it('consumes configured charges once per exact trigger and expires at depletion', () => {
     const charged = effectFrom(numericEncounterEffectFixture(), {
       id: 'effect.three-charges',

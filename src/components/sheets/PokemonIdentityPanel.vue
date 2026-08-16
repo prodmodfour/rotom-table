@@ -34,6 +34,8 @@ const emit = defineEmits<{
 const pokedexPath = computed(() => pokedexEntryPathForSpecies(props.sheet.species))
 const caughtBallName = computed(() => pokemonCaughtBallName(props.sheet))
 const caughtBallTitle = computed(() => `Caught in ${caughtBallName.value}`)
+const itemEvolutionControlled = computed(() => props.sheet.itemEvolutionLocked === true)
+const evolutionAllocationOpen = computed(() => props.sheet.itemEvolutionAttention?.statAllocation.status === 'open')
 const loyaltyModel = computed({
   get: () => props.sheet.loyalty,
   set: (value: unknown) => {
@@ -62,7 +64,8 @@ const loyaltyModel = computed({
             <EditableCell v-model="sheet.nickname" placeholder="Nickname" />
           </h1>
           <p class="identity__species">
-            <EditableCell v-model="sheet.species" placeholder="Species" />
+            <EditableCell v-model="sheet.species" placeholder="Species" :readonly="itemEvolutionControlled" />
+            <span v-if="itemEvolutionControlled" class="identity__authority-badge" title="Species is controlled by accepted Evolutionary Item history">Evolved</span>
           </p>
           <div v-if="sheetTypes.length" class="identity__type-badges">
             <TypeBadge
@@ -102,6 +105,7 @@ const loyaltyModel = computed({
               type="number"
               :min="1"
               :max="100"
+              :readonly="evolutionAllocationOpen"
               @update:model-value="emit('set-level', $event)"
             />
           </span>
@@ -161,6 +165,7 @@ const loyaltyModel = computed({
               v-model="sheet.nature"
               type="select"
               :options="natureOptions"
+              :readonly="evolutionAllocationOpen"
               placeholder="Hardy / Modest / …"
             />
           </dd>
@@ -270,6 +275,21 @@ const loyaltyModel = computed({
   display: inline-flex;
   flex-wrap: wrap;
   gap: 0.25rem;
+}
+
+.identity__authority-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  border: 1px solid color-mix(in srgb, var(--rt-success) 52%, var(--rule));
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  color: var(--rt-success);
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .identity__type-badges {

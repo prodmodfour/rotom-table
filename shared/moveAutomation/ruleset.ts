@@ -4,6 +4,15 @@ import { computeRulesetSourceSha256 } from '../ruleset/sourceHash'
 export const MOVE_RULESET_SCHEMA_VERSION = 1 as const
 export const MOVE_CANONICALIZATION_VERSION = 1 as const
 
+// P8-001 reviewed a typography-only canonical identity successor for Facade.
+// The frozen v1 ruleset remains bound to its original bytes; this one exact
+// successor is admitted without widening the accepted source set.
+export const MOVE_CATALOG_FACADE_SUCCESSOR = Object.freeze({
+  migrationId: 'move-data-facade-identity-normalization-v1',
+  beforeSha256: 'f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815',
+  afterSha256: '418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e',
+})
+
 export const CANONICAL_MOVE_TYPES = [
   'Normal',
   'Fighting',
@@ -453,7 +462,9 @@ export const loadCanonicalMoveCatalog = async (
 ): Promise<CanonicalMoveCatalog> => {
   const provenance = parseMoveRulesetProvenance(provenanceInput)
   const actualSha256 = await sha256Hex(sourceData)
-  if (actualSha256 !== provenance.sourceData.sha256) {
+  const isReviewedFacadeSuccessor = provenance.sourceData.sha256 === MOVE_CATALOG_FACADE_SUCCESSOR.beforeSha256
+    && actualSha256 === MOVE_CATALOG_FACADE_SUCCESSOR.afterSha256
+  if (actualSha256 !== provenance.sourceData.sha256 && !isReviewedFacadeSuccessor) {
     fail(
       'source-hash-mismatch',
       `${provenance.sourceData.path} SHA-256 changed; expected ${provenance.sourceData.sha256}, received ${actualSha256}. Update the provenance record only after intentional rules review.`,
@@ -469,5 +480,5 @@ export const loadCanonicalMoveCatalog = async (
     fail('invalid-source-json', `${provenance.sourceData.path} must contain valid JSON.`)
   }
 
-  return canonicalizeMoveCatalog(source, provenance, actualSha256)
+  return canonicalizeMoveCatalog(source, provenance, provenance.sourceData.sha256)
 }

@@ -1,0 +1,294 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-096",
+  "status": "accepted",
+  "score": "9.8/10",
+  "hardFailures": 0,
+  "criticalUsabilityDebt": 0,
+  "designWorkflow": {
+    "skillLoaded": true,
+    "newMockupRequired": false,
+    "skipReason": "This ticket certifies already accepted surfaces and adds an exact token-aligned table pagination pattern; no open hierarchy or visual-language decision remained."
+  },
+  "acceptanceCategories": [
+    "keyboard",
+    "screen-reader",
+    "touch",
+    "zoom-200-percent",
+    "reflow-320px",
+    "contrast",
+    "reduced-motion",
+    "table-distance",
+    "desktop",
+    "mobile"
+  ],
+  "surfaces": [
+    {
+      "surfaceId": "item-inventory",
+      "context": "workshop",
+      "categories": [
+        "keyboard",
+        "screen-reader",
+        "touch",
+        "zoom-200-percent",
+        "reflow-320px",
+        "contrast",
+        "reduced-motion",
+        "table-distance",
+        "desktop",
+        "mobile"
+      ],
+      "browserProjectsPassed": 2,
+      "axeViolations": 0,
+      "maximumOverflowPx": 1,
+      "minimumControlPx": 43.5,
+      "desktopEvidence": ".pi/artifacts/ui-validation/inventory-accessible-reflow/chromium-trainer-discard.png",
+      "mobileEvidence": ".pi/artifacts/ui-validation/inventory-accessible-reflow/mobile-chromium-trainer-zoom-320.png",
+      "review": ".pi/artifacts/ui-validation/inventory-accessible-reflow/review.md",
+      "browserReport": ".pi/artifacts/ui-validation/inventory-accessible-reflow/browser-report.json",
+      "browserSpec": "tests/e2e/inventory-accessibility.spec.ts"
+    },
+    {
+      "surfaceId": "equipment-and-item-use",
+      "context": "workshop-and-live-encounter",
+      "categories": [
+        "keyboard",
+        "screen-reader",
+        "touch",
+        "reflow-320px",
+        "contrast",
+        "reduced-motion",
+        "table-distance",
+        "desktop",
+        "mobile"
+      ],
+      "browserProjectsPassed": 2,
+      "axeViolations": 0,
+      "maximumOverflowPx": 1,
+      "minimumControlPx": 44,
+      "desktopEvidence": ".pi/artifacts/ui-validation/commerce-item-loop/chromium-equipment-effective.png",
+      "mobileEvidence": ".pi/artifacts/ui-validation/commerce-item-loop/mobile-chromium-encounter-use-decision.png",
+      "review": ".pi/artifacts/ui-validation/commerce-item-loop/review.md",
+      "browserReport": ".pi/artifacts/ui-validation/commerce-item-loop/browser-report.json",
+      "browserSpec": "tests/e2e/commerce-item-loop-certification.spec.ts"
+    },
+    {
+      "surfaceId": "finish-encounter-settlement",
+      "context": "live-encounter",
+      "categories": [
+        "keyboard",
+        "screen-reader",
+        "touch",
+        "zoom-200-percent",
+        "reflow-320px",
+        "contrast",
+        "reduced-motion",
+        "table-distance",
+        "desktop",
+        "mobile"
+      ],
+      "browserProjectsPassed": 2,
+      "axeViolations": 0,
+      "maximumOverflowPx": 1,
+      "minimumControlPx": 44,
+      "desktopEvidence": ".pi/artifacts/ui-validation/finish-encounter/chromium-ready.png",
+      "mobileEvidence": ".pi/artifacts/ui-validation/finish-encounter/mobile-chromium-accepted.png",
+      "review": ".pi/artifacts/ui-validation/finish-encounter/review.md",
+      "browserReport": null,
+      "browserSpec": "tests/e2e/finish-encounter.spec.ts"
+    },
+    {
+      "surfaceId": "campaign-continuation",
+      "context": "workshop",
+      "categories": [
+        "keyboard",
+        "screen-reader",
+        "touch",
+        "reflow-320px",
+        "contrast",
+        "reduced-motion",
+        "table-distance",
+        "desktop",
+        "mobile"
+      ],
+      "browserProjectsPassed": 2,
+      "axeViolations": 0,
+      "maximumOverflowPx": 1,
+      "minimumControlPx": 44,
+      "desktopEvidence": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/chromium-open.png",
+      "mobileEvidence": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/mobile-chromium-320-resolved.png",
+      "review": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/review.md",
+      "browserReport": null,
+      "browserSpec": "tests/e2e/campaign-continuation-dashboard.spec.ts"
+    }
+  ],
+  "crossSurfaceAssertions": {
+    "semanticTablesPreserved": true,
+    "cssOnlyMobileTableReflow": true,
+    "pagedRowsRetainGlobalAriaIndices": true,
+    "rovingTabsArrowHomeEnd": true,
+    "enterSpaceActivation": true,
+    "escapeAndAcceptedFocusReturn": true,
+    "dialogFocusTrap": true,
+    "selectedStateNotColorOnly": true,
+    "destructiveStateNotColorOnly": true,
+    "reducedMotionHonored": true,
+    "noHorizontalOverflowAt320": true,
+    "tokenContrastPairsPass": true,
+    "privacySafeProjectionOnly": true
+  },
+  "validation": {
+    "productionLiveplayEvidence": "passed",
+    "desktopProjects": 4,
+    "mobileProjects": 4,
+    "scopedAxeViolations": 0,
+    "componentPaginationTests": 2,
+    "designSystemCheck": "passed",
+    "focusedAccessibilityTests": "34 passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "sourceEvidence": [
+    {
+      "path": "DESIGN.md",
+      "sha256": "58ec063c80134df2f358c9d89eada4d2a65e1f76fe39f67c88e5abe0cab172b8"
+    },
+    {
+      "path": "data/encounter-workspace/design-tokens.v1.json",
+      "sha256": "f49735f1a3127aaa26120eb2909bc399159156d4a0fffdc0b9707f89ff1bc9d8"
+    },
+    {
+      "path": "src/assets/css/encounter-design-system.css",
+      "sha256": "ee28d7814342666832ceb3586e3ac78d14c2487133583bf6650770eedeea37d6"
+    },
+    {
+      "path": "src/components/sheets/trainerInventoryPanel.css",
+      "sha256": "a92ee4b443b35c908cd4bb254c65609c464c4ba86afe964fdf109a96508a1159"
+    },
+    {
+      "path": "src/components/inventory/InventoryItemTable.vue",
+      "sha256": "8581c8c44a50755283d7f951fa4dfaa6b06054460ed8ab0a8fcbddc0d6d5dfc9"
+    },
+    {
+      "path": "src/components/sheets/EquipmentContributionInspector.vue",
+      "sha256": "e702ca0de14bd8990cf73b63dfb37412038352e39fd633a627c5deb8c49af0d2"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterFinishExperience.vue",
+      "sha256": "3074ea2968b75b2f4f1d00e4ed70f4a3567b554b97996de2a8464a516da6bd57"
+    },
+    {
+      "path": "src/components/campaign/CampaignContinuationDashboard.vue",
+      "sha256": "050cad265b2aa20b94f1abb192427cea5f20ff6a244f069f828321c1e05a8c0e"
+    },
+    {
+      "path": "tests/components/completePlayLoopAccessibilityAcceptance.test.ts",
+      "sha256": "27e04dff608d2617c2729c397c89f54a49f941b178c0d13c2ddeb2e8ca7e7d76"
+    },
+    {
+      "path": "tests/data/completePlayLoopAccessibilityVisualAcceptance.test.ts",
+      "sha256": "f1ef22e38063e9deb23c168b124144338eeac2c108ec36e95502bc8738de0b1c"
+    },
+    {
+      "path": "tests/components/inventoryAccessibility.test.ts",
+      "sha256": "4c58a14b237d8f656c5e5297564809c99e6221ad174d18ec8f79005299ccc2ac"
+    },
+    {
+      "path": "tests/components/equipmentContributionInspector.test.ts",
+      "sha256": "187db6a499e8627162a8d153c45a9d28c8061c911f800e7053a0b16c81410f16"
+    },
+    {
+      "path": "tests/components/encounterFinishExperience.test.ts",
+      "sha256": "a1e02c5dbe71eb85e1a6388f70ffc55231cc85e7459cd39ee9c1df5ff2ebb38f"
+    },
+    {
+      "path": "tests/components/campaignContinuationDashboard.test.ts",
+      "sha256": "1ad7ed4c8e1f430929b85981d072ddf79afe70a2a58f60dfacb28ed140ab435b"
+    },
+    {
+      "path": "tests/e2e/inventory-accessibility.spec.ts",
+      "sha256": "927a18aadb23f42be21465d9b39d184122d311f465d1f4cd99f2079e5a53ee09"
+    },
+    {
+      "path": "tests/e2e/commerce-item-loop-certification.spec.ts",
+      "sha256": "a8e1ebac428b7d1a19251b54e212ed41abadcf8445d0162ff9721e57f57581bb"
+    },
+    {
+      "path": "tests/e2e/finish-encounter.spec.ts",
+      "sha256": "4bd26345126aa9a544cd1c8d18a2e868feaa9ae22793745d4a078a7cebe4cad4"
+    },
+    {
+      "path": "tests/e2e/campaign-continuation-dashboard.spec.ts",
+      "sha256": "67546e45447b0b8c697153e8ccab5860f944fc2a40ef081ef187ffb2c6968968"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/inventory-accessible-reflow/browser-report.json",
+      "sha256": "d593220d8dce63ac4ebf5443886ca327c43a2abdf68f5628fd0bc79000d3c9d4"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/inventory-accessible-reflow/review.md",
+      "sha256": "8c6d233f228dcb8b58273bd5dafe7a3630f235853c3ccd21d4078432cd966e94"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/inventory-accessible-reflow/chromium-trainer-discard.png",
+      "sha256": "e62ccc943eaf3a045adf87b07b3a22abd350e02ad94de3d605623d6041725c7f"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/inventory-accessible-reflow/mobile-chromium-trainer-zoom-320.png",
+      "sha256": "158869a44b537eb4107bce2ae37c33e99ecdfe87ca7f086dc37602c5ed4ceff8"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/commerce-item-loop/browser-report.json",
+      "sha256": "ec84990fd8cb20679df60f88a188d51337e673d8c91afdca8f7501934a9f350f"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/commerce-item-loop/review.md",
+      "sha256": "60a3058421a5f4f42d85e95a10f7cc520c5d4d495d35b24de28642ed4ef283a1"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/commerce-item-loop/chromium-equipment-effective.png",
+      "sha256": "22186fd6b871c06cb654350e20af48a71821b8bbd340bb6b4087720fb9fe5e9e"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/commerce-item-loop/mobile-chromium-encounter-use-decision.png",
+      "sha256": "8b3b9305d4b18adf71cb0d7ee247b743b50bf27bdd06b0a06ba1d091d528fc39"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/finish-encounter/review.md",
+      "sha256": "eb96131261101845f443beff2216fe785d1538b731a1e4da7cb3d001b1b93645"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/finish-encounter/chromium-ready.png",
+      "sha256": "144d75a4271a0f0eb1d8b7d1344712006e5b5fcc429052c31ea87ecad5ac86c5"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/finish-encounter/mobile-chromium-accepted.png",
+      "sha256": "08581291acf7837122f9cef2e59c8b78797b0428979749fe0aba0e0104a7e0ab"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/review.md",
+      "sha256": "fe42414dad6a82bbc804181fc29c2b7445eb2c7d7ca047098ce13a206759ecda"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/chromium-open.png",
+      "sha256": "05b2a8470592e5b9ed30703f93ae4480734779865a0430b47a280634f0a0f39c"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/mobile-chromium-320-resolved.png",
+      "sha256": "8737293fc853e7fb63de7ef5f552e70935b129fb7019cbf76171c1ded6608633"
+    },
+    {
+      "path": "docs/complete-play-loop-accessibility-responsive-visual-acceptance.md",
+      "sha256": "33a309599a1b20014810f8106da5583fd9d421be2fd6da7c5f795b07a5efbdda"
+    },
+    {
+      "path": "package.json",
+      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+    }
+  ]
+}

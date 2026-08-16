@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import {
+  createEmptySheetEquipmentState,
+  serializedEquipmentInventoryStateFromInstance,
+} from '#shared/itemAutomation/equipment'
 import type {
   MoveItemGroupInventoryOwnerReference,
   MoveItemMapOwnerReference,
@@ -21,6 +25,7 @@ import {
 } from '~~/server/domain/moveAutomation/groupInventoryChanges'
 import { MoveItemMutationError } from '~~/server/domain/moveAutomation/itemMutationTypes'
 import { planMoveItemMutations } from '~~/server/domain/moveAutomation/planItemMutations'
+import { activeEquipmentState } from '../fixtures/equipment'
 import { creatureRuleOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const emptyInventory = (): GroupInventory => Object.fromEntries(
@@ -39,6 +44,10 @@ const mapFixture = (): TabletopMap => ({
   encounterState: createEmptyEncounterState(),
 })
 
+const pokemonEquipmentState = (slug: string, held?: string) => held
+  ? activeEquipmentState({ ownerKind: 'pokemon', ownerSlug: slug, slotId: 'held', canonicalItemId: held })
+  : createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: slug })
+
 const pokemonSheet = (
   slug: string,
   revision: number,
@@ -49,6 +58,7 @@ const pokemonSheet = (
   species: 'Pikachu',
   level: 20,
   revision,
+  equipmentState: pokemonEquipmentState(slug, held),
   ...(held ? { items: { held } } : {}),
 })
 
@@ -62,6 +72,7 @@ const trainerSheet = (
   level: 20,
   revision,
   inventory,
+  equipmentState: createEmptySheetEquipmentState({ ownerKind: 'trainer', ownerSlug: slug }),
 })
 
 const groupInventory = (
@@ -114,7 +125,7 @@ const heldReference = (
 ): MoveItemReference => ({
   schemaVersion: 1,
   kind: 'pokemon-held',
-  itemId: 'held:1',
+  itemId: pokemonEquipmentState(slug, canonicalItemId).instances[0]!.instanceId,
   canonicalItemId,
   owner: pokemonOwner(slug, revision),
   quantity: 1,
@@ -138,6 +149,22 @@ const groupRowReference = (input: {
   quantity: input.quantity,
   stack: input.section === 'equipment' ? 'singleton' : 'stackable',
   equip: 'unequipped',
+})
+
+const serializedEquipment = (rowId: string, canonicalItemName: string) => {
+  const state = activeEquipmentState({
+    ownerKind: 'trainer',
+    ownerSlug: `inventory-${rowId}`,
+    slotId: 'accessory',
+    canonicalItemId: canonicalItemName,
+  })
+  return serializedEquipmentInventoryStateFromInstance(state.instances[0]!)
+}
+
+const equipmentRow = (id: string, name: string) => ({
+  id,
+  name,
+  serializedEquipment: serializedEquipment(id, name),
 })
 
 const groundReference = (input: {
@@ -187,8 +214,8 @@ describe('typed move item mutation plans', () => {
       ...emptyInventory(),
       medicalKit: [{ id: 'group-potions', name: 'Potion', qty: 5 }],
       equipment: [
-        { id: 'group-iron-ball', name: 'Iron Ball' },
-        { id: 'group-bright-powder', name: 'Bright Powder' },
+        equipmentRow('group-iron-ball', 'Iron Ball'),
+        equipmentRow('group-bright-powder', 'Bright Powder'),
       ],
     })
     const originalGroup = structuredClone(group)
@@ -277,7 +304,7 @@ describe('typed move item mutation plans', () => {
     expect(plan.sheetWrites.find(write => write.slug === 'ace')).toMatchObject({
       expectedRevision: 4,
       revision: 5,
-      changedFields: ['inventory', 'equipmentSlots'],
+      changedFields: ['inventory', 'equipmentState', 'equipmentSlots'],
       nextSheet: {
         inventory: {
           medicalKit: [{ id: 'trainer-potions', name: 'Potion', qty: 2 }],
@@ -288,7 +315,7 @@ describe('typed move item mutation plans', () => {
     expect(plan.sheetWrites.find(write => write.slug === 'sparky')).toMatchObject({
       expectedRevision: 3,
       revision: 4,
-      changedFields: ['items'],
+      changedFields: ['equipmentState', 'items'],
       nextSheet: { items: { held: 'Iron Ball' } },
     })
     expect(plan.stateChanges.expectedRevisions).toEqual([
@@ -371,7 +398,11 @@ describe('typed move item mutation plans', () => {
     })
     expect(unequip.sheetWrites[0]?.nextSheet).toMatchObject({ items: {} })
     expect(unequip.groupInventoryWrites[0]?.nextDocument.inventory.equipment).toEqual([
-      { id: 'group-leftovers', name: 'Leftovers' },
+      expect.objectContaining({
+        id: 'group-leftovers',
+        name: 'Leftovers',
+        serializedEquipment: expect.objectContaining({ canonicalItemId: 'Leftovers' }),
+      }),
     ])
     expect(unequip.operationResults[0]?.quantityEffects).toEqual([
       { canonicalItemId: 'leftovers', delta: 0 },
@@ -439,7 +470,7 @@ describe('typed move item mutation plans', () => {
         { id: 'group-potions', name: 'Potion', qty: 5 },
         { id: 'group-leftovers', name: 'Leftovers', qty: 2 },
       ],
-      equipment: [{ id: 'group-iron-ball', name: 'Iron Ball' }],
+      equipment: [equipmentRow('group-iron-ball', 'Iron Ball')],
     })
     const trainer = trainerSheet()
     const plan = planMoveItemMutations({
@@ -585,7 +616,7 @@ describe('typed move item mutation plans', () => {
     expect(plan.nextMap).toMatchObject({ revision: 8, updatedAt: 1_700_000_000_000 })
     expect(plan.nextMap.encounterState?.groundItems).toEqual([
       expect.objectContaining({ id: 'ground-iron-ball', quantity: 1 }),
-      {
+      expect.objectContaining({
         id: 'ground-leftovers',
         canonicalItemId: 'leftovers',
         canonicalItemName: 'Leftovers',
@@ -595,7 +626,9 @@ describe('typed move item mutation plans', () => {
         sourceOperationId: 'op_itemmutation01',
         sideId: null,
         ownerPlacementId: null,
-      },
+        serializedEquipment: expect.objectContaining({ canonicalItemId: 'Leftovers' }),
+        equipmentSource: expect.objectContaining({ kind: 'inventory' }),
+      }),
     ])
     expect(plan.stateChanges.changes.filter(change => change.kind === 'encounter-state')).toHaveLength(1)
     expect(plan.stateChanges.expectedRevisions).toContainEqual({
@@ -605,7 +638,9 @@ describe('typed move item mutation plans', () => {
       [{ canonicalItemId: 'leftovers', delta: 0 }],
       [{ canonicalItemId: 'iron-ball', delta: 0 }],
     ])
-    expect(plan.sheetWrites.find(write => write.slug === 'dropper')?.changedFields).toEqual(['items'])
+    expect(plan.sheetWrites.find(write => write.slug === 'dropper')?.changedFields).toEqual([
+      'equipmentState', 'items',
+    ])
     expect(plan.sheetWrites.find(write => write.slug === 'ace')?.nextSheet).toMatchObject({
       inventory: {
         pokemonItems: [{ id: 'trainer-iron-ball', name: 'Iron Ball', qty: 1 }],
@@ -613,7 +648,7 @@ describe('typed move item mutation plans', () => {
     })
   })
 
-  it('allows exactly a second held item for an effective Delivery Bird owner', () => {
+  it('allows exactly a second structured held item for an effective Delivery Bird owner', () => {
     const map = {
       ...mapFixture(),
       placements: [{
@@ -633,7 +668,7 @@ describe('typed move item mutation plans', () => {
     }
     const group = groupInventory({
       ...emptyInventory(),
-      equipment: [{ id: 'group-iron-ball', name: 'Iron Ball' }],
+      equipment: [equipmentRow('group-iron-ball', 'Iron Ball')],
     })
     const operation = {
       id: 'item.delivery-bird.second', kind: 'equip' as const, reasonCode: 'item.equip',
@@ -651,21 +686,26 @@ describe('typed move item mutation plans', () => {
     })
     const withTwo = planned.sheetWrites.find(write => write.slug === pokemon.slug)?.nextSheet as CharacterSheet
     expect(withTwo.items?.held).toBe('Leftovers, Iron Ball')
+    expect(withTwo.equipmentState?.instances).toHaveLength(2)
+    expect(withTwo.equipmentState?.slots.filter(slot => slot.instanceId !== null)).toHaveLength(2)
+    const ironBall = withTwo.equipmentState?.instances.find(instance => instance.canonicalItemId === 'Iron Ball')
+    if (!ironBall) throw new Error('Expected exact structured Iron Ball instance.')
     const chooseSecond = planMoveItemMutations({
       ...basePlanInput(), map: planned.nextMap,
       pokemonSheets: new Map([[withTwo.slug, withTwo]]),
       operations: [{
         id: 'item.delivery-bird.choose-second', kind: 'destroy', reasonCode: 'item.destroy',
         source: {
-          schemaVersion: 1, kind: 'pokemon-held', itemId: 'held:2', canonicalItemId: 'iron-ball',
+          schemaVersion: 1, kind: 'pokemon-held', itemId: ironBall.instanceId, canonicalItemId: 'iron-ball',
           owner: pokemonOwner(withTwo.slug, withTwo.revision ?? 4),
           quantity: 1, stack: 'singleton', equip: 'pokemon-held',
         },
         quantity: 1,
       }],
     })
-    expect((chooseSecond.sheetWrites.find(write => write.slug === pokemon.slug)?.nextSheet as CharacterSheet)
-      .items?.held).toBe('Leftovers')
+    const afterChoice = chooseSecond.sheetWrites.find(write => write.slug === pokemon.slug)?.nextSheet as CharacterSheet
+    expect(afterChoice.items?.held).toBe('Leftovers')
+    expect(afterChoice.equipmentState?.instances).toHaveLength(1)
 
     expectItemError(() => planMoveItemMutations({
       ...basePlanInput(), map,
@@ -675,7 +715,7 @@ describe('typed move item mutation plans', () => {
     }), 'destination-occupied')
   })
 
-  it('allows exactly a second held item for an effective Handyman owner', () => {
+  it('allows exactly a second structured held item for an effective Handyman owner', () => {
     const map = {
       ...mapFixture(),
       placements: [{
@@ -695,7 +735,7 @@ describe('typed move item mutation plans', () => {
     }
     const group = groupInventory({
       ...emptyInventory(),
-      equipment: [{ id: 'group-iron-ball', name: 'Iron Ball' }],
+      equipment: [equipmentRow('group-iron-ball', 'Iron Ball')],
     })
     const operation = {
       id: 'item.handyman.second', kind: 'equip' as const, reasonCode: 'item.equip',
@@ -711,8 +751,9 @@ describe('typed move item mutation plans', () => {
       groupInventories: new Map([[group.slug, group]]),
       operations: [operation],
     })
-    expect((planned.sheetWrites.find(write => write.slug === pokemon.slug)?.nextSheet as CharacterSheet)
-      .items?.held).toBe('Leftovers, Iron Ball')
+    const withTwo = planned.sheetWrites.find(write => write.slug === pokemon.slug)?.nextSheet as CharacterSheet
+    expect(withTwo.items?.held).toBe('Leftovers, Iron Ball')
+    expect(withTwo.equipmentState?.instances).toHaveLength(2)
 
     expectItemError(() => planMoveItemMutations({
       ...basePlanInput(),
@@ -736,7 +777,7 @@ describe('typed move item mutation plans', () => {
     const group = groupInventory({
       ...emptyInventory(),
       medicalKit: [{ id: 'group-potions', name: 'Potion', qty: 1 }],
-      equipment: [{ id: 'group-iron-ball', name: 'Iron Ball' }],
+      equipment: [equipmentRow('group-iron-ball', 'Iron Ball')],
     })
     const common = {
       ...basePlanInput(),

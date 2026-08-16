@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto'
 import { AA078_LUNCHBOX_TEMP_HP_REASON } from '#shared/abilityAutomation/aa078'
 import { parseEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseSheetEquipmentStateForOwner } from '#shared/itemAutomation/equipment'
+import { nextRevision } from '#shared/sessionRevisions'
 import { moveEffectBranchPaths, type MoveConditionEffectOperation, type MoveTemporaryEffectOperation } from '#shared/moveAutomation/effects'
 import {
   parseMoveResolutionAuditTrace,
@@ -25,6 +27,7 @@ import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import {
   createMoveStateChangePlan,
   type MoveStateChangeInput,
+  unavailableMoveStateCompensation,
   type MoveStateChangePlan,
 } from './plan'
 import { mergeDisjointMoveSheetStateChanges } from './mergeSheetStateChanges'
@@ -89,11 +92,16 @@ import type {
 } from './reducers/coreTokenEffectTypes'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
 import {
+  createEquipmentFaintProtectionQueries,
+  equipmentTypeGemActivationDescriptors,
+} from './equipmentProviderMechanics'
+import {
   expectedMoveCoreTokenRecipientIds,
   resolveMoveCoreTokenDynamicRecipients,
 } from './reducers/coreTokenRecipients'
 import { reduceMoveResolutionTrace } from './trace'
 import { aa060MoveMarkId, hasAa060MoveMark } from '../abilityAutomation/mechanics/aa060MoveIntegration'
+import { createDigestionBuffTradeOperations } from '../itemAutomation/digestionBuffTrade'
 import { aa060TriggeredMoveOverlayOperations } from '../abilityAutomation/mechanics/aa060TriggeredMoveIntegration'
 import { aa061TriggeredMoveOverlayOperations } from '../abilityAutomation/mechanics/aa061TriggeredMoveIntegration'
 import { aa062BoneLordEmpowersMove, aa062MoveOverlayOperations } from '../abilityAutomation/mechanics/aa062MoveIntegration'
@@ -1043,7 +1051,13 @@ const executeReviewedMoveSpec = (
     moveSourceId,
     authoritativeTargetIds: options.authoritativeTargetIds,
   }
+  const typeGemActivations = equipmentTypeGemActivationDescriptors({
+    context: options.context,
+    script,
+    moveSourceId,
+  })
   const abilityOverlays = [
+    ...typeGemActivations.flatMap(entry => entry.operations),
     ...aa060TriggeredMoveOverlayOperations(overlayInput),
     ...aa061TriggeredMoveOverlayOperations(overlayInput),
     ...aa062MoveOverlayOperations(overlayInput),
@@ -1189,6 +1203,71 @@ const aa060AmbushOperations = (input: {
   ])
 }
 
+const typeGemConsumptionStateChange = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly script: MoveAutomationScript
+  readonly moveSourceId: string
+  readonly execution: MoveSpecExecutionCompleteResult
+}): MoveStateChangeInput | null => {
+  const descriptors = equipmentTypeGemActivationDescriptors({
+    context: input.context,
+    script: input.script,
+    moveSourceId: input.moveSourceId,
+  })
+  const acceptedOperationIds = new Set(input.execution.operations.flatMap(emission => (
+    emission.recipientIds.includes(input.context.actor.placement.id)
+      ? [emission.operation.id]
+      : []
+  )))
+  const accepted = descriptors.filter(entry => acceptedOperationIds.has(entry.activationOperationId))
+  if (!accepted.length) return null
+  const actor = input.context.actor
+  const previousSheet = deepCloneJson(actor.sheet.sheet)
+  const state = parseSheetEquipmentStateForOwner(previousSheet.equipmentState, {
+    kind: actor.sheet.kind,
+    slug: actor.sheet.slug,
+  })
+  const consumedIds = new Set(accepted.map(entry => entry.sourceInstanceId))
+  for (const entry of accepted) {
+    const instance = state.instances.find(candidate => candidate.instanceId === entry.sourceInstanceId)
+    if (!instance || instance.revision !== entry.sourceInstanceRevision) {
+      fail('execution-rejected', 'The accepted Type Gem source changed before authoritative reduction.')
+    }
+  }
+  const equipmentState = parseSheetEquipmentStateForOwner({
+    ...state,
+    revision: nextRevision(state.revision),
+    slots: state.slots.map(slot => consumedIds.has(slot.instanceId ?? '')
+      ? { ...slot, instanceId: null }
+      : slot),
+    instances: state.instances.filter(instance => !consumedIds.has(instance.instanceId)),
+  }, { kind: actor.sheet.kind, slug: actor.sheet.slug })
+  const currentSheet = {
+    ...previousSheet,
+    equipmentState,
+    revision: nextRevision(actor.sheet.revision),
+    updatedAt: input.context.time,
+  }
+  return {
+    kind: 'sheet-state',
+    scope: {
+      kind: 'sheet',
+      sheetKind: actor.sheet.kind,
+      sheetSlug: actor.sheet.slug,
+    },
+    expectedRevision: actor.sheet.revision,
+    sourceOperationId: accepted[0]!.activationOperationId,
+    reasonCode: 'equipment.type-gem.consumed',
+    previous: previousSheet,
+    current: currentSheet,
+    changedFields: ['equipmentState'],
+    compensation: unavailableMoveStateCompensation(
+      'equipment.type-gem.consumption-is-externally-observed',
+      'externally-observed',
+    ),
+  }
+}
+
 /** Reduce one already completed interpreter result into the immediate planner projection. */
 export const reduceCompletedMoveSpec = (
   options: ResolveMoveSpecOptions,
@@ -1216,6 +1295,16 @@ export const reduceCompletedMoveSpec = (
     script,
     execution,
     authored: authoredOperations,
+  })
+  const moveSourceId = options.runtime.definition.spec.phases
+    .flatMap(phase => phase.operations)
+    .find(operation => operation.source.kind === 'move')?.source.id
+    ?? `move.${moveSlug(options.runtime.canonicalId)}`
+  const typeGemConsumption = typeGemConsumptionStateChange({
+    context: options.context,
+    script: compatibility,
+    moveSourceId,
+    execution,
   })
   const uncommittedOperations = [...authoredOperations, ...abilityOperations]
   assertSupportedImmediateOperations(uncommittedOperations)
@@ -1299,6 +1388,19 @@ export const reduceCompletedMoveSpec = (
     resolvedItemChoices: execution.resolvedItemChoices,
     contextForOperation,
   })
+  const digestionBuffOperations = createDigestionBuffTradeOperations({
+    interpretation: interpretedItemEffects,
+  })
+  for (const emission of digestionBuffOperations) {
+    reductionTrace = reduceMoveResolutionTrace(reductionTrace, {
+      kind: 'operation', phase: emission.operation.phase,
+      operationId: emission.operation.id, operationKind: emission.operation.kind,
+      recipientIds: emission.recipientIds, outcome: 'applied',
+      reasonCode: emission.operation.reasonCode,
+      input: emission.operation.payload as unknown as import('#shared/moveAutomation/trace').MoveResolutionTraceJsonValue,
+      result: { status: 'emitted' },
+    })
+  }
   // A self target is explicit interpreter evidence, not an attacked-target wire
   // identity. Self-only operations must address the actor selector directly.
   const dustCloudBurst = aa068DustCloudBurstEnabled({
@@ -1345,7 +1447,7 @@ export const reduceCompletedMoveSpec = (
     && operation.payload.action === 'digest-buff'
     && appliedItemOperationIds.has(operation.id)
   ))
-  const coreOperations = uncommittedOperations.filter(isMoveCoreTokenEffectEmission)
+  const coreOperations = [...uncommittedOperations, ...digestionBuffOperations].filter(isMoveCoreTokenEffectEmission)
     .map((emission): MoveResolvedCoreTokenEffectOperation => (
       (emission.operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON
         && emission.operation.source.kind === 'operation'
@@ -1362,6 +1464,7 @@ export const reduceCompletedMoveSpec = (
   const recipientControlledOperationIds = new Set(
     branchControlledOperationIds(uncommittedOperations),
   )
+  for (const { operation } of digestionBuffOperations) recipientControlledOperationIds.add(operation.id)
   const selectedPerceptionAvoidance = execution.trace.events.some(event => (
     event.kind === 'choice'
     && event.reasonCode === 'ability.perception.optional-disengage'
@@ -1423,7 +1526,9 @@ export const reduceCompletedMoveSpec = (
   const multiHit = execution.multiHitExecutions[0] ?? null
   const postMultiCoreEffects = coreOperations.every(({ operation }) => (
     operation.kind !== 'damage'
-    && (operation.phase === 'after-damage' || operation.phase === 'cleanup')
+    && (operation.phase === 'after-damage'
+      || operation.phase === 'cleanup'
+      || (operation.phase === 'damage' && operation.reasonCode.startsWith('equipment.')))
   ))
   if (execution.multiHitExecutions.length > 1
     || (multiHit && coreOperations.length > 0 && !postMultiCoreEffects)) {
@@ -1452,8 +1557,21 @@ export const reduceCompletedMoveSpec = (
     root: initialDynamic,
     children: execution.childExecutions,
   })
+  const preHandledEquipmentDamageIds = new Set(coreOperations.flatMap(({ operation }) => (
+    operation.kind === 'heal'
+    && (operation.reasonCode === 'equipment.focus-band.prevent-faint'
+      || operation.reasonCode === 'equipment.focus-sash.prevent-faint')
+    && operation.source.kind === 'operation'
+      ? [operation.source.id]
+      : []
+  )))
   const core: MoveCoreTokenEffectReduction = reduceMoveCoreTokenEffects({
     context: options.context,
+    faintProtection: createEquipmentFaintProtectionQueries({
+      context: options.context,
+      skipDamageOperationIds: preHandledEquipmentDamageIds,
+      requirePreRolledRandom: true,
+    }),
     operations: coreOperations,
     dynamicRecipients: initialDynamic,
     ...(nestedRecipients ? { recipientIdsForOperation: nestedRecipients } : {}),
@@ -1567,6 +1685,15 @@ export const reduceCompletedMoveSpec = (
         })))
       })()
     : core.stateChanges
+  const finalCoreStateChanges = typeGemConsumption
+    ? createMoveStateChangePlan(mergeDisjointMoveSheetStateChanges([
+        ...combinedCoreStateChanges.changes.map((change): MoveStateChangeInput => {
+          const { id: _id, order: _order, ...value } = change
+          return structuredClone(value) as MoveStateChangeInput
+        }),
+        typeGemConsumption,
+      ]))
+    : combinedCoreStateChanges
   const mergeUpdates = <Update extends { readonly id: string }>(
     ...groups: readonly (readonly Update[])[]
   ): Update[] => [...new Map(groups.flat().map(update => [update.id, update])).values()]
@@ -1620,11 +1747,11 @@ export const reduceCompletedMoveSpec = (
     rollLedger: execution.rollLedger,
     trace,
     native: Object.freeze({
-      operations: uncommittedOperations,
+      operations: [...uncommittedOperations, ...digestionBuffOperations],
       childExecutions: execution.childExecutions,
       dynamicRecipients: Object.freeze(dynamicRecipients),
       faintedPlacementIds: Object.freeze([...faintedSet]),
-      coreStateChanges: combinedCoreStateChanges,
+      coreStateChanges: finalCoreStateChanges,
       permanentMoveListStateChanges: permanentMoveLists.stateChanges,
       itemEffects: knockOffItems.itemEffects,
       spatialMovements: spatial.movements,

@@ -4,6 +4,7 @@ import { applyHpToSheet } from '~/utils/sheetMutations'
 import { applyPokemonExtendedRest, setPokemonInjuries } from '~/utils/sheets/healing'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { resolveWielderWeaponProfile } from '~~/server/domain/capabilityAutomation/wielder'
+import { equipmentGrantDefinitionFor } from '~~/server/domain/itemAutomation/equipmentGrantRegistry'
 import { createBreedingBabyTemplateAuthorityV1, createBreedingMarsupialProviderTraitV1, resolveBreedingMarsupialBabyTemplateV1 } from '../../server/domain/breeding/babyTemplate'
 
 const shedinja = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
@@ -33,22 +34,23 @@ describe('Capability passive providers', () => {
     for (const stat of resolveStats(baby)) expect(stat.base).toBe(Math.max(1, adultStats.get(stat.key)! - 5))
   })
 
-  it('limits Wielder equipment profiles by size and never projects Master weapon Moves', () => {
-    expect(resolveWielderWeaponProfile({ heldItemName: 'Honed Claws', size: 'Small' })).toMatchObject({
-      weaponClass: 'small-melee', damageBaseBonus: 1, accuracyCheckPenalty: 0,
-      adeptMoveName: 'Wounding Strike',
-    })
-    expect(resolveWielderWeaponProfile({ heldItemName: 'Survival Knife', size: 'Small' })).toMatchObject({
-      weaponClass: 'small-melee',
-      adeptMoveName: 'Cheap Shot',
-      damageBaseBonus: 1,
-    })
-    expect(resolveWielderWeaponProfile({ heldItemName: 'Meteor Masher', size: 'Medium' })).toMatchObject({
-      weaponClass: 'large-melee', damageBaseBonus: 2, accuracyCheckPenalty: 1,
-      adeptMoveName: 'Backswing',
-    })
-    expect(resolveWielderWeaponProfile({ heldItemName: 'Meteor Masher', size: 'Small' })).toBeNull()
-    expect(resolveWielderWeaponProfile({ heldItemName: 'Honed Claws', size: 'Medium' })).toBeNull()
+  it('rejects descriptive held-item authority and reviews Wielder grants explicitly', () => {
+    expect(resolveWielderWeaponProfile({ heldItemName: 'Honed Claws', size: 'Small' })).toBeNull()
+    expect(resolveWielderWeaponProfile({ heldItemName: 'Meteor Masher', size: 'Medium' })).toBeNull()
+    expect(equipmentGrantDefinitionFor('Honed Claws')?.grants).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'weapon-profile', weaponClass: 'small-melee',
+        damageBaseBonus: 1, accuracyCheckPenalty: 0,
+      }),
+      expect.objectContaining({
+        kind: 'move', canonicalId: 'Wounding Strike', minimumCombatRank: 4,
+        pokemonWielderEligible: true, executionStatus: 'native',
+      }),
+      expect.objectContaining({
+        kind: 'move', canonicalId: 'Gouge', minimumCombatRank: 6,
+        pokemonWielderEligible: false, executionStatus: 'definition-missing',
+      }),
+    ]))
   })
 
   it('restores a Soulless user to exactly one HP after Extended Rest', () => {

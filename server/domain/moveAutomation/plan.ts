@@ -42,6 +42,8 @@ export const MOVE_SHEET_STATE_FIELDS = [
   'items',
   'inventory',
   'equipmentSlots',
+  /** Owner-bound serialized equipment custody; only server-authored reducers may mutate it. */
+  'equipmentState',
   'digestion',
   'abilities',
   /** Shared sheet field used by authoritative Daily ability resources. */

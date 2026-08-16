@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PhPlus, PhX } from '@phosphor-icons/vue'
+import { PhLockKey, PhPlus, PhX } from '@phosphor-icons/vue'
 import { SHEET_ABILITY_NAME_OPTIONS, setLookupAbilityName, type AbilityLookupRow } from '~/utils/sheetAbilityLookup'
 import { formatLookupValue } from '~/utils/sheetMoveLookup'
 import type { CharacterSheet, CharacterSheetAbility } from '~/types/characterSheet'
@@ -28,6 +28,12 @@ const updateEdgeChoice = (index: number, choiceId: string, value: EditableCellVa
   if (edge) setPokemonEdgeChoice(props.sheet, edge, index, choiceId, value)
 }
 
+const abilityIsEvolutionLocked = (index: number): boolean => (
+  props.abilityRows[index]?.ability.itemEvolutionLocked === true
+)
+const abilityRemovalIsLocked = (index: number): boolean => abilityIsEvolutionLocked(index)
+  || props.abilityRows.slice(index + 1).some(row => row.ability.itemEvolutionLocked === true)
+
 const emit = defineEmits<{
   addAbility: []
   removeAbility: [index: number]
@@ -41,7 +47,7 @@ const emit = defineEmits<{
     <section class="panel-card">
       <h2 class="panel-title">
         Abilities
-        <span class="panel-subtle">name editable · details from abilities.json</span>
+        <span class="panel-subtle">ordinary names editable · evolved rows authoritative</span>
         <button type="button" class="row-add" @click="emit('addAbility')">
           <PhPlus :size="14" weight="bold" /> Add row
         </button>
@@ -58,8 +64,12 @@ const emit = defineEmits<{
                 type="select"
                 placeholder="Ability"
                 :options="SHEET_ABILITY_NAME_OPTIONS"
+                :readonly="abilityIsEvolutionLocked(i)"
                 @update:model-value="(v) => setLookupAbilityName(row.ability, v)"
               />
+              <span v-if="abilityIsEvolutionLocked(i)" class="ability-authority-badge" title="Mapped by accepted Evolutionary Item authority">
+                <PhLockKey :size="12" weight="bold" aria-hidden="true" /> Evolved
+              </span>
             </td>
             <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
             <td class="move-effect">{{ formatLookupValue(row.reference?.trigger) }}</td>
@@ -69,6 +79,7 @@ const emit = defineEmits<{
             </td>
             <td class="row-actions">
               <button
+                v-if="!abilityRemovalIsLocked(i)"
                 type="button"
                 class="row-remove"
                 title="Remove ability"
@@ -158,6 +169,22 @@ const emit = defineEmits<{
 }
 
 .row.two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.ability-authority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  width: fit-content;
+  margin-top: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--rt-success) 52%, var(--rule));
+  border-radius: 999px;
+  padding: 0.08rem 0.38rem;
+  color: var(--rt-success);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 
 .edge-editor-stack {
   display: grid;

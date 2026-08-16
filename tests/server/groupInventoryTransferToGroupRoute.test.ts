@@ -166,7 +166,7 @@ describe('trainer inventory to group inventory transfer API route', () => {
     seedTrainer(trainerSheetDocument({
       inventory: {
         ...emptyInventory(),
-        medicalKit: [{ name: 'Potion', qty: 4 }],
+        medicalKit: [{ id: 'trainer-potion-row', name: 'Potion', qty: 4 }],
       },
     }), 2, 200)
 
@@ -178,7 +178,7 @@ describe('trainer inventory to group inventory transfer API route', () => {
         groupSlug: groupInventory.slug,
         groupRevision: groupInventory.revision,
         section: 'medicalKit',
-        trainerRowIndex: 0,
+        trainerItemId: 'trainer-potion-row',
         quantity: 3,
       },
     }) as {
@@ -190,7 +190,7 @@ describe('trainer inventory to group inventory transfer API route', () => {
     expect(response.ok).toBe(true)
     expect(response.trainerSheet.sheet.revision).toBe(3)
     expect(response.trainerSheet.sheet.inventory?.medicalKit).toEqual([
-      { name: 'Potion', qty: 1 },
+      { id: 'trainer-potion-row', name: 'Potion', qty: 1 },
     ])
     expect(response.groupInventory.revision).toBe(2)
     expect(response.groupInventory.inventory.medicalKit).toEqual([

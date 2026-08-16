@@ -12,10 +12,12 @@ const props = withDefaults(defineProps<{
   selected?: boolean
   shortcut?: number | null
   commandsBlocked?: boolean
+  compact?: boolean
 }>(), {
   selected: false,
   shortcut: null,
   commandsBlocked: false,
+  compact: false,
 })
 const emit = defineEmits<{
   activate: [offer: EncounterActionOffer]
@@ -28,6 +30,7 @@ const accessibleName = computed(() => [
   encounterActionCostLabel(props.offer),
   encounterActionUsageLabel(props.offer),
   encounterActionTargetLabel(props.offer),
+  props.offer.sourceContextLabel ?? '',
   props.offer.availability.status === 'available' ? 'available' : 'unavailable',
 ].join(', '))
 </script>
@@ -35,7 +38,9 @@ const accessibleName = computed(() => [
 <template>
   <article
     class="encounter-offer-card rt-surface rt-signal-spine"
+    :class="{ 'encounter-offer-card--compact': compact }"
     :data-rt-state="selected ? 'selected' : offer.availability.status === 'available' ? 'idle' : 'unavailable'"
+    tabindex="-1"
     data-rt-layer="persistent"
     data-rt-elevation="1"
   >
@@ -44,7 +49,8 @@ const accessibleName = computed(() => [
       <kbd v-if="shortcut !== null" :aria-label="`Keyboard shortcut ${shortcut}`">{{ shortcut }}</kbd>
     </header>
     <h3>{{ offer.presentation.label }}</h3>
-    <p v-if="offer.presentation.description">{{ offer.presentation.description }}</p>
+    <p v-if="offer.sourceContextLabel" class="encounter-offer-card__source-context">{{ offer.sourceContextLabel }}</p>
+    <p v-if="offer.presentation.description && !compact">{{ offer.presentation.description }}</p>
     <dl>
       <div><dt>Timing</dt><dd>{{ offer.timing.label }}</dd></div>
       <div><dt>Cost</dt><dd>{{ encounterActionCostLabel(offer) }}</dd></div>
@@ -78,12 +84,16 @@ const accessibleName = computed(() => [
 
 <style scoped>
 .encounter-offer-card { width: min(19rem, 82vw); min-height: 15rem; display: flex; flex: 0 0 auto; flex-direction: column; padding: var(--rt-card-padding); }
+.encounter-offer-card--compact { width: min(15rem, 74vw); min-height: 11.5rem; }
 .encounter-offer-card > header,
 .encounter-offer-card > footer { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .encounter-offer-card > header > span { color: var(--rt-info); font-size: var(--rt-type-meta-xs-size); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .encounter-offer-card kbd { min-width: 1.65rem; padding: 0.15rem 0.35rem; border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); background: var(--rt-surface-3); color: var(--rt-text-strong); font: 700 var(--rt-type-meta-xs-size)/1.2 var(--rt-font-numeric); text-align: center; }
 .encounter-offer-card h3 { margin: 0.55rem 0 0.2rem; color: var(--rt-text-strong); font-size: var(--rt-type-action-md-size); }
 .encounter-offer-card > p { margin: 0 0 0.55rem; color: var(--rt-text-muted); font-size: var(--rt-type-body-sm-size); }
+.encounter-offer-card > .encounter-offer-card__source-context { margin-bottom: 0.25rem; color: var(--rt-info); font-size: var(--rt-type-meta-xs-size); font-weight: 700; }
+.encounter-offer-card--compact dl > div:nth-child(1),
+.encounter-offer-card--compact dl > div:nth-child(4) { display: none; }
 .encounter-offer-card dl { display: grid; gap: 0.3rem; margin: 0.45rem 0; }
 .encounter-offer-card dl > div { display: grid; grid-template-columns: 4rem minmax(0, 1fr); gap: 0.5rem; }
 .encounter-offer-card dt { color: var(--rt-text-muted); font-size: var(--rt-type-meta-xs-size); text-transform: uppercase; }

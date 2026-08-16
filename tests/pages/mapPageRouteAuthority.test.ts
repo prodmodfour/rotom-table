@@ -373,7 +373,7 @@ describe('map page route authority', () => {
     expect(mapPage).toContain('moveToken: moveTokenFromMoveAutomation')
     expect(mapPage).toContain('moveDispatchPending,')
     expect(mapPage).toContain('const moveAutomationDispatchInFlight = () => moveDispatchPending.value')
-    expect(mapPage).toContain('const openPokeballCaptureFromContext = (payload: { id: string; pokeballName: string }) => {\n  if (moveAutomationDispatchInFlight()) return')
+    expect(mapPage).toContain('const openPokeballCaptureFromContext = (payload: { id: string; sourceInstanceId: string }) => {\n  if (moveAutomationDispatchInFlight()) return')
     expect(mapPage).toContain('const cancelActionAutomationTargeting = () => {\n  if (moveAutomationDispatchInFlight()) return')
     expect(mapPage).toContain('dispatchSetInitiative: (payload) => livePlayCommands.setInitiative(payload)')
     expect(mapPage).toContain('dispatchNextInitiative: (payload) => livePlayCommands.nextInitiative(payload)')

@@ -9,6 +9,7 @@ import { aa077LancerCriticalRangeBonus } from '../abilityAutomation/mechanics/aa
 import { aa079MercilessForcesCritical } from '../abilityAutomation/mechanics/aa079StaticIntegration'
 import { trainerBadMoodCriticalRangeBonus } from '../edgeAutomation/trainerCombat'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { itemCriticalRangeBonus } from '../itemAutomation/combatEffects'
 
 export const CRITICAL_HIT_PREVENTING_ABILITIES = Object.freeze([
   'Battle Armor',
@@ -42,7 +43,7 @@ export interface MoveCriticalHitResolution {
   readonly operationId: string
   readonly recipientId: string
   readonly trigger: MoveCriticalHitTrigger
-  readonly triggerSource: 'canonical' | 'operation' | 'ability'
+  readonly triggerSource: 'canonical' | 'operation' | 'ability' | 'item'
   readonly naturalRoll: number | null
   readonly candidate: boolean
   readonly preventionPolicy: MoveCriticalHitPolicy['prevention']
@@ -158,20 +159,21 @@ export const resolveMoveCriticalHit = (options: {
     placementId: options.context.actor.placement.id,
   })
   const actorId = options.context.actor.placement.id
-  const actorItems = options.context.queries.targetStates.resolve(actorId)?.itemIds ?? []
-  const rareLeekEligible = actorItems.includes('rare-leek')
-    && (
-      options.context.actor.token.species.toLowerCase().replace(/[^a-z0-9]+/g, '') === 'farfetchd'
-      || options.context.queries.abilities.has(actorId, 'Leek Mastery')
-    )
+  const equipmentCriticalRangeBonus = options.context.queries.equipment.metric({
+    placementId: actorId,
+    metric: 'critical-range',
+    targetId: 'all',
+    base: 0,
+  })?.final ?? 0
+  const rareLeekMasteryBonus = options.context.queries.abilities.has(actorId, 'Leek Mastery')
+    && options.context.queries.targetStates.resolve(actorId)?.itemIds.includes('rare-leek') === true
     && !options.context.queries.itemEffects.resolve({
       placementId: actorId,
-      scope: options.context.actor.placement.sheetKind === 'pokemon'
-        ? 'pokemon-held'
-        : 'trainer-accessory',
+      scope: 'pokemon-held',
       timing: 'static',
     }).suppressed
-  const rareLeekBonus = rareLeekEligible ? 2 : 0
+    ? 2
+    : 0
   const razorEdgeBonus = options.context.queries.abilities.has(actorId, 'Razor Edge')
     ? /(?:^|\s)tail(?:\s|$)/i.test(options.script.moveName) ? 3 : 2
     : 0
@@ -186,6 +188,10 @@ export const resolveMoveCriticalHit = (options: {
     && effect.suppression.sources.length === 0
     && (effect.duration.remaining === null || effect.duration.remaining > 0)
   )) ? 2 : 0
+  const direHitBonus = itemCriticalRangeBonus({
+    effects: options.context.map.encounterState?.effects,
+    placementId: actorId,
+  })
   const badMoodBonus = options.context.actor.placement.sheetKind === 'trainer'
     ? trainerBadMoodCriticalRangeBonus(
         options.context.actor.sheet.sheet as TrainerSheet,
@@ -197,8 +203,8 @@ export const resolveMoveCriticalHit = (options: {
         ...baseTrigger,
         minimum: Math.max(
           1,
-          baseTrigger.minimum - (beamCannon ? 3 : 0) - lancerBonus - rareLeekBonus
-            - razorEdgeBonus - superLuckBonus - viciousBonus - badMoodBonus,
+          baseTrigger.minimum - (beamCannon ? 3 : 0) - lancerBonus - equipmentCriticalRangeBonus
+            - rareLeekMasteryBonus - razorEdgeBonus - superLuckBonus - viciousBonus - direHitBonus - badMoodBonus,
         ),
       }
     : baseTrigger
@@ -217,7 +223,10 @@ export const resolveMoveCriticalHit = (options: {
     operationId: options.operation.id,
     recipientId: options.recipientId,
     trigger,
-    triggerSource: merciless ? 'ability' : authoredPolicy ? 'operation' : 'canonical',
+    triggerSource: merciless ? 'ability'
+      : authoredPolicy ? 'operation'
+        : direHitBonus > 0 || equipmentCriticalRangeBonus > 0 || rareLeekMasteryBonus > 0 ? 'item'
+          : 'canonical',
     naturalRoll: options.naturalRoll,
     candidate,
     preventionPolicy,

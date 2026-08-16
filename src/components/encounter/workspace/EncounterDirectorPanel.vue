@@ -6,6 +6,7 @@ import type {
   EncounterPendingRecoveryAction,
 } from '#shared/encounterPresentation'
 import type { SetFieldEffectPayload } from '#shared/livePlayCommands'
+import { useMapItemExploration } from '~/composables/encounter/useMapItemExploration'
 import type {
   EncounterDocumentClock,
   EncounterDocumentObjective,
@@ -20,10 +21,12 @@ const props = withDefaults(defineProps<{
   commandsBlocked?: boolean
   busy?: boolean
   error?: string | null
+  lifecycleRecovery?: { readonly state: 'queued' | 'sending' | 'uncertain', readonly label: string } | null
 }>(), {
   commandsBlocked: false,
   busy: false,
   error: null,
+  lifecycleRecovery: null,
 })
 
 const exportHref = computed(() => `/api/encounter-documents/export?encounterId=${encodeURIComponent(props.workspace.source.encounterId)}`)
@@ -56,9 +59,22 @@ const emit = defineEmits<{
   (event: 'setScene', name: string | null): void
   (event: 'setFieldEffect', payload: SetFieldEffectPayload): void
   (event: 'clearFieldEffects'): void
+  (event: 'dismissEffect', dismissalRef: string): void
+  (event: 'finishEncounter'): void
+  (event: 'retryLifecycle'): void
+  (event: 'checkLifecycle'): void
   (event: 'recover', interactionId: string, action: EncounterPendingRecoveryAction['action']): void
+  (event: 'correctItem', operationId: string): void
   (event: 'openHistory', presentationId: string): void
 }>()
+
+const mapExploration = useMapItemExploration({
+  mapSlug: () => props.workspace.source.mapSlug,
+  mapRevision: () => props.workspace.source.mapRevision,
+  enabled: () => props.workspace.viewer.canUseDirector,
+  commandsBlocked: () => props.commandsBlocked || props.busy,
+  afterAccepted: async () => { emit('refresh') },
+})
 
 const tabs = ['overview', 'cast', 'story', 'system'] as const
 type DirectorTab = typeof tabs[number]
@@ -96,6 +112,7 @@ const fieldCategory = ref<'weather' | 'terrain' | 'room'>('weather')
 const fieldKind = ref<SetFieldEffectPayload['kind']>('rainy')
 const fieldRounds = ref<number | null>(null)
 const director = computed(() => props.workspace.director)
+const activeEffects = computed(() => props.workspace.activeEffects ?? [])
 const visibleParticipantCount = computed(() => props.workspace.participants.filter(participant => !participant.hidden).length)
 const hiddenParticipantCount = computed(() => director.value?.hiddenParticipantIds.length ?? props.workspace.sides.reduce((total, side) => (
   total + (side.hiddenParticipantCount ?? 0)
@@ -110,6 +127,9 @@ const recoverablePending = computed<readonly EncounterPendingInteractionAuthoriz
   ),
 ))
 const correctedAccepted = computed(() => props.workspace.accepted.filter(accepted => accepted.correction !== null))
+const correctableItems = computed(() => props.workspace.accepted.filter(accepted => (
+  accepted.source.sourceKind === 'item' && accepted.correction === null
+)))
 const fieldKinds = computed<readonly SetFieldEffectPayload['kind'][]>(() => {
   if (fieldCategory.value === 'weather') return ['sunny', 'rainy', 'hail', 'sandstorm']
   if (fieldCategory.value === 'terrain') return ['electric', 'grassy', 'misty', 'psychic']
@@ -123,6 +143,7 @@ const unavailableDirectorConcepts = computed(() => props.workspace.mapBackedLimi
   return 'Waves'
 }))
 const commandDisabled = computed(() => props.commandsBlocked || props.busy || director.value === null)
+const lifecycleDisabled = computed(() => props.commandsBlocked || props.busy || props.lifecycleRecovery !== null || !props.workspace.viewer.canUseDirector)
 
 const close = (): void => emit('update:open', false)
 const onKeydown = (event: KeyboardEvent): void => {
@@ -203,8 +224,21 @@ const submitFieldEffect = (): void => emit('setFieldEffect', {
   ...(fieldCategory.value === 'weather' ? { weatherMode: 'replace' as const } : {}),
   ...(fieldCategory.value === 'terrain' ? { terrainScope: 'field' as const } : {}),
 })
+const dismissEffect = (dismissalRef: string | null): void => {
+  if (!dismissalRef || lifecycleDisabled.value) return
+  emit('dismissEffect', dismissalRef)
+}
+const openFinishEncounter = (): void => {
+  if (lifecycleDisabled.value) return
+  emit('finishEncounter')
+}
 
 watch(fieldCategory, () => { fieldKind.value = fieldKinds.value[0]! })
+watch(() => mapExploration.decisions.value.length, (count, previous = 0) => {
+  if (count <= 0) return
+  activeTab.value = 'system'
+  if (previous === 0 && !props.open) emit('update:open', true)
+})
 watch(() => props.open, async (open) => {
   if (!open) return
   await nextTick()
@@ -455,6 +489,60 @@ watch(() => props.busy, (busy, prior) => {
         class="encounter-director__section"
       >
         <h3>Live controls and recovery</h3>
+
+        <EncounterDirectRepelDecision
+          :decisions="mapExploration.decisions.value"
+          :status="mapExploration.status.value"
+          :message="mapExploration.message.value"
+          :busy="mapExploration.busy.value"
+          :commands-blocked="commandsBlocked || busy"
+          @settle="mapExploration.settle"
+          @retry-exact="mapExploration.retryExact"
+          @refresh="mapExploration.load"
+          @dismiss="mapExploration.dismiss"
+        />
+
+        <section v-if="lifecycleRecovery" class="encounter-director__lifecycle-recovery" aria-labelledby="encounter-lifecycle-recovery-heading">
+          <h4 id="encounter-lifecycle-recovery-heading">Encounter cleanup recovery</h4>
+          <p>{{ lifecycleRecovery.label }} is {{ lifecycleRecovery.state }}. Check the server or retry the exact journaled command before issuing another lifecycle command.</p>
+          <div class="encounter-director__mini-actions">
+            <button type="button" :disabled="busy" @click="emit('checkLifecycle')">Check server</button>
+            <button type="button" :disabled="busy || lifecycleRecovery.state === 'sending'" @click="emit('retryLifecycle')">Retry exact command</button>
+          </div>
+        </section>
+
+        <div class="encounter-director__subhead"><h4>Active effects</h4><span>{{ activeEffects.length }}</span></div>
+        <div v-if="activeEffects.length" class="encounter-director__effects" aria-label="Authoritative active effects">
+          <article v-for="effect in activeEffects" :key="effect.effectRef" class="encounter-director__effect">
+            <div class="encounter-director__effect-copy">
+              <strong>{{ effect.label }}</strong>
+              <p>Affected: {{ effect.affectedLabel }} <span aria-hidden="true">·</span> Source: {{ effect.sourceLabel }}</p>
+              <p class="encounter-director__duration"><span aria-hidden="true">⌛</span>{{ effect.durationLabel }}</p>
+            </div>
+            <button
+              v-if="effect.dismissible && effect.dismissalRef"
+              type="button"
+              :disabled="lifecycleDisabled"
+              :aria-label="`Dismiss ${effect.label} from ${effect.affectedLabel}`"
+              @click="dismissEffect(effect.dismissalRef)"
+            >Dismiss effect</button>
+          </article>
+        </div>
+        <p v-else class="encounter-director__empty">No active duration effects.</p>
+
+        <div class="encounter-director__subhead"><h4>Encounter boundary</h4></div>
+        <section class="encounter-director__encounter-boundary" aria-labelledby="encounter-finish-heading">
+          <h5 id="encounter-finish-heading">Settle the complete encounter</h5>
+          <p id="encounter-finish-consequences">Review persistent consequences, rewards, outcomes, and temporary cleanup together before one atomic commit.</p>
+          <button
+            type="button"
+            class="encounter-director__finish rt-control"
+            :disabled="lifecycleDisabled"
+            aria-describedby="encounter-finish-consequences"
+            @click="openFinishEncounter"
+          >Finish Encounter</button>
+        </section>
+
         <div class="encounter-director__subhead"><h4>Initiative</h4><span>Round {{ workspace.turn.round }}</span></div>
         <div class="encounter-director__actions" role="group" aria-label="Director initiative controls">
           <button type="button" :disabled="commandsBlocked || busy" @click="emit('previousInitiative')">Previous turn</button>
@@ -494,6 +582,21 @@ watch(() => props.busy, (busy, prior) => {
                 @click="emit('recover', interaction.interactionId, action.action)"
               >{{ action.label }}</button>
             </div>
+          </article>
+        </template>
+
+        <template v-if="correctableItems.length">
+          <div class="encounter-director__subhead"><h4>Item correction</h4><span>{{ correctableItems.length }}</span></div>
+          <article v-for="accepted in correctableItems" :key="accepted.presentationId" class="encounter-director__recovery">
+            <div>
+              <strong>{{ accepted.headline.label }}</strong>
+              <p>Restore the consumed item and reverse the receipt only if every affected resource is unchanged.</p>
+            </div>
+            <button
+              type="button"
+              :disabled="commandsBlocked || busy"
+              @click="emit('correctItem', accepted.operationId)"
+            >Correct item use</button>
           </article>
         </template>
 
@@ -561,6 +664,18 @@ watch(() => props.busy, (busy, prior) => {
 .encounter-director__story, .encounter-director__inline-form { display: grid; gap: .65rem; padding: .75rem; border: 1px solid var(--rt-rule); background: var(--rt-surface-2); }
 .encounter-director__story label, .encounter-director__inline-form label { display: grid; gap: .25rem; color: var(--rt-text-muted); font-size: var(--rt-type-label-sm-size); }
 .encounter-director__inline-form input, .encounter-director__inline-form select { min-height: var(--rt-touch-minimum); width: 100%; padding: .45rem; border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); background: var(--rt-bg-canvas); color: var(--rt-text); font: inherit; }
+.encounter-director__lifecycle-recovery { display: grid; gap: var(--rt-space-2); padding: var(--rt-space-3); border-inline-start: 3px solid var(--rt-pending); background: var(--rt-surface-2); }
+.encounter-director__lifecycle-recovery p { margin: 0; }
+.encounter-director__effects { display: grid; gap: var(--rt-space-2); }
+.encounter-director__effect { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--rt-space-3); padding: .75rem; border-inline-start: 3px solid var(--rt-pending); background: var(--rt-surface-2); }
+.encounter-director__effect-copy { min-width: 0; }
+.encounter-director__effect p { margin: .2rem 0 0; color: var(--rt-text-muted); font-size: var(--rt-type-body-sm-size); overflow-wrap: anywhere; }
+.encounter-director__effect .encounter-director__duration { display: flex; align-items: center; gap: .35rem; color: var(--rt-pending); font-weight: 700; }
+.encounter-director__effect button { min-height: var(--rt-touch-minimum); }
+.encounter-director__encounter-boundary { display: grid; gap: var(--rt-space-3); padding: var(--rt-space-3); border: 1px solid var(--rt-rule); border-left: 3px solid var(--rt-focus); background: var(--rt-surface-2); }
+.encounter-director__encounter-boundary h5 { margin: 0; color: var(--rt-text-strong); font-size: var(--rt-type-body-md-size); }
+.encounter-director__encounter-boundary p { margin: 0; color: var(--rt-text-muted); line-height: 1.5; }
+.encounter-director__finish { width: 100%; min-height: var(--rt-touch-minimum); justify-content: center; border-color: var(--rt-focus); background: color-mix(in srgb, var(--rt-focus) 10%, var(--rt-surface-2)); color: var(--rt-text-strong); font-weight: 800; }
 .encounter-director__recovery { display: grid; gap: .5rem; padding: .7rem; border-inline-start: 3px solid var(--rt-danger); background: var(--rt-surface-2); }
 .encounter-director__clock { display: grid; gap: .4rem; padding: .7rem; border-inline-start: 3px solid var(--rt-pending); background: var(--rt-surface-2); }
 .encounter-director__clock > div:first-child { display: flex; justify-content: space-between; gap: 1rem; }
@@ -579,6 +694,8 @@ watch(() => props.busy, (busy, prior) => {
 @media (max-width: 42rem) {
   .encounter-director { inset: 0; width: 100%; border: 0; border-radius: 0; }
   .encounter-director__tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .encounter-director__effect { grid-template-columns: 1fr; }
+  .encounter-director__effect button { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .encounter-director-enter-active, .encounter-director-leave-active { transition: none; }

@@ -349,9 +349,11 @@ const hydrateRuntimeSheets = async (
       requestOptionsForContext(requestContext),
     )
     if (!sameAccessRequestContext(currentAccessRequestContext, requestContext)) {
-      throw new Error(
+      const error = new Error(
         `Runtime sheet reload for ${requestContext.accessScopeKey} was superseded before fresh sheets could be applied.`,
       )
+      if (options.throwOnError) throw error
+      return
     }
     const result = api.adoptAuthoritativeSet(payload, token)
     if (result.status === 'ignored-superseded' || result.status === 'ignored-scope') {

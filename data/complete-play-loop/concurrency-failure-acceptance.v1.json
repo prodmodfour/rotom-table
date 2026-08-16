@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-097",
+  "status": "accepted",
+  "manualStorageRepairRequired": false,
+  "automaticReconnectReplayAllowed": false,
+  "scenarios": [
+    {
+      "scenarioId": "duplicate-commands",
+      "expected": "The exact accepted or rejected result replays without reroll, re-consumption, revision advance, or duplicate realtime publication.",
+      "evidenceTests": [
+        "tests/server/executeItemOperation.test.ts",
+        "tests/server/itemOperationRepository.test.ts"
+      ]
+    },
+    {
+      "scenarioId": "stale-inventories",
+      "expected": "Stale Trainer, group, target, and definition revisions reject before any cost or delivery and require fresh authority.",
+      "evidenceTests": [
+        "tests/integration/shopCheckoutConcurrency.test.ts",
+        "tests/server/executeItemOperation.test.ts"
+      ]
+    },
+    {
+      "scenarioId": "moved-rows",
+      "expected": "Moved, missing, duplicate-name, or fully reserved rows are never substituted; reconciliation is non-mutating.",
+      "evidenceTests": [
+        "tests/server/throwPokeballCommand.test.ts",
+        "tests/utils/inventoryRecoveryStorage.test.ts"
+      ]
+    },
+    {
+      "scenarioId": "pending-choices",
+      "expected": "Exact bounded choice authority and reservations survive pause/reload; stale choices cannot expand or commit.",
+      "evidenceTests": [
+        "tests/server/itemOperationRepository.test.ts",
+        "tests/server/executeItemOperation.test.ts"
+      ]
+    },
+    {
+      "scenarioId": "reservations",
+      "expected": "Pending quantity blocks competing transfer across restart and is released only by authenticated terminal recovery.",
+      "evidenceTests": [
+        "tests/integration/groupInventoryItemReservationRecovery.test.ts",
+        "tests/server/itemOperationRepository.test.ts"
+      ]
+    },
+    {
+      "scenarioId": "server-restart",
+      "expected": "Accepted, rejected, pending, capture, settlement, and correction state reload from durable evidence without rerunning mechanics.",
+      "evidenceTests": [
+        "tests/server/executeItemOperation.test.ts",
+        "tests/server/commitEncounterSettlement.test.ts",
+        "tests/server/encounterSettlementCorrection.test.ts"
+      ]
+    },
+    {
+      "scenarioId": "tab-echo-and-reconnect",
+      "expected": "One retained strict command excludes competing tabs; online events never auto-submit it, and explicit status/retry remains exact.",
+      "evidenceTests": [
+        "tests/utils/inventoryRecoveryStorage.test.ts",
+        "tests/utils/encounterSettlementOperationStorage.test.ts"
+      ]
+    },
+    {
+      "scenarioId": "partial-transaction-failure",
+      "expected": "Failure at every item, map, sheet, inventory, settlement, history, attention, and realtime boundary rolls back without terminal evidence or partial revision.",
+      "evidenceTests": [
+        "tests/server/throwPokeballCommand.test.ts",
+        "tests/server/encounterSettlementAtomicCommit.test.ts",
+        "tests/server/commitEncounterSettlement.test.ts"
+      ]
+    },
+    {
+      "scenarioId": "settlement-retry",
+      "expected": "Ambiguous commit retains one strict command; exact status returns accepted evidence, while no result requires explicit retry and current reauthorization.",
+      "evidenceTests": [
+        "tests/server/encounterSettlementRecovery.test.ts",
+        "tests/utils/encounterSettlementOperationStorage.test.ts"
+      ]
+    },
+    {
+      "scenarioId": "correction",
+      "expected": "One hash-bound GM correction appends immutable audit/realtime evidence, exact-replays after restart, and rolls back every failed boundary.",
+      "evidenceTests": [
+        "tests/server/encounterSettlementCorrection.test.ts"
+      ]
+    }
+  ],
+  "exactlyOnceGuarantees": [
+    {
+      "asset": "item",
+      "owner": "item operation transaction and immutable operation result",
+      "evidenceTests": [
+        "tests/server/executeItemOperation.test.ts",
+        "tests/server/itemOperationRepository.test.ts"
+      ]
+    },
+    {
+      "asset": "reward",
+      "owner": "encounter settlement atomic commit",
+      "evidenceTests": [
+        "tests/server/encounterSettlementAtomicCommit.test.ts",
+        "tests/server/commitEncounterSettlement.test.ts"
+      ]
+    },
+    {
+      "asset": "effect",
+      "owner": "item/settlement write set and accepted history",
+      "evidenceTests": [
+        "tests/server/executeItemOperation.test.ts",
+        "tests/server/encounterSettlementAtomicCommit.test.ts"
+      ]
+    },
+    {
+      "asset": "capture",
+      "owner": "Poké Ball SQLite transaction and settlement capture authority",
+      "evidenceTests": [
+        "tests/server/throwPokeballCommand.test.ts"
+      ]
+    },
+    {
+      "asset": "experience",
+      "owner": "settlement Experience provider merged into one exact sheet revision",
+      "evidenceTests": [
+        "tests/server/encounterSettlementAtomicCommit.test.ts",
+        "tests/server/commitEncounterSettlement.test.ts"
+      ]
+    },
+    {
+      "asset": "attention-decision",
+      "owner": "settlement attention source and role-scoped whole-snapshot projection",
+      "evidenceTests": [
+        "tests/server/encounterSettlementAtomicCommit.test.ts",
+        "tests/server/campaignAttentionProjection.test.ts"
+      ]
+    },
+    {
+      "asset": "realtime-delivery",
+      "owner": "post-commit persisted event journal",
+      "evidenceTests": [
+        "tests/server/executeItemOperation.test.ts",
+        "tests/server/commitEncounterSettlement.test.ts"
+      ]
+    }
+  ],
+  "failurePolicy": {
+    "unknownOutcome": "retain-exact-command",
+    "reconnect": "status-check-only-no-auto-replay",
+    "conflict": "reload-current-authority-and-redeclare",
+    "crossTab": "one-durable-scope-lock",
+    "partialWrite": "rollback-entire-transaction",
+    "correction": "append-only-gm-authority",
+    "privacy": "project-safe-status-without-operation-or-row-evidence"
+  },
+  "validation": {
+    "focusedTests": "92 passed",
+    "typecheck": "passed in P8-096; no production TypeScript changed",
+    "scopedEslint": "passed",
+    "productionBuild": "inherited-from-P8-096",
+    "gitDiffCheck": "passed"
+  },
+  "sourceEvidence": [
+    {
+      "path": "tests/server/executeItemOperation.test.ts",
+      "sha256": "f09fcc737a6391a873d84a13d79bafc59715a108787717d9fd0fe7ffb20ed93a"
+    },
+    {
+      "path": "tests/server/itemOperationRepository.test.ts",
+      "sha256": "a23eb90e614cb5fbbe3eb013dbf412d56c4a4bb5b392bb68492f5a0b6dcff155"
+    },
+    {
+      "path": "tests/integration/shopCheckoutConcurrency.test.ts",
+      "sha256": "1a36e8a91eb989aa6fa91c102b3f01a76cba53ab671a99a150c2b2309ed3ac97"
+    },
+    {
+      "path": "tests/server/throwPokeballCommand.test.ts",
+      "sha256": "c5dad7e88f5eeb7246256481e9c254d05bd751ab9304ea38dbc81260a5599ee9"
+    },
+    {
+      "path": "tests/utils/inventoryRecoveryStorage.test.ts",
+      "sha256": "f0baf5c2758efde8eae82d5d53de44fdb8ba6890fe5718b2d6287e67d725ba5d"
+    },
+    {
+      "path": "tests/integration/groupInventoryItemReservationRecovery.test.ts",
+      "sha256": "e5115f12bd16eb97233630ff19d2438cc15f2bae6dafa99315e514c69dc55be8"
+    },
+    {
+      "path": "tests/server/commitEncounterSettlement.test.ts",
+      "sha256": "0f9be0ffdc828e23f9ae9d3fc5ea2a59f019fb189ccf88f1ed96580df553a886"
+    },
+    {
+      "path": "tests/server/encounterSettlementCorrection.test.ts",
+      "sha256": "db55f9fa1740b63d3da7b58510ec6ecdac0ea222f15a44c7992a7e44e213bec5"
+    },
+    {
+      "path": "tests/utils/encounterSettlementOperationStorage.test.ts",
+      "sha256": "8b3d67f716990d229165e6745c33ab7bbe41272ef533e8691573ba230d828a3f"
+    },
+    {
+      "path": "tests/server/encounterSettlementAtomicCommit.test.ts",
+      "sha256": "d7a66e80e78bf353878fbfaf99642b3fa5ea74b8f596dbb80eaf681a2c5770c0"
+    },
+    {
+      "path": "tests/server/encounterSettlementRecovery.test.ts",
+      "sha256": "c4265406df804f12e0fcd8b7d8df5ac3b3e73478ad2fb9ebb1d9c92e9a309b00"
+    },
+    {
+      "path": "tests/server/campaignAttentionProjection.test.ts",
+      "sha256": "a81dfea9fdba42bd45ca88eb7f7af00dee857bbcf2f4731552ee3b5f86de4468"
+    },
+    {
+      "path": "server/useCases/executeItemOperation.ts",
+      "sha256": "0d92d6d2cce3c391e47cd7be4956a41d61e641f69aa32043b882da22e062761a"
+    },
+    {
+      "path": "server/storage/itemOperationRepository.ts",
+      "sha256": "c9a65ea5807e132955f42e2951fee7b4b328d1d55d2c96d62b5c013e6d672d0d"
+    },
+    {
+      "path": "server/useCases/applyThrowPokeballCommand.ts",
+      "sha256": "30f2e7987b316e2812bc0d4be81ddcc029c92ccc80ba3f0249cdfd80c23534b9"
+    },
+    {
+      "path": "server/domain/encounterSettlement/atomicCommit.ts",
+      "sha256": "d17b7ac75516cd504f441e51e2b743e51e51086dc0489c5ab7ac10c796f0e5fb"
+    },
+    {
+      "path": "server/useCases/commitEncounterSettlement.ts",
+      "sha256": "346f45b5e0e309a6b2f3b752ea68baf8c5d5e34faf019e04e3197dba6a4968c7"
+    },
+    {
+      "path": "server/domain/encounterSettlement/correction.ts",
+      "sha256": "197228c7324b19d7ed65d26b7b7435806211769bb64bee12a7295181c2d86a0c"
+    },
+    {
+      "path": "src/utils/inventoryRecoveryStorage.ts",
+      "sha256": "bdb7dd72a5cf51661ce9751bc19a7ccc4f95e2e969651b58d406b806f6457f8a"
+    },
+    {
+      "path": "src/utils/encounterSettlementOperationStorage.ts",
+      "sha256": "131261a8960795eeea7e78e9505b0a9286b6df8d5c02397f3e0eac76a48ea527"
+    },
+    {
+      "path": "tests/data/completePlayLoopConcurrencyFailureAcceptance.test.ts",
+      "sha256": "375acf17c898ab4aebea5a10295c3be8d07fb1d57dce41a69d1088f1d03395ee"
+    },
+    {
+      "path": "docs/complete-play-loop-concurrency-reconnect-failure.md",
+      "sha256": "cc9e90b12087df0c0061f4eb15f64736d99129e34d9e105018e8d1a0a1b8c2ed"
+    },
+    {
+      "path": "package.json",
+      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+    }
+  ]
+}

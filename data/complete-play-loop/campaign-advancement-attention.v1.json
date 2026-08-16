@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-084",
+  "status": "implemented",
+  "limits": {
+    "sheets": 10000,
+    "settlementSources": 10000,
+    "projectedItems": 10000
+  },
+  "authorities": {
+    "pokemonExperience": "data/reference/pokemonExperienceChart.json",
+    "statPointRules": "data/reference/rules.json",
+    "pokemonSpecies": "data/reference/pokedex.json",
+    "settlementLevelEvents": "encounter_settlement_attention_sources linked to immutable settlement history facts",
+    "sheetRead": ["kind", "slug", "revision", "document"],
+    "campaignMinuteRequired": true
+  },
+  "detections": {
+    "levelThreshold": {
+      "reason": "level-threshold",
+      "urgencyWhenSheetIsBehindExperience": "blocking",
+      "decisionWhenSheetIsBehindExperience": "repair-advancement",
+      "eventBackedSettlementUrgency": "normal",
+      "eventBackedSettlementDecision": "allocate-advancement",
+      "automaticallyChangesLevel": false,
+      "guessesSpecificNewChoice": false
+    },
+    "unspentAdvancement": {
+      "reason": "unspent-advancement",
+      "urgency": "normal",
+      "decision": "allocate-advancement",
+      "pokemonSpentFields": "stats.*.added",
+      "trainerSpentFields": "stats.*.levelUp",
+      "copiesBudgetOrRemainingAmount": false
+    },
+    "invalidAdvancement": {
+      "reason": "invalid-advancement",
+      "urgency": "blocking",
+      "decision": "repair-advancement",
+      "causes": [
+        "unsupported-species-authority",
+        "invalid-level",
+        "invalid-experience",
+        "experience-below-level",
+        "malformed-or-negative-stat-points",
+        "arithmetic-overflow",
+        "stat-point-overspend",
+        "base-relation-violation",
+        "unavailable-canonical-calculation"
+      ],
+      "normalizesInvalidValues": false
+    }
+  },
+  "identity": {
+    "itemStableAcrossUnrelatedSheetRevisions": true,
+    "sourceEventChangesWithSheetRevision": true,
+    "decisionAndActionBindExactSheetRevision": true,
+    "deterministicOrder": ["urgency", "entityKind", "entityId", "itemId"],
+    "duplicateAuthorityFailsClosed": true,
+    "truncatedAuthorityFailsClosed": true
+  },
+  "noAutomaticBuildChoices": [
+    "stat-allocation",
+    "move",
+    "ability",
+    "evolution",
+    "feature",
+    "edge",
+    "class",
+    "skill-rank"
+  ],
+  "doesNotCopy": [
+    "experience-total",
+    "level",
+    "species-data",
+    "stats",
+    "budget",
+    "spent-amount",
+    "remaining-amount",
+    "sheet-name",
+    "private-notes",
+    "profile-evidence",
+    "operation-command"
+  ],
+  "sources": {
+    "detector": {
+      "path": "server/domain/campaignAttention/advancementDetector.ts",
+      "sha256": "3547325de2e8176b45009fa6d18c7d598e5edc367cd073647b7c86f31d817974"
+    },
+    "trainerMilestoneBudgetResolver": {
+      "path": "server/domain/campaignAttention/trainerChoiceDetector.ts",
+      "sha256": "a60cfd25a1ecea06b2b961f30e60506fb8f06898c9c4086c661a821dd4a26ce6"
+    },
+    "attentionModel": {
+      "path": "shared/campaignAttention/model.ts",
+      "sha256": "0fd3e9494a41bda34fd209f55b26d3db7e3a90f2eb1337ecaf4ce285365552de"
+    },
+    "settlementProvider": {
+      "path": "server/domain/campaignAttention/settlementProvider.ts",
+      "sha256": "39f6aa405b54cc39f688f0ff8deee024421a515476f769420f96328f83a6fd87"
+    },
+    "settlementAtomicSource": {
+      "path": "server/domain/encounterSettlement/atomicCommit.ts",
+      "sha256": "d17b7ac75516cd504f441e51e2b743e51e51086dc0489c5ab7ac10c796f0e5fb"
+    },
+    "experienceResolver": {
+      "path": "src/utils/sheets/pokemonExperience.ts",
+      "sha256": "dc0509420e6e2aec6985fd1631669d54c5dec4563e39f9683c92d691fd208135"
+    },
+    "experienceChart": {
+      "path": "data/reference/pokemonExperienceChart.json",
+      "sha256": "a8b9026cd855e2c84c157e5f117454c6afe8f48549ff215fe562867208629428"
+    },
+    "statPointResolver": {
+      "path": "src/utils/statPointBudgets.ts",
+      "sha256": "84b3d9790fc637ec9f38c728a2d2d498939daaf873f203b4f0551ba5c5a1a3ff"
+    },
+    "rules": {
+      "path": "data/reference/rules.json",
+      "sha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142"
+    },
+    "pokemonStatResolver": {
+      "path": "src/utils/sheets/pokemonDerived.ts",
+      "sha256": "873d7d1fb12fc47b3b98bfcba697cedc7301f25d5c556f4794fd581c3a72b8d4"
+    },
+    "pokedex": {
+      "path": "data/reference/pokedex.json",
+      "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+    },
+    "detectorTests": {
+      "path": "tests/server/campaignAttentionAdvancementDetector.test.ts",
+      "sha256": "5aa19c91ebc3fb7321a96088ba67cc8249b3826fc30f3a1a152c8e4cf0d6a2b5"
+    },
+    "settlementProviderTests": {
+      "path": "tests/server/campaignAttentionSettlementProvider.test.ts",
+      "sha256": "62bad51651902a7ef4946a18c2ea00cd6379b028e3ca60c8a0f26616a840a60e"
+    },
+    "atomicSourceTests": {
+      "path": "tests/server/encounterSettlementAtomicCommit.test.ts",
+      "sha256": "d7a66e80e78bf353878fbfaf99642b3fa5ea74b8f596dbb80eaf681a2c5770c0"
+    },
+    "documentation": {
+      "path": "docs/campaign-advancement-attention.md",
+      "sha256": "6bb34a48ca58ad77731621704e921916d94ffd03990be4ac58b0f25305acaf92"
+    }
+  },
+  "validation": {
+    "focusedTests": "32 passed",
+    "typecheck": "passed",
+    "eslint": "passed",
+    "diffCheck": "passed"
+  }
+}

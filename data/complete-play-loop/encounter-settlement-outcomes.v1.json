@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-078",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-outcomes-v1",
+  "sourceEvidence": {
+    "outcomeSettlementModelSha256": "0182ed1ae0d19855df1ec16a4dd6c4606798ad5cb2088d926841c0414438c897",
+    "encounterDocumentModelSha256": "16191d4b3090eb7f29fb9aa6303e4c3d553da3bf356fd01650c16a851fd3fd5c",
+    "encounterDirectorCommandsSha256": "ee40eda04ff0f961c726f280a06c22ddb1a8d678d6139cd919c902d8b2da27bc",
+    "consequenceSnapshotModelSha256": "2d2d07d1582943e5d4ad9cce789521c5d6009b65ea284b31847841450109794d",
+    "rewardPackageContractSha256": "577ccd02ac0183799b659330202ba44049a914419e99c3d1a3bdda8cf3c219a9"
+  },
+  "authority": {
+    "completenessLiteral": "authoritative-current",
+    "required": [
+      "exact current linked Encounter Document and revision",
+      "one declaration for every objective, clock, phase, and present public or GM stake",
+      "explicit complete campaign-consequence list",
+      "exact GM authorization bound to the Encounter Document revision",
+      "one server-captured deterministic write timestamp"
+    ],
+    "forbidden": [
+      "client-created subject identities",
+      "missing outcome subjects",
+      "duplicate declarations",
+      "stale Encounter Document revisions",
+      "mechanical writes encoded in narrative summaries",
+      "rewriting applied consequence evidence"
+    ]
+  },
+  "closedOutcomes": {
+    "objective": ["completed", "failed"],
+    "clock": ["paused at bounded progress", "completed exactly at maximum"],
+    "phase": ["completed with optional bounded summary"],
+    "stake": ["realized", "avoided", "changed"],
+    "lifecycle": "A complete allowed plan changes the Encounter Document lifecycle to completed and clears an active phase only through the closed phase conclusion.",
+    "preservation": "Labels, visibility, maxima, stakes source text, notes, recipes, presentation, reserves, waves, and unrelated Encounter Document fields are never re-authored by settlement."
+  },
+  "campaignConsequences": {
+    "categories": ["relationship", "location", "faction", "opportunity", "other"],
+    "mechanicalEffectLiteral": "none",
+    "rule": "GM-authored bounded consequence summaries are accepted narrative facts only. Any mechanical mutation requires a separately owned closed objective, clock, phase, reward, cleanup, or future authoritative provider.",
+    "maximum": 128
+  },
+  "facts": {
+    "fields": [
+      "deterministic fact identity",
+      "closed fact kind and source subject",
+      "public or GM audience",
+      "exact source authority and revision",
+      "stable result code",
+      "bounded optional summary",
+      "closed-encounter-field or none mechanical marker"
+    ],
+    "privacy": "GM objective, stake, and campaign-consequence facts remain GM-only; their existence and summaries are not projected publicly.",
+    "consequences": "Objective, clock, and phase writes merge with matching current consequence authority; accepted narrative events use preserve snapshots and never delete unrelated consequence rows."
+  },
+  "writePlan": {
+    "aggregateRevision": "All closed changes produce one Encounter Document revision.",
+    "beforeAfterEvidence": "The private plan retains stable-JSON SHA-256 before and after evidence plus the exact next Encounter Document.",
+    "staleRule": "Application rechecks the complete authority hash, current document revision and hash, next hash, and monotonic next revision.",
+    "atomicRule": "Missing decisions, denied GM authority, stale state, malformed narrative mechanics, or applied-evidence drift exposes no applicable write. P8-080 persists the write with the settlement batch."
+  },
+  "completion": {
+    "pending": "Every omitted objective, clock, phase, or present stake remains a visible audience-scoped decision.",
+    "denied": "Denied GM authorization retains its private reason and blocks application.",
+    "terminal": "Committing, completed, cancelled, or already terminal settlement cannot be replanned."
+  },
+  "privacy": {
+    "serverPrivate": [
+      "GM authorization and denial reason",
+      "GM stakes source text",
+      "GM-only outcome summaries",
+      "document hashes and write timestamp",
+      "internal consequence and fact identities"
+    ],
+    "safeProjection": "Later UI may expose only audience-authorized labels, closed result status, bounded summary, progress, and pending state."
+  },
+  "evidence": {
+    "runtime": "server/domain/encounterSettlement/outcomeSettlement.ts",
+    "tests": "tests/server/encounterSettlementOutcomeSettlement.test.ts",
+    "documentation": "docs/encounter-settlement-outcomes.md"
+  }
+}

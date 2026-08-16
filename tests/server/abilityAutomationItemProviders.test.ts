@@ -8,6 +8,8 @@ import {
   parseAbilityItemProviders,
 } from '#shared/abilityAutomation/itemProviders'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptySheetEquipmentState } from '#shared/itemAutomation/equipment'
+import { activeEquipmentState } from '../fixtures/equipment'
 import {
   resolveAuthoritativeMoveItemResources,
   type AuthoritativeMoveItemResourceRequirement,
@@ -40,6 +42,9 @@ const mapFixture = (): TabletopMap => ({
 const sheet = (slug: string, held?: string, revision = 2): CharacterSheet => ({
   slug, nickname: slug, species: 'Pikachu', level: 10, revision,
   combat: { currentHp: 30 }, movelist: [{ name: 'Scratch' }],
+  equipmentState: held
+    ? activeEquipmentState({ ownerKind: 'pokemon', ownerSlug: slug, slotId: 'held', canonicalItemId: held })
+    : createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: slug }),
   ...(held ? { items: { held } } : {}),
 })
 const requirements = {

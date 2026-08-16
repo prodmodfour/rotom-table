@@ -48,14 +48,17 @@ const mapDoc = (): TabletopMap => ({
   initiative: { activeId: 'trainer', round: 1 },
 })
 
+const BASIC_BALL_SOURCE_ID = 'item-instance:trainer:lenora:pokeBalls:basic-ball-row'
+
 const trainerSheet = (): TrainerSheet => ({
   slug: 'lenora',
   name: 'Lenora',
+  revision: 1,
   level: 1,
   currentTeam: [],
   boxedPokemon: [],
   inventory: {
-    pokeBalls: [{ name: 'Basic Ball', qty: 2 }],
+    pokeBalls: [{ id: 'basic-ball-row', name: 'Basic Ball', qty: 2 }],
   },
 })
 
@@ -108,10 +111,14 @@ const serverOutcome = (overrides: Partial<PokeballCaptureOutcomeEvent['result']>
   },
 })
 
+type PanelCallbacks = Partial<Pick<
+  Parameters<typeof usePokeballCapturePanel>[0],
+  'onPokeballThrow' | 'onPokeballFeedback' | 'onPokeballResult' | 'dispatchCaptureAttempt'
+>>
+
 const buildPanel = (
-  applyCaptureOutcome = vi.fn(),
+  callbacks: PanelCallbacks = {},
   onBeforePokeballThrow?: (event: { userId: string; pokeballName: string }) => unknown,
-  callbacks: Partial<Pick<Parameters<typeof usePokeballCapturePanel>[0], 'onPokeballThrow' | 'onPokeballFeedback' | 'onPokeballResult' | 'dispatchCaptureAttempt'>> = {},
 ) => {
   const trainer = trainerSheet()
   const map = ref(mapDoc())
@@ -123,239 +130,39 @@ const buildPanel = (
     ]),
     pokemonBySlug: ref(new Map()),
     trainerBySlug: ref(new Map([[trainer.slug, trainer]])),
-    canControlPlacement: (id) => id === 'trainer',
-    applyCaptureOutcome,
+    canControlPlacement: id => id === 'trainer',
     onBeforePokeballThrow,
     ...callbacks,
-    now: () => 100,
   })
 
-  return { panel, applyCaptureOutcome, map }
+  return { panel, map }
 }
 
-describe('usePokeballCapturePanel', () => {
+describe('usePokeballCapturePanel liveplay authority', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
-  it('visually rolls the hit d20 before reporting a Poké Ball miss', () => {
-    vi.useFakeTimers()
-    vi.spyOn(Math, 'random').mockReturnValue(0)
-    const { panel, applyCaptureOutcome, map } = buildPanel()
-
-    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
-    expect(panel.pokeballCaptureTargeting.value?.candidateIds).toEqual(['pidgey'])
-
-    panel.selectPokeballCaptureTarget('pidgey')
-
-    expect(panel.pokeballCaptureFeedback.value).toMatchObject({
-      phase: 'rolling',
-      naturalRoll: 1,
-      hit: false,
-      moveName: 'Throw Basic Ball',
-    })
-    expect(panel.pokeballCaptureResult.value).toBeNull()
-    expect(panel.pokeballCaptureError.value).toBeNull()
-    expect(applyCaptureOutcome).not.toHaveBeenCalled()
-
-    vi.advanceTimersByTime(650)
-    expect(panel.pokeballCaptureFeedback.value?.phase).toBe('hit-roll')
-
-    vi.advanceTimersByTime(850)
-    expect(panel.pokeballCaptureFeedback.value?.phase).toBe('outcome')
-
-    vi.advanceTimersByTime(600)
-    expect(panel.pokeballCaptureFeedback.value).toBeNull()
-    expect(panel.pokeballCaptureResult.value).toBeNull()
-    expect(panel.pokeballCaptureError.value).toBe('The Poké Ball missed.')
-    expect(map.value.metadata?.captureLog).toMatchObject([
-      {
-        hit: false,
-        success: false,
-        lines: expect.arrayContaining([
-          'Lenora threw Basic Ball at Pidgey.',
-          'Result: The Poké Ball missed.',
-        ]),
-      },
-    ])
-    expect(applyCaptureOutcome).toHaveBeenCalledWith(expect.objectContaining({
-      trainerId: 'trainer',
-      targetId: 'pidgey',
-      pokeballName: 'Basic Ball',
-      result: expect.objectContaining({ hit: false, failureReason: 'The Poké Ball missed.' }),
-    }))
-  })
-
-  it('waits for the throw splash hook before starting capture feedback', async () => {
-    vi.useFakeTimers()
-    vi.spyOn(Math, 'random').mockReturnValue(0)
-    const onBeforePokeballThrow = vi.fn(() => new Promise((resolve) => { setTimeout(resolve, 100) }))
-    const { panel } = buildPanel(vi.fn(), onBeforePokeballThrow)
-
-    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
-    const capture = panel.selectPokeballCaptureTarget('pidgey')
-
-    expect(onBeforePokeballThrow).toHaveBeenCalledWith({ userId: 'trainer', pokeballName: 'Basic Ball' })
-    expect(panel.pokeballCaptureFeedback.value).toBeNull()
-    expect(panel.pokeballCaptureResult.value).toBeNull()
-
-    await vi.advanceTimersByTimeAsync(100)
-    await capture
-
-    expect(panel.pokeballCaptureFeedback.value).toMatchObject({
-      phase: 'rolling',
-      moveName: 'Throw Basic Ball',
-    })
-  })
-
-  it('notifies visual sync callbacks for throw, feedback, and result UI without waiting for mechanics', () => {
-    vi.useFakeTimers()
-    vi.spyOn(Math, 'random')
-      .mockReturnValueOnce(0.99)
-      .mockReturnValueOnce(0)
-    const applyCaptureOutcome = vi.fn(() => new Promise((resolve) => { setTimeout(resolve, 250) }))
-    const onPokeballThrow = vi.fn()
-    const onPokeballFeedback = vi.fn()
-    const onPokeballResult = vi.fn()
-    const { panel } = buildPanel(applyCaptureOutcome, undefined, {
-      onPokeballThrow,
-      onPokeballFeedback,
-      onPokeballResult,
-    })
-
-    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
-    panel.selectPokeballCaptureTarget('pidgey')
-
-    expect(onPokeballThrow).toHaveBeenCalledWith({
-      userId: 'trainer',
-      targetId: 'pidgey',
-      pokeballName: 'Basic Ball',
-      resultId: 'capture-trainer-pidgey-100',
-    })
-    expect(onPokeballFeedback).toHaveBeenCalledWith({
-      feedback: expect.objectContaining({
-        id: 'capture-trainer-pidgey-100',
-        userId: 'trainer',
-        targetId: 'pidgey',
-        moveName: 'Throw Basic Ball',
-        phase: 'rolling',
-      }),
-    })
-    expect(onPokeballResult).not.toHaveBeenCalled()
-
-    vi.advanceTimersByTime(2100)
-
-    expect(onPokeballResult).toHaveBeenCalledWith({
-      trainerId: 'trainer',
-      result: expect.objectContaining({
-        id: 'capture-trainer-pidgey-100',
-        hit: true,
-        success: true,
-      }),
-      error: null,
-    })
-    expect(applyCaptureOutcome).toHaveBeenCalledTimes(1)
-  })
-
-  it('notifies result UI callbacks for a missed Poké Ball without exposing a modal result', () => {
-    vi.useFakeTimers()
-    vi.spyOn(Math, 'random').mockReturnValue(0)
-    const onPokeballResult = vi.fn()
-    const { panel } = buildPanel(vi.fn(), undefined, { onPokeballResult })
-
-    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
-    panel.selectPokeballCaptureTarget('pidgey')
-    vi.advanceTimersByTime(2100)
-
-    expect(onPokeballResult).toHaveBeenCalledWith({
-      trainerId: 'trainer',
-      result: null,
-      error: 'The Poké Ball missed.',
-    })
-  })
-
-  it('exposes the capture result modal once the Poké Ball hit roll finishes', () => {
-    vi.useFakeTimers()
-    vi.spyOn(Math, 'random')
-      .mockReturnValueOnce(0.99)
-      .mockReturnValueOnce(0)
-    const { panel } = buildPanel()
-
-    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
-    panel.selectPokeballCaptureTarget('pidgey')
-
-    expect(panel.pokeballCaptureFeedback.value).toMatchObject({
-      phase: 'rolling',
-      naturalRoll: 20,
-      hit: true,
-      moveName: 'Throw Basic Ball',
-    })
-    expect(panel.pokeballCaptureResult.value).toBeNull()
-
-    vi.advanceTimersByTime(2100)
-
-    expect(panel.pokeballCaptureFeedback.value).toBeNull()
-    expect(panel.pokeballCaptureResult.value).toMatchObject({
-      hit: true,
-      success: true,
-      targetName: 'Pidgey',
-      pokeballName: 'Basic Ball',
-    })
-    expect(panel.pokeballCaptureError.value).toBeNull()
-  })
-
-  it('appends every resolved capture attempt to map metadata for the combat log', () => {
-    vi.useFakeTimers()
-    vi.spyOn(Math, 'random')
-      .mockReturnValueOnce(0.99)
-      .mockReturnValueOnce(0)
-    const { panel, map } = buildPanel()
-
-    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
-    panel.selectPokeballCaptureTarget('pidgey')
-
-    expect(map.value.metadata?.captureLog).toBeUndefined()
-
-    vi.advanceTimersByTime(2100)
-
-    expect(map.value.metadata?.captureLog).toMatchObject([
-      {
-        at: 100,
-        userId: 'trainer',
-        userName: 'Lenora',
-        actionName: 'Throw Basic Ball',
-        pokeballName: 'Basic Ball',
-        targetId: 'pidgey',
-        targetName: 'Pidgey',
-        success: true,
-        hit: true,
-        lines: expect.arrayContaining([
-          'Lenora threw Basic Ball at Pidgey.',
-          'Result: Pidgey was captured!',
-        ]),
-      },
-    ])
-  })
-
-  it('uses authoritative dispatcher results without local rolls, local metadata, or local sheet mutation fallback', async () => {
+  it('renders the authoritative result without local rolls, metadata, or sheet mutation', async () => {
     vi.useFakeTimers()
     const random = vi.spyOn(Math, 'random').mockReturnValue(0.99)
-    const applyCaptureOutcome = vi.fn()
     const dispatchCaptureAttempt = vi.fn().mockResolvedValue(serverOutcome())
     const onPokeballThrow = vi.fn()
-    const { panel, map } = buildPanel(applyCaptureOutcome, undefined, {
-      dispatchCaptureAttempt,
-      onPokeballThrow,
-    })
+    const onPokeballResult = vi.fn()
+    const { panel, map } = buildPanel({ dispatchCaptureAttempt, onPokeballThrow, onPokeballResult })
 
-    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
+    panel.openPokeballCapture({ id: 'trainer', sourceInstanceId: BASIC_BALL_SOURCE_ID })
+    expect(panel.pokeballCaptureTargeting.value?.candidateIds).toEqual(['pidgey'])
     await panel.selectPokeballCaptureTarget('pidgey')
 
     expect(dispatchCaptureAttempt).toHaveBeenCalledWith({
       trainerId: 'trainer',
       targetId: 'pidgey',
-      pokeballName: 'Basic Ball',
+      pokeball: expect.objectContaining({
+        sourceInstanceId: BASIC_BALL_SOURCE_ID,
+        name: 'Basic Ball',
+      }),
     })
     expect(random).not.toHaveBeenCalled()
     expect(onPokeballThrow).toHaveBeenCalledWith({
@@ -364,23 +171,109 @@ describe('usePokeballCapturePanel', () => {
       pokeballName: 'Basic Ball',
       resultId: 'capture-server-result',
     })
+    expect(panel.pokeballCaptureFeedback.value).toMatchObject({
+      phase: 'rolling',
+      naturalRoll: 1,
+      hit: false,
+    })
+
     vi.advanceTimersByTime(2100)
+
     expect(map.value.metadata?.captureLog).toBeUndefined()
-    expect(applyCaptureOutcome).not.toHaveBeenCalled()
+    expect(panel.pokeballCaptureResult.value).toBeNull()
     expect(panel.pokeballCaptureError.value).toBe('The server says the Poké Ball missed.')
+    expect(onPokeballResult).toHaveBeenCalledWith({
+      trainerId: 'trainer',
+      result: null,
+      error: 'The server says the Poké Ball missed.',
+    })
   })
 
-  it('does not locally fall back or submit twice while an authoritative throw is pending', async () => {
+  it('waits for the throw splash hook before dispatching to authority', async () => {
     vi.useFakeTimers()
-    const random = vi.spyOn(Math, 'random').mockReturnValue(0.99)
-    const applyCaptureOutcome = vi.fn()
+    const dispatchCaptureAttempt = vi.fn().mockResolvedValue(serverOutcome())
+    const onBeforePokeballThrow = vi.fn(() => new Promise((resolve) => {
+      setTimeout(resolve, 100)
+    }))
+    const { panel } = buildPanel({ dispatchCaptureAttempt }, onBeforePokeballThrow)
+
+    panel.openPokeballCapture({ id: 'trainer', sourceInstanceId: BASIC_BALL_SOURCE_ID })
+    const capture = panel.selectPokeballCaptureTarget('pidgey')
+
+    expect(onBeforePokeballThrow).toHaveBeenCalledWith({ userId: 'trainer', pokeballName: 'Basic Ball' })
+    expect(dispatchCaptureAttempt).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(100)
+    await capture
+
+    expect(dispatchCaptureAttempt).toHaveBeenCalledTimes(1)
+    expect(panel.pokeballCaptureFeedback.value?.phase).toBe('rolling')
+  })
+
+  it('uses the server success receipt for feedback and result callbacks', async () => {
+    vi.useFakeTimers()
+    const outcome = serverOutcome({
+      success: true,
+      hit: true,
+      failureReason: null,
+      accuracyRoll: 20,
+      modifiedAccuracyRoll: 20,
+      captureRoll: 1,
+      adjustedCaptureRoll: 1,
+      shakeCount: 4,
+    })
+    const onPokeballFeedback = vi.fn()
+    const onPokeballResult = vi.fn()
+    const { panel } = buildPanel({
+      dispatchCaptureAttempt: vi.fn().mockResolvedValue(outcome),
+      onPokeballFeedback,
+      onPokeballResult,
+    })
+
+    panel.openPokeballCapture({ id: 'trainer', sourceInstanceId: BASIC_BALL_SOURCE_ID })
+    await panel.selectPokeballCaptureTarget('pidgey')
+
+    expect(onPokeballFeedback).toHaveBeenCalledWith({
+      feedback: expect.objectContaining({
+        id: 'capture-server-result',
+        phase: 'rolling',
+        naturalRoll: 20,
+        hit: true,
+      }),
+    })
+    vi.advanceTimersByTime(2100)
+    expect(onPokeballResult).toHaveBeenCalledWith({
+      trainerId: 'trainer',
+      result: expect.objectContaining({ id: 'capture-server-result', success: true }),
+      error: null,
+    })
+  })
+
+  it('fails closed when liveplay authority is unavailable', async () => {
+    const onPokeballResult = vi.fn()
+    const { panel, map } = buildPanel({ onPokeballResult })
+
+    panel.openPokeballCapture({ id: 'trainer', sourceInstanceId: BASIC_BALL_SOURCE_ID })
+    await panel.selectPokeballCaptureTarget('pidgey')
+
+    expect(panel.pokeballCaptureError.value).toBe('Liveplay Poké Ball authority is unavailable.')
+    expect(panel.pokeballCaptureFeedback.value).toBeNull()
+    expect(map.value.metadata?.captureLog).toBeUndefined()
+    expect(onPokeballResult).toHaveBeenCalledWith({
+      trainerId: 'trainer',
+      result: null,
+      error: 'Liveplay Poké Ball authority is unavailable.',
+    })
+  })
+
+  it('does not submit twice while an authoritative throw is pending', async () => {
     let resolveDispatch: (value: false) => void = () => undefined
     const dispatchCaptureAttempt = vi.fn(() => new Promise<false>((resolve) => {
       resolveDispatch = resolve
     }))
-    const { panel, map } = buildPanel(applyCaptureOutcome, undefined, { dispatchCaptureAttempt })
+    const { panel } = buildPanel({ dispatchCaptureAttempt })
 
-    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
+    panel.openPokeballCapture({ id: 'trainer', sourceInstanceId: BASIC_BALL_SOURCE_ID })
     const first = panel.selectPokeballCaptureTarget('pidgey')
     const second = panel.selectPokeballCaptureTarget('pidgey')
 
@@ -391,9 +284,7 @@ describe('usePokeballCapturePanel', () => {
     await second
 
     expect(panel.pokeballCapturePending.value).toBe(false)
-    expect(random).not.toHaveBeenCalled()
-    expect(applyCaptureOutcome).not.toHaveBeenCalled()
-    expect(map.value.metadata?.captureLog).toBeUndefined()
+    expect(dispatchCaptureAttempt).toHaveBeenCalledTimes(1)
     expect(panel.pokeballCaptureError.value).toBe('Poké Ball throw was rejected.')
   })
 })

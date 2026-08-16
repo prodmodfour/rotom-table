@@ -442,6 +442,89 @@ describe('useShopfrontCheckout', () => {
     expect(checkout.stockChangeNotice.value).toBeNull()
   })
 
+  it('keeps an accepted delivery receipt visible while loading exact post-checkout action handoffs', async () => {
+    const continuationId = 'shop-continuation:v1:11111111111111111111111111111111'
+    const postJson = vi.fn<PostJson>(async (request, body) => {
+      if (request === SHOP_API_PATHS.checkout) {
+        return {
+          ...acceptedResponseForBody(body),
+          postCheckout: {
+            schemaVersion: 1,
+            continuations: [{
+              continuationId,
+              itemLabel: 'Potion',
+              quantity: 1,
+              source: {
+                locationKind: 'trainer-inventory',
+                containerLabel: 'Ash inventory',
+                section: 'medicalKit',
+                sectionLabel: 'Medical Kit',
+                rowLabel: 'Row 1',
+              },
+            }],
+          },
+        }
+      }
+      if (request === SHOP_API_PATHS.postCheckoutActions) {
+        return {
+          schemaVersion: 1,
+          generatedAt: 1_700_000_000_500,
+          items: [{
+            continuationId,
+            itemLabel: 'Potion',
+            quantity: 1,
+            source: {
+              locationKind: 'trainer-inventory',
+              containerLabel: 'Ash inventory',
+              section: 'medicalKit',
+              sectionLabel: 'Medical Kit',
+              rowLabel: 'Row 1',
+            },
+            destinationSummary: 'Pikachu available',
+            actions: [{
+              actionId: 'shop-post-action:v1:22222222222222222222222222222222',
+              kind: 'use',
+              label: 'Use now',
+              enabled: true,
+              unavailableReason: null,
+              href: '/sheets/trainers/ash?inventoryAction=use&inventorySource=inventory-source%3Av1%3A33333333333333333333333333333333',
+            }],
+          }],
+        }
+      }
+      throw new Error(`Unexpected POST ${request}`)
+    })
+    const { checkout } = createHarness({ postJson })
+    await checkout.loadCheckoutDocuments()
+    checkout.setCartQuantity('potion', 1)
+
+    await expect(checkout.submitCheckout()).resolves.toMatchObject({ dispatched: true })
+    expect(checkout.postCheckoutReceipt.value?.continuations[0]?.itemLabel).toBe('Potion')
+    await vi.waitFor(() => expect(checkout.postCheckoutActionsStatus.value).toBe('ready'))
+    expect(checkout.postCheckoutActions.value?.items[0]?.actions[0]).toMatchObject({ kind: 'use', enabled: true })
+    expect(postJson).toHaveBeenCalledWith(SHOP_API_PATHS.postCheckoutActions, {
+      request: {
+        schemaVersion: 1,
+        shopSlug: 'viridian-mart',
+        checkoutOperationId: expect.stringMatching(/^op_/u),
+        continuationIds: [continuationId],
+      },
+      profileId,
+    })
+
+    const staleProjection = checkout.postCheckoutActions.value
+    const delayedReload = deferred<unknown>()
+    postJson.mockImplementationOnce(async () => delayedReload.promise)
+    const reload = checkout.loadPostCheckoutActions()
+    await vi.waitFor(() => expect(checkout.postCheckoutActionsStatus.value).toBe('loading'))
+    checkout.dismissPostCheckoutActions()
+    delayedReload.resolve(staleProjection)
+    await reload
+    expect(checkout.postCheckoutReceipt.value).toBeNull()
+    expect(checkout.postCheckoutActions.value).toBeNull()
+    expect(checkout.postCheckoutActionsStatus.value).toBe('idle')
+  })
+
   it('keeps double-clicked checkout submissions to one active command while the first send is in flight', async () => {
     const responseDeferred = deferred<ShopCheckoutCommandResult>()
     const postStarted = deferred<unknown>()

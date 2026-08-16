@@ -50,6 +50,10 @@ const canonicalEncounterState = () => ({
     schemaVersion: 1,
     entries: [],
   },
+  equipmentProviderReceipts: {
+    schemaVersion: 1,
+    entries: [],
+  },
   abilityReactionAvailability: {
     schemaVersion: 1,
     sceneId: null,
@@ -118,9 +122,11 @@ describe('move automation encounter state', () => {
       zones: ENCOUNTER_ZONE_LIMITS.count,
       groundItems: MAP_GROUND_ITEM_LIMITS.count,
       pendingResolutionSummaries: 64,
+      itemFormChanges: 128,
+      itemExploration: 32,
     })
     expect(JSON.stringify(state)).toBe(
-      '{"schemaVersion":1,"sides":{},"effects":[],"counters":{},"history":{"sceneId":null,"currentRound":null,"currentTurn":null,"lastDeclaredMoves":[],"lastCompletedMoves":[],"lastDamagingMovesReceived":[],"damageBySourceThisTurn":[],"damageBySourceThisRound":[],"actedThisTurnPlacementIds":[],"actedThisRoundPlacementIds":[],"consecutiveMoves":[],"switchedPlacementIds":[],"faintedPlacementIds":[],"switches":[],"knockouts":[],"moveAncestry":[],"moveUses":[],"eventMoveLinks":[]},"turnResources":{},"abilityUsage":{"schemaVersion":1,"sceneId":null,"entries":[]},"abilityTiming":{"schemaVersion":1,"sceneId":null,"round":{"windowId":null,"sequence":null,"uses":[]},"turn":{"windowId":null,"sequence":null,"uses":[]},"cooldowns":[],"receipts":[]},"abilityEffectLifecycle":{"schemaVersion":1,"entries":[]},"abilityOwnedState":{"schemaVersion":1,"entries":[],"receipts":[]},"abilityEventReceipts":{"schemaVersion":1,"entries":[]},"abilityReactionAvailability":{"schemaVersion":1,"sceneId":null,"roundId":null,"roundSequence":null,"entries":[],"receipts":[]},"abilityEntities":{"schemaVersion":1,"entries":[],"receipts":[]},"abilityTransformations":{"schemaVersion":1,"entries":[],"receipts":[]},"capabilityRuntime":{"schemaVersion":1,"usages":{"schemaVersion":1,"entries":[]},"modes":[],"links":[],"tasks":[],"pendingAdjudications":[],"checkPenalties":[]},"zones":[],"groundItems":[],"pendingResolutionSummaries":[]}',
+      '{"schemaVersion":1,"sides":{},"effects":[],"counters":{},"history":{"sceneId":null,"currentRound":null,"currentTurn":null,"lastDeclaredMoves":[],"lastCompletedMoves":[],"lastDamagingMovesReceived":[],"damageBySourceThisTurn":[],"damageBySourceThisRound":[],"actedThisTurnPlacementIds":[],"actedThisRoundPlacementIds":[],"consecutiveMoves":[],"switchedPlacementIds":[],"faintedPlacementIds":[],"switches":[],"knockouts":[],"moveAncestry":[],"moveUses":[],"eventMoveLinks":[]},"turnResources":{},"abilityUsage":{"schemaVersion":1,"sceneId":null,"entries":[]},"abilityTiming":{"schemaVersion":1,"sceneId":null,"round":{"windowId":null,"sequence":null,"uses":[]},"turn":{"windowId":null,"sequence":null,"uses":[]},"cooldowns":[],"receipts":[]},"abilityEffectLifecycle":{"schemaVersion":1,"entries":[]},"abilityOwnedState":{"schemaVersion":1,"entries":[],"receipts":[]},"abilityEventReceipts":{"schemaVersion":1,"entries":[]},"equipmentProviderReceipts":{"schemaVersion":1,"entries":[]},"abilityReactionAvailability":{"schemaVersion":1,"sceneId":null,"roundId":null,"roundSequence":null,"entries":[],"receipts":[]},"abilityEntities":{"schemaVersion":1,"entries":[],"receipts":[]},"abilityTransformations":{"schemaVersion":1,"entries":[],"receipts":[]},"capabilityRuntime":{"schemaVersion":1,"usages":{"schemaVersion":1,"entries":[]},"modes":[],"links":[],"tasks":[],"pendingAdjudications":[],"checkPenalties":[]},"zones":[],"groundItems":[],"pendingResolutionSummaries":[]}',
     )
     expect(parseEncounterState({ ...canonicalEncounterState(), history: {} }).history)
       .toEqual(createEmptyEncounterHistory())

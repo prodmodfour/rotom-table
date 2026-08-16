@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-077",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-captures-v1",
+  "sourceEvidence": {
+    "rewardPackageContractSha256": "577ccd02ac0183799b659330202ba44049a914419e99c3d1a3bdda8cf3c219a9",
+    "captureSettlementModelSha256": "11896b4a3741f08ef4e57e4b7d0a752a1bced0f44d3944303b09ecafd9c1375b",
+    "acceptedCaptureCommandSha256": "30f2e7987b316e2812bc0d4be81ddcc029c92ccc80ba3f0249cdfd80c23534b9",
+    "captureMutationRulesSha256": "0a307591d48619ef0ef36c217242366c270149d4724ca6d07405e2918dcdc373",
+    "trainerRosterRulesSha256": "8a9ad66c90fb8c7a423bf7e1eb6925864b9ebccb64bba95aae5ba922bb5d9125",
+    "playerProfileContractSha256": "fe1f7e2cbd2a14fb8805e6681647abb2e0578ebe783f5c64437bf0594998b12c"
+  },
+  "acceptedCapture": {
+    "schemaVersion": 1,
+    "required": [
+      "exact capture operation authority and accepted-result hash",
+      "capture provenance hash",
+      "actor Profile or explicit GM live-play actor",
+      "capturing Trainer and post-capture revision",
+      "existing captured Pokémon sheet and post-capture revision",
+      "original roster destination and caught-ball value",
+      "naming requirement and accepted campaign minute"
+    ],
+    "rules": [
+      "one accepted record matches exactly one non-excluded capture reward",
+      "the current sheets cannot predate accepted capture revisions",
+      "the Pokémon exists in exactly one current owner Trainer roster",
+      "the current caught-ball field exactly preserves the accepted value",
+      "settlement never creates or copies a captured Pokémon sheet"
+    ]
+  },
+  "ownership": {
+    "destination": "One exact Profile authority linked to the accepted capture Trainer.",
+    "actor": "A player capture remains with its accepted actor Profile; an explicit GM live-play capture may be assigned to a currently authorised Profile.",
+    "permission": "The exact current owner Trainer sheet revision supplies destination permission.",
+    "forbidden": [
+      "silent owner-Trainer changes",
+      "unlinked destination Profiles",
+      "duplicate team and box custody",
+      "missing captured sheets",
+      "changed caught-ball provenance"
+    ]
+  },
+  "assignment": {
+    "destinations": ["team", "box"],
+    "teamLimit": 6,
+    "overflow": "A team request beyond six remains pending with a box-only assignment decision; it is never silently redirected.",
+    "boxCapacity": "No finite app-owned box limit exists, so general reward capacity is unbounded while the per-Trainer team limit is validated exactly.",
+    "naming": "Required naming remains a visible bounded decision. Keep and set are explicit; settlement never invents a nickname.",
+    "conservation": "Every non-excluded capture has exactly one whole Profile allocation and one contributing accepted-capture write."
+  },
+  "writePlan": {
+    "aggregateRevision": "Each changed Trainer roster or Pokémon nickname sheet advances exactly once.",
+    "relatedWrites": "Roster and nickname changes are explicit non-contributing zero-amount, zero-capacity reward previews beside the one whole capture write.",
+    "beforeAfterEvidence": "Private sheet plans retain stable-JSON SHA-256 before and after evidence and exact source-derived next sheets.",
+    "staleRule": "Application rechecks the complete authority hash, every current sheet hash and revision, every next-sheet hash, and every next revision.",
+    "atomicRule": "Missing choices, denied permission, overflow, provenance drift, stale authority, or malformed custody expose no applicable writes. P8-080 owns persistence."
+  },
+  "completion": {
+    "pending": "Missing assignment, required naming, or team-capacity resolution remains visible and blocks application.",
+    "denied": "Denied ownership keeps private evidence, creates no mutation, and blocks application.",
+    "excluded": "An explicitly excluded capture requires no allocation or write.",
+    "foreignAllocation": "Allocation evidence from another provider is never replaced implicitly.",
+    "terminal": "Committed, applied, cancelled, or already-receipted captures cannot be replanned."
+  },
+  "privacy": {
+    "serverPrivate": [
+      "capture operation and accepted-result identity",
+      "provenance hashes",
+      "Profile definition and linked-character evidence",
+      "sheet documents and hashes",
+      "row-level write identities"
+    ],
+    "safeProjection": "Later UI may show safe captured Pokémon and Trainer labels, team or box choice, team occupancy, naming-needed status, and preserved ball label only to authorised audiences."
+  },
+  "evidence": {
+    "runtime": "server/domain/encounterSettlement/captureSettlement.ts",
+    "tests": "tests/server/encounterSettlementCaptureSettlement.test.ts",
+    "documentation": "docs/encounter-settlement-captures.md"
+  }
+}

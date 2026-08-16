@@ -1,5 +1,11 @@
 import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from 'vue'
 import type { LivePlayResolvedMoveResult, ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import type { EncounterPresentationProjection } from '#shared/encounterPresentation'
+import equipmentGrantJson from '~~/data/complete-play-loop/equipment-grants.v1.json'
+import {
+  parseEquipmentGrantDocument,
+  type EquipmentWeaponProfileGrantV1,
+} from '#shared/itemAutomation/equipmentGrants'
 import {
   isMoveAttackSourceId,
   type MoveAttackSourceId,
@@ -13,7 +19,6 @@ import {
   capabilityWeaponMoveName,
   livingWeaponMoveNames,
 } from '#shared/capabilityAutomation/weaponMoves'
-import { resolveWielderWeaponProfile } from '#shared/capabilityAutomation/wielder'
 import {
   buildTokenMoveMenuOptions,
   moveEntriesForPlacement,
@@ -37,6 +42,9 @@ import {
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
 import { moveAutomationDustCloudScript } from '~/utils/moveAutomationDustCloud'
 import { findMoveAutomationSemanticStatus } from '~/utils/moveAutomationSemanticStatus'
+import { explicitScriptForMove } from '~/utils/move-automation/registry'
+import { nativeMoveAutomationPresentationScriptForMove } from '~/utils/move-automation/nativePresentation'
+import { REVIEWED_EQUIPMENT_WEAPON_MOVE_SCRIPTS } from '~/utils/move-automation/scripts/equipmentWeaponMoves'
 import { moveAutomationScriptForConfirmedAreaTemplate } from '~/utils/moveAutomationConfirmedAreaTemplate'
 import { passDestinationLogLine } from '~/utils/moveAutomationPass'
 import {
@@ -87,7 +95,6 @@ import {
 } from '~/utils/moveAutomationLog'
 import { playDiceRollSound } from '~/utils/soundEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
-import { pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
 import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
 import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
@@ -108,6 +115,14 @@ import type {
 import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
+
+const EQUIPMENT_WEAPON_PROFILE_BY_ITEM = new Map<string, EquipmentWeaponProfileGrantV1>(
+  parseEquipmentGrantDocument(equipmentGrantJson).definitions.flatMap(definition => (
+    definition.grants.flatMap(grant => grant.kind === 'weapon-profile' && grant.executionStatus === 'native'
+      ? [[definition.canonicalItemId, grant] as const]
+      : [])
+  )),
+)
 
 interface BooleanRef {
   readonly value: boolean
@@ -182,6 +197,8 @@ export interface UseMoveAutomationPanelOptions {
   spawnedPokemon: ComputedRef<SpawnedPokemon[]>
   pokemonBySlug: SheetMapRef<CharacterSheet>
   trainerBySlug: SheetMapRef<TrainerSheet>
+  /** Server-derived source offers; used only to bridge opaque weapon selectors into the workshop. */
+  encounterPresentation?: Ref<EncounterPresentationProjection>
   canEditMap: BooleanRef
   canControlPlacement: (id: string) => boolean
   modifyHp: SheetUpdateHandler<MoveAutomationHpUpdate>
@@ -400,6 +417,7 @@ export const useMoveAutomationPanel = ({
   spawnedPokemon,
   pokemonBySlug,
   trainerBySlug,
+  encounterPresentation,
   canEditMap,
   canControlPlacement,
   modifyHp,
@@ -460,7 +478,6 @@ export const useMoveAutomationPanel = ({
     if (!map.value || !id) return []
     const placement = map.value.placements.find((item) => item.id === id)
     if (!placement) return []
-    const token = spawnedPokemon.value.find(candidate => candidate.id === id) ?? null
     const encounterEffects = map.value.encounterState?.effects ?? []
     const baseEntries = moveEntriesForPlacement(placement, sheetLookup(), { encounterEffects })
     const supplemental = new Map<string, TokenSheetMoveEntry>()
@@ -469,26 +486,61 @@ export const useMoveAutomationPanel = ({
       supplemental.set(`${normalized}\u0000${entry.attackSourceId ?? 'ordinary'}`, entry)
     }
 
-    if (placement.sheetKind === 'pokemon' && token) {
-      const sheet = pokemonBySlug.value?.get(placement.sheetSlug)
-      const profile = sheet && pokemonHasResolvedCapability(sheet, 'Wielder')
-        ? resolveWielderWeaponProfile({ heldItemName: sheet.items?.held, size: token.size })
-        : null
-      if (profile?.adeptMoveName && (token.combatSkillRankValue ?? 0) >= 4) {
-        const move = capabilityWeaponMove(profile.adeptMoveName)
-        if (move) retainSupplemental({
-          move: {
-            ...move,
-            db: (move.db ?? 0) + profile.damageBaseBonus,
-            ac: typeof move.ac === 'number' ? move.ac + profile.accuracyCheckPenalty : move.ac,
-            range: profile.grantsReach && /\bmelee\b/i.test(move.range ?? '')
-              ? `${/^(?:large|huge|gigantic)$/i.test(token.size ?? '') ? 3 : 2}, ${/2 Targets/i.test(move.range ?? '') ? '2 Targets' : '1 Target'}`
-              : move.range,
-          },
-          automatic: true,
-          suppressStab: true,
-        })
+    // The server projection is the only client-visible authority for equipment
+    // sources. It exposes opaque selectors, never serialized equipment IDs.
+    for (const offer of encounterPresentation?.value.offers ?? []) {
+      if (offer.actor.participantId !== id || offer.source.sourceKind !== 'move'
+        || offer.availability.status !== 'available') continue
+      const attackSourceId = isMoveAttackSourceId(offer.source.instanceId)
+        ? offer.source.instanceId : null
+      if (!attackSourceId) continue
+      const prefix = `${offer.source.canonicalId} (`
+      const attackSourceLabel = offer.source.displayName.startsWith(prefix)
+        && offer.source.displayName.endsWith(')')
+        ? offer.source.displayName.slice(prefix.length, -1)
+        : offer.source.displayName
+      const projectedReach = offer.targeting
+        .map(target => /^(\d+) meters \(Reach\)$/u.exec(target.rangeLabel ?? '')?.[1] ?? null)
+        .find((value): value is string => value !== null) ?? null
+      const equipmentProfile = EQUIPMENT_WEAPON_PROFILE_BY_ITEM.get(attackSourceLabel) ?? null
+      const withProjectedWeapon = <Move extends {
+        readonly range?: string | null
+        readonly db?: number | null
+        readonly ac?: number | string | null
+      }>(move: Move, includeDamageBonus: boolean): Move => ({
+        ...move,
+        ...(includeDamageBonus && equipmentProfile && typeof move.db === 'number'
+          ? { db: move.db + equipmentProfile.damageBaseBonus }
+          : {}),
+        ...(equipmentProfile && typeof move.ac === 'number'
+          ? { ac: move.ac + equipmentProfile.accuracyCheckPenalty }
+          : {}),
+        ...(projectedReach && /\bmelee\b/iu.test(move.range ?? '')
+          ? { range: `${projectedReach}, ${/\b2 Targets\b/iu.test(move.range ?? '') ? '2 Targets' : '1 Target'}` }
+          : {}),
+      })
+      if (isStruggleAttackMoveName(offer.source.canonicalId)) {
+        for (const entry of baseEntries.filter(candidate => isStruggleAttackMoveName(candidate.move.name))) {
+          retainSupplemental({
+            ...entry,
+            move: withProjectedWeapon(entry.move, false),
+            attackSourceId,
+            attackSourceLabel,
+            ...(equipmentProfile?.damageBaseBonus
+              ? { presentationDamageBaseBonus: equipmentProfile.damageBaseBonus }
+              : {}),
+          })
+        }
+        continue
       }
+      const move = capabilityWeaponMove(offer.source.canonicalId)
+      if (move) retainSupplemental({
+        move: withProjectedWeapon(move, true),
+        automatic: true,
+        suppressStab: true,
+        attackSourceId,
+        attackSourceLabel,
+      })
     }
 
     const publicStates = Array.isArray(map.value.metadata?.automationPresentationStates)
@@ -639,11 +691,20 @@ export const useMoveAutomationPanel = ({
       usageContext: tokenMoveUsageContext(id),
       encounterEffects: map.value?.encounterState?.effects ?? [],
       additionalMoveEntries: supplementalMoveEntries,
+      scriptForMove: (canonicalId) => (
+        REVIEWED_EQUIPMENT_WEAPON_MOVE_SCRIPTS.get(canonicalId)
+          ?? explicitScriptForMove(canonicalId)
+          ?? nativeMoveAutomationPresentationScriptForMove(canonicalId)
+      ),
     })
     if (!result.ok) return null
 
     const semanticStatus = findMoveAutomationSemanticStatus(result.entry.canonicalMoveName)
-    return semanticStatus?.baseStatus === 'blocked' ? null : result.entry
+    const reviewedOpaqueWeaponSource = Boolean(
+      result.entry.sourceEntry.attackSourceId
+      && capabilityWeaponMoveName(result.entry.canonicalMoveName),
+    )
+    return semanticStatus?.baseStatus === 'blocked' && !reviewedOpaqueWeaponSource ? null : result.entry
   }
 
   const moveTargetHitChances = (

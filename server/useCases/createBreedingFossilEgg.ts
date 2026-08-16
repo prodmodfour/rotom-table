@@ -5,6 +5,7 @@ import type { BreedingActorAuthorityV1, BreedingAuthorizationReceiptV1 } from '#
 import type { PokemonEggDocumentV1 } from '#shared/breeding/egg'
 import type { BreedingFossilEggCreationProjectionV1, BreedingFossilReanimationAuthorityV1, BreedingFossilSourceAuthorityV1 } from '#shared/breeding/fossilEgg'
 import type { BreedingOptionOfferRecordV1 } from '#shared/breeding/ledgers'
+import { parseBreedingRollRecordIdSyntax, type BreedingRollRecordId } from '#shared/breeding/ids'
 import type { BreedingDependencyEvidenceV1, BreedingOperationReadSetV1, BreedingReadResourceV1 } from '#shared/breeding/readSets'
 import { parseBreedingOperationCommandV1, type BreedingOperationCommandV1, type BreedingOperationResultV1 } from '#shared/breeding/operations'
 import type { PersistedSheet } from '../storage/sheetRepository'
@@ -191,6 +192,9 @@ const currentSourceAuthorities = (input: {
   readonly campaignMinute: number
   readonly options: CreateBreedingFossilEggOptions
 }): { readonly source: BreedingFossilSourceAuthorityV1, readonly reanimation: BreedingFossilReanimationAuthorityV1 } => {
+  if (input.command.payload.source.kind !== 'fossil') {
+    return fail('breeding.fossil-egg-use-case.wrong-command', 'Fossil authority requires a fossil source command.')
+  }
   const source = createBreedingFossilSourceAuthorityV1({
     eggId: input.command.payload.eggId,
     sourceId: input.command.payload.source.sourceId,
@@ -310,7 +314,7 @@ const drawPercentage = (options: CreateBreedingFossilEggOptions): number => {
   if (!Number.isSafeInteger(value) || Number(value) < 50 || Number(value) > 200) return fail('breeding.fossil-egg-use-case.invalid-random-source', 'Fossil hatch-duration random source must return 50 through 200.')
   return Number(value)
 }
-const rollRecordId = (operationId: string): `breeding-roll:v1:${string}` => `breeding-roll:v1:${createHash('sha256').update(`breeding-fossil-egg-roll-v1\u0000${operationId}\u0000${0}`).digest('hex').slice(0,32)}`
+const rollRecordId = (operationId: string): BreedingRollRecordId => parseBreedingRollRecordIdSyntax(`breeding-roll:v1:${createHash('sha256').update(`breeding-fossil-egg-roll-v1\u0000${operationId}\u0000${0}`).digest('hex').slice(0,32)}`)!
 const prepareDurationRoll = (input: {
   readonly database: RotomDatabase
   readonly command: Extract<BreedingOperationCommandV1, { readonly commandKind: 'create-source-egg' }>

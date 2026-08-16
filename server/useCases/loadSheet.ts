@@ -9,7 +9,7 @@ import {
   type PlayerProfileLinkedTrainerSheet,
 } from '../policies/playerProfilePolicy'
 import { projectAbilityAutomationSheetForPlayer } from '../domain/abilityAutomation/clientStateProjection'
-import { redactSheetForPlayer } from '../utils/sheetPrivacy'
+import { projectSheetEquipmentContributions, redactSheetForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sqliteSheetRepository, type SheetRepository, type PersistedSheet } from '../storage/sheetRepository'
 
@@ -90,6 +90,9 @@ export const loadSheetUseCase = (
             { linkedTrainerSheets },
           ),
         )
-      : result.sheet,
+      : projectSheetEquipmentContributions(
+          input.kind,
+          result.sheet as unknown as Record<string, unknown>,
+        ) as unknown as LoadedSheet,
   }
 }

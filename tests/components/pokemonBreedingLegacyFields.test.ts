@@ -21,8 +21,8 @@ const sheet = (): CharacterSheet => ({
 })
 
 const EditableCellStub = {
-  props: ['modelValue'],
-  template: '<span class="editable-cell-stub">{{ modelValue }}</span>',
+  props: ['modelValue', 'readonly'],
+  template: '<span class="editable-cell-stub" :data-readonly="readonly === true">{{ modelValue }}</span>',
 }
 
 const NuxtLinkStub = {
@@ -52,6 +52,28 @@ describe('Pokémon sheet breeding compatibility retirement', () => {
     expect(compatibility.text()).not.toContain('Add row')
     expect(wrapper.emitted('addEggMove')).toBeUndefined()
     expect(wrapper.emitted('removeEggMove')).toBeUndefined()
+  })
+
+  it('locks accepted item-trained rows while retaining controls for editable legacy rows', async () => {
+    const itemTrained = sheet()
+    itemTrained.appliedMoves = [
+      { name: 'Thunderbolt', source: 'tm', itemMoveLearningLocked: true },
+      { name: 'Iron Tail', source: 'tutor' },
+    ]
+    const wrapper = mount(PokemonKnownMovesPanel, {
+      props: { sheet: itemTrained, unlockedLevelUpMoves: [] },
+      global: { stubs: { EditableCell: EditableCellStub } },
+    })
+
+    const rows = wrapper.findAll('tbody').at(2)?.findAll('tr') ?? []
+    expect(rows).toHaveLength(2)
+    expect(rows[0]?.text()).toContain('trained')
+    expect(rows[0]?.text()).toContain('Item Action')
+    expect(rows[0]?.findAll('.editable-cell-stub').every(cell => cell.attributes('data-readonly') === 'true')).toBe(true)
+    expect(rows[0]?.find('button[title="Remove applied move"]').exists()).toBe(false)
+    expect(rows[1]?.findAll('.editable-cell-stub').every(cell => cell.attributes('data-readonly') === 'false')).toBe(true)
+    await rows[1]?.get('button[title="Remove applied move"]').trigger('click')
+    expect(wrapper.emitted('removeAppliedMove')).toEqual([[1]])
   })
 
   it('renders all nine inheritance checkpoints and remaining candidates without mutation controls', () => {

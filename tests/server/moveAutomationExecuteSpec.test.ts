@@ -245,7 +245,7 @@ const directHpOperation = (
 
 const baseSpec = (): TestSpec => ({
   schemaVersion: 2,
-  canonicalId: 'Interpreter Test',
+  canonicalId: 'Tackle',
   version: 1,
   targeting: {
     kind: 'none',
@@ -1047,7 +1047,7 @@ describe('phased MoveSpec interpreter', () => {
       actorPlacementId: 'actor-token',
       attackSourceId: `attack-source.v1.${'a'.repeat(64)}`,
       targetBranchId: 'branch.reviewed',
-      canonicalMoveId: 'Interpreter Test',
+      canonicalMoveId: 'Tackle',
       specVersion: 1,
       specHash: definition.definitionHash,
       phase: 'hit',
@@ -1072,7 +1072,7 @@ describe('phased MoveSpec interpreter', () => {
       schemaVersion: 1,
       resolutionId: 'resolution-suspension-1',
       actorPlacementId: 'actor-token',
-      canonicalMoveId: 'Interpreter Test',
+      canonicalMoveId: 'Tackle',
       phase: 'hit',
       status: 'pending',
       outstandingWindowCount: 1,

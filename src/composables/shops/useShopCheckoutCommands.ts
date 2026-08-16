@@ -18,6 +18,7 @@ import {
 import { isSlug } from '#shared/paths'
 import { LIVE_PLAY_REALTIME_EVENT_TYPES, shopChannel, type RealtimeEvent } from '#shared/realtime'
 import type { PlayerProfileId } from '#shared/playerProfiles'
+import { parseShopCheckoutContinuationReceipt } from '#shared/shopPostCheckout'
 import { SHOP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { getErrorMessage } from '~/utils/errorMessages'
@@ -355,6 +356,12 @@ const validateAcceptedResult = (
       } else if (!response.documents.trainerSheets.every(isRecord)) {
         issues.push(`${path}.documents.trainerSheets must contain only objects.`)
       }
+    }
+  }
+  if (hasOwn(response, 'postCheckout') && response.postCheckout !== undefined) {
+    try { parseShopCheckoutContinuationReceipt(response.postCheckout) }
+    catch (error) {
+      issues.push(`${path}.postCheckout must be a valid exact-delivery continuation receipt: ${getErrorMessage(error)}`)
     }
   }
 }

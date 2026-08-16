@@ -1,5 +1,10 @@
 import { join as joinPath } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
+import { openRotomDatabase } from '../../server/storage/database'
+import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
+import { applyItemRepelCampaignEffect } from '../../server/domain/itemAutomation/exploration'
+import { ITEM_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/itemAutomation/registry'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   generateEncountersUseCase,
   type GenerateEncountersDependencies,
@@ -208,6 +213,56 @@ describe('generateEncountersUseCase', () => {
       failures: 1,
       files: [expect.objectContaining({ name: 'wild-forest-1-pidgey.json', error: expect.any(String) })],
     })
+  })
+
+  it('applies one exact active route Repel to reviewed wild levels and reports the bounded filter summary', async () => {
+    const database = openRotomDatabase({ path: ':memory:' })
+    try {
+      database.connection.prepare('UPDATE campaign_clock SET campaign_minute = 100 WHERE singleton = 1').run()
+      const applied = applyItemRepelCampaignEffect({
+        current: null,
+        definition: ITEM_AUTOMATION_RUNTIME_REGISTRY.require('Super Repel'),
+        sourceOperationId: 'item-source-operation:00000001',
+        sourceInstanceId: 'item-instance:trainer:explorer:medicalKit:repel-row',
+        campaignMinute: 100,
+      })
+      const trainer: TrainerSheet = {
+        slug: 'explorer', name: 'Explorer', level: 10, revision: 3,
+        serverPrivate: { itemExploration: applied.state },
+      }
+      createSqliteSheetRepository<Record<string, unknown>>(database).save({
+        kind: 'trainer', slug: 'explorer', revision: 3, updatedAt: 10,
+        document: trainer as unknown as Record<string, unknown>,
+      })
+      const runtime = createDependencies({ database })
+      const result = await generateEncountersUseCase({
+        region: 'vale', table: 'forest', count: 4, preview: true,
+        rolled: [
+          { species: 'Pidgey', level: 5, roll: 1 },
+          { species: 'Rattata', level: 25, roll: 2 },
+          { species: 'Fearow', level: 26, roll: 3 },
+          { species: 'Arbok', level: 35, roll: 4 },
+        ],
+        exploration: { trainerSlug: 'explorer', trainerRevision: 3, campaignClockRevision: 0 },
+      }, runtime.dependencies)
+      expect(result.rolled.map(entry => [entry.species, entry.level])).toEqual([
+        ['Fearow', 26], ['Arbok', 35],
+      ])
+      expect(result.routeRepel).toEqual({
+        itemLabel: 'Super Repel', maximumAffectedWildLevel: 25,
+        expiresAtCampaignMinute: 220, repelledRolls: 2,
+      })
+      expect(runtime.runPokegen).toHaveBeenCalledTimes(2)
+
+      await expect(generateEncountersUseCase({
+        region: 'vale', table: 'forest', count: 1, preview: true,
+        rolled: [{ species: 'Pidgey', level: 5, roll: 1 }],
+        exploration: { trainerSlug: 'explorer', trainerRevision: 2, campaignClockRevision: 0 },
+      }, runtime.dependencies)).rejects.toMatchObject({
+        statusCode: 409, message: 'The route Repel Trainer changed. Refresh before generation.',
+      })
+    }
+    finally { database.close() }
   })
 
   it('maps validation and missing-table failures to use-case errors with HTTP-compatible status', async () => {

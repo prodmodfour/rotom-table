@@ -6,6 +6,20 @@ import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { createSqliteBreedingOperationRepository, type BreedingOperationLedgerRecord, type BreedingOperationRepository } from '../storage/breedingOperationRepository'
 import { createSqliteCampaignClockRepository, type CampaignClockRepository } from '../storage/campaignClockRepository'
 import { executeCampaignOperation } from './executeCampaignOperation'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import { toPersistableSheetPayload } from '~/utils/sheetMutations'
+import { reconcileSheetReBreathers } from '../domain/itemAutomation/reBreatherLifecycle'
+import { createSqliteSheetRepository } from '../storage/sheetRepository'
+import { createSqliteRealtimeEventRepository } from '../storage/realtimeEventRepository'
+import { setupSheetSaveRealtimeAppendInputs } from '../realtime/setupDocumentRealtime'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
+import {
+  defaultPersistedRealtimeEventPublisher,
+  defaultPersistedRealtimePublicationFailureReporter,
+  publishPersistedRealtimeEventsAfterCommit,
+  type PersistedRealtimeEventPublisher,
+} from '../realtime/persistedBatchPublication'
 
 export interface AdvanceBreedingCampaignClockOptions {
   readonly database?: RotomDatabase
@@ -16,6 +30,9 @@ export interface AdvanceBreedingCampaignClockOptions {
   readonly dependentEggBatchAuthority?: 'validated-by-campaign-clock-batch-v1'
   /** Failure-injection hook proving clock mutation and operation settlement atomicity. */
   readonly beforeSettle?: () => void
+  readonly now?: () => number
+  readonly clientId?: string
+  readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
 }
 export class CampaignClockCommandError extends Error {
   readonly code: 'campaign-clock.wrong-command' | 'campaign-clock.stale-ruleset' | 'campaign-clock.unsupported-scope' | 'campaign-clock.repository-mismatch'
@@ -45,7 +62,8 @@ export const advanceBreedingCampaignClock = (
   const clockRepository = options.clockRepository ?? createSqliteCampaignClockRepository(database)
   if (operationRepository.database !== database || clockRepository.database !== database) throw new CampaignClockCommandError('campaign-clock.repository-mismatch', 'Clock and operation repositories must share one coordinator database connection.')
   const createdAtCampaignMinute = clockRepository.get().campaignMinute
-  return executeCampaignOperation({
+  const realtimeEvents: PersistedRealtimeEvent[] = []
+  const execution = executeCampaignOperation({
     repository: operationRepository,
     command: parts.command,
     createdAtCampaignMinute,
@@ -69,6 +87,40 @@ export const advanceBreedingCampaignClock = (
         operationId: canonical.operationId, commandHash, commandKind: 'advance-campaign-clock', reasonId: 'breeding.operation.conflict',
         currentAggregateRefs: [clockRef(advanced.clock.revision)], conflictingScopes: [canonicalScope],
       })
+      const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+      const realtime = createSqliteRealtimeEventRepository({ database })
+      const timestamp = (options.now ?? Date.now)()
+      for (const stored of sheets.list()) {
+        const currentSheet = {
+          ...stored.document,
+          slug: stored.slug,
+          revision: stored.revision,
+          updatedAt: stored.updatedAt,
+        } as unknown as CharacterSheet | TrainerSheet
+        const reconciled = reconcileSheetReBreathers({
+          kind: stored.kind,
+          slug: stored.slug,
+          sheet: currentSheet,
+          campaignMinute: advanced.clock.campaignMinute,
+        })
+        if (!reconciled.changed) continue
+        const update = sheets.applyLivePlayUpdate({
+          kind: stored.kind,
+          slug: stored.slug,
+          expectedRevision: stored.revision,
+          nextSheet: toPersistableSheetPayload({ ...reconciled.sheet, updatedAt: timestamp }),
+          sourceOperationId: canonical.operationId,
+        })
+        if (update === 'stale') throw new Error(`Re-Breather sheet ${stored.kind}/${stored.slug} changed during campaign-clock reconciliation.`)
+        const accepted = sheets.getByRef(stored.kind, stored.slug)
+          ?? (() => { throw new Error(`Re-Breather sheet ${stored.kind}/${stored.slug} disappeared after campaign-clock reconciliation.`) })()
+        realtimeEvents.push(...realtime.appendMany(setupSheetSaveRealtimeAppendInputs({
+          kind: accepted.kind,
+          slug: accepted.slug,
+          sheet: accepted.sheet,
+          clientId: options.clientId,
+        })))
+      }
       return createBreedingOperationAcceptedV1({
         operationId: canonical.operationId, commandHash, commandKind: 'advance-campaign-clock', outcomeKind: 'clock-advanced',
         aggregateRefs: [clockRef(advanced.clock.revision)], changedScopes: [canonicalScope], committedAtCampaignMinute: advanced.clock.campaignMinute,
@@ -76,4 +128,11 @@ export const advanceBreedingCampaignClock = (
     },
     ...(options.beforeSettle ? { beforeSettle: () => options.beforeSettle?.() } : {}),
   })
+  publishPersistedRealtimeEventsAfterCommit({
+    events: realtimeEvents,
+    operation: `campaign-clock-re-breather:${parts.command.operationId}`,
+    publish: options.publishPersistedRealtimeEvent ?? defaultPersistedRealtimeEventPublisher,
+    reportFailure: defaultPersistedRealtimePublicationFailureReporter,
+  })
+  return execution
 }

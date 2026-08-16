@@ -1,4 +1,11 @@
-import type { MoveResolutionAuditTrace } from '#shared/moveAutomation/trace'
+import type {
+  MoveResolutionAuditTrace,
+  MoveResolutionTraceJsonValue,
+} from '#shared/moveAutomation/trace'
+import type {
+  MoveDamageEffectOperation,
+  MoveDirectHpEffectOperation,
+} from '#shared/moveAutomation/effects'
 import type { EncounterState } from '#shared/moveAutomation/encounterState'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
@@ -81,6 +88,20 @@ export { MoveCoreTokenEffectReductionError }
 export type { MoveCoreTokenEffectReductionErrorCode } from './coreTokenEffectError'
 export { applyMoveCoreTokenEffectResultsToTrace } from './coreTokenTrace'
 
+export interface MoveCoreTokenFaintProtectionDecision {
+  readonly remainingHp: 1
+  readonly reasonCode: string
+  readonly evidence: MoveResolutionTraceJsonValue
+}
+export interface MoveCoreTokenFaintProtectionQueries {
+  readonly resolve: (input: {
+    readonly operation: MoveDamageEffectOperation | MoveDirectHpEffectOperation
+    readonly recipient: MoveCoreTokenEffectRecipient
+    readonly result: MoveCoreTokenEffectRecipientResult
+  }) => MoveCoreTokenFaintProtectionDecision | null
+  readonly finalizeEncounterState?: (state: EncounterState) => EncounterState
+}
+
 export interface ReduceMoveCoreTokenOperationStateInput {
   readonly context: AuthoritativeMoveRulesContext
   /** Exact server-emitted operations, retained in canonical phase/operation order. */
@@ -93,6 +114,8 @@ export interface ReduceMoveCoreTokenOperationStateInput {
   /** Required only by a combat-stage operation with an accuracy-roll trigger. */
   readonly combatStageAccuracyRolls?: MoveCombatStageAccuracyRollQueries
   readonly immunities: MoveCoreTokenEffectImmunityQueries
+  /** Server-owned pre-faint interception; clients cannot author or select it. */
+  readonly faintProtection?: MoveCoreTokenFaintProtectionQueries
   /** Child operations retain their explicitly selected actor/source context. */
   readonly contextForOperation?: (
     operation: MoveResolvedCoreTokenEffectOperation['operation'],
@@ -488,6 +511,31 @@ export const reduceMoveCoreTokenOperationState = (
         priorOperationResults: operationResults,
       }))
     }
+    if ((operation.kind === 'damage' || operation.kind === 'direct-hp')
+      && input.faintProtection) {
+      recipientResults = recipientResults.map((result, index) => {
+        if (result.previous.kind !== 'hp' || result.current.kind !== 'hp'
+          || result.previous.currentHp <= 0 || result.current.currentHp > 0) return result
+        const recipient = recipients[index]!
+        const decision = input.faintProtection!.resolve({ operation, recipient, result })
+        if (!decision) return result
+        hpAccumulator.set(recipient.token, decision.remainingHp)
+        return {
+          ...result,
+          current: { ...result.current, currentHp: decision.remainingHp },
+          details: {
+            ...(typeof result.details === 'object' && result.details !== null
+              && !Array.isArray(result.details) ? result.details : {}),
+            faintProtection: {
+              reasonCode: decision.reasonCode,
+              evidence: decision.evidence,
+            },
+          },
+          changedFields: result.changedFields.includes('hp')
+            ? result.changedFields : [...result.changedFields, 'hp'],
+        }
+      })
+    }
     for (const result of recipientResults) {
       const consultedIds = canonicalMoveCoreTokenPlacementIds(
         input.context,
@@ -623,9 +671,12 @@ export const reduceMoveCoreTokenOperationState = (
     berserk.encounterState,
     faintedPlacementIds,
   )
-  const encounterStateUpdate = sameJsonValue(conditionEncounterAccumulator.previous, encounterAfterCapabilityFaint)
+  const encounterAfterFaintProtection = input.faintProtection?.finalizeEncounterState
+    ? input.faintProtection.finalizeEncounterState(encounterAfterCapabilityFaint)
+    : encounterAfterCapabilityFaint
+  const encounterStateUpdate = sameJsonValue(conditionEncounterAccumulator.previous, encounterAfterFaintProtection)
     ? null
-    : { previous: conditionEncounterAccumulator.previous, current: encounterAfterCapabilityFaint }
+    : { previous: conditionEncounterAccumulator.previous, current: encounterAfterFaintProtection }
   const frozenResults = deepFreeze(deepCloneJson(operationResults))
   const stateChanges = buildMoveCoreTokenStateChanges({
     context: input.context,
@@ -662,6 +713,7 @@ export const reduceMoveCoreTokenEffects = (
       ? {}
       : { combatStageAccuracyRolls: input.combatStageAccuracyRolls }),
     immunities: input.immunities,
+    ...(input.faintProtection === undefined ? {} : { faintProtection: input.faintProtection }),
     ...(input.contextForOperation === undefined
       ? {}
       : { contextForOperation: input.contextForOperation }),

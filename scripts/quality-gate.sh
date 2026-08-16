@@ -97,6 +97,16 @@ if have npm; then
   pp_section "Breeding compiled registry"
   run_cmd npm run check:breeding-compiler
 
+  pp_section "Complete Play Loop acceptance"
+  run_cmd npm run check:complete-play-loop-item-catalog-closure
+  run_cmd npm run check:complete-play-loop-authority-guardrails
+  run_cmd npm run check:complete-play-loop-performance
+  run_cmd npm run check:complete-play-loop-accessibility-visual
+  run_cmd npm run check:complete-play-loop-concurrency-failure
+  run_cmd npm run check:complete-play-loop-golden-campaigns
+  run_cmd npm run check:complete-play-loop-documentation
+  run_cmd npm run check:complete-play-loop-alpha-acceptance
+
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation
 

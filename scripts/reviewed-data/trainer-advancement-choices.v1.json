@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "trainer-advancement-choices:v1",
+  "status": "reviewed",
+  "target": {
+    "path": "data/reference/rules.json",
+    "ruleKey": "Trainer Advancement Choices",
+    "baseSha256": "d9b0815c7a9cec1974239b6cb942ec5509ba7021078423fd16ed37bbf72cca2a"
+  },
+  "sources": [
+    {
+      "path": "books/markdown/core/02-character-creation.md",
+      "sha256": "ca4e9f631b18f1a63b441eb01927426319212c780d7318d9547182817df1ac15",
+      "lineRanges": [[514, 929]],
+      "runtimeAuthority": false
+    },
+    {
+      "path": "books/markdown/core/03-skills-edges-and-features.md",
+      "sha256": "96a3da4eb912079b7f73025d92c9caf489b58c4993b235a25cc41364ed88a4d9",
+      "lineRanges": [[1233, 1240], [1635, 1650], [1704, 1728]],
+      "runtimeAuthority": false
+    }
+  ],
+  "reviewDecision": {
+    "runtimeUsesDocumentaryText": false,
+    "runtimeUsesOnlyStructuredRule": true,
+    "irreversibleChoiceIsAutomatic": false,
+    "unsupportedPrerequisitePlanningIsGuided": true,
+    "notesAreNeverResolutionAuthority": true
+  },
+  "rule": {
+    "name": "Trainer Advancement Choices",
+    "category": "Advancement Rule",
+    "text": "Reviewed structured authority for Trainer Feature, Class, Edge, Skill Edge, milestone, and incomplete build-choice detection. Runtime uses only trainerAdvancementChoiceMechanics.",
+    "description": "Reviewed structured authority for detecting Trainer Feature, Class, Edge, Skill Edge, milestone, and incomplete build choices without selecting them.",
+    "trainerAdvancementChoiceMechanics": {
+      "schemaVersion": 1,
+      "maximumLevel": 50,
+      "featureEntitlements": {
+        "paidAtLevelOne": 4,
+        "paidEveryOddLevelFrom": 3,
+        "freeTrainingAtLevelOne": 1,
+        "freeTrainingFeatureIds": [
+          "Agility Training",
+          "Brutal Training",
+          "Focused Training",
+          "Inspired Training"
+        ],
+        "countedCollections": ["features", "classes", "orders"],
+        "nonEntitlementAcquisitionKinds": ["feature-grant", "edge-grant", "gm", "training"],
+        "maximumClassFeatures": 4
+      },
+      "edgeEntitlements": {
+        "atLevelOne": 4,
+        "everyEvenLevelFrom": 2,
+        "bonusSkillEdgeLevels": [2, 6, 12],
+        "skillEdgeIds": [
+          "Basic Skills",
+          "Adept Skills",
+          "Expert Skills",
+          "Master Skills",
+          "Skill Stunt",
+          "Categoric Inclination",
+          "Skill Enhancement",
+          "Virtuoso"
+        ],
+        "nonEntitlementAcquisitionKinds": ["feature-grant", "edge-grant", "gm"]
+      },
+      "skillRankMaximums": [
+        { "level": 1, "rank": "Novice", "backgroundException": "Adept" },
+        { "level": 2, "rank": "Adept", "backgroundException": null },
+        { "level": 6, "rank": "Expert", "backgroundException": null },
+        { "level": 12, "rank": "Master", "backgroundException": null }
+      ],
+      "milestoneChoices": [
+        {
+          "level": 5,
+          "options": [
+            { "id": "attack-special-attack", "immediatePoints": 2, "scheduledEvenLevels": [6, 8, 10] },
+            { "id": "general-feature", "featureSlots": 1 }
+          ]
+        },
+        {
+          "level": 10,
+          "options": [
+            { "id": "attack-special-attack", "immediatePoints": 0, "scheduledEvenLevels": [12, 14, 16, 18, 20] },
+            { "id": "two-edges", "edgeSlots": 2 }
+          ]
+        },
+        {
+          "level": 20,
+          "options": [
+            { "id": "attack-special-attack", "immediatePoints": 0, "scheduledEvenLevels": [22, 24, 26, 28, 30] },
+            { "id": "two-edges", "edgeSlots": 2 }
+          ]
+        },
+        {
+          "level": 30,
+          "options": [
+            { "id": "attack-special-attack", "immediatePoints": 0, "scheduledEvenLevels": [32, 34, 36, 38, 40] },
+            { "id": "two-edges", "edgeSlots": 2 },
+            { "id": "general-feature", "featureSlots": 1 }
+          ]
+        },
+        {
+          "level": 40,
+          "options": [
+            { "id": "attack-special-attack", "immediatePoints": 0, "scheduledEvenLevels": [42, 44, 46, 48, 50] },
+            { "id": "two-edges", "edgeSlots": 2 },
+            { "id": "general-feature", "featureSlots": 1 }
+          ]
+        }
+      ],
+      "resolutionEvidence": {
+        "statOptionFields": ["stats", "attack", "spAttack"],
+        "statOptionRequiresExactCurrentEarnedTotal": true,
+        "statOptionRequiresAttackSpecialAttackSum": true,
+        "featureAndEdgeOptionsRequireCanonicalCurrentInstances": true,
+        "bonusSkillEdgesField": "bonusSkillEdges",
+        "remainingFeatureField": "remainingFeatures",
+        "remainingEdgeField": "remainingEdges",
+        "freeformNotesResolveNothing": true
+      },
+      "canonicalSources": {
+        "features": "data/reference/features.json",
+        "edges": "data/reference/edges.json",
+        "featureInstances": "shared/featureAutomation/instances.ts",
+        "edgeInstances": "shared/edgeAutomation/instances.ts"
+      },
+      "unsupportedPrerequisitePolicy": "guided-current-canonical-candidates-only",
+      "automaticSelectionPolicy": "never"
+    }
+  }
+}

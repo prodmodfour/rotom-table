@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-059",
+  "status": "reviewed",
+  "reviewId": "complete-play-loop-guided-item-adjudications-v1",
+  "runtimeProseParsing": false,
+  "sources": [
+    {
+      "path": "scripts/reviewed-data/guided-item-adjudications.v1.json",
+      "fileSha256": "c68b2785bb9bca914c5d075ef2ed5eaacaaca914f73b8886902fcdd855000e00"
+    },
+    {
+      "path": "data/reference/items.json",
+      "fileSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+    },
+    {
+      "path": "data/reference/rules.json",
+      "fileSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142"
+    },
+    {
+      "path": "data/complete-play-loop/specs.v1.json",
+      "fileSha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe"
+    },
+    {
+      "path": "data/complete-play-loop/medical-extended-actions.v1.json",
+      "fileSha256": "fd2cddf562e33e0200b793840ab6b0c98523b8a30946bcfbb916d3a07aef5192"
+    },
+    {
+      "path": "data/complete-play-loop/equipment-definitions.v1.json",
+      "fileSha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a"
+    },
+    {
+      "path": "data/complete-play-loop/equipment-grants.v1.json",
+      "fileSha256": "466a621c6901a4c0d6c544deae103e82062c75c8fe32d3c84442c1e0c87836bc"
+    }
+  ],
+  "ruleEvidence": {
+    "loyaltyRecordSha256": "95cf2e2467ac266b285b011aac0622b52f1014ed8dfad36f42a8d1adb57e76d3",
+    "usingItemsRecordSha256": "b28291192d6d5b498596316a5e642d486f6007087ab61fd9b58f2506d812c3f9"
+  },
+  "loyalty": {
+    "choiceId": "gm-loyalty-outcome",
+    "targetKind": "pokemon",
+    "minimum": 1,
+    "maximum": 1,
+    "options": [
+      {
+        "optionId": "record-no-loyalty-change",
+        "label": "Record use; no Loyalty Rank change",
+        "outcome": "no-change",
+        "delta": 0
+      },
+      {
+        "optionId": "lower-loyalty-by-one",
+        "label": "Lower Loyalty by 1",
+        "outcome": "decrease-one",
+        "delta": -1
+      }
+    ],
+    "defaultLoyaltyWhenAbsent": 3,
+    "minimumLoyalty": 0,
+    "maximumLoyalty": 6,
+    "decisionRole": "gm",
+    "freeformMechanics": false
+  },
+  "inventoryItems": [
+    {
+      "canonicalId": "Energy Powder",
+      "canonicalRecordSha256": "3b0000c7cd66b0fb1bc189cdaaec9f543cccfc1434ac27a14694d09c16c36766",
+      "canonicalEffectSha256": "c68cb9632fcaad6b760ad838ebdb50d9c9f939d8e68691a7e85bdc9358c2fdc7",
+      "deterministicEffect": {
+        "kind": "heal-hp",
+        "amount": 25
+      },
+      "targetKinds": [
+        "pokemon"
+      ],
+      "timing": "standard",
+      "contexts": [
+        "encounter",
+        "sheet"
+      ]
+    },
+    {
+      "canonicalId": "Energy Root",
+      "canonicalRecordSha256": "90927d2686a26def6f0a944b9016b42f6000fd4729c05e32a5793dc115eafc1c",
+      "canonicalEffectSha256": "a047e9787deebaf0e2de2555e57f96a63d9e54139f2c6f043428bd3646740c8e",
+      "deterministicEffect": {
+        "kind": "heal-hp",
+        "amount": 70
+      },
+      "targetKinds": [
+        "pokemon"
+      ],
+      "timing": "standard",
+      "contexts": [
+        "encounter",
+        "sheet"
+      ]
+    },
+    {
+      "canonicalId": "Heal Powder",
+      "canonicalRecordSha256": "bbfcd8a4b59cddab6f62d82fb9439c534aa0204588041bb50b77dd4cc437a6f2",
+      "canonicalEffectSha256": "74c5914101f6d79fde48104bbf5c0c504876abc96a911cc3ffcfe3bb4549a168",
+      "deterministicEffect": {
+        "kind": "remove-conditions",
+        "mode": "persistent",
+        "selection": "all-applicable"
+      },
+      "targetKinds": [
+        "pokemon"
+      ],
+      "timing": "standard",
+      "contexts": [
+        "encounter",
+        "sheet"
+      ]
+    },
+    {
+      "canonicalId": "Revival Herb",
+      "canonicalRecordSha256": "80304913ad6c05920a78ee1bb28f9fb69f40379bcbd57922f632f0b7c8745f56",
+      "canonicalEffectSha256": "3eb135d45f6f704829b860599140b600464372cd5369952e071df57971af2b8e",
+      "deterministicEffect": {
+        "kind": "revive",
+        "basis": "full-formula-maximum-hp",
+        "numerator": 1,
+        "denominator": 2,
+        "rounding": "down",
+        "minimum": 1
+      },
+      "targetKinds": [
+        "pokemon"
+      ],
+      "timing": "standard",
+      "contexts": [
+        "encounter",
+        "sheet"
+      ]
+    },
+    {
+      "canonicalId": "Poultices",
+      "canonicalRecordSha256": "2879a8aab33a5d520ee3ee0772a497ed35b8fc4629b2f64e0a81a61f5463975f",
+      "canonicalEffectSha256": "c767e3eb294e64a433ac29ba2fd94441d7615a90b7db4ba7ff9c197d76fc8f8a",
+      "deterministicEffect": {
+        "kind": "apply-medical-treatment",
+        "treatmentKind": "bandages",
+        "durationMinutes": 360,
+        "tickMinutes": 30,
+        "healingNumerator": 1,
+        "healingDenominator": 8,
+        "injuryAtCompletion": 1,
+        "stopOnHpLoss": true,
+        "obeyDailyInjuryLimit": true
+      },
+      "targetKinds": [
+        "pokemon",
+        "trainer"
+      ],
+      "timing": "extended",
+      "contexts": [
+        "campaign",
+        "sheet",
+        "extended-action"
+      ]
+    }
+  ],
+  "consumption": {
+    "phase": "gm-adjudication",
+    "quantity": 1,
+    "reserveWhilePending": true,
+    "refundableOnCancel": true,
+    "reusable": false
+  },
+  "reBreather": {
+    "canonicalId": "Re-Breather",
+    "canonicalRecordSha256": "bd89163a1ce43a68c9146d994dca483a128c40055df90179dcf94cdb1dc86f58",
+    "equipmentDefinitionSha256": "430c0cfe2cb6a80fec61d1f2bb663cb116dec5b5c8e4c5793725fca9e44ddfdf",
+    "equipmentGrantDefinitionSha256": "767e9688f5f3dd61e2f313ef283a8ad32af5e2f7c5d1a6baa9bebdf2b24ea321",
+    "actionId": "equipment.re-breather.activate",
+    "capabilityId": "Gilled",
+    "timing": "standard",
+    "targetKind": "self",
+    "activeMinutes": 60,
+    "openAirRefillMinutes": 5,
+    "openAirAuthority": "bounded-gm-confirmation",
+    "ownerKinds": [
+      "trainer",
+      "pokemon"
+    ],
+    "slotIds": [
+      "head",
+      "held"
+    ]
+  },
+  "boundaries": {
+    "declaration": "reserve exact consumable or bind exact equipped instance without applying mechanics",
+    "acceptance": "reauthorize current definition, custody, target, revisions, bounded option, and authenticated GM role before one atomic commit",
+    "cancellation": "release the exact reservation or close the equipment request without item, HP, condition, Loyalty, capability, action, or clock mutation",
+    "replay": "same principal and exact command return the stored terminal projection without reapplying",
+    "privacy": "public projections exclude operation IDs, source rows, equipment instance IDs, hashes, profile identities, ownership evidence, raw commands, private Loyalty values, and private receipts"
+  }
+}

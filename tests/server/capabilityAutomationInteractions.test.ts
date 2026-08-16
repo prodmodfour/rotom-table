@@ -29,6 +29,7 @@ import { reconcileLivingWeaponRoundMovementResources } from '../../server/domain
 import { livingWeaponAttackSourceId } from '../../server/domain/capabilityAutomation/livingWeaponAttackSource'
 import { ENCOUNTER_EVENT_SCHEMA_VERSION } from '#shared/moveAutomation/events'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
+import { activeEquipmentState } from '../fixtures/equipment'
 
 const actor: SheetPlacement = {
   id: 'actor', sheetKind: 'pokemon', sheetSlug: 'actor-sheet', position: { x: 1, y: 0, z: 1 }, sideId: 'red',
@@ -61,12 +62,29 @@ const moveContext = (
   moveName: string,
   map = baseMap(),
   targetSheet = pokemon(target.sheetSlug),
+  attackSourceId?: ResolveMoveIntent['attackSourceId'],
 ) => buildAuthoritativeMoveRulesContext({
   map,
   pokemonSheets: new Map([[sheet.slug, sheet], [target.sheetSlug, targetSheet]]),
   trainerSheets: new Map<string, TrainerSheet>(),
-  intent: moveIntent(moveName), candidatePlacementIds: [target.id], selectedPlacementIds: [target.id],
+  intent: moveIntent(moveName, attackSourceId), candidatePlacementIds: [target.id], selectedPlacementIds: [target.id],
   random: () => 0, time: 1_000,
+})
+
+const equipmentMoveSourceId = (sheet: CharacterSheet, moveName: string): ResolveMoveIntent['attackSourceId'] => {
+  const projection = buildEncounterPresentationProjection({
+    role: 'gm', map: baseMap(), mapRevision: 1,
+    pokemonSheets: [sheet, pokemon(target.sheetSlug)], trainerSheets: [], generatedAt: 1_000,
+  })
+  const sourceId = projection.offers.find(offer => (
+    offer.source.canonicalId === moveName && offer.source.displayName.includes('(')
+  ))?.source.instanceId
+  if (!sourceId?.startsWith('attack-source.v1.')) throw new Error(`Expected equipment source for ${moveName}.`)
+  return sourceId as ResolveMoveIntent['attackSourceId']
+}
+
+const equippedPokemonState = (canonicalItemId: string) => activeEquipmentState({
+  ownerKind: 'pokemon', ownerSlug: actor.sheetSlug, slotId: 'held', canonicalItemId,
 })
 
 const command = (canonicalId: string, actionId: string, selections: Record<string, unknown> = {}) => parseExecuteCapabilityActionCommand({
@@ -186,12 +204,18 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
   it('projects only size-legal Wielder weapon benefits and caps granted Moves at Adept rank', () => {
     const small = pokemon(actor.sheetSlug, {
       species: 'Pikachu', skills: { combat: '4d6' }, capabilities: { other: ['Wielder'] },
-      items: { held: 'Honed Claws' },
+      items: { held: 'Meteor Masher' },
+      equipmentState: equippedPokemonState('Honed Claws'),
     })
-    expect(moveContext(small, 'Struggle').queries.resolveActorMoveEntry('Struggle')).toMatchObject({
+    const honedClawsStruggleSource = equipmentMoveSourceId(small, 'Struggle')
+    expect(moveContext(small, 'Struggle', baseMap(), pokemon(target.sheetSlug), honedClawsStruggleSource)
+      .queries.resolveActorMoveEntry('Struggle')).toMatchObject({
       ok: true, entry: { script: { damageBase: 5 } },
     })
-    const woundingContext = moveContext(small, 'Wounding Strike')
+    const woundingSource = equipmentMoveSourceId(small, 'Wounding Strike')
+    const woundingContext = moveContext(
+      small, 'Wounding Strike', baseMap(), pokemon(target.sheetSlug), woundingSource,
+    )
     expect(woundingContext.queries.resolveActorMoveEntry('Wounding Strike')).toMatchObject({
       ok: true, entry: { hasStab: false, script: { damageBase: 7 } },
     })
@@ -217,8 +241,14 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
       }) }),
     ]))
     expect(moveContext(small, 'Gouge').queries.resolveActorMoveEntry('Gouge')).toMatchObject({ ok: false })
-    const knife = { ...small, items: { held: 'Survival Knife' } }
-    expect(moveContext(knife, 'Cheap Shot').queries.resolveActorMoveEntry('Cheap Shot')).toMatchObject({
+    const knife = {
+      ...small,
+      items: { held: 'Honed Claws' },
+      equipmentState: equippedPokemonState('Survival Knife'),
+    }
+    const knifeSource = equipmentMoveSourceId(knife, 'Cheap Shot')
+    expect(moveContext(knife, 'Cheap Shot', baseMap(), pokemon(target.sheetSlug), knifeSource)
+      .queries.resolveActorMoveEntry('Cheap Shot')).toMatchObject({
       ok: true, entry: { script: { damageBase: 6 } },
     })
     const unownedWeaponMove = pokemon(actor.sheetSlug, {
@@ -229,9 +259,12 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
 
     const large = pokemon(actor.sheetSlug, {
       species: 'Snorlax', skills: { combat: '6d6' }, capabilities: { other: ['Wielder'] },
-      items: { held: 'Meteor Masher' },
+      items: { held: 'Honed Claws' },
+      equipmentState: equippedPokemonState('Meteor Masher'),
     })
-    expect(moveContext(large, 'Backswing').queries.resolveActorMoveEntry('Backswing')).toMatchObject({
+    const masherSource = equipmentMoveSourceId(large, 'Backswing')
+    expect(moveContext(large, 'Backswing', baseMap(), pokemon(target.sheetSlug), masherSource)
+      .queries.resolveActorMoveEntry('Backswing')).toMatchObject({
       ok: true,
       entry: { script: { damageBase: 9, ac: 3 } },
     })
@@ -241,7 +274,8 @@ describe('Capability interactions with moves, edges, and coupled presence', () =
   it('publishes source-owned Wielder Moves through Encounter Presentation without exposing Master grants', () => {
     const sheet = pokemon(actor.sheetSlug, {
       species: 'Snorlax', skills: { combat: '6d6' }, capabilities: { other: ['Wielder'] },
-      items: { held: 'Quarterstaff' },
+      items: { held: 'Honed Claws' },
+      equipmentState: equippedPokemonState('Quarterstaff'),
     })
     const projection = buildEncounterPresentationProjection({
       role: 'gm',

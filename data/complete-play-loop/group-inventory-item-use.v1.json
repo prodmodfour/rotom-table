@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-065",
+  "status": "current-semantics",
+  "contract": "group-inventory-item-use-v1",
+  "scope": {
+    "mechanicsOwner": "existing UseItemCommandV1, reviewed item registry, item operation journal, planner, reducer, recovery, and realtime paths",
+    "newParallelMechanicsPath": false,
+    "contexts": [
+      "immediate out-of-encounter sheet item use"
+    ],
+    "extendedActions": "transfer-first because durable activities require Trainer custody for their complete lifecycle",
+    "encounterUse": "unchanged and Trainer-custody-only"
+  },
+  "actorPolicy": {
+    "gm": "may select any current Trainer sheet",
+    "player": "may select only a Trainer explicitly linked to the selected authenticated Profile",
+    "actorChoices": "opaque, group-revision-bound and Trainer-revision-bound server identities",
+    "targetScope": "selected Trainer and that Trainer's unambiguous current roster under existing target eligibility",
+    "reauthorization": [
+      "projection",
+      "declaration",
+      "execution",
+      "pending resume",
+      "pending abandonment"
+    ]
+  },
+  "projection": {
+    "endpoint": "GET /api/items/group-actions",
+    "declarationEndpoint": "POST /api/items/group-actions/declare",
+    "executionEndpoint": "POST /api/items/use",
+    "safeFields": [
+      "opaque actor, offer and source-selection identities",
+      "acting Trainer display label and current revision",
+      "shared container, section, presentation-row, item and available-quantity labels",
+      "existing target eligibility, bounded choices, previews, timing, costs and acceptance notice",
+      "textual unavailable reasons"
+    ],
+    "forbiddenFields": [
+      "group inventory row ID",
+      "inventory instance ID",
+      "operation, request or reservation ID",
+      "Profile ID",
+      "definition or command hash",
+      "private ownership evidence",
+      "serialized equipment state",
+      "raw provenance"
+    ],
+    "maximumActors": 64,
+    "maximumOffers": 256,
+    "maximumTargetsPerOffer": 64
+  },
+  "reservation": {
+    "identity": "exact item-instance:group source retained only in private command and journal evidence",
+    "quantity": "reviewed consumption quantity reserved while an unresolved operation requires it",
+    "projection": "shared Use and Transfer quantities subtract exact pending reservations; stack operations use the same reservation authority",
+    "unrelatedRows": "remain mutable; pending settlement may rebase only the group aggregate revision after revalidating the exact source row, canonical definition, reserved quantity, actor, targets and every other original read",
+    "atomicRaceProtection": [
+      "use",
+      "group-to-Trainer transfer",
+      "split",
+      "merge",
+      "discard"
+    ],
+    "release": [
+      "accepted settlement",
+      "rejected settlement",
+      "authenticated abandonment"
+    ],
+    "processRestart": true,
+    "manualRepairRequired": false
+  },
+  "commitAuthority": {
+    "declaration": "reprojects the exact group revision, actor choice, source offer, target options and current reservation quantity before issuing a private template",
+    "execution": "reprojects by server-only actor slug, compares exact actor, group source and complete read set, then delegates to the existing authoritative context, eligibility, planner and reducer",
+    "atomicity": "source consumption, target mutations, group revision, item journal receipt and persisted realtime events commit together or roll back",
+    "staleEvidence": "initial actor delegation, Trainer revision, group revision, source row, canonical definition, quantity, reservation, campaign clock, target or bounded-choice drift fails before mutation; a pending row reservation tolerates only a newer group aggregate revision after exact source and all non-group reads revalidate",
+    "replay": "one exact operation command can be retried after uncertainty and cannot consume or apply mechanics twice",
+    "responseAdoption": "accepted authoritative group inventory replaces local state; affected sheet links are safe projections"
+  },
+  "interaction": {
+    "designInputs": [
+      ".pi/artifacts/ui-mockups/group-inventory-item-use/brief.md",
+      ".pi/artifacts/ui-mockups/group-inventory-item-use/renderer-blocker.md",
+      ".pi/artifacts/ui-mockups/inventory-stack-actions/v002.png",
+      "DESIGN.md"
+    ],
+    "composition": "existing 60/40 inventory and inline decision workspace, collapsing to one column",
+    "actorControl": "one 44px minimum Acting Trainer selector with textual custody and target-scope explanation",
+    "rowControl": "Use appears beside Transfer and quieter stack controls only when group item-action authority is active",
+    "decision": "existing TrainerSheetItemDecision target, choice, preview, acceptance and exact-retry anatomy",
+    "pendingBoundary": "states exact quantity reservation and mechanical inertness until bounded GM acceptance",
+    "uncertainBoundary": "exact retry is the only mutation path; actor switching, refresh, cancellation, editing and competing inventory actions remain blocked",
+    "minimumControlHeightPx": 44,
+    "optimisticMutation": false
+  },
+  "evidence": {
+    "tests": [
+      "tests/shared/groupInventoryItemActions.test.ts",
+      "tests/server/groupInventoryItemActions.test.ts",
+      "tests/server/groupInventoryItemActionRoutes.test.ts",
+      "tests/server/groupInventoryTransferToTrainer.test.ts",
+      "tests/integration/groupInventoryItemReservationRecovery.test.ts",
+      "tests/composables/useGroupInventoryItemActions.test.ts",
+      "tests/components/groupInventoryPanel.test.ts",
+      "tests/utils/groupItemOperationStorage.test.ts",
+      "tests/data/completePlayLoopGroupInventoryItemUse.test.ts",
+      "tests/e2e/group-inventory-item-use.spec.ts"
+    ],
+    "visualReview": ".pi/artifacts/ui-validation/group-inventory-item-use/review.md"
+  }
+}

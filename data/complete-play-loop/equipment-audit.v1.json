@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-004",
+  "representations": [
+    {
+      "ownerKind": "trainer",
+      "field": "equipmentSlots",
+      "slots": ["mainHand", "offHand", "head", "body", "feet", "accessory"],
+      "state": "legacy-descriptive",
+      "sourceInventoryProvenance": false,
+      "atomicEquip": false
+    },
+    {
+      "ownerKind": "pokemon",
+      "field": "items.held",
+      "slots": ["held"],
+      "state": "legacy-descriptive",
+      "sourceInventoryProvenance": false,
+      "atomicEquip": false
+    }
+  ],
+  "currentDerivedProviders": [
+    { "canonicalItemId": "Bright Powder", "contribution": "speed evasion +2", "code": "src/utils/sheetHeldItemEffects.ts" },
+    { "canonicalItemId": "Luck Incense", "contribution": "accuracy rolls +1", "code": "src/utils/sheetHeldItemEffects.ts" },
+    { "canonicalItemId": "Quick Claw", "contribution": "initiative +10", "code": "src/utils/sheetHeldItemEffects.ts" }
+  ],
+  "gaps": [
+    { "detail": "Slot compatibility and exclusivity are not server-authoritative.", "tickets": ["P8-041", "P8-043"] },
+    { "detail": "Equip, unequip, swap, give, and take are not one atomic operation family.", "tickets": ["P8-044", "P8-045"] },
+    { "detail": "Most canonical equipment contributions, grants, and event subscriptions are absent.", "tickets": ["P8-046", "P8-047", "P8-048"] },
+    { "detail": "Source loss, suppression, durability, and breakage have no uniform lifecycle.", "tickets": ["P8-049", "P8-050"] }
+  ]
+}

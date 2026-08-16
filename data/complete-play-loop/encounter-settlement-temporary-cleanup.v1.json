@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-079",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-temporary-cleanup-v1",
+  "sourceEvidence": {
+    "temporaryCleanupModelSha256": "6eac234e8545a0b9d6f7836f003f312d811e92d1eaca3c3b00c4530f6f7c7881",
+    "encounterLifecyclePlannerSha256": "7bae2b6d1ace7414dc8ec06861bcb7a73fc82477ddd71d8a271123260a578941",
+    "durationLifecycleSha256": "a35b3d55d470673dd39ceab6823f39b870c39537cd18c6e499244a4187177ba2",
+    "effectLifecycleSha256": "bd95e811524815c77c4a24fc9de1e5bee572c77dc3024b3bd65f328f55a460b3",
+    "encounterResourceReducerSha256": "16f07306d5921f165bb8f8be559a1b292b1b394f4d00eb5e79fb5f8e7c9df163",
+    "settlementDocumentModelSha256": "bd6751d716f1b2f40552c95208141844b87da83453a0ea16610a0835b1bfb849",
+    "encounterStateModelSha256": "3c5fdb41d85822bea8d0b25a4d9088043183cf32605df1d606df3fc963cddafd"
+  },
+  "authority": {
+    "completenessLiteral": "authoritative-current",
+    "required": [
+      "exact linked map and revision",
+      "complete exact backing-sheet reads for every map placement",
+      "complete active reservation operation identities",
+      "complete provider-bound transformations",
+      "one GM authorization bound to the linked map revision",
+      "one server-captured monotonic write timestamp"
+    ],
+    "forbidden": [
+      "client-authored state patches",
+      "name or tag inferred cleanup",
+      "missing or duplicate source coverage",
+      "stale map or sheet revisions",
+      "unbound transforms",
+      "silent reservation abandonment",
+      "rewriting applied cleanup evidence"
+    ]
+  },
+  "sourceCoverage": {
+    "rule": "Every authoritative effect, zone, ground item, backing sheet, encounter-resource directory, present initiative tracker, active reservation, and pending encounter-item decision appears exactly once in temporary cleanup.",
+    "sourceKinds": [
+      "effect",
+      "zone",
+      "ground-item",
+      "combat-stage-sheet",
+      "encounter-resources",
+      "initiative",
+      "reservation",
+      "encounter-item"
+    ],
+    "ambiguity": "A stable source identity resolving to more than one authoritative object fails closed.",
+    "extraOrMissing": "Foreign, duplicate, and omitted cleanup source identities fail before a write preview becomes applicable."
+  },
+  "owningContracts": {
+    "combatStages": "The existing item combat-stage encounter lifecycle handler emits one typed all-stage reset over exact sheet-backed placements.",
+    "temporaryEffects": "Turn, round, and encounter durations expire through the existing encounter-end effect lifecycle; Scene, campaign-time, explicit-dismissal, until-triggered, and permanent durations remain unless an exact reviewed cleanup behavior says otherwise.",
+    "resources": "Encounter-end clears structured turn resources and encounter history through their existing reducers.",
+    "zones": "Zone durations follow the same encounter-boundary duration distinction; each preserve, expiry, or transform remains source-specific.",
+    "groundItems": "Map-owned ground items persist by default and leave only through an explicit expire behavior or exact provider-bound transform.",
+    "initiative": "A declared initiative cleanup clears encounter-scoped placement scores and resets the normalized tracker to no active placement at round one.",
+    "sceneState": "Active Scene identity, Scene move usage, Scene temporary HP, Scene effects, Scene form changes, campaign-time effects, HP, injuries, persistent conditions, inventories, equipment, and advancement remain untouched.",
+    "reservations": "Reservations are derived from pending item operations. Any active reservation remains a blocker and is never released by cleanup as a substitute for resolving or abandoning its owning operation."
+  },
+  "transformations": {
+    "supportedKinds": ["effect", "zone", "ground-item"],
+    "identityRule": "The transformed value retains the exact source identity and passes its strict owning parser.",
+    "authorityRule": "Every transform names one exact provider authority; a decision-selected transform must match the authority pinned by that accepted option.",
+    "forbidden": "Generic JSON patches, cross-kind replacement, identity changes, and text-derived mechanics are rejected."
+  },
+  "preview": {
+    "fields": [
+      "cleanup entry identity",
+      "closed cleanup kind",
+      "exact source identity and kind",
+      "reset, expire, preserve, transform, exclude, or pending action",
+      "closed result code",
+      "whether current authority changes"
+    ],
+    "explainability": "Every changed or preserved temporary source has one deterministic action row; open choices and blockers remain explicit.",
+    "privacy": "The complete preview is server-private. Later projections expose only audience-safe labels, action, changed state, and blocker summaries."
+  },
+  "writePlan": {
+    "map": "All map-owned cleanup composes into at most one next map revision with stable-JSON SHA-256 before and after evidence.",
+    "sheets": "Each changed sheet receives one revision with exact previous and next hashes; HP, injuries, conditions, and unrelated permanent fields are retained.",
+    "determinism": "The encounter-end event identity derives from settlement identity, map identity, and exact map revision; no browser clock, random client value, or array-order accident owns cleanup.",
+    "staleRule": "Application rechecks the complete authority hash, exact map and sheet revisions, before hashes, after hashes, and monotonic next revisions.",
+    "atomicRule": "Open decisions, active reservations, pending encounter items, denied authorization, stale state, incomplete coverage, or invalid transforms expose no applicable writes. P8-080 persists all resulting writes with the settlement transaction."
+  },
+  "replay": {
+    "planning": "The same settlement and exact authority produce byte-equivalent write plans and result codes.",
+    "terminal": "Committing, completed, cancelled, applied, or receipted cleanup cannot be replanned as new work.",
+    "retry": "A stale plan must be rebuilt from a fresh complete read; it is never rebased by source label or replayed as a new command."
+  },
+  "evidence": {
+    "runtime": "server/domain/encounterSettlement/temporaryCleanup.ts",
+    "tests": "tests/server/encounterSettlementTemporaryCleanup.test.ts",
+    "documentation": "docs/encounter-settlement-temporary-cleanup.md"
+  }
+}

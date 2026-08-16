@@ -1,0 +1,293 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-093",
+  "status": "implemented",
+  "contract": "canonical-item-catalog-closure-v1",
+  "runtimeProseParsing": false,
+  "storageSchemaVersion": 44,
+  "catalog": {
+    "canonicalItemCount": 348,
+    "cohortCount": 18,
+    "implementationStateCounts": {
+      "native": 204,
+      "guided": 40,
+      "passive": 104,
+      "blocked": 0
+    },
+    "remainingBlockedRows": 0
+  },
+  "formerBlockedSet": {
+    "captureRows": 25,
+    "interpretiveCampaignToolRows": 34,
+    "blackSludgeCanonicalDefectRows": 1,
+    "closedRows": 60
+  },
+  "guidedCampaignTools": {
+    "itemCount": 34,
+    "reusableCount": 17,
+    "consumableCount": 17,
+    "choiceId": "gm-campaign-tool-outcome",
+    "acceptedOptionId": "accept-reviewed-use",
+    "freeformMechanics": false,
+    "consumablesReserveExactUnit": true,
+    "reusableSourcesRetained": true,
+    "privateDurableReceipts": true,
+    "cancellationRefundsWithoutMutation": true
+  },
+  "capture": {
+    "itemCount": 25,
+    "exactStableSourceRowRequired": true,
+    "trainerRevisionRequired": true,
+    "sameNameFallbackForbidden": true,
+    "structuredModifierAuthority": true,
+    "atomicConsumptionAndOutcomeReceipt": true,
+    "exactReplayDoesNotReroll": true,
+    "unsupportedConditionsFailClosedWithReason": true
+  },
+  "blackSludge": {
+    "canonicalAcquisitionCost": "$500",
+    "implementationState": "native",
+    "requiredTargetType": "Poison",
+    "digestionBuff": {
+      "kind": "turn-start-heal",
+      "numerator": 1,
+      "denominator": 8,
+      "duration": "encounter"
+    },
+    "sourceHashBoundMigration": true
+  },
+  "privacy": {
+    "publicProjectionAllowlist": [
+      "safe labels",
+      "timing",
+      "bounded choices",
+      "settlement facts",
+      "availability and unavailable reasons"
+    ],
+    "forbidden": [
+      "operation IDs",
+      "request IDs",
+      "source instance IDs",
+      "inventory row IDs",
+      "definition hashes",
+      "Profile IDs",
+      "private receipts",
+      "ownership evidence",
+      "private notes"
+    ]
+  },
+  "failClosed": [
+    "unknown or duplicate canonical identity",
+    "catalog, reviewed source, record, effect, policy, or definition drift",
+    "stale source revision or unavailable exact row",
+    "same-name source substitution or duplicate exact source identity",
+    "invalid actor, target, ownership, custody, choice, timing, or action authority",
+    "malformed or expanded guided decision",
+    "unsupported Poké Ball condition authority",
+    "occupied Digestion Buff capacity or non-Poison Black Sludge target",
+    "conflicting write, no-op mutation, uncertain receipt expansion, or incomplete read"
+  ],
+  "sourceEvidence": [
+    {
+      "path": "data/reference/items.json",
+      "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+    },
+    {
+      "path": "data/complete-play-loop/specs.v1.json",
+      "sha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe"
+    },
+    {
+      "path": "data/complete-play-loop/canonical-data-remediation.v1.json",
+      "sha256": "3b733805374faa38e82fa4861a77cd35a07c9ab901a7c160ae17b51ab452739e"
+    },
+    {
+      "path": "scripts/reviewed-data/black-sludge-acquisition-cost.v1.json",
+      "sha256": "a37cf5969dc102007e12b9aae81d3144c9b12aaa0b06e8413820919a67d1d5d5"
+    },
+    {
+      "path": "scripts/migrate_black_sludge_acquisition_cost.py",
+      "sha256": "71653c4daff908861590e8fdbc047cfc12fd21856f396b8b91a92c9cf4c4b2a6"
+    },
+    {
+      "path": "tests/data/completePlayLoopPhase1.test.ts",
+      "sha256": "e2f038d41a88eb468d34dc2be9b9b7f9a2a6dc89a3e9d175850618ff90508ed4"
+    },
+    {
+      "path": "tests/server/executeItemOperation.test.ts",
+      "sha256": "f09fcc737a6391a873d84a13d79bafc59715a108787717d9fd0fe7ffb20ed93a"
+    },
+    {
+      "path": "tests/server/itemAutomationDigestionTradeIntegration.test.ts",
+      "sha256": "c1579a339f6460c6ef2ce06d9385066fdce754912127cd780518a7823049f97e"
+    },
+    {
+      "path": "scripts/reviewed-data/guided-catalog-items.v1.json",
+      "sha256": "73e4f23dc87ce2fa911c6dcb21777a2af125ed4acdac463b73f785dcd583e6c6"
+    },
+    {
+      "path": "scripts/generate_complete_play_loop_guided_catalog_items.py",
+      "sha256": "05282756e78cb84935f217b4086f6189960246ad728a144923c5c96bb7315a25"
+    },
+    {
+      "path": "data/complete-play-loop/guided-catalog-items.v1.json",
+      "sha256": "8e669d3a49f235d464b933ac86638f291b7dbf08981899236c059129c1b7602e"
+    },
+    {
+      "path": "shared/itemAutomation/guidedAdjudication.ts",
+      "sha256": "01ad38721047fb991f95192b369e76b49f75600d16f759a9ec0f49cec6f27098"
+    },
+    {
+      "path": "server/domain/itemAutomation/guidedAdjudication.ts",
+      "sha256": "6dcd019ef9656fc8048566e2017ec580a1acb290ec7bb6e0f7c6f31fb0c92e5e"
+    },
+    {
+      "path": "server/domain/itemAutomation/registry.ts",
+      "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+    },
+    {
+      "path": "server/domain/itemAutomation/planner.ts",
+      "sha256": "0285852cae636700e473452beec6aa58f6ea3f5acff853c04adc658917f863d2"
+    },
+    {
+      "path": "server/domain/itemAutomation/reducer.ts",
+      "sha256": "bbd5fa95f4f5d1a73717cd2769021c8044b5c2cff19c9afea06da3722327b6e4"
+    },
+    {
+      "path": "server/domain/itemAutomation/conformance.ts",
+      "sha256": "0d16dda724bb357b592f4853bb466ac5cef6a2140a9256e56b35e7cfc12c02e2"
+    },
+    {
+      "path": "server/useCases/manageItemGuidedAdjudication.ts",
+      "sha256": "2eb9819ff1ab99b1b2c58f800ced38d3c5f030f0401e60fbe224d03c7099b563"
+    },
+    {
+      "path": "server/storage/itemGuidedRequestRepository.ts",
+      "sha256": "8d85468685d099b155a224d50cc21d43bf0ea775eff2caecaad07e95364ec8bd"
+    },
+    {
+      "path": "server/storage/migrations.ts",
+      "sha256": "fa869c20dfaf59fb2996e79310d0f849b3c74ac012d15983217313562714136a"
+    },
+    {
+      "path": "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+      "sha256": "eac1ea2fde7a7d1aaa1f628bdd600408f971a94f2413c1a0a15b7731ef62b332"
+    },
+    {
+      "path": "tests/data/completePlayLoopGuidedCatalogItems.test.ts",
+      "sha256": "4202e479ff8dd4088bf74d35bf7f48111785c7d41b39ec9c2eb8d98aeb0b8f7d"
+    },
+    {
+      "path": "tests/server/itemGuidedAdjudication.test.ts",
+      "sha256": "a277fc26bb30b54513b610ce21c6e14a66b5d0f51d533d39235275dfc6ae6b62"
+    },
+    {
+      "path": "tests/integration/guidedCatalogSheetItems.test.ts",
+      "sha256": "cbd464bd6975675596dfc8e2e8a0ae61459da24738f4e658a625079ec12b6291"
+    },
+    {
+      "path": "tests/components/campaignGuidedItemAdjudication.test.ts",
+      "sha256": "540f8472fbf3a383ef2816c89db5e82349c29f49e7164466da58b331c1fabc83"
+    },
+    {
+      "path": "tests/server/realtimeEventMigrations.test.ts",
+      "sha256": "6bafe241bfb8b81efcda67aeff1309fad8296e5e9f427e89b51023dbf7904a8b"
+    },
+    {
+      "path": "scripts/reviewed-data/capture-pokeballs.v1.json",
+      "sha256": "9f0eaaabd87bd66d5cd7ec17091a862f39f0c20a91225c0dd449aa558575840b"
+    },
+    {
+      "path": "scripts/generate_complete_play_loop_capture_pokeballs.py",
+      "sha256": "76631f764b0404eb7472f0b5f70f84712a081b4347126de15ac85a58e75042c6"
+    },
+    {
+      "path": "data/complete-play-loop/capture-pokeballs.v1.json",
+      "sha256": "0fb778b5e67ef36e28d4c18c7ca6ea7c3dc4ad716604c876e58684970410ae10"
+    },
+    {
+      "path": "shared/livePlayCommands.ts",
+      "sha256": "d2aa14d3dff36730b633c26899b37232ee60b14b9d79ae1c046c1df954d692e7"
+    },
+    {
+      "path": "src/utils/pokeballCapture.ts",
+      "sha256": "0a307591d48619ef0ef36c217242366c270149d4724ca6d07405e2918dcdc373"
+    },
+    {
+      "path": "server/useCases/applyThrowPokeballCommand.ts",
+      "sha256": "30f2e7987b316e2812bc0d4be81ddcc029c92ccc80ba3f0249cdfd80c23534b9"
+    },
+    {
+      "path": "src/composables/map-editor/usePokeballCapturePanel.ts",
+      "sha256": "21d86d017e6b718fe0ed3ff068e7a638a0925ebeb3b6087ecb6bb17085ff4541"
+    },
+    {
+      "path": "src/composables/map-editor/useLivePlayCommands.ts",
+      "sha256": "f17c5ced4736ce6ca72a53493cf90fc1fb1b86e3d331c7c3da87414502a47217"
+    },
+    {
+      "path": "tests/data/completePlayLoopCapturePokeballs.test.ts",
+      "sha256": "fd83f898e5c17fc4694f3f7f5b293a0f6207689ba0c4e061acde706a45c7ddaa"
+    },
+    {
+      "path": "tests/utils/pokeballCapture.test.ts",
+      "sha256": "5baaf85c684a8ae1d285a42ea795c2d2fbc0e63eb54329be08415b250c588bee"
+    },
+    {
+      "path": "tests/server/throwPokeballCommand.test.ts",
+      "sha256": "c5dad7e88f5eeb7246256481e9c254d05bd751ab9304ea38dbc81260a5599ee9"
+    },
+    {
+      "path": "tests/composables/map-editor/usePokeballCapturePanel.test.ts",
+      "sha256": "a22227adfe02556be423ba3ff3581a70e2a85d075b8411b058e9c0c9e2b37de9"
+    },
+    {
+      "path": "tests/composables/map-editor/useLivePlayCommands.test.ts",
+      "sha256": "ccc0500429856f4a4f3e961337d492cb3177b5f4b78edc5951a1cad38c28e67d"
+    },
+    {
+      "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+      "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+    },
+    {
+      "path": "scripts/generate_complete_play_loop_item_catalog_cohorts.py",
+      "sha256": "edf66154cd76aede7f461feb810b82c5deb1d5d9e8f1ba82b21295074c4c75a0"
+    },
+    {
+      "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "sha256": "be82c8f9975056f894bf9b8cf78780869afcd71ef7f2bccfbe0cae88adaac1a0"
+    },
+    {
+      "path": "data/complete-play-loop/item-catalog-cohort-certification.v1.json",
+      "sha256": "84c90d28710dc87e9c28b034c26beea3c4b316e855930c1a0a0dcc5df2e5944f"
+    },
+    {
+      "path": "docs/canonical-item-catalog-cohorts.md",
+      "sha256": "e9dbaae9f1041b5da2e030010cdd0237f29bdd3255252493962c087793cdf394"
+    },
+    {
+      "path": "tests/data/completePlayLoopItemCatalogCohorts.test.ts",
+      "sha256": "d22a0d127419c5865706cd0699134ef1a84cb16e27653179014f719f9524e2f0"
+    },
+    {
+      "path": "tests/server/itemCatalogCohortRegistry.test.ts",
+      "sha256": "57ef83bef122693fbbd540d0d0b42e0993589b987c40bb6a9651cc0fc7331b3c"
+    },
+    {
+      "path": "tests/shared/itemCatalogCohorts.test.ts",
+      "sha256": "a372d30e210e97064623bc471e2a6a74202c2acbc89fd9ea916f43a1f7107cc9"
+    },
+    {
+      "path": "docs/item-catalog-closure.md",
+      "sha256": "c77185b6682dbc3667f300b0d992f22dc2135bfc0397755d7ff2274dffbb184e"
+    }
+  ],
+  "validation": {
+    "generatorChecks": "passed",
+    "focusedTests": "98 passed",
+    "allCompletePlayLoopDataTests": "195 passed",
+    "nuxtTypecheck": "passed",
+    "scopedEslint": "passed",
+    "productionBuild": "passed",
+    "gitDiffCheck": "passed"
+  }
+}

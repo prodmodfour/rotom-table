@@ -18,6 +18,7 @@ const emit = defineEmits<{
 
 const editing = ref(false)
 const draft = ref('')
+const displayButton = ref<HTMLButtonElement | null>(null)
 const inputEl = ref<HTMLInputElement | null>(null)
 const listId = useId()
 
@@ -26,6 +27,7 @@ const referenceItem = computed(() => normalizedValue.value ? findItem(normalized
 const displayLabel = computed(() => referenceItem.value?.name ?? normalizedValue.value)
 const isEmpty = computed(() => !displayLabel.value)
 const displayText = computed(() => displayLabel.value || props.placeholder)
+const editLabel = computed(() => `Edit item name: ${displayText.value}`)
 const displayTitle = computed(() => {
   if (!referenceItem.value) return displayText.value
   const detail = ptuItemOptionDetail(referenceItem.value)
@@ -45,27 +47,33 @@ const beginEdit = () => {
   void focusInput()
 }
 
-const commit = () => {
+const restoreDisplayFocus = async (): Promise<void> => {
+  await nextTick()
+  displayButton.value?.focus()
+}
+const commit = (restoreFocus = false) => {
   if (!editing.value) return
   editing.value = false
   emit('commit', draft.value)
+  if (restoreFocus) void restoreDisplayFocus()
 }
 
-const cancel = () => {
+const cancel = (restoreFocus = false) => {
   editing.value = false
   draft.value = normalizedValue.value
+  if (restoreFocus) void restoreDisplayFocus()
 }
 
 const onKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     event.preventDefault()
-    cancel()
+    cancel(true)
     return
   }
 
   if (event.key === 'Enter') {
     event.preventDefault()
-    commit()
+    commit(true)
   }
 }
 </script>
@@ -74,10 +82,12 @@ const onKeydown = (event: KeyboardEvent) => {
   <span class="inventory-name-cell" :class="{ 'inventory-name-cell--editing': editing }">
     <button
       v-if="!editing"
+      ref="displayButton"
       type="button"
       class="inventory-name-cell__display"
       :class="{ 'inventory-name-cell__display--empty': isEmpty }"
       :title="displayTitle"
+      :aria-label="editLabel"
       @click="beginEdit"
     >
       <ItemSprite v-if="referenceItem" :item="referenceItem" size="sm" />
@@ -93,8 +103,9 @@ const onKeydown = (event: KeyboardEvent) => {
         type="text"
         :list="listId"
         :placeholder="placeholder"
+        :aria-label="`Item name, current value ${displayText}`"
         autocomplete="off"
-        @blur="commit"
+        @blur="commit(false)"
         @keydown="onKeydown"
       />
       <datalist :id="listId">
@@ -129,6 +140,7 @@ const onKeydown = (event: KeyboardEvent) => {
   gap: 0.4rem;
   width: 100%;
   min-width: 0;
+  min-height: 2.75rem;
   max-width: 100%;
   border: 0;
   border-radius: 4px;
@@ -143,11 +155,15 @@ const onKeydown = (event: KeyboardEvent) => {
   transition: background-color 0.12s ease, box-shadow 0.12s ease;
 }
 
-.inventory-name-cell__display:hover,
-.inventory-name-cell__display:focus-visible {
+.inventory-name-cell__display:hover {
   background: rgba(var(--accent-rgb), 0.08);
   box-shadow: inset 0 -1px 0 rgba(var(--accent-rgb), 0.45);
-  outline: none;
+}
+
+.inventory-name-cell__display:focus-visible {
+  background: rgba(var(--accent-rgb), 0.08);
+  outline: 2px solid var(--rt-focus, var(--accent));
+  outline-offset: 2px;
 }
 
 .inventory-name-cell__display--empty {
@@ -175,6 +191,7 @@ const onKeydown = (event: KeyboardEvent) => {
 .inventory-name-cell__input {
   width: 100%;
   min-width: 9rem;
+  min-height: 2.75rem;
   border: 1px solid var(--accent, #ff1f2d);
   border-radius: 4px;
   background: var(--paper, #fff);
@@ -183,5 +200,16 @@ const onKeydown = (event: KeyboardEvent) => {
   font: inherit;
   outline: none;
   box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
+}
+
+.inventory-name-cell__input:focus-visible {
+  border-color: var(--rt-focus, var(--accent));
+  outline: 2px solid var(--rt-focus, var(--accent));
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-name-cell__display { transition: none; }
 }
 </style>

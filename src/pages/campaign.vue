@@ -1,90 +1,110 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
+import { PhArrowRight, PhCalendarBlank } from '@phosphor-icons/vue'
 import AppNavigation from '~/components/AppNavigation.vue'
-import { CAMPAIGN_API_PATHS } from '~/utils/apiRoutes'
-import { getClientId } from '~/utils/clientId'
-import { getErrorMessage } from '~/utils/errorMessages'
-import type { CampaignNextDayResult } from '#shared/campaign'
+import CampaignContinuationDashboard from '~/components/campaign/CampaignContinuationDashboard.vue'
+import CampaignDayPreflightDialog from '~/components/campaign/CampaignDayPreflightDialog.vue'
+import { useCampaignContinuationDashboard } from '~/composables/campaign/useCampaignContinuationDashboard'
+import { useCampaignDayPreflight } from '~/composables/campaign/useCampaignDayPreflight'
 
-const { isGm } = useAuth()
-const { postJson } = useApiClient()
+const { isGm, isPlayer } = useAuth()
+const profiles = usePlayerProfiles()
+const dashboard = useCampaignContinuationDashboard()
+const nextDayOrigin = ref<HTMLButtonElement | null>(null)
+const campaignDay = useCampaignDayPreflight({
+  onAccepted: () => dashboard.load({ silent: true }),
+})
 
-const advancingDay = ref(false)
-const nextDayError = ref<string | null>(null)
-const nextDayResult = ref<CampaignNextDayResult | null>(null)
-
-const formatCount = (count: number, singular: string, plural = `${singular}s`): string =>
-  `${count} ${count === 1 ? singular : plural}`
-
-const advanceCampaignDay = async () => {
-  if (!isGm.value || advancingDay.value) return
-  const confirmed = window.confirm(
-    'Advance the campaign to the next day? This starts a new Injury-healing allowance, removes 1 Injury from every Pokémon and Trainer sheet, restores HP for sheets below 5 Injuries, clears conditions, resets Daily move use, and restores Trainer AP.',
-  )
-  if (!confirmed) return
-
-  advancingDay.value = true
-  nextDayError.value = null
-  try {
-    nextDayResult.value = await postJson<CampaignNextDayResult>(CAMPAIGN_API_PATHS.nextDay, {
-      clientId: getClientId(),
-    })
-  } catch (error) {
-    nextDayError.value = getErrorMessage(error)
-  } finally {
-    advancingDay.value = false
-  }
+const showNextDayPreflight = async (): Promise<void> => {
+  if (!isGm.value) return
+  await campaignDay.show()
 }
+const closeNextDayPreflight = async (): Promise<void> => {
+  campaignDay.close()
+  await nextTick()
+  nextDayOrigin.value?.focus()
+}
+
+onMounted(async () => {
+  if (isPlayer.value) {
+    profiles.loadRememberedProfile()
+    try {
+      await profiles.reloadProfiles({ silent: true, clearMissingSelection: true })
+    }
+    catch {
+      // The dashboard still loads a safe empty owner projection when no current Profile is available.
+    }
+  }
+  await dashboard.load()
+})
 
 useHead({ title: 'Campaign · Rotom Table' })
 </script>
 
 <template>
-  <main class="campaign-page">
+  <main class="campaign-page rt-context-workshop">
     <AppNavigation />
 
-    <section class="panel-card campaign-hero">
-      <div>
-        <p class="campaign-eyebrow">Campaign tools</p>
-        <h1>Campaign day</h1>
-        <p>
-          Advance shared campaign recovery in one step. The next day action applies to every saved Pokémon and Trainer sheet.
-        </p>
-      </div>
-      <button
-        type="button"
-        class="next-day-button"
-        :disabled="!isGm || advancingDay"
-        @click="advanceCampaignDay"
-      >
-        {{ advancingDay ? 'Advancing…' : 'Next day' }}
-      </button>
-    </section>
+    <CampaignContinuationDashboard
+      :projection="dashboard.projection.value"
+      :status="dashboard.status.value"
+      :error="dashboard.error.value"
+      :has-selected-profile="profiles.hasSelectedProfile.value"
+      @refresh="dashboard.refresh"
+    >
+      <template #campaign-tools>
+        <section v-if="isGm" class="next-day-tool" aria-labelledby="next-day-title">
+          <div class="next-day-tool__heading">
+            <PhCalendarBlank :size="24" weight="duotone" aria-hidden="true" />
+            <div>
+              <p>GM campaign tool</p>
+              <h2 id="next-day-title">Next day</h2>
+            </div>
+          </div>
+          <p class="next-day-tool__summary">
+            Review open work, then advance shared recovery and Egg time through the authoritative campaign clock.
+          </p>
+          <details class="next-day-tool__details">
+            <summary>What changes</summary>
+            <ul>
+              <li>Starts a new Injury-healing allowance and removes 1 Injury from each eligible sheet.</li>
+              <li>Restores eligible HP, clears conditions, Daily Move usage, and Trainer AP.</li>
+              <li>Advances timed effects and due Eggs; paused Egg time remains skipped.</li>
+            </ul>
+          </details>
+          <button
+            ref="nextDayOrigin"
+            type="button"
+            class="next-day-tool__action"
+            :disabled="campaignDay.busy.value"
+            @click="showNextDayPreflight"
+          >
+            {{ campaignDay.busy.value ? 'Reviewing…' : 'Review next day' }}
+            <PhArrowRight v-if="!campaignDay.busy.value" :size="18" weight="bold" aria-hidden="true" />
+          </button>
+        </section>
+      </template>
+    </CampaignContinuationDashboard>
 
-    <section class="panel-card next-day-card">
-      <h2>Next day effects</h2>
-      <ul>
-        <li>Start a new Injury-healing allowance and remove 1 Injury from each sheet.</li>
-        <li>Restore HP to the injury-adjusted Max HP when the sheet is below 5 Injuries.</li>
-        <li>Clear sheet conditions and reset Daily move usage.</li>
-        <li>Restore Trainer AP while preserving bound AP.</li>
-      </ul>
-      <p v-if="!isGm" class="campaign-note campaign-note--warning">
-        GM login is required to advance the campaign day.
-      </p>
-      <p v-if="nextDayError" class="campaign-note campaign-note--error" role="alert">
-        {{ nextDayError }}
-      </p>
-      <div v-if="nextDayResult" class="next-day-result" role="status">
-        <strong>Next day complete.</strong>
-        <span>{{ formatCount(nextDayResult.updatedSheets, 'sheet') }} updated out of {{ nextDayResult.totalSheets }}.</span>
-        <span>{{ formatCount(nextDayResult.hitPointsRestored, 'HP', 'HP') }} restored.</span>
-        <span>{{ formatCount(nextDayResult.injuriesHealed, 'Injury', 'Injuries') }} healed.</span>
-        <span>{{ formatCount(nextDayResult.dailyMoveUsesCleared, 'Daily move use') }} cleared.</span>
-        <span>{{ formatCount(nextDayResult.conditionsCleared, 'condition') }} cleared.</span>
-        <span>{{ formatCount(nextDayResult.trainerApRestored, 'Trainer AP', 'Trainer AP') }} restored.</span>
-      </div>
-    </section>
+    <CampaignDayPreflightDialog
+      v-if="isGm"
+      :open="campaignDay.open.value"
+      :phase="campaignDay.phase.value"
+      :projection="campaignDay.projection.value"
+      :postflight="campaignDay.postflight.value"
+      :confirmed="campaignDay.confirmed.value"
+      :error="campaignDay.error.value"
+      :uncertain="campaignDay.uncertain.value"
+      :online="campaignDay.online.value"
+      :can-commit="campaignDay.canCommit.value"
+      :remaining-attention="dashboard.projection.value?.attention.summary ?? null"
+      @close="closeNextDayPreflight"
+      @recheck="campaignDay.check"
+      @commit="campaignDay.commit"
+      @update:confirmed="campaignDay.confirmed.value = $event"
+    />
+
+    <CampaignGuidedItemAdjudication v-if="isGm" />
   </main>
 </template>
 
@@ -93,124 +113,71 @@ useHead({ title: 'Campaign · Rotom Table' })
   min-height: 100vh;
   display: grid;
   align-content: start;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--paper);
-  color: var(--ink);
+  gap: var(--rt-space-6, 1.5rem);
+  padding: clamp(.75rem, 2vw, 1.5rem);
+  background: var(--rt-bg-canvas, var(--paper));
+  color: var(--rt-text, var(--ink));
 }
-
-.campaign-hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.campaign-eyebrow {
-  margin: 0 0 0.2rem;
-  color: var(--accent);
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
-
-.campaign-hero h1,
-.next-day-card h2 {
-  margin: 0;
-  color: var(--ink-bright);
-  font-family: var(--font-book);
-  letter-spacing: 0.04em;
-}
-
-.campaign-hero h1 {
-  font-size: clamp(1.7rem, 4vw, 2.45rem);
-}
-
-.campaign-hero p,
-.next-day-card li,
-.campaign-note,
-.next-day-result {
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
-
-.campaign-hero p {
-  max-width: 62ch;
-  margin: 0.35rem 0 0;
-}
-
-.next-day-button {
-  flex: 0 0 auto;
-  border: 1px solid color-mix(in srgb, var(--accent) 65%, var(--rule-soft));
-  border-radius: 999px;
-  background: rgba(var(--accent-rgb), 0.18);
-  color: var(--ink-bright);
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  padding: 0.78rem 1.2rem;
-  text-transform: uppercase;
-  transition: background 0.12s, border-color 0.12s, transform 0.12s;
-}
-
-.next-day-button:hover:not(:disabled),
-.next-day-button:focus-visible:not(:disabled) {
-  border-color: var(--accent);
-  background: rgba(var(--accent-rgb), 0.26);
-  transform: translateY(-1px);
-}
-
-.next-day-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.next-day-card {
+.next-day-tool {
   display: grid;
-  gap: 0.65rem;
+  gap: var(--rt-space-3, .75rem);
+  border: 1px solid var(--rt-rule, var(--rule-soft));
+  background: var(--rt-surface-1, var(--paper-soft));
+  padding: var(--rt-space-4, 1rem);
 }
-
-.next-day-card ul {
-  margin: 0;
-  padding-left: 1.2rem;
+.next-day-tool__heading { display: flex; align-items: center; gap: .65rem; }
+.next-day-tool__heading > svg { color: var(--rt-focus, var(--info)); }
+.next-day-tool__heading p,
+.next-day-tool__heading h2,
+.next-day-tool__summary { margin: 0; }
+.next-day-tool__heading p {
+  color: var(--rt-text-muted, var(--ink-muted));
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
 }
-
-.campaign-note {
-  margin: 0;
+.next-day-tool__heading h2 {
+  margin-top: .15rem;
+  color: var(--rt-text-strong, var(--ink-bright));
+  font: 700 1.55rem/1.05 var(--font-book);
 }
-
-.campaign-note--warning {
-  color: #f2b67b;
+.next-day-tool__summary,
+.next-day-tool__details {
+  color: var(--rt-text-muted, var(--ink-soft));
+  line-height: 1.45;
 }
-
-.campaign-note--error {
-  color: #ffb3b3;
-}
-
-.next-day-result {
+.next-day-tool__details summary {
+  min-height: 44px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem 0.8rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper-inset);
-  padding: 0.65rem 0.75rem;
+  align-items: center;
+  cursor: pointer;
+  color: var(--rt-text, var(--ink));
+  font-weight: 750;
 }
-
-.next-day-result strong {
-  color: var(--ink-bright);
+.next-day-tool__details ul { margin: 0; padding: 0 0 0 1.2rem; }
+.next-day-tool__details li + li { margin-top: .35rem; }
+.next-day-tool__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  min-height: 46px;
+  width: 100%;
+  border: 1px solid var(--rt-focus, var(--info));
+  background: var(--rt-surface-2, var(--paper-inset));
+  color: var(--rt-text-strong, var(--ink-bright));
+  cursor: pointer;
+  font-weight: 800;
+  padding: .7rem 1rem;
 }
-
-@media (max-width: 760px) {
-  .campaign-hero {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .next-day-button {
-    width: 100%;
-  }
+.next-day-tool__action:disabled { cursor: progress; opacity: .62; }
+.next-day-tool button:focus-visible,
+.next-day-tool summary:focus-visible {
+  outline: 3px solid var(--rt-focus, #59d8ff);
+  outline-offset: 3px;
+}
+@media (max-width: 520px) {
+  .campaign-page { padding: .65rem; }
 }
 </style>

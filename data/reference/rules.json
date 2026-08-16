@@ -297,7 +297,29 @@
       "TM",
       "HM"
     ],
-    "source": "books/markdown/core/09-gear-and-items.md"
+    "source": "books/markdown/core/09-gear-and-items.md",
+    "itemMoveLearningMechanics": {
+      "schemaVersion": 1,
+      "actorKind": "trainer",
+      "targetKind": "owned-pokemon",
+      "learningMinutes": 60,
+      "activeMoveMaximum": 6,
+      "clusterMindAdditionalSlots": 2,
+      "machineTutorMoveMaximum": 3,
+      "tutorPointCost": 1,
+      "replacementOfCountedMachineTutorMoveCost": 0,
+      "tm": {
+        "reusable": false,
+        "consumptionQuantity": 1,
+        "consumptionPhase": "extended-action-completion"
+      },
+      "hm": {
+        "reusable": true,
+        "usesPerCampaignDay": 1,
+        "consumptionQuantity": 0
+      },
+      "naturalization": "current-level-up-opportunity-does-not-count"
+    }
   },
   "Stat Point Advancement": {
     "name": "Stat Point Advancement",
@@ -336,6 +358,54 @@
       }
     }
   },
+  "Vitamins and Related Items": {
+    "name": "Vitamins and Related Items",
+    "category": "Item Rule",
+    "text": "Vitamins permanently improve a Pokémon, but only five Vitamins may benefit each Pokémon. HP Up, Protein, Iron, Calcium, Zinc, and Carbos each raise their listed Base Stat by 1. Heart Booster grants 2 Tutor Points and PP Up raises one Move's Frequency; each may be used only once per Pokémon. At-Will Moves are ineligible for PP Up, EOT becomes At-Will, and Scene or Daily gains one use. Rare Candy grants enough Experience for the next Level and may benefit a Pokémon up to five times. Stat Suppressants lower one chosen Base Stat by 1 only with the Pokémon's Trainer's consent.",
+    "aliases": [
+      "Vitamin Limit",
+      "PP Up Frequency",
+      "Rare Candy Limit",
+      "Stat Suppressants"
+    ],
+    "source": "books/markdown/core/09-gear-and-items.md",
+    "itemAdvancementMechanics": {
+      "schemaVersion": 1,
+      "vitaminLifetimeLimit": 5,
+      "statVitamins": {
+        "HP Up": "hp",
+        "Protein": "atk",
+        "Iron": "def",
+        "Calcium": "satk",
+        "Zinc": "sdef",
+        "Carbos": "spd"
+      },
+      "heartBooster": {
+        "lifetimeLimit": 1,
+        "tutorPoints": 2
+      },
+      "ppUp": {
+        "lifetimeLimit": 1,
+        "atWillPolicy": "ineligible",
+        "eotResult": "At-Will",
+        "repeatableFrequencies": [
+          "Scene",
+          "Daily"
+        ],
+        "additionalUses": 1
+      },
+      "rareCandy": {
+        "lifetimeLimit": 5,
+        "maximumLevel": 100,
+        "experienceResult": "minimum-for-next-level"
+      },
+      "statSuppressants": {
+        "baseStatDelta": -1,
+        "minimumBaseStat": 1,
+        "consent": "owning-trainer-explicit"
+      }
+    }
+  },
   "Base Relations": {
     "name": "Base Relations",
     "category": "Advancement Rule",
@@ -347,5 +417,1661 @@
       "Stat Relations"
     ],
     "source": "books/markdown/core/05-pokemon.md"
+  },
+  "Evolutionary Items": {
+    "name": "Evolutionary Items",
+    "category": "Item Rule",
+    "text": "Reviewed structured authority for Evolutionary Stones and Keepsakes. Runtime eligibility and transitions use itemEvolutionMechanics only; documentary text is provenance, never executable input.",
+    "source": "books/markdown/core/09-gear-and-items.md; books/markdown/core/05-pokemon.md",
+    "itemEvolutionMechanics": {
+      "schemaVersion": 1,
+      "actorKind": "trainer",
+      "targetKind": "owned-pokemon",
+      "timing": "confirmed-instant",
+      "consumptionQuantity": 1,
+      "consumptionPhase": "accepted-use",
+      "identityPolicy": "retain-sheet-character-and-ownership-identity",
+      "statPolicy": "unallocate-added-points-then-owner-restat",
+      "abilityPolicy": "map-current-canonical-abilities-by-tier-and-slot",
+      "movePolicy": "retain-current-moves-and-create-bounded-opportunity-attention",
+      "skillsCapabilitiesPolicy": "adopt-destination-canonical-defaults-and-preserve-explicit-overrides",
+      "equipmentPolicy": "reconcile-current-equipment-against-destination-species",
+      "transitionCount": 62,
+      "transitions": [
+        {
+          "itemId": "Fire Stone",
+          "fromSpecies": "Vulpix",
+          "toSpecies": "Ninetales",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Fire Stone",
+          "fromSpecies": "Growlithe",
+          "toSpecies": "Arcanine",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Fire Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Flareon",
+          "minimumLevel": 0,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Fire Stone",
+          "fromSpecies": "Pansear",
+          "toSpecies": "Simisear",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Poliwhirl",
+          "toSpecies": "Poliwrath",
+          "minimumLevel": 30,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Shellder",
+          "toSpecies": "Cloyster",
+          "minimumLevel": 0,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Staryu",
+          "toSpecies": "Starmie",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Vaporeon",
+          "minimumLevel": 0,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Lombre",
+          "toSpecies": "Ludicolo",
+          "minimumLevel": 25,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Panpour",
+          "toSpecies": "Simipour",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Thunder Stone",
+          "fromSpecies": "Pikachu",
+          "toSpecies": "Raichu",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Thunder Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Jolteon",
+          "minimumLevel": 0,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Thunder Stone",
+          "fromSpecies": "Eelektrik",
+          "toSpecies": "Eelektross",
+          "minimumLevel": 40,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Gloom",
+          "toSpecies": "Vileplume",
+          "minimumLevel": 30,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Weepinbell",
+          "toSpecies": "Victreebel",
+          "minimumLevel": 30,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Exeggcute",
+          "toSpecies": "Exeggutor",
+          "minimumLevel": 0,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Leafeon",
+          "minimumLevel": 0,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Nuzleaf",
+          "toSpecies": "Shiftry",
+          "minimumLevel": 25,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Pansage",
+          "toSpecies": "Simisage",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Nidorina",
+          "toSpecies": "Nidoqueen",
+          "minimumLevel": 25,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Nidorino",
+          "toSpecies": "Nidoking",
+          "minimumLevel": 25,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Clefairy",
+          "toSpecies": "Clefable",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Jigglypuff",
+          "toSpecies": "Wigglytuff",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Sylveon",
+          "minimumLevel": 0,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Skitty",
+          "toSpecies": "Delcatty",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Munna",
+          "toSpecies": "Musharna",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Sun Stone",
+          "fromSpecies": "Gloom",
+          "toSpecies": "Bellossom",
+          "minimumLevel": 30,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Sun Stone",
+          "fromSpecies": "Sunkern",
+          "toSpecies": "Sunflora",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Sun Stone",
+          "fromSpecies": "Cottonee",
+          "toSpecies": "Whimsicott",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Sun Stone",
+          "fromSpecies": "Petilil",
+          "toSpecies": "Lilligant",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Sun Stone",
+          "fromSpecies": "Helioptile",
+          "toSpecies": "Heliolisk",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Shiny Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Glaceon",
+          "minimumLevel": 0,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Shiny Stone",
+          "fromSpecies": "Togetic",
+          "toSpecies": "Togekiss",
+          "minimumLevel": 30,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Shiny Stone",
+          "fromSpecies": "Roselia",
+          "toSpecies": "Roserade",
+          "minimumLevel": 30,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Shiny Stone",
+          "fromSpecies": "Minccino",
+          "toSpecies": "Cinccino",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Shiny Stone",
+          "fromSpecies": "Floette",
+          "toSpecies": "Florges",
+          "minimumLevel": 30,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Dusk Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Umbreon",
+          "minimumLevel": 0,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Dusk Stone",
+          "fromSpecies": "Murkrow",
+          "toSpecies": "Honchkrow",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Dusk Stone",
+          "fromSpecies": "Misdreavus",
+          "toSpecies": "Mismagius",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Dusk Stone",
+          "fromSpecies": "Lampent",
+          "toSpecies": "Chandelure",
+          "minimumLevel": 35,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Dusk Stone",
+          "fromSpecies": "Doublade",
+          "toSpecies": "Aegislash",
+          "minimumLevel": 40,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Dawn Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Espeon",
+          "minimumLevel": 0,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Dawn Stone",
+          "fromSpecies": "Kirlia",
+          "toSpecies": "Gallade",
+          "minimumLevel": 30,
+          "requiredGender": "Male"
+        },
+        {
+          "itemId": "Dawn Stone",
+          "fromSpecies": "Snorunt",
+          "toSpecies": "Froslass",
+          "minimumLevel": 30,
+          "requiredGender": "Female"
+        },
+        {
+          "itemId": "Deepseascale/Deepseatooth",
+          "fromSpecies": "Clamperl",
+          "toSpecies": "Huntail",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Deepseascale/Deepseatooth",
+          "fromSpecies": "Clamperl",
+          "toSpecies": "Gorebyss",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Dragon Scale",
+          "fromSpecies": "Seadra",
+          "toSpecies": "Kingdra",
+          "minimumLevel": 40,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Dubious Disc",
+          "fromSpecies": "Porygon2",
+          "toSpecies": "Porygon-Z",
+          "minimumLevel": 25,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Electirizer",
+          "fromSpecies": "Electabuzz",
+          "toSpecies": "Electivire",
+          "minimumLevel": 40,
+          "requiredGender": null
+        },
+        {
+          "itemId": "King’s Rock",
+          "fromSpecies": "Poliwhirl",
+          "toSpecies": "Politoed",
+          "minimumLevel": 30,
+          "requiredGender": null
+        },
+        {
+          "itemId": "King’s Rock",
+          "fromSpecies": "Slowpoke",
+          "toSpecies": "Slowking",
+          "minimumLevel": 35,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Oval Stone",
+          "fromSpecies": "Happiny",
+          "toSpecies": "Chansey",
+          "minimumLevel": 10,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Magmarizer",
+          "fromSpecies": "Magmar",
+          "toSpecies": "Magmortar",
+          "minimumLevel": 40,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Metal Coat",
+          "fromSpecies": "Onix",
+          "toSpecies": "Steelix",
+          "minimumLevel": 35,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Metal Coat",
+          "fromSpecies": "Scyther",
+          "toSpecies": "Scizor",
+          "minimumLevel": 30,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Protector",
+          "fromSpecies": "Rhydon",
+          "toSpecies": "Rhyperior",
+          "minimumLevel": 45,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Razor Claw",
+          "fromSpecies": "Sneasel",
+          "toSpecies": "Weavile",
+          "minimumLevel": 30,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Razor Fang",
+          "fromSpecies": "Gligar",
+          "toSpecies": "Gliscor",
+          "minimumLevel": 25,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Reaper Cloth",
+          "fromSpecies": "Dusclops",
+          "toSpecies": "Dusknoir",
+          "minimumLevel": 40,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Sachet",
+          "fromSpecies": "Spritzee",
+          "toSpecies": "Aromatisse",
+          "minimumLevel": 20,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Up-Grade",
+          "fromSpecies": "Porygon",
+          "toSpecies": "Porygon2",
+          "minimumLevel": 10,
+          "requiredGender": null
+        },
+        {
+          "itemId": "Whipped Dream",
+          "fromSpecies": "Swirlix",
+          "toSpecies": "Slurpuff",
+          "minimumLevel": 20,
+          "requiredGender": null
+        }
+      ]
+    }
+  },
+  "Item-Driven Form Changes": {
+    "name": "Item-Driven Form Changes",
+    "category": "Item Rule",
+    "text": "Reviewed structured authority for Mega Evolution form changes. Runtime eligibility, effective data, source ownership, Scene usage, and reversal use itemFormChangeMechanics only; documentary text is provenance, never executable input.",
+    "source": "books/markdown/core/05-pokemon.md; books/markdown/core/09-gear-and-items.md; reviewed Pokédex Mega Evolution blocks",
+    "itemFormChangeMechanics": {
+      "schemaVersion": 1,
+      "triggerKind": "mega-evolution",
+      "ringItemId": "Mega Ring",
+      "stoneItemId": "Mega Stone",
+      "timing": "swift-action-on-trainer-or-pokemon-turn",
+      "duration": "scene",
+      "trainerSceneLimit": 1,
+      "hpPolicy": "unchanged",
+      "statPolicy": "add-reviewed-non-hp-deltas-to-effective-stats",
+      "typePolicy": "replace-only-when-form-record-declares-types",
+      "abilityPolicy": "add-reviewed-ability-or-select-distinct-natural-ability-on-duplicate",
+      "identityPolicy": "retain-sheet-character-history-and-customization",
+      "sourcePolicy": "active-matching-ring-and-form-bound-stone-or-reviewed-delta-exception",
+      "sourceLossPolicy": "accepted-scene-form-survives-suppression-and-stone-is-removal-locked",
+      "reversalPolicy": "automatic-at-scene-end",
+      "persistentFormPolicy": "supported-by-state-model-but-no-reviewed-item-trigger",
+      "formCount": 50,
+      "forms": [
+        {
+          "formId": "mega-aerodactyl",
+          "baseSpeciesId": "Aerodactyl",
+          "displayName": "Mega Aerodactyl",
+          "types": null,
+          "abilityId": "Tough Claws",
+          "statDeltas": {
+            "atk": 3,
+            "def": 2,
+            "satk": 1,
+            "sdef": 2,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-alakazam",
+          "baseSpeciesId": "Alakazam",
+          "displayName": "Mega Alakazam",
+          "types": null,
+          "abilityId": "Trace",
+          "statDeltas": {
+            "atk": 0,
+            "def": 2,
+            "satk": 4,
+            "sdef": 0,
+            "spd": 3
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-beedrill",
+          "baseSpeciesId": "Beedrill",
+          "displayName": "Mega Beedrill",
+          "types": null,
+          "abilityId": "Adaptability",
+          "statDeltas": {
+            "atk": 6,
+            "def": 0,
+            "satk": -3,
+            "sdef": 0,
+            "spd": 7
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-blastoise",
+          "baseSpeciesId": "Blastoise",
+          "displayName": "Mega Blastoise",
+          "types": null,
+          "abilityId": "Mega Launcher",
+          "statDeltas": {
+            "atk": 2,
+            "def": 2,
+            "satk": 5,
+            "sdef": 1,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-charizard-x",
+          "baseSpeciesId": "Charizard",
+          "displayName": "Mega Charizard X",
+          "types": [
+            "Fire",
+            "Dragon"
+          ],
+          "abilityId": "Tough Claws",
+          "statDeltas": {
+            "atk": 5,
+            "def": 3,
+            "satk": 2,
+            "sdef": 0,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-charizard-y",
+          "baseSpeciesId": "Charizard",
+          "displayName": "Mega Charizard Y",
+          "types": null,
+          "abilityId": "Drought",
+          "statDeltas": {
+            "atk": 2,
+            "def": 0,
+            "satk": 5,
+            "sdef": 3,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-gengar",
+          "baseSpeciesId": "Gengar",
+          "displayName": "Mega Gengar",
+          "types": null,
+          "abilityId": "Shadow Tag",
+          "statDeltas": {
+            "atk": 0,
+            "def": 2,
+            "satk": 4,
+            "sdef": 2,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-gyarados",
+          "baseSpeciesId": "Gyarados",
+          "displayName": "Mega Gyarados",
+          "types": [
+            "Water",
+            "Dark"
+          ],
+          "abilityId": "Mold Breaker",
+          "statDeltas": {
+            "atk": 3,
+            "def": 3,
+            "satk": 1,
+            "sdef": 3,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-kangaskhan",
+          "baseSpeciesId": "Kangaskhan",
+          "displayName": "Mega Kangaskhan",
+          "types": null,
+          "abilityId": "Parental Bond",
+          "statDeltas": {
+            "atk": 3,
+            "def": 2,
+            "satk": 2,
+            "sdef": 2,
+            "spd": 1
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-mewtwo-x",
+          "baseSpeciesId": "Mewtwo",
+          "displayName": "Mega Mewtwo X",
+          "types": [
+            "Psychic",
+            "Fighting"
+          ],
+          "abilityId": "Steadfast",
+          "statDeltas": {
+            "atk": 8,
+            "def": 1,
+            "satk": 0,
+            "sdef": 0,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-mewtwo-y",
+          "baseSpeciesId": "Mewtwo",
+          "displayName": "Mega Mewtwo Y",
+          "types": null,
+          "abilityId": "Insomnia",
+          "statDeltas": {
+            "atk": 4,
+            "def": -2,
+            "satk": 4,
+            "sdef": 3,
+            "spd": 1
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-pidgeot",
+          "baseSpeciesId": "Pidgeot",
+          "displayName": "Mega Pidgeot",
+          "types": null,
+          "abilityId": "No Guard",
+          "statDeltas": {
+            "atk": 0,
+            "def": 0,
+            "satk": 7,
+            "sdef": 1,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-pinsir",
+          "baseSpeciesId": "Pinsir",
+          "displayName": "Mega Pinsir",
+          "types": [
+            "Bug",
+            "Flying"
+          ],
+          "abilityId": "Aerilate",
+          "statDeltas": {
+            "atk": 3,
+            "def": 2,
+            "satk": 1,
+            "sdef": 2,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-slowbro",
+          "baseSpeciesId": "Slowbro",
+          "displayName": "Mega Slowbro",
+          "types": null,
+          "abilityId": "Shell Armor",
+          "statDeltas": {
+            "atk": 0,
+            "def": 7,
+            "satk": 3,
+            "sdef": 0,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-venusaur",
+          "baseSpeciesId": "Venusaur",
+          "displayName": "Mega Venusaur",
+          "types": null,
+          "abilityId": "Thick Fat",
+          "statDeltas": {
+            "atk": 2,
+            "def": 4,
+            "satk": 2,
+            "sdef": 2,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-ampharos",
+          "baseSpeciesId": "Ampharos",
+          "displayName": "Mega Ampharos",
+          "types": [
+            "Electric",
+            "Dragon"
+          ],
+          "abilityId": "Mold Breaker",
+          "statDeltas": {
+            "atk": 2,
+            "def": 2,
+            "satk": 5,
+            "sdef": 2,
+            "spd": -1
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-heracross",
+          "baseSpeciesId": "Heracross",
+          "displayName": "Mega Heracross",
+          "types": null,
+          "abilityId": "Skill Link",
+          "statDeltas": {
+            "atk": 6,
+            "def": 4,
+            "satk": 0,
+            "sdef": 1,
+            "spd": -1
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-houndoom",
+          "baseSpeciesId": "Houndoom",
+          "displayName": "Mega Houndoom",
+          "types": null,
+          "abilityId": "Solar Power",
+          "statDeltas": {
+            "atk": 0,
+            "def": 4,
+            "satk": 3,
+            "sdef": 1,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-scizor",
+          "baseSpeciesId": "Scizor",
+          "displayName": "Mega Scizor",
+          "types": null,
+          "abilityId": "Technician",
+          "statDeltas": {
+            "atk": 2,
+            "def": 4,
+            "satk": 1,
+            "sdef": 2,
+            "spd": 1
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-steelix",
+          "baseSpeciesId": "Steelix",
+          "displayName": "Mega Steelix",
+          "types": null,
+          "abilityId": "Sand Force",
+          "statDeltas": {
+            "atk": 4,
+            "def": 3,
+            "satk": 0,
+            "sdef": 3,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-tyranitar",
+          "baseSpeciesId": "Tyranitar",
+          "displayName": "Mega Tyranitar",
+          "types": null,
+          "abilityId": "Sand Stream",
+          "statDeltas": {
+            "atk": 3,
+            "def": 4,
+            "satk": 0,
+            "sdef": 2,
+            "spd": 1
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-absol",
+          "baseSpeciesId": "Absol",
+          "displayName": "Mega Absol",
+          "types": null,
+          "abilityId": "Magic Bounce",
+          "statDeltas": {
+            "atk": 2,
+            "def": 0,
+            "satk": 4,
+            "sdef": 0,
+            "spd": 4
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-aggron",
+          "baseSpeciesId": "Aggron",
+          "displayName": "Mega Aggron",
+          "types": [
+            "Steel"
+          ],
+          "abilityId": "Filter",
+          "statDeltas": {
+            "atk": 3,
+            "def": 5,
+            "satk": 0,
+            "sdef": 2,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-altaria",
+          "baseSpeciesId": "Altaria",
+          "displayName": "Mega Altaria",
+          "types": [
+            "Dragon",
+            "Fairy"
+          ],
+          "abilityId": "Pixilate",
+          "statDeltas": {
+            "atk": 4,
+            "def": 2,
+            "satk": 4,
+            "sdef": 0,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-banette",
+          "baseSpeciesId": "Banette",
+          "displayName": "Mega Banette",
+          "types": null,
+          "abilityId": "Prankster",
+          "statDeltas": {
+            "atk": 5,
+            "def": 1,
+            "satk": 1,
+            "sdef": 2,
+            "spd": 1
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-blaziken",
+          "baseSpeciesId": "Blaziken",
+          "displayName": "Mega Blaziken",
+          "types": null,
+          "abilityId": "Speed Boost",
+          "statDeltas": {
+            "atk": 4,
+            "def": 1,
+            "satk": 2,
+            "sdef": 1,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-camerupt",
+          "baseSpeciesId": "Camerupt",
+          "displayName": "Mega Camerupt",
+          "types": null,
+          "abilityId": "Sheer Force",
+          "statDeltas": {
+            "atk": 2,
+            "def": 3,
+            "satk": 4,
+            "sdef": 3,
+            "spd": -2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-gardevoir",
+          "baseSpeciesId": "Gardevoir",
+          "displayName": "Mega Gardevoir",
+          "types": null,
+          "abilityId": "Pixilate",
+          "statDeltas": {
+            "atk": 2,
+            "def": 0,
+            "satk": 4,
+            "sdef": 2,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-glalie",
+          "baseSpeciesId": "Glalie",
+          "displayName": "Mega Glalie",
+          "types": null,
+          "abilityId": "Refrigerate",
+          "statDeltas": {
+            "atk": 4,
+            "def": 0,
+            "satk": 4,
+            "sdef": 0,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-groudon",
+          "baseSpeciesId": "Groudon",
+          "displayName": "Mega Groudon",
+          "types": [
+            "Ground",
+            "Fire"
+          ],
+          "abilityId": "Heat Mirage",
+          "statDeltas": {
+            "atk": 3,
+            "def": 2,
+            "satk": 5,
+            "sdef": 0,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-kyogre",
+          "baseSpeciesId": "Kyogre",
+          "displayName": "Mega Kyogre",
+          "types": null,
+          "abilityId": "Wash Away",
+          "statDeltas": {
+            "atk": 5,
+            "def": 0,
+            "satk": 3,
+            "sdef": 2,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-latias",
+          "baseSpeciesId": "Latias",
+          "displayName": "Mega Latias",
+          "types": null,
+          "abilityId": "Levitate",
+          "statDeltas": {
+            "atk": 2,
+            "def": 3,
+            "satk": 3,
+            "sdef": 2,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-latios",
+          "baseSpeciesId": "Latios",
+          "displayName": "Mega Latios",
+          "types": null,
+          "abilityId": "Levitate",
+          "statDeltas": {
+            "atk": 4,
+            "def": 2,
+            "satk": 3,
+            "sdef": 1,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-manectric",
+          "baseSpeciesId": "Manectric",
+          "displayName": "Mega Manectric",
+          "types": null,
+          "abilityId": "Intimidate",
+          "statDeltas": {
+            "atk": 0,
+            "def": 2,
+            "satk": 3,
+            "sdef": 2,
+            "spd": 3
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-mawile",
+          "baseSpeciesId": "Mawile",
+          "displayName": "Mega Mawile",
+          "types": null,
+          "abilityId": "Huge Power",
+          "statDeltas": {
+            "atk": 2,
+            "def": 4,
+            "satk": 0,
+            "sdef": 4,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-medicham",
+          "baseSpeciesId": "Medicham",
+          "displayName": "Mega Medicham",
+          "types": null,
+          "abilityId": "Pure Power",
+          "statDeltas": {
+            "atk": 4,
+            "def": 1,
+            "satk": 2,
+            "sdef": 1,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-metagross",
+          "baseSpeciesId": "Metagross",
+          "displayName": "Mega Metagross",
+          "types": null,
+          "abilityId": "Tough Claws",
+          "statDeltas": {
+            "atk": 1,
+            "def": 2,
+            "satk": 1,
+            "sdef": 2,
+            "spd": 4
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-rayquaza",
+          "baseSpeciesId": "Rayquaza",
+          "displayName": "Mega Rayquaza",
+          "types": null,
+          "abilityId": "Run Away",
+          "statDeltas": {
+            "atk": 3,
+            "def": 1,
+            "satk": 3,
+            "sdef": 1,
+            "spd": 2
+          },
+          "requiresMegaStone": false
+        },
+        {
+          "formId": "mega-sableye",
+          "baseSpeciesId": "Sableye",
+          "displayName": "Mega Sableye",
+          "types": null,
+          "abilityId": "Magic Bounce",
+          "statDeltas": {
+            "atk": 1,
+            "def": 5,
+            "satk": 2,
+            "sdef": 5,
+            "spd": -3
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-salamence",
+          "baseSpeciesId": "Salamence",
+          "displayName": "Mega Salamence",
+          "types": null,
+          "abilityId": "Aerilate",
+          "statDeltas": {
+            "atk": 1,
+            "def": 5,
+            "satk": 1,
+            "sdef": 1,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-sceptile",
+          "baseSpeciesId": "Sceptile",
+          "displayName": "Mega Sceptile",
+          "types": [
+            "Grass",
+            "Dragon"
+          ],
+          "abilityId": "Lightning Rod",
+          "statDeltas": {
+            "atk": 2,
+            "def": 1,
+            "satk": 4,
+            "sdef": 0,
+            "spd": 3
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-sharpedo",
+          "baseSpeciesId": "Sharpedo",
+          "displayName": "Mega Sharpedo",
+          "types": null,
+          "abilityId": "Strong Jaw",
+          "statDeltas": {
+            "atk": 2,
+            "def": 3,
+            "satk": 1,
+            "sdef": 3,
+            "spd": 1
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-swampert",
+          "baseSpeciesId": "Swampert",
+          "displayName": "Mega Swampert",
+          "types": null,
+          "abilityId": "Swift Swim",
+          "statDeltas": {
+            "atk": 4,
+            "def": 2,
+            "satk": 1,
+            "sdef": 2,
+            "spd": 1
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-abomasnow",
+          "baseSpeciesId": "Abomasnow",
+          "displayName": "Mega Abomasnow",
+          "types": null,
+          "abilityId": "Snow Warning",
+          "statDeltas": {
+            "atk": 4,
+            "def": 3,
+            "satk": 4,
+            "sdef": 2,
+            "spd": -3
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-gallade",
+          "baseSpeciesId": "Gallade",
+          "displayName": "Mega Gallade",
+          "types": null,
+          "abilityId": "Inner Focus",
+          "statDeltas": {
+            "atk": 4,
+            "def": 3,
+            "satk": 0,
+            "sdef": 0,
+            "spd": 3
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-garchomp",
+          "baseSpeciesId": "Garchomp",
+          "displayName": "Mega Garchomp",
+          "types": null,
+          "abilityId": "Sand Force",
+          "statDeltas": {
+            "atk": 4,
+            "def": 2,
+            "satk": 4,
+            "sdef": 1,
+            "spd": -1
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-lopunny",
+          "baseSpeciesId": "Lopunny",
+          "displayName": "Mega Lopunny",
+          "types": [
+            "Normal",
+            "Fighting"
+          ],
+          "abilityId": "Scrappy",
+          "statDeltas": {
+            "atk": 6,
+            "def": 1,
+            "satk": 0,
+            "sdef": 0,
+            "spd": 3
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-lucario",
+          "baseSpeciesId": "Lucario",
+          "displayName": "Mega Lucario",
+          "types": null,
+          "abilityId": "Adaptability",
+          "statDeltas": {
+            "atk": 4,
+            "def": 2,
+            "satk": 2,
+            "sdef": 0,
+            "spd": 2
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-audino",
+          "baseSpeciesId": "Audino",
+          "displayName": "Mega Audino",
+          "types": [
+            "Normal",
+            "Fairy"
+          ],
+          "abilityId": "Healer",
+          "statDeltas": {
+            "atk": 0,
+            "def": 4,
+            "satk": 2,
+            "sdef": 4,
+            "spd": 0
+          },
+          "requiresMegaStone": true
+        },
+        {
+          "formId": "mega-diancie",
+          "baseSpeciesId": "Diancie",
+          "displayName": "Mega Diancie",
+          "types": null,
+          "abilityId": "Magic Bounce",
+          "statDeltas": {
+            "atk": 6,
+            "def": -4,
+            "satk": 6,
+            "sdef": -4,
+            "spd": 6
+          },
+          "requiresMegaStone": true
+        }
+      ]
+    }
+  },
+  "Exploration Items": {
+    "name": "Exploration Items",
+    "category": "Item Rule",
+    "text": "Reviewed structured authority for Bait, Fishing Lure, Honey as Bait, Repels, and Dowsing Rod. Runtime timing, checks, campaign effects, bounded prompts, and rewards use itemExplorationMechanics only; documentary text is provenance, never executable input.",
+    "source": "books/markdown/core/09-gear-and-items.md; data/reference/features.json#Crystal Resonance",
+    "itemExplorationMechanics": {
+      "schemaVersion": 1,
+      "actorKind": "trainer",
+      "bait": {
+        "canonicalId": "Bait",
+        "consumptionQuantity": 1,
+        "routeLure": {
+          "checkIntervalMinutes": 15,
+          "successMinimum": 15,
+          "maximumAttempts": 3,
+          "dieSides": 20,
+          "encounterSelection": "gm-comparable-party-level"
+        },
+        "wildDistraction": {
+          "timing": "standard-action",
+          "target": "exact-wild-pokemon",
+          "focusDc": 12,
+          "failureConsequence": "forfeit-next-standard-action"
+        }
+      },
+      "fishingLure": {
+        "canonicalId": "Fishing Lure",
+        "routeLureMechanics": "same-as-bait",
+        "reusable": true,
+        "lossPolicy": "never-automatic-bounded-gm-adjudication"
+      },
+      "honey": {
+        "canonicalId": "Honey",
+        "snackMechanicsRetained": true,
+        "baitMechanics": "same-as-bait"
+      },
+      "repels": [
+        {
+          "canonicalId": "Repel",
+          "durationMinutes": 60,
+          "maximumAffectedWildLevel": 15
+        },
+        {
+          "canonicalId": "Super Repel",
+          "durationMinutes": 120,
+          "maximumAffectedWildLevel": 25
+        },
+        {
+          "canonicalId": "Max Repel",
+          "durationMinutes": 300,
+          "maximumAffectedWildLevel": 35
+        }
+      ],
+      "repelDirect": {
+        "timing": "standard-action",
+        "target": "exact-wild-pokemon-at-or-below-item-level",
+        "accuracyCheck": {
+          "baseAc": 6,
+          "attackClass": "status",
+          "evasion": "speed"
+        },
+        "hitConsequence": {
+          "movement": "immediate-interrupt-shift-away-as-far-as-able",
+          "nextAction": "forfeit-next-shift-action",
+          "positioningAuthority": "bounded-gm-prompt-after-server-owned-hit"
+        }
+      },
+      "dowsingRod": {
+        "canonicalId": "Dowsing Rod",
+        "searchMinutes": 10,
+        "allowedAreas": [
+          "route",
+          "cave",
+          "outside"
+        ],
+        "dailyUses": "floor-occult-education-rank-divided-by-two",
+        "baseDice": "occult-education-rank-d6",
+        "terrainBonusDice": 1,
+        "terrainKinds": [
+          "beach",
+          "cave",
+          "desert",
+          "sandy-or-rocky"
+        ],
+        "skillStuntDowsingBonusDice": 1,
+        "crystalResonanceBonusDice": 3,
+        "successMinimum": 4,
+        "rerollOn": 6,
+        "shardColors": [
+          "Red",
+          "Orange",
+          "Yellow",
+          "Green",
+          "Blue",
+          "Violet"
+        ],
+        "areaAuthority": "bounded-gm-confirmation"
+      }
+    }
+  },
+  "Pokémon Advancement Choices": {
+    "name": "Pokémon Advancement Choices",
+    "category": "Advancement Rule",
+    "text": "Reviewed structured authority for event-bound natural Move opportunities, Ability milestones, optional level evolution, form branches, and post-evolution review. Runtime detection uses pokemonAdvancementChoiceMechanics only; documentary text remains provenance.",
+    "aliases": [
+      "Pokémon Level-Up Choices",
+      "Pokemon Advancement Choices"
+    ],
+    "source": "books/markdown/core/05-pokemon.md",
+    "pokemonAdvancementChoiceMechanics": {
+      "schemaVersion": 1,
+      "sourceEventPolicy": "immutable-level-threshold-event",
+      "moveLearning": {
+        "candidateSource": "pokedex.level_up_moves",
+        "candidateLevelPolicy": "greater-than-before-and-at-most-after",
+        "activeMoveMaximum": 6,
+        "clusterMindAdditionalSlots": 2,
+        "replacementRequiredAtMaximum": true,
+        "currentExactCanonicalRowResolves": true,
+        "authoritativeResolutionSources": [
+          "item-move-learning",
+          "breeding-permanent-move",
+          "settlement-attention-resolution"
+        ]
+      },
+      "abilityMilestones": [
+        {
+          "level": 1,
+          "ordinal": 1,
+          "tiers": [
+            "basic"
+          ]
+        },
+        {
+          "level": 20,
+          "ordinal": 2,
+          "tiers": [
+            "basic",
+            "advanced"
+          ]
+        },
+        {
+          "level": 40,
+          "ordinal": 3,
+          "tiers": [
+            "basic",
+            "advanced",
+            "high"
+          ]
+        }
+      ],
+      "abilityResolution": {
+        "currentExactCanonicalRowsResolveOrdinals": true,
+        "itemEvolutionMappingsResolveOrdinals": true,
+        "settlementAttentionResolutionResolvesEvent": true
+      },
+      "evolution": {
+        "candidateSource": "pokedex.evolutions",
+        "optional": true,
+        "nextStageOnly": true,
+        "candidateRecordStageMustMatch": true,
+        "candidateLevelPolicy": "greater-than-before-and-at-most-after",
+        "conditionPolicy": "no-condition-field",
+        "itemTransitionPolicy": "exclude-reviewed-item-transition-pairs",
+        "multipleCanonicalCandidates": "explicit-form-choice",
+        "malformedOrUnsupportedCandidate": "provider-unavailable"
+      },
+      "postEvolution": {
+        "source": "server-private-item-evolution-application",
+        "reviewStatAllocation": true,
+        "reviewMoveOpportunities": true,
+        "reviewInactiveEquipment": true,
+        "abilityMappingsAreResolved": true,
+        "currentAuthorityCanClearCompletedWork": true
+      },
+      "formChoice": {
+        "genericInferenceFromSpeciesName": false,
+        "itemFormOperationResolutionSuppressesDuplicate": true
+      }
+    }
+  },
+  "Trainer Advancement Choices": {
+    "name": "Trainer Advancement Choices",
+    "category": "Advancement Rule",
+    "text": "Reviewed structured authority for Trainer Feature, Class, Edge, Skill Edge, milestone, and incomplete build-choice detection. Runtime uses only trainerAdvancementChoiceMechanics.",
+    "description": "Reviewed structured authority for detecting Trainer Feature, Class, Edge, Skill Edge, milestone, and incomplete build choices without selecting them.",
+    "trainerAdvancementChoiceMechanics": {
+      "schemaVersion": 1,
+      "maximumLevel": 50,
+      "featureEntitlements": {
+        "paidAtLevelOne": 4,
+        "paidEveryOddLevelFrom": 3,
+        "freeTrainingAtLevelOne": 1,
+        "freeTrainingFeatureIds": [
+          "Agility Training",
+          "Brutal Training",
+          "Focused Training",
+          "Inspired Training"
+        ],
+        "countedCollections": [
+          "features",
+          "classes",
+          "orders"
+        ],
+        "nonEntitlementAcquisitionKinds": [
+          "feature-grant",
+          "edge-grant",
+          "gm",
+          "training"
+        ],
+        "maximumClassFeatures": 4
+      },
+      "edgeEntitlements": {
+        "atLevelOne": 4,
+        "everyEvenLevelFrom": 2,
+        "bonusSkillEdgeLevels": [
+          2,
+          6,
+          12
+        ],
+        "skillEdgeIds": [
+          "Basic Skills",
+          "Adept Skills",
+          "Expert Skills",
+          "Master Skills",
+          "Skill Stunt",
+          "Categoric Inclination",
+          "Skill Enhancement",
+          "Virtuoso"
+        ],
+        "nonEntitlementAcquisitionKinds": [
+          "feature-grant",
+          "edge-grant",
+          "gm"
+        ]
+      },
+      "skillRankMaximums": [
+        {
+          "level": 1,
+          "rank": "Novice",
+          "backgroundException": "Adept"
+        },
+        {
+          "level": 2,
+          "rank": "Adept",
+          "backgroundException": null
+        },
+        {
+          "level": 6,
+          "rank": "Expert",
+          "backgroundException": null
+        },
+        {
+          "level": 12,
+          "rank": "Master",
+          "backgroundException": null
+        }
+      ],
+      "milestoneChoices": [
+        {
+          "level": 5,
+          "options": [
+            {
+              "id": "attack-special-attack",
+              "immediatePoints": 2,
+              "scheduledEvenLevels": [
+                6,
+                8,
+                10
+              ]
+            },
+            {
+              "id": "general-feature",
+              "featureSlots": 1
+            }
+          ]
+        },
+        {
+          "level": 10,
+          "options": [
+            {
+              "id": "attack-special-attack",
+              "immediatePoints": 0,
+              "scheduledEvenLevels": [
+                12,
+                14,
+                16,
+                18,
+                20
+              ]
+            },
+            {
+              "id": "two-edges",
+              "edgeSlots": 2
+            }
+          ]
+        },
+        {
+          "level": 20,
+          "options": [
+            {
+              "id": "attack-special-attack",
+              "immediatePoints": 0,
+              "scheduledEvenLevels": [
+                22,
+                24,
+                26,
+                28,
+                30
+              ]
+            },
+            {
+              "id": "two-edges",
+              "edgeSlots": 2
+            }
+          ]
+        },
+        {
+          "level": 30,
+          "options": [
+            {
+              "id": "attack-special-attack",
+              "immediatePoints": 0,
+              "scheduledEvenLevels": [
+                32,
+                34,
+                36,
+                38,
+                40
+              ]
+            },
+            {
+              "id": "two-edges",
+              "edgeSlots": 2
+            },
+            {
+              "id": "general-feature",
+              "featureSlots": 1
+            }
+          ]
+        },
+        {
+          "level": 40,
+          "options": [
+            {
+              "id": "attack-special-attack",
+              "immediatePoints": 0,
+              "scheduledEvenLevels": [
+                42,
+                44,
+                46,
+                48,
+                50
+              ]
+            },
+            {
+              "id": "two-edges",
+              "edgeSlots": 2
+            },
+            {
+              "id": "general-feature",
+              "featureSlots": 1
+            }
+          ]
+        }
+      ],
+      "resolutionEvidence": {
+        "statOptionFields": [
+          "stats",
+          "attack",
+          "spAttack"
+        ],
+        "statOptionRequiresExactCurrentEarnedTotal": true,
+        "statOptionRequiresAttackSpecialAttackSum": true,
+        "featureAndEdgeOptionsRequireCanonicalCurrentInstances": true,
+        "bonusSkillEdgesField": "bonusSkillEdges",
+        "remainingFeatureField": "remainingFeatures",
+        "remainingEdgeField": "remainingEdges",
+        "freeformNotesResolveNothing": true
+      },
+      "canonicalSources": {
+        "features": "data/reference/features.json",
+        "edges": "data/reference/edges.json",
+        "featureInstances": "shared/featureAutomation/instances.ts",
+        "edgeInstances": "shared/edgeAutomation/instances.ts"
+      },
+      "unsupportedPrerequisitePolicy": "guided-current-canonical-candidates-only",
+      "automaticSelectionPolicy": "never"
+    }
   }
 }

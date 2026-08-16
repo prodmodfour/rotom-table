@@ -140,6 +140,17 @@ export interface CreateMoveAutomationStatResolverInput {
   readonly hasEffectiveAbility?: (placementId: string, canonicalId: string) => boolean
   /** Activated encounter state for Poison Heal's conditional stage protection. */
   readonly hasActivePoisonHeal?: (placementId: string) => boolean
+  /** Hash-current equipment default Stage is represented as an offset from authored stage deltas. */
+  readonly resolveEquipmentCombatStageDefault?: (
+    placementId: string,
+    stage: MoveCombatStageStat,
+  ) => number
+  /** Hash-current active equipment applies after the selected Combat Stage policy. */
+  readonly resolvePostStageEquipmentStat?: (
+    placementId: string,
+    stat: MoveExpressionStat,
+    value: number,
+  ) => number
   /** Authoritative context read-set seam. Standalone pure queries may omit it. */
   readonly recordSheetRead?: (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
@@ -417,30 +428,43 @@ export const createMoveAutomationStatResolver = (
     'Stat-query placement',
   )
   const tokens = indexedByUniqueId(
-    input.tokens.map(token => statTokenSnapshot(
-      token,
-      input.hasEffectiveAbility?.(token.id, 'Dauntless Shield')
-        ?? token.abilityNames?.includes('Dauntless Shield')
-        ?? false,
-      input.hasEffectiveAbility?.(token.id, 'Intrepid Sword')
-        ?? token.abilityNames?.includes('Intrepid Sword')
-        ?? false,
-      input.hasEffectiveAbility?.(token.id, 'Keen Eye')
-        ?? token.abilityNames?.some(name => resolveCanonicalSheetAbilityName(name) === 'Keen Eye')
-        ?? false,
-      input.hasEffectiveAbility?.(token.id, 'Guts')
-        ?? token.abilityNames?.includes('Guts')
-        ?? false,
-      (input.hasEffectiveAbility?.(token.id, 'Marvel Scale')
-        ?? token.abilityNames?.includes('Marvel Scale')
-        ?? false)
-        && token.conditions.some(condition => {
-          const canonical = normalizeConditionName(condition)
-          return canonical !== null
-            && (AA079_MARVEL_SCALE_CONDITIONS as readonly string[]).includes(canonical)
-        }),
-      input.hasActivePoisonHeal?.(token.id) ?? false,
-    )),
+    input.tokens.map((token) => {
+      const snapshot = statTokenSnapshot(
+        token,
+        input.hasEffectiveAbility?.(token.id, 'Dauntless Shield')
+          ?? token.abilityNames?.includes('Dauntless Shield')
+          ?? false,
+        input.hasEffectiveAbility?.(token.id, 'Intrepid Sword')
+          ?? token.abilityNames?.includes('Intrepid Sword')
+          ?? false,
+        input.hasEffectiveAbility?.(token.id, 'Keen Eye')
+          ?? token.abilityNames?.some(name => resolveCanonicalSheetAbilityName(name) === 'Keen Eye')
+          ?? false,
+        input.hasEffectiveAbility?.(token.id, 'Guts')
+          ?? token.abilityNames?.includes('Guts')
+          ?? false,
+        (input.hasEffectiveAbility?.(token.id, 'Marvel Scale')
+          ?? token.abilityNames?.includes('Marvel Scale')
+          ?? false)
+          && token.conditions.some(condition => {
+            const canonical = normalizeConditionName(condition)
+            return canonical !== null
+              && (AA079_MARVEL_SCALE_CONDITIONS as readonly string[]).includes(canonical)
+          }),
+        input.hasActivePoisonHeal?.(token.id) ?? false,
+      )
+      if (!input.resolveEquipmentCombatStageDefault) return snapshot
+      return deepFreeze({
+        ...snapshot,
+        combatStages: Object.fromEntries(COMBAT_STAGE_KEYS.map(stage => [
+          stage,
+          clampCombatStage(
+            snapshot.combatStages[stage]
+              + input.resolveEquipmentCombatStageDefault!(token.id, stage),
+          ),
+        ])) as SpawnedPokemon['combatStages'],
+      })
+    }),
     token => token.id,
     'duplicate-token-id',
     'Stat-query token',
@@ -474,9 +498,17 @@ export const createMoveAutomationStatResolver = (
       query: MoveAutomationStatQuery,
     ): MoveAutomationStatResolution | null => {
       const token = tokenFor(placementId)
-      return token
+      const resolved = token
         ? resolveStat(placementId, token, query, overlayFor(placementId, query.stat))
         : null
+      if (!resolved || !input.resolvePostStageEquipmentStat) return resolved
+      const value = input.resolvePostStageEquipmentStat(
+        placementId,
+        resolved.sourceStat,
+        resolved.value,
+      )
+      if (!Number.isFinite(value)) return null
+      return deepFreeze({ ...resolved, value })
     },
     combatStage: (
       placementId: string,

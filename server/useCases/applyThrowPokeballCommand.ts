@@ -20,6 +20,11 @@ import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
+  ITEM_INVENTORY_SECTIONS,
+  itemInventoryInstanceId,
+  type ItemInventorySection,
+} from '#shared/itemAutomation/inventory'
+import {
   appendPokeballCaptureLogEntry,
   applyPokeballCaptureOutcomeToPokemonSheet,
   applyPokeballCaptureOutcomeToTrainerSheet,
@@ -242,11 +247,15 @@ const linkedTrainerSheetsForActor = async (
   },
 )
 
-const expectBoundedString = (value: unknown, label: string): string => {
+const expectBoundedString = (
+  value: unknown,
+  label: string,
+  maximum = COMMAND_STRING_MAX_LENGTH,
+): string => {
   if (!nonEmptyString(value)) rejectLivePlayCommand('invalid', `${label} is required`)
   const trimmed = (value as string).trim()
-  if (trimmed.length > COMMAND_STRING_MAX_LENGTH) {
-    rejectLivePlayCommand('invalid', `${label} must be at most ${COMMAND_STRING_MAX_LENGTH} characters`)
+  if (trimmed.length > maximum) {
+    rejectLivePlayCommand('invalid', `${label} must be at most ${maximum} characters`)
   }
   return trimmed
 }
@@ -254,13 +263,41 @@ const expectBoundedString = (value: unknown, label: string): string => {
 const expectThrowPokeballPayload = (payload: unknown): ThrowPokeballPayload => {
   if (!isRecord(payload)) rejectLivePlayCommand('invalid', 'throwPokeball payload must be an object')
   const record = payload as UnknownRecord
+  if (Object.keys(record).length !== 4
+    || !['trainerPlacementId', 'targetPlacementId', 'sourceInstanceId', 'source']
+      .every(field => Object.hasOwn(record, field))) {
+    rejectLivePlayCommand('invalid', 'throwPokeball payload must contain only exact source and placement authority')
+  }
   const trainerPlacementId = expectBoundedString(record.trainerPlacementId, 'throwPokeball payload.trainerPlacementId')
   const targetPlacementId = expectBoundedString(record.targetPlacementId, 'throwPokeball payload.targetPlacementId')
-  const pokeballName = expectBoundedString(record.pokeballName, 'throwPokeball payload.pokeballName')
+  const sourceInstanceId = expectBoundedString(record.sourceInstanceId, 'throwPokeball payload.sourceInstanceId', 1_024)
   if (trainerPlacementId === targetPlacementId) {
     rejectLivePlayCommand('invalid', 'throwPokeball trainerPlacementId and targetPlacementId must be different')
   }
-  return { trainerPlacementId, targetPlacementId, pokeballName }
+  if (!isRecord(record.source)) rejectLivePlayCommand('invalid', 'throwPokeball payload.source must be an object')
+  const rawSource = record.source as UnknownRecord
+  if (Object.keys(rawSource).length !== 5
+    || !['kind', 'slug', 'section', 'rowId', 'expectedRevision'].every(field => Object.hasOwn(rawSource, field))
+    || rawSource.kind !== 'trainer'
+    || typeof rawSource.section !== 'string'
+    || !ITEM_INVENTORY_SECTIONS.includes(rawSource.section as ItemInventorySection)
+    || !Number.isSafeInteger(rawSource.expectedRevision)
+    || Number(rawSource.expectedRevision) < 0) {
+    rejectLivePlayCommand('invalid', 'throwPokeball payload.source is malformed')
+  }
+  const source = {
+    kind: 'trainer' as const,
+    slug: expectBoundedString(rawSource.slug, 'throwPokeball payload.source.slug'),
+    section: rawSource.section as ItemInventorySection,
+    rowId: expectBoundedString(rawSource.rowId, 'throwPokeball payload.source.rowId', 200),
+    expectedRevision: Number(rawSource.expectedRevision),
+  }
+  if (itemInventoryInstanceId({
+    containerKind: 'trainer', containerSlug: source.slug, section: source.section, rowId: source.rowId,
+  }) !== sourceInstanceId) {
+    rejectLivePlayCommand('invalid', 'throwPokeball payload source identity is inconsistent')
+  }
+  return { trainerPlacementId, targetPlacementId, sourceInstanceId, source }
 }
 
 const commandPayload = (command: ThrowPokeballLivePlayCommand): ThrowPokeballPayload => (
@@ -446,12 +483,21 @@ const optionForPayload = (
   trainerSheet: TrainerSheet,
   payload: ThrowPokeballPayload,
 ) => {
+  if (payload.source.slug !== trainerSheet.slug
+    || payload.source.expectedRevision !== trainerSheet.revision) {
+    rejectLivePlayCommand('conflict', 'The exact Poké Ball source Trainer or revision changed')
+  }
   const options = buildTrainerPokeballOptions(trainerSheet)
-  const option = options.find((candidate) => candidate.name === payload.pokeballName)
-  if (!option) {
-    rejectLivePlayCommand('conflict', `${payload.pokeballName} is not available in the trainer's Poké Ball inventory`)
+  const matches = options.filter(candidate => (
+    candidate.sourceInstanceId === payload.sourceInstanceId
+    && candidate.source.section === payload.source.section
+    && candidate.source.rowId === payload.source.rowId
+  ))
+  if (matches.length !== 1) {
+    rejectLivePlayCommand('conflict', 'The exact Poké Ball source row is unavailable or ambiguous')
     throw new Error('unreachable')
   }
+  const option = matches[0]!
   if (option.quantity <= 0) {
     rejectLivePlayCommand('conflict', `${option.name} quantity must be greater than zero`)
     throw new Error('unreachable')
@@ -877,6 +923,7 @@ const applyThrowPokeballCommand = (
     pokeball,
     pokemonBySlug: context.pokemonBySlug,
     currentRound: context.map.initiative?.round ?? null,
+    map: context.map,
     random: dependencies.random,
     now: dependencies.now,
   })
@@ -889,7 +936,7 @@ const applyThrowPokeballCommand = (
   }
 
   const nextTrainer = deepCloneJson(trainerSheet) as TrainerSheet
-  const trainerApplyResult = applyPokeballCaptureOutcomeToTrainerSheet(nextTrainer, event)
+  const trainerApplyResult = applyPokeballCaptureOutcomeToTrainerSheet(nextTrainer, event, pokeball)
   const marsupialPair = event.result.success ? prospectiveMarsupialPair : null
   const captureCompanions = event.result.success ? prospectiveCompanions : []
   for (const companion of captureCompanions) {
@@ -1250,7 +1297,7 @@ export const buildThrowPokeballCommandEnvelope = (input: {
   readonly baseRevision: number
   readonly trainerPlacement: SheetPlacement
   readonly targetPlacement: SheetPlacement
-  readonly pokeballName: string
+  readonly pokeball: Pick<ReturnType<typeof buildTrainerPokeballOptions>[number], 'sourceInstanceId' | 'source'>
 }): ThrowPokeballLivePlayCommand => ({
   schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   opId: input.opId,
@@ -1269,6 +1316,7 @@ export const buildThrowPokeballCommandEnvelope = (input: {
   payload: {
     trainerPlacementId: input.trainerPlacement.id,
     targetPlacementId: input.targetPlacement.id,
-    pokeballName: input.pokeballName,
+    sourceInstanceId: input.pokeball.sourceInstanceId,
+    source: input.pokeball.source,
   },
 })

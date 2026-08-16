@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "ticketRange": ["P8-011", "P8-053"],
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "identity": {
+    "canonicalId": "exact key/name from data/reference/items.json",
+    "aliases": "reviewed exact canonical aliases only",
+    "inventoryInstance": "container kind + container slug + section + stable row ID",
+    "originalDisplayLabelRetained": true,
+    "fuzzyRuntimeMatching": false
+  },
+  "contexts": ["encounter", "sheet", "campaign", "workshop", "extended-action", "passive"],
+  "timings": ["standard", "shift", "swift", "full", "free", "extended", "priority", "interrupt", "reaction", "passive"],
+  "roles": ["usable", "equippable", "passive", "guided", "reference-only", "not-applicable"],
+  "targets": ["self", "participant", "side", "inventory-row", "equipment-slot", "move", "stat", "skill", "type", "destination", "gm-adjudication"],
+  "operations": ["hp", "temporary-hp", "injury", "condition", "stage", "resource", "usage", "inventory", "equipment", "effect", "form", "move", "ability", "capability", "evolution", "campaign-fact", "attention-item"],
+  "hpRestoration": {
+    "amountKinds": ["fixed", "rolled", "skill-check", "maximum-relative"],
+    "maximumRelativeBasis": "full-formula-maximum-hp",
+    "finalCap": "injury-adjusted-effective-maximum-hp",
+    "ordinaryHealingFaintedState": "preserve",
+    "rollAuthority": "server resolves once and stores expression, individual dice, modifier, total, and—when applicable—authoritative actor, skill, rank, and die-size evidence in the immutable operation plan",
+    "preview": ["current HP", "full formula maximum HP", "injury-adjusted effective maximum HP", "requested or rolled range", "effective restoration", "overheal"],
+    "fullHealthTargetPolicy": "unavailable before consumption unless another reviewed compound effect changes the target",
+    "clientMechanicalValuesForbidden": true
+  },
+  "revival": {
+    "targetKind": "pokemon",
+    "prerequisite": "authoritative Fainted state from retained canonical condition or non-positive HP",
+    "amountKinds": ["fixed-resulting-hp", "maximum-relative-resulting-hp"],
+    "maximumRelativeBasis": "full-formula-maximum-hp",
+    "finalCap": "injury-adjusted-effective-maximum-hp",
+    "acceptedEffect": ["set authoritative HP to resolved positive result", "remove Fainted only"],
+    "zeroEffectiveMaximumPolicy": "unavailable before consumption",
+    "ordinaryHealingDistinct": true,
+    "clientMechanicalValuesForbidden": true
+  },
+  "conditionRemoval": {
+    "canonicalIdentity": "data/reference/conditions.json identities and reviewed aliases",
+    "canonicalCatalogSha256": "a3ddc1b832304df106d1e1587b3208a51b7806e5a764e773103b0f29da838fb0",
+    "scopes": ["listed", "persistent", "volatile", "all-status"],
+    "selections": ["all-applicable", "choose-one"],
+    "listedPolicy": "the reviewed list is an allowlist; parameterized instances are matched by canonical base identity",
+    "categoryPolicy": "Persistent and Volatile Status Affliction categories come from canonical condition records; Other Afflictions are retained",
+    "chosenPolicy": "options are derived from the selected authoritative target and persisted as bounded opaque choice IDs",
+    "noApplicableTargetPolicy": "unavailable before reservation or consumption with an explicit no-applicable-condition preview",
+    "planEvidence": ["authoritative current conditions", "canonical removed identities", "exact removed entries", "resulting conditions"],
+    "clientMechanicalValuesForbidden": true,
+    "repulsiveMedicine": {
+      "canonicalLoyaltyRecordSha256": "95cf2e2467ac266b285b011aac0622b52f1014ed8dfad36f42a8d1adb57e76d3",
+      "items": ["Energy Powder", "Energy Root", "Heal Powder", "Revival Herb"],
+      "policy": "not executable as native restoration until a bounded GM-attention receipt owns the non-deterministic Loyalty consequence",
+      "silentOmissionForbidden": true
+    }
+  },
+  "toolSkillChecks": {
+    "skillAuthority": "server-resolved effective Trainer skill projection from the revision-bound actor sheet",
+    "clientDiceOrModifierForbidden": true,
+    "rollBudget": { "maximumRolledHealingDice": 32, "firstAidMaximumSkillDice": 6, "firstAidDieSides": 6 },
+    "nativeItemApModes": ["drain"],
+    "firstAidApPolicy": { "mode": "drain", "amount": 1, "recovery": "extended-rest" },
+    "reusableSourcePolicy": "the exact authoritative source row remains unchanged and is still part of the read set",
+    "compoundNoOpPolicy": "an empty all-applicable cure component is accepted only beside another reviewed effect for the same target",
+    "planEvidence": ["actor sheet identity and revision", "skill identity", "effective rank", "die size", "individual rolls", "raw total", "AP before and after", "durable drain identity"],
+    "replay": "accepted and resumed operations reuse stored roll and AP evidence and never reroll on exact replay"
+  },
+  "authority": {
+    "separateConcepts": ["actor", "controller", "inventory-owner", "source-container", "target"],
+    "serverLoads": ["canonical item", "source row", "actor/controller", "targets", "map/encounter", "sheets", "equipment", "resources", "campaign clock/facts"],
+    "clientMaySubmit": ["projected offer ID", "source row ID", "opaque target/choice IDs", "resource revisions", "operation ID"],
+    "clientMayNotAssert": ["ownership", "quantity", "eligibility", "effect values", "action availability", "canonical identity"]
+  },
+  "consumptionPhases": ["never", "declaration", "accepted-use", "hit", "extended-action-completion", "gm-adjudication"],
+  "nonEncounterExecution": {
+    "contract": "data/complete-play-loop/non-encounter-item-context.v1.json",
+    "campaignClockRequired": true,
+    "targetAuthority": ["actor", "actor-roster", "profile-control", "gm-override"],
+    "extendedActionPhases": ["declaration", "in-progress", "completion"],
+    "completionAuthorityRequired": true,
+    "gmConfirmationIsTypedEvidence": true,
+    "activeEncounterRequired": false
+  },
+  "medicalExtendedActions": {
+    "contract": "data/complete-play-loop/medical-extended-actions.v1.json",
+    "nativeSource": "First Aid Kit",
+    "nativeSources": ["First Aid Kit", "Bandages"],
+    "guidedDeferredSources": {
+      "Poultices": "P8-059 Loyalty adjudication",
+      "Re-Breather": "P8-059 open-air refill adjudication"
+    },
+    "timedTreatmentState": "shared/itemAutomation/medicalTreatments.ts",
+    "nativeEquipmentDelivery": {
+      "source": "Wonder Launcher",
+      "payload": "reviewed X-Items",
+      "rangeMeters": 8,
+      "standardActions": 1,
+      "apDrain": 1,
+      "targetForfeit": false,
+      "sourceIdentityTransport": "opaque-binding-only"
+    },
+    "startAppliesMechanics": false,
+    "completionAtomicWithItemSettlement": true,
+    "interruptionAppliesMechanics": false,
+    "sourceReusable": true,
+    "healingCap": "injury-adjusted-effective-maximum-hp",
+    "campaignTimeServerOwned": true,
+    "exactReplayNeverRerolls": true
+  },
+  "permanentAdvancement": {
+    "contract": "data/complete-play-loop/permanent-advancement-items.v1.json",
+    "nativeSources": ["HP Up", "Protein", "Iron", "Calcium", "Zinc", "Carbos", "Heart Booster", "PP Up", "Rare Candy", "Stat Suppressants"],
+    "target": "one owned Pokémon",
+    "timing": "extended-action-completion",
+    "startAndInterruptionMechanicallyInert": true,
+    "sharedVitaminLifetimeLimit": 5,
+    "rareCandyLifetimeLimit": 5,
+    "choiceAuthority": "target-specific opaque options persisted at start and revalidated at completion",
+    "trainerConsent": "exact required confirmation for Stat Suppressants",
+    "sheetValidity": ["minimum Base Stat", "Base Relations", "added Stat Point budget", "Level/Experience consistency", "Tutor Point budget"],
+    "provenance": "server-private immutable application ledger",
+    "completionAtomicWithItemSettlement": true,
+    "exactReplayNeverReapplies": true
+  },
+  "pendingPolicy": {
+    "reservationRequired": true,
+    "cancelRefund": "according to ItemSpec phase",
+    "staleCommand": "fail closed without a new mechanical command",
+    "resume": "same rolls, reservation, costs, offer identity, and read set"
+  },
+  "atomicity": {
+    "readSet": ["inventory", "actor sheet", "target sheets", "map/encounter", "equipment", "resources", "campaign clock/facts", "pending decisions"],
+    "writeSet": ["inventory", "sheets", "map/encounter", "equipment", "resources", "history", "receipts", "attention items"],
+    "rule": "all accepted writes and history commit in one transaction or none do"
+  },
+  "presentation": {
+    "usesGenericContract": true,
+    "group": "inventory",
+    "projects": ["offer", "unavailable reasons", "costs", "targets", "choices", "contributions", "accepted facts", "private detail"],
+    "parallelItemDecisionUiForbidden": true
+  },
+  "recovery": {
+    "pendingAbandonment": "GM or current actor owner may release a pending reservation without applying mechanics",
+    "acceptedCorrection": "GM-only exact compensation from immutable server-owned before/after evidence",
+    "clientMaySubmit": ["origin operation ID", "new correction operation ID", "bounded reason"],
+    "clientMayNotSubmit": ["restored quantity", "HP", "conditions", "stages", "resources", "document patches"],
+    "conflictPolicy": "any affected revision or accepted after-document drift fails closed",
+    "receiptPolicy": "origin receipt remains immutable; a linked correction receipt records ancestry and inventory disposition",
+    "realtimePolicy": "authorised aggregate updates plus privacy-safe presentation invalidation only"
+  },
+  "qualityChecks": ["schema-version", "canonical-fingerprint", "duplicate-ID", "ambiguous-alias", "orphan-alias", "missing-evidence", "unbounded-choice", "unsupported-operation", "orphan-handler", "runtime-drift", "coverage-regression"]
+}

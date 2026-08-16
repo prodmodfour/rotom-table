@@ -21,7 +21,6 @@ describe('loginRedirect', () => {
   it('exposes canonical login and player-blocked route constants', () => {
     expect(LOGIN_PATH).toBe('/login')
     expect(PLAYER_BLOCKED_REDIRECT_PREFIXES).toEqual([
-      CAMPAIGN_PATH,
       ENCOUNTER_GENERATOR_PATH,
       ENCOUNTER_BUILDER_PATH,
       ENCOUNTER_TABLES_PATH,
@@ -38,8 +37,8 @@ describe('loginRedirect', () => {
   })
 
   it('detects player-blocked paths and nested routes', () => {
-    expect(isPlayerBlockedRedirectPath(CAMPAIGN_PATH)).toBe(true)
-    expect(isPlayerBlockedRedirectPath(`${CAMPAIGN_PATH}/history`)).toBe(true)
+    expect(isPlayerBlockedRedirectPath(CAMPAIGN_PATH)).toBe(false)
+    expect(isPlayerBlockedRedirectPath(`${CAMPAIGN_PATH}/history`)).toBe(false)
     expect(isPlayerBlockedRedirectPath(SETTINGS_PATH)).toBe(false)
     expect(isPlayerBlockedRedirectPath(`${SETTINGS_PATH}/campaign`)).toBe(false)
     expect(isPlayerBlockedRedirectPath(GROUP_INVENTORY_PATH)).toBe(false)
@@ -63,7 +62,7 @@ describe('loginRedirect', () => {
   })
 
   it('blocks player redirects to GM-only routes while allowing shared settings and GM redirects', () => {
-    expect(resolveLoginRedirectTarget(CAMPAIGN_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
+    expect(resolveLoginRedirectTarget(CAMPAIGN_PATH, 'player')).toBe(CAMPAIGN_PATH)
     expect(resolveLoginRedirectTarget(GROUP_INVENTORY_PATH, 'player')).toBe(GROUP_INVENTORY_PATH)
     expect(resolveLoginRedirectTarget(SETTINGS_PATH, 'player')).toBe(SETTINGS_PATH)
     expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)

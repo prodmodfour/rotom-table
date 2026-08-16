@@ -64,6 +64,7 @@ export const BREEDING_DOCUMENTATION_CLOSURE_V1 = Object.freeze({
         '## Endpoint summary',
         '## `GET /api/breeding/workshop`',
         '## `GET /api/breeding/workshop/activity`',
+        '## `GET /api/breeding/items` and `POST /api/breeding/items`',
         '## `POST /api/breeding/projects/wizard`',
         '## `POST /api/breeding/projects/wizard/guidance`',
         '## `POST /api/breeding/projects/wizard/choices`',
@@ -118,13 +119,13 @@ export const BREEDING_DOCUMENTATION_CLOSURE_V1 = Object.freeze({
     }),
   ]),
   runtimeBindings: Object.freeze({
-    workshopApiCount: 7 as const,
+    workshopApiCount: 8 as const,
     projectStatusCount: 12 as const,
     eggStatusCount: 7 as const,
     eggSourceKindCount: 4 as const,
     commandKindCount: 22 as const,
     baseAudienceCount: 5 as const,
-    storageSchemaVersion: 28 as const,
+    storageSchemaVersion: 44 as const,
     postBodyMaximumUtf8Bytes: 32 * 1024,
     archiveMaximumUtf8Bytes: 64 * 1024 * 1024,
     campaignClockEggBatchMaximum: 100 as const,
@@ -159,4 +160,4 @@ export const BREEDING_DOCUMENTATION_CLOSURE_V1 = Object.freeze({
 })
 
 export const BREEDING_DOCUMENTATION_CLOSURE_DEFINITION_SHA256 =
-  'b7c0dc3a22e73767107971694f4fb6d152e834ea5e7d57174a09fe67bea57f01' as const
+  'f6e8b87fc4af050c51d21c576f249a18d5ef74b6d382ff110c6434eca01176d7' as const

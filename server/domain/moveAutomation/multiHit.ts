@@ -1,11 +1,14 @@
+import { createHash } from 'node:crypto'
 import {
   MOVE_EFFECT_OPERATION_LIMITS,
+  parseMoveEffectOperation,
   type MoveCombatStageEffectOperation,
   type MoveConditionEffectOperation,
   type MoveDamageEffectOperation,
   type MoveMultiHitCount,
   type MoveMultiHitEffectOperation,
   type MoveMultiHitEffectTemplate,
+  type MoveTemporaryEffectOperation,
 } from '#shared/moveAutomation/effects'
 import {
   MOVE_AUTOMATION_ROLL_LEDGER_LIMITS,
@@ -38,6 +41,11 @@ import { normalizeConditionNames } from '~/utils/statusConditions'
 import { gridFootprintCells } from '~/utils/gridGeometry'
 import type { AuthoritativeMoveRulesContext } from './context'
 import { resolveAuthoritativeMoveUserAccuracy } from './accuracy'
+import {
+  equipmentFaintProtectionSource,
+  equipmentMoveResistanceSteps,
+  equipmentProviderFrequencyTag,
+} from './equipmentProviderMechanics'
 import type { MoveContextualDamageBaseResolution } from './damageBase'
 import { resolveMoveSpecDamageRollFormula } from './damageRollFormula'
 import {
@@ -62,6 +70,8 @@ import {
 import { resolveMoveCoreTokenRecipient } from './reducers/coreTokenRecipients'
 import { reduceDamageEffectForRecipient } from './reducers/hp'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
+import { reduceMoveTemporaryEffect } from './reducers/mapTemporaryEffects'
+import { createEmptyEncounterState, parseEncounterState } from '#shared/moveAutomation/encounterState'
 import { primeAa060MoveRandomness } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { primeAa061MoveRandomness } from '../abilityAutomation/mechanics/aa061MoveIntegration'
 import {
@@ -525,6 +535,17 @@ const rollAccuracy = (options: {
         context: options.context,
         token: options.actor,
       }),
+      equipmentEvasionBonuses: Object.fromEntries(
+        (['physical', 'special', 'speed'] as const).map(targetId => [
+          targetId,
+          options.context.queries.equipment.metric({
+            placementId: options.target.id,
+            metric: 'evasion',
+            targetId,
+            base: 0,
+          })?.final ?? 0,
+        ]),
+      ),
       fieldEffects: createMoveAutomationWeatherResolver(options.context.map, {
         subjectPlacementId: options.target.id,
         subjectOccupiedCells: gridFootprintCells(options.target.position, options.target),
@@ -882,6 +903,8 @@ export const executeMoveMultiHitOperation = (options: {
   readonly ignitionBoostTriggeringDamage?: boolean
   /** Same-resolution Protean changes the user's Type before STAB. */
   readonly forceActorStab?: boolean
+  /** Accepted current Type Gem addition, applied to every strike's bounded DB. */
+  readonly equipmentDamageBaseBonus?: number
   /** Retain the reviewed count roll in the replay ledger, but use this accepted reviewed hit count. */
   readonly forcedHitCount?: number
 }): MoveMultiHitExecution => {
@@ -901,6 +924,11 @@ export const executeMoveMultiHitOperation = (options: {
   const damagedTargetIds = new Set<string>()
   const faintedTargetIds = new Set<string>()
   const resistanceAppliedTargetIds = new Set<string>()
+  const equipmentFaintProtectionBindings = new Set<string>()
+  const previousProviderEncounterState = parseEncounterState(
+    context.map.encounterState ?? createEmptyEncounterState(),
+  )
+  let providerEncounterState = previousProviderEncounterState
   let operationOrder = 0
   const nextOperationOrder = (): number => operationOrder++
   let sequenceCount: CountResolution | null = operation.payload.count.kind === 'fixed'
@@ -1065,7 +1093,13 @@ export const executeMoveMultiHitOperation = (options: {
           const allStrikeResistanceSteps = options.allStrikeResistanceStepsByRecipient?.get(damageRecipientId) ?? 0
           const kampfgeistResistance = options.kampfgeistResistanceRecipientIds?.has(damageRecipientId)
             && ['Bug', 'Dark', 'Rock'].includes(furCoatType.moveType) ? 1 : 0
-          const resistanceSteps = firstStrikeResistanceSteps + allStrikeResistanceSteps + kampfgeistResistance
+          const equipmentResistanceSteps = equipmentMoveResistanceSteps({
+            context,
+            placementId: damageRecipientId,
+            moveName: options.canonicalMoveId,
+          })
+          const resistanceSteps = firstStrikeResistanceSteps + allStrikeResistanceSteps
+            + kampfgeistResistance + equipmentResistanceSteps
           const aa071Type = aa071ResistDamageType({
             resolved: furCoatType,
             steps: resistanceSteps,
@@ -1073,6 +1107,7 @@ export const executeMoveMultiHitOperation = (options: {
               ...Array.from({ length: firstStrikeResistanceSteps }, () => 'AA-071 triggered resistance'),
               ...Array.from({ length: allStrikeResistanceSteps }, () => 'Innards Out'),
               ...Array.from({ length: kampfgeistResistance }, () => 'Kampfgeist'),
+              ...Array.from({ length: equipmentResistanceSteps }, () => 'equipment.helmet.move-resistance'),
             ],
           })
           const heatproofType = aa073HeatproofDamageTypeOverlay({
@@ -1103,10 +1138,11 @@ export const executeMoveMultiHitOperation = (options: {
             recipientId,
             canonicalMoveId: options.canonicalMoveId,
             resolvedType,
-            postBoundsDamageBaseBonus: aa076IronFistDamageBaseBonus({
-              context,
-              script: options.script,
-            }),
+            postBoundsDamageBaseBonus: (options.equipmentDamageBaseBonus ?? 0)
+              + aa076IronFistDamageBaseBonus({
+                context,
+                script: options.script,
+              }),
             failUnsupported: message => fail(
               'damage-formula-unsupported',
               operation,
@@ -1216,7 +1252,7 @@ export const executeMoveMultiHitOperation = (options: {
               ? { contextualDamageBase: formula.contextualDamageBase }
               : {}),
           })
-          const damageResult = reduceDamageEffectForRecipient({
+          let damageResult = reduceDamageEffectForRecipient({
             operation: damageOperation,
             recipient: damageRecipient,
             accumulator: hp,
@@ -1246,6 +1282,83 @@ export const executeMoveMultiHitOperation = (options: {
               }),
             },
           })
+          const beforeProtection = damageResult.previous.kind === 'hp' ? damageResult.previous : null
+          let afterProtection = damageResult.current.kind === 'hp' ? damageResult.current : null
+          const protection = beforeProtection && afterProtection
+            && beforeProtection.currentHp > 0 && afterProtection.currentHp <= 0
+            ? equipmentFaintProtectionSource({
+                context,
+                placementId: damageRecipientId,
+                beforeHp: beforeProtection.currentHp,
+                maximumHp: beforeProtection.fullMaxHp,
+                afterHp: afterProtection.currentHp,
+                changeKind: 'damage',
+                moveSourced: true,
+              })
+            : null
+          const unusedProtection = protection
+            && !equipmentFaintProtectionBindings.has(protection.sourceBindingSha256)
+            ? protection : null
+          const protectionRoll = unusedProtection?.roll
+            ? context.random.roll({
+                rollId: `equipment-provider-roll:v1:${createHash('sha256')
+                  .update(`${operation.id}\u0000${damageRecipientId}\u0000${hitIndex}\u0000${unusedProtection.sourceBindingSha256}`)
+                  .digest('hex').slice(0, 32)}`,
+                parentEffectId: damageOperation.id,
+                reason: unusedProtection.reasonCode,
+                formula: { kind: 'dice', count: 1, sides: unusedProtection.roll.sides, modifier: 0 },
+              })
+            : null
+          const protectionApplied = unusedProtection !== null
+            && (unusedProtection.roll === null
+              || (protectionRoll?.naturalResult ?? 0) >= unusedProtection.roll.minimum)
+          if (protectionApplied && unusedProtection && beforeProtection && afterProtection) {
+            equipmentFaintProtectionBindings.add(unusedProtection.sourceBindingSha256)
+            hp.set(damageRecipient.token, 1)
+            afterProtection = { ...afterProtection, currentHp: 1 }
+            damageResult = {
+              ...damageResult,
+              current: afterProtection,
+              details: {
+                ...(typeof damageResult.details === 'object' && damageResult.details !== null
+                  && !Array.isArray(damageResult.details) ? damageResult.details : {}),
+                equipmentFaintProtection: {
+                  providerId: unusedProtection.providerId,
+                  reasonCode: unusedProtection.reasonCode,
+                  roll: protectionRoll?.naturalResult ?? null,
+                  applied: true,
+                },
+              } as MoveResolutionTraceJsonValue,
+            }
+            const suffix = createHash('sha256')
+              .update(`${operation.id}\u0000${damageRecipientId}\u0000${hitIndex}\u0000${unusedProtection.sourceBindingSha256}`)
+              .digest('hex').slice(0, 32)
+            const frequencyOperation = parseMoveEffectOperation({
+              id: `equipment-provider-frequency-operation:v1:${suffix}`,
+              kind: 'temporary-effect', source: { kind: 'operation', id: operation.id },
+              recipients: { kind: 'attacked-targets' }, phase: operation.phase,
+              reasonCode: 'equipment-provider.scene-frequency-consumed',
+              payload: {
+                action: 'add', effectId: `equipment-provider-frequency:v1:${suffix}`,
+                recipientScope: 'placements',
+                definition: {
+                  kind: 'capability', duration: { kind: 'scene', remaining: null },
+                  stacks: 1, charges: null, stackPolicy: { kind: 'replace', maxStacks: null },
+                  chargePolicy: { kind: 'none', amount: null },
+                  tags: ['equipment-provider-frequency', equipmentProviderFrequencyTag(unusedProtection.sourceBindingSha256)],
+                  payload: { capabilityId: 'equipment-provider-frequency', action: 'grant', value: 1 },
+                  dispel: { policy: 'matching-tags', tags: [equipmentProviderFrequencyTag(unusedProtection.sourceBindingSha256)] },
+                  transferPolicy: 'retain',
+                },
+              },
+            }, 'multiHit.equipmentFaintProtectionFrequency') as MoveTemporaryEffectOperation
+            providerEncounterState = reduceMoveTemporaryEffect({
+              context,
+              previous: providerEncounterState,
+              operation: frequencyOperation,
+              recipientIds: [damageRecipientId],
+            }).current
+          }
           mutationResults.push(damageResult)
           recordMoveCoreTokenEffectTouches(
             touches,
@@ -1485,7 +1598,9 @@ export const executeMoveMultiHitOperation = (options: {
     hpUpdates,
     conditionUpdates,
     stageUpdates: combatStageUpdates,
-    encounterStateUpdate: null,
+    encounterStateUpdate: providerEncounterState === previousProviderEncounterState
+      ? null
+      : { previous: previousProviderEncounterState, current: providerEncounterState },
   })
   const totalAttemptedHitCount = normalizedTargetResults.reduce(
     (total, result) => total + result.attemptedHitCount,

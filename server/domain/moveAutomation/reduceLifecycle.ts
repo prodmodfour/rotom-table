@@ -401,6 +401,15 @@ const lifecycleEventAfterTriggers = (
     return { kind: event.kind }
   }
   if (event.kind === 'scene-end') return { kind: 'scene-end' }
+  if (event.kind === 'encounter-end') return { kind: 'encounter-end' }
+  if (event.kind === 'campaign-time-advanced') {
+    return {
+      kind: 'campaign-time-advanced',
+      previousCampaignMinute: event.previousCampaignMinute,
+      campaignMinute: event.campaignMinute,
+      clockRevision: event.clockRevision,
+    }
+  }
   return null
 }
 
@@ -556,9 +565,9 @@ export const reduceEncounterLifecycle = (
     if (beforeTriggerEvent) {
       applyEffectEvent(event, depth, beforeTriggerEvent, eventTransitions)
     }
-    // Scene-end handlers query outgoing history/resources before both clear.
+    // Scene/encounter-end handlers query outgoing history/resources before both clear.
     // Every other fact updates its structured indexes before handlers observe it.
-    if (event.kind !== 'scene-end') applyIndexedStateEvent(event)
+    if (event.kind !== 'scene-end' && event.kind !== 'encounter-end') applyIndexedStateEvent(event)
 
     for (const effectId of transformationEffectIdsEndedByEvent({
       effects: state.effects,
@@ -748,7 +757,7 @@ export const reduceEncounterLifecycle = (
         })
       }
     }
-    if (event.kind === 'scene-end') applyIndexedStateEvent(event)
+    if (event.kind === 'scene-end' || event.kind === 'encounter-end') applyIndexedStateEvent(event)
 
     for (const childEvent of childEvents) processEvent(childEvent, depth + 1)
   }

@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-082",
+  "status": "certified",
+  "contract": "finish-encounter-experience-v1",
+  "storageSchemaVersion": 44,
+  "sourceEvidence": {
+    "finishViewContractSha256": "be2e14973b11ad4632bcd7db8dabe13f9390c39db17986ae86faa69ab00a4358",
+    "preparationUseCaseSha256": "b349ee26b5110e782f702a1042747cf23b1cf394dba5859fe556f1bc5ad28ff7",
+    "finishUseCaseSha256": "15c9d0964279f92b5a3f1601e75f43b08952b6d3b627ae47d2864f70a132b206",
+    "settlementRepositorySha256": "ba885a6bf1bebaeb977d93f51979e59b00c24f625538530f8098e240c399f57b",
+    "livePlayOperationRepositorySha256": "470635456261e180d04e3c9518fb937fd313f2b36cd5e278a581fca77f6fb480",
+    "temporaryCleanupModelSha256": "6eac234e8545a0b9d6f7836f003f312d811e92d1eaca3c3b00c4530f6f7c7881",
+    "prepareRouteSha256": "8c129ee34a2590dfdfd6e5d13fc73d6d74ca3058f6839e94140580d5888fdd46",
+    "commitRouteSha256": "f58cc616fa51afb52036e15332eb4d7176a1311fc786bad1ecb85914b5600c6c",
+    "operationStatusRouteSha256": "685b8cc49b06b18ccfb8009c7fbbd29cf48c7380609ed02cb0d7358605aaefa0",
+    "pendingStorageSha256": "131261a8960795eeea7e78e9505b0a9286b6df8d5c02397f3e0eac76a48ea527",
+    "finishComposableSha256": "3c39fbc36ee28b0314c5d1c0a6dbcd2b5b18f2bb3663db2b231aefc653910341",
+    "finishComponentSha256": "3074ea2968b75b2f4f1d00e4ed70f4a3567b554b97996de2a8464a516da6bd57",
+    "directorComponentSha256": "0e7fba7cc370c793698abbb3e9fecab8927abaef49e9c18f01a98717e45ed1e7",
+    "workspacePageSha256": "3c0b8ea9779a9a13ef8bddced2a8e376748df9cbef741218982f8287d5af761f",
+    "browserSpecSha256": "4bd26345126aa9a544cd1c8d18a2e868feaa9ae22793745d4a078a7cebe4cad4",
+    "browserConfigSha256": "65786ba1de984fdb1a7bf86eabadb8aec237f39f7f3daf5dc1ce5ad64e2efc72",
+    "targetMockupSha256": "890c59c2a4027c50ee62cf5a2df3cda8ecaec78983cdd4996e58193503fec22a"
+  },
+  "authority": {
+    "entry": "Only a current GM may open prepare or commit through the Encounter Director.",
+    "currentRead": "Preparation reconstructs the active or paused Encounter Document, linked map, every participant sheet, campaign clock, group inventory, pending move and item operations, capture evidence, and the current settlement revision.",
+    "affiliation": "A side exists only through explicit SheetPlacement.sideId; Pokémon ownership requires one exact same-side current Trainer roster link.",
+    "rewards": "Existing authority-backed settlement reward lines are retained; accepted captures add exact source-hash-bound capture rewards. Presentation text never invents a reward.",
+    "experience": "One eligible Pokémon may receive an unallocated reward; multiple Pokémon require an existing exact participant, Pokémon, or side allocation and never default across opponents.",
+    "captureBounds": "Only the latest 10000 deterministic live-play operation rows are read, and a current encounter exceeding that complete source bound blocks settlement.",
+    "outcomes": "Unresolved objectives, clocks, phases, and stakes remain required decisions rather than being silently completed.",
+    "cleanup": "Legacy global field lanes are materialized through the reviewed battlefield-zone adapter so every turn-, round-, and encounter-duration source receives one typed cleanup action."
+  },
+  "commit": {
+    "commandFields": [
+      "schemaVersion",
+      "operationId",
+      "settlementId",
+      "expectedSettlementRevision",
+      "planDefinitionSha256",
+      "confirmed"
+    ],
+    "serverOwned": "The browser never authors patches. The server rebuilds the exact plan from the operation timestamp and verifies expected revision and plan SHA-256.",
+    "atomic": "Rewards, captures, sheets, inventories, persistent consequences, temporary cleanup, structured outcomes, Encounter Document completion, history, attention seeds, and terminal settlement revision commit in one synchronous SQLite transaction or all roll back.",
+    "replay": "The exact command and GM principal return the durable accepted result across retry and restart; identity or command collisions fail closed.",
+    "publication": "Role-safe settlement realtime rows are journaled in the transaction and published only after commit."
+  },
+  "recovery": {
+    "storageSchemaVersion": 1,
+    "retention": "One strict command and one operation-bound local-storage scope lock are retained per encounter before network submission.",
+    "crossTab": "A second tab cannot intentionally replace another retained operation, and conditional cleanup cannot remove another tab's command.",
+    "uncertain": "Interrupted responses preserve the exact command and expose check or explicit retry; reconnection never resubmits automatically.",
+    "discard": "Discard and fresh review remain disabled until a successful exact status check returns unknown.",
+    "conflict": "A stale 409 clears only the exact rejected command and requires a fresh prepare, review, and confirmation."
+  },
+  "privacy": {
+    "player": "Player workspaces expose no Director entry, Finish Encounter layer, commit material, or private settlement evidence.",
+    "viewAllowlist": "The schema-v1 view contains bounded labels, counts, safe details, actions, app-relative continuations, accepted totals, and GM-only opaque command material.",
+    "forbiddenRenderedFields": [
+      "operation identities",
+      "settlement row and allocation identities",
+      "Profile identities and principal keys",
+      "authority revisions and definition hashes",
+      "source rows, provider evidence, provenance, and private notes"
+    ]
+  },
+  "experience": {
+    "requiredCopy": [
+      "Finish Encounter",
+      "Ready to settle",
+      "No unresolved decisions",
+      "Persistent consequences",
+      "Rewards & allocations",
+      "Encounter outcome",
+      "Temporary cleanup",
+      "Outstanding work",
+      "I reviewed this settlement and understand it cannot be partly applied.",
+      "Finish encounter",
+      "Back to encounter"
+    ],
+    "states": [
+      "loading",
+      "blocked",
+      "ready",
+      "saving",
+      "uncertain",
+      "accepted",
+      "error"
+    ],
+    "focus": "Initial focus lands on the dialog title; Tab is trapped; rail actions focus semantic sections; Escape and Back restore the connected decision origin or Director toggle.",
+    "responsive": "The semantic review reflows without horizontal scrolling at 320 px and at an effective 160 px 200-percent reflow width.",
+    "targets": "Primary interactive targets are at least 44 px, focus is cyan and visible, commitment is red, readiness is mint with text and icon, and reduced motion disables panel and progress animation.",
+    "singlePrimaryAction": "The ready state has one irreversible primary action, gated by one explicit confirmation checkbox."
+  },
+  "certification": {
+    "fixture": "One production-liveplay trainer duel with three participants, one injured and conditioned Pokémon, 10 XP, ₽500 shared money, initiative, temporary Hit Points, and a round-duration weather field.",
+    "fixtureCoverage": {
+      "simple-trainer-duel": "Production-liveplay and server orchestration apply 10 XP and ₽500 atomically without sheet or inventory visits.",
+      "capture-team-overflow": "Accepted capture evidence resolves the seventh Pokémon to the current storage box and emits owner follow-up without duplicating capture.",
+      "loot-heavy": "Server orchestration merges 12 Potions and creates one deterministic serialized Light Armor row.",
+      "injury-heavy": "Server orchestration preserves zero Hit Points, five Injuries, and Poisoned while applying unrelated rewards.",
+      "reconnect-during-settlement": "Restart replay, exact operation status, uncertain recovery, cross-tab lock, realtime convergence, and player privacy are independently covered."
+    },
+    "maximumReviewMilliseconds": 120000,
+    "sheetOrInventoryVisits": 0,
+    "desktop": {
+      "readySha256": "144d75a4271a0f0eb1d8b7d1344712006e5b5fcc429052c31ea87ecad5ac86c5",
+      "acceptedSha256": "15d618b3cfda81f5c367988369742f3d7bc8ac48d917c9cdcdbb23b0da482727"
+    },
+    "mobile320": {
+      "readySha256": "dbf1d00b57f303e00a25fcc12c66c9363d48c3f39381f4e77ec52ad4b9040417",
+      "acceptedSha256": "08581291acf7837122f9cef2e59c8b78797b0428979749fe0aba0e0104a7e0ab"
+    },
+    "assertions": [
+      "GM-only entry and player privacy",
+      "strict ready review and explicit confirmation",
+      "no serious or critical scoped Axe violations",
+      "no horizontal overflow at 320 px or equivalent 200-percent reflow",
+      "at least 44 px primary target",
+      "XP and shared money applied exactly once",
+      "HP, injury, and condition persisted",
+      "round weather expired and initiative reset",
+      "accepted summary remained in the encounter workspace"
+    ]
+  },
+  "tests": {
+    "orchestration": "tests/server/finishEncounter.test.ts",
+    "routes": "tests/server/finishEncounterRoutes.test.ts",
+    "viewContract": "tests/shared/finishEncounterView.test.ts",
+    "pendingStorage": "tests/utils/encounterSettlementOperationStorage.test.ts",
+    "clientState": "tests/composables/encounter/useFinishEncounter.test.ts",
+    "component": "tests/components/encounterFinishExperience.test.ts",
+    "director": "tests/components/encounterWorkspaceDirector.test.ts",
+    "browser": "tests/e2e/finish-encounter.spec.ts",
+    "contract": "tests/data/completePlayLoopFinishEncounterExperience.test.ts"
+  },
+  "documentation": "docs/finish-encounter-experience.md",
+  "visualReview": ".pi/artifacts/ui-validation/finish-encounter/review.md"
+}

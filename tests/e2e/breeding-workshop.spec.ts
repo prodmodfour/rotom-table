@@ -35,6 +35,57 @@ const installWorkshopRoutes = async (
       const body = request.postDataJSON() as Record<string, unknown>
       requestBodies.push({ pathname, body })
     }
+    if (pathname === '/api/breeding/items') {
+      if (request.method() === 'GET') return fulfillJson(route, fixture.items)
+      const body = request.postDataJSON() as Record<string, unknown>
+      if (body.action === 'preview-fossil') {
+        const option = (suffix: string, label: string) => ({
+          optionId: `breeding-item-option:v1:${suffix.repeat(32)}`,
+          label,
+          description: null,
+          disabled: false,
+          unavailableReason: null,
+        })
+        return fulfillJson(route, {
+          schemaVersion: 1,
+          kind: 'fossil',
+          operationId: body.operationId,
+          trainerSheetSlug: 'trainer-mira',
+          expectedTrainerRevision: 7,
+          title: 'Restore a Fossil',
+          summary: [
+            'Exactly one GM-designated source unit is consumed.',
+            'The Reanimation Machine remains in inventory.',
+            'The result is an ordinary incubating Egg in the shared lifecycle.',
+          ],
+          choices: [
+            { choiceId: `breeding-item-choice:v1:${'a'.repeat(32)}`, label: 'Nature', minimum: 1, maximum: 1, options: [option('b', 'Cuddly')] },
+            { choiceId: `breeding-item-choice:v1:${'c'.repeat(32)}`, label: 'Basic Ability', minimum: 1, maximum: 1, options: [option('d', 'Shell Armor')] },
+            { choiceId: `breeding-item-choice:v1:${'e'.repeat(32)}`, label: 'Gender', minimum: 1, maximum: 1, options: [option('f', 'Female')] },
+          ],
+        })
+      }
+      if (body.kind === 'assign-egg-warmer') {
+        return fulfillJson(route, {
+          schemaVersion: 1,
+          operationId: body.operationId,
+          kind: 'assign-egg-warmer',
+          status: 'accepted',
+          trainerSheetSlug: 'trainer-mira',
+          trainerRevision: 8,
+          egg: null,
+          assignment: {
+            warmerLabel: 'Egg Warmer',
+            assignedEggLabels: ['Bulbasaur Egg', 'Eevee Egg', 'Castform Egg'],
+            capacity: 4,
+            progressRateNumerator: 2,
+            progressRateDenominator: 1,
+          },
+          message: '3 Eggs assigned. Each campaign day now counts as two hatch-rate days.',
+        })
+      }
+      return fulfillJson(route, { statusMessage: 'Unexpected item workflow request.' }, 400)
+    }
     if (pathname === '/api/breeding/workshop') return fulfillJson(route, fixture.workshop)
     if (pathname === '/api/breeding/workshop/activity') {
       if (activityUnavailable) {
@@ -156,6 +207,37 @@ test('player Workshop is axe-clean, keyboard-contained, selector-only, and visua
   for (const id of Object.values(fixtures.aggregateIds)) expect(persisted).not.toContain(id)
 })
 
+test('GM uses Egg Warmer and reviews Fossil restoration without private custody leakage', async ({ page }) => {
+  const { requestBodies } = await openWorkshop(page, 'gm')
+  const tools = page.getByRole('region', { name: 'Egg & restoration tools' })
+  await expect(tools.getByRole('heading', { name: 'Egg Warmer assignment' })).toBeVisible()
+  await expect(tools).toContainText('2 / 4 assigned')
+  await tools.getByRole('checkbox', { name: /Castform Egg/u }).check()
+  await expect(tools).toContainText('3 / 4 assigned')
+  await tools.getByRole('button', { name: 'Save assignment' }).click()
+  await expect(tools).toContainText('3 Eggs assigned. Each campaign day now counts as two hatch-rate days.')
+  const assignment = requestBodies.find(entry => (entry.body as Record<string, unknown>).kind === 'assign-egg-warmer')?.body
+  expect(assignment).toMatchObject({
+    schemaVersion: 1,
+    kind: 'assign-egg-warmer',
+    trainerSheetSlug: 'trainer-mira',
+    expectedTrainerRevision: 7,
+  })
+  expect(JSON.stringify(assignment)).not.toContain('inventoryEntryId')
+  expect(JSON.stringify(assignment)).not.toContain('eggId')
+
+  await tools.getByRole('button', { name: 'Review restoration' }).click()
+  await expect(tools.getByRole('heading', { name: 'Restore a Fossil' })).toBeVisible()
+  await tools.getByLabel('Nature').selectOption({ label: 'Cuddly' })
+  await tools.getByLabel('Basic Ability').selectOption({ label: 'Shell Armor' })
+  await tools.getByLabel('Gender').selectOption({ label: 'Female' })
+  await expect(tools.getByRole('button', { name: 'Confirm & create Egg' })).toBeEnabled()
+  const visibleText = await tools.innerText()
+  expect(visibleText).not.toContain('breeding-item-option')
+  expect(visibleText).not.toContain('operationId')
+  expect(await seriousAxeViolations(page)).toEqual([])
+})
+
 test('Workshop reflows at acceptance widths and honors reduced motion without horizontal essential-content overflow', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium', 'One browser engine covers the explicit CSS-width matrix; mobile has its own visual project.')
   await openWorkshop(page, 'player')
@@ -179,7 +261,7 @@ test('Workshop reflows at acceptance widths and honors reduced motion without ho
         }))
         .filter(row => row.left < 0 || row.right > document.documentElement.clientWidth),
     }))).toMatchObject({ client: width, scroll: width, offenders: [] })
-    const targets = page.locator('main[data-rt-context="workshop"] .breeding-workshop-button:visible, main[data-rt-context="workshop"] .breeding-activity-button:visible, main[data-rt-context="workshop"] .breeding-consent-button:visible')
+    const targets = page.locator('main[data-rt-context="workshop"] .breeding-workshop-button:visible, main[data-rt-context="workshop"] .breeding-activity-button:visible, main[data-rt-context="workshop"] .breeding-consent-button:visible, main[data-rt-context="workshop"] .breeding-items__button:visible')
     for (let index = 0; index < await targets.count(); index += 1) {
       const box = await targets.nth(index).boundingBox()
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(43.5)

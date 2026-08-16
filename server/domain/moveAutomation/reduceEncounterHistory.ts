@@ -741,8 +741,8 @@ const openTurnWindow = (
 /**
  * Reduce one authoritative fact into structured bounded history indexes.
  *
- * Callers should apply scene-end after scene-end trigger handlers so those
- * handlers can inspect the outgoing scene. Other facts are intended to update
+ * Callers should apply scene-end and encounter-end after their trigger handlers
+ * so those handlers can inspect the outgoing history. Other facts update
  * history before handlers observe the event.
  */
 export const reduceEncounterHistoryEvent = (
@@ -754,7 +754,9 @@ export const reduceEncounterHistoryEvent = (
   if (event.kind === 'scene-start') {
     return deepFreeze({ ...createEmptyEncounterHistory(), sceneId: event.sceneId })
   }
-  if (event.kind === 'scene-end') return deepFreeze(createEmptyEncounterHistory())
+  if (event.kind === 'scene-end' || event.kind === 'encounter-end') {
+    return deepFreeze(createEmptyEncounterHistory())
+  }
   if (event.kind === 'round-start') return deepFreeze(openRoundWindow(history, event.round))
   if (event.kind === 'turn-start') return deepFreeze(openTurnWindow(history, event))
 

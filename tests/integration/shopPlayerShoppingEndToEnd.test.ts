@@ -467,7 +467,7 @@ describe('player shopping end-to-end harness', () => {
     expect(storedShop.purchaseLog?.map((entry) => entry.opId)).toEqual(['op_e2ehappy01'])
     expect(storedTrainer).toMatchObject({ revision: 1, money: 700 })
     expect(storedTrainer.inventory?.medicalKit).toEqual([
-      { name: 'Potion', qty: 1, cost: 300, description: 'Restores HP.' },
+      expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 1, cost: 300, description: 'Restores HP.' }),
     ])
     expect(checkoutOperationCount(harness)).toBe(1)
     expect(persistedRealtimeEvents(harness).filter((event) => (

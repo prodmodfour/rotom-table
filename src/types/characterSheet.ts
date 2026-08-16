@@ -7,6 +7,17 @@ import type { EdgeUsageLedger } from '#shared/edgeAutomation/state'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { BreedingInheritancePermanentMoveProvenanceV1 } from '#shared/breeding/lineage'
 import type { BreedingBabyTemplateAuthorityV1, BreedingBabyTemplateMechanicsV1 } from '#shared/breeding/babyTemplate'
+import type { SheetEquipmentProjectionV1, SheetEquipmentStateV1 } from '#shared/itemAutomation/equipment'
+import type { EquipmentContributionProjectionV1 } from '#shared/itemAutomation/equipmentContributions'
+import type { ItemMedicalTreatmentProjectionV1, ItemMedicalTreatmentStateV1 } from '#shared/itemAutomation/medicalTreatments'
+import type { ItemPermanentAdvancementStateV1 } from '#shared/itemAutomation/permanentAdvancement'
+import type { ItemMoveLearningStateV1 } from '#shared/itemAutomation/moveLearning'
+import type {
+  ItemEvolutionAttentionProjectionV1,
+  ItemEvolutionStateV1,
+} from '#shared/itemAutomation/evolution'
+import type { ItemFormChangeStateV1 } from '#shared/itemAutomation/formChanges'
+import type { ItemGuidedLoyaltyStateV1 } from '#shared/itemAutomation/guidedAdjudication'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
 
@@ -48,6 +59,8 @@ export interface CharacterSheetMove {
   contestStats?: string
   /** Server-authored origin for a move learned through permanent move or breeding automation. */
   permanentMoveSource?: PermanentMoveListEntryProvenance | BreedingInheritancePermanentMoveProvenanceV1
+  /** Owner-safe marker: this active Move can be replaced only by authoritative Move-learning workflows. */
+  itemMoveLearningLocked?: true
 }
 
 export type CharacterSheetAppliedMoveSource = 'tm' | 'tutor'
@@ -55,10 +68,14 @@ export type CharacterSheetAppliedMoveSource = 'tm' | 'tutor'
 export interface CharacterSheetAppliedMove extends CharacterSheetMove {
   /** How this move was applied to the Pokémon outside level-up or egg inheritance. */
   source: CharacterSheetAppliedMoveSource
+  /** Owner-safe marker: this applied record is controlled by authoritative Move-learning workflows. */
+  itemMoveLearningLocked?: true
 }
 
 export interface CharacterSheetAbility {
   name: string
+  /** Owner-safe marker: this species Ability row is controlled by accepted evolution provenance. */
+  itemEvolutionLocked?: true
   frequency?: string
   trigger?: string
   effect?: string
@@ -169,6 +186,16 @@ export interface CharacterSheetGm {
 /** Server-authored evidence that must never be accepted from or projected to a client. */
 export interface CharacterSheetServerPrivate {
   breedingBabyTemplate?: BreedingBabyTemplateAuthorityV1
+  /** Immutable server-owned provenance for accepted permanent item advancement. */
+  itemPermanentAdvancement?: ItemPermanentAdvancementStateV1
+  /** Immutable server-owned provenance for accepted TM/HM Move learning. */
+  itemMoveLearning?: ItemMoveLearningStateV1
+  /** Immutable applications and follow-up resolution receipts for item-driven evolution. */
+  itemEvolution?: ItemEvolutionStateV1
+  /** Persistent item-driven form state; no schema-v1 canonical item currently creates one. */
+  itemFormChanges?: ItemFormChangeStateV1
+  /** Immutable private GM Loyalty-adjudication receipts for guided item use. */
+  itemGuidedLoyalty?: ItemGuidedLoyaltyStateV1
   breedingProviderTraits?: {
     serpentsMark: {
       patternId: 'attack' | 'crush' | 'fear' | 'life' | 'speed' | 'stealth'
@@ -272,6 +299,8 @@ export interface CharacterSheetSkills {
 export interface CharacterSheet {
   /** Server-owned document revision used for command conflict control. */
   revision?: number
+  /** Server-authored persistence timestamp carried by authoritative runtime projections. */
+  updatedAt?: number
   /** Durable server-only mechanic evidence; stripped from every player projection and preserved across sheet saves. */
   serverPrivate?: CharacterSheetServerPrivate
   /** URL slug for the sheet's subpage (``/sheets/<slug>``). */
@@ -281,6 +310,10 @@ export interface CharacterSheet {
   nickname: string
   /** Matches a `species` value in `data/reference/pokedex.json`; blank means no species selected yet. */
   species: string
+  /** Owner-safe marker: species changes now require an authoritative evolution workflow. */
+  itemEvolutionLocked?: true
+  /** Owner-safe follow-up summary derived from server-private evolution provenance. */
+  itemEvolutionAttention?: ItemEvolutionAttentionProjectionV1
   /** Current level. When edited in the sheet UI, totalExp is synced to this level's PTU threshold. */
   level: number
   /** Editable total experience. When edited in the sheet UI, level is synced from the PTU experience chart. */
@@ -339,6 +372,16 @@ export interface CharacterSheet {
   /** Ace Trainer's current Trained Stat. The selected non-HP stat defaults to at least +1 Combat Stage until Extended Rest. */
   trainedStat?: PokemonTrainedStatKey
   items?: CharacterSheetItems
+  /** Explicit server-authoritative held-item state. Legacy items.held remains descriptive until migration. */
+  equipmentState?: SheetEquipmentStateV1
+  /** Player-safe projection; source inventory provenance and command evidence are omitted. */
+  equipmentProjection?: SheetEquipmentProjectionV1
+  /** Non-persisted server-authored base/source/cap/final effective equipment values. */
+  equipmentContributionProjection?: EquipmentContributionProjectionV1
+  /** Durable campaign-minute medical treatment lifecycle; only authoritative item and time operations may write it. */
+  itemMedicalTreatments?: ItemMedicalTreatmentStateV1
+  /** Player-safe, non-authoritative treatment status derived from private lifecycle evidence. */
+  itemMedicalTreatmentProjection?: readonly ItemMedicalTreatmentProjectionV1[]
   weapon?: CharacterSheetWeapon
 
   tutorPoints?: CharacterSheetTutorPoints
@@ -352,7 +395,7 @@ export interface CharacterSheet {
   movelist?: CharacterSheetMove[]
   /** Read-only compatibility data; never lineage proof or a learned-Move writer. */
   eggMoves?: CharacterSheetMove[]
-  /** TM/HM or Tutor moves manually recorded as applied to this Pokémon. */
+  /** TM/HM or Tutor moves recorded as applied; item-controlled rows are read-only. */
   appliedMoves?: CharacterSheetAppliedMove[]
   /** Persistent Daily move frequency usage. EOT/Scene and per-Scene Daily locks are map-scoped. */
   moveUsage?: SheetMoveUsageState

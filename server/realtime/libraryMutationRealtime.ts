@@ -31,6 +31,7 @@ export type LibraryMapUpdateOperation =
   | 'folder-move'
   | 'sheet-rename-retarget'
   | 'sheet-delete-cleanup'
+  | 'encounter-settlement'
 
 export interface LibraryRealtimePublicationFailureContext {
   readonly event: PersistedRealtimeEvent

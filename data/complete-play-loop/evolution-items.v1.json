@@ -1,0 +1,914 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-055",
+  "status": "reviewed-native",
+  "canonicalAuthority": {
+    "items": {
+      "path": "data/reference/items.json",
+      "fileSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+    },
+    "rules": {
+      "path": "data/reference/rules.json",
+      "fileSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142",
+      "recordSha256": "8507d5cd78a17063e57dd6356c2b4d32d3e0d0b5c29c0aad316c398f6e1381cb",
+      "migrationId": "rule-data-evolution-item-mechanics-v1",
+      "migrationAfterFileSha256": "68c0f55a4038423de752ece05afa44830babe5ab0e642add524da46f4a49373e",
+      "catalogSuccessorMigrationIds": [
+        "rule-data-item-form-change-mechanics-v1",
+        "rule-data-exploration-item-mechanics-v1",
+        "rule-data-pokemon-advancement-choices-v1",
+        "rule-data-trainer-advancement-choices-v1"
+      ]
+    },
+    "pokedex": {
+      "path": "data/reference/pokedex.json",
+      "fileSha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+    },
+    "runtimeDocumentaryParsingForbidden": true
+  },
+  "sourceEvidence": [
+    {
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [
+        [
+          2034,
+          2101
+        ]
+      ],
+      "excerptSha256": "dd7bfc3390388aa8add9051c98e69017ae8ef3d4bc823ead4019135e5864e73a",
+      "pages": [
+        298
+      ]
+    },
+    {
+      "path": "books/markdown/core/05-pokemon.md",
+      "fileSha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3",
+      "gitBlob": "4ead8eb5ac53f9eca9de8c721579d1568d6f0bdc",
+      "lineRanges": [
+        [
+          591,
+          607
+        ]
+      ],
+      "excerptSha256": "9b0b18e730a0ab42b42dbd6116f05bb8b8bdfed44713e5ea99a0cf8c30bad256",
+      "pages": [
+        202
+      ]
+    }
+  ],
+  "policy": {
+    "actorKind": "trainer",
+    "targetKind": "owned-pokemon",
+    "timing": "confirmed-instant",
+    "consumption": {
+      "phase": "accepted-use",
+      "quantity": 1
+    },
+    "identity": "retain-sheet-character-and-ownership-identity",
+    "stats": "unallocate-added-points-then-owner-restat",
+    "abilities": "map-current-canonical-abilities-by-tier-and-slot",
+    "moves": "retain-current-moves-and-create-bounded-opportunity-attention",
+    "skillsCapabilities": "adopt-destination-canonical-defaults-and-preserve-explicit-overrides",
+    "equipment": "reconcile-current-equipment-against-destination-species",
+    "destinationChoice": "one-authority-projected-opaque-destination",
+    "confirmation": "one-exact-explicit-confirmation",
+    "staleChoicePolicy": "reject-and-refresh"
+  },
+  "items": [
+    {
+      "canonicalId": "Fire Stone",
+      "recordSha256": "18b4fb594137a3fb1f8b58a2100826d7822b96f9a28e659235ac91ed01f48c67",
+      "effectSha256": "521a5808787d17da8e0cc1c5bd8a9e8a5d8dd73466fd53800a617f12d14d2aef",
+      "price": "$3000",
+      "transitionCount": 4,
+      "transitions": [
+        {
+          "itemId": "Fire Stone",
+          "fromSpecies": "Vulpix",
+          "toSpecies": "Ninetales",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "613904bbc2ee67eaa2297b0ce92e60a39cd95648445a795119a67b444bee0ac7",
+          "toSpeciesRecordSha256": "4411ecae4f360a8f68067494ee3b6701d561083c05eb246a89bba7287e69d523"
+        },
+        {
+          "itemId": "Fire Stone",
+          "fromSpecies": "Growlithe",
+          "toSpecies": "Arcanine",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "3fa7d8603f0149e6bff25223acc3a5d488623d5cb4fb4ff7cc6e5bda40cc6f28",
+          "toSpeciesRecordSha256": "718731a730018143cf746275be5a378847b0973c21b0b50300363f14572e0b87"
+        },
+        {
+          "itemId": "Fire Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Flareon",
+          "minimumLevel": 0,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "89d8c4891b3e1012986ab9878edfe19720e59e4dc12e7987cf2b025a8b2fd2db",
+          "toSpeciesRecordSha256": "91150b65da11ef96a02bf74784fd927423c24c903d8e75ed753c73f1c56f64a0"
+        },
+        {
+          "itemId": "Fire Stone",
+          "fromSpecies": "Pansear",
+          "toSpecies": "Simisear",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "e55667e1cfbe8fd7819284db0a82609ac09701ef613c6ffb7cbef489344c87b3",
+          "toSpeciesRecordSha256": "2af4407352513b613ded0aca93362f2a8f40a744d6de8a350fd36304d8f6f87d"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Water Stone",
+      "recordSha256": "b85e759ead25eaf9539345f7d88b341eda3c13867ce17514676095d02b088f53",
+      "effectSha256": "021155855b7744e16fe04c93419fa709b49035223229048280ca2f0168489fa9",
+      "price": "$3000",
+      "transitionCount": 6,
+      "transitions": [
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Poliwhirl",
+          "toSpecies": "Poliwrath",
+          "minimumLevel": 30,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "37257e5fff1506c6792cd0b82d01b08c4ce96e46d57511d458fe4ddae06b523d",
+          "toSpeciesRecordSha256": "b0ca446558dc2101f87a2ce7f9f46daac6ae6083c7c7b79236efc6a902d29930"
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Shellder",
+          "toSpecies": "Cloyster",
+          "minimumLevel": 0,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "b31b9d01c70a85ac493d661ca2b901a119c9c240f0e023825065b7c5ea122db8",
+          "toSpeciesRecordSha256": "69c1e6e1437a3b29e87241ab80450cdd21b0e742d9761930cb8f160391a31595"
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Staryu",
+          "toSpecies": "Starmie",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "a41b61cf61a5bdff928815b5f3bbf4509e881a3daf3156c0c8c83b262f695200",
+          "toSpeciesRecordSha256": "d546cd88cdfa6e2ef88d5defcda0b78eeb7f72e6222cc4c99ea3947de9862aee"
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Vaporeon",
+          "minimumLevel": 0,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "89d8c4891b3e1012986ab9878edfe19720e59e4dc12e7987cf2b025a8b2fd2db",
+          "toSpeciesRecordSha256": "3fb8afb74534030d764a52965835701ea142f25a793793ea19f52dda708364e7"
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Lombre",
+          "toSpecies": "Ludicolo",
+          "minimumLevel": 25,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "287e2042b182cdbda7103b39c72dbbb5ae0cdadc77934b39a9acdbe4e6e5dee0",
+          "toSpeciesRecordSha256": "953d35822928fc96521dca0052ed1ddae73aa79ac99d14c70cb610e75c9e436a"
+        },
+        {
+          "itemId": "Water Stone",
+          "fromSpecies": "Panpour",
+          "toSpecies": "Simipour",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "05471b3431831882d997ba13a62fdbed68c81c8ba5261e9fcbe435fff5987613",
+          "toSpeciesRecordSha256": "322e0466fdb861d78b04c4c5f2f43f6e760f602e8c2ef9ea77438a9060e4d54f"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Thunder Stone",
+      "recordSha256": "f76bff0bb30233cd29d890ea35be2e0737d28d2ab5584be818aba39f89097cfa",
+      "effectSha256": "6f434a8e35d07b9f0791fd7ce23c389472e029b820cd8d360a4b6cef262218f3",
+      "price": "$3000",
+      "transitionCount": 3,
+      "transitions": [
+        {
+          "itemId": "Thunder Stone",
+          "fromSpecies": "Pikachu",
+          "toSpecies": "Raichu",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "e1336abc160b16125a762f71250341fd85390928f2bffbac0f2ba841484ead1a",
+          "toSpeciesRecordSha256": "6613b7a6e2365a3847f5ef5619174235a9dfbf8831b81142138633fb80506ebe"
+        },
+        {
+          "itemId": "Thunder Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Jolteon",
+          "minimumLevel": 0,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "89d8c4891b3e1012986ab9878edfe19720e59e4dc12e7987cf2b025a8b2fd2db",
+          "toSpeciesRecordSha256": "4d2655ecb2960ac503a8aeec043d4681964dc5e51f17269ee63652c1add98134"
+        },
+        {
+          "itemId": "Thunder Stone",
+          "fromSpecies": "Eelektrik",
+          "toSpecies": "Eelektross",
+          "minimumLevel": 40,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "cb9aa89f17bf7b1afa3b630484f6a1ba7b40997eee4c1f625ba8180e97e0447f",
+          "toSpeciesRecordSha256": "0bce48d2cec8cb1cb89f7ede235b4ee0e637d9d67f74bac0ff3310bced777981"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Leaf Stone",
+      "recordSha256": "712771e5d4c78f1946d9f3251c459e6655f0625605094c4c60538c035771a8fd",
+      "effectSha256": "75c2d991efd55126eb6eeac6ea55e4ac95b953d19a6453a7c2367f34b349bd61",
+      "price": "$3000",
+      "transitionCount": 6,
+      "transitions": [
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Gloom",
+          "toSpecies": "Vileplume",
+          "minimumLevel": 30,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "e6327c34c993d9db965a9b4d7d3850cd895bed39b8b94c7355362210b2f218d8",
+          "toSpeciesRecordSha256": "d5651f63bbf27da6f9d4025c7f5907324ede38434e1b54165fb5c40c8fed3764"
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Weepinbell",
+          "toSpecies": "Victreebel",
+          "minimumLevel": 30,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "569d15d80e06e0fb3431561cfd2ced9387ecda2d58b7bffab3537bf976c17720",
+          "toSpeciesRecordSha256": "ef1f96e8d8182c96dd51e77ba72ef9c42bce2dca98aa2e5846e318de35b475c7"
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Exeggcute",
+          "toSpecies": "Exeggutor",
+          "minimumLevel": 0,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "956c4ae8343ccc1f678e523bab96faae50d7e2b254df6c23088d0317db1c115e",
+          "toSpeciesRecordSha256": "f065e3384967417662b5604c59743b35425262c71bfeed6bde2c4dedf2c8b9b7"
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Leafeon",
+          "minimumLevel": 0,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "89d8c4891b3e1012986ab9878edfe19720e59e4dc12e7987cf2b025a8b2fd2db",
+          "toSpeciesRecordSha256": "7f4be0ccce2ae4cf7146a15aa7f773a76916ba4712d3c299e0f896b2e897e3d2"
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Nuzleaf",
+          "toSpecies": "Shiftry",
+          "minimumLevel": 25,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "935cb3d21db20e8d39a79fa5001b7613568bb18af11fe444700ca4262c44b221",
+          "toSpeciesRecordSha256": "a588012dbfb569ba9c8907c7248b799898b6b193f696cd03f10f5d9d1ceaffbf"
+        },
+        {
+          "itemId": "Leaf Stone",
+          "fromSpecies": "Pansage",
+          "toSpecies": "Simisage",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "3255e2ae6b80412ebb58dd46bd2a183c53cf3a1ebc716d6632b65bcd5bc61727",
+          "toSpeciesRecordSha256": "5239feeebd89ee7a2ff16c4ead08bb9fd11dfedbdd0f9b9e0069958d52189b60"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Moon Stone",
+      "recordSha256": "1d13cb65f1f0abe094298adf96f3ccbbc51dce3b349577cee1d6e4f9cd9f9d4d",
+      "effectSha256": "c90291d3245336ab00bbb95128aa81495166ae4850ae66e045cbfffc9f0fac29",
+      "price": "$3000",
+      "transitionCount": 7,
+      "transitions": [
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Nidorina",
+          "toSpecies": "Nidoqueen",
+          "minimumLevel": 25,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "1abdd83ab4d85e123bfd03788a359954fdd832ebbe7f10a07c1a51135bf06ddd",
+          "toSpeciesRecordSha256": "de36f9deb09e8e8db19da727c2da6a87a1ea8eb0e85969152fbf06fd237b8e8a"
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Nidorino",
+          "toSpecies": "Nidoking",
+          "minimumLevel": 25,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "e6b87f53dea8a2063ab8993a9a1451a69a118e7f512751fb9fa37879d321c351",
+          "toSpeciesRecordSha256": "109f779cea92c3730eb19254af9b3506dba726991ccf8c9ec4feeca2fc619b17"
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Clefairy",
+          "toSpecies": "Clefable",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "03d3153635a4309e82bcda40a93702c866f8398d41b1fc9b6c77c004c52bdaef",
+          "toSpeciesRecordSha256": "9482c3e2273bc850e0f2c3e17460280463a11ff409e2da20f8fc6a2289f7a157"
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Jigglypuff",
+          "toSpecies": "Wigglytuff",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "5f127bb8e7c9283873c624924bee41521fff33611aa0aa7ee8ce53d1ca21557c",
+          "toSpeciesRecordSha256": "efd650757c012a4f079b1bc97551a3155c227f57076f569d97e10f1feaa334ca"
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Sylveon",
+          "minimumLevel": 0,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "89d8c4891b3e1012986ab9878edfe19720e59e4dc12e7987cf2b025a8b2fd2db",
+          "toSpeciesRecordSha256": "8fe0d1d5f37257d3b77a0266d6f4ecfb5b34ad8494a37d03354d0737cfb3d997"
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Skitty",
+          "toSpecies": "Delcatty",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "c3f22cc03bf14243835ab855ff37ce6ff2d6f9623a09c3243458a6c60e8f3a2e",
+          "toSpeciesRecordSha256": "2af8c0e2debc04bc9b849e11e289b34eaebf838b2bdc528ab7ad175870ec7fb7"
+        },
+        {
+          "itemId": "Moon Stone",
+          "fromSpecies": "Munna",
+          "toSpecies": "Musharna",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "c52abc30b213e6518bd077e4705fecdcc2305755587723d3cd0e3757da3cc0d0",
+          "toSpeciesRecordSha256": "b6f5ae7fbe103439e9d32656702ab8437cf71cef5f15e4f90bd08177f47f488c"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Sun Stone",
+      "recordSha256": "0dd2ca077496b933c327e568c0dd880562d503a4ec9f9e04d5b92477dac9f920",
+      "effectSha256": "0ffd7e259c0a0fbed4c08d8c9ca916524ab1ca68a5fff63b3666757d4ecff8e6",
+      "price": "$3000",
+      "transitionCount": 5,
+      "transitions": [
+        {
+          "itemId": "Sun Stone",
+          "fromSpecies": "Gloom",
+          "toSpecies": "Bellossom",
+          "minimumLevel": 30,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "e6327c34c993d9db965a9b4d7d3850cd895bed39b8b94c7355362210b2f218d8",
+          "toSpeciesRecordSha256": "745528ed1cf35dff334a32002efc6e3bcfdb0bbd593857b790d18a2cfc304738"
+        },
+        {
+          "itemId": "Sun Stone",
+          "fromSpecies": "Sunkern",
+          "toSpecies": "Sunflora",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "f63e3f559fd5b0453f2c7e58570d183975c6576d003a0f308aac4d21f2ad0b82",
+          "toSpeciesRecordSha256": "8864f7e519537ef053fde48ba9beca45dfb21e0edc721577602ad0c0eb4e49ae"
+        },
+        {
+          "itemId": "Sun Stone",
+          "fromSpecies": "Cottonee",
+          "toSpecies": "Whimsicott",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "4859954484373ae3de02c8c04e3451b23dd6d3dec7855f67c65ecf143ec63917",
+          "toSpeciesRecordSha256": "941bba95ec5ada325516c0799d65e01ecd584b489dfdf7089d920611f2b3558b"
+        },
+        {
+          "itemId": "Sun Stone",
+          "fromSpecies": "Petilil",
+          "toSpecies": "Lilligant",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "ace54ceac1c3fff8c468f28701359d2bd46fe002633983cedf022d52f11629df",
+          "toSpeciesRecordSha256": "473568d4c5dac1cc0a4fa54833101e6760d2e02bcadceed42b0a7e2f55b72ce2"
+        },
+        {
+          "itemId": "Sun Stone",
+          "fromSpecies": "Helioptile",
+          "toSpecies": "Heliolisk",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "f79c1edca496a1fedf27172a55034f7b2e10bc18f1ccee3ce00d81ec60d578ec",
+          "toSpeciesRecordSha256": "7ab12f4ae2c1c2fc3a35daa9c3a06cd91b8353efa71a125985850fd2ee679d13"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Shiny Stone",
+      "recordSha256": "72d8e4c14e44cdfceb84347c90283eca1ae6299f4cc60b0ae4321fb824f53cea",
+      "effectSha256": "6ac1e5005cc0bed9341d17fea78e0d7fa1ee85f4b06ced3e856aa25063dec932",
+      "price": "$3000",
+      "transitionCount": 5,
+      "transitions": [
+        {
+          "itemId": "Shiny Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Glaceon",
+          "minimumLevel": 0,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "89d8c4891b3e1012986ab9878edfe19720e59e4dc12e7987cf2b025a8b2fd2db",
+          "toSpeciesRecordSha256": "4cda69f8d4cb30c6a3ee51ae1c2a8509c401bc286217efbee73dcb0676e3887f"
+        },
+        {
+          "itemId": "Shiny Stone",
+          "fromSpecies": "Togetic",
+          "toSpecies": "Togekiss",
+          "minimumLevel": 30,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "ad0d9f9813e76d3ebfbd2836928a93dc4ae80f6f649b91fabdffc3437daed8e9",
+          "toSpeciesRecordSha256": "225005fcbdfd7ea34dd0d9df632073161d73a068a416d2a857084116cb3e1ebb"
+        },
+        {
+          "itemId": "Shiny Stone",
+          "fromSpecies": "Roselia",
+          "toSpecies": "Roserade",
+          "minimumLevel": 30,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "dbfa3079a1f67a93c7d8b300c1bbfd6fa4af8b783e73d8b74a95d35768253c0e",
+          "toSpeciesRecordSha256": "8d85e407a7f23b19eaab6d9487836923928d4bb5b2b0b6f23e50d915e2e6e148"
+        },
+        {
+          "itemId": "Shiny Stone",
+          "fromSpecies": "Minccino",
+          "toSpecies": "Cinccino",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "85723f298c05999bb04be6efc22ee7e8e3b27b9323f1dd4d3c8db7dd99372814",
+          "toSpeciesRecordSha256": "31d2dfa197f351f0295d51f3e8e7dd5f82f066da34447646d266808ff1c34cf9"
+        },
+        {
+          "itemId": "Shiny Stone",
+          "fromSpecies": "Floette",
+          "toSpecies": "Florges",
+          "minimumLevel": 30,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "46237069f62e7694afb4ba7c4b43f56034236c99087c43fcd7c186540243676e",
+          "toSpeciesRecordSha256": "bcac910244851eff48377f254264766e62575ee0ce9f03301751efbef83963b7"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Dusk Stone",
+      "recordSha256": "0bf76a47e027d546387c3555be41457afb52d9a79bce438d32f4acd1d69644cd",
+      "effectSha256": "7eb2df183dcdc9adf38ab7affe53f66dd5f297059a0d504a52ae9905eece7f4d",
+      "price": "$3000",
+      "transitionCount": 5,
+      "transitions": [
+        {
+          "itemId": "Dusk Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Umbreon",
+          "minimumLevel": 0,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "89d8c4891b3e1012986ab9878edfe19720e59e4dc12e7987cf2b025a8b2fd2db",
+          "toSpeciesRecordSha256": "33f94cc9d2061a14395e5d15825f824def11939c8b650ca42db9f603c48c292c"
+        },
+        {
+          "itemId": "Dusk Stone",
+          "fromSpecies": "Murkrow",
+          "toSpecies": "Honchkrow",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "411b53a60aa3e27ffc23c60257919c2fbed4539de113230d042aff2cade1e24e",
+          "toSpeciesRecordSha256": "c90a42c7eccb24276b5ae7a3d5172a803ba479912a9257b8d2e8512d70ec7891"
+        },
+        {
+          "itemId": "Dusk Stone",
+          "fromSpecies": "Misdreavus",
+          "toSpecies": "Mismagius",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "3d57eadfd3481880800665902e0bd9d6502ed9117adbdb8adbdde53e8cd8aa9f",
+          "toSpeciesRecordSha256": "d4b1c737cb246d8c0c9fcc8c2139c317fc3b94ac54a8b405a676a72ed0c4a98f"
+        },
+        {
+          "itemId": "Dusk Stone",
+          "fromSpecies": "Lampent",
+          "toSpecies": "Chandelure",
+          "minimumLevel": 35,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "9635363dbf6a0dd6f030f9d11dc329b378143daa5dab86b462ce31e4b17de7a6",
+          "toSpeciesRecordSha256": "c3f25e6015044ffc6a71f7d0b6152fdbbc67ba7c44c92817f8e6ad8727942ced"
+        },
+        {
+          "itemId": "Dusk Stone",
+          "fromSpecies": "Doublade",
+          "toSpecies": "Aegislash",
+          "minimumLevel": 40,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "8c5d1ec4386bba61c41e77cce93ca4f8d60bb072182f7887b47e1e428ac9256b",
+          "toSpeciesRecordSha256": "3588f26d5edf1a44916c5c05d1bd8d0c78f3f74fece9318f0f7a37d0df6245bd"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Dawn Stone",
+      "recordSha256": "5ede5a06401afdc51fbe78e15d6032f4c45b5ca485c86e81aede0b47c84ebddb",
+      "effectSha256": "c870fb4f2844810fcd53dbf81584ae7a361833e15bb1294c8bdfded2713572c9",
+      "price": "$3000",
+      "transitionCount": 3,
+      "transitions": [
+        {
+          "itemId": "Dawn Stone",
+          "fromSpecies": "Eevee",
+          "toSpecies": "Espeon",
+          "minimumLevel": 0,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "89d8c4891b3e1012986ab9878edfe19720e59e4dc12e7987cf2b025a8b2fd2db",
+          "toSpeciesRecordSha256": "605ede42b21b478c183d1bec9d27577798065b436dd0263c5da58e346ff44e6d"
+        },
+        {
+          "itemId": "Dawn Stone",
+          "fromSpecies": "Kirlia",
+          "toSpecies": "Gallade",
+          "minimumLevel": 30,
+          "requiredGender": "Male",
+          "fromSpeciesRecordSha256": "e345de1ff0bd69a63a88dcee9083bf815b66284c8ca76887f32e233c51a4df40",
+          "toSpeciesRecordSha256": "4ffef29b409cdbf0891c87f262feb886bc969e2d9be2f3b530885c092836a925"
+        },
+        {
+          "itemId": "Dawn Stone",
+          "fromSpecies": "Snorunt",
+          "toSpecies": "Froslass",
+          "minimumLevel": 30,
+          "requiredGender": "Female",
+          "fromSpeciesRecordSha256": "b82e670ca8159623f1c30d38176cd1d85f04ac954176dace7ed606d121b5761c",
+          "toSpeciesRecordSha256": "03f33493e867433f64af45280e6a7da9f9008a3a53804f354e8a4b89c0119a90"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Deepseascale/Deepseatooth",
+      "recordSha256": "0197d6d5dc014c698692a887856bdba3d0caeb377dfb69cfd428fe36fa209745",
+      "effectSha256": "5107aa33935477866f21d9436fdda399127ee58efabd670317c52a00cf9ebc78",
+      "price": "$3000",
+      "transitionCount": 2,
+      "transitions": [
+        {
+          "itemId": "Deepseascale/Deepseatooth",
+          "fromSpecies": "Clamperl",
+          "toSpecies": "Huntail",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "ea874c71f370b54769dd237c1316197b0cb58c4b8e3146a4cc0942495d81451e",
+          "toSpeciesRecordSha256": "bf459cfb08569e1c0e68bcf13e567e941973c33186878149f9e7eed8e2d75f7d"
+        },
+        {
+          "itemId": "Deepseascale/Deepseatooth",
+          "fromSpecies": "Clamperl",
+          "toSpecies": "Gorebyss",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "ea874c71f370b54769dd237c1316197b0cb58c4b8e3146a4cc0942495d81451e",
+          "toSpeciesRecordSha256": "1cbb30a9aee2106009c6d6eaa033a66fa648052f06fa2598ffaad57163bed18d"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Dragon Scale",
+      "recordSha256": "8b0aff095f534fb8bb89d761d9e1bcae3478fc1071c343fbff9633c7a6a2cfd8",
+      "effectSha256": "c59b924fd42a5963a5df504fe41808e42ad961afea72f199a7cd6b8903317d82",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Dragon Scale",
+          "fromSpecies": "Seadra",
+          "toSpecies": "Kingdra",
+          "minimumLevel": 40,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "6736c7313ed6c0ca7d5d8320353b3b8ba43c81da61023216f0f5f274cc0e08fb",
+          "toSpeciesRecordSha256": "b6add3c132327091eefc20a8416cdd5edecc4b2159b8c18c410173f5f92aea13"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Dubious Disc",
+      "recordSha256": "853054c640cd7fcba3c6307dc1a1543d2b702957cd6c9e932e1cca927b7cb9a5",
+      "effectSha256": "16431023d0630862c3330e1fcdb44793414d71b4832f9b8f3aff9d0ce3c60783",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Dubious Disc",
+          "fromSpecies": "Porygon2",
+          "toSpecies": "Porygon-Z",
+          "minimumLevel": 25,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "eee998d6201334f17c88a96022c4bcd6b95f16302fe0bf5c63879accc38d0415",
+          "toSpeciesRecordSha256": "19ebae54a9678faed3b42f9129d3d1c999bd3e171d6da13bcab12b2bf2e4968c"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Electirizer",
+      "recordSha256": "7cfd5337bb3e3d5f5a3ac7a933b5845ccd7adb6e8fc27e386ad272151735bba2",
+      "effectSha256": "f14eaa19e1103bd49c3c9a75409b8a65b809c51f225d6320f125ceb901a27eb1",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Electirizer",
+          "fromSpecies": "Electabuzz",
+          "toSpecies": "Electivire",
+          "minimumLevel": 40,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "f6ae574252c1645fbb2e9432802c6aaa8d3378bdc76b450a01d7a585e98e6488",
+          "toSpeciesRecordSha256": "816878a92706287e321e91ef76860547b3187851eeb824cb33d710d1430c0e0a"
+        }
+      ]
+    },
+    {
+      "canonicalId": "King’s Rock",
+      "recordSha256": "2d279cde96e6abb56db70fc0ed3974ba5ef05f9b49ee6ea7b19578a7a5dccf09",
+      "effectSha256": "47b5551e24ce69d65d2f65d931aed3ba1298601de5fd3542eac2ac558e3d5d2c",
+      "price": "$2500",
+      "transitionCount": 2,
+      "transitions": [
+        {
+          "itemId": "King’s Rock",
+          "fromSpecies": "Poliwhirl",
+          "toSpecies": "Politoed",
+          "minimumLevel": 30,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "37257e5fff1506c6792cd0b82d01b08c4ce96e46d57511d458fe4ddae06b523d",
+          "toSpeciesRecordSha256": "204826cf6b4481b8e027e9872f663e07198d4564774ed81651a79e51749cc743"
+        },
+        {
+          "itemId": "King’s Rock",
+          "fromSpecies": "Slowpoke",
+          "toSpecies": "Slowking",
+          "minimumLevel": 35,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "509a2b3679b7426a84a6a055fc32e26cad0604f79e28e088524ca999bc26dab0",
+          "toSpeciesRecordSha256": "29291571c00b7bac09dc44784e9690bc86c68234594b4e1debe9e96f8617acdc"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Oval Stone",
+      "recordSha256": "72202db969b9463a02e551ba3d145a41af6a76aa660a78890eeb5aed5fc8e4c4",
+      "effectSha256": "83956faf2590a716ab562e702fe00707294def5a1f4879f89cc10549c5d76ee6",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Oval Stone",
+          "fromSpecies": "Happiny",
+          "toSpecies": "Chansey",
+          "minimumLevel": 10,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "5c28320f2fd963ae93b755b211b47c46b4cba10ff26a498a6169a93303cb559a",
+          "toSpeciesRecordSha256": "ae331d476124dd5aab77c061ef5bcb1ea9e188117f2e07a8957d940bc7190fc6"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Magmarizer",
+      "recordSha256": "fbdd7c230c1fd75871544a7c60028b48181dadb870486b9018bb4e5f7071f49c",
+      "effectSha256": "fdfe27f5cff6d7e362fdc2db621d98e4549f8628fb7356fc3fefa28817a877e0",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Magmarizer",
+          "fromSpecies": "Magmar",
+          "toSpecies": "Magmortar",
+          "minimumLevel": 40,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "d12268ddb383102d78be03c78ee0a14b5b68d508cfa7a799d94018ece56c243c",
+          "toSpeciesRecordSha256": "aa40665ea0627378ca8fd6a33c63ac015198808e5a896e462f6980cfac07cc29"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Metal Coat",
+      "recordSha256": "b3df330a23cf15f72eb72e489c3a353d14c5fe6d5b348c071569024b4e5d51ce",
+      "effectSha256": "6ead0e9b6aaacea225ffc3656c89c37a05c4552a4e3b11580b88cb91f27f8c14",
+      "price": "$3000",
+      "transitionCount": 2,
+      "transitions": [
+        {
+          "itemId": "Metal Coat",
+          "fromSpecies": "Onix",
+          "toSpecies": "Steelix",
+          "minimumLevel": 35,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "10b72b9867da24a9b11ec4787f3fbc0579909ba0c6b6a6527a42ebed5a7df070",
+          "toSpeciesRecordSha256": "dd3d0787fd51ba0376cd79ff887b908375a0ad8f60b4bbf60b49ee220dcf2aed"
+        },
+        {
+          "itemId": "Metal Coat",
+          "fromSpecies": "Scyther",
+          "toSpecies": "Scizor",
+          "minimumLevel": 30,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "08da9127b62f2111d5a915be628a29c3faf17758217803bed1c9f5782a5fa79f",
+          "toSpeciesRecordSha256": "4b94848af18fe6ea029634ba4601b31b2ed2b22c23dd570714d2bb9dff09841c"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Protector",
+      "recordSha256": "a34625b1decd93e074abd6772d61d4c0d27d7579aa07cc580222ccd2199b3dfb",
+      "effectSha256": "9601bccf04206beae7d00900a8957fe0652272cd40e57830f46b403241011a85",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Protector",
+          "fromSpecies": "Rhydon",
+          "toSpecies": "Rhyperior",
+          "minimumLevel": 45,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "acb90a2c1e62dc28127ac805811ff704e48bbbb5e9873cbc1055359c8e9cf054",
+          "toSpeciesRecordSha256": "1fa7ba1e9e425958cfe0f28b550017e120840bbfd70a42bda0d7e504efd69acf"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Razor Claw",
+      "recordSha256": "42ae81b9c1e179ab549ba174bb4372c72bb6666dddae476e9e04e6f227ba1691",
+      "effectSha256": "25e6ef0f4554be5919ace74f41eb4ed6ae66045160a58c327136eba0ead6e09a",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Razor Claw",
+          "fromSpecies": "Sneasel",
+          "toSpecies": "Weavile",
+          "minimumLevel": 30,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "5476938934a1050e891f4d488196b68d3503f82df4c9bb20d30605e0bc602c84",
+          "toSpeciesRecordSha256": "a51287948b3fbd83c19116c15b4b6d2b5d1a68f4a815055bfdafb1644652a24c"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Razor Fang",
+      "recordSha256": "72e2e7d52afb8dcd3ea6d3f28903284ddabe57c89f8343c79e79680f2200a010",
+      "effectSha256": "68e50de0872633bc48d3ac35503f0895184d73df97c2c48b0c0362ab1abba06f",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Razor Fang",
+          "fromSpecies": "Gligar",
+          "toSpecies": "Gliscor",
+          "minimumLevel": 25,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "8b5c153daccd140ed855d5998da340df6cdd66a9276b4321529142b59f798a98",
+          "toSpeciesRecordSha256": "dfd16844213c8f70b8e8f3d52d2031c51e3632e21f666baac9bc6a78096dbb98"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Reaper Cloth",
+      "recordSha256": "9a0909c9e0199f9376f987b1932aa13854917f851a766b5189d804822127fc8f",
+      "effectSha256": "219ac448531fd97bd9353be915967d1459661cd105bf87277c6b5c3f20563b3d",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Reaper Cloth",
+          "fromSpecies": "Dusclops",
+          "toSpecies": "Dusknoir",
+          "minimumLevel": 40,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "b7d4b16ac96c0488408791e8e3494bc46530a2548a2f3c739224e29d7444c5ad",
+          "toSpeciesRecordSha256": "4dae0c8a87894db5ddf41a9f741a6524bec40da59b1db963ecd0333ea3b675cc"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Sachet",
+      "recordSha256": "23b1349f3e56fe767b6a1b072091bd4be2bfc131c97ab698d257923a22b84daf",
+      "effectSha256": "3b8b672344c1f90a03528bb3c64f4e451b48b06758ddff73c2dcc34894b418d4",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Sachet",
+          "fromSpecies": "Spritzee",
+          "toSpecies": "Aromatisse",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "c312b6746d0824cc61aeec9fdd374e6fce8c62945fef99afd1b09897e75af50f",
+          "toSpeciesRecordSha256": "86020c7001512152d7da96cc393c58ba9687e058b710a7843bb11410dd7ed0df"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Up-Grade",
+      "recordSha256": "7d610abd00d58290c801224e8b02a109d2cb8387f35ee8aa9bb2ef099cbc5468",
+      "effectSha256": "26260a6191de034e47f59a1c32eba8aafc1c9e66ffbad6e3c2ec68c3dc45956f",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Up-Grade",
+          "fromSpecies": "Porygon",
+          "toSpecies": "Porygon2",
+          "minimumLevel": 10,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "5019499a1161c321f80881b64e4e5de4b5977a8bfd41c58a4acf41115c81484d",
+          "toSpeciesRecordSha256": "eee998d6201334f17c88a96022c4bcd6b95f16302fe0bf5c63879accc38d0415"
+        }
+      ]
+    },
+    {
+      "canonicalId": "Whipped Dream",
+      "recordSha256": "0fa438b3466b50ae2c68f0c33a3a5e521de8fc86c5407dfe1e531f7def20c914",
+      "effectSha256": "96f13b6bca2acd6e1a9aab3ce371c429851084396588f2010e3262df6a2e802a",
+      "price": "$3000",
+      "transitionCount": 1,
+      "transitions": [
+        {
+          "itemId": "Whipped Dream",
+          "fromSpecies": "Swirlix",
+          "toSpecies": "Slurpuff",
+          "minimumLevel": 20,
+          "requiredGender": null,
+          "fromSpeciesRecordSha256": "bb23484947a782804b1b8a8c3ce69a404908a0c2cec432383110549eb830bc62",
+          "toSpeciesRecordSha256": "34fb17b81ae21b115299fca72e57f086bb745a8c297c0889b7457dcfe0aae459"
+        }
+      ]
+    }
+  ],
+  "execution": {
+    "contexts": [
+      "sheet",
+      "campaign"
+    ],
+    "operation": "evolve-pokemon",
+    "atomicWrites": [
+      "source-inventory",
+      "pokemon-sheet",
+      "equipment-state",
+      "private-evolution-ledger",
+      "owner-attention"
+    ],
+    "replay": "exact-operation-id-reuses-accepted-result",
+    "setupSave": "locked-authority-preserved-and-exact-restat-resolution-receipted",
+    "sourceFiles": [
+      "shared/itemAutomation/evolution.ts",
+      "server/domain/itemAutomation/evolution.ts",
+      "server/domain/itemAutomation/eligibility.ts",
+      "server/domain/itemAutomation/planner.ts",
+      "server/domain/itemAutomation/reducer.ts",
+      "server/domain/itemAutomation/conformance.ts",
+      "server/storage/sheetRepository.ts"
+    ]
+  },
+  "privacy": {
+    "choices": "actor-owner",
+    "outcome": "actor-owner",
+    "privateFields": [
+      "source-operation",
+      "source-row",
+      "source-instance",
+      "hashes",
+      "ability-slot-evidence",
+      "raw-equipment-reasons"
+    ],
+    "ownerProjection": [
+      "species-transition",
+      "stat-allocation",
+      "move-opportunities",
+      "ability-changes",
+      "inactive-equipment-item-labels"
+    ]
+  },
+  "ui": {
+    "selectedMockup": ".pi/artifacts/ui-mockups/evolution-item-workflow/v002.png",
+    "decisionComponent": "src/components/sheets/TrainerSheetItemDecision.vue",
+    "attentionComponent": "src/components/sheets/PokemonEvolutionAttentionCard.vue",
+    "responsive": "one-column-below-720px"
+  },
+  "certification": {
+    "status": "certified",
+    "requirements": [
+      "focused-domain-integration-and-component-tests",
+      "desktop-and-mobile-liveplay-e2e",
+      "privacy-and-replay-acceptance",
+      "typecheck-eslint-generated-data-and-breeding-successor-gates"
+    ]
+  }
+}

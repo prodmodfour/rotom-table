@@ -27,6 +27,10 @@ export type GroupInventoryRealtimeOperation =
   | 'transfer-to-group'
   | 'shop-checkout'
   | 'resolve-move'
+  | 'item-operation'
+  | 'item-correction'
+  | 'inventory-stack'
+  | 'encounter-settlement'
 
 export interface GroupInventoryAffectedSheetUpdate {
   readonly kind: SheetKind
@@ -106,7 +110,7 @@ export const groupInventoryUpdatedRealtimeDedupeKey = (input: {
 }
 
 export const groupInventoryAffectedSheetRealtimeDedupeKey = (input: {
-  readonly operation: Extract<GroupInventoryRealtimeOperation, 'transfer-to-trainer' | 'transfer-to-group'>
+  readonly operation: Extract<GroupInventoryRealtimeOperation, 'transfer-to-trainer' | 'transfer-to-group' | 'inventory-stack'>
   readonly kind: SheetKind
   readonly slug: string
   readonly revision: number
@@ -188,7 +192,7 @@ const normalizeAffectedSheetUpdate = (
 export const groupInventoryAffectedSheetUpdatedRealtimeAppendInputs = (input: {
   readonly update: GroupInventoryAffectedSheetUpdate
   readonly clientId?: unknown
-  readonly operation: Extract<GroupInventoryRealtimeOperation, 'transfer-to-trainer' | 'transfer-to-group'>
+  readonly operation: Extract<GroupInventoryRealtimeOperation, 'transfer-to-trainer' | 'transfer-to-group' | 'inventory-stack'>
 }): readonly AppendRealtimeEventInput[] => {
   const update = normalizeAffectedSheetUpdate(input.update)
   const normalizedClientId = normalizeRealtimeEventClientIdForEventLog(input.clientId)

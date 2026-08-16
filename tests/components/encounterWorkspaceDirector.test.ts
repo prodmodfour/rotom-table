@@ -61,6 +61,7 @@ describe('EncounterDirectorPanel', () => {
     const authored: EncounterWorkspaceViewModel = {
       ...base,
       source: { ...base.source, encounterRevision: 2 },
+      activeEffects: [],
       director: {
         encounterRevision: 2,
         name: 'Canal ambush',
@@ -99,6 +100,91 @@ describe('EncounterDirectorPanel', () => {
     await wrapper.get('#director-tab-system').trigger('click')
     expect(wrapper.get('a[download]').attributes('href')).toBe('/api/encounter-documents/export?encounterId=arena')
     expect(wrapper.get('a[download]').text()).toContain('Export encounter backup')
+  })
+
+  it('exposes explicit pending abandonment and accepted item correction controls only in GM system recovery', async () => {
+    const base = workspace()
+    const recoveryWorkspace: EncounterWorkspaceViewModel = {
+      ...base,
+      pending: [{
+        schemaVersion: 1, projection: 'gm', interactionId: 'item-pending:one', mapSlug: 'arena', mapRevision: 7,
+        status: 'pending', source: { sourceKind: 'item', canonicalId: 'Potion', instanceId: null, displayName: 'Potion', referenceHref: null },
+        actor: null, prompt: 'Complete the Potion decision.', choices: [],
+        responseIdentity: { interactionId: 'item-pending:one', resolutionId: 'op_item_pending_0001', windowId: 'item-decision:one', retryKey: 'op_item_pending_0001' },
+        allowPass: false, allowCancel: false, expiresAt: null,
+        recoveryActions: [{ action: 'cancel', actionId: 'item-abandon:one', label: 'Abandon and release item', enabled: true, unavailableReason: null }],
+        announcement: { announcementId: 'announcement:item', priority: 'assertive', message: 'Potion requires a decision.', dedupeKey: 'item-pending' },
+      }],
+      accepted: [{
+        schemaVersion: 1, presentationId: 'accepted-item:one', operationId: 'op_item_accepted_0001', mapSlug: 'arena',
+        previousRevision: 6, revision: 7,
+        source: { sourceKind: 'item', canonicalId: 'Potion', instanceId: null, displayName: 'Potion', referenceHref: null },
+        actor: null, affectedParticipants: [], outcomes: [], changes: [], explanations: [],
+        causal: { groupId: 'item-group:one', parentPresentationId: null, depth: 0, sequence: 0 },
+        headline: { label: 'Potion resolved', description: null, iconKey: 'source.item', tone: 'positive' },
+        splash: null, vfx: [], announcements: [], history: [], correction: null,
+      }],
+    }
+    const wrapper = mount(EncounterDirectorPanel, { props: { workspace: recoveryWorkspace, open: true } })
+    await wrapper.get('#director-tab-system').trigger('click')
+    expect(wrapper.text()).toContain('Abandon and release item')
+    expect(wrapper.text()).toContain('Correct item use')
+    await wrapper.findAll('.encounter-director__recovery button').find(button => button.text() === 'Abandon and release item')!.trigger('click')
+    await wrapper.findAll('.encounter-director__recovery button').find(button => button.text() === 'Correct item use')!.trigger('click')
+    expect(wrapper.emitted('recover')).toEqual([['item-pending:one', 'cancel']])
+    expect(wrapper.emitted('correctItem')).toEqual([['op_item_accepted_0001']])
+  })
+
+  it('renders server-authored durations and emits only projected lifecycle authority', async () => {
+    const base = workspace()
+    const durationWorkspace: EncounterWorkspaceViewModel = {
+      ...base,
+      activeEffects: [{
+        effectRef: 'effect-ref:v1:one', label: 'Critical range bonus', sourceLabel: 'Luxray',
+        affectedLabel: 'Luxray', durationKind: 'encounter', durationLabel: 'Until encounter ends',
+        dismissalRef: null, dismissible: false,
+      }, {
+        effectRef: 'effect-ref:v1:two', label: 'Stage-change protection', sourceLabel: 'Luxray',
+        affectedLabel: 'Luxray', durationKind: 'turns', durationLabel: '3 target turns remaining',
+        dismissalRef: null, dismissible: false,
+      }, {
+        effectRef: 'effect-ref:v1:three', label: 'Focus stance', sourceLabel: 'Luxray',
+        affectedLabel: 'Luxray', durationKind: 'explicit-dismissal', durationLabel: 'Until GM dismisses',
+        dismissalRef: 'effect-ref:v1:three', dismissible: true,
+      }],
+    }
+    const wrapper = mount(EncounterDirectorPanel, { props: { workspace: durationWorkspace, open: true } })
+    await wrapper.get('#director-tab-system').trigger('click')
+    expect(wrapper.text()).toContain('Active effects3')
+    expect(wrapper.text()).toContain('Until encounter ends')
+    expect(wrapper.text()).toContain('3 target turns remaining')
+    expect(wrapper.text()).toContain('Until GM dismisses')
+    expect(wrapper.findAll('.encounter-director__effect button')).toHaveLength(1)
+    await wrapper.get('.encounter-director__effect button').trigger('click')
+    expect(wrapper.emitted('dismissEffect')).toEqual([['effect-ref:v1:three']])
+
+    const boundary = wrapper.get('section.encounter-director__encounter-boundary')
+    expect(boundary.text()).toContain('Review persistent consequences, rewards, outcomes, and temporary cleanup together before one atomic commit.')
+    await boundary.get('.encounter-director__finish').trigger('click')
+    expect(wrapper.emitted('finishEncounter')).toEqual([[]])
+  })
+
+  it('disables lifecycle controls while commands are blocked or busy', async () => {
+    const base = workspace()
+    const durationWorkspace: EncounterWorkspaceViewModel = {
+      ...base,
+      activeEffects: [{
+        effectRef: 'effect-ref:v1:three', label: 'Focus stance', sourceLabel: 'Luxray',
+        affectedLabel: 'Luxray', durationKind: 'explicit-dismissal', durationLabel: 'Until GM dismisses',
+        dismissalRef: 'effect-ref:v1:three', dismissible: true,
+      }],
+    }
+    const wrapper = mount(EncounterDirectorPanel, {
+      props: { workspace: durationWorkspace, open: true, commandsBlocked: true },
+    })
+    await wrapper.get('#director-tab-system').trigger('click')
+    expect(wrapper.get('.encounter-director__effect button').attributes()).toHaveProperty('disabled')
+    expect(wrapper.get('.encounter-director__finish').attributes()).toHaveProperty('disabled')
   })
 
   it('supports Escape, refresh, and Workshop controls without presenting mechanics as player actions', async () => {

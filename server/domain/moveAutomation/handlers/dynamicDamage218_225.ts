@@ -34,7 +34,7 @@ const DEFINITIONS: Readonly<Record<string, DamageDefinition>> = Object.freeze({
   'Dynamax Cannon': { slug: 'dynamax-cannon', damageBase: 10, damageClass: 'special', moveType: 'dragon' },
   'Echoed Voice': { slug: 'echoed-voice', damageBase: 4, damageClass: 'special', moveType: 'normal' },
   'Electro Ball': { slug: 'electro-ball', damageBase: 6, damageClass: 'special', moveType: 'electric' },
-  'Façade': { slug: 'facade', damageBase: 7, damageClass: 'physical', moveType: 'normal' },
+  'Facade': { slug: 'facade', damageBase: 7, damageClass: 'physical', moveType: 'normal' },
   'Fishious Rend': { slug: 'fishious-rend', damageBase: 9, damageClass: 'physical', moveType: 'water' },
   Flail: { slug: 'flail', damageBase: 7, damageClass: 'physical', moveType: 'normal' },
   'Fusion Bolt': { slug: 'fusion-bolt', damageBase: 10, damageClass: 'physical', moveType: 'electric' },
@@ -157,7 +157,7 @@ const contextualDefinition = (
     addModifier('actor-speed', stat(context, actorId, 'speed'))
     addModifier('target-speed', -stat(context, selected.placement.id, 'speed'))
   }
-  else if (name === 'Façade') {
+  else if (name === 'Facade') {
     const actorState = context.queries.targetStates.resolve(actorId)
     if (actorState && statusCount(actorState.conditionIds) > 0) damageBase = 14
   }

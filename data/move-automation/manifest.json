@@ -13780,6 +13780,64 @@
       "rolloutCohortId": null
     },
     {
+      "canonicalId": "Facade",
+      "displayName": "Facade",
+      "baseStatus": "complete",
+      "interactionStatus": "unassessed",
+      "runtime": {
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "553c00e0a2cdf27fd1723cc819677b52cdac49a6e7ae7f54ffe0a36e7fd41180",
+        "sourceModule": "server/domain/moveAutomation/specs/dynamicDamageCohorts218_225.ts"
+      },
+      "rulesProvenance": {
+        "rulesetId": "rotom-table-reference-moves-v1",
+        "canonicalizationVersion": 1,
+        "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
+      },
+      "capabilityTags": [
+        "expressions.bounded",
+        "hp.typed",
+        "targeting.authoritative"
+      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "fac-ade.v2-reviewed-conformance"
+      ],
+      "conformanceEvidence": {
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.enemy"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "fac-ade.v2-reviewed-conformance",
+            "evidenceClasses": [
+              "hit",
+              "miss",
+              "crit",
+              "immunity",
+              "retry",
+              "multi-resource-conflict",
+              "enemy",
+              "threshold-pass",
+              "threshold-fail"
+            ]
+          }
+        ],
+        "notApplicable": []
+      },
+      "reviewedAt": "2026-07-19",
+      "unsupportedInteractionIds": [],
+      "rolloutCohortId": "ma-220"
+    },
+    {
       "canonicalId": "Fairy Lock",
       "displayName": "Fairy Lock",
       "baseStatus": "complete",
@@ -14233,64 +14291,6 @@
       "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "ma-244"
-    },
-    {
-      "canonicalId": "Façade",
-      "displayName": "Façade",
-      "baseStatus": "complete",
-      "interactionStatus": "unassessed",
-      "runtime": {
-        "kind": "movespec-v2",
-        "version": 2,
-        "definitionHash": "cb3ce426fd29113c204c9b7c20412449df05fa636bf1844237ac1a55a939ae77",
-        "sourceModule": "server/domain/moveAutomation/specs/dynamicDamageCohorts218_225.ts"
-      },
-      "rulesProvenance": {
-        "rulesetId": "rotom-table-reference-moves-v1",
-        "canonicalizationVersion": 1,
-        "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
-      },
-      "capabilityTags": [
-        "expressions.bounded",
-        "hp.typed",
-        "targeting.authoritative"
-      ],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [],
-      "limitations": [],
-      "manualSteps": [],
-      "scenarioIds": [
-        "fac-ade.v2-reviewed-conformance"
-      ],
-      "conformanceEvidence": {
-        "requirementTags": [
-          "branch.threshold",
-          "mechanic.damage",
-          "recovery.retry",
-          "resource.multi",
-          "target.enemy"
-        ],
-        "scenarios": [
-          {
-            "scenarioId": "fac-ade.v2-reviewed-conformance",
-            "evidenceClasses": [
-              "hit",
-              "miss",
-              "crit",
-              "immunity",
-              "retry",
-              "multi-resource-conflict",
-              "enemy",
-              "threshold-pass",
-              "threshold-fail"
-            ]
-          }
-        ],
-        "notApplicable": []
-      },
-      "reviewedAt": "2026-07-19",
-      "unsupportedInteractionIds": [],
-      "rolloutCohortId": "ma-220"
     },
     {
       "canonicalId": "Feather Dance",

@@ -100,11 +100,73 @@ describe('typed encounter effects', () => {
     expect(() => parseEncounterEffect({
       ...effect,
       duration: { kind: 'scene', remaining: 1 },
-    })).toThrow('must be null for scene, until-triggered, and permanent durations')
+    })).toThrow('must be null for scene, encounter, explicit-dismissal, until-triggered, and permanent durations')
     expect(() => parseEncounterEffect({
       ...effect,
       duration: { kind: 'rounds', remaining: null },
     })).toThrow('encounterEffect.duration.remaining: must be a safe integer')
+  })
+
+  it('strictly separates counted, boundary, dismissal, and absolute campaign-time duration evidence', () => {
+    const effect = conditionEncounterEffectFixture()
+    expect(parseEncounterEffect({
+      ...effect,
+      duration: { kind: 'encounter', remaining: null },
+    }).duration).toEqual({ kind: 'encounter', remaining: null })
+    expect(parseEncounterEffect({
+      ...effect,
+      duration: { kind: 'explicit-dismissal', remaining: null },
+    }).duration).toEqual({ kind: 'explicit-dismissal', remaining: null })
+    expect(parseEncounterEffect({
+      ...effect,
+      duration: {
+        kind: 'campaign-time', remaining: null,
+        startedAtCampaignMinute: 1_440,
+        expiresAtCampaignMinute: 4_320,
+        durationMinutes: 2_880,
+      },
+    }).duration).toEqual({
+      kind: 'campaign-time', remaining: null,
+      startedAtCampaignMinute: 1_440,
+      expiresAtCampaignMinute: 4_320,
+      durationMinutes: 2_880,
+    })
+
+    expect(() => parseEncounterEffect({
+      ...effect,
+      duration: { kind: 'turns' },
+    })).toThrow('encounterEffect.duration: must contain exactly the supported fields')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      duration: { kind: 'encounter', remaining: null, boundary: 'end' },
+    })).toThrow('encounterEffect.duration: must contain exactly the supported fields')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      duration: {
+        kind: 'campaign-time', remaining: null,
+        startedAtCampaignMinute: 1_440,
+        expiresAtCampaignMinute: 4_319,
+        durationMinutes: 2_880,
+      },
+    })).toThrow('campaign-time expiry must exactly equal its start plus positive durationMinutes')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      duration: {
+        kind: 'campaign-time', remaining: null,
+        startedAtCampaignMinute: 1_440,
+        expiresAtCampaignMinute: 1_440,
+        durationMinutes: 0,
+      },
+    })).toThrow('encounterEffect.duration.durationMinutes: must be from 1')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      duration: {
+        kind: 'campaign-time', remaining: 1,
+        startedAtCampaignMinute: 0,
+        expiresAtCampaignMinute: 1,
+        durationMinutes: 1,
+      },
+    })).toThrow('must be null for campaign-time durations')
   })
 
   it('parses explicit lifecycle policies and canonicalizes pre-policy effect data', () => {

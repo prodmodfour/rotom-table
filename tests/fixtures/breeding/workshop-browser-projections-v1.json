@@ -218,6 +218,126 @@
       "transition": "none",
       "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
       "projectionDefinitionSha256": "b0638fb27d06a321021f2f5915ecd946753bed14b95712e72a0fe73dd4c0d678"
+    },
+    "items": {
+      "schemaVersion": 1,
+      "audience": "gm",
+      "trainer": {
+        "trainerSheetSlug": "trainer-mira",
+        "trainerRevision": 7,
+        "displayName": "Mira"
+      },
+      "generatedAtCampaignMinute": 720,
+      "commandsBlocked": false,
+      "eggWarmer": {
+        "availability": {
+          "enabled": true,
+          "unavailableReason": null
+        },
+        "capacity": 4,
+        "progressRateNumerator": 2,
+        "progressRateDenominator": 1,
+        "units": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000001",
+            "label": "Egg Warmer",
+            "description": "Reusable · up to four current Eggs",
+            "disabled": false,
+            "unavailableReason": null,
+            "assignedEggOptionIds": [
+              "breeding-item-option:v1:00000000000000000000000000000002",
+              "breeding-item-option:v1:00000000000000000000000000000003"
+            ]
+          }
+        ],
+        "eggs": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000002",
+            "label": "Bulbasaur Egg",
+            "description": "Campaign minute 480 of 1440",
+            "disabled": false,
+            "unavailableReason": null,
+            "status": "incubating",
+            "accumulatedCampaignMinutes": 480,
+            "targetCampaignMinutes": 1440,
+            "percent": 33
+          },
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000003",
+            "label": "Eevee Egg",
+            "description": "Campaign minute 960 of 2880",
+            "disabled": false,
+            "unavailableReason": null,
+            "status": "incubating",
+            "accumulatedCampaignMinutes": 960,
+            "targetCampaignMinutes": 2880,
+            "percent": 33
+          },
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000004",
+            "label": "Castform Egg",
+            "description": "Campaign minute 120 of 1440",
+            "disabled": false,
+            "unavailableReason": null,
+            "status": "incubating",
+            "accumulatedCampaignMinutes": 120,
+            "targetCampaignMinutes": 1440,
+            "percent": 8
+          }
+        ]
+      },
+      "fossil": {
+        "availability": {
+          "enabled": true,
+          "unavailableReason": null
+        },
+        "sourceOptions": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000005",
+            "label": "Helix Fossil",
+            "description": "GM designation consumes exactly this source unit.",
+            "disabled": false,
+            "unavailableReason": null
+          }
+        ],
+        "machineOptions": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000006",
+            "label": "Reanimation Machine",
+            "description": "Reusable restoration tool; not consumed.",
+            "disabled": false,
+            "unavailableReason": null
+          }
+        ],
+        "speciesOptions": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000007",
+            "label": "Omanyte",
+            "description": "Creates one ordinary incubating Egg through the shared lifecycle.",
+            "disabled": false,
+            "unavailableReason": null
+          }
+        ],
+        "consumesFossilSource": 1,
+        "consumesMachine": 0
+      },
+      "artificial": {
+        "availability": {
+          "enabled": false,
+          "unavailableReason": "Playing God with one reviewed Species choice is required."
+        },
+        "chemistryOptions": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000008",
+            "label": "Chemistry Set",
+            "description": "Reusable creation tool; not consumed.",
+            "disabled": false,
+            "unavailableReason": null
+          }
+        ],
+        "moneyCost": 3500,
+        "consumesChemistrySet": 0
+      }
     }
   },
   "player": {
@@ -484,6 +604,126 @@
       "generatedAtCampaignMinute": 720,
       "securityPolicyDefinitionSha256": "83b97a053d054711de722c43debf482b1f0fa8ee03006d254f76905b376d4bf5",
       "projectionDefinitionSha256": "29d73987e38e22bf7c4dd2a5bcc56868b093d11eafb63f10f2a311afa33403d2"
+    },
+    "items": {
+      "schemaVersion": 1,
+      "audience": "owner",
+      "trainer": {
+        "trainerSheetSlug": "trainer-mira",
+        "trainerRevision": 7,
+        "displayName": "Mira"
+      },
+      "generatedAtCampaignMinute": 720,
+      "commandsBlocked": false,
+      "eggWarmer": {
+        "availability": {
+          "enabled": true,
+          "unavailableReason": null
+        },
+        "capacity": 4,
+        "progressRateNumerator": 2,
+        "progressRateDenominator": 1,
+        "units": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000001",
+            "label": "Egg Warmer",
+            "description": "Reusable · up to four current Eggs",
+            "disabled": false,
+            "unavailableReason": null,
+            "assignedEggOptionIds": [
+              "breeding-item-option:v1:00000000000000000000000000000002",
+              "breeding-item-option:v1:00000000000000000000000000000003"
+            ]
+          }
+        ],
+        "eggs": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000002",
+            "label": "Bulbasaur Egg",
+            "description": "Campaign minute 480 of 1440",
+            "disabled": false,
+            "unavailableReason": null,
+            "status": "incubating",
+            "accumulatedCampaignMinutes": 480,
+            "targetCampaignMinutes": 1440,
+            "percent": 33
+          },
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000003",
+            "label": "Eevee Egg",
+            "description": "Campaign minute 960 of 2880",
+            "disabled": false,
+            "unavailableReason": null,
+            "status": "incubating",
+            "accumulatedCampaignMinutes": 960,
+            "targetCampaignMinutes": 2880,
+            "percent": 33
+          },
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000004",
+            "label": "Castform Egg",
+            "description": "Campaign minute 120 of 1440",
+            "disabled": false,
+            "unavailableReason": null,
+            "status": "incubating",
+            "accumulatedCampaignMinutes": 120,
+            "targetCampaignMinutes": 1440,
+            "percent": 8
+          }
+        ]
+      },
+      "fossil": {
+        "availability": {
+          "enabled": false,
+          "unavailableReason": "A GM must designate and restore Fossils."
+        },
+        "sourceOptions": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000005",
+            "label": "Helix Fossil",
+            "description": "GM designation consumes exactly this source unit.",
+            "disabled": false,
+            "unavailableReason": null
+          }
+        ],
+        "machineOptions": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000006",
+            "label": "Reanimation Machine",
+            "description": "Reusable restoration tool; not consumed.",
+            "disabled": false,
+            "unavailableReason": null
+          }
+        ],
+        "speciesOptions": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000007",
+            "label": "Omanyte",
+            "description": "Creates one ordinary incubating Egg through the shared lifecycle.",
+            "disabled": false,
+            "unavailableReason": null
+          }
+        ],
+        "consumesFossilSource": 1,
+        "consumesMachine": 0
+      },
+      "artificial": {
+        "availability": {
+          "enabled": false,
+          "unavailableReason": "A GM must authorize Playing God creation."
+        },
+        "chemistryOptions": [
+          {
+            "optionId": "breeding-item-option:v1:00000000000000000000000000000008",
+            "label": "Chemistry Set",
+            "description": "Reusable creation tool; not consumed.",
+            "disabled": false,
+            "unavailableReason": null
+          }
+        ],
+        "moneyCost": 3500,
+        "consumesChemistrySet": 0
+      }
     }
   }
 }

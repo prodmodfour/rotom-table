@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-064",
+  "status": "current-semantics",
+  "contract": "inventory-stack-actions-v1",
+  "actions": [
+    {
+      "action": "split",
+      "quantity": "one bounded positive quantity that leaves at least one unit and every exact pending reservation on the source row",
+      "sourceIdentity": "retained",
+      "destinationIdentity": "one deterministic operation-bound stable row ID created by the server",
+      "metadata": "copied exactly from the strict source-row evidence",
+      "confirmation": "action-submit",
+      "reversibility": "reversible"
+    },
+    {
+      "action": "merge",
+      "quantity": "the entire exact unreserved source stack",
+      "sourceIdentity": "removed",
+      "destinationIdentity": "retained",
+      "metadata": "exact normalized item identity plus equal cost, description, modifier, slot, and structured variant",
+      "confirmation": "action-submit",
+      "reversibility": "reversible"
+    },
+    {
+      "action": "discard",
+      "quantity": "one bounded positive unreserved quantity; serialized or equipment-section rows move only as one whole item",
+      "sourceIdentity": "retained for partial discard and removed for whole discard",
+      "destinationIdentity": "none",
+      "metadata": "strict private before evidence retained in the operation journal",
+      "confirmation": "one exact server-issued explicit-choice option",
+      "reversibility": "irreversible"
+    }
+  ],
+  "projection": {
+    "endpoint": "GET /api/inventory/actions",
+    "handoff": "inventory-stack-operation",
+    "trainerAuthority": "authenticated GM or player controlling the exact Trainer",
+    "groupAuthority": "authenticated GM only for split, merge, and discard",
+    "sourceRevisionBound": true,
+    "reservationAware": true,
+    "sameContainerMergeOnly": true,
+    "maximumMergeDestinations": 128,
+    "maximumRowsPerSection": 256,
+    "safeFields": [
+      "opaque offer, source, destination, confirmation, and revision requirement IDs",
+      "container, section, presentation-row, and item labels",
+      "bounded quantity and remaining-quantity presentation",
+      "textual unavailable reasons",
+      "reversible or irreversible consequence labels"
+    ],
+    "forbiddenFields": [
+      "source or destination row ID",
+      "split row ID",
+      "serialized equipment identity or state",
+      "operation ID",
+      "Profile ID",
+      "definition or declaration hash",
+      "reservation identity",
+      "private correction evidence",
+      "raw provenance"
+    ]
+  },
+  "commitAuthority": {
+    "declaration": "strict schema-v1 action, source, quantity, destination, confirmation, and revision matching against a freshly recomputed offer",
+    "privateCommand": "strict source and destination before rows, stable IDs, exact section and container, expected revision, quantity, and deterministic split ID",
+    "staleEvidence": "any source, destination, metadata, row identity, quantity, reservation, revision, or exploration-lock drift fails before mutation",
+    "safeInteger": "all quantities, sums, revisions, and row bounds fail closed outside supported safe-integer limits",
+    "atomicity": "inventory mutation, accepted adapter receipt, authoritative document revision, and persisted realtime events commit in one transaction or roll back",
+    "responses": "accepted authoritative sheets or group inventories replace local state; the browser never patches quantities optimistically"
+  },
+  "identityAndEquipment": {
+    "splitSourceIdRetained": true,
+    "splitIdDeterministicAndCollisionChecked": true,
+    "mergeDestinationIdRetained": true,
+    "mergeSourceIdRemoved": true,
+    "serializedEquipmentNeverSplitOrMerged": true,
+    "serializedEquipmentDiscardWholeOnly": true,
+    "structuredShardColorPreserved": true,
+    "unknownOrExpandedRowMetadataRejected": true
+  },
+  "replayAndRecovery": {
+    "journal": "inventory_action_operations",
+    "schemaMigration": 41,
+    "v40RowsPreserved": true,
+    "states": [
+      "pending",
+      "accepted"
+    ],
+    "principalAndScopeBound": true,
+    "exactDeclarationHashBound": true,
+    "privateBeforeEvidencePersistedBeforeMutation": true,
+    "acceptedAfterDocumentPersisted": true,
+    "receiptFailureRollsBackMutation": true,
+    "sessionExactRetry": true,
+    "processRestartRecovery": true,
+    "exactReplayCannotRepeatMutation": true,
+    "manualRepairRequired": false
+  },
+  "interaction": {
+    "selectedMockup": ".pi/artifacts/ui-mockups/inventory-stack-actions/v002.png",
+    "selectedMockupScore": "10/10",
+    "composition": "60/40 inventory and inline decision workspace, collapsing to one column",
+    "rowControls": "ordinary actions and quieter stack management use two compact wrapping groups",
+    "discardOrder": [
+      "exact safe source",
+      "bounded quantity and remaining quantity",
+      "irreversible consequence",
+      "native explicit confirmation",
+      "revision recheck",
+      "Cancel and exact danger commit"
+    ],
+    "nonColourCues": [
+      "Discard label",
+      "warning icon",
+      "Irreversible heading",
+      "native checked checkbox",
+      "exact permanent-removal sentence",
+      "quantity-specific submit label"
+    ],
+    "minimumControlHeightPx": 44,
+    "optimisticMutation": false,
+    "uncertainBoundary": "exact retry remains the only mutation path; refresh, cancellation, source switching, and competing inventory changes stay blocked"
+  },
+  "evidence": {
+    "tests": [
+      "tests/server/inventoryStackOperations.test.ts",
+      "tests/server/executeInventoryStackOperation.test.ts",
+      "tests/server/trainerInventoryActionOffers.test.ts",
+      "tests/server/groupInventoryActionOffers.test.ts",
+      "tests/server/realtimeEventMigrations.test.ts",
+      "tests/server/breedingStorageMigrations.test.ts",
+      "tests/composables/useTrainerInventoryActionFlows.test.ts",
+      "tests/composables/useGroupInventoryActionFlows.test.ts",
+      "tests/components/inventoryActionDecision.test.ts",
+      "tests/components/groupInventoryPanel.test.ts",
+      "tests/utils/inventoryActionOperationStorage.test.ts",
+      "tests/utils/groupInventoryActionOperationStorage.test.ts",
+      "tests/data/completePlayLoopInventoryStackActions.test.ts",
+      "tests/e2e/inventory-stack-actions.spec.ts"
+    ]
+  }
+}

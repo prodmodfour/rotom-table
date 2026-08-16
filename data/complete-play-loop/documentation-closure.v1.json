@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-099",
+  "status": "complete",
+  "audiences": {
+    "user": "docs/complete-play-loop-player-guide.md",
+    "gm": "docs/complete-play-loop-gm-guide.md",
+    "contributor": "docs/complete-play-loop-contributor-guide.md",
+    "operator": "docs/complete-play-loop-operator-guide.md"
+  },
+  "index": "docs/complete-play-loop-alpha-guide.md",
+  "topics": {
+    "item-states": [
+      "docs/complete-play-loop-alpha-guide.md",
+      "docs/complete-play-loop-contributor-guide.md",
+      "docs/canonical-item-catalog-cohorts.md"
+    ],
+    "inventory-actions": [
+      "docs/complete-play-loop-player-guide.md",
+      "docs/unified-inventory-actions.md",
+      "docs/inventory-source-selection.md"
+    ],
+    "equipment": [
+      "docs/complete-play-loop-player-guide.md",
+      "docs/equipment-lifecycle.md"
+    ],
+    "guided-adjudication": [
+      "docs/complete-play-loop-gm-guide.md",
+      "docs/guided-item-adjudication.md"
+    ],
+    "settlement": [
+      "docs/complete-play-loop-gm-guide.md",
+      "docs/finish-encounter-experience.md",
+      "docs/encounter-settlement-atomic-commit.md"
+    ],
+    "attention-items": [
+      "docs/complete-play-loop-gm-guide.md",
+      "docs/campaign-attention-item-model.md",
+      "docs/campaign-continuation-dashboard.md"
+    ],
+    "correction": [
+      "docs/complete-play-loop-gm-guide.md",
+      "docs/encounter-settlement-convergence.md"
+    ],
+    "recovery": [
+      "docs/complete-play-loop-player-guide.md",
+      "docs/complete-play-loop-concurrency-reconnect-failure.md",
+      "docs/inventory-conflict-recovery.md"
+    ],
+    "canonical-data-maintenance": [
+      "docs/complete-play-loop-contributor-guide.md",
+      "docs/complete-play-loop-authority-guardrails.md",
+      "docs/canonical-item-catalog-cohorts.md"
+    ],
+    "troubleshooting": [
+      "docs/complete-play-loop-gm-guide.md",
+      "docs/complete-play-loop-operator-guide.md",
+      "docs/complete-play-loop-concurrency-reconnect-failure.md"
+    ]
+  },
+  "documentationPolicy": {
+    "productUseAndExtensionOnly": true,
+    "repositoryPromotion": false,
+    "releaseCeremony": false,
+    "runtimeProseParsingRecommended": false,
+    "directStorageRepairRecommended": false,
+    "localHostingRecommended": false,
+    "externalPtuRuntimeSourcesRecommended": false,
+    "privacySafeExamplesOnly": true,
+    "relativeLinksRequired": true
+  },
+  "validation": {
+    "documents": 5,
+    "topics": 10,
+    "brokenRelativeLinks": 0,
+    "focusedTests": "4 passed",
+    "scopedEslint": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "sourceEvidence": [
+    {
+      "path": "docs/complete-play-loop-alpha-guide.md",
+      "sha256": "7d47e6490ce2fc03b479c92a292e3c2c6db9f4bb0b2466937776fefa61bda2c2"
+    },
+    {
+      "path": "docs/complete-play-loop-player-guide.md",
+      "sha256": "06ebe55980caedd87c2e1bf4155a22720b1dfe9ea27e31ee68a9c094bd75fb22"
+    },
+    {
+      "path": "docs/complete-play-loop-gm-guide.md",
+      "sha256": "bf4b4d6f153a52f3bd4acdc1675c4d13422699e7776fc8bce8a8f827eb644567"
+    },
+    {
+      "path": "docs/complete-play-loop-contributor-guide.md",
+      "sha256": "c8ce203c2265fec585537e16d9bf6142886c75c9bcc1934b6fd58aae2baf4ca9"
+    },
+    {
+      "path": "docs/complete-play-loop-operator-guide.md",
+      "sha256": "9925dc3e50f8feb59f24ef84dfe6b292cdd4e20994e15741c46acea707a43d67"
+    },
+    {
+      "path": "docs/canonical-item-catalog-cohorts.md",
+      "sha256": "e9dbaae9f1041b5da2e030010cdd0237f29bdd3255252493962c087793cdf394"
+    },
+    {
+      "path": "docs/unified-inventory-actions.md",
+      "sha256": "ea2c7fde2ac0c0f4751407ed11017962195b6157c2765d6b95d609e7b6c534f5"
+    },
+    {
+      "path": "docs/inventory-source-selection.md",
+      "sha256": "ab2a31dca85e6bf8bf2b771f9e655bcdf43870b7eeb8750a23b7244de92db6cf"
+    },
+    {
+      "path": "docs/equipment-lifecycle.md",
+      "sha256": "bb9fb003f4e101a384a8612d8b4d8b718449759b0ade930b78bc704a5f64d3dc"
+    },
+    {
+      "path": "docs/guided-item-adjudication.md",
+      "sha256": "5c51a39846667b2d031126ad8bee4ba26b713f7c72665fd41e59e5726af6319f"
+    },
+    {
+      "path": "docs/finish-encounter-experience.md",
+      "sha256": "792990914eb2d055586aa412472a4915cca213f6d4d8ed53a5939746e478fde4"
+    },
+    {
+      "path": "docs/encounter-settlement-atomic-commit.md",
+      "sha256": "9d5651e091f48a7c11ae0a1fbd5b824a7f18b5377421b926bdd5f0d6c7fd958b"
+    },
+    {
+      "path": "docs/campaign-attention-item-model.md",
+      "sha256": "8acb5828b601a840c3a84067048e46278d4a0bd7c9bc46ea83292a5b94ae91da"
+    },
+    {
+      "path": "docs/campaign-continuation-dashboard.md",
+      "sha256": "7cf2825ae5fcc0c9f2f20a54460f1d791be0aa44a660c8bb3bc06b59b0e2da59"
+    },
+    {
+      "path": "docs/encounter-settlement-convergence.md",
+      "sha256": "8971dc66741299e271ced40378aafffc0c98725c6f6fa4a1f89c80e9aad20146"
+    },
+    {
+      "path": "docs/complete-play-loop-concurrency-reconnect-failure.md",
+      "sha256": "cc9e90b12087df0c0061f4eb15f64736d99129e34d9e105018e8d1a0a1b8c2ed"
+    },
+    {
+      "path": "docs/inventory-conflict-recovery.md",
+      "sha256": "24f2888bbe68a2a432d64e6a71f0025ad28215638db77b85630a3d5033c846fa"
+    },
+    {
+      "path": "docs/complete-play-loop-authority-guardrails.md",
+      "sha256": "f1b84834ce310d79e55cea73495f9698a8ccf9913c3ff2d3400fe56775a50ed5"
+    },
+    {
+      "path": "tests/data/completePlayLoopDocumentationClosure.test.ts",
+      "sha256": "54e103014b6e56a5ea66f265118039dbac8375bfbaf71a51715c5a6ffee55c94"
+    },
+    {
+      "path": "package.json",
+      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+    }
+  ]
+}

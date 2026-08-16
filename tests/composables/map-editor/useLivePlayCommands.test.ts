@@ -922,6 +922,48 @@ describe('useLivePlayCommands', () => {
     await expect(delegate.get(result.opId!)).resolves.toBeNull()
   })
 
+  it('journals encounter cleanup and opaque dismissal commands before sending them', async () => {
+    const sent: Array<{ readonly path: string, readonly body: Record<string, unknown> }> = []
+    apiMocks.postJson.mockImplementation(async (path: string, rawBody: unknown) => {
+      const body = commandRecord(rawBody)
+      sent.push({ path, body })
+      return {
+        ok: true,
+        opId: body.opId,
+        mapSlug: body.mapSlug,
+        previousRevision: 7,
+        revision: 8,
+        patches: [],
+      }
+    })
+    const { actions } = createCommandHarness({ slug: 'arena-map', mapRevision: ref(7) })
+
+    await expect(actions.dismissEncounterEffect({ effectId: `effect-ref:v1:${'a'.repeat(64)}` }))
+      .resolves.toMatchObject({ dispatched: true })
+    await expect(actions.endEncounter({ reason: 'completed' }))
+      .resolves.toMatchObject({ dispatched: true })
+
+    expect(sent).toHaveLength(2)
+    expect(sent[0]).toMatchObject({
+      path: MAP_API_PATHS.dismissEncounterEffect,
+      body: {
+        baseRevision: 7,
+        type: LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT,
+        scopes: [{ kind: 'map', lane: 'encounter' }],
+        payload: { effectId: `effect-ref:v1:${'a'.repeat(64)}` },
+      },
+    })
+    expect(sent[1]).toMatchObject({
+      path: MAP_API_PATHS.endEncounter,
+      body: {
+        baseRevision: 7,
+        type: LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER,
+        scopes: [{ kind: 'map', lane: 'encounter' }],
+        payload: { reason: 'completed' },
+      },
+    })
+  })
+
   it('tracks pending command details by operation while a dispatch is in flight', async () => {
     const postGate = deferred<void>()
     apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
@@ -3434,6 +3476,17 @@ describe('useLivePlayCommands', () => {
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
+  const basicBallThrowSource = {
+    sourceInstanceId: 'item-instance:trainer:ash:pokeBalls:basic-ball-row',
+    source: {
+      kind: 'trainer' as const,
+      slug: 'ash',
+      section: 'pokeBalls' as const,
+      rowId: 'basic-ball-row',
+      expectedRevision: 2,
+    },
+  }
+
   it('posts authoritative throwPokeball commands with placement-derived sheet scopes and adopts the response', async () => {
     const map = {
       ...mapFixture(),
@@ -3480,7 +3533,7 @@ describe('useLivePlayCommands', () => {
     const result = await actions.throwPokeball({
       trainerPlacementId: 'trainer-ash',
       targetPlacementId: 'target-token',
-      pokeballName: 'Basic Ball',
+      ...basicBallThrowSource,
     })
 
     expect(result.dispatched).toBe(true)
@@ -3503,7 +3556,7 @@ describe('useLivePlayCommands', () => {
       payload: {
         trainerPlacementId: 'trainer-ash',
         targetPlacementId: 'target-token',
-        pokeballName: 'Basic Ball',
+        ...basicBallThrowSource,
       },
       clientId: 'ssr',
       profileId: 'profile_ash00000',
@@ -3555,7 +3608,7 @@ describe('useLivePlayCommands', () => {
     const resultPromise = actions.throwPokeball({
       trainerPlacementId: 'trainer-ash',
       targetPlacementId: 'target-token',
-      pokeballName: 'Basic Ball',
+      ...basicBallThrowSource,
     })
     await vi.waitFor(() => expect(sentBody).not.toBeNull())
     const entry = await outbox.get(sentBody!.opId as string)
@@ -3593,7 +3646,9 @@ describe('useLivePlayCommands', () => {
     })
 
     const actions = useTestLivePlayCommands({ slug: 'arena-map', map: ref(map), mapRevision: ref(4) })
-    await actions.throwPokeball({ trainerPlacementId: 'trainer-ash', targetPlacementId: 'target-token', pokeballName: 'Basic Ball' })
+    await actions.throwPokeball({
+      trainerPlacementId: 'trainer-ash', targetPlacementId: 'target-token', ...basicBallThrowSource,
+    })
 
     expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.throwPokeball, expect.not.objectContaining({
       profileId: expect.anything(),
@@ -7235,7 +7290,7 @@ describe('useLivePlayCommands', () => {
         { kind: 'map', lane: 'metadata' },
         { kind: 'map', lane: 'placements' },
       ],
-      payload: { trainerPlacementId: 'trainer-ash', targetPlacementId: 'target-token', pokeballName: 'Basic Ball' },
+      payload: { trainerPlacementId: 'trainer-ash', targetPlacementId: 'target-token', ...basicBallThrowSource },
     })
     const captureEntry = await enqueueStoredCommand(captureOutbox, {
       requestPath: MAP_API_PATHS.throwPokeball,

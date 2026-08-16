@@ -98,10 +98,24 @@ const sanitizePresentationParticipants = (
   if (visible === null) return projection
   return {
     ...projection,
+    offers: projection.offers.map(offer => ({
+      ...offer,
+      selectionOptions: (offer.selectionOptions ?? []).filter(option => (
+        option.kind !== 'participant' || visible.has(option.value)
+      )),
+    })),
     accepted: projection.accepted.map(accepted => sanitizeAcceptedForVisibleParticipants(accepted, visible)),
     pending: projection.pending.map(pending => ({
       ...pending,
       actor: pending.actor && visible.has(pending.actor.participantId) ? pending.actor : null,
+      ...(pending.projection === 'public' ? {} : {
+        choices: pending.choices.map(choice => ({
+          ...choice,
+          options: choice.kind === 'participant'
+            ? choice.options.filter(option => visible.has(option.optionId))
+            : choice.options,
+        })),
+      }),
     })),
   }
 }

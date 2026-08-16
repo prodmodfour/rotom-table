@@ -1,4 +1,6 @@
 import type { AuthRole } from '#shared/auth'
+import { itemInventoryInstanceId } from '#shared/itemAutomation/inventory'
+import { parseItemExplorationState } from '#shared/itemAutomation/exploration'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { validateSlug } from '#shared/paths'
 import { isRevision } from '#shared/sessionRevisions'
@@ -25,6 +27,7 @@ import {
   type PersistedSheet,
   type SheetRepository,
 } from '../storage/sheetRepository'
+import { createSqliteItemOperationRepository, type ItemOperationRepository } from '../storage/itemOperationRepository'
 import {
   createSqliteRealtimeEventRepository,
   type RealtimeEventRepository,
@@ -42,6 +45,11 @@ import {
 } from '../realtime/persistedBatchPublication'
 import { authorizeGroupInventoryTrainerTransfer } from '../policies/groupInventoryTransferPolicy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { projectGroupInventoryForPlayer } from '../utils/groupInventoryPrivacy'
+import {
+  projectSheetEquipmentContributions,
+  redactSheetRecordForPlayer,
+} from '../utils/sheetPrivacy'
 
 export class TransferTrainerInventoryToGroupUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -76,9 +84,12 @@ export interface TransferTrainerInventoryToGroupDependencies {
   readonly sheetRepository?: TransferTrainerSheetRepository
   readonly groupInventoryRepository?: TransferGroupInventoryRepository
   readonly realtimeEventRepository?: TransferTrainerInventoryRealtimeEventRepository
+  readonly itemOperationRepository?: Pick<ItemOperationRepository, 'reservedQuantity'> & { readonly database?: RotomDatabase }
   readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
   readonly reportAfterCommitPublicationFailure?: PersistedRealtimePublicationFailureReporter
   readonly createTargetGroupRowId?: InventoryTransferTargetRowIdGenerator
+  /** Optional atomic adapter receipt; invoked with raw authoritative resources before commit. */
+  readonly onAcceptedInTransaction?: (result: TransferTrainerInventoryToGroupResult) => void
   readonly now?: () => number
 }
 
@@ -100,7 +111,8 @@ const databaseFromDependencies = (dependencies: TransferTrainerInventoryToGroupD
   const sheetDatabase = dependencies.sheetRepository?.database
   const groupInventoryDatabase = dependencies.groupInventoryRepository?.database
   const realtimeDatabase = dependencies.realtimeEventRepository?.database
-  const database = dependencies.database ?? sheetDatabase ?? groupInventoryDatabase ?? realtimeDatabase ?? getRotomDatabase()
+  const itemOperationDatabase = dependencies.itemOperationRepository?.database
+  const database = dependencies.database ?? sheetDatabase ?? groupInventoryDatabase ?? realtimeDatabase ?? itemOperationDatabase ?? getRotomDatabase()
 
   if (sheetDatabase && sheetDatabase !== database) {
     throw new Error('Trainer sheet transfer repository must use the same RotomDatabase as the transfer transaction')
@@ -110,6 +122,9 @@ const databaseFromDependencies = (dependencies: TransferTrainerInventoryToGroupD
   }
   if (realtimeDatabase && realtimeDatabase !== database) {
     throw new Error('Group inventory transfer realtime event repository must use the same RotomDatabase as the transfer transaction')
+  }
+  if (itemOperationDatabase && itemOperationDatabase !== database) {
+    throw new Error('Group inventory transfer item-operation repository must use the same RotomDatabase as the transfer transaction')
   }
 
   return database
@@ -217,6 +232,8 @@ export const transferTrainerInventoryToGroupUseCase = (
     ?? createSqliteGroupInventoryRepository(database)
   const realtimeEventRepository = dependencies.realtimeEventRepository
     ?? createSqliteRealtimeEventRepository({ database })
+  const itemOperationRepository = dependencies.itemOperationRepository
+    ?? createSqliteItemOperationRepository({ database })
   const createTargetGroupRowId = dependencies.createTargetGroupRowId ?? createGroupInventoryRowId
   const now = dependencies.now ?? Date.now
 
@@ -226,6 +243,42 @@ export const transferTrainerInventoryToGroupUseCase = (
       throw new TransferTrainerInventoryToGroupUseCaseError(404, `Trainer sheet ${trainerSlug}.json not found`)
     }
     assertCurrentRevision(trainer.revision, trainerRevision, `Trainer sheet ${trainerSlug}`)
+
+    const trainerDocument = trainer.sheet as unknown as TrainerSheet
+    const trainerRows = trainerDocument.inventory?.[section] ?? []
+    const sourceRow = 'sourceRowId' in trainerRowSelector
+      ? trainerRows.find(row => row.id === trainerRowSelector.sourceRowId)
+      : trainerRows[trainerRowSelector.sourceRowIndex]
+    if (sourceRow?.id) {
+      const sourceInstanceId = itemInventoryInstanceId({
+        containerKind: 'trainer', containerSlug: trainerSlug, section, rowId: sourceRow.id,
+      })
+      let sourceLocked = false
+      try {
+        sourceLocked = parseItemExplorationState(trainerDocument.serverPrivate?.itemExploration)
+          .routeLures.some(activity => activity.reusable
+            && (activity.status === 'active' || activity.status === 'awaiting-encounter')
+            && activity.sourceInstanceId === sourceInstanceId)
+      }
+      catch {
+        throw new TransferTrainerInventoryToGroupUseCaseError(409, 'Exploration activity authority is malformed.')
+      }
+      if (sourceLocked) {
+        throw new TransferTrainerInventoryToGroupUseCaseError(
+          409,
+          'This Fishing Lure cannot move while its route activity remains unresolved.',
+        )
+      }
+      const serialized = sourceRow.serializedEquipment !== undefined
+      const sourceQuantity = serialized || section === 'equipment' ? 1 : (sourceRow.qty ?? 1)
+      const reserved = itemOperationRepository.reservedQuantity(sourceInstanceId)
+      if (Number.isSafeInteger(input.quantity) && Number(input.quantity) > sourceQuantity - reserved) {
+        throw new TransferTrainerInventoryToGroupUseCaseError(
+          409,
+          'The transfer source does not have enough unreserved quantity.',
+        )
+      }
+    }
 
     const groupInventory = groupInventoryRepository.get(groupSlug)?.document ?? null
     if (!groupInventory) {
@@ -309,6 +362,11 @@ export const transferTrainerInventoryToGroupUseCase = (
         'transfer-to-group',
       ),
     ])
+    dependencies.onAcceptedInTransaction?.({
+      ok: true,
+      trainerSheet,
+      groupInventory: authoritativeGroupInventory,
+    })
 
     return {
       ok: true as const,
@@ -325,9 +383,22 @@ export const transferTrainerInventoryToGroupUseCase = (
     reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultPersistedRealtimePublicationFailureReporter,
   })
 
+  if (input.role === 'player') {
+    return {
+      ok: true,
+      trainerSheet: {
+        ...transactionResult.trainerSheet,
+        sheet: redactSheetRecordForPlayer('trainer', transactionResult.trainerSheet.sheet),
+      },
+      groupInventory: projectGroupInventoryForPlayer(transactionResult.groupInventory),
+    }
+  }
   return {
     ok: true,
-    trainerSheet: transactionResult.trainerSheet,
+    trainerSheet: {
+      ...transactionResult.trainerSheet,
+      sheet: projectSheetEquipmentContributions('trainer', transactionResult.trainerSheet.sheet),
+    },
     groupInventory: transactionResult.groupInventory,
   }
 }

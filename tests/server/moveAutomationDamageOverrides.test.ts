@@ -34,6 +34,8 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { defaultTargetResolutionState } from '~/utils/moveAutomationTargetResolution'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createItemTemporaryCombatEffect } from '../../server/domain/itemAutomation/combatEffects'
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
   id,
@@ -68,8 +70,9 @@ const context = (options: {
   readonly targetTypes?: readonly string[]
   readonly targetAbilities?: readonly string[]
   readonly randomValues?: readonly number[]
-} = {}) => buildAuthoritativeMoveRulesContext({
-  map: {
+  readonly direHit?: boolean
+} = {}) => {
+  const sourceMap: TabletopMap = {
     schemaVersion: 2,
     slug: 'damage-overrides-arena',
     name: 'Damage Overrides Arena',
@@ -86,7 +89,26 @@ const context = (options: {
     ],
     lights: [],
     initiative: { activeId: 'actor-token', round: 1 },
-  } satisfies TabletopMap,
+    encounterState: createEmptyEncounterState(),
+  }
+  if (options.direHit) {
+    sourceMap.encounterState = {
+      ...sourceMap.encounterState!,
+      effects: [createItemTemporaryCombatEffect({
+        operationId: 'op_item_dire_hit_fixture',
+        canonicalItemId: 'Dire Hit',
+        sourcePlacementId: 'actor-token',
+        targetPlacementId: 'actor-token',
+        family: 'critical-range',
+        amount: 2,
+        duration: { kind: 'encounter', amount: null },
+        stackPolicy: 'replace',
+        map: sourceMap,
+      })],
+    }
+  }
+  return buildAuthoritativeMoveRulesContext({
+  map: sourceMap,
   pokemonSheets: new Map([
     ['actor', pokemonSheet('actor', { types: [...(options.actorTypes ?? ['Fire'])] })],
     ['target', pokemonSheet('target', {
@@ -105,7 +127,8 @@ const context = (options: {
   selectedPlacementIds: ['target-token'],
   random: createFiniteAuthoritativeMoveRandomStream(options.randomValues ?? []),
   time: 10_000,
-})
+  })
+}
 
 const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationScript => ({
   kind: 'explicit',
@@ -385,6 +408,23 @@ describe('MoveSpec type-effectiveness and critical-hit overrides', () => {
     expect(bypassed).toMatchObject({ critical: true, preventedBy: null })
     expect(expanded).toMatchObject({ critical: true, trigger: { kind: 'range', minimum: 18 } })
     expect(even).toMatchObject({ critical: true, trigger: { kind: 'natural-rolls' } })
+  })
+
+  it('adds authoritative Dire Hit range to canonical server-side critical resolution', () => {
+    const rules = context({ direHit: true })
+    const result = resolveMoveCriticalHit({
+      context: rules,
+      operation: damageOperation(),
+      script: script({ criticalRange: 20 }),
+      recipientId: 'target-token',
+      naturalRoll: 18,
+    })
+    expect(result).toMatchObject({
+      critical: true,
+      trigger: { kind: 'range', minimum: 18 },
+      triggerSource: 'item',
+      naturalRoll: 18,
+    })
   })
 
   it('combines type, critical, and explicit stage policies in the ordered damage calculation', () => {

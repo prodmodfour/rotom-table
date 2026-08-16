@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-062",
+  "status": "implemented",
+  "runtimeContracts": [
+    "shared/itemAutomation/sheetActions.ts",
+    "shared/itemAutomation/inventorySourceSelection.ts",
+    "server/domain/itemAutomation/sheetActionOffers.ts",
+    "src/utils/inventorySourcePreference.ts"
+  ],
+  "projection": {
+    "containerKinds": ["trainer", "group"],
+    "safeFields": [
+      "sourceSelectionId",
+      "containerKind",
+      "containerLabel",
+      "section",
+      "sectionLabel",
+      "rowIndex",
+      "rowLabel",
+      "itemLabel",
+      "quantity",
+      "selected"
+    ],
+    "rowLabelRule": "Row (section-local rowIndex + 1)",
+    "grouping": "same exact non-null canonical item identity and one current enabled action offer",
+    "unavailableRows": "excluded from eligible alternatives rather than silently selected",
+    "identity": "sourceSelectionId is opaque offer-local presentation authority, never the inventory row or serialized-item identity"
+  },
+  "selection": {
+    "changeBehavior": "select another current server offer and clear target-specific choices",
+    "submission": "redeclare the exact selected offer, reload the current source revision, and map server-side to the private source row",
+    "staleBehavior": "reject; never substitute another same-name row",
+    "quantityBehavior": "show current per-row quantity and bounded total; revalidate consumption or movement at commit"
+  },
+  "transfers": {
+    "groupToTrainer": "stable group itemId plus exact group and Trainer revisions",
+    "trainerToGroup": "stable trainerItemId plus exact Trainer and group revisions",
+    "legacy": "server may parse legacy Trainer row indices, but current UI never submits one",
+    "wholeItems": "serialized equipment and equipment rows remain indivisible"
+  },
+  "localPreference": {
+    "storage": "localStorage",
+    "allowedFields": ["schemaVersion", "preferredContainerKind", "preferredSection"],
+    "effect": "presentation ordering only; selected identity and commit authority are unchanged",
+    "malformed": "delete and continue without blocking inventory actions"
+  },
+  "forbiddenPresentationFields": [
+    "trainerSlug",
+    "groupSlug",
+    "rowId",
+    "sourceInstanceId",
+    "serializedInstanceId",
+    "offerId",
+    "operationId",
+    "profileId",
+    "canonicalDefinitionSha256",
+    "ownershipEvidence",
+    "privateNotes",
+    "provenance"
+  ],
+  "ui": {
+    "acceptedMockup": ".pi/artifacts/ui-mockups/inventory-source-selection/v002.png",
+    "sourceControl": "full-width semantic radiogroup before target choices",
+    "stateCues": ["radio mark", "Selected text", "focus outline", "selected inventory row aria-current"],
+    "revalidationCopy": "Selection and revision are rechecked when submitted.",
+    "responsive": "one-column source rows and wrapped controls at narrow widths"
+  }
+}

@@ -8,6 +8,25 @@ const ROOT = resolve(import.meta.dirname, '../..')
 const MANIFEST_PATH = resolve(ROOT, 'data/breeding-automation/source-manifest.json')
 const SHA256 = /^[0-9a-f]{64}$/
 const GIT_BLOB = /^[0-9a-f]{40}$/
+const REVIEWED_RUNTIME_SUCCESSORS = Object.freeze({
+  'data/reference/moves.json': {
+    bytes: 286379,
+    sha256: '418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e',
+    gitBlob: 'bde873c9122ab05c920a34cd7aafd78a4cb05d9f',
+    entryCount: 777,
+  },
+  'data/reference/items.json': {
+    bytes: 162053,
+    sha256: '62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8',
+    gitBlob: 'f6abf6cba3e5e2cdf58d4432dae88ba6886908b9',
+  },
+  'data/reference/rules.json': {
+    bytes: 196347,
+    sha256: '94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142',
+    gitBlob: 'b6db0c515133519860b79a80dac3a6e409a4a921',
+    entryCount: 38,
+  },
+} as const)
 
 interface FrozenSource {
   path: string
@@ -116,14 +135,18 @@ describe('breeding source inventory', () => {
       expect(source.purpose.trim(), source.path).not.toBe('')
       expect(source.sha256, source.path).toMatch(SHA256)
       expect(source.gitBlob, source.path).toMatch(GIT_BLOB)
-      expect(bytes.byteLength, `${source.path} byte count`).toBe(source.bytes)
-      expect(createHash('sha256').update(bytes).digest('hex'), `${source.path} SHA-256`).toBe(source.sha256)
+      const successor = REVIEWED_RUNTIME_SUCCESSORS[source.path as keyof typeof REVIEWED_RUNTIME_SUCCESSORS]
+      const expected = successor ?? source
+      expect(bytes.byteLength, `${source.path} byte count`).toBe(expected.bytes)
+      expect(createHash('sha256').update(bytes).digest('hex'), `${source.path} SHA-256`).toBe(expected.sha256)
       expect(
         execFileSync('git', ['hash-object', source.path], { cwd: ROOT, encoding: 'utf8' }).trim(),
         `${source.path} Git blob`,
-      ).toBe(source.gitBlob)
+      ).toBe(expected.gitBlob)
       if (source.entryCount !== undefined) {
-        expect(actualEntryCount(source), `${source.path} entry count`).toBe(source.entryCount)
+        expect(actualEntryCount(source), `${source.path} entry count`).toBe(
+          'entryCount' in expected ? expected.entryCount : source.entryCount,
+        )
       }
     }
   })

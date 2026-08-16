@@ -170,7 +170,7 @@ describe('Baton Pass combat-stage planning', () => {
     expect(stagesFor(sourceChange.current)).toEqual(plan.currentRecalledStages)
   })
 
-  it('leaves both sheets unchanged for an ordinary switch policy', () => {
+  it('clears the recalled sheet and leaves the replacement unchanged for an ordinary switch policy', () => {
     const resources = stagedSheets()
     const placement = placements()
     const plan = planMoveSwitchCombatStageTransfer({
@@ -183,8 +183,15 @@ describe('Baton Pass combat-stage planning', () => {
       stateTransferPolicy: 'none',
     })
 
-    expect(plan.stateChanges).toEqual([])
-    expect(plan.currentRecalledStages).toEqual(plan.previousRecalledStages)
+    expect(plan.stateChanges).toHaveLength(1)
+    expect(plan.stateChanges[0]).toMatchObject({
+      kind: 'sheet-state',
+      scope: { sheetSlug: 'switch-actor-sheet' },
+      changedFields: ['combatStages'],
+    })
+    expect(plan.currentRecalledStages).toEqual({
+      atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0,
+    })
     expect(plan.currentSentOutStages).toEqual(plan.previousSentOutStages)
   })
 })

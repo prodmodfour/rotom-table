@@ -1,0 +1,405 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-093",
+  "reviewId": "capture-pokeballs-v1",
+  "reviewStatus": "accepted",
+  "runtimeProseParsing": false,
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "items": [
+    {
+      "canonicalId": "Basic Ball",
+      "canonicalRecordSha256": "e64e7964dca92ea931d068fe0cf8433fe2c18ffa4572a7d736327b4d75291703",
+      "canonicalEffectSha256": "4fb2363d395f95879f883bddbcc23e226e4c848eb98aeba4b25a264f124c1863",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Great Ball",
+      "canonicalRecordSha256": "66c2535d7ebbbb57e36e6bc37e386cd16d05ab85eb85906b39bc3816a9110d66",
+      "canonicalEffectSha256": "cc4eebc665f797956d4d1b1ef13ae3061c37ad6bc5da86cd1ed872b1e58e8cd9",
+      "baseModifier": -10,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Ultra Ball",
+      "canonicalRecordSha256": "aec705d784349ffebd569e72508fa9b955e8deebadeb57ce20ee84e737210b88",
+      "canonicalEffectSha256": "8cd74bedd2a5c24bc90726ac55ee531b6a8024a774ace8a0b9e8ac092fc6947e",
+      "baseModifier": -15,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Master Ball",
+      "canonicalRecordSha256": "5c9d7aa84cf915d48abe8ce6f94ddad7fae2e60b73d72b648c43a8c0a5e0e25e",
+      "canonicalEffectSha256": "9073cd2b4f558e5cc050194b37a09b5a533ca578b7467658d81605b81f366fae",
+      "baseModifier": -100,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Safari Ball",
+      "canonicalRecordSha256": "131f37c0f4b5fd1158d9b6032ab81d42f4070ec5137124c1b7aebea76a08707d",
+      "canonicalEffectSha256": "fa749b978d503a21b32a7272fee027d2b76b62cda6ce53241b9f9188d30fbee3",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Level Ball",
+      "canonicalRecordSha256": "0319685e2f32ef3a88626e877dd3a1c07117ee565a67ffee617682338f7b749d",
+      "canonicalEffectSha256": "60708123bca71e023ff1edafd293e5c7943c659724c5a0aae3f31db8714bc6ae",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "active-pokemon-relative-level",
+        "modifier": -20,
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Lure Ball",
+      "canonicalRecordSha256": "40a02ab37168b1a42aab92acb2afa707bb77218ed09371732d41a31a76120cc5",
+      "canonicalEffectSha256": "b50055b7cdf60e073aa034b7b090b3df4a215cd240f2c8c42939c384dbf196f9",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "baited-encounter-target",
+        "modifier": -20,
+        "authority": "unavailable-with-reason",
+        "unavailableReason": "Current encounter state has no exact bait-origin marker for this target."
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Moon Ball",
+      "canonicalRecordSha256": "24f0d1f17476c5c250e424e2f80cfa1d2a7ea719a00bc794e34faa08270c4b3d",
+      "canonicalEffectSha256": "33372b40c12d6505d71d9dc7559788bde392595548eab4495d8e14345e5991db",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "evolution-stone-species",
+        "modifier": -20,
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Friend Ball",
+      "canonicalRecordSha256": "c1c2df7f31739a5e08c5692b582d17a905389170b2e0b1ae4c7348f5fa308f3b",
+      "canonicalEffectSha256": "9b7421b943fba6e3c4fa05b15dc25cd241850d2a23ecd298faae9c8009c8d057",
+      "baseModifier": -5,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "increase-starting-loyalty",
+        "amount": 1,
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Love Ball",
+      "canonicalRecordSha256": "eea5e4e03d154fc09883b272d01014ad5644da2632bd7d49f132638f0a2810d7",
+      "canonicalEffectSha256": "5f817632e5094df25a17a3a8163bf9a318c68ef3dd4b6a954cb42643bbf853a8",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "active-pokemon-same-line-opposite-gender",
+        "modifier": -30,
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Heavy Ball",
+      "canonicalRecordSha256": "5b4e8ec86bf971188ebc6d2535cfe4f05ed24518ea40bfd3855e0a06e07c90ff",
+      "canonicalEffectSha256": "ea3fc6784c0b1fa9dabb7ac380d5515f874c760dda59edc561729262a77e9904",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "weight-class-above-one",
+        "modifierPerClass": -5,
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Fast Ball",
+      "canonicalRecordSha256": "adb03c27b32bdd8c1af7be3eb0e07b6869941edc698cf39e1932f76c1b4bb707",
+      "canonicalEffectSha256": "062cb11b419b8405982014d3cb37f9e6c266b1702e7695a56661950af9572b90",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "movement-above-seven",
+        "modifier": -20,
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Sport Ball",
+      "canonicalRecordSha256": "666eeb06f3ba79f90242003fdf684594880d654bf90776186c46afc9f953ed21",
+      "canonicalEffectSha256": "fa749b978d503a21b32a7272fee027d2b76b62cda6ce53241b9f9188d30fbee3",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Premier Ball",
+      "canonicalRecordSha256": "41417c53936e11e7be9ba07f5357a2825c1e15639c635e80622eeb3b55338075",
+      "canonicalEffectSha256": "e2bc0d64f785a4257c84a47f4660852caa3cd085e35ce3506311cd32060adb59",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Repeat Ball",
+      "canonicalRecordSha256": "c8309d90423c5c44653ffc27fa085638130af9f5b5aa0a9824bad1d182f8806c",
+      "canonicalEffectSha256": "1602ab9b686ebebdb02ccbf09b002096f8bbbaf7eedb5d03a1b62120202ca268",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "trainer-owns-target-species",
+        "modifier": -20,
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Timer Ball",
+      "canonicalRecordSha256": "019b5c5788563b6205ad357a0e94b8e9f043623f9397f7877b5ded5e895f58e2",
+      "canonicalEffectSha256": "57f2adbab7aa12d924a69694d897b1ab1e3b76aa92f645ebfc096eedd5fc689c",
+      "baseModifier": 5,
+      "condition": {
+        "kind": "round-schedule",
+        "modifiersByRound": [
+          5,
+          0,
+          -5,
+          -10,
+          -15,
+          -20
+        ],
+        "afterLast": -20,
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Nest Ball",
+      "canonicalRecordSha256": "7527d017393c33bc228416043673458fe3c1ed36bfbe7eb2c12295a57291dd5b",
+      "canonicalEffectSha256": "a4670b07869052d5f1ec5c725aff54a15860c225d3692ad5eb0c3d9fb10a211e",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "target-level-below",
+        "threshold": 10,
+        "modifier": -20,
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Net Ball",
+      "canonicalRecordSha256": "9b481b720a22c6c8bf7d8ca3c797c2e030d2363a32318828f45364da3404a964",
+      "canonicalEffectSha256": "252a2da3b40a388b2083f96d6c12003ce26d13f10e3228f6a4c735a261965534",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "target-type",
+        "types": [
+          "Water",
+          "Bug"
+        ],
+        "modifier": -20,
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Dive Ball",
+      "canonicalRecordSha256": "32f6d5c4fc2323e6f3d3ac08e9a06a6418a7ea1112410bb446cbc6956f3f970e",
+      "canonicalEffectSha256": "992d6137b8f4d79f84384aad84b606c9f2b45d3c41fd6bc765ea4b9fbc32b358",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "encounter-origin-environment",
+        "environments": [
+          "underwater",
+          "underground"
+        ],
+        "modifier": -20,
+        "authority": "unavailable-with-reason",
+        "unavailableReason": "Current map authority has no reviewed encounter-origin environment marker."
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Luxury Ball",
+      "canonicalRecordSha256": "22e2c36d897edd899b2e2ccc5924a51c5c73accfd7ea9a37d8bfe28215343496",
+      "canonicalEffectSha256": "83f5102cd1a9938661d51633ad1c74e343b6635b63a5f992e6239fd719c5ae12",
+      "baseModifier": -5,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "raised-happiness",
+        "authority": "unavailable-with-reason",
+        "unavailableReason": "The app-owned canonical row does not define a bounded numeric happiness or Loyalty mutation."
+      }
+    },
+    {
+      "canonicalId": "Heal Ball",
+      "canonicalRecordSha256": "a59aaa9c3351b5c7b157858bcabd7a86d8a0a1e3485b8ce55c50f1b9222d8fb5",
+      "canonicalEffectSha256": "2f42e7c8ea93a1deada43346c1cd9ce74fbbf067a62e2b9fdd4c76f7cb92d0a3",
+      "baseModifier": -5,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "heal-to-effective-maximum",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Quick Ball",
+      "canonicalRecordSha256": "54fde85788f1f9670427ff8fbc622f7596b2ecfc41301c5ad68b18f5a33ddc3d",
+      "canonicalEffectSha256": "4aeb8725df8c5fc795416d5b9afd35e8fde7e830c6b90b2e868da4ed791d136a",
+      "baseModifier": -20,
+      "condition": {
+        "kind": "round-schedule",
+        "modifiersByRound": [
+          -20,
+          -15,
+          -10,
+          0
+        ],
+        "afterLast": 0,
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Dusk Ball",
+      "canonicalRecordSha256": "5174bfb6a9f4c07ddfd90ce9c007fe033ab8b01ae02583ef3645a55e9e79b096",
+      "canonicalEffectSha256": "ca4dab95868d732626a2488900b37e6a9141c636d2b0ce4968df535bedc9d627",
+      "baseModifier": 0,
+      "condition": {
+        "kind": "current-light-environment",
+        "environments": [
+          "dark",
+          "very-low-light"
+        ],
+        "modifier": -20,
+        "authority": "unavailable-with-reason",
+        "unavailableReason": "Current map authority has no reviewed light-level marker."
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Cherish Ball",
+      "canonicalRecordSha256": "7a02089951a000699d4d2ceb88f817a334ed77397261d12ba2c354b9a506f84c",
+      "canonicalEffectSha256": "0b31a6aac27f4f151ea1084f0f74bab323f2b4eab8fafa7a2fe0b3bf9b82add0",
+      "baseModifier": -5,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    },
+    {
+      "canonicalId": "Park Ball",
+      "canonicalRecordSha256": "039fb9e64854f3ea3f825262ce69c32b6faac513ab27ebbf37d631cab6b18fda",
+      "canonicalEffectSha256": "0c33e0823b0a845e302cdb917cd74c3d9d2ee9db75fa2be49327a6031f740819",
+      "baseModifier": -15,
+      "condition": {
+        "kind": "none",
+        "authority": "automatic"
+      },
+      "postCapture": {
+        "kind": "none",
+        "authority": "automatic"
+      }
+    }
+  ]
+}

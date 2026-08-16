@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-100",
+  "status": "accepted",
+  "productPhase": "alpha",
+  "plan": {
+    "path": "implementation-plans/done/COMPLETE_PLAY_LOOP_PLAN.md",
+    "ticketsTotal": 100,
+    "ticketsDone": 100,
+    "currentTicket": "NONE",
+    "blockers": 0
+  },
+  "catalog": {
+    "canonicalRows": 348,
+    "native": 204,
+    "guided": 40,
+    "passive": 104,
+    "blocked": 0
+  },
+  "acceptance": {
+    "goldenCampaigns": 3,
+    "canonicalFixtures": 21,
+    "desktopMobileLiveplayProjects": 8,
+    "hardAccessibilityFailures": 0,
+    "criticalUsabilityDebt": 0,
+    "manualStorageRepairRequired": false,
+    "runtimeProseParsing": false,
+    "clientOwnedMechanicalMutation": false
+  },
+  "gates": [
+    {
+      "gateId": "catalog-closure",
+      "command": "npm run check:complete-play-loop-item-catalog-closure",
+      "status": "passed"
+    },
+    {
+      "gateId": "authority-guardrails",
+      "command": "npm run check:complete-play-loop-authority-guardrails",
+      "status": "passed"
+    },
+    {
+      "gateId": "performance",
+      "command": "npm run check:complete-play-loop-performance",
+      "status": "passed"
+    },
+    {
+      "gateId": "accessibility-visual",
+      "command": "npm run check:complete-play-loop-accessibility-visual",
+      "status": "passed"
+    },
+    {
+      "gateId": "concurrency-failure",
+      "command": "npm run check:complete-play-loop-concurrency-failure",
+      "status": "passed"
+    },
+    {
+      "gateId": "golden-campaigns",
+      "command": "npm run check:complete-play-loop-golden-campaigns",
+      "status": "passed"
+    },
+    {
+      "gateId": "documentation",
+      "command": "npm run check:complete-play-loop-documentation",
+      "status": "passed"
+    }
+  ],
+  "validation": {
+    "allGenerators": "passed",
+    "focusedClosureTests": "passed",
+    "fullVitest": "passed",
+    "nuxtTests": "passed",
+    "eslint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "qualityGate": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "finalAssertions": {
+    "everyPlanDone": true,
+    "everyTicketDone": true,
+    "planArchived": true,
+    "noBlockedCatalogRow": true,
+    "noCriticalPrimaryLoopDebt": true,
+    "liveplayOnly": true
+  },
+  "sourceEvidence": [
+    {
+      "path": "implementation-plans/done/COMPLETE_PLAY_LOOP_PLAN.md",
+      "sha256": "3843b49880d40c9c83021a81a892af1084219bb8fc30c54e47948181e01894c5"
+    },
+    {
+      "path": "implementation-plans/plan-order.md",
+      "sha256": "4789b6c6ed53de3f9666b276e3598f513380331128c0bda5d4d16760b41af495"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "7f69ce8ebee03a33b95182c0d654961edb29ba0a82a0b81c07cf52aa2e56a0be"
+    },
+    {
+      "path": "data/reference/items.json",
+      "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+    },
+    {
+      "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "sha256": "be82c8f9975056f894bf9b8cf78780869afcd71ef7f2bccfbe0cae88adaac1a0"
+    },
+    {
+      "path": "data/complete-play-loop/item-catalog-closure.v1.json",
+      "sha256": "39920a9c83f027efa7511b20f6d0f92fdae01267b1d0d19c42d7d6d9f7ea43ad"
+    },
+    {
+      "path": "data/complete-play-loop/authority-guardrails.v1.json",
+      "sha256": "de007c2e1a39e207646c355163fdfc19c8daf2d602b2573527190d7b41b7db65"
+    },
+    {
+      "path": "data/complete-play-loop/performance-scale-budgets.v1.json",
+      "sha256": "eeb6f1eeadbf6c804435a9b8c083f9007b7c2bea4b509935c851ab4fdfa4c870"
+    },
+    {
+      "path": "data/complete-play-loop/accessibility-responsive-visual-acceptance.v1.json",
+      "sha256": "e2f18495f1cafe8724e4877f54a78c19e4d0b1ec6792a2df34eed994e956261e"
+    },
+    {
+      "path": "data/complete-play-loop/concurrency-failure-acceptance.v1.json",
+      "sha256": "badafd1bfa8079b02c291bc713dca9b285007110b959a7d51f9170de4d5cd4f0"
+    },
+    {
+      "path": "data/complete-play-loop/golden-campaign-acceptance.v1.json",
+      "sha256": "cafa457c1cf5c717e713f06a98c2db02adb11179c7a9e4e1e3e6e077e6b208fa"
+    },
+    {
+      "path": "data/complete-play-loop/documentation-closure.v1.json",
+      "sha256": "c10fb00d145cf8b27e69a5a18e1c76592d0a9d89206537c7d7ff7da621348d9e"
+    },
+    {
+      "path": "docs/complete-play-loop-alpha-acceptance.md",
+      "sha256": "112e7838a5e53abf318b3040089905c4e74658dc8af7fe3a332608f1e745dd09"
+    },
+    {
+      "path": "tests/data/completePlayLoopAlphaAcceptance.test.ts",
+      "sha256": "b322ef3b70446b01969758e06b718f4ae2d27671e1e5338630fd1b87df8673d4"
+    },
+    {
+      "path": "package.json",
+      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+    }
+  ]
+}

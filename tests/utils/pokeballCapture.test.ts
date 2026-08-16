@@ -13,6 +13,7 @@ const trainer = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => ({
   slug: 'trainer',
   name: 'Trainer',
   level: 1,
+  revision: 1,
   ...overrides,
 })
 
@@ -30,13 +31,14 @@ describe('pokeballCapture inventory helpers', () => {
       inventory: {
         keyItems: [
           {
+            id: 'key-basic-ball',
             name: 'Basic Ball',
             qty: 100,
             cost: '$250',
             description: 'Capture Modifier +0. Basic Poké Ball; often called just a “Poké Ball”.',
           },
         ],
-        pokeBalls: [{ name: 'Basic Ball', qty: 0, mod: '+0' }],
+        pokeBalls: [{ id: 'empty-basic-ball', name: 'Basic Ball', qty: 0, mod: '+0' }],
       },
     })
 
@@ -55,7 +57,7 @@ describe('pokeballCapture inventory helpers', () => {
 
     const sheet = trainer({
       inventory: {
-        pokeBalls: [{ name: 'Basic Balls', qty: 2 }],
+        pokeBalls: [{ id: 'plural-basic-ball', name: 'Basic Balls', qty: 2 }],
       },
     })
 
@@ -64,6 +66,32 @@ describe('pokeballCapture inventory helpers', () => {
         name: 'Basic Ball',
         quantity: 2,
       }),
+    ])
+  })
+
+  it('keeps duplicate same-name Ball rows as separate exact source authorities', () => {
+    const sheet = trainer({
+      inventory: {
+        pokeBalls: [
+          { id: 'first-basic-ball', name: 'Basic Ball', qty: 3 },
+          { id: 'second-basic-ball', name: 'Basic Ball', qty: 2 },
+        ],
+      },
+    })
+    const options = buildTrainerPokeballOptions(sheet)
+    expect(options).toHaveLength(2)
+    expect(options.map(option => option.source.rowId)).toEqual(['first-basic-ball', 'second-basic-ball'])
+    expect(new Set(options.map(option => option.sourceInstanceId)).size).toBe(2)
+
+    const result = applyPokeballCaptureOutcomeToTrainerSheet(sheet, {
+      pokeballName: 'Basic Ball',
+      targetSlug: 'pidgey',
+      result: { success: false },
+    } as Parameters<typeof applyPokeballCaptureOutcomeToTrainerSheet>[1], options[1]!)
+    expect(result.consumed).toBe(true)
+    expect(sheet.inventory?.pokeBalls).toMatchObject([
+      { id: 'first-basic-ball', qty: 3 },
+      { id: 'second-basic-ball', qty: 1 },
     ])
   })
 
@@ -98,16 +126,18 @@ describe('pokeballCapture inventory helpers', () => {
   it('consumes Poké Balls from the section where they were recorded', () => {
     const sheet = trainer({
       inventory: {
-        keyItems: [{ name: 'Basic Ball', qty: 3 }],
-        pokeBalls: [{ name: 'Great Ball', qty: 1 }],
+        keyItems: [{ id: 'source-basic-ball', name: 'Basic Ball', qty: 3 }],
+        pokeBalls: [{ id: 'other-great-ball', name: 'Great Ball', qty: 1 }],
       },
     })
 
+    const source = buildTrainerPokeballOptions(sheet)
+      .find(option => option.name === 'Basic Ball')!
     const result = applyPokeballCaptureOutcomeToTrainerSheet(sheet, {
       pokeballName: 'Basic Ball',
       targetSlug: 'pidgey',
       result: { success: false },
-    } as Parameters<typeof applyPokeballCaptureOutcomeToTrainerSheet>[1])
+    } as Parameters<typeof applyPokeballCaptureOutcomeToTrainerSheet>[1], source)
 
     expect(result.consumed).toBe(true)
     expect(sheet.inventory?.keyItems?.[0]?.qty).toBe(2)

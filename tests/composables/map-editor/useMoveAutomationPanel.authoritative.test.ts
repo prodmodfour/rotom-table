@@ -14,6 +14,7 @@ import type { MoveAutomationAreaTemplate, MoveAutomationFeedbackState, MoveAutom
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { LivePlayResolvedMoveResult } from '#shared/livePlayMoveResolution'
+import type { EncounterPresentationProjection } from '#shared/encounterPresentation'
 
 const baseMap = (): TabletopMap => ({
   schemaVersion: 2,
@@ -219,6 +220,7 @@ const panelFixture = (options: {
   onMoveUse?: TestCallback
   onBeforeNonImmediateAction?: TestCallback
   onRangedAttackOfOpportunity?: TestCallback
+  encounterPresentation?: Ref<EncounterPresentationProjection>
 } = {}) => {
   const map = ref(baseMap())
   const tokens: Ref<SpawnedPokemon[]> = options.tokens ?? ref([
@@ -239,6 +241,7 @@ const panelFixture = (options: {
     spawnedPokemon: computed(() => tokens.value),
     pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
     trainerBySlug: ref(new Map<string, TrainerSheet>()),
+    ...(options.encounterPresentation ? { encounterPresentation: options.encounterPresentation } : {}),
     canEditMap: computed(() => true),
     canControlPlacement: (id) => id === 'user-token',
     modifyHp: options.modifyHp ?? vi.fn(),
@@ -261,6 +264,47 @@ const panelFixture = (options: {
 }
 
 describe('useMoveAutomationPanel authoritative dispatcher', () => {
+  it('bridges server-projected opaque equipment Move sources without reading held-item text', async () => {
+    const attackSourceId = `attack-source.v1.${'a'.repeat(64)}` as const
+    const encounterPresentation = ref({
+      offers: [{
+        actor: { participantId: 'user-token' },
+        source: {
+          sourceKind: 'move', canonicalId: 'Cheap Shot',
+          instanceId: attackSourceId, displayName: 'Cheap Shot (Survival Knife)',
+        },
+        availability: { status: 'available', reasons: [] },
+        targeting: [{ rangeLabel: 'Melee' }],
+      }],
+    } as unknown as EncounterPresentationProjection)
+    const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+      accepted: false, message: 'Fixture stops after command capture.',
+    })
+    const { panel } = panelFixture({
+      moveName: 'Tackle', encounterPresentation, dispatchAuthoritativeMove: dispatch,
+    })
+    expect(panel.tokenMoveOptionsById.value['user-token']).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        name: 'Cheap Shot', attackSourceId,
+        attackSourceLabel: 'Survival Knife',
+      }),
+    ]))
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Cheap Shot', attackSourceId })
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      userId: 'user-token', moveName: 'Cheap Shot', mode: 'target',
+    })
+    await panel.selectMoveAutomationTarget('target-a')
+    expect(dispatch).toHaveBeenCalledWith({
+      intent: {
+        schemaVersion: 1,
+        placementId: 'user-token',
+        moveName: 'Cheap Shot',
+        attackSourceId,
+        selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+      },
+    })
+  })
+
   it('falls back to the existing local path when the dispatcher returns undefined', async () => {
     const moveScript = reviewedScript('Ember')
     await withRegisteredScripts([moveScript], async () => {

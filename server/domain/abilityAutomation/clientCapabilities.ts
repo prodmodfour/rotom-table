@@ -24,6 +24,7 @@ import { aa071ForecastTypeResolution } from './mechanics/aa071StaticIntegration'
 import { aa074HoneyPawsPreparationForPlacement } from '#shared/abilityAutomation/aa074'
 import { splitSheetItemNames } from '~/utils/sheetItemNames'
 import { resolveMoveAutomationItemRuleIdentity } from '../moveAutomation/itemRuleData'
+import { createEncounterEquipmentGrantQueries } from '../moveAutomation/equipmentGrantQueries'
 
 export interface BuildAbilityClientCapabilitiesInput {
   readonly role: AuthRole
@@ -75,6 +76,13 @@ export const buildAbilityClientCapabilityBundle = (
     linkedTrainerSheets,
   }))
   const encounterState = input.map.encounterState
+  const equipmentGrants = createEncounterEquipmentGrantQueries({
+    map: input.map,
+    sheets: [
+      ...input.pokemonSheets.map(sheet => ({ kind: 'pokemon' as const, slug: sheet.slug, sheet })),
+      ...input.trainerSheets.map(sheet => ({ kind: 'trainer' as const, slug: sheet.slug, sheet })),
+    ],
+  })
   const capabilityCarriedIds = new Set((encounterState?.capabilityRuntime?.links ?? []).flatMap(link => (
     link.kind === 'as-one-mount' || link.kind === 'viral-fusion' ? [...link.participantPlacementIds] : []
   )))
@@ -84,8 +92,20 @@ export const buildAbilityClientCapabilityBundle = (
       ? pokemonBySlug.get(placement.sheetSlug)
       : trainerBySlug.get(placement.sheetSlug)
     if (!sheet) return []
+    const equipmentAbilityOrdinals = new Map<string, number>()
+    const equipmentAbilityInstances = (equipmentGrants.resolve(placement.id)?.active ?? []).flatMap((entry) => {
+      if (entry.grant.kind !== 'ability') return []
+      const ordinal = (equipmentAbilityOrdinals.get(entry.grant.grantId) ?? 0) + 1
+      equipmentAbilityOrdinals.set(entry.grant.grantId, ordinal)
+      return [{
+        instanceId: `equipment-grant:${placement.id}:${entry.grant.grantId}:${ordinal}`,
+        canonicalId: entry.grant.canonicalId,
+        parameterStatus: 'not-parameterized' as const,
+        parameterData: null,
+      }]
+    })
     const projected = projectAuthoritativeEffectiveAbilities({
-      baseAbilities: resolveSheetAndEdgeAbilityInstances(sheet),
+      baseAbilities: [...resolveSheetAndEdgeAbilityInstances(sheet), ...equipmentAbilityInstances],
       effects: encounterState?.effects ?? [],
       transformationSnapshots: encounterState?.abilityTransformations,
       target: {

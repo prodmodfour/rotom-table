@@ -6,6 +6,8 @@ import { normalizeRevision } from '#shared/sessionRevisions'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { sheetRootFor } from '../utils/sheetPaths'
 import { walkDirectories, walkFiles, type FilePredicate } from '../utils/jsonFiles'
+import { migrateLegacyEquipmentDocuments } from '../domain/itemAutomation/equipmentMigration'
+import { getRotomDatabase, type RotomDatabase } from './database'
 import { sqliteSheetRepository, type SheetRepository } from './sheetRepository'
 
 export interface ImportedSheetFromJson {
@@ -26,6 +28,8 @@ export interface ImportSheetsFromJsonResult {
 export interface ImportSheetsFromJsonOptions {
   readonly roots?: Partial<Record<SheetKind, string>>
   readonly repository?: Pick<SheetRepository, 'saveSetupSheet' | 'createFolder'>
+    & Partial<Pick<SheetRepository, 'getByRef'>>
+    & { readonly database?: RotomDatabase }
   readonly listFiles?: (root: string, predicate?: FilePredicate) => string[]
   readonly readFile?: (path: string) => string
   readonly updatedAtForFile?: (path: string) => number
@@ -117,9 +121,18 @@ export const importSheetsFromJson = async (
     }
   }
 
+  const migrationDatabase = options.repository?.database ?? (options.repository ? null : getRotomDatabase())
+  if (migrationDatabase) migrateLegacyEquipmentDocuments(migrationDatabase.connection)
+  const finalized = imported.map((entry) => {
+    const current = repository.getByRef?.(entry.kind, entry.slug)
+    return current
+      ? { ...entry, revision: current.revision, updatedAt: current.updatedAt }
+      : entry
+  })
+
   return {
     roots,
-    imported,
-    count: imported.length,
+    imported: finalized,
+    count: finalized.length,
   }
 }

@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   API_EVENTS_PATH,
+  BREEDING_API_PATHS,
   CAMPAIGN_API_PATHS,
   ENCOUNTER_API_PATHS,
+  ENCOUNTER_SETTLEMENT_API_PATHS,
+  EQUIPMENT_API_PATHS,
   GROUP_INVENTORY_API_PATHS,
+  INVENTORY_ACTION_API_PATHS,
+  ITEM_API_PATHS,
   MAP_API_PATHS,
   PLAYER_PROFILE_API_PATHS,
   POKEDEX_API_PATHS,
@@ -19,7 +24,18 @@ describe('API route constants', () => {
 
   it('exposes campaign API paths', () => {
     expect(CAMPAIGN_API_PATHS).toEqual({
+      attention: '/api/campaign/attention',
+      continuation: '/api/campaign/continuation',
+      nextDayPreflight: '/api/campaign/next-day/preflight',
       nextDay: '/api/campaign/next-day',
+    })
+  })
+
+  it('exposes Finish Encounter settlement paths', () => {
+    expect(ENCOUNTER_SETTLEMENT_API_PATHS).toEqual({
+      prepareFinish: '/api/encounter-settlements/finish/prepare',
+      commitFinish: '/api/encounter-settlements/finish/commit',
+      operationStatus: '/api/encounter-settlements/operations/status',
     })
   })
 
@@ -61,6 +77,43 @@ describe('API route constants', () => {
       save: '/api/shops/save',
       deleteShop: '/api/shops/delete',
       checkout: '/api/shops/checkout',
+      postCheckoutActions: '/api/shops/post-checkout-actions',
+    })
+  })
+
+  it('exposes equipment API paths', () => {
+    expect(EQUIPMENT_API_PATHS).toEqual({
+      operations: '/api/equipment/operations',
+    })
+  })
+
+  it('exposes unified inventory action API paths', () => {
+    expect(INVENTORY_ACTION_API_PATHS).toEqual({
+      actions: '/api/inventory/actions',
+      execute: '/api/inventory/actions/execute',
+      history: '/api/inventory/history',
+    })
+  })
+
+  it('exposes breeding API paths', () => {
+    expect(BREEDING_API_PATHS).toEqual({
+      items: '/api/breeding/items',
+    })
+  })
+
+  it('exposes item API paths', () => {
+    expect(ITEM_API_PATHS).toEqual({
+      use: '/api/items/use',
+      resume: '/api/items/resume',
+      recover: '/api/items/recover',
+      sheetActions: '/api/items/sheet-actions',
+      declareSheetAction: '/api/items/sheet-actions/declare',
+      groupActions: '/api/items/group-actions',
+      declareGroupAction: '/api/items/group-actions/declare',
+      extendedActions: '/api/items/extended-actions',
+      formChanges: '/api/items/form-changes',
+      exploration: '/api/items/exploration',
+      guided: '/api/items/guided',
     })
   })
 
@@ -115,6 +168,8 @@ describe('API route constants', () => {
       clearFieldEffects: '/api/maps/field-effects/clear',
       tickFieldEffectDurations: '/api/maps/field-effects/tick',
       setScene: '/api/maps/scene/set',
+      endEncounter: '/api/maps/encounter/end',
+      dismissEncounterEffect: '/api/maps/encounter/effects/dismiss',
       updateAttackOfOpportunity: '/api/maps/attack-of-opportunity/update',
       updateStartTurnModal: '/api/maps/start-turn-modal/update',
       useManeuver: '/api/maps/tokens/use-maneuver',

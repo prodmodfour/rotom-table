@@ -9,8 +9,10 @@ import {
 import type { ShopEntry, ShopTableDocument } from '~/types/shop'
 import type { TrainerInventory, TrainerSheet } from '~/types/trainerSheet'
 import {
+  inventoryTransferEntriesCanMerge,
   inventoryTransferSectionUsesQuantity,
   mergeInventoryEntryIntoSection,
+  InventoryTransferError,
   type InventoryTransferEntry,
   type InventoryTransferInventory,
   type InventoryTransferSnapshot,
@@ -75,10 +77,25 @@ export interface ApplyShopCheckoutGroupDeliveryInput {
 export interface ApplyShopCheckoutTrainerDeliveryInput {
   readonly trainerSheet: TrainerSheet
   readonly purchasedEntries: readonly ShopCheckoutPurchasedEntry[]
+  readonly createTargetRowId?: InventoryTransferTargetRowIdGenerator
 }
 
 export interface ShopCheckoutMoneyDocument {
   readonly money?: number
+}
+
+export interface ShopCheckoutDeliveredInventorySource {
+  readonly entryId: string
+  readonly itemName: string
+  readonly section: GroupInventorySectionKey
+  readonly quantity: number
+  readonly rowId: string
+  readonly rowIndex: number
+}
+
+export interface ShopCheckoutInventoryDeliveryResult {
+  readonly inventory: InventoryTransferSnapshot
+  readonly sources: readonly ShopCheckoutDeliveredInventorySource[]
 }
 
 interface AggregatedLine {
@@ -329,25 +346,19 @@ const mergePurchasedEntryIntoInventory = (
   createTargetRowId?: InventoryTransferTargetRowIdGenerator,
 ): InventoryTransferSnapshot => {
   const section = purchase.entry.section as GroupInventorySectionKey
-
   if (!inventoryTransferSectionUsesQuantity(section)) {
-    let equipmentRows = inventory[section]
+    let rows = inventory[section]
     for (let index = 0; index < purchase.quantity; index += 1) {
-      equipmentRows = mergeInventoryEntryIntoSection({
+      rows = mergeInventoryEntryIntoSection({
         section,
-        rows: equipmentRows,
+        rows,
         entry: inventoryEntryFromPurchase(purchase),
         quantity: 1,
         createTargetRowId,
       })
     }
-
-    return {
-      ...inventory,
-      [section]: equipmentRows,
-    }
+    return { ...inventory, [section]: rows }
   }
-
   return {
     ...inventory,
     [section]: mergeInventoryEntryIntoSection({
@@ -358,6 +369,68 @@ const mergePurchasedEntryIntoInventory = (
       createTargetRowId,
     }),
   }
+}
+
+const deliveredSource = (input: {
+  readonly purchase: ShopCheckoutPurchasedEntry
+  readonly quantity: number
+  readonly rows: readonly InventoryTransferEntry[]
+  readonly rowIndex: number
+}): ShopCheckoutDeliveredInventorySource => {
+  const row = input.rows[input.rowIndex]
+  const rowId = row?.id?.trim()
+  if (!row || !rowId) throw new InventoryTransferError('invalid-row-id', 'Shop delivery requires one stable exact destination row identity.')
+  return Object.freeze({
+    entryId: input.purchase.entry.id,
+    itemName: input.purchase.entry.itemName,
+    section: input.purchase.entry.section as GroupInventorySectionKey,
+    quantity: input.quantity,
+    rowId,
+    rowIndex: input.rowIndex,
+  })
+}
+
+export const mergeShopCheckoutEntriesIntoInventoryWithSources = (
+  input: ApplyShopCheckoutDeliveryInput,
+): ShopCheckoutInventoryDeliveryResult => {
+  let inventory = completeInventorySnapshot(input.inventory)
+  const sources: ShopCheckoutDeliveredInventorySource[] = []
+
+  for (const purchase of input.purchasedEntries) {
+    const section = purchase.entry.section as GroupInventorySectionKey
+    const entry = inventoryEntryFromPurchase(purchase)
+    if (!inventoryTransferSectionUsesQuantity(section)) {
+      for (let index = 0; index < purchase.quantity; index += 1) {
+        const previousRows = inventory[section]
+        const rows = mergeInventoryEntryIntoSection({
+          section,
+          rows: previousRows,
+          entry,
+          quantity: 1,
+          createTargetRowId: input.createTargetRowId,
+        })
+        sources.push(deliveredSource({ purchase, quantity: 1, rows, rowIndex: previousRows.length }))
+        inventory = { ...inventory, [section]: rows }
+      }
+      continue
+    }
+
+    const previousRows = inventory[section]
+    const mergeCandidate = { ...entry, qty: purchase.quantity }
+    const existingIndex = previousRows.findIndex(row => inventoryTransferEntriesCanMerge(section, row, mergeCandidate))
+    const rows = mergeInventoryEntryIntoSection({
+      section,
+      rows: previousRows,
+      entry,
+      quantity: purchase.quantity,
+      createTargetRowId: input.createTargetRowId,
+    })
+    const rowIndex = existingIndex >= 0 ? existingIndex : rows.length - 1
+    sources.push(deliveredSource({ purchase, quantity: purchase.quantity, rows, rowIndex }))
+    inventory = { ...inventory, [section]: rows }
+  }
+
+  return Object.freeze({ inventory, sources: Object.freeze(sources) })
 }
 
 export const mergeShopCheckoutEntriesIntoInventory = (
@@ -385,5 +458,6 @@ export const applyShopCheckoutDeliveryToTrainerSheet = (
   inventory: mergeShopCheckoutEntriesIntoInventory({
     inventory: input.trainerSheet.inventory as TrainerInventory | undefined,
     purchasedEntries: input.purchasedEntries,
+    createTargetRowId: input.createTargetRowId,
   }) as NonNullable<TrainerSheet['inventory']>,
 })

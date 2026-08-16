@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-001",
+  "canonicalItemCatalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "journey": [
+    {
+      "step": "acquire",
+      "authority": [
+        "server/useCases/executeShopCheckoutCommand.ts",
+        "server/useCases/transferGroupInventoryToTrainer.ts",
+        "server/useCases/transferTrainerInventoryToGroup.ts"
+      ],
+      "currentState": "Shop checkout and trainer/group transfers are atomic, revision-checked, realtime-published operations.",
+      "gaps": [
+        { "kind": "manual-edit", "detail": "Items acquired outside checkout or transfer are entered through editable inventory rows.", "tickets": ["P8-012", "P8-061", "P8-067"] },
+        { "kind": "identity", "detail": "Trainer rows may omit stable row IDs and store only display names.", "tickets": ["P8-003", "P8-012", "P8-023"] }
+      ]
+    },
+    {
+      "step": "inventory",
+      "authority": [
+        "server/storage/groupInventoryRepository.ts",
+        "server/storage/sheetRepository.ts",
+        "src/utils/groupInventoryTransfers.ts"
+      ],
+      "currentState": "Group rows have stable IDs. Stack transfer is atomic, but target merging still uses normalized display-name identity.",
+      "gaps": [
+        { "kind": "duplicate-entry", "detail": "Canonical identity, serialized item state, reservations, and provenance are not stored on every row.", "tickets": ["P8-003", "P8-012", "P8-017", "P8-045"] },
+        { "kind": "shortcut", "detail": "General inventory save accepts direct setup edits outside an operation receipt.", "tickets": ["P8-061", "P8-064", "P8-067"] }
+      ]
+    },
+    {
+      "step": "equip",
+      "authority": [
+        "src/types/trainerSheet.ts",
+        "src/types/characterSheet.ts",
+        "src/components/sheets/TrainerEquippedGearPanel.vue",
+        "src/components/sheets/PokemonHeldItemSelect.vue",
+        "src/utils/sheetHeldItemEffects.ts"
+      ],
+      "currentState": "Trainer slots and a Pokémon held-item string exist, with a small set of name-resolved derived bonuses.",
+      "gaps": [
+        { "kind": "manual-edit", "detail": "Equipping edits descriptive strings and does not atomically move a stable inventory instance.", "tickets": ["P8-041", "P8-042", "P8-044"] },
+        { "kind": "hidden-shortcut", "detail": "Only selected held-item effects are hard-coded; source loss and stale offers are not uniformly reconciled.", "tickets": ["P8-046", "P8-047", "P8-048", "P8-049"] }
+      ]
+    },
+    {
+      "step": "encounter-use",
+      "authority": [
+        "server/domain/encounterPresentation/buildProjection.ts",
+        "server/useCases/declareEncounterAction.ts",
+        "server/useCases/applyLivePlaySheetCommand.ts",
+        "server/domain/moveAutomation/reduceEncounterResources.ts"
+      ],
+      "currentState": "The generic presentation contract exposes inventory affordances, but ordinary items are not executable offers. HP, conditions, stages, resources, replay, and realtime authorities already exist independently.",
+      "gaps": [
+        { "kind": "dead-end", "detail": "Inventory affordances have no linked item offer and declaration only authorizes the offer rather than applying item mechanics.", "tickets": ["P8-019", "P8-021", "P8-024", "P8-038"] },
+        { "kind": "manual-edit", "detail": "Users currently consume an item and apply HP, condition, stage, or action changes through separate commands or sheet edits.", "tickets": ["P8-026", "P8-027", "P8-031", "P8-040"] },
+        { "kind": "double-spend-risk", "detail": "No one operation currently binds source row, action cost, target effects, history, and exact replay.", "tickets": ["P8-017", "P8-018", "P8-027", "P8-028"] }
+      ]
+    },
+    {
+      "step": "finish-encounter",
+      "authority": [
+        "shared/encounterDocuments/model.ts",
+        "server/useCases/encounterDocuments.ts",
+        "server/domain/encounterWorkspace/projection.ts"
+      ],
+      "currentState": "Encounter lifecycle, objectives, clocks, phases, accepted history, capture, and sheet mutation exist as separate authorities.",
+      "gaps": [
+        { "kind": "dead-end", "detail": "Completing lifecycle does not create a versioned consequence/reward settlement document.", "tickets": ["P8-071", "P8-072", "P8-073"] },
+        { "kind": "cross-screen-handoff", "detail": "XP, loot, captures, cleanup, and objective outcomes are settled through separate screens or commands.", "tickets": ["P8-074", "P8-075", "P8-076", "P8-077", "P8-078", "P8-079", "P8-080"] }
+      ]
+    },
+    {
+      "step": "advance-and-recover",
+      "authority": [
+        "server/useCases/advanceCampaignDay.ts",
+        "server/useCases/executeCampaignOperation.ts",
+        "shared/breeding/eggLifecycle.ts",
+        "src/pages/campaign.vue"
+      ],
+      "currentState": "Campaign-day recovery and breeding attention exist, while advancement and unresolved campaign work remain distributed across sheets.",
+      "gaps": [
+        { "kind": "hidden-bookkeeping", "detail": "Level, move, evolution, treatment, team overflow, capture, hatch, and ownership decisions do not share an attention-item authority.", "tickets": ["P8-083", "P8-084", "P8-085", "P8-086", "P8-087", "P8-088"] },
+        { "kind": "dead-end", "detail": "Campaign page offers only the irreversible next-day action and no role-projected continuation dashboard.", "tickets": ["P8-089", "P8-090", "P8-091"] }
+      ]
+    }
+  ]
+}

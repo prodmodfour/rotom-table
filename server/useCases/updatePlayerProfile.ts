@@ -9,6 +9,7 @@ import {
   type UpdatePlayerProfileInput as UpdateStoredPlayerProfileInput,
 } from '../utils/playerProfileStorage'
 import { sqliteSheetRepository } from '../storage/sheetRepository'
+import { publishCampaignAttentionInvalidation } from '../realtime/campaignAttentionRealtime'
 import {
   PlayerProfileUseCaseError,
   assertGmProfileRequest,
@@ -33,6 +34,7 @@ export interface UpdatePlayerProfileDependencies {
     input: UpdateStoredPlayerProfileInput,
   ) => PlayerProfile | null
   readonly sheetExists?: (ref: LinkedCharacterRef) => boolean
+  readonly publishAttentionInvalidation?: (profile: PlayerProfile) => void
 }
 
 export interface UpdatePlayerProfileResult {
@@ -91,6 +93,17 @@ export const updatePlayerProfileUseCase = (
   try {
     const profile = updateProfile(profileId, update)
     if (!profile) throw new PlayerProfileUseCaseError(404, `Player profile ${profileId} not found`)
+    const publishAttentionInvalidation = dependencies.publishAttentionInvalidation
+      ?? ((current: PlayerProfile) => publishCampaignAttentionInvalidation({
+        cause: 'profile-authority',
+        profileIds: [current.id],
+      }))
+    try {
+      publishAttentionInvalidation(profile)
+    }
+    catch (error) {
+      console.error('[campaign-attention] Profile invalidation publication failed', error)
+    }
     return { profile }
   } catch (error) {
     if (error instanceof PlayerProfileUseCaseError) throw error

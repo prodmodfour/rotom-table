@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "complete-play-loop-breeding-items-v1",
+  "ticket": "P8-058",
+  "reviewStatus": "accepted-existing-structured-authority",
+  "reviewMethod": "Cross-checked canonical item records against the completed Breeding and Egg Lifecycle modifier inventory, source adjudications, fossil Egg contract, Baby Template and artificial Egg contract boundary, and interaction certification. No documentary text is runtime authority.",
+  "items": [
+    {
+      "canonicalId": "Egg Warmer",
+      "operation": "assign-incubating-eggs",
+      "contexts": ["campaign", "workshop"],
+      "consumption": { "phase": "never", "quantity": 0, "reusable": true },
+      "mechanics": {
+        "capacity": 4,
+        "campaignProgressRateNumerator": 2,
+        "campaignProgressRateDenominator": 1,
+        "providerId": "item.egg-warmer"
+      }
+    },
+    {
+      "canonicalId": "Reanimation Machine",
+      "operation": "restore-fossil-egg",
+      "contexts": ["campaign", "workshop"],
+      "consumption": { "phase": "never", "quantity": 0, "reusable": true },
+      "mechanics": {
+        "fossilSourceConsumption": 1,
+        "fossilSourceAuthority": "gm-designated-exact-inventory-unit",
+        "providerId": "item.reanimation-machine",
+        "offspringPipeline": "shared-pokemon-egg-document-v1"
+      }
+    },
+    {
+      "canonicalId": "Chemistry Set",
+      "operation": "create-playing-god-artificial-egg",
+      "contexts": ["campaign", "workshop"],
+      "consumption": { "phase": "never", "quantity": 0, "reusable": true },
+      "mechanics": {
+        "moneyCost": 3500,
+        "requiredFeatureId": "Playing God",
+        "providerId": "item.chemistry-set",
+        "offspringPipeline": "shared-pokemon-egg-document-v1"
+      }
+    }
+  ],
+  "runtimePolicies": {
+    "authority": "server-rebuilds-current-item-feature-edge-skill-egg-and-campaign-authority",
+    "assignment": "one-exact-warmer-unit-up-to-four-current-owned-incubating-eggs",
+    "consumption": "fossil-source-only-at-accepted-restoration",
+    "reusableTools": "warmer-machine-and-chemistry-set-remain-in-inventory",
+    "provenance": "existing-breeding-read-sets-receipts-provider-traits-and-source-authority",
+    "recovery": "exact-principal-bound-operation-replay-without-redraw-or-double-cost",
+    "privacy": "safe-human-labels-only-no-hashes-row-ids-rolls-or-private-provider-evidence",
+    "parallelOffspringPath": "forbidden"
+  }
+}

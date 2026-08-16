@@ -7,6 +7,7 @@ import {
   type MoveDamageEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { SheetEquipmentStateV1 } from '#shared/itemAutomation/equipment'
 import type { TabletopMap } from '~/types/map'
 import { placementToSpawned } from '~/utils/placement'
 import { pokemonInitiativeOrderEntry } from '~/utils/initiativeOrderEntries'
@@ -40,6 +41,7 @@ import {
   creatureRuleOverlayEncounterEffectFixture,
   numericEncounterEffectFixture,
 } from '../fixtures/moveAutomation/encounterEffects'
+import { activeEquipmentState } from '../fixtures/equipment'
 
 const slug = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 const ability = (canonicalId: string) => ({
@@ -61,6 +63,7 @@ const pokemon = (input: {
   readonly conditions?: readonly string[]
   readonly currentHp?: number
   readonly heldItem?: string
+  readonly equipmentState?: SheetEquipmentStateV1
 }): CharacterSheet => ({
   slug: input.slug,
   nickname: input.slug,
@@ -71,6 +74,7 @@ const pokemon = (input: {
   abilities: (input.abilities ?? []).map(ability),
   movelist: [{ name: input.move ?? 'Tackle' }],
   items: input.heldItem ? { held: input.heldItem } : {},
+  ...(input.equipmentState ? { equipmentState: input.equipmentState } : {}),
   stats: {
     hp: { added: 30 }, atk: { added: 20 }, def: { added: 20 },
     satk: { added: 20 }, sdef: { added: 20 }, spd: { added: 20 },
@@ -412,7 +416,9 @@ describe('AA-085 through AA-100 static conformance', () => {
     expect(context(empowered, 'Razor Leaf').queries.stats.combatStage('actor', {
       stage: 'spd', stageModifierPolicy: 'honor',
     })?.value).toBe(2)
-    expect(result.defenderTypes).toEqual(['Fire'])
+    // Memory labels are absent from the canonical item registry and remain
+    // descriptive-only rather than silently establishing equipment identity.
+    expect(result.defenderTypes).toEqual(['normal'])
     expect(context(empowered, 'Razor Leaf').queries.rules.reviewedScriptFor('Razor Leaf')).toMatchObject({
       range: 'Cone 2',
       targetBranches: expect.arrayContaining([
@@ -427,28 +433,31 @@ describe('AA-085 through AA-100 static conformance', () => {
 
   it('projects an exact Symbiosis item snapshot only while its binding remains active', () => {
     const base = capabilityEncounterEffectFixture()
+    const quickClawState = activeEquipmentState({
+      ownerKind: 'pokemon', ownerSlug: 'actor', slotId: 'held', canonicalItemId: 'Quick Claw',
+    })
     const source = fixture({
-      actor: pokemon({ slug: 'actor', heldItem: 'Leftovers' }),
+      actor: pokemon({ slug: 'actor', equipmentState: quickClawState }),
     })
     const actorPlacement = source.map.placements.find(placement => placement.id === 'actor')!
     const reference = authoritativeEquippedItemReferences(actorPlacement, source.actor)[0]!
     const shared = {
       ...base,
-      id: 'effect.symbiosis.leftovers',
+      id: 'effect.symbiosis.quick-claw',
       source: { ...base.source, placementId: 'actor' },
       affected: { placementIds: ['target'], sideIds: [], cells: [] },
       duration: { kind: 'scene' as const, remaining: null },
       tags: [
-        'ability', 'aa094-symbiosis-shared-item', 'aa094-symbiosis-item:leftovers',
+        'ability', 'aa094-symbiosis-shared-item', 'aa094-symbiosis-item:quick-claw',
         `aa094-symbiosis-binding:${moveItemEffectBindingId(reference)}`,
       ],
       payload: { capabilityId: 'aa094.symbiosis.shared-held-item', action: 'grant' as const },
     }
     const active = fixture({
-      actor: pokemon({ slug: 'actor', heldItem: 'Leftovers' }),
+      actor: pokemon({ slug: 'actor', equipmentState: quickClawState }),
       effects: [shared],
     })
-    expect(context(active).queries.tokens.get('target')?.tokenItems).toContain('leftovers')
+    expect(context(active).queries.tokens.get('target')?.tokenItems).toContain('quick-claw')
 
     const missingItem = fixture({ effects: [shared] })
     expect(context(missingItem).queries.tokens.get('target')?.tokenItems).not.toContain('leftovers')
@@ -460,7 +469,7 @@ describe('AA-085 through AA-100 static conformance', () => {
       payload: { capabilityId: 'test.symbiosis.suppression', action: 'grant' as const },
     }
     const suppressed = fixture({
-      actor: pokemon({ slug: 'actor', heldItem: 'Leftovers' }),
+      actor: pokemon({ slug: 'actor', equipmentState: quickClawState }),
       effects: [suppressionSource, {
         ...shared,
         suppression: { sources: [{
@@ -468,7 +477,7 @@ describe('AA-085 through AA-100 static conformance', () => {
         }] },
       }],
     })
-    expect(context(suppressed).queries.tokens.get('target')?.tokenItems).not.toContain('leftovers')
+    expect(context(suppressed).queries.tokens.get('target')?.tokenItems).not.toContain('quick-claw')
   })
 
   it('lets White Smoke reject external Accuracy penalties while retaining self-authored penalties', () => {

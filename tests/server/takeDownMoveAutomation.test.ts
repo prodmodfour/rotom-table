@@ -719,7 +719,8 @@ describe('Take Down planner and accepted durable saga', () => {
       random: () => { throw new Error('Stuck Take Down must not roll.') },
       operationId: 'op_take_down_stuck',
     })).toThrowError(expect.objectContaining({
-      code: 'execution-rejected',
+      code: 'move-condition-blocked',
+      reason: 'unauthorized-state',
     }))
 
     const stuckHarness = createHarness({
@@ -729,7 +730,7 @@ describe('Take Down planner and accepted durable saga', () => {
     const stuckMap = deepCloneJson(stuckHarness.maps.getBySlug('take-down-arena'))
     const stuckSheets = deepCloneJson(stuckHarness.sheets.list())
     const stuckRejected = await declare(stuckHarness, 'op_take_down_stuck_command')
-    expect(stuckRejected.result).toMatchObject({ ok: false, reason: 'invalid' })
+    expect(stuckRejected.result).toMatchObject({ ok: false, reason: 'conflict' })
     expect(stuckHarness.maps.getBySlug('take-down-arena')).toEqual(stuckMap)
     expect(stuckHarness.sheets.list()).toEqual(stuckSheets)
     expect(stuckHarness.pending.listByMap('take-down-arena')).toEqual([])

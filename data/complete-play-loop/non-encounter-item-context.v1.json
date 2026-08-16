@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-051",
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "contexts": ["sheet", "campaign", "workshop", "extended-action"],
+  "authority": {
+    "serverAuthored": true,
+    "browserMaySubmit": ["declared offer identity", "operation identity", "opaque target identities", "opaque bounded choices", "expected revisions"],
+    "browserMayNotSubmit": ["campaign minute", "target ownership", "GM confirmation evidence", "extended-action activity state", "effect values"],
+    "activeEncounterRequired": false,
+    "exactReadSetRequired": true
+  },
+  "campaignTime": {
+    "requiredForEveryNonEncounterOperation": true,
+    "fields": ["campaign clock revision", "campaign minute"],
+    "commitRevalidation": true,
+    "immutablePlanEvidence": true
+  },
+  "targetOwnership": {
+    "relationships": ["actor", "actor-roster", "profile-control", "gm-override"],
+    "ambiguousRosterOwnershipPolicy": "fail-closed",
+    "playerTargetPolicy": "actor, unambiguous shared roster, or current linked-profile control only",
+    "gmOverridePolicy": "explicitly recorded in immutable server plan evidence"
+  },
+  "extendedActions": {
+    "modes": ["immediate", "extended"],
+    "phases": ["declaration", "in-progress", "completion"],
+    "resolutionPolicy": "extended item mechanics may resolve only from an exact durable completion boundary",
+    "activityEvidence": ["activity identity", "activity revision", "started-at campaign minute"],
+    "declarationWithoutActivityPolicy": "visible but non-executable"
+  },
+  "gmConfirmation": {
+    "statuses": ["not-required", "required", "confirmed"],
+    "confirmationPolicy": "required mechanics resolve only with current server-authored GM evidence",
+    "privateNotesInRuntimeEvidence": false
+  },
+  "operationReuse": {
+    "itemSpecs": true,
+    "eligibility": true,
+    "deterministicPlanning": true,
+    "atomicReduction": true,
+    "receipts": true,
+    "exactReplay": true,
+    "correction": true,
+    "realtime": true
+  },
+  "privacy": {
+    "storedPlanMayContainOwnerSlugs": true,
+    "publicProjectionMayContainOwnerSlugs": false,
+    "profileIdsInContextEvidence": false,
+    "sourceRowsInPublicProjection": false
+  },
+  "failClosed": [
+    "missing campaign clock read",
+    "stale campaign clock revision",
+    "invalid sheet target identity",
+    "ambiguous roster ownership",
+    "unowned player target",
+    "missing extended-action completion authority",
+    "missing GM confirmation",
+    "unsupported or undeclared workflow context"
+  ]
+}

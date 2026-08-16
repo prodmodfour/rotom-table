@@ -158,13 +158,22 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       abilityNames: actorToken.abilityNames?.filter(name => name !== 'Compound Eyes'),
     },
     {
-      heldItemEffectsSuppressed,
+      // Legacy token labels are descriptive only. Hash-current equipment is
+      // composed below through the authoritative contribution registry.
+      heldItemEffectsSuppressed: true,
       // Gravity is composed below from the authoritative global-field query.
       // Keep the retained browser/legacy compatibility projection out of v2.
       fieldAccuracyBonus: 0,
     },
   )
   const gravity = context.queries.gravity.accuracy()
+  const equipmentAccuracy = context.queries.equipment.metric({
+    placementId: context.actor.placement.id,
+    metric: 'accuracy-roll',
+    targetId: 'all',
+    base: 0,
+  })
+  const equipmentAccuracyBonus = equipmentAccuracy?.final ?? 0
   const compoundEyesBonus = compoundEyesActive ? 3 : 0
   const modifiers: MoveAutomationRollModifier[] = [{
     sourceId: 'actor-accuracy',
@@ -180,6 +189,11 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     hasDarkvision: context.queries.creatureRules.hasCapability(context.actor.placement.id, 'Darkvision'),
     hasBlindsense: context.queries.creatureRules.hasCapability(context.actor.placement.id, 'Blindsense'),
     hasKeenEye: keenEye,
+  })
+  for (const contribution of equipmentAccuracy?.contributions ?? []) modifiers.push({
+    sourceId: contribution.contributionId,
+    reason: `${contribution.canonicalItemId} Accuracy`,
+    value: contribution.applied,
   })
   if (darknessPenalty !== 0) modifiers.push({
     sourceId: 'environment.darkness',
@@ -280,6 +294,7 @@ export const resolveAuthoritativeMoveUserAccuracy = (
   modifiers.push(...remainingModifiers)
   const remainingBonus = remainingModifiers.reduce((total, modifier) => total + modifier.value, 0)
   const preEncounterValue = actorAccuracy
+    + equipmentAccuracyBonus
     + darknessPenalty
     + compoundEyesBonus
     + (helpingHand.length > 0 ? HELPING_HAND_ACCURACY_BONUS : 0)

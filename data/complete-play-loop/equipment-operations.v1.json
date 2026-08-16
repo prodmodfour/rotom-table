@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-044",
+  "canonicalItemCatalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "equipmentDefinitionsSha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a",
+  "equipmentContractSha256": "8360d4c6f0f3333f490dc4329e862c4cab6a5161b661ddc531bfd94ce63f6307",
+  "commands": [
+    "equip",
+    "unequip",
+    "swap",
+    "give",
+    "take"
+  ],
+  "authority": {
+    "endpoint": "server/api/equipment/operations.post.ts",
+    "useCase": "server/useCases/executeEquipmentOperation.ts",
+    "commandContract": "shared/itemAutomation/equipmentOperations.ts",
+    "compatibility": "server/domain/itemAutomation/equipmentCompatibility.ts",
+    "operationStore": "server/storage/equipmentOperationRepository.ts",
+    "storageSchemaVersion": 33,
+    "actorControllerInventoryOwnerAndEquipmentOwnerAreSeparate": true,
+    "playerControl": "current selected profile must control every consulted Trainer or roster-linked Pokémon sheet",
+    "sharedInventory": "GM-only until an explicit delegated equipment policy exists"
+  },
+  "atomicity": {
+    "boundary": "source inventory, destination inventory, every owning sheet, equipment state, immutable operation evidence, and realtime event rows",
+    "wholeItemQuantity": 1,
+    "sheetAndEquipmentRevisionIncrementTogether": true,
+    "sameSheetInventoryAndEquipmentIncrementOnce": true,
+    "swapIntermediateDualActivationPersisted": false,
+    "failureBeforeInventoryMovement": true
+  },
+  "idempotency": {
+    "operationIdPattern": "equipment-operation:v1:<32 lowercase hex>",
+    "commandHash": "SHA-256 of bounded stable JSON",
+    "sameCommand": "exact stored result with exactReplay=true and no writes or publication",
+    "differentCommand": "reject operation identity reuse",
+    "acceptedEvidence": "immutable before and after resource documents plus exact source row"
+  },
+  "custody": {
+    "equippedInstanceId": "deterministic from operation, canonical item, and exact inventory source identity",
+    "inventorySource": "stable row identity plus exact expected container revision",
+    "equippedSource": "owner, sheet revision, equipment revision, instance identity, and instance revision",
+    "returnIdentity": "reuse exact free provenance row or allocate one deterministic return row",
+    "stackRemainder": "never merged implicitly; displaced or taken whole items receive a distinct stable row",
+    "serializedItemPolicy": "P8-045 preserves the stable equipped-item identity, revision, configuration, and bounded item-specific state on every return and re-equip"
+  },
+  "privacyAndRealtime": {
+    "playerHttp": "raw equipment provenance and private configuration remain redacted",
+    "realtime": "persisted sheet and group-inventory updates are appended in the operation transaction and published only after commit",
+    "replayPublication": false
+  },
+  "failurePolicy": {
+    "staleRead": "reject and move nothing",
+    "incompatible": "return the exact reviewed safe reason and move nothing",
+    "missingOrDuplicateRow": "reject and move nothing",
+    "unresolvedLegacySlot": "reject and move nothing",
+    "unsupportedIdentity": "reject and move nothing",
+    "noOp": "reject and move nothing"
+  }
+}

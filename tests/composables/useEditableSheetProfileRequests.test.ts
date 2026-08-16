@@ -29,6 +29,7 @@ vi.mock('~/composables/useRealtime', () => ({
 
 interface TestSheet {
   slug: string
+  revision?: number
   nickname: string
   level: number
   playerProfileAccessible?: boolean
@@ -138,6 +139,25 @@ describe('useEditableSheet profile-aware requests', () => {
       expectedRevision: 0,
       clientId: 'sheet-client',
     })
+  })
+
+  it('adopts a complete server-accepted mechanical sheet without echo-saving the update', async () => {
+    const editable = useEditableSheet<TestSheet>(
+      { slug: 'pikachu', revision: 2, nickname: 'Pikachu', level: 5 },
+      'pokemon',
+      { debounceMs: 10 },
+    )
+
+    editable.sheet.value.level = 6
+    await nextTick()
+    editable.adoptAuthoritativeSheet({ slug: 'pikachu', revision: 3, nickname: 'Pikachu', level: 7 })
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(mocks.postJson).not.toHaveBeenCalled()
+    expect(editable.sheet.value).toEqual({ slug: 'pikachu', revision: 3, nickname: 'Pikachu', level: 7 })
+    expect(editable.saveStatus.value).toBe('saved')
   })
 
   it('shows a clear save error instead of posting a linked sheet without a selected profile', async () => {

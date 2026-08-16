@@ -24,6 +24,7 @@ import { aa084PowerConstructBlocksTemporaryHp } from '../../abilityAutomation/me
 import { AA073_GULP_MISSILE_HP_REASON } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
 import { AA076_IRON_BARBS_HP_REASON } from '../../abilityAutomation/mechanics/aa076MoveIntegration'
 import { trainerStaminaTemporaryHp } from '../../edgeAutomation/trainerCombat'
+import { equipmentDrainHealingMultiplier } from '../equipmentProviderMechanics'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   evaluateMoveExpression,
@@ -883,7 +884,8 @@ export const reduceDirectHpEffectForRecipient = (options: {
   const previous = hpSnapshot(accumulator, recipient)
   if (operation.reasonCode === 'ability.bully.add-injury'
     || operation.reasonCode === 'ability.cruelty.add-injury'
-    || operation.reasonCode === 'ability.flame-tongue.add-injury') {
+    || operation.reasonCode === 'ability.flame-tongue.add-injury'
+    || operation.reasonCode === 'equipment.razor-fang.injury') {
     accumulator.addInjuries(recipient.token, 1)
     const current = hpSnapshot(accumulator, recipient)
     return {
@@ -1158,7 +1160,10 @@ export const reduceHealEffectForRecipient = (options: {
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, recipient, accumulator } = options
   const previous = hpSnapshot(accumulator, recipient)
-  if (authoritativeAbilityHealingBlocked({ map: options.context.map, placementId: recipient.placement.id })) {
+  const equipmentSurvivalAdjustment = operation.reasonCode === 'equipment.focus-band.prevent-faint'
+    || operation.reasonCode === 'equipment.focus-sash.prevent-faint'
+  if (!equipmentSurvivalAdjustment
+    && authoritativeAbilityHealingBlocked({ map: options.context.map, placementId: recipient.placement.id })) {
     return noOpHpResult(recipient, previous, 'ability-cruelty-healing-blocked')
   }
   const outcomeTrigger = operation.payload.operationOutcomeTrigger
@@ -1232,6 +1237,19 @@ export const reduceHealEffectForRecipient = (options: {
       requireNonNegative: true,
       priorOperationResults: options.priorOperationResults,
     })
+    if (authored.kind === 'damage-dealt' && operation.payload.pool === 'hit-points') {
+      const multiplier = equipmentDrainHealingMultiplier({
+        context: options.context,
+        placementId: recipient.placement.id,
+      })
+      if (multiplier !== 1) {
+        calculation = {
+          ...calculation,
+          rawValue: calculation.rawValue * multiplier,
+          roundedValue: calculation.roundedValue * multiplier,
+        }
+      }
+    }
     // PTU Temporary Hit Points never stack; retain whichever pool is larger.
     requestedPoolValue = operation.payload.pool === 'temporary-hit-points'
       ? operation.reasonCode === AA078_LUNCHBOX_TEMP_HP_REASON

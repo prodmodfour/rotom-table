@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import TrainerPokemonTabPanel from './TrainerPokemonTabPanel.vue'
 import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerSkillConstants'
@@ -14,10 +14,33 @@ import type {
   TrainerSkillKey,
 } from '~/types/trainerSheet'
 import type { SheetEditorCapabilities } from '~/utils/sheetEditorCapabilities'
+import type { SaveStatus } from '~/composables/useEditableSheet'
+import type { TrainerSheetItemAcceptedResult } from '~/composables/sheets/useTrainerSheetItemActions'
+import type { TrainerEquipmentAcceptedResult } from '~/composables/sheets/useTrainerEquipmentOperations'
+import type { TrainerInventoryActionAcceptedResult } from '~/composables/sheets/useTrainerInventoryActionFlows'
+import type { ItemGuidedAcceptedResult } from '~/composables/items/useItemGuidedAdjudication'
+import type { InventoryContinuationAction } from '~/utils/inventoryContinuationRoute'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   sheet: TrainerSheet
   capabilities: SheetEditorCapabilities
+  saveStatus?: SaveStatus
+  itemActionProfileId?: string | null
+  prepareItemAction?: () => Promise<void>
+  reconcileInventoryAuthority?: () => Promise<void>
+  inventoryContinuationAction?: InventoryContinuationAction | null
+  inventoryContinuationSourceId?: string | null
+}>(), {
+  saveStatus: 'idle',
+  itemActionProfileId: null,
+  prepareItemAction: undefined,
+  reconcileInventoryAuthority: undefined,
+  inventoryContinuationAction: null,
+  inventoryContinuationSourceId: null,
+})
+
+const emit = defineEmits<{
+  itemAccepted: [response: TrainerSheetItemAcceptedResult | TrainerEquipmentAcceptedResult | TrainerInventoryActionAcceptedResult | ItemGuidedAcceptedResult]
 }>()
 
 const sheet = computed<TrainerSheet>(() => props.sheet)
@@ -31,6 +54,13 @@ const setTrainerAccentColor = (value: unknown) => {
 const SKILL_KEYS: TrainerSkillKey[] = TRAINER_SKILL_ORDER.map(([key]) => key)
 
 const { tabs, activeTab, setActiveTab } = useTrainerSheetTabs()
+watch(
+  () => [props.inventoryContinuationAction, props.inventoryContinuationSourceId] as const,
+  ([action, source]) => {
+    if (action && source) setActiveTab('inventory')
+  },
+  { immediate: true },
+)
 const healingModalOpen = ref(false)
 const trainingModalOpen = ref(false)
 const openHealingModal = () => {
@@ -79,8 +109,6 @@ const {
 } = useTrainerSheetCsvFields(sheet, SKILL_KEYS)
 
 const {
-  addClass,
-  removeClass,
   addMove,
   removeMove,
   reorderMove,
@@ -145,14 +173,11 @@ const {
     <!-- =================================================================== -->
     <TrainerStatsTabPanel
       v-if="activeTab === 'stats'"
-      :sheet="sheet"
       :stats="stats"
       :stat-points-left="statPointsLeft"
       :stat-points-spent="statPointsSpent"
       :stat-points-budget="statPointsBudget"
       @set-stat-field="setStatField"
-      @add-class="addClass"
-      @remove-class="removeClass"
     />
 
     <!-- =================================================================== -->
@@ -222,8 +247,16 @@ const {
     <TrainerInventoryTabPanel
       v-if="activeTab === 'inventory'"
       :sheet="sheet"
+      :save-status="saveStatus"
+      :profile-id="itemActionProfileId"
+      :can-adjudicate-equipment="canManagePlayerAccess"
+      :prepare-item-action="prepareItemAction"
+      :reconcile-inventory-authority="reconcileInventoryAuthority"
+      :inventory-continuation-action="inventoryContinuationAction"
+      :inventory-continuation-source-id="inventoryContinuationSourceId"
       @add-item="addInvItem"
       @remove-item="removeInvItem"
+      @item-accepted="emit('itemAccepted', $event)"
     />
 
     <!-- =================================================================== -->

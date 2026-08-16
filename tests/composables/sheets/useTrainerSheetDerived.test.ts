@@ -2,26 +2,34 @@ import { computed, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { useTrainerSheetDerived } from '~/composables/sheets/useTrainerSheetDerived'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
+import { activeEquipmentState } from '../../fixtures/equipment'
+import { projectEquipmentContributionsForSheet } from '~~/server/domain/itemAutomation/equipmentContributionProjection'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
-const makeSheet = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => ({
-  slug: 'test-trainer',
-  name: 'Test Trainer',
-  level: 10,
-  currentHp: 999,
-  currentInjuries: 1,
-  ap: { left: 99 },
-  stats: {
-    hp: { levelUp: 2 },
-    atk: { levelUp: 3 },
-    satk: { levelUp: 4 },
-    spd: { levelUp: 5 },
-  },
-  evasion: { speedBonus: 1, physicalBonus: -1, specialBonus: 2 },
-  movelist: [{ name: 'Tackle' }],
-  abilities: [{ name: 'Intimidate' }],
-  ...overrides,
-})
+const makeSheet = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => {
+  const sheet: TrainerSheet = {
+    slug: 'test-trainer',
+    name: 'Test Trainer',
+    level: 10,
+    currentHp: 999,
+    currentInjuries: 1,
+    ap: { left: 99 },
+    stats: {
+      hp: { levelUp: 2 },
+      atk: { levelUp: 3 },
+      satk: { levelUp: 4 },
+      spd: { levelUp: 5 },
+    },
+    evasion: { speedBonus: 1, physicalBonus: -1, specialBonus: 2 },
+    movelist: [{ name: 'Tackle' }],
+    abilities: [{ name: 'Intimidate' }],
+    ...overrides,
+  }
+  sheet.equipmentContributionProjection = projectEquipmentContributionsForSheet({
+    kind: 'trainer', slug: sheet.slug, sheet,
+  }) ?? undefined
+  return sheet
+}
 
 describe('useTrainerSheetDerived', () => {
   it('derives trainer sheet rows, vitals, and lookup rows', () => {
@@ -200,7 +208,10 @@ describe('useTrainerSheetDerived', () => {
   it('adds equipped Quick Claw to trainer sheet initiative before condition adjustments', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet({
       conditions: ['Flinch'],
-      equipmentSlots: { accessory: 'Quick Claw' },
+      equipmentSlots: { accessory: 'Legacy value is not authority' },
+      equipmentState: activeEquipmentState({
+        ownerKind: 'trainer', ownerSlug: 'test-trainer', slotId: 'accessory', canonicalItemId: 'Quick Claw',
+      }),
     }))
     const derived = useTrainerSheetDerived(sheet)
 

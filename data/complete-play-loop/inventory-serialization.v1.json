@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-045",
+  "runtimeContracts": [
+    "shared/itemAutomation/equipment.ts",
+    "src/types/trainerSheet.ts",
+    "src/utils/groupInventoryTransfers.ts",
+    "server/useCases/executeEquipmentOperation.ts"
+  ],
+  "rowKinds": {
+    "stack": {
+      "serializedEquipment": null,
+      "quantity": "positive safe integer",
+      "partialTransfer": true,
+      "partialConsumption": true,
+      "merge": "only exact alias-normalized display identity with equal cost, description, modifier, and slot metadata; never fuzzy"
+    },
+    "wholeRow": {
+      "section": "equipment",
+      "quantity": 1,
+      "storedQty": "ignored and omitted on authoritative return",
+      "partialTransfer": false,
+      "merge": false
+    },
+    "serialized": {
+      "field": "serializedEquipment",
+      "allowedSections": "all inventory sections",
+      "quantity": 1,
+      "partialTransfer": false,
+      "merge": false,
+      "identity": "equipped-item:v1:<32 lowercase hex>",
+      "revision": "increments exactly once across equip, return, swap, give, take, inventory transfer, and re-equip",
+      "state": "bounded strict JSON",
+      "activity": "durable active/inactive/suppressed/broken state and exact reasons",
+      "configuration": "reviewed definition-hash-bound equipment configuration or null"
+    }
+  },
+  "extraction": {
+    "stackToEquipment": "decrement exactly one stack unit and allocate one deterministic serialized identity",
+    "wholeRowToEquipment": "remove exactly one row and allocate one deterministic serialized identity",
+    "serializedToEquipment": "remove the whole row, preserve identity and state, increment the item revision",
+    "returnToInventory": "preserve identity, canonical hashes, configuration, activity, and state in one non-mergeable row and increment the item revision"
+  },
+  "authority": {
+    "inventoryCas": "owning Trainer sheet or group-inventory revision",
+    "equippedCas": "owning sheet, equipment-state, and item-instance revisions",
+    "setupAutosave": "cannot create, rewrite, move, duplicate, or delete existing server-owned serialized state",
+    "playerProjection": "omits serialized identity, hashes, configuration values, and item-specific state",
+    "malformedOrStale": "fail closed before inventory movement"
+  },
+  "transfers": {
+    "stack": "move requested positive quantity; preserve row metadata; merge only under the exact stack policy",
+    "serialized": "move exactly one whole row; preserve serialized identity, hashes, configuration, activity, and state while incrementing its revision exactly once",
+    "equipmentSection": "move exactly one whole row",
+    "sourceRowId": "container-local identity may change at destination without changing serialized whole-item identity"
+  },
+  "chargedAndDurableTools": {
+    "storage": "serializedEquipment.state",
+    "activation": "state is mechanically inert unless a reviewed item definition and ticket-specific reducer interpret it",
+    "proseInference": false
+  },
+  "failurePolicy": {
+    "fuzzyNameMerge": "keep separate",
+    "metadataMismatch": "keep separate or reject; never discard source metadata",
+    "serializedQuantityOtherThanOne": "reject",
+    "duplicateSerializedIdentity": "reject",
+    "unsafeRevisionIncrement": "reject",
+    "unknownStateFieldMechanics": "preserve but do not interpret"
+  }
+}

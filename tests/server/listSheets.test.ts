@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { listSheetsUseCase } from '../../server/useCases/listSheets'
+import { loadSheetUseCase } from '../../server/useCases/loadSheet'
+import { activeEquipmentState } from '../fixtures/equipment'
 import type { StoredSheetDocument } from '../../server/storage/sheetRepository'
 import {
   PLAYER_PROFILE_SCHEMA_VERSION,
@@ -71,6 +73,51 @@ describe('list sheets use case', () => {
       pokemonSheets: [pokemon({ revision: 3 })],
       trainerSheets: [trainer({ folder: 'npcs/gym-leaders', revision: 2 })],
     })
+  })
+
+  it('returns the same current GM projection from list and direct load at one revision', () => {
+    const equipmentState = activeEquipmentState({
+      ownerKind: 'trainer',
+      ownerSlug: 'new-trainer-1',
+      slotId: 'body',
+      canonicalItemId: 'Light Armor',
+    })
+    const current = trainer({
+      revision: 7,
+      equipmentState,
+      serverPrivate: {},
+    })
+    const sheetRepository = {
+      list: vi.fn((kind?: SheetKind) => kind === 'trainer'
+        ? [{
+            kind: 'trainer' as const,
+            slug: current.slug,
+            document: current as unknown as Record<string, unknown>,
+            revision: 7,
+            updatedAt: 70,
+          }]
+        : []),
+      getByRef: vi.fn(() => ({
+        kind: 'trainer' as const,
+        slug: current.slug,
+        sheet: current as unknown as Record<string, unknown>,
+        revision: 7,
+        updatedAt: 70,
+      })),
+    }
+
+    const listed = listSheetsUseCase({ role: 'gm' }, { sheetRepository }).trainerSheets[0]!
+    const loaded = loadSheetUseCase({
+      role: 'gm',
+      kind: 'trainer',
+      slug: current.slug,
+    }, { sheetRepository }).sheet
+
+    expect(listed).toEqual(loaded)
+    expect(listed.equipmentContributionProjection?.values).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Damage reduction', final: 5 }),
+    ]))
+    expect(listed.serverPrivate).toBeUndefined()
   })
 
   it('filters persisted sheets to player-accessible entries for players', () => {

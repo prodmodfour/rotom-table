@@ -49,6 +49,7 @@ export const ENCOUNTER_WORKSPACE_LIMITS = Object.freeze({
   offers: 2_048,
   pending: 256,
   accepted: 512,
+  activeEffects: 256,
   resourcesPerParticipant: 32,
   conditionsPerParticipant: 64,
   labelChars: 200,
@@ -186,6 +187,21 @@ export interface EncounterWorkspacePhase {
   readonly summary: string | null
 }
 
+/** GM-only display projection of one authoritative durable encounter effect. */
+export interface EncounterWorkspaceActiveEffect {
+  /** Opaque server-authored row identity. It is never displayed or derived by clients. */
+  readonly effectRef: string
+  readonly label: string
+  readonly sourceLabel: string
+  readonly affectedLabel: string
+  readonly durationKind: 'turns' | 'rounds' | 'scene' | 'encounter' | 'campaign-time' | 'explicit-dismissal' | 'until-triggered' | 'permanent'
+  /** Complete server-authored duration copy. Clients do not calculate expiry. */
+  readonly durationLabel: string
+  /** Server-owned dismissal authority; null for every non-dismissible duration. */
+  readonly dismissalRef: string | null
+  readonly dismissible: boolean
+}
+
 /** Full story/cast authoring projection. This object is structurally absent outside GM/diagnostic views. */
 export interface EncounterWorkspaceDirectorState {
   readonly encounterRevision: number
@@ -231,6 +247,8 @@ export interface EncounterWorkspaceViewModel {
   readonly phase: EncounterWorkspacePhase | null
   readonly stakes: string | null
   readonly director: EncounterWorkspaceDirectorState | null
+  /** Structurally absent outside GM/diagnostic projections. */
+  readonly activeEffects?: readonly EncounterWorkspaceActiveEffect[]
   readonly offers: readonly EncounterActionOffer[]
   readonly passives: readonly EncounterPassiveSummary[]
   readonly affordances: readonly EncounterContextualAffordance[]
@@ -299,7 +317,8 @@ export const assertEncounterWorkspaceViewModel = (
     || workspace.objectives.length > ENCOUNTER_WORKSPACE_LIMITS.objectives
     || workspace.offers.length > ENCOUNTER_WORKSPACE_LIMITS.offers
     || workspace.pending.length > ENCOUNTER_WORKSPACE_LIMITS.pending
-    || workspace.accepted.length > ENCOUNTER_WORKSPACE_LIMITS.accepted) {
+    || workspace.accepted.length > ENCOUNTER_WORKSPACE_LIMITS.accepted
+    || (workspace.activeEffects?.length ?? 0) > ENCOUNTER_WORKSPACE_LIMITS.activeEffects) {
     fail('limit-exceeded', 'Workspace exceeds a bounded collection limit.')
   }
 
@@ -391,6 +410,30 @@ export const assertEncounterWorkspaceViewModel = (
     const hidden = new Set(workspace.director.hiddenParticipantIds)
     if (workspace.participants.some(participant => participant.hidden !== hidden.has(participant.participantId))) {
       fail('privacy-violation', 'Director hidden participant projection is inconsistent.')
+    }
+  }
+  if (!workspace.viewer.canUseDirector && workspace.activeEffects !== undefined) {
+    fail('privacy-violation', 'Active-effect authority is present outside a Director workspace.')
+  }
+  if (workspace.activeEffects) {
+    const effectRefs = workspace.activeEffects.map(effect => effect.effectRef)
+    if (!unique(effectRefs)) fail('invalid-workspace', 'Director active-effect references must be unique.')
+    for (const effect of workspace.activeEffects) {
+      if (!effect.effectRef.trim() || effect.effectRef.length > 160 || effect.effectRef.trim() !== effect.effectRef
+        || /[\u0000-\u001f\u007f]/.test(effect.effectRef)) {
+        fail('invalid-workspace', 'Director active-effect reference must be bounded opaque text.')
+      }
+      bounded(effect.label, `Effect ${effect.effectRef} label`)
+      bounded(effect.sourceLabel, `Effect ${effect.effectRef} source label`)
+      bounded(effect.affectedLabel, `Effect ${effect.effectRef} affected label`)
+      bounded(effect.durationLabel, `Effect ${effect.effectRef} duration label`)
+      if (effect.dismissible !== (effect.durationKind === 'explicit-dismissal')
+        || effect.dismissible !== (effect.dismissalRef !== null)) {
+        fail('invalid-workspace', `Effect ${effect.effectRef} dismissal authority disagrees with its duration.`)
+      }
+      if (effect.dismissalRef !== null && effect.dismissalRef !== effect.effectRef) {
+        fail('invalid-workspace', `Effect ${effect.effectRef} has inconsistent opaque command authority.`)
+      }
     }
   }
   if (!workspace.viewer.canInspectDiagnostics && workspace.diagnostics.length > 0) {

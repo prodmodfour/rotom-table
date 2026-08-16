@@ -10,6 +10,7 @@ import {
 import {
   buildAuthoritativeMoveRulesContext,
 } from '~~/server/domain/moveAutomation/context'
+import { resolveAuthoritativeMoveUserAccuracy } from '~~/server/domain/moveAutomation/accuracy'
 import {
   resolveMoveDamageStatSelections,
   resolveMoveSpecDamageBreakdown,
@@ -31,6 +32,8 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   defaultTargetResolutionState,
 } from '~/utils/moveAutomationTargetResolution'
+import { activeEquipmentState } from '../fixtures/equipment'
+import type { SheetEquipmentStateV1 } from '#shared/itemAutomation/equipment'
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
   id,
@@ -89,6 +92,8 @@ const context = (options: {
   readonly actorCapabilities?: CharacterSheet['capabilities']
   readonly targetAbilities?: readonly string[]
   readonly targetCapabilities?: CharacterSheet['capabilities']
+  readonly actorEquipmentState?: SheetEquipmentStateV1
+  readonly targetEquipmentState?: SheetEquipmentStateV1
 } = {}) => buildAuthoritativeMoveRulesContext({
   map: mapFixture(options.weather, options.terrains, options.rooms),
   pokemonSheets: new Map([
@@ -97,6 +102,7 @@ const context = (options: {
         ? { abilities: options.actorAbilities.map(name => ({ name })) }
         : {}),
       ...(options.actorCapabilities ? { capabilities: options.actorCapabilities } : {}),
+      ...(options.actorEquipmentState ? { equipmentState: options.actorEquipmentState } : {}),
       stats: {
         atk: { added: 1, stage: -1 },
         def: { added: 12, stage: 2 },
@@ -110,6 +116,7 @@ const context = (options: {
         ? { abilities: options.targetAbilities.map(name => ({ name })) }
         : {}),
       ...(options.targetCapabilities ? { capabilities: options.targetCapabilities } : {}),
+      ...(options.targetEquipmentState ? { equipmentState: options.targetEquipmentState } : {}),
       stats: {
         atk: { added: 15, stage: 3 },
         def: { added: 3, stage: -1 },
@@ -228,6 +235,79 @@ const termAmount = (
 ): number => breakdown.kind === 'standard'
   ? breakdown.terms.find(term => term.label === label)?.amount ?? -1
   : -1
+
+describe('MoveSpec equipment-derived contributions', () => {
+  it('applies hash-current after-stage Stat operations through authoritative stat queries', () => {
+    const baseline = context()
+    const equipped = context({
+      actorEquipmentState: activeEquipmentState({
+        ownerKind: 'pokemon', ownerSlug: 'actor', slotId: 'held', canonicalItemId: 'Iron Ball',
+      }),
+    })
+    const query = {
+      stat: 'speed' as const,
+      combatStagePolicy: 'honor' as const,
+      stageModifierPolicy: 'honor' as const,
+    }
+    const base = baseline.queries.stats.resolve('actor-token', query)!
+    const result = equipped.queries.stats.resolve('actor-token', query)!
+
+    expect(result.value).toBe(Math.floor(base.value * 0.5))
+    expect(equipped.queries.equipment.metric({
+      placementId: 'actor-token', metric: 'stat-after-stages', targetId: 'spd', base: base.value,
+    })?.contributions).toEqual([
+      expect.objectContaining({ canonicalItemId: 'Iron Ball', operation: 'multiply-floor', value: 0.5 }),
+    ])
+  })
+
+  it('uses reviewed Accuracy contributions and suppresses them under Magic Room', () => {
+    const equipmentState = activeEquipmentState({
+      ownerKind: 'pokemon', ownerSlug: 'actor', slotId: 'held', canonicalItemId: 'Luck Incense',
+    })
+    const baseline = resolveAuthoritativeMoveUserAccuracy(context(), { targetPlacementId: 'target-token' })
+    const equipped = resolveAuthoritativeMoveUserAccuracy(context({ actorEquipmentState: equipmentState }), {
+      targetPlacementId: 'target-token',
+    })
+    const suppressed = resolveAuthoritativeMoveUserAccuracy(context({
+      actorEquipmentState: equipmentState,
+      rooms: ['magic'],
+    }), { targetPlacementId: 'target-token' })
+
+    expect(equipped.value).toBe(baseline.value + 1)
+    expect(equipped.modifiers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ sourceId: 'equipment.luck-incense.accuracy', value: 1 }),
+    ]))
+    expect(suppressed.value).toBe(baseline.value)
+  })
+
+  it('adds outgoing direct damage and subtracts typed incoming reduction in the ordered pipeline', () => {
+    const move = { ...script('Physical'), type: 'Fire' }
+    const operation = damageOperation({ damageClass: 'physical', moveType: 'fire' })
+    const baseline = resolve(context(), move, operation)
+    const equipped = resolve(context({
+      actorEquipmentState: activeEquipmentState({
+        ownerKind: 'pokemon', ownerSlug: 'actor', slotId: 'held', canonicalItemId: 'Life Orb',
+      }),
+      targetEquipmentState: activeEquipmentState({
+        ownerKind: 'pokemon', ownerSlug: 'target', slotId: 'held', canonicalItemId: 'Fire Type Brace',
+      }),
+    }), move, operation)
+    expect(baseline.kind).toBe('standard')
+    expect(equipped.kind).toBe('standard')
+    if (baseline.kind !== 'standard' || equipped.kind !== 'standard') return
+    expect(equipped.hpLoss).toBe(Math.max(1, baseline.hpLoss + 5 - 15))
+    expect(equipped.pipeline?.stages.flatMap(stage => stage.modifiers)).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        source: { kind: 'equipment', id: 'Life Orb' },
+        reasonCode: 'equipment.direct-damage', operation: 'add', value: 5,
+      }),
+      expect.objectContaining({
+        source: { kind: 'equipment', id: 'Fire Type Brace' },
+        reasonCode: 'equipment.damage-reduction', operation: 'subtract', value: 15,
+      }),
+    ]))
+  })
+})
 
 describe('MoveSpec alternate attack and defense stat selection', () => {
   it('supports Body Press, Foul Play, and Psyshock-family stat sources', () => {

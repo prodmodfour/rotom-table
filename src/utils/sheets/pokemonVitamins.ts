@@ -9,6 +9,11 @@ export type PokemonVitaminFlagKey = 'heartBooster' | 'ppUp'
 export type PokemonVitaminNumberKey = 'rareCandies' | 'heartScales'
 export type PokemonVitaminTextKey = 'ppUpMove' | 'notes'
 
+/** Fields mutated only by accepted permanent-advancement item operations. */
+export const POKEMON_ITEM_CONTROLLED_VITAMIN_FIELDS = Object.freeze([
+  'statBoosts', 'statSuppressants', 'heartBooster', 'ppUp', 'ppUpMove', 'rareCandies',
+] as const)
+
 export interface PokemonVitaminStatItemDefinition {
   stat: StatKey
   label: string
@@ -117,6 +122,34 @@ export const resolvePokemonVitaminSummary = (sheet: CharacterSheet | null | unde
     rareCandiesLeft: POKEMON_RARE_CANDY_LIMIT - rareCandies,
     heartScales: coercePokemonVitaminCount(vitamins?.heartScales),
   }
+}
+
+/**
+ * Setup-sheet saves may edit notes and Heart Scale custody, but cannot forge,
+ * erase, or rewrite accepted permanent item outcomes. Low-level import and
+ * server item-operation paths intentionally do not use this boundary.
+ */
+export const preservePokemonItemControlledVitaminFieldsForSetupSave = <
+  TSheet extends Record<string, unknown>,
+>(candidate: TSheet, current: Record<string, unknown>): TSheet => {
+  const candidateVitamins = candidate.vitamins && typeof candidate.vitamins === 'object'
+    && !Array.isArray(candidate.vitamins)
+    ? { ...(candidate.vitamins as Record<string, unknown>) }
+    : {}
+  const currentVitamins = current.vitamins && typeof current.vitamins === 'object'
+    && !Array.isArray(current.vitamins)
+    ? current.vitamins as Record<string, unknown>
+    : null
+  for (const field of POKEMON_ITEM_CONTROLLED_VITAMIN_FIELDS) {
+    if (currentVitamins && Object.hasOwn(currentVitamins, field)) {
+      candidateVitamins[field] = structuredClone(currentVitamins[field])
+    }
+    else delete candidateVitamins[field]
+  }
+  const result = { ...candidate } as Record<string, unknown>
+  if (Object.keys(candidateVitamins).length > 0) result.vitamins = candidateVitamins
+  else delete result.vitamins
+  return result as TSheet
 }
 
 export const resolvePokemonStatVitaminAdjustment = (

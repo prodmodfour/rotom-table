@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-003",
+  "authorities": [
+    {
+      "resource": "trainer-inventory",
+      "storage": "sheets.document_json",
+      "revisionOwner": "sheets.revision",
+      "rowIdentity": "optional InventoryEntry.id",
+      "approvedWriters": ["shop-checkout", "group-inventory-transfer", "item-operation", "equipment-operation", "encounter-settlement", "setup-save"],
+      "knownRisks": ["legacy rows without IDs", "setup-save can rewrite whole inventory", "legacy normalized-name stack merge"]
+    },
+    {
+      "resource": "group-inventory",
+      "storage": "group_inventories.document_json",
+      "revisionOwner": "group_inventories.revision",
+      "rowIdentity": "required GroupInventoryEntry.id",
+      "approvedWriters": ["shop-checkout", "group-inventory-transfer", "item-operation", "encounter-settlement", "setup-save"],
+      "knownRisks": ["setup-save can rewrite whole inventory", "legacy normalized-name stack merge"]
+    },
+    {
+      "resource": "shop-catalog-and-stock",
+      "storage": "shop_tables.document_json",
+      "revisionOwner": "shop_tables.revision",
+      "rowIdentity": "ShopEntry.id",
+      "approvedWriters": ["shop-checkout", "shop-setup-save"],
+      "knownRisks": ["accepted purchase lines do not yet carry canonical item IDs"]
+    },
+    {
+      "resource": "pokemon-held-item",
+      "storage": "sheets.document_json:items.held",
+      "revisionOwner": "sheets.revision",
+      "rowIdentity": "display string only",
+      "approvedWriters": ["equipment-operation", "setup-save"],
+      "knownRisks": ["not bound to source inventory row", "name-based passive lookup", "no source-loss operation"]
+    },
+    {
+      "resource": "trainer-equipment",
+      "storage": "sheets.document_json:equipmentSlots",
+      "revisionOwner": "sheets.revision",
+      "rowIdentity": "display string per slot",
+      "approvedWriters": ["equipment-operation", "setup-save"],
+      "knownRisks": ["not bound to source inventory row", "slot values can diverge from equipment inventory"]
+    },
+    {
+      "resource": "capture-ball-consumption",
+      "storage": "trainer inventory through specialized capture command",
+      "revisionOwner": "trainer sheet and map revisions",
+      "rowIdentity": "specialized capture authority",
+      "approvedWriters": ["throw-poke-ball"],
+      "knownRisks": ["must remain specialized until shared item boundaries are proven"]
+    },
+    {
+      "resource": "breeding-item-resources",
+      "storage": "breeding operation evidence plus trainer sheet inventory",
+      "revisionOwner": "breeding read set and trainer sheet revision",
+      "rowIdentity": "source-specific evidence identity",
+      "approvedWriters": ["breeding-operation"],
+      "knownRisks": ["must integrate through handoff rather than duplicate breeding mechanics"]
+    }
+  ],
+  "requiredBoundary": "Every runtime item mutation must use a stable source row, canonical item ID, full mutable read set, compare-and-swap writes, one terminal operation receipt, and after-commit realtime publication."
+}

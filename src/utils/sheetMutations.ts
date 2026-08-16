@@ -160,11 +160,13 @@ export const applyConditionsToSheet = (
   if (kind === 'pokemon') {
     const updated = deepCloneJson(sheet as CharacterSheet)
     updated.combat = { ...(updated.combat ?? {}), conditions: normalized }
+    if (updated.combat.statusAfflictions !== undefined) delete updated.combat.statusAfflictions
     return updated
   }
 
   const updated = deepCloneJson(sheet as TrainerSheet)
   updated.conditions = normalized
+  if (updated.statusAfflictions !== undefined) delete updated.statusAfflictions
   return updated
 }
 

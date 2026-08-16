@@ -8,6 +8,7 @@ import {
   stringifyCanonicalRealtimeJson,
 } from '#shared/realtimeEventLog'
 import type { AppendRealtimeEventInput } from '../storage/realtimeEventRepository'
+import { projectSheetEquipmentContributions } from '../utils/sheetPrivacy'
 
 export interface AuthoritativeSheetDocumentUpdate {
   readonly kind: SheetKind
@@ -63,11 +64,12 @@ export const normalizeAuthoritativeSheetDocumentUpdate = (
   if (detachedSheet.slug !== slug) throw new Error(`${label}.sheet.slug must match ${label}.slug`)
   assertSafeNonNegativeInteger(detachedSheet.revision, `${label}.sheet.revision`)
   assertSafeNonNegativeInteger(detachedSheet.updatedAt, `${label}.sheet.updatedAt`)
-  const canonicalSheet = stringifyCanonicalRealtimeJson(detachedSheet, `${label}.sheet`)
+  const authoritativeSheet = projectSheetEquipmentContributions(update.kind, detachedSheet)
+  const canonicalSheet = stringifyCanonicalRealtimeJson(authoritativeSheet, `${label}.sheet`)
   return {
     kind: update.kind,
     slug,
-    sheet: detachedSheet,
+    sheet: authoritativeSheet,
     canonicalSheet,
   }
 }

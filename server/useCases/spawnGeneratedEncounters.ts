@@ -31,7 +31,11 @@ import {
   type GenerateEncountersRuntimeOverrides,
 } from '../utils/generateEncountersRuntime'
 import { decorateGeneratedPokemonSheet } from '../utils/pokegenBatch'
-import { normalizeGenerateEncountersError, type GenerateEncountersResult } from './generateEncounters'
+import {
+  activeRouteRepelForEncounterGeneration,
+  normalizeGenerateEncountersError,
+  type GenerateEncountersResult,
+} from './generateEncounters'
 import { normalizeLoadMapSlug } from './loadMap'
 import { createPlacementId as defaultCreatePlacementId } from '~/utils/placement'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -145,6 +149,7 @@ interface GeneratedSheetRecord {
 interface SpawnGenerationPlan extends GenerateEncountersResult {
   readonly slugPrefix: string
   readonly generatedSheets: readonly GeneratedSheetRecord[]
+  readonly explorationAuthority: ReturnType<typeof readEncounterGenerateRequest>['exploration']
 }
 
 interface PreparedGeneratedSheet {
@@ -428,6 +433,7 @@ const createSpawnOutputPlan = (
 const generateEncounterSheetsInMemory = async (
   body: SpawnEncounterBody | null | undefined,
   runtime: GenerateEncountersRuntime,
+  database: RotomDatabase,
 ): Promise<SpawnGenerationPlan> => {
   const request = readEncounterGenerateRequest(body)
   const table = readEncounterTableFile(request.region, request.tableKey, {
@@ -440,8 +446,13 @@ const generateEncounterSheetsInMemory = async (
     : request.countRange.min === request.countRange.max
       ? request.countRange.min
       : Math.max(request.countRange.min, request.rolled.length)
-  const rolled = request.rolled ?? Array.from({ length: count }, () => rollEncounterTable(table, runtime.random))
+  const repel = activeRouteRepelForEncounterGeneration(request.exploration, database)
+  const unfiltered = request.rolled ?? Array.from({ length: count }, () => rollEncounterTable(table, runtime.random))
     .filter((encounter): encounter is NonNullable<typeof encounter> => Boolean(encounter))
+  const rolled = repel
+    ? unfiltered.filter(encounter => encounter.level > repel.maximumAffectedWildLevel)
+    : unfiltered
+  const repelledRolls = unfiltered.length - rolled.length
   const output = createSpawnOutputPlan(request, count, runtime)
   const files = [] as GenerateEncountersResult['files']
   const generatedSheets: GeneratedSheetRecord[] = []
@@ -492,6 +503,13 @@ const generateEncounterSheetsInMemory = async (
     count,
     slugPrefix: output.slugPrefix,
     generatedSheets,
+    explorationAuthority: request.exploration,
+    routeRepel: repel ? {
+      itemLabel: repel.canonicalItemId,
+      maximumAffectedWildLevel: repel.maximumAffectedWildLevel,
+      expiresAtCampaignMinute: repel.expiresAtCampaignMinute,
+      repelledRolls,
+    } : null,
   }
 }
 
@@ -638,6 +656,16 @@ const persistEncounterSpawn = ({
   realtimeEventRepository: SpawnRealtimeEventRepository
   timestamp: number
 }): EncounterPersistenceResult => database.withTransaction(() => {
+  const currentRepel = activeRouteRepelForEncounterGeneration(generation.explorationAuthority, database)
+  const currentRepelSummary = currentRepel ? {
+    itemLabel: currentRepel.canonicalItemId,
+    maximumAffectedWildLevel: currentRepel.maximumAffectedWildLevel,
+    expiresAtCampaignMinute: currentRepel.expiresAtCampaignMinute,
+    repelledRolls: generation.routeRepel?.repelledRolls ?? 0,
+  } : null
+  if (JSON.stringify(currentRepelSummary) !== JSON.stringify(generation.routeRepel)) {
+    throw new SpawnGeneratedEncountersUseCaseError(409, 'Route Repel authority changed before encounter spawn commit.')
+  }
   const currentMap = mapRepository.getBySlug(mapSlug)
   if (!currentMap) throw new SpawnGeneratedEncountersUseCaseError(404, `Map ${mapSlug}.json not found`)
   const mode = modeRepository.get(mapSlug).interactionMode
@@ -778,10 +806,10 @@ export const spawnGeneratedEncountersUseCase = async (
     }
     assertSpawnOutputRoot(String(body?.outRoot ?? DEFAULT_ENCOUNTER_GENERATE_OUT_ROOT))
 
-    const runtime = resolveGenerateEncountersRuntime(dependencies)
-    const generation = await generateEncounterSheetsInMemory(body, runtime)
-
     const database = databaseFromDependencies(dependencies)
+    const runtime = resolveGenerateEncountersRuntime(dependencies)
+    const generation = await generateEncounterSheetsInMemory(body, runtime, database)
+
     const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository<TabletopMap>(database)
     const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(database, mapRepository as unknown as MapRepository)
     const modeRepository = dependencies.mapInteractionModeRepository ?? createSqliteMapInteractionModeRepository(database)
@@ -811,7 +839,12 @@ export const spawnGeneratedEncountersUseCase = async (
 
     const spawned = persistence.placements.filter((placement) => !placement.error)
     const spawnFailures = persistence.placements.length - spawned.length
-    const { generatedSheets: _generatedSheets, slugPrefix: _slugPrefix, ...generationResult } = generation
+    const {
+      generatedSheets: _generatedSheets,
+      slugPrefix: _slugPrefix,
+      explorationAuthority: _explorationAuthority,
+      ...generationResult
+    } = generation
 
     return {
       ...generationResult,

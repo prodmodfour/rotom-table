@@ -285,7 +285,7 @@ describe('shop checkout concurrency and conflict integration', () => {
     expect(storedShop(database).entries[0]?.stock).toBe(0)
     expect(storedShop(database).purchaseLog?.map((entry) => entry.opId)).toEqual(['op_shopcheckout_laststock_a'])
     expect(storedTrainer(database, 'ash')).toMatchObject({ revision: 1, updatedAt: 900, money: 800 })
-    expect(storedTrainer(database, 'ash').inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 1, cost: 200 }])
+    expect(storedTrainer(database, 'ash').inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 1, cost: 200 })])
     expect(storedTrainer(database, 'misty')).toMatchObject({ revision: 0, updatedAt: 300, money: 1_000 })
     expect(storedTrainer(database, 'misty').inventory?.medicalKit).toEqual([])
 
@@ -446,7 +446,7 @@ describe('shop checkout concurrency and conflict integration', () => {
     expect(storedShop(database).entries[0]?.stock).toBe(1)
     expect(storedShop(database).purchaseLog?.map((entry) => entry.opId)).toEqual(['op_shopcheckout_duplicate_retry_integration'])
     expect(storedTrainer(database)).toMatchObject({ revision: 1, updatedAt: 1_000, money: 800 })
-    expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 1, cost: 200 }])
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 1, cost: 200 })])
   })
 
   it('rejects a different command with the same operation ID without replacing the recorded result', () => {
@@ -489,6 +489,6 @@ describe('shop checkout concurrency and conflict integration', () => {
     expect(storedShop(database).entries[0]?.stock).toBe(2)
     expect(storedShop(database).purchaseLog?.map((entry) => entry.opId)).toEqual([command.opId])
     expect(storedTrainer(database)).toMatchObject({ revision: 1, updatedAt: 1_000, money: 800 })
-    expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 1, cost: 200 }])
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([expect.objectContaining({ id: expect.any(String), name: 'Potion', qty: 1, cost: 200 })])
   })
 })

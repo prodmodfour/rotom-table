@@ -19,11 +19,10 @@ export default defineNuxtPlugin((nuxtApp) => {
     controller.start()
   }
 
-  nuxtApp.hook('app:mounted', () => {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', start, { once: true })
-    } else {
-      start()
-    }
+  // Capturing titles mutates SSR-rendered attributes. Root suspense can resolve
+  // before async page descendants finish hydrating, so wait for Nuxt's page
+  // completion hook and then leave its hydration call stack before touching DOM.
+  nuxtApp.hook('page:finish', () => {
+    window.requestAnimationFrame(start)
   })
 })

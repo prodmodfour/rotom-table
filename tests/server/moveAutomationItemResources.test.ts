@@ -12,6 +12,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { activeEquipmentState } from '../fixtures/equipment'
 
 const placement = (
   id: string,
@@ -67,6 +68,9 @@ const trainerSheet = (): TrainerSheet => ({
     accessory: 'Bright Powder',
     mainHand: 'Unknown Homebrew Blade',
   },
+  equipmentState: activeEquipmentState({
+    ownerKind: 'trainer', ownerSlug: 'ace', slotId: 'accessory', canonicalItemId: 'Bright Powder',
+  }),
   inventory: {
     medicalKit: [
       { name: 'Potion', qty: 3 },
@@ -88,6 +92,10 @@ const pokemonSheet = (
   level: 20,
   revision,
   items: { held },
+  equipmentState: activeEquipmentState({
+    ownerKind: 'pokemon', ownerSlug: slug, slotId: 'held', canonicalItemId: held,
+    sourceSection: 'pokemonItems',
+  }),
 })
 
 const groupInventory = (): GroupInventoryDocument => ({
@@ -163,14 +171,14 @@ describe('authoritative move item resources', () => {
       {
         requirementId: 'test.actor-equipped',
         kind: 'trainer-equipment-slot',
-        itemId: 'slot:accessory:1',
+        itemId: trainer.equipmentState!.instances[0]!.instanceId,
         canonicalItemId: 'bright-powder',
         quantity: 1,
       },
       {
         requirementId: 'test.target-equipped',
         kind: 'pokemon-held',
-        itemId: 'held:1',
+        itemId: target.equipmentState!.instances[0]!.instanceId,
         canonicalItemId: 'leftovers',
         quantity: 1,
       },

@@ -23,6 +23,13 @@ const emit = defineEmits<{
 }>()
 
 const accentColorValue = computed(() => normalizeTrainerAccentColor(props.sheet.accentColor) ?? DEFAULT_TRAINER_ACCENT_COLOR)
+const actionPointsLeft = computed<number | undefined>({
+  get: () => props.sheet.ap?.left ?? props.maxAp,
+  set: (value) => {
+    if (!props.sheet.ap) props.sheet.ap = {}
+    props.sheet.ap.left = value
+  },
+})
 
 const setAccentColorFromEvent = (event: Event) => {
   const target = event.target
@@ -122,7 +129,7 @@ const setAccentColorFromEvent = (event: Event) => {
       <div class="vital">
         <span class="vital-label">AP</span>
         <span class="vital-value">
-          <EditableCell v-model="sheet.ap!.left" type="number" :min="0" />
+          <EditableCell v-model="actionPointsLeft" type="number" :min="0" accessible-label="Action Points left" />
           <span class="vital-divider">/</span> {{ maxAp }}
         </span>
       </div>

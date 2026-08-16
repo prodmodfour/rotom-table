@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-083",
+  "status": "implemented",
+  "model": {
+    "schemaVersion": 1,
+    "fields": [
+      "itemId",
+      "reason",
+      "audience",
+      "urgency",
+      "entity",
+      "sourceEvent",
+      "authority",
+      "requiredDecision",
+      "legalActions",
+      "resolution",
+      "createdAtCampaignMinute"
+    ],
+    "audiences": ["gm", "owner"],
+    "urgencies": ["blocking", "urgent", "normal", "informational"],
+    "resolutionStates": ["open", "resolved", "superseded"],
+    "maximumLegalActions": 8,
+    "maximumProjectedSettlementSources": 10000,
+    "authorityPointer": ["kind", "id", "revision"],
+    "copiesMutableCharacterData": false,
+    "exactParser": true,
+    "deeplyFrozen": true
+  },
+  "invariants": [
+    "Every open item has at least one bounded current legal action.",
+    "Every action is app-relative and points to exact revisioned authority.",
+    "Terminal items clear required decisions and legal actions.",
+    "Terminal state requires a positive revision, resolution code, source event, and non-retroactive campaign minute.",
+    "The immutable source event cannot occur after item creation.",
+    "Unknown fields, copied mutable snapshots, and freeform presentation copy fail closed.",
+    "Duplicate item and action identities fail closed.",
+    "Consumers must reload and reauthorize authority before mutation."
+  ],
+  "settlementProvider": {
+    "sourceTable": "encounter_settlement_attention_sources",
+    "introducesDuplicatePersistence": false,
+    "identity": "Deterministic SHA-256 derivation from the durable settlement attention source identity.",
+    "sourceEvent": "The linked immutable settlement history fact.",
+    "preservesExactAuthorityKind": true,
+    "doesNotCopy": [
+      "settlementId",
+      "finishOperationId",
+      "characterName",
+      "level",
+      "hp",
+      "injuries",
+      "conditions",
+      "inventory",
+      "profileEvidence",
+      "privatePlan",
+      "sourceJson"
+    ],
+    "reasonPolicies": {
+      "level-threshold": ["normal", "allocate-advancement", "review-advancement"],
+      "advancement-review": ["normal", "allocate-advancement", "review-advancement"],
+      "capture-review": ["normal", "review-capture", "review-capture"],
+      "medical-review": ["urgent", "choose-treatment", "start-treatment"],
+      "equipment-review": ["normal", "repair-equipment", "review-equipment"],
+      "continuation-review": ["informational", "review-continuation", "continue-campaign"]
+    },
+    "deterministicOrder": ["urgency", "createdAtCampaignMinute", "itemId"]
+  },
+  "sources": {
+    "sharedModel": {
+      "path": "shared/campaignAttention/model.ts",
+      "sha256": "0fd3e9494a41bda34fd209f55b26d3db7e3a90f2eb1337ecaf4ce285365552de"
+    },
+    "settlementProvider": {
+      "path": "server/domain/campaignAttention/settlementProvider.ts",
+      "sha256": "39f6aa405b54cc39f688f0ff8deee024421a515476f769420f96328f83a6fd87"
+    },
+    "settlementAtomicSource": {
+      "path": "server/domain/encounterSettlement/atomicCommit.ts",
+      "sha256": "d17b7ac75516cd504f441e51e2b743e51e51086dc0489c5ab7ac10c796f0e5fb"
+    },
+    "settlementSourceRepository": {
+      "path": "server/storage/encounterSettlementRepository.ts",
+      "sha256": "ba885a6bf1bebaeb977d93f51979e59b00c24f625538530f8098e240c399f57b"
+    },
+    "sharedTests": {
+      "path": "tests/shared/campaignAttentionModel.test.ts",
+      "sha256": "6431ad2e5cf66791e1ba4b9cc491c82386ff87ce28e1f04007372ab835e66c7f"
+    },
+    "providerTests": {
+      "path": "tests/server/campaignAttentionSettlementProvider.test.ts",
+      "sha256": "62bad51651902a7ef4946a18c2ea00cd6379b028e3ca60c8a0f26616a840a60e"
+    },
+    "documentation": {
+      "path": "docs/campaign-attention-item-model.md",
+      "sha256": "8acb5828b601a840c3a84067048e46278d4a0bd7c9bc46ea83292a5b94ae91da"
+    }
+  },
+  "validation": {
+    "focusedTests": "18 passed",
+    "typecheck": "passed",
+    "eslint": "passed",
+    "diffCheck": "passed"
+  }
+}

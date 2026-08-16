@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-071",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-document-v1",
+  "sourceEvidence": {
+    "encounterDocumentModelSha256": "16191d4b3090eb7f29fb9aa6303e4c3d553da3bf356fd01650c16a851fd3fd5c",
+    "settlementDocumentModelSha256": "bd6751d716f1b2f40552c95208141844b87da83453a0ea16610a0835b1bfb849",
+    "settlementGapMatrixSha256": "3297e29b664f13f7e270b0104aa931b99c5bd2859e50520dcb16463682a137ae",
+    "settlementFixturesSha256": "5ca134e3edef10db08888fb6d7403f47a97092e72bfd1235be9867ce5e68553e",
+    "encounterStateModelSha256": "3c5fdb41d85822bea8d0b25a4d9088043183cf32605df1d606df3fc963cddafd",
+    "encounterWorkspaceModelSha256": "c1cdafd479a14054b3f521c36d43ea665490555a9daec42d56ea494190519bc8"
+  },
+  "ownership": {
+    "documentOwns": [
+      "settlement lifecycle and revision",
+      "exact source-authority references",
+      "unresolved gate inventory",
+      "consequence and cleanup disposition plan",
+      "reward package and allocation declarations",
+      "bounded decision records",
+      "settlement receipt links",
+      "terminal completion evidence"
+    ],
+    "documentDoesNotOwn": [
+      "encounter or map mechanics",
+      "sheet HP, Injuries, conditions, Experience, money, inventory, equipment, moves, or ownership",
+      "capture creation or roster mutation",
+      "objective, clock, phase, effect, resource, or campaign-clock mechanics",
+      "operation idempotency or realtime event storage"
+    ],
+    "rule": "The settlement document orchestrates current authority references and frozen before/after evidence; it never becomes a parallel mechanics authority or a mutable copy of an encounter, map, or sheet."
+  },
+  "root": {
+    "fields": [
+      "schemaVersion",
+      "settlementId",
+      "revision",
+      "status",
+      "encounter",
+      "participants",
+      "unresolvedGates",
+      "persistentConsequences",
+      "rewardPackage",
+      "allocations",
+      "temporaryCleanup",
+      "decisions",
+      "receipts",
+      "completion",
+      "createdAtCampaignMinute",
+      "updatedAtCampaignMinute"
+    ],
+    "statuses": [
+      "draft",
+      "blocked",
+      "ready",
+      "committing",
+      "completed",
+      "cancelled"
+    ],
+    "revision": "non-negative compare-and-swap revision",
+    "timeAuthority": "non-negative authoritative campaign minute, never browser or wall-clock time",
+    "unknownFields": "reject"
+  },
+  "encounterReference": {
+    "fields": [
+      "encounterId",
+      "encounterRevision",
+      "linkedMapSlug",
+      "linkedMapRevision",
+      "campaignMinute"
+    ],
+    "purpose": "one exact source checkpoint; no EncounterDocument or map payload is embedded"
+  },
+  "participants": {
+    "identity": "stable encounter participant identity plus exact map and sheet authority references",
+    "fields": [
+      "participantId",
+      "sourceAuthority",
+      "sheetKind",
+      "sheetSlug",
+      "sheetRevision",
+      "sideId",
+      "ownerParticipantId",
+      "settlementRole",
+      "disposition"
+    ],
+    "roles": [
+      "combatant",
+      "support",
+      "observer"
+    ],
+    "dispositions": [
+      "active",
+      "defeated",
+      "withdrawn",
+      "escaped",
+      "captured",
+      "excluded"
+    ],
+    "forbiddenCopies": [
+      "display name",
+      "sheet document",
+      "token document",
+      "controller or Profile evidence",
+      "current mechanics payload"
+    ]
+  },
+  "unresolvedGates": {
+    "allBlocking": true,
+    "kinds": [
+      "pending-reaction",
+      "pending-resolution",
+      "uncertain-command",
+      "private-choice",
+      "revision-conflict",
+      "invalid-participant",
+      "unallocated-reward",
+      "capture-destination",
+      "cleanup-decision",
+      "unsupported-authority",
+      "gm-adjudication",
+      "stale-snapshot"
+    ],
+    "boundedResolutions": [
+      "refresh",
+      "retry-exact",
+      "choose",
+      "adjudicate",
+      "allocate",
+      "correct",
+      "exclude"
+    ],
+    "rule": "Every gate names at least one exact authority and one or more legal resolution kinds; freeform dismissal is not a resolution.",
+    "auditRule": "Accepted decisions and receipts may retain a stable resolved-gate subject after that gate leaves the current unresolved list."
+  },
+  "persistentConsequences": {
+    "kinds": [
+      "hp",
+      "injuries",
+      "conditions",
+      "capture",
+      "inventory",
+      "equipment",
+      "resource",
+      "usage",
+      "effect",
+      "objective",
+      "clock",
+      "phase",
+      "ownership",
+      "accepted-event"
+    ],
+    "behaviors": [
+      "preserve",
+      "transform",
+      "expire",
+      "reset",
+      "require-decision"
+    ],
+    "snapshotKinds": [
+      "integer",
+      "boolean",
+      "text",
+      "text-list",
+      "reference"
+    ],
+    "snapshotAuthority": "revision evidence and preview only; the owning use case re-reads and applies mechanics",
+    "states": [
+      "proposed",
+      "ready",
+      "applied",
+      "excluded"
+    ]
+  },
+  "rewardPackage": {
+    "statuses": [
+      "draft",
+      "ready",
+      "allocated",
+      "committed",
+      "cancelled"
+    ],
+    "payloadKinds": [
+      "experience",
+      "money",
+      "item",
+      "capture",
+      "narrative"
+    ],
+    "serializedItemRule": "one serialized item per reward line with an exact definition authority",
+    "narrativeRule": "a bounded fact and audience; narrative text never becomes hidden mechanics",
+    "unallocatedRule": "pending lines remain present and block completion until allocated or explicitly excluded"
+  },
+  "allocations": {
+    "destinations": [
+      "group",
+      "side",
+      "participant",
+      "trainer-inventory",
+      "pokemon-sheet",
+      "group-inventory",
+      "profile"
+    ],
+    "methods": [
+      "fixed",
+      "weighted",
+      "individual",
+      "whole"
+    ],
+    "rule": "Every allocation references one current reward line and one revision-bound destination; amount validation remains with the owning reward mechanic."
+  },
+  "temporaryCleanup": {
+    "kinds": [
+      "combat-stages",
+      "temporary-effects",
+      "encounter-resources",
+      "reservations",
+      "zones",
+      "ground-items",
+      "duration-effects",
+      "encounter-items",
+      "initiative"
+    ],
+    "sourceAware": true,
+    "rule": "Each entry names its owning authority, affected participants and source identities, disposition, decision when required, and terminal receipt when applied."
+  },
+  "decisions": {
+    "kinds": [
+      "allocation",
+      "capture-destination",
+      "consequence",
+      "cleanup",
+      "objective-outcome",
+      "gm-correction",
+      "exclusion",
+      "completion"
+    ],
+    "statuses": [
+      "open",
+      "accepted"
+    ],
+    "rule": "Options are bounded and authority-backed. Accepted decisions record exactly one offered option, private actor evidence, and campaign minute."
+  },
+  "receipts": {
+    "kinds": [
+      "decision",
+      "consequence",
+      "reward",
+      "allocation",
+      "cleanup",
+      "completion",
+      "correction"
+    ],
+    "rule": "Receipts link orchestration subjects and exact accepted decisions to existing operation authority without copying private commands, write sets, hashes, or mechanics results. Corrections link one prior receipt."
+  },
+  "completion": {
+    "states": [
+      "open",
+      "accepted",
+      "cancelled"
+    ],
+    "terminalPairing": {
+      "completed": "accepted",
+      "cancelled": "cancelled"
+    },
+    "terminalEvidence": [
+      "operationId",
+      "completion receiptId",
+      "completed encounter revision",
+      "authoritative campaign minute"
+    ],
+    "exactReplay": "the terminal operation and receipt are references to existing idempotency authority, not permission to execute again"
+  },
+  "privacy": {
+    "audiences": [
+      "public",
+      "participant-owner",
+      "destination-owner",
+      "gm"
+    ],
+    "serverPrivateFields": [
+      "Profile principal identity",
+      "operation identity",
+      "authority identity and revision",
+      "receipt ancestry",
+      "GM narrative note"
+    ],
+    "projectionRule": "Role-specific projections resolve safe current labels and summaries from authorized authorities, omit private identities, and never expose this server document verbatim."
+  },
+  "limits": {
+    "participants": 1024,
+    "unresolvedGates": 256,
+    "consequences": 4096,
+    "rewardLines": 1024,
+    "allocations": 4096,
+    "cleanupEntries": 4096,
+    "decisions": 1024,
+    "receipts": 8192,
+    "decisionOptions": 64,
+    "narrativeCharacters": 4000
+  },
+  "futureTicketOwnership": {
+    "P8-072": "gate derivation and completion eligibility",
+    "P8-073": "authority-backed consequence and cleanup snapshots",
+    "P8-074": "reward packages and allocation validation",
+    "P8-075": "experience allocation mechanics",
+    "P8-076": "money and item allocation mechanics",
+    "P8-077": "capture destination mechanics",
+    "P8-078": "objective, clock, phase, and outcome facts",
+    "P8-079": "source-owned temporary cleanup planning",
+    "P8-080": "atomic commit and terminal receipt",
+    "P8-081": "correction, realtime, privacy projection, and recovery",
+    "P8-082": "Finish Encounter experience and browser certification"
+  },
+  "evidence": {
+    "runtimeContract": "shared/encounterSettlement/document.ts",
+    "sharedTests": "tests/shared/encounterSettlementDocument.test.ts",
+    "dataTests": "tests/data/completePlayLoopEncounterSettlementDocument.test.ts",
+    "documentation": "docs/encounter-settlement-document.md"
+  }
+}

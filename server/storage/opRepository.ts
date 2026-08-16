@@ -47,6 +47,9 @@ export interface SaveSqliteLivePlayOpResultInput extends SaveLivePlayOpResultInp
 
 export interface LivePlayOpRepository extends LivePlayOpStore {
   getStoredOpRecord(mapSlug: string, opId: string): SqliteLivePlayOpRecord | null
+  /** Private bounded source read used by cross-domain settlement reconstruction. */
+  listStoredOpsForMap(mapSlug: string, limit?: number): readonly SqliteLivePlayOpRecord[]
+  countStoredOpsForMap(mapSlug: string, createdAtOrAfter?: number): number
   listAcceptedOpsSinceRevision(input: LivePlayAcceptedOperationHistoryInput): readonly LivePlayAcceptedOperationMetadata[]
   listMoveCorrectionRecords(mapSlug: string, originOperationId: string): readonly SqliteLivePlayOpRecord[]
   saveCommandResult(input: SaveSqliteLivePlayOpResultInput): SqliteLivePlayOpRecord
@@ -270,6 +273,49 @@ export const createSqliteLivePlayOpRepository = (
     return record && record.mapSlug === parsedMapSlug ? record : null
   }
 
+  const countStoredOpsForMap = (mapSlugInput: string, createdAtOrAfterInput = 0): number => {
+    const mapSlug = parseLivePlayMapSlug(mapSlugInput, 'live-play op mapSlug')
+    if (!Number.isSafeInteger(createdAtOrAfterInput) || createdAtOrAfterInput < 0) {
+      throw new Error('live-play operation source timestamp must be a non-negative safe integer')
+    }
+    const row = database.connection.prepare(`
+      SELECT COUNT(*) AS count FROM live_play_ops WHERE map_slug = ? AND created_at >= ?
+    `).get(mapSlug, createdAtOrAfterInput) as { readonly count: unknown } | undefined
+    const count = Number(row?.count)
+    if (!Number.isSafeInteger(count) || count < 0) throw new Error('live-play operation source count is invalid')
+    return count
+  }
+
+  const listStoredOpsForMap = (
+    mapSlugInput: string,
+    limitInput = 10_000,
+  ): readonly SqliteLivePlayOpRecord[] => {
+    const mapSlug = parseLivePlayMapSlug(mapSlugInput, 'live-play op mapSlug')
+    if (!Number.isSafeInteger(limitInput) || limitInput < 1 || limitInput > 10_000) {
+      throw new Error('live-play operation source limit must be from 1 through 10000')
+    }
+    const rows = database.connection.prepare(`
+      SELECT
+        op_id,
+        map_slug,
+        command_hash,
+        command_json,
+        result_json,
+        result_revision,
+        move_compensation_json,
+        correction_origin_op_id,
+        created_at
+      FROM (
+        SELECT * FROM live_play_ops
+        WHERE map_slug = ?
+        ORDER BY created_at DESC, op_id DESC
+        LIMIT ?
+      ) AS bounded_live_play_ops
+      ORDER BY created_at ASC, op_id ASC
+    `).all(mapSlug, limitInput) as unknown as OpRow[]
+    return rows.map(rowToOpRecord)
+  }
+
   const listAcceptedOpsSinceRevision = (
     input: LivePlayAcceptedOperationHistoryInput,
   ): readonly LivePlayAcceptedOperationMetadata[] => {
@@ -417,6 +463,8 @@ export const createSqliteLivePlayOpRepository = (
     getStoredOpRecord,
     getOpRecord: getStoredOpRecord,
     getOpResult: (mapSlug, opId) => getStoredOpRecord(mapSlug, opId)?.result ?? null,
+    listStoredOpsForMap,
+    countStoredOpsForMap,
     listAcceptedOpsSinceRevision,
     listMoveCorrectionRecords,
     saveCommandResult,
@@ -434,6 +482,8 @@ export const sqliteLivePlayOpRepository: LivePlayOpRepository = {
   getStoredOpRecord: (mapSlug, opId) => defaultOpRepository().getStoredOpRecord(mapSlug, opId),
   getOpRecord: (mapSlug, opId) => defaultOpRepository().getOpRecord(mapSlug, opId),
   getOpResult: (mapSlug, opId) => defaultOpRepository().getOpResult(mapSlug, opId),
+  listStoredOpsForMap: (mapSlug, limit) => defaultOpRepository().listStoredOpsForMap(mapSlug, limit),
+  countStoredOpsForMap: (mapSlug, createdAtOrAfter) => defaultOpRepository().countStoredOpsForMap(mapSlug, createdAtOrAfter),
   listAcceptedOpsSinceRevision: (input) => defaultOpRepository().listAcceptedOpsSinceRevision(input),
   listMoveCorrectionRecords: (mapSlug, originOperationId) => (
     defaultOpRepository().listMoveCorrectionRecords(mapSlug, originOperationId)

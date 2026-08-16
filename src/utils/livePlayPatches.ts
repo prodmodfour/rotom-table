@@ -254,7 +254,7 @@ const applyPlacementPatch = (map: TabletopMap, payload: unknown): LivePlayPatche
 const encounterLifecycleState = (
   map: TabletopMap,
   payload: UnknownRecord,
-  patchLabel: 'map.initiative' | 'map.scene',
+  patchLabel: 'map.initiative' | 'map.scene' | 'map.encounterLifecycle',
 ): {
   readonly encounterState: EncounterState
   readonly temporaryHitPoints: TabletopMap['temporaryHitPoints']
@@ -535,6 +535,49 @@ const applyScenePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRej
     if (lifecycle.temporaryHitPoints === undefined) delete map.temporaryHitPoints
     else map.temporaryHitPoints = deepCloneJson(lifecycle.temporaryHitPoints)
   }
+  const initiativeChanges = isRecord(payload.lifecycle)
+    ? payload.lifecycle.placementInitiativeChanges
+    : undefined
+  if (initiativeChanges !== undefined) {
+    if (!Array.isArray(initiativeChanges)) {
+      return failed('invalid-patch', 'map.scene placement initiative changes must be an array')
+    }
+    const seen = new Set<string>()
+    for (const raw of initiativeChanges) {
+      if (!isRecord(raw) || !nonEmptyString(raw.placementId)
+        || (raw.previous !== null && typeof raw.previous !== 'number')
+        || (raw.current !== null && typeof raw.current !== 'number')
+        || seen.has(raw.placementId)) {
+        return failed('invalid-patch', 'map.scene placement initiative changes are malformed')
+      }
+      const placement = map.placements.find(candidate => candidate.id === raw.placementId)
+      const previous = typeof placement?.initiative === 'number' ? placement.initiative : null
+      if (!placement || previous !== raw.previous) {
+        return failed('patch-revision-mismatch', 'map.scene placement initiative authority changed before patch application')
+      }
+      seen.add(raw.placementId)
+      placement.initiative = raw.current as number | null
+    }
+  }
+  return null
+}
+
+const applyEncounterDurationLifecyclePatch = (
+  map: TabletopMap,
+  payload: unknown,
+): LivePlayPatchesRejected | null => {
+  if (!isRecord(payload)
+    || (payload.command !== LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER
+      && payload.command !== LIVE_PLAY_COMMAND_TYPES.DISMISS_ENCOUNTER_EFFECT)) {
+    return failed('invalid-patch', 'map.encounterLifecycle patches require a supported lifecycle command')
+  }
+  const lifecycle = encounterLifecycleState(map, payload, 'map.encounterLifecycle')
+  if (!lifecycle) return failed('invalid-patch', 'map.encounterLifecycle patches require authoritative lifecycle state')
+  if ('ok' in lifecycle) return lifecycle
+  map.encounterState = lifecycle.encounterState
+  map.fieldEffects = cloneFieldEffects(lifecycle.fieldEffects)
+  if (lifecycle.temporaryHitPoints === undefined) delete map.temporaryHitPoints
+  else map.temporaryHitPoints = deepCloneJson(lifecycle.temporaryHitPoints)
   return null
 }
 
@@ -644,6 +687,8 @@ const applyKnownPatch = (map: TabletopMap, patch: LivePlayPatch): LivePlayPatche
       return applyTerrainPatch(map, patch.payload)
     case LIVE_PLAY_PATCH_TYPES.MAP_SCENE:
       return applyScenePatch(map, patch.payload)
+    case LIVE_PLAY_PATCH_TYPES.MAP_ENCOUNTER_LIFECYCLE:
+      return applyEncounterDurationLifecyclePatch(map, patch.payload)
     case LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE:
     case LIVE_PLAY_PATCH_TYPES.TOKEN_ACTION:
       return applyMoveUsagePatch(map, patch.payload)

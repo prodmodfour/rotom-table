@@ -4,7 +4,19 @@ import {
   parseEncounterPresentationProjection,
   type EncounterActionOffer,
 } from '../../shared/encounterPresentation'
+import type { ItemRuntimeDefinition, ItemRuntimeRegistry } from '#shared/itemAutomation/spec'
+import { attachEncounterItemCommandTemplate } from '../../server/domain/itemAutomation/commandTemplate'
+import { ITEM_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/itemAutomation/registry'
 import { declareEncounterActionUseCase } from '../../server/useCases/declareEncounterAction'
+import { buildEncounterPresentationProjection } from '../../server/domain/encounterPresentation/buildProjection'
+import { createItemChoiceMap, createItemChoiceTargetSheet, createItemChoiceTrainerSheet } from '../fixtures/moveAutomation/itemChoices'
+import { activeEquipmentState } from '../fixtures/equipment'
+import {
+  FORM_CHANGE_POKEMON_PLACEMENT_ID,
+  createFormChangeMap,
+  createFormChangePokemon,
+  createFormChangeTrainer,
+} from '../fixtures/itemFormChanges'
 
 const offer = (available = true): EncounterActionOffer => ({
   schemaVersion: 1,
@@ -72,6 +84,151 @@ describe('generic encounter action declaration authorization', () => {
     expect(() => declareEncounterActionUseCase({ role: 'player', intent: intent(overrides) }, {
       loadProjection: () => projection(),
     })).toThrow()
+  })
+
+  it('attaches a private revision-bound command template only to an authorized item offer', () => {
+    const map = createItemChoiceMap()
+    const pokemon = createItemChoiceTargetSheet()
+    const trainer = createItemChoiceTrainerSheet()
+    const itemProjection = buildEncounterPresentationProjection({
+      role: 'gm', map, mapRevision: 4, pokemonSheets: [pokemon], trainerSheets: [trainer], generatedAt: 100,
+    })
+    const itemOffer = itemProjection.offers.find(candidate => candidate.source.sourceKind === 'item' && candidate.source.canonicalId === 'Potion')!
+    const result = declareEncounterActionUseCase({
+      role: 'gm',
+      intent: {
+        schemaVersion: 1,
+        intentId: 'intent:item-potion',
+        offerId: itemOffer.offerId,
+        mapSlug: map.slug,
+        baseRevision: 4,
+        actorParticipantId: itemOffer.actor.participantId,
+        actionId: itemOffer.intent.actionId,
+        selections: [],
+      },
+    }, {
+      loadProjection: () => itemProjection,
+      loadItemAuthority: () => ({ map, mapRevision: 4, pokemonSheets: [pokemon], trainerSheets: [trainer] }),
+    })
+    expect(result.itemCommand).toMatchObject({
+      operationId: 'template:item-operation',
+      offerId: itemOffer.offerId,
+      sourceInstanceId: itemOffer.source.instanceId,
+      actorSheet: { kind: 'trainer', slug: trainer.slug, expectedRevision: 3 },
+      source: { kind: 'trainer', slug: trainer.slug, section: 'medicalKit', rowId: 'private-potion-row', expectedRevision: 3 },
+    })
+    expect(result.itemCommand).not.toHaveProperty('canonicalItemId')
+    expect(result.itemCommand?.readSet).toEqual(expect.arrayContaining([
+      { kind: 'sheet', sheetKind: 'trainer', id: trainer.slug, revision: 3 },
+      { kind: 'sheet', sheetKind: 'pokemon', id: pokemon.slug, revision: 2 },
+    ]))
+  })
+
+  it('attaches a bounded Mega Evolution command without exposing equipment or authority provenance', () => {
+    const map = createFormChangeMap()
+    const pokemon = createFormChangePokemon()
+    const trainer = createFormChangeTrainer()
+    const itemProjection = buildEncounterPresentationProjection({
+      role: 'gm', map, mapRevision: 7, pokemonSheets: [pokemon], trainerSheets: [trainer], generatedAt: 5_200,
+    })
+    const itemOffer = itemProjection.offers.find(candidate => candidate.intent.actionId === 'item.form-change.mega-evolve')!
+    const result = declareEncounterActionUseCase({
+      role: 'gm',
+      intent: {
+        schemaVersion: 1,
+        intentId: 'intent:mega-evolution',
+        offerId: itemOffer.offerId,
+        mapSlug: map.slug,
+        baseRevision: 7,
+        actorParticipantId: itemOffer.actor.participantId,
+        actionId: itemOffer.intent.actionId,
+        selections: [{ choiceId: 'target', optionIds: [FORM_CHANGE_POKEMON_PLACEMENT_ID] }],
+      },
+    }, {
+      loadProjection: () => itemProjection,
+      loadItemAuthority: () => ({ map, mapRevision: 7, pokemonSheets: [pokemon], trainerSheets: [trainer] }),
+    })
+    expect(result.itemFormChangeCommand).toMatchObject({
+      operationId: 'template:item-form-change',
+      offerId: itemOffer.offerId,
+      mapSlug: map.slug,
+      baseRevision: 7,
+      actorPlacementId: itemOffer.actor.participantId,
+      targetPlacementId: FORM_CHANGE_POKEMON_PLACEMENT_ID,
+      abilityOptionId: null,
+      readSet: [
+        { kind: 'map', sheetKind: null, id: map.slug, revision: 7 },
+        { kind: 'sheet', sheetKind: 'pokemon', id: pokemon.slug, revision: 4 },
+        { kind: 'sheet', sheetKind: 'trainer', id: trainer.slug, revision: 3 },
+      ],
+    })
+    const serialized = JSON.stringify(result)
+    expect(serialized).not.toContain(pokemon.equipmentState!.instances[0]!.instanceId)
+    expect(serialized).not.toContain(trainer.equipmentState!.instances[0]!.instanceId)
+    expect(serialized).not.toContain('formRecordSha256')
+    expect(serialized).not.toContain('canonicalRecordSha256')
+  })
+
+  it('binds Wonder Launcher delivery opaquely without exposing whole-item identity', () => {
+    const map = createItemChoiceMap()
+    const pokemon = createItemChoiceTargetSheet()
+    const trainer = createItemChoiceTrainerSheet()
+    trainer.skills = { ...trainer.skills, medicineEd: { rankBonus: 3 } }
+    trainer.inventory!.medicalKit!.push({ id: 'x-attack-row', name: 'X Attack', qty: 1 })
+    trainer.equipmentState = activeEquipmentState({
+      ownerKind: 'trainer', ownerSlug: trainer.slug, slotId: 'mainHand', additionalSlotIds: ['offHand'],
+      canonicalItemId: 'Wonder Launcher',
+    })
+    const itemProjection = buildEncounterPresentationProjection({
+      role: 'gm', map, mapRevision: 4, pokemonSheets: [pokemon], trainerSheets: [trainer], generatedAt: 100,
+    })
+    const itemOffer = itemProjection.offers.find(candidate => candidate.intent.actionId.startsWith('item.use.wonder-launcher:'))!
+    const result = declareEncounterActionUseCase({
+      role: 'gm',
+      intent: {
+        schemaVersion: 1, intentId: 'intent:wonder-launcher', offerId: itemOffer.offerId,
+        mapSlug: map.slug, baseRevision: 4, actorParticipantId: itemOffer.actor.participantId,
+        actionId: itemOffer.intent.actionId, selections: [],
+      },
+    }, {
+      loadProjection: () => itemProjection,
+      loadItemAuthority: () => ({ map, mapRevision: 4, pokemonSheets: [pokemon], trainerSheets: [trainer] }),
+    })
+    expect(result.itemCommand?.delivery).toMatchObject({
+      kind: 'wonder-launcher', equipmentBindingId: expect.stringMatching(/^equipment-delivery:v1:[a-f0-9]{32}$/),
+    })
+    expect(JSON.stringify(result)).not.toContain('equipped-item:v1:')
+    expect(JSON.stringify(result)).not.toContain('equipmentInstanceId')
+  })
+
+  it('adds campaign-clock read authority only for a reviewed daily item duration', () => {
+    const map = createItemChoiceMap()
+    const pokemon = createItemChoiceTargetSheet()
+    const trainer = createItemChoiceTrainerSheet()
+    const itemProjection = buildEncounterPresentationProjection({
+      role: 'gm', map, mapRevision: 4, pokemonSheets: [pokemon], trainerSheets: [trainer], generatedAt: 100,
+    })
+    const potionOffer = itemProjection.offers.find(candidate => candidate.source.sourceKind === 'item'
+      && candidate.source.canonicalId === 'Potion')!
+    const base = ITEM_AUTOMATION_RUNTIME_REGISTRY.require('Potion')
+    const definition: ItemRuntimeDefinition = {
+      canonicalId: base.canonicalId,
+      definitionSha256: 'd'.repeat(64),
+      spec: { ...base.spec, contexts: ['encounter'], duration: { kind: 'daily', amount: 2 } },
+    }
+    const registry: ItemRuntimeRegistry = {
+      definitions: [definition], aliases: new Map(),
+      resolve: value => value === definition.canonicalId ? definition : null,
+      require: value => value === definition.canonicalId ? definition : (() => { throw new Error('missing') })(),
+    }
+    const daily = attachEncounterItemCommandTemplate({
+      offer: potionOffer, map, mapRevision: 4, pokemonSheets: [pokemon], trainerSheets: [trainer],
+      campaignClock: { revision: 9 }, registry,
+    })
+    expect(daily.itemCommand?.readSet).toContainEqual({ kind: 'campaign-clock', id: 'campaign', revision: 9 })
+    expect(attachEncounterItemCommandTemplate({
+      offer: potionOffer, map, mapRevision: 4, pokemonSheets: [pokemon], trainerSheets: [trainer], registry,
+    }).itemCommand).toBeUndefined()
   })
 
   it('rejects an unavailable offer with its safe server reason', () => {

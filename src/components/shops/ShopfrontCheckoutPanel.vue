@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { ShopCheckoutCommandOutboxEntry } from '~/utils/livePlayCommandOutbox'
 import type {
+  ShopCheckoutContinuationReceiptV1,
+  ShopPostCheckoutActionProjectionStatus,
+  ShopPostCheckoutActionProjectionV1,
+} from '#shared/shopPostCheckout'
+import type {
   ShopfrontCartLine,
   ShopfrontCheckoutDocumentsStatus,
   ShopfrontCheckoutParticipantOption,
@@ -28,6 +33,10 @@ const props = defineProps<{
   outboxStatus: ShopCheckoutOutboxStatus
   outboxError?: string | null
   selectedProfileDisplayName?: string | null
+  postCheckoutReceipt?: ShopCheckoutContinuationReceiptV1 | null
+  postCheckoutActions?: ShopPostCheckoutActionProjectionV1 | null
+  postCheckoutActionsStatus?: ShopPostCheckoutActionProjectionStatus
+  postCheckoutActionsError?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -39,6 +48,8 @@ const emit = defineEmits<{
   'reload-documents': []
   'clear-error': []
   'clear-stock-change-notice': []
+  'retry-post-checkout-actions': []
+  'dismiss-post-checkout-actions': []
 }>()
 
 const currency = (value: number): string => `$${value.toLocaleString('en-US')}`
@@ -99,7 +110,7 @@ const checkoutButtonLabel = (): string => {
 }
 
 const pendingEntryLabel = (entry: ShopCheckoutCommandOutboxEntry): string => (
-  `${entry.opId} · ${entry.state} · ${entry.attemptCount} ${entry.attemptCount === 1 ? 'attempt' : 'attempts'}`
+  `Pending checkout · ${entry.state} · ${entry.attemptCount} ${entry.attemptCount === 1 ? 'attempt' : 'attempts'}`
 )
 
 const eventSelectValue = (event: Event): string => (event.target as HTMLSelectElement | null)?.value ?? ''
@@ -225,7 +236,7 @@ const handleDeliveryOptionChange = (event: Event): void => {
     </form>
 
     <article
-      v-if="statusTitle()"
+      v-if="statusTitle() && !(checkoutStatus === 'accepted' && postCheckoutReceipt)"
       class="shopfront-checkout__message"
       :class="`shopfront-checkout__message--${checkoutStatus}`"
       :role="statusRole()"
@@ -243,6 +254,16 @@ const handleDeliveryOptionChange = (event: Event): void => {
         Clear checkout message
       </button>
     </article>
+
+    <ShopPostCheckoutActions
+      v-if="checkoutStatus === 'accepted' && postCheckoutReceipt"
+      :receipt="postCheckoutReceipt"
+      :projection="postCheckoutActions"
+      :status="postCheckoutActionsStatus ?? 'idle'"
+      :error="postCheckoutActionsError"
+      @retry="emit('retry-post-checkout-actions')"
+      @dismiss="emit('dismiss-post-checkout-actions')"
+    />
 
     <section v-if="pendingOutboxEntries.length > 0 || outboxError" class="shopfront-checkout__outbox" aria-label="Pending checkout recovery">
       <h3>Pending checkout commands</h3>

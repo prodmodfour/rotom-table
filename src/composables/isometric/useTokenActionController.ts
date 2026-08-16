@@ -93,7 +93,7 @@ export interface TokenActionControllerEmitters {
   useAbility: (payload: { id: string } & TokenAbilityUseReference) => void
   useOrder?: (payload: { id: string; orderName?: string | null }) => void
   sendOutPokemon?: (payload: { trainerId: string; pokemonSlug: string }) => void
-  throwPokeball?: (payload: { id: string; pokeballName: string }) => void
+  throwPokeball?: (payload: { id: string; sourceInstanceId: string }) => void
   viewSheet: (id: string) => void
   viewPokedex: (id: string) => void
 }
@@ -433,11 +433,11 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     closeContextMenu()
   }
 
-  const handleContextThrowPokeball = (pokeballName: string) => {
+  const handleContextThrowPokeball = (sourceInstanceId: string) => {
     const id = controllableContextId()
     if (!id || !options.emit.throwPokeball) return
 
-    options.emit.throwPokeball({ id, pokeballName })
+    options.emit.throwPokeball({ id, sourceInstanceId })
     closeContextMenu()
   }
 

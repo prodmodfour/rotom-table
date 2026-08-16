@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-069",
+  "status": "current-semantics",
+  "contract": "inventory-responsive-accessibility-v1",
+  "scope": [
+    "Trainer inventory section navigation and rows",
+    "shared inventory section navigation and rows",
+    "inline inventory field editing",
+    "item source selection",
+    "Use, Equip, Give, Transfer, Split, Merge, Discard, and Inspect controls",
+    "inventory action and item-use decisions",
+    "equipment, recovery, exploration, Extended Action, and activity controls"
+  ],
+  "responsive": {
+    "desktop": "preserve the native semantic table and the inventory/activity hierarchy",
+    "narrowBreakpointPx": 760,
+    "narrowRows": "reflow each semantic table row into one labelled matte card without changing source order or table header associations",
+    "minimumReflowViewportPx": 320,
+    "pageHorizontalOverflowPx": 1,
+    "fieldLabels": [
+      "Name",
+      "Qty",
+      "Slot",
+      "Cost",
+      "Mod",
+      "Description",
+      "Actions"
+    ],
+    "decisionFlow": "the selected inventory row precedes its full-width decision and accepted activity remains secondary",
+    "zoom": "content reflows at a 320 CSS-pixel viewport, equivalent to 400 percent zoom on a 1280-pixel layout, without two-dimensional scrolling"
+  },
+  "keyboard": {
+    "sheetNavigation": "one roving tab stop with Arrow keys, Home, and End activation",
+    "sectionTabs": "ARIA tablist and tabpanel with one roving tab stop; Arrow keys, Home, and End both focus and activate",
+    "sourceChoices": "ARIA radiogroup with one roving tab stop; Arrow keys, Home, and End select and focus",
+    "inlineEditing": "Enter or Space opens an editor; Enter commits and Escape cancels; both return focus to the same field trigger while blur preserves forward tab order",
+    "decisionOpen": "focus moves to the decision heading",
+    "decisionClose": "focus returns to the originating row action when it remains, otherwise to the active inventory section tab",
+    "focusIndicator": "electric cyan plus a visible two-pixel or stronger outline"
+  },
+  "touch": {
+    "minimumPrimaryTargetPx": 44,
+    "coveredTargets": [
+      "sheet and inventory section controls",
+      "item-name and inline field editors",
+      "row action buttons and links",
+      "quantity and source inputs",
+      "confirmation labels and decision actions",
+      "save, reload, recovery, equipment, exploration, and history actions"
+    ]
+  },
+  "screenReader": {
+    "table": "native table, column-header, and row-header semantics remain present at every breakpoint",
+    "mobileLabels": "the same Name, quantity, source, cost, description, and Actions labels are visible in reflow",
+    "selectedSource": "Selected source text accompanies the cyan signal and aria-current state",
+    "editors": "each editable trigger and active input names its field and current safe item label",
+    "unavailableActions": "disabled action names include a concise safe textual reason rather than depending on title or colour alone",
+    "rowChanges": "adding or removing an editable row is announced through a polite live region",
+    "status": "pending, accepted, conflict, error, reservation, and recovery states retain their existing status or alert regions"
+  },
+  "sensoryIndependence": {
+    "selection": [
+      "Selected source text",
+      "cyan signal spine or outline",
+      "aria-current or aria-selected state"
+    ],
+    "destructive": [
+      "Discard label and trash or warning icon",
+      "Irreversible heading",
+      "exact quantity and permanent-removal consequence",
+      "explicit confirmation control before submit",
+      "danger colour reserved for the destructive consequence"
+    ],
+    "quantitySourceTargetCost": "safe textual labels remain visible and are never communicated by colour or icon alone"
+  },
+  "motion": {
+    "reducedMotion": "inventory and sheet navigation and inline edit triggers remove decorative transitions when prefers-reduced-motion is reduce",
+    "requiredMotion": false
+  },
+  "privacy": {
+    "safeVisibleFields": [
+      "container and section label",
+      "presentation row label",
+      "item label",
+      "available and selected quantity",
+      "target label",
+      "cost and consequence label"
+    ],
+    "forbiddenVisibleFields": [
+      "operation, declaration, or request ID",
+      "Profile ID",
+      "stable inventory row or source-instance ID",
+      "equipment-instance ID",
+      "revision or definition hash",
+      "raw command, ownership evidence, or private note"
+    ]
+  },
+  "interaction": {
+    "selectedMockup": ".pi/artifacts/ui-mockups/inventory-accessible-reflow/v001.png",
+    "selectedMockupScore": "10/10",
+    "minimumControlHeightPx": 44,
+    "desktopTablePreserved": true,
+    "mobileCardReflow": true,
+    "selectedRowNonColourText": "Selected source"
+  },
+  "evidence": {
+    "tests": [
+      "tests/components/inventoryAccessibility.test.ts",
+      "tests/components/inventorySectionTabs.test.ts",
+      "tests/components/inventoryItemTable.test.ts",
+      "tests/components/editableCellEditor.test.ts",
+      "tests/composables/editable-cell/useEditableCellSession.test.ts",
+      "tests/components/inventorySourceSelector.test.ts",
+      "tests/components/inventoryActionDecision.test.ts",
+      "tests/components/groupInventoryPanel.test.ts",
+      "tests/components/inventoryHistoryPanel.test.ts",
+      "tests/components/inventoryRecoveryCard.test.ts",
+      "tests/components/trainerSheetItemActions.test.ts",
+      "tests/components/trainerExplorationActivityCard.test.ts",
+      "tests/components/equipmentMigrationPanels.test.ts",
+      "tests/components/equipmentContributionInspector.test.ts",
+      "tests/components/equipmentLifecycleAdjudicator.test.ts",
+      "tests/components/medicalTreatmentStatusCard.test.ts",
+      "tests/e2e/inventory-accessibility.spec.ts"
+    ],
+    "mockup": ".pi/artifacts/ui-mockups/inventory-accessible-reflow/v001.png"
+  }
+}

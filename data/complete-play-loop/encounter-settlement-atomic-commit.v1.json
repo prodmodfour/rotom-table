@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-080",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-atomic-commit-v1",
+  "storageSchemaVersion": 42,
+  "sourceEvidence": {
+    "atomicCommitModelSha256": "d17b7ac75516cd504f441e51e2b743e51e51086dc0489c5ab7ac10c796f0e5fb",
+    "atomicCommandModelSha256": "2393593885fc8d0114272befdb2ad2fcea04c3655df2480bcf68351299d0eaf6",
+    "atomicRepositorySha256": "ba885a6bf1bebaeb977d93f51979e59b00c24f625538530f8098e240c399f57b",
+    "atomicUseCaseSha256": "346f45b5e0e309a6b2f3b752ea68baf8c5d5e34faf019e04e3197dba6a4968c7",
+    "storageMigrationsSha256": "fa869c20dfaf59fb2996e79310d0f849b3c74ac012d15983217313562714136a",
+    "settlementDocumentModelSha256": "bd6751d716f1b2f40552c95208141844b87da83453a0ea16610a0835b1bfb849",
+    "experienceAllocationSha256": "93ea291832c0f998e5cc27ae51a870303995720603a5fdd3334720ae0107b04e",
+    "lootAllocationSha256": "cc0049761424ea8a817f0771f53bf781518ab4b4f87db3ab66d04c1a8c3ce368",
+    "captureSettlementSha256": "11896b4a3741f08ef4e57e4b7d0a752a1bced0f44d3944303b09ecafd9c1375b",
+    "outcomeSettlementSha256": "0182ed1ae0d19855df1ec16a4dd6c4606798ad5cb2088d926841c0414438c897",
+    "temporaryCleanupSha256": "6eac234e8545a0b9d6f7836f003f312d811e92d1eaca3c3b00c4530f6f7c7881"
+  },
+  "commandBoundary": {
+    "schemaVersion": 1,
+    "required": [
+      "one stable operation identity",
+      "one exact settlement identity and expected revision",
+      "one server-owned plan SHA-256",
+      "explicit confirmed true"
+    ],
+    "strictness": "Unknown fields, malformed identities, non-lowercase hashes, implicit confirmation, and stale or unavailable plans fail before transaction work.",
+    "authorization": "Only the GM may cross the commit boundary; principal authority remains server-owned and is bound to exact replay."
+  },
+  "completePlan": {
+    "providers": [
+      "batch Experience allocation",
+      "money and item loot allocation",
+      "capture settlement",
+      "structured outcomes and campaign consequences",
+      "temporary-state cleanup and encounter lifecycle"
+    ],
+    "completeness": "Every provider must be complete, the outcome must contain one Encounter Document successor, and cleanup must contain one authoritative encounter-end lifecycle result.",
+    "documentOwnership": "Experience, loot, and capture may change only allocations; outcomes may change only persistent consequences; cleanup cannot rewrite settlement orchestration fields.",
+    "rewardRevalidation": "All provider destination writes merge by exact destination authority and are re-run through the complete P8-074 reward validator before commit.",
+    "eligibilityRevalidation": "The merged settlement is re-run through the P8-072 complete-current eligibility evaluator before terminalization."
+  },
+  "aggregateWrites": {
+    "sheetMerge": "Multiple providers targeting one sheet use a deterministic three-way JSON merge from the same exact previous document. Disjoint changes become one successor revision; divergent writes to one leaf fail closed.",
+    "groupMerge": "Each group inventory successor is revision and hash bound to the exact P8-076 loot authority.",
+    "mapAndEncounter": "Outcome and cleanup successors retain their own exact before hash, after hash, and monotonic revision.",
+    "settlement": "One final settlement successor marks consequences, rewards, allocations, cleanup, receipts, and completion accepted at the same campaign minute.",
+    "preservation": "Aggregate sheet cleanup and reward writes retain HP, injuries, persistent conditions, inventory or equipment not explicitly awarded, and durable advancement."
+  },
+  "lockedAuthority": {
+    "rule": "The repository acquires BEGIN IMMEDIATE, checks exact replay first, then rebuilds the complete authority snapshot while the write lock is held.",
+    "coverage": [
+      "settlement document",
+      "eligibility facts and participant revisions",
+      "all consulted sheet and group documents",
+      "linked map and Encounter Document",
+      "all reward destination writes and permissions",
+      "current campaign minute"
+    ],
+    "staleRule": "Any authority-hash, revision, definition-hash, completion, or campaign-clock drift rejects the whole command before its first durable successor."
+  },
+  "transaction": {
+    "engine": "One synchronous SQLite BEGIN IMMEDIATE transaction owns Encounter Document, map, sheet, group inventory, settlement, operation, history, and attention writes.",
+    "writeOrder": [
+      "Encounter Document successor",
+      "map successor when changed",
+      "one merged successor per changed sheet",
+      "one successor per changed group inventory",
+      "terminal settlement successor",
+      "accepted operation evidence",
+      "immutable history facts",
+      "open attention sources"
+    ],
+    "postWriteChecks": "Every domain document is reloaded or returned from its normalizing repository and must match the planned exact after hash before commit.",
+    "rollback": "An error after any individual write or immediately before COMMIT rolls back every prior successor, operation row, history fact, and attention source.",
+    "noAsyncGap": "The transaction callback is synchronous; no network, publication, browser, or promise boundary can split the commit."
+  },
+  "durableEvidence": {
+    "settlementTable": "encounter_settlements stores one revisioned canonical settlement document per encounter with a definition hash and terminal operation binding.",
+    "operationTable": "encounter_settlement_operations stores the strict command hash, full private plan evidence, authority hash, exact accepted result, and result hash.",
+    "historyTable": "encounter_settlement_history_facts stores immutable audience-scoped structured facts for Experience, loot, captures, outcomes, cleanup, and completion.",
+    "attentionTable": "encounter_settlement_attention_sources stores open authority-linked source records without copying mutable character state.",
+    "privacy": "Plan evidence, revisions, hashes, operation identities, source identities, and private payloads are server-private. P8-081 owns role-specific projections and realtime publication."
+  },
+  "terminalReplay": {
+    "lookupOrder": "A previously accepted operation is loaded before current authority or terminal settlement checks.",
+    "exactness": "The same operation identity, strict command hash, and principal returns the stored accepted result byte-for-byte without rerunning mechanics or writes.",
+    "restart": "Replay is loaded from SQLite and therefore survives process restart.",
+    "identityReuse": "The same operation identity with another command or principal fails closed and never exposes the prior result.",
+    "newOperation": "A completed, committing, cancelled, or otherwise terminal settlement cannot be planned or committed under a new operation identity."
+  },
+  "attentionAndHistory": {
+    "history": "Facts contain bounded structured result codes and audience scopes; no freeform note becomes hidden mechanics.",
+    "levelThreshold": "Crossed canonical Experience thresholds seed owner-scoped level-threshold attention sources linked to the exact committed sheet revision and Experience fact.",
+    "authorityOnly": "Attention sources name an affected entity, reason, source fact, and exact authority reference; they do not copy mutable character data or make irreversible build choices.",
+    "futureProcessing": "P8-083 and later tickets project and resolve attention items from these durable sources."
+  },
+  "tests": {
+    "planner": "tests/server/encounterSettlementAtomicCommit.test.ts",
+    "repository": "tests/server/encounterSettlementRepository.test.ts",
+    "useCase": "tests/server/commitEncounterSettlement.test.ts",
+    "migration": "tests/server/realtimeEventMigrations.test.ts",
+    "contract": "tests/data/completePlayLoopEncounterSettlementAtomicCommit.test.ts",
+    "rollback": "The repository suite injects failure at every generated write boundary and proves all document revisions and evidence tables remain unchanged.",
+    "restartReplay": "The repository suite closes and reopens a file-backed SQLite database before asserting exact replay without reauthorization."
+  },
+  "documentation": "docs/encounter-settlement-atomic-commit.md"
+}

@@ -14,6 +14,10 @@ import {
 import { resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { saveSheetUseCase } from '../../useCases/saveSheet'
 import { normalizeRealtimeClientId } from '#shared/realtime'
+import {
+  projectSheetEquipmentContributions,
+  redactSheetRecordForPlayer,
+} from '../../utils/sheetPrivacy'
 
 interface SaveBody {
   kind?: unknown
@@ -53,7 +57,14 @@ export default defineEventHandler(async (event) => {
       interactionMode,
       allowSlugSync: body.allowSlugSync === false ? false : undefined,
     })
-    return { ok: result.ok, slug: result.slug, path: result.path, sheet: result.sheet }
+    return {
+      ok: result.ok,
+      slug: result.slug,
+      path: result.path,
+      sheet: role === 'player'
+        ? redactSheetRecordForPlayer(kind, result.sheet)
+        : projectSheetEquipmentContributions(kind, result.sheet),
+    }
   } catch (err) {
     throwUseCaseHttpError(err)
   }

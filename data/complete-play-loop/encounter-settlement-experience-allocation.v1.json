@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-075",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-experience-allocation-v1",
+  "sourceEvidence": {
+    "rewardPackageContractSha256": "577ccd02ac0183799b659330202ba44049a914419e99c3d1a3bdda8cf3c219a9",
+    "experienceAllocationModelSha256": "93ea291832c0f998e5cc27ae51a870303995720603a5fdd3334720ae0107b04e",
+    "pokemonExperienceChartSha256": "a8b9026cd855e2c84c157e5f117454c6afe8f48549ff215fe562867208629428",
+    "pokemonExperienceRulesSha256": "dc0509420e6e2aec6985fd1631669d54c5dec4563e39f9683c92d691fd208135",
+    "sheetMutationRulesSha256": "8371f4f5377e786c1aaeff9c4702cb0a68eb1cbea0e19f2acdd0d2ded2ae1942",
+    "capabilityEvolutionRulesSha256": "da8f10e5ee7d00f18426b7aa563a5532cba4fdbd844d9adbff7f0b7ec0066378",
+    "marsupialRelationshipRulesSha256": "0cf515f84ad426c51d7c7752a7305b27cbb1a775566953163938675cafecd82f"
+  },
+  "authority": {
+    "completenessLiteral": "authoritative-current",
+    "required": [
+      "every current non-excluded Experience reward declaration or an explicit pending state",
+      "exact current Pokémon participant and sheet revision",
+      "complete reciprocal relationship sheet authority",
+      "exact destination revision",
+      "source-backed destination permission"
+    ],
+    "experienceInvariant": "Current Level is 1 through 100 and total Experience is a non-negative safe integer whose canonical chart level exactly matches the sheet Level. Missing total Experience uses only the canonical current-level threshold.",
+    "forbidden": [
+      "Trainer recipients",
+      "duplicate Pokémon sheets through multiple participants",
+      "stale sheet revisions",
+      "client-calculated levels",
+      "missing relationship counterparts",
+      "inconsistent Level and total Experience",
+      "unsafe integer totals"
+    ]
+  },
+  "distribution": {
+    "methods": ["fixed", "weighted", "individual"],
+    "fixed": "Equal integer shares; remaining points go in stable participant-identity order.",
+    "weighted": "Positive safe-integer weights use exact integer products and largest remainder; ties use stable participant-identity order.",
+    "individual": "Every selected recipient has one positive explicit amount and all amounts sum exactly to the reward.",
+    "minimum": "Every selected recipient receives at least one Experience point.",
+    "conservation": "Relationship-aware contributing writes sum exactly to the source reward amount.",
+    "allocation": "One deterministic allocation per Experience reward retains the selected group, side, participant, or Pokémon-sheet scope and server-derived total or weight evidence."
+  },
+  "levelPreview": {
+    "fields": [
+      "sheet identity",
+      "expected revision",
+      "grant amount",
+      "total Experience before and after",
+      "Level before and after",
+      "every crossed canonical Level and threshold",
+      "source-owned lifecycle reason identities"
+    ],
+    "canonicalLevels": "data/reference/pokemonExperienceChart.json only",
+    "maxLevel": 100,
+    "rule": "The same authoritative Experience mutation and capability-evolution functions produce preview and private next-sheet evidence."
+  },
+  "marsupial": {
+    "sharing": "A valid mother with the reviewed 20-percent share transfers floor(base grant times 0.2) to the exact reciprocal baby and keeps the remainder.",
+    "corruption": "Malformed, one-sided, duplicate, missing, capability-invalid, or lifecycle-invalid relationships reject the whole plan.",
+    "level25": "A baby crossing Level 25 uses capability evolution authority, ends Baby Template, and clears reciprocal pouch state on both sheets.",
+    "relatedWrite": "A relationship counterpart receiving no Experience still has an explicit non-contributing zero-amount write when its durable lifecycle state changes."
+  },
+  "batchWrite": {
+    "allocationIdentity": "SHA-256 over version, settlement identity, and reward identity",
+    "writeIdentity": "SHA-256 over version, settlement, allocation, target sheet, and grant-or-related-lifecycle role",
+    "aggregateRevision": "Every changed sheet has one expected revision and one next revision regardless of how many allocations contribute.",
+    "beforeAfterEvidence": "Each private sheet write retains exact stable-JSON SHA-256 before and after evidence plus the source-derived next sheet.",
+    "staleRule": "Application rechecks every sheet revision and before hash, every next-sheet after hash, and every next revision before returning any write.",
+    "atomicRule": "An incomplete, denied, pending, stale, or changed batch returns no applicable writes. P8-080 persists the complete list in the settlement transaction."
+  },
+  "completion": {
+    "complete": "Every non-excluded Experience line has one allowed declaration and complete preview.",
+    "pending": "A line without a declaration remains pending and blocks application.",
+    "denied": "A denied destination retains its allocation and permission evidence but produces no Experience write and blocks application.",
+    "excluded": "An explicitly excluded Experience line requires no allocation or write.",
+    "foreignAllocation": "An existing Experience allocation not owned by this versioned batch provider is never replaced implicitly."
+  },
+  "ownership": {
+    "providerOwns": [
+      "integer distribution",
+      "canonical threshold preview",
+      "relationship-aware grant expansion",
+      "exact private next-sheet plan",
+      "batch stale revalidation"
+    ],
+    "providerDoesNotOwn": [
+      "settlement transaction persistence",
+      "public projection",
+      "post-level advancement choices",
+      "attention-item resolution",
+      "arbitrary Experience or Level edits"
+    ]
+  },
+  "privacy": {
+    "serverPrivate": [
+      "sheet document and hash",
+      "relationship state and operation identity",
+      "permission authority and denial identity",
+      "source-write identity",
+      "Profile ownership evidence"
+    ],
+    "safeProjection": "Later UI may show recipient labels, allocated XP, Level before and after, crossed Levels, pending or denied state, and safe lifecycle summaries only."
+  },
+  "evidence": {
+    "runtime": "server/domain/encounterSettlement/experienceAllocation.ts",
+    "tests": "tests/server/encounterSettlementExperienceAllocation.test.ts",
+    "documentation": "docs/encounter-settlement-experience-allocation.md"
+  }
+}

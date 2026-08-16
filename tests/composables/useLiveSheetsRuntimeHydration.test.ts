@@ -87,6 +87,31 @@ describe('useLiveSheets runtime hydration', () => {
     )
   })
 
+  it('silently ignores a best-effort reload superseded by a different access scope', async () => {
+    let resolveDefault!: (payload: unknown) => void
+    apiMocks.getJson
+      .mockReturnValueOnce(new Promise((resolve) => {
+        resolveDefault = resolve
+      }))
+      .mockResolvedValueOnce({
+        pokemonSheets: [{ slug: 'profile-pikachu', nickname: 'Profile Pikachu', revision: 1 }],
+        trainerSheets: [],
+      })
+    const liveSheets = useLiveSheets()
+
+    const defaultReload = liveSheets.reloadRuntimeSheets()
+    await liveSheets.reloadRuntimeSheets({ role: 'player', profileId: 'profile-a' as PlayerProfileId })
+    resolveDefault({
+      pokemonSheets: [{ slug: 'guest-pikachu', nickname: 'Guest Pikachu', revision: 0 }],
+      trainerSheets: [],
+    })
+
+    await expect(defaultReload).resolves.toBeUndefined()
+    expect(liveSheets.pokemonBySlug.value.get('profile-pikachu')).toMatchObject({ nickname: 'Profile Pikachu' })
+    expect(liveSheets.pokemonBySlug.value.has('guest-pikachu')).toBe(false)
+    expect(console.warn).not.toHaveBeenCalled()
+  })
+
   it('reports explicit reconciliation reloads that are superseded before applying fresh sheets', async () => {
     let resolveFirst!: (payload: unknown) => void
     apiMocks.getJson

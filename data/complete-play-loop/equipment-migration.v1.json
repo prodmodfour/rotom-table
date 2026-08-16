@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-042",
+  "canonicalItemCatalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "equipmentContractSha256": "8360d4c6f0f3333f490dc4329e862c4cab6a5161b661ddc531bfd94ce63f6307",
+  "runtime": {
+    "implementation": "server/domain/itemAutomation/equipmentMigration.ts",
+    "documentMigrationVersion": 1,
+    "sqliteSchemaVersionUnchanged": 32,
+    "executionBoundaries": [
+      "after application SQLite migrations on every database open",
+      "after all JSON sheet imports"
+    ],
+    "offlineImporterCompatibility": "the schema-28 importer never overwrites a newer owner-bound schema-v1 equipment document with an older legacy JSON source; a genuinely newer source revision remains importable",
+    "idempotencyMarker": "valid owner-bound equipmentState schemaVersion 1",
+    "transaction": "BEGIN IMMEDIATE across every changed sheet and group inventory document"
+  },
+  "sourceResolution": {
+    "canonicalIdentity": "exact canonical name or reviewed alias from data/reference/items.json",
+    "trainerPrecedence": "the owning Trainer inventory",
+    "pokemonPrecedence": "Trainer inventories whose currentTeam or boxedPokemon contains the Pokemon sheet slug",
+    "groupFallback": "group inventories are considered only when no eligible Trainer source row exists",
+    "eligibleSource": "one stable, uniquely identified, positive-quantity canonical row",
+    "wholeEquipmentRowCapacity": 1,
+    "stackCapacity": "authoritative positive integer quantity with one unit moved per assignment",
+    "missingRowIdentity": "allocate a deterministic bounded row identity before source evaluation",
+    "duplicateRowIdentity": "unresolved ambiguous-source; never consume"
+  },
+  "conversion": {
+    "legacyTrainerField": "equipmentSlots",
+    "legacyPokemonField": "items.held",
+    "legacyValuesCopiedIntoExplicitRecoveryEvidence": true,
+    "legacyEffectiveFieldsAfterMigration": "clear equipmentSlots values and items.held after explicit state captures the canonical instance or unresolved legacy display value",
+    "inventoryMovement": "remove one whole equipment row or decrement one stack unit in the same transaction",
+    "sourceRevision": "pre-migration source container revision",
+    "sheetRevision": "increment once for each changed document",
+    "updatedAt": "advance the prior authoritative timestamp by exactly one",
+    "initialEquipmentRevision": 0,
+    "initialInstanceRevision": 0,
+    "initialActivity": {
+      "status": "inactive",
+      "reasonCode": "equipment.definition-pending",
+      "equipmentDefinitionSha256": null,
+      "policy": "P8-043 must bind reviewed compatibility and a definition hash before activation"
+    },
+    "itemSpecificConfiguration": null
+  },
+  "unresolved": {
+    "mechanicallyEffective": false,
+    "reasons": [
+      "unknown-item",
+      "missing-source",
+      "ambiguous-source",
+      "invalid-assignment"
+    ],
+    "duplicateCanonicalAssignments": "invalid-assignment because handedness or multiple-copy intent cannot be inferred",
+    "evidence": [
+      "deterministic issue identity",
+      "owner slot",
+      "retained legacy display value",
+      "canonical candidate identities",
+      "stable candidate source identities"
+    ],
+    "gmPresentation": "show slot, retained display value, safe reason, and candidate count without raw source row identity",
+    "playerPresentation": "show only aggregate unresolved count"
+  },
+  "failurePolicy": {
+    "preExistingValidAuthority": "preserve assigned instances; retire matching legacy shell values and remove any persisted derived player projection",
+    "unrepresentedLegacyBesideExplicitAuthority": "preserve as an inactive invalid-assignment issue and increment the equipment semantic revision",
+    "conflictingLegacyBesideExplicitAuthority": "fail and roll back every document",
+    "malformedOrOwnerMisboundAuthority": "fail and roll back every document",
+    "ambiguousAssignment": "preserve as unresolved without inventory movement",
+    "unknownCanonicalIdentity": "preserve as unresolved without web, prose, or fuzzy lookup",
+    "revisionOrTimestampOverflow": "fail and roll back",
+    "partialMigration": false
+  },
+  "normalization": {
+    "newSheets": "create a complete empty owner-bound equipmentState",
+    "loadedExplicitState": "strictly parse and bind to the owning sheet kind and slug",
+    "playerProjectionPersistence": "strip before every sheet write",
+    "descriptiveFieldActivation": false
+  }
+}

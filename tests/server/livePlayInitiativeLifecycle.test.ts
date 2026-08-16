@@ -11,6 +11,17 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import { pokemonHpSnapshot } from '~/utils/sheetSpawn'
 import { LivePlayIntegrationHarness, assertAccepted } from './livePlayIntegrationHarness'
+import {
+  applyItemFormChangeCandidate,
+  resolveItemFormChangeCandidate,
+} from '../../server/domain/itemAutomation/formChanges'
+import {
+  FORM_CHANGE_POKEMON_PLACEMENT_ID,
+  FORM_CHANGE_TRAINER_PLACEMENT_ID,
+  createFormChangeMap,
+  createFormChangePokemon,
+  createFormChangeTrainer,
+} from '../fixtures/itemFormChanges'
 
 const harnesses: LivePlayIntegrationHarness[] = []
 
@@ -147,6 +158,69 @@ const residualHandler = (effectId: string): EncounterLifecycleTriggerHandler => 
 })
 
 describe('live-play initiative lifecycle integration', () => {
+  it('uses an active reviewed Mega form Speed delta when initiative has no explicit override', async () => {
+    const pokemon = createFormChangePokemon('mega-mewtwo-y', {
+      species: 'Mewtwo', types: ['Psychic'], abilities: [{ name: 'Pressure' }],
+      equipmentState: createFormChangePokemon('mega-mewtwo-y', { species: 'Mewtwo' }).equipmentState,
+    })
+    const trainer = createFormChangeTrainer()
+    const base = createFormChangeMap({
+      slug: 'integration-arena',
+      placements: createFormChangeMap().placements.map((placement) => {
+        const copy = { ...placement }
+        delete copy.initiative
+        return copy
+      }),
+      initiative: { activeId: FORM_CHANGE_POKEMON_PLACEMENT_ID, round: 2 },
+    })
+    const candidate = resolveItemFormChangeCandidate({
+      map: base,
+      actorPlacementId: FORM_CHANGE_POKEMON_PLACEMENT_ID,
+      targetPlacementId: FORM_CHANGE_POKEMON_PLACEMENT_ID,
+      sheets: {
+        pokemon: new Map([[pokemon.slug, pokemon]]),
+        trainer: new Map([[trainer.slug, trainer]]),
+      },
+    })
+    const rival = {
+      ...pokemon,
+      slug: 'mega-rival',
+      nickname: 'A Rival',
+      equipmentState: undefined,
+    }
+    const activeMap = applyItemFormChangeCandidate({
+      map: base, candidate, operationId: 'operation-mega-initiative', acceptedAt: 5_200,
+    })
+    activeMap.placements.push({
+      id: 'mega-rival-token', sheetKind: 'pokemon', sheetSlug: rival.slug,
+      position: { x: 4, y: 0, z: 2 }, sideId: 'heroes',
+    })
+    const harness = LivePlayIntegrationHarness.create({
+      map: activeMap,
+      sheets: [{
+        kind: 'pokemon', slug: pokemon.slug, revision: pokemon.revision ?? 0,
+        updatedAt: 5_100, sheet: pokemon,
+      }, {
+        kind: 'pokemon', slug: rival.slug, revision: rival.revision ?? 0,
+        updatedAt: 5_100, sheet: rival,
+      }, {
+        kind: 'trainer', slug: trainer.slug, revision: trainer.revision ?? 0,
+        updatedAt: 5_100, sheet: trainer,
+      }],
+    })
+    harnesses.push(harness)
+    const result = await harness.nextInitiative({
+      actor: { role: 'gm', clientId: 'gm-client' },
+      command: harness.nextInitiativeCommand({
+        opId: 'op_mega_initiative_speed', baseRevision: 7,
+        orderIds: [FORM_CHANGE_POKEMON_PLACEMENT_ID, 'mega-rival-token', FORM_CHANGE_TRAINER_PLACEMENT_ID],
+        activeId: FORM_CHANGE_POKEMON_PLACEMENT_ID, round: 2,
+      }),
+    })
+    expect(assertAccepted(result.result)).toMatchObject({ previousRevision: 7, revision: 8 })
+    expect(result.map.initiative?.activeId).toBe('mega-rival-token')
+  })
+
   it('commits map expiry, due sheet loss, terminal idempotency, and remote map state together', async () => {
     const effect = dueEffect()
     const harness = LivePlayIntegrationHarness.create({

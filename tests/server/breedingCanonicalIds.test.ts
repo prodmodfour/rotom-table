@@ -116,13 +116,17 @@ describe('breeding canonical IDs', () => {
     expect(isBreedingCanonicalLocalIdSyntax('a'.repeat(65))).toBe(false)
   })
 
-  it('maps every app-owned species, Move, and Ability record once with exact record provenance', () => {
+  it('maps the frozen app-owned baseline with exact provenance and excludes only reviewed successor records', () => {
     expect(BREEDING_CANONICAL_SPECIES_COUNT).toBe(1_149)
     expect(BREEDING_CANONICAL_MOVE_COUNT).toBe(777)
     expect(BREEDING_CANONICAL_ABILITY_COUNT).toBe(483)
     expect(BREEDING_CANONICAL_SPECIES).toHaveLength(pokedex.length)
     expect(BREEDING_CANONICAL_MOVES).toHaveLength(Object.keys(moves).length)
     expect(BREEDING_CANONICAL_ABILITIES).toHaveLength(Object.keys(abilities).length)
+    expect(Object.keys(moves).filter(name => !BREEDING_CANONICAL_MOVES.some(row => row.sourceName === name)))
+      .toEqual(['Facade'])
+    expect(BREEDING_CANONICAL_MOVES.filter(row => !Object.hasOwn(moves, row.sourceName)).map(row => row.sourceName))
+      .toEqual(['Façade'])
 
     const validateRows = (
       rows: readonly CatalogSourceRow[],
@@ -139,7 +143,13 @@ describe('breeding canonical IDs', () => {
       }
     }
     validateRows(catalog.definition.catalogs.species, pokedex.map(row => [row.species, row]))
-    validateRows(catalog.definition.catalogs.moves, Object.entries(moves))
+    const frozenMoveSources = Object.entries(moves)
+    frozenMoveSources[503] = ['Façade', {
+      name: 'Façade', type: 'Normal', frequency: 'EOT', ac: 2, damage_base: 7,
+      damage_roll: '2d6+10 / 17', damage_class: 'Physical', range: 'Melee, 1 Target',
+      effect: 'If the user is afflicted with a Persistent Status Affliction, Façade’s Damage Base is doubled to DB 14 (4d10+15 / 40).',
+    }]
+    validateRows(catalog.definition.catalogs.moves, frozenMoveSources)
     validateRows(catalog.definition.catalogs.abilities, Object.entries(abilities))
     expect(catalog.definition.diagnostics).toMatchObject({
       speciesCount: 1_149,
@@ -187,6 +197,7 @@ describe('breeding canonical IDs', () => {
       expect(isCanonicalBreedingSpeciesId(value), String(value)).toBe(false)
     }
     expect(canonicalBreedingMoveIdentity('Facade')).toBeNull()
+    expect(canonicalBreedingMoveIdentity('facade')).toMatchObject({ sourceName: 'Façade' })
     expect(canonicalBreedingAbilityIdentity('SYNCHRONIZE')).toBeNull()
     expect(canonicalBreedingEggGroupIdentity('Field')).toBeNull()
     expect(canonicalBreedingCampaignOptionIdentity('breeding.unknown-option')).toBeNull()

@@ -94,10 +94,37 @@ describe('encounter presentation contracts', () => {
     expect(parsed.presentation.label).toBe('Thunder Shock')
   })
 
+  it('strictly preserves safe item target availability and target-specific costs', () => {
+    const unavailable = encounterAvailabilityReason('target.invalid')
+    const parsed = parseEncounterActionOffer({
+      ...offer(),
+      sourceContextLabel: 'Rowan · Medical Kit',
+      selectionOptions: [{
+        kind: 'participant', value: 'target:one', label: 'Pikachu', description: '20/20 HP · At full HP.',
+        costs: [{ kind: 'full-action', resourceId: 'full', amount: 1, label: '1 Full Action' }],
+        disabled: true,
+        unavailableReason: unavailable,
+      }],
+    })
+    expect(parsed.sourceContextLabel).toBe('Rowan · Medical Kit')
+    expect(parsed.selectionOptions?.[0]).toMatchObject({
+      kind: 'participant', disabled: true, unavailableReason: { code: 'target.invalid' },
+      costs: [{ kind: 'full-action', label: '1 Full Action' }],
+    })
+    expect(() => parseEncounterActionOffer({
+      ...offer(),
+      selectionOptions: [{
+        kind: 'participant', value: 'target:one', label: 'Pikachu', description: null,
+        costs: [], disabled: true, unavailableReason: null,
+      }],
+    })).toThrow(/require exactly one safe unavailable reason/i)
+  })
+
   it('rejects unknown fields, inconsistent availability, and bounded-array overflow', () => {
     expect(() => parseEncounterActionOffer({ ...offer(), mechanicsProgram: 'roll damage' })).toThrow(
       EncounterPresentationValidationError,
     )
+    expect(() => parseEncounterActionOffer({ ...offer(), itemCommand: {} })).toThrow(/unknown itemCommand/i)
     expect(() => parseEncounterActionOffer({
       ...offer(),
       availability: { status: 'unavailable', reasons: [] },
@@ -135,6 +162,34 @@ describe('encounter presentation contracts', () => {
       })
       expect(projected.offers[0]?.availability.reasons[0]?.diagnosticDetail).toBeNull()
     }
+  })
+
+  it('redacts private diagnostic evidence from unavailable action options', () => {
+    const projected = projectEncounterPresentation({
+      source: parseEncounterPresentationProjection({
+        ...emptyEncounterPresentationProjection({
+          mapSlug: 'arena', mapRevision: 7, audience: 'diagnostic', generatedAt: 100,
+        }),
+        offers: [{
+          ...offer(),
+          selectionOptions: [{
+            kind: 'participant', value: 'target:one', label: 'Target One', description: 'At full HP.',
+            disabled: true,
+            unavailableReason: encounterAvailabilityReason('target.invalid', {
+              sources: [source], diagnosticDetail: 'private target-state evidence',
+            }),
+          }],
+        }],
+      }),
+      policy: {
+        audience: 'actor-owner', controlledParticipantIds: ['actor:one'],
+        hiddenSourceKeys: ['move:Thunder Shock:'],
+      },
+    })
+    expect(projected.offers[0]?.selectionOptions?.[0]?.unavailableReason).toMatchObject({
+      diagnosticDetail: null,
+      sources: [{ sourceKind: 'system', canonicalId: 'private-rule' }],
+    })
   })
 
   it('strictly validates action and pending-response intents', () => {

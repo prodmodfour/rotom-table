@@ -42,7 +42,7 @@ defineSlots<{
 
 <style scoped>
 .editable-cell__empty {
-  color: var(--ink-faint, #999);
+  color: var(--ink-muted, #999);
   font-style: italic;
 }
 

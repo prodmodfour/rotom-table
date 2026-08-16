@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-066",
+  "status": "current-semantics",
+  "contract": "shop-post-checkout-actions-v1",
+  "continuationAuthority": {
+    "source": "the terminal accepted shop-checkout operation result and its authoritative delivered target document",
+    "receipt": "one strict public continuation per exact delivered row, including whole-item rows created by a multi-quantity purchase",
+    "identity": "opaque operation-, target-, accepted-revision-, section-, stable-row-, and receipt-position-bound identity",
+    "lookupByItemName": false,
+    "clientAuthoredRowAuthority": false,
+    "olderReceipts": "accepted checkouts without exact continuation authority remain valid purchases but cannot project post-checkout actions",
+    "overLimitReceipt": "an otherwise valid checkout remains accepted without a continuation receipt when more than 64 exact delivered rows would exceed the bounded public contract",
+    "idempotentReplay": "the stored terminal checkout result returns the same continuation receipt without redelivery"
+  },
+  "actions": [
+    {
+      "kind": "inspect",
+      "handoff": "existing canonical item reference navigation",
+      "commitOnNavigation": false
+    },
+    {
+      "kind": "use",
+      "handoff": "existing Trainer or delegated group item-use decision",
+      "commitOnNavigation": false
+    },
+    {
+      "kind": "equip",
+      "handoff": "existing Trainer equipment decision",
+      "commitOnNavigation": false
+    },
+    {
+      "kind": "give",
+      "handoff": "existing Trainer-to-Pokemon equipment custody decision",
+      "commitOnNavigation": false
+    },
+    {
+      "kind": "move-to-group",
+      "handoff": "existing Trainer-to-group transfer decision",
+      "commitOnNavigation": false
+    },
+    {
+      "kind": "transfer-to-trainer",
+      "handoff": "existing group-to-Trainer transfer decision",
+      "commitOnNavigation": false
+    }
+  ],
+  "projection": {
+    "endpoint": "POST /api/shops/post-checkout-actions",
+    "request": "strict shop slug, accepted checkout operation identity, and a unique bounded subset of receipt continuation identities",
+    "freshAuthority": "current authenticated custody, Profile delegation, stable source row, section, reservations, canonical offer, target eligibility, equipment slots, destination revisions, and group policy",
+    "maximumContinuations": 64,
+    "maximumActionsPerContinuation": 6,
+    "safeFields": [
+      "opaque continuation and action identities used only as protocol values",
+      "item and accepted quantity labels",
+      "safe container, section, presentation-row, destination, action, and unavailable-reason labels",
+      "app-relative handoffs containing only current opaque offer identities"
+    ],
+    "forbiddenVisibleFields": [
+      "checkout operation ID",
+      "stable inventory row ID",
+      "inventory instance ID",
+      "Profile ID",
+      "definition or command hash",
+      "serialized equipment identity or state",
+      "private delegation evidence",
+      "private shop audit fields",
+      "raw provenance"
+    ],
+    "staleOrMovedSource": "the accepted receipt remains visible while every unsupported current handoff is disabled with a textual reason",
+    "expandedOrForeignReceipt": "fails closed before projection"
+  },
+  "interaction": {
+    "selectedMockup": ".pi/artifacts/ui-mockups/shop-post-checkout-actions/v002.png",
+    "selectedMockupScore": "9.7/10",
+    "hierarchy": "accepted checkout fact, exact purchased-source continuity, then current action handoffs",
+    "confirmationBoundary": "navigation opens an existing decision workspace; no item, equipment, or transfer mutation occurs until that workspace is explicitly confirmed",
+    "loadingAndFailure": "the accepted receipt remains visible while current actions load, fail, or are retried",
+    "dismissal": "Done shopping dismisses only the local continuation panel",
+    "responsive": "two-column purchased rows reflow to one ordered column without page-level horizontal overflow",
+    "minimumControlHeightPx": 44,
+    "nonColourCues": [
+      "Checkout accepted heading and check icon",
+      "action labels and icons",
+      "native disabled controls",
+      "adjacent textual unavailable reasons",
+      "destination summary text"
+    ],
+    "optimisticMutation": false
+  },
+  "reuse": {
+    "newItemMechanicsPath": false,
+    "newEquipmentMechanicsPath": false,
+    "newTransferMechanicsPath": false,
+    "existingAuthorities": [
+      "shop checkout operation journal and terminal result",
+      "Trainer inventory action projection",
+      "group inventory action projection",
+      "Trainer item-use projection",
+      "delegated group item-use projection",
+      "existing exact inventory decision routes"
+    ]
+  },
+  "evidence": {
+    "tests": [
+      "tests/shared/shopPostCheckout.test.ts",
+      "tests/utils/shopPostCheckoutDelivery.test.ts",
+      "tests/utils/inventoryContinuationRoute.test.ts",
+      "tests/server/executeShopCheckoutCommand.test.ts",
+      "tests/server/shopCheckoutOperationRepository.test.ts",
+      "tests/server/shopPostCheckoutActions.test.ts",
+      "tests/server/shopCheckoutRoute.test.ts",
+      "tests/composables/shops/useShopfrontCheckout.test.ts",
+      "tests/components/shops/ShopPostCheckoutActions.test.ts",
+      "tests/e2e/shop-post-checkout-actions.spec.ts"
+    ]
+  }
+}

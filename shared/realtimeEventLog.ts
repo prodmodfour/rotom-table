@@ -6,6 +6,7 @@ import {
   parseLivePlayOpId,
 } from './livePlayCommands'
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
+import { parsePlayerProfileId, type PlayerProfileId } from './playerProfiles'
 import type { RealtimeEvent } from './realtime'
 import {
   parseBreedingRealtimeEventAccess,
@@ -39,6 +40,10 @@ export type RealtimeEventAccess =
       readonly mapSlug: string
       readonly resolutionId: string
       readonly windowId: string
+    }
+  | {
+      readonly kind: 'player-profile-access'
+      readonly profileId: PlayerProfileId
     }
   | BreedingRealtimeEventAccess
 
@@ -460,11 +465,19 @@ export const parseRealtimeEventAccess = (value: unknown, label = 'access'): Real
     }
   }
 
+  if (access.kind === 'player-profile-access') {
+    assertOnlyKeys(access, ['kind', 'profileId'], label)
+    return {
+      kind: 'player-profile-access',
+      profileId: parsePlayerProfileId(access.profileId, `${label}.profileId`),
+    }
+  }
+
   if (access.kind === 'breeding-access') {
     return parseBreedingRealtimeEventAccess(access, label)
   }
 
-  throw new Error(`${label}.kind must be gm-only, map-access, sheet-access, group-inventory-access, shop-access, pending-move-response-access, or breeding-access`)
+  throw new Error(`${label}.kind must be gm-only, map-access, sheet-access, group-inventory-access, shop-access, pending-move-response-access, player-profile-access, or breeding-access`)
 }
 
 export const parseRealtimeEventDraft = <TData = unknown>(value: unknown): RealtimeEventDraft<TData> => {

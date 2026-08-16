@@ -1,3 +1,8 @@
+import {
+  parseSerializedEquipmentInventoryState,
+  parseSheetEquipmentStateForOwner,
+  TRAINER_EQUIPMENT_SLOT_IDS,
+} from '#shared/itemAutomation/equipment'
 import { isSlug } from '#shared/paths'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { moveItemEffectBindingId } from '#shared/moveAutomation/itemEffects'
@@ -16,9 +21,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { InventoryEntry, TrainerSheet } from '~/types/trainerSheet'
-import { splitSheetItemNames } from '~/utils/sheetItemNames'
 import { deepCloneJson } from '~/utils/serialization'
-import { TRAINER_EQUIPMENT_SLOTS } from '~/utils/sheets/trainerInventorySections'
 import {
   MOVE_ITEM_MUTATION_LIMITS,
   type MoveConsumedItemRecord,
@@ -426,6 +429,10 @@ const quantityForInventoryEntry = (
   entry: InventoryEntry,
   section: MoveItemTrainerInventorySection,
 ): number | null => {
+  if (entry.serializedEquipment !== undefined) {
+    parseSerializedEquipmentInventoryState(entry.serializedEquipment)
+    return 1
+  }
   if (section === 'equipment') return 1
   return Number.isSafeInteger(entry.qty) && Number(entry.qty) > 0
     ? Number(entry.qty)
@@ -454,54 +461,53 @@ export const authoritativeEquippedItemReferences = (
   placement: SheetPlacement,
   sheet: CharacterSheet | TrainerSheet,
 ): readonly MoveItemReference[] => {
+  if (sheet.equipmentState === undefined) return []
   const revision = normalizeRevision(sheet.revision)
-  if (placement.sheetKind === 'pokemon') {
-    return splitSheetItemNames((sheet as CharacterSheet).items?.held).flatMap((name, index) => {
-      const canonical = canonicalItemIdentity(name)
-      if (!canonical) return []
-      const reference = itemReference({
-        schemaVersion: 1,
-        kind: 'pokemon-held',
-        itemId: `held:${index + 1}`,
-        canonicalItemId: canonical.id,
-        owner: {
-          kind: 'sheet',
-          sheetKind: 'pokemon',
-          slug: placement.sheetSlug,
-          revision,
-        },
-        quantity: 1,
-        stack: 'singleton',
-        equip: 'pokemon-held',
-      })
-      return reference ? [reference] : []
-    })
-  }
-
-  const trainer = sheet as TrainerSheet
-  return TRAINER_EQUIPMENT_SLOTS.flatMap(({ key: slot }) => (
-    splitSheetItemNames(trainer.equipmentSlots?.[slot]).flatMap((name, index) => {
-      const canonical = canonicalItemIdentity(name)
-      if (!canonical) return []
-      const reference = itemReference({
-        schemaVersion: 1,
-        kind: 'trainer-equipment-slot',
-        itemId: `slot:${slot}:${index + 1}`,
-        canonicalItemId: canonical.id,
-        owner: {
-          kind: 'sheet',
-          sheetKind: 'trainer',
-          slug: placement.sheetSlug,
-          revision,
-        },
-        slot,
-        quantity: 1,
-        stack: 'singleton',
-        equip: 'trainer-slot',
-      })
-      return reference ? [reference] : []
-    })
-  ))
+  const state = parseSheetEquipmentStateForOwner(sheet.equipmentState, {
+    kind: placement.sheetKind,
+    slug: placement.sheetSlug,
+  })
+  return state.instances.flatMap((instance): readonly MoveItemReference[] => {
+    if (instance.activity.status !== 'active') return []
+    const canonical = canonicalItemIdentity(instance.canonicalItemId)
+    if (!canonical) return []
+    const configuredTypeId = instance.configuration?.configurationId === 'equipment.type-plate.v1'
+      && typeof instance.configuration.values.typeId === 'string'
+      ? instance.configuration.values.typeId
+      : null
+    const configuredIdentity = canonical.id === 'type-plate' && configuredTypeId
+      ? canonicalItemIdentity(`${configuredTypeId}-type-plate`)
+      : null
+    const equippedCanonicalItemId = configuredIdentity?.id ?? canonical.id
+    const slots = state.slots.filter(slot => slot.instanceId === instance.instanceId).map(slot => slot.slotId)
+    if (slots.length === 0) return []
+    const trainerSlot = TRAINER_EQUIPMENT_SLOT_IDS.find(slot => slots.includes(slot))
+    const reference = itemReference(placement.sheetKind === 'pokemon' ? {
+      schemaVersion: 1,
+      kind: 'pokemon-held',
+      itemId: instance.instanceId,
+      canonicalItemId: equippedCanonicalItemId,
+      owner: {
+        kind: 'sheet', sheetKind: 'pokemon', slug: placement.sheetSlug, revision,
+      },
+      quantity: 1,
+      stack: 'singleton',
+      equip: 'pokemon-held',
+    } : trainerSlot ? {
+      schemaVersion: 1,
+      kind: 'trainer-equipment-slot',
+      itemId: instance.instanceId,
+      canonicalItemId: equippedCanonicalItemId,
+      owner: {
+        kind: 'sheet', sheetKind: 'trainer', slug: placement.sheetSlug, revision,
+      },
+      slot: trainerSlot,
+      quantity: 1,
+      stack: 'singleton',
+      equip: 'trainer-slot',
+    } : null)
+    return reference ? [reference] : []
+  })
 }
 
 const trainerInventoryReferences = (
@@ -511,9 +517,13 @@ const trainerInventoryReferences = (
   sections: readonly MoveItemTrainerInventorySection[],
 ): readonly MoveItemReference[] => sections.flatMap(section => (
   (sheet.inventory?.[section] ?? []).flatMap((entry, index) => {
-    const canonical = canonicalItemIdentity(entry.name)
+    const serialized = entry.serializedEquipment === undefined
+      ? null
+      : parseSerializedEquipmentInventoryState(entry.serializedEquipment)
+    const canonical = canonicalItemIdentity(serialized?.canonicalItemId ?? entry.name)
+    const displayCanonical = canonicalItemIdentity(entry.name)
     const quantity = quantityForInventoryEntry(entry, section)
-    if (!canonical || quantity === null) return []
+    if (!canonical || !displayCanonical || canonical.id !== displayCanonical.id || quantity === null) return []
     const storedId: unknown = entry.id
     const itemId = typeof storedId === 'string' && storedId.trim()
       ? storedId.trim()
@@ -531,7 +541,7 @@ const trainerInventoryReferences = (
       },
       section,
       quantity,
-      stack: section === 'equipment' ? 'singleton' : 'stackable',
+      stack: section === 'equipment' || serialized ? 'singleton' : 'stackable',
       equip: 'unequipped',
     })
     return reference ? [reference] : []
@@ -543,9 +553,13 @@ const groupInventoryReferences = (
   sections: readonly MoveItemTrainerInventorySection[],
 ): readonly MoveItemReference[] => sections.flatMap(section => (
   groupInventory.inventory[section].flatMap((entry) => {
-    const canonical = canonicalItemIdentity(entry.name)
+    const serialized = entry.serializedEquipment === undefined
+      ? null
+      : parseSerializedEquipmentInventoryState(entry.serializedEquipment)
+    const canonical = canonicalItemIdentity(serialized?.canonicalItemId ?? entry.name)
+    const displayCanonical = canonicalItemIdentity(entry.name)
     const quantity = quantityForInventoryEntry(entry, section)
-    if (!canonical || quantity === null) return []
+    if (!canonical || !displayCanonical || canonical.id !== displayCanonical.id || quantity === null) return []
     const reference = itemReference({
       schemaVersion: 1,
       kind: 'group-inventory-row',
@@ -558,7 +572,7 @@ const groupInventoryReferences = (
       },
       section,
       quantity,
-      stack: section === 'equipment' ? 'singleton' : 'stackable',
+      stack: section === 'equipment' || serialized ? 'singleton' : 'stackable',
       equip: 'unequipped',
     })
     return reference ? [reference] : []
@@ -699,6 +713,21 @@ export const resolveAuthoritativeMoveItemResources = (
   const candidates: AuthoritativeMoveItemCandidate[] = []
   const sheetReads: AuthoritativeMoveItemSheetRead[] = []
   const groupInventoryReads: AuthoritativeMoveGroupInventoryRead[] = []
+  const formChangeRemovalLockedInstanceIds = (placement: SheetPlacement): ReadonlySet<string> => {
+    const sceneStartedAt = input.map.activeScene?.startedAt ?? null
+    return new Set((input.map.encounterState?.itemFormChanges?.entries ?? []).flatMap((entry) => {
+      const active = entry.duration.kind === 'persistent'
+        || (sceneStartedAt !== null && entry.duration.sceneStartedAt === sceneStartedAt)
+      if (!active) return []
+      if (placement.sheetKind === 'pokemon'
+        && entry.placementId === placement.id
+        && entry.pokemonSheetSlug === placement.sheetSlug
+        && entry.stoneInstanceId) return [entry.stoneInstanceId]
+      if (placement.sheetKind === 'trainer'
+        && entry.trainerSheetSlug === placement.sheetSlug) return [entry.ringInstanceId]
+      return []
+    }))
+  }
 
   const addSheet = (
     requirement: AuthoritativeMoveItemResourceRequirement,
@@ -713,7 +742,10 @@ export const resolveAuthoritativeMoveItemResources = (
     const revision = normalizeRevision(sheet.revision)
     sheetReads.push({ kind: placement.sheetKind, slug: placement.sheetSlug, revision })
     const references = mode === 'equipped'
+      // Mega Stones (and the supporting Ring in Trainer-targeting paths) are
+      // not legal removal/transfer choices while their accepted form is active.
       ? authoritativeEquippedItemReferences(placement, sheet)
+          .filter(reference => !formChangeRemovalLockedInstanceIds(placement).has(reference.itemId))
       : placement.sheetKind === 'trainer'
         ? trainerInventoryReferences(
             placement.sheetSlug,

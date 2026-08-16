@@ -424,6 +424,34 @@
       "migrationStatus": "generic-contract"
     },
     {
+      "inventoryId": "live-play:endEncounter",
+      "wireType": "endEncounter",
+      "constant": "END_ENCOUNTER",
+      "sourceKind": "token",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
+      "inventoryId": "live-play:dismissEncounterEffect",
+      "wireType": "dismissEncounterEffect",
+      "constant": "DISMISS_ENCOUNTER_EFFECT",
+      "sourceKind": "token",
+      "interactionRoles": [
+        "activated-action"
+      ],
+      "genericActionId": "token.manage",
+      "authorityPath": "authoritative-live-play-command",
+      "acceptedAdapter": "acceptedEncounterPresentationFromLivePlayCommand",
+      "snapshotProjection": "encounter-action-or-gm-management-surface",
+      "migrationStatus": "generic-contract"
+    },
+    {
       "inventoryId": "live-play:updateAttackOfOpportunity",
       "wireType": "updateAttackOfOpportunity",
       "constant": "UPDATE_ATTACK_OF_OPPORTUNITY",

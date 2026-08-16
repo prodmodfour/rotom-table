@@ -7,11 +7,13 @@ import {
   type EncounterEventKind,
 } from '#shared/moveAutomation/events'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
 import {
   ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID,
   ENCOUNTER_EXHAUST_COMMAND_FLAG_ID,
   ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID,
+  ITEM_RESTORATIVE_NEXT_TURN_FLAG_ID,
   ENCOUNTER_PRIORITY_ADVANCED_NEXT_TURN_FLAG_ID,
   EncounterResourceReductionError,
   clearEncounterSetupExecuteState,
@@ -353,6 +355,27 @@ describe('authoritative encounter action resources', () => {
     )])
     expect(createMoveAutomationResourceResolver(sentOut.state.turnResources)
       .actedSinceEntry('actor-token')).toBe(false)
+  })
+
+  it('consumes restorative-item Standard and Shift forfeiture at the next authoritative turn', () => {
+    const ledger = createEncounterTurnResourceLedger({ placementId: 'actor-token', round: 1, turn: 1 })
+    const nextTurn = reduceEncounterLifecycle({
+      ...createEmptyEncounterState(),
+      turnResources: {
+        'actor-token': {
+          ...ledger,
+          oncePerTurnFlags: [{
+            id: ITEM_RESTORATIVE_NEXT_TURN_FLAG_ID,
+            sourceOperationId: 'item-operation:fixture',
+            resetOn: ['turn-start' as const],
+          }],
+        },
+      },
+    }, [turnStart(2, 5)])
+    const queries = createMoveAutomationResourceResolver(nextTurn.state.turnResources)
+    expect(queries.actionSpent('actor-token', 'standard')).toBe(1)
+    expect(queries.actionSpent('actor-token', 'shift')).toBe(1)
+    expect(queries.hasOncePerTurnFlag('actor-token', ITEM_RESTORATIVE_NEXT_TURN_FLAG_ID)).toBe(false)
   })
 
   it('schedules Exhaust and advanced Priority forfeits at the next authoritative turn', () => {

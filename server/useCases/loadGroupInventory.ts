@@ -8,9 +8,11 @@ import {
   sqliteGroupInventoryRepository,
   type GroupInventoryRepository,
 } from '../storage/groupInventoryRepository'
+import { canAccessGroupInventoryForRole } from '../policies/groupInventoryAccessPolicy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { projectGroupInventoryForPlayer } from '../utils/groupInventoryPrivacy'
 
-export class LoadGroupInventoryUseCaseError extends UseCaseHttpError<400> {}
+export class LoadGroupInventoryUseCaseError extends UseCaseHttpError<400 | 404> {}
 
 export interface LoadGroupInventoryInput {
   readonly role: AuthRole
@@ -40,6 +42,10 @@ export const loadGroupInventoryUseCase = (
 ): GroupInventoryDocument => {
   const groupInventoryRepository = dependencies.groupInventoryRepository ?? sqliteGroupInventoryRepository
   const slug = normalizeLoadGroupInventorySlug(input.slug)
+  if (!canAccessGroupInventoryForRole(input.role, slug)) {
+    throw new LoadGroupInventoryUseCaseError(404, 'Group inventory was not found.')
+  }
 
-  return groupInventoryRepository.getOrCreate({ slug }).document
+  const document = groupInventoryRepository.getOrCreate({ slug }).document
+  return input.role === 'player' ? projectGroupInventoryForPlayer(document) : document
 }

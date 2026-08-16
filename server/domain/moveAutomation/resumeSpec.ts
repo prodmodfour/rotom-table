@@ -88,6 +88,7 @@ import {
 } from '../abilityAutomation/mechanics/aa068StaticIntegration'
 import { AA068_DUST_CLOUD_BURST_BRANCH_ID } from '#shared/abilityAutomation/mechanics'
 import { resolveMoveSpecTargetingRule } from './targetingBranches'
+import { equipmentTypeGemActivationDescriptors } from './equipmentProviderMechanics'
 import {
   AA078_LONG_REACH_TARGETING_OVERRIDE,
   aa078LongReachSelected,
@@ -513,6 +514,9 @@ export const resumeMoveSpec = (
             }
           : {}),
       serverAbilityOverlayOperations: [
+        ...equipmentTypeGemActivationDescriptors({
+          context, script: entry.script, moveSourceId,
+        }).flatMap(entry => entry.operations),
         ...aa060TriggeredMoveOverlayOperations({
           context, script: entry.script, moveSourceId, authoritativeTargetIds,
         }),

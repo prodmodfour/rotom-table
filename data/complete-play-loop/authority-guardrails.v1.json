@@ -1,0 +1,584 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-094",
+  "status": "enforced",
+  "runtimeProseParsing": false,
+  "reviewedAuthoritySha256": "bf58791c9ef371141dff174ede58ece6218f6046e8b392bbee8dc3acab5833f5",
+  "catalog": {
+    "path": "data/reference/items.json",
+    "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+    "itemCount": 348,
+    "registeredExactlyOnce": true,
+    "blockedCount": 0
+  },
+  "cohortRegistryEvidence": {
+    "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+    "sha256": "be82c8f9975056f894bf9b8cf78780869afcd71ef7f2bccfbe0cae88adaac1a0"
+  },
+  "providerAuthorities": {
+    "machine-move": {
+      "memberCount": 106,
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "server/domain/itemAutomation/moveLearning.ts",
+          "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d"
+        },
+        {
+          "path": "server/useCases/manageItemExtendedAction.ts",
+          "sha256": "c702601553ed4bf20314d488cb6acfa125b536255463b36091c71be6f77b23d2"
+        }
+      ]
+    },
+    "evolution": {
+      "memberCount": 24,
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "server/domain/itemAutomation/evolution.ts",
+          "sha256": "be082b324180fcb567ce876608b30f6de5a7a85b79ae48ae160576cde89e6b51"
+        },
+        {
+          "path": "server/useCases/executeItemOperation.ts",
+          "sha256": "0d92d6d2cce3c391e47cd7be4956a41d61e641f69aa32043b882da22e062761a"
+        }
+      ]
+    },
+    "permanent-advancement": {
+      "memberCount": 10,
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "server/domain/itemAutomation/permanentAdvancement.ts",
+          "sha256": "dd9fde87ad0942699823cc5e7ac5ca586ff211b82de481554225b0bf13defc83"
+        },
+        {
+          "path": "server/useCases/manageItemExtendedAction.ts",
+          "sha256": "c702601553ed4bf20314d488cb6acfa125b536255463b36091c71be6f77b23d2"
+        }
+      ]
+    },
+    "exploration": {
+      "memberCount": 7,
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "server/domain/itemAutomation/exploration.ts",
+          "sha256": "83e0123d2ed83e738ceccebd96331d38b6dde2427880ea88f5d6cb29ea801d3f"
+        },
+        {
+          "path": "server/useCases/executeItemExplorationOperation.ts",
+          "sha256": "db6b0f9a93c8eaf871de4c468f6ac17eab0823a78977d0d12fa83468d4b2c377"
+        }
+      ]
+    },
+    "breeding": {
+      "memberCount": 3,
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "server/domain/breeding/itemWorkflows.ts",
+          "sha256": "ddf1bcf3e023e6b398082b37cb28d94b7058476952b34bad9f3c7ba54e9a7b33"
+        },
+        {
+          "path": "server/useCases/manageItemBreedingWorkflows.ts",
+          "sha256": "f22d8351c9dbd622bb9c6d7a27a5f4af0e902e1473b1806e16a1ec2454d2df57"
+        }
+      ]
+    },
+    "guided-adjudication": {
+      "memberCount": 6,
+      "implementationState": "guided",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "server/domain/itemAutomation/guidedAdjudication.ts",
+          "sha256": "6dcd019ef9656fc8048566e2017ec580a1acb290ec7bb6e0f7c6f31fb0c92e5e"
+        },
+        {
+          "path": "server/useCases/manageItemGuidedAdjudication.ts",
+          "sha256": "2eb9819ff1ab99b1b2c58f800ced38d3c5f030f0401e60fbe224d03c7099b563"
+        }
+      ]
+    },
+    "equipment": {
+      "memberCount": 104,
+      "implementationState": "passive",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "server/domain/itemAutomation/equipmentDefinitionRegistry.ts",
+          "sha256": "453f5e9fe8e815e174321a46b9e549a1510ae89f2c167d2be3304260426ea76e"
+        },
+        {
+          "path": "server/useCases/executeEquipmentOperation.ts",
+          "sha256": "f81fdc0c15ccac5bd4c4611b0592330cd39ddc572b8b25e0e47aba49c8c402c0"
+        }
+      ]
+    },
+    "core-item-spec": {
+      "memberCount": 29,
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "server/domain/itemAutomation/registry.ts",
+          "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+        },
+        {
+          "path": "server/domain/itemAutomation/planner.ts",
+          "sha256": "0285852cae636700e473452beec6aa58f6ea3f5acff853c04adc658917f863d2"
+        },
+        {
+          "path": "server/domain/itemAutomation/reducer.ts",
+          "sha256": "bbd5fa95f4f5d1a73717cd2769021c8044b5c2cff19c9afea06da3722327b6e4"
+        }
+      ]
+    },
+    "capture": {
+      "memberCount": 25,
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "data/complete-play-loop/capture-pokeballs.v1.json",
+          "sha256": "0fb778b5e67ef36e28d4c18c7ca6ea7c3dc4ad716604c876e58684970410ae10"
+        },
+        {
+          "path": "server/useCases/applyThrowPokeballCommand.ts",
+          "sha256": "30f2e7987b316e2812bc0d4be81ddcc029c92ccc80ba3f0249cdfd80c23534b9"
+        }
+      ]
+    },
+    "interpretive-campaign-tool": {
+      "memberCount": 34,
+      "implementationState": "guided",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "data/complete-play-loop/guided-catalog-items.v1.json",
+          "sha256": "8e669d3a49f235d464b933ac86638f291b7dbf08981899236c059129c1b7602e"
+        },
+        {
+          "path": "server/useCases/manageItemGuidedAdjudication.ts",
+          "sha256": "2eb9819ff1ab99b1b2c58f800ced38d3c5f030f0401e60fbe224d03c7099b563"
+        }
+      ]
+    },
+    "canonical-data-defect": {
+      "memberCount": 0,
+      "implementationState": "blocked",
+      "allowZeroMembers": true,
+      "ownerEvidence": [
+        {
+          "path": "scripts/migrate_black_sludge_acquisition_cost.py",
+          "sha256": "71653c4daff908861590e8fdbc047cfc12fd21856f396b8b91a92c9cf4c4b2a6"
+        },
+        {
+          "path": "scripts/reviewed-data/black-sludge-acquisition-cost.v1.json",
+          "sha256": "a37cf5969dc102007e12b9aae81d3144c9b12aaa0b06e8413820919a67d1d5d5"
+        }
+      ]
+    }
+  },
+  "handlerAuthorities": {
+    "item.native.v1": {
+      "assignmentCount": 1,
+      "implementationState": "native",
+      "ownerEvidence": [
+        {
+          "path": "server/domain/itemAutomation/planner.ts",
+          "sha256": "0285852cae636700e473452beec6aa58f6ea3f5acff853c04adc658917f863d2"
+        },
+        {
+          "path": "server/domain/itemAutomation/reducer.ts",
+          "sha256": "bbd5fa95f4f5d1a73717cd2769021c8044b5c2cff19c9afea06da3722327b6e4"
+        }
+      ]
+    },
+    "item.guided.v1": {
+      "assignmentCount": 2,
+      "implementationState": "guided",
+      "ownerEvidence": [
+        {
+          "path": "server/domain/itemAutomation/guidedAdjudication.ts",
+          "sha256": "6dcd019ef9656fc8048566e2017ec580a1acb290ec7bb6e0f7c6f31fb0c92e5e"
+        },
+        {
+          "path": "server/useCases/manageItemGuidedAdjudication.ts",
+          "sha256": "2eb9819ff1ab99b1b2c58f800ced38d3c5f030f0401e60fbe224d03c7099b563"
+        }
+      ]
+    }
+  },
+  "mechanicalAuthoritySymbols": [
+    {
+      "symbol": "resolvePokeballCaptureAttempt",
+      "declarationEvidence": {
+        "path": "src/utils/pokeballCapture.ts",
+        "sha256": "0a307591d48619ef0ef36c217242366c270149d4724ca6d07405e2918dcdc373"
+      },
+      "callerEvidence": [
+        {
+          "path": "server/useCases/applyThrowPokeballCommand.ts",
+          "sha256": "30f2e7987b316e2812bc0d4be81ddcc029c92ccc80ba3f0249cdfd80c23534b9"
+        }
+      ]
+    },
+    {
+      "symbol": "planDeterministicItemOperation",
+      "declarationEvidence": {
+        "path": "server/domain/itemAutomation/planner.ts",
+        "sha256": "0285852cae636700e473452beec6aa58f6ea3f5acff853c04adc658917f863d2"
+      },
+      "callerEvidence": [
+        {
+          "path": "server/useCases/executeItemOperation.ts",
+          "sha256": "0d92d6d2cce3c391e47cd7be4956a41d61e641f69aa32043b882da22e062761a"
+        },
+        {
+          "path": "server/useCases/resumeItemOperation.ts",
+          "sha256": "824b7315ca30de1add972b0e1cffd2b746cfa604384813ddc92e39a246e9a947"
+        }
+      ]
+    },
+    {
+      "symbol": "reduceItemOperationPlan",
+      "declarationEvidence": {
+        "path": "server/domain/itemAutomation/reducer.ts",
+        "sha256": "bbd5fa95f4f5d1a73717cd2769021c8044b5c2cff19c9afea06da3722327b6e4"
+      },
+      "callerEvidence": [
+        {
+          "path": "server/useCases/executeItemOperation.ts",
+          "sha256": "0d92d6d2cce3c391e47cd7be4956a41d61e641f69aa32043b882da22e062761a"
+        },
+        {
+          "path": "server/useCases/resumeItemOperation.ts",
+          "sha256": "824b7315ca30de1add972b0e1cffd2b746cfa604384813ddc92e39a246e9a947"
+        }
+      ]
+    },
+    {
+      "symbol": "executeItemOperationUseCase",
+      "declarationEvidence": {
+        "path": "server/useCases/executeItemOperation.ts",
+        "sha256": "0d92d6d2cce3c391e47cd7be4956a41d61e641f69aa32043b882da22e062761a"
+      },
+      "callerEvidence": [
+        {
+          "path": "server/api/items/use.post.ts",
+          "sha256": "1e9bc3d109fa30eea392ccf532272d767e5e9ab98a0b8d86a816d10facc289d8"
+        },
+        {
+          "path": "server/useCases/manageItemExtendedAction.ts",
+          "sha256": "c702601553ed4bf20314d488cb6acfa125b536255463b36091c71be6f77b23d2"
+        }
+      ]
+    },
+    {
+      "symbol": "executeEquipmentOperation",
+      "declarationEvidence": {
+        "path": "server/useCases/executeEquipmentOperation.ts",
+        "sha256": "f81fdc0c15ccac5bd4c4611b0592330cd39ddc572b8b25e0e47aba49c8c402c0"
+      },
+      "callerEvidence": [
+        {
+          "path": "server/api/equipment/operations.post.ts",
+          "sha256": "73a2f22715da82c85a0b65076ece3892b640afb98c8bb061a8a2630371e6a9bc"
+        },
+        {
+          "path": "server/useCases/executeTrainerInventoryAction.ts",
+          "sha256": "51692afd170945df0159b5a4f1fe2ac862a56dbbf29b1b9f344b9cad6dd70b32"
+        }
+      ]
+    },
+    {
+      "symbol": "executeItemExplorationOperationUseCase",
+      "declarationEvidence": {
+        "path": "server/useCases/executeItemExplorationOperation.ts",
+        "sha256": "db6b0f9a93c8eaf871de4c468f6ac17eab0823a78977d0d12fa83468d4b2c377"
+      },
+      "callerEvidence": [
+        {
+          "path": "server/api/items/exploration.post.ts",
+          "sha256": "b2a47da5424659ce8ac828ba42bd86c9d2a87b41b643f58949b69c9d030a83cf"
+        }
+      ]
+    },
+    {
+      "symbol": "manageItemGuidedAdjudicationUseCase",
+      "declarationEvidence": {
+        "path": "server/useCases/manageItemGuidedAdjudication.ts",
+        "sha256": "2eb9819ff1ab99b1b2c58f800ced38d3c5f030f0401e60fbe224d03c7099b563"
+      },
+      "callerEvidence": [
+        {
+          "path": "server/api/items/guided.post.ts",
+          "sha256": "a17360951d8094676dac5923b3934ffe8a2d48661deb4c2025835de04c309a56"
+        }
+      ]
+    },
+    {
+      "symbol": "commitEncounterSettlement",
+      "declarationEvidence": {
+        "path": "server/useCases/commitEncounterSettlement.ts",
+        "sha256": "346f45b5e0e309a6b2f3b752ea68baf8c5d5e34faf019e04e3197dba6a4968c7"
+      },
+      "callerEvidence": [
+        {
+          "path": "server/useCases/finishEncounter.ts",
+          "sha256": "15c9d0964279f92b5a3f1601e75f43b08952b6d3b627ae47d2864f70a132b206"
+        }
+      ]
+    }
+  ],
+  "clientAuthority": {
+    "filesChecked": 995,
+    "serverImports": 0,
+    "mechanicalMutationCallbacks": 0,
+    "commandOnly": true
+  },
+  "inventoryMutationAuthorities": {
+    "server/domain/abilityAutomation/mechanics/aa069Activated.ts": {
+      "assignmentCount": 1,
+      "kind": "pure-reducer",
+      "evidence": {
+        "path": "server/domain/abilityAutomation/mechanics/aa069Activated.ts",
+        "sha256": "70fb1ebba1e96bded7241259a1215869bde11da7f3bb5944ba70040772ebdab3"
+      }
+    },
+    "server/domain/itemAutomation/equipmentMigration.ts": {
+      "assignmentCount": 1,
+      "kind": "transaction-planned-migration",
+      "evidence": {
+        "path": "server/domain/itemAutomation/equipmentMigration.ts",
+        "sha256": "cdcf26e2cf1b39894e6ad6be73da877f21611510e12c1456ed250c5e674de200"
+      }
+    },
+    "server/domain/itemAutomation/exploration.ts": {
+      "assignmentCount": 1,
+      "kind": "pure-reducer",
+      "evidence": {
+        "path": "server/domain/itemAutomation/exploration.ts",
+        "sha256": "83e0123d2ed83e738ceccebd96331d38b6dde2427880ea88f5d6cb29ea801d3f"
+      }
+    },
+    "server/domain/itemAutomation/sourceInventory.ts": {
+      "assignmentCount": 1,
+      "kind": "pure-reducer",
+      "evidence": {
+        "path": "server/domain/itemAutomation/sourceInventory.ts",
+        "sha256": "298ce583c31a92b8573718a11176e13037ed2e2bee8a015e965237522298a43a"
+      }
+    },
+    "server/storage/groupInventoryRepository.ts": {
+      "assignmentCount": 2,
+      "kind": "transaction-repository",
+      "evidence": {
+        "path": "server/storage/groupInventoryRepository.ts",
+        "sha256": "dbc3c6f72c623df49b40894937848c836e30f5a9ec171518d548dbd6db6cd03f"
+      }
+    },
+    "server/storage/sheetRepository.ts": {
+      "assignmentCount": 1,
+      "kind": "transaction-repository",
+      "evidence": {
+        "path": "server/storage/sheetRepository.ts",
+        "sha256": "567a30835d31c93c4ca3b19ad4e7d73a088ed0ad5954de7c85dac8150bdcebdf"
+      }
+    },
+    "server/useCases/executeEquipmentOperation.ts": {
+      "assignmentCount": 1,
+      "kind": "transaction-use-case",
+      "evidence": {
+        "path": "server/useCases/executeEquipmentOperation.ts",
+        "sha256": "f81fdc0c15ccac5bd4c4611b0592330cd39ddc572b8b25e0e47aba49c8c402c0"
+      }
+    },
+    "server/utils/sheetPrivacy.ts": {
+      "assignmentCount": 1,
+      "kind": "projection-redaction",
+      "evidence": {
+        "path": "server/utils/sheetPrivacy.ts",
+        "sha256": "eb69e75ef232f6b6ed902679f8010710cfad6f21ad36ccec54a9977cb371c7ed"
+      }
+    }
+  },
+  "settlementFieldOwners": {
+    "schemaVersion": [
+      "document-model"
+    ],
+    "settlementId": [
+      "document-model",
+      "repository"
+    ],
+    "revision": [
+      "repository",
+      "atomic-commit"
+    ],
+    "status": [
+      "eligibility",
+      "atomic-commit"
+    ],
+    "encounter": [
+      "eligibility",
+      "consequence-snapshot"
+    ],
+    "participants": [
+      "eligibility",
+      "consequence-snapshot"
+    ],
+    "unresolvedGates": [
+      "eligibility",
+      "consequence-snapshot"
+    ],
+    "persistentConsequences": [
+      "consequence-snapshot",
+      "outcomes"
+    ],
+    "rewardPackage": [
+      "reward-package"
+    ],
+    "allocations": [
+      "experience",
+      "loot",
+      "capture"
+    ],
+    "temporaryCleanup": [
+      "cleanup"
+    ],
+    "decisions": [
+      "eligibility",
+      "outcomes"
+    ],
+    "receipts": [
+      "atomic-commit"
+    ],
+    "completion": [
+      "atomic-commit"
+    ],
+    "createdAtCampaignMinute": [
+      "document-model",
+      "repository"
+    ],
+    "updatedAtCampaignMinute": [
+      "repository",
+      "atomic-commit"
+    ]
+  },
+  "settlementProviderEvidence": {
+    "document-model": [
+      {
+        "path": "shared/encounterSettlement/document.ts",
+        "sha256": "bd6751d716f1b2f40552c95208141844b87da83453a0ea16610a0835b1bfb849"
+      }
+    ],
+    "repository": [
+      {
+        "path": "server/storage/encounterSettlementRepository.ts",
+        "sha256": "ba885a6bf1bebaeb977d93f51979e59b00c24f625538530f8098e240c399f57b"
+      }
+    ],
+    "eligibility": [
+      {
+        "path": "server/domain/encounterSettlement/eligibility.ts",
+        "sha256": "2196e0dff5f96c2f3d4ff7066c635dcfaef5bb728d1e31d647ff016b0a110248"
+      }
+    ],
+    "consequence-snapshot": [
+      {
+        "path": "server/domain/encounterSettlement/consequenceSnapshot.ts",
+        "sha256": "2d2d07d1582943e5d4ad9cce789521c5d6009b65ea284b31847841450109794d"
+      }
+    ],
+    "reward-package": [
+      {
+        "path": "server/domain/encounterSettlement/rewardPackage.ts",
+        "sha256": "fda6c7a6e00dfd7de7992f1d3e241a3b6c8053d4f16ca033a40e64d80dff87c7"
+      }
+    ],
+    "experience": [
+      {
+        "path": "server/domain/encounterSettlement/experienceAllocation.ts",
+        "sha256": "93ea291832c0f998e5cc27ae51a870303995720603a5fdd3334720ae0107b04e"
+      }
+    ],
+    "loot": [
+      {
+        "path": "server/domain/encounterSettlement/lootAllocation.ts",
+        "sha256": "cc0049761424ea8a817f0771f53bf781518ab4b4f87db3ab66d04c1a8c3ce368"
+      }
+    ],
+    "capture": [
+      {
+        "path": "server/domain/encounterSettlement/captureSettlement.ts",
+        "sha256": "11896b4a3741f08ef4e57e4b7d0a752a1bced0f44d3944303b09ecafd9c1375b"
+      }
+    ],
+    "outcomes": [
+      {
+        "path": "server/domain/encounterSettlement/outcomeSettlement.ts",
+        "sha256": "0182ed1ae0d19855df1ec16a4dd6c4606798ad5cb2088d926841c0414438c897"
+      }
+    ],
+    "cleanup": [
+      {
+        "path": "server/domain/encounterSettlement/temporaryCleanup.ts",
+        "sha256": "6eac234e8545a0b9d6f7836f003f312d811e92d1eaca3c3b00c4530f6f7c7881"
+      }
+    ],
+    "atomic-commit": [
+      {
+        "path": "server/domain/encounterSettlement/atomicCommit.ts",
+        "sha256": "d17b7ac75516cd504f441e51e2b743e51e51086dc0489c5ab7ac10c796f0e5fb"
+      },
+      {
+        "path": "server/useCases/commitEncounterSettlement.ts",
+        "sha256": "346f45b5e0e309a6b2f3b752ea68baf8c5d5e34faf019e04e3197dba6a4968c7"
+      }
+    ]
+  },
+  "sourceEvidence": [
+    {
+      "path": "scripts/generate_complete_play_loop_authority_guardrails.py",
+      "sha256": "b64c2f587d40ee03600110b17ca2adf4193f52aef07f7fac0d642c69ec90048d"
+    },
+    {
+      "path": "scripts/reviewed-data/complete-play-loop-authority-guardrails.v1.json",
+      "sha256": "bf58791c9ef371141dff174ede58ece6218f6046e8b392bbee8dc3acab5833f5"
+    },
+    {
+      "path": "shared/itemAutomation/spec.ts",
+      "sha256": "bc085124e229cafe4342f2194323c1651c5ed16a0f7b150a19aa9edf6b4363cb"
+    },
+    {
+      "path": "shared/encounterSettlement/document.ts",
+      "sha256": "bd6751d716f1b2f40552c95208141844b87da83453a0ea16610a0835b1bfb849"
+    }
+  ],
+  "certificationEvidence": [
+    {
+      "path": "tests/data/completePlayLoopAuthorityGuardrails.test.ts",
+      "sha256": "bafa41a3d6a411526ab56dd3aaaf4d01e6af3363ca4458794267e77b5150aaf9"
+    },
+    {
+      "path": "docs/complete-play-loop-authority-guardrails.md",
+      "sha256": "f1b84834ce310d79e55cea73495f9698a8ccf9913c3ff2d3400fe56775a50ed5"
+    },
+    {
+      "path": "package.json",
+      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+    }
+  ],
+  "completionEvidenceSha256": "15e9e50bf3ded59b9d8dbc4b3bc19653ac5cd95dc0ed433a77165fe2c2193407"
+}

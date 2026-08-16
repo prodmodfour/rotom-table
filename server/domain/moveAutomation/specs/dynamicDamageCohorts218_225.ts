@@ -26,7 +26,7 @@ import {
 export const MA_218_225_MOVE_NAMES = Object.freeze([
   'Arm Thrust', 'Autotomize', 'Barb Barrage', 'Barrage', 'Behemoth Bash', 'Behemoth Blade', 'Body Press', 'Bolt Beak',
   'Bone Rush', 'Bonemerang', 'Bullet Seed', 'Comet Punch', 'Double Hit', 'Double Iron Bash', 'Double Slap', 'Dragon Darts',
-  'Dual Chop', 'Dual Wingbeat', 'Dynamax Cannon', 'Echoed Voice', 'Electro Ball', 'Façade', 'Fishious Rend', 'Flail',
+  'Dual Chop', 'Dual Wingbeat', 'Dynamax Cannon', 'Echoed Voice', 'Electro Ball', 'Facade', 'Fishious Rend', 'Flail',
   'Fusion Bolt', 'Fusion Flare', 'Gear Grind', 'Grass Knot', 'Gyro Ball', 'Heavy Slam', 'Hex', 'Ice Ball',
   'Icicle Spear', 'Infernal Parade', 'Judgment', 'Low Kick', 'Payback', 'Punishment', 'Retaliate', 'Revelation Dance',
   'Reversal', 'Rock Blast', 'Round', 'Scale Shot', 'Secret Power', 'Smelling Salts', 'Spike Cannon', 'Stomping Tantrum',
@@ -207,7 +207,7 @@ export const AUTOTOMIZE_MOVE_SPEC = createReviewedMoveSpec({
 const dynamicDefinitions = [
   ['Behemoth Bash', 'behemoth-bash'], ['Behemoth Blade', 'behemoth-blade'], ['Bolt Beak', 'bolt-beak'],
   ['Dynamax Cannon', 'dynamax-cannon'], ['Echoed Voice', 'echoed-voice'], ['Electro Ball', 'electro-ball'],
-  ['Façade', 'facade'], ['Fishious Rend', 'fishious-rend'], ['Flail', 'flail'], ['Fusion Bolt', 'fusion-bolt'],
+  ['Facade', 'facade'], ['Fishious Rend', 'fishious-rend'], ['Flail', 'flail'], ['Fusion Bolt', 'fusion-bolt'],
   ['Fusion Flare', 'fusion-flare'], ['Grass Knot', 'grass-knot'], ['Gyro Ball', 'gyro-ball'], ['Heavy Slam', 'heavy-slam'],
   ['Hex', 'hex'], ['Ice Ball', 'ice-ball'], ['Infernal Parade', 'infernal-parade'], ['Low Kick', 'low-kick'],
   ['Payback', 'payback'], ['Punishment', 'punishment'], ['Retaliate', 'retaliate'], ['Revelation Dance', 'revelation-dance'],
@@ -232,7 +232,7 @@ export const BOLT_BEAK_MOVE_SPEC = DYNAMIC_SPECS['Bolt Beak']
 export const DYNAMAX_CANNON_MOVE_SPEC = DYNAMIC_SPECS['Dynamax Cannon']
 export const ECHOED_VOICE_MOVE_SPEC = DYNAMIC_SPECS['Echoed Voice']
 export const ELECTRO_BALL_MOVE_SPEC = DYNAMIC_SPECS['Electro Ball']
-export const FACADE_MOVE_SPEC = DYNAMIC_SPECS['Façade']
+export const FACADE_MOVE_SPEC = DYNAMIC_SPECS.Facade
 export const FISHIOUS_REND_MOVE_SPEC = DYNAMIC_SPECS['Fishious Rend']
 export const FLAIL_MOVE_SPEC = DYNAMIC_SPECS.Flail
 export const FUSION_BOLT_MOVE_SPEC = DYNAMIC_SPECS['Fusion Bolt']
@@ -380,7 +380,7 @@ const SPECS: Record<DynamicDamageCohort218225MoveName, MoveSpec> = {
   'Double Hit': DOUBLE_HIT_MOVE_SPEC, 'Double Iron Bash': DOUBLE_IRON_BASH_MOVE_SPEC, 'Double Slap': DOUBLE_SLAP_MOVE_SPEC,
   'Dragon Darts': DRAGON_DARTS_MOVE_SPEC, 'Dual Chop': DUAL_CHOP_MOVE_SPEC, 'Dual Wingbeat': DUAL_WINGBEAT_MOVE_SPEC,
   'Dynamax Cannon': DYNAMAX_CANNON_MOVE_SPEC, 'Echoed Voice': ECHOED_VOICE_MOVE_SPEC, 'Electro Ball': ELECTRO_BALL_MOVE_SPEC,
-  'Façade': FACADE_MOVE_SPEC, 'Fishious Rend': FISHIOUS_REND_MOVE_SPEC, Flail: FLAIL_MOVE_SPEC,
+  Facade: FACADE_MOVE_SPEC, 'Fishious Rend': FISHIOUS_REND_MOVE_SPEC, Flail: FLAIL_MOVE_SPEC,
   'Fusion Bolt': FUSION_BOLT_MOVE_SPEC, 'Fusion Flare': FUSION_FLARE_MOVE_SPEC, 'Gear Grind': GEAR_GRIND_MOVE_SPEC,
   'Grass Knot': GRASS_KNOT_MOVE_SPEC, 'Gyro Ball': GYRO_BALL_MOVE_SPEC, 'Heavy Slam': HEAVY_SLAM_MOVE_SPEC,
   Hex: HEX_MOVE_SPEC, 'Ice Ball': ICE_BALL_MOVE_SPEC, 'Icicle Spear': ICICLE_SPEAR_MOVE_SPEC,

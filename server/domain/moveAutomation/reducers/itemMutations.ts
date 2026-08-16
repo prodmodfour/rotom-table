@@ -1,4 +1,12 @@
+import {
+  parseSheetEquipmentStateForOwner,
+  parseSerializedEquipmentInventoryState,
+  serializedEquipmentInventoryStateFromInstance,
+  type EquippedItemInstanceV1,
+  type EquipmentInventoryProvenanceV1,
+} from '#shared/itemAutomation/equipment'
 import { isOpId } from '#shared/sessionCommands'
+import { itemInventoryInstanceId } from '#shared/itemAutomation/inventory'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import {
   createEmptyEncounterState,
@@ -55,7 +63,6 @@ import type {
   MoveItemMutationOperationResult,
   MoveItemMutationResourceReduction,
   MoveItemMutationResourceScope,
-  MoveItemNonGroundDestination,
   MoveItemQuantityEffect,
   MoveItemQuantityPolicy,
   ReducedMoveItemMutations,
@@ -87,7 +94,7 @@ export interface ReduceMoveItemMutationsInput {
   readonly originOperationId: string
 }
 
-type ItemSheetField = 'items' | 'inventory' | 'equipmentSlots' | 'digestion' | 'abilityUsage' | 'berryStorage'
+type ItemSheetField = 'items' | 'inventory' | 'equipmentSlots' | 'equipmentState' | 'digestion' | 'abilityUsage' | 'berryStorage'
 type ItemDocument = CharacterSheet | TrainerSheet
 
 type ResourceTouch = {
@@ -104,6 +111,7 @@ interface ItemStack {
   readonly quantity: number
   readonly source: MoveItemReference
   readonly entry: InventoryEntry | null
+  readonly equippedInstance: EquippedItemInstanceV1 | null
 }
 
 interface RemovedItemStack {
@@ -449,6 +457,10 @@ const inventoryQuantity = (
   section: MoveItemInventoryDestination['section'],
   label: string,
 ): number => {
+  if (entry.serializedEquipment !== undefined) {
+    parseSerializedEquipmentInventoryState(entry.serializedEquipment)
+    return 1
+  }
   if (section === 'equipment') return 1
   return positiveQuantity(entry.qty, `${label}.qty`)
 }
@@ -458,12 +470,14 @@ const sourceStack = (input: {
   readonly canonicalName: string
   readonly quantity: number
   readonly entry?: InventoryEntry | null
+  readonly equippedInstance?: EquippedItemInstanceV1 | null
 }): ItemStack => ({
   canonicalItemId: input.reference.canonicalItemId,
   canonicalItemName: input.canonicalName,
   quantity: input.quantity,
   source: input.reference,
   entry: input.entry ? deepCloneJson(input.entry) : null,
+  equippedInstance: input.equippedInstance ? deepCloneJson(input.equippedInstance) : null,
 })
 
 const sourceMismatch = (
@@ -596,57 +610,101 @@ const removeItem = (input: {
   if (source.kind === 'pokemon-held') {
     const sheet = state.pokemonSheets.get(source.owner.slug)
       ?? fail('resource-missing', `Pokémon item sheet ${source.owner.slug} is unavailable.`)
-    const names = splitSheetItemNames(sheet.items?.held)
-    const index = names.findIndex((_name, candidateIndex) => source.itemId === `held:${candidateIndex + 1}`)
-    if (index < 0) fail('item-missing', `Held item ${source.itemId} was not found.`)
+    if (sheet.equipmentState === undefined) {
+      fail('item-missing', `Held item ${source.itemId} has no structured equipment authority.`)
+    }
+    const equipmentState = parseSheetEquipmentStateForOwner(sheet.equipmentState, {
+      kind: 'pokemon', slug: source.owner.slug,
+    })
+    const instance = equipmentState.instances.find(row => row.instanceId === source.itemId)
+      ?? fail('item-missing', `Held item ${source.itemId} was not found.`)
+    const assigned = equipmentState.slots.some(slot => (
+      (slot.slotId === 'held' || slot.slotId === 'held-secondary')
+      && slot.instanceId === source.itemId
+    ))
+    if (!assigned) fail('item-missing', `Held item ${source.itemId} was not assigned to a held slot.`)
     sourceMismatch(source, 1, `Held item ${source.itemId}`)
-    const canonicalName = assertCanonicalName(names[index], source.canonicalItemId, `Held item ${source.itemId}`)
-    const remaining = names.filter((_name, candidateIndex) => candidateIndex !== index)
+    if (canonicalItem(instance.canonicalItemId, `Held item ${source.itemId}`).id !== source.canonicalItemId) {
+      fail('item-mismatch', `Held item ${source.itemId} canonical identity changed.`)
+    }
+    const canonicalName = canonical.name
+    const remainingNames = splitSheetItemNames(sheet.items?.held)
+    const legacyIndex = remainingNames.findIndex(name => (
+      resolveMoveAutomationItemRuleIdentity(name)?.canonicalItemId === source.canonicalItemId
+    ))
+    if (legacyIndex >= 0) remainingNames.splice(legacyIndex, 1)
     const items = { ...(sheet.items ?? {}) }
-    if (remaining.length === 0) delete items.held
-    else items.held = remaining.join(', ')
-    setPokemonSheet(state, source.owner.slug, { ...sheet, items })
+    if (remainingNames.length === 0) delete items.held
+    else items.held = remainingNames.join(', ')
+    const nextEquipmentState = parseSheetEquipmentStateForOwner({
+      ...equipmentState,
+      revision: equipmentState.revision + 1,
+      slots: equipmentState.slots.map(slot => slot.instanceId === instance.instanceId
+        ? { ...slot, instanceId: null }
+        : slot),
+      instances: equipmentState.instances.filter(row => row.instanceId !== instance.instanceId),
+    }, { kind: 'pokemon', slug: source.owner.slug })
+    setPokemonSheet(state, source.owner.slug, { ...sheet, items, equipmentState: nextEquipmentState })
+    const serializedEquipment = serializedEquipmentInventoryStateFromInstance(instance, instance.revision + 1)
+    const resourceKey = touchResource({
+      state, owner: source.owner, operation, operationOrder, changedField: 'equipmentState',
+    })
+    touchResource({ state, owner: source.owner, operation, operationOrder, changedField: 'items' })
     return {
-      stack: sourceStack({ reference: source, canonicalName, quantity: 1 }),
-      resourceKey: touchResource({
-        state,
-        owner: source.owner,
-        operation,
-        operationOrder,
-        changedField: 'items',
+      stack: sourceStack({
+        reference: source,
+        canonicalName,
+        quantity: 1,
+        entry: { name: canonicalName, serializedEquipment },
+        equippedInstance: instance,
       }),
+      resourceKey,
     }
   }
 
   if (source.kind === 'trainer-equipment-slot') {
     const sheet = state.trainerSheets.get(source.owner.slug)
       ?? fail('resource-missing', `Trainer item sheet ${source.owner.slug} is unavailable.`)
-    const names = splitSheetItemNames(sheet.equipmentSlots?.[source.slot])
-    const prefix = `slot:${source.slot}:`
-    const index = names.findIndex((_name, candidateIndex) => (
-      source.itemId === `${prefix}${candidateIndex + 1}`
-    ))
-    if (index < 0) fail('item-missing', `Trainer equipped item ${source.itemId} was not found.`)
+    if (sheet.equipmentState === undefined) {
+      fail('item-missing', `Trainer equipped item ${source.itemId} has no structured equipment authority.`)
+    }
+    const equipmentState = parseSheetEquipmentStateForOwner(sheet.equipmentState, {
+      kind: 'trainer', slug: source.owner.slug,
+    })
+    const instance = equipmentState.instances.find(row => row.instanceId === source.itemId)
+      ?? fail('item-missing', `Trainer equipped item ${source.itemId} was not found.`)
+    const assigned = equipmentState.slots.some(slot => slot.slotId === source.slot && slot.instanceId === source.itemId)
+    if (!assigned) fail('item-missing', `Trainer equipped item ${source.itemId} was not assigned to ${source.slot}.`)
     sourceMismatch(source, 1, `Trainer equipped item ${source.itemId}`)
-    const canonicalName = assertCanonicalName(
-      names[index],
-      source.canonicalItemId,
-      `Trainer equipped item ${source.itemId}`,
-    )
-    const remaining = names.filter((_name, candidateIndex) => candidateIndex !== index)
+    if (canonicalItem(instance.canonicalItemId, `Trainer equipped item ${source.itemId}`).id !== source.canonicalItemId) {
+      fail('item-mismatch', `Trainer equipped item ${source.itemId} canonical identity changed.`)
+    }
+    const canonicalName = canonical.name
     const equipmentSlots = { ...(sheet.equipmentSlots ?? {}) }
-    if (remaining.length === 0) delete equipmentSlots[source.slot]
-    else equipmentSlots[source.slot] = remaining.join(', ')
-    setTrainerSheet(state, source.owner.slug, { ...sheet, equipmentSlots })
+    delete equipmentSlots[source.slot]
+    const nextEquipmentState = parseSheetEquipmentStateForOwner({
+      ...equipmentState,
+      revision: equipmentState.revision + 1,
+      slots: equipmentState.slots.map(slot => slot.instanceId === instance.instanceId
+        ? { ...slot, instanceId: null }
+        : slot),
+      instances: equipmentState.instances.filter(row => row.instanceId !== instance.instanceId),
+    }, { kind: 'trainer', slug: source.owner.slug })
+    setTrainerSheet(state, source.owner.slug, { ...sheet, equipmentSlots, equipmentState: nextEquipmentState })
+    const serializedEquipment = serializedEquipmentInventoryStateFromInstance(instance, instance.revision + 1)
+    const resourceKey = touchResource({
+      state, owner: source.owner, operation, operationOrder, changedField: 'equipmentState',
+    })
+    touchResource({ state, owner: source.owner, operation, operationOrder, changedField: 'equipmentSlots' })
     return {
-      stack: sourceStack({ reference: source, canonicalName, quantity: 1 }),
-      resourceKey: touchResource({
-        state,
-        owner: source.owner,
-        operation,
-        operationOrder,
-        changedField: 'equipmentSlots',
+      stack: sourceStack({
+        reference: source,
+        canonicalName,
+        quantity: 1,
+        entry: { name: canonicalName, serializedEquipment },
+        equippedInstance: instance,
       }),
+      resourceKey,
     }
   }
 
@@ -778,11 +836,29 @@ const removeItem = (input: {
     ...state.map,
     encounterState: parseEncounterState({ ...encounterState, groundItems }),
   }
+  const serializedEquipment = match.item.serializedEquipment
+  const equippedInstance = serializedEquipment && match.item.equipmentSource
+    ? {
+        instanceId: serializedEquipment.instanceId,
+        revision: serializedEquipment.revision,
+        canonicalItemId: serializedEquipment.canonicalItemId,
+        canonicalRecordSha256: serializedEquipment.canonicalRecordSha256,
+        equipmentDefinitionSha256: serializedEquipment.equipmentDefinitionSha256,
+        source: match.item.equipmentSource,
+        configuration: serializedEquipment.configuration,
+        serializedState: serializedEquipment.state,
+        activity: serializedEquipment.activity,
+        equippedByOperationId: match.item.sourceOperationId,
+        equippedAt: 0,
+      } satisfies EquippedItemInstanceV1
+    : null
   return {
     stack: sourceStack({
       reference: source,
       canonicalName: match.item.canonicalItemName,
       quantity,
+      entry: serializedEquipment ? { name: match.item.canonicalItemName, serializedEquipment } : null,
+      equippedInstance,
     }),
     resourceKey: touchResource({ state, owner: source.owner, operation, operationOrder }),
   }
@@ -798,7 +874,7 @@ const entryForDestination = (
   delete entry.id
   entry.name = stack.canonicalItemName
   entry.id = itemId
-  if (section !== 'equipment') entry.qty = stack.quantity
+  if (section !== 'equipment' && entry.serializedEquipment === undefined) entry.qty = stack.quantity
   return entry
 }
 
@@ -869,7 +945,8 @@ const addInventoryItem = (input: {
     if (existing) {
       const entry = rows[existing.index]!
       const existingCanonical = canonicalItem(entry.name, `Trainer destination ${destination.itemId}`)
-      if (existingCanonical.id !== stack.canonicalItemId || destination.section === 'equipment') {
+      if (existingCanonical.id !== stack.canonicalItemId || destination.section === 'equipment'
+        || entry.serializedEquipment !== undefined || stack.entry?.serializedEquipment !== undefined) {
         fail('destination-occupied', `Trainer item destination ${destination.itemId} is occupied.`)
       }
       const quantity = inventoryQuantity(
@@ -916,7 +993,8 @@ const addInventoryItem = (input: {
   if (existing) {
     const entry = rows[existing.index]!
     const existingCanonical = canonicalItem(entry.name, `Group destination ${destination.itemId}`)
-    if (existingCanonical.id !== stack.canonicalItemId || destination.section === 'equipment') {
+    if (existingCanonical.id !== stack.canonicalItemId || destination.section === 'equipment'
+      || entry.serializedEquipment !== undefined || stack.entry?.serializedEquipment !== undefined) {
       fail('destination-occupied', `Group item destination ${destination.itemId} is occupied.`)
     }
     const quantity = inventoryQuantity(
@@ -947,58 +1025,131 @@ const addEquippedItem = (input: {
   readonly stack: ItemStack
   readonly operation: MoveItemMutation
   readonly operationOrder: number
+  readonly originOperationId: string
 }): string => {
   const { state, destination, stack, operation, operationOrder } = input
   assertOwnerRevision(state, destination.owner)
   if (stack.quantity !== 1) {
     fail('invalid-quantity', `Operation ${operation.id} cannot equip more than one item.`)
   }
+  const serialized = stack.entry?.serializedEquipment === undefined
+    ? null
+    : parseSerializedEquipmentInventoryState(stack.entry.serializedEquipment)
+  const inventorySource = (() => {
+    const source = stack.source
+    if (source.kind !== 'trainer-inventory-row' && source.kind !== 'group-inventory-row') return null
+    const containerKind = source.kind === 'trainer-inventory-row' ? 'trainer' as const : 'group' as const
+    return {
+      kind: 'inventory' as const,
+      containerKind,
+      containerSlug: source.owner.slug,
+      section: source.section,
+      rowId: source.itemId,
+      sourceInstanceId: itemInventoryInstanceId({
+        containerKind, containerSlug: source.owner.slug, section: source.section, rowId: source.itemId,
+      }),
+      sourceRevision: source.owner.revision,
+      quantity: 1 as const,
+    } satisfies EquipmentInventoryProvenanceV1
+  })()
+  const nextInstance: EquippedItemInstanceV1 = stack.equippedInstance
+    ? { ...stack.equippedInstance, revision: stack.equippedInstance.revision + 1 }
+    : serialized && inventorySource
+      ? {
+          instanceId: serialized.instanceId,
+          revision: serialized.revision + 1,
+          canonicalItemId: serialized.canonicalItemId,
+          canonicalRecordSha256: serialized.canonicalRecordSha256,
+          equipmentDefinitionSha256: serialized.equipmentDefinitionSha256,
+          source: inventorySource,
+          configuration: serialized.configuration,
+          serializedState: serialized.state,
+          activity: serialized.activity,
+          equippedByOperationId: input.originOperationId,
+          equippedAt: 0,
+        }
+      : fail('unsupported-location', `Operation ${operation.id} cannot equip an item without serialized instance authority.`)
+  if (canonicalItem(nextInstance.canonicalItemId, `Operation ${operation.id} serialized equipment`).id !== stack.canonicalItemId) {
+    fail('item-mismatch', `Operation ${operation.id} serialized equipment identity changed.`)
+  }
+
   if (destination.kind === 'pokemon-held') {
     const sheet = state.pokemonSheets.get(destination.owner.slug)
       ?? fail('resource-missing', `Pokémon item sheet ${destination.owner.slug} is unavailable.`)
-    const heldItems = splitSheetItemNames(sheet.items?.held)
+    if (sheet.equipmentState === undefined) {
+      fail('resource-missing', `Pokémon ${destination.owner.slug} has no structured equipment authority.`)
+    }
+    const equipmentState = parseSheetEquipmentStateForOwner(sheet.equipmentState, {
+      kind: 'pokemon', slug: destination.owner.slug,
+    })
+    const heldSlots = equipmentState.slots.filter(slot => (
+      slot.slotId === 'held' || slot.slotId === 'held-secondary'
+    ))
     const capacity = aa067PokemonHeldItemCapacity({ map: state.map, sheet })
-    if (heldItems.length >= capacity) {
+    const heldSlot = heldSlots.find(slot => slot.instanceId === null)
+      ?? fail('destination-occupied', `Pokémon ${destination.owner.slug} has no open structured held-item slot.`)
+    if (heldSlots.filter(slot => slot.instanceId !== null).length >= capacity) {
       fail(
         'destination-occupied',
-        `Pokémon ${destination.owner.slug} already holds its maximum of ${capacity} item${capacity === 1 ? '' : 's'}.`,
+        `Pokémon ${destination.owner.slug} already holds its maximum structured item capacity.`,
       )
     }
+    if (equipmentState.instances.some(instance => instance.instanceId === nextInstance.instanceId)) {
+      fail('destination-conflict', `Equipment instance ${nextInstance.instanceId} is already assigned.`)
+    }
+    const nextEquipmentState = parseSheetEquipmentStateForOwner({
+      ...equipmentState,
+      revision: equipmentState.revision + 1,
+      slots: equipmentState.slots.map(slot => slot.slotId === heldSlot.slotId
+        ? { ...slot, instanceId: nextInstance.instanceId }
+        : slot),
+      instances: [...equipmentState.instances, nextInstance],
+    }, { kind: 'pokemon', slug: destination.owner.slug })
+    const heldItems = splitSheetItemNames(sheet.items?.held)
     setPokemonSheet(state, destination.owner.slug, {
       ...sheet,
       items: { ...(sheet.items ?? {}), held: [...heldItems, stack.canonicalItemName].join(', ') },
+      equipmentState: nextEquipmentState,
     })
-    return touchResource({
-      state,
-      owner: destination.owner,
-      operation,
-      operationOrder,
-      changedField: 'items',
+    const resourceKey = touchResource({
+      state, owner: destination.owner, operation, operationOrder, changedField: 'equipmentState',
     })
+    touchResource({ state, owner: destination.owner, operation, operationOrder, changedField: 'items' })
+    return resourceKey
   }
 
   const sheet = state.trainerSheets.get(destination.owner.slug)
     ?? fail('resource-missing', `Trainer item sheet ${destination.owner.slug} is unavailable.`)
-  if (splitSheetItemNames(sheet.equipmentSlots?.[destination.slot]).length > 0) {
-    fail(
-      'destination-occupied',
-      `Trainer ${destination.owner.slug} equipment slot ${destination.slot} is occupied.`,
-    )
+  if (sheet.equipmentState === undefined) {
+    fail('resource-missing', `Trainer ${destination.owner.slug} has no structured equipment authority.`)
   }
+  const equipmentState = parseSheetEquipmentStateForOwner(sheet.equipmentState, {
+    kind: 'trainer', slug: destination.owner.slug,
+  })
+  if (equipmentState.slots.find(slot => slot.slotId === destination.slot)?.instanceId !== null) {
+    fail('destination-occupied', `Trainer ${destination.owner.slug} equipment slot ${destination.slot} is occupied.`)
+  }
+  if (equipmentState.instances.some(instance => instance.instanceId === nextInstance.instanceId)) {
+    fail('destination-conflict', `Equipment instance ${nextInstance.instanceId} is already assigned.`)
+  }
+  const nextEquipmentState = parseSheetEquipmentStateForOwner({
+    ...equipmentState,
+    revision: equipmentState.revision + 1,
+    slots: equipmentState.slots.map(slot => slot.slotId === destination.slot
+      ? { ...slot, instanceId: nextInstance.instanceId }
+      : slot),
+    instances: [...equipmentState.instances, nextInstance],
+  }, { kind: 'trainer', slug: destination.owner.slug })
   setTrainerSheet(state, destination.owner.slug, {
     ...sheet,
-    equipmentSlots: {
-      ...(sheet.equipmentSlots ?? {}),
-      [destination.slot]: stack.canonicalItemName,
-    },
+    equipmentSlots: { ...(sheet.equipmentSlots ?? {}), [destination.slot]: stack.canonicalItemName },
+    equipmentState: nextEquipmentState,
   })
-  return touchResource({
-    state,
-    owner: destination.owner,
-    operation,
-    operationOrder,
-    changedField: 'equipmentSlots',
+  const resourceKey = touchResource({
+    state, owner: destination.owner, operation, operationOrder, changedField: 'equipmentState',
   })
+  touchResource({ state, owner: destination.owner, operation, operationOrder, changedField: 'equipmentSlots' })
+  return resourceKey
 }
 
 const addGroundItem = (input: {
@@ -1041,6 +1192,10 @@ const addGroundItem = (input: {
           sourceOperationId: input.originOperationId,
           sideId: destination.sideId,
           ownerPlacementId: destination.ownerPlacementId,
+          ...(stack.entry?.serializedEquipment && stack.equippedInstance ? {
+            serializedEquipment: stack.entry.serializedEquipment,
+            equipmentSource: stack.equippedInstance.source,
+          } : {}),
         },
       ],
     }),
@@ -1078,6 +1233,27 @@ const referenceLocationKey = (reference: MoveItemReference): string => {
   return `${owner}:ground:${reference.itemId}`
 }
 
+const sourceBacksActiveItemFormChange = (
+  map: TabletopMap,
+  reference: MoveItemReference,
+): boolean => {
+  if ((reference.kind !== 'pokemon-held' && reference.kind !== 'trainer-equipment-slot')
+    || reference.owner.kind !== 'sheet') return false
+  const sceneStartedAt = map.activeScene?.startedAt ?? null
+  return (map.encounterState?.itemFormChanges?.entries ?? []).some((entry) => {
+    const active = entry.duration.kind === 'persistent'
+      || (sceneStartedAt !== null && entry.duration.sceneStartedAt === sceneStartedAt)
+    if (!active) return false
+    return reference.kind === 'pokemon-held'
+      ? reference.owner.sheetKind === 'pokemon'
+        && reference.owner.slug === entry.pokemonSheetSlug
+        && reference.itemId === entry.stoneInstanceId
+      : reference.owner.sheetKind === 'trainer'
+        && reference.owner.slug === entry.trainerSheetSlug
+        && reference.itemId === entry.ringInstanceId
+  })
+}
+
 const destinationLocationKey = (destination: MoveItemDestination): string => {
   const owner = resourceKeyForOwner(destination.owner)
   if (destination.kind === 'pokemon-held') return `${owner}:held`
@@ -1104,7 +1280,14 @@ const assertSoleEquippedItem = (state: WorkingState, reference: MoveItemReferenc
   if (reference.kind === 'pokemon-held') {
     const sheet = state.pokemonSheets.get(reference.owner.slug)
       ?? fail('resource-missing', `Pokémon item sheet ${reference.owner.slug} is unavailable.`)
-    if (splitSheetItemNames(sheet.items?.held).length !== 1) {
+    const equipment = sheet.equipmentState === undefined ? null : parseSheetEquipmentStateForOwner(
+      sheet.equipmentState, { kind: 'pokemon', slug: reference.owner.slug },
+    )
+    if (!equipment || equipment.instances.length !== 1
+      || !equipment.slots.some(slot => (
+        (slot.slotId === 'held' || slot.slotId === 'held-secondary')
+        && slot.instanceId === reference.itemId
+      ))) {
       fail('unsupported-location', `Held item ${reference.itemId} is not the sole equipped item.`)
     }
     return
@@ -1112,7 +1295,10 @@ const assertSoleEquippedItem = (state: WorkingState, reference: MoveItemReferenc
   if (reference.kind === 'trainer-equipment-slot') {
     const sheet = state.trainerSheets.get(reference.owner.slug)
       ?? fail('resource-missing', `Trainer item sheet ${reference.owner.slug} is unavailable.`)
-    if (splitSheetItemNames(sheet.equipmentSlots?.[reference.slot]).length !== 1) {
+    const equipment = sheet.equipmentState === undefined ? null : parseSheetEquipmentStateForOwner(
+      sheet.equipmentState, { kind: 'trainer', slug: reference.owner.slug },
+    )
+    if (!equipment || equipment.slots.find(slot => slot.slotId === reference.slot)?.instanceId !== reference.itemId) {
       fail('unsupported-location', `Trainer item ${reference.itemId} is not the sole item in its slot.`)
     }
     return
@@ -1151,7 +1337,7 @@ const countInventory = (
     for (const entry of inventory[section] ?? []) {
       const item = resolveMoveAutomationItemRuleIdentity(entry.name)
       if (!item) continue
-      const quantity = section === 'equipment'
+      const quantity = section === 'equipment' || entry.serializedEquipment !== undefined
         ? 1
         : Number.isSafeInteger(entry.qty) && Number(entry.qty) > 0
           ? Number(entry.qty)
@@ -1164,11 +1350,25 @@ const countInventory = (
 const quantitySnapshot = (state: WorkingState): ReadonlyMap<string, number> => {
   const quantities = new Map<string, number>()
   for (const sheet of state.pokemonSheets.values()) {
-    countNamedItems(quantities, splitSheetItemNames(sheet.items?.held))
+    if (sheet.equipmentState === undefined) countNamedItems(quantities, splitSheetItemNames(sheet.items?.held))
+    else {
+      const equipment = parseSheetEquipmentStateForOwner(sheet.equipmentState, { kind: 'pokemon', slug: sheet.slug })
+      for (const instance of equipment.instances) {
+        addQuantity(quantities, canonicalItem(instance.canonicalItemId, 'Pokémon equipment quantity').id, 1)
+      }
+    }
   }
   for (const sheet of state.trainerSheets.values()) {
-    for (const slot of MOVE_ITEM_TRAINER_EQUIPMENT_SLOTS) {
-      countNamedItems(quantities, splitSheetItemNames(sheet.equipmentSlots?.[slot]))
+    if (sheet.equipmentState === undefined) {
+      for (const slot of MOVE_ITEM_TRAINER_EQUIPMENT_SLOTS) {
+        countNamedItems(quantities, splitSheetItemNames(sheet.equipmentSlots?.[slot]))
+      }
+    }
+    else {
+      const equipment = parseSheetEquipmentStateForOwner(sheet.equipmentState, { kind: 'trainer', slug: sheet.slug })
+      for (const instance of equipment.instances) {
+        addQuantity(quantities, canonicalItem(instance.canonicalItemId, 'Trainer equipment quantity').id, 1)
+      }
     }
     countInventory(quantities, sheet.inventory)
   }
@@ -1810,6 +2010,7 @@ const reduceOperation = (input: {
   const auditedItemIds: string[] = []
   let quantityPolicy: MoveItemQuantityPolicy = 'conserve'
   let consumptionId: string | null = null
+  let digestedCanonicalItemId: string | null = null
 
   if (operation.kind === 'swap') {
     const left = parseReference(operation.left, `${operation.id}.left`)
@@ -1886,6 +2087,7 @@ const reduceOperation = (input: {
       quantity: consumed.quantity,
       source: consumed.source,
       entry: null,
+      equippedInstance: null,
     }
     touchedKeys.add(addItem({
       state,
@@ -2069,6 +2271,7 @@ const reduceOperation = (input: {
       operation,
       operationOrder,
     })
+    digestedCanonicalItemId = digested.canonicalItemId
     const digestedIdentity = resolveMoveAutomationItemRuleIdentity(digested.canonicalItemId)
     if (harvest && digestedIdentity?.family !== 'berry') {
       fail('item-mismatch', `Harvest cannot retain non-Berry Digestion Buff ${digested.canonicalItemId}.`)
@@ -2161,6 +2364,9 @@ const reduceOperation = (input: {
     if (destination && referenceLocationKey(source) === destinationLocationKey(destination)) {
       fail('invalid-operation', `Operation ${operation.id} source and destination are identical.`)
     }
+    if (sourceBacksActiveItemFormChange(state.map, source)) {
+      fail('invalid-operation', `Operation ${operation.id} cannot remove equipment backing an active Mega Evolution.`)
+    }
     const removed = removeItem({ state, source, quantity, operation, operationOrder })
     touchedKeys.add(removed.resourceKey)
     auditedItemIds.push(removed.stack.canonicalItemId)
@@ -2223,6 +2429,7 @@ const reduceOperation = (input: {
   return deepFreeze({
     operationId: operation.id,
     kind: operation.kind,
+    digestedCanonicalItemId,
     quantityPolicy,
     quantityEffects,
     resourceScopes: resourceScopesFor(state, touchedKeys),

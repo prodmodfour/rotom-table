@@ -6,12 +6,17 @@ import { useSheetRenameUrlSync } from '~/composables/sheets/useSheetRenameUrlSyn
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { routeSlugParam } from '~/utils/routeParams'
+import { parseInventoryContinuationRouteIntent } from '~/utils/inventoryContinuationRoute'
 import {
   buildSheetLoadQuery,
   PLAYER_PROFILE_REQUIRED_FOR_LINKED_SHEET_MESSAGE,
   sheetApiProfileContext,
 } from '~/utils/sheetApiRequests'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import type { TrainerSheetItemAcceptedResult } from '~/composables/sheets/useTrainerSheetItemActions'
+import type { TrainerEquipmentAcceptedResult } from '~/composables/sheets/useTrainerEquipmentOperations'
+import type { TrainerInventoryActionAcceptedResult } from '~/composables/sheets/useTrainerInventoryActionFlows'
+import type { ItemGuidedAcceptedResult } from '~/composables/items/useItemGuidedAdjudication'
 
 // ---------------------------------------------------------------------------
 // Editable sheet wiring
@@ -30,6 +35,7 @@ const { reloadRuntimeSheets } = useLiveSheets()
 if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
 const slug = routeSlugParam(route.params)
+const inventoryContinuation = computed(() => parseInventoryContinuationRouteIntent(route.query))
 const currentSheetProfileContext = () => sheetApiProfileContext(isPlayer.value, selectedProfileId.value)
 const sheetLoadQuery = computed(() => buildSheetLoadQuery({
   kind: 'trainer',
@@ -40,6 +46,7 @@ const {
   data: runtimeSheetResult,
   error: runtimeSheetError,
   status: runtimeSheetStatus,
+  refresh: refreshRuntimeSheet,
 } = await useFetch<{ sheet: TrainerSheet } | null>(SHEET_API_PATHS.load, {
   default: () => null,
   immediate: true,
@@ -55,6 +62,8 @@ const {
   saveStatus,
   saveError,
   renamedTo,
+  saveNow,
+  adoptAuthoritativeSheet,
 } = useEditableSheetResource<TrainerSheet>({
   baseSheet,
   kind: 'trainer',
@@ -97,6 +106,41 @@ const syncLiveSheetsForPlayerProfile = async () => {
   await reloadRuntimeSheets({ profileId: selectedProfileId.value })
 }
 
+const prepareItemAction = async (): Promise<void> => {
+  await saveNow()
+  if (saveStatus.value === 'error') throw new Error(saveError.value ?? 'Save the Trainer sheet before using an item.')
+}
+
+const reconcileInventoryAuthority = async (): Promise<void> => {
+  await refreshRuntimeSheet()
+  if (runtimeSheetError.value) throw new Error(getErrorMessage(runtimeSheetError.value))
+  const authoritative = runtimeSheetResult.value?.sheet
+  if (!authoritative) throw new Error('The authoritative Trainer inventory could not be reloaded.')
+  adoptAuthoritativeSheet(authoritative)
+  await reloadRuntimeSheets(isPlayer.value ? { profileId: selectedProfileId.value } : undefined)
+}
+
+type AcceptedSheetMutationResult = TrainerSheetItemAcceptedResult | TrainerEquipmentAcceptedResult | TrainerInventoryActionAcceptedResult | ItemGuidedAcceptedResult
+
+const authoritativeTrainerSheet = (response: AcceptedSheetMutationResult): TrainerSheet | null => {
+  const accepted = response.sheets.find(value => value.kind === 'trainer' && value.slug === slug)
+  return accepted ? {
+    ...accepted.sheet,
+    slug: accepted.slug,
+    revision: accepted.revision,
+  } as unknown as TrainerSheet : null
+}
+
+const adoptAcceptedItemResult = async (response: AcceptedSheetMutationResult): Promise<void> => {
+  let accepted = authoritativeTrainerSheet(response)
+  if (!accepted) {
+    await refreshRuntimeSheet()
+    accepted = runtimeSheetResult.value?.sheet ?? null
+  }
+  if (accepted) adoptAuthoritativeSheet(accepted)
+  await reloadRuntimeSheets(isPlayer.value ? { profileId: selectedProfileId.value } : undefined)
+}
+
 onMounted(() => {
   void syncLiveSheetsForPlayerProfile()
 })
@@ -124,6 +168,13 @@ useHead(() => ({
       v-if="sheet"
       :sheet="sheet"
       :capabilities="editorCapabilities"
+      :save-status="saveStatus"
+      :item-action-profile-id="isPlayer ? selectedProfileId : null"
+      :prepare-item-action="prepareItemAction"
+      :reconcile-inventory-authority="reconcileInventoryAuthority"
+      :inventory-continuation-action="inventoryContinuation?.action ?? null"
+      :inventory-continuation-source-id="inventoryContinuation?.sourceSelectionId ?? null"
+      @item-accepted="adoptAcceptedItemResult"
     />
 
     <template #not-found>

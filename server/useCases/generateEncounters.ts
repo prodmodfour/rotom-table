@@ -17,6 +17,12 @@ import {
   type GenerateEncountersRuntimeOverrides,
 } from '../utils/generateEncountersRuntime'
 import type { RolledEncounter } from '~/types/encounterTable'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import { strongestActiveRepel } from '../domain/itemAutomation/exploration'
+import { ITEM_AUTOMATION_RUNTIME_REGISTRY } from '../domain/itemAutomation/registry'
+import { getRotomDatabase, type RotomDatabase } from '../storage/database'
+import { createSqliteSheetRepository } from '../storage/sheetRepository'
+import { createSqliteCampaignClockRepository } from '../storage/campaignClockRepository'
 
 export { readEncounterTableFile } from '../utils/encounterTableFiles'
 export type { EncounterGeneratedFileResult } from '../utils/pokegenBatch'
@@ -34,9 +40,17 @@ export interface GenerateEncountersResult {
   preview: boolean
   beforeCount: number
   count: number
+  routeRepel: {
+    readonly itemLabel: string
+    readonly maximumAffectedWildLevel: number
+    readonly expiresAtCampaignMinute: number
+    readonly repelledRolls: number
+  } | null
 }
 
-export type GenerateEncountersDependencies = GenerateEncountersRuntimeOverrides
+export interface GenerateEncountersDependencies extends GenerateEncountersRuntimeOverrides {
+  readonly database?: RotomDatabase
+}
 
 type EncounterGenerateRequest = ReturnType<typeof readEncounterGenerateRequest>
 
@@ -56,6 +70,41 @@ const rolledEncountersForRequest = (
   random: () => number,
 ): RolledEncounter[] => request.rolled ?? Array.from({ length: count }, () => rollEncounterTable(table, random))
   .filter((encounter): encounter is RolledEncounter => Boolean(encounter))
+
+export const activeRouteRepelForEncounterGeneration = (
+  exploration: EncounterGenerateRequest['exploration'],
+  database: RotomDatabase,
+) => {
+  if (!exploration) return null
+  const stored = createSqliteSheetRepository<Record<string, unknown>>(database)
+    .getByRef('trainer', exploration.trainerSlug)
+  if (!stored) throw new GenerateEncountersUseCaseError(404, 'The route Repel Trainer is missing.')
+  if (stored.revision !== exploration.trainerRevision) {
+    throw new GenerateEncountersUseCaseError(409, 'The route Repel Trainer changed. Refresh before generation.')
+  }
+  const clock = createSqliteCampaignClockRepository(database).get()
+  if (clock.revision !== exploration.campaignClockRevision) {
+    throw new GenerateEncountersUseCaseError(409, 'The campaign clock changed. Refresh before generation.')
+  }
+  const trainer = {
+    ...(structuredClone(stored.sheet) as unknown as TrainerSheet),
+    slug: stored.slug,
+    revision: stored.revision,
+    updatedAt: stored.updatedAt,
+  }
+  let effect
+  try { effect = strongestActiveRepel(trainer.serverPrivate?.itemExploration, clock.campaignMinute) }
+  catch { throw new GenerateEncountersUseCaseError(409, 'The route Repel authority is malformed.') }
+  if (!effect) throw new GenerateEncountersUseCaseError(409, 'No active route Repel covers this encounter generation.')
+  const definition = ITEM_AUTOMATION_RUNTIME_REGISTRY.resolve(effect.canonicalItemId)
+  const reviewed = definition?.spec.effects.find(candidate => candidate.operation === 'use-repel')
+  if (!definition || definition.definitionSha256 !== effect.canonicalDefinitionSha256
+    || !reviewed || reviewed.maximumAffectedWildLevel !== effect.maximumAffectedWildLevel
+    || effect.expiresAtCampaignMinute !== effect.startedAtCampaignMinute + reviewed.durationMinutes) {
+    throw new GenerateEncountersUseCaseError(409, 'The reviewed route Repel definition changed. Refresh before generation.')
+  }
+  return effect
+}
 
 const isStatusLikeError = (error: unknown): error is {
   statusCode?: unknown
@@ -93,7 +142,15 @@ export const generateEncountersUseCase = async (
       readTextFile: runtime.readTextFile,
     })
     const count = countForEncounterRequest(request, runtime.random)
-    const rolled = rolledEncountersForRequest(request, count, table, runtime.random)
+    const repel = activeRouteRepelForEncounterGeneration(
+      request.exploration,
+      dependencies.database ?? getRotomDatabase(),
+    )
+    const unfiltered = rolledEncountersForRequest(request, count, table, runtime.random)
+    const rolled = repel
+      ? unfiltered.filter(encounter => encounter.level > repel.maximumAffectedWildLevel)
+      : unfiltered
+    const repelledRolls = unfiltered.length - rolled.length
     const output = createEncounterOutputPlan({
       tableKey: request.tableKey,
       count,
@@ -133,6 +190,12 @@ export const generateEncountersUseCase = async (
       preview: request.preview,
       beforeCount: batch.beforeCount,
       count,
+      routeRepel: repel ? {
+        itemLabel: repel.canonicalItemId,
+        maximumAffectedWildLevel: repel.maximumAffectedWildLevel,
+        expiresAtCampaignMinute: repel.expiresAtCampaignMinute,
+        repelledRolls,
+      } : null,
     }
   } catch (error) {
     throw normalizeGenerateEncountersError(error)

@@ -1,0 +1,1411 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-056",
+  "reviewStatus": "accepted",
+  "reviewMethod": "Transcribed each listed Mega Evolution block into exact form identity, type override, granted Ability, and non-HP Stat deltas; retained source values including net +9 exceptions; rejected unlisted franchise forms.",
+  "forms": [
+    {
+      "formId": "mega-aerodactyl",
+      "baseSpeciesId": "Aerodactyl",
+      "displayName": "Mega Aerodactyl",
+      "types": null,
+      "abilityId": "Tough Claws",
+      "statDeltas": {
+        "atk": 3,
+        "def": 2,
+        "satk": 1,
+        "sdef": 2,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-alakazam",
+      "baseSpeciesId": "Alakazam",
+      "displayName": "Mega Alakazam",
+      "types": null,
+      "abilityId": "Trace",
+      "statDeltas": {
+        "atk": 0,
+        "def": 2,
+        "satk": 4,
+        "sdef": 0,
+        "spd": 3
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-beedrill",
+      "baseSpeciesId": "Beedrill",
+      "displayName": "Mega Beedrill",
+      "types": null,
+      "abilityId": "Adaptability",
+      "statDeltas": {
+        "atk": 6,
+        "def": 0,
+        "satk": -3,
+        "sdef": 0,
+        "spd": 7
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-blastoise",
+      "baseSpeciesId": "Blastoise",
+      "displayName": "Mega Blastoise",
+      "types": null,
+      "abilityId": "Mega Launcher",
+      "statDeltas": {
+        "atk": 2,
+        "def": 2,
+        "satk": 5,
+        "sdef": 1,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-charizard-x",
+      "baseSpeciesId": "Charizard",
+      "displayName": "Mega Charizard X",
+      "types": [
+        "Fire",
+        "Dragon"
+      ],
+      "abilityId": "Tough Claws",
+      "statDeltas": {
+        "atk": 5,
+        "def": 3,
+        "satk": 2,
+        "sdef": 0,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-charizard-y",
+      "baseSpeciesId": "Charizard",
+      "displayName": "Mega Charizard Y",
+      "types": null,
+      "abilityId": "Drought",
+      "statDeltas": {
+        "atk": 2,
+        "def": 0,
+        "satk": 5,
+        "sdef": 3,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-gengar",
+      "baseSpeciesId": "Gengar",
+      "displayName": "Mega Gengar",
+      "types": null,
+      "abilityId": "Shadow Tag",
+      "statDeltas": {
+        "atk": 0,
+        "def": 2,
+        "satk": 4,
+        "sdef": 2,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-gyarados",
+      "baseSpeciesId": "Gyarados",
+      "displayName": "Mega Gyarados",
+      "types": [
+        "Water",
+        "Dark"
+      ],
+      "abilityId": "Mold Breaker",
+      "statDeltas": {
+        "atk": 3,
+        "def": 3,
+        "satk": 1,
+        "sdef": 3,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-kangaskhan",
+      "baseSpeciesId": "Kangaskhan",
+      "displayName": "Mega Kangaskhan",
+      "types": null,
+      "abilityId": "Parental Bond",
+      "statDeltas": {
+        "atk": 3,
+        "def": 2,
+        "satk": 2,
+        "sdef": 2,
+        "spd": 1
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-mewtwo-x",
+      "baseSpeciesId": "Mewtwo",
+      "displayName": "Mega Mewtwo X",
+      "types": [
+        "Psychic",
+        "Fighting"
+      ],
+      "abilityId": "Steadfast",
+      "statDeltas": {
+        "atk": 8,
+        "def": 1,
+        "satk": 0,
+        "sdef": 0,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-mewtwo-y",
+      "baseSpeciesId": "Mewtwo",
+      "displayName": "Mega Mewtwo Y",
+      "types": null,
+      "abilityId": "Insomnia",
+      "statDeltas": {
+        "atk": 4,
+        "def": -2,
+        "satk": 4,
+        "sdef": 3,
+        "spd": 1
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-pidgeot",
+      "baseSpeciesId": "Pidgeot",
+      "displayName": "Mega Pidgeot",
+      "types": null,
+      "abilityId": "No Guard",
+      "statDeltas": {
+        "atk": 0,
+        "def": 0,
+        "satk": 7,
+        "sdef": 1,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-pinsir",
+      "baseSpeciesId": "Pinsir",
+      "displayName": "Mega Pinsir",
+      "types": [
+        "Bug",
+        "Flying"
+      ],
+      "abilityId": "Aerilate",
+      "statDeltas": {
+        "atk": 3,
+        "def": 2,
+        "satk": 1,
+        "sdef": 2,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-slowbro",
+      "baseSpeciesId": "Slowbro",
+      "displayName": "Mega Slowbro",
+      "types": null,
+      "abilityId": "Shell Armor",
+      "statDeltas": {
+        "atk": 0,
+        "def": 7,
+        "satk": 3,
+        "sdef": 0,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-venusaur",
+      "baseSpeciesId": "Venusaur",
+      "displayName": "Mega Venusaur",
+      "types": null,
+      "abilityId": "Thick Fat",
+      "statDeltas": {
+        "atk": 2,
+        "def": 4,
+        "satk": 2,
+        "sdef": 2,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-ampharos",
+      "baseSpeciesId": "Ampharos",
+      "displayName": "Mega Ampharos",
+      "types": [
+        "Electric",
+        "Dragon"
+      ],
+      "abilityId": "Mold Breaker",
+      "statDeltas": {
+        "atk": 2,
+        "def": 2,
+        "satk": 5,
+        "sdef": 2,
+        "spd": -1
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-heracross",
+      "baseSpeciesId": "Heracross",
+      "displayName": "Mega Heracross",
+      "types": null,
+      "abilityId": "Skill Link",
+      "statDeltas": {
+        "atk": 6,
+        "def": 4,
+        "satk": 0,
+        "sdef": 1,
+        "spd": -1
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-houndoom",
+      "baseSpeciesId": "Houndoom",
+      "displayName": "Mega Houndoom",
+      "types": null,
+      "abilityId": "Solar Power",
+      "statDeltas": {
+        "atk": 0,
+        "def": 4,
+        "satk": 3,
+        "sdef": 1,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-scizor",
+      "baseSpeciesId": "Scizor",
+      "displayName": "Mega Scizor",
+      "types": null,
+      "abilityId": "Technician",
+      "statDeltas": {
+        "atk": 2,
+        "def": 4,
+        "satk": 1,
+        "sdef": 2,
+        "spd": 1
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-steelix",
+      "baseSpeciesId": "Steelix",
+      "displayName": "Mega Steelix",
+      "types": null,
+      "abilityId": "Sand Force",
+      "statDeltas": {
+        "atk": 4,
+        "def": 3,
+        "satk": 0,
+        "sdef": 3,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-tyranitar",
+      "baseSpeciesId": "Tyranitar",
+      "displayName": "Mega Tyranitar",
+      "types": null,
+      "abilityId": "Sand Stream",
+      "statDeltas": {
+        "atk": 3,
+        "def": 4,
+        "satk": 0,
+        "sdef": 2,
+        "spd": 1
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-absol",
+      "baseSpeciesId": "Absol",
+      "displayName": "Mega Absol",
+      "types": null,
+      "abilityId": "Magic Bounce",
+      "statDeltas": {
+        "atk": 2,
+        "def": 0,
+        "satk": 4,
+        "sdef": 0,
+        "spd": 4
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-aggron",
+      "baseSpeciesId": "Aggron",
+      "displayName": "Mega Aggron",
+      "types": [
+        "Steel"
+      ],
+      "abilityId": "Filter",
+      "statDeltas": {
+        "atk": 3,
+        "def": 5,
+        "satk": 0,
+        "sdef": 2,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-altaria",
+      "baseSpeciesId": "Altaria",
+      "displayName": "Mega Altaria",
+      "types": [
+        "Dragon",
+        "Fairy"
+      ],
+      "abilityId": "Pixilate",
+      "statDeltas": {
+        "atk": 4,
+        "def": 2,
+        "satk": 4,
+        "sdef": 0,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-banette",
+      "baseSpeciesId": "Banette",
+      "displayName": "Mega Banette",
+      "types": null,
+      "abilityId": "Prankster",
+      "statDeltas": {
+        "atk": 5,
+        "def": 1,
+        "satk": 1,
+        "sdef": 2,
+        "spd": 1
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-blaziken",
+      "baseSpeciesId": "Blaziken",
+      "displayName": "Mega Blaziken",
+      "types": null,
+      "abilityId": "Speed Boost",
+      "statDeltas": {
+        "atk": 4,
+        "def": 1,
+        "satk": 2,
+        "sdef": 1,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-camerupt",
+      "baseSpeciesId": "Camerupt",
+      "displayName": "Mega Camerupt",
+      "types": null,
+      "abilityId": "Sheer Force",
+      "statDeltas": {
+        "atk": 2,
+        "def": 3,
+        "satk": 4,
+        "sdef": 3,
+        "spd": -2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-gardevoir",
+      "baseSpeciesId": "Gardevoir",
+      "displayName": "Mega Gardevoir",
+      "types": null,
+      "abilityId": "Pixilate",
+      "statDeltas": {
+        "atk": 2,
+        "def": 0,
+        "satk": 4,
+        "sdef": 2,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-glalie",
+      "baseSpeciesId": "Glalie",
+      "displayName": "Mega Glalie",
+      "types": null,
+      "abilityId": "Refrigerate",
+      "statDeltas": {
+        "atk": 4,
+        "def": 0,
+        "satk": 4,
+        "sdef": 0,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-groudon",
+      "baseSpeciesId": "Groudon",
+      "displayName": "Mega Groudon",
+      "types": [
+        "Ground",
+        "Fire"
+      ],
+      "abilityId": "Heat Mirage",
+      "statDeltas": {
+        "atk": 3,
+        "def": 2,
+        "satk": 5,
+        "sdef": 0,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-kyogre",
+      "baseSpeciesId": "Kyogre",
+      "displayName": "Mega Kyogre",
+      "types": null,
+      "abilityId": "Wash Away",
+      "statDeltas": {
+        "atk": 5,
+        "def": 0,
+        "satk": 3,
+        "sdef": 2,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-latias",
+      "baseSpeciesId": "Latias",
+      "displayName": "Mega Latias",
+      "types": null,
+      "abilityId": "Levitate",
+      "statDeltas": {
+        "atk": 2,
+        "def": 3,
+        "satk": 3,
+        "sdef": 2,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-latios",
+      "baseSpeciesId": "Latios",
+      "displayName": "Mega Latios",
+      "types": null,
+      "abilityId": "Levitate",
+      "statDeltas": {
+        "atk": 4,
+        "def": 2,
+        "satk": 3,
+        "sdef": 1,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-manectric",
+      "baseSpeciesId": "Manectric",
+      "displayName": "Mega Manectric",
+      "types": null,
+      "abilityId": "Intimidate",
+      "statDeltas": {
+        "atk": 0,
+        "def": 2,
+        "satk": 3,
+        "sdef": 2,
+        "spd": 3
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-mawile",
+      "baseSpeciesId": "Mawile",
+      "displayName": "Mega Mawile",
+      "types": null,
+      "abilityId": "Huge Power",
+      "statDeltas": {
+        "atk": 2,
+        "def": 4,
+        "satk": 0,
+        "sdef": 4,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-medicham",
+      "baseSpeciesId": "Medicham",
+      "displayName": "Mega Medicham",
+      "types": null,
+      "abilityId": "Pure Power",
+      "statDeltas": {
+        "atk": 4,
+        "def": 1,
+        "satk": 2,
+        "sdef": 1,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-metagross",
+      "baseSpeciesId": "Metagross",
+      "displayName": "Mega Metagross",
+      "types": null,
+      "abilityId": "Tough Claws",
+      "statDeltas": {
+        "atk": 1,
+        "def": 2,
+        "satk": 1,
+        "sdef": 2,
+        "spd": 4
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-rayquaza",
+      "baseSpeciesId": "Rayquaza",
+      "displayName": "Mega Rayquaza",
+      "types": null,
+      "abilityId": "Run Away",
+      "statDeltas": {
+        "atk": 3,
+        "def": 1,
+        "satk": 3,
+        "sdef": 1,
+        "spd": 2
+      },
+      "requiresMegaStone": false
+    },
+    {
+      "formId": "mega-sableye",
+      "baseSpeciesId": "Sableye",
+      "displayName": "Mega Sableye",
+      "types": null,
+      "abilityId": "Magic Bounce",
+      "statDeltas": {
+        "atk": 1,
+        "def": 5,
+        "satk": 2,
+        "sdef": 5,
+        "spd": -3
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-salamence",
+      "baseSpeciesId": "Salamence",
+      "displayName": "Mega Salamence",
+      "types": null,
+      "abilityId": "Aerilate",
+      "statDeltas": {
+        "atk": 1,
+        "def": 5,
+        "satk": 1,
+        "sdef": 1,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-sceptile",
+      "baseSpeciesId": "Sceptile",
+      "displayName": "Mega Sceptile",
+      "types": [
+        "Grass",
+        "Dragon"
+      ],
+      "abilityId": "Lightning Rod",
+      "statDeltas": {
+        "atk": 2,
+        "def": 1,
+        "satk": 4,
+        "sdef": 0,
+        "spd": 3
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-sharpedo",
+      "baseSpeciesId": "Sharpedo",
+      "displayName": "Mega Sharpedo",
+      "types": null,
+      "abilityId": "Strong Jaw",
+      "statDeltas": {
+        "atk": 2,
+        "def": 3,
+        "satk": 1,
+        "sdef": 3,
+        "spd": 1
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-swampert",
+      "baseSpeciesId": "Swampert",
+      "displayName": "Mega Swampert",
+      "types": null,
+      "abilityId": "Swift Swim",
+      "statDeltas": {
+        "atk": 4,
+        "def": 2,
+        "satk": 1,
+        "sdef": 2,
+        "spd": 1
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-abomasnow",
+      "baseSpeciesId": "Abomasnow",
+      "displayName": "Mega Abomasnow",
+      "types": null,
+      "abilityId": "Snow Warning",
+      "statDeltas": {
+        "atk": 4,
+        "def": 3,
+        "satk": 4,
+        "sdef": 2,
+        "spd": -3
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-gallade",
+      "baseSpeciesId": "Gallade",
+      "displayName": "Mega Gallade",
+      "types": null,
+      "abilityId": "Inner Focus",
+      "statDeltas": {
+        "atk": 4,
+        "def": 3,
+        "satk": 0,
+        "sdef": 0,
+        "spd": 3
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-garchomp",
+      "baseSpeciesId": "Garchomp",
+      "displayName": "Mega Garchomp",
+      "types": null,
+      "abilityId": "Sand Force",
+      "statDeltas": {
+        "atk": 4,
+        "def": 2,
+        "satk": 4,
+        "sdef": 1,
+        "spd": -1
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-lopunny",
+      "baseSpeciesId": "Lopunny",
+      "displayName": "Mega Lopunny",
+      "types": [
+        "Normal",
+        "Fighting"
+      ],
+      "abilityId": "Scrappy",
+      "statDeltas": {
+        "atk": 6,
+        "def": 1,
+        "satk": 0,
+        "sdef": 0,
+        "spd": 3
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-lucario",
+      "baseSpeciesId": "Lucario",
+      "displayName": "Mega Lucario",
+      "types": null,
+      "abilityId": "Adaptability",
+      "statDeltas": {
+        "atk": 4,
+        "def": 2,
+        "satk": 2,
+        "sdef": 0,
+        "spd": 2
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-audino",
+      "baseSpeciesId": "Audino",
+      "displayName": "Mega Audino",
+      "types": [
+        "Normal",
+        "Fairy"
+      ],
+      "abilityId": "Healer",
+      "statDeltas": {
+        "atk": 0,
+        "def": 4,
+        "satk": 2,
+        "sdef": 4,
+        "spd": 0
+      },
+      "requiresMegaStone": true
+    },
+    {
+      "formId": "mega-diancie",
+      "baseSpeciesId": "Diancie",
+      "displayName": "Mega Diancie",
+      "types": null,
+      "abilityId": "Magic Bounce",
+      "statDeltas": {
+        "atk": 6,
+        "def": -4,
+        "satk": 6,
+        "sdef": -4,
+        "spd": 6
+      },
+      "requiresMegaStone": true
+    }
+  ],
+  "sourceEvidence": [
+    {
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "fileSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "gitBlob": "d319fe6af5b33d51ce958595401dc268f57cc4fb",
+      "lineRanges": [
+        [
+          1813,
+          1815
+        ],
+        [
+          1993,
+          1995
+        ]
+      ],
+      "excerptSha256": "841ae4b6638a48d660610619c86202932a13dd20be3838b4daeaac391ed0b3fc",
+      "pages": [
+        293,
+        297
+      ]
+    },
+    {
+      "path": "books/markdown/core/05-pokemon.md",
+      "fileSha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3",
+      "gitBlob": "4ead8eb5ac53f9eca9de8c721579d1568d6f0bdc",
+      "lineRanges": [
+        [
+          1044,
+          1106
+        ]
+      ],
+      "excerptSha256": "c96d150eb5c64c649ee3e634c28ab2a44e2296771be419a3c63e7ca114a7768d",
+      "pages": [
+        206
+      ]
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/aerodactyl.md",
+      "fileSha256": "cf7130814a9b9627ef878439041e20ba347b8725c6263846485f3b486658e0e5",
+      "gitBlob": "f1978065d25bb3086f4dd1e3ded50f08092d6915",
+      "lineRanges": [
+        [
+          121,
+          126
+        ]
+      ],
+      "excerptSha256": "455dcc1a2ad517efdd7c2c17e5401cea53ac0ab088e8d4179ab297d97ff1ac23"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/alakazam.md",
+      "fileSha256": "6e46965cec950c8bc9651bf56cad5396c71309d62d721bc8317079adc3cc2941",
+      "gitBlob": "aa0426fed3accfc41c743e9d15c14f901260ca5b",
+      "lineRanges": [
+        [
+          113,
+          117
+        ]
+      ],
+      "excerptSha256": "fd1e5ae62666600146777458cea72cafd61e6745e4573b701c03ba26a536e36d"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/beedrill.md",
+      "fileSha256": "42c785b89c35e0620e8b179acaa612f1ae75f05356071716885dbe7f1a9e5f90",
+      "gitBlob": "3b61c7709be03636b162b45260163981281905cd",
+      "lineRanges": [
+        [
+          106,
+          110
+        ]
+      ],
+      "excerptSha256": "f64a9101532b33b76b30d1712a7b5cec582021b848b90e06e3b1b3798be0dac4"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/blastoise.md",
+      "fileSha256": "07d1cf11899b025954ffd5f94e8ea10c12ba23e9238e5f1ce3d8af7d83400f23",
+      "gitBlob": "94428ff3b566c4a80bc0a0e757787a78e893674d",
+      "lineRanges": [
+        [
+          116,
+          121
+        ]
+      ],
+      "excerptSha256": "a8e46a4d3a4b99d9dd5afc1b9729e9f143a48c70cc245dfc5670d1624aa50595"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/charizard.md",
+      "fileSha256": "4fcf9058cf6a3baea78ada991561d6fc3d697c384670b19192d97b06d9c0eb7a",
+      "gitBlob": "40d9ac46bcc2cce6daf7f86d45369a4e74be8048",
+      "lineRanges": [
+        [
+          114,
+          118
+        ],
+        [
+          119,
+          123
+        ]
+      ],
+      "excerptSha256": "fd9ad3122eeeed80327779682ac4292f54dc52eba22337b9ef57832bb8053f66"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/gengar.md",
+      "fileSha256": "83b033cf055847b307c3db6e04ffa3459862c4f5380dd2591571f0830279d03f",
+      "gitBlob": "0925244820ba5597b922f504fbf5b848e192560f",
+      "lineRanges": [
+        [
+          116,
+          121
+        ]
+      ],
+      "excerptSha256": "e9eeeecb3dfd32071a463a78a25c4b27b44df0859b6bba425b33e2a69d1feb19"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/gyarados.md",
+      "fileSha256": "b3a1dd33cb8eeabe6b11b898271b24abbd0df4bcfc225a048e39a81a232215c9",
+      "gitBlob": "337dffd006e365e8a50c3b91900dccf21323e603",
+      "lineRanges": [
+        [
+          107,
+          111
+        ]
+      ],
+      "excerptSha256": "d19bcaea0fd74c467ec6f402cd8c5cd166922da1ca4580fe39938cf9d165369e"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/kangaskhan.md",
+      "fileSha256": "467a5b4e99c3b4fd52686e9085d72f57868e340312c4638a2c0e96e5da7902b1",
+      "gitBlob": "54f2491897bda96076dc771320f2059f871df772",
+      "lineRanges": [
+        [
+          122,
+          127
+        ]
+      ],
+      "excerptSha256": "6355a549ac423ed0c74b8d8cba5e825db610a14afd9ecc127c0f7c163f3388e7"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/mewtwo.md",
+      "fileSha256": "df8465c0d98df3e1255bf76745acc656079161a521b6cc544f80df192909cd8a",
+      "gitBlob": "815a2b88c589a14fed132269156f2e56cafae266",
+      "lineRanges": [
+        [
+          120,
+          124
+        ],
+        [
+          125,
+          130
+        ]
+      ],
+      "excerptSha256": "7605bbde7a17217eb4b26a4d9474b682dfeba3a11bbbccf607d662cf64fab752"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/pidgeot.md",
+      "fileSha256": "364c3f1a3043295ef6992fb6ba5b4583b4c3603176b4a1b5b5792d443b121afe",
+      "gitBlob": "1fa1741468e96f758a06debf3638ff46e8dabe75",
+      "lineRanges": [
+        [
+          106,
+          110
+        ]
+      ],
+      "excerptSha256": "b219b86080c863fcb2cbf825d323d9e1a5e5fed3bd70a96abe7cb8e6672573aa"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/pinsir.md",
+      "fileSha256": "59702794ff2784a440f48cf68f20c3a0b47a7fdbf43716f01a438d0690fdada8",
+      "gitBlob": "ec48079d3f7928c95596b2a0e1e2a9a2b857b351",
+      "lineRanges": [
+        [
+          123,
+          128
+        ]
+      ],
+      "excerptSha256": "601f3f30055e1eb39eb2842da3974a2c731056118aa76d9faa88557d08fc3680"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/slowbro.md",
+      "fileSha256": "5b84ac1a33f81fa0298903f2003d9559dc2060fbb8b356e8017463ac914ead36",
+      "gitBlob": "dbd26e448f5c216a1987d161fed4ac82a3f05aee",
+      "lineRanges": [
+        [
+          119,
+          123
+        ]
+      ],
+      "excerptSha256": "23639d818f189c7a0c3056b2539c5ef4fe8df17ed26afcd8ae3266cb25a4bbae"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen1/venusaur.md",
+      "fileSha256": "8168002e3cb85e2b8211627bea93fb4bd39644f00c38a373100d6d100be0691e",
+      "gitBlob": "32e650086d2c034f9518e9ff99c915e1136e3248",
+      "lineRanges": [
+        [
+          119,
+          123
+        ]
+      ],
+      "excerptSha256": "581423bf6cdb1f5ceb26475304af9dc018dccc5854e72e09045d9fe2419e5c24"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen2/ampharos.md",
+      "fileSha256": "b35f92e292b2caf7a6f86cb7dc00f15d6ccf2c6794e9cb2ec2011d8a99eafdd4",
+      "gitBlob": "7352aab03038527054a5a22f347816224db7cae8",
+      "lineRanges": [
+        [
+          119,
+          124
+        ]
+      ],
+      "excerptSha256": "78862a8afe1cb14e823549a1bf5f101699a8294d3c5c56fbb8741322b0668b94"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen2/heracross.md",
+      "fileSha256": "2469e6ebabb2cdc7e5c069f352cc6024818dad9d37089af4b6b3ef7e852852fb",
+      "gitBlob": "b590c7cdfb8b07cac2e152ab99c7244a1039a960",
+      "lineRanges": [
+        [
+          118,
+          122
+        ]
+      ],
+      "excerptSha256": "b5f1a068f9b4c68c1cf3d4ae9828cfb4bf3eca59524568e262158d9201438c86"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen2/houndoom.md",
+      "fileSha256": "3a7beeae6749cc524aca370a3d5c1b0d54e20adb1be810bd2737c38d09453e0a",
+      "gitBlob": "ca152d5ebb2f26fe5cd8bbbdefaad20c88a0d01c",
+      "lineRanges": [
+        [
+          113,
+          118
+        ]
+      ],
+      "excerptSha256": "c973da0eb25280b58010cfa7ea79e703ad2ff55e7970c68aabbc1417f4155ed0"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen2/scizor.md",
+      "fileSha256": "9fc737fb0b9a33badbdd38b4cfe64a01dfcb9d50eb949be50c040383b1617eeb",
+      "gitBlob": "3dbb75f1d9364271dcaf1267daf23b368f6e71ae",
+      "lineRanges": [
+        [
+          118,
+          123
+        ]
+      ],
+      "excerptSha256": "8c78951b7d4a31a525dd4cd32c4499ef56f13feb42ffee1bc05d65e0f790528c"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen2/steelix.md",
+      "fileSha256": "211848898af59dd3d41d750be051d1da02c9225c4e547004e2d8c07314e73690",
+      "gitBlob": "ae89848d54bc4487f3168b1721d1f55e2c2b43bc",
+      "lineRanges": [
+        [
+          120,
+          124
+        ]
+      ],
+      "excerptSha256": "e911548a4866242c8c3c2a17aef0960a590cbad8012214ee3f43478cb69ba0f5"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen2/tyranitar.md",
+      "fileSha256": "21f794c46d6b93305a773bd20500c7c1453d592e7ba24edb7cc5d8a89ffa4b1a",
+      "gitBlob": "93d844a1d6055e2e237139cae80772e72972349b",
+      "lineRanges": [
+        [
+          116,
+          120
+        ]
+      ],
+      "excerptSha256": "43d293ed543611be73bba38b167e75cd1d5d5ab13224718e09944c8ccbb4d242"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/absol.md",
+      "fileSha256": "e7532e698db7b3c88feac53edb8d7198245dc34266d6a36a9c607d8b2b8140ca",
+      "gitBlob": "d9bfff6bb95e40a0117420f8e8d89a7059548484",
+      "lineRanges": [
+        [
+          128,
+          132
+        ]
+      ],
+      "excerptSha256": "4f10e1729e980e83e68a3891985743705aaaf09fe9bc2538fa91426a19cdfc18"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/aggron.md",
+      "fileSha256": "d22061df372b2c89245247c0ea21d02264ad32c9242c6a713c5a72cab50bfba5",
+      "gitBlob": "cbad889918f44cfe7d1a8a803a7c33a8d0db28ec",
+      "lineRanges": [
+        [
+          123,
+          127
+        ]
+      ],
+      "excerptSha256": "214c9c6e3ca28bfe7c37a9289759f2e4e563630ba886859bdcc40861f9388feb"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/altaria.md",
+      "fileSha256": "1581f4a40ca59bf5e1c85bbea6914753ee5ccc9b8b9a4895ef69ed302cc9967c",
+      "gitBlob": "92a1b9cbf5cdfe559bcd7eed04d44d29c42c4315",
+      "lineRanges": [
+        [
+          120,
+          124
+        ]
+      ],
+      "excerptSha256": "6a0a55027e72a59955ca4d7420260f727a3d855fb853cf75b2180b8c37b13455"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/banette.md",
+      "fileSha256": "810feb12ab3b860f4eb446d356fdba4239c4213b1622d8100e3d10cc60bb498e",
+      "gitBlob": "110e0c864819c9e2e766eaa9c060f2a7af2caf89",
+      "lineRanges": [
+        [
+          117,
+          122
+        ]
+      ],
+      "excerptSha256": "1ea7bffec79bf64145a0c93f38585eafaf21f697feba29c5f04131e4b3c03a03"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/blaziken.md",
+      "fileSha256": "11e9f61ea9a12c17a7f9ede22fac0869f37125c12329bf74b310ac78b55211b3",
+      "gitBlob": "c68a413f1dd09bfda8793f11c3fa07f60a6d55ea",
+      "lineRanges": [
+        [
+          117,
+          122
+        ]
+      ],
+      "excerptSha256": "78cbfb0329f955a7a2250363a9c3a1842327804b18ce477633964c9d7df08c73"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/camerupt.md",
+      "fileSha256": "21153fe3c33fa501a3e451369dc5d2abad2da7e2b49723a10a3fbd7f7fbbce8f",
+      "gitBlob": "607a0063869d4ea13a7bf8de12e6473eab762348",
+      "lineRanges": [
+        [
+          115,
+          120
+        ]
+      ],
+      "excerptSha256": "154f160207e9528959639ee47ca14ec9af5e6b46eb0048e26a614d0e5eb4467c"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/gardevoir.md",
+      "fileSha256": "937ad4c9a59dbc9960b9dccb6cf083e2d75f4b4adaf5398dca6b31944888ee35",
+      "gitBlob": "8912e98cee53ff9f3c58547c2b523205ce769689",
+      "lineRanges": [
+        [
+          122,
+          127
+        ]
+      ],
+      "excerptSha256": "0a029e8f2005d7402c3e473ef163e6a82b5a5dcbfd26be2dc128bc837c3056c5"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/glalie.md",
+      "fileSha256": "84573ad63fbbba3fd510d9143881befc93797f8b1194c27c307e5a2201492936",
+      "gitBlob": "9b9255b55cc71313d159a030d8c699034094eb9e",
+      "lineRanges": [
+        [
+          109,
+          113
+        ]
+      ],
+      "excerptSha256": "188aeca775cd6cdc7e24dd8874fbfeb8bdc9bf655414a0fb2f426d757c595b38"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/groudon.md",
+      "fileSha256": "e7315e28320ac25f81a31652b3d63ed4bf1b618de490b4aa93ef5bdb8394c56e",
+      "gitBlob": "8bcd995936f0e160cafbd1dc1a497059de2eafe5",
+      "lineRanges": [
+        [
+          115,
+          119
+        ]
+      ],
+      "excerptSha256": "57abed5b5f45393afd7961834e7b9647921f662033ab006782d228d7b20ac269"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/kyogre.md",
+      "fileSha256": "ba7061760d0ea53fcff5c3ab13809f14f76da91253c15c5e64cb6a3d0a9a123f",
+      "gitBlob": "12d3aefa5fec947d6a04f7da98a6ed19a1f229fb",
+      "lineRanges": [
+        [
+          108,
+          112
+        ]
+      ],
+      "excerptSha256": "b230db204f8aa00025d98df8e69a660484d1bf2824026063881176a40834da62"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/latias.md",
+      "fileSha256": "4837ca67b0badd08f960c72626451342a16b550c9920e2e32d9f6b70212a057f",
+      "gitBlob": "532dffaf4ceead506f93a72d5c0586995f0e5151",
+      "lineRanges": [
+        [
+          122,
+          126
+        ]
+      ],
+      "excerptSha256": "6c3f54155c5ab629eff6993739445eb70ea9bac0692140404e2f45d89d6a4e38"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/latios.md",
+      "fileSha256": "a396d4e489e9d6ed92a273b150a7294222f4a2216d20220ae82b1175dada0acf",
+      "gitBlob": "14ab7206e9071877b3a5eb4c447fe687d01abb93",
+      "lineRanges": [
+        [
+          121,
+          125
+        ]
+      ],
+      "excerptSha256": "8d00fb25325613c9192d1b71398d5264cd0e91b619213e3a2b8fa1f556a3af75"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/manectric.md",
+      "fileSha256": "78732b68d5996bc05cae95def3fd21c6ebac93a7160c6e893fa974b8d347812e",
+      "gitBlob": "4600bd90fb60d3092857f1a2b2cd9679a96531ed",
+      "lineRanges": [
+        [
+          109,
+          114
+        ]
+      ],
+      "excerptSha256": "3d5a372cb43828a703b79a43d2ac1c0682adcdddeeaa550ac3b7ad353725a6e0"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/mawile.md",
+      "fileSha256": "f10329af379c7814d72a79e6fb2c1e695e0ac6b896e6770b8ad5114ad7d188ba",
+      "gitBlob": "5a3d06a6694f6c450f93918d15fc5a73cba6ab1a",
+      "lineRanges": [
+        [
+          124,
+          128
+        ]
+      ],
+      "excerptSha256": "a662eaf3f1219eb2f3037405a35e794b00b677280abe508a216c2fd21adf8976"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/medicham.md",
+      "fileSha256": "e4bfcd4b7d3f8f27dd1f5764541974876670c0d0ddc16253bad255b57eb26e9c",
+      "gitBlob": "622cb13cc1168ec7e77c5da9e0681dfb61054a68",
+      "lineRanges": [
+        [
+          122,
+          127
+        ]
+      ],
+      "excerptSha256": "449d75405c9c965e3481b09f634a71d0eb4a6507e705dd2497794dca25fc687c"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/metagross.md",
+      "fileSha256": "d177bb582980fb1c741fe5971d04cd3e36b1670d2191febafd22d9bdb542b23a",
+      "gitBlob": "4577883470df081064b2309ca68dbe0914f7b438",
+      "lineRanges": [
+        [
+          115,
+          120
+        ]
+      ],
+      "excerptSha256": "f24f0b4a924d28d66be93d1b34728264cf17862644a8c9b3f076653fe704d6f8"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/rayquaza.md",
+      "fileSha256": "f5669b279be37d273b982d4f00ea0dd1be4297d27fdceb815ac8710738c5299d",
+      "gitBlob": "f930002c4d15b6e8b663ec6dd744fec67b78efaa",
+      "lineRanges": [
+        [
+          112,
+          117
+        ]
+      ],
+      "excerptSha256": "53fbda9a62185f2568a89a34bff8bfdedb1080d9b4bf8cece47dfc3ba8efab4b"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/sableye.md",
+      "fileSha256": "d0910f5c967f989a9c6fbaca2e144dd71e5e9fb9a5e629d53809a6787a1f9e0b",
+      "gitBlob": "dc5fec8916fddb7b493099f2182d4e34dde1200a",
+      "lineRanges": [
+        [
+          130,
+          135
+        ]
+      ],
+      "excerptSha256": "4a7be97fa6422d51557e2ac4febfbc2a42dcf2e33a9c1b5e40e46623eac28421"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/salamence.md",
+      "fileSha256": "2b0599ee4654ea5ad7d772f1dbe7d6a6d6c0092e5a1344fec2dbbd06baa5a280",
+      "gitBlob": "1fe5936ac03a765d826a0f46cfcc76097f6a9d67",
+      "lineRanges": [
+        [
+          117,
+          122
+        ]
+      ],
+      "excerptSha256": "53268b21d9696af9f1e930bdd1af6fa7064a01321d360774b72969ead97d8adb"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/sceptile.md",
+      "fileSha256": "60d11539e239cc8b6c0c65c21f32cba948d29e5611fc2993b852a78a60a803bd",
+      "gitBlob": "f962e4f5ab0af55546e49e3d47d18dc8990f0360",
+      "lineRanges": [
+        [
+          123,
+          128
+        ]
+      ],
+      "excerptSha256": "d7a6175d83d589efe99a82a12f2d3297da61bdee208d313eb05776424323a98b"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/sharpedo.md",
+      "fileSha256": "fd672460a2f822957209fd9fdd971465d3a6973a19d405562a4288fcf208cbcc",
+      "gitBlob": "30155c66e35f952e49e6053caa872187741c9a6b",
+      "lineRanges": [
+        [
+          115,
+          120
+        ]
+      ],
+      "excerptSha256": "1994063dc188fa8b1b8e5ee0d4341ff8e4678420f0b662f29c604d35f991e0b0"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen3/swampert.md",
+      "fileSha256": "85d99b35b59f7c662b94a6f7b83e828b478392a9b60b5818fc3375f51df19adb",
+      "gitBlob": "09be27811b073ffdc5a5329cc854861ffc5cc859",
+      "lineRanges": [
+        [
+          116,
+          121
+        ]
+      ],
+      "excerptSha256": "da856b0752618137a92f2f2ff32bbaa0190553c36da15523c7e29a7448f7e47c"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen4/abomasnow.md",
+      "fileSha256": "dca070db10618e4d1a0d5e4bf6f4870d646c3cc624dffe26e5dd6c2f57a8e475",
+      "gitBlob": "35e7c7140d8c439371aa0a67ee162d42561c19df",
+      "lineRanges": [
+        [
+          106,
+          111
+        ]
+      ],
+      "excerptSha256": "706e5e0c304ef7772f44a22b2bf2377e7349e0de261f0c04c5832d029b984f55"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen4/gallade.md",
+      "fileSha256": "ddd1e622d81af888734d37ffaa36937132e7648eb7cbeb8fda48d1d6429d17fd",
+      "gitBlob": "373e00b4fb3c5f1fbdb18f3a4fba29964d938db4",
+      "lineRanges": [
+        [
+          123,
+          127
+        ]
+      ],
+      "excerptSha256": "650c1ef75720a35dcab9776980bad1995f9eebdbab56a27cc2d78f476052f524"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen4/garchomp.md",
+      "fileSha256": "737833af3a7b9d394ecb57e2ca8af867ca0d571c81cb92f18fcca692d8e20572",
+      "gitBlob": "831bf65465c32d11d693dc2e1fdea1a588b11bbf",
+      "lineRanges": [
+        [
+          109,
+          114
+        ]
+      ],
+      "excerptSha256": "787bc77036e02467c646a9781478d55293b3c7b1179f9f721c3a90916968517f"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen4/lopunny.md",
+      "fileSha256": "139d992d66b4b0cd7b5be717789404e24a0b362c85dd07f7e1caed01e86658b0",
+      "gitBlob": "48d482508864843cbbd332ae31ad978c9360eb92",
+      "lineRanges": [
+        [
+          114,
+          119
+        ]
+      ],
+      "excerptSha256": "2f75e75ee72e37286f622e3cf8e98f5fcfbc7636331282db576d520cdb31e311"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen4/lucario.md",
+      "fileSha256": "038d4e94177b4209033b09e7f4772596502bd34fbf4b89004f827cc612da5301",
+      "gitBlob": "58106b77c872e0c453e3af95b3fdcbccb87cb7f3",
+      "lineRanges": [
+        [
+          118,
+          122
+        ]
+      ],
+      "excerptSha256": "c6e446fb6176e11056c0553467da6a9b5154b00a04d2502924ebeba55f549969"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen5/audino.md",
+      "fileSha256": "7a66c22937a8c54a482da409421331f55db9a65a6906537b9b2a4f8816b5772f",
+      "gitBlob": "4db7d64df8267c43ae3cd1fff357ab8240aa460f",
+      "lineRanges": [
+        [
+          125,
+          129
+        ]
+      ],
+      "excerptSha256": "d2670aa4e1d4f1750feddd97279dc5935f312a191a2130ea9c495c41ad91b953"
+    },
+    {
+      "path": "books/markdown/pokedexes/gen6/diancie.md",
+      "fileSha256": "d47cec4dcf84dc0984b387c2c5d71d99f03c111e640cbc82fd9128187f3413f8",
+      "gitBlob": "920f255e2b7ccd9f9078457f7e6fc5041fd1a0fe",
+      "lineRanges": [
+        [
+          114,
+          119
+        ]
+      ],
+      "excerptSha256": "79335dbbce5fbf382d9bce8f029414caa5fe0a7e1bbd6a30d31199019ca9c716"
+    }
+  ]
+}

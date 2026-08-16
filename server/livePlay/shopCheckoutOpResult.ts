@@ -1,3 +1,4 @@
+import { parseShopCheckoutContinuationReceipt } from '#shared/shopPostCheckout'
 import {
   isLivePlayCommandRejectionReason,
   type ShopCheckoutCommandAccepted,
@@ -81,7 +82,12 @@ const isShopCheckoutAcceptedResult = (result: unknown): result is ShopCheckoutCo
   if (!isSafeNonNegativeInteger(result.shopRevision)) return false
   if (!isSafeNonNegativeInteger(result.totalPrice)) return false
   if (!Array.isArray(result.lines) || !result.lines.every(isResultLine)) return false
-  return isRecord(result.documents) && isRecord(result.documents.shop)
+  if (!isRecord(result.documents) || !isRecord(result.documents.shop)) return false
+  if (result.postCheckout !== undefined) {
+    try { parseShopCheckoutContinuationReceipt(result.postCheckout) }
+    catch { return false }
+  }
+  return true
 }
 
 const isShopCheckoutRejectedResult = (result: unknown): result is ShopCheckoutCommandRejected => {

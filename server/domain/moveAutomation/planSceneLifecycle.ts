@@ -28,16 +28,21 @@ import {
   type EncounterLifecycleSheetWrite,
 } from './planInitiativeLifecycle'
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
+import { emptyItemExplorationEncounterState } from '#shared/itemAutomation/exploration'
 import type {
   EncounterLifecycleReductionResult,
   EncounterLifecycleTriggerHandler,
 } from './reduceLifecycle'
 import { transitionAbilitySceneEncounterState } from '../abilityAutomation/timing'
+import { clearSceneItemFormChanges } from '#shared/itemAutomation/formChanges'
+import type { ScenePlacementInitiativeChange } from '#shared/livePlayCommands'
+import { reviewedItemFormChangeForId } from '../itemAutomation/formChangeRegistry'
 
 export type SceneLifecyclePlanningErrorCode =
   | 'duplicate-event-id'
   | 'duplicate-operation-id'
   | 'conflicting-sheet-write'
+  | 'stale-item-form-state'
 
 export class SceneLifecyclePlanningError extends Error {
   readonly code: SceneLifecyclePlanningErrorCode
@@ -59,6 +64,7 @@ export interface SceneLifecyclePlan {
   readonly currentTemporaryHitPoints: TabletopMap['temporaryHitPoints']
   readonly previousMoveUsage: TabletopMap['moveUsage']
   readonly currentMoveUsage: TabletopMap['moveUsage']
+  readonly placementInitiativeChanges: readonly ScenePlacementInitiativeChange[]
   readonly previousFieldEffects: Required<NonNullable<TabletopMap['fieldEffects']>>
   readonly currentFieldEffects: Required<NonNullable<TabletopMap['fieldEffects']>>
   readonly nextMap: TabletopMap
@@ -154,6 +160,12 @@ const resetSceneEncounterContainers = (state: EncounterState): EncounterState =>
   counters: {},
   turnResources: {},
   pendingResolutionSummaries: [],
+  ...(state.itemFormChanges
+    ? { itemFormChanges: clearSceneItemFormChanges(state.itemFormChanges) }
+    : {}),
+  ...(state.itemExploration
+    ? { itemExploration: emptyItemExplorationEncounterState() }
+    : {}),
 })
 
 const mapAtSceneBoundary = (
@@ -161,11 +173,29 @@ const mapAtSceneBoundary = (
   current: MapSceneState | null,
   time: number,
 ): TabletopMap => {
-  const resetEncounter = resetSceneEncounterContainers(parseEncounterState(
-    map.encounterState ?? createEmptyEncounterState(),
-  ))
+  const previousEncounter = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
+  const sceneInitiativeDeltas = new Map<string, number>()
+  for (const entry of previousEncounter.itemFormChanges?.entries ?? []) {
+    if (entry.duration.kind !== 'scene'
+      || entry.duration.sceneStartedAt !== map.activeScene?.startedAt) continue
+    const form = reviewedItemFormChangeForId(entry.formId)
+    if (!form || form.recordSha256 !== entry.formRecordSha256) {
+      throw new SceneLifecyclePlanningError(
+        'stale-item-form-state',
+        'Accepted item-driven form state is stale; Scene initiative cannot be reversed safely.',
+      )
+    }
+    sceneInitiativeDeltas.set(entry.placementId, form.statDeltas.spd)
+  }
+  const resetEncounter = resetSceneEncounterContainers(previousEncounter)
   const boundaryMap: TabletopMap = {
     ...deepCloneJson(map),
+    placements: map.placements.map((placement) => {
+      const delta = sceneInitiativeDeltas.get(placement.id)
+      return delta !== undefined && typeof placement.initiative === 'number'
+        ? { ...placement, initiative: placement.initiative - delta }
+        : placement
+    }),
     activeScene: current,
     encounterState: transitionAbilitySceneEncounterState(
       resetEncounter,
@@ -335,6 +365,13 @@ export const planSceneLifecycle = (
   const currentEncounterState = parseEncounterState(
     workingMap.encounterState ?? createEmptyEncounterState(),
   )
+  const previousPlacementById = new Map(input.map.placements.map(placement => [placement.id, placement]))
+  const placementInitiativeChanges: ScenePlacementInitiativeChange[] = workingMap.placements.flatMap((placement) => {
+    const previousPlacement = previousPlacementById.get(placement.id)
+    const previous = typeof previousPlacement?.initiative === 'number' ? previousPlacement.initiative : null
+    const currentInitiative = typeof placement.initiative === 'number' ? placement.initiative : null
+    return previous !== currentInitiative ? [{ placementId: placement.id, previous, current: currentInitiative }] : []
+  })
 
   return Object.freeze({
     events,
@@ -345,6 +382,7 @@ export const planSceneLifecycle = (
     currentTemporaryHitPoints: deepCloneJson(workingMap.temporaryHitPoints),
     previousMoveUsage: deepCloneJson(input.map.moveUsage),
     currentMoveUsage: deepCloneJson(workingMap.moveUsage),
+    placementInitiativeChanges: deepCloneJson(placementInitiativeChanges),
     previousFieldEffects: cloneMapFieldEffects(input.map.fieldEffects),
     currentFieldEffects: cloneMapFieldEffects(workingMap.fieldEffects),
     nextMap: workingMap,

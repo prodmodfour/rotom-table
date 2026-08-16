@@ -106,9 +106,38 @@ export interface EncounterActionIntentDescriptor {
 }
 
 export interface EncounterActionSelectionOption {
-  readonly kind: 'object' | 'device' | 'keystone' | 'egg' | 'trainer'
+  readonly kind: 'object' | 'device' | 'keystone' | 'egg' | 'trainer' | 'participant'
+  /** Exact targeting/choice requirement this option satisfies. */
+  readonly requirementId?: string
   readonly value: string
   readonly label: string
+  /** Server-authored safe preview copy; never a client-computed mechanical value. */
+  readonly description?: string | null
+  /** Target-specific authoritative costs, when choosing the option changes settlement. */
+  readonly costs?: readonly EncounterActionCost[]
+  /** Server-owned option availability. Browsers must not infer this from preview text. */
+  readonly disabled?: boolean
+  readonly unavailableReason?: EncounterAvailabilityReason | null
+}
+
+export interface EncounterFormChangeStatDeltaPreview {
+  readonly statId: 'atk' | 'def' | 'satk' | 'sdef' | 'spd'
+  readonly label: string
+  readonly delta: number
+}
+
+export interface EncounterFormChangePreview {
+  readonly kind: 'item-form-change'
+  readonly fromFormLabel: string
+  readonly toFormLabel: string
+  readonly fromTypes: readonly string[]
+  readonly toTypes: readonly string[]
+  readonly abilityLabel: string
+  readonly abilityRequiresChoice: boolean
+  readonly statDeltas: readonly EncounterFormChangeStatDeltaPreview[]
+  readonly durationLabel: 'Scene'
+  readonly reversalLabel: string
+  readonly acceptanceBoundaryLabel: string
 }
 
 export interface EncounterActionOffer {
@@ -129,8 +158,12 @@ export interface EncounterActionOffer {
   readonly availability: EncounterAvailability
   readonly presentation: EncounterPresentationCopy
   readonly intent: EncounterActionIntentDescriptor
+  /** Safe server-authored source location/context; raw source IDs remain undisplayed. */
+  readonly sourceContextLabel?: string | null
   /** Authorized bounded resource identities consumed by typed action controls. */
   readonly selectionOptions?: readonly EncounterActionSelectionOption[]
+  /** Safe server-authored mechanical comparison for a form-change decision. */
+  readonly formChangePreview?: EncounterFormChangePreview | null
 }
 
 export interface EncounterDerivedFactValue {

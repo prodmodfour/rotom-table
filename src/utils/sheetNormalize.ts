@@ -8,8 +8,14 @@
  * and mutate it in place.
  */
 import { normalizeRevision } from '#shared/sessionRevisions'
+import {
+  parseSerializedEquipmentInventoryState,
+  parseSheetEquipmentStateForOwner,
+} from '#shared/itemAutomation/equipment'
 import type { CharacterSheet, CharacterSheetAppliedMove, StatKey } from '~/types/characterSheet'
 import type { InventoryEntry, TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
+import { parseItemBreedingState } from '#shared/breeding/itemWorkflows'
+import { parseItemGuidedLoyaltyState } from '#shared/itemAutomation/guidedAdjudication'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
 import { normalizePokemonGmSection } from '~/utils/sheets/pokemonGmFields'
@@ -43,11 +49,20 @@ const ensureArr = <T>(host: any, key: string): T[] => {
 
 export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet => {
   sheet.revision = normalizeRevision(sheet.revision)
+  if (sheet.equipmentState !== undefined) {
+    sheet.equipmentState = parseSheetEquipmentStateForOwner(sheet.equipmentState, {
+      kind: 'pokemon',
+      slug: sheet.slug,
+    })
+  }
   if (typeof sheet.player !== 'boolean') sheet.player = false
   normalizePokemonGmSection(sheet)
   const loyalty = normalizePokemonLoyalty(sheet.loyalty)
   if (loyalty == null) delete sheet.loyalty
   else sheet.loyalty = loyalty
+  if (sheet.serverPrivate?.itemGuidedLoyalty !== undefined) {
+    sheet.serverPrivate.itemGuidedLoyalty = parseItemGuidedLoyaltyState(sheet.serverPrivate.itemGuidedLoyalty)
+  }
   setPokemonCaughtBall(sheet, sheet.caughtBall)
 
   // Headline stats — give every key an entry so the stats table is editable.
@@ -121,7 +136,16 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
 
 export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
   sheet.revision = normalizeRevision(sheet.revision)
+  if (sheet.equipmentState !== undefined) {
+    sheet.equipmentState = parseSheetEquipmentStateForOwner(sheet.equipmentState, {
+      kind: 'trainer',
+      slug: sheet.slug,
+    })
+  }
   if (typeof sheet.player !== 'boolean') sheet.player = false
+  if (sheet.serverPrivate?.itemBreeding !== undefined) {
+    sheet.serverPrivate.itemBreeding = parseItemBreedingState(sheet.serverPrivate.itemBreeding)
+  }
   const accentColor = normalizeTrainerAccentColor(sheet.accentColor)
   if (accentColor) sheet.accentColor = accentColor
   else delete sheet.accentColor
@@ -159,9 +183,19 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
   ensureObj<NonNullable<TrainerSheet['equipmentSlots']>>(sheet, 'equipmentSlots')
 
   const inv = ensureObj<NonNullable<TrainerSheet['inventory']>>(sheet, 'inventory')
+  const serializedEquipmentIds = new Set<string>()
   for (const key of ['keyItems', 'pokemonItems', 'medicalKit', 'pokeBalls', 'foodStuff', 'equipment']) {
     for (const entry of ensureArr<InventoryEntry>(inv, key)) {
       normalizeTrainerInventoryLegacyFishingRodAutofill(entry)
+      if (entry.serializedEquipment !== undefined) {
+        entry.serializedEquipment = parseSerializedEquipmentInventoryState(entry.serializedEquipment)
+        if (serializedEquipmentIds.has(entry.serializedEquipment.instanceId)) {
+          throw new Error('Trainer inventory contains a duplicate serialized equipment identity.')
+        }
+        serializedEquipmentIds.add(entry.serializedEquipment.instanceId)
+        delete entry.qty
+      }
+      else if (key === 'equipment') delete entry.qty
     }
   }
 

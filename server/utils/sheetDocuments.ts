@@ -1,5 +1,6 @@
 import { slugify, sanitizeFolderPath, validateSlug } from '#shared/paths'
 import type { SheetKind } from '#shared/sheets'
+import { createEmptySheetEquipmentState } from '#shared/itemAutomation/equipment'
 import { DEFAULT_POKEMON_CAUGHT_BALL } from '~/utils/sheets/pokemonCaughtBall'
 import { pickRandomTrainerSpriteUrl } from './trainerSprites'
 
@@ -31,6 +32,7 @@ export const buildDefaultRuntimeSheet = (
     revision: 0,
     slug,
     player,
+    equipmentState: createEmptySheetEquipmentState({ ownerKind: kind, ownerSlug: slug }),
     ...(options.now === undefined ? {} : { updatedAt: options.now }),
   }
 

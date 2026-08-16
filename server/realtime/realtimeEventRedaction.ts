@@ -5,7 +5,10 @@ import {
 import { LIVE_PLAY_REALTIME_EVENT_TYPES } from '#shared/realtime'
 import { isSheetKind } from '#shared/sheets'
 import { redactResolveMovePatchesForObserver } from '../utils/moveResultPrivacy'
-import { redactSheetRecordForPlayer } from '../utils/sheetPrivacy'
+import {
+  projectSheetEquipmentContributions,
+  redactSheetRecordForPlayer,
+} from '../utils/sheetPrivacy'
 import { redactShopRecordForPlayer, redactUnknownShopRecordForPlayer } from '../utils/shopPrivacy'
 import type {
   RealtimeDeliveryPrincipal,
@@ -18,6 +21,8 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { reconcileCapabilityRuntimeSourceLoss } from '../domain/capabilityAutomation/sourceLoss'
+import { projectGroupInventoryForPlayer } from '../utils/groupInventoryPrivacy'
+import type { GroupInventoryDocument } from '~/types/groupInventory'
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -33,6 +38,21 @@ const redactedSheetRealtimeEvent = (
     data: {
       ...data,
       sheet: redactSheetRecordForPlayer(data.kind, data.sheet),
+    },
+  }
+}
+
+const redactedGroupInventoryRealtimeEvent = (
+  event: Record<string, unknown>,
+  data: Record<string, unknown>,
+): unknown => {
+  if (typeof data.slug !== 'string' || !isRecord(data.document)) return null
+  if (data.document.slug !== data.slug || !isRecord(data.document.inventory)) return null
+  return {
+    ...event,
+    data: {
+      ...data,
+      document: projectGroupInventoryForPlayer(data.document as unknown as GroupInventoryDocument),
     },
   }
 }
@@ -137,7 +157,18 @@ export const redactRealtimeEventForPrincipal = (
   principal: RealtimeDeliveryPrincipal,
   dependencies?: RealtimeEventAccessDependencies,
 ): unknown => {
-  if (principal.role !== 'player' || !isRecord(event)) return event
+  if (!isRecord(event)) return event
+  if (principal.role !== 'player') {
+    const data = event.data
+    if (!isRecord(data) || !isSheetKind(data.kind) || !isRecord(data.sheet)) return event
+    return {
+      ...event,
+      data: {
+        ...data,
+        sheet: projectSheetEquipmentContributions(data.kind, data.sheet),
+      },
+    }
+  }
 
   const observerSafeEvent = redactedResolveMoveRealtimeEvent(event)
   const data = observerSafeEvent.data
@@ -167,6 +198,7 @@ export const redactRealtimeEventForPrincipal = (
   }
 
   const redacted = redactedSheetRealtimeEvent(observerSafeEvent, data)
+    ?? redactedGroupInventoryRealtimeEvent(observerSafeEvent, data)
     ?? redactedShopRealtimeEvent(observerSafeEvent, data)
     ?? redactedShopCheckoutResultRealtimeEvent(observerSafeEvent, data)
     ?? observerSafeEvent

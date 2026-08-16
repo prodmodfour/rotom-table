@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-070",
+  "status": "certified",
+  "contract": "commerce-item-loop-certification-v1",
+  "certificationTest": "tests/e2e/commerce-item-loop-certification.spec.ts",
+  "runtimeEvidence": {
+    "referenceItemsSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+    "itemSpecsSha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe",
+    "equipmentDefinitionsSha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a",
+    "equipmentContributionsSha256": "dcf20f7e7992aee9ebb62c20f0b808dc3b6e4d881290128cfc23529d42079fcf",
+    "unifiedInventoryActionsSha256": "554910af72d1f78a3c8e38b870cccb6b1d3968515b6cd65c1ad7980bd85a8399",
+    "shopPostCheckoutActionsSha256": "1069299eef57407bf3703372564066946720fa9201055e0ebee037a164ca2419",
+    "inventoryHistorySha256": "6000ddc646c398c29443622963bd142a748bdeb1cad66a877348c9b75ef4432c",
+    "inventoryAccessibilitySha256": "ab2bf52388ad5f89d34b8cfdcbc5fed59c395b831a2351c250b5b99b4a733767"
+  },
+  "clients": [
+    {
+      "id": "player-client",
+      "role": "player",
+      "authority": "one selected Profile linked to the acting Trainer and target Pokémon"
+    },
+    {
+      "id": "gm-sheet-client",
+      "role": "gm",
+      "authority": "independent live Trainer and encounter projections"
+    },
+    {
+      "id": "gm-group-client",
+      "role": "gm",
+      "authority": "independent shared-inventory projection"
+    }
+  ],
+  "fixtures": {
+    "desktopRestorative": "Potion",
+    "mobileRestorative": "Super Potion",
+    "equipment": "Light Armor",
+    "equipmentContribution": "5 Damage reduction",
+    "purchaseQuantity": 2,
+    "useQuantity": 1,
+    "transferQuantity": 1,
+    "equipmentQuantity": 1
+  },
+  "journey": [
+    "create a Profile-bound Trainer, Pokémon target, open shop, and live encounter",
+    "buy two restorative units and one Light Armor into exact Trainer inventory destinations",
+    "replay checkout and prove no duplicate money, stock, inventory, or revision mutation",
+    "continue from the accepted Light Armor delivery and equip the whole serialized item",
+    "observe the reviewed Damage reduction contribution in player and GM sheet clients",
+    "replay equip and prove no duplicate inventory or equipment mutation",
+    "use one restorative from the encounter cockpit on the controlled Pokémon",
+    "observe authoritative HP settlement, action consequence, consumption, event feed, and GM convergence",
+    "replay item use and prove no duplicate HP, quantity, or revision mutation",
+    "transfer the remaining restorative from Trainer inventory to shared inventory",
+    "observe Trainer removal and shared-inventory arrival without manual refresh",
+    "replay transfer and prove no duplicate row, quantity, or revision mutation",
+    "unequip Light Armor, withdraw its effective contribution, and return it to Trainer inventory",
+    "replay unequip and prove no duplicate equipment or inventory mutation",
+    "verify purchase, equipment, item-use, transfer, and unequip history and final cross-role state"
+  ],
+  "authorityAssertions": {
+    "checkoutAcceptedResultDrivesContinuation": true,
+    "playerProfileControlsSourceAndTarget": true,
+    "serverResolvesInventoryEquipmentAndItemMechanics": true,
+    "equipmentContributionAppearsAndWithdraws": true,
+    "encounterHpAndInventorySettleTogether": true,
+    "trainerAndGroupTransferSettleTogether": true,
+    "allAffectedRevisionsConverge": true,
+    "manualRefreshRequired": false
+  },
+  "replayAssertions": {
+    "checkoutExactReplayIsTerminal": true,
+    "equipExactReplayIsTerminal": true,
+    "itemUseExactReplayIsTerminal": true,
+    "transferExactReplayIsTerminal": true,
+    "unequipExactReplayIsTerminal": true,
+    "duplicateMutationCount": 0
+  },
+  "historyAssertions": {
+    "newestFirst": true,
+    "requiredKinds": [
+      "purchase",
+      "equipment-change",
+      "item-use",
+      "transfer"
+    ],
+    "equipmentChangeCount": 2,
+    "playerReadable": true,
+    "readOnlyProjection": true
+  },
+  "convergenceAssertions": {
+    "playerAndGmTrainerRevisionEqual": true,
+    "playerAndGmPokemonRevisionEqual": true,
+    "playerAndGmGroupRevisionEqual": true,
+    "liveEquipmentStateEqual": true,
+    "liveContributionStateEqual": true,
+    "liveHpStateEqual": true,
+    "liveInventoryStateEqual": true,
+    "freshDirectLoadsConfirmProjection": true
+  },
+  "accessibilityAssertions": {
+    "projects": [
+      "chromium",
+      "mobile-chromium"
+    ],
+    "scopedAxeViolations": 0,
+    "maximumHorizontalPageOverflowPx": 1,
+    "checkoutReceiptReflows": true,
+    "encounterDecisionReflows": true,
+    "inventoryHistoryReflows": true,
+    "sharedInventoryReflows": true,
+    "consoleWarningsErrorsOrPageErrors": 0
+  },
+  "privacyAssertions": {
+    "forbiddenVisibleFields": [
+      "Profile ID",
+      "inventory operation or source identity",
+      "equipment operation or instance identity",
+      "stable inventory row identity",
+      "definition or source hash"
+    ],
+    "safeVisibleFields": [
+      "Profile and character display labels",
+      "item, container, section, and presentation-row labels",
+      "quantity, cost, target, slot, and consequence labels",
+      "accepted receipt and history summaries"
+    ],
+    "gmAndPlayerProjectionsRemainRoleCorrect": true
+  },
+  "runtimeHydrationAssertions": {
+    "listAndDirectLoadEquipmentProjectionsEquivalent": true,
+    "privateFieldsStrippedFromListAndDirectLoad": true,
+    "expectedAccessScopeSupersessionIsSilent": true,
+    "explicitReconciliationStillFailsClosed": true,
+    "styledTooltipMutationWaitsForPageHydration": true,
+    "emptyTrainerClassPlaceholderDoesNotAlterHydrationShape": true
+  },
+  "evidence": {
+    "productionLiveplay": true,
+    "screenshotsDirectory": ".pi/artifacts/ui-validation/commerce-item-loop",
+    "browserReport": ".pi/artifacts/ui-validation/commerce-item-loop/browser-report.json",
+    "visualReview": ".pi/artifacts/ui-validation/commerce-item-loop/review.md",
+    "tests": [
+      "tests/e2e/commerce-item-loop-certification.spec.ts",
+      "tests/server/listSheets.test.ts",
+      "tests/composables/useLiveSheetsRuntimeHydration.test.ts",
+      "tests/plugins/styledTitleTooltips.test.ts"
+    ]
+  }
+}

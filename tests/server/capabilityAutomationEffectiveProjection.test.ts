@@ -5,6 +5,8 @@ import { reconcileCapabilityRuntimeSourceLoss } from '../../server/domain/capabi
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { parseSheetEquipmentStateForOwner } from '#shared/itemAutomation/equipment'
+import { activeEquipmentState } from '../fixtures/equipment'
 
 const pokemon = (slug: string, species: string, overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
   slug, name: slug, species, level: 50, ...overrides,
@@ -60,9 +62,23 @@ describe('effective Capability projection', () => {
   })
 
   it('projects reviewed equipped-item Capability grants with exact item provenance', () => {
+    const snowBoots = activeEquipmentState({
+      ownerKind: 'trainer', ownerSlug: 'equipped-trainer', slotId: 'feet', canonicalItemId: 'Snow Boots',
+    })
+    const goggles = activeEquipmentState({
+      ownerKind: 'trainer', ownerSlug: 'equipped-trainer', slotId: 'head', canonicalItemId: 'Dark Vision Goggles',
+    })
+    const equipmentState = parseSheetEquipmentStateForOwner({
+      ...snowBoots,
+      slots: snowBoots.slots.map(slot => slot.slotId === 'head'
+        ? goggles.slots.find(candidate => candidate.slotId === 'head')!
+        : slot),
+      instances: [...snowBoots.instances, ...goggles.instances],
+    }, { kind: 'trainer', slug: 'equipped-trainer' })
     const trainer: TrainerSheet = {
       slug: 'equipped-trainer', name: 'Equipped Trainer', level: 20, revision: 1,
-      equipmentSlots: { feet: 'Snow Boots', accessory: 'Dark Vision Goggles' },
+      equipmentSlots: { feet: 'Potion', accessory: 'Meteor Masher' },
+      equipmentState,
     }
     const trainerPlacement: SheetPlacement = {
       id: 'equipped-trainer', sheetKind: 'trainer', sheetSlug: trainer.slug, position: { x: 0, y: 1, z: 0 },

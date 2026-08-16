@@ -285,6 +285,7 @@ describe('live-play command contract', () => {
       'terrain',
       'placements',
       'scene',
+      'encounter',
       'metadata',
     ])
     expect(LIVE_PLAY_TOKEN_SCOPE_FIELDS).toEqual([

@@ -4,6 +4,7 @@ import { dirname, isAbsolute, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { CAMPAIGN_ROOT } from '../utils/campaignPaths'
 import { applyStorageMigrations } from './migrations'
+import { migrateLegacyEquipmentDocuments } from '../domain/itemAutomation/equipmentMigration'
 
 export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
 export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
@@ -76,7 +77,14 @@ export const openRotomDatabase = (options: OpenRotomDatabaseOptions = {}): Rotom
 
   const connection = new DatabaseSync(path)
   const journalMode = configureConnection(connection, path, options.enableWal ?? true)
-  applyStorageMigrations(connection)
+  try {
+    applyStorageMigrations(connection)
+    migrateLegacyEquipmentDocuments(connection)
+  }
+  catch (error) {
+    connection.close()
+    throw error
+  }
 
   let transactionDepth = 0
   let transactionRollbackOnlyError: Error | null = null

@@ -35,6 +35,10 @@ import {
 } from '~/utils/sheets/pokemonTrainingFeatures'
 import { adjustedSheetMovementCapabilityValue } from '~/utils/sheets/movementCapabilityAdjustments'
 import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
+import {
+  applyProjectedEquipmentContributions,
+  projectedEquipmentContributionDelta,
+} from '~/utils/equipmentContributionProjection'
 import { movementCapabilityKeyFromLabel, normalizeMovementCapabilitySpeed } from '~/utils/movementCapabilities'
 import type { CharacterSheet, CharacterSheetSkills } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -75,6 +79,21 @@ const resolvedCapabilityNumber = (
   const parsed = Number.parseFloat(value.trim())
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
 }
+
+const equipmentAdjustedCapabilityRows = <Row extends CapabilityNumberRow>(
+  sheet: CharacterSheet | TrainerSheet,
+  rows: readonly Row[],
+): readonly Row[] => rows.map(row => typeof row.value === 'number'
+  ? {
+      ...row,
+      value: applyProjectedEquipmentContributions({
+        sheet,
+        metric: 'capability-value',
+        targetId: row.label.trim().toLocaleLowerCase('en-US'),
+        base: row.value,
+      }),
+    }
+  : row)
 
 const defenderCapabilitiesFromRows = (rows: readonly CapabilityNumberRow[]): DefenderCapabilities | undefined => {
   const sky = resolvedCapabilityNumber(rows, 'Sky')
@@ -257,7 +276,7 @@ export const pokemonHpSnapshot = (
   const species = getPokedexEntryForSpawnSnapshot(sheet.species)
   const defenderTypes = sheet.types ?? species?.types ?? []
   const resolvedCapabilities = resolveCapabilities(sheet)
-  const capabilityRows = resolvedCapabilities.rows
+  const capabilityRows = equipmentAdjustedCapabilityRows(sheet, resolvedCapabilities.rows)
   const defenderCapabilities = defenderCapabilitiesFromRows(capabilityRows)
   const combatStages = normalizeCombatStages({
     atk: sheet.stats?.atk?.stage,
@@ -273,6 +292,7 @@ export const pokemonHpSnapshot = (
   const skillRows = resolveSkills(sheet)
   const activeTrainingFeature = normalizePokemonTrainingFeatureName(sheet.activeTrainingFeature) ?? undefined
   const accuracyRollBonus = pokemonTrainingFeatureAccuracyRollBonus(activeTrainingFeature)
+    + projectedEquipmentContributionDelta({ sheet, metric: 'accuracy-roll', targetId: 'all' })
   const advancedMobility = new Set(selectedPokemonCapabilityEdges(sheet, 'Advanced Mobility')
     .map(value => value.trim().toLocaleLowerCase('en-US')))
   const capabilityTraining = new Set(selectedPokemonCapabilityEdges(sheet, 'Capability Training')
@@ -358,7 +378,7 @@ export const trainerHpSnapshot = (
   const spd = stats.find((row) => row.key === 'spd')?.total ?? 0
   const evasion = trainerEvasionModifiers(sheet)
   const resolvedCapabilities = resolveTrainerCapabilities(sheet)
-  const capabilityRows = resolvedCapabilities.rows
+  const capabilityRows = equipmentAdjustedCapabilityRows(sheet, resolvedCapabilities.rows)
   const defenderCapabilities = defenderCapabilitiesFromRows(capabilityRows)
   const stageSource = Object.fromEntries(
     COMBAT_STAT_STAGE_KEYS.map((key) => [key, sheet.stats?.[key]?.stage ?? sheet.combatStages?.[key]]),

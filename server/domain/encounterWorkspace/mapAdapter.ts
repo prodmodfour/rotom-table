@@ -2,6 +2,7 @@ import type { EncounterParticipantPresentationRef, EncounterPresentationProjecti
 import {
   ENCOUNTER_WORKSPACE_SCHEMA_VERSION,
   assertEncounterWorkspaceViewModel,
+  type EncounterWorkspaceActiveEffect,
   type EncounterWorkspaceAudience,
   type EncounterWorkspaceConnectionState,
   type EncounterWorkspaceEnvironmentEntry,
@@ -15,12 +16,25 @@ import type { EncounterResourceSummary, EncounterSideAccent } from '#shared/enco
 import type { EncounterDocument } from '#shared/encounterDocuments/model'
 import type { LiveTableSnapshot } from '#shared/liveTableSnapshot'
 import type { EncounterActionType, EncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
+import type { EncounterEffect, EncounterEffectDuration } from '#shared/moveAutomation/encounterEffects'
 import { computeMaxHp, resolveStats } from '~/utils/sheets/pokemonDerived'
 import { catalogEntryForPokemonSheet, catalogEntryForTrainerSheet } from '~/utils/sheetSpawn'
-import { computeTrainerMaxAp, computeTrainerMaxHp } from '~/utils/sheets/trainerDerived'
+import { computeTrainerMaxHp } from '~/utils/sheets/trainerDerived'
+import { featureApAvailable, featureTemporaryApAvailable } from '#shared/featureAutomation/state'
+import { resolveTrainerFeatureApState } from '../featureAutomation/resources'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import {
+  ITEM_DIRE_HIT_CAPABILITY_ID,
+  ITEM_GUARD_SPEC_CAPABILITY_ID,
+} from '../itemAutomation/combatEffects'
+import {
+  ITEM_DIGESTION_EFFECT_TAG,
+  ITEM_DIGESTION_HEAL_CAPABILITY_PREFIX,
+} from '../itemAutomation/digestionBuffTrade'
+import { encounterEffectCommandRef } from '../moveAutomation/encounterEffectCommandRef'
+import { activeReviewedItemFormChange } from '../itemAutomation/formChanges'
 
 const SIDE_SYMBOLS = ['◆', '●', '▲', '■', '✦', '⬟', '◇', '○'] as const
 const ACTION_LABELS: Readonly<Record<EncounterActionType, string>> = Object.freeze({
@@ -127,14 +141,16 @@ const actionResources = (
   return resources
 }
 
-const trainerApResource = (sheet: TrainerSheet | null): EncounterResourceSummary[] => {
-  if (!sheet) return []
-  const maximum = computeTrainerMaxAp(sheet)
-  const current = sheet.ap?.left ?? Math.max(
-    0,
-    maximum - safeInteger(sheet.ap?.spent) - safeInteger(sheet.ap?.bound) - safeInteger(sheet.ap?.drained),
-  )
-  return [{ id: 'trainer:ap', label: 'AP', current: Math.max(0, current), maximum }]
+const trainerApResource = (input: {
+  readonly sheet: TrainerSheet | null
+  readonly now: number
+  readonly round: number | null
+}): EncounterResourceSummary[] => {
+  if (!input.sheet) return []
+  const state = resolveTrainerFeatureApState(input.sheet)
+  const current = featureApAvailable(state, input.now, input.round)
+  const maximum = state.max + featureTemporaryApAvailable(state, input.now, input.round)
+  return [{ id: 'trainer:ap', label: 'AP', current, maximum: Math.max(maximum, current) }]
 }
 
 const participantForPlacement = (input: {
@@ -149,14 +165,23 @@ const participantForPlacement = (input: {
   readonly hidden: ReadonlySet<string>
   readonly canUseDirector: boolean
   readonly castRole: EncounterDocument['castRoles'][number]['role'] | null
+  readonly generatedAt: number
 }): EncounterWorkspaceParticipant => {
   const { placement, map } = input
   const pokemon = placement.sheetKind === 'pokemon' ? input.pokemonBySlug.get(placement.sheetSlug) ?? null : null
   const trainer = placement.sheetKind === 'trainer' ? input.trainerBySlug.get(placement.sheetSlug) ?? null : null
   const presented = input.presentationById.get(placement.id)
-  const conditions = [...new Set((presented?.statusLabels ?? (
-    placement.sheetKind === 'pokemon' ? pokemon?.combat?.conditions : trainer?.conditions
-  ) ?? []).map(value => value.trim()).filter(Boolean))].slice(0, 64)
+  const activeItemFormLabel = pokemon
+    ? activeReviewedItemFormChange({
+        map, placementId: placement.id, pokemonSheet: pokemon,
+      })?.form.displayName ?? null
+    : null
+  const conditions = [...new Set([
+    ...(presented?.statusLabels ?? (
+      placement.sheetKind === 'pokemon' ? pokemon?.combat?.conditions : trainer?.conditions
+    ) ?? []),
+    ...(activeItemFormLabel ? [activeItemFormLabel] : []),
+  ].map(value => value.trim()).filter(Boolean))].slice(0, 64)
   const injuries = safeInteger(pokemon?.combat?.injuries ?? trainer?.currentInjuries)
   let hp: EncounterWorkspaceParticipant['hp'] = null
   if (pokemon) {
@@ -183,7 +208,7 @@ const participantForPlacement = (input: {
       ? catalogEntryForTrainerSheet(trainer)
       : null
   const currentTurn = (map.initiative?.activeId ?? map.encounterState?.history.currentTurn?.placementId ?? null) === placement.id
-  const fainted = Boolean(map.encounterState?.history.faintedPlacementIds.includes(placement.id)) || hp?.current === 0
+  const fainted = hp?.current === 0 || conditions.some(condition => condition.trim().toLocaleLowerCase('en-US') === 'fainted')
   return {
     participantId: placement.id,
     kind: placement.sheetKind,
@@ -213,7 +238,14 @@ const participantForPlacement = (input: {
     hp,
     injuries,
     conditions,
-    resources: [...actionResources(ledger), ...trainerApResource(trainer)],
+    resources: [
+      ...actionResources(ledger),
+      ...trainerApResource({
+        sheet: trainer,
+        now: input.generatedAt,
+        round: map.initiative?.round ?? null,
+      }),
+    ],
     fainted,
   }
 }
@@ -294,15 +326,16 @@ const turnEntries = (
   map: TabletopMap,
   order: readonly string[],
   pending: EncounterPresentationProjection['pending'],
+  participants: readonly EncounterWorkspaceParticipant[],
 ): EncounterWorkspaceTurnEntry[] => {
   const currentId = map.initiative?.activeId ?? map.encounterState?.history.currentTurn?.placementId ?? null
   const currentIndex = currentId ? order.indexOf(currentId) : -1
   const initiativeById = new Map(map.placements.map(placement => [placement.id, placement.initiative ?? null]))
-  const fainted = new Set(map.encounterState?.history.faintedPlacementIds ?? [])
+  const participantById = new Map(participants.map(participant => [participant.participantId, participant]))
   return order.map((participantId, index) => ({
     participantId,
     initiative: initiativeById.get(participantId) ?? null,
-    state: fainted.has(participantId)
+    state: participantById.get(participantId)?.fainted
       ? 'fainted'
       : participantId === currentId
         ? 'current'
@@ -313,10 +346,118 @@ const turnEntries = (
 }
 
 const titleCaseId = (value: string): string => value
-  .split(/[-_]/g)
+  .split(/[-_.]/g)
   .filter(Boolean)
   .map(part => `${part.charAt(0).toLocaleUpperCase()}${part.slice(1)}`)
   .join(' ')
+
+const sentenceCaseId = (value: string): string => {
+  const words = value.split(/[-_.]/g).map(part => part.trim()).filter(Boolean)
+  if (words.length === 0) return 'Encounter effect'
+  return `${words[0]!.charAt(0).toLocaleUpperCase()}${words[0]!.slice(1)}${words.length > 1 ? ` ${words.slice(1).join(' ').toLocaleLowerCase()}` : ''}`
+}
+
+const activeEffectLabel = (effect: EncounterEffect): string => {
+  if (effect.kind === 'condition') {
+    if (effect.payload.action === 'apply') return `${titleCaseId(effect.payload.conditionId)} condition`
+    return effect.payload.action === 'prevent'
+      ? `${titleCaseId(effect.payload.conditionId)} prevention`
+      : `${titleCaseId(effect.payload.conditionId)} suppression`
+  }
+  if (effect.kind === 'numeric-modifier') return `${titleCaseId(effect.payload.attribute)} modifier`
+  if (effect.kind === 'capability') {
+    if (effect.payload.capabilityId === ITEM_DIRE_HIT_CAPABILITY_ID) return 'Critical range bonus'
+    if (effect.payload.capabilityId === ITEM_GUARD_SPEC_CAPABILITY_ID) return 'Stage-change protection'
+    if (effect.tags.includes(ITEM_DIGESTION_EFFECT_TAG)
+      && effect.payload.capabilityId.startsWith(ITEM_DIGESTION_HEAL_CAPABILITY_PREFIX)) {
+      return 'Digestion Buff healing'
+    }
+    return sentenceCaseId(effect.payload.capabilityId)
+  }
+  if (effect.kind === 'item-suppression') return 'Item suppression'
+  if (effect.kind === 'move-list-overlay') return 'Move list change'
+  if (effect.kind === 'creature-rule-overlay') return `${titleCaseId(effect.payload.domain)} change`
+  if (effect.kind === 'transformation') return 'Transformation'
+  return 'Vortex'
+}
+
+const activeEffectDurationLabel = (duration: EncounterEffectDuration): string => {
+  if (duration.kind === 'turns') {
+    const subject = duration.subject === 'target' ? 'target' : 'source'
+    return `${duration.remaining} ${subject} turn${duration.remaining === 1 ? '' : 's'} remaining`
+  }
+  if (duration.kind === 'rounds') {
+    return `${duration.remaining} round${duration.remaining === 1 ? '' : 's'} remaining`
+  }
+  if (duration.kind === 'scene') return 'Until scene ends'
+  if (duration.kind === 'encounter') return 'Until encounter ends'
+  if (duration.kind === 'campaign-time') return `Until campaign minute ${duration.expiresAtCampaignMinute}`
+  if (duration.kind === 'explicit-dismissal') return 'Until GM dismisses'
+  if (duration.kind === 'until-triggered') return 'Until triggered'
+  return 'Permanent'
+}
+
+const compactDisplaySummary = (values: readonly string[], fallback: string): string => {
+  const uniqueValues = [...new Set(values.map(value => value.trim()).filter(Boolean))]
+  if (uniqueValues.length === 0) return fallback
+  const summary = uniqueValues.length === 1
+    ? uniqueValues[0]!
+    : `${uniqueValues[0]}, ${uniqueValues[1]}${uniqueValues.length > 2 ? ` and ${uniqueValues.length - 2} more` : ''}`
+  return summary.slice(0, 200)
+}
+
+const activeEffectProjection = (input: {
+  readonly effect: EncounterEffect
+  readonly participantById: ReadonlyMap<string, EncounterWorkspaceParticipant>
+  readonly map: TabletopMap
+}): EncounterWorkspaceActiveEffect => {
+  const { effect } = input
+  const effectRef = encounterEffectCommandRef(effect.id)
+  const affectedNames = effect.affected.placementIds.flatMap((placementId) => {
+    const participant = input.participantById.get(placementId)
+    return participant ? [participant.displayName] : []
+  })
+  const missingParticipantCount = effect.affected.placementIds.length - affectedNames.length
+  const sideNames = effect.affected.sideIds.flatMap((sideId) => {
+    const side = input.map.encounterState?.sides[sideId]
+    return side ? [side.label] : []
+  })
+  const affectedContext = [
+    ...affectedNames,
+    ...sideNames,
+    ...(missingParticipantCount > 0
+      ? [`${missingParticipantCount} participant${missingParticipantCount === 1 ? '' : 's'}`]
+      : []),
+    ...(effect.affected.cells.length > 0
+      ? [`${effect.affected.cells.length} battlefield cell${effect.affected.cells.length === 1 ? '' : 's'}`]
+      : []),
+  ]
+  return {
+    effectRef,
+    label: activeEffectLabel(effect),
+    sourceLabel: input.participantById.get(effect.source.placementId)?.displayName ?? 'Encounter source',
+    affectedLabel: compactDisplaySummary(affectedContext, 'Battlefield'),
+    durationKind: effect.duration.kind,
+    durationLabel: activeEffectDurationLabel(effect.duration),
+    dismissalRef: effect.duration.kind === 'explicit-dismissal' ? effectRef : null,
+    dismissible: effect.duration.kind === 'explicit-dismissal',
+  }
+}
+
+const activeEffectProjections = (input: {
+  readonly map: TabletopMap
+  readonly participants: readonly EncounterWorkspaceParticipant[]
+}): readonly EncounterWorkspaceActiveEffect[] => {
+  const participantById = new Map(input.participants.map(participant => [participant.participantId, participant]))
+  return (input.map.encounterState?.effects ?? [])
+    .filter(effect => effect.suppression.sources.length === 0
+      && (effect.duration.remaining === null || effect.duration.remaining > 0)
+      && (effect.charges === null || effect.charges > 0))
+    .map(effect => activeEffectProjection({ effect, participantById, map: input.map }))
+    .sort((left, right) => left.label.localeCompare(right.label)
+      || left.affectedLabel.localeCompare(right.affectedLabel)
+      || left.effectRef.localeCompare(right.effectRef))
+}
 
 const environmentEntries = (map: TabletopMap): EncounterWorkspaceEnvironmentEntry[] => {
   const entries: EncounterWorkspaceEnvironmentEntry[] = []
@@ -407,6 +548,7 @@ export const buildMapBackedEncounterWorkspace = (input: {
       hidden,
       canUseDirector,
       castRole: castRoleByParticipant.get(placement.id) ?? null,
+      generatedAt: projection.generatedAt,
     }))
     .sort((left, right) => left.displayName.localeCompare(right.displayName)
       || left.participantId.localeCompare(right.participantId))
@@ -485,7 +627,7 @@ export const buildMapBackedEncounterWorkspace = (input: {
       currentParticipantId: currentParticipantId && participantSet.has(currentParticipantId)
         ? currentParticipantId
         : null,
-      entries: turnEntries(snapshot.map, order, projection.pending),
+      entries: turnEntries(snapshot.map, order, projection.pending, participants),
     },
     sides,
     participants,
@@ -530,6 +672,9 @@ export const buildMapBackedEncounterWorkspace = (input: {
       stakes: encounterDocument.stakes,
       notes: encounterDocument.notes,
     } : null,
+    ...(canUseDirector ? { activeEffects: activeEffectProjections({ map: snapshot.map, participants }) } : {}),
+    // Workspace offers contain presentation only. Private command templates
+    // are attached after a fresh declaration authorization, never preloaded.
     offers: projection.offers,
     passives: projection.passives,
     affordances: projection.affordances,

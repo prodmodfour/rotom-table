@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-095",
+  "status": "enforced",
+  "profiles": {
+    "lowerEndLaptop": {
+      "description": "Four logical cores, 8 GB RAM, current Chromium-class browser, Node 24 certification process.",
+      "interactionTargetMs": 200,
+      "initialRenderTargetMs": 2000
+    },
+    "mobile": {
+      "description": "320 CSS-pixel viewport, touch input, reduced concurrent work, same role-safe liveplay projection.",
+      "maximumRenderedInventoryRows": 80,
+      "maximumRenderedActionOffers": 80,
+      "minimumControlSizePx": 44
+    },
+    "largeCampaign": {
+      "description": "Catalog-complete campaign at every strict contract bound; no incomplete reads or silent truncation.",
+      "inventoryRows": 5000,
+      "equipmentOwnerCount": 512,
+      "attentionItemCount": 10000,
+      "realtimeClientCount": 32
+    }
+  },
+  "scenarios": {
+    "largeInventory": {
+      "storedRows": 5000,
+      "projectionOffers": 512,
+      "renderPageSize": 80,
+      "maximumDurationMs": 2000,
+      "maximumProjectionBytes": 2097152
+    },
+    "equipmentProviders": {
+      "ownerCount": 512,
+      "providersPerOwner": 2,
+      "minimumResolvedContributions": 1024,
+      "maximumDurationMs": 4000
+    },
+    "actionDock": {
+      "offerCount": 512,
+      "renderBatchSize": 80,
+      "maximumDurationMs": 2000,
+      "maximumProjectionBytes": 1048576
+    },
+    "rewardPackage": {
+      "rewardLines": 1024,
+      "allocations": 1024,
+      "maximumDurationMs": 4000,
+      "maximumDocumentBytes": 8388608
+    },
+    "attentionQueue": {
+      "itemCount": 10000,
+      "maximumDurationMs": 8000,
+      "maximumProjectionBytes": 33554432
+    },
+    "multiClientRealtime": {
+      "eventsPerBatch": 1000,
+      "clientCount": 32,
+      "maximumDurationMs": 5000
+    }
+  },
+  "domGrowth": {
+    "inventoryStrategy": "fixed-page",
+    "actionDockStrategy": "incremental-batch",
+    "pageOrBatchSize": 80,
+    "unboundedRenderingAllowed": false
+  },
+  "measurementPolicy": {
+    "clock": "performance.now monotonic wall time",
+    "workers": 1,
+    "fileParallelism": false,
+    "runtime": "Node 24",
+    "flakinessMargin": "Budgets are at least four times the reviewed development baseline and assert structural caps separately.",
+    "failurePolicy": "A budget overrun blocks acceptance; do not raise a limit without profiling and reviewed evidence."
+  },
+  "sourceEvidence": [
+    {
+      "path": "shared/itemAutomation/inventoryActions.ts",
+      "sha256": "48fc0ed00ff61ad24e72976cc2637b7a4968146baf40eabf3453c48240cb41c2"
+    },
+    {
+      "path": "server/domain/itemAutomation/equipmentContributions.ts",
+      "sha256": "9cac24538b6892cc7a791bb55d1ac4efd30ddaadadd67de015a2269fa7914828"
+    },
+    {
+      "path": "shared/encounterPresentation/validation.ts",
+      "sha256": "984b75d4aaea025fe464477aef60ea55f41899c3b7a1edb5dbcca5420f3142f6"
+    },
+    {
+      "path": "shared/encounterSettlement/document.ts",
+      "sha256": "bd6751d716f1b2f40552c95208141844b87da83453a0ea16610a0835b1bfb849"
+    },
+    {
+      "path": "shared/campaignAttention/projection.ts",
+      "sha256": "477d6d81d6816831832f96eb6d7c9f2f64e849412b8fe1ef442b1b95a30b4993"
+    },
+    {
+      "path": "server/realtime/realtimeEventAccessPolicy.ts",
+      "sha256": "c815c93a56b726fabe4b44b926e4af6217988028541d8ef07b8854bf90d39b1e"
+    },
+    {
+      "path": "src/components/inventory/InventoryItemTable.vue",
+      "sha256": "8581c8c44a50755283d7f951fa4dfaa6b06054460ed8ab0a8fcbddc0d6d5dfc9"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterActionDock.vue",
+      "sha256": "3f7cdf70eacbc0cb0c172b7512d1265ff806023eff31564965a0d0fd90a899fb"
+    },
+    {
+      "path": "tests/server/completePlayLoopPerformanceBudgets.test.ts",
+      "sha256": "46c8be584c0b8c16242ca4ee658d5986632c225f04e7e13ebcc0311b93d29107"
+    },
+    {
+      "path": "tests/components/completePlayLoopPerformanceBudgets.test.ts",
+      "sha256": "929c59b68d9a64a3900828634c4bf286b43a8e2a9ba8e624065478f22769a37e"
+    },
+    {
+      "path": "tests/data/completePlayLoopPerformanceBudgets.test.ts",
+      "sha256": "21e37365839989d64a6e0700e91db977eb439ff7785c6df271bd5f499a448981"
+    },
+    {
+      "path": "docs/complete-play-loop-performance-and-scale.md",
+      "sha256": "c361a300d4bf1b5bd15c17257c90e8ae916d128ec1e88bc8010b7ed92f7d159b"
+    },
+    {
+      "path": "package.json",
+      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+    }
+  ]
+}

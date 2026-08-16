@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-041",
+  "runtimeContract": "shared/itemAutomation/equipment.ts",
+  "embeddedField": "equipmentState",
+  "playerProjectionField": "equipmentProjection",
+  "authority": {
+    "storage": "owning sheet document_json",
+    "compareAndSwapRevision": "sheets.revision",
+    "semanticRevision": "equipmentState.revision",
+    "approvedWriters": [
+      "equipment-operation",
+      "reviewed-equipment-migration"
+    ],
+    "lifecycleExtension": "data/complete-play-loop/equipment-lifecycle.v1.json",
+    "clientWholeSheetMechanicsWriter": false
+  },
+  "owners": {
+    "trainer": {
+      "slots": [
+        "mainHand",
+        "offHand",
+        "head",
+        "body",
+        "feet",
+        "accessory"
+      ],
+      "legacyDescriptiveField": "equipmentSlots"
+    },
+    "pokemon": {
+      "slots": [
+        "held",
+        "held-secondary"
+      ],
+      "legacyDescriptiveField": "items.held"
+    }
+  },
+  "effectiveInstance": {
+    "identity": "equipped-item:v1:<32 lowercase hex>",
+    "wholeItemQuantity": 1,
+    "requiredCanonicalEvidence": [
+      "canonicalItemId",
+      "canonicalRecordSha256",
+      "equipmentDefinitionSha256 before activation; null only for inactive migrated assignments awaiting reviewed compatibility"
+    ],
+    "requiredSourceInventoryEvidence": [
+      "containerKind",
+      "containerSlug",
+      "section",
+      "rowId",
+      "sourceInstanceId",
+      "sourceRevision",
+      "quantity"
+    ],
+    "requiredLifecycleEvidence": [
+      "instance revision",
+      "activity status and durable reason sources",
+      "equippedByOperationId",
+      "equippedAt",
+      "bounded serializedState"
+    ],
+    "configuration": "null or a schema/hash-bound strict JSON object validated by the item-specific equipment definition"
+  },
+  "inventorySerialization": {
+    "field": "InventoryEntry.serializedEquipment",
+    "identityContinuity": "the equipped instance identity remains the same whole-item identity when returned to inventory and equipped again",
+    "revision": "increments on every inventory/equipment custody transition or item-specific state change",
+    "quantity": 1,
+    "activity": "durable activity status and exact reasons survive inventory, transfer, return, and re-equip custody",
+    "state": "bounded strict JSON reserved for reviewed charges, hash-bound durability, and other item-specific state",
+    "stackRows": "omit serializedEquipment and use positive safe-integer quantity",
+    "playerProjection": "serialized identity, hashes, configuration, and state are server-private"
+  },
+  "slotAuthority": {
+    "representation": "complete canonical ordered slot list with explicit nulls",
+    "multiSlotWholeItem": "one instance identity may occupy several compatible slots",
+    "orphanInstanceAllowed": false,
+    "missingInstanceReferenceAllowed": false,
+    "ownerSlotMismatchAllowed": false
+  },
+  "legacyResolution": {
+    "representation": "unresolved entries separate from effective instances",
+    "effectiveContribution": false,
+    "requiredEvidence": [
+      "issueId",
+      "slotId",
+      "legacyDisplayName",
+      "reason",
+      "candidateCanonicalItemIds",
+      "candidateSourceInstanceIds"
+    ],
+    "silentNameBasedActivation": false
+  },
+  "activityStates": [
+    "active",
+    "inactive",
+    "suppressed",
+    "broken"
+  ],
+  "playerProjection": {
+    "includes": [
+      "owner",
+      "semantic revision",
+      "slot assignments",
+      "opaque equipped instance identity and revision",
+      "canonical item identity",
+      "activity status and safe reason codes",
+      "configuration identity",
+      "unresolved count"
+    ],
+    "omits": [
+      "source container slug",
+      "source row identity",
+      "source inventory revision",
+      "canonical and definition hashes",
+      "configuration values",
+      "operation identity and timestamp",
+      "inactive reason source identities",
+      "serialized inventory identity and item-specific state",
+      "legacy unresolved descriptions and candidate sources"
+    ],
+    "stored": false,
+    "malformedAuthorityPolicy": "omit-projection-fail-closed"
+  },
+  "invariants": [
+    "Descriptive inventory rows, trainer equipmentSlots strings, and Pokemon items.held strings are never effective equipment authority.",
+    "Every effective instance is canonical-hash-bound, whole-item, source-provenanced, assigned, revisioned, and operation-authored.",
+    "A serialized whole item retains one stable instance identity, durable activity, and bounded item-specific state across inventory, equipment, transfers, return, and re-equip.",
+    "Active instances have no inactive reasons; every non-active instance has at least one durable reason source.",
+    "The embedded equipment owner identity must match the owning sheet before any runtime contribution or operation.",
+    "Item-specific configuration is inert unless its configuration and equipment definition hashes are registered and current.",
+    "Reviewed durability is initialized only from explicit configuration and reaches broken exactly at zero; unsupported narrative damage requires guided adjudication rather than inferred mutation.",
+    "Player sheet and realtime projections never expose source inventory row IDs, source revisions, operation IDs, definition hashes, private configuration values, reason source identities, or serialized durability."
+  ]
+}

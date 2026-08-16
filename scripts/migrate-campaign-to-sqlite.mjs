@@ -1607,11 +1607,22 @@ const applyStorageMigrations = (connection) => {
 const openMigrationDatabase = (databasePath) => {
   mkdirSync(dirname(databasePath), { recursive: true, mode: 0o750 })
   const connection = new DatabaseSync(databasePath)
-  connection.exec('PRAGMA foreign_keys = ON')
-  connection.exec('PRAGMA busy_timeout = 5000')
-  connection.exec('PRAGMA journal_mode = WAL')
-  applyStorageMigrations(connection)
-  return connection
+  try {
+    connection.exec('PRAGMA foreign_keys = ON')
+    connection.exec('PRAGMA busy_timeout = 5000')
+    connection.exec('PRAGMA journal_mode = WAL')
+    const existingVersion = readUserVersion(connection)
+    // This standalone JSON importer intentionally owns only schema 28. A
+    // production runtime may have advanced the same database afterward; its
+    // common maps/sheets/inventory tables remain import-compatible, but the
+    // importer must neither downgrade nor reinterpret newer schema objects.
+    if (existingVersion <= STORAGE_SCHEMA_VERSION) applyStorageMigrations(connection)
+    return connection
+  }
+  catch (error) {
+    connection.close()
+    throw error
+  }
 }
 
 const stringifyDocument = (document) => {
@@ -1647,6 +1658,22 @@ const upsertMapRecord = (connection, record) => {
   return true
 }
 
+const runtimeEquipmentDocumentSupersedesLegacySource = (existing, record) => {
+  if (!existing || Object.hasOwn(record.document, 'equipmentState')) return false
+  if (Number(existing.revision) <= record.revision || Number(existing.updated_at) <= record.updatedAt) return false
+  let document
+  try { document = JSON.parse(existing.document_json) }
+  catch { return false }
+  return isRecord(document)
+    && isRecord(document.equipmentState)
+    && document.equipmentState.schemaVersion === 1
+    && isRecord(document.equipmentState.owner)
+    && document.equipmentState.owner.kind === record.kind
+    && document.equipmentState.owner.slug === record.slug
+    && document.revision === Number(existing.revision)
+    && document.updatedAt === Number(existing.updated_at)
+}
+
 const upsertSheetRecord = (connection, record) => {
   const documentJson = stringifyDocument(record.document)
   const existing = connection.prepare(`
@@ -1654,7 +1681,8 @@ const upsertSheetRecord = (connection, record) => {
     FROM sheets
     WHERE kind = ? AND slug = ?
   `).get(record.kind, record.slug)
-  if (storedDocumentUnchanged(existing, documentJson, record.revision, record.updatedAt)) return false
+  if (storedDocumentUnchanged(existing, documentJson, record.revision, record.updatedAt)
+    || runtimeEquipmentDocumentSupersedesLegacySource(existing, record)) return false
 
   connection.prepare(`
     INSERT INTO sheets (kind, slug, document_json, revision, updated_at)
@@ -1764,7 +1792,9 @@ const validateMapRow = (row, record) => {
 
 const validateSheetRow = (row, record) => {
   if (!row) throw new Error(`Imported ${record.kind} sheet ${record.slug} is missing from SQLite`)
-  if (Number(row.revision) !== record.revision) throw new Error(`Imported ${record.kind} sheet ${record.slug} revision mismatch`)
+  if (Number(row.revision) !== record.revision && !runtimeEquipmentDocumentSupersedesLegacySource(row, record)) {
+    throw new Error(`Imported ${record.kind} sheet ${record.slug} revision mismatch`)
+  }
   const document = parseStoredJson(row.document_json, `${record.kind} sheet ${record.slug}`)
   if (!isRecord(document)) throw new Error(`Imported ${record.kind} sheet ${record.slug} document must be an object`)
   if (document.slug !== record.slug) throw new Error(`Imported ${record.kind} sheet ${record.slug} document slug mismatch`)

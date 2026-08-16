@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-052",
+  "status": "reviewed-native-with-guided-deferral",
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "activities": {
+    "identityPattern": "item-activity:v1:<32 lowercase hexadecimal characters>",
+    "operationIdentityPattern": "item-activity-operation:v1:<32 lowercase hexadecimal characters>",
+    "statuses": ["in-progress", "completed", "interrupted"],
+    "oneActivePerTrainer": true,
+    "oneActivePerSource": true,
+    "startRevision": 0,
+    "terminalRevisionIncrement": 1,
+    "campaignTime": {
+      "start": "authoritative singleton campaign minute",
+      "terminal": "authoritative singleton campaign minute at commit",
+      "minimumDuration": null,
+      "clientTimeForbidden": true
+    }
+  },
+  "firstAidKit": {
+    "canonicalId": "First Aid Kit",
+    "canonicalRecordSha256": "731805bff0ae72a26eeaa18f5b57cd8d00225b156787e66cebe8c57e49d9b2c6",
+    "canonicalEffectSha256": "0ed195fba099f940ca0fab9c40b2fee65ccf408164b674f833ed0d037300ae08",
+    "actorKind": "trainer",
+    "targetKinds": ["pokemon", "trainer"],
+    "targetAuthority": ["actor", "actor-roster", "profile-control", "gm-override"],
+    "skill": { "id": "medicineEd", "dieSides": 6, "serverRollOnly": true },
+    "ap": { "mode": "drain", "amount": 1, "recovery": "extended-rest", "applyAt": "completion" },
+    "healing": {
+      "basis": "authoritative-skill-check-total",
+      "cap": "injury-adjusted-effective-maximum-hp",
+      "faintedState": "preserve"
+    },
+    "conditionIds": ["Burned", "Poisoned", "Badly Poisoned", "Paralysis"],
+    "source": { "reusable": true, "quantityConsumed": 0, "exactRowStillRevalidated": true }
+  },
+  "bandages": {
+    "canonicalId": "Bandages",
+    "canonicalRecordSha256": "8d9423b246471aaf32e89d1a67a6c6734c5ca76496903ab8e0210f05b949cb62",
+    "canonicalEffectSha256": "9018603e5421cb714a3901fe1a9bb24ac781a12c6f1c61bd63b1d9456487ee8e",
+    "naturalHealingRecordSha256": "7ac42082c1809abae1312661d9529cc9413ab8e34977c16dad09c9fe2e72140e",
+    "application": { "timing": "extended", "consumeAt": "completion", "quantity": 1 },
+    "durationMinutes": 360,
+    "tickMinutes": 30,
+    "healing": { "basis": "full-formula-maximum-hp", "numerator": 1, "denominator": 8, "minimum": 1, "blockedAtInjuries": 5 },
+    "completion": { "injuriesRemoved": 1, "obeyDailyInjuryLimit": true },
+    "interruption": { "trigger": "authoritative-hp-loss", "appliesAfterAcceptedApplication": true },
+    "stacking": "one-active-treatment-per-target",
+    "campaignDaySettlement": "materialize all due half-hour boundaries before next-day recovery in the same transaction"
+  },
+  "poultices": {
+    "canonicalId": "Poultices",
+    "canonicalRecordSha256": "2879a8aab33a5d520ee3ee0772a497ed35b8fc4629b2f64e0a81a61f5463975f",
+    "canonicalEffectSha256": "c767e3eb294e64a433ac29ba2fd94441d7615a90b7db4ba7ff9c197d76fc8f8a",
+    "sharesBandageTreatment": true,
+    "nativeExecution": false,
+    "reason": "Canonical authority makes repeated-use Loyalty consequences GM judgment; P8-059 must provide the bounded guided receipt before inventory can settle."
+  },
+  "equipmentActions": {
+    "wonderLauncher": {
+      "canonicalId": "Wonder Launcher",
+      "canonicalRecordSha256": "8679405ba60ea75d3c602b36d47eafaf378defe18cc66726a74917c5ed20d4a8",
+      "equipmentDefinitionSha256": "76451499397408feb0a31fd6ee281a8a8f045120dcfba9cf65558d657e4f2aa0",
+      "actionId": "equipment.wonder-launcher.apply",
+      "executionStatus": "native",
+      "supportedPayload": "reviewed native X-Items",
+      "costs": { "standardActions": 1, "apDrain": 1, "apRecovery": "extended-rest", "xItemQuantity": 1 },
+      "target": { "kind": "pokemon", "rangeMeters": 8, "forfeitNextActions": false },
+      "sourceBinding": "opaque exact equipped-source digest",
+      "acceptedEffectSurvivesSourceLoss": true,
+      "combinedResearcherItems": "fail-closed-without-reviewed-identity"
+    },
+    "reBreather": {
+      "canonicalId": "Re-Breather",
+      "canonicalRecordSha256": "bd89163a1ce43a68c9146d994dca483a128c40055df90179dcf94cdb1dc86f58",
+      "equipmentDefinitionSha256": "430c0cfe2cb6a80fec61d1f2bb663cb116dec5b5c8e4c5793725fca9e44ddfdf",
+      "actionId": "equipment.re-breather.activate",
+      "executionStatus": "deferred",
+      "deferredTicket": "P8-059",
+      "reason": "The five-minute refill requires a bounded authoritative open-air adjudication; runtime cannot infer environment from elapsed time."
+    }
+  },
+  "boundaries": {
+    "start": "store immutable source, actor, target, ownership, definition, campaign-time, and settlement identities without rolling, draining AP, healing, removing conditions, consuming inventory, or revising sheets",
+    "progress": "durable in-progress activity is reloadable and privacy-safe; no elapsed-time mechanics are invented",
+    "complete": "reauthorize current source, target ownership, target eligibility, Trainer AP, canonical definition, campaign clock, and full item read set; item settlement and terminal activity receipt commit in one SQLite transaction",
+    "interrupt": "write only one terminal activity receipt and realtime invalidation; no item operation, roll, AP, HP, condition, inventory, or sheet mutation",
+    "retry": "exact command replay returns stored activity and item receipts; it never rerolls or reapplies",
+    "conflict": "stale activity revision, command drift, source loss, target loss, AP loss, definition drift, or transaction failure leaves the activity safely in progress"
+  },
+  "privacy": {
+    "projectionAllows": ["opaque activity identity", "revision", "status", "display labels", "campaign minutes", "current target HP summary", "current condition labels", "completion cost labels", "safe terminal message"],
+    "projectionForbids": ["source row ID", "equipment instance ID", "canonical hashes", "profile ID", "ownership evidence", "raw command", "roll before completion"],
+    "realtime": "sheet-access invalidation with opaque activity identity, status, and revision only"
+  },
+  "implementation": {
+    "sharedContract": "shared/itemAutomation/extendedActions.ts",
+    "repository": "server/storage/itemExtendedActionRepository.ts",
+    "useCase": "server/useCases/manageItemExtendedAction.ts",
+    "projection": "server/domain/itemAutomation/extendedActionProjection.ts",
+    "medicalStateContract": "shared/itemAutomation/medicalTreatments.ts",
+    "medicalLifecycle": "server/domain/itemAutomation/medicalTreatments.ts",
+    "campaignClockSettlement": "server/useCases/advanceCampaignDay.ts",
+    "equipmentDelivery": "server/domain/itemAutomation/equipmentDelivery.ts",
+    "api": ["server/api/items/extended-actions.get.ts", "server/api/items/extended-actions.post.ts"],
+    "client": ["src/composables/sheets/useTrainerItemExtendedActions.ts", "src/components/sheets/TrainerItemExtendedActionCard.vue", "src/components/sheets/MedicalTreatmentStatusCard.vue"],
+    "mockups": [".pi/artifacts/ui-mockups/medical-extended-action/v001.png", ".pi/artifacts/ui-mockups/bandages-treatment-status/v003.png"],
+    "tests": [
+      "tests/shared/itemAutomationExtendedActions.test.ts",
+      "tests/server/itemExtendedActions.test.ts",
+      "tests/shared/itemAutomationMedicalTreatments.test.ts",
+      "tests/server/itemMedicalTreatments.test.ts",
+      "tests/server/itemExtendedActionRoutes.test.ts",
+      "tests/composables/useTrainerItemExtendedActions.test.ts",
+      "tests/components/trainerSheetItemActions.test.ts",
+      "tests/components/medicalTreatmentStatusCard.test.ts",
+      "tests/server/executeItemOperation.test.ts",
+      "tests/server/encounterPresentationProjection.test.ts",
+      "tests/e2e/medical-extended-actions.spec.ts"
+    ]
+  },
+  "certification": {
+    "focusedItemAndExtendedActionSuite": {
+      "files": 49,
+      "tests": 315,
+      "workers": 1,
+      "fileParallelism": false,
+      "result": "passed"
+    },
+    "liveplayProductionBuild": {
+      "spec": "tests/e2e/medical-extended-actions.spec.ts",
+      "projects": ["chromium", "mobile-chromium"],
+      "journeysPerProject": 2,
+      "tests": 4,
+      "result": "passed",
+      "covers": [
+        "start-mechanical-inertness",
+        "reconnect-and-resume-projection",
+        "stale-activity-conflict",
+        "safe-interruption",
+        "accepted-completion",
+        "exact-start-completion-and-interruption-replay",
+        "Bandages-private-evidence-redaction",
+        "desktop-and-mobile-reflow",
+        "axe-accessibility"
+      ]
+    },
+    "gates": {
+      "nuxtTypecheck": "passed",
+      "focusedEslint": "passed",
+      "gitDiffCheck": "passed",
+      "generatedItemInventoryCheck": "passed"
+    },
+    "manualStorageRepairRequired": false
+  }
+}

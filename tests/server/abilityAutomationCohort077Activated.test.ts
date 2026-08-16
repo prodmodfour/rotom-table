@@ -13,6 +13,8 @@ import { planAuthoritativeMoveState } from '../../server/domain/planAuthoritativ
 import { buildAuthoritativeMoveRulesContext } from '../../server/domain/moveAutomation/context'
 import { creatureRuleOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 import { aa066DazzlingDefinition } from '../../server/domain/abilityAutomation/mechanics/aa066StaticIntegration'
+import { activePokemonHeldEquipmentState } from '../fixtures/equipment'
+import { splitSheetItemNames } from '~/utils/sheetItemNames'
 
 const id = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 const ability = (canonicalId: string) => ({
@@ -48,6 +50,10 @@ const sheet = (input: {
   types: ['Normal'],
   abilities: (input.abilities ?? []).map(ability),
   movelist: [{ name: 'Vine Whip' }, { name: 'Tackle' }],
+  equipmentState: activePokemonHeldEquipmentState({
+    ownerSlug: input.slug,
+    canonicalItemIds: splitSheetItemNames(input.held),
+  }),
   ...(input.held ? { items: { held: input.held } } : {}),
   stats: {
     hp: { added: 90 }, atk: { added: 40 }, def: { added: 30 },

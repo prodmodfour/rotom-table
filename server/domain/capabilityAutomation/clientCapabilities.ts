@@ -55,6 +55,7 @@ import {
   resolvePhysicalPowerLoad,
 } from './physicalPower'
 import { placementToSpawned } from '~/utils/placement'
+import { resolveItemFormChangeMegaRingSource } from '../itemAutomation/formChanges'
 
 const pokedexBySpecies = new Map((pokedexData as readonly PokedexRecord[]).map(record => [
   record.species.trim().toLocaleLowerCase('en-US'), record,
@@ -442,15 +443,31 @@ const contextSatisfied = (input: {
           .some(move => move.name.trim().toLocaleLowerCase('en-US') === 'dragon ascent')) return false
       const sceneStartedAt = map.activeScene?.startedAt
       if (!Number.isSafeInteger(sceneStartedAt) || (sceneStartedAt ?? -1) < 0) return false
+      if (map.encounterState?.itemFormChanges?.entries.some(entry => (
+        entry.placementId === input.placement.id
+        && (entry.duration.kind === 'persistent'
+          || entry.duration.sceneStartedAt === sceneStartedAt)
+      ))) return false
       const uses = Array.isArray(map.metadata?.capabilityMegaEvolutionUses)
         ? map.metadata.capabilityMegaEvolutionUses as unknown[] : []
-      return input.linkedTrainers.some(trainer => (
-        trainer.equipmentSlots?.accessory?.trim().toLocaleLowerCase('en-US') === 'mega ring'
-        && !uses.some(raw => {
+      return input.linkedTrainers.some((trainer) => {
+        try {
+          resolveItemFormChangeMegaRingSource({
+            map,
+            trainerSheet: trainer,
+            sheets: { pokemon: input.pokemonBySlug, trainer: input.trainerBySlug },
+          })
+        }
+        catch { return false }
+        return !map.encounterState?.itemFormChanges?.entries.some(entry => (
+          entry.trainerSheetSlug === trainer.slug
+          && entry.duration.kind === 'scene'
+          && entry.duration.sceneStartedAt === sceneStartedAt
+        )) && !uses.some(raw => {
           const use = raw as Record<string, unknown>
           return use?.trainerSlug === trainer.slug && use.sceneStartedAt === sceneStartedAt
         })
-      ))
+      })
     }
     case 'jump-destination-cell': return physicalPowerMovementLimit(
       input.physicalPowerLoad,
@@ -971,6 +988,10 @@ export const buildCapabilityClientCapabilityBundle = (
       const runtime = CAPABILITY_AUTOMATION_RUNTIME_REGISTRY.require(instance.canonicalId)
       for (const action of runtime.spec.actions) {
         if (independentActionBlocked || action.actionId === 'ready-light-shield'
+          // P8-056 routes Delta Evolution through the same exact Ring-backed
+          // item form-change decision as every other Mega Evolution. Retain
+          // accepted legacy modes, but do not project a duplicate command path.
+          || (instance.canonicalId === 'Delta Evolution' && action.actionId === 'mega-evolve')
           || capabilityActionDelegatesToCampaignAggregate(instance.canonicalId, action.actionId)) continue
         const context = action.contextPredicateId.slice(action.contextPredicateId.lastIndexOf('.') + 1)
         if (!contextSatisfied({

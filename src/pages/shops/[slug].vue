@@ -49,6 +49,10 @@ const {
   checkoutErrorMessage,
   checkoutUnavailableReason,
   stockChangeNotice,
+  postCheckoutReceipt,
+  postCheckoutActions,
+  postCheckoutActionsStatus,
+  postCheckoutActionsError,
   canCheckout,
   pendingOutboxEntries,
   outboxStatus,
@@ -62,6 +66,8 @@ const {
   discardOutboxEntry,
   clearCheckoutError,
   clearStockChangeNotice,
+  loadPostCheckoutActions,
+  dismissPostCheckoutActions,
 } = useShopfrontCheckout({
   shop,
   authRole: role,
@@ -199,6 +205,10 @@ useHead(() => ({
         :outbox-status="outboxStatus"
         :outbox-error="outboxError"
         :selected-profile-display-name="selectedProfileDisplayName"
+        :post-checkout-receipt="postCheckoutReceipt"
+        :post-checkout-actions="postCheckoutActions"
+        :post-checkout-actions-status="postCheckoutActionsStatus"
+        :post-checkout-actions-error="postCheckoutActionsError"
         @update-payment-option="selectPaymentOption"
         @update-delivery-option="selectDeliveryOption"
         @checkout="submitCheckout"
@@ -207,6 +217,8 @@ useHead(() => ({
         @reload-documents="loadCheckoutDocuments"
         @clear-error="clearCheckoutError"
         @clear-stock-change-notice="clearStockChangeNotice"
+        @retry-post-checkout-actions="loadPostCheckoutActions"
+        @dismiss-post-checkout-actions="dismissPostCheckoutActions"
       />
     </template>
 
@@ -225,6 +237,7 @@ useHead(() => ({
 .shopfront-page {
   min-height: 100vh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 1rem;
   padding: 1rem;

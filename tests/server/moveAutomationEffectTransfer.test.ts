@@ -9,6 +9,15 @@ import {
   conditionEncounterEffectFixture,
   numericEncounterEffectFixture,
 } from '../fixtures/moveAutomation/encounterEffects'
+import { createItemTemporaryCombatEffect } from '../../server/domain/itemAutomation/combatEffects'
+import {
+  itemDigestionSheetTag,
+  rebindItemDigestionEffectsForPlacement,
+} from '../../server/domain/itemAutomation/digestionEffectIdentity'
+import {
+  ITEM_DIGESTION_EFFECT_TAG,
+  ITEM_DIGESTION_HEAL_CAPABILITY_PREFIX,
+} from '../../server/domain/itemAutomation/digestionBuffTrade'
 
 const RECALLED = 'baton-source'
 const REPLACEMENT = 'baton-replacement'
@@ -124,6 +133,59 @@ describe('encounter effect switch transfer policies', () => {
       'effect.state.expiring',
     ])
     expect(result.effects).toEqual([])
+  })
+
+  it('retains a sheet-owned Snack across recall and rebinds only when that sheet returns', () => {
+    const owner = { id: RECALLED, sheetKind: 'pokemon' as const, sheetSlug: 'snorlax' }
+    const effect = parseEncounterEffect({
+      ...numericEncounterEffectFixture(),
+      id: 'effect.item.digestion.leftovers', kind: 'capability',
+      source: { ...numericEncounterEffectFixture().source, placementId: RECALLED },
+      affected: { placementIds: [RECALLED], sideIds: [], cells: [] },
+      duration: { kind: 'encounter', remaining: null },
+      tags: [ITEM_DIGESTION_EFFECT_TAG, itemDigestionSheetTag(owner)],
+      payload: { capabilityId: `${ITEM_DIGESTION_HEAL_CAPABILITY_PREFIX}16`, action: 'grant', value: 1 },
+      transferPolicy: 'retain', suppression: { sources: [] },
+    })
+    const switched = resolveEncounterEffectSwitchTransfer({
+      effects: [effect], recalledPlacementId: RECALLED,
+      sentOutPlacementId: REPLACEMENT, stateTransferPolicy: 'none',
+    })
+    expect(switched.effects[0]?.affected.placementIds).toEqual([RECALLED])
+    expect(rebindItemDigestionEffectsForPlacement({
+      effects: switched.effects,
+      placement: { ...owner, id: 'snorlax-returned' },
+    })[0]).toMatchObject({
+      source: { placementId: 'snorlax-returned' },
+      affected: { placementIds: ['snorlax-returned'] },
+    })
+  })
+
+  it('expires item-authored Dire Hit and Guard Spec on ordinary switch and Baton Pass', () => {
+    const map = { initiative: { round: 2 }, encounterState: undefined }
+    for (const stateTransferPolicy of ['none', 'baton-pass'] as const) {
+      const itemEffects = [
+        createItemTemporaryCombatEffect({
+          operationId: 'op_item_dire_hit_transfer', canonicalItemId: 'Dire Hit',
+          sourcePlacementId: 'trainer-source', targetPlacementId: RECALLED,
+          family: 'critical-range', amount: 2,
+          duration: { kind: 'encounter', amount: null }, stackPolicy: 'replace', map,
+        }),
+        createItemTemporaryCombatEffect({
+          operationId: 'op_item_guard_spec_transfer', canonicalItemId: 'Guard Spec',
+          sourcePlacementId: 'trainer-source', targetPlacementId: RECALLED,
+          family: 'move-stage-reduction-immunity', amount: 5,
+          duration: { kind: 'turns', amount: 5 }, stackPolicy: 'refresh', map,
+        }),
+      ]
+      const result = resolveEncounterEffectSwitchTransfer({
+        effects: itemEffects, recalledPlacementId: RECALLED,
+        sentOutPlacementId: REPLACEMENT, stateTransferPolicy,
+      })
+      expect(result.transferredEffectIds).toEqual([])
+      expect(result.expiredEffectIds).toEqual(itemEffects.map(effect => effect.id))
+      expect(result.effects).toEqual([])
+    }
   })
 
   it('fails closed when rebinding would duplicate an affected placement', () => {

@@ -1,0 +1,692 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-009",
+  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "fixtures": [
+    {
+      "id": "healing-potion-encounter",
+      "canonicalItemId": "Potion",
+      "canonicalRecordSha256": "f928b100dad5c642441e401404a3edefbd127efbaebe92c646f899297a8a1b84",
+      "context": "encounter",
+      "source": {
+        "kind": "trainer",
+        "slug": "fixture-trainer",
+        "section": "medicalKit",
+        "rowId": "fixture-potion-row",
+        "quantity": 2,
+        "revision": 3
+      },
+      "actor": "fixture-trainer-placement",
+      "target": "fixture-pokemon-placement",
+      "before": {
+        "targetHp": 7,
+        "targetMaxHp": 42,
+        "standardSpent": 0
+      },
+      "expected": {
+        "targetHp": 27,
+        "sourceQuantity": 1,
+        "standardSpent": 1,
+        "targetNextTurnStandardSpent": 1,
+        "targetNextTurnShiftSpent": 1,
+        "terminalReplay": "same-receipt"
+      },
+      "p8_031Evidence": {
+        "amount": {
+          "kind": "fixed",
+          "requestedHealing": 20
+        },
+        "cap": "injury-adjusted-effective-maximum-hp",
+        "ordinaryHealingFaintedState": "preserve-and-ineligible",
+        "previewFields": [
+          "currentHp",
+          "effectiveMaximumHp",
+          "requestedHealing",
+          "effectiveHealing",
+          "overheal"
+        ],
+        "serverTests": [
+          "tests/server/itemAutomationHealing.test.ts",
+          "tests/server/itemAutomationPlannerReducer.test.ts",
+          "tests/server/executeItemOperation.test.ts",
+          "tests/server/itemAutomationExecutionContext.test.ts"
+        ],
+        "presentationTests": [
+          "tests/server/encounterPresentationProjection.test.ts",
+          "tests/server/itemOperationPresentation.test.ts",
+          "tests/components/encounterWorkspaceActions.test.ts"
+        ]
+      },
+      "p8_040Evidence": {
+        "certificationTest": "tests/integration/restorativeConsumableVerticalSlice.test.ts",
+        "journey": [
+          "player-checkout",
+          "stable-trainer-inventory-delivery",
+          "gm-and-player-offer-convergence",
+          "fresh-declaration",
+          "server-projected-target-and-cost-preview",
+          "atomic-item-acceptance",
+          "event-feed-reconnect",
+          "exact-command-replay",
+          "gm-correction",
+          "exact-correction-replay"
+        ],
+        "roles": [
+          "gm",
+          "controlled-player-profile"
+        ],
+        "acceptedWrites": [
+          "trainer-inventory-quantity",
+          "target-hp",
+          "actor-standard-action",
+          "target-next-turn-standard-and-shift-forfeiture"
+        ],
+        "reconnectAuthority": "fresh-workspace-projection-from-sqlite-map-sheets-item-operation-journal-and-realtime-log",
+        "eventFeed": "public-mechanical-outcome-without-source-row-or-consumption-operation-identity",
+        "replay": "same-receipt-no-additional-write-or-publication",
+        "correction": "gm-only-exact-before-state-compensation-with-linked-role-safe-receipt",
+        "manualRepairRequired": false
+      }
+    },
+    {
+      "id": "condition-antidote",
+      "canonicalItemId": "Antidote",
+      "canonicalRecordSha256": "12f14c28fdd54025d0f974db5e407cf75795a660dd562e2dccee3a853bebcaa8",
+      "context": "encounter",
+      "before": {
+        "conditions": [
+          "Poisoned",
+          "Slowed"
+        ]
+      },
+      "expected": {
+        "conditions": [
+          "Slowed"
+        ],
+        "consumed": 1
+      },
+      "p8_032Evidence": {
+        "scope": {
+          "mode": "listed",
+          "conditionIds": [
+            "Poisoned",
+            "Badly Poisoned"
+          ],
+          "selection": "all-applicable"
+        },
+        "canonicalIdentitySource": "data/reference/conditions.json",
+        "serverTests": [
+          "tests/server/itemAutomationConditionRemoval.test.ts",
+          "tests/server/itemAutomationPlannerReducer.test.ts",
+          "tests/server/itemAutomationExecutionContext.test.ts",
+          "tests/server/executeItemOperation.test.ts"
+        ],
+        "presentationTests": [
+          "tests/server/encounterPresentationProjection.test.ts",
+          "tests/server/itemOperationPresentation.test.ts"
+        ],
+        "recoveryTests": [
+          "tests/server/resumeItemOperation.test.ts",
+          "tests/server/recoverItemOperation.test.ts"
+        ],
+        "reviewedCoverage": {
+          "nativeListed": [
+            "Antidote",
+            "Paralyze Heal",
+            "Burn Heal",
+            "Ice Heal"
+          ],
+          "nativePersistent": [
+            "Full Heal"
+          ],
+          "nativeVolatile": [
+            "Mental Herb"
+          ],
+          "nativeAllStatusCompound": [
+            "Full Restore"
+          ],
+          "failClosedRepulsive": [
+            "Heal Powder"
+          ],
+          "chosenConditionAuthority": "covered by a strict synthetic registry fixture because no current canonical owned item has a deterministic choose-one cure without additional unresolved mechanics"
+        }
+      }
+    },
+    {
+      "id": "revival-revive",
+      "canonicalItemId": "Revive",
+      "canonicalRecordSha256": "d14d58ea7afb04023ed0a70ae6c8aa7eb659238b3ae655ed072f683ed022c928",
+      "context": "encounter",
+      "before": {
+        "targetHp": 0,
+        "conditions": [
+          "Fainted",
+          "Slowed"
+        ],
+        "injuries": 0
+      },
+      "expected": {
+        "targetHp": 20,
+        "conditions": [
+          "Slowed"
+        ],
+        "consumed": 1
+      },
+      "p8_033Evidence": {
+        "targetKind": "pokemon",
+        "faintedState": "require-and-clear",
+        "fixedResultingHp": 20,
+        "relativeBasis": "full-formula-maximum-hp",
+        "cap": "injury-adjusted-effective-maximum-hp",
+        "ordinaryHealingDistinct": true,
+        "repulsiveRevivalHerbDisposition": "fail-closed-until-gm-attention-authority",
+        "serverTests": [
+          "tests/server/itemAutomationRevival.test.ts",
+          "tests/server/itemAutomationPlannerReducer.test.ts",
+          "tests/server/executeItemOperation.test.ts"
+        ],
+        "presentationTests": [
+          "tests/server/encounterPresentationProjection.test.ts",
+          "tests/server/itemOperationPresentation.test.ts"
+        ],
+        "recoveryTests": [
+          "tests/server/recoverItemOperation.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "temporary-stage-x-attack",
+      "canonicalItemId": "X Attack",
+      "canonicalRecordSha256": "b728be8813586b0c93d02cc78bcce8c337f7767fbac4f72bd5b62bcdee13f985",
+      "context": "encounter",
+      "before": {
+        "attackStage": 5
+      },
+      "expected": {
+        "attackStage": 6,
+        "sourceAttribution": "item",
+        "consumed": 1
+      },
+      "p8_034Evidence": {
+        "stageBounds": [
+          -6,
+          6
+        ],
+        "requestedDelta": 2,
+        "appliedDelta": 1,
+        "capped": true,
+        "noOpAtCap": "ineligible-before-consumption",
+        "switchPolicy": "clear-on-switch-or-recall-except-baton-pass",
+        "encounterEndPolicy": "lifecycle-authored-reset",
+        "reviewedNativeStageItems": [
+          "X Attack",
+          "X Defend",
+          "X Special",
+          "X Sp. Def",
+          "X Speed",
+          "X Accuracy"
+        ],
+        "temporaryEffects": {
+          "Dire Hit": {
+            "criticalRangeBonus": 2,
+            "duration": "encounter",
+            "reapplication": "replace",
+            "switchPolicy": "expire"
+          },
+          "Guard Spec": {
+            "blockedSource": "move-authored-negative-stage-or-accuracy-change",
+            "duration": "five-target-turns",
+            "reapplication": "refresh",
+            "switchPolicy": "expire"
+          }
+        },
+        "serverTests": [
+          "tests/server/itemAutomationSpec.test.ts",
+          "tests/server/itemAutomationPlannerReducer.test.ts",
+          "tests/server/itemAutomationExecutionContext.test.ts",
+          "tests/server/itemAutomationConformance.test.ts",
+          "tests/server/executeItemOperation.test.ts",
+          "tests/server/moveAutomationDamageOverrides.test.ts",
+          "tests/server/moveAutomationCoreTokenReducers.test.ts",
+          "tests/server/moveSwitchCombatStages.test.ts",
+          "tests/server/moveAutomationEffectTransfer.test.ts",
+          "tests/server/livePlaySceneLifecycle.test.ts"
+        ],
+        "presentationTests": [
+          "tests/server/itemOperationPresentation.test.ts"
+        ],
+        "recoveryTests": [
+          "tests/server/resumeItemOperation.test.ts",
+          "tests/server/recoverItemOperation.test.ts"
+        ]
+      },
+      "p8_035Evidence": {
+        "durationAuthorityPath": "data/complete-play-loop/duration-authority.v1.json",
+        "durationAuthoritySha256": "47f5e132457b3b11c1efd1b1ed4834f2a8b5e52e3705a28d455f5acf2fd9bd9f",
+        "campaignMinutesPerDay": 1440,
+        "boundaries": [
+          "turn-start-or-end",
+          "round-start-or-end",
+          "scene-end",
+          "encounter-end",
+          "campaign-time-advanced",
+          "effect-removed",
+          "switch-or-recall"
+        ],
+        "encounterAndSceneDistinct": true,
+        "wallClockAuthorityForbidden": true,
+        "pendingResolutionPolicy": "encounter-end-fails-closed",
+        "exactRetryPolicy": "stable-operation-identity-and-durable-result",
+        "dailyAdvanceAtomicity": "clock-sheet-map-effect-and-all-due-Egg-checkpoints",
+        "pausedEggPolicy": "skipped-never-credited",
+        "archivePolicy": "clock-and-Egg-operations-retain-terminal-command-result-read-set-receipt-and-segment-evidence",
+        "correctionPolicy": "immutable-accepted-receipt-and-monotonic-clock; separately-authorized-compensating-operation-required",
+        "storageSchemaVersion": 33,
+        "standaloneBreedingMigrationVersion": 28,
+        "standaloneMigrationDisposition": "unchanged-because-it-remains-the-breeding-import-schema-boundary-and-application-migrations-29-through-32-run-on-open",
+        "serverTests": [
+          "tests/server/itemAutomationDurations.test.ts",
+          "tests/server/moveAutomationEffectLifecycle.test.ts",
+          "tests/server/livePlayEncounterLifecycle.test.ts",
+          "tests/server/advanceCampaignDay.test.ts",
+          "tests/server/campaignDayOperationRepository.test.ts",
+          "tests/server/realtimeEventMigrations.test.ts",
+          "tests/server/breedingCampaignClockBatch.test.ts",
+          "tests/server/breedingArchiveManager.test.ts",
+          "tests/server/breedingArchiveReleaseAcceptance.test.ts",
+          "tests/server/itemAutomationPlannerReducer.test.ts",
+          "tests/server/itemAutomationExecutionContext.test.ts",
+          "tests/server/encounterWorkspaceProjection.test.ts",
+          "tests/server/recoverItemOperation.test.ts"
+        ],
+        "sharedTests": [
+          "tests/shared/moveAutomationEncounterEffects.test.ts",
+          "tests/shared/moveAutomationEvents.test.ts",
+          "tests/shared/campaignDay.test.ts"
+        ],
+        "clientTests": [
+          "tests/utils/campaignDayOperationStorage.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "food-snack-leftovers",
+      "canonicalItemId": "Leftovers",
+      "canonicalRecordSha256": "b40b88f89e4f4168c60523c43f20fd85def53aa9dee44de5ec24977a688a119c",
+      "context": "encounter",
+      "before": {
+        "sourceQuantity": 1,
+        "digestionBuffs": [],
+        "currentHp": 50
+      },
+      "expected": {
+        "sourceQuantity": 0,
+        "digestionBuffs": [
+          "Leftovers"
+        ],
+        "tradeClearsStoredBuff": true,
+        "turnStartHealing": {
+          "numerator": 1,
+          "denominator": 16,
+          "rounding": "down"
+        },
+        "duration": "encounter",
+        "switchPolicy": "retain-for-same-sheet",
+        "encounterEndPolicy": "expire"
+      },
+      "p8_036Evidence": {
+        "nativeRefreshments": {
+          "Enriched Water": 20,
+          "Shuckle’s Berry Juice": 30,
+          "Super Soda Pop": 30,
+          "Sparkling Lemonade": 50,
+          "MooMoo Milk": 80
+        },
+        "nativeSnacks": {
+          "Candy Bar": {
+            "kind": "fixed-heal",
+            "amount": 5
+          },
+          "Honey": {
+            "kind": "fixed-heal",
+            "amount": 5
+          },
+          "Leftovers": {
+            "kind": "turn-start-heal",
+            "numerator": 1,
+            "denominator": 16,
+            "duration": "encounter"
+          }
+        },
+        "blackSludge": {
+          "mechanicsReviewed": {
+            "requiredPokemonType": "Poison",
+            "numerator": 1,
+            "denominator": 8
+          },
+          "runtimeDisposition": "fail-closed-missing-canonical-cost"
+        },
+        "storageAuthority": "typed-sheet-digestion-state",
+        "ordinaryCapacity": 1,
+        "effectiveGluttonyCapacity": 3,
+        "effectiveAbilityAuthority": "suppression-and-transformation-aware-server-projection",
+        "incompatibleStacking": "reject-before-consumption",
+        "tradeAuthority": "server-owned-move-item-mutation",
+        "fixedTradeHealing": "atomic-with-buff-clear-and-move-settlement",
+        "encounterHealing": "server-authored-turn-start-lifecycle-operation",
+        "reconnectAndRestart": "persisted-sheet-and-map-effect-authority",
+        "correction": "whole-authoritative-sheet-and-map-compensation",
+        "serverTests": [
+          "tests/server/itemAutomationSpec.test.ts",
+          "tests/server/itemAutomationPlannerReducer.test.ts",
+          "tests/server/itemAutomationConformance.test.ts",
+          "tests/server/itemOperationPresentation.test.ts",
+          "tests/server/executeItemOperation.test.ts",
+          "tests/server/resumeItemOperation.test.ts",
+          "tests/server/recoverItemOperation.test.ts",
+          "tests/server/moveAutomationItemEffects.test.ts",
+          "tests/server/itemAutomationDigestionTradeIntegration.test.ts",
+          "tests/server/itemAutomationDigestionLifecycle.test.ts",
+          "tests/server/moveAutomationEffectTransfer.test.ts",
+          "tests/server/livePlayEncounterLifecycle.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "equipment-light-armor",
+      "canonicalItemId": "Light Armor",
+      "canonicalRecordSha256": "d2b98b9b199ad0b297ddf9ca78f3f51fea13ce1b6e99cacf714abe9dd516d075",
+      "context": "sheet",
+      "expected": {
+        "slot": "body",
+        "damageReductionDelta": 5,
+        "inventoryAndEquipmentAtomic": true
+      }
+    },
+    {
+      "id": "held-passive-bright-powder-source-loss",
+      "canonicalItemId": "Bright Powder",
+      "canonicalRecordSha256": "7ae9e09a2d19298be1c906a9bfd5997be29ad81c38a1ba21cc7dfa77e74ca6bf",
+      "context": "encounter",
+      "expected": {
+        "speedEvasionDeltaWhileHeld": 2,
+        "speedEvasionDeltaAfterLoss": 0,
+        "staleOffers": 0
+      }
+    },
+    {
+      "id": "group-inventory-concurrency",
+      "canonicalItemId": "Potion",
+      "canonicalRecordSha256": "f928b100dad5c642441e401404a3edefbd127efbaebe92c646f899297a8a1b84",
+      "context": "encounter",
+      "source": {
+        "kind": "group",
+        "slug": "main",
+        "section": "medicalKit",
+        "rowId": "fixture-shared-potion",
+        "quantity": 1,
+        "revision": 8
+      },
+      "expected": {
+        "acceptedClients": 1,
+        "staleClients": 1,
+        "consumed": 1
+      }
+    },
+    {
+      "id": "shop-purchase-restorative",
+      "canonicalItemId": "Potion",
+      "canonicalRecordSha256": "f928b100dad5c642441e401404a3edefbd127efbaebe92c646f899297a8a1b84",
+      "context": "shop",
+      "expected": {
+        "paymentAndDeliveryAtomic": true,
+        "deliveredCanonicalId": "Potion",
+        "postCheckoutActions": [
+          "inspect",
+          "use"
+        ]
+      }
+    },
+    {
+      "id": "extended-first-aid-kit",
+      "canonicalItemId": "First Aid Kit",
+      "canonicalRecordSha256": "731805bff0ae72a26eeaa18f5b57cd8d00225b156787e66cebe8c57e49d9b2c6",
+      "context": "campaign",
+      "expected": {
+        "reusable": true,
+        "requiresBoundedRoll": true,
+        "resumeUsesOriginalRoll": true,
+        "skillId": "medicineEd",
+        "dieSides": 6,
+        "apDrain": 1,
+        "apRecovery": "extended-rest",
+        "conditionIds": [
+          "Burned",
+          "Poisoned",
+          "Badly Poisoned",
+          "Paralysis"
+        ]
+      },
+      "p8_037Evidence": {
+        "canonicalEffectSha256": "0ed195fba099f940ca0fab9c40b2fee65ccf408164b674f833ed0d037300ae08",
+        "skillAuthority": "revision-bound-server-resolved-trainer-skill",
+        "clientRollMechanicsForbidden": true,
+        "rollEvidence": [
+          "expression",
+          "individual-dice",
+          "modifier",
+          "raw-total",
+          "skill-id",
+          "rank-value",
+          "die-sides",
+          "actor-sheet-revision"
+        ],
+        "apAuthority": "featureApState",
+        "apDisposition": "durable-drain-recovered-by-extended-rest",
+        "sourceDisposition": "exact-reusable-row-retained",
+        "targetEffects": "skill-check-healing-and-all-applicable-listed-cures",
+        "atomicity": "ap-healing-conditions-and-evidence-commit-or-rollback-together",
+        "replay": "stored-plan-never-client-reroll",
+        "correction": "whole-authoritative-sheet-compensation-including-ap-drain",
+        "nonEncounterExecutionImplementedBy": [
+          "P8-051",
+          "P8-052"
+        ],
+        "nonEncounterExecutionEvidence": [
+          "shared/itemAutomation/nonEncounter.ts",
+          "shared/itemAutomation/extendedActions.ts",
+          "server/useCases/manageItemExtendedAction.ts"
+        ],
+        "serverTests": [
+          "tests/server/itemAutomationSpec.test.ts",
+          "tests/server/itemAutomationAp.test.ts",
+          "tests/server/itemAutomationHealing.test.ts",
+          "tests/server/itemAutomationPlannerReducer.test.ts",
+          "tests/server/itemAutomationExecutionContext.test.ts",
+          "tests/server/itemAutomationConformance.test.ts",
+          "tests/server/encounterWorkspaceProjection.test.ts"
+        ]
+      },
+      "p8_052Evidence": {
+        "activityStart": "durable-and-mechanically-inert",
+        "activityCompletion": "current-authority-revalidated-and-atomic-with-item-settlement",
+        "activityInterruption": "terminal-receipt-without-item-mechanics",
+        "reconnect": "reload-durable-activity-before-exact-command-retry",
+        "privacy": "labels-and-current-authorized-target-summary-without-source-or-roll-evidence",
+        "certificationTests": [
+          "tests/server/itemExtendedActions.test.ts",
+          "tests/server/itemExtendedActionRoutes.test.ts",
+          "tests/e2e/medical-extended-actions.spec.ts"
+        ]
+      }
+    },
+    {
+      "id": "extended-bandages-treatment",
+      "canonicalItemId": "Bandages",
+      "canonicalRecordSha256": "8d9423b246471aaf32e89d1a67a6c6734c5ca76496903ab8e0210f05b949cb62",
+      "context": "campaign",
+      "before": {
+        "sourceQuantity": 2,
+        "targetHp": 1,
+        "targetInjuries": 2,
+        "activeTreatments": 0
+      },
+      "expected": {
+        "startAppliesMechanics": false,
+        "completionConsumes": 1,
+        "completionImmediateHealing": 0,
+        "durationMinutes": 360,
+        "tickMinutes": 30,
+        "tickCount": 12,
+        "tickHealing": "one-eighth-full-formula-maximum-hp-with-injury-cap",
+        "fullDurationInjuryAttempt": 1,
+        "hpLossCancellation": "immediate-and-terminal",
+        "terminalReplay": "same-activity-and-item-receipts"
+      },
+      "p8_052Evidence": {
+        "canonicalEffectSha256": "9018603e5421cb714a3901fe1a9bb24ac781a12c6f1c61bd63b1d9456487ee8e",
+        "treatmentAuthority": "shared/itemAutomation/medicalTreatments.ts",
+        "settlementAuthority": "server/useCases/advanceCampaignDay.ts",
+        "projectionAuthority": "settled-treatment-evidence-not-wall-clock",
+        "oneActivePerTarget": true,
+        "immutableOrigin": "accepted-item-operation-receipt",
+        "serverTests": [
+          "tests/server/itemExtendedActions.test.ts",
+          "tests/server/itemMedicalTreatments.test.ts",
+          "tests/server/advanceCampaignDay.test.ts"
+        ],
+        "sharedTests": [
+          "tests/shared/itemAutomationMedicalTreatments.test.ts"
+        ],
+        "componentTests": [
+          "tests/components/medicalTreatmentStatusCard.test.ts"
+        ],
+        "liveplayTest": "tests/e2e/medical-extended-actions.spec.ts"
+      }
+    },
+    {
+      "id": "wonder-launcher-x-item-delivery",
+      "canonicalItemId": "Wonder Launcher",
+      "canonicalRecordSha256": "8679405ba60ea75d3c602b36d47eafaf378defe18cc66726a74917c5ed20d4a8",
+      "context": "encounter",
+      "expected": {
+        "payload": "reviewed-native-x-item",
+        "rangeMeters": 8,
+        "standardActionsSpent": 1,
+        "apDrained": 1,
+        "payloadQuantityConsumed": 1,
+        "targetNextTurnForfeit": false,
+        "sourceBinding": "opaque-exact-equipped-source-digest",
+        "acceptedEffectSurvivesSourceLoss": true
+      },
+      "p8_052Evidence": {
+        "executionAuthority": "server/domain/itemAutomation/equipmentDelivery.ts",
+        "sourceRevalidation": "active-compatible-unsuppressed-current-whole-item",
+        "combinedResearcherItems": "fail-closed-without-reviewed-canonical-identity",
+        "reBreatherDisposition": "P8-059-bounded-open-air-refill-adjudication",
+        "tests": [
+          "tests/server/declareEncounterAction.test.ts",
+          "tests/server/encounterPresentationProjection.test.ts",
+          "tests/server/executeItemOperation.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "permanent-stat-vitamins",
+      "canonicalItemId": "HP Up",
+      "canonicalRecordSha256": "0c6ea9d7eddb11c99cb643b0e7b4b5d7db32c545d1471e3a7bfff5152df0b674",
+      "context": "campaign",
+      "before": { "vitaminSlotsUsed": 4, "hpBaseStat": 5, "sourceQuantity": 1 },
+      "expected": {
+        "reviewedSources": ["HP Up", "Protein", "Iron", "Calcium", "Zinc", "Carbos"],
+        "namedBaseStatDelta": 1,
+        "vitaminSlotsUsed": 5,
+        "sourceQuantity": 0,
+        "sixthVitamin": "unavailable-before-start"
+      },
+      "p8_053Evidence": {
+        "sharedLifetimeLimit": 5,
+        "start": "durable-and-mechanically-inert",
+        "completion": "sheet-provenance-consumption-and-receipts-atomic",
+        "sheetValidation": ["base-relations", "added-stat-point-budget", "minimum-base-stat"],
+        "tests": [
+          "tests/server/itemPermanentAdvancement.test.ts",
+          "tests/integration/permanentAdvancementExtendedActions.test.ts",
+          "tests/e2e/permanent-advancement-items.spec.ts"
+        ]
+      }
+    },
+    {
+      "id": "permanent-pp-up-choice",
+      "canonicalItemId": "PP Up",
+      "canonicalRecordSha256": "8a361ac67582b1e35264a29c12772fa441fd7b6ad5517ff15279412b739cb3ed",
+      "context": "campaign",
+      "before": { "move": "Spark", "frequency": "EOT", "vitaminSlotsUsed": 0, "sourceQuantity": 1 },
+      "expected": {
+        "frequency": "At-Will",
+        "vitaminSlotsUsed": 1,
+        "sourceQuantity": 0,
+        "lifetimeLimit": 1,
+        "staleChoice": "fail-closed-without-write"
+      },
+      "p8_053Evidence": {
+        "choiceAuthority": "target-specific-opaque-move-and-original-frequency",
+        "ineligible": ["At-Will", "unknown-frequency", "ambiguous-move-list"],
+        "retry": "persisted-choice-never-regenerated",
+        "tests": [
+          "tests/shared/itemAutomationSheetActions.test.ts",
+          "tests/server/itemPermanentAdvancement.test.ts",
+          "tests/integration/permanentAdvancementExtendedActions.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "permanent-rare-candy",
+      "canonicalItemId": "Rare Candy",
+      "canonicalRecordSha256": "e42f36f859e6e97e31539713413e8eb1481f4905cdbebe93b6fc56c2ab89fe09",
+      "context": "campaign",
+      "before": { "level": 5, "totalExperience": 40, "rareCandyUses": 0, "sourceQuantity": 1 },
+      "expected": {
+        "level": 6,
+        "totalExperience": 50,
+        "rareCandyUses": 1,
+        "sourceQuantity": 0,
+        "lifetimeLimit": 5,
+        "level100": "unavailable-before-start"
+      },
+      "p8_053Evidence": {
+        "progressionAuthority": "data/reference/pokemonExperienceChart.json",
+        "result": "exact-minimum-total-experience-for-next-level",
+        "direct-level-increment-without-experience": false,
+        "tests": [
+          "tests/server/itemPermanentAdvancement.test.ts",
+          "tests/integration/permanentAdvancementExtendedActions.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "permanent-stat-suppressant-consent",
+      "canonicalItemId": "Stat Suppressants",
+      "canonicalRecordSha256": "9972b4c3630144787de4bf3d96c1916f94d06d4c38e32b2bac731cd6229caa79",
+      "context": "campaign",
+      "before": { "attackBaseStat": 5, "sourceQuantity": 1, "trainerConsent": false },
+      "expected": {
+        "attackBaseStat": 4,
+        "sourceQuantity": 0,
+        "vitaminSlotsConsumed": 0,
+        "trainerConsentRequired": true,
+        "noOpOrInvalidSheet": "unavailable-before-start"
+      },
+      "p8_053Evidence": {
+        "choices": ["one-currently-legal-base-stat", "exact-owning-trainer-confirmation"],
+        "consentPersistence": "stored-at-start-and-revalidated-at-completion",
+        "minimumBaseStat": 1,
+        "tests": [
+          "tests/server/itemPermanentAdvancement.test.ts",
+          "tests/integration/permanentAdvancementExtendedActions.test.ts",
+          "tests/e2e/permanent-advancement-items.spec.ts"
+        ]
+      }
+    }
+  ]
+}

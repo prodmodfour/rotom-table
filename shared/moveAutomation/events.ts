@@ -29,6 +29,8 @@ export const ENCOUNTER_EVENT_SCHEMA_VERSION = 2 as const
 export const ENCOUNTER_EVENT_KINDS = [
   'scene-start',
   'scene-end',
+  'encounter-end',
+  'campaign-time-advanced',
   'round-start',
   'round-end',
   'turn-start',
@@ -82,6 +84,8 @@ export const ENCOUNTER_EVENT_LIMITS = Object.freeze({
   movementStep: 10_000,
   coordinate: 1_000_000,
   amount: 1_000_000_000,
+  campaignMinute: Number.MAX_SAFE_INTEGER,
+  clockRevision: Number.MAX_SAFE_INTEGER,
   jsonDepth: 16,
   jsonNodes: 65_536,
   jsonObjectFields: 32,
@@ -131,6 +135,19 @@ export interface EncounterSceneEvent
   extends EncounterEventEnvelope<'scene-start' | 'scene-end'> {
   /** Stable server-owned identity for one scene instance, not its display name. */
   readonly sceneId: string
+}
+
+export interface EncounterEndEvent
+  extends EncounterEventEnvelope<'encounter-end'> {
+  /** Stable server-owned map-local encounter boundary identity. */
+  readonly encounterId: string
+}
+
+export interface EncounterCampaignTimeAdvancedEvent
+  extends EncounterEventEnvelope<'campaign-time-advanced'> {
+  readonly previousCampaignMinute: number
+  readonly campaignMinute: number
+  readonly clockRevision: number
 }
 
 export interface EncounterRoundEvent
@@ -290,6 +307,8 @@ export interface EncounterResourceEvent
 
 export type EncounterEvent =
   | EncounterSceneEvent
+  | EncounterEndEvent
+  | EncounterCampaignTimeAdvancedEvent
   | EncounterRoundEvent
   | EncounterTurnEvent
   | EncounterMoveDeclaredEvent
@@ -352,6 +371,13 @@ const COMMON_FIELDS = [
   'reasonCode',
 ] as const
 const SCENE_FIELDS = [...COMMON_FIELDS, 'sceneId'] as const
+const ENCOUNTER_END_FIELDS = [...COMMON_FIELDS, 'encounterId'] as const
+const CAMPAIGN_TIME_ADVANCED_FIELDS = [
+  ...COMMON_FIELDS,
+  'previousCampaignMinute',
+  'campaignMinute',
+  'clockRevision',
+] as const
 const ROUND_FIELDS = [...COMMON_FIELDS, 'round'] as const
 const TURN_FIELDS = [
   ...COMMON_FIELDS,
@@ -961,6 +987,44 @@ const parseDetachedEvent = (value: unknown, path: string): EncounterEvent => {
     return {
       ...parseCommon(record, kind, path),
       sceneId: parseStableId(record.sceneId, `${path}.sceneId`),
+    }
+  }
+
+  if (kind === 'encounter-end') {
+    assertExactFields(record, ENCOUNTER_END_FIELDS, path)
+    return {
+      ...parseCommon(record, kind, path),
+      encounterId: parseStableId(record.encounterId, `${path}.encounterId`),
+    }
+  }
+
+  if (kind === 'campaign-time-advanced') {
+    assertExactFields(record, CAMPAIGN_TIME_ADVANCED_FIELDS, path)
+    const previousCampaignMinute = parseInteger(
+      record.previousCampaignMinute,
+      `${path}.previousCampaignMinute`,
+      0,
+      ENCOUNTER_EVENT_LIMITS.campaignMinute,
+    )
+    const campaignMinute = parseInteger(
+      record.campaignMinute,
+      `${path}.campaignMinute`,
+      1,
+      ENCOUNTER_EVENT_LIMITS.campaignMinute,
+    )
+    if (campaignMinute <= previousCampaignMinute) {
+      fail('invalid-encounter-event', `${path}.campaignMinute`, 'must be later than previousCampaignMinute.')
+    }
+    return {
+      ...parseCommon(record, kind, path),
+      previousCampaignMinute,
+      campaignMinute,
+      clockRevision: parseInteger(
+        record.clockRevision,
+        `${path}.clockRevision`,
+        1,
+        ENCOUNTER_EVENT_LIMITS.clockRevision,
+      ),
     }
   }
 

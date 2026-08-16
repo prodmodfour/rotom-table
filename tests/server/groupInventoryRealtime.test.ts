@@ -11,6 +11,7 @@ import {
   groupInventoryUpdatedRealtimeAppendInputs,
   groupInventoryUpdatedRealtimeDedupeKey,
 } from '~~/server/realtime/groupInventoryRealtime'
+import { redactRealtimeEventForPrincipal } from '~~/server/realtime/realtimeEventRedaction'
 
 const groupInventory = (overrides: Partial<GroupInventoryDocument> = {}): GroupInventoryDocument => ({
   ...createDefaultGroupInventoryDocument({ now: 100 }),
@@ -49,6 +50,39 @@ describe('group inventory realtime helpers', () => {
       access: { kind: 'group-inventory-access', groupSlug: GROUP_INVENTORY_MAIN_SLUG },
       dedupeKey: 'group-inventory:resolve-move:main:2:specific',
     })
+  })
+
+  it('redacts private serialized whole-item evidence from player delivery', () => {
+    const serializedEquipment = {
+      schemaVersion: 1 as const,
+      instanceId: `equipped-item:v1:${'a'.repeat(32)}`,
+      revision: 3,
+      canonicalItemId: 'Focus',
+      canonicalRecordSha256: 'b'.repeat(64),
+      equipmentDefinitionSha256: 'c'.repeat(64),
+      configuration: {
+        schemaVersion: 1 as const,
+        configurationId: 'equipment.focus.v1',
+        definitionSha256: 'c'.repeat(64),
+        values: { statId: 'atk' },
+      },
+      state: { charge: 2 },
+    }
+    const document = groupInventory({
+      inventory: {
+        ...createDefaultGroupInventoryDocument({ now: 100 }).inventory,
+        equipment: [{ id: 'focus-row', name: 'Focus', serializedEquipment }],
+      },
+    })
+    const event = groupInventoryUpdatedRealtimeAppendInputs(document)[0]!.event
+    const playerEvent = redactRealtimeEventForPrincipal(event, { role: 'player' }) as {
+      data: { document: GroupInventoryDocument }
+    }
+    expect(playerEvent.data.document.inventory.equipment).toEqual([
+      { id: 'focus-row', name: 'Focus', qty: 1 },
+    ])
+    expect(JSON.stringify(playerEvent)).not.toContain('equipped-item:v1')
+    expect(redactRealtimeEventForPrincipal(event, { role: 'gm' })).toEqual(event)
   })
 
   it('creates affected trainer sheet update events for transfer convergence', () => {

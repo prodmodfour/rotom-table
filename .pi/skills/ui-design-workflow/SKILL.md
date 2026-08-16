@@ -1,14 +1,14 @@
 ---
 name: ui-design-workflow
-description: Mandatory Rotom Table workflow for every UI task, including planning, implementing, modifying, reviewing, or debugging Nuxt/Vue pages and components, CSS, layouts, responsive behavior, accessibility presentation, interactions, design-system primitives, and three.js visuals. Uses a resource-capped Codex native image-generation wrapper to create target-state mockups before substantive visible changes.
+description: Rotom Table's autonomous UI design-and-implementation workflow for Nuxt/Vue pages, components, CSS, layouts, responsive/accessibility presentation, interactions, design-system primitives, and three.js visuals. Load proactively whenever work has a visible or interactive consequence, even when no mockup was requested. For substantive open visual decisions, generate and iteratively critique target-state mockups with the resource-capped Codex native image wrapper before coding; ground every result in DESIGN.md, authorised projections, domain contracts, tokens, current implementation, and liveplay validation.
 compatibility: Requires Linux user systemd and an authenticated Codex CLI with native image generation.
 ---
 
-# Rotom Table UI Design Workflow
+# Rotom Table autonomous UI design workflow
 
-Load and follow this skill whenever work touches the visible or interactive UI, even when the user did not ask for a mockup.
+This is an agent-selected project capability, not a user-command-only workflow. Load it whenever work touches visible or interactive UI. For substantive design work, own the visual decisions, iterate to the quality gate, select the best artifact, then continue through implementation and liveplay validation without waiting for aesthetic approval.
 
-## Non-negotiable trigger
+## Trigger and skip policy
 
 This skill applies to:
 
@@ -17,103 +17,133 @@ This skill applies to:
 - three.js scenes, cameras, controls, visual effects, and UI layered over rendered worlds;
 - visual bug fixes, UI reviews, screenshot changes, and frontend implementation plans.
 
-For a substantive visible change, generate a target-state mockup before editing implementation code. Load the skill but skip image generation only when the work is provably non-visual (for example, test plumbing or type-only refactoring), when the user explicitly opts out, or when the requested change is an exact mechanical edit with no design choice. State the reason briefly when skipping.
+Generate a target-state mockup before substantive visible changes when consequential hierarchy, composition, density, state presentation, or visual-language decisions remain open. Do not wait for the user to mention mockups, GPT Image, this skill, or a `/skill` command, and do not ask permission merely to invoke it.
+
+Load the skill but skip image generation when it would add no material information:
+
+- provably non-visual test, type, data, or refactoring work;
+- an exact mechanical UI edit with no meaningful design choice;
+- faithful implementation of an authoritative finished design;
+- a deterministic SVG/HTML/CSS/canvas artifact that is more accurate than generated pixels;
+- explicit user opt-out.
+
+Record the skip reason briefly. Missing taste preferences are not blockers.
 
 ## Design authority
 
-Before composing a mockup brief:
+Before composing a brief:
 
 1. Read `DESIGN.md`; it is normative.
-2. Read the relevant existing page/component/styles and the active implementation-plan ticket.
+2. Read the relevant current page/component/styles and active implementation-plan ticket when the task belongs to one.
 3. For encounter UI, also inspect:
-   - `docs/encounter-workspace/design-system.md`
-   - `data/encounter-workspace/design-tokens.v1.json`
+   - `docs/encounter-workspace/design-system.md`;
+   - `data/encounter-workspace/design-tokens.v1.json`;
    - relevant `Encounter*` primitives and visual baselines.
-4. Preserve the product context: Field Guide, Workshop, or Live Encounter.
-5. Do not let an image generator invent mechanics, permissions, privacy behavior, or canonical PTU text. Use only app-owned `data/reference/*.json` for PTU runtime facts.
+4. Identify the product context: Field Guide, Workshop, or Live Encounter.
+5. Identify the audience and authorised projection before choosing visible data.
+6. Use only app-owned `data/reference/*.json` for PTU runtime facts.
 
-A generated mockup is a design aid, never product authority. Domain contracts, authorised projections, `DESIGN.md`, and structured design tokens override it.
+A generated image is a design aid, never product authority. `DESIGN.md`, domain contracts, authorised projections, structured tokens, and canonical runtime data override current screenshots and generated pixels. Never let image generation invent mechanics, permissions, privacy behavior, canonical PTU text, product claims, or unreleased campaign content.
+
+## Autonomous design contract
+
+- Own reversible visual decisions: hierarchy, composition, spacing, density, type character, shape treatment, token-aligned palette refinement, and polish.
+- Infer safe defaults from authoritative project context and record any remaining reversible assumptions in `brief.md`.
+- Ask only when a consequential non-aesthetic product fact is genuinely blocking and no safe authoritative answer exists. Do not ask users to choose between ordinary visual treatments.
+- Do not impose a fixed render or retry budget. Iterate for as many versions as materially useful, with every call sequential and resource-bounded. Stop when the quality gate passes, the user explicitly limits iteration, or a concrete blocker leaves no productive next change; never repeat an unchanged failed request or render merely to accumulate variants.
+- Inspect every PNG with `read`, write pixel-evidenced reviews, and keep the highest-scoring version as the current best.
+- If a revision regresses, branch the next revision from the current best rather than blindly using the newest image.
+- Multiple speculative concepts are not required. Choose and refine one strong direction unless alternatives are explicitly required or the initial structure fundamentally fails.
+- Do not expose campaign secrets, real player information, credentials, customer data, or unreleased story content to the child Codex process.
+
+## Artifact layout
+
+Keep every screen/state auditable under the ignored project artifact directory:
+
+```text
+.pi/artifacts/ui-mockups/<screen-slug>/
+├── brief.md
+├── v001-prompt.md
+├── v001.png
+├── v001-review.md
+├── v002-prompt.md
+├── v002.png
+└── v002-review.md
+```
+
+Use lowercase kebab-case. Never overwrite an iteration. `brief.md` is the stable source of truth; each prompt and review must correspond to its PNG.
+
+## Resolve and check the renderer
+
+`SKILL_DIR` means the directory containing this `SKILL.md`. Run from the repository root with the absolute script path:
+
+```bash
+RENDERER="$SKILL_DIR/scripts/pi-codex-ui-mockup"
+"$RENDERER" --check
+```
+
+Run `--check` once before the first render in a session. If it fails, report the diagnostic and continue from normative design authority only when visual ambiguity does not block safe implementation. Never bypass the cgroup, lock, sandbox, or wrapper by invoking raw `codex`.
 
 ## Workflow
 
-### 1. Establish the current state
+### 1. Establish current state
 
-Inspect the relevant implementation and existing visual state. When a current-state screenshot materially improves the target design, use the Playwright browser skill against liveplay and save a privacy-safe screenshot. Never start deprecated local hosting.
+Inspect the relevant implementation and visual state. When it materially improves the target, use the Playwright browser skill against liveplay and save a privacy-safe screenshot. Never start deprecated local hosting. Label every image role explicitly: edit target, current-state reference, style reference, or supporting asset.
 
-Do not include campaign secrets, real player information, credentials, or unreleased story content in reference images.
+### 2. Write the stable brief and baseline prompt
 
-### 2. Write a target-state brief
+Use [the design brief template](references/design-brief-template.md). Separate authoritative requirements, inferred assumptions, acceptance criteria, and forbidden patterns. Then write `v001-prompt.md` as a concise rendering specification derived from `brief.md`; it may not weaken the brief or authority sources.
 
-Use [the design brief template](references/design-brief-template.md). Include only details relevant to the task, but always identify:
+### 3. Render one version at a time
 
-- product context and screen/state;
-- target viewport or breakpoint;
-- primary user task or decision;
-- information hierarchy and exact required copy;
-- components and interaction states that must be visible;
-- invariants, accessibility requirements, and forbidden patterns.
-
-If a critical visual choice is ambiguous, ask one focused question. Otherwise proceed without asking for separate mockup permission; UI work already activates this workflow.
-
-### 3. Generate through the bounded wrapper
-
-Never invoke raw `codex` for mockups. Resolve the script relative to this skill directory and call it by absolute path:
+Initial render:
 
 ```bash
-/path/to/project/.pi/skills/ui-design-workflow/scripts/pi-codex-ui-mockup \
-  --name concise-screen-state \
-  --out-dir .pi/artifacts/ui-mockups \
-  -- "$(cat /path/to/brief.txt)"
+"$RENDERER" \
+  --prompt-file .pi/artifacts/ui-mockups/<screen-slug>/v001-prompt.md \
+  --output .pi/artifacts/ui-mockups/<screen-slug>/v001.png
 ```
 
-Attach a current screenshot or visual reference when useful:
+Targeted revision from the current best:
 
 ```bash
-/path/to/project/.pi/skills/ui-design-workflow/scripts/pi-codex-ui-mockup \
-  --reference /absolute/path/current-state.png \
-  --name target-state \
-  -- "target-state design brief"
+"$RENDERER" \
+  --reference .pi/artifacts/ui-mockups/<screen-slug>/v001.png \
+  --prompt-file .pi/artifacts/ui-mockups/<screen-slug>/v002-prompt.md \
+  --output .pi/artifacts/ui-mockups/<screen-slug>/v002.png
 ```
 
-The wrapper:
+Generate one screen/state/breakpoint per call and run calls sequentially. A failed invocation that produces no PNG does not advance the version number. Diagnose it, preserve the same version number while no artifact exists, and retry whenever a concrete fix, materially changed strategy, or recovered transient dependency makes another attempt useful. There is no fixed retry count, but never evade resource controls or spin on an unchanged unresolved failure.
 
-- enables Codex's native image-generation tool;
-- disables shell/code, browser, apps, plugins-by-use, computer control, and sub-agents for the child task;
-- runs ephemerally in a user-systemd cgroup;
-- caps memory at 768 MiB, swap at 128 MiB, tasks at 64, file size at 64 MiB, and runtime at four minutes;
-- uses a global non-blocking lock so image jobs cannot overlap;
-- copies results to `.pi/artifacts/ui-mockups/` by default.
+### 4. Inspect, score, and iterate autonomously
 
-Run variants sequentially, never concurrently. Generate one screen or breakpoint per invocation. One initial concept plus one targeted revision is normally enough; do not create speculative batches.
+Open the actual image with `read`; the Codex worker's prose is not evidence. Use [the autonomous review rubric](references/autonomous-review-template.md) and write the matching `vNNN-review.md`.
 
-If the bounded invocation fails, do not repeatedly retry. Report the failure, retain any diagnostic, and continue from normative design authority unless unresolved visual ambiguity genuinely blocks the task.
+The gate passes only at **9/10 or 10/10 with no hard failure**. Hard failures include unsupported mechanics or privacy, wrong state/copy/counts, contradiction of `DESIGN.md`, unclear primary decision, unauthorised information, and misleading generation artifacts.
 
-### 4. Inspect before implementation
+When the gate fails, choose the single highest-impact weakness, create the next targeted prompt, repeat every invariant, render from the highest-scoring image, and inspect again. Continue without requesting aesthetic approval for as many evidence-backed revisions as remain useful, until the gate passes or a concrete renderer, authority, or convergence blocker leaves no productive next change.
 
-Open the generated image with `read` and check it against `DESIGN.md` and the task:
+### 5. Select, implement, and validate
 
-- primary task/actor is immediately obvious;
-- semantic colours retain their meanings;
-- matte surfaces dominate and glass is limited to world overlays;
-- no overlay soup, badge flood, raw IDs, tiny essential text, or colour-only meaning;
-- required desktop/mobile, keyboard, touch, focus, reduced-motion, and privacy states remain plausible;
-- generated labels do not introduce unsupported mechanics or copy.
+Select the highest-scoring passing artifact; if a concrete blocker stops iteration without a pass, record it and use generated pixels only where they remain trustworthy. Implement with existing tokens and primitives—never sample arbitrary colours, radii, shadows, fonts, or spacing from the bitmap. Preserve pending/accepted/corrected boundaries, authorised projections, liveplay behavior, and accessibility contracts.
 
-Treat text rendering and fine geometry as conceptual; do not copy image artifacts into the product. If revision is needed, issue one focused follow-up brief rather than broad restyling.
+Run focused validation appropriate to the touched UI. For encounter design-system changes, run `npm run check:encounter-design` and focused tests where relevant. Validate completed browser behavior and responsive presentation in liveplay with Playwright. Follow the repository's bounded-worker and closure-only full-suite rules.
 
-### 5. Implement and validate
+Compare implementation screenshots against the selected mock for hierarchy and intent, not pixel identity. Document deliberate differences where domain authority, accessibility, responsive behavior, or existing primitives require them.
 
-Implement with existing tokens and primitives instead of sampling arbitrary colours, radii, shadows, fonts, or spacing from the image. Preserve authoritative pending/accepted/corrected state boundaries and liveplay behavior.
+## Completion report
 
-Use focused validation appropriate to the touched UI. For encounter design-system changes, run `npm run check:encounter-design` and focused tests where relevant. Validate the completed flow in liveplay with Playwright when browser behavior or responsive presentation changed. Follow the repository's bounded-worker and closure-only full-suite rules.
+Report only after autonomous design and requested implementation work stop:
 
-Report:
-
-- mockup path and the brief used;
+- selected mockup path, score, render count, and reference lineage;
+- stable brief and selected prompt/review paths;
 - implementation files changed;
-- focused validation performed;
-- any deliberate differences between mockup and implementation.
+- focused checks and liveplay/Playwright validation performed;
+- deliberate implementation differences from the mock;
+- if blocked, the concrete unresolved hard failure.
+
+Do not end by requesting aesthetic review or recommending another evidence-backed render that can be performed now—perform it instead.
 
 ## Model provenance
 
-The native Codex image tool does not expose a model-selection parameter or report its backend model. Never claim a mockup was generated by `gpt-image-2`. Explicit model selection would require a separate Images API workflow and API credentials; that is outside this wrapper.
+The native Codex image tool does not expose a model-selection parameter or report its backend image model. Never claim that a particular GPT Image model was selected. Explicit model selection requires a separate Images API workflow and API credentials, which this skill forbids.

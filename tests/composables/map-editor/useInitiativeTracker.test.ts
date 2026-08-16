@@ -5,6 +5,8 @@ import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
+import { activeEquipmentState } from '../../fixtures/equipment'
+import { projectEquipmentContributionsForSheet } from '~~/server/domain/itemAutomation/equipmentContributionProjection'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { TabletopMap } from '~/types/map'
@@ -13,15 +15,21 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 
 const stages: CombatStageMap = { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 }
 
-const sheet = (slug: string, overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
-  slug,
-  nickname: slug,
-  species: 'Pikachu',
-  level: 10,
-  combat: { currentHp: 30, conditions: [] },
-  stats: {},
-  ...overrides,
-})
+const sheet = (slug: string, overrides: Partial<CharacterSheet> = {}): CharacterSheet => {
+  const result: CharacterSheet = {
+    slug,
+    nickname: slug,
+    species: 'Pikachu',
+    level: 10,
+    combat: { currentHp: 30, conditions: [] },
+    stats: {},
+    ...overrides,
+  }
+  result.equipmentContributionProjection = projectEquipmentContributionsForSheet({
+    kind: 'pokemon', slug, sheet: result,
+  }) ?? undefined
+  return result
+}
 
 const token = (overrides: Partial<SpawnedPokemon> & Pick<SpawnedPokemon, 'id' | 'sheetSlug' | 'species'>): SpawnedPokemon => ({
   slug: overrides.sheetSlug,
@@ -490,7 +498,10 @@ describe('useInitiativeTracker', () => {
       ]),
       pokemonBySlug: ref(new Map([['quick', sheet('quick', {
         activeTrainingFeature: 'Agility Training',
-        items: { held: 'Quick Claw' },
+        items: { held: 'Legacy text is not authority' },
+        equipmentState: activeEquipmentState({
+          ownerKind: 'pokemon', ownerSlug: 'quick', slotId: 'held', canonicalItemId: 'Quick Claw',
+        }),
       })]])),
       trainerBySlug: ref(new Map<string, TrainerSheet>()),
       canManageInitiative: computed(() => true),

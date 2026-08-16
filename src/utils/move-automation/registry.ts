@@ -11,6 +11,7 @@ import {
   REVIEWED_TARGET_STAGE_AREA_SCRIPTS,
 } from '~/utils/move-automation/scripts/area'
 import { REVIEWED_DIRECT_HP_LOSS_SCRIPTS } from '~/utils/move-automation/scripts/directHpLoss'
+import { REVIEWED_EQUIPMENT_WEAPON_MOVE_SCRIPTS } from '~/utils/move-automation/scripts/equipmentWeaponMoves'
 import { REVIEWED_SELF_SCRIPTS } from '~/utils/move-automation/scripts/self'
 import {
   SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS,
@@ -39,6 +40,7 @@ const hasReviewedSeamlessSingleTargetScript = (script: MoveAutomationScript): bo
   || REVIEWED_SINGLE_TARGET_STATUS_SCRIPTS.has(script.moveName)
   || REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS.has(script.moveName)
   || REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS.has(script.moveName)
+  || REVIEWED_EQUIPMENT_WEAPON_MOVE_SCRIPTS.has(script.moveName)
   || REVIEWED_MIXED_TARGET_AREA_SCRIPTS.has(script.moveName)
   || hasNativeMoveAutomationPresentation(script.moveName)
   || (REVIEWED_DIRECT_HP_LOSS_SCRIPTS.has(script.moveName) && Boolean(script.directHpLoss))
@@ -53,6 +55,7 @@ export const isSeamlessSingleTargetAttackScript = (
       || REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS.has(script.moveName)
       || REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS.has(script.moveName)
       || REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS.has(script.moveName)
+      || REVIEWED_EQUIPMENT_WEAPON_MOVE_SCRIPTS.has(script.moveName)
     )
     && script.targetMode === 'one-target'
     && script.targetCount === 1

@@ -20,6 +20,7 @@ import { coerceEvasionBonus } from '~/utils/evasion'
 import { setSheetAccuracyStage } from '~/utils/sheetAccuracy'
 import { parseCsvList } from '~/utils/sheets/csvFields'
 import { stripLegacyTrainerSkillRank } from '~/utils/sheets/trainerSkillEntries'
+import { createInventoryTransferRowId } from '~/utils/groupInventoryTransfers'
 
 export type TrainerEvasionBonusKey = Extract<
   keyof TrainerEvasion,
@@ -90,7 +91,10 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
   const addInvItem = (key: keyof NonNullable<TrainerSheet['inventory']>) => {
     const inv = sheet.value?.inventory
     if (!inv) return
-    ;(inv[key] as InventoryEntry[]).push({ name: '' })
+    const rows = inv[key] as InventoryEntry[]
+    const entry: InventoryEntry = { name: '' }
+    entry.id = createInventoryTransferRowId({ section: key, index: rows.length, sourceEntry: entry })
+    rows.push(entry)
   }
 
   const removeInvItem = (key: keyof NonNullable<TrainerSheet['inventory']>, i: number) => {

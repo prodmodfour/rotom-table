@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEmptySheetEquipmentState } from '#shared/itemAutomation/equipment'
+import { activeEquipmentState } from '../fixtures/equipment'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import type { PendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
@@ -49,6 +51,9 @@ const sheet = (input: {
   types: ['Normal'],
   abilities: (input.abilities ?? []).map(ability),
   movelist: input.move ? [{ name: input.move }] : [],
+  equipmentState: input.held
+    ? activeEquipmentState({ ownerKind: 'pokemon', ownerSlug: input.slug, slotId: 'held', canonicalItemId: input.held })
+    : createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: input.slug }),
   ...(input.held ? { items: { held: input.held } } : {}),
   stats: {
     hp: { added: 100 }, atk: { added: 45 }, def: { added: 35 },
@@ -260,6 +265,7 @@ describe('AA-077 triggered integrations', () => {
       ...target,
       revision: (target.revision ?? 0) + 1,
       items: {},
+      equipmentState: createEmptySheetEquipmentState({ ownerKind: 'pokemon', ownerSlug: 'target' }),
     }
     const currentState = {
       ...declaration.state,

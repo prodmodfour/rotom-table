@@ -798,6 +798,8 @@ const persistPendingMoveDeclaration = (options: {
       slug: write.slug,
       expectedRevision: write.expectedRevision,
       nextSheet,
+      sourceOperationId: command.opId,
+      ...(write.changedFields.includes('equipmentState') ? { heldItemCustodyChanged: true } : {}),
     })
     if (sheetResult === 'stale') {
       rejectLivePlayCommand(
@@ -1258,6 +1260,8 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
             slug: write.slug,
             expectedRevision: write.expectedRevision,
             nextSheet,
+            sourceOperationId: command.opId,
+            ...(write.changedFields.includes('equipmentState') ? { heldItemCustodyChanged: true } : {}),
           })
           if (sheetResult === 'stale') {
             throw new LivePlayResolveMoveCommandUseCaseError(409, `${write.kind} sheet ${write.slug} changed before the resolveMove command could be persisted`)

@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P8-073",
+  "status": "current-semantics",
+  "contract": "encounter-settlement-consequence-snapshot-v1",
+  "sourceEvidence": {
+    "settlementDocumentModelSha256": "bd6751d716f1b2f40552c95208141844b87da83453a0ea16610a0835b1bfb849",
+    "settlementDocumentContractSha256": "4f8183f4de3b29fdb2dc66b2e3bc67a25377b554eebe879eebc2a6744c54da02",
+    "eligibilityContractSha256": "b05b3ead31780e3a4548d73fe304d4ff6944b4871b763ba2e227192413bf02b1",
+    "snapshotModelSha256": "2d2d07d1582943e5d4ad9cce789521c5d6009b65ea284b31847841450109794d"
+  },
+  "authority": {
+    "completenessLiteral": "authoritative-current",
+    "coverageDispositions": ["complete", "not-applicable"],
+    "coverageRule": "Exactly one authority-backed coverage row is required for every persistent-consequence and temporary-cleanup domain. Facts cannot appear under not-applicable coverage and every fact authority must be one exact authority declared by that domain.",
+    "mandatoryPerParticipant": ["hp", "injuries", "conditions", "equipment"],
+    "forbiddenDerivations": [
+      "field labels",
+      "display names",
+      "condition prose",
+      "effect tags without an owning provider",
+      "client snapshots",
+      "browser time",
+      "document copies used as mechanics authority"
+    ]
+  },
+  "persistentConsequences": {
+    "domains": [
+      "hp",
+      "injuries",
+      "conditions",
+      "capture",
+      "inventory",
+      "equipment",
+      "resource",
+      "usage",
+      "effect",
+      "objective",
+      "clock",
+      "phase",
+      "ownership",
+      "accepted-event"
+    ],
+    "behaviors": {
+      "hp": ["preserve"],
+      "injuries": ["preserve", "transform", "require-decision"],
+      "conditions": ["preserve", "transform", "require-decision"],
+      "capture": ["preserve", "transform", "require-decision"],
+      "inventory": ["preserve", "transform"],
+      "equipment": ["preserve", "transform", "require-decision"],
+      "resource": ["preserve", "transform"],
+      "usage": ["preserve", "transform"],
+      "effect": ["preserve", "transform", "require-decision"],
+      "objective": ["preserve", "transform", "require-decision"],
+      "clock": ["preserve", "transform", "require-decision"],
+      "phase": ["preserve", "transform", "require-decision"],
+      "ownership": ["preserve", "transform", "require-decision"],
+      "accepted-event": ["preserve"]
+    },
+    "snapshotKinds": ["integer", "boolean", "text", "text-list", "reference"],
+    "rule": "Every row stores only one bounded before/after value, exact source authority, stable field identity, participant scope when applicable, and one source-owned behavior. HP and accepted-event evidence cannot be silently transformed at settlement."
+  },
+  "temporaryCleanup": {
+    "domains": [
+      "combat-stages",
+      "temporary-effects",
+      "encounter-resources",
+      "reservations",
+      "zones",
+      "ground-items",
+      "duration-effects",
+      "encounter-items",
+      "initiative"
+    ],
+    "behaviors": {
+      "combat-stages": ["reset"],
+      "temporary-effects": ["expire", "transform", "require-decision"],
+      "encounter-resources": ["reset"],
+      "reservations": ["expire"],
+      "zones": ["preserve", "transform", "expire", "require-decision"],
+      "ground-items": ["preserve", "transform", "expire", "require-decision"],
+      "duration-effects": ["preserve", "transform", "expire", "require-decision"],
+      "encounter-items": ["transform", "expire", "require-decision"],
+      "initiative": ["reset"]
+    },
+    "rule": "Temporary rows name exact source identities and affected current participants. Reset, expiration, transformation, or preservation is declarative preview evidence; P8-079 source-owned reducers perform cleanup."
+  },
+  "boundedDecisions": {
+    "createdOnlyFor": "require-decision behavior",
+    "effects": ["accept", "exclude", "transform"],
+    "authority": "Every option names the exact current fact authority.",
+    "identity": "SHA-256 over version, settlement identity, scope, and stable source-fact identity.",
+    "acceptedRule": "An accepted option is retained only while subject, audience, ordered options, and exact authority remain unchanged. It cannot be rewritten by refresh.",
+    "freeformValues": "forbidden"
+  },
+  "refreshAndAudit": {
+    "entryIdentity": "SHA-256 over version, settlement identity, persistent-or-temporary scope, and stable source-fact identity",
+    "ordering": "stable entry and decision identity order",
+    "appliedEvidence": "An applied entry or linked receipt cannot be rewritten. An applied source fact cannot disappear from a complete refresh.",
+    "acceptedDecision": "An accepted snapshot decision cannot disappear or change options through refresh.",
+    "foreignEntry": "A consequence or cleanup row not owned by this versioned builder is rejected instead of silently replaced.",
+    "terminalRule": "Snapshots cannot be rebuilt after status enters committing, completed, or cancelled."
+  },
+  "ownership": {
+    "snapshotOwns": [
+      "complete source coverage evidence",
+      "bounded scalar before/after preview",
+      "persistent-versus-temporary classification",
+      "stable snapshot entry identity",
+      "bounded decision offers"
+    ],
+    "snapshotDoesNotOwn": [
+      "HP, Injury, condition, capture, inventory, equipment, objective, clock, phase, effect, resource, or event mechanics",
+      "cleanup reduction",
+      "settlement persistence or revision advancement",
+      "terminal commit, rollback, history, realtime, or public projection"
+    ]
+  },
+  "privacy": {
+    "storage": "server-private",
+    "forbiddenPublicEvidence": [
+      "source fact identity",
+      "authority identity or revision",
+      "source cleanup identity",
+      "decision option identity",
+      "Profile principal identity",
+      "receipt or operation identity"
+    ],
+    "projectionRule": "Later projections resolve safe labels and behavior summaries from current authorized sources; they never expose raw snapshot authority."
+  },
+  "evidence": {
+    "runtime": "server/domain/encounterSettlement/consequenceSnapshot.ts",
+    "tests": "tests/server/encounterSettlementConsequenceSnapshot.test.ts",
+    "documentation": "docs/encounter-settlement-consequence-snapshot.md"
+  }
+}

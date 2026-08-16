@@ -88,7 +88,7 @@ const trainerSheet = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => ({
   capabilities: { throwingRange: 10 },
   currentTeam: [],
   boxedPokemon: [],
-  inventory: { pokeBalls: [{ name: 'Basic Ball', qty: 2, mod: '0' }] },
+  inventory: { pokeBalls: [{ id: 'basic-ball-row', name: 'Basic Ball', qty: 2, mod: '0' }] },
   revision: 0,
   ...overrides,
 })
@@ -110,13 +110,23 @@ const linkedProfile = (): PlayerProfile => ({
   linkedCharacters: [{ sheetKind: 'trainer', sheetSlug: 'ash' }],
 })
 
-const commandFor = (map: TabletopMap, opId = 'op_capture001'): ThrowPokeballLivePlayCommand => buildThrowPokeballCommandEnvelope({
+const commandFor = (
+  map: TabletopMap,
+  opId = 'op_capture001',
+  source: { readonly rowId: string, readonly expectedRevision?: number } = { rowId: 'basic-ball-row' },
+): ThrowPokeballLivePlayCommand => buildThrowPokeballCommandEnvelope({
   opId,
   mapSlug: map.slug,
   baseRevision: map.revision ?? 0,
   trainerPlacement: map.placements[0]!,
   targetPlacement: map.placements[1]!,
-  pokeballName: 'Basic Ball',
+  pokeball: {
+    sourceInstanceId: `item-instance:trainer:ash:pokeBalls:${source.rowId}`,
+    source: {
+      kind: 'trainer', slug: 'ash', section: 'pokeBalls',
+      rowId: source.rowId, expectedRevision: source.expectedRevision ?? 0,
+    },
+  },
 })
 
 const setup = (options: {
@@ -264,6 +274,138 @@ describe('throwPokeball live-play command', () => {
     expect(env.ops.getStoredOpRecord('arena', 'op_capture001')).toMatchObject({ result: response.result })
     expect(env.published).toHaveLength(5)
     expect(env.published.at(-1)).toMatchObject({ type: 'live-play-command-accepted', opId: 'op_capture001' })
+  })
+
+  it('consumes only the declared exact row when duplicate same-name Ball rows exist', async () => {
+    const env = setup({
+      trainer: trainerSheet({
+        inventory: { pokeBalls: [
+          { id: 'basic-ball-row', name: 'Basic Ball', qty: 4 },
+          { id: 'second-basic-ball-row', name: 'Basic Ball', qty: 2 },
+        ] },
+      }),
+    })
+    const response = await execute({
+      ...env,
+      command: commandFor(env.map, 'op_capture_exact_duplicate', { rowId: 'second-basic-ball-row' }),
+      random: vi.fn().mockReturnValueOnce(0),
+    })
+
+    expect(response.result).toMatchObject({ ok: true, revision: 1 })
+    expect(response.capture).toMatchObject({ pokeballName: 'Basic Ball', result: { hit: false, success: false } })
+    expect(response.capture).not.toHaveProperty('sourceInstanceId')
+    expect(response.capture).not.toHaveProperty('source')
+    expect(env.sheets.getByRef('trainer', 'ash')!.sheet.inventory).toMatchObject({
+      pokeBalls: [
+        { id: 'basic-ball-row', qty: 4 },
+        { id: 'second-basic-ball-row', qty: 1 },
+      ],
+    })
+  })
+
+  it('does not substitute another same-name Ball when the declared exact row is unavailable', async () => {
+    const random = vi.fn(() => 0)
+    const env = setup({
+      trainer: trainerSheet({
+        inventory: { pokeBalls: [
+          { id: 'basic-ball-row', name: 'Basic Ball', qty: 4 },
+          { id: 'empty-basic-ball-row', name: 'Basic Ball', qty: 0 },
+        ] },
+      }),
+    })
+    const response = await execute({
+      ...env,
+      command: commandFor(env.map, 'op_capture_no_substitution', { rowId: 'empty-basic-ball-row' }),
+      random,
+    })
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'conflict', currentRevision: 0 })
+    expect(random).not.toHaveBeenCalled()
+    expect(env.sheets.getByRef('trainer', 'ash')!.sheet.inventory).toMatchObject({
+      pokeBalls: [
+        { id: 'basic-ball-row', qty: 4 },
+        { id: 'empty-basic-ball-row', qty: 0 },
+      ],
+    })
+  })
+
+  it('applies reviewed Friend Ball and Heal Ball post-capture mechanics in the same accepted transaction', async () => {
+    const friend = setup({
+      trainer: trainerSheet({
+        inventory: { pokeBalls: [{ id: 'friend-ball-row', name: 'Friend Ball', qty: 1 }] },
+      }),
+      target: targetSheet({ loyalty: 2 }),
+    })
+    const friendResponse = await execute({
+      ...friend,
+      command: commandFor(friend.map, 'op_capture_friend_ball', { rowId: 'friend-ball-row' }),
+      random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
+    })
+    expect(friendResponse.capture).toMatchObject({ pokeballName: 'Friend Ball', result: { success: true } })
+    expect(friend.sheets.getByRef('pokemon', 'pidgey')!.sheet).toMatchObject({
+      caughtBall: 'Friend Ball', loyalty: 3,
+    })
+    expect(friend.sheets.getByRef('trainer', 'ash')!.sheet.inventory).toMatchObject({
+      pokeBalls: [{ id: 'friend-ball-row', qty: 0 }],
+    })
+
+    const heal = setup({
+      trainer: trainerSheet({
+        inventory: { pokeBalls: [{ id: 'heal-ball-row', name: 'Heal Ball', qty: 1 }] },
+      }),
+      target: targetSheet({ stats: { hp: { added: 10 } }, combat: { currentHp: 1 } }),
+    })
+    const healResponse = await execute({
+      ...heal,
+      command: commandFor(heal.map, 'op_capture_heal_ball', { rowId: 'heal-ball-row' }),
+      random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
+    })
+    expect(healResponse.capture).toMatchObject({ pokeballName: 'Heal Ball', result: { success: true } })
+    expect(heal.sheets.getByRef('pokemon', 'pidgey')!.sheet).toMatchObject({ caughtBall: 'Heal Ball' })
+    expect(Number((heal.sheets.getByRef('pokemon', 'pidgey')!.sheet.combat as { currentHp?: unknown }).currentHp))
+      .toBeGreaterThan(1)
+    expect(heal.sheets.getByRef('trainer', 'ash')!.sheet.inventory).toMatchObject({
+      pokeBalls: [{ id: 'heal-ball-row', qty: 0 }],
+    })
+  })
+
+  it('uses reviewed round schedules and fails closed with explicit notes for unavailable Ball conditions', async () => {
+    const timerMap = baseMap({ initiative: { activeId: 'target-1', round: 6 } })
+    const timer = setup({
+      map: timerMap,
+      trainer: trainerSheet({
+        inventory: { pokeBalls: [{ id: 'timer-ball-row', name: 'Timer Ball', qty: 1 }] },
+      }),
+    })
+    const timerResponse = await execute({
+      ...timer,
+      command: commandFor(timer.map, 'op_capture_timer_ball', { rowId: 'timer-ball-row' }),
+      random: vi.fn().mockReturnValueOnce(0),
+    })
+    expect(timerResponse.capture?.result.breakdown).toMatchObject({
+      rollModifier: -25,
+      rollModifierLines: expect.arrayContaining([
+        { label: 'Timer Ball modifier', value: 5 },
+        { label: 'Timer Ball round 6 adjustment', value: -25 },
+      ]),
+    })
+
+    const dusk = setup({
+      trainer: trainerSheet({
+        inventory: { pokeBalls: [{ id: 'dusk-ball-row', name: 'Dusk Ball', qty: 1 }] },
+      }),
+    })
+    const duskResponse = await execute({
+      ...dusk,
+      command: commandFor(dusk.map, 'op_capture_dusk_ball', { rowId: 'dusk-ball-row' }),
+      random: vi.fn().mockReturnValueOnce(0),
+    })
+    expect(duskResponse.capture?.result.breakdown.notes).toContain(
+      'Conditional modifier unavailable: Current map authority has no reviewed light-level marker.',
+    )
+    expect(duskResponse.capture?.result.breakdown.rollModifierLines).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: expect.stringContaining('light') }),
+    ]))
   })
 
   it('rolls the entire capture back when a first-Species reward would overflow', async () => {
@@ -434,9 +576,13 @@ describe('throwPokeball live-play command', () => {
     expect(response.sheetUpdates?.map((update) => `${update.kind}:${update.slug}`)).toEqual(['trainer:ash'])
   })
 
-  it('persists hit-but-failed capture shake data while leaving target state unchanged', async () => {
+  it('persists hit-but-failed capture shake data while ignoring forgeable row modifiers', async () => {
     const env = setup({
-      trainer: trainerSheet({ level: 50, inventory: { pokeBalls: [{ name: 'Basic Ball', qty: 2, mod: '+200' }] } }),
+      trainer: trainerSheet({
+        level: 1,
+        inventory: { pokeBalls: [{ id: 'basic-ball-row', name: 'Basic Ball', qty: 2, mod: '+200' }] },
+      }),
+      target: targetSheet({ level: 100, combat: { currentHp: 100 } }),
     })
     const random = vi.fn()
       .mockReturnValueOnce(0.99)
@@ -460,7 +606,7 @@ describe('throwPokeball live-play command', () => {
   })
 
   it('rejects missing or zero-quantity balls, out-of-range targets, and already-linked targets before rolling or writing documents', async () => {
-    const zeroBall = setup({ trainer: trainerSheet({ inventory: { pokeBalls: [{ name: 'Basic Ball', qty: 0, mod: '0' }] } }) })
+    const zeroBall = setup({ trainer: trainerSheet({ inventory: { pokeBalls: [{ id: 'basic-ball-row', name: 'Basic Ball', qty: 0, mod: '0' }] } }) })
     const zeroRandom = vi.fn()
     const zeroResponse = await execute({ ...zeroBall, random: zeroRandom })
     expect(zeroResponse.result).toMatchObject({ ok: false, reason: 'conflict' })

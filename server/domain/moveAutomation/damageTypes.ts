@@ -39,6 +39,7 @@ import {
 import { aa081DamageTypeOverlay } from '../abilityAutomation/mechanics/aa081StaticIntegration'
 import { AA083_POLYCEPHALY_DAMAGE_REASON } from '../abilityAutomation/mechanics/aa083MoveIntegration'
 import { aa085to100DamageTypeOverlay } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
+import { equipmentRemovesTypeImmunity } from './equipmentProviderMechanics'
 
 export type MoveDamageTypeResolutionErrorCode =
   | 'move-type-unavailable'
@@ -320,9 +321,17 @@ export const resolveMoveDamageType = (options: {
     }
   })
 
-  const chartImmunity = defenderTypeEvaluations.find(evaluation => (
-    evaluation.relation === 'immune' && !evaluation.ignored
-  )) ?? null
+  const equipmentSuppressesImmunity = moveType.type === 'Ground'
+    && equipmentRemovesTypeImmunity({
+      context: options.context,
+      placementId: options.recipientId,
+      typeId: moveType.type,
+    })
+  const chartImmunity = equipmentSuppressesImmunity
+    ? null
+    : defenderTypeEvaluations.find(evaluation => (
+        evaluation.relation === 'immune' && !evaluation.ignored
+      )) ?? null
   const effectivenessSteps = defenderTypeEvaluations.reduce((total, evaluation) => (
     total + (evaluation.ignored || evaluation.effectivenessStep === null
       ? 0
@@ -359,6 +368,7 @@ export const resolveMoveDamageType = (options: {
       moveType: moveType.type,
     })
   const levitateImmunity = effectiveLevitate
+    && !equipmentSuppressesImmunity
     && moveType.type === 'Ground'
     && policy.immunity === 'honor'
     && policy.passiveImmunity !== 'ignore'
@@ -384,7 +394,8 @@ export const resolveMoveDamageType = (options: {
             target,
             { suppressGroundsourceImmunity: gravityGroundInteraction.suppressesGroundsourceImmunity },
           ),
-          ignoreImmunity: policy.immunity === 'ignore'
+          ignoreImmunity: equipmentSuppressesImmunity
+            || policy.immunity === 'ignore'
             || policy.passiveImmunity === 'ignore',
           ignoreResistance: policy.resistance === 'ignore',
         },

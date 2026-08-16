@@ -1,3 +1,7 @@
+import { parseSerializedEquipmentInventoryState } from '#shared/itemAutomation/equipment'
+import { parseItemExplorationState, parseItemShardInventoryVariant } from '#shared/itemAutomation/exploration'
+import { parseItemInventoryInstanceId } from '#shared/itemAutomation/inventory'
+import { activeItemMedicalTreatment } from '#shared/itemAutomation/medicalTreatments'
 import { sanitizeFolderPath, validateSlug } from '#shared/paths'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import { isSheetKind, SHEET_KINDS, type SheetKind } from '#shared/sheets'
@@ -9,9 +13,12 @@ import {
   reconcileJuicerHeldItemCustody,
 } from '#shared/capabilityAutomation/campaignState'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import { sameJsonValue } from '~/utils/serialization'
 import { pokemonHasResolvedCapability } from '~/utils/sheets/pokemonDerived'
 import { stripDerivedSheetRuntimeFields } from '~/utils/sheets/persistence'
+import { preservePokemonItemControlledVitaminFieldsForSetupSave } from '~/utils/sheets/pokemonVitamins'
+import { preservePokemonItemControlledMovesForSetupSave } from '~/utils/sheets/pokemonMoveLearning'
 import {
   preservePokemonGmFieldsForPlayerSave,
   preservePokemonServerPrivateFieldsForSave,
@@ -32,6 +39,9 @@ import {
   runtimeSheetNameSlug,
 } from '../utils/sheetDocuments'
 import { logicalSheetResourcePath } from '../utils/runtimeResourcePaths'
+import { cancelBandageTreatmentOnHpLoss } from '../domain/itemAutomation/medicalTreatments'
+import { reconcilePokemonItemEvolutionForSetupSave } from '../domain/itemAutomation/evolution'
+import { createSqliteCampaignClockRepository } from './campaignClockRepository'
 import {
   createSqliteMapRepository,
   sqliteMapRepository,
@@ -157,6 +167,8 @@ export interface ApplyLivePlaySheetUpdateInput {
   readonly sourceOperationId?: string
   /** Set only when authority proves an item replacement hidden by an unchanged legacy held-item label. */
   readonly heldItemCustodyChanged?: boolean
+  /** Server-only campaign-clock settlement seam; ordinary commands cannot author treatment lifecycle state. */
+  readonly allowMedicalTreatmentTransition?: boolean
 }
 
 export type LivePlaySheetUpdateResult = 'applied' | 'stale'
@@ -290,6 +302,34 @@ const sheetPayloadBase = (sheet: Record<string, unknown>): Record<string, unknow
   return payload
 }
 
+const normalizeSerializedEquipmentInventoryForStorage = (
+  sheet: Record<string, unknown>,
+): Record<string, unknown> => {
+  if (!sheet.inventory || typeof sheet.inventory !== 'object' || Array.isArray(sheet.inventory)) return sheet
+  const ids = new Set<string>()
+  const inventory = Object.fromEntries(Object.entries(sheet.inventory as Record<string, unknown>).map(([section, value]) => [
+    section,
+    Array.isArray(value) ? value.map((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return entry
+      const row = { ...(entry as Record<string, unknown>) }
+      if (row.serializedEquipment !== undefined) {
+        const serialized = parseSerializedEquipmentInventoryState(row.serializedEquipment)
+        if (ids.has(serialized.instanceId)) throw new Error('Trainer inventory contains a duplicate serialized equipment identity.')
+        if (row.itemVariant !== undefined) throw new Error('Serialized equipment cannot also carry stack item variant authority.')
+        ids.add(serialized.instanceId)
+        row.serializedEquipment = serialized
+        delete row.qty
+      }
+      else {
+        if (row.itemVariant !== undefined) row.itemVariant = parseItemShardInventoryVariant(row.itemVariant)
+        if (section === 'equipment') delete row.qty
+      }
+      return row
+    }) : value,
+  ]))
+  return { ...sheet, inventory }
+}
+
 const normalizeSheetForStorage = (
   kind: SheetKind,
   slugInput: string,
@@ -301,8 +341,11 @@ const normalizeSheetForStorage = (
   const folder = normalizeFolder(overrides.folder ?? sheet.folder ?? '', `${kind} sheet folder`)
   const revision = normalizeRevision(overrides.revision ?? sheet.revision)
   const updatedAt = timestampOrNow(overrides.updatedAt ?? sheet.updatedAt, `${kind} sheet ${slug} updatedAt`)
-  const payload = sheetPayloadBase(sheet)
-  if (kind === 'trainer') stripLegacyTrainerSheetSkillRanks(payload)
+  let payload = sheetPayloadBase(sheet)
+  if (kind === 'trainer') {
+    stripLegacyTrainerSheetSkillRanks(payload)
+    payload = normalizeSerializedEquipmentInventoryForStorage(payload)
+  }
 
   return {
     ...payload,
@@ -353,6 +396,219 @@ const storedDocumentToPersistedSheet = (stored: StoredSheetDocument): PersistedS
     revision: stored.revision,
     updatedAt: stored.updatedAt,
   }
+}
+
+const preserveSerializedEquipmentForSetupSave = (
+  candidate: Record<string, unknown>,
+  current: Record<string, unknown>,
+): Record<string, unknown> => {
+  const protectedCandidate = { ...candidate }
+  const currentInventory = current.inventory && typeof current.inventory === 'object' && !Array.isArray(current.inventory)
+    ? current.inventory as Record<string, unknown>
+    : {}
+  const candidateHasInventory = Boolean(
+    candidate.inventory && typeof candidate.inventory === 'object' && !Array.isArray(candidate.inventory),
+  )
+  const candidateInventory = candidateHasInventory
+    ? candidate.inventory as Record<string, unknown>
+    : {}
+  const serializedLocations = new Map<string, string>()
+  for (const [section, value] of Object.entries(currentInventory)) {
+    if (!Array.isArray(value)) continue
+    for (const entry of value) {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+      const row = entry as Record<string, unknown>
+      if (typeof row.id === 'string' && Object.hasOwn(row, 'serializedEquipment')) {
+        serializedLocations.set(row.id, section)
+      }
+    }
+  }
+  const nextInventory: Record<string, unknown> = Object.fromEntries(Object.entries(candidateInventory).map(([section, value]) => [
+    section,
+    Array.isArray(value) ? value.flatMap((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [entry]
+      const row = { ...(entry as Record<string, unknown>) }
+      if (typeof row.id === 'string' && serializedLocations.has(row.id)
+        && serializedLocations.get(row.id) !== section) return []
+      delete row.serializedEquipment
+      return [row]
+    }) : value,
+  ]))
+  for (const [section, currentValue] of Object.entries(currentInventory)) {
+    if (!Array.isArray(currentValue)) continue
+    const authoritative = new Map(currentValue.flatMap((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return []
+      const row = entry as Record<string, unknown>
+      return typeof row.id === 'string' && Object.hasOwn(row, 'serializedEquipment') ? [[row.id, row] as const] : []
+    }))
+    if (!authoritative.size) continue
+    const candidateRows = Array.isArray(nextInventory[section])
+      ? (nextInventory[section] as unknown[]).map(entry => entry && typeof entry === 'object' && !Array.isArray(entry)
+          ? { ...(entry as Record<string, unknown>) }
+          : entry)
+      : []
+    const seen = new Set<string>()
+    const protectedRows = candidateRows.map((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return entry
+      const row = entry as Record<string, unknown>
+      const id = typeof row.id === 'string' ? row.id : null
+      const serverRow = id ? authoritative.get(id) : undefined
+      if (!serverRow) {
+        delete row.serializedEquipment
+        return row
+      }
+      if (seen.has(id!)) throw new Error(`Serialized equipment row ${id} is duplicated in setup save.`)
+      seen.add(id!)
+      row.name = serverRow.name
+      row.serializedEquipment = serverRow.serializedEquipment
+      delete row.qty
+      return row
+    })
+    for (const [id, serverRow] of authoritative) {
+      if (!seen.has(id)) protectedRows.push(cloneStoredJson(serverRow))
+    }
+    nextInventory[section] = protectedRows
+  }
+  if (candidateHasInventory || serializedLocations.size > 0) protectedCandidate.inventory = nextInventory
+  return protectedCandidate
+}
+
+const preserveItemVariantsForSetupSave = (
+  candidate: Record<string, unknown>,
+  current: Record<string, unknown>,
+): Record<string, unknown> => {
+  const currentInventory = current.inventory && typeof current.inventory === 'object' && !Array.isArray(current.inventory)
+    ? current.inventory as Record<string, unknown>
+    : {}
+  const candidateInventory = candidate.inventory && typeof candidate.inventory === 'object' && !Array.isArray(candidate.inventory)
+    ? candidate.inventory as Record<string, unknown>
+    : {}
+  const authoritative = new Map<string, { readonly section: string, readonly row: Record<string, unknown> }>()
+  for (const [section, value] of Object.entries(currentInventory)) {
+    if (!Array.isArray(value)) continue
+    for (const entry of value) {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+      const row = entry as Record<string, unknown>
+      if (typeof row.id !== 'string' || row.itemVariant === undefined) continue
+      parseItemShardInventoryVariant(row.itemVariant)
+      if (authoritative.has(row.id)) throw new Error(`Structured item variant row ${row.id} is duplicated.`)
+      authoritative.set(row.id, { section, row })
+    }
+  }
+  const nextInventory: Record<string, unknown> = {}
+  const seen = new Set<string>()
+  for (const [section, value] of Object.entries(candidateInventory)) {
+    if (!Array.isArray(value)) {
+      nextInventory[section] = value
+      continue
+    }
+    nextInventory[section] = value.flatMap((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [entry]
+      const row = { ...(entry as Record<string, unknown>) }
+      const id = typeof row.id === 'string' ? row.id : null
+      const server = id ? authoritative.get(id) : undefined
+      if (row.itemVariant !== undefined && !server) delete row.itemVariant
+      if (!server) return [row]
+      if (server.section !== section) return []
+      if (seen.has(id!)) throw new Error(`Structured item variant row ${id} is duplicated in setup save.`)
+      seen.add(id!)
+      return [cloneStoredJson(server.row)]
+    })
+  }
+  for (const [id, server] of authoritative) {
+    if (seen.has(id)) continue
+    const rows = Array.isArray(nextInventory[server.section]) ? nextInventory[server.section] as unknown[] : []
+    nextInventory[server.section] = [...rows, cloneStoredJson(server.row)]
+  }
+  return authoritative.size > 0 || Object.keys(candidateInventory).length > 0
+    ? { ...candidate, inventory: nextInventory }
+    : candidate
+}
+
+const preserveEquipmentStateForSetupSave = (
+  kind: SheetKind,
+  candidate: Record<string, unknown>,
+  current: Record<string, unknown>,
+): Record<string, unknown> => {
+  const protectedCandidate = { ...candidate }
+  if (Object.hasOwn(current, 'equipmentState')) {
+    protectedCandidate.equipmentState = current.equipmentState
+    if (kind === 'trainer') {
+      if (Object.hasOwn(current, 'equipmentSlots')) protectedCandidate.equipmentSlots = current.equipmentSlots
+      else delete protectedCandidate.equipmentSlots
+    }
+    else {
+      const candidateItems = candidate.items && typeof candidate.items === 'object' && !Array.isArray(candidate.items)
+        ? { ...(candidate.items as Record<string, unknown>) }
+        : {}
+      const currentItems = current.items && typeof current.items === 'object' && !Array.isArray(current.items)
+        ? current.items as Record<string, unknown>
+        : {}
+      if (Object.hasOwn(currentItems, 'held')) candidateItems.held = currentItems.held
+      else delete candidateItems.held
+      protectedCandidate.items = candidateItems
+    }
+  }
+  else delete protectedCandidate.equipmentState
+  if (Object.hasOwn(current, 'itemMedicalTreatments')) {
+    protectedCandidate.itemMedicalTreatments = current.itemMedicalTreatments
+  }
+  else delete protectedCandidate.itemMedicalTreatments
+  return kind === 'trainer'
+    ? preserveItemVariantsForSetupSave(
+        preserveSerializedEquipmentForSetupSave(protectedCandidate, current),
+        current,
+      )
+    : protectedCandidate
+}
+
+const preserveActiveFishingLureSourcesForSetupSave = (
+  candidate: Record<string, unknown>,
+  current: Record<string, unknown>,
+): Record<string, unknown> => {
+  const currentTrainer = current as unknown as TrainerSheet
+  const currentState = parseItemExplorationState(currentTrainer.serverPrivate?.itemExploration)
+  const locked = currentState.routeLures.flatMap((activity) => {
+    if (!activity.reusable || (activity.status !== 'active' && activity.status !== 'awaiting-encounter')) return []
+    const source = parseItemInventoryInstanceId(activity.sourceInstanceId)
+    if (!source || source.containerKind !== 'trainer' || source.containerSlug !== currentTrainer.slug) {
+      throw new Error('Active Fishing Lure activity has invalid source custody.')
+    }
+    const rows = currentTrainer.inventory?.[source.section] ?? []
+    const matches = rows.filter(row => row.id === source.rowId)
+    if (matches.length !== 1) throw new Error('Active Fishing Lure source is missing or duplicated.')
+    return [{ source, row: matches[0]! }]
+  })
+  if (locked.length === 0) return candidate
+  const inventory = candidate.inventory && typeof candidate.inventory === 'object' && !Array.isArray(candidate.inventory)
+    ? structuredClone(candidate.inventory as Record<string, unknown>)
+    : {}
+  const lockedIds = new Set(locked.map(entry => entry.source.rowId))
+  for (const [section, value] of Object.entries(inventory)) {
+    if (!Array.isArray(value)) continue
+    inventory[section] = value.filter(entry => !entry || typeof entry !== 'object' || Array.isArray(entry)
+      || typeof (entry as Record<string, unknown>).id !== 'string'
+      || !lockedIds.has((entry as Record<string, unknown>).id as string))
+  }
+  for (const entry of locked) {
+    const rows = Array.isArray(inventory[entry.source.section])
+      ? inventory[entry.source.section] as unknown[]
+      : []
+    inventory[entry.source.section] = [...rows, structuredClone(entry.row)]
+  }
+  return { ...candidate, inventory }
+}
+
+const preserveTrainerServerPrivateForSetupSave = <T extends Record<string, unknown>>(
+  candidate: T,
+  current: Record<string, unknown>,
+): T => {
+  const next = { ...candidate } as Record<string, unknown>
+  if (Object.hasOwn(current, 'serverPrivate')) next.serverPrivate = structuredClone(current.serverPrivate)
+  else delete next.serverPrivate
+  const protectedSources = preserveActiveFishingLureSourcesForSetupSave(next, current)
+  Object.assign(next, protectedSources)
+  return next as T
 }
 
 const semanticSheetSnapshot = (sheet: Record<string, unknown>): Record<string, unknown> => {
@@ -627,14 +883,32 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
     if (current.revision !== expectedRevision) throw new Error(`${kind} sheet ${slug} is stale; expected revision ${expectedRevision}, current revision ${current.revision}`)
 
     const currentSheet = current.sheet
-    const inputSheet = kind === 'pokemon'
+    const requestedUpdatedAt = nowTimestamp(input.now)
+    const inputSheetWithPrivateFields = kind === 'pokemon'
       ? preservePokemonServerPrivateFieldsForSave(
           input.preservePokemonGmFields
-            ? preservePokemonGmFieldsForPlayerSave(input.sheet, currentSheet)
-            : input.sheet,
+            ? preservePokemonGmFieldsForPlayerSave(
+                preservePokemonItemControlledMovesForSetupSave(
+                  preservePokemonItemControlledVitaminFieldsForSetupSave(input.sheet, currentSheet),
+                  currentSheet,
+                ),
+                currentSheet,
+              )
+            : preservePokemonItemControlledMovesForSetupSave(
+                preservePokemonItemControlledVitaminFieldsForSetupSave(input.sheet, currentSheet),
+                currentSheet,
+              ),
           currentSheet,
         )
-      : input.sheet
+      : preserveTrainerServerPrivateForSetupSave(input.sheet, currentSheet)
+    const evolutionReconciledSheet = kind === 'pokemon'
+      ? reconcilePokemonItemEvolutionForSetupSave({
+          current: currentSheet as unknown as CharacterSheet,
+          candidate: inputSheetWithPrivateFields as unknown as CharacterSheet,
+          resolvedAt: requestedUpdatedAt,
+        }) as unknown as Record<string, unknown>
+      : inputSheetWithPrivateFields
+    const inputSheet = preserveEquipmentStateForSetupSave(kind, evolutionReconciledSheet, currentSheet)
     const sourceWithServerFields = {
       ...inputSheet,
       slug,
@@ -647,17 +921,29 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
         ? {}
         : { moveUsage: currentSheet.moveUsage }),
     }
-    const candidate = normalizeSheetForStorage(kind, slug, sourceWithServerFields, {
+    const normalizedCandidate = normalizeSheetForStorage(kind, slug, sourceWithServerFields, {
       folder: currentSheet.folder as string | undefined,
       revision: current.revision,
       updatedAt: current.updatedAt,
     })
+    const candidate = activeItemMedicalTreatment(currentSheet.itemMedicalTreatments)
+      ? normalizeSheetForStorage(kind, slug, cancelBandageTreatmentOnHpLoss({
+          sheetKind: kind,
+          previousSheet: currentSheet as unknown as CharacterSheet | TrainerSheet,
+          nextSheet: normalizedCandidate as unknown as CharacterSheet | TrainerSheet,
+          campaignMinute: createSqliteCampaignClockRepository(database).get().campaignMinute,
+        }) as unknown as Record<string, unknown>, {
+          folder: currentSheet.folder as string | undefined,
+          revision: current.revision,
+          updatedAt: current.updatedAt,
+        })
+      : normalizedCandidate
 
     if (sameJsonValue(semanticSheetSnapshot(currentSheet), semanticSheetSnapshot(candidate))) {
       return { changed: false, sheet: current, path: logicalSheetResourcePath(kind, current.sheet) }
     }
 
-    const updatedAt = nowTimestamp(input.now)
+    const updatedAt = requestedUpdatedAt
     const nextSheet = normalizeSheetForStorage(kind, slug, candidate, {
       folder: currentSheet.folder as string | undefined,
       revision: nextRevision(current.revision),
@@ -968,8 +1254,18 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
             ...(input.heldItemCustodyChanged === true ? { heldItemCustodyChanged: true } : {}),
           })
         : input.nextSheet
+      const treatmentReconciled = input.allowMedicalTreatmentTransition === true
+        ? custodyReconciled
+        : activeItemMedicalTreatment(current.sheet.itemMedicalTreatments)
+          ? cancelBandageTreatmentOnHpLoss({
+            sheetKind: kind,
+            previousSheet: current.sheet as unknown as CharacterSheet | TrainerSheet,
+            nextSheet: custodyReconciled as unknown as CharacterSheet | TrainerSheet,
+            campaignMinute: createSqliteCampaignClockRepository(database).get().campaignMinute,
+            }) as unknown as Record<string, unknown>
+          : custodyReconciled
       const nextSheet = normalizeSheetForStorage(kind, slug, {
-        ...custodyReconciled,
+        ...treatmentReconciled,
         folder: current.sheet.folder ?? '',
       }, {
         folder: current.sheet.folder as string | undefined,

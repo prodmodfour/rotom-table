@@ -12,6 +12,7 @@ import type {
 } from '#shared/moveAutomation/effects'
 import type { EncounterLifecycleTriggerHandler } from '~~/server/domain/moveAutomation/reduceLifecycle'
 import { encounterSceneId } from '~~/server/domain/moveAutomation/planSceneLifecycle'
+import { applyCombatStagesToSheet } from '~/utils/sheetMutations'
 import type { PersistedSheet } from '~~/server/storage/sheetRepository'
 import type { TabletopMap } from '~/types/map'
 import { LivePlayIntegrationHarness, assertAccepted } from './livePlayIntegrationHarness'
@@ -274,5 +275,32 @@ describe('live-play scene lifecycle integration', () => {
     })
     expect(((await harness.readSheet('pokemon', 'alpha-mon'))?.sheet.combat as { currentHp: number }).currentHp).toBe(25)
     expect(harness.operationRecordCount()).toBe(2)
+  })
+
+  it('preserves authoritative Combat Stages and Accuracy when only the scene ends', async () => {
+    const staged = pokemonSheet()
+    staged.sheet = applyCombatStagesToSheet('pokemon', staged.sheet as never, {
+      atk: 4, def: -2, satk: 1, sdef: 3, spd: -1, acc: 2,
+    }) as unknown as Record<string, unknown>
+    const harness = LivePlayIntegrationHarness.create({
+      map: lifecycleMap(sceneEffect()),
+      sheets: [staged],
+    })
+    harnesses.push(harness)
+    const endCommand = harness.setSceneCommand({
+      opId: 'op_scene_end_stage_cleanup', baseRevision: 0, name: null,
+    })
+    const first = await harness.setScene({ actor: { role: 'gm', clientId: 'gm-client' }, command: endCommand })
+    const replay = await harness.setScene({ actor: { role: 'gm', clientId: 'gm-client' }, command: endCommand })
+    expect(assertAccepted(first.result)).toMatchObject({ previousRevision: 0, revision: 1 })
+    expect(replay.result).toEqual(first.result)
+    const sheet = (await harness.readSheet('pokemon', 'alpha-mon'))?.sheet as Record<string, unknown>
+    expect((sheet.stats as Record<string, { stage?: number }>).atk?.stage).toBe(4)
+    expect((sheet.stats as Record<string, { stage?: number }>).def?.stage).toBe(-2)
+    expect((sheet.stats as Record<string, { stage?: number }>).satk?.stage).toBe(1)
+    expect((sheet.stats as Record<string, { stage?: number }>).sdef?.stage).toBe(3)
+    expect((sheet.stats as Record<string, { stage?: number }>).spd?.stage).toBe(-1)
+    expect((sheet.combatStages as { acc?: number }).acc).toBe(2)
+    expect((await harness.readSheet('pokemon', 'alpha-mon'))?.revision).toBe(0)
   })
 })

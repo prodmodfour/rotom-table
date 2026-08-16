@@ -19,6 +19,12 @@ import {
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
 import { UseCaseHttpError } from './useCaseErrors'
 
+export interface EncounterGenerationExplorationAuthorityInput {
+  readonly trainerSlug?: unknown
+  readonly trainerRevision?: unknown
+  readonly campaignClockRevision?: unknown
+}
+
 export interface GenerateEncounterBody {
   region?: string
   table?: string
@@ -30,6 +36,8 @@ export interface GenerateEncounterBody {
   preview?: boolean
   /** Exact non-Nothing rolls already displayed by the client preview. */
   rolled?: unknown
+  /** Optional exact Trainer/clock authority used to apply an active route Repel. */
+  exploration?: EncounterGenerationExplorationAuthorityInput
 }
 
 export const DEFAULT_ENCOUNTER_GENERATE_OUT_ROOT = DEFAULT_ENCOUNTER_OUT_ROOT
@@ -200,6 +208,31 @@ export const uniqueEncounterOutputDir = (
   return joinPath(parent, `${baseName}-${n}`)
 }
 
+const sanitizeExplorationAuthority = (value: unknown): {
+  readonly trainerSlug: string
+  readonly trainerRevision: number
+  readonly campaignClockRevision: number
+} | undefined => {
+  if (value === undefined) return undefined
+  const row = rolledEncounterRecord(value, 'exploration')
+  const fields = ['trainerSlug', 'trainerRevision', 'campaignClockRevision']
+  if (Object.keys(row).length !== fields.length || fields.some(field => !Object.hasOwn(row, field))) {
+    badEncounterInput('exploration must contain exactly trainerSlug, trainerRevision, and campaignClockRevision')
+  }
+  const trainerSlug = String(row.trainerSlug ?? '')
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(trainerSlug)) badEncounterInput('exploration.trainerSlug must be a canonical slug')
+  const revision = (entry: unknown, label: string): number => {
+    const parsed = Number(entry)
+    if (!Number.isSafeInteger(parsed) || parsed < 0) badEncounterInput(`${label} must be a safe non-negative integer`)
+    return parsed
+  }
+  return {
+    trainerSlug,
+    trainerRevision: revision(row.trainerRevision, 'exploration.trainerRevision'),
+    campaignClockRevision: revision(row.campaignClockRevision, 'exploration.campaignClockRevision'),
+  }
+}
+
 export const readEncounterGenerateRequest = (body: GenerateEncounterBody | null | undefined) => {
   const hasCountRange = body?.countMin !== undefined || body?.countMax !== undefined
   const countRange = hasCountRange
@@ -213,5 +246,6 @@ export const readEncounterGenerateRequest = (body: GenerateEncounterBody | null 
     countRange,
     preview: Boolean(body?.preview),
     rolled: sanitizeRolledEncounters(body?.rolled),
+    exploration: sanitizeExplorationAuthority(body?.exploration),
   }
 }
