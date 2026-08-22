@@ -31,6 +31,7 @@ import {
   POKEMON_VITAMIN_STAT_KEYS,
   coercePokemonVitaminCount,
 } from '~/utils/sheets/pokemonVitamins'
+import { parsePokemonContestStatsState } from '#shared/contests/preparation'
 
 const STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
 const TRAINER_STAT_KEYS: TrainerStatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
@@ -64,6 +65,13 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
     sheet.serverPrivate.itemGuidedLoyalty = parseItemGuidedLoyaltyState(sheet.serverPrivate.itemGuidedLoyalty)
   }
   setPokemonCaughtBall(sheet, sheet.caughtBall)
+  // Keep Contest fields additive: migrate a legacy value when present, but do
+  // not rewrite unrelated historical sheets merely because Contest support
+  // exists in the current schema.
+  if (Object.hasOwn(sheet, 'contestStats')) {
+    sheet.contestStats = parsePokemonContestStatsState(sheet.contestStats)
+  }
+  if (Object.hasOwn(sheet, 'contestRibbons')) ensureArr(sheet, 'contestRibbons')
 
   // Headline stats — give every key an entry so the stats table is editable.
   const stats = ensureObj<NonNullable<CharacterSheet['stats']>>(sheet, 'stats')
@@ -219,6 +227,7 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
     if (resolved.status === 'ready' && resolved.data) edge.automation = { ...resolved.data, family: 'trainer' }
   }
   ensureArr(sheet, 'advancement')
+  if (Object.hasOwn(sheet, 'contestResults')) ensureArr(sheet, 'contestResults')
   ensureArr<string>(sheet, 'currentTeam')
   ensureArr<string>(sheet, 'boxedPokemon')
   ensureArr<string>(sheet, 'wishlist')

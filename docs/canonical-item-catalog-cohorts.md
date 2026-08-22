@@ -15,14 +15,15 @@ Runtime actions still require their owning exact provider:
 - Breeding/Egg item operations;
 - bounded guided adjudication;
 - equipment definitions, contributions, grants, and provider lifecycle;
-- core ItemSpecs and item-operation journals; or
-- the specialized capture operation.
+- core ItemSpecs and item-operation journals;
+- the specialized capture operation; or
+- Pokémon Contest preparation authority for exact Poffin custody and use.
 
 `server/domain/itemAutomation/catalogCohortRegistry.ts` intentionally exposes read-only coverage decisions. It rechecks every member's exact canonical record and effect fingerprint and rejects duplicate, missing, or drifted identities. Callers must still resolve the owning provider independently. Runtime prose parsing is forbidden.
 
 ## Reviewed grouping
 
-A cohort contains at most 32 rows. After P8-093 closure, the 348-row catalog forms 18 cohorts:
+A cohort contains at most 32 rows. After P8-093 closure and the reviewed Pokémon Contest successor, the 349-row catalog forms 19 cohorts:
 
 - four machine-Move cohorts for 106 TMs/HMs;
 - one 24-row Evolution cohort;
@@ -32,7 +33,8 @@ A cohort contains at most 32 rows. After P8-093 closure, the 348-row catalog for
 - one six-row guided-adjudication cohort;
 - four equipment cohorts for 104 remaining exact definitions;
 - one 29-row core ItemSpec cohort, including the reviewed Black Sludge repair;
-- one 25-row native capture cohort; and
+- one 25-row native capture cohort;
+- one one-row native Contest preparation cohort for Poffin; and
 - three guided interpretive-tool cohorts containing 34 field, camp, crafting, care, and combat items.
 
 Precedence is explicit because some exact rows participate in more than one supporting registry. For example, an Evolutionary Keepsake can have equipment compatibility and an Evolution provider; the Evolution provider owns its catalog decision while equipment remains a supporting authority. A row appears in exactly one cohort.
@@ -53,7 +55,7 @@ All evidence paths are app-relative and hash-pinned. The generator fails on a mi
 
 ## P8-093 closure
 
-The reviewed snapshot now records 204 `native`, 104 `passive`, 40 `guided`, and zero `blocked` rows. A `native`, `passive`, or `guided` decision means the cohort has the evidence required by `data/complete-play-loop/completion-rubric.v1.json`; it does not weaken per-operation authorization or freshness checks.
+The reviewed snapshot now records 205 `native`, 104 `passive`, 40 `guided`, and zero `blocked` rows. A `native`, `passive`, or `guided` decision means the cohort has the evidence required by `data/complete-play-loop/completion-rubric.v1.json`; it does not weaken per-operation authorization or freshness checks.
 
 P8-093 closes the former 60-row remediation set:
 

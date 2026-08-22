@@ -5,18 +5,19 @@
   "canonicalAuthority": {
     "rules": {
       "path": "data/reference/rules.json",
-      "fileSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142",
+      "fileSha256": "f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df",
       "recordSha256": "2263efe28b4816477ddc26e37fc564c15465875491ee44d741d5472dfe57fef1",
       "migrationId": "rule-data-item-form-change-mechanics-v1",
       "catalogSuccessorMigrationIds": [
         "rule-data-exploration-item-mechanics-v1",
         "rule-data-pokemon-advancement-choices-v1",
-        "rule-data-trainer-advancement-choices-v1"
+        "rule-data-trainer-advancement-choices-v1",
+        "rule-data-character-creation-mechanics-v1"
       ]
     },
     "items": {
       "path": "data/reference/items.json",
-      "fileSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+      "fileSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
       "ringRecordSha256": "4477ebf9aaa6deeaa150fab2d5c2a2af2c2867dd07649cb8b758c192d8b9fa4d",
       "stoneRecordSha256": "a8851a58e1b5ffd2771bb231a95184011534a20ff39a8e19a2c82e02f69d9e10"
     },

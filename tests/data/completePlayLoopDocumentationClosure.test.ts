@@ -58,7 +58,7 @@ describe('P8-099 Complete Play Loop documentation closure', () => {
 
   it('documents exact authority and recovery rules without promoting unsafe shortcuts', () => {
     const index = read(closure.index)
-    expect(index).toContain('204 native, 40 guided, and 104 passive')
+    expect(index).toContain('205 native, 40 guided, and 104 passive')
     expect(index).toContain('There are no blocked rows')
     expect(index).toContain('Reconnect never submits automatically')
 

@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "inventoryId": "onboarding-authority-baseline-v1",
+  "auditDate": "2026-08-16",
+  "baselineCommit": "ec672287",
+  "riskKinds": [
+    "dual-authority",
+    "client-owned-mutation",
+    "unstable-identity",
+    "missing-revision-check",
+    "dangling-reference",
+    "sound"
+  ],
+  "operations": [
+    {
+      "id": "sheet-create",
+      "title": "Create blank sheet document",
+      "route": "server/api/sheets/create.post.ts",
+      "useCase": "server/useCases/createSheet.ts",
+      "storage": "server/storage/sheetRepository.ts",
+      "storageKind": "sqlite",
+      "authorization": "gm-only",
+      "revisionControl": "new-document",
+      "realtime": "library events appended in-transaction, published after commit",
+      "risks": [
+        {
+          "kind": "sound",
+          "description": "Creation is transactional with authoritative re-read and durable realtime events."
+        }
+      ]
+    },
+    {
+      "id": "sheet-save-setup",
+      "title": "Whole-document setup sheet save (autosave)",
+      "route": "server/api/sheets/save.post.ts",
+      "useCase": "server/useCases/saveSheet.ts",
+      "storage": "server/storage/sheetRepository.ts",
+      "storageKind": "sqlite",
+      "authorization": "gm, or player whose selected profile links the sheet (or player-visible sheet)",
+      "revisionControl": "expectedRevision CAS",
+      "realtime": "library events",
+      "risks": [
+        {
+          "kind": "client-owned-mutation",
+          "description": "The client submits the entire document; creation-relevant fields (levelUp totals, remainingEdges, currentTeam) are accepted as sent. Legality is advisory display math, not authority."
+        },
+        {
+          "kind": "dual-authority",
+          "description": "Server-owned lanes (equipmentState, serverPrivate, usage ledgers) are preserved server-side while the rest of the document is client-owned, so a sheet is simultaneously authoritative and freely editable."
+        }
+      ]
+    },
+    {
+      "id": "sheet-rename",
+      "title": "Rename sheet (slug + display name)",
+      "route": "server/api/sheets/rename.post.ts",
+      "useCase": "server/useCases/renameSheet.ts",
+      "storage": "server/storage/sheetRepository.ts",
+      "storageKind": "sqlite",
+      "authorization": "gm-only",
+      "revisionControl": "CAS on current revision",
+      "realtime": "library events + map updates",
+      "risks": [
+        {
+          "kind": "unstable-identity",
+          "description": "Sheet identity is the slug. Rename allocates a new slug and retargets map token references atomically, but nothing else follows."
+        },
+        {
+          "kind": "dangling-reference",
+          "description": "Trainer currentTeam/boxedPokemon slug arrays and player-profile linkedCharacters are NOT retargeted on rename; renaming a pokemon silently severs team membership and player control."
+        }
+      ]
+    },
+    {
+      "id": "sheet-delete",
+      "title": "Delete sheet document",
+      "route": "server/api/sheets/delete.post.ts",
+      "useCase": "server/useCases/deleteSheet.ts",
+      "storage": "server/storage/sheetRepository.ts",
+      "storageKind": "sqlite",
+      "authorization": "gm-only",
+      "revisionControl": "row presence only",
+      "realtime": "library events + map reference removal",
+      "risks": [
+        {
+          "kind": "dangling-reference",
+          "description": "Deletion removes map references but leaves profile linkedCharacters and trainer team arrays pointing at the dead slug until the next full-profile save validates them."
+        }
+      ]
+    },
+    {
+      "id": "sheet-folders",
+      "title": "Create/move/delete sheet folders",
+      "route": "server/api/sheets/create-folder.post.ts",
+      "useCase": "server/useCases/createSheetFolder.ts",
+      "storage": "server/storage/sheetRepository.ts",
+      "storageKind": "sqlite",
+      "authorization": "gm-only",
+      "revisionControl": "folder rows + document folder fields in one transaction",
+      "realtime": "library events",
+      "risks": [
+        {
+          "kind": "sound",
+          "description": "Folders are logical SQLite rows; onboarding destinations can reuse them, but folder placement also flags player accessibility (isRuntimePlayerFolderPath), which is an implicit visibility rule."
+        }
+      ]
+    },
+    {
+      "id": "profile-create",
+      "title": "Create player profile",
+      "route": "server/api/player-profiles/create.post.ts",
+      "useCase": "server/useCases/createPlayerProfile.ts",
+      "storage": "server/utils/playerProfileStorage.ts",
+      "storageKind": "filesystem-json",
+      "authorization": "gm-only",
+      "revisionControl": "exclusive-create file write ('wx')",
+      "realtime": "campaign attention invalidation",
+      "risks": [
+        {
+          "kind": "dual-authority",
+          "description": "Profiles live as JSON files under the campaign root while every sheet they link lives in SQLite; there is no shared transaction between profile links and sheet state."
+        }
+      ]
+    },
+    {
+      "id": "profile-update-links",
+      "title": "Update profile display name and linked characters",
+      "route": "server/api/player-profiles/update.post.ts",
+      "useCase": "server/useCases/updatePlayerProfile.ts",
+      "storage": "server/utils/playerProfileStorage.ts",
+      "storageKind": "filesystem-json",
+      "authorization": "gm-only",
+      "revisionControl": "none (whole-file overwrite, last write wins)",
+      "realtime": "campaign attention invalidation",
+      "risks": [
+        {
+          "kind": "missing-revision-check",
+          "description": "Profile updates have no revision or compare-and-set; two concurrent GM tabs silently overwrite each other's link lists."
+        },
+        {
+          "kind": "dangling-reference",
+          "description": "Link existence is validated only at write time; later sheet rename/delete invalidates stored links with no repair or attention trail at the profile."
+        }
+      ]
+    },
+    {
+      "id": "team-membership",
+      "title": "Trainer team and box membership",
+      "route": "server/api/sheets/save.post.ts",
+      "useCase": "server/useCases/saveSheet.ts",
+      "storage": "server/storage/sheetRepository.ts",
+      "storageKind": "sqlite",
+      "authorization": "same as sheet save",
+      "revisionControl": "trainer document CAS only",
+      "realtime": "library events",
+      "risks": [
+        {
+          "kind": "client-owned-mutation",
+          "description": "currentTeam/boxedPokemon are plain slug arrays inside the trainer document; the server never validates that referenced pokemon exist, are unique across trainers, or are profile-consistent."
+        },
+        {
+          "kind": "dangling-reference",
+          "description": "A team can reference deleted, renamed, or another player's pokemon; live-play send-out discovers the failure later."
+        }
+      ]
+    },
+    {
+      "id": "equipment-operations",
+      "title": "Equipment lifecycle operations",
+      "route": "server/api/equipment/operations.post.ts",
+      "useCase": "server/useCases/executeEquipmentOperation.ts",
+      "storage": "server/storage/equipmentOperationRepository.ts",
+      "storageKind": "sqlite",
+      "authorization": "gm or owning player",
+      "revisionControl": "operation IDs + sheet revision read sets, exact retry",
+      "realtime": "sheet events",
+      "risks": [
+        {
+          "kind": "sound",
+          "description": "Plan 8 equipment authority already provides serialized identities, op journals, and exact retry; onboarding must route equipment grants through it rather than writing legacy slot strings."
+        }
+      ]
+    },
+    {
+      "id": "inventory-actions",
+      "title": "Authoritative inventory actions",
+      "route": "server/api/inventory/actions/execute.post.ts",
+      "useCase": "server/useCases/executeTrainerInventoryAction.ts",
+      "storage": "server/storage/inventoryActionOperationRepository.ts",
+      "storageKind": "sqlite",
+      "authorization": "gm or owning player",
+      "revisionControl": "operation journal + document revisions",
+      "realtime": "sheet events",
+      "risks": [
+        {
+          "kind": "dual-authority",
+          "description": "Authoritative item actions coexist with raw inventory row editing through whole-sheet save; onboarding-created rows must carry canonical identity so later actions resolve."
+        }
+      ]
+    },
+    {
+      "id": "encounter-participants",
+      "title": "Encounter cast, reserves, and participant addition",
+      "route": "server/api/encounter-workspace",
+      "useCase": "server/useCases/applyLivePlayEncounterLifecycleCommand.ts",
+      "storage": "server/storage/encounterDocumentRepository.ts",
+      "storageKind": "sqlite",
+      "authorization": "gm-only for composition",
+      "revisionControl": "encounter document revisions + command op IDs",
+      "realtime": "encounter events",
+      "risks": [
+        {
+          "kind": "sound",
+          "description": "Participant addition is revision-checked, but candidates are raw sheets; readiness/ownership grouping is absent (owned by P9-074/P9-075)."
+        }
+      ]
+    }
+  ]
+}

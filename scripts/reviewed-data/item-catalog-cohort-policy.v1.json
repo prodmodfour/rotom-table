@@ -14,6 +14,7 @@
     "equipment",
     "core-item-spec",
     "capture",
+    "contest",
     "interpretive-campaign-tool",
     "canonical-data-defect"
   ],
@@ -276,6 +277,30 @@
       "recoveryEvidence": [
         "server/useCases/recoverItemOperation.ts",
         "tests/integration/outOfEncounterItemRecovery.test.ts"
+      ],
+      "unresolvedRequirements": []
+    },
+    "contest": {
+      "implementationState": "native",
+      "sourceRegistry": "data/reference/contests.json",
+      "providerRequirements": [
+        "canonical Poffin identity",
+        "level-based allowance",
+        "exact inventory custody",
+        "atomic Contest preparation operation"
+      ],
+      "executableEvidence": [
+        "server/useCases/contestPreparation.ts",
+        "shared/contests/preparation.ts",
+        "tests/server/contestsRuntime.test.ts"
+      ],
+      "uiProjectionEvidence": [
+        "src/components/contests/ContestPreparationWorkbench.vue",
+        "src/components/sheets/PokemonContestPreparationPanel.vue"
+      ],
+      "recoveryEvidence": [
+        "server/storage/migrations.ts",
+        "shared/contests/preparationOperations.ts"
       ],
       "unresolvedRequirements": []
     }

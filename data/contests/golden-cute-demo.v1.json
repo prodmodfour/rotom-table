@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "fixtureId": "contest-golden-core-cute-demo-v1",
+  "sourceFingerprint": {
+    "path": "books/markdown/core/08-pokemon-contests.md",
+    "sha256": "d4cbfef280d2b96bede24648b1ca69a8bfcbdad639d8a5537ce8518387285111",
+    "pages": [267, 268]
+  },
+  "variantId": "standard",
+  "contestTypeId": "cute",
+  "contestants": [
+    {
+      "id": "lickitung",
+      "displayName": "Lickitung",
+      "trainerId": "lickitung-trainer",
+      "level": 10,
+      "letter": "A",
+      "introduction": {"skillId": "charm", "rolls": [5, 1, 3, 4, 4], "generatedStatId": "cute", "generatedDice": 4, "matchingAppeal": 2, "letterTotal": 6},
+      "initialPools": {"cute": 6, "beauty": 0, "cool": 0, "smart": 0, "tough": 0}
+    },
+    {
+      "id": "zubat",
+      "displayName": "Zubat",
+      "trainerId": "zubat-trainer",
+      "level": 10,
+      "letter": "B",
+      "introduction": {"skillId": "charm", "rolls": [4, 3, 1, 6], "generatedStatId": "cute", "generatedDice": 3, "matchingAppeal": 2, "letterTotal": 5},
+      "initialPools": {"cute": 3, "beauty": 0, "cool": 0, "smart": 3, "tough": 0}
+    },
+    {
+      "id": "mawile",
+      "displayName": "Mawile",
+      "trainerId": "mawile-trainer",
+      "level": 10,
+      "letter": "C",
+      "introduction": {"skillId": "guile", "graceGeneratedStatId": "cute", "rolls": [2, 5, 6, 2], "generatedStatId": "cute", "generatedDice": 2, "matchingAppeal": 2, "letterTotal": 4},
+      "initialPools": {"cute": 2, "beauty": 2, "cool": 0, "smart": 0, "tough": 0}
+    }
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "lineup": ["mawile", "lickitung", "zubat"],
+      "centerContestantId": "lickitung",
+      "turnOrder": ["lickitung", "zubat", "mawile"],
+      "appeals": [
+        {"contestantId": "lickitung", "moveId": "Attract", "effectId": "excitement", "spent": {}, "rolls": [3, 2, 6, 1], "appealDelta": 4, "fumbleDelta": 1, "voltageAfter": 2},
+        {"contestantId": "zubat", "moveId": "U-Turn", "effectId": "inversed-appeal", "spent": {}, "rolls": [6, 1, 2, 1, 5, 1], "appealDelta": 4, "fumbleDelta": 0, "voltageAfter": 0},
+        {"contestantId": "mawile", "moveId": "Sweet Scent", "effectId": "excitement", "spent": {"cute": 2}, "rolls": [2, 2, 6, 4, 1], "appealDelta": 4, "fumbleDelta": 0, "voltageAfter": 2}
+      ],
+      "expectedScoreboard": {
+        "lickitung": {"appeal": 6, "fumble": 1, "voltage": 2},
+        "zubat": {"appeal": 6, "fumble": 0, "voltage": 0},
+        "mawile": {"appeal": 6, "fumble": 0, "voltage": 2}
+      },
+      "canonicalExpectedScoreboard": {
+        "lickitung": {"appeal": 6, "fumble": 1, "voltage": 2},
+        "zubat": {"appeal": 6, "fumble": 0, "voltage": 0},
+        "mawile": {"appeal": 7, "fumble": 0, "voltage": 2}
+      }
+    },
+    {
+      "round": 2,
+      "lineup": ["lickitung", "zubat", "mawile"],
+      "centerContestantId": "zubat",
+      "turnOrder": ["zubat", "mawile", "lickitung"],
+      "appeals": [
+        {"contestantId": "zubat", "moveId": "Confuse Ray", "effectId": "unsettling", "spent": {"smart": 3}, "rolls": [1, 1, 4, 6, 5, 1, 6, 2], "appealDelta": 10, "fumbleDelta": 3, "voltageAfter": 0},
+        {"contestantId": "mawile", "moveId": "Fake Tears", "effectId": "excitement", "spent": {}, "rolls": [6, 6, 3, 5], "appealDelta": 6, "fumbleDelta": 0, "voltageAfter": 3},
+        {"contestantId": "lickitung", "moveId": "Aqua Tail", "effectId": "steady-performance", "spent": {"cute": 3}, "rolls": [1, 5, 3, 3, 4, 6, 6, 5, 3, 5], "appealDelta": 11, "fumbleDelta": 0, "voltageAfter": 2}
+      ],
+      "expectedScoreboard": {
+        "lickitung": {"appeal": 17, "fumble": 1, "voltage": 2},
+        "zubat": {"appeal": 16, "fumble": 3, "voltage": 0},
+        "mawile": {"appeal": 12, "fumble": 0, "voltage": 3}
+      },
+      "canonicalExpectedScoreboard": {
+        "lickitung": {"appeal": 17, "fumble": 1, "voltage": 2},
+        "zubat": {"appeal": 16, "fumble": 3, "voltage": 0},
+        "mawile": {"appeal": 13, "fumble": 0, "voltage": 3}
+      }
+    },
+    {
+      "round": 3,
+      "lineup": ["zubat", "mawile", "lickitung"],
+      "centerContestantId": "mawile",
+      "turnOrder": ["mawile", "lickitung", "zubat"],
+      "appeals": [
+        {"contestantId": "mawile", "moveId": "Giga Impact", "effectId": "seen-nothing-yet", "spent": {"beauty": 2}, "initialRolls": [2, 5, 1, 2, 4, 5, 3, 2, 2, 1, 4], "interventionId": "Coordinator", "rolls": [3, 4, 5, 4, 1, 5, 6, 4, 1, 6, 2], "appealDelta": 17, "fumbleDelta": 2, "voltageAfter": 0},
+        {"contestantId": "lickitung", "moveId": "Defense Curl", "effectId": "sabotage", "spent": {"cute": 3}, "rolls": [5, 3, 1, 3, 5, 1, 3, 6, 6], "appealDelta": 0, "adjacentFumbleDelta": {"mawile": 9}, "voltageAfter": 2},
+        {"contestantId": "zubat", "moveId": "Frustration", "effectId": "desperation", "spent": {"cute": 3}, "rolls": [5, 6, 4, 6, 6, 4, 3, 1, 3], "appealDelta": 14, "fumbleDelta": 1, "voltageAfter": 0}
+      ],
+      "expectedScoreboard": {
+        "lickitung": {"appeal": 17, "fumble": 1, "voltage": 2, "finalScore": 16},
+        "zubat": {"appeal": 30, "fumble": 4, "voltage": 0, "finalScore": 26},
+        "mawile": {"appeal": 29, "fumble": 11, "voltage": 0, "finalScore": 18}
+      },
+      "canonicalExpectedScoreboard": {
+        "lickitung": {"appeal": 17, "fumble": 1, "voltage": 2, "finalScore": 16},
+        "zubat": {"appeal": 30, "fumble": 4, "voltage": 0, "finalScore": 26},
+        "mawile": {"appeal": 30, "fumble": 11, "voltage": 0, "finalScore": 19}
+      }
+    }
+  ],
+  "expectedPlacements": [
+    {"placement": 1, "contestantId": "zubat", "finalScore": 26},
+    {"placement": 2, "contestantId": "mawile", "finalScore": 18},
+    {"placement": 3, "contestantId": "lickitung", "finalScore": 16}
+  ],
+  "canonicalExpectedPlacements": [
+    {"placement": 1, "contestantId": "zubat", "finalScore": 26},
+    {"placement": 2, "contestantId": "mawile", "finalScore": 19},
+    {"placement": 3, "contestantId": "lickitung", "finalScore": 16}
+  ],
+  "expectedSettlementAtSignificance2": [
+    {"contestantId": "zubat", "experience": 40, "ribbon": true},
+    {"contestantId": "mawile", "experience": 20, "ribbon": false},
+    {"contestantId": "lickitung", "experience": 20, "ribbon": false}
+  ],
+  "documentaryDiscrepancies": [
+    {"resolution": "CONTEST-DATA-006", "printedFinalAppeal": {"lickitung": 15, "zubat": 28, "mawile": 27}, "canonicalBonusApplied": 2},
+    {"resolution": "CONTEST-DATA-007", "printedMawileFumble": 9, "canonicalMawileFumble": 11},
+    {"resolution": "CONTEST-DATA-008", "finding": "Sweet Scent mechanically assembles six dice but the walkthrough lists five; a fixture-only neutral 1 completes the server roll."},
+    {"resolution": "CONTEST-DATA-009", "finding": "The listed Sweet Scent faces score five Appeal under the canonical normal table, not four; canonical Mawile totals are therefore one higher from round 1 onward."}
+  ]
+}

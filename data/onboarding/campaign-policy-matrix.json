@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "matrixId": "onboarding-campaign-policy-matrix-v1",
+  "date": "2026-08-16",
+  "areas": ["trainer", "pokemon", "package", "workflow"],
+  "knobs": [
+    {
+      "id": "starting-trainer-level",
+      "area": "trainer",
+      "title": "Starting Trainer level",
+      "canonicalConstraint": "1..50 (trainerAdvancementChoiceMechanics.maximumLevel)",
+      "policyControl": "trainer.startingLevel",
+      "shippedDefault": "1",
+      "varianceRationale": "Campaigns legitimately start above level 1; higher levels unlock milestone choices, more Features/Edges, and larger stat budgets that validation must scale automatically."
+    },
+    {
+      "id": "trainer-stat-budget-source",
+      "area": "trainer",
+      "title": "Trainer stat budget",
+      "canonicalConstraint": "Level + 9 cumulative (statPointFormulas.trainerLevelUp); not policy-variable",
+      "policyControl": "none",
+      "shippedDefault": "canonical formula",
+      "varianceRationale": "Fixed canonical math. Recording it here documents that the matrix deliberately does NOT expose it; house-ruled budgets are out of alpha scope."
+    },
+    {
+      "id": "starting-money",
+      "area": "trainer",
+      "title": "Starting money",
+      "canonicalConstraint": "non-negative integer; canonical default baseline arrives with DATA-ONB-002",
+      "policyControl": "trainer.startingMoney",
+      "shippedDefault": "canonical baseline once DATA-ONB-002 lands; policy may override explicitly",
+      "varianceRationale": "Wealthy or destitute campaign openings are common table variation."
+    },
+    {
+      "id": "trainer-item-package",
+      "area": "package",
+      "title": "Starting inventory package",
+      "canonicalConstraint": "every entry resolves to a canonical items.json identity; serialized equipment uses Plan 8 authority",
+      "policyControl": "packages.trainerItems (versioned reviewed package reference)",
+      "shippedDefault": "empty package",
+      "varianceRationale": "Standard kits (Poké Balls, Potions, camping gear) vary per campaign and should be one reviewed package application, not per-character retyping."
+    },
+    {
+      "id": "trainer-equipment-package",
+      "area": "package",
+      "title": "Starting equipment grants",
+      "canonicalConstraint": "equipment instances created only through Plan 8 equipment authority",
+      "policyControl": "packages.trainerEquipment",
+      "shippedDefault": "empty package",
+      "varianceRationale": "Some campaigns begin with weapons/armor; equipment must never be legacy prose slots."
+    },
+    {
+      "id": "feature-source-restrictions",
+      "area": "trainer",
+      "title": "Permitted Feature/Edge/class sources",
+      "canonicalConstraint": "allow/deny lists reference canonical feature and edge IDs or tags only",
+      "policyControl": "trainer.featureAllowPolicy / trainer.edgeAllowPolicy",
+      "shippedDefault": "all canonical entries permitted",
+      "varianceRationale": "Tables restrict classes or ban specific options; restrictions must be explicit ID/tag lists, not hidden filters."
+    },
+    {
+      "id": "starter-count",
+      "area": "pokemon",
+      "title": "Number of starters",
+      "canonicalConstraint": "1..6 (team limit)",
+      "policyControl": "pokemon.starterCount",
+      "shippedDefault": "1",
+      "varianceRationale": "Multi-starter campaigns exist; team size and overflow destinations must stay explicit."
+    },
+    {
+      "id": "starter-pool",
+      "area": "pokemon",
+      "title": "Starter species pool",
+      "canonicalConstraint": "entries are exact Pokédex row identities (DATA-ONB-003); sparse rows fail closed",
+      "policyControl": "pokemon.starterPool (mode: any-canonical | curated-list)",
+      "shippedDefault": "any-canonical with GM approval required",
+      "varianceRationale": "The most common campaign variation; curated trios, regional lists, or open choice."
+    },
+    {
+      "id": "starter-level",
+      "area": "pokemon",
+      "title": "Starter level",
+      "canonicalConstraint": "1..100 with canonical experience alignment",
+      "policyControl": "pokemon.starterLevel",
+      "shippedDefault": "5",
+      "varianceRationale": "Table convention differs; the shipped default is a product policy value, not a canonical PTU claim."
+    },
+    {
+      "id": "starter-creation-moves",
+      "area": "pokemon",
+      "title": "Move sources at creation",
+      "canonicalConstraint": "level-up list is always legal; TM/tutor additions must reference canonical machine/tutor compatibility",
+      "policyControl": "pokemon.additionalMoveSources",
+      "shippedDefault": "level-up only",
+      "varianceRationale": "Some campaigns allow one egg/TM move at creation; must be explicit and validated."
+    },
+    {
+      "id": "starter-held-items",
+      "area": "pokemon",
+      "title": "Starter held items",
+      "canonicalConstraint": "canonical item identity + custody through item authority",
+      "policyControl": "packages.starterHeldItems",
+      "shippedDefault": "none",
+      "varianceRationale": "Held-item starts vary; custody must be single-owner at commit."
+    },
+    {
+      "id": "starter-pokeball",
+      "area": "pokemon",
+      "title": "Caught-ball metadata and ball inventory",
+      "canonicalConstraint": "ball identity from items.json when recorded",
+      "policyControl": "pokemon.caughtBallPolicy",
+      "shippedDefault": "standard Poké Ball metadata, no inventory consumption",
+      "varianceRationale": "Presentation-level convention with optional inventory linkage."
+    },
+    {
+      "id": "starting-loyalty",
+      "area": "pokemon",
+      "title": "Starting Loyalty",
+      "canonicalConstraint": "canonical default arrives with DATA-ONB-004; bounded override only",
+      "policyControl": "pokemon.startingLoyalty",
+      "shippedDefault": "canonical baseline once DATA-ONB-004 lands",
+      "varianceRationale": "Some tables start loyal companions higher; must stay a bounded numeric policy."
+    },
+    {
+      "id": "unresolved-choice-policy",
+      "area": "workflow",
+      "title": "Optional unresolved choices at submission",
+      "canonicalConstraint": "hard rules can never be deferred; only explicitly optional decisions may remain open",
+      "policyControl": "workflow.unresolvedChoicePolicy",
+      "shippedDefault": "all-required-resolved",
+      "varianceRationale": "Some GMs allow deferring flavor or single optional picks to session zero; blocking issues are never deferrable."
+    },
+    {
+      "id": "approval-policy",
+      "area": "workflow",
+      "title": "Approval requirement",
+      "canonicalConstraint": "approval is always an explicit GM action in alpha; auto-approve is out of scope",
+      "policyControl": "workflow.approval (fixed: gm-review-required)",
+      "shippedDefault": "gm-review-required",
+      "varianceRationale": "Recorded to keep the boundary explicit; the matrix documents that this knob intentionally does not vary yet."
+    },
+    {
+      "id": "folder-destinations",
+      "area": "workflow",
+      "title": "Committed sheet folder destinations",
+      "canonicalConstraint": "valid folder paths; player-accessible folder semantics respected",
+      "policyControl": "workflow.destinations.trainerFolder / pokemonFolder",
+      "shippedDefault": "players/<profile display name>",
+      "varianceRationale": "Libraries are organized differently per table; destination must be policy, not per-commit improvisation."
+    },
+    {
+      "id": "higher-level-milestones",
+      "area": "trainer",
+      "title": "Milestone choice collection for higher-level starts",
+      "canonicalConstraint": "milestoneChoices structure from trainerAdvancementChoiceMechanics",
+      "policyControl": "trainer.milestoneCollection (during-onboarding | defer-to-attention)",
+      "shippedDefault": "during-onboarding",
+      "varianceRationale": "Some tables prefer resolving milestone choices in session; deferral routes them into existing campaign attention."
+    },
+    {
+      "id": "pokemon-stage-restriction",
+      "area": "pokemon",
+      "title": "Evolution-stage restriction for the pool",
+      "canonicalConstraint": "stage data from pokedex.evolutions; rows with unknown stage fail closed when restricted",
+      "policyControl": "pokemon.stageRestriction",
+      "shippedDefault": "unrestricted",
+      "varianceRationale": "First-stage-only starters are a common convention layered on any pool mode."
+    }
+  ]
+}

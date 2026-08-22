@@ -69,6 +69,7 @@ export type RealtimeEventAccessDecision =
         | 'shop-not-accessible'
         | 'pending-move-response-not-accessible'
         | 'player-profile-not-accessible'
+        | 'contest-not-accessible'
         | 'breeding-not-accessible'
         | 'invalid-access'
     }
@@ -371,6 +372,17 @@ export const evaluateRealtimeEventAccess = (
       && input.principal.playerProfile?.id === input.access.profileId
       ? allowed()
       : denied('player-profile-not-accessible')
+  }
+  if (input.access.kind === 'contest-access') {
+    if (input.access.audience === 'public') return allowed()
+    if (input.access.audience === 'gm') {
+      return input.principal.role === 'gm' ? allowed() : denied('contest-not-accessible')
+    }
+    return input.principal.role === 'player'
+      && input.access.profileId !== null
+      && input.principal.playerProfile?.id === input.access.profileId
+      ? allowed()
+      : denied('contest-not-accessible')
   }
   if (input.access.kind === 'breeding-access') {
     return evaluateBreedingAccess(input.access, input.principal, input.dependencies, input.event)

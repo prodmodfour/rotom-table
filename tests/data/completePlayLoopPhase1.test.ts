@@ -17,7 +17,8 @@ import durationAuthorityJson from '~~/data/complete-play-loop/duration-authority
 import itemContractJson from '~~/data/complete-play-loop/item-contract.v1.json'
 import { stableJsonStringify } from '#shared/automation/stableJson'
 
-const CATALOG_SHA256 = '62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8'
+const CATALOG_SHA256 = '842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef'
+const BLACK_SLUDGE_MIGRATION_CATALOG_SHA256 = '62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8'
 const sha256 = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex')
 
 interface InventoryRow {
@@ -132,7 +133,7 @@ describe('Complete Play Loop phase-one evidence', () => {
     expect(remediationJson.openDefects).toEqual([])
     expect(remediationJson.reviewedMigrations).toContainEqual(expect.objectContaining({
       migrationId: 'item-black-sludge-acquisition-cost-v1', canonicalId: 'Black Sludge',
-      afterFileSha256: CATALOG_SHA256, reviewStatus: 'accepted',
+      afterFileSha256: BLACK_SLUDGE_MIGRATION_CATALOG_SHA256, reviewStatus: 'accepted',
     }))
     expect(rows.get('Black Sludge')?.behaviorInventory).toMatchObject({
       actionCost: { canonicalAcquisitionCostLabels: ['$500'] },

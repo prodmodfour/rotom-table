@@ -4,9 +4,9 @@
   "status": "reviewed",
   "reviewId": "complete-play-loop-guided-catalog-items-v1",
   "runtimeProseParsing": false,
-  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "catalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
   "sourceSha256": "73e4f23dc87ce2fa911c6dcb21777a2af125ed4acdac463b73f785dcd583e6c6",
-  "cohortPolicySha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b",
+  "cohortPolicySha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750",
   "decision": {
     "choiceId": "gm-campaign-tool-outcome",
     "optionId": "accept-reviewed-use",
@@ -15,7 +15,7 @@
     "freeformMechanics": false
   },
   "itemCount": 34,
-  "registrySha256": "22ab0bcd7719c0612ffb5a486beb6475e32169b380018eebe2764cd7c8b0b783",
+  "registrySha256": "c34ab94eb909c558bc68ce36968b544f8e8c5e0463a413980041dd70fb6d9829",
   "items": [
     {
       "canonicalId": "Collection Jar",
@@ -679,7 +679,7 @@
     },
     {
       "canonicalId": "Poffin Mixer",
-      "canonicalRecordSha256": "595e1f1154a03c5929cd5564ac1a63cef6e195a0a6d94ff50b3ca70782c65970",
+      "canonicalRecordSha256": "33e7a8896ac22777f5b804f9c3f79177b1b86378dcbaef185492a79d494987db",
       "canonicalEffectSha256": "4276be0bdb8788b4eb8615ac0f246488087d25eeee8ea21bf5a153659c4b6a29",
       "templateId": "reusable-crafting-tool",
       "contexts": [

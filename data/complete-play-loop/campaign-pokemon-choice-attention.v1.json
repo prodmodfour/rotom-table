@@ -45,8 +45,23 @@
       "action": "review-abilities",
       "routeQuery": "attention=abilities",
       "milestones": [
-        { "level": 20, "ordinal": 2, "tiers": ["basic", "advanced"] },
-        { "level": 40, "ordinal": 3, "tiers": ["basic", "advanced", "high"] }
+        {
+          "level": 20,
+          "ordinal": 2,
+          "tiers": [
+            "basic",
+            "advanced"
+          ]
+        },
+        {
+          "level": 40,
+          "ordinal": 3,
+          "tiers": [
+            "basic",
+            "advanced",
+            "high"
+          ]
+        }
       ],
       "copiesAbilityOptions": false
     },
@@ -76,7 +91,11 @@
       "routeQuery": "attention=post-evolution",
       "requiresAcceptedItemOperation": true,
       "requiresCurrentPrivateEvolutionAuthority": true,
-      "reviews": ["stat-allocation", "move-opportunities", "inactive-equipment"],
+      "reviews": [
+        "stat-allocation",
+        "move-opportunities",
+        "inactive-equipment"
+      ],
       "abilityMappingsAlreadyResolved": true
     }
   },
@@ -120,27 +139,91 @@
     "private-plan"
   ],
   "sources": {
-    "detector": { "path": "server/domain/campaignAttention/pokemonChoiceDetector.ts", "sha256": "3b885611bb19523591017fdfd5416b189b0d73722e6c0f91f7bfe1f94828acb2" },
-    "attentionModel": { "path": "shared/campaignAttention/model.ts", "sha256": "0fd3e9494a41bda34fd209f55b26d3db7e3a90f2eb1337ecaf4ce285365552de" },
-    "rules": { "path": "data/reference/rules.json", "sha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142" },
-    "migration": { "path": "scripts/migrate_pokemon_advancement_choices.py", "sha256": "5728770bf38d8abb54cfac3fca51fe02140f69f3574874c01926b2e137d75d41" },
-    "reviewedMigration": { "path": "scripts/reviewed-data/pokemon-advancement-choices.v1.json", "sha256": "e04fa00425295f81699a8187aefd4c3f9fd0abb01f635639f313de00896e9c37" },
-    "migrationLedger": { "path": "data/complete-play-loop/canonical-data-remediation.v1.json", "sha256": "3b733805374faa38e82fa4861a77cd35a07c9ab901a7c160ae17b51ab452739e" },
-    "pokedex": { "path": "data/reference/pokedex.json", "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696" },
-    "moves": { "path": "data/reference/moves.json", "sha256": "418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e" },
-    "abilities": { "path": "data/reference/abilities.json", "sha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362" },
-    "settlementAtomicSource": { "path": "server/domain/encounterSettlement/atomicCommit.ts", "sha256": "d17b7ac75516cd504f441e51e2b743e51e51086dc0489c5ab7ac10c796f0e5fb" },
-    "settlementRepository": { "path": "server/storage/encounterSettlementRepository.ts", "sha256": "ba885a6bf1bebaeb977d93f51979e59b00c24f625538530f8098e240c399f57b" },
-    "itemEvolutionDomain": { "path": "server/domain/itemAutomation/evolution.ts", "sha256": "be082b324180fcb567ce876608b30f6de5a7a85b79ae48ae160576cde89e6b51" },
-    "itemEvolutionState": { "path": "shared/itemAutomation/evolution.ts", "sha256": "6da8d29727ef721de8e62c9096625b7b68d53c9b890fa82866663264359fa758" },
-    "itemMoveLearningDomain": { "path": "server/domain/itemAutomation/moveLearning.ts", "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d" },
-    "itemOperationRepository": { "path": "server/storage/itemOperationRepository.ts", "sha256": "c9a65ea5807e132955f42e2951fee7b4b328d1d55d2c96d62b5c013e6d672d0d" },
-    "detectorTests": { "path": "tests/server/campaignAttentionPokemonChoiceDetector.test.ts", "sha256": "d570dbde0e08dbcdb7f05ee4baba4d2a7918a424e85a3cc235e5c6963055e21b" },
-    "itemMoveLearningTests": { "path": "tests/server/itemMoveLearning.test.ts", "sha256": "94c57722d8983b12840a85bf88a6be42631ba30017f2f0b6f3ddc32ed5eb9337" },
-    "settlementTests": { "path": "tests/server/encounterSettlementAtomicCommit.test.ts", "sha256": "d7a66e80e78bf353878fbfaf99642b3fa5ea74b8f596dbb80eaf681a2c5770c0" },
-    "itemEvolutionTests": { "path": "tests/server/itemEvolution.test.ts", "sha256": "e508693d26ffef8bd1b6a19ae5ed4067e62bce0f324de925d2dee714820c1597" },
-    "documentation": { "path": "docs/campaign-pokemon-choice-attention.md", "sha256": "5aa3a203e988bc42907986fc76c1c6b88543b226948debc8389c7ba6aa9bc9d4" },
-    "documentaryProvenance": { "path": "books/markdown/core/05-pokemon.md", "sha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3", "runtimeAuthority": false }
+    "detector": {
+      "path": "server/domain/campaignAttention/pokemonChoiceDetector.ts",
+      "sha256": "3b885611bb19523591017fdfd5416b189b0d73722e6c0f91f7bfe1f94828acb2"
+    },
+    "attentionModel": {
+      "path": "shared/campaignAttention/model.ts",
+      "sha256": "0fd3e9494a41bda34fd209f55b26d3db7e3a90f2eb1337ecaf4ce285365552de"
+    },
+    "rules": {
+      "path": "data/reference/rules.json",
+      "sha256": "f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df"
+    },
+    "migration": {
+      "path": "scripts/migrate_pokemon_advancement_choices.py",
+      "sha256": "5728770bf38d8abb54cfac3fca51fe02140f69f3574874c01926b2e137d75d41"
+    },
+    "reviewedMigration": {
+      "path": "scripts/reviewed-data/pokemon-advancement-choices.v1.json",
+      "sha256": "e04fa00425295f81699a8187aefd4c3f9fd0abb01f635639f313de00896e9c37"
+    },
+    "migrationLedger": {
+      "path": "data/complete-play-loop/canonical-data-remediation.v1.json",
+      "sha256": "e9ebb4402db86a5bd5fa3ba4c47efb856c7f65af0ace526b5804f61511eeb3b0"
+    },
+    "pokedex": {
+      "path": "data/reference/pokedex.json",
+      "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696"
+    },
+    "moves": {
+      "path": "data/reference/moves.json",
+      "sha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821"
+    },
+    "abilities": {
+      "path": "data/reference/abilities.json",
+      "sha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
+    },
+    "settlementAtomicSource": {
+      "path": "server/domain/encounterSettlement/atomicCommit.ts",
+      "sha256": "d17b7ac75516cd504f441e51e2b743e51e51086dc0489c5ab7ac10c796f0e5fb"
+    },
+    "settlementRepository": {
+      "path": "server/storage/encounterSettlementRepository.ts",
+      "sha256": "ba885a6bf1bebaeb977d93f51979e59b00c24f625538530f8098e240c399f57b"
+    },
+    "itemEvolutionDomain": {
+      "path": "server/domain/itemAutomation/evolution.ts",
+      "sha256": "be082b324180fcb567ce876608b30f6de5a7a85b79ae48ae160576cde89e6b51"
+    },
+    "itemEvolutionState": {
+      "path": "shared/itemAutomation/evolution.ts",
+      "sha256": "6da8d29727ef721de8e62c9096625b7b68d53c9b890fa82866663264359fa758"
+    },
+    "itemMoveLearningDomain": {
+      "path": "server/domain/itemAutomation/moveLearning.ts",
+      "sha256": "6389439f016bf2b26b651e4290086dea1c943f5e12b7eb939e3df7dccb67f9f6"
+    },
+    "itemOperationRepository": {
+      "path": "server/storage/itemOperationRepository.ts",
+      "sha256": "c9a65ea5807e132955f42e2951fee7b4b328d1d55d2c96d62b5c013e6d672d0d"
+    },
+    "detectorTests": {
+      "path": "tests/server/campaignAttentionPokemonChoiceDetector.test.ts",
+      "sha256": "d570dbde0e08dbcdb7f05ee4baba4d2a7918a424e85a3cc235e5c6963055e21b"
+    },
+    "itemMoveLearningTests": {
+      "path": "tests/server/itemMoveLearning.test.ts",
+      "sha256": "94c57722d8983b12840a85bf88a6be42631ba30017f2f0b6f3ddc32ed5eb9337"
+    },
+    "settlementTests": {
+      "path": "tests/server/encounterSettlementAtomicCommit.test.ts",
+      "sha256": "d7a66e80e78bf353878fbfaf99642b3fa5ea74b8f596dbb80eaf681a2c5770c0"
+    },
+    "itemEvolutionTests": {
+      "path": "tests/server/itemEvolution.test.ts",
+      "sha256": "e508693d26ffef8bd1b6a19ae5ed4067e62bce0f324de925d2dee714820c1597"
+    },
+    "documentation": {
+      "path": "docs/campaign-pokemon-choice-attention.md",
+      "sha256": "5aa3a203e988bc42907986fc76c1c6b88543b226948debc8389c7ba6aa9bc9d4"
+    },
+    "documentaryProvenance": {
+      "path": "books/markdown/core/05-pokemon.md",
+      "sha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3",
+      "runtimeAuthority": false
+    }
   },
   "validation": {
     "focusedTests": "38 passed",

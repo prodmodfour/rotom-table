@@ -13,6 +13,27 @@ export interface PtuAbility {
   bonus?: string
 }
 
+export type PtuMoveContestIdentity =
+  | {
+      schemaVersion: 1
+      status: 'defined'
+      typeId: 'beauty' | 'cool' | 'cute' | 'smart' | 'tough'
+      effectId: string
+      typeLabel: string
+      effectLabel: string
+      tags: string[]
+      source: string
+      sourceSha256: string
+      reviewedMigrationId: string
+    }
+  | {
+      schemaVersion: 1
+      status: 'unavailable'
+      reasonCode: string
+      safeReason: string
+      reviewedMigrationId: string
+    }
+
 export interface PtuMove {
   name: string
   type: string
@@ -24,6 +45,8 @@ export interface PtuMove {
   range?: string
   effect?: string
   special?: string
+  /** Reviewed structured Contest identity. Free-form legacy Contest text is not authoritative. */
+  contest?: PtuMoveContestIdentity
 }
 
 export interface PtuManeuver {

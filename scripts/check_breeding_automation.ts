@@ -277,6 +277,7 @@ const reviewedSourceMigrations = new Map<string, {
   readonly evidencePath: string
   readonly steps: readonly {
     readonly migrationId: string
+    readonly evidencePath?: string
     readonly beforeSha256: string
     readonly afterSha256: string
     readonly afterBytes: number
@@ -300,17 +301,35 @@ const reviewedSourceMigrations = new Map<string, {
         afterBytes: 162053,
         afterGitBlob: 'f6abf6cba3e5e2cdf58d4432dae88ba6886908b9',
       }),
+      Object.freeze({
+        migrationId: 'pokemon-contests:v1',
+        evidencePath: 'scripts/reviewed-data/pokemon-contests.v1.json',
+        beforeSha256: '62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8',
+        afterSha256: '842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef',
+        afterBytes: 164478,
+        afterGitBlob: '41ac3589a5e0fb6d4150e0cf835fee3d10fa735f',
+      }),
     ]),
   })],
   ['data/reference/moves.json', Object.freeze({
     evidencePath: 'data/complete-play-loop/canonical-data-remediation.v1.json',
-    steps: Object.freeze([Object.freeze({
-      migrationId: 'move-data-facade-identity-normalization-v1',
-      beforeSha256: 'f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815',
-      afterSha256: '418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e',
-      afterBytes: 286379,
-      afterGitBlob: 'bde873c9122ab05c920a34cd7aafd78a4cb05d9f',
-    })]),
+    steps: Object.freeze([
+      Object.freeze({
+        migrationId: 'move-data-facade-identity-normalization-v1',
+        beforeSha256: 'f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815',
+        afterSha256: '418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e',
+        afterBytes: 286379,
+        afterGitBlob: 'bde873c9122ab05c920a34cd7aafd78a4cb05d9f',
+      }),
+      Object.freeze({
+        migrationId: 'pokemon-contests:v1',
+        evidencePath: 'scripts/reviewed-data/pokemon-contests.v1.json',
+        beforeSha256: '418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e',
+        afterSha256: '10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821',
+        afterBytes: 615165,
+        afterGitBlob: 'cdbfb1a62ae15bfcc2f474a6f40df703342c47b1',
+      }),
+    ]),
   })],
   ['data/reference/rules.json', Object.freeze({
     evidencePath: 'data/complete-play-loop/canonical-data-remediation.v1.json',
@@ -364,6 +383,13 @@ const reviewedSourceMigrations = new Map<string, {
         afterBytes: 196347,
         afterGitBlob: 'b6db0c515133519860b79a80dac3a6e409a4a921',
       }),
+      Object.freeze({
+        migrationId: 'rule-data-character-creation-mechanics-v1',
+        beforeSha256: '94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142',
+        afterSha256: 'f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df',
+        afterBytes: 198452,
+        afterGitBlob: '8e8d49a61c440876e285c63ff7d075b9a4ea24b2',
+      }),
     ]),
   })],
 ])
@@ -384,15 +410,23 @@ for (const source of frozenSources) {
     const bytes = readFileSync(resolve(ROOT, source.path))
     const migration = reviewedSourceMigrations.get(source.path)
     if (migration) {
-      const evidence = json<{ readonly reviewedMigrations?: readonly Record<string, unknown>[] }>(migration.evidencePath)
       assert(source.sha256 === migration.steps[0]?.beforeSha256, `${source.path} reviewed migration no longer binds its frozen before hash`)
       let predecessorSha256 = source.sha256
       for (const step of migration.steps) {
-        const review = evidence.reviewedMigrations?.find(entry => entry.migrationId === step.migrationId)
-        assert(step.beforeSha256 === predecessorSha256, `${source.path} reviewed migration chain is discontinuous`)
-        assert((review?.beforeCatalogSha256 ?? review?.beforeFileSha256) === step.beforeSha256
+        const evidence = json<Record<string, any>>(step.evidencePath ?? migration.evidencePath)
+        const review = evidence.reviewedMigrations?.find((entry: Record<string, unknown>) => entry.migrationId === step.migrationId)
+        const target = evidence.targets?.find((entry: Record<string, unknown>) => entry.path === source.path)
+        const migrationEvidenceMatches = (review?.beforeCatalogSha256 ?? review?.beforeFileSha256) === step.beforeSha256
           && (review?.afterCatalogSha256 ?? review?.afterFileSha256) === step.afterSha256
-          && review?.reviewStatus === 'accepted', `${source.path} reviewed migration evidence drifted`)
+          && review?.reviewStatus === 'accepted'
+        const targetEvidenceMatches = evidence.migrationId === step.migrationId
+          && evidence.status === 'reviewed'
+          && target?.baseSha256 === step.beforeSha256
+          && target?.afterSha256 === step.afterSha256
+          && target?.afterBytes === step.afterBytes
+          && target?.afterGitBlob === step.afterGitBlob
+        assert(step.beforeSha256 === predecessorSha256, `${source.path} reviewed migration chain is discontinuous`)
+        assert(migrationEvidenceMatches || targetEvidenceMatches, `${source.path} reviewed migration evidence drifted`)
         predecessorSha256 = step.afterSha256
       }
       const successor = migration.steps.at(-1)!
@@ -817,6 +851,9 @@ const reviewedP8090NavigationSuccessor = campaignContinuation.ticket === 'P8-090
   && sha256(readFileSync(resolve(ROOT, campaignNavigationPath))) === campaignNavigation.sha256
 const p8090VisualSuccessors: Readonly<Record<string, string>> = Object.freeze({
   'tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-chromium-linux.png': '4242fb449407ca67863ca8374e14d64a573406623fcc88cf62ea1bb9cb6afea9',
+  // Plan 10 adds Contests as a reviewed first-class navigation destination; on
+  // mobile that extra item intentionally adds one wrapped navigation row.
+  'tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-mobile-chromium-linux.png': '9ba47f253993bd5068a264f261fba053565dc0a9ba078e6f6c759deef1a346c0',
 })
 assert(Array.isArray(browserBaselines) && browserBaselines.length === 4
   && browserBaselines.every((baseline: any) => {

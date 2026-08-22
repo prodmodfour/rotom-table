@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "rubricId": "pokemon-contest-completion-rubric-v1",
+  "states": [
+    {
+      "id": "native",
+      "requirements": ["stable canonical identity", "server validator", "server resolution", "resource commit", "receipt/history evidence", "focused fixture"]
+    },
+    {
+      "id": "guided",
+      "requirements": ["stable canonical identity", "server-owned eligibility and timing", "bounded GM choice", "server commit", "receipt/history evidence", "safe cancellation and retry"]
+    },
+    {
+      "id": "passive",
+      "requirements": ["stable provider identity", "automatic contribution", "source-loss withdrawal", "contribution explanation", "focused fixture"]
+    },
+    {
+      "id": "reference-only",
+      "requirements": ["explicit safe reason", "no selectable mechanical action", "no runtime prose inference"]
+    },
+    {
+      "id": "not-applicable",
+      "requirements": ["reviewed scope reason", "no selectable mechanical action"]
+    },
+    {
+      "id": "blocked",
+      "requirements": ["named missing authority", "owning ticket", "visible fail-closed reason"],
+      "permittedAtFinalAcceptance": false
+    }
+  ],
+  "globalGates": [
+    "Every rule and referencing row appears exactly once.",
+    "No blocked row remains.",
+    "No browser-supplied roll or score is accepted.",
+    "No runtime module reads documentary books, parser output, or websites.",
+    "No visible action lacks an authoritative commit path or explicit safe unavailable reason.",
+    "Exact retry returns the original result and never spends a resource twice.",
+    "Role projections are structurally distinct and privacy-tested."
+  ],
+  "finalAcceptance": {
+    "blockedCount": 0,
+    "proseInferredSemantics": 0,
+    "orphanOptionIds": 0,
+    "unownedRows": 0
+  }
+}

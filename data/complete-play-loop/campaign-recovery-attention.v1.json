@@ -155,11 +155,11 @@
     },
     "itemRegistry": {
       "path": "server/domain/itemAutomation/registry.ts",
-      "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+      "sha256": "f6f7ae530decdad61b832a707fc09cc065e56c66fb845de1c5f12ee2739a4f7e"
     },
     "itemSpecs": {
       "path": "data/complete-play-loop/specs.v1.json",
-      "sha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe"
+      "sha256": "b03d2706fa0d666b33262e215b80a0bc33ac617d07a62e5aca7319db396918ed"
     },
     "campaignClock": {
       "path": "shared/campaignClock.ts",

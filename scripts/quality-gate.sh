@@ -97,6 +97,9 @@ if have npm; then
   pp_section "Breeding compiled registry"
   run_cmd npm run check:breeding-compiler
 
+  pp_section "Pokémon Contest authority and acceptance"
+  run_cmd npm run check:pokemon-contests
+
   pp_section "Complete Play Loop acceptance"
   run_cmd npm run check:complete-play-loop-item-catalog-closure
   run_cmd npm run check:complete-play-loop-authority-guardrails

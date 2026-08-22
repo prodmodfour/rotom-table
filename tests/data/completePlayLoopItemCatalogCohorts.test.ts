@@ -11,7 +11,7 @@ describe('P8-092 canonical item catalog cohort certification', () => {
   it('pins one bounded exact assignment for the complete canonical catalog', () => {
     expect(certification).toMatchObject({
       schemaVersion: 1, ticket: 'P8-092', status: 'implemented',
-      canonicalItemCount: 348, cohortCount: 18, maximumMembersPerCohort: 32,
+      canonicalItemCount: 349, cohortCount: 19, maximumMembersPerCohort: 32,
       runtimeProseParsing: false,
     })
     expect(ITEM_CATALOG_COHORT_SCHEMA_VERSION).toBe(1)
@@ -47,7 +47,7 @@ describe('P8-092 canonical item catalog cohort certification', () => {
 
   it('records exact P8-093 closure with no blocked catalog row', () => {
     expect(certification.implementationStateCounts).toEqual({
-      native: 204, guided: 40, passive: 104, blocked: 0,
+      native: 205, guided: 40, passive: 104, blocked: 0,
     })
     expect(certification.p8093Remediation).toEqual({
       captureRows: 25, interpretiveToolRows: 34, canonicalDataDefectRows: 1,

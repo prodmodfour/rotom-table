@@ -1605,7 +1605,52 @@
     ],
     "aliases": [],
     "notes": [],
-    "source": "09-gear-and-items.md"
+    "source": "09-gear-and-items.md",
+    "contestMechanics": {
+      "schemaVersion": 1,
+      "kind": "guided-crafting",
+      "outputItemId": "Poffin",
+      "ingredientMoneyCost": 500,
+      "outputQuantity": 2,
+      "choiceRequired": "contest-stat-from-reviewed-berry-mapping",
+      "reviewedBerryStatMapping": {
+        "cool": [
+          "Cheri Berry",
+          "Figy Berry",
+          "Razz Berry",
+          "Spelon Berry",
+          "Belue Berry"
+        ],
+        "beauty": [
+          "Chesto Berry",
+          "Wiki Berry",
+          "Bluk Berry",
+          "Spelon Berry",
+          "Pamtre Berry"
+        ],
+        "cute": [
+          "Pecha Berry",
+          "Mago Berry",
+          "Nanab Berry",
+          "Pamtre Berry",
+          "Watmel Berry"
+        ],
+        "smart": [
+          "Rawst Berry",
+          "Aguav Berry",
+          "Wepear Berry",
+          "Watmel Berry",
+          "Durin Berry"
+        ],
+        "tough": [
+          "Aspear Berry",
+          "Iapapa Berry",
+          "Pinap Berry",
+          "Durin Berry",
+          "Belue Berry"
+        ]
+      }
+    }
   },
   "Poké Ball Tool Box": {
     "name": "Poké Ball Tool Box",
@@ -1906,7 +1951,13 @@
     ],
     "aliases": [],
     "notes": [],
-    "source": "09-gear-and-items.md"
+    "source": "09-gear-and-items.md",
+    "contestMechanics": {
+      "schemaVersion": 1,
+      "kind": "trainer-introduction-bonus",
+      "bonusDice": 2,
+      "contestStatChoiceRequired": true
+    }
   },
   "Stealth Clothes": {
     "name": "Stealth Clothes",
@@ -2386,7 +2437,13 @@
     ],
     "aliases": [],
     "notes": [],
-    "source": "09-gear-and-items.md"
+    "source": "09-gear-and-items.md",
+    "contestMechanics": {
+      "schemaVersion": 1,
+      "kind": "pokemon-introduction-bonus",
+      "bonusDice": 2,
+      "contestStatChoiceRequired": true
+    }
   },
   "Contest Fashion": {
     "name": "Contest Fashion",
@@ -2404,7 +2461,13 @@
     ],
     "aliases": [],
     "notes": [],
-    "source": "09-gear-and-items.md"
+    "source": "09-gear-and-items.md",
+    "contestMechanics": {
+      "schemaVersion": 1,
+      "kind": "appeal-reroll-ones",
+      "usesPerContest": 1,
+      "contestStatChoiceRequired": true
+    }
   },
   "Everstone": {
     "name": "Everstone",
@@ -6817,5 +6880,36 @@
     "aliases": [],
     "notes": [],
     "source": "09-gear-and-items.md"
+  },
+  "Poffin": {
+    "name": "Poffin",
+    "categories": [
+      "Food",
+      "Contest Item"
+    ],
+    "effects": [
+      "When consumed through the authoritative preparation workflow, choose one Contest Stat. The Pokémon permanently gains +1 die in that stat, subject to its lifetime Poffin allowance."
+    ],
+    "costs": [
+      "$500"
+    ],
+    "sections": [
+      "Food"
+    ],
+    "aliases": [
+      "Poffins"
+    ],
+    "notes": [
+      "The chosen Contest Stat is structured per item unit and is never inferred from free-form inventory text."
+    ],
+    "source": "pokemon-contests:v1 reviewed migration",
+    "contestMechanics": {
+      "schemaVersion": 1,
+      "kind": "poffin",
+      "contestStatChoiceRequired": true,
+      "contestDiceGranted": 1,
+      "consumptionPhase": "accepted-preparation-operation",
+      "acquisitionCost": 500
+    }
   }
 }

@@ -1,0 +1,1262 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "onboarding-creation-fixtures-v1",
+  "date": "2026-08-16",
+  "fingerprintAlgorithm": "sha256(JSON.stringify(row)) first 16 hex chars",
+  "fixtures": [
+    {
+      "fixtureId": "default-level1-single-starter",
+      "kind": "creation-journey",
+      "title": "Default Level 1 Trainer with one starter",
+      "policy": {
+        "policyId": "fixture-policy-default",
+        "version": 1,
+        "trainer": {
+          "startingLevel": 1,
+          "startingMoney": "canonical-baseline"
+        },
+        "pokemon": {
+          "starterCount": 1,
+          "starterPool": {
+            "mode": "any-canonical"
+          },
+          "starterLevel": 5,
+          "additionalMoveSources": []
+        },
+        "packages": {
+          "trainerItems": [],
+          "trainerEquipment": [],
+          "starterHeldItems": []
+        },
+        "workflow": {
+          "unresolvedChoicePolicy": "all-required-resolved",
+          "approval": "gm-review-required",
+          "destinations": {
+            "trainerFolder": "players/rowan",
+            "pokemonFolder": "players/rowan"
+          }
+        }
+      },
+      "canonicalFingerprints": [
+        {
+          "source": "data/reference/pokedex.json#species=Bulbasaur",
+          "sha256_16": "51bdc666f47e7db4"
+        },
+        {
+          "source": "data/reference/rules.json#Trainer Advancement Choices.trainerAdvancementChoiceMechanics",
+          "sha256_16": "9d1ae2d4612e3923"
+        },
+        {
+          "source": "data/reference/rules.json#Stat Point Advancement.statPointFormulas",
+          "sha256_16": "e97e873125378f55"
+        },
+        {
+          "source": "data/reference/features.json#Focused Training",
+          "sha256_16": "5b4db3bc9ba350d4"
+        }
+      ],
+      "trainerBuild": {
+        "name": "Rowan Vale",
+        "level": 1,
+        "statAllocation": {
+          "hp": 2,
+          "atk": 1,
+          "def": 2,
+          "satk": 1,
+          "sdef": 2,
+          "spd": 2
+        },
+        "background": {
+          "name": "Ranch Hand",
+          "adept": [
+            "pokeEd"
+          ],
+          "novice": [
+            "command"
+          ],
+          "pathetic": [
+            "charm",
+            "guile",
+            "intimidate"
+          ]
+        },
+        "trainingFeature": "Focused Training",
+        "edges": [
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "athletics"
+            }
+          },
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "survival"
+            }
+          },
+          {
+            "name": "Swimmer",
+            "choices": {}
+          },
+          {
+            "name": "Categoric Inclination",
+            "choices": {
+              "category": "Body"
+            }
+          }
+        ],
+        "features": [
+          {
+            "name": "Ace Trainer",
+            "isClassAnchor": true,
+            "choices": {}
+          },
+          {
+            "name": "Perseverance",
+            "choices": {}
+          },
+          {
+            "name": "Elite Trainer",
+            "choices": {}
+          },
+          {
+            "name": "Let Me Help You With That",
+            "choices": {}
+          }
+        ],
+        "classes": [
+          "Ace Trainer"
+        ]
+      },
+      "pokemonBuilds": [
+        {
+          "species": "Bulbasaur",
+          "nickname": "Sprig",
+          "level": 5,
+          "nature": "Hardy",
+          "gender": "Male",
+          "abilities": [
+            "Overgrow"
+          ],
+          "moves": [
+            "Tackle",
+            "Growl"
+          ],
+          "addedStats": {
+            "hp": 3,
+            "atk": 1,
+            "def": 1,
+            "satk": 5,
+            "sdef": 3,
+            "spd": 2
+          },
+          "heldItem": null,
+          "teamSlot": 1
+        }
+      ],
+      "expected": {
+        "validation": {
+          "blockingIssues": 0,
+          "warnings": [],
+          "pendingDataDefects": []
+        },
+        "derivedPreview": {
+          "trainer": {
+            "maxHp": 48,
+            "apMax": 5,
+            "statPointsSpent": 10,
+            "statPointsBudget": 10,
+            "featureRows": 5,
+            "edgeRows": 4
+          },
+          "pokemon": [
+            {
+              "species": "Bulbasaur",
+              "maxHp": 39,
+              "addedSpent": 15,
+              "addedBudget": 15,
+              "tutorPoints": 2,
+              "moveCount": 2
+            }
+          ]
+        },
+        "commitPlan": {
+          "sheetsCreated": 2,
+          "profileLinks": 2,
+          "teamMembers": 1,
+          "boxedMembers": 0,
+          "inventoryRows": 0,
+          "equipmentInstances": 0,
+          "provenanceRecords": 1
+        },
+        "readyForPlay": true
+      }
+    },
+    {
+      "fixtureId": "higher-level-start",
+      "kind": "creation-journey",
+      "title": "Level 5 Trainer with milestone choice and level 10 starter",
+      "policy": {
+        "policyId": "fixture-policy-veteran",
+        "version": 1,
+        "trainer": {
+          "startingLevel": 5,
+          "startingMoney": "canonical-baseline",
+          "milestoneCollection": "during-onboarding"
+        },
+        "pokemon": {
+          "starterCount": 1,
+          "starterPool": {
+            "mode": "curated-list",
+            "species": [
+              "Bulbasaur"
+            ]
+          },
+          "starterLevel": 10,
+          "additionalMoveSources": []
+        },
+        "packages": {
+          "trainerItems": [],
+          "trainerEquipment": [],
+          "starterHeldItems": []
+        },
+        "workflow": {
+          "unresolvedChoicePolicy": "all-required-resolved",
+          "approval": "gm-review-required",
+          "destinations": {
+            "trainerFolder": "players/mira",
+            "pokemonFolder": "players/mira"
+          }
+        }
+      },
+      "canonicalFingerprints": [
+        {
+          "source": "data/reference/pokedex.json#species=Bulbasaur",
+          "sha256_16": "51bdc666f47e7db4"
+        },
+        {
+          "source": "data/reference/rules.json#Trainer Advancement Choices.trainerAdvancementChoiceMechanics",
+          "sha256_16": "9d1ae2d4612e3923"
+        }
+      ],
+      "trainerBuild": {
+        "name": "Mira Senn",
+        "level": 5,
+        "statAllocation": {
+          "hp": 3,
+          "atk": 1,
+          "def": 3,
+          "satk": 1,
+          "sdef": 3,
+          "spd": 3
+        },
+        "milestoneChoices": [
+          {
+            "level": 5,
+            "optionId": "attack-special-attack",
+            "immediateAllocation": {
+              "atk": 1,
+              "satk": 1
+            }
+          }
+        ],
+        "background": {
+          "name": "League Prospect",
+          "adept": [
+            "pokeEd"
+          ],
+          "novice": [
+            "command"
+          ],
+          "pathetic": [
+            "charm",
+            "guile",
+            "intimidate"
+          ]
+        },
+        "trainingFeature": "Focused Training",
+        "edges": [
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "athletics"
+            }
+          },
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "survival"
+            }
+          },
+          {
+            "name": "Swimmer",
+            "choices": {}
+          },
+          {
+            "name": "Categoric Inclination",
+            "choices": {
+              "category": "Body"
+            }
+          },
+          {
+            "name": "Adept Skills",
+            "choices": {
+              "skill": "command"
+            }
+          },
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "acrobatics"
+            }
+          }
+        ],
+        "bonusSkillEdges": [
+          {
+            "grantLevel": 2,
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "focus"
+            }
+          }
+        ],
+        "features": [
+          {
+            "name": "Ace Trainer",
+            "isClassAnchor": true,
+            "choices": {}
+          },
+          {
+            "name": "Perseverance",
+            "choices": {}
+          },
+          {
+            "name": "Elite Trainer",
+            "choices": {}
+          },
+          {
+            "name": "Critical Moment",
+            "choices": {}
+          },
+          {
+            "name": "Let Me Help You With That",
+            "choices": {}
+          },
+          {
+            "name": "Survivalist",
+            "isClassAnchor": true,
+            "choices": {}
+          }
+        ],
+        "classes": [
+          "Ace Trainer",
+          "Survivalist"
+        ]
+      },
+      "pokemonBuilds": [
+        {
+          "species": "Bulbasaur",
+          "nickname": "Thicket",
+          "level": 10,
+          "nature": "Hardy",
+          "gender": "Female",
+          "abilities": [
+            "Overgrow"
+          ],
+          "moves": [
+            "Tackle",
+            "Growl",
+            "Leech Seed",
+            "Vine Whip"
+          ],
+          "addedStats": {
+            "hp": 4,
+            "atk": 2,
+            "def": 2,
+            "satk": 6,
+            "sdef": 4,
+            "spd": 2
+          },
+          "heldItem": null,
+          "teamSlot": 1
+        }
+      ],
+      "expected": {
+        "validation": {
+          "blockingIssues": 0,
+          "warnings": [],
+          "pendingDataDefects": []
+        },
+        "derivedPreview": {
+          "trainer": {
+            "maxHp": 59,
+            "apMax": 6,
+            "statPointsSpent": 14,
+            "statPointsBudget": 14,
+            "milestoneImmediatePoints": 2,
+            "featureRows": 7,
+            "edgeRows": 7
+          },
+          "pokemon": [
+            {
+              "species": "Bulbasaur",
+              "maxHp": 47,
+              "addedSpent": 20,
+              "addedBudget": 20,
+              "tutorPoints": 3,
+              "moveCount": 4
+            }
+          ]
+        },
+        "commitPlan": {
+          "sheetsCreated": 2,
+          "profileLinks": 2,
+          "teamMembers": 1,
+          "boxedMembers": 0,
+          "inventoryRows": 0,
+          "equipmentInstances": 0,
+          "provenanceRecords": 1
+        },
+        "readyForPlay": true
+      }
+    },
+    {
+      "fixtureId": "multiple-starters",
+      "kind": "creation-journey",
+      "title": "Level 1 Trainer with the classic trio",
+      "policy": {
+        "policyId": "fixture-policy-trio",
+        "version": 1,
+        "trainer": {
+          "startingLevel": 1,
+          "startingMoney": "canonical-baseline"
+        },
+        "pokemon": {
+          "starterCount": 3,
+          "starterPool": {
+            "mode": "curated-list",
+            "species": [
+              "Bulbasaur",
+              "Charmander",
+              "Squirtle"
+            ]
+          },
+          "starterLevel": 5,
+          "additionalMoveSources": []
+        },
+        "packages": {
+          "trainerItems": [],
+          "trainerEquipment": [],
+          "starterHeldItems": []
+        },
+        "workflow": {
+          "unresolvedChoicePolicy": "all-required-resolved",
+          "approval": "gm-review-required",
+          "destinations": {
+            "trainerFolder": "players/juno",
+            "pokemonFolder": "players/juno"
+          }
+        }
+      },
+      "canonicalFingerprints": [
+        {
+          "source": "data/reference/pokedex.json#species=Bulbasaur",
+          "sha256_16": "51bdc666f47e7db4"
+        },
+        {
+          "source": "data/reference/pokedex.json#species=Charmander",
+          "sha256_16": "69dbbc7ba5204886"
+        },
+        {
+          "source": "data/reference/pokedex.json#species=Squirtle",
+          "sha256_16": "5c03cc0b0c2f5a10"
+        }
+      ],
+      "trainerBuild": {
+        "name": "Juno Park",
+        "level": 1,
+        "statAllocation": {
+          "hp": 2,
+          "atk": 1,
+          "def": 2,
+          "satk": 1,
+          "sdef": 2,
+          "spd": 2
+        },
+        "background": {
+          "name": "Field Camp Kid",
+          "adept": [
+            "pokeEd"
+          ],
+          "novice": [
+            "command"
+          ],
+          "pathetic": [
+            "charm",
+            "guile",
+            "intimidate"
+          ]
+        },
+        "trainingFeature": "Focused Training",
+        "edges": [
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "athletics"
+            }
+          },
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "survival"
+            }
+          },
+          {
+            "name": "Swimmer",
+            "choices": {}
+          },
+          {
+            "name": "Categoric Inclination",
+            "choices": {
+              "category": "Body"
+            }
+          }
+        ],
+        "features": [
+          {
+            "name": "Ace Trainer",
+            "isClassAnchor": true,
+            "choices": {}
+          },
+          {
+            "name": "Perseverance",
+            "choices": {}
+          },
+          {
+            "name": "Elite Trainer",
+            "choices": {}
+          },
+          {
+            "name": "Let Me Help You With That",
+            "choices": {}
+          }
+        ],
+        "classes": [
+          "Ace Trainer"
+        ]
+      },
+      "pokemonBuilds": [
+        {
+          "species": "Bulbasaur",
+          "nickname": "Sprig",
+          "level": 5,
+          "nature": "Hardy",
+          "gender": "Male",
+          "abilities": [
+            "Overgrow"
+          ],
+          "moves": [
+            "Tackle",
+            "Growl"
+          ],
+          "addedStats": {
+            "hp": 3,
+            "atk": 1,
+            "def": 1,
+            "satk": 5,
+            "sdef": 3,
+            "spd": 2
+          },
+          "heldItem": null,
+          "teamSlot": 1
+        },
+        {
+          "species": "Charmander",
+          "nickname": "Cinder",
+          "level": 5,
+          "nature": "Serious",
+          "gender": "Female",
+          "abilities": [
+            "Blaze"
+          ],
+          "moves": [
+            "Scratch",
+            "Growl"
+          ],
+          "addedStats": {
+            "hp": 1,
+            "atk": 3,
+            "def": 1,
+            "satk": 4,
+            "sdef": 2,
+            "spd": 4
+          },
+          "heldItem": null,
+          "teamSlot": 2
+        },
+        {
+          "species": "Squirtle",
+          "nickname": "Pebble",
+          "level": 5,
+          "nature": "Docile",
+          "gender": "Male",
+          "abilities": [
+            "Torrent"
+          ],
+          "moves": [
+            "Tackle",
+            "Tail Whip"
+          ],
+          "addedStats": {
+            "hp": 2,
+            "atk": 2,
+            "def": 4,
+            "satk": 2,
+            "sdef": 3,
+            "spd": 2
+          },
+          "heldItem": null,
+          "teamSlot": 3
+        }
+      ],
+      "expected": {
+        "validation": {
+          "blockingIssues": 0,
+          "warnings": [],
+          "pendingDataDefects": []
+        },
+        "derivedPreview": {
+          "trainer": {
+            "maxHp": 48,
+            "apMax": 5,
+            "statPointsSpent": 10,
+            "statPointsBudget": 10,
+            "featureRows": 5,
+            "edgeRows": 4
+          },
+          "pokemon": [
+            {
+              "species": "Bulbasaur",
+              "maxHp": 39,
+              "addedSpent": 15,
+              "addedBudget": 15,
+              "tutorPoints": 2,
+              "moveCount": 2
+            },
+            {
+              "species": "Charmander",
+              "maxHp": 30,
+              "addedSpent": 15,
+              "addedBudget": 15,
+              "tutorPoints": 2,
+              "moveCount": 2
+            },
+            {
+              "species": "Squirtle",
+              "maxHp": 33,
+              "addedSpent": 15,
+              "addedBudget": 15,
+              "tutorPoints": 2,
+              "moveCount": 2
+            }
+          ]
+        },
+        "commitPlan": {
+          "sheetsCreated": 4,
+          "profileLinks": 4,
+          "teamMembers": 3,
+          "boxedMembers": 0,
+          "inventoryRows": 0,
+          "equipmentInstances": 0,
+          "provenanceRecords": 1
+        },
+        "readyForPlay": true
+      }
+    },
+    {
+      "fixtureId": "class-subchoices",
+      "kind": "creation-journey",
+      "title": "Level 1 Researcher with dependent subchoices",
+      "policy": {
+        "policyId": "fixture-policy-default",
+        "version": 1,
+        "trainer": {
+          "startingLevel": 1,
+          "startingMoney": "canonical-baseline"
+        },
+        "pokemon": {
+          "starterCount": 1,
+          "starterPool": {
+            "mode": "curated-list",
+            "species": [
+              "Charmander"
+            ]
+          },
+          "starterLevel": 5,
+          "additionalMoveSources": []
+        },
+        "packages": {
+          "trainerItems": [],
+          "trainerEquipment": [],
+          "starterHeldItems": []
+        },
+        "workflow": {
+          "unresolvedChoicePolicy": "all-required-resolved",
+          "approval": "gm-review-required",
+          "destinations": {
+            "trainerFolder": "players/theo",
+            "pokemonFolder": "players/theo"
+          }
+        }
+      },
+      "canonicalFingerprints": [
+        {
+          "source": "data/reference/pokedex.json#species=Charmander",
+          "sha256_16": "69dbbc7ba5204886"
+        },
+        {
+          "source": "data/reference/features.json#Researcher",
+          "sha256_16": "075646317ccb5d0d"
+        },
+        {
+          "source": "data/reference/features.json#Agility Training",
+          "sha256_16": "af5241faff38ccd9"
+        }
+      ],
+      "trainerBuild": {
+        "name": "Theo Alder",
+        "level": 1,
+        "statAllocation": {
+          "hp": 2,
+          "atk": 2,
+          "def": 2,
+          "satk": 2,
+          "sdef": 1,
+          "spd": 1
+        },
+        "background": {
+          "name": "Lab Assistant",
+          "adept": [
+            "pokeEd"
+          ],
+          "novice": [
+            "medicineEd"
+          ],
+          "pathetic": [
+            "charm",
+            "guile",
+            "intimidate"
+          ]
+        },
+        "trainingFeature": "Agility Training",
+        "edges": [
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "athletics"
+            }
+          },
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "survival"
+            }
+          },
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "combat"
+            }
+          },
+          {
+            "name": "Basic Martial Arts",
+            "choices": {}
+          }
+        ],
+        "features": [
+          {
+            "name": "Researcher",
+            "isClassAnchor": true,
+            "choices": {
+              "researcherField": "Botany",
+              "researcherField2": "Chemistry"
+            }
+          },
+          {
+            "name": "Survivalist",
+            "isClassAnchor": true,
+            "choices": {}
+          },
+          {
+            "name": "Martial Artist",
+            "isClassAnchor": true,
+            "choices": {}
+          },
+          {
+            "name": "Let Me Help You With That",
+            "choices": {}
+          }
+        ],
+        "classes": [
+          "Researcher",
+          "Survivalist",
+          "Martial Artist"
+        ]
+      },
+      "pokemonBuilds": [
+        {
+          "species": "Charmander",
+          "nickname": "Ember",
+          "level": 5,
+          "nature": "Serious",
+          "gender": "Male",
+          "abilities": [
+            "Blaze"
+          ],
+          "moves": [
+            "Scratch",
+            "Growl"
+          ],
+          "addedStats": {
+            "hp": 1,
+            "atk": 3,
+            "def": 1,
+            "satk": 4,
+            "sdef": 2,
+            "spd": 4
+          },
+          "heldItem": null,
+          "teamSlot": 1
+        }
+      ],
+      "expected": {
+        "validation": {
+          "blockingIssues": 0,
+          "warnings": [],
+          "pendingDataDefects": [],
+          "reviewedBuildClauses": [
+            "Researcher"
+          ]
+        },
+        "derivedPreview": {
+          "trainer": {
+            "maxHp": 48,
+            "apMax": 5,
+            "statPointsSpent": 10,
+            "statPointsBudget": 10,
+            "featureRows": 5,
+            "edgeRows": 4
+          },
+          "pokemon": [
+            {
+              "species": "Charmander",
+              "maxHp": 30,
+              "addedSpent": 15,
+              "addedBudget": 15,
+              "tutorPoints": 2,
+              "moveCount": 2
+            }
+          ]
+        },
+        "commitPlan": {
+          "sheetsCreated": 2,
+          "profileLinks": 2,
+          "teamMembers": 1,
+          "boxedMembers": 0,
+          "inventoryRows": 0,
+          "equipmentInstances": 0,
+          "provenanceRecords": 1
+        },
+        "readyForPlay": true
+      }
+    },
+    {
+      "fixtureId": "equipment-package",
+      "kind": "creation-journey",
+      "title": "Level 1 Trainer with a reviewed starting item package",
+      "policy": {
+        "policyId": "fixture-policy-outfitted",
+        "version": 1,
+        "trainer": {
+          "startingLevel": 1,
+          "startingMoney": "canonical-baseline"
+        },
+        "pokemon": {
+          "starterCount": 1,
+          "starterPool": {
+            "mode": "curated-list",
+            "species": [
+              "Squirtle"
+            ]
+          },
+          "starterLevel": 5,
+          "additionalMoveSources": []
+        },
+        "packages": {
+          "trainerItems": [
+            {
+              "itemId": "Basic Ball",
+              "quantity": 5,
+              "section": "pokeBalls"
+            },
+            {
+              "itemId": "Potion",
+              "quantity": 2,
+              "section": "medicalKit"
+            }
+          ],
+          "trainerEquipment": [],
+          "starterHeldItems": []
+        },
+        "workflow": {
+          "unresolvedChoicePolicy": "all-required-resolved",
+          "approval": "gm-review-required",
+          "destinations": {
+            "trainerFolder": "players/vera",
+            "pokemonFolder": "players/vera"
+          }
+        }
+      },
+      "canonicalFingerprints": [
+        {
+          "source": "data/reference/pokedex.json#species=Squirtle",
+          "sha256_16": "5c03cc0b0c2f5a10"
+        },
+        {
+          "source": "data/reference/items.json#Basic Ball",
+          "sha256_16": "7394e80da593c4fa"
+        },
+        {
+          "source": "data/reference/items.json#Potion",
+          "sha256_16": "1d4ed8c83ce2624f"
+        }
+      ],
+      "trainerBuild": {
+        "name": "Vera Lin",
+        "level": 1,
+        "statAllocation": {
+          "hp": 2,
+          "atk": 1,
+          "def": 2,
+          "satk": 1,
+          "sdef": 2,
+          "spd": 2
+        },
+        "background": {
+          "name": "Harbor Courier",
+          "adept": [
+            "pokeEd"
+          ],
+          "novice": [
+            "command"
+          ],
+          "pathetic": [
+            "charm",
+            "guile",
+            "intimidate"
+          ]
+        },
+        "trainingFeature": "Focused Training",
+        "edges": [
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "athletics"
+            }
+          },
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "survival"
+            }
+          },
+          {
+            "name": "Swimmer",
+            "choices": {}
+          },
+          {
+            "name": "Categoric Inclination",
+            "choices": {
+              "category": "Body"
+            }
+          }
+        ],
+        "features": [
+          {
+            "name": "Ace Trainer",
+            "isClassAnchor": true,
+            "choices": {}
+          },
+          {
+            "name": "Perseverance",
+            "choices": {}
+          },
+          {
+            "name": "Elite Trainer",
+            "choices": {}
+          },
+          {
+            "name": "Let Me Help You With That",
+            "choices": {}
+          }
+        ],
+        "classes": [
+          "Ace Trainer"
+        ]
+      },
+      "pokemonBuilds": [
+        {
+          "species": "Squirtle",
+          "nickname": "Pebble",
+          "level": 5,
+          "nature": "Docile",
+          "gender": "Male",
+          "abilities": [
+            "Torrent"
+          ],
+          "moves": [
+            "Tackle",
+            "Tail Whip"
+          ],
+          "addedStats": {
+            "hp": 2,
+            "atk": 2,
+            "def": 4,
+            "satk": 2,
+            "sdef": 3,
+            "spd": 2
+          },
+          "heldItem": null,
+          "teamSlot": 1
+        }
+      ],
+      "expected": {
+        "validation": {
+          "blockingIssues": 0,
+          "warnings": [],
+          "pendingDataDefects": []
+        },
+        "derivedPreview": {
+          "trainer": {
+            "maxHp": 48,
+            "apMax": 5,
+            "statPointsSpent": 10,
+            "statPointsBudget": 10,
+            "featureRows": 5,
+            "edgeRows": 4
+          },
+          "pokemon": [
+            {
+              "species": "Squirtle",
+              "maxHp": 33,
+              "addedSpent": 15,
+              "addedBudget": 15,
+              "tutorPoints": 2,
+              "moveCount": 2
+            }
+          ]
+        },
+        "commitPlan": {
+          "sheetsCreated": 2,
+          "profileLinks": 2,
+          "teamMembers": 1,
+          "boxedMembers": 0,
+          "inventoryRows": 2,
+          "equipmentInstances": 0,
+          "provenanceRecords": 1
+        },
+        "readyForPlay": true
+      }
+    },
+    {
+      "fixtureId": "optional-unresolved-choices",
+      "kind": "creation-journey",
+      "title": "Policy-permitted optional deferral",
+      "policy": {
+        "policyId": "fixture-policy-relaxed",
+        "version": 1,
+        "trainer": {
+          "startingLevel": 1,
+          "startingMoney": "canonical-baseline"
+        },
+        "pokemon": {
+          "starterCount": 1,
+          "starterPool": {
+            "mode": "curated-list",
+            "species": [
+              "Bulbasaur"
+            ]
+          },
+          "starterLevel": 5,
+          "additionalMoveSources": [],
+          "caughtBallPolicy": "player-choice"
+        },
+        "packages": {
+          "trainerItems": [],
+          "trainerEquipment": [],
+          "starterHeldItems": []
+        },
+        "workflow": {
+          "unresolvedChoicePolicy": "allow-optional-deferral",
+          "deferrableDecisions": [
+            "pokemon.1.caught-ball"
+          ],
+          "approval": "gm-review-required",
+          "destinations": {
+            "trainerFolder": "players/iris",
+            "pokemonFolder": "players/iris"
+          }
+        }
+      },
+      "canonicalFingerprints": [
+        {
+          "source": "data/reference/pokedex.json#species=Bulbasaur",
+          "sha256_16": "51bdc666f47e7db4"
+        }
+      ],
+      "trainerBuild": {
+        "name": "Iris Kade",
+        "level": 1,
+        "statAllocation": {
+          "hp": 2,
+          "atk": 1,
+          "def": 2,
+          "satk": 1,
+          "sdef": 2,
+          "spd": 2
+        },
+        "background": {
+          "name": "Wandering Botanist",
+          "adept": [
+            "pokeEd"
+          ],
+          "novice": [
+            "command"
+          ],
+          "pathetic": [
+            "charm",
+            "guile",
+            "intimidate"
+          ]
+        },
+        "trainingFeature": "Focused Training",
+        "edges": [
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "athletics"
+            }
+          },
+          {
+            "name": "Basic Skills",
+            "choices": {
+              "skill": "survival"
+            }
+          },
+          {
+            "name": "Swimmer",
+            "choices": {}
+          },
+          {
+            "name": "Categoric Inclination",
+            "choices": {
+              "category": "Body"
+            }
+          }
+        ],
+        "features": [
+          {
+            "name": "Ace Trainer",
+            "isClassAnchor": true,
+            "choices": {}
+          },
+          {
+            "name": "Perseverance",
+            "choices": {}
+          },
+          {
+            "name": "Elite Trainer",
+            "choices": {}
+          },
+          {
+            "name": "Let Me Help You With That",
+            "choices": {}
+          }
+        ],
+        "classes": [
+          "Ace Trainer"
+        ]
+      },
+      "pokemonBuilds": [
+        {
+          "species": "Bulbasaur",
+          "nickname": "Fern",
+          "level": 5,
+          "nature": "Hardy",
+          "gender": "Female",
+          "abilities": [
+            "Chlorophyll"
+          ],
+          "moves": [
+            "Tackle",
+            "Growl"
+          ],
+          "addedStats": {
+            "hp": 3,
+            "atk": 1,
+            "def": 1,
+            "satk": 5,
+            "sdef": 3,
+            "spd": 2
+          },
+          "heldItem": null,
+          "teamSlot": 1
+        }
+      ],
+      "deferredDecisions": [
+        "pokemon.1.caught-ball"
+      ],
+      "expected": {
+        "validation": {
+          "blockingIssues": 0,
+          "warnings": [
+            "deferred-optional-decision"
+          ],
+          "pendingDataDefects": []
+        },
+        "derivedPreview": {
+          "trainer": {
+            "maxHp": 48,
+            "apMax": 5,
+            "statPointsSpent": 10,
+            "statPointsBudget": 10,
+            "featureRows": 5,
+            "edgeRows": 4
+          },
+          "pokemon": [
+            {
+              "species": "Bulbasaur",
+              "maxHp": 39,
+              "addedSpent": 15,
+              "addedBudget": 15,
+              "tutorPoints": 2,
+              "moveCount": 2
+            }
+          ]
+        },
+        "commitPlan": {
+          "sheetsCreated": 2,
+          "profileLinks": 2,
+          "teamMembers": 1,
+          "boxedMembers": 0,
+          "inventoryRows": 0,
+          "equipmentInstances": 0,
+          "provenanceRecords": 1
+        },
+        "completionFollowUps": 1,
+        "readyForPlay": true
+      }
+    }
+  ],
+  "notes": "reviewed-build-clause prerequisites surface as GM-review deviations, never silent legality."
+}

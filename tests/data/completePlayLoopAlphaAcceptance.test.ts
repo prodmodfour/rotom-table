@@ -38,19 +38,19 @@ describe('P8-100 final alpha product acceptance', () => {
     expect(documentation.status).toBe('complete')
   })
 
-  it('proves all 348 canonical items are complete with no blocked row', () => {
+  it('proves all 349 canonical items are complete with no blocked row', () => {
     expect(acceptance.catalog).toEqual({
-      canonicalRows: 348,
-      native: 204,
+      canonicalRows: 349,
+      native: 205,
       guided: 40,
       passive: 104,
       blocked: 0,
     })
-    expect(cohorts.itemCount).toBe(348)
-    expect(cohorts.implementationStateCounts).toEqual({ guided: 40, native: 204, passive: 104 })
+    expect(cohorts.itemCount).toBe(349)
+    expect(cohorts.implementationStateCounts).toEqual({ guided: 40, native: 205, passive: 104 })
     expect(cohorts.cohorts.flatMap(cohort => cohort.unresolvedRequirements)).toEqual([])
     expect(cohorts.providerCounts['canonical-data-defect']).toBe(0)
-    expect(authority.catalog).toMatchObject({ itemCount: 348, registeredExactlyOnce: true, blockedCount: 0 })
+    expect(authority.catalog).toMatchObject({ itemCount: 349, registeredExactlyOnce: true, blockedCount: 0 })
   })
 
   it('records no hard usability, authority, privacy, replay, or fixture debt', () => {
@@ -93,7 +93,9 @@ describe('P8-100 final alpha product acceptance', () => {
     expect(ticketRows.every(match => match[2] === 'DONE')).toBe(true)
     expect(acceptance.plan.path).toBe('implementation-plans/done/COMPLETE_PLAY_LOOP_PLAN.md')
     expect(read('implementation-plans/plan-order.md')).toContain('| [Complete Play Loop](done/COMPLETE_PLAY_LOOP_PLAN.md) | `DONE` | Complete and archived')
-    expect(read('AGENTS.md')).toContain('Complete Play Loop is `DONE` (100 of 100 tickets complete')
+    const agentGuidance = read('AGENTS.md')
+    expect(agentGuidance).toContain('Read `implementation-plans/plan-order.md` before implementation work')
+    expect(agentGuidance).not.toContain('implementation-plans/COMPLETE_PLAY_LOOP_PLAN.md')
   })
 
   it('requires every final validator and assertion only after accepted closure', () => {

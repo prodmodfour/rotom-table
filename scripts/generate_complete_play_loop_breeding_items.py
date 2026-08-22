@@ -21,7 +21,7 @@ ARTIFACTS = {
     "sourceAdjudications": ROOT / "data/breeding-automation/source-adjudications.json",
 }
 EXPECTED_FILE_HASHES = {
-    "items": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+    "items": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
     "review": "82756f7e7e5d7adc8fd7aee59df8931f738d839532f8a60a7814e577d3802841",
     "modifierInventory": "297007e546dc9afe12dbe4622557ccba9c6bca9f1d8b0fec2c631d5a270d761d",
     "modifierProviderHandoff": "2add92cbab9e68f611eb0c6e162edab342918ffc5ba95ec1077f9f76b56fe25b",

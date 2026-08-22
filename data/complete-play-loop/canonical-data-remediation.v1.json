@@ -199,7 +199,7 @@
       "beforeBytes": 286381,
       "beforeGitBlob": "3d0ee4a0de93efb3835f3a38f6b895febaa58b24",
       "beforeRecord": {
-        "canonicalKey": "Façade",
+        "canonicalKey": "Fa\u00e7ade",
         "recordSha256": "070bf4d4d21c98dbb0213cc84a88f24e6d5302600e455ff1155e1e2818c62b85"
       },
       "afterFileSha256": "418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e",
@@ -211,7 +211,7 @@
         "itemRecordSha256": "fc000103f33291199c04aadbc594e7deae96ad351dea40a8fc5893be6a6849f8",
         "itemCatalogSha256": "757d7a52a7ebc015025060bfb94273c3ad0ecd54dae98017d838529966e5d329",
         "pokedexFileSha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696",
-        "reviewMethod": "normalize the pre-existing app-owned Façade Move key/name to the exact Facade identity already used by TM 42 and canonical species compatibility; preserve every mechanical field and normalize only the self-name typography"
+        "reviewMethod": "normalize the pre-existing app-owned Fa\u00e7ade Move key/name to the exact Facade identity already used by TM 42 and canonical species compatibility; preserve every mechanical field and normalize only the self-name typography"
       },
       "record": {
         "name": "Facade",
@@ -222,10 +222,10 @@
         "damage_roll": "2d6+10 / 17",
         "damage_class": "Physical",
         "range": "Melee, 1 Target",
-        "effect": "If the user is afflicted with a Persistent Status Affliction, Facade’s Damage Base is doubled to DB 14 (4d10+15 / 40)."
+        "effect": "If the user is afflicted with a Persistent Status Affliction, Facade\u2019s Damage Base is doubled to DB 14 (4d10+15 / 40)."
       },
-      "reason": "The canonical Move catalog stored the existing record as Façade while TM 42 and species compatibility use Facade. The reviewed migration normalizes that one identity in place, preserves its mechanics, and prevents duplicate canonical IDs or synthesized Move data.",
-      "downstreamFrozenBaselinePolicy": "The immutable Breeding canonical-ID row remains bound to its historical Façade spelling and record hash. Its exact reviewed source-file successor is admitted without silently rewriting the closed subsystem; Move-learning consumes the normalized app-owned record directly.",
+      "reason": "The canonical Move catalog stored the existing record as Fa\u00e7ade while TM 42 and species compatibility use Facade. The reviewed migration normalizes that one identity in place, preserves its mechanics, and prevents duplicate canonical IDs or synthesized Move data.",
+      "downstreamFrozenBaselinePolicy": "The immutable Breeding canonical-ID row remains bound to its historical Fa\u00e7ade spelling and record hash. Its exact reviewed source-file successor is admitted without silently rewriting the closed subsystem; Move-learning consumes the normalized app-owned record directly.",
       "downstreamQualityGate": "scripts/check_breeding_automation.ts plus tests/server/breedingCanonicalIds.test.ts",
       "reviewStatus": "accepted"
     },
@@ -989,7 +989,7 @@
     },
     {
       "migrationId": "rule-data-pokemon-advancement-choices-v1",
-      "canonicalId": "Pokémon Advancement Choices",
+      "canonicalId": "Pok\u00e9mon Advancement Choices",
       "canonicalPath": "data/reference/rules.json",
       "beforeFileSha256": "ff0e220165887fec69ce11f70c0db84210ae289a51145196fe885fe0937ce0a8",
       "beforeBytes": 188040,
@@ -1028,7 +1028,7 @@
         }
       ],
       "reason": "Adds exact event-bound Move opportunities, Ability milestones, optional level Evolution and form-branch policy, plus post-evolution review. Conditional or malformed candidates fail closed and no irreversible choice is automatic.",
-      "downstreamFrozenBaselinePolicy": "Earlier reviewed rule records retain per-record authority; this exact chained successor changes only the Pokémon Advancement Choices record.",
+      "downstreamFrozenBaselinePolicy": "Earlier reviewed rule records retain per-record authority; this exact chained successor changes only the Pok\u00e9mon Advancement Choices record.",
       "reviewStatus": "accepted"
     },
     {
@@ -1096,6 +1096,81 @@
       ],
       "reason": "Adds exact Trainer Feature, Class, Edge, Skill Edge, milestone-option, and incomplete-build detection authority without selecting a build or parsing freeform notes.",
       "downstreamFrozenBaselinePolicy": "Earlier reviewed rule records retain per-record authority; this exact chained successor changes only the Trainer Advancement Choices record.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "rule-data-character-creation-mechanics-v1",
+      "canonicalId": "Character Creation",
+      "canonicalPath": "data/reference/rules.json",
+      "beforeFileSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142",
+      "beforeBytes": 196347,
+      "beforeGitBlob": "b6db0c515133519860b79a80dac3a6e409a4a921",
+      "afterFileSha256": "f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df",
+      "afterBytes": 198452,
+      "afterGitBlob": "8e8d49a61c440876e285c63ff7d075b9a4ea24b2",
+      "afterRecordSha256": "05a18d8de500b5a8442f3c03c118695fa93de7ee7851fe30392707cc31df3120",
+      "reviewedTranscription": {
+        "path": "scripts/reviewed-data/character-creation.v1.json",
+        "fileSha256": "72a336b23ede46b80af223b84295cb5cfbe436fac7784ea74e96b8409a007199",
+        "reviewStatus": "accepted",
+        "runtimeAuthority": false
+      },
+      "sourceEvidence": [
+        {
+          "subject": "skill-background-composition",
+          "path": "books/markdown/core/02-character-creation.md",
+          "fileSha256": "ca4e9f631b18f1a63b441eb01927426319212c780d7318d9547182817df1ac15",
+          "gitBlob": "0d70506d34879009c406760a4d59d61e30a60609",
+          "lineRanges": [
+            [
+              60,
+              96
+            ],
+            [
+              462,
+              470
+            ]
+          ],
+          "excerptSha256": "438a79abaf59646f72727f8d840749bc5d0a7711d04bb01d825befaa009a89a6",
+          "pages": [
+            18,
+            19
+          ]
+        },
+        {
+          "subject": "starting-money-recommendation",
+          "path": "books/markdown/core/02-character-creation.md",
+          "fileSha256": "ca4e9f631b18f1a63b441eb01927426319212c780d7318d9547182817df1ac15",
+          "gitBlob": "0d70506d34879009c406760a4d59d61e30a60609",
+          "lineRanges": [
+            [
+              438,
+              457
+            ]
+          ],
+          "excerptSha256": "074c6e080da28724ed99d33670975e1ab368f6fb6c3ccbe03042bfb78a49d510",
+          "pages": [
+            17
+          ]
+        },
+        {
+          "subject": "starting-loyalty-baseline",
+          "path": "books/markdown/core/05-pokemon.md",
+          "fileSha256": "4fa04ea5d56b04a95ddfaea55cf096166d0bdd71b318ed9f64dbbce583b47eb3",
+          "gitBlob": "4ead8eb5ac53f9eca9de8c721579d1568d6f0bdc",
+          "lineRanges": [
+            [
+              1460,
+              1495
+            ]
+          ],
+          "excerptSha256": "9921de1223e89038aeb8e1efb8399cbeec0e1f747f7a5fb4f0ed2066aae7c4b7",
+          "pages": [
+            210,
+            211
+          ]
+        }
+      ],
       "reviewStatus": "accepted"
     }
   ]

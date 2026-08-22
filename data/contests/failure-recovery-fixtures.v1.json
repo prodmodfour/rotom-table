@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "pokemon-contest-failure-recovery-v1",
+  "fixtures": [
+    {
+      "id": "stale-revision",
+      "command": "declare-appeal",
+      "fault": "expected revision is one behind",
+      "expected": {"code": "contest.revision-conflict", "documentChanged": false, "diceJournalRowsAdded": 0, "rewardsAdded": 0, "retry": "refetch-and-redeclare-with-new-operation-id"},
+      "projections": {"public": "unchanged", "owner": "stale-safe-reason-and-current-turn", "gm": "unchanged-plus-diagnostic-conflict"}
+    },
+    {
+      "id": "duplicate-declaration-exact-retry",
+      "command": "declare-appeal",
+      "fault": "same operation ID and byte-equivalent intent delivered twice",
+      "expected": {"code": "contest.exact-replay", "documentChangedOnRetry": false, "diceJournalRowsAddedOnRetry": 0, "sameTerminalResult": true},
+      "projections": {"public": "one-accepted-appeal", "owner": "one-terminal-result", "gm": "one-operation-receipt"}
+    },
+    {
+      "id": "operation-id-payload-conflict",
+      "command": "declare-appeal",
+      "fault": "same operation ID with different move or dice spend",
+      "expected": {"code": "contest.operation-conflict", "documentChanged": false, "diceJournalRowsAdded": 0},
+      "projections": {"public": "unchanged", "owner": "unsafe-retry-blocked", "gm": "conflict-diagnostic"}
+    },
+    {
+      "id": "disconnected-contestant",
+      "command": "current-decision",
+      "fault": "controller disconnects before declaration",
+      "expected": {"code": "contest.waiting-for-controller", "documentChanged": false, "gmMayReassignController": true, "automaticAppeal": false},
+      "projections": {"public": "waiting-for-named-contestant-without-private-plan", "owner": "recoverable-pending-decision", "gm": "reassign-or-cancel-controls"}
+    },
+    {
+      "id": "gm-restart-mid-round",
+      "command": "load-contest",
+      "fault": "server process restarts after accepted appeal and before next declaration",
+      "expected": {"code": "contest.loaded", "documentEquivalent": true, "journalEquivalent": true, "currentTurnEquivalent": true, "reroll": false},
+      "projections": {"public": "converged-scoreboard", "owner": "same-pending-decision", "gm": "same-oversight-state"}
+    },
+    {
+      "id": "illegal-move-repeat",
+      "command": "declare-appeal",
+      "fault": "same non-Reliable move as prior round",
+      "expected": {"code": "contest.move-repeat-forbidden", "documentChanged": false, "diceJournalRowsAdded": 0, "legalAlternativesIncluded": true},
+      "projections": {"public": "unchanged", "owner": "move-visible-disabled-with-safe-reason", "gm": "unchanged"}
+    },
+    {
+      "id": "dice-pool-overspend",
+      "command": "declare-appeal",
+      "fault": "spend exceeds remaining pool or three-die appeal cap",
+      "expected": {"code": "contest.dice-overspend", "documentChanged": false, "diceJournalRowsAdded": 0, "poolChanged": false},
+      "projections": {"public": "unchanged", "owner": "remaining-pool-and-legal-range", "gm": "unchanged"}
+    },
+    {
+      "id": "interrupted-settlement",
+      "command": "commit-settlement",
+      "fault": "failure injected after ribbon plan and before inventory write",
+      "expected": {"code": "contest.settlement-failed", "documentStage": "settling", "sheetWrites": 0, "inventoryWrites": 0, "ribbonsAdded": 0, "rewardsAdded": 0, "retry": "exact-operation-id"},
+      "projections": {"public": "settlement-pending-no-reward-claim", "owner": "safe-retry-status", "gm": "write-list-and-retry"}
+    },
+    {
+      "id": "server-restart-between-rounds",
+      "command": "advance-round",
+      "fault": "restart after round commit",
+      "expected": {"code": "contest.loaded", "roundAdvancedExactlyOnce": true, "pendingEffectsEquivalent": true, "supercontestTypeRollEquivalent": true},
+      "projections": {"public": "next-round-stage", "owner": "correct-first-decision", "gm": "durable-history"}
+    },
+    {
+      "id": "forged-option-id",
+      "command": "declare-appeal",
+      "fault": "move, intervention, or contestant ID was not in the server offer",
+      "expected": {"code": "contest.option-not-offered", "documentChanged": false, "diceJournalRowsAdded": 0},
+      "projections": {"public": "unchanged", "owner": "safe-invalid-option", "gm": "bounded-security-diagnostic"}
+    },
+    {
+      "id": "spectator-mutation",
+      "command": "declare-appeal",
+      "fault": "authenticated non-controller submits another contestant's decision",
+      "expected": {"code": "contest.controller-required", "documentChanged": false, "privateDataReturned": false},
+      "projections": {"public": "unchanged", "owner": "none", "gm": "optional-security-diagnostic"}
+    }
+  ]
+}

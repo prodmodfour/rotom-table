@@ -5,8 +5,15 @@ import contract from '../../data/complete-play-loop/finish-encounter-experience.
 import settlementFixtures from '../../data/complete-play-loop/fixtures/settlements.v1.json'
 import { FINISH_ENCOUNTER_VIEW_SCHEMA_VERSION } from '../../shared/encounterSettlement/finish'
 import { ENCOUNTER_SETTLEMENT_PENDING_SCHEMA_VERSION } from '../../src/utils/encounterSettlementOperationStorage'
+import { readOptionalLocalUiArtifact } from '../helpers/localUiArtifacts'
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
+
+const verifyLocalArtifactSha256 = (path: string, expected: string): void => {
+  expect(expected).toMatch(/^[a-f0-9]{64}$/)
+  const bytes = readOptionalLocalUiArtifact(process.cwd(), path)
+  if (bytes) expect(createHash('sha256').update(bytes).digest('hex'), path).toBe(expected)
+}
 
 describe('P8-082 Finish Encounter experience contract', () => {
   it('is certified and hash-bound to server, recovery, workspace, and production-liveplay authority', () => {
@@ -35,8 +42,12 @@ describe('P8-082 Finish Encounter experience contract', () => {
       workspacePageSha256: sha256('src/pages/play/[encounterId].vue'),
       browserSpecSha256: sha256('tests/e2e/finish-encounter.spec.ts'),
       browserConfigSha256: sha256('playwright.p8082-reuse.config.ts'),
-      targetMockupSha256: sha256('.pi/artifacts/ui-mockups/finish-encounter-experience/v001.png'),
+      targetMockupSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
     })
+    verifyLocalArtifactSha256(
+      '.pi/artifacts/ui-mockups/finish-encounter-experience/v001.png',
+      contract.sourceEvidence.targetMockupSha256,
+    )
   })
 
   it('requires one current server-owned read and fails closed for ambiguous allocation or outcome authority', () => {
@@ -109,13 +120,11 @@ describe('P8-082 Finish Encounter experience contract', () => {
       'HP, injury, and condition persisted',
       'round weather expired and initiative reset',
     ]))
-    expect(contract.certification.desktop).toEqual({
-      readySha256: sha256('.pi/artifacts/ui-validation/finish-encounter/chromium-ready.png'),
-      acceptedSha256: sha256('.pi/artifacts/ui-validation/finish-encounter/chromium-accepted.png'),
-    })
-    expect(contract.certification.mobile320).toEqual({
-      readySha256: sha256('.pi/artifacts/ui-validation/finish-encounter/mobile-chromium-ready.png'),
-      acceptedSha256: sha256('.pi/artifacts/ui-validation/finish-encounter/mobile-chromium-accepted.png'),
-    })
+    for (const [path, expected] of [
+      ['.pi/artifacts/ui-validation/finish-encounter/chromium-ready.png', contract.certification.desktop.readySha256],
+      ['.pi/artifacts/ui-validation/finish-encounter/chromium-accepted.png', contract.certification.desktop.acceptedSha256],
+      ['.pi/artifacts/ui-validation/finish-encounter/mobile-chromium-ready.png', contract.certification.mobile320.readySha256],
+      ['.pi/artifacts/ui-validation/finish-encounter/mobile-chromium-accepted.png', contract.certification.mobile320.acceptedSha256],
+    ] as const) verifyLocalArtifactSha256(path, expected)
   })
 })

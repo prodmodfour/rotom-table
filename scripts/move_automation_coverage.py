@@ -21,8 +21,11 @@ SCENARIO_REQUIREMENTS_PATH = ROOT / "data" / "move-automation" / "scenario-requi
 LEGACY_FINGERPRINT_PATH = ROOT / "data" / "move-automation" / "legacy-v1-fingerprints.json"
 SCENARIO_ROOT = ROOT / "tests" / "fixtures" / "moveAutomation"
 COMPLETE_PLAY_LOOP_REMEDIATION_PATH = ROOT / "data" / "complete-play-loop" / "canonical-data-remediation.v1.json"
+POKEMON_CONTEST_REVIEW_PATH = ROOT / "scripts" / "reviewed-data" / "pokemon-contests.v1.json"
 MOVE_CATALOG_SUCCESSOR_MIGRATION_ID = "move-data-facade-identity-normalization-v1"
 MOVE_CATALOG_SUCCESSOR_SHA256 = "418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e"
+CONTEST_CATALOG_SUCCESSOR_MIGRATION_ID = "pokemon-contests:v1"
+CONTEST_CATALOG_SUCCESSOR_SHA256 = "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821"
 
 
 def load_registry_source(source_dir: Path = MOVE_AUTOMATION_SOURCE_DIR) -> str:
@@ -774,15 +777,33 @@ def _parse_ruleset_and_catalog(
         review = next((entry for entry in reviewed_migrations if (
             isinstance(entry, dict) and entry.get("migrationId") == MOVE_CATALOG_SUCCESSOR_MIGRATION_ID
         )), None) if isinstance(reviewed_migrations, list) else None
-        if not (
+        facade_successor_is_reviewed = (
             expected_hash == "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
-            and actual_hash == MOVE_CATALOG_SUCCESSOR_SHA256
             and isinstance(review, dict)
             and review.get("beforeFileSha256") == expected_hash
-            and review.get("afterFileSha256") == actual_hash
-            and review.get("afterBytes") == len(source_bytes)
+            and review.get("afterFileSha256") == MOVE_CATALOG_SUCCESSOR_SHA256
             and review.get("reviewStatus") == "accepted"
-        ):
+        )
+        contest_review = _record(
+            _load_json(POKEMON_CONTEST_REVIEW_PATH, "pokemonContestReview"),
+            "pokemonContestReview",
+        )
+        contest_target = next((entry for entry in contest_review.get("targets", []) if (
+            isinstance(entry, dict) and entry.get("path") == "data/reference/moves.json"
+        )), None)
+        contest_successor_is_reviewed = (
+            contest_review.get("migrationId") == CONTEST_CATALOG_SUCCESSOR_MIGRATION_ID
+            and contest_review.get("status") == "reviewed"
+            and isinstance(contest_target, dict)
+            and contest_target.get("baseSha256") == MOVE_CATALOG_SUCCESSOR_SHA256
+            and contest_target.get("afterSha256") == actual_hash
+            and contest_target.get("afterBytes") == len(source_bytes)
+        )
+        accepted_successor = facade_successor_is_reviewed and (
+            (actual_hash == MOVE_CATALOG_SUCCESSOR_SHA256 and review.get("afterBytes") == len(source_bytes))
+            or (actual_hash == CONTEST_CATALOG_SUCCESSOR_SHA256 and contest_successor_is_reviewed)
+        )
+        if not accepted_successor:
             _fail(
                 "source-hash-mismatch",
                 "catalog",
@@ -946,8 +967,9 @@ def _parse_ruleset_and_catalog(
             f"expected {expected_count} canonical moves, received {len(canonical_moves)}.",
         )
     canonical_moves.sort(key=lambda move: move["name"])
-    # Manifest provenance remains bound to the reviewed baseline. The exact
-    # accepted successor is validated above and changes only Facade typography.
+    # Manifest provenance remains bound to the reviewed baseline. Exact
+    # reviewed successors above normalize Facade and add Contest-only identity
+    # evidence without changing Move automation semantics.
     return ruleset, canonical_moves, expected_hash
 
 

@@ -20,9 +20,9 @@ describe('P8-093 canonical item catalog closure certification', () => {
       runtimeProseParsing: false,
       storageSchemaVersion: LATEST_STORAGE_SCHEMA_VERSION,
       catalog: {
-        canonicalItemCount: 348,
-        cohortCount: 18,
-        implementationStateCounts: { native: 204, guided: 40, passive: 104, blocked: 0 },
+        canonicalItemCount: 349,
+        cohortCount: 19,
+        implementationStateCounts: { native: 205, guided: 40, passive: 104, blocked: 0 },
         remainingBlockedRows: 0,
       },
       formerBlockedSet: {
@@ -32,10 +32,10 @@ describe('P8-093 canonical item catalog closure certification', () => {
         closedRows: 60,
       },
     })
-    expect(cohorts.implementationStateCounts).toEqual({ native: 204, guided: 40, passive: 104 })
+    expect(cohorts.implementationStateCounts).toEqual({ native: 205, guided: 40, passive: 104 })
     expect(cohorts.cohorts.some(cohort => cohort.implementationState === 'blocked')).toBe(false)
     expect(cohorts.cohorts.some(cohort => cohort.implementationState === 'reference-only')).toBe(false)
-    expect(cohorts.itemCount).toBe(348)
+    expect(cohorts.itemCount).toBe(349)
   })
 
   it('certifies exact guided disposition, structured capture, and reviewed Black Sludge repair', () => {

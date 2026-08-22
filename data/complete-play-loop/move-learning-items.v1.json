@@ -2,15 +2,15 @@
   "schemaVersion": 1,
   "ticket": "P8-054",
   "status": "reviewed-native",
-  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "catalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
   "canonicalAuthority": {
     "items": {
       "path": "data/reference/items.json",
-      "fileSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+      "fileSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
     },
     "rules": {
       "path": "data/reference/rules.json",
-      "fileSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142",
+      "fileSha256": "f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df",
       "machineRuleRecordSha256": "4660d7ac403b12cd107c68fee363bb89568664b507d7366c58263e3e7ceeee61",
       "tmTutorLimitRecordSha256": "990c4866c6fa173e29d1e97505106d67ef705958a1f534a7e09916e37052ce5d",
       "tutorPointsRecordSha256": "2c0b815490b1f5953d82f3cfb8c11a7d2cf65e82f8f525206fcb993967fc0277",
@@ -20,7 +20,8 @@
         "rule-data-item-form-change-mechanics-v1",
         "rule-data-exploration-item-mechanics-v1",
         "rule-data-pokemon-advancement-choices-v1",
-        "rule-data-trainer-advancement-choices-v1"
+        "rule-data-trainer-advancement-choices-v1",
+        "rule-data-character-creation-mechanics-v1"
       ]
     },
     "moves": {

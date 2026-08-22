@@ -126,11 +126,11 @@
     },
     "campaignPage": {
       "path": "src/pages/campaign.vue",
-      "sha256": "e7f6c31e79db339e20e5fb5e77a62635241de9f0fa6c593f5877555c6cf0d4d7"
+      "sha256": "36d8d45d0df425b4d78f93fc57a20509edef77dba00c0987f45ee118fc8e8bef"
     },
     "navigationPolicy": {
       "path": "src/utils/appNavigation.ts",
-      "sha256": "9abf580a571df6f4416dea63bc1680c52892c9cd520f8473ea5a11b9fdfeacf1"
+      "sha256": "b449f4228c0ec55f7ecc1f37e405066f2c6c431cbfe71e71adb3d3fde863ac57"
     },
     "roleRoutePolicy": {
       "path": "src/utils/appRoutes.ts",
@@ -146,7 +146,7 @@
     },
     "authorityProjectionTests": {
       "path": "tests/server/campaignContinuation.test.ts",
-      "sha256": "c4effab179cf304046ba00416a1c08c5b2d3e583c49fd8f77b8e343c99d65c4d"
+      "sha256": "7a742b1ee24b24a0863af757c48f1b0a73bdd7d51d78a376b3c5f4d8508ed612"
     },
     "componentTests": {
       "path": "tests/components/campaignContinuationDashboard.test.ts",
@@ -174,15 +174,15 @@
     },
     "desktopEvidence": {
       "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/chromium-open.png",
-      "sha256": "05b2a8470592e5b9ed30703f93ae4480734779865a0430b47a280634f0a0f39c"
+      "sha256": "fe2ddeba60a0c179292103b6ffca91b8b9c5cb2a0cb6ae6ca05b30314f76b7e5"
     },
     "mobileEvidence": {
       "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/mobile-chromium-open.png",
-      "sha256": "18847fc46d6b4d2b2cf9401dc8ce84ef2acd608c8f1636b526251f5292c0d96a"
+      "sha256": "a578a194e8e850a750702d53e727acb54aec9afac00657d3237ddad404b8dcdf"
     },
     "mobile320Evidence": {
       "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/mobile-chromium-320-resolved.png",
-      "sha256": "8737293fc853e7fb63de7ef5f552e70935b129fb7019cbf76171c1ded6608633"
+      "sha256": "8e4575a75b3b9215b3434aa8f8228e2626e86c126daa1102bda3ad824c1b381a"
     },
     "visualReview": {
       "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/review.md",

@@ -8,6 +8,7 @@ import {
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
 import { parsePlayerProfileId, type PlayerProfileId } from './playerProfiles'
 import type { RealtimeEvent } from './realtime'
+import { parseContestId } from './contests/ids'
 import {
   parseBreedingRealtimeEventAccess,
   type BreedingRealtimeEventAccess,
@@ -44,6 +45,12 @@ export type RealtimeEventAccess =
   | {
       readonly kind: 'player-profile-access'
       readonly profileId: PlayerProfileId
+    }
+  | {
+      readonly kind: 'contest-access'
+      readonly contestId: string
+      readonly audience: 'public' | 'gm' | 'owner'
+      readonly profileId: PlayerProfileId | null
     }
   | BreedingRealtimeEventAccess
 
@@ -473,11 +480,23 @@ export const parseRealtimeEventAccess = (value: unknown, label = 'access'): Real
     }
   }
 
+  if (access.kind === 'contest-access') {
+    assertOnlyKeys(access, ['kind', 'contestId', 'audience', 'profileId'], label)
+    if (access.audience !== 'public' && access.audience !== 'gm' && access.audience !== 'owner') {
+      throw new Error(`${label}.audience must be public, gm, or owner`)
+    }
+    const profileId = access.profileId === null ? null : parsePlayerProfileId(access.profileId, `${label}.profileId`)
+    if ((access.audience === 'owner') !== (profileId !== null)) {
+      throw new Error(`${label}.profileId must be present exactly for owner Contest access`)
+    }
+    return { kind: 'contest-access', contestId: parseContestId(access.contestId, `${label}.contestId`), audience: access.audience, profileId }
+  }
+
   if (access.kind === 'breeding-access') {
     return parseBreedingRealtimeEventAccess(access, label)
   }
 
-  throw new Error(`${label}.kind must be gm-only, map-access, sheet-access, group-inventory-access, shop-access, pending-move-response-access, player-profile-access, or breeding-access`)
+  throw new Error(`${label}.kind must be gm-only, map-access, sheet-access, group-inventory-access, shop-access, pending-move-response-access, player-profile-access, contest-access, or breeding-access`)
 }
 
 export const parseRealtimeEventDraft = <TData = unknown>(value: unknown): RealtimeEventDraft<TData> => {

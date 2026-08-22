@@ -80,7 +80,7 @@
   "sourceEvidence": [
     {
       "path": "docs/complete-play-loop-alpha-guide.md",
-      "sha256": "7d47e6490ce2fc03b479c92a292e3c2c6db9f4bb0b2466937776fefa61bda2c2"
+      "sha256": "9ea569f113b90c49fbdb38a823bbca0497fa03048f5a5a7ac2c1038a5d2fd51d"
     },
     {
       "path": "docs/complete-play-loop-player-guide.md",
@@ -100,7 +100,7 @@
     },
     {
       "path": "docs/canonical-item-catalog-cohorts.md",
-      "sha256": "e9dbaae9f1041b5da2e030010cdd0237f29bdd3255252493962c087793cdf394"
+      "sha256": "f11f9149622dd99eec6d9526f43901ab808464c927314d1df30789eb0ab067b5"
     },
     {
       "path": "docs/unified-inventory-actions.md",
@@ -152,15 +152,15 @@
     },
     {
       "path": "tests/data/completePlayLoopDocumentationClosure.test.ts",
-      "sha256": "54e103014b6e56a5ea66f265118039dbac8375bfbaf71a51715c5a6ffee55c94"
+      "sha256": "b9476d0bb9c138336ca07c5fe72144e8baf3be8502306538117cf9a107053d20"
     },
     {
       "path": "package.json",
-      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+      "sha256": "efbd8d525679b92f236473e7ff25cf58ffab662b8f0c7fca316aee2fb76f7ec4"
     },
     {
       "path": "scripts/quality-gate.sh",
-      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+      "sha256": "6385abe72e4b0e62311a9d4446021f1aefdf653246499cce5eaf3f7260e534ee"
     }
   ]
 }

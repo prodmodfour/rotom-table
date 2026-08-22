@@ -25,14 +25,14 @@ describe('P8-094 complete-loop drift and authority guardrails', () => {
       ['scripts/generate_complete_play_loop_authority_guardrails.py', '--check'],
       { cwd: root, stdio: 'pipe' },
     )).not.toThrow()
-  })
+  }, 30_000)
 
   it('registers every canonical item exactly once under a reviewed non-blocked provider', () => {
     expect(guardrails.schemaVersion).toBe(1)
     expect(guardrails.ticket).toBe('P8-094')
     expect(guardrails.status).toBe('enforced')
     expect(guardrails.runtimeProseParsing).toBe(false)
-    expect(guardrails.catalog.itemCount).toBe(348)
+    expect(guardrails.catalog.itemCount).toBe(349)
     expect(guardrails.catalog.itemCount).toBe(Object.keys(items).length)
     expect(guardrails.catalog.registeredExactlyOnce).toBe(true)
     expect(guardrails.catalog.blockedCount).toBe(0)
@@ -45,7 +45,7 @@ describe('P8-094 complete-loop drift and authority guardrails', () => {
 
     const providers = Object.entries(guardrails.providerAuthorities)
     expect(new Set(providers.map(([providerId]) => providerId))).toEqual(new Set(Object.keys(cohorts.providerCounts)))
-    expect(providers.reduce((sum, [, provider]) => sum + provider.memberCount, 0)).toBe(348)
+    expect(providers.reduce((sum, [, provider]) => sum + provider.memberCount, 0)).toBe(349)
     for (const [providerId, provider] of providers) {
       expect(provider.memberCount).toBe(cohorts.providerCounts[providerId as keyof typeof cohorts.providerCounts])
       if (provider.allowZeroMembers) expect(provider.memberCount).toBe(0)

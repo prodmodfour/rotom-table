@@ -49,6 +49,8 @@ const mapLabel = (map: { name: string, folder: string }): string => map.folder ?
         <NuxtLink to="/play">Cancel to Encounter Library</NuxtLink>
       </header>
 
+      <OnboardingPartyCandidatesCard />
+
       <section class="encounter-builder__section" aria-labelledby="builder-recipe-heading">
         <header><span>1</span><div><h2 id="builder-recipe-heading">Choose a recipe</h2><p>Recipes set useful defaults; they never invent mechanics.</p></div></header>
         <div class="encounter-builder__recipes">

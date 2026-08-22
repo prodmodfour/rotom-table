@@ -3,12 +3,13 @@ import type { PokemonEggDocumentV1 } from '../../shared/breeding/egg'
 import type { CampaignAttentionProjectionV1 } from '../../shared/campaignAttention/projection'
 import type { EncounterSettlementDocument } from '../../shared/encounterSettlement/document'
 import type { EncounterWorkspaceSummary } from '../../shared/encounterWorkspace/library'
-import type { PlayerProfile } from '../../shared/playerProfiles'
+import { normalizePlayerProfile, type PlayerProfile } from '../../shared/playerProfiles'
 import { openRotomDatabase } from '../../server/storage/database'
 import {
   loadCampaignContinuationUseCase,
   projectCampaignContinuation,
 } from '../../server/useCases/loadCampaignContinuation'
+import { readCampaignAttentionAuthority } from '../../server/useCases/loadCampaignAttention'
 
 const attention = (scope: 'gm' | 'owner'): CampaignAttentionProjectionV1 => ({
   schemaVersion: 1,
@@ -54,9 +55,12 @@ const egg = (eggId: string, ownerTrainerSlug: string, status: 'incubating' | 're
   status,
 } as unknown as PokemonEggDocumentV1)
 
-const profile = {
+const profile: PlayerProfile = normalizePlayerProfile({
+  schemaVersion: 1,
+  id: 'profile_test0000',
+  displayName: 'Test Player',
   linkedCharacters: [{ sheetKind: 'trainer', sheetSlug: 'trainer-alpha' }],
-} as unknown as PlayerProfile
+})
 
 describe('campaign continuation projection', () => {
   it('projects the current encounter, freshest unfinished settlement, and GM-wide Egg summary', () => {
@@ -96,8 +100,13 @@ describe('campaign continuation projection', () => {
   it('loads one production-shaped SQLite continuation and preserves detector-owned setup work', () => {
     const database = openRotomDatabase({ path: ':memory:', enableWal: false })
     try {
+      const authority = readCampaignAttentionAuthority({
+        database,
+        listProfiles: () => [profile],
+      })
       const projected = loadCampaignContinuationUseCase({ role: 'gm' }, {
         database,
+        loadAuthority: () => authority,
         listWorkspaces: () => [],
       })
       expect(projected).toMatchObject({

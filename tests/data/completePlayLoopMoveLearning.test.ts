@@ -9,6 +9,7 @@ import rulesJson from '../../data/reference/rules.json'
 import contractJson from '../../data/complete-play-loop/move-learning-items.v1.json'
 import remediationJson from '../../data/complete-play-loop/canonical-data-remediation.v1.json'
 import { stableJsonStringify } from '#shared/automation/stableJson'
+import { projectLegacyMoveMechanicalAuthority } from '#shared/ruleset/moveMechanicalAuthority'
 import { ITEM_AUTOMATION_RUNTIME_REGISTRY } from '../../server/domain/itemAutomation/registry'
 
 const sha256 = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex')
@@ -80,7 +81,7 @@ describe('P8-054 machine Move-learning contract', () => {
       expect(sha256(stableJsonStringify(item))).toBe(row.canonicalRecordSha256)
       expect(sha256(item.effects.join('\n'))).toBe(row.canonicalEffectSha256)
       expect(move?.name).toBe(row.moveId)
-      expect(sha256(stableJsonStringify(move))).toBe(row.moveRecordSha256)
+      expect(sha256(stableJsonStringify(projectLegacyMoveMechanicalAuthority(move!)))).toBe(row.moveRecordSha256)
       const compatibleSpecies = pokedexJson.filter(species => species.tm_hm_moves?.some(entry => (
         entry.kind === row.machineKind && entry.number === row.machineNumber && entry.name === row.moveId
       ))).map(species => species.species).sort()

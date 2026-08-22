@@ -19,6 +19,7 @@ import type { EquipmentContributionProjectionV1 } from '#shared/itemAutomation/e
 import type { ItemMedicalTreatmentProjectionV1, ItemMedicalTreatmentStateV1 } from '#shared/itemAutomation/medicalTreatments'
 import type { ItemMachineUsageStateV1 } from '#shared/itemAutomation/moveLearning'
 import type { ItemGuidedCampaignToolStateV1 } from '#shared/itemAutomation/guidedAdjudication'
+import type { TrainerContestResultRecordV1 } from '#shared/contests/ribbons'
 import type {
   ItemExplorationProjectionV1,
   ItemExplorationStateV1,
@@ -273,6 +274,8 @@ export interface InventoryEntry {
   serializedEquipment?: SerializedEquipmentInventoryStateV1
   /** Server-authored structured identity for canonical rows whose reviewed variant cannot be inferred from name or prose. */
   itemVariant?: ItemShardInventoryVariantV1
+  /** Reviewed Contest-stat identity for a crafted Poffin stack; generic purchased Poffins omit it and choose on consumption. */
+  contestPoffinStatId?: 'beauty' | 'cool' | 'cute' | 'smart' | 'tough'
 }
 
 export interface TrainerInventory {
@@ -339,6 +342,8 @@ export interface TrainerSheet {
   /** Injuries restored during the current campaign day; capped by PTU's daily Injury-healing limit. */
   injuriesHealedToday?: number
   money?: number
+  /** Durable Contest placement and ribbon provenance for campaign history. */
+  contestResults?: TrainerContestResultRecordV1[]
 
   /** Optional URL of a portrait image to drop into the silhouette frame. */
   portraitUrl?: string

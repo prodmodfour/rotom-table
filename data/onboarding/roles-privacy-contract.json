@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "contractId": "onboarding-roles-privacy-v1",
+  "date": "2026-08-16",
+  "roles": ["gm", "owner-player", "other-player", "public-observer", "diagnostic-operator"],
+  "resources": [
+    {
+      "id": "policy-active",
+      "title": "Active campaign onboarding policy",
+      "access": {
+        "gm": "read-write (publish new versions)",
+        "owner-player": "read (bound version summary and option catalogs)",
+        "other-player": "read (same table-public summary)",
+        "public-observer": "none",
+        "diagnostic-operator": "read"
+      },
+      "projectionRule": "Policy content is table-public to authenticated roles; internal review notes and unpublished drafts of a policy version are GM-only."
+    },
+    {
+      "id": "onboarding-slot-list",
+      "title": "Onboarding slots and queue",
+      "access": {
+        "gm": "read-write (open, cancel, restart, supersede)",
+        "owner-player": "read own slot state only",
+        "other-player": "aggregate presence only (a slot exists / completed) without draft detail",
+        "public-observer": "none",
+        "diagnostic-operator": "read (IDs and states, no draft payloads)"
+      },
+      "projectionRule": "Queue rows shown to non-GMs never include another profile's draft content, validation, or comments."
+    },
+    {
+      "id": "draft-content",
+      "title": "Draft build choices and validation",
+      "access": {
+        "gm": "read (full projection incl. diagnostics); write only through bounded corrections",
+        "owner-player": "read-write while draft or changes-requested; read-only otherwise",
+        "other-player": "none",
+        "public-observer": "none",
+        "diagnostic-operator": "structure and state codes only, no choice values"
+      },
+      "projectionRule": "Owner and GM receive structurally different projections built server-side; other roles receive nothing, not a redacted copy."
+    },
+    {
+      "id": "review-comments",
+      "title": "Review comments and change requests",
+      "access": {
+        "gm": "read-write",
+        "owner-player": "read player-directed entries; write responses",
+        "other-player": "none",
+        "public-observer": "none",
+        "diagnostic-operator": "counts and codes only"
+      },
+      "projectionRule": "GM-only notes live in a separate lane that is never serialized into owner or observer projections."
+    },
+    {
+      "id": "corrections",
+      "title": "GM corrections and acknowledgements",
+      "access": {
+        "gm": "read-write",
+        "owner-player": "read all corrections applied to own draft; write acknowledgements",
+        "other-player": "none",
+        "public-observer": "none",
+        "diagnostic-operator": "operation IDs and states only"
+      },
+      "projectionRule": "Corrections are receipt-backed operations; the owner always sees before/after values and rationale for their own draft."
+    },
+    {
+      "id": "submission-snapshots",
+      "title": "Immutable submission snapshots",
+      "access": {
+        "gm": "read",
+        "owner-player": "read own",
+        "other-player": "none",
+        "public-observer": "none",
+        "diagnostic-operator": "existence, revision, and fingerprint metadata only"
+      },
+      "projectionRule": "Snapshots are immutable server documents; clients never reconstruct them from local state."
+    },
+    {
+      "id": "completion-state",
+      "title": "Completion and ready-for-play state",
+      "access": {
+        "gm": "read",
+        "owner-player": "read own completion package",
+        "other-player": "campaign-level aggregate (player X is ready) without build detail",
+        "public-observer": "none",
+        "diagnostic-operator": "read"
+      },
+      "projectionRule": "Created sheets then follow ordinary sheet visibility authority; the completion record itself exposes no private draft history."
+    },
+    {
+      "id": "onboarding-metrics",
+      "title": "Aggregate UX metrics",
+      "access": {
+        "gm": "read aggregates",
+        "owner-player": "none",
+        "other-player": "none",
+        "public-observer": "none",
+        "diagnostic-operator": "read aggregates"
+      },
+      "projectionRule": "Aggregate-only: no campaign identities, character names, private choices, comments, or draft payloads are ever retained (P9-008)."
+    }
+  ],
+  "trustBoundaries": [
+    "No public signup, email invitation, password issuance, OAuth, or reusable secret links; identity remains the shared table password plus role cookie plus GM-created player profiles.",
+    "The selected player profile is the player identity; profile selection is client-remembered but every server decision re-validates profile-to-draft binding server-side.",
+    "Draft ownership binds to exactly one player profile at slot creation; only the GM can rebind it, and rebinding is a recorded operation.",
+    "Privacy is structural: role projections are computed server-side per request/event; clients never receive data they must hide.",
+    "Diagnostic access never includes choice values, comments, or identity beyond stable IDs and state codes.",
+    "Hard rule violations cannot be downgraded by any role; GM overrides operate only inside explicitly bounded policy or correction lanes."
+  ]
+}

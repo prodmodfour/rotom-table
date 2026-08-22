@@ -78,6 +78,8 @@ const {
             <th>Range</th>
             <th>Effect</th>
             <th>Special</th>
+            <th>Contest type</th>
+            <th>Contest effect</th>
             <th aria-label="Row actions"></th>
           </tr>
         </thead>
@@ -154,6 +156,15 @@ const {
               <span v-if="row.reference?.special">{{ row.reference.special }}</span>
               <span v-else class="badge-empty">—</span>
             </td>
+            <td>
+              <span v-if="row.reference?.contest?.status === 'defined'" class="badge">{{ row.reference.contest.typeLabel }}</span>
+              <span v-else class="badge-empty" :title="row.reference?.contest?.status === 'unavailable' ? row.reference.contest.safeReason : undefined">—</span>
+            </td>
+            <td class="move-effect">
+              <span v-if="row.reference?.contest?.status === 'defined'">{{ row.reference.contest.effectLabel }}</span>
+              <span v-else-if="row.reference?.contest?.status === 'unavailable'" class="badge-empty">Unavailable</span>
+              <span v-else class="badge-empty">—</span>
+            </td>
             <td class="row-actions">
               <button
                 v-if="!row.automatic && row.move.itemMoveLearningLocked !== true"
@@ -172,7 +183,7 @@ const {
             </td>
           </tr>
           <tr v-if="!moveRows.length">
-            <td colspan="12" class="empty-cell">No moves yet — click "Add row" to start.</td>
+            <td colspan="14" class="empty-cell">No moves yet — click "Add row" to start.</td>
           </tr>
         </tbody>
       </table>

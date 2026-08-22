@@ -2073,5 +2073,52 @@
       "unsupportedPrerequisitePolicy": "guided-current-canonical-candidates-only",
       "automaticSelectionPolicy": "never"
     }
+  },
+  "Character Creation": {
+    "name": "Character Creation",
+    "category": "Advancement Rule",
+    "text": "Step 2: Create Skill Background. Rank three different Skills down to Pathetic Rank. Rank up one Skill to Adept Rank and one other Skill to Novice Rank. Pathetic Skills cannot be raised above Pathetic during character creation. Step 9: Money and Items — we recommend all starting Trainers begin with a Pokédex and $5000. Loyalty: most caught wild Pokémon begin at Loyalty Rank 2. Runtime uses only characterCreationMechanics.",
+    "aliases": [
+      "Skill Background",
+      "Starting Money",
+      "Starting Loyalty",
+      "Creation Steps"
+    ],
+    "source": "books/markdown/core/02-character-creation.md; books/markdown/core/05-pokemon.md",
+    "characterCreationMechanics": {
+      "schemaVersion": 1,
+      "sourceHashes": [
+        {
+          "source": "books/markdown/core/02-character-creation.md",
+          "sha256_16": "ca4e9f631b18f1a6"
+        },
+        {
+          "source": "books/markdown/core/05-pokemon.md",
+          "sha256_16": "4fa04ea5d56b04a9"
+        }
+      ],
+      "background": {
+        "adeptPicks": 1,
+        "novicePicks": 1,
+        "patheticPicks": 3,
+        "distinctSkillsRequired": true,
+        "patheticFloorLockedDuringCreation": true,
+        "resolvesDataDefect": "DATA-ONB-001"
+      },
+      "startingMoney": {
+        "recommendedDefault": 5000,
+        "policyOverridable": true,
+        "standardKitNotes": "The core recommendation includes a Pokédex; no canonical items.json identity exists for it, so it remains narrative equipment unless a campaign package grants concrete items.",
+        "resolvesDataDefect": "DATA-ONB-002"
+      },
+      "startingLoyalty": {
+        "defaultValue": 2,
+        "minimum": 0,
+        "maximum": 6,
+        "policyOverridable": true,
+        "adjudicationNote": "The core Loyalty chapter states most caught wild Pokémon begin at Loyalty 2; starters use the same reviewed baseline unless campaign policy sets another bounded value.",
+        "resolvesDataDefect": "DATA-ONB-004"
+      }
+    }
   }
 }

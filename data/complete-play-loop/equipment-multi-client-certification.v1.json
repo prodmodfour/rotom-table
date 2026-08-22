@@ -4,11 +4,11 @@
   "status": "certified",
   "certificationTest": "tests/integration/equipmentMultiClientLifecycle.test.ts",
   "runtimeEvidence": {
-    "equipmentDefinitionsSha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a",
-    "equipmentContributionsSha256": "dcf20f7e7992aee9ebb62c20f0b808dc3b6e4d881290128cfc23529d42079fcf",
-    "equipmentGrantsSha256": "466a621c6901a4c0d6c544deae103e82062c75c8fe32d3c84442c1e0c87836bc",
-    "equipmentEventProvidersSha256": "8edfef9137c5ee6c0df2c612715fd99d738eed7f0f394e8aeb08c4b3c69b00ee",
-    "equipmentLifecycleSha256": "fa4011cef49732b025ba9cf94990e55ff4e4ad7f753377927ce2aa20ddb509be"
+    "equipmentDefinitionsSha256": "fb5d8c6cafba3c969da7b20e0c09e9d6b32d4baa6993c4005a40b4f6249316b7",
+    "equipmentContributionsSha256": "1030671c7e4507bfab355babbd4bd0b540710bd4c8fea3558abb60e7363f2ce5",
+    "equipmentGrantsSha256": "9e1baaa1a2dd721bf97b9c2d413e0f61590dffdeba52f3fcedf5684b68e7e515",
+    "equipmentEventProvidersSha256": "65ba0f016fd6ab5985dc9d8514a808e51d2d6d0839aab075c0fbb4703d1452b6",
+    "equipmentLifecycleSha256": "eb93d99bef64387de37b23e301a491cf75b9dd11bed38dce2326a86da88a8a4c"
   },
   "clients": [
     {

@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "data/reference/items.json"
 SOURCE = ROOT / "scripts/reviewed-data/capture-pokeballs.v1.json"
 OUTPUT = ROOT / "data/complete-play-loop/capture-pokeballs.v1.json"
-SOURCE_SHA256 = "9f0eaaabd87bd66d5cd7ec17091a862f39f0c20a91225c0dd449aa558575840b"
+SOURCE_SHA256 = "fe3e02c4f752428dafe24a9b1213657a41967ae914544578cca86e0c1a0139ed"
 
 
 def stable(value: Any) -> str:

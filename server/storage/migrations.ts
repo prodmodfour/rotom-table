@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 44
+export const LATEST_STORAGE_SCHEMA_VERSION = 46
 
 export interface StorageMigration {
   readonly version: number
@@ -1722,7 +1722,205 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     name: 'admit bounded guided campaign-tool adjudication requests',
     up: addCampaignToolGuidedRequestKind,
   },
+  {
+    version: 45,
+    name: 'store guided onboarding policies, slots, drafts, submissions, reviews, operations, and completions',
+    up: createGuidedOnboardingTables,
+  },
+  {
+    version: 46,
+    name: 'store authoritative Pokemon Contest documents operations metrics and structured preparation state',
+    up: createPokemonContestTables,
+  },
 ]
+
+function createPokemonContestTables(connection: DatabaseSync): void {
+  connection.exec(`
+    CREATE TABLE contests (
+      contest_id TEXT PRIMARY KEY CHECK (length(contest_id) BETWEEN 12 AND 96),
+      document_json TEXT NOT NULL CHECK (
+        json_valid(document_json) AND length(CAST(document_json AS BLOB)) <= 8388608
+      ),
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      stage TEXT NOT NULL CHECK (stage IN (
+        'setup', 'introduction', 'performance', 'settling', 'completed', 'cancelled'
+      )),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+    );
+    CREATE INDEX contests_stage_updated_idx ON contests (stage, updated_at DESC, contest_id);
+
+    CREATE TABLE contest_operations (
+      operation_id TEXT PRIMARY KEY CHECK (length(operation_id) BETWEEN 20 AND 120),
+      contest_id TEXT NOT NULL,
+      command_hash TEXT NOT NULL CHECK (length(command_hash) = 64),
+      command_kind TEXT NOT NULL CHECK (length(command_kind) BETWEEN 3 AND 80),
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 1048576
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 8388608
+      ),
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      FOREIGN KEY (contest_id) REFERENCES contests(contest_id) DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX contest_operations_contest_revision_idx
+      ON contest_operations (contest_id, result_revision, operation_id);
+
+    CREATE TABLE contest_preparation_operations (
+      operation_id TEXT PRIMARY KEY CHECK (length(operation_id) BETWEEN 20 AND 120),
+      pokemon_sheet_slug TEXT NOT NULL,
+      trainer_sheet_slug TEXT NOT NULL,
+      command_hash TEXT NOT NULL CHECK (length(command_hash) = 64),
+      command_json TEXT NOT NULL CHECK (json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 262144),
+      result_json TEXT NOT NULL CHECK (json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 1048576),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+    CREATE INDEX contest_preparation_pokemon_idx
+      ON contest_preparation_operations (pokemon_sheet_slug, created_at, operation_id);
+
+    CREATE TABLE contest_ux_metric_aggregates (
+      metric_day INTEGER NOT NULL CHECK (metric_day >= 0),
+      metric_id TEXT NOT NULL CHECK (length(metric_id) BETWEEN 3 AND 80),
+      sample_count INTEGER NOT NULL CHECK (sample_count >= 0),
+      total_value INTEGER NOT NULL CHECK (total_value >= 0),
+      maximum_value INTEGER NOT NULL CHECK (maximum_value >= 0),
+      PRIMARY KEY (metric_day, metric_id)
+    );
+
+    UPDATE sheets
+    SET document_json = json_set(
+      document_json,
+      '$.contestStats',
+      json_object(
+        'schemaVersion', 1,
+        'legacyDescription', CASE json_type(document_json, '$.contestStats')
+          WHEN 'text' THEN json_extract(document_json, '$.contestStats')
+          ELSE ''
+        END,
+        'poffins', json('[]'),
+        'grooming', json('null'),
+        'reallocations', json('[]')
+      )
+    )
+    WHERE kind = 'pokemon'
+      AND (json_type(document_json, '$.contestStats') IS NULL
+        OR json_type(document_json, '$.contestStats') = 'text');
+  `)
+}
+
+function createGuidedOnboardingTables(connection: DatabaseSync): void {
+  connection.exec(`
+    CREATE TABLE onboarding_policies (
+      policy_id TEXT NOT NULL CHECK (length(policy_id) BETWEEN 8 AND 80),
+      version INTEGER NOT NULL CHECK (version >= 1),
+      content_json TEXT NOT NULL CHECK (
+        json_valid(content_json) AND length(CAST(content_json AS BLOB)) <= 1048576
+      ),
+      display_json TEXT NOT NULL CHECK (
+        json_valid(display_json) AND length(CAST(display_json AS BLOB)) <= 65536
+      ),
+      content_hash TEXT NOT NULL CHECK (length(content_hash) BETWEEN 16 AND 64),
+      published_at INTEGER NOT NULL CHECK (published_at >= 0),
+      is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0, 1)),
+      PRIMARY KEY (policy_id, version)
+    );
+    CREATE UNIQUE INDEX onboarding_policies_single_active_uidx
+      ON onboarding_policies (is_active) WHERE is_active = 1;
+
+    CREATE TABLE onboarding_slots (
+      slot_id TEXT PRIMARY KEY CHECK (length(slot_id) BETWEEN 8 AND 80),
+      profile_id TEXT NOT NULL CHECK (length(profile_id) BETWEEN 8 AND 80),
+      policy_id TEXT NOT NULL CHECK (length(policy_id) BETWEEN 8 AND 80),
+      policy_version INTEGER NOT NULL CHECK (policy_version >= 1),
+      status TEXT NOT NULL CHECK (status IN ('open', 'completed', 'cancelled', 'superseded')),
+      active_draft_id TEXT CHECK (active_draft_id IS NULL OR length(active_draft_id) BETWEEN 8 AND 80),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+    );
+    CREATE INDEX onboarding_slots_profile_idx ON onboarding_slots (profile_id, status, slot_id);
+    CREATE UNIQUE INDEX onboarding_slots_open_profile_uidx
+      ON onboarding_slots (profile_id) WHERE status = 'open';
+
+    CREATE TABLE onboarding_drafts (
+      draft_id TEXT PRIMARY KEY CHECK (length(draft_id) BETWEEN 8 AND 80),
+      slot_id TEXT NOT NULL,
+      state TEXT NOT NULL CHECK (state IN (
+        'draft', 'submitted', 'changes-requested', 'approved', 'committing',
+        'completed', 'cancelled', 'superseded'
+      )),
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      document_json TEXT NOT NULL CHECK (
+        json_valid(document_json) AND length(CAST(document_json AS BLOB)) <= 2097152
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+      FOREIGN KEY (slot_id) REFERENCES onboarding_slots(slot_id) DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX onboarding_drafts_slot_idx ON onboarding_drafts (slot_id, state, draft_id);
+
+    CREATE TABLE onboarding_submissions (
+      draft_id TEXT NOT NULL,
+      submission_revision INTEGER NOT NULL CHECK (submission_revision >= 1),
+      snapshot_json TEXT NOT NULL CHECK (
+        json_valid(snapshot_json) AND length(CAST(snapshot_json AS BLOB)) <= 4194304
+      ),
+      validation_json TEXT NOT NULL CHECK (
+        json_valid(validation_json) AND length(CAST(validation_json AS BLOB)) <= 1048576
+      ),
+      policy_content_hash TEXT NOT NULL CHECK (length(policy_content_hash) BETWEEN 16 AND 64),
+      catalog_fingerprint TEXT NOT NULL CHECK (length(catalog_fingerprint) BETWEEN 16 AND 64),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      PRIMARY KEY (draft_id, submission_revision),
+      FOREIGN KEY (draft_id) REFERENCES onboarding_drafts(draft_id) DEFERRABLE INITIALLY DEFERRED
+    );
+
+    CREATE TABLE onboarding_review_entries (
+      entry_id TEXT PRIMARY KEY CHECK (length(entry_id) BETWEEN 8 AND 120),
+      draft_id TEXT NOT NULL,
+      submission_revision INTEGER NOT NULL CHECK (submission_revision >= 0),
+      kind TEXT NOT NULL CHECK (kind IN (
+        'change-request', 'player-response', 'correction', 'acknowledgement', 'approval-note'
+      )),
+      audience TEXT NOT NULL CHECK (audience IN ('table', 'gm-only')),
+      payload_json TEXT NOT NULL CHECK (
+        json_valid(payload_json) AND length(CAST(payload_json AS BLOB)) <= 262144
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      FOREIGN KEY (draft_id) REFERENCES onboarding_drafts(draft_id) DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX onboarding_review_entries_draft_idx
+      ON onboarding_review_entries (draft_id, created_at, entry_id);
+
+    CREATE TABLE onboarding_ops (
+      op_id TEXT PRIMARY KEY CHECK (length(op_id) BETWEEN 8 AND 120),
+      scope TEXT NOT NULL CHECK (scope IN (
+        'create-slot', 'submit', 'request-changes', 'respond', 'correct', 'acknowledge',
+        'approve', 'commit', 'cancel', 'supersede', 'migrate-policy'
+      )),
+      payload_hash TEXT NOT NULL CHECK (length(payload_hash) BETWEEN 16 AND 64),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 1048576
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+
+    CREATE TABLE onboarding_completions (
+      completion_id TEXT PRIMARY KEY CHECK (length(completion_id) BETWEEN 8 AND 120),
+      slot_id TEXT NOT NULL UNIQUE,
+      draft_id TEXT NOT NULL,
+      submission_revision INTEGER NOT NULL CHECK (submission_revision >= 1),
+      policy_id TEXT NOT NULL CHECK (length(policy_id) BETWEEN 8 AND 80),
+      policy_version INTEGER NOT NULL CHECK (policy_version >= 1),
+      refs_json TEXT NOT NULL CHECK (
+        json_valid(refs_json) AND length(CAST(refs_json AS BLOB)) <= 1048576
+      ),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      FOREIGN KEY (slot_id) REFERENCES onboarding_slots(slot_id) DEFERRABLE INITIALLY DEFERRED
+    );
+  `)
+}
 
 function createTrainerSpeciesAcquisitionSourceOperationTable(connection: DatabaseSync): void {
   const acquisitionRow = connection.prepare(`

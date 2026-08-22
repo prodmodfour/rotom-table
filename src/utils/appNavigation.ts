@@ -14,6 +14,8 @@ import { BREEDING_WORKSHOP_PATH } from '#shared/breeding/workshop'
 import { isLegacyGridPath } from '~/utils/legacyGridRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
+import { ONBOARDING_PATH, isOnboardingPath } from '~/utils/onboardingRoutes'
+import { CONTESTS_PATH } from '#shared/contests/routes'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import { PLAYER_TRAINER_PORTAL_PATH } from '~/utils/playerTrainerPortalRoutes'
 import { referenceIndexPath } from '~/utils/reference/routes'
@@ -31,6 +33,7 @@ export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: ENCOUNTER_LIBRARY_PATH, label: 'Play' },
   { path: MAP_LIBRARY_PATH, label: 'Workshop' },
   { path: BREEDING_WORKSHOP_PATH, label: 'Breeding' },
+  { path: CONTESTS_PATH, label: 'Contests' },
   { path: CAMPAIGN_PATH, label: 'Campaign' },
   { path: GROUP_INVENTORY_PATH, label: 'Group Inventory' },
   { path: SHOP_LIBRARY_PATH, label: 'Shops' },
@@ -39,6 +42,7 @@ export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: SHEET_LIBRARY_PATH, label: 'Sheets', gmOnly: true },
   { path: SETTINGS_PATH, label: 'Settings' },
   { path: PLAYER_PROFILE_MANAGEMENT_PATH, label: 'Players', gmOnly: true },
+  { path: ONBOARDING_PATH, label: 'Onboarding' },
   { path: ENCOUNTER_BUILDER_PATH, label: 'Build', gmOnly: true },
 ]
 
@@ -85,6 +89,8 @@ export const isAppNavItemActive = (currentPath: string, itemPath: string): boole
   }
 
   if (itemPath === GROUP_INVENTORY_PATH) return isGroupInventoryPath(currentPath)
+
+  if (itemPath === ONBOARDING_PATH) return isOnboardingPath(currentPath)
 
   if (itemPath === SHOP_LIBRARY_PATH) return isShopPath(currentPath)
 

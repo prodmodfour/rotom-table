@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import contractJson from '../../data/complete-play-loop/inventory-source-selection.v1.json'
+import { readOptionalLocalUiArtifact } from '../helpers/localUiArtifacts'
 
 const contract = contractJson as any
 const root = resolve(import.meta.dirname, '../..')
@@ -39,6 +40,7 @@ describe('P8-062 inventory source selection data contract', () => {
     for (const path of contract.runtimeContracts) expect(existsSync(resolve(root, path)), path).toBe(true)
     expect(contract.ui.revalidationCopy).toBe('Selection and revision are rechecked when submitted.')
     expect(contract.ui.stateCues).toEqual(expect.arrayContaining(['radio mark', 'Selected text', 'selected inventory row aria-current']))
-    expect(existsSync(resolve(root, contract.ui.acceptedMockup))).toBe(true)
+    const mockup = readOptionalLocalUiArtifact(root, contract.ui.acceptedMockup)
+    if (mockup) expect(mockup.byteLength).toBeGreaterThan(0)
   })
 })

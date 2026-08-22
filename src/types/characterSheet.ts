@@ -20,6 +20,8 @@ import type { ItemFormChangeStateV1 } from '#shared/itemAutomation/formChanges'
 import type { ItemGuidedLoyaltyStateV1 } from '#shared/itemAutomation/guidedAdjudication'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
+import type { PokemonContestStatsStateV1 } from '#shared/contests/preparation'
+import type { ContestRibbonRecordV1 } from '#shared/contests/ribbons'
 
 /**
  * Schema for a Pokémon character sheet, modelled on the PTU pokesheet
@@ -57,6 +59,16 @@ export interface CharacterSheetMove {
   effect?: string
   special?: string
   contestStats?: string
+  /** Server-reviewed Contest identity for a Feature-created Move absent from the canonical Move catalog. */
+  contestIdentity?: {
+    readonly schemaVersion: 1
+    readonly status: 'defined'
+    readonly typeId: 'beauty'|'cool'|'cute'|'smart'|'tough'
+    readonly effectId: string
+    readonly sourceFeatureId: 'Innovation'|'Passing Waltz'|'Beguiling Dance'
+    readonly sourceOperationId: string
+    readonly boundAt: number
+  }
   /** Server-authored origin for a move learned through permanent move or breeding automation. */
   permanentMoveSource?: PermanentMoveListEntryProvenance | BreedingInheritancePermanentMoveProvenanceV1
   /** Owner-safe marker: this active Move can be replaced only by authoritative Move-learning workflows. */
@@ -361,6 +373,10 @@ export interface CharacterSheet {
   eggGroups?: string[]
 
   stats?: Partial<Record<StatKey, CharacterSheetStat>>
+  /** Structured Contest preparation authority. Historical string values migrate into legacyDescription only. */
+  contestStats?: PokemonContestStatsStateV1
+  /** Durable provenance-backed Contest ribbons won by this Pokémon. */
+  contestRibbons?: ContestRibbonRecordV1[]
   /** Vitamins, stat suppressants, and related Pokémon nutrition/permanent stat items. */
   vitamins?: CharacterSheetVitaminTracking
   /** Non-stat stage-like modifiers, such as Accuracy. Stat stages live in `stats.*.stage`. */

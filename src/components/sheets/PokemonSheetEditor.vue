@@ -212,6 +212,10 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
         :tutor-points-left="tutorPointsLeft"
       />
 
+      <!-- ============ Pokémon Contest preparation ============ -->
+      <PokemonContestPreparationPanel :sheet="sheet" />
+      <PokemonContestRibbonPanel :sheet="sheet" />
+
       <!-- ============ Movelist ============ -->
       <PokemonMovesPanel
         :move-rows="moveRows"

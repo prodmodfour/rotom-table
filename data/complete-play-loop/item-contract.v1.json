@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "ticketRange": ["P8-011", "P8-053"],
-  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "catalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
   "identity": {
     "canonicalId": "exact key/name from data/reference/items.json",
     "aliases": "reviewed exact canonical aliases only",

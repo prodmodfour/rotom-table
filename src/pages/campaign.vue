@@ -3,6 +3,7 @@ import { nextTick, onMounted, ref } from 'vue'
 import { PhArrowRight, PhCalendarBlank } from '@phosphor-icons/vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import CampaignContinuationDashboard from '~/components/campaign/CampaignContinuationDashboard.vue'
+import CampaignOnboardingCard from '~/components/campaign/CampaignOnboardingCard.vue'
 import CampaignDayPreflightDialog from '~/components/campaign/CampaignDayPreflightDialog.vue'
 import { useCampaignContinuationDashboard } from '~/composables/campaign/useCampaignContinuationDashboard'
 import { useCampaignDayPreflight } from '~/composables/campaign/useCampaignDayPreflight'
@@ -53,6 +54,8 @@ useHead({ title: 'Campaign · Rotom Table' })
       @refresh="dashboard.refresh"
     >
       <template #campaign-tools>
+        <CampaignOnboardingCard />
+        <CampaignContestActivityCard :profile-id="profiles.selectedProfileId.value" />
         <section v-if="isGm" class="next-day-tool" aria-labelledby="next-day-title">
           <div class="next-day-tool__heading">
             <PhCalendarBlank :size="24" weight="duotone" aria-hidden="true" />

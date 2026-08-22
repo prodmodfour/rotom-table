@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "criteriaId": "pokemon-contest-ux-success-v1",
+  "privacy": {
+    "collection": "aggregate-only",
+    "forbiddenDimensions": ["campaign-id", "profile-id", "trainer-name", "pokemon-name", "gm-notes", "roll-results", "move-name"],
+    "allowedDimensions": ["role-kind", "viewport-class", "input-kind", "motion-preference", "variant-id", "contestant-count", "terminal-status"]
+  },
+  "targets": [
+    {"event": "time-to-contest-start", "target": "median<=180s", "startsAt": "workshop-open", "endsAt": "introduction-open"},
+    {"event": "appeal-decision-time", "target": "median<=45s,p90<=90s", "startsAt": "decision-visible", "endsAt": "accepted-or-safe-rejection"},
+    {"event": "round-duration", "target": "median<=240s", "startsAt": "round-open", "endsAt": "round-advanced"},
+    {"event": "scoreboard-comprehension", "target": ">=90%-task-success-within-10s", "task": "identify leader,current performer,center-of-attention"},
+    {"event": "illegal-choice-recovery", "target": ">=95%-recover-without-reload-within-20s", "startsAt": "safe-validation-shown", "endsAt": "legal-control-focused"},
+    {"event": "settlement-completion", "target": "median<=120s", "startsAt": "settlement-preview-open", "endsAt": "atomic-completion-visible"},
+    {"event": "spectator-clarity", "target": ">=90%-task-success-within-10s", "task": "identify round,turn,accepted-result,leader"}
+  ],
+  "retention": {
+    "rawSamples": false,
+    "minimumAggregateCount": 5,
+    "boundedCardinality": true
+  }
+}

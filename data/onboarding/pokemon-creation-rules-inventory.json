@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "inventoryId": "onboarding-pokemon-creation-rules-v1",
+  "auditDate": "2026-08-16",
+  "baselineCommit": "ec672287",
+  "authorityKinds": [
+    "structured-reference",
+    "code-derived",
+    "campaign-policy",
+    "absent"
+  ],
+  "decisions": [
+    {
+      "id": "pokemon-species-eligibility",
+      "title": "Which species may be a starter",
+      "authorityKind": "campaign-policy",
+      "authoritySources": ["data/reference/pokedex.json"],
+      "notes": "Canonical species identity comes from the Pokédex (1,149 rows); which subset is offered is pure campaign policy (starter pool). GM memory currently owns this entirely.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-starting-level",
+      "title": "Starter level",
+      "authorityKind": "campaign-policy",
+      "authoritySources": ["data/reference/pokemonExperienceChart.json"],
+      "notes": "Level bounds 1-100 with the canonical experience chart; the default starter level is campaign policy, not a universal PTU constant in app data.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-forms",
+      "title": "Species forms",
+      "authorityKind": "structured-reference",
+      "authoritySources": ["data/reference/pokedex.json"],
+      "notes": "Forms are separate Pokédex rows (e.g. 'Rotom Heat', 'Shaymin Sky Forme'). There is no structured form-family linkage; selection must resolve to exactly one canonical row and never fabricate forms from name strings.",
+      "dataDefect": {
+        "id": "DATA-ONB-003",
+        "requiredAction": "Starter pools must reference exact Pokédex row identities. If a campaign wants form choice at creation, the pool lists each form row explicitly; no runtime form inference. No rules.json change required, but catalog compilation (P9-015) must freeze row identity hashes.",
+        "documentaryProvenance": "data/reference/pokedex.json row naming convention"
+      }
+    },
+    {
+      "id": "pokemon-base-stats",
+      "title": "Species base stats",
+      "authorityKind": "structured-reference",
+      "authoritySources": ["data/reference/pokedex.json#base_stats"],
+      "notes": "Six-stat base blocks per row (spatk/spdef key spelling); sparse legacy rows exist and must fail closed if selected into a pool.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-added-stat-budget",
+      "title": "Added stat points (Level + 10)",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/rules.json#Stat Point Advancement.statPointFormulas.pokemonAdded"
+      ],
+      "notes": "Structured formula already used by runtime advancement.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-base-relations",
+      "title": "Base Relations ordering for added stats",
+      "authorityKind": "code-derived",
+      "authoritySources": [
+        "data/reference/rules.json#Base Relations.text",
+        "src/utils/sheets/pokemonDerived.ts#base relation resolution"
+      ],
+      "notes": "Rule text plus existing runtime violation detection; onboarding validation reuses the same derivation rather than re-deriving from prose.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-nature",
+      "title": "Nature choice and stat effects",
+      "authorityKind": "code-derived",
+      "authoritySources": ["src/utils/ptuNatures.ts#PTU_NATURES"],
+      "notes": "37 natures with plus/minus stat mappings are app-owned runtime authority already consumed by sheets.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-abilities",
+      "title": "Starting Ability (Basic tier at Level 1)",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/pokedex.json#abilities",
+        "data/reference/abilities.json",
+        "data/reference/rules.json#Pokémon Advancement Choices.pokemonAdvancementChoiceMechanics.abilityMilestones"
+      ],
+      "notes": "Tiered species ability sets plus milestone ordinals (L1 basic, L20 basic/advanced, L40 any). 130 Pokédex rows lack Basic Abilities and must fail closed if pooled.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-moves",
+      "title": "Starting Moves from the level-up list",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/pokedex.json#level_up_moves",
+        "data/reference/moves.json",
+        "data/reference/rules.json#Pokémon Advancement Choices.pokemonAdvancementChoiceMechanics.moveLearning"
+      ],
+      "notes": "Level-gated candidates, six active Move maximum, replacement rules; TM/tutor additions at creation are campaign policy.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-skills",
+      "title": "Pokémon skill dice",
+      "authorityKind": "structured-reference",
+      "authoritySources": ["data/reference/pokedex.json#skills"],
+      "notes": "Species default skill dice strings; overrides after creation belong to advancement/edges, not onboarding.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-capabilities",
+      "title": "Capabilities, size, weight, movement",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/pokedex.json#capabilities",
+        "data/reference/capabilities.json"
+      ],
+      "notes": "Structured movement values plus named capability list with canonical capability definitions.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-gender",
+      "title": "Gender",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/pokedex.json#male_pct/female_pct/genderless"
+      ],
+      "notes": "Species gender ratios; genderless species must not collect a gender choice.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-loyalty",
+      "title": "Starting Loyalty",
+      "authorityKind": "absent",
+      "authoritySources": ["data/reference/rules.json#Loyalty.text"],
+      "notes": "Loyalty is prose-only; the sheet stores a numeric loyalty field but no structured source states the starting value for a new starter.",
+      "dataDefect": {
+        "id": "DATA-ONB-004",
+        "requiredAction": "Add characterCreationMechanics.startingLoyalty default to data/reference/rules.json through a reviewed, source-hash-bound migration before P9-047; policy may expose a bounded override.",
+        "documentaryProvenance": "books/markdown/core/06-playing-pokemon.md (Loyalty chapter)"
+      }
+    },
+    {
+      "id": "pokemon-tutor-points",
+      "title": "Tutor Points at creation (1 + floor(level/5))",
+      "authorityKind": "code-derived",
+      "authoritySources": [
+        "src/utils/sheets/pokemonTutorPoints.ts#computePokemonTutorPointsEarned",
+        "data/reference/rules.json#Tutor Points.text"
+      ],
+      "notes": "Existing runtime formula backed by the rule text.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-held-items",
+      "title": "Starter held item",
+      "authorityKind": "campaign-policy",
+      "authoritySources": [
+        "data/reference/items.json",
+        "shared/itemAutomation/equipment.ts"
+      ],
+      "notes": "Whether starters begin with held items is policy; item identity and custody use Plan 8 authority.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-team-placement",
+      "title": "Team membership and the six-Pokémon limit",
+      "authorityKind": "code-derived",
+      "authoritySources": [
+        "src/utils/trainerPokemonLinks.ts#TRAINER_TEAM_LIMIT",
+        "data/reference/rules.json#Pokémon Switching"
+      ],
+      "notes": "Team limit constant exists client-side only; onboarding commit must enforce it server-side (P9-048, P9-057).",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-ownership-provenance",
+      "title": "Ownership and acquisition provenance",
+      "authorityKind": "code-derived",
+      "authoritySources": [
+        "shared/speciesAcquisition.ts",
+        "server/storage/trainerSpeciesAcquisitionRepository.ts"
+      ],
+      "notes": "Species acquisition history exists for capture/breeding; onboarding must record an explicit 'onboarding' acquisition source rather than leaving starters provenance-free.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-identity-presentation",
+      "title": "Nickname, shiny flag, portrait, caught-ball metadata",
+      "authorityKind": "code-derived",
+      "authoritySources": ["src/types/characterSheet.ts#CharacterSheet"],
+      "notes": "Non-mechanical presentation bounded by sheet schema; ball identity references items.json when set.",
+      "dataDefect": null
+    },
+    {
+      "id": "pokemon-experience-alignment",
+      "title": "Experience total for the chosen level",
+      "authorityKind": "structured-reference",
+      "authoritySources": ["data/reference/pokemonExperienceChart.json"],
+      "notes": "Committed starters must carry the canonical experience floor for their level so later settlement math is coherent.",
+      "dataDefect": null
+    }
+  ]
+}

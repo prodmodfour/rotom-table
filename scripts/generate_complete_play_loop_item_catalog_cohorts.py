@@ -131,6 +131,9 @@ def main() -> None:
         canonical_id for canonical_id, row in catalog.items()
         if "Poké Ball" in row.get("categories", [])
     }
+    # Poffin is owned by the reviewed Pokémon Contest preparation authority;
+    # the four other Contest items remain classified by their earlier equipment/tool providers.
+    contest = {"Poffin"}
     interpretive_groups = policy.get("interpretiveCampaignToolGroups")
     if not isinstance(interpretive_groups, dict):
         raise SystemExit("Item cohort policy interpretive groups must be an object")
@@ -154,6 +157,7 @@ def main() -> None:
         "equipment": equipment,
         "core-item-spec": specs,
         "capture": capture,
+        "contest": contest,
         "interpretive-campaign-tool": interpretive,
         "canonical-data-defect": defects,
     }

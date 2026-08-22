@@ -5,6 +5,11 @@ import lineageContractJson from '../../../data/breeding-automation/lineage-contr
 import sourceManifestJson from '../../../data/breeding-automation/source-manifest.json'
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import {
+  currentMoveSourceNameForLegacyIdentity,
+  isReviewedLegacyMoveMechanicalFingerprint,
+  projectLegacyMoveMechanicalAuthority,
+} from '#shared/ruleset/moveMechanicalAuthority'
+import {
   BREEDING_INHERITANCE_CHECKPOINT_LEVELS,
   BREEDING_INHERITANCE_ILLEGAL_REASON_IDS,
   type BreedingInheritanceCheckpointLevel,
@@ -201,8 +206,21 @@ export const BREEDING_INHERITANCE_LEARNING_POLICY_DEFINITION_SHA256 = sha256(BRE
 const canonicalMoveRecord = (moveId: string): { readonly id: BreedingMoveId, readonly record: ReferenceMoveRecord, readonly recordSha256: string } | null => {
   const id = parseBreedingMoveIdSyntax(moveId)
   const identity = id ? canonicalBreedingMoveIdentity(id) : null
-  const record = identity ? moves[identity.sourceName] : null
-  if (!id || !identity || !record || record.name !== identity.sourceName || sha256(record) !== identity.sourceRecordSha256) return null
+  const currentSourceName = identity
+    ? currentMoveSourceNameForLegacyIdentity(identity.id, identity.sourceName)
+    : ''
+  const record = identity ? moves[currentSourceName] : null
+  const currentRecordSha256 = record
+    ? sha256(projectLegacyMoveMechanicalAuthority(record as unknown as Readonly<Record<string, unknown>>))
+    : ''
+  if (!id || !identity || !record || record.name !== currentSourceName
+    || !isReviewedLegacyMoveMechanicalFingerprint({
+      canonicalId: identity.id,
+      frozenSourceName: identity.sourceName,
+      frozenRecordSha256: identity.sourceRecordSha256,
+      currentSourceName,
+      currentRecordSha256,
+    })) return null
   return Object.freeze({ id, record, recordSha256: identity.sourceRecordSha256 })
 }
 const prerequisiteBand = (level: number): { readonly maximumFrequency: 'EOT' | 'Scene' | null, readonly maximumDamageBase: 7 | 9 | null } => (

@@ -195,6 +195,10 @@ const normalizeGroupInventoryEntry = (
   if (!Object.hasOwn(source, 'serializedEquipment') && Object.hasOwn(source, 'itemVariant')) {
     entry.itemVariant = parseItemShardInventoryVariant(source.itemVariant)
   }
+  if (Object.hasOwn(source, 'contestPoffinStatId')) {
+    if (entry.name !== 'Poffin' || typeof source.contestPoffinStatId !== 'string' || !['beauty','cool','cute','smart','tough'].includes(source.contestPoffinStatId)) throw new Error('Group inventory contains an invalid crafted Poffin Contest-stat identity.')
+    entry.contestPoffinStatId = source.contestPoffinStatId as NonNullable<InventoryEntry['contestPoffinStatId']>
+  }
   for (const field of ['cost', 'description', 'mod', 'slot'] as const) {
     if (Object.hasOwn(source, field)) normalizeEntryOptionalStringField(entry, field, source[field])
   }

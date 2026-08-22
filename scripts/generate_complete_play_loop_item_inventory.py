@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ITEMS_PATH = ROOT / "data/reference/items.json"
 SPECS_PATH = ROOT / "data/complete-play-loop/specs.v1.json"
 OUTPUT_PATH = ROOT / "data/complete-play-loop/item-inventory.v1.json"
-CATALOG_SHA256 = "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+CATALOG_SHA256 = "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
 REPULSIVE_MEDICINES = {"Energy Powder", "Energy Root", "Heal Powder", "Revival Herb"}
 PERMANENT_ADVANCEMENT_ITEMS = {
     "HP Up", "Protein", "Iron", "Calcium", "Zinc", "Carbos",
@@ -102,6 +102,8 @@ def primary_role(categories: set[str]) -> str:
 
 
 def contexts_for(role: str) -> list[str]:
+    if role == "contest-preparation":
+        return ["campaign", "sheet", "workshop"]
     if role in {"restorative", "temporary-combat-buff", "combat-tool", "capture-consumable"}:
         return ["encounter", "sheet"]
     if role == "equipment-provider":
@@ -126,6 +128,8 @@ def timing_for(role: str) -> str:
 
 
 def targets_for(role: str) -> list[str]:
+    if role == "contest-preparation":
+        return ["participant", "contest-stat"]
     if role == "equipment-provider":
         return ["equipment-slot", "participant"]
     if role == "move-learning":
@@ -148,6 +152,7 @@ def consumption_for(role: str, categories: set[str]) -> dict[str, Any]:
         bool(categories & EQUIPMENT_CATEGORIES) or bool(categories & TOOL_CATEGORIES) or "HM" in categories
     )
     phase = "never" if reusable else (
+        "accepted-preparation-operation" if role == "contest-preparation" else
         "hit" if role == "capture-consumable" else
         "extended-action-completion" if role in {"move-learning", "permanent-advancement"} else
         "gm-adjudication" if role in {"combat-tool", "exploration-effect", "guided-owned-item", "reusable-or-crafting-tool"} else
@@ -185,6 +190,17 @@ def equipment_requirements(categories: set[str]) -> dict[str, Any] | None:
 
 
 def current_support(canonical_id: str, categories: set[str], native_ids: set[str]) -> dict[str, Any]:
+    if canonical_id == "Poffin":
+        return {
+            "state": "native-runtime-wired",
+            "authorities": [
+                "data/reference/contests.json#preparation.poffins",
+                "shared/contests/preparation.ts",
+                "shared/contests/preparationOperations.ts",
+                "server/useCases/contestPreparation.ts",
+            ],
+            "gaps": [],
+        }
     if canonical_id in PERMANENT_ADVANCEMENT_ITEMS:
         return {
             "state": "native-runtime-wired",
@@ -376,6 +392,7 @@ def main() -> None:
             raise SystemExit(f"Canonical item key/name mismatch: {canonical_id}")
         categories = set(item.get("categories", []))
         role = (
+            "contest-preparation" if canonical_id == "Poffin" else
             "permanent-advancement" if canonical_id in PERMANENT_ADVANCEMENT_ITEMS else
             "evolution-trigger" if canonical_id in evolution_ids else
             primary_role(categories)

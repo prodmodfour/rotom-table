@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "contractId": "onboarding-ux-success-v1",
+  "date": "2026-08-16",
+  "privacyPolicy": "Aggregate-only measurement. No campaign identities, character names, private choices, comments, or draft payloads may be captured or retained by any onboarding metric.",
+  "criteria": [
+    {
+      "id": "time-to-first-valid-preview",
+      "area": "player-flow",
+      "statement": "A new player completing the default Level 1 slot reaches a fully valid Trainer preview (zero blocking issues) without facilitator rescue.",
+      "target": "median <= 20 minutes, p90 <= 40 minutes across acceptance runs",
+      "measurement": "acceptance journey timing (manual + scripted fixtures), aggregate durations only",
+      "releaseGate": true
+    },
+    {
+      "id": "required-decision-count",
+      "area": "player-flow",
+      "statement": "The default Level 1 + one starter path presents a bounded number of required decisions with one visually primary decision at a time.",
+      "target": "<= 30 required decisions; every additional screen is optional depth, not a mandatory detour",
+      "measurement": "static decision-graph count from the builder state machine fixture",
+      "releaseGate": true
+    },
+    {
+      "id": "validation-recovery",
+      "area": "player-flow",
+      "statement": "Every blocking issue names its owning decision and one activation lands the user on an operable control for it.",
+      "target": "100% of issue links land on the owning decision; recovery requires <= 2 navigations",
+      "measurement": "automated issue-link traversal across failure fixtures",
+      "releaseGate": true
+    },
+    {
+      "id": "resume-fidelity",
+      "area": "durability",
+      "statement": "Reload, another device, or server restart restores the draft to the exact current decision with no lost accepted state.",
+      "target": "100% across concurrency/restart fixtures",
+      "measurement": "multi-client and restart acceptance fixtures",
+      "releaseGate": true
+    },
+    {
+      "id": "gm-review-effort",
+      "area": "gm-flow",
+      "statement": "A GM reviews a default submission in one workspace without opening raw sheets or comparing JSON.",
+      "target": "median <= 10 minutes for the default fixture; zero raw-ID or JSON steps",
+      "measurement": "acceptance journey timing + workflow step audit",
+      "releaseGate": true
+    },
+    {
+      "id": "atomic-commit-reliability",
+      "area": "safety",
+      "statement": "Approval either creates the entire package or nothing; exact retry returns the original result.",
+      "target": "0 partial packages, 0 duplicates across all failure-injection fixtures",
+      "measurement": "P9-096 failure/rollback/retry acceptance",
+      "releaseGate": true
+    },
+    {
+      "id": "time-to-first-encounter-action",
+      "area": "handoff",
+      "statement": "From approval, a ready player reaches an eligible encounter and performs a legal first action without manual relinking.",
+      "target": "<= 5 minutes GM+player combined in golden journeys; zero manual link/repair steps",
+      "measurement": "P9-097 golden journey evidence",
+      "releaseGate": true
+    },
+    {
+      "id": "onboarding-accessibility",
+      "area": "accessibility",
+      "statement": "Keyboard-only, screen-reader, 200% zoom, 320px reflow, touch targets, and reduced motion pass on all builder, review, and completion surfaces.",
+      "target": "zero serious/critical Axe violations; 100% keyboard script completion; 44x44 CSS px primary targets",
+      "measurement": "P9-090 accessibility acceptance",
+      "releaseGate": true
+    },
+    {
+      "id": "catalog-scale-performance",
+      "area": "performance",
+      "statement": "Large starter pools and feature catalogs stay responsive.",
+      "target": "choice list render/filter p95 <= 100ms on benchmark fixtures; validation recompute p95 <= 250ms",
+      "measurement": "P9-089 benchmark fixtures",
+      "releaseGate": true
+    },
+    {
+      "id": "privacy-zero-disclosure",
+      "area": "privacy",
+      "statement": "No unauthorized role ever receives another profile's draft choices, comments, or review detail.",
+      "target": "0 disclosures across privacy/abuse fixtures",
+      "measurement": "P9-088/P9-093 acceptance",
+      "releaseGate": true
+    }
+  ]
+}

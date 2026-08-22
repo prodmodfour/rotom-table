@@ -11,27 +11,27 @@
     },
     {
       "path": "data/reference/items.json",
-      "fileSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+      "fileSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
     },
     {
       "path": "data/reference/rules.json",
-      "fileSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142"
+      "fileSha256": "f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df"
     },
     {
       "path": "data/complete-play-loop/specs.v1.json",
-      "fileSha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe"
+      "fileSha256": "b03d2706fa0d666b33262e215b80a0bc33ac617d07a62e5aca7319db396918ed"
     },
     {
       "path": "data/complete-play-loop/medical-extended-actions.v1.json",
-      "fileSha256": "fd2cddf562e33e0200b793840ab6b0c98523b8a30946bcfbb916d3a07aef5192"
+      "fileSha256": "24094e072a2caee8846b2245ad3339f7471d2da76f6e5cb121cc3865a607435e"
     },
     {
       "path": "data/complete-play-loop/equipment-definitions.v1.json",
-      "fileSha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a"
+      "fileSha256": "fb5d8c6cafba3c969da7b20e0c09e9d6b32d4baa6993c4005a40b4f6249316b7"
     },
     {
       "path": "data/complete-play-loop/equipment-grants.v1.json",
-      "fileSha256": "466a621c6901a4c0d6c544deae103e82062c75c8fe32d3c84442c1e0c87836bc"
+      "fileSha256": "9e1baaa1a2dd721bf97b9c2d413e0f61590dffdeba52f3fcedf5684b68e7e515"
     }
   ],
   "ruleEvidence": {

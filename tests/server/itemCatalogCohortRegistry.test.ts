@@ -49,6 +49,9 @@ describe('canonical item catalog cohort registry', () => {
     expect(requireCanonicalItemCatalogCohortDecision('Black Sludge').cohort).toMatchObject({
       providerId: 'core-item-spec', implementationState: 'native', unresolvedRequirements: [],
     })
+    expect(requireCanonicalItemCatalogCohortDecision('Poffin').cohort).toMatchObject({
+      providerId: 'contest', implementationState: 'native', unresolvedRequirements: [],
+    })
     expect(canonicalItemCatalogCohortDecision('Invented Item')).toBeNull()
     expect(() => requireCanonicalItemCatalogCohortDecision('Invented Item')).toThrow(
       'has no reviewed cohort decision',
@@ -73,7 +76,7 @@ describe('canonical item catalog cohort registry', () => {
 
   it('records P8-093 closure with no blocked canonical row', () => {
     expect(canonicalItemCatalogCohortRegistry.implementationStateCounts).toEqual({
-      guided: 40, native: 204, passive: 104,
+      guided: 40, native: 205, passive: 104,
     })
     const decisions = listCanonicalItemCatalogCohortDecisions()
     expect(decisions.filter(decision => decision.cohort.implementationState === 'blocked')).toEqual([])

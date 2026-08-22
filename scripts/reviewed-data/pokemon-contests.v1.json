@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "pokemon-contests:v1",
+  "status": "reviewed",
+  "reviewedAt": "2026-08-20",
+  "targets": [
+    {
+      "path": "data/reference/contests.json",
+      "mode": "create",
+      "afterSha256": "fadb03c328f2025dcc81fe497365db345717184bea6a9247b2f79d9d3f61362a",
+      "afterBytes": 20082,
+      "afterGitBlob": "931e33b0dbab16e240d853dc19b095d3acea1aa2"
+    },
+    {
+      "path": "data/reference/moves.json",
+      "mode": "add-contest-identity",
+      "baseSha256": "418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e",
+      "afterSha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821",
+      "afterBytes": 615165,
+      "afterGitBlob": "cdbfb1a62ae15bfcc2f474a6f40df703342c47b1"
+    },
+    {
+      "path": "data/reference/items.json",
+      "mode": "add-reviewed-contest-items",
+      "baseSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+      "afterSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+      "afterBytes": 164478,
+      "afterGitBlob": "41ac3589a5e0fb6d4150e0cf835fee3d10fa735f"
+    }
+  ],
+  "sources": [
+    {
+      "path": "books/markdown/core/04-trainer-classes.md",
+      "sha256": "eb8133680034d95eb5bb67dba89617943655baf0d1bce67c961d24a8a17c9268",
+      "subjects": ["Coordinator", "Style Expert", "contest Features"]
+    },
+    {
+      "path": "books/markdown/core/08-pokemon-contests.md",
+      "sha256": "d4cbfef280d2b96bede24648b1ca69a8bfcbdad639d8a5537ce8518387285111",
+      "subjects": ["contest stats", "introduction", "performance", "effects", "variants", "experience"]
+    },
+    {
+      "path": "books/markdown/core/09-gear-and-items.md",
+      "sha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "subjects": ["Poffins", "Poffin Mixer", "Fancy Clothes", "Contest Accessory", "Contest Fashion"]
+    },
+    {
+      "path": "books/markdown/core/10-indices-and-reference.md",
+      "sha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "subjects": ["core Move contest identities"]
+    },
+    {
+      "path": "books/markdown/core/11-running-the-game.md",
+      "sha256": "46d21f9baea3ee7add852126c79ec376897f78ba9e55d812cd6860885c03df74",
+      "subjects": ["experience significance and defeated-level value"]
+    },
+    {
+      "path": "books/markdown/useful-charts.md",
+      "sha256": "de264d15a25b3e310b5f6852bb41ad93d021acc83d9bd41ce427cd49bea34c34",
+      "subjects": ["contest effect cross-check"]
+    },
+    {
+      "path": "books/markdown/errata-2.md",
+      "sha256": "1b8be900ac33dd8d621c7acda801ad535f0f8532142829c5409d907c081a1c70",
+      "subjects": ["Move contest identity corrections"]
+    },
+    {
+      "path": "books/markdown/errata-3.md",
+      "sha256": "d589c68c0b12c18de4df30b5e37351297b324d7f7fa4a8cda63cda5c7ff154b8",
+      "subjects": ["Beautiful Ability correction"]
+    },
+    {
+      "path": "books/markdown/arceus_references.md",
+      "sha256": "ea178314170a31d22f0a475d897bbb07aaa23b62aa5f52d67ea6628cbba3ace5",
+      "subjects": ["Legends Arceus Move contest identities"]
+    },
+    {
+      "path": "books/markdown/sumo_references.md",
+      "sha256": "592001dee213738438e3b7a8973637134cf5f54b49f10f3a0f4012d0e319ddc8",
+      "subjects": ["Sun and Moon Move contest identities"]
+    },
+    {
+      "path": "books/markdown/swsh_-_armor_crown_references.md",
+      "sha256": "784d7f4a725539ce34519df0cdc7e7a0efa1a6cce386abd1aaa53ef832c4d228",
+      "subjects": ["Sword and Shield Move contest identities"]
+    }
+  ],
+  "reviewDecisions": [
+    {
+      "id": "CONTEST-DATA-001",
+      "decision": "The core chapter and its worked demo control Center of Attention scoring: a 3 earns one Appeal. The Useful Charts row that groups 2–3 at zero conflicts with both and is recorded as a documentary defect, not runtime authority."
+    },
+    {
+      "id": "CONTEST-DATA-002",
+      "decision": "Get Ready!/Get Ready and Good Show!/Good Show normalize to one stable effect identity each; punctuation remains display metadata only."
+    },
+    {
+      "id": "CONTEST-DATA-003",
+      "decision": "Facade is matched to documentary Façade by accent-insensitive stable identity. Struggle variants are explicit no-contest-identity rows because Struggle Attacks are not Moves."
+    },
+    {
+      "id": "CONTEST-DATA-004",
+      "decision": "The worked Level 10, five-contestant experience example binds the participation unit to ceil((contestantCount - placement + 1) / 2), preserving its first-place 60 and last-place 20 outcomes at x2."
+    },
+    {
+      "id": "CONTEST-DATA-005",
+      "decision": "Final-score ties have no explicit core resolution. Runtime uses a journaled server coin only when a placement tie must be resolved and records this bounded app-reviewed adjudication in history."
+    },
+    {
+      "id": "CONTEST-DATA-006",
+      "decision": "The worked demo omits the rule text's two matching-skill bonus Appeal from its running totals. Canonical replay applies the bonus and records both printed and rule-corrected totals."
+    },
+    {
+      "id": "CONTEST-DATA-007",
+      "decision": "The worked demo prints Mawile at 9 Fumble after first gaining 2 and then receiving 9 from Sabotage; its printed final score of 16 confirms 11 Fumble. Canonical replay uses the internally consistent 11."
+    },
+    {
+      "id": "CONTEST-DATA-008",
+      "decision": "The worked Sweet Scent appeal mechanically assembles six dice (three base, one matching, two spent) but prints only five results. The golden fixture retains the five printed faces and appends a neutral 1 solely to complete deterministic server replay."
+    },
+    {
+      "id": "CONTEST-DATA-009",
+      "decision": "The five printed Sweet Scent faces score five Appeal under the canonical normal table, not the printed four. Canonical replay carries Mawile one Appeal higher from round 1 onward while retaining printed totals as documentary comparison fields."
+    },
+    {
+      "id": "CONTEST-DATA-010",
+      "decision": "Rotation's twice-participant limit is a team-wide cap on Contest dice actually spent, not a per-stat pool cap and not authority to merge or fabricate each Pokémon's prepared pools. Dice generated by the team's single Introduction are shared; each Pokémon's ordinary prepared dice remain its own. Shared dice are consumed first under a deterministic app-reviewed custody rule."
+    },
+    {
+      "id": "CONTEST-DATA-011",
+      "decision": "Rotation Experience uses all Pokémon on lower-placed teams when deriving the reviewed round-up participation unit, sums the team's own-level package, then splits that package equally with deterministic remainder assignment in roster order. This binds the core instruction to use the total number of Pokémon involved without treating teammates as defeated opponents."
+    },
+    {
+      "id": "CONTEST-DATA-012",
+      "decision": "When a Festival starts its next reduced field, Appeal and spent event preparation carry over, while Fumble, Voltage, last-Move repetition, and unresolved cross-round effects reset. Once-per-Contest interventions remain once per Festival document; this avoids silently multiplying ordinary sheet resources across one event."
+    },
+    {
+      "id": "CONTEST-DATA-013",
+      "decision": "Contest Stat dice deplete for the whole Contest and do not refresh each round. This follows the explicit core example where three dice spent in one round leave only one of a four-die pool for the following round; Rotation's shared cap is additional rather than a reset rule."
+    }
+  ]
+}

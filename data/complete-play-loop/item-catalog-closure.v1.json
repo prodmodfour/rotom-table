@@ -4,12 +4,12 @@
   "status": "implemented",
   "contract": "canonical-item-catalog-closure-v1",
   "runtimeProseParsing": false,
-  "storageSchemaVersion": 44,
+  "storageSchemaVersion": 46,
   "catalog": {
-    "canonicalItemCount": 348,
-    "cohortCount": 18,
+    "canonicalItemCount": 349,
+    "cohortCount": 19,
     "implementationStateCounts": {
-      "native": 204,
+      "native": 205,
       "guided": 40,
       "passive": 104,
       "blocked": 0
@@ -90,15 +90,15 @@
   "sourceEvidence": [
     {
       "path": "data/reference/items.json",
-      "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+      "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
     },
     {
       "path": "data/complete-play-loop/specs.v1.json",
-      "sha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe"
+      "sha256": "b03d2706fa0d666b33262e215b80a0bc33ac617d07a62e5aca7319db396918ed"
     },
     {
       "path": "data/complete-play-loop/canonical-data-remediation.v1.json",
-      "sha256": "3b733805374faa38e82fa4861a77cd35a07c9ab901a7c160ae17b51ab452739e"
+      "sha256": "e9ebb4402db86a5bd5fa3ba4c47efb856c7f65af0ace526b5804f61511eeb3b0"
     },
     {
       "path": "scripts/reviewed-data/black-sludge-acquisition-cost.v1.json",
@@ -106,11 +106,11 @@
     },
     {
       "path": "scripts/migrate_black_sludge_acquisition_cost.py",
-      "sha256": "71653c4daff908861590e8fdbc047cfc12fd21856f396b8b91a92c9cf4c4b2a6"
+      "sha256": "f33c5e0ffc487e5313f9b4741d96dece0bc52815aa084eb4a65f69a484cf29b8"
     },
     {
       "path": "tests/data/completePlayLoopPhase1.test.ts",
-      "sha256": "e2f038d41a88eb468d34dc2be9b9b7f9a2a6dc89a3e9d175850618ff90508ed4"
+      "sha256": "b7ab043ad99343eb8415a74464575bb225f6e5289f719fdcfe1062819caa55b9"
     },
     {
       "path": "tests/server/executeItemOperation.test.ts",
@@ -130,7 +130,7 @@
     },
     {
       "path": "data/complete-play-loop/guided-catalog-items.v1.json",
-      "sha256": "8e669d3a49f235d464b933ac86638f291b7dbf08981899236c059129c1b7602e"
+      "sha256": "112a547140e61d25aee499bcd49b191a878928f54f408d688b605343ed78fec3"
     },
     {
       "path": "shared/itemAutomation/guidedAdjudication.ts",
@@ -142,7 +142,7 @@
     },
     {
       "path": "server/domain/itemAutomation/registry.ts",
-      "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+      "sha256": "f6f7ae530decdad61b832a707fc09cc065e56c66fb845de1c5f12ee2739a4f7e"
     },
     {
       "path": "server/domain/itemAutomation/planner.ts",
@@ -166,7 +166,7 @@
     },
     {
       "path": "server/storage/migrations.ts",
-      "sha256": "fa869c20dfaf59fb2996e79310d0f849b3c74ac012d15983217313562714136a"
+      "sha256": "f2b2a80227044e507c56f26f4eeffcc86b5ae8732e39e7dd98992a2c1e460ea6"
     },
     {
       "path": "src/components/campaign/CampaignGuidedItemAdjudication.vue",
@@ -190,19 +190,19 @@
     },
     {
       "path": "tests/server/realtimeEventMigrations.test.ts",
-      "sha256": "6bafe241bfb8b81efcda67aeff1309fad8296e5e9f427e89b51023dbf7904a8b"
+      "sha256": "555e167881ece81738c9b0dece8e607f97991187246b867f569c99205930149f"
     },
     {
       "path": "scripts/reviewed-data/capture-pokeballs.v1.json",
-      "sha256": "9f0eaaabd87bd66d5cd7ec17091a862f39f0c20a91225c0dd449aa558575840b"
+      "sha256": "fe3e02c4f752428dafe24a9b1213657a41967ae914544578cca86e0c1a0139ed"
     },
     {
       "path": "scripts/generate_complete_play_loop_capture_pokeballs.py",
-      "sha256": "76631f764b0404eb7472f0b5f70f84712a081b4347126de15ac85a58e75042c6"
+      "sha256": "e523a05e387b7e1faf36de4c86fe5659cb27cf25751cbc8fc8d1069f2633922b"
     },
     {
       "path": "data/complete-play-loop/capture-pokeballs.v1.json",
-      "sha256": "0fb778b5e67ef36e28d4c18c7ca6ea7c3dc4ad716604c876e58684970410ae10"
+      "sha256": "2052d0fb2ba4ae11715ceb6e8a551ed0130b7e36b48c78fb99fa37c6981038a8"
     },
     {
       "path": "shared/livePlayCommands.ts",
@@ -246,31 +246,31 @@
     },
     {
       "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-      "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+      "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
     },
     {
       "path": "scripts/generate_complete_play_loop_item_catalog_cohorts.py",
-      "sha256": "edf66154cd76aede7f461feb810b82c5deb1d5d9e8f1ba82b21295074c4c75a0"
+      "sha256": "a6c5e6de01b2f38240b8e610fd5779cadc1bc224a1a782d4678dc2767a82e48c"
     },
     {
       "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
-      "sha256": "be82c8f9975056f894bf9b8cf78780869afcd71ef7f2bccfbe0cae88adaac1a0"
+      "sha256": "53f3c2c06e83d23fded29a03ff2a96021075a366f994925c21a7b1132f230f8c"
     },
     {
       "path": "data/complete-play-loop/item-catalog-cohort-certification.v1.json",
-      "sha256": "84c90d28710dc87e9c28b034c26beea3c4b316e855930c1a0a0dcc5df2e5944f"
+      "sha256": "efdbc447c00c72f4c42b784acfbc441b29a8655567b637cf50c189aaa080a857"
     },
     {
       "path": "docs/canonical-item-catalog-cohorts.md",
-      "sha256": "e9dbaae9f1041b5da2e030010cdd0237f29bdd3255252493962c087793cdf394"
+      "sha256": "f11f9149622dd99eec6d9526f43901ab808464c927314d1df30789eb0ab067b5"
     },
     {
       "path": "tests/data/completePlayLoopItemCatalogCohorts.test.ts",
-      "sha256": "d22a0d127419c5865706cd0699134ef1a84cb16e27653179014f719f9524e2f0"
+      "sha256": "215309eef48a86f6adea3c0860459227879abe456d3116b6b0bf87fc362c7034"
     },
     {
       "path": "tests/server/itemCatalogCohortRegistry.test.ts",
-      "sha256": "57ef83bef122693fbbd540d0d0b42e0993589b987c40bb6a9651cc0fc7331b3c"
+      "sha256": "95d8f33a98490f1a2be18efca3c8ee7f9ccd2a649ae57070e70e01ff847d3681"
     },
     {
       "path": "tests/shared/itemCatalogCohorts.test.ts",

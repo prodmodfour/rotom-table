@@ -9,6 +9,11 @@ import lineageContractJson from '../../../data/breeding-automation/lineage-contr
 import naturesJson from '../../../data/breeding-automation/natures.json'
 import sourceManifestJson from '../../../data/breeding-automation/source-manifest.json'
 import { stableJsonStringify } from '#shared/automation/stableJson'
+import {
+  currentMoveSourceNameForLegacyIdentity,
+  isReviewedLegacyMoveMechanicalFingerprint,
+  projectLegacyMoveMechanicalAuthority,
+} from '#shared/ruleset/moveMechanicalAuthority'
 import type { PokemonEggId, PokemonBreedingOriginId, BreedingOperationId } from '#shared/breeding/ids'
 import type { PokemonEggDocumentV1 } from '#shared/breeding/egg'
 import type { BreedingBabyTemplateAuthorityV1 } from '#shared/breeding/babyTemplate'
@@ -135,7 +140,10 @@ const pokedex = pokedexJson as readonly PokedexRecord[]
 const moves = movesJson as unknown as Readonly<Record<string, ReferenceMoveRecord>>
 const abilities = abilitiesJson as Readonly<Record<string, ReferenceAbilityRecord>>
 const experience = new Map((experienceJson as readonly ExperienceEntry[]).map(entry => [entry.level, entry.expNeeded]))
-const moveIdentityByName = new Map(BREEDING_CANONICAL_MOVES.map(identity => [identity.sourceName, identity]))
+const moveIdentityByName = new Map(BREEDING_CANONICAL_MOVES.map(identity => [
+  currentMoveSourceNameForLegacyIdentity(identity.id, identity.sourceName),
+  identity,
+]))
 const abilityIdentityByName = new Map(BREEDING_CANONICAL_ABILITIES.map(identity => [identity.sourceName, identity]))
 const runtimeSourceHashes = new Map((sourceManifestJson.runtimeSources as readonly { readonly path: string, readonly sha256: string }[])
   .map(entry => [entry.path, entry.sha256]))
@@ -178,8 +186,17 @@ export const BREEDING_CHILD_SHEET_CONSTRUCTION_POLICY_DEFINITION_SHA256 = sha256
 const canonicalMove = (name: string): CharacterSheetMove => {
   const identity = moveIdentityByName.get(name)
   const record = moves[name]
-  if (!identity || canonicalBreedingMoveIdentity(identity.id) !== identity || !record || record.name !== identity.sourceName
-    || sha256(record) !== identity.sourceRecordSha256) {
+  const currentRecordSha256 = record
+    ? sha256(projectLegacyMoveMechanicalAuthority(record as unknown as Readonly<Record<string, unknown>>))
+    : ''
+  if (!identity || canonicalBreedingMoveIdentity(identity.id) !== identity || !record || record.name !== name
+    || !isReviewedLegacyMoveMechanicalFingerprint({
+      canonicalId: identity.id,
+      frozenSourceName: identity.sourceName,
+      frozenRecordSha256: identity.sourceRecordSha256,
+      currentSourceName: name,
+      currentRecordSha256,
+    })) {
     return fail('breeding.child-sheet.stale-authority', `Move ${name} is not one exact current app-owned canonical Move.`)
   }
   const category = record.damage_class === 'Physical' || record.damage_class === 'Special' || record.damage_class === 'Status'

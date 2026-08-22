@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "character-creation:v1",
+  "status": "reviewed",
+  "target": {
+    "path": "data/reference/rules.json",
+    "ruleKey": "Character Creation",
+    "baseSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142"
+  },
+  "sources": [
+    {
+      "path": "books/markdown/core/02-character-creation.md",
+      "subject": "skill-background-composition",
+      "lineRanges": [
+        [
+          60,
+          96
+        ],
+        [
+          462,
+          470
+        ]
+      ]
+    },
+    {
+      "path": "books/markdown/core/02-character-creation.md",
+      "subject": "starting-money-recommendation",
+      "lineRanges": [
+        [
+          438,
+          457
+        ]
+      ]
+    },
+    {
+      "path": "books/markdown/core/05-pokemon.md",
+      "subject": "starting-loyalty-baseline",
+      "lineRanges": [
+        [
+          1460,
+          1495
+        ]
+      ]
+    }
+  ],
+  "reviewDecision": {
+    "status": "accepted",
+    "summary": "Structured background composition (1 Adept / 1 Novice / 3 Pathetic, distinct, creation-locked floor), the $5000 starting-money recommendation, and the Loyalty 2 caught-baseline for starting Pokémon; policy may override money and Loyalty inside canonical bounds.",
+    "resolvesDataDefects": [
+      "DATA-ONB-001",
+      "DATA-ONB-002",
+      "DATA-ONB-004"
+    ]
+  },
+  "rule": {
+    "name": "Character Creation",
+    "category": "Advancement Rule",
+    "text": "Step 2: Create Skill Background. Rank three different Skills down to Pathetic Rank. Rank up one Skill to Adept Rank and one other Skill to Novice Rank. Pathetic Skills cannot be raised above Pathetic during character creation. Step 9: Money and Items — we recommend all starting Trainers begin with a Pokédex and $5000. Loyalty: most caught wild Pokémon begin at Loyalty Rank 2. Runtime uses only characterCreationMechanics.",
+    "aliases": [
+      "Skill Background",
+      "Starting Money",
+      "Starting Loyalty",
+      "Creation Steps"
+    ],
+    "source": "books/markdown/core/02-character-creation.md; books/markdown/core/05-pokemon.md",
+    "characterCreationMechanics": {
+      "schemaVersion": 1,
+      "sourceHashes": [
+        {
+          "source": "books/markdown/core/02-character-creation.md",
+          "sha256_16": "ca4e9f631b18f1a6"
+        },
+        {
+          "source": "books/markdown/core/05-pokemon.md",
+          "sha256_16": "4fa04ea5d56b04a9"
+        }
+      ],
+      "background": {
+        "adeptPicks": 1,
+        "novicePicks": 1,
+        "patheticPicks": 3,
+        "distinctSkillsRequired": true,
+        "patheticFloorLockedDuringCreation": true,
+        "resolvesDataDefect": "DATA-ONB-001"
+      },
+      "startingMoney": {
+        "recommendedDefault": 5000,
+        "policyOverridable": true,
+        "standardKitNotes": "The core recommendation includes a Pokédex; no canonical items.json identity exists for it, so it remains narrative equipment unless a campaign package grants concrete items.",
+        "resolvesDataDefect": "DATA-ONB-002"
+      },
+      "startingLoyalty": {
+        "defaultValue": 2,
+        "minimum": 0,
+        "maximum": 6,
+        "policyOverridable": true,
+        "adjudicationNote": "The core Loyalty chapter states most caught wild Pokémon begin at Loyalty 2; starters use the same reviewed baseline unless campaign policy sets another bounded value.",
+        "resolvesDataDefect": "DATA-ONB-004"
+      }
+    }
+  }
+}

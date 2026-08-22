@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "ticket": "P8-043",
-  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "catalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
   "definitionCount": 108,
   "classificationPolicy": {
     "status": "reviewed",
@@ -451,7 +451,7 @@
     },
     {
       "canonicalItemId": "Fancy Clothes",
-      "canonicalRecordSha256": "1bd69a7221f797dc32e2c738a1f8c0f204bf3b492556ba5ced745db435f0e2d6",
+      "canonicalRecordSha256": "5bec6c85d73f9176e2f6c22e7796afb6cab4883c0fe61281ae81e37d78e2d444",
       "ownerRules": [
         {
           "ownerKind": "trainer",
@@ -1014,7 +1014,7 @@
     },
     {
       "canonicalItemId": "Contest Accessory",
-      "canonicalRecordSha256": "b859f9835c3978186cba6459164b4baa7652588d2ab5e1248fa2e4c007200662",
+      "canonicalRecordSha256": "3fa09101ba877427d54f92888df524aaa637686641d3c43b6f9ca6579936ba9a",
       "ownerRules": [
         {
           "ownerKind": "pokemon",
@@ -1031,7 +1031,7 @@
     },
     {
       "canonicalItemId": "Contest Fashion",
-      "canonicalRecordSha256": "14e59f707a78b7cb56adf657ae1cf30b127ff03e897e35526e9c3ae349298ef2",
+      "canonicalRecordSha256": "aef0832fdd8f507717a1c082ddd93b55fe6d5e222b45d2c5aba61cb1c0f5fd2e",
       "ownerRules": [
         {
           "ownerKind": "pokemon",

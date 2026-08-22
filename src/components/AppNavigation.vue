@@ -199,6 +199,7 @@ watch(isPlayer, (nextIsPlayer) => {
 
 .profile-status {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.45rem;
   min-width: 0;
@@ -209,6 +210,11 @@ watch(isPlayer, (nextIsPlayer) => {
   background: var(--paper-inset);
   color: var(--ink-soft);
   font-size: 0.82rem;
+}
+
+@media (max-width: 420px) {
+  .profile-status { border-radius: 12px; }
+  .profile-status__actions { flex-wrap: wrap; }
 }
 
 .profile-status__text {

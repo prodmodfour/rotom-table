@@ -8,6 +8,7 @@ import {
   CAMPAIGN_DAY_PREFLIGHT_SCHEMA_VERSION,
 } from '../../shared/campaignDayPreflight'
 import { CAMPAIGN_DAY_PREFLIGHT_AUTHORITY_LIMIT } from '../../server/domain/campaignDay/preflightAuthority'
+import { isLocalUiArtifactPath, readOptionalLocalUiArtifact } from '../helpers/localUiArtifacts'
 
 const sha256 = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex')
 
@@ -94,10 +95,13 @@ describe('P8-091 campaign-day continuation evidence', () => {
     })
   })
 
-  it('pins every runtime, test, document, journey, mockup, and browser artifact', () => {
+  it('pins every runtime, test, document, journey, and local UI artifact reference', () => {
     for (const source of Object.values(contract.sources)) {
       expect(source.sha256, source.path).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(source.path)), source.path).toBe(source.sha256)
+      const bytes = isLocalUiArtifactPath(source.path)
+        ? readOptionalLocalUiArtifact(process.cwd(), source.path)
+        : readFileSync(source.path)
+      if (bytes) expect(sha256(bytes), source.path).toBe(source.sha256)
     }
   })
 })

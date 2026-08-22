@@ -13,6 +13,7 @@ import {
   type ItemMoveLearningApplicationV1,
 } from '#shared/itemAutomation/moveLearning'
 import { stableJsonStringify } from '#shared/automation/stableJson'
+import { projectLegacyMoveMechanicalAuthority } from '#shared/ruleset/moveMechanicalAuthority'
 import type { PokedexRecord } from '~/types/pokemon'
 import type { PtuItemMoveLearningMechanicsV1, PtuMove } from '~/types/ptuReference'
 import type {
@@ -196,7 +197,7 @@ const assertImmutableStateMatchesRows = (
     const sourceMove = canonicalMoves[application.moveId]
     const sourceSpecies = canonicalPokedex.filter(row => row.species === application.speciesId)
     if (!sourceMove || sourceMove.name !== application.moveId
-      || sha256(stableJsonStringify(sourceMove)) !== application.moveRecordSha256
+      || sha256(stableJsonStringify(projectLegacyMoveMechanicalAuthority(sourceMove as unknown as Readonly<Record<string, unknown>>))) !== application.moveRecordSha256
       || sourceSpecies.length !== 1
       || sha256(stableJsonStringify(sourceSpecies[0])) !== application.speciesRecordSha256) {
       throw new Error('Item-controlled Move rows no longer match immutable accepted Move-learning provenance.')
@@ -317,7 +318,7 @@ const currentAuthority = (input: {
     species,
     speciesRecordSha256: sha256(stableJsonStringify(species)),
     move,
-    moveRecordSha256: sha256(stableJsonStringify(move)),
+    moveRecordSha256: sha256(stableJsonStringify(projectLegacyMoveMechanicalAuthority(move as unknown as Readonly<Record<string, unknown>>))),
     moveRows: currentRows,
     appliedRows,
     activeMaximum,

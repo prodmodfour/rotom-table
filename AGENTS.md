@@ -2,9 +2,10 @@ This is a Nuxt 4 and three.js project.
 
 ## Implementation plan completion
 
-- Active execution snapshot: Guided Character Creation and Campaign Onboarding is `TODO` (0 of 100 tickets complete; current P9-001; no blocker).
+- Active execution snapshot: Plans 1–10 are `DONE` and archived; no implementation plan is currently registered for execution.
 - Read `implementation-plans/plan-order.md` before implementation work and follow its dependency order.
-- The authoritative ticket ledger is `implementation-plans/CHARACTER_CREATION_AND_CAMPAIGN_ONBOARDING_PLAN.md`; each plan's `PLAN_STATUS` and `CURRENT_TICKET` remain authoritative.
+- Plan 10's authoritative archived ledger is `implementation-plans/done/POKEMON_CONTESTS_PLAN.md`; each registered plan's `PLAN_STATUS` and `CURRENT_TICKET` remain authoritative.
+- The recorded finish line is the 1.0 release definition in `implementation-plans/plan-order.md`, with prospective Plans 11–13 (Deferred Mechanics Closure, GM Campaign Toolkit, 1.0 Release Readiness). Prospective rows are scope intent only and impose no execution obligation until drafted and registered.
 - Keep the active plan and `implementation-plans/plan-order.md` synchronized whenever ticket counts, current execution, dependencies, or plan status change.
 - Completing one ticket, phase, or plan is only a checkpoint. Do not stop, finish the task, or report overall completion while any implementation plan or ticket in the ordered ledgers remains unfinished. Continue autonomously in dependency order until every implementation is `DONE`, unless a genuine external blocker prevents progress; record any such blocker in both authoritative ledgers.
 
@@ -43,6 +44,7 @@ Treat only these app-owned JSON files as the canonical runtime reference sources
 - `data/reference/stat-rankings.json`
 - `data/reference/pokemonExperienceChart.json`
 - `data/reference/rules.json`
+- `data/reference/contests.json`
 
 The similarly named files under `ptu-data/data/`, checked-in books/markdown, parser inputs, PDFs, websites, wikis, and other external sources are documentary or provenance material only. They are not runtime sources of truth and must not be used to silently supplement, override, or reinterpret the canonical JSON.
 

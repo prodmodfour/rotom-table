@@ -5,17 +5,18 @@
   "canonicalAuthority": {
     "rules": {
       "path": "data/reference/rules.json",
-      "fileSha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142",
+      "fileSha256": "f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df",
       "recordSha256": "3b520452e7a8e8b3c2b8a766ebe1f5bd2bd0f72f7c202dca7829f4af34155561",
       "migrationId": "rule-data-exploration-item-mechanics-v1",
       "catalogSuccessorMigrationIds": [
         "rule-data-pokemon-advancement-choices-v1",
-        "rule-data-trainer-advancement-choices-v1"
+        "rule-data-trainer-advancement-choices-v1",
+        "rule-data-character-creation-mechanics-v1"
       ]
     },
     "items": {
       "path": "data/reference/items.json",
-      "fileSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+      "fileSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
       "shardsRecordSha256": "ec5bf72105f2a42742e20fbe3ade5a407007b3fb350df9020ae6900d64818c38"
     },
     "features": {
@@ -25,7 +26,7 @@
     },
     "specs": {
       "path": "data/complete-play-loop/specs.v1.json",
-      "fileSha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe"
+      "fileSha256": "b03d2706fa0d666b33262e215b80a0bc33ac617d07a62e5aca7319db396918ed"
     },
     "runtimeDocumentaryParsingForbidden": true
   },

@@ -8,6 +8,7 @@ import {
 import { CAMPAIGN_PATH, GROUP_INVENTORY_PATH, LOGIN_PATH, SETTINGS_PATH, USEFUL_CHARTS_PATH } from '~/utils/appRoutes'
 import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { BREEDING_WORKSHOP_PATH } from '#shared/breeding/workshop'
+import { CONTESTS_PATH } from '#shared/contests/routes'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import { SHOP_LIBRARY_PATH } from '~/utils/shopRoutes'
 import {
@@ -22,18 +23,21 @@ describe('app navigation helpers', () => {
       '/play',
       '/maps',
       BREEDING_WORKSHOP_PATH,
+      CONTESTS_PATH,
       CAMPAIGN_PATH,
       GROUP_INVENTORY_PATH,
       SHOP_LIBRARY_PATH,
       '/pokedex',
       '/trainers',
       SETTINGS_PATH,
+      '/onboarding',
     ])
     expect(PRIMARY_APP_NAV_ITEMS.some((item) => item.path === '/sessions')).toBe(false)
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).map((item) => item.path)).toEqual([
       '/play',
       '/maps',
       BREEDING_WORKSHOP_PATH,
+      CONTESTS_PATH,
       CAMPAIGN_PATH,
       GROUP_INVENTORY_PATH,
       SHOP_LIBRARY_PATH,
@@ -41,6 +45,7 @@ describe('app navigation helpers', () => {
       '/sheets',
       SETTINGS_PATH,
       PLAYER_PROFILE_MANAGEMENT_PATH,
+      '/onboarding',
       '/encounters/new',
     ])
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).some((item) => item.path === '/sessions')).toBe(false)

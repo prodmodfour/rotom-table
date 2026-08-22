@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "ticket": "P10-100",
+  "status": "accepted",
+  "productPhase": "alpha",
+  "plan": {
+    "path": "implementation-plans/done/POKEMON_CONTESTS_PLAN.md",
+    "ticketsTotal": 100,
+    "ticketsDone": 100,
+    "currentTicket": "NONE",
+    "blockers": 0
+  },
+  "catalog": {
+    "canonicalMoveRows": 777,
+    "definedMoveRows": 761,
+    "explicitUnavailableMoveRows": 16,
+    "canonicalRuleRows": 34,
+    "integrationRows": 44,
+    "blockedRows": 0,
+    "runtimeProseParsing": false
+  },
+  "acceptance": {
+    "variants": ["standard", "supercontest", "festival", "rotation"],
+    "deterministicScenarios": 18,
+    "contestantScales": [3, 4, 5],
+    "desktopMobileProjects": ["chromium", "mobile-chromium"],
+    "concurrentProductionRoles": ["gm", "player-owner-1", "player-owner-2", "spectator"],
+    "hardAccessibilityFailures": 0,
+    "criticalContestDebt": 0,
+    "manualStorageRepairRequired": false,
+    "clientOwnedRandomness": false,
+    "clientOwnedMechanicalMutation": false
+  },
+  "validation": {
+    "reviewedMigration": "passed",
+    "deterministicFixtureRegeneration": "passed",
+    "focusedContestGate": "passed",
+    "fullVitest": "passed",
+    "nuxtTests": "passed",
+    "eslint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "contestDesktopMobileLiveplay": "passed",
+    "repositoryPlaywright": "passed",
+    "repositoryQualityGate": "passed"
+  },
+  "visualEvidence": [
+    ".pi/artifacts/ui-mockups/live-contest-cockpit/v003.png",
+    ".pi/artifacts/ui-validation/contests/chromium-setup.png",
+    ".pi/artifacts/ui-validation/contests/chromium-performance.png",
+    ".pi/artifacts/ui-validation/contests/chromium-settlement-320.png",
+    ".pi/artifacts/ui-validation/contests/chromium-completed.png",
+    ".pi/artifacts/ui-validation/contests/mobile-chromium-setup.png",
+    ".pi/artifacts/ui-validation/contests/mobile-chromium-performance.png",
+    ".pi/artifacts/ui-validation/contests/mobile-chromium-settlement-320.png",
+    ".pi/artifacts/ui-validation/contests/mobile-chromium-completed.png"
+  ],
+  "browserTraceEvidence": [
+    {
+      "path": ".pi/artifacts/ui-validation/contests/traces/chromium.zip",
+      "sha256": "69532c04263534619d2882acb5b23be99eb0b82375c2ea5f236210dced9d87a7"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/contests/traces/mobile-chromium.zip",
+      "sha256": "1b9f67d13bd746f689de0e7048814e17a17795d941a4c018b80d5c13bccdb099"
+    }
+  ],
+  "finalAssertions": {
+    "everyTicketDone": true,
+    "planArchived": true,
+    "noBlockedCanonicalRow": true,
+    "noCriticalContestDebt": true,
+    "liveplayOnly": true,
+    "legacyContestTextIsNonAuthoritative": true
+  },
+  "sourceEvidence": [
+    { "path": "scripts/reviewed-data/pokemon-contests.v1.json", "sha256": "ca491986faf4427c4a20040eeb6a8c3d8c9d01961d190a301cb85e88a39fa36f" },
+    { "path": "data/reference/contests.json", "sha256": "fadb03c328f2025dcc81fe497365db345717184bea6a9247b2f79d9d3f61362a" },
+    { "path": "data/reference/moves.json", "sha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821" },
+    { "path": "data/reference/items.json", "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef" },
+    { "path": "data/contests/completion-rubric.v1.json", "sha256": "01a18face8d317450731bb1f1051e75f02fd5a4a6e770e72225c944c2f0fac1a" },
+    { "path": "data/contests/footprint-debt.v1.json", "sha256": "d000927ff6763fde1854fa3b142114e53210ad38e25ff5f8d1dbb224ff06a47a" },
+    { "path": "data/contests/rule-coverage.v1.json", "sha256": "0fb3ba8b9361d5b662934637a12a2abbb5d3cf20438d88458759933d8b54f5c8" },
+    { "path": "data/contests/integration-coverage.v1.json", "sha256": "0d06024462a5fd94fb7027e9abbcfae847f75727c138087672964629250a0e14" },
+    { "path": "data/contests/roles-privacy.v1.json", "sha256": "5ee2e7f258a38c53c4865f0009fed2215f9631a3cb80383983136020b700a32e" },
+    { "path": "data/contests/ux-success-criteria.v1.json", "sha256": "31603068285d4dd513bcb2a766d493c6278f3b02f78154690f4b6794bec04cc1" },
+    { "path": "data/contests/golden-cute-demo.v1.json", "sha256": "7f980014fffa5bd5571f596c047671099f86fbf3a80689a855c234e88222b99d" },
+    { "path": "data/contests/variant-matrix.v1.json", "sha256": "e848d51550c5d2732e5d4f379c36ae51c3a0edd54a2666f1886fe9899be87ed2" },
+    { "path": "data/contests/failure-recovery-fixtures.v1.json", "sha256": "aa5a1082a873c72cfed43cb899310d5df1a55a625b7501c290c4c2a8eeb44a30" },
+    { "path": "shared/contests/document.ts", "sha256": "545a8e9f01ef381a1a5a4a90085433b7f827fda3e5ae011813fced25717764cb" },
+    { "path": "server/domain/contests/engine.ts", "sha256": "b5b08f7bd23537a4e46ab67128487247ced921cb229a84fda0299cf063abcad6" },
+    { "path": "server/useCases/contests.ts", "sha256": "a162e55b057a386643b73a04e1dc453305f2ae47f52142c90fdacc2fc46060a6" },
+    { "path": "server/useCases/contestPreparation.ts", "sha256": "0fb33ada6668b86dafbfcd0e4c3596a89f2e0103b29a2534e2805c18436417fd" },
+    { "path": "tests/server/contestPerformanceBudgets.test.ts", "sha256": "e9f6ac365d3a0d3ebbfb058ce270865774e1a0a09abf256b5dd33c52071cc413" },
+    { "path": "tests/server/contestStorageRecovery.test.ts", "sha256": "a345f16078f1ff4cefe8bbc42d200dbc21e1fea205425703e81c63d17fb9629c" },
+    { "path": "tests/e2e/contests-acceptance.spec.ts", "sha256": "aea075d2c2588421575b1046d23a8c8122d041f2c62f52101749adae372c3bd4" },
+    { "path": "docs/adrs/019-authoritative-pokemon-contest-runtime.md", "sha256": "e2b8237398f99c9e26fea235cd993b8d235f2463ce43f7407f8805f180bc1f6a" },
+    { "path": "docs/contests/README.md", "sha256": "6777c54366c25d4496c0cbbfa4913caab4162bbd10c5637d2cee93a4007042cd" },
+    { "path": "docs/contests/player-and-gm-guide.md", "sha256": "de8308f046f906d869580184cfd2cb5c0e237cc3aff6ce0442a51fef7ffae409" },
+    { "path": "docs/contests/architecture-and-api.md", "sha256": "29623842953887935acc12f435016e6d7fe3cb2c4801c4200fe7d2fa2200ea2f" },
+    { "path": "docs/contests/canonical-data-maintenance.md", "sha256": "259d45838db5c0c0da4416374b2700b76c7191e57edb34aa89297d2d57cd9e1d" },
+    { "path": "docs/contests/operations-recovery.md", "sha256": "afefb5151e6c6e2735bed2ae49c02019988cc2e7b91151c219b30c5c80db1c6a" },
+    { "path": "docs/contests/accessibility-and-acceptance.md", "sha256": "cb1f03ee83351cc2afaf9e1af8b7b5db821313d8b114287274923d0c4f003d26" },
+    { "path": "package.json", "sha256": "efbd8d525679b92f236473e7ff25cf58ffab662b8f0c7fca316aee2fb76f7ec4" },
+    { "path": "scripts/quality-gate.sh", "sha256": "6385abe72e4b0e62311a9d4446021f1aefdf653246499cce5eaf3f7260e534ee" }
+  ]
+}

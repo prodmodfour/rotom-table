@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "contractId": "pokemon-contest-roles-privacy-v1",
+  "roles": [
+    {
+      "id": "gm",
+      "can": ["create", "edit-setup", "enroll-any", "start", "declare-for-gm-contestant", "resolve-guided", "pause", "correct", "cancel", "settle", "read-gm-projection"],
+      "cannot": []
+    },
+    {
+      "id": "competing-player",
+      "can": ["read-public-projection", "read-own-projection", "declare-for-controlled-contestant", "resolve-own-intervention"],
+      "cannot": ["read-other-private-plans", "read-gm-notes", "read-undeclared-prizes", "correct", "settle"]
+    },
+    {
+      "id": "spectator",
+      "can": ["read-public-projection"],
+      "cannot": ["read-private-plans", "read-dice-pools-before-publication", "declare", "intervene", "correct", "settle"]
+    },
+    {
+      "id": "diagnostic",
+      "can": ["read-diagnostic-projection-after-explicit-gm-opt-in"],
+      "cannot": ["mutate-through-projection", "rewrite-dice-evidence"]
+    }
+  ],
+  "authorityConcepts": {
+    "actor": "The Pokémon or Rotation team member currently performing.",
+    "controller": "The GM or exact selected player profile authorized to submit the current decision.",
+    "sheetOwner": "The trainer/profile relationship that authorizes durable sheet access; it need not be the acting controller after explicit GM reassignment.",
+    "gm": "The trusted-table Director with setup, guided decision, correction, and settlement authority.",
+    "spectator": "Any authenticated participant without controller or GM authority for the contest."
+  },
+  "structuralProjectionRules": [
+    "Public, owner, GM, and diagnostic projections are built independently on the server.",
+    "GM notes, prize drafts, raw operation hashes, and undeclared choices never enter public or owner payloads.",
+    "Public letters, positions, voltage, accepted appeals, fumbles, scores, and settlement facts are table-visible.",
+    "A controller sees only their own remaining dice pools, legal alternatives, and pending decision payload.",
+    "Realtime events carry role-safe summaries and force a role-projected refetch; clients never redact authoritative documents locally."
+  ],
+  "trustedTableBoundary": "No public spectator accounts or multi-tenant isolation are introduced. Existing authenticated GM/player roles and selected player profiles remain the trust boundary."
+}

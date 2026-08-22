@@ -345,7 +345,7 @@ interface ReviewedItemSpecsDocument {
   readonly specs: readonly ReviewedItemEffectRow[]
 }
 
-const CATALOG_SHA256 = '62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8'
+const CATALOG_SHA256 = '842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef'
 const canonicalItems = itemsJson as Record<string, PtuItem>
 const reviewed = specsJson as unknown as ReviewedItemSpecsDocument
 const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex')
@@ -929,7 +929,11 @@ const moveLearningMechanics = (rulesJson as Record<string, {
 const pokedexRows = pokedexJson as unknown as readonly {
   readonly tm_hm_moves?: readonly { readonly kind: string, readonly number: string, readonly name: string }[]
 }[]
-const moveRows = movesJson as unknown as Record<string, { readonly name?: string }>
+const moveRows = movesJson as unknown as Record<string, {
+  readonly name?: string
+  readonly contest?: unknown
+  readonly [key: string]: unknown
+}>
 const machinePokedexAuthority = machineRows
   .flatMap(row => row.effect.kind === 'learn-machine-move' ? [row.effect] : [])
   .sort((left, right) => {
@@ -948,9 +952,14 @@ const machinePokedexAuthority = machineRows
       entry.kind === effect.machineKind && entry.number === effect.machineNumber && entry.name === effect.moveId
     ))).map(species => species.species).sort(),
   }))
+// Contest identity is a reviewed additive projection and does not alter the
+// closed machine-learning authority that this legacy fingerprint protects.
 const machineMoveAuthority = Object.fromEntries([...new Set(machineRows.flatMap(row => (
   row.effect.kind === 'learn-machine-move' ? [row.effect.moveId] : []
-)))].sort().map(moveId => [moveId, moveRows[moveId]]))
+)))].sort().map((moveId) => {
+  const { contest: _contestIdentity, ...machineAuthority } = moveRows[moveId] ?? {}
+  return [moveId, machineAuthority]
+}))
 if (!moveLearningMechanics || moveLearningMechanics.schemaVersion !== 1
   || moveLearningMechanics.learningMinutes !== 60
   || moveLearningMechanics.activeMoveMaximum !== 6

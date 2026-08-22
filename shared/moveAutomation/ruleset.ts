@@ -13,6 +13,15 @@ export const MOVE_CATALOG_FACADE_SUCCESSOR = Object.freeze({
   afterSha256: '418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e',
 })
 
+// P10-010 adds Contest identity as a reviewed projection on every Move. Move
+// automation remains bound to its frozen mechanical ruleset while admitting
+// this exact chained whole-file successor.
+export const MOVE_CATALOG_CONTEST_SUCCESSOR = Object.freeze({
+  migrationId: 'pokemon-contests:v1',
+  beforeSha256: MOVE_CATALOG_FACADE_SUCCESSOR.afterSha256,
+  afterSha256: '10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821',
+})
+
 export const CANONICAL_MOVE_TYPES = [
   'Normal',
   'Fighting',
@@ -464,7 +473,13 @@ export const loadCanonicalMoveCatalog = async (
   const actualSha256 = await sha256Hex(sourceData)
   const isReviewedFacadeSuccessor = provenance.sourceData.sha256 === MOVE_CATALOG_FACADE_SUCCESSOR.beforeSha256
     && actualSha256 === MOVE_CATALOG_FACADE_SUCCESSOR.afterSha256
-  if (actualSha256 !== provenance.sourceData.sha256 && !isReviewedFacadeSuccessor) {
+  const isReviewedContestSuccessor = (
+    provenance.sourceData.sha256 === MOVE_CATALOG_FACADE_SUCCESSOR.beforeSha256
+    || provenance.sourceData.sha256 === MOVE_CATALOG_CONTEST_SUCCESSOR.beforeSha256
+  ) && actualSha256 === MOVE_CATALOG_CONTEST_SUCCESSOR.afterSha256
+  if (actualSha256 !== provenance.sourceData.sha256
+    && !isReviewedFacadeSuccessor
+    && !isReviewedContestSuccessor) {
     fail(
       'source-hash-mismatch',
       `${provenance.sourceData.path} SHA-256 changed; expected ${provenance.sourceData.sha256}, received ${actualSha256}. Update the provenance record only after intentional rules review.`,

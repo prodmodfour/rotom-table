@@ -47,7 +47,7 @@ const SECTION_SET = new Set<string>(ITEM_INVENTORY_SECTIONS)
 const ACTION_SET = new Set<string>(INVENTORY_STACK_ACTIONS)
 const CONTAINER_SET = new Set<string>(['trainer', 'group'])
 const ROW_FIELDS = new Set([
-  'id', 'name', 'qty', 'cost', 'description', 'mod', 'slot', 'serializedEquipment', 'itemVariant',
+  'id', 'name', 'qty', 'cost', 'description', 'mod', 'slot', 'serializedEquipment', 'itemVariant', 'contestPoffinStatId',
 ])
 
 const fail = (message: string): never => { throw new Error(message) }
@@ -124,6 +124,10 @@ export const parseInventoryStackEvidenceRow = (
     parsed.serializedEquipment = parseSerializedEquipmentInventoryState(input.serializedEquipment)
   }
   if (input.itemVariant !== undefined) parsed.itemVariant = parseItemShardInventoryVariant(input.itemVariant)
+  if (input.contestPoffinStatId !== undefined) {
+    if (parsed.name !== 'Poffin' || typeof input.contestPoffinStatId !== 'string' || !['beauty','cool','cute','smart','tough'].includes(input.contestPoffinStatId)) fail(`${label}.contestPoffinStatId is invalid.`)
+    parsed.contestPoffinStatId = input.contestPoffinStatId as NonNullable<InventoryEntry['contestPoffinStatId']>
+  }
   if (parsed.serializedEquipment && parsed.itemVariant) fail(`${label} cannot combine whole-item and stack variant authority.`)
   if (!inventoryStackRowUsesQuantity(section, parsed) && parsed.qty !== undefined) {
     fail(`${label}.qty is unavailable for whole-item rows.`)

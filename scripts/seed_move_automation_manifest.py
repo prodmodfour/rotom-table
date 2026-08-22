@@ -30,6 +30,12 @@ MOVE_CATALOG_FACADE_SUCCESSOR = {
     "beforeSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815",
     "afterSha256": "418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e",
 }
+POKEMON_CONTEST_REVIEW_PATH = ROOT / "scripts" / "reviewed-data" / "pokemon-contests.v1.json"
+MOVE_CATALOG_CONTEST_SUCCESSOR = {
+    "migrationId": "pokemon-contests:v1",
+    "beforeSha256": MOVE_CATALOG_FACADE_SUCCESSOR["afterSha256"],
+    "afterSha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821",
+}
 MANIFEST_MOVE_FIELDS = {
     "canonicalId",
     "displayName",
@@ -62,7 +68,23 @@ def load_ruleset() -> dict[str, Any]:
         expected_hash == MOVE_CATALOG_FACADE_SUCCESSOR["beforeSha256"]
         and actual_hash == MOVE_CATALOG_FACADE_SUCCESSOR["afterSha256"]
     )
-    if actual_hash != expected_hash and not reviewed_facade_successor:
+    contest_review = json.loads(POKEMON_CONTEST_REVIEW_PATH.read_text(encoding="utf-8"))
+    contest_target = next((target for target in contest_review.get("targets", [])
+                           if target.get("path") == "data/reference/moves.json"), None)
+    reviewed_contest_successor = (
+        expected_hash in {
+            MOVE_CATALOG_FACADE_SUCCESSOR["beforeSha256"],
+            MOVE_CATALOG_CONTEST_SUCCESSOR["beforeSha256"],
+        }
+        and actual_hash == MOVE_CATALOG_CONTEST_SUCCESSOR["afterSha256"]
+        and contest_review.get("migrationId") == MOVE_CATALOG_CONTEST_SUCCESSOR["migrationId"]
+        and contest_review.get("status") == "reviewed"
+        and isinstance(contest_target, dict)
+        and contest_target.get("baseSha256") == MOVE_CATALOG_CONTEST_SUCCESSOR["beforeSha256"]
+        and contest_target.get("afterSha256") == MOVE_CATALOG_CONTEST_SUCCESSOR["afterSha256"]
+        and contest_target.get("afterBytes") == MOVES_PATH.stat().st_size
+    )
+    if actual_hash != expected_hash and not reviewed_facade_successor and not reviewed_contest_successor:
         raise ManifestSeedError(
             "Canonical move source hash does not match data/move-automation/ruleset.json."
         )

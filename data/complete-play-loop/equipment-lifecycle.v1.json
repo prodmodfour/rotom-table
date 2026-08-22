@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "ticket": "P8-049",
-  "equipmentDefinitionsFileSha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a",
+  "equipmentDefinitionsFileSha256": "fb5d8c6cafba3c969da7b20e0c09e9d6b32d4baa6993c4005a40b4f6249316b7",
   "authority": {
     "writer": "accepted replay-safe equipment-operation",
     "sheetCompareAndSwap": true,
@@ -11,13 +11,23 @@
     "clientStateTrusted": false
   },
   "activity": {
-    "statuses": ["active", "inactive", "suppressed", "broken"],
+    "statuses": [
+      "active",
+      "inactive",
+      "suppressed",
+      "broken"
+    ],
     "reasonFamilies": {
       "equipment.suppression.": "suppressed",
       "equipment.inactive.": "inactive",
       "equipment.breakage.": "broken"
     },
-    "priority": ["broken", "inactive", "suppressed", "active"],
+    "priority": [
+      "broken",
+      "inactive",
+      "suppressed",
+      "active"
+    ],
     "activeRequiresNoReasons": true,
     "nonActiveRequiresDurableReason": true,
     "exactReasonRemoval": true,
@@ -26,7 +36,10 @@
   "durability": {
     "serializedStateKey": "equipmentDurability",
     "stateSchemaVersion": 1,
-    "fields": ["current", "maximum"],
+    "fields": [
+      "current",
+      "maximum"
+    ],
     "initialization": "reviewed-configuration-maximum-only",
     "breakAtCurrent": 0,
     "breakReasonCode": "equipment.breakage.durability",
@@ -36,13 +49,21 @@
         "canonicalItemId": "Hand Net",
         "configurationId": "equipment.hand-net.v1",
         "configurationField": "durabilityMaximum",
-        "maximumValues": [50, 100, 200]
+        "maximumValues": [
+          50,
+          100,
+          200
+        ]
       },
       {
         "canonicalItemId": "Weighted Nets",
         "configurationId": "equipment.weighted-nets.v1",
         "configurationField": "durabilityMaximum",
-        "maximumValues": [50, 80, 150]
+        "maximumValues": [
+          50,
+          80,
+          150
+        ]
       }
     ],
     "unsupportedDamagePolicy": "guided-narrative-breakage-or-no-mutation"
@@ -76,8 +97,17 @@
     "replayPolicy": "exact-command-no-duplicate-change"
   },
   "privacy": {
-    "playerProjectionIncludes": ["activity status", "safe reason codes"],
-    "playerProjectionOmits": ["reason source identities", "serialized durability state", "instance authority identity", "hashes", "operation evidence"],
+    "playerProjectionIncludes": [
+      "activity status",
+      "safe reason codes"
+    ],
+    "playerProjectionOmits": [
+      "reason source identities",
+      "serialized durability state",
+      "instance authority identity",
+      "hashes",
+      "operation evidence"
+    ],
     "gmLifecycleControlsRequireFullAuthority": true
   }
 }

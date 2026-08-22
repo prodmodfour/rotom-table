@@ -17,7 +17,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 ITEMS_PATH = ROOT / "data/reference/items.json"
 OUTPUT_PATH = ROOT / "data/complete-play-loop/equipment-definitions.v1.json"
-CATALOG_SHA256 = "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+CATALOG_SHA256 = "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
 EQUIPMENT_CATEGORIES = {
     "Held Item", "Weapon", "Hand Equipment", "Head Equipment",
     "Body Equipment", "Feet Equipment", "Accessory Item",

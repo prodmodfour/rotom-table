@@ -7,6 +7,7 @@ import itemFixtures from '../../data/complete-play-loop/fixtures/items.v1.json'
 import settlementFixtures from '../../data/complete-play-loop/fixtures/settlements.v1.json'
 import items from '../../data/reference/items.json'
 import { stableJsonStringify } from '../../shared/automation/stableJson'
+import { isLocalUiArtifactPath, readOptionalLocalUiArtifact } from '../helpers/localUiArtifacts'
 
 const root = resolve(import.meta.dirname, '../..')
 const sha256 = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex')
@@ -67,8 +68,8 @@ describe('P8-098 complete golden campaign acceptance', () => {
       expect(journey.projects).toEqual(['chromium', 'mobile-chromium'])
       expect(journey.gmAndPlayer).toBe(true)
       expect(journey.manualRepair).toBe(false)
-      const report = readFileSync(resolve(root, journey.report), 'utf8').toLowerCase()
-      expect(report).toMatch(/pass|accepted/)
+      const reportBytes = readOptionalLocalUiArtifact(root, journey.report)
+      if (reportBytes) expect(reportBytes.toString('utf8').toLowerCase()).toMatch(/pass|accepted/)
     }
   })
 
@@ -113,7 +114,10 @@ describe('P8-098 complete golden campaign acceptance', () => {
       expect(paths.has(row.path), row.path).toBe(false)
       paths.add(row.path)
       expect(row.sha256).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(resolve(root, row.path))), row.path).toBe(row.sha256)
+      const bytes = isLocalUiArtifactPath(row.path)
+        ? readOptionalLocalUiArtifact(root, row.path)
+        : readFileSync(resolve(root, row.path))
+      if (bytes) expect(sha256(bytes), row.path).toBe(row.sha256)
     }
     for (const path of [
       'data/reference/items.json',

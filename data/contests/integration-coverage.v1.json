@@ -1,0 +1,432 @@
+{
+  "schemaVersion": 1,
+  "inventoryId": "pokemon-contest-integration-coverage-v1",
+  "sourceCatalog": "data/reference/contests.json#integrationRows",
+  "expectedCounts": {
+    "feature": 34,
+    "edge": 2,
+    "ability": 3,
+    "item": 5
+  },
+  "rows": [
+    {
+      "kind": "feature",
+      "id": "Coordinator",
+      "completionState": "native",
+      "handler": "reroll-appeal-once-per-contest",
+      "ownerTickets": [
+        "P10-051"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Decisive Director",
+      "completionState": "not-applicable",
+      "safeReason": "Contest turn order comes from canonical position charts, not Initiative.",
+      "ownerTickets": [
+        "P10-051"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Adaptable Performance",
+      "completionState": "native",
+      "handler": "compose-type-and-effect-once-per-contest",
+      "ownerTickets": [
+        "P10-051"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Flexible Preparations",
+      "completionState": "native",
+      "handler": "reallocate-two-poffin-dice-until-campaign-day-end",
+      "ownerTickets": [
+        "P10-051"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Innovation",
+      "completionState": "guided",
+      "handler": "bind-created-move-contest-identity",
+      "safeReason": "A created Move requires an explicit reviewed type and effect choice; prose is never parsed.",
+      "ownerTickets": [
+        "P10-051"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Nuanced Performance",
+      "completionState": "not-applicable",
+      "safeReason": "Contest appeals do not expend battle Move frequencies.",
+      "ownerTickets": [
+        "P10-051"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Reliable Performance",
+      "completionState": "native",
+      "handler": "fixed-one-appeal-per-die",
+      "ownerTickets": [
+        "P10-051"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Look and Learn",
+      "completionState": "passive",
+      "handler": "existing-feature-acquisition-authority",
+      "ownerTickets": [
+        "P10-051"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Juggling Show",
+      "completionState": "native",
+      "handler": "introduction-half-acrobatics-bonus",
+      "ownerTickets": [
+        "P10-051"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Style Expert",
+      "completionState": "passive",
+      "handler": "two-poffin-dice-chosen-stat",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Style Flourish",
+      "completionState": "native",
+      "handler": "reroll-ones-once-per-contest",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Style Entrainment",
+      "completionState": "not-applicable",
+      "safeReason": "Its granted Abilities have no canonical Contest action in this catalog.",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Beautiful Ballet",
+      "completionState": "native",
+      "handler": "poffin-threshold-virtual-moves",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Fabulous Max",
+      "completionState": "native",
+      "handler": "improve-contest-alignment-one-step",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Enticing Beauty",
+      "completionState": "not-applicable",
+      "safeReason": "This Feature modifies route lure checks rather than Contest play.",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Cool Conduct",
+      "completionState": "native",
+      "handler": "poffin-threshold-virtual-moves",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Rule of Cool",
+      "completionState": "native",
+      "handler": "improve-contest-alignment-one-step",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Action Hero Stunt",
+      "completionState": "not-applicable",
+      "safeReason": "This Feature substitutes dramatic Skill Checks outside Contest scoring.",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Cute Cuddle",
+      "completionState": "native",
+      "handler": "poffin-threshold-virtual-moves",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Gleeful Steps",
+      "completionState": "native",
+      "handler": "improve-contest-alignment-one-step",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Let’s Be Friends!",
+      "completionState": "not-applicable",
+      "safeReason": "This Feature changes wild Pokémon disposition checks.",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Smart Scheme",
+      "completionState": "native",
+      "handler": "poffin-threshold-virtual-moves",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Calculated Assault",
+      "completionState": "native",
+      "handler": "improve-contest-alignment-one-step",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Learn From Your Mistakes",
+      "completionState": "not-applicable",
+      "safeReason": "This Feature rerolls Skill Checks, not Appeal Rolls.",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Tough Tumble",
+      "completionState": "native",
+      "handler": "poffin-threshold-virtual-moves",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Macho Charge",
+      "completionState": "native",
+      "handler": "improve-contest-alignment-one-step",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Endurance",
+      "completionState": "not-applicable",
+      "safeReason": "This Feature modifies falling, suffocation, and injury consequences.",
+      "ownerTickets": [
+        "P10-052"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Stat Ace",
+      "completionState": "passive",
+      "handler": "ordinary-combat-stat-derivation",
+      "ownerTickets": [
+        "P10-053"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Contest Trends",
+      "completionState": "guided",
+      "handler": "discounted-contest-item-crafting",
+      "ownerTickets": [
+        "P10-053"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Playing God",
+      "completionState": "passive",
+      "handler": "coloration-introduction-bonus",
+      "ownerTickets": [
+        "P10-053"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Beguiling Dance",
+      "completionState": "passive",
+      "handler": "created-dance-effect-excitement",
+      "ownerTickets": [
+        "P10-053"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Passing Waltz",
+      "completionState": "guided",
+      "handler": "bind-created-dance-contest-type",
+      "ownerTickets": [
+        "P10-053"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Voice Lessons",
+      "completionState": "passive",
+      "handler": "sonic-move-bonus-die",
+      "ownerTickets": [
+        "P10-053"
+      ]
+    },
+    {
+      "kind": "feature",
+      "id": "Marksman Orders",
+      "completionState": "not-applicable",
+      "safeReason": "Its ranged battle Orders do not change Contest appeals.",
+      "ownerTickets": [
+        "P10-053"
+      ]
+    },
+    {
+      "kind": "edge",
+      "id": "Grace",
+      "completionState": "native",
+      "handler": "poffin-cap-and-introduction-flexibility",
+      "ownerTickets": [
+        "P10-054"
+      ]
+    },
+    {
+      "kind": "edge",
+      "id": "Groomer",
+      "completionState": "native",
+      "handler": "campaign-day-introduction-bonus",
+      "ownerTickets": [
+        "P10-054"
+      ]
+    },
+    {
+      "kind": "ability",
+      "id": "Beautiful",
+      "completionState": "native",
+      "handler": "two-beauty-dice-once-per-contest",
+      "ownerTickets": [
+        "P10-055"
+      ]
+    },
+    {
+      "kind": "ability",
+      "id": "Fashion Designer",
+      "completionState": "native",
+      "handler": "decorative-twine-two-dice",
+      "ownerTickets": [
+        "P10-055"
+      ]
+    },
+    {
+      "kind": "ability",
+      "id": "Ugly",
+      "completionState": "passive",
+      "handler": "introduction-sixes-count-as-ones",
+      "ownerTickets": [
+        "P10-055"
+      ]
+    },
+    {
+      "kind": "item",
+      "id": "Poffin Mixer",
+      "completionState": "guided",
+      "handler": "reviewed-berry-crafting",
+      "ownerTickets": [
+        "P10-056"
+      ]
+    },
+    {
+      "kind": "item",
+      "id": "Fancy Clothes",
+      "completionState": "native",
+      "handler": "trainer-introduction-two-dice",
+      "ownerTickets": [
+        "P10-056"
+      ]
+    },
+    {
+      "kind": "item",
+      "id": "Contest Accessory",
+      "completionState": "native",
+      "handler": "pokemon-introduction-two-dice",
+      "ownerTickets": [
+        "P10-056"
+      ]
+    },
+    {
+      "kind": "item",
+      "id": "Contest Fashion",
+      "completionState": "native",
+      "handler": "matching-type-reroll-ones",
+      "ownerTickets": [
+        "P10-056"
+      ]
+    },
+    {
+      "kind": "item",
+      "id": "Poffin",
+      "completionState": "native",
+      "handler": "permanent-contest-die-consumption",
+      "ownerTickets": [
+        "P10-024",
+        "P10-056"
+      ]
+    }
+  ],
+  "dataDefects": [
+    {
+      "id": "CONTEST-ITEM-001",
+      "status": "resolved",
+      "summary": "Standalone Poffin identity was absent.",
+      "resolution": "Reviewed pokemon-contests:v1 migration added data/reference/items.json#Poffin."
+    },
+    {
+      "id": "CONTEST-GROOM-001",
+      "status": "resolved",
+      "summary": "Grooming duration had no structured campaign-day state.",
+      "resolution": "Contest preparation state records campaign-day-bounded Groomer provenance."
+    },
+    {
+      "id": "CONTEST-CREATED-MOVE-001",
+      "status": "resolved",
+      "summary": "Innovation and Dance Form can create Move identities not present in moves.json.",
+      "resolution": "Guided identity binding is required; unresolved created Moves fail closed."
+    }
+  ],
+  "blockedCount": 0
+}

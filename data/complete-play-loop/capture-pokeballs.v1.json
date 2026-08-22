@@ -3,8 +3,8 @@
   "ticket": "P8-093",
   "status": "reviewed-native",
   "runtimeProseParsing": false,
-  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
-  "reviewedSourceSha256": "9f0eaaabd87bd66d5cd7ec17091a862f39f0c20a91225c0dd449aa558575840b",
+  "catalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+  "reviewedSourceSha256": "fe3e02c4f752428dafe24a9b1213657a41967ae914544578cca86e0c1a0139ed",
   "itemCount": 25,
   "registrySha256": "b2a8c59487b22ad101b92687f7959eff5b3032317b4cf91d913397423f7c58f1",
   "items": [

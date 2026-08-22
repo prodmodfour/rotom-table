@@ -3,17 +3,17 @@
   "ticket": "P8-094",
   "status": "enforced",
   "runtimeProseParsing": false,
-  "reviewedAuthoritySha256": "bf58791c9ef371141dff174ede58ece6218f6046e8b392bbee8dc3acab5833f5",
+  "reviewedAuthoritySha256": "9fc7f68793f6f92e83eff9a152433dbcf9e5c16c2bb6e048827ff6a25640bda9",
   "catalog": {
     "path": "data/reference/items.json",
-    "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
-    "itemCount": 348,
+    "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+    "itemCount": 349,
     "registeredExactlyOnce": true,
     "blockedCount": 0
   },
   "cohortRegistryEvidence": {
     "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
-    "sha256": "be82c8f9975056f894bf9b8cf78780869afcd71ef7f2bccfbe0cae88adaac1a0"
+    "sha256": "53f3c2c06e83d23fded29a03ff2a96021075a366f994925c21a7b1132f230f8c"
   },
   "providerAuthorities": {
     "machine-move": {
@@ -23,7 +23,7 @@
       "ownerEvidence": [
         {
           "path": "server/domain/itemAutomation/moveLearning.ts",
-          "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d"
+          "sha256": "6389439f016bf2b26b651e4290086dea1c943f5e12b7eb939e3df7dccb67f9f6"
         },
         {
           "path": "server/useCases/manageItemExtendedAction.ts",
@@ -128,7 +128,7 @@
       "ownerEvidence": [
         {
           "path": "server/domain/itemAutomation/registry.ts",
-          "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+          "sha256": "f6f7ae530decdad61b832a707fc09cc065e56c66fb845de1c5f12ee2739a4f7e"
         },
         {
           "path": "server/domain/itemAutomation/planner.ts",
@@ -147,11 +147,26 @@
       "ownerEvidence": [
         {
           "path": "data/complete-play-loop/capture-pokeballs.v1.json",
-          "sha256": "0fb778b5e67ef36e28d4c18c7ca6ea7c3dc4ad716604c876e58684970410ae10"
+          "sha256": "2052d0fb2ba4ae11715ceb6e8a551ed0130b7e36b48c78fb99fa37c6981038a8"
         },
         {
           "path": "server/useCases/applyThrowPokeballCommand.ts",
           "sha256": "30f2e7987b316e2812bc0d4be81ddcc029c92ccc80ba3f0249cdfd80c23534b9"
+        }
+      ]
+    },
+    "contest": {
+      "memberCount": 1,
+      "implementationState": "native",
+      "allowZeroMembers": false,
+      "ownerEvidence": [
+        {
+          "path": "server/useCases/contestPreparation.ts",
+          "sha256": "0fb33ada6668b86dafbfcd0e4c3596a89f2e0103b29a2534e2805c18436417fd"
+        },
+        {
+          "path": "shared/contests/preparation.ts",
+          "sha256": "3ae8db9e626d6177409fe943ea5221a347dfa43288eefeed8a1ee5ea15ff2c54"
         }
       ]
     },
@@ -162,7 +177,7 @@
       "ownerEvidence": [
         {
           "path": "data/complete-play-loop/guided-catalog-items.v1.json",
-          "sha256": "8e669d3a49f235d464b933ac86638f291b7dbf08981899236c059129c1b7602e"
+          "sha256": "112a547140e61d25aee499bcd49b191a878928f54f408d688b605343ed78fec3"
         },
         {
           "path": "server/useCases/manageItemGuidedAdjudication.ts",
@@ -177,7 +192,7 @@
       "ownerEvidence": [
         {
           "path": "scripts/migrate_black_sludge_acquisition_cost.py",
-          "sha256": "71653c4daff908861590e8fdbc047cfc12fd21856f396b8b91a92c9cf4c4b2a6"
+          "sha256": "f33c5e0ffc487e5313f9b4741d96dece0bc52815aa084eb4a65f69a484cf29b8"
         },
         {
           "path": "scripts/reviewed-data/black-sludge-acquisition-cost.v1.json",
@@ -339,7 +354,7 @@
     }
   ],
   "clientAuthority": {
-    "filesChecked": 995,
+    "filesChecked": 1020,
     "serverImports": 0,
     "mechanicalMutationCallbacks": 0,
     "commandOnly": true
@@ -390,7 +405,7 @@
       "kind": "transaction-repository",
       "evidence": {
         "path": "server/storage/sheetRepository.ts",
-        "sha256": "567a30835d31c93c4ca3b19ad4e7d73a088ed0ad5954de7c85dac8150bdcebdf"
+        "sha256": "3a4ce96b4001618df1a8e438dec9488522d63b61be4f3c6da0ab92258fe88703"
       }
     },
     "server/useCases/executeEquipmentOperation.ts": {
@@ -551,7 +566,7 @@
     },
     {
       "path": "scripts/reviewed-data/complete-play-loop-authority-guardrails.v1.json",
-      "sha256": "bf58791c9ef371141dff174ede58ece6218f6046e8b392bbee8dc3acab5833f5"
+      "sha256": "9fc7f68793f6f92e83eff9a152433dbcf9e5c16c2bb6e048827ff6a25640bda9"
     },
     {
       "path": "shared/itemAutomation/spec.ts",
@@ -565,7 +580,7 @@
   "certificationEvidence": [
     {
       "path": "tests/data/completePlayLoopAuthorityGuardrails.test.ts",
-      "sha256": "bafa41a3d6a411526ab56dd3aaaf4d01e6af3363ca4458794267e77b5150aaf9"
+      "sha256": "c7ac35ce92e34b1a7df5595406b36f28d40795e87d1e71ae9b85a31a7f31f73e"
     },
     {
       "path": "docs/complete-play-loop-authority-guardrails.md",
@@ -573,12 +588,12 @@
     },
     {
       "path": "package.json",
-      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+      "sha256": "efbd8d525679b92f236473e7ff25cf58ffab662b8f0c7fca316aee2fb76f7ec4"
     },
     {
       "path": "scripts/quality-gate.sh",
-      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+      "sha256": "6385abe72e4b0e62311a9d4446021f1aefdf653246499cce5eaf3f7260e534ee"
     }
   ],
-  "completionEvidenceSha256": "15e9e50bf3ded59b9d8dbc4b3bc19653ac5cd95dc0ed433a77165fe2c2193407"
+  "completionEvidenceSha256": "a83bfd07b021c8bcb464e14194da461b4d40d934d1e98fd6beee1db7f263a50e"
 }

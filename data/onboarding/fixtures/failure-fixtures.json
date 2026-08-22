@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "onboarding-failure-fixtures-v1",
+  "date": "2026-08-16",
+  "outcomeCodes": [
+    "revision-conflict",
+    "policy-version-pinned",
+    "reauthorization-failed",
+    "validation-blocked",
+    "uncertain-commit",
+    "ownership-rejected",
+    "resume-exact"
+  ],
+  "fixtures": [
+    {
+      "fixtureId": "stale-draft-revision",
+      "title": "Stale tab writes over a newer draft revision",
+      "scenario": "Tab A saves decision X at revision 7. Tab B, still holding revision 6, saves decision Y.",
+      "injection": { "point": "draft-mutation", "kind": "stale-revision" },
+      "expected": {
+        "outcomeCode": "revision-conflict",
+        "projections": {
+          "gm": "queue unchanged; no partial state visible",
+          "ownerPlayer": "conflict notice with reload-and-reapply guidance; unsent intent preserved locally until reconciled",
+          "otherPlayer": "nothing",
+          "publicObserver": "nothing"
+        },
+        "retryBehavior": "resubmitting the same stale revision fails identically; reload obtains revision 7 and reapplies intent",
+        "rollback": "no draft change from the stale write",
+        "correctionOptions": [],
+        "partialSheetCreation": "none"
+      }
+    },
+    {
+      "fixtureId": "policy-superseded-during-draft",
+      "title": "GM publishes policy v2 while a draft is bound to v1",
+      "scenario": "A draft in progress under policy v1; the GM publishes v2 with a different starter pool.",
+      "injection": { "point": "policy-publication", "kind": "newer-version" },
+      "expected": {
+        "outcomeCode": "policy-version-pinned",
+        "projections": {
+          "gm": "queue shows draft pinned to v1 with an explicit upgrade/restart offer",
+          "ownerPlayer": "draft continues unchanged under v1; informational notice that a newer policy exists",
+          "otherPlayer": "nothing",
+          "publicObserver": "nothing"
+        },
+        "retryBehavior": "draft mutations keep validating against v1 until the GM explicitly migrates or supersedes",
+        "rollback": "not applicable; no state was invalidated",
+        "correctionOptions": ["gm-migrate-draft-to-v2-with-preview", "gm-supersede-and-restart"],
+        "partialSheetCreation": "none"
+      }
+    },
+    {
+      "fixtureId": "duplicate-slug-at-commit",
+      "title": "Sheet slug collision discovered during approval commit",
+      "scenario": "Between approval preview and commit, a GM manually creates a sheet occupying the planned slug.",
+      "injection": { "point": "commit-write", "kind": "slug-collision" },
+      "expected": {
+        "outcomeCode": "reauthorization-failed",
+        "projections": {
+          "gm": "approval fails with the colliding resource named and a re-plan action; no partial rows",
+          "ownerPlayer": "submission remains approved-pending; no completion event",
+          "otherPlayer": "nothing",
+          "publicObserver": "nothing"
+        },
+        "retryBehavior": "exact retry of the failed commit returns the same failure; re-planning allocates fresh slugs and succeeds",
+        "rollback": "entire transaction rolled back: no sheet, link, team, inventory, equipment, or provenance rows",
+        "correctionOptions": ["re-plan-with-fresh-slugs"],
+        "partialSheetCreation": "none"
+      }
+    },
+    {
+      "fixtureId": "invalid-prerequisite-submission",
+      "title": "Submission carrying a forged or stale choice ID",
+      "scenario": "A tampered client submits a package whose feature choice violates prerequisites or references an unknown catalog ID.",
+      "injection": { "point": "submission", "kind": "invalid-choice" },
+      "expected": {
+        "outcomeCode": "validation-blocked",
+        "projections": {
+          "gm": "no review item created for the invalid submission",
+          "ownerPlayer": "blocking issues listing each failed decision with stable codes and owning decisions",
+          "otherPlayer": "nothing",
+          "publicObserver": "nothing"
+        },
+        "retryBehavior": "identical submission fails identically; resolving the named decisions permits a new submission revision",
+        "rollback": "draft remains in draft state; no snapshot created",
+        "correctionOptions": [],
+        "partialSheetCreation": "none"
+      }
+    },
+    {
+      "fixtureId": "interrupted-approval-commit",
+      "title": "Server crash between approval acceptance and commit completion",
+      "scenario": "The GM approves; the server restarts mid-transaction before the completion record is durable.",
+      "injection": { "point": "commit-write", "kind": "process-crash" },
+      "expected": {
+        "outcomeCode": "uncertain-commit",
+        "projections": {
+          "gm": "blocking reconciliation state: approval outcome unknown until the operation journal is consulted",
+          "ownerPlayer": "blocking reconciliation state; no second submission offered",
+          "otherPlayer": "nothing",
+          "publicObserver": "nothing"
+        },
+        "retryBehavior": "retry with the original operation ID returns the journaled terminal result: either the full committed package or the rolled-back failure; never a second package",
+        "rollback": "SQLite transaction semantics guarantee all-or-nothing; the journal records which side of the boundary was reached",
+        "correctionOptions": ["reconcile-from-operation-journal"],
+        "partialSheetCreation": "none"
+      }
+    },
+    {
+      "fixtureId": "concurrent-owner-and-gm-review",
+      "title": "Owner edits while the GM reviews a submission",
+      "scenario": "A submitted snapshot is under review while the owner keeps editing the live draft.",
+      "injection": { "point": "review", "kind": "concurrent-edit" },
+      "expected": {
+        "outcomeCode": "resume-exact",
+        "projections": {
+          "gm": "review target remains the immutable submitted snapshot; a marker shows newer draft edits exist",
+          "ownerPlayer": "edits accumulate on the draft as a prospective new revision; the submitted snapshot is read-only",
+          "otherPlayer": "nothing",
+          "publicObserver": "nothing"
+        },
+        "retryBehavior": "approving the reviewed snapshot re-authorizes against it, not the live edits; changed material requires a new submission revision",
+        "rollback": "not applicable",
+        "correctionOptions": ["request-changes-against-snapshot"],
+        "partialSheetCreation": "none"
+      }
+    },
+    {
+      "fixtureId": "profile-deleted-during-draft",
+      "title": "Bound player profile removed mid-draft",
+      "scenario": "The GM deletes or unbinds the player profile that owns an active draft.",
+      "injection": { "point": "ownership", "kind": "profile-removed" },
+      "expected": {
+        "outcomeCode": "ownership-rejected",
+        "projections": {
+          "gm": "slot flagged blocked with rebind/cancel options",
+          "ownerPlayer": "draft locked with a safe explanation; no mutation accepted",
+          "otherPlayer": "nothing",
+          "publicObserver": "nothing"
+        },
+        "retryBehavior": "mutations fail with the same ownership rejection until the GM rebinds or cancels",
+        "rollback": "draft content preserved; nothing deleted implicitly",
+        "correctionOptions": ["gm-rebind-profile", "gm-cancel-slot"],
+        "partialSheetCreation": "none"
+      }
+    },
+    {
+      "fixtureId": "server-restart-resume",
+      "title": "Server restart in the middle of building",
+      "scenario": "The player is mid-decision when the server restarts and the realtime channel drops.",
+      "injection": { "point": "draft-mutation", "kind": "process-restart" },
+      "expected": {
+        "outcomeCode": "resume-exact",
+        "projections": {
+          "gm": "queue state identical after restart",
+          "ownerPlayer": "reload restores the exact current decision, accepted choices, and validation from the durable draft",
+          "otherPlayer": "nothing",
+          "publicObserver": "nothing"
+        },
+        "retryBehavior": "any in-flight mutation retries with its operation identity; accepted-before-restart returns the stored result, unaccepted applies fresh",
+        "rollback": "not applicable; durable revisions only",
+        "correctionOptions": [],
+        "partialSheetCreation": "none"
+      }
+    }
+  ]
+}

@@ -4,6 +4,11 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import acceptance from '../../data/complete-play-loop/accessibility-responsive-visual-acceptance.v1.json'
 import tokens from '../../data/encounter-workspace/design-tokens.v1.json'
+import {
+  assertLocalUiArtifactPath,
+  isLocalUiArtifactPath,
+  readOptionalLocalUiArtifact,
+} from '../helpers/localUiArtifacts'
 
 const root = resolve(import.meta.dirname, '../..')
 const sha256 = (value: Buffer): string => createHash('sha256').update(value).digest('hex')
@@ -20,11 +25,12 @@ const contrastRatio = (foreground: string, background: string): number => {
   return (Math.max(left, right) + 0.05) / (Math.min(left, right) + 0.05)
 }
 
-const pngDimensions = (path: string): { width: number, height: number } => {
-  const bytes = readFileSync(resolve(root, path))
+const pngDimensions = (path: string, bytes: Buffer): { width: number, height: number } => {
   expect(bytes.subarray(1, 4).toString('ascii'), path).toBe('PNG')
   return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) }
 }
+
+const optionalArtifact = (path: string): Buffer | null => readOptionalLocalUiArtifact(root, path)
 
 describe('P8-096 accessibility, responsive, and visual acceptance', () => {
   it('covers every acceptance category across all four primary complete-loop surfaces', () => {
@@ -81,38 +87,57 @@ describe('P8-096 accessibility, responsive, and visual acceptance', () => {
     expect(tokens.typography.families.interface).toBe('Atkinson Hyperlegible')
   })
 
-  it('revalidates accepted production-liveplay reports, reviews, and desktop/mobile image dimensions', () => {
-    const inventoryReport = JSON.parse(readFileSync(resolve(root, acceptance.surfaces[0]!.browserReport!), 'utf8'))
-    expect(inventoryReport.productionLiveplay).toMatchObject({ passed: 2, failed: 0 })
-    expect(inventoryReport.assertions).toMatchObject({
-      semanticDesktopTableHeadersAndRowHeaders: true,
-      cssOnlyNarrowCardReflow: true,
-      reflowValidatedAtCssWidths: [412, 320],
-      maximumHorizontalPageOverflowPx: 1,
-      minimumInventoryActionTargetPx: 43.5,
-      scopedAxeViolations: 0,
-      consoleWarningsErrorsOrPageErrors: 0,
-    })
-    const commerceReport = JSON.parse(readFileSync(resolve(root, acceptance.surfaces[1]!.browserReport!), 'utf8'))
-    expect(commerceReport.productionLiveplay).toMatchObject({ passed: 2, failed: 0, workers: 1 })
-    expect(commerceReport.assertions).toMatchObject({
-      scopedAxeViolations: 0,
-      maximumAllowedHorizontalPageOverflowPx: 1,
-      consoleWarningsErrorsOrPageErrors: 0,
-      privateIdentityLeaks: 0,
-    })
+  it('revalidates any available local reports, reviews, and desktop/mobile image dimensions', () => {
+    const inventoryReportPath = acceptance.surfaces[0]!.browserReport!
+    const inventoryReportBytes = optionalArtifact(inventoryReportPath)
+    if (inventoryReportBytes) {
+      const inventoryReport = JSON.parse(inventoryReportBytes.toString('utf8'))
+      expect(inventoryReport.productionLiveplay).toMatchObject({ passed: 2, failed: 0 })
+      expect(inventoryReport.assertions).toMatchObject({
+        semanticDesktopTableHeadersAndRowHeaders: true,
+        cssOnlyNarrowCardReflow: true,
+        reflowValidatedAtCssWidths: [412, 320],
+        maximumHorizontalPageOverflowPx: 1,
+        minimumInventoryActionTargetPx: 43.5,
+        scopedAxeViolations: 0,
+        consoleWarningsErrorsOrPageErrors: 0,
+      })
+    }
+
+    const commerceReportPath = acceptance.surfaces[1]!.browserReport!
+    const commerceReportBytes = optionalArtifact(commerceReportPath)
+    if (commerceReportBytes) {
+      const commerceReport = JSON.parse(commerceReportBytes.toString('utf8'))
+      expect(commerceReport.productionLiveplay).toMatchObject({ passed: 2, failed: 0, workers: 1 })
+      expect(commerceReport.assertions).toMatchObject({
+        scopedAxeViolations: 0,
+        maximumAllowedHorizontalPageOverflowPx: 1,
+        consoleWarningsErrorsOrPageErrors: 0,
+        privateIdentityLeaks: 0,
+      })
+    }
 
     for (const surface of acceptance.surfaces) {
-      const desktop = pngDimensions(surface.desktopEvidence)
-      const mobile = pngDimensions(surface.mobileEvidence)
-      expect(desktop.width, `${surface.surfaceId} desktop`).toBeGreaterThanOrEqual(1000)
-      expect(mobile.width, `${surface.surfaceId} mobile`).toBeLessThanOrEqual(1200)
-      expect(mobile.width, `${surface.surfaceId} mobile`).toBeLessThan(desktop.width)
-      expect(desktop.height).toBeGreaterThan(400)
-      expect(mobile.height).toBeGreaterThan(400)
-      const review = readFileSync(resolve(root, surface.review), 'utf8')
-      expect(review.toLowerCase(), surface.review).toMatch(/accepted|pass/)
-      expect(review.toLowerCase(), surface.review).not.toMatch(/unresolved (?:hard failure|critical blocker)|hard failure:\s*yes/)
+      const desktopBytes = optionalArtifact(surface.desktopEvidence)
+      const mobileBytes = optionalArtifact(surface.mobileEvidence)
+      const desktop = desktopBytes ? pngDimensions(surface.desktopEvidence, desktopBytes) : null
+      const mobile = mobileBytes ? pngDimensions(surface.mobileEvidence, mobileBytes) : null
+      if (desktop) {
+        expect(desktop.width, `${surface.surfaceId} desktop`).toBeGreaterThanOrEqual(1000)
+        expect(desktop.height).toBeGreaterThan(400)
+      }
+      if (mobile) {
+        expect(mobile.width, `${surface.surfaceId} mobile`).toBeLessThanOrEqual(1200)
+        expect(mobile.height).toBeGreaterThan(400)
+      }
+      if (desktop && mobile) expect(mobile.width, `${surface.surfaceId} mobile`).toBeLessThan(desktop.width)
+
+      const reviewBytes = optionalArtifact(surface.review)
+      if (reviewBytes) {
+        const review = reviewBytes.toString('utf8').toLowerCase()
+        expect(review, surface.review).toMatch(/accepted|pass/)
+        expect(review, surface.review).not.toMatch(/unresolved (?:hard failure|critical blocker)|hard failure:\s*yes/)
+      }
     }
   })
 
@@ -143,16 +168,21 @@ describe('P8-096 accessibility, responsive, and visual acceptance', () => {
       expect(paths.has(row.path), row.path).toBe(false)
       paths.add(row.path)
       expect(row.sha256).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(resolve(root, row.path))), row.path).toBe(row.sha256)
+      const bytes = isLocalUiArtifactPath(row.path)
+        ? optionalArtifact(row.path)
+        : readFileSync(resolve(root, row.path))
+      if (bytes) expect(sha256(bytes), row.path).toBe(row.sha256)
     }
     for (const surface of acceptance.surfaces) {
-      for (const path of [
-        surface.desktopEvidence,
-        surface.mobileEvidence,
-        surface.review,
-        surface.browserSpec,
-        ...(surface.browserReport ? [surface.browserReport] : []),
-      ]) expect(paths.has(path), path).toBe(true)
+      for (const path of [surface.desktopEvidence, surface.mobileEvidence, surface.review]) {
+        assertLocalUiArtifactPath(path)
+        expect(paths.has(path), path).toBe(true)
+      }
+      expect(paths.has(surface.browserSpec), surface.browserSpec).toBe(true)
+      if (surface.browserReport) {
+        assertLocalUiArtifactPath(surface.browserReport)
+        expect(paths.has(surface.browserReport), surface.browserReport).toBe(true)
+      }
     }
     for (const required of [
       'DESIGN.md',

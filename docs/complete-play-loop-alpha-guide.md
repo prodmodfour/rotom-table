@@ -17,7 +17,7 @@ Choose the guide for your role:
 - **Guided:** the server creates a bounded private GM decision from reviewed structured data. The GM may choose only listed options; prose does not become mechanics.
 - **Passive:** an equipped/held provider contributes only while exact custody, compatibility, activity, definition, and lifecycle authority remain current.
 
-All 348 current canonical rows are in one of those three complete states: 204 native, 40 guided, and 104 passive. There are no blocked rows. `reference-only` and `not-applicable` remain review vocabulary but are not assigned to a current canonical row; neither may hide concrete mechanics.
+All 349 current canonical rows are in one of those three complete states: 205 native, 40 guided, and 104 passive. There are no blocked rows. `reference-only` and `not-applicable` remain review vocabulary but are not assigned to a current canonical row; neither may hide concrete mechanics.
 
 ### Acceptance boundaries
 

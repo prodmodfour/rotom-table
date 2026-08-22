@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "ticket": "P8-047",
-  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
-  "equipmentDefinitionsSha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a",
+  "catalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+  "equipmentDefinitionsSha256": "fb5d8c6cafba3c969da7b20e0c09e9d6b32d4baa6993c4005a40b4f6249316b7",
   "definitionCount": 108,
   "grantingItemCount": 31,
   "grantCount": 45,
@@ -340,8 +340,8 @@
     },
     {
       "canonicalItemId": "Fancy Clothes",
-      "canonicalRecordSha256": "1bd69a7221f797dc32e2c738a1f8c0f204bf3b492556ba5ced745db435f0e2d6",
-      "equipmentDefinitionSha256": "fd67b3ac5fcba3dbd4de75e84be5526177b02f3374e7bbcd9be704fd7a4c9d61",
+      "canonicalRecordSha256": "5bec6c85d73f9176e2f6c22e7796afb6cab4883c0fe61281ae81e37d78e2d444",
+      "equipmentDefinitionSha256": "cac0431df97ff93617fcce3bad29e96f1d5c928bfbb73268b93292c6a7062e5f",
       "grants": []
     },
     {
@@ -682,14 +682,14 @@
     },
     {
       "canonicalItemId": "Contest Accessory",
-      "canonicalRecordSha256": "b859f9835c3978186cba6459164b4baa7652588d2ab5e1248fa2e4c007200662",
-      "equipmentDefinitionSha256": "942d1c81536c6b15e38cc580a9a2b3c2ed69a004151c98426da171c076a8f87c",
+      "canonicalRecordSha256": "3fa09101ba877427d54f92888df524aaa637686641d3c43b6f9ca6579936ba9a",
+      "equipmentDefinitionSha256": "f7a631939617fcc2ca12dc3eb8a30eb3ebab54c300fd4b76fc0fee2a824c2694",
       "grants": []
     },
     {
       "canonicalItemId": "Contest Fashion",
-      "canonicalRecordSha256": "14e59f707a78b7cb56adf657ae1cf30b127ff03e897e35526e9c3ae349298ef2",
-      "equipmentDefinitionSha256": "2652b52015d48be55c289218a4121adaecacfa5096afa760a051cd947544b1ee",
+      "canonicalRecordSha256": "aef0832fdd8f507717a1c082ddd93b55fe6d5e222b45d2c5aba61cb1c0f5fd2e",
+      "equipmentDefinitionSha256": "0d1de887fb8038719c0e2df27054cd7fa6684a4e24e4fb88f82648ade04a4fa2",
       "grants": []
     },
     {

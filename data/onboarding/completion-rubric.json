@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "rubricId": "onboarding-completion-rubric-v1",
+  "date": "2026-08-16",
+  "ruleStates": [
+    {
+      "id": "complete",
+      "definition": "The creation rule has reviewed structured authority, executable server validation, guided UI, evidence, and passing tests. Nothing about it requires GM memory, prose interpretation, or manual repair."
+    },
+    {
+      "id": "guided",
+      "definition": "The rule is enforced and explained through the guided workflow, but part of its authority is an app-owned runtime derivation (code-derived) rather than a standalone catalog fact. Acceptable at final closure only when the derivation is catalog-bound with a source fingerprint."
+    },
+    {
+      "id": "campaign-policy",
+      "definition": "The rule is deliberately variable per campaign. Its bounds are canonical; its value comes from the versioned policy. Complete when the policy field, bounds validation, editor control, and draft binding all exist."
+    },
+    {
+      "id": "warning",
+      "definition": "The rule is validated but its violation is survivable table variation. It renders as a non-blocking warning with an explanation and never silently disappears. Final acceptance requires every warning to be intentional, not an unfinished error."
+    },
+    {
+      "id": "blocked",
+      "definition": "The rule cannot be implemented because structured authority is absent or ambiguous (open DATA-ONB defect) or an upstream contract is missing. A blocked rule cannot ship; final closure permits zero blocked rows."
+    },
+    {
+      "id": "not-applicable",
+      "definition": "The rule does not apply to the current workflow branch (e.g. milestone choices for a level-1 start, gender for genderless species). Must be derived structurally, never by hiding UI."
+    }
+  ],
+  "workflowBranchStates": [
+    {
+      "id": "default-level-1",
+      "definition": "One Level 1 Trainer plus policy starter(s): the first playable vertical slice. Every rule row must be complete/guided/campaign-policy before P9-060."
+    },
+    {
+      "id": "higher-level-start",
+      "definition": "Levels above 1 including milestone choices, larger budgets, and rank caps. Complete before P9-092."
+    },
+    {
+      "id": "multiple-starters",
+      "definition": "Starter count above 1 with team composition and overflow. Complete before P9-050."
+    },
+    {
+      "id": "existing-intake",
+      "definition": "Adoption of pre-existing characters. Complete before P9-070."
+    }
+  ],
+  "acceptancePredicates": [
+    "No hidden mandatory step: every decision required for a legal build is represented as an explicit guided decision with completion state.",
+    "No unresolved blocker: zero rules in blocked state and zero open DATA-ONB defects at closure.",
+    "No out-of-band repair: no workflow branch requires raw IDs, JSON editing, SQLite access, or ad hoc sheet repair to reach ready-for-play.",
+    "No client-downgraded severity: hard-rule violations render as blocking everywhere and are re-checked server-side at submit and approval.",
+    "No orphan option: every selectable option resolves to a stable canonical or policy ID that the server can re-authorize.",
+    "No silent not-applicable: branch exclusions derive from structured conditions recorded in the catalog."
+  ]
+}

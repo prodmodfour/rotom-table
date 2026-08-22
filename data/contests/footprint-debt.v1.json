@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "inventoryId": "pokemon-contest-footprint-v1",
+  "reviewedAt": "2026-08-20",
+  "runtimeAuthorityBeforePlan": "none",
+  "touchpoints": [
+    {
+      "id": "legacy-move-contest-stats-field",
+      "kind": "legacy-freeform",
+      "paths": [
+        "src/types/characterSheet.ts",
+        "src/utils/sheetMoveLookup.ts",
+        "server/storage/initializedPokemonSheetRepository.ts"
+      ],
+      "finding": "CharacterSheetMove.contestStats is an optional free-form compatibility field. It is copied/cleared with move lookup fields but has no canonical parsing, validation, or mechanics.",
+      "retiredBy": "P10-021,P10-028",
+      "disposition": "retain-as-non-authoritative-description"
+    },
+    {
+      "id": "structured-pokemon-contest-stats",
+      "kind": "missing-authority",
+      "paths": [
+        "src/types/characterSheet.ts",
+        "src/utils/sheetNormalize.ts",
+        "server/storage/sheetRepository.ts"
+      ],
+      "finding": "Pokémon sheets have no structured contest-stat or Poffin state.",
+      "retiredBy": "P10-021,P10-022,P10-023,P10-027",
+      "disposition": "add-versioned-preparation-state-and-derived-projection"
+    },
+    {
+      "id": "breeding-coloration-identity",
+      "kind": "existing-stable-identity",
+      "paths": [
+        "shared/breeding/egg.ts",
+        "src/types/characterSheet.ts"
+      ],
+      "finding": "Playing God coloration already uses beauty/cool/cute/smart/tough IDs and carries immutable source evidence.",
+      "retiredBy": "P10-021,P10-029,P10-053",
+      "disposition": "reuse-identities-and-provenance"
+    },
+    {
+      "id": "move-contest-identities",
+      "kind": "missing-canonical-data",
+      "paths": [
+        "data/reference/moves.json",
+        "data/ptuReference.ts",
+        "src/types/ptuReference.ts",
+        "src/components/reference/MoveDetailArticle.vue",
+        "src/components/sheets/PokemonMovesPanel.vue"
+      ],
+      "finding": "The app-owned move catalog had no contest type/effect fields; documentary Move blocks were not runtime authority.",
+      "retiredBy": "P10-004,P10-019,P10-028",
+      "disposition": "reviewed-migration-with-explicit-unavailable-state"
+    },
+    {
+      "id": "contest-rule-catalog",
+      "kind": "missing-canonical-data",
+      "paths": [
+        "data/reference/rules.json",
+        "books/markdown/core/08-pokemon-contests.md",
+        "books/markdown/useful-charts.md"
+      ],
+      "finding": "Contest mechanics existed only as documentary prose and a conflicting Useful Charts center-scoring row.",
+      "retiredBy": "P10-002,P10-003,P10-019",
+      "disposition": "data/reference/contests.json-is-sole-runtime-authority"
+    },
+    {
+      "id": "contest-referencing-features",
+      "kind": "reference-prose-only",
+      "paths": [
+        "data/reference/features.json",
+        "shared/featureAutomation/manifest.ts",
+        "server/domain/featureAutomation/registry.ts"
+      ],
+      "finding": "Exactly 34 reviewed Feature rows comprise the Coordinator tree, Style Expert tree, and seven crossover rows; existing automation does not expose contest timing.",
+      "retiredBy": "P10-005,P10-051,P10-052,P10-053,P10-057,P10-059",
+      "disposition": "bind-existing-feature-identity-to-contest-integration-registry"
+    },
+    {
+      "id": "contest-referencing-edges",
+      "kind": "reference-prose-only",
+      "paths": [
+        "data/reference/edges.json",
+        "shared/edgeAutomation/manifest.ts",
+        "server/domain/edgeAutomation/registry.ts"
+      ],
+      "finding": "Grace and Groomer have no contest runtime despite canonical prose.",
+      "retiredBy": "P10-005,P10-025,P10-054,P10-059",
+      "disposition": "native-preparation-and-introduction-providers"
+    },
+    {
+      "id": "contest-referencing-abilities",
+      "kind": "partial-non-contest-automation",
+      "paths": [
+        "data/reference/abilities.json",
+        "shared/abilityAutomation/mechanics.ts"
+      ],
+      "finding": "Beautiful has dormant contest metadata in automation mechanics, while Beautiful, Fashion Designer, and Ugly have no complete contest lifecycle integration.",
+      "retiredBy": "P10-005,P10-055,P10-059",
+      "disposition": "native-or-passive-contest-providers"
+    },
+    {
+      "id": "contest-items-and-poffin",
+      "kind": "missing-item-semantics",
+      "paths": [
+        "data/reference/items.json",
+        "shared/itemAutomation",
+        "server/domain/itemAutomation"
+      ],
+      "finding": "Poffin Mixer, Fancy Clothes, Contest Accessory, and Contest Fashion were prose-only; standalone Poffin identity was absent.",
+      "retiredBy": "P10-003,P10-023,P10-024,P10-056,P10-059",
+      "disposition": "reviewed-poffin-row-plus-native-custody-and-guided-crafting"
+    },
+    {
+      "id": "contest-runtime",
+      "kind": "missing-subsystem",
+      "paths": [
+        "shared",
+        "server/domain",
+        "server/storage",
+        "server/api",
+        "src/pages"
+      ],
+      "finding": "No ContestDocument, lifecycle, dice journal, projection, realtime, UI, or settlement path existed.",
+      "retiredBy": "P10-011-P10-100",
+      "disposition": "extend-shared-authority-patterns-with-versioned-contest-documents"
+    }
+  ],
+  "fabricatedOrUnsafeBehaviors": [
+    {
+      "id": "DEBT-CONTEST-001",
+      "behavior": "A client or GM could type a move contest description that looked authoritative.",
+      "status": "retired",
+      "evidence": "Runtime ignores CharacterSheetMove.contestStats and consumes only move.contest from data/reference/moves.json."
+    },
+    {
+      "id": "DEBT-CONTEST-002",
+      "behavior": "Documentary parser output could be mistaken for runtime data.",
+      "status": "retired",
+      "evidence": "scripts/migrate_pokemon_contests.py is source-hash-bound and documentary files are never imported by runtime modules."
+    },
+    {
+      "id": "DEBT-CONTEST-003",
+      "behavior": "Center scoring could silently follow the conflicting Useful Charts row.",
+      "status": "retired",
+      "evidence": "CONTEST-DATA-001 records the reviewed core-chapter/demo resolution in contests.json."
+    }
+  ]
+}

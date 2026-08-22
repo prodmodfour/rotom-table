@@ -237,15 +237,15 @@
   "sourceEvidence": [
     {
       "path": "data/reference/items.json",
-      "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+      "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
     },
     {
       "path": "data/complete-play-loop/fixtures/index.v1.json",
-      "sha256": "6d145f66c4a09f43b4eca1d4ab8a299bbc8297c95a62e0d3d8d3f5ace7540e02"
+      "sha256": "d82e7568f11ee4f7f46bd801f15cf93a49264d40f2466a4fcf3f52eddac0e78b"
     },
     {
       "path": "data/complete-play-loop/fixtures/items.v1.json",
-      "sha256": "6f39b19879bec3c9006c307ab01835d03dd4973ed8fc359349c60064829817cb"
+      "sha256": "a3e29cdfad86c2ab5edd1c3a834e9b7700d369fdfafacc2457d5ef7b8c7a51a8"
     },
     {
       "path": "data/complete-play-loop/fixtures/settlements.v1.json",
@@ -253,11 +253,11 @@
     },
     {
       "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
-      "sha256": "be82c8f9975056f894bf9b8cf78780869afcd71ef7f2bccfbe0cae88adaac1a0"
+      "sha256": "53f3c2c06e83d23fded29a03ff2a96021075a366f994925c21a7b1132f230f8c"
     },
     {
       "path": "data/complete-play-loop/commerce-item-loop-certification.v1.json",
-      "sha256": "bf1741e56272989d7a4e21e8e99a67d60a0c0ea362e233d805565eee092feaec"
+      "sha256": "5c5ef0baaf242ea7351500123b1e983b41cf65530de9461c8f60da5bd6747b59"
     },
     {
       "path": "data/complete-play-loop/finish-encounter-experience.v1.json",
@@ -265,11 +265,11 @@
     },
     {
       "path": "data/complete-play-loop/campaign-continuation-dashboard.v1.json",
-      "sha256": "19a9f1931102be0acca5cf0f957cce99729ff3a559532ddc229c29ed6840bb7f"
+      "sha256": "aece53fffbb7cfbadbd433b836bb90f9297be7d7d31d3b51d884da0cf91dc26c"
     },
     {
       "path": "data/complete-play-loop/campaign-day-continuation.v1.json",
-      "sha256": "d46eb94cb3d86fa441917e4559eac05d7fd31b16fa08e8d9b94e3159ebfe473e"
+      "sha256": "5f942a12cb497ed7b3da67edb2b86af393fd41b53f1d6f2df6a7f358963158a3"
     },
     {
       "path": "tests/integration/shopPlayerShoppingEndToEnd.test.ts",
@@ -365,7 +365,7 @@
     },
     {
       "path": "tests/integration/completePlayLoopGoldenCampaigns.test.ts",
-      "sha256": "ff463eb048f76eba7944f5d83f27721ca87daca011fda51433e44458009764c4"
+      "sha256": "87854e791893c9bf1c784d30e9ad87a849a3b3fc22f604648b17875540903e4d"
     },
     {
       "path": "docs/complete-play-loop-golden-campaigns.md",
@@ -373,11 +373,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+      "sha256": "efbd8d525679b92f236473e7ff25cf58ffab662b8f0c7fca316aee2fb76f7ec4"
     },
     {
       "path": "scripts/quality-gate.sh",
-      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+      "sha256": "6385abe72e4b0e62311a9d4446021f1aefdf653246499cce5eaf3f7260e534ee"
     }
   ]
 }

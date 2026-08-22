@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "inventoryId": "onboarding-trainer-creation-rules-v1",
+  "auditDate": "2026-08-16",
+  "baselineCommit": "ec672287",
+  "authorityKinds": [
+    "structured-reference",
+    "code-derived",
+    "campaign-policy",
+    "absent"
+  ],
+  "decisions": [
+    {
+      "id": "trainer-starting-level",
+      "title": "Starting Trainer level",
+      "authorityKind": "campaign-policy",
+      "authoritySources": [
+        "data/reference/rules.json#Trainer Advancement Choices.trainerAdvancementChoiceMechanics.maximumLevel"
+      ],
+      "notes": "Default 1; higher-level starts are campaign policy. Canonical bound: levels 1-50.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-base-stats",
+      "title": "Base combat stats (10 HP, 5 others)",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/rules.json#Stat Point Advancement.text",
+        "src/utils/sheets/trainerDerived.ts#DEFAULT_BASE"
+      ],
+      "notes": "Structured rule text plus runtime defaults agree; catalog must bind the numeric floor explicitly.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-stat-budget",
+      "title": "Creation and level stat-point budget (Level + 9 cumulative)",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/rules.json#Stat Point Advancement.statPointFormulas.trainerLevelUp"
+      ],
+      "notes": "10 discretionary points at creation; +1 per level after 1; no Base Relations for Trainers.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-hp-formula",
+      "title": "Trainer Max HP formula (Level x2 + HP x3 + 10)",
+      "authorityKind": "code-derived",
+      "authoritySources": ["src/utils/ptuHp.ts#computeTrainerFormulaMaxHp"],
+      "notes": "Existing runtime authority reused by all sheets; catalog binds it as a derived contribution, not a new rule.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-skill-list",
+      "title": "The 17 Trainer skills and rank ladder",
+      "authorityKind": "code-derived",
+      "authoritySources": [
+        "src/types/trainerSheet.ts#TRAINER_SKILLS",
+        "src/utils/skillRanks.ts#SKILL_RANK_TO_VALUE"
+      ],
+      "notes": "Pathetic(1)/Untrained(2)/Novice(3)/Adept(4)/Expert(5)/Master(6) ladder is stable runtime authority.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-skill-rank-caps",
+      "title": "Skill rank maximums by level (Novice at L1, Adept via background)",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/rules.json#Trainer Advancement Choices.trainerAdvancementChoiceMechanics.skillRankMaximums"
+      ],
+      "notes": "Level 1 cap Novice with background exception Adept; L2 Adept, L6 Expert, L12 Master.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-background-structure",
+      "title": "Skill background composition (how many Adept/Novice/Pathetic picks)",
+      "authorityKind": "absent",
+      "authoritySources": [],
+      "notes": "The sheet stores adept/novice/pathetic arrays and the rank calculator applies them, but no app-owned structured source states the legal counts a creation background grants.",
+      "dataDefect": {
+        "id": "DATA-ONB-001",
+        "requiredAction": "Add characterCreationMechanics.background (adept/novice/pathetic pick counts and rank effects) to data/reference/rules.json through a reviewed, source-hash-bound migration before P9-034.",
+        "documentaryProvenance": "books/markdown/core/02-character-creation.md"
+      }
+    },
+    {
+      "id": "trainer-training-feature",
+      "title": "Free Training Feature at Level 1",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/rules.json#Trainer Advancement Choices.trainerAdvancementChoiceMechanics.featureEntitlements.freeTrainingAtLevelOne",
+        "data/reference/features.json#[Training] tagged entries"
+      ],
+      "notes": "Exactly one of Agility/Brutal/Focused/Inspired Training; canonical IDs frozen in the mechanics block.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-feature-entitlements",
+      "title": "Paid Feature slots (4 at L1, +1 each odd level from 3)",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/rules.json#Trainer Advancement Choices.trainerAdvancementChoiceMechanics.featureEntitlements"
+      ],
+      "notes": "Counted collections include features, classes, and orders; grant-acquired entries excluded.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-edge-entitlements",
+      "title": "Edge slots (4 at L1, +1 each even level, bonus skill edges at 2/6/12)",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/rules.json#Trainer Advancement Choices.trainerAdvancementChoiceMechanics.edgeEntitlements"
+      ],
+      "notes": "Skill Edge IDs frozen; bonus slots restricted to that set.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-feature-identities",
+      "title": "Feature identities, prerequisites, and subchoices",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/features.json",
+        "data/feature-automation/prerequisites.json",
+        "shared/featureAutomation/instances.ts",
+        "src/utils/sheets/trainerSubchoices.ts"
+      ],
+      "notes": "444 canonical features with hash-bound prerequisite expressions and instance choice schemas.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-edge-identities",
+      "title": "Edge identities, prerequisites, and subchoices",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/edges.json",
+        "data/edge-automation/prerequisites.json",
+        "shared/edgeAutomation/instances.ts"
+      ],
+      "notes": "61 Trainer Edges with typed prerequisite expressions including skill, stat-point, and choice-bound clauses.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-classes",
+      "title": "Class acquisition and class Feature branches",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/features.json#Class tag",
+        "data/feature-automation/class-directory.json",
+        "data/reference/rules.json#Trainer Advancement Choices.trainerAdvancementChoiceMechanics.featureEntitlements.maximumClassFeatures"
+      ],
+      "notes": "40 classes; class anchors are Feature instances; at most 4 class Features counted per class anchor rule.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-ap-pool",
+      "title": "Action Point pool (5 + floor(level/5))",
+      "authorityKind": "code-derived",
+      "authoritySources": ["src/utils/sheets/trainerDerived.ts#trainerMaxAp"],
+      "notes": "Existing runtime formula; onboarding previews reuse it.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-starting-money",
+      "title": "Starting money",
+      "authorityKind": "absent",
+      "authoritySources": [],
+      "notes": "No app-owned structured source states a default starting money value; campaigns vary it. Policy owns the value, but the canonical default baseline must be added with provenance.",
+      "dataDefect": {
+        "id": "DATA-ONB-002",
+        "requiredAction": "Add characterCreationMechanics.startingMoney default to data/reference/rules.json through a reviewed, source-hash-bound migration before P9-038; CampaignOnboardingPolicy overrides it explicitly.",
+        "documentaryProvenance": "books/markdown/core/02-character-creation.md"
+      }
+    },
+    {
+      "id": "trainer-starting-inventory",
+      "title": "Starting inventory and equipment package",
+      "authorityKind": "campaign-policy",
+      "authoritySources": [
+        "data/reference/items.json",
+        "shared/itemAutomation/equipment.ts"
+      ],
+      "notes": "Item identities and equipment authority are canonical; which items a new Trainer starts with is pure campaign policy (P9-029).",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-capabilities-defaults",
+      "title": "Trainer capability defaults (Overland 5, Throwing Range, Power, Jump)",
+      "authorityKind": "code-derived",
+      "authoritySources": [
+        "src/utils/sheets/trainerDerived.ts",
+        "data/reference/rules.json#Basic Capabilities"
+      ],
+      "notes": "Athletics-derived defaults already implemented and rule-backed.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-milestone-choices",
+      "title": "Level 5/10/20/30/40 milestone choices for higher-level starts",
+      "authorityKind": "structured-reference",
+      "authoritySources": [
+        "data/reference/rules.json#Trainer Advancement Choices.trainerAdvancementChoiceMechanics.milestoneChoices"
+      ],
+      "notes": "Higher-level onboarding starts must collect these choices; new characters at level 1 have none.",
+      "dataDefect": null
+    },
+    {
+      "id": "trainer-identity-fields",
+      "title": "Identity and presentation fields (name, age, sex, portrait, accent)",
+      "authorityKind": "code-derived",
+      "authoritySources": ["src/types/trainerSheet.ts#TrainerSheet"],
+      "notes": "Bounded free-text and asset fields; no canonical rule constrains them beyond sheet schema.",
+      "dataDefect": null
+    }
+  ]
+}

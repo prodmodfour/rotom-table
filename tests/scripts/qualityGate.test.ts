@@ -51,6 +51,7 @@ describe('quality gate automation validation', () => {
         'run check:breeding-automation',
         'run check:breeding-family-resolutions',
         'run check:breeding-compiler',
+        'run check:pokemon-contests',
         'run check:complete-play-loop-item-catalog-closure',
         'run check:complete-play-loop-authority-guardrails',
         'run check:complete-play-loop-performance',
@@ -109,6 +110,7 @@ describe('quality gate automation validation', () => {
     expect(packageJson.scripts['check:breeding-family-resolutions']).toContain('--check')
     expect(packageJson.scripts['compile:breeding-registry']).toContain('--write')
     expect(packageJson.scripts['check:breeding-compiler']).toContain('--check')
+    expect(packageJson.scripts['check:pokemon-contests']).toContain('contestCoverage.test.ts')
     expect(packageJson.scripts['check:move-automation']).toBe(
       'python3 scripts/check_move_automation_coverage.py',
     )

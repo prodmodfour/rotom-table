@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
-  "entryCount": 348,
+  "catalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+  "entryCount": 349,
   "classificationPolicy": {
     "reviewId": "complete-play-loop-item-behaviour-inventory-v1",
     "status": "reviewed",
@@ -4492,7 +4492,7 @@
     },
     {
       "canonicalId": "Poffin Mixer",
-      "recordSha256": "595e1f1154a03c5929cd5564ac1a63cef6e195a0a6d94ff50b3ca70782c65970",
+      "recordSha256": "33e7a8896ac22777f5b804f9c3f79177b1b86378dcbaef185492a79d494987db",
       "effectSha256": "4276be0bdb8788b4eb8615ac0f246488087d25eeee8ea21bf5a153659c4b6a29",
       "aliases": [],
       "categories": [
@@ -5607,7 +5607,7 @@
     },
     {
       "canonicalId": "Fancy Clothes",
-      "recordSha256": "1bd69a7221f797dc32e2c738a1f8c0f204bf3b492556ba5ced745db435f0e2d6",
+      "recordSha256": "5bec6c85d73f9176e2f6c22e7796afb6cab4883c0fe61281ae81e37d78e2d444",
       "effectSha256": "79fb8105cb0f8b6729b2b0e47dc104f4c1aedf8e35ef0a64362db869430fc118",
       "aliases": [],
       "categories": [
@@ -7192,7 +7192,7 @@
     },
     {
       "canonicalId": "Contest Accessory",
-      "recordSha256": "b859f9835c3978186cba6459164b4baa7652588d2ab5e1248fa2e4c007200662",
+      "recordSha256": "3fa09101ba877427d54f92888df524aaa637686641d3c43b6f9ca6579936ba9a",
       "effectSha256": "579b94f5b9684f65f7cddf943f22e3957dce56ca43ef6febcea15d97987af1a2",
       "aliases": [],
       "categories": [
@@ -7252,7 +7252,7 @@
     },
     {
       "canonicalId": "Contest Fashion",
-      "recordSha256": "14e59f707a78b7cb56adf657ae1cf30b127ff03e897e35526e9c3ae349298ef2",
+      "recordSha256": "aef0832fdd8f507717a1c082ddd93b55fe6d5e222b45d2c5aba61cb1c0f5fd2e",
       "effectSha256": "4e8a600530586d392875fb624061e2334c9e3678204d036c9588876d86945792",
       "aliases": [],
       "categories": [
@@ -19527,6 +19527,60 @@
             "action projection",
             "recovery"
           ]
+        },
+        "canonicalDataDefects": []
+      }
+    },
+    {
+      "canonicalId": "Poffin",
+      "recordSha256": "0b2b29279e430c0de655d7976b999de75c42c3c09c399ec9ce14c5fdda0b4ca8",
+      "effectSha256": "cf5046c8c7e67e3e435643129b5607c152f2660370f64c05685f757e6dee1efe",
+      "aliases": [
+        "Poffins"
+      ],
+      "categories": [
+        "Food",
+        "Contest Item"
+      ],
+      "sections": [
+        "Food"
+      ],
+      "behaviorInventory": {
+        "mechanicalRole": "contest-preparation",
+        "contexts": [
+          "campaign",
+          "sheet",
+          "workshop"
+        ],
+        "timing": "standard",
+        "targets": [
+          "participant",
+          "contest-stat"
+        ],
+        "actionCost": {
+          "kind": "standard-action",
+          "amount": 1,
+          "canonicalAcquisitionCostLabels": [
+            "$500"
+          ]
+        },
+        "consumption": {
+          "quantity": 1,
+          "phase": "accepted-preparation-operation",
+          "reservationRequiredWhenPending": true,
+          "reusable": false
+        },
+        "duration": "instant",
+        "equipmentRequirements": null,
+        "currentProductSupport": {
+          "state": "native-runtime-wired",
+          "authorities": [
+            "data/reference/contests.json#preparation.poffins",
+            "shared/contests/preparation.ts",
+            "shared/contests/preparationOperations.ts",
+            "server/useCases/contestPreparation.ts"
+          ],
+          "gaps": []
         },
         "canonicalDataDefects": []
       }

@@ -17,14 +17,18 @@
     "loadUseCaseSha256": "a1c9cd5c4b5858797249980aae55530a5bc7ba068b62b142e55e201fe78697c3",
     "recoveryUseCaseSha256": "eb3f39452ee39d3377104e7b1c5f5784c2ef9d30e7fc33f9103f97d285276cce",
     "settlementRealtimeSha256": "8f4c9d602dee9e706a6a0570549f1fdfbb53c702f13d2401662309db7ed9567a",
-    "realtimeAccessPolicySha256": "c815c93a56b726fabe4b44b926e4af6217988028541d8ef07b8854bf90d39b1e",
+    "realtimeAccessPolicySha256": "c2fdf0adeedde964ef086d39f63b9ce34bb33480c491aa3c94b0eb36ad7b8877",
     "groupAccessPolicySha256": "8a93d510a3d8ee8f576f4c2c48672825790cf264a544b80026e999ed698d6f6f",
     "loadRouteSha256": "e2441fdd726fccc5cdb9e4493f81d5045fbeb7ecfe07d649ad25e23af64c51d1",
     "recoveryRouteSha256": "685b8cc49b06b18ccfb8009c7fbbd29cf48c7380609ed02cb0d7358605aaefa0",
-    "storageMigrationsSha256": "fa869c20dfaf59fb2996e79310d0f849b3c74ac012d15983217313562714136a"
+    "storageMigrationsSha256": "f2b2a80227044e507c56f26f4eeffcc86b5ae8732e39e7dd98992a2c1e460ea6"
   },
   "projection": {
-    "audiences": ["public", "owner", "gm"],
+    "audiences": [
+      "public",
+      "owner",
+      "gm"
+    ],
     "currentAuthority": "Every load rechecks current map access, selected Profile sheet authority, current Trainer roster links, and the explicit shared-group policy before projection.",
     "public": "Public loads expose public reward amounts, public gate kinds and resolutions, cleanup categories, aggregate counts, completion, and allowlisted public history only.",
     "owner": "Owner loads add only current participant, destination, and history subjects authorized by exact Profile-linked sheet or player-facing shared-group authority.",
@@ -49,8 +53,16 @@
   "realtime": {
     "transactionalJournal": "Settlement and correction events are appended in the same SQLite transaction as accepted state and evidence.",
     "postCommitPublication": "Publication runs after commit; a publisher failure is reported while durable replay remains authoritative.",
-    "eventKinds": ["encounter-settlement-updated", "encounter-settlement-corrected"],
-    "audienceRows": ["public map-access", "GM-only", "participant sheet-access", "authorized shared-group access"],
+    "eventKinds": [
+      "encounter-settlement-updated",
+      "encounter-settlement-corrected"
+    ],
+    "audienceRows": [
+      "public map-access",
+      "GM-only",
+      "participant sheet-access",
+      "authorized shared-group access"
+    ],
     "deliveryRule": "Current resource access and settlement projection audience are both checked on live SSE delivery and replay.",
     "gmConvergence": "GM delivery excludes public and owner variants so a later redacted event cannot replace the GM projection.",
     "ownerConvergence": "Owner events signal the accepted revision; the current role-safe load is canonical when one Profile aggregates several sheet authorities."

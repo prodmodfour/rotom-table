@@ -169,7 +169,7 @@
     },
     "campaignPage": {
       "path": "src/pages/campaign.vue",
-      "sha256": "e7f6c31e79db339e20e5fb5e77a62635241de9f0fa6c593f5877555c6cf0d4d7"
+      "sha256": "36d8d45d0df425b4d78f93fc57a20509edef77dba00c0987f45ee118fc8e8bef"
     },
     "preflightContractTests": {
       "path": "tests/shared/campaignDayPreflight.test.ts",
@@ -213,19 +213,19 @@
     },
     "desktopReadyEvidence": {
       "path": ".pi/artifacts/ui-validation/campaign-day-continuation/chromium-ready.png",
-      "sha256": "8fe4347aedbf50f85be3ef8999745a12f191df9bfd334f11cd2a45ea1ba645ca"
+      "sha256": "ac50bae70c3dca3b674b7081b96f1aa38f1b83dbb38947f9b3e4f04ddab46bce"
     },
     "desktopAcceptedEvidence": {
       "path": ".pi/artifacts/ui-validation/campaign-day-continuation/chromium-accepted.png",
-      "sha256": "18a10876f6485fe7edecbac1029de47188a55499c446db35eecca4e5148c81f2"
+      "sha256": "89e008a70b3b6e15142aa4a49117dfa02d574c8c217988d2c152310f09f46e86"
     },
     "mobileReadyEvidence": {
       "path": ".pi/artifacts/ui-validation/campaign-day-continuation/mobile-chromium-ready.png",
-      "sha256": "7746543ad6368f013401f6bcecd2c684b6d2dc7ce60385b9333812373c901567"
+      "sha256": "c7d53eec33e974dcc97f607be9b7b3903fa6defb27e35e91e010fa4a8d9e6477"
     },
     "mobileAcceptedEvidence": {
       "path": ".pi/artifacts/ui-validation/campaign-day-continuation/mobile-chromium-accepted.png",
-      "sha256": "f6148c7ec1abcf8fe818c6269446f2e37eb5f0f97984e4538a28c2b24a8273e3"
+      "sha256": "6c0a87093e895ad0b7f54cd05a272e59d9d279cfb91cc88859230c1552912ac5"
     },
     "visualReview": {
       "path": ".pi/artifacts/ui-validation/campaign-day-continuation/review.md",

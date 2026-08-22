@@ -1,0 +1,598 @@
+{
+  "schemaVersion": 1,
+  "inventoryId": "onboarding-zero-to-play-baseline-v1",
+  "auditDate": "2026-08-16",
+  "baselineCommit": "ec672287",
+  "actorRoles": ["gm", "player", "public-observer", "diagnostic-operator"],
+  "journeyStages": [
+    "access",
+    "profile-identity",
+    "trainer-build",
+    "pokemon-build",
+    "team-linking",
+    "profile-linking",
+    "review-approval",
+    "campaign-visibility",
+    "encounter-entry",
+    "first-action",
+    "existing-adoption"
+  ],
+  "findingKinds": [
+    "manual-construction",
+    "duplicate-entry",
+    "hidden-prerequisite",
+    "invalid-state-escape",
+    "direct-storage-repair",
+    "supported"
+  ],
+  "baselineStatuses": ["available", "partial", "missing"],
+  "tasks": [
+    {
+      "id": "authenticate-table-roles",
+      "title": "Enter the table as GM or player",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "access",
+      "currentOwners": ["src/pages/login.vue", "shared/auth.ts"],
+      "currentFlow": [
+        "Open /login, enter the shared table password, and pick the GM or Player role.",
+        "The role cookie drives every later authorization decision."
+      ],
+      "authorityInputs": ["shared table password", "rotom-role cookie"],
+      "findings": [
+        {
+          "kind": "supported",
+          "description": "Trusted-table role entry works and stays inside the private identity boundary; onboarding must reuse it, not replace it."
+        }
+      ],
+      "baselineStatus": "available",
+      "futureTickets": ["P9-006"]
+    },
+    {
+      "id": "select-player-profile",
+      "title": "Select which player profile this browser acts as",
+      "actorRoles": ["player"],
+      "journeyStage": "access",
+      "currentOwners": [
+        "src/composables/usePlayerProfiles.ts",
+        "shared/playerProfiles.ts"
+      ],
+      "currentFlow": [
+        "Player picks one of the GM-created profiles; the choice is remembered in localStorage.",
+        "Token control, sheet visibility, and inventory requests attach the selected profile ID."
+      ],
+      "authorityInputs": ["player profile list API", "remembered selection (localStorage)"],
+      "findings": [
+        {
+          "kind": "hidden-prerequisite",
+          "description": "Nothing routes a selected profile toward character creation; a profile without linked characters simply sees empty play surfaces."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-027", "P9-098"]
+    },
+    {
+      "id": "create-player-profile",
+      "title": "Create the player profile that will own the new character",
+      "actorRoles": ["gm"],
+      "journeyStage": "profile-identity",
+      "currentOwners": [
+        "src/pages/players.vue",
+        "src/composables/useGmPlayerProfileManagement.ts",
+        "server/api/player-profiles/create.post.ts",
+        "server/useCases/createPlayerProfile.ts"
+      ],
+      "currentFlow": [
+        "GM opens /players, types a display name, and creates the profile.",
+        "The profile starts with zero linked characters and no onboarding state."
+      ],
+      "authorityInputs": ["GM role", "player profile storage"],
+      "findings": [
+        {
+          "kind": "supported",
+          "description": "Profile creation is server-authoritative and revision-safe."
+        },
+        {
+          "kind": "hidden-prerequisite",
+          "description": "There is no concept of an onboarding slot: after creating a profile the GM must remember every remaining manual step in order."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-024"]
+    },
+    {
+      "id": "create-blank-trainer-sheet",
+      "title": "Create the Trainer sheet document",
+      "actorRoles": ["gm"],
+      "journeyStage": "trainer-build",
+      "currentOwners": [
+        "src/pages/sheets/index.vue",
+        "src/components/SheetBrowser.vue",
+        "server/api/sheets/create.post.ts",
+        "server/useCases/createSheet.ts",
+        "server/storage/sheetRepository.ts"
+      ],
+      "currentFlow": [
+        "GM opens /sheets, picks a folder, and creates a blank trainer document.",
+        "The server allocates a new-trainer-N slug and writes a minimal default runtime sheet."
+      ],
+      "authorityInputs": ["GM role", "sheet repository", "library realtime events"],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "The created document is an empty shell (slug, default name, level) with no creation budgets, no policy, and no ownership."
+        },
+        {
+          "kind": "invalid-state-escape",
+          "description": "The blank sheet is immediately a normal library citizen: it can be linked, teamed, and placed in encounters while mechanically empty."
+        },
+        {
+          "kind": "hidden-prerequisite",
+          "description": "Players cannot create sheets at all; the GM must create the document before a player can even start building."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-031", "P9-057", "P9-098"]
+    },
+    {
+      "id": "enter-trainer-identity",
+      "title": "Enter Trainer identity and presentation",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "trainer-build",
+      "currentOwners": [
+        "src/pages/sheets/trainers/[slug].vue",
+        "src/components/sheets/TrainerIdentityPanel.vue",
+        "src/components/sheets/TrainerNarrativePanel.vue",
+        "src/components/sheets/TrainerPortraitPickerModal.vue"
+      ],
+      "currentFlow": [
+        "Open the ordinary Trainer editor and fill name, played-by, age, sex, portrait, accent, and narrative blocks field by field."
+      ],
+      "authorityInputs": ["trainer sheet document", "autosave save API"],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "Identity entry is unordered sheet editing; nothing distinguishes required creation fields from optional flavor."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-032"]
+    },
+    {
+      "id": "allocate-trainer-stats",
+      "title": "Allocate starting Trainer stat points",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "trainer-build",
+      "currentOwners": [
+        "src/components/sheets/TrainerStatsPanel.vue",
+        "src/components/sheets/TrainerStatsTabPanel.vue",
+        "src/utils/sheets/trainerCombatDerivations.ts"
+      ],
+      "currentFlow": [
+        "Type levelUp values per stat in the stats grid; derived HP and combat values update live."
+      ],
+      "authorityInputs": ["trainer sheet document", "derived stat math"],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "The 10-point creation budget and level-gain budget are table knowledge; the editor accepts any totals."
+        },
+        {
+          "kind": "invalid-state-escape",
+          "description": "Overspent or underspent stat totals save silently; nothing blocks play with an illegal allocation."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-033"]
+    },
+    {
+      "id": "choose-background-and-skills",
+      "title": "Choose skill background and resulting skill ranks",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "trainer-build",
+      "currentOwners": [
+        "src/components/sheets/TrainerSkillBackgroundPanel.vue",
+        "src/components/sheets/TrainerSkillsPanel.vue",
+        "src/utils/sheets/trainerSkillCalculation.ts"
+      ],
+      "currentFlow": [
+        "Type a free-form background name/description and pick adept/novice/pathetic skills.",
+        "Skill ranks derive from background plus Edges, with manual rank bonuses available."
+      ],
+      "authorityInputs": ["trainer sheet document", "skill rank derivation"],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "Background is free prose; rank floors/caps and adept/novice/pathetic counts are not enforced as a creation decision."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-034"]
+    },
+    {
+      "id": "choose-training-feature",
+      "title": "Choose the free Training Feature",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "trainer-build",
+      "currentOwners": [
+        "src/components/sheets/TrainerTrainingFeaturePanel.vue",
+        "shared/featureAutomation/instances.ts"
+      ],
+      "currentFlow": [
+        "Pick one of the four canonical [Training] features in the Trainer editor."
+      ],
+      "authorityInputs": ["trainer sheet document", "canonical feature identities"],
+      "findings": [
+        {
+          "kind": "hidden-prerequisite",
+          "description": "Nothing requires the choice at creation; a Trainer can reach play with no Training Feature selected."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-035"]
+    },
+    {
+      "id": "add-edges-features-classes",
+      "title": "Add starting Edges, Features, and classes",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "trainer-build",
+      "currentOwners": [
+        "src/components/sheets/TrainerEdgesPanel.vue",
+        "src/components/sheets/TrainerFeaturesPanel.vue",
+        "src/components/sheets/TrainerClassesPanel.vue",
+        "shared/edgeAutomation/instances.ts",
+        "shared/featureAutomation/instances.ts"
+      ],
+      "currentFlow": [
+        "Add rows through pickers backed by canonical reference data; automation instances capture identity and choices.",
+        "Prerequisites and remaining Edge/Feature counts are displayed but advisory."
+      ],
+      "authorityInputs": [
+        "canonical edges/features reference data",
+        "feature/edge automation instances",
+        "trainer sheet document"
+      ],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "Creation counts (4 Edges, 4 Features at level 1) live in remainingFeatures/remainingEdges fields the user maintains by hand."
+        },
+        {
+          "kind": "invalid-state-escape",
+          "description": "Prerequisite-violating or overspent selections save normally; legality is a display concern, not a gate."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-036", "P9-037"]
+    },
+    {
+      "id": "set-starting-money-inventory-equipment",
+      "title": "Set starting money, inventory, and equipment",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "trainer-build",
+      "currentOwners": [
+        "src/components/sheets/TrainerInventoryPanel.vue",
+        "src/components/sheets/TrainerInventoryTabPanel.vue",
+        "shared/itemAutomation/equipment.ts"
+      ],
+      "currentFlow": [
+        "Type the starting money number and add inventory rows by hand or through item pickers.",
+        "Equip items through the authoritative equipment workflow after rows exist."
+      ],
+      "authorityInputs": [
+        "canonical item reference data",
+        "equipment state authority",
+        "trainer sheet document"
+      ],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "Campaign starting money and standard kit are table knowledge; every starter package is retyped per character."
+        },
+        {
+          "kind": "duplicate-entry",
+          "description": "The same standard starting items are re-entered for every new Trainer with no reviewed package to apply."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-029", "P9-038"]
+    },
+    {
+      "id": "create-blank-pokemon-sheet",
+      "title": "Create the starter Pokémon sheet document",
+      "actorRoles": ["gm"],
+      "journeyStage": "pokemon-build",
+      "currentOwners": [
+        "src/pages/sheets/index.vue",
+        "server/api/sheets/create.post.ts",
+        "server/useCases/createSheet.ts"
+      ],
+      "currentFlow": [
+        "GM creates a blank pokemon document from the sheet library, then hands the slug to the player or edits it directly."
+      ],
+      "authorityInputs": ["GM role", "sheet repository"],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "Starter creation begins as an empty document with no species, level, or campaign pool authority."
+        },
+        {
+          "kind": "hidden-prerequisite",
+          "description": "Which species are legal starters for this campaign exists only in GM memory or prose notes."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-041", "P9-098"]
+    },
+    {
+      "id": "assign-species-level-stats",
+      "title": "Assign species, level, nature, and added stats",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "pokemon-build",
+      "currentOwners": [
+        "src/pages/sheets/[slug].vue",
+        "src/components/sheets/PokemonIdentityPanel.vue",
+        "src/components/sheets/PokemonStatsPanel.vue",
+        "src/components/sheets/PokemonAddedStatsAdminCard.vue"
+      ],
+      "currentFlow": [
+        "Pick the species in the identity panel to pull Pokédex defaults, set level and nature, then type added stat points."
+      ],
+      "authorityInputs": [
+        "data/reference/pokedex.json",
+        "pokemon sheet document",
+        "derived stat math"
+      ],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "The level-based added-stat budget (level + 10) is enforced only as display math; the base/added split relies on user discipline."
+        },
+        {
+          "kind": "invalid-state-escape",
+          "description": "Illegal added-stat totals, impossible natures, or non-species forms save without a blocking issue."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-042", "P9-043"]
+    },
+    {
+      "id": "choose-pokemon-abilities-moves",
+      "title": "Choose starter Abilities and starting Moves",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "pokemon-build",
+      "currentOwners": [
+        "src/components/sheets/PokemonAbilitiesEdgesPanel.vue",
+        "src/components/sheets/PokemonMovesPanel.vue",
+        "src/components/sheets/PokemonKnownMovesPanel.vue"
+      ],
+      "currentFlow": [
+        "Pick Abilities and level-up Moves through reference-backed pickers on the ordinary sheet."
+      ],
+      "authorityInputs": [
+        "data/reference/pokedex.json level-up and ability lists",
+        "data/reference/moves.json",
+        "data/reference/abilities.json"
+      ],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "Basic-ability tier rules and the level-up move window are advisory; the picker permits any canonical entry."
+        },
+        {
+          "kind": "invalid-state-escape",
+          "description": "A starter can reach play with zero Moves, illegal Abilities, or more than six active Moves."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-044", "P9-045"]
+    },
+    {
+      "id": "confirm-capabilities-skills",
+      "title": "Confirm capabilities, skills, size, and movement",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "pokemon-build",
+      "currentOwners": [
+        "src/components/sheets/PokemonCapabilitiesPanel.vue",
+        "src/components/sheets/PokemonSkillsPanel.vue"
+      ],
+      "currentFlow": [
+        "Species defaults arrive from the Pokédex; users override individual capability and skill cells when needed."
+      ],
+      "authorityInputs": ["data/reference/pokedex.json", "pokemon sheet document"],
+      "findings": [
+        {
+          "kind": "invalid-state-escape",
+          "description": "Manual overrides can contradict species authority with no record of why; there is no bounded house-rule lane."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-046"]
+    },
+    {
+      "id": "link-starter-team",
+      "title": "Link starters into the Trainer's team",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "team-linking",
+      "currentOwners": [
+        "src/components/sheets/TrainerPokemonTabPanel.vue",
+        "src/components/sheets/TrainerPokemonBrowser.vue",
+        "src/utils/trainerPokemonLinks.ts"
+      ],
+      "currentFlow": [
+        "Open the Trainer's Pokémon tab, browse eligible pokemon sheets, and add each starter to currentTeam or boxedPokemon."
+      ],
+      "authorityInputs": ["trainer sheet currentTeam/boxedPokemon", "pokemon sheet library"],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "Team formation is a separate post-creation step the GM or player must remember; nothing connects it to starter creation."
+        },
+        {
+          "kind": "invalid-state-escape",
+          "description": "Team slugs are plain strings on the trainer document; renames and deletions can leave dangling or duplicated links."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-048", "P9-057"]
+    },
+    {
+      "id": "link-profile-characters",
+      "title": "Link the Trainer and starters to the player profile",
+      "actorRoles": ["gm"],
+      "journeyStage": "profile-linking",
+      "currentOwners": [
+        "src/pages/players.vue",
+        "src/utils/playerProfileManagement.ts",
+        "server/api/player-profiles/update.post.ts",
+        "server/useCases/updatePlayerProfile.ts"
+      ],
+      "currentFlow": [
+        "GM returns to /players, selects the profile, and links the trainer sheet and each pokemon sheet one by one."
+      ],
+      "authorityInputs": ["GM role", "player profile storage", "sheet existence checks"],
+      "findings": [
+        {
+          "kind": "duplicate-entry",
+          "description": "Each character is selected twice: once while teaming on the trainer sheet and again while linking on /players."
+        },
+        {
+          "kind": "hidden-prerequisite",
+          "description": "Forgetting one pokemon link silently removes that starter from player control in live play; nothing checks team/profile consistency."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-057", "P9-066"]
+    },
+    {
+      "id": "review-and-approve-build",
+      "title": "Review and approve the finished character package",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "review-approval",
+      "currentOwners": [
+        "src/pages/sheets/trainers/[slug].vue",
+        "src/pages/sheets/[slug].vue"
+      ],
+      "currentFlow": [
+        "The GM opens each sheet and eyeballs stats, skills, Edges, Features, Moves, and inventory against remembered campaign rules.",
+        "Feedback happens out of band; corrections are direct edits to live sheets."
+      ],
+      "authorityInputs": ["GM memory of campaign rules", "ordinary sheet editors"],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "There is no submission, snapshot, change-request, or approval record; the GM reviews mutable sheets and edits them directly with no visible history."
+        },
+        {
+          "kind": "invalid-state-escape",
+          "description": "Player edits during review change what the GM is looking at; approval is a verbal event with no authority."
+        }
+      ],
+      "baselineStatus": "missing",
+      "futureTickets": ["P9-052", "P9-053", "P9-055"]
+    },
+    {
+      "id": "see-campaign-readiness",
+      "title": "See onboarding readiness on the Campaign dashboard",
+      "actorRoles": ["gm", "player"],
+      "journeyStage": "campaign-visibility",
+      "currentOwners": [
+        "src/pages/campaign.vue",
+        "shared/campaignAttention/model.ts",
+        "shared/campaignAttention/projection.ts"
+      ],
+      "currentFlow": [
+        "Campaign attention surfaces roster/ownership gaps for existing characters, but has no notion of in-progress character creation."
+      ],
+      "authorityInputs": ["campaign attention projection"],
+      "findings": [
+        {
+          "kind": "hidden-prerequisite",
+          "description": "Unstarted or half-built characters are invisible as campaign work; the GM tracks onboarding progress outside the app."
+        }
+      ],
+      "baselineStatus": "missing",
+      "futureTickets": ["P9-073", "P9-076"]
+    },
+    {
+      "id": "enter-encounter-with-party",
+      "title": "Bring the new party into an encounter",
+      "actorRoles": ["gm"],
+      "journeyStage": "encounter-entry",
+      "currentOwners": [
+        "src/pages/encounters/new.vue",
+        "shared/encounterDocuments/builder.ts",
+        "shared/encounterDocuments/model.ts"
+      ],
+      "currentFlow": [
+        "GM builds an encounter and adds the new Trainer and each starter as cast/reserves by picking sheets individually."
+      ],
+      "authorityInputs": ["encounter documents", "sheet library"],
+      "findings": [
+        {
+          "kind": "manual-construction",
+          "description": "The Builder has no grouped Trainer+team candidate; each member is re-picked and re-sided by hand."
+        },
+        {
+          "kind": "invalid-state-escape",
+          "description": "Blank or half-built sheets are indistinguishable from ready characters when adding encounter participants."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-074", "P9-075"]
+    },
+    {
+      "id": "perform-first-action",
+      "title": "Perform the first legal action with the new character",
+      "actorRoles": ["player"],
+      "journeyStage": "first-action",
+      "currentOwners": [
+        "src/pages/play/[encounterId].vue",
+        "shared/playerProfileTokenControl.ts",
+        "server/policies/playerProfileTokenControlPolicy.ts"
+      ],
+      "currentFlow": [
+        "Player opens the encounter; token control derives from profile-linked sheets; declares a Move or other action."
+      ],
+      "authorityInputs": [
+        "selected player profile",
+        "profile linked characters",
+        "live play command authority"
+      ],
+      "findings": [
+        {
+          "kind": "hidden-prerequisite",
+          "description": "First-action success depends on every earlier manual step (links, team, moves, stats) having been done correctly; failures surface here as inexplicable missing control or empty action lists."
+        }
+      ],
+      "baselineStatus": "partial",
+      "futureTickets": ["P9-060", "P9-080"]
+    },
+    {
+      "id": "adopt-existing-character",
+      "title": "Adopt an existing character into the campaign",
+      "actorRoles": ["gm"],
+      "journeyStage": "existing-adoption",
+      "currentOwners": [
+        "src/pages/players.vue",
+        "server/storage/importSheetsFromJson.ts"
+      ],
+      "currentFlow": [
+        "Existing or imported sheets are linked to a profile manually; validity against campaign rules is judged by eye.",
+        "Structural repairs happen by editing the sheet or importing corrected JSON."
+      ],
+      "authorityInputs": ["sheet import/export hierarchy", "GM judgement"],
+      "findings": [
+        {
+          "kind": "direct-storage-repair",
+          "description": "Fixing malformed legacy sheets means editing JSON exports or the live document by hand; there is no bounded, previewed repair workflow."
+        },
+        {
+          "kind": "invalid-state-escape",
+          "description": "Adoption never validates the character against campaign policy, ownership conflicts, or dangling team references."
+        }
+      ],
+      "baselineStatus": "missing",
+      "futureTickets": ["P9-062", "P9-065", "P9-067"]
+    }
+  ]
+}

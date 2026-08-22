@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "ticket": "P8-044",
-  "canonicalItemCatalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "canonicalItemCatalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
   "equipmentDefinitionsSha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a",
   "equipmentContractSha256": "8360d4c6f0f3333f490dc4329e862c4cab6a5161b661ddc531bfd94ce63f6307",
   "commands": [

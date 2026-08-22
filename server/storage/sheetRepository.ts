@@ -1,4 +1,5 @@
 import { parseSerializedEquipmentInventoryState } from '#shared/itemAutomation/equipment'
+import { parsePokemonContestStatsState } from '#shared/contests/preparation'
 import { parseItemExplorationState, parseItemShardInventoryVariant } from '#shared/itemAutomation/exploration'
 import { parseItemInventoryInstanceId } from '#shared/itemAutomation/inventory'
 import { activeItemMedicalTreatment } from '#shared/itemAutomation/medicalTreatments'
@@ -322,6 +323,7 @@ const normalizeSerializedEquipmentInventoryForStorage = (
       }
       else {
         if (row.itemVariant !== undefined) row.itemVariant = parseItemShardInventoryVariant(row.itemVariant)
+        if (row.contestPoffinStatId !== undefined && (row.name !== 'Poffin' || typeof row.contestPoffinStatId !== 'string' || !['beauty','cool','cute','smart','tough'].includes(row.contestPoffinStatId))) throw new Error('Trainer inventory contains an invalid crafted Poffin Contest-stat identity.')
         if (section === 'equipment') delete row.qty
       }
       return row
@@ -345,6 +347,9 @@ const normalizeSheetForStorage = (
   if (kind === 'trainer') {
     stripLegacyTrainerSheetSkillRanks(payload)
     payload = normalizeSerializedEquipmentInventoryForStorage(payload)
+  }
+  else if (Object.hasOwn(payload, 'contestStats')) {
+    payload.contestStats = parsePokemonContestStatsState(payload.contestStats)
   }
 
   return {
@@ -523,6 +528,54 @@ const preserveItemVariantsForSetupSave = (
   return authoritative.size > 0 || Object.keys(candidateInventory).length > 0
     ? { ...candidate, inventory: nextInventory }
     : candidate
+}
+
+const preservePokemonContestStatsForSetupSave = (
+  candidate: Record<string, unknown>,
+  current: Record<string, unknown>,
+): Record<string, unknown> => {
+  const hasCandidateState = Object.hasOwn(candidate, 'contestStats')
+  const hasCurrentState = Object.hasOwn(current, 'contestStats')
+  if (!hasCandidateState && !hasCurrentState) return candidate
+  const currentState = parsePokemonContestStatsState(current.contestStats)
+  const candidateState = parsePokemonContestStatsState(candidate.contestStats)
+  return {
+    ...candidate,
+    contestStats: {
+      ...currentState,
+      // Setup editing may preserve historical prose, but Contest preparation
+      // ledgers are writable only by idempotent server operations.
+      legacyDescription: candidateState.legacyDescription,
+    },
+  }
+}
+
+const preservePokemonContestMoveBindingsForSetupSave = (
+  candidate: Record<string, unknown>,
+  current: Record<string, unknown>,
+): Record<string, unknown> => {
+  const protectedSheet = { ...candidate }
+  for (const field of ['movelist', 'appliedMoves'] as const) {
+    const currentRows = Array.isArray(current[field]) ? current[field] as Record<string, unknown>[] : []
+    const bindings = new Map<string, unknown[]>()
+    for (const row of currentRows) {
+      if (!row || typeof row !== 'object' || typeof row.name !== 'string' || !Object.hasOwn(row, 'contestIdentity')) continue
+      const key = `${row.name.normalize('NFKC').trim().toLowerCase()}\u0000${String(row.source ?? '')}`
+      bindings.set(key, [...(bindings.get(key) ?? []), cloneStoredJson(row.contestIdentity)])
+    }
+    if (!Array.isArray(candidate[field])) continue
+    protectedSheet[field] = (candidate[field] as unknown[]).map((value) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return value
+      const row = { ...(value as Record<string, unknown>) }
+      const key = `${String(row.name ?? '').normalize('NFKC').trim().toLowerCase()}\u0000${String(row.source ?? '')}`
+      const queue = bindings.get(key) ?? []
+      const binding = queue.shift()
+      if (binding === undefined) delete row.contestIdentity
+      else row.contestIdentity = binding
+      return row
+    })
+  }
+  return protectedSheet
 }
 
 const preserveEquipmentStateForSetupSave = (
@@ -908,7 +961,13 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
           resolvedAt: requestedUpdatedAt,
         }) as unknown as Record<string, unknown>
       : inputSheetWithPrivateFields
-    const inputSheet = preserveEquipmentStateForSetupSave(kind, evolutionReconciledSheet, currentSheet)
+    const contestProtectedSheet = kind === 'pokemon'
+      ? preservePokemonContestMoveBindingsForSetupSave(
+          preservePokemonContestStatsForSetupSave(evolutionReconciledSheet, currentSheet),
+          currentSheet,
+        )
+      : evolutionReconciledSheet
+    const inputSheet = preserveEquipmentStateForSetupSave(kind, contestProtectedSheet, currentSheet)
     const sourceWithServerFields = {
       ...inputSheet,
       slug,

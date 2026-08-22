@@ -372,6 +372,7 @@ watch(selectedProfileId, () => {
     </header>
 
     <main class="trainer-portal-page__body">
+      <OnboardingResumeBanner />
       <section v-if="!hasSelectedProfile" class="trainer-portal-empty panel-card">
         <h2>Choose a player profile</h2>
         <p>Select your table profile to see the trainers and Pokémon the GM linked to you.</p>

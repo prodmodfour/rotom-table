@@ -2,15 +2,15 @@
   "schemaVersion": 1,
   "ticket": "P8-092",
   "status": "reviewed",
-  "catalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
-  "policySha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b",
+  "catalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+  "policySha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750",
   "runtimeProseParsing": false,
   "cohortMemberLimit": 32,
-  "cohortCount": 18,
-  "itemCount": 348,
+  "cohortCount": 19,
+  "itemCount": 349,
   "implementationStateCounts": {
     "guided": 40,
-    "native": 204,
+    "native": 205,
     "passive": 104
   },
   "providerCounts": {
@@ -23,10 +23,11 @@
     "equipment": 104,
     "core-item-spec": 29,
     "capture": 25,
+    "contest": 1,
     "interpretive-campaign-tool": 34,
     "canonical-data-defect": 0
   },
-  "registrySha256": "43c2dae4f0e6dc3bcb6767cfc09c7d5ef76f38b5e5a3f82b114827e70dd088e8",
+  "registrySha256": "d47956441ed92d3f464021e51eb0f898877e8c7b5d72e5b559b2935198c33ead",
   "cohorts": [
     {
       "cohortId": "machine-move-01",
@@ -206,21 +207,21 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/move-learning-items.v1.json",
-          "sha256": "c679cfe04a8e37c4007ed6054309141aa3c03d2938a3885da53eca9e480473b4"
+          "sha256": "7d633df77ca878f03e4595def1d2205f1b6d2e1fe8beb021600004009dc28a2c"
         }
       ],
       "executableEvidence": [
         {
           "path": "server/domain/itemAutomation/moveLearning.ts",
-          "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d"
+          "sha256": "6389439f016bf2b26b651e4290086dea1c943f5e12b7eb939e3df7dccb67f9f6"
         },
         {
           "path": "tests/integration/machineMoveLearningOperation.test.ts",
@@ -427,21 +428,21 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/move-learning-items.v1.json",
-          "sha256": "c679cfe04a8e37c4007ed6054309141aa3c03d2938a3885da53eca9e480473b4"
+          "sha256": "7d633df77ca878f03e4595def1d2205f1b6d2e1fe8beb021600004009dc28a2c"
         }
       ],
       "executableEvidence": [
         {
           "path": "server/domain/itemAutomation/moveLearning.ts",
-          "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d"
+          "sha256": "6389439f016bf2b26b651e4290086dea1c943f5e12b7eb939e3df7dccb67f9f6"
         },
         {
           "path": "tests/integration/machineMoveLearningOperation.test.ts",
@@ -648,21 +649,21 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/move-learning-items.v1.json",
-          "sha256": "c679cfe04a8e37c4007ed6054309141aa3c03d2938a3885da53eca9e480473b4"
+          "sha256": "7d633df77ca878f03e4595def1d2205f1b6d2e1fe8beb021600004009dc28a2c"
         }
       ],
       "executableEvidence": [
         {
           "path": "server/domain/itemAutomation/moveLearning.ts",
-          "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d"
+          "sha256": "6389439f016bf2b26b651e4290086dea1c943f5e12b7eb939e3df7dccb67f9f6"
         },
         {
           "path": "tests/integration/machineMoveLearningOperation.test.ts",
@@ -759,21 +760,21 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/move-learning-items.v1.json",
-          "sha256": "c679cfe04a8e37c4007ed6054309141aa3c03d2938a3885da53eca9e480473b4"
+          "sha256": "7d633df77ca878f03e4595def1d2205f1b6d2e1fe8beb021600004009dc28a2c"
         }
       ],
       "executableEvidence": [
         {
           "path": "server/domain/itemAutomation/moveLearning.ts",
-          "sha256": "af19cbfa834a99b6922aa16267c56f99d2b4a66aad62ab4e056cf18ab0d34f0d"
+          "sha256": "6389439f016bf2b26b651e4290086dea1c943f5e12b7eb939e3df7dccb67f9f6"
         },
         {
           "path": "tests/integration/machineMoveLearningOperation.test.ts",
@@ -940,15 +941,15 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/evolution-items.v1.json",
-          "sha256": "043ec5a957eee39ad3264a39c806568c60e205814a3527db87d41a63e3e2ec2d"
+          "sha256": "70e1e149eb231657fc5212d1d6f4b59578f9e295a177e75a6837a181461da59f"
         }
       ],
       "executableEvidence": [
@@ -1051,15 +1052,15 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/permanent-advancement-items.v1.json",
-          "sha256": "d93002e513202855ac152cec31b295e5d8ea333141fcada77044bdacee0ae7c6"
+          "sha256": "7f64d95117eabd7f578ef182f8f14ea082667498051e42c55dfe2812c0d67d29"
         }
       ],
       "executableEvidence": [
@@ -1147,15 +1148,15 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/exploration-items.v1.json",
-          "sha256": "acbecd1b8378308dea13fb1c14035dea49f4fb3b47c4d6709fc0545e733f895e"
+          "sha256": "78c0b15224274afea209801be168a3923aa05895cd3fabef31d3a4e0e1bb6394"
         }
       ],
       "executableEvidence": [
@@ -1223,15 +1224,15 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/breeding-items.v1.json",
-          "sha256": "32519279975960e1b5b4e71324499b84598fe5b6f553b448cb1859df95337150"
+          "sha256": "84c9af7ee8463281e683d7b26bf7d6b9f818667dd493eb0aae6f407c3f1c9439"
         }
       ],
       "executableEvidence": [
@@ -1314,15 +1315,15 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/guided-item-adjudications.v1.json",
-          "sha256": "a9e60cf27b038a9bc31848228ccb12ae70774b12ceb96d96eb533fa9716c8cf2"
+          "sha256": "63feadb755ba8d30f0524073f6af14252cbd6d5203d8d045869a94d48523adbf"
         }
       ],
       "executableEvidence": [
@@ -1363,7 +1364,7 @@
       "providerId": "equipment",
       "implementationState": "passive",
       "memberCount": 32,
-      "sourceFingerprint": "c45fb8dde66530f6cc55f5897a044e77c74361ba358d38ddbab7fa15863a5911",
+      "sourceFingerprint": "c0851ffe7b6d53493fd273ca3d697c36ae418d675fb220d740635024b296d91f",
       "members": [
         {
           "canonicalId": "Kitchen Knife",
@@ -1437,7 +1438,7 @@
         },
         {
           "canonicalId": "Fancy Clothes",
-          "recordSha256": "1bd69a7221f797dc32e2c738a1f8c0f204bf3b492556ba5ced745db435f0e2d6",
+          "recordSha256": "5bec6c85d73f9176e2f6c22e7796afb6cab4883c0fe61281ae81e37d78e2d444",
           "effectSha256": "79fb8105cb0f8b6729b2b0e47dc104f4c1aedf8e35ef0a64362db869430fc118"
         },
         {
@@ -1535,15 +1536,15 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/equipment-definitions.v1.json",
-          "sha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a"
+          "sha256": "fb5d8c6cafba3c969da7b20e0c09e9d6b32d4baa6993c4005a40b4f6249316b7"
         }
       ],
       "executableEvidence": [
@@ -1584,7 +1585,7 @@
       "providerId": "equipment",
       "implementationState": "passive",
       "memberCount": 32,
-      "sourceFingerprint": "2bd209d6e0c8ccdbca7f464b22d210f3ada82f68e1b39e3a0dfbd237441e7ca3",
+      "sourceFingerprint": "d6d631227abf0974e166585159c893f4aa394f7fe912655b1a843402fcc9118d",
       "members": [
         {
           "canonicalId": "Wonder Launcher",
@@ -1623,12 +1624,12 @@
         },
         {
           "canonicalId": "Contest Accessory",
-          "recordSha256": "b859f9835c3978186cba6459164b4baa7652588d2ab5e1248fa2e4c007200662",
+          "recordSha256": "3fa09101ba877427d54f92888df524aaa637686641d3c43b6f9ca6579936ba9a",
           "effectSha256": "579b94f5b9684f65f7cddf943f22e3957dce56ca43ef6febcea15d97987af1a2"
         },
         {
           "canonicalId": "Contest Fashion",
-          "recordSha256": "14e59f707a78b7cb56adf657ae1cf30b127ff03e897e35526e9c3ae349298ef2",
+          "recordSha256": "aef0832fdd8f507717a1c082ddd93b55fe6d5e222b45d2c5aba61cb1c0f5fd2e",
           "effectSha256": "4e8a600530586d392875fb624061e2334c9e3678204d036c9588876d86945792"
         },
         {
@@ -1756,15 +1757,15 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/equipment-definitions.v1.json",
-          "sha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a"
+          "sha256": "fb5d8c6cafba3c969da7b20e0c09e9d6b32d4baa6993c4005a40b4f6249316b7"
         }
       ],
       "executableEvidence": [
@@ -1977,15 +1978,15 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/equipment-definitions.v1.json",
-          "sha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a"
+          "sha256": "fb5d8c6cafba3c969da7b20e0c09e9d6b32d4baa6993c4005a40b4f6249316b7"
         }
       ],
       "executableEvidence": [
@@ -2078,15 +2079,15 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/equipment-definitions.v1.json",
-          "sha256": "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a"
+          "sha256": "fb5d8c6cafba3c969da7b20e0c09e9d6b32d4baa6993c4005a40b4f6249316b7"
         }
       ],
       "executableEvidence": [
@@ -2284,21 +2285,21 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/specs.v1.json",
-          "sha256": "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe"
+          "sha256": "b03d2706fa0d666b33262e215b80a0bc33ac617d07a62e5aca7319db396918ed"
         }
       ],
       "executableEvidence": [
         {
           "path": "server/domain/itemAutomation/registry.ts",
-          "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+          "sha256": "f6f7ae530decdad61b832a707fc09cc065e56c66fb845de1c5f12ee2739a4f7e"
         },
         {
           "path": "tests/server/executeItemOperation.test.ts",
@@ -2470,15 +2471,15 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/capture-pokeballs.v1.json",
-          "sha256": "0fb778b5e67ef36e28d4c18c7ca6ea7c3dc4ad716604c876e58684970410ae10"
+          "sha256": "2052d0fb2ba4ae11715ceb6e8a551ed0130b7e36b48c78fb99fa37c6981038a8"
         }
       ],
       "executableEvidence": [
@@ -2530,8 +2531,78 @@
       "unresolvedRequirements": []
     },
     {
-      "cohortId": "interpretive-campaign-tool-field-and-camp-tools",
+      "cohortId": "contest",
       "sequence": 16,
+      "providerId": "contest",
+      "implementationState": "native",
+      "memberCount": 1,
+      "sourceFingerprint": "c8f554e92148c72d81005960838fc53c8064bef388c2894abeaeb1c7c480a841",
+      "members": [
+        {
+          "canonicalId": "Poffin",
+          "recordSha256": "0b2b29279e430c0de655d7976b999de75c42c3c09c399ec9ce14c5fdda0b4ca8",
+          "effectSha256": "cf5046c8c7e67e3e435643129b5607c152f2660370f64c05685f757e6dee1efe"
+        }
+      ],
+      "providerRequirements": [
+        "canonical Poffin identity",
+        "level-based allowance",
+        "exact inventory custody",
+        "atomic Contest preparation operation"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "data/reference/items.json",
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
+        },
+        {
+          "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
+        },
+        {
+          "path": "data/reference/contests.json",
+          "sha256": "fadb03c328f2025dcc81fe497365db345717184bea6a9247b2f79d9d3f61362a"
+        }
+      ],
+      "executableEvidence": [
+        {
+          "path": "server/useCases/contestPreparation.ts",
+          "sha256": "0fb33ada6668b86dafbfcd0e4c3596a89f2e0103b29a2534e2805c18436417fd"
+        },
+        {
+          "path": "shared/contests/preparation.ts",
+          "sha256": "3ae8db9e626d6177409fe943ea5221a347dfa43288eefeed8a1ee5ea15ff2c54"
+        },
+        {
+          "path": "tests/server/contestsRuntime.test.ts",
+          "sha256": "73ca5a48d37b521211d281ca3371354cbb95985ad19450c74eed019001f44637"
+        }
+      ],
+      "uiProjectionEvidence": [
+        {
+          "path": "src/components/contests/ContestPreparationWorkbench.vue",
+          "sha256": "328c3c8a8361b630602a4a1efb9ddacaab30c3cbd33893cc1aa0e91158f7e28f"
+        },
+        {
+          "path": "src/components/sheets/PokemonContestPreparationPanel.vue",
+          "sha256": "bbcb257cfcd6b562fbe9116cd0812d94b25bb3bb6be0ef356c198aff9ff2bb3b"
+        }
+      ],
+      "recoveryEvidence": [
+        {
+          "path": "server/storage/migrations.ts",
+          "sha256": "f2b2a80227044e507c56f26f4eeffcc86b5ae8732e39e7dd98992a2c1e460ea6"
+        },
+        {
+          "path": "shared/contests/preparationOperations.ts",
+          "sha256": "daea5d7de193834f3b1b94602fea6f16f42b53b2523c61ac4a09214bbae01193"
+        }
+      ],
+      "unresolvedRequirements": []
+    },
+    {
+      "cohortId": "interpretive-campaign-tool-field-and-camp-tools",
+      "sequence": 17,
       "providerId": "interpretive-campaign-tool",
       "implementationState": "guided",
       "memberCount": 11,
@@ -2602,21 +2673,21 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/guided-catalog-items.v1.json",
-          "sha256": "8e669d3a49f235d464b933ac86638f291b7dbf08981899236c059129c1b7602e"
+          "sha256": "112a547140e61d25aee499bcd49b191a878928f54f408d688b605343ed78fec3"
         }
       ],
       "executableEvidence": [
         {
           "path": "server/domain/itemAutomation/registry.ts",
-          "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+          "sha256": "f6f7ae530decdad61b832a707fc09cc065e56c66fb845de1c5f12ee2739a4f7e"
         },
         {
           "path": "server/useCases/manageItemGuidedAdjudication.ts",
@@ -2663,11 +2734,11 @@
     },
     {
       "cohortId": "interpretive-campaign-tool-crafting-and-care-tools",
-      "sequence": 17,
+      "sequence": 18,
       "providerId": "interpretive-campaign-tool",
       "implementationState": "guided",
       "memberCount": 15,
-      "sourceFingerprint": "4ea27390397397d6dd00dd48f5dc3c9d9a5cd234d23b80dbfbaa93e027eef4be",
+      "sourceFingerprint": "cb3b95d877feacf6cb6147b0735fe031473fb97738b597bd8c9ac206f4ea411c",
       "members": [
         {
           "canonicalId": "Mulch",
@@ -2716,7 +2787,7 @@
         },
         {
           "canonicalId": "Poffin Mixer",
-          "recordSha256": "595e1f1154a03c5929cd5564ac1a63cef6e195a0a6d94ff50b3ca70782c65970",
+          "recordSha256": "33e7a8896ac22777f5b804f9c3f79177b1b86378dcbaef185492a79d494987db",
           "effectSha256": "4276be0bdb8788b4eb8615ac0f246488087d25eeee8ea21bf5a153659c4b6a29"
         },
         {
@@ -2754,21 +2825,21 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/guided-catalog-items.v1.json",
-          "sha256": "8e669d3a49f235d464b933ac86638f291b7dbf08981899236c059129c1b7602e"
+          "sha256": "112a547140e61d25aee499bcd49b191a878928f54f408d688b605343ed78fec3"
         }
       ],
       "executableEvidence": [
         {
           "path": "server/domain/itemAutomation/registry.ts",
-          "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+          "sha256": "f6f7ae530decdad61b832a707fc09cc065e56c66fb845de1c5f12ee2739a4f7e"
         },
         {
           "path": "server/useCases/manageItemGuidedAdjudication.ts",
@@ -2815,7 +2886,7 @@
     },
     {
       "cohortId": "interpretive-campaign-tool-interpretive-combat-tools",
-      "sequence": 18,
+      "sequence": 19,
       "providerId": "interpretive-campaign-tool",
       "implementationState": "guided",
       "memberCount": 8,
@@ -2871,21 +2942,21 @@
       "sourceEvidence": [
         {
           "path": "data/reference/items.json",
-          "sha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+          "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
         },
         {
           "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-          "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+          "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
         },
         {
           "path": "data/complete-play-loop/guided-catalog-items.v1.json",
-          "sha256": "8e669d3a49f235d464b933ac86638f291b7dbf08981899236c059129c1b7602e"
+          "sha256": "112a547140e61d25aee499bcd49b191a878928f54f408d688b605343ed78fec3"
         }
       ],
       "executableEvidence": [
         {
           "path": "server/domain/itemAutomation/registry.ts",
-          "sha256": "045db8e0383a4dcc5278b35cb14fa0dfd7b573b7efd44980ca65bb296bc7b02d"
+          "sha256": "f6f7ae530decdad61b832a707fc09cc065e56c66fb845de1c5f12ee2739a4f7e"
         },
         {
           "path": "server/useCases/manageItemGuidedAdjudication.ts",

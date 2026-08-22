@@ -6,10 +6,10 @@
   "sourceEvidence": {
     "rewardPackageContractSha256": "577ccd02ac0183799b659330202ba44049a914419e99c3d1a3bdda8cf3c219a9",
     "lootAllocationModelSha256": "cc0049761424ea8a817f0771f53bf781518ab4b4f87db3ab66d04c1a8c3ce368",
-    "inventoryStackRulesSha256": "c666c457dfc1defd2aa94bed20feb3d078da06eb573dcbec61cac822b2181a11",
+    "inventoryStackRulesSha256": "46fb28daf3e9377eb02e8ffc6426c4682ea6b424755b3d1c05802cde9e60ad6e",
     "inventoryMergeRulesSha256": "33ea7522b9f18893b668da64c7946132b9f4ac117e7ce5b0787037f945260087",
     "serializedEquipmentContractSha256": "9662b573b09faadd1f47255838108bc0fd5fc61c122551d07e11b53ee3830b73",
-    "canonicalItemsSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8"
+    "canonicalItemsSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
   },
   "authority": {
     "completenessLiteral": "authoritative-current",
@@ -31,13 +31,19 @@
     ]
   },
   "money": {
-    "destinations": ["trainer-inventory", "group-inventory"],
+    "destinations": [
+      "trainer-inventory",
+      "group-inventory"
+    ],
     "distribution": "A reward may be split across exact destinations; positive integer declarations must sum exactly to the source amount.",
     "balance": "Each current non-negative safe-integer balance is incremented in deterministic allocation order with overflow rejection.",
     "write": "Every contributing leaf write identifies one exact sheet or group-inventory revision and capacity cost zero."
   },
   "items": {
-    "destinations": ["trainer-inventory", "group-inventory"],
+    "destinations": [
+      "trainer-inventory",
+      "group-inventory"
+    ],
     "stackMerge": "Stack rewards reuse the authoritative inventory merge predicate. Exact canonical identity, cost, description, modifier, slot, and structured variant must match before quantity is merged.",
     "newRows": "A non-merging reward receives a deterministic settlement, reward, and destination-bound row identity.",
     "sectionCapacity": 256,

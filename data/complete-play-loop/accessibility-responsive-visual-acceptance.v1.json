@@ -188,7 +188,7 @@
     },
     {
       "path": "tests/data/completePlayLoopAccessibilityVisualAcceptance.test.ts",
-      "sha256": "f1ef22e38063e9deb23c168b124144338eeac2c108ec36e95502bc8738de0b1c"
+      "sha256": "bb7deff57ee59019a478e9d24667bcbac0a0b47299f7aab8c8537214248a145e"
     },
     {
       "path": "tests/components/inventoryAccessibility.test.ts",
@@ -232,11 +232,11 @@
     },
     {
       "path": ".pi/artifacts/ui-validation/inventory-accessible-reflow/chromium-trainer-discard.png",
-      "sha256": "e62ccc943eaf3a045adf87b07b3a22abd350e02ad94de3d605623d6041725c7f"
+      "sha256": "4cfb335de65786dcaf013677406ec3fba33afc4b222baefb51105fffe82e7a12"
     },
     {
       "path": ".pi/artifacts/ui-validation/inventory-accessible-reflow/mobile-chromium-trainer-zoom-320.png",
-      "sha256": "158869a44b537eb4107bce2ae37c33e99ecdfe87ca7f086dc37602c5ed4ceff8"
+      "sha256": "1bf3b47b2fdb4ca6984983b88b0bfc32f4ef7db11200b262d9a6bd7af2d8b450"
     },
     {
       "path": ".pi/artifacts/ui-validation/commerce-item-loop/browser-report.json",
@@ -272,11 +272,11 @@
     },
     {
       "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/chromium-open.png",
-      "sha256": "05b2a8470592e5b9ed30703f93ae4480734779865a0430b47a280634f0a0f39c"
+      "sha256": "fe2ddeba60a0c179292103b6ffca91b8b9c5cb2a0cb6ae6ca05b30314f76b7e5"
     },
     {
       "path": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/mobile-chromium-320-resolved.png",
-      "sha256": "8737293fc853e7fb63de7ef5f552e70935b129fb7019cbf76171c1ded6608633"
+      "sha256": "8e4575a75b3b9215b3434aa8f8228e2626e86c126daa1102bda3ad824c1b381a"
     },
     {
       "path": "docs/complete-play-loop-accessibility-responsive-visual-acceptance.md",
@@ -284,11 +284,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "32b413c7c44c9eb499c7392050fed9de3df82b5005f4c75b1785ea58504e1637"
+      "sha256": "efbd8d525679b92f236473e7ff25cf58ffab662b8f0c7fca316aee2fb76f7ec4"
     },
     {
       "path": "scripts/quality-gate.sh",
-      "sha256": "9cc4ccb13ad0020b63da1cc1659cd3df053cbe7c37fe236cc81eac59caf929c0"
+      "sha256": "6385abe72e4b0e62311a9d4446021f1aefdf653246499cce5eaf3f7260e534ee"
     }
   ]
 }

@@ -12,7 +12,12 @@
     "statPointRules": "data/reference/rules.json",
     "pokemonSpecies": "data/reference/pokedex.json",
     "settlementLevelEvents": "encounter_settlement_attention_sources linked to immutable settlement history facts",
-    "sheetRead": ["kind", "slug", "revision", "document"],
+    "sheetRead": [
+      "kind",
+      "slug",
+      "revision",
+      "document"
+    ],
     "campaignMinuteRequired": true
   },
   "detections": {
@@ -55,7 +60,12 @@
     "itemStableAcrossUnrelatedSheetRevisions": true,
     "sourceEventChangesWithSheetRevision": true,
     "decisionAndActionBindExactSheetRevision": true,
-    "deterministicOrder": ["urgency", "entityKind", "entityId", "itemId"],
+    "deterministicOrder": [
+      "urgency",
+      "entityKind",
+      "entityId",
+      "itemId"
+    ],
     "duplicateAuthorityFailsClosed": true,
     "truncatedAuthorityFailsClosed": true
   },
@@ -117,7 +127,7 @@
     },
     "rules": {
       "path": "data/reference/rules.json",
-      "sha256": "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142"
+      "sha256": "f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df"
     },
     "pokemonStatResolver": {
       "path": "src/utils/sheets/pokemonDerived.ts",

@@ -10,21 +10,22 @@ const SHA256 = /^[0-9a-f]{64}$/
 const GIT_BLOB = /^[0-9a-f]{40}$/
 const REVIEWED_RUNTIME_SUCCESSORS = Object.freeze({
   'data/reference/moves.json': {
-    bytes: 286379,
-    sha256: '418d20378d61383295da0c6d4a8a3752e6ed001300c604df9fe7e3f04276089e',
-    gitBlob: 'bde873c9122ab05c920a34cd7aafd78a4cb05d9f',
+    bytes: 615165,
+    sha256: '10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821',
+    gitBlob: 'cdbfb1a62ae15bfcc2f474a6f40df703342c47b1',
     entryCount: 777,
   },
   'data/reference/items.json': {
-    bytes: 162053,
-    sha256: '62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8',
-    gitBlob: 'f6abf6cba3e5e2cdf58d4432dae88ba6886908b9',
+    bytes: 164478,
+    sha256: '842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef',
+    gitBlob: '41ac3589a5e0fb6d4150e0cf835fee3d10fa735f',
+    entryCount: 349,
   },
   'data/reference/rules.json': {
-    bytes: 196347,
-    sha256: '94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142',
-    gitBlob: 'b6db0c515133519860b79a80dac3a6e409a4a921',
-    entryCount: 38,
+    bytes: 198452,
+    sha256: 'f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df',
+    gitBlob: '8e8d49a61c440876e285c63ff7d075b9a4ea24b2',
+    entryCount: 39,
   },
 } as const)
 

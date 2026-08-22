@@ -125,7 +125,7 @@ export const BREEDING_DOCUMENTATION_CLOSURE_V1 = Object.freeze({
     eggSourceKindCount: 4 as const,
     commandKindCount: 22 as const,
     baseAudienceCount: 5 as const,
-    storageSchemaVersion: 44 as const,
+    storageSchemaVersion: 46 as const,
     postBodyMaximumUtf8Bytes: 32 * 1024,
     archiveMaximumUtf8Bytes: 64 * 1024 * 1024,
     campaignClockEggBatchMaximum: 100 as const,
@@ -160,4 +160,4 @@ export const BREEDING_DOCUMENTATION_CLOSURE_V1 = Object.freeze({
 })
 
 export const BREEDING_DOCUMENTATION_CLOSURE_DEFINITION_SHA256 =
-  'f6e8b87fc4af050c51d21c576f249a18d5ef74b6d382ff110c6434eca01176d7' as const
+  '927ad5aac2a3e1f5015b02b50369e45a7ee8145138f7008d60f10b258143f613' as const

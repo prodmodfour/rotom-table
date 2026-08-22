@@ -179,6 +179,7 @@ const {
       :stat-points-budget="statPointsBudget"
       @set-stat-field="setStatField"
     />
+    <TrainerContestHistoryPanel v-if="activeTab === 'stats'" :sheet="sheet" />
 
     <!-- =================================================================== -->
     <!-- SKILLS TAB                                                           -->

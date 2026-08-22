@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "ticket": "P8-092",
   "status": "implemented",
-  "canonicalItemCount": 348,
-  "cohortCount": 18,
+  "canonicalItemCount": 349,
+  "cohortCount": 19,
   "maximumMembersPerCohort": 32,
   "runtimeProseParsing": false,
   "assignment": {
@@ -22,7 +22,7 @@
     "recovery-evidence"
   ],
   "implementationStateCounts": {
-    "native": 204,
+    "native": 205,
     "guided": 40,
     "passive": 104,
     "blocked": 0
@@ -52,19 +52,19 @@
   "sources": {
     "reviewedPolicy": {
       "path": "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
-      "sha256": "b4cd7b740fa583bf05fcf026ea8c960fe09332350e149a225c5f17263e24eb6b"
+      "sha256": "556335341df2fb0656316ac20402959f0e2ec03b2e00aca200e619f9ec0f2750"
     },
     "generator": {
       "path": "scripts/generate_complete_play_loop_item_catalog_cohorts.py",
-      "sha256": "edf66154cd76aede7f461feb810b82c5deb1d5d9e8f1ba82b21295074c4c75a0"
+      "sha256": "a6c5e6de01b2f38240b8e610fd5779cadc1bc224a1a782d4678dc2767a82e48c"
     },
     "generatedRegistry": {
       "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
-      "sha256": "be82c8f9975056f894bf9b8cf78780869afcd71ef7f2bccfbe0cae88adaac1a0"
+      "sha256": "53f3c2c06e83d23fded29a03ff2a96021075a366f994925c21a7b1132f230f8c"
     },
     "strictContract": {
       "path": "shared/itemAutomation/catalogCohorts.ts",
-      "sha256": "ec5ca1dd55f1d680555af7d9386e862f1cc00f8f1ec97c8bf328c2df12b167b2"
+      "sha256": "b9c805658c486bfc57b31c4ce5e6684792734b7d4750382124f70597091cab0e"
     },
     "serverRegistry": {
       "path": "server/domain/itemAutomation/catalogCohortRegistry.ts",
@@ -76,11 +76,11 @@
     },
     "registryTests": {
       "path": "tests/server/itemCatalogCohortRegistry.test.ts",
-      "sha256": "57ef83bef122693fbbd540d0d0b42e0993589b987c40bb6a9651cc0fc7331b3c"
+      "sha256": "95d8f33a98490f1a2be18efca3c8ee7f9ccd2a649ae57070e70e01ff847d3681"
     },
     "documentation": {
       "path": "docs/canonical-item-catalog-cohorts.md",
-      "sha256": "e9dbaae9f1041b5da2e030010cdd0237f29bdd3255252493962c087793cdf394"
+      "sha256": "f11f9149622dd99eec6d9526f43901ab808464c927314d1df30789eb0ab067b5"
     },
     "completionRubric": {
       "path": "data/complete-play-loop/completion-rubric.v1.json",

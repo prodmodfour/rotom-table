@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { stableJsonStringify } from '#shared/automation/stableJson'
+import { projectLegacyMoveMechanicalAuthority } from '#shared/ruleset/moveMechanicalAuthority'
 import {
   BREEDING_OFFER_OPTION_KINDS,
   breedingFamilyIdForRoot,
@@ -143,7 +144,10 @@ describe('breeding canonical IDs', () => {
       }
     }
     validateRows(catalog.definition.catalogs.species, pokedex.map(row => [row.species, row]))
-    const frozenMoveSources = Object.entries(moves)
+    const frozenMoveSources = Object.entries(moves).map(([name, record]) => [
+      name,
+      projectLegacyMoveMechanicalAuthority(record),
+    ] as [string, Record<string, unknown>])
     frozenMoveSources[503] = ['Façade', {
       name: 'Façade', type: 'Normal', frequency: 'EOT', ac: 2, damage_base: 7,
       damage_roll: '2d6+10 / 17', damage_class: 'Physical', range: 'Melee, 1 Target',

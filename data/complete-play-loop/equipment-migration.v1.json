@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "ticket": "P8-042",
-  "canonicalItemCatalogSha256": "62b29a499c791d689f6efc99e04ed515a71336421352626749cf6cc7407982c8",
+  "canonicalItemCatalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
   "equipmentContractSha256": "8360d4c6f0f3333f490dc4329e862c4cab6a5161b661ddc531bfd94ce63f6307",
   "runtime": {
     "implementation": "server/domain/itemAutomation/equipmentMigration.ts",

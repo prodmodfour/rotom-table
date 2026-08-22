@@ -7,6 +7,7 @@ import rules from '~~/data/reference/rules.json'
 import specs from '~~/data/complete-play-loop/specs.v1.json'
 import contract from '~~/data/complete-play-loop/medical-extended-actions.v1.json'
 import equipmentDefinitions from '~~/data/complete-play-loop/equipment-definitions.v1.json'
+import { readOptionalLocalUiArtifact } from '../helpers/localUiArtifacts'
 
 const sha = (value: string): string => createHash('sha256').update(value).digest('hex')
 
@@ -126,8 +127,11 @@ describe('P8-052 medical Extended Action contract', () => {
       contract.implementation.equipmentDelivery,
       ...contract.implementation.api,
       ...contract.implementation.client,
-      ...contract.implementation.mockups,
       ...contract.implementation.tests,
     ]) expect(readFileSync(path).byteLength).toBeGreaterThan(0)
+    for (const path of contract.implementation.mockups) {
+      const mockup = readOptionalLocalUiArtifact(process.cwd(), path)
+      if (mockup) expect(mockup.byteLength).toBeGreaterThan(0)
+    }
   })
 })

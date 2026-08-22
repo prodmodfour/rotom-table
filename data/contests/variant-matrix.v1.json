@@ -1,0 +1,1678 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "pokemon-contest-variant-matrix-v1",
+  "sources": [
+    {
+      "path": "data/reference/contests.json",
+      "sha256": "fadb03c328f2025dcc81fe497365db345717184bea6a9247b2f79d9d3f61362a"
+    },
+    {
+      "path": "data/reference/moves.json",
+      "sha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "standard-beauty-3",
+      "variantId": "standard",
+      "contestTypeId": "beauty",
+      "contestantCount": 3,
+      "seed": 1000,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-beauty-3-0",
+            "letter": "B",
+            "introductionTotal": 4
+          },
+          {
+            "contestantId": "contestant:standard-beauty-3-1",
+            "letter": "C",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:standard-beauty-3-2",
+            "letter": "A",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 9,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-beauty-3-1",
+            "placement": 1,
+            "appeal": 17,
+            "fumble": 7,
+            "finalScore": 10
+          },
+          {
+            "contestantId": "contestant:standard-beauty-3-0",
+            "placement": 2,
+            "appeal": 4,
+            "fumble": 3,
+            "finalScore": 1
+          },
+          {
+            "contestantId": "contestant:standard-beauty-3-2",
+            "placement": 3,
+            "appeal": 4,
+            "fumble": 8,
+            "finalScore": -4
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-beauty-3-1",
+            "placement": 1,
+            "totalExperience": 22,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-beauty-3-0",
+            "placement": 2,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-beauty-3-2",
+            "placement": 3,
+            "totalExperience": 12,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "acbe60230f3eb94ce8aa62753fb69070f2141131dec06358f348961db8220416"
+      }
+    },
+    {
+      "id": "standard-beauty-4",
+      "variantId": "standard",
+      "contestTypeId": "beauty",
+      "contestantCount": 4,
+      "seed": 1001,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-beauty-4-0",
+            "letter": "B",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-beauty-4-1",
+            "letter": "A",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-beauty-4-2",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:standard-beauty-4-3",
+            "letter": "C",
+            "introductionTotal": 2
+          }
+        ],
+        "acceptedAppeals": 16,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-beauty-4-1",
+            "placement": 1,
+            "appeal": 24,
+            "fumble": 9,
+            "finalScore": 15
+          },
+          {
+            "contestantId": "contestant:standard-beauty-4-0",
+            "placement": 2,
+            "appeal": 11,
+            "fumble": 3,
+            "finalScore": 8
+          },
+          {
+            "contestantId": "contestant:standard-beauty-4-2",
+            "placement": 3,
+            "appeal": 10,
+            "fumble": 4,
+            "finalScore": 6
+          },
+          {
+            "contestantId": "contestant:standard-beauty-4-3",
+            "placement": 4,
+            "appeal": 10,
+            "fumble": 9,
+            "finalScore": 1
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-beauty-4-1",
+            "placement": 1,
+            "totalExperience": 22,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-beauty-4-0",
+            "placement": 2,
+            "totalExperience": 20,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-beauty-4-2",
+            "placement": 3,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-beauty-4-3",
+            "placement": 4,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "ab428e55a81c0a74d9d977884d8df36e98fcde3f9348e471f091bcb58a78e9b7"
+      }
+    },
+    {
+      "id": "standard-beauty-5",
+      "variantId": "standard",
+      "contestTypeId": "beauty",
+      "contestantCount": 5,
+      "seed": 1002,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-beauty-5-0",
+            "letter": "C",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-1",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-2",
+            "letter": "B",
+            "introductionTotal": 4
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-3",
+            "letter": "E",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-4",
+            "letter": "A",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 25,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-beauty-5-4",
+            "placement": 1,
+            "appeal": 24,
+            "fumble": 6,
+            "finalScore": 18
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-1",
+            "placement": 2,
+            "appeal": 28,
+            "fumble": 12,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-0",
+            "placement": 3,
+            "appeal": 9,
+            "fumble": 0,
+            "finalScore": 9
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-2",
+            "placement": 4,
+            "appeal": 22,
+            "fumble": 19,
+            "finalScore": 3
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-3",
+            "placement": 5,
+            "appeal": 13,
+            "fumble": 19,
+            "finalScore": -6
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-beauty-5-4",
+            "placement": 1,
+            "totalExperience": 42,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-1",
+            "placement": 2,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-0",
+            "placement": 3,
+            "totalExperience": 20,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-2",
+            "placement": 4,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-beauty-5-3",
+            "placement": 5,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "ee91979de091cd4c01852bb73c5d5b493b956105548ba46cc847b5af46b2d69f"
+      }
+    },
+    {
+      "id": "standard-cool-3",
+      "variantId": "standard",
+      "contestTypeId": "cool",
+      "contestantCount": 3,
+      "seed": 1010,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-cool-3-0",
+            "letter": "C",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:standard-cool-3-1",
+            "letter": "A",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-cool-3-2",
+            "letter": "B",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 9,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-cool-3-0",
+            "placement": 1,
+            "appeal": 18,
+            "fumble": 1,
+            "finalScore": 17
+          },
+          {
+            "contestantId": "contestant:standard-cool-3-1",
+            "placement": 2,
+            "appeal": 10,
+            "fumble": 5,
+            "finalScore": 5
+          },
+          {
+            "contestantId": "contestant:standard-cool-3-2",
+            "placement": 3,
+            "appeal": 6,
+            "fumble": 2,
+            "finalScore": 4
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-cool-3-0",
+            "placement": 1,
+            "totalExperience": 20,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-cool-3-1",
+            "placement": 2,
+            "totalExperience": 11,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cool-3-2",
+            "placement": 3,
+            "totalExperience": 12,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "c976beac98c39576dcfa67f9e76d6372a9b80cab2668db74f7d172d6b47572e2"
+      }
+    },
+    {
+      "id": "standard-cool-4",
+      "variantId": "standard",
+      "contestTypeId": "cool",
+      "contestantCount": 4,
+      "seed": 1011,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-cool-4-0",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-cool-4-1",
+            "letter": "A",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-cool-4-2",
+            "letter": "B",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-cool-4-3",
+            "letter": "D",
+            "introductionTotal": 2
+          }
+        ],
+        "acceptedAppeals": 16,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-cool-4-0",
+            "placement": 1,
+            "appeal": 23,
+            "fumble": 4,
+            "finalScore": 19
+          },
+          {
+            "contestantId": "contestant:standard-cool-4-3",
+            "placement": 2,
+            "appeal": 15,
+            "fumble": 3,
+            "finalScore": 12
+          },
+          {
+            "contestantId": "contestant:standard-cool-4-1",
+            "placement": 3,
+            "appeal": 14,
+            "fumble": 3,
+            "finalScore": 11
+          },
+          {
+            "contestantId": "contestant:standard-cool-4-2",
+            "placement": 4,
+            "appeal": 11,
+            "fumble": 2,
+            "finalScore": 9
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-cool-4-0",
+            "placement": 1,
+            "totalExperience": 20,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-cool-4-3",
+            "placement": 2,
+            "totalExperience": 26,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cool-4-1",
+            "placement": 3,
+            "totalExperience": 11,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cool-4-2",
+            "placement": 4,
+            "totalExperience": 12,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "92f88161ae7e3e242cad23767c2a2ab79bc1c2a7a195f002666779df398e516d"
+      }
+    },
+    {
+      "id": "standard-cool-5",
+      "variantId": "standard",
+      "contestTypeId": "cool",
+      "contestantCount": 5,
+      "seed": 1012,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-cool-5-0",
+            "letter": "E",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-1",
+            "letter": "A",
+            "introductionTotal": 5
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-2",
+            "letter": "D",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-3",
+            "letter": "C",
+            "introductionTotal": 4
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-4",
+            "letter": "B",
+            "introductionTotal": 5
+          }
+        ],
+        "acceptedAppeals": 25,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-cool-5-0",
+            "placement": 1,
+            "appeal": 28,
+            "fumble": 3,
+            "finalScore": 25
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-2",
+            "placement": 2,
+            "appeal": 14,
+            "fumble": 5,
+            "finalScore": 9
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-4",
+            "placement": 3,
+            "appeal": 8,
+            "fumble": 0,
+            "finalScore": 8
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-1",
+            "placement": 4,
+            "appeal": 18,
+            "fumble": 12,
+            "finalScore": 6
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-3",
+            "placement": 5,
+            "appeal": 21,
+            "fumble": 17,
+            "finalScore": 4
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-cool-5-0",
+            "placement": 1,
+            "totalExperience": 30,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-2",
+            "placement": 2,
+            "totalExperience": 24,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-4",
+            "placement": 3,
+            "totalExperience": 28,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-1",
+            "placement": 4,
+            "totalExperience": 11,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cool-5-3",
+            "placement": 5,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "3fccc60dc811165fcc77ab64c6f0bb29a9c8cafe5d47ddd74b0bcdafcfe07687"
+      }
+    },
+    {
+      "id": "standard-cute-3",
+      "variantId": "standard",
+      "contestTypeId": "cute",
+      "contestantCount": 3,
+      "seed": 1020,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-cute-3-0",
+            "letter": "B",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-cute-3-1",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-cute-3-2",
+            "letter": "A",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 9,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-cute-3-2",
+            "placement": 1,
+            "appeal": 13,
+            "fumble": 7,
+            "finalScore": 6
+          },
+          {
+            "contestantId": "contestant:standard-cute-3-0",
+            "placement": 2,
+            "appeal": 10,
+            "fumble": 4,
+            "finalScore": 6
+          },
+          {
+            "contestantId": "contestant:standard-cute-3-1",
+            "placement": 3,
+            "appeal": 6,
+            "fumble": 4,
+            "finalScore": 2
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-cute-3-2",
+            "placement": 1,
+            "totalExperience": 24,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-cute-3-0",
+            "placement": 2,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cute-3-1",
+            "placement": 3,
+            "totalExperience": 11,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "9bdc09d3708ada2f8475e7c3258f43a45c625fe2203a816fe61e6bb021dd822f"
+      }
+    },
+    {
+      "id": "standard-cute-4",
+      "variantId": "standard",
+      "contestTypeId": "cute",
+      "contestantCount": 4,
+      "seed": 1021,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-cute-4-0",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-cute-4-1",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:standard-cute-4-2",
+            "letter": "A",
+            "introductionTotal": 6
+          },
+          {
+            "contestantId": "contestant:standard-cute-4-3",
+            "letter": "B",
+            "introductionTotal": 5
+          }
+        ],
+        "acceptedAppeals": 16,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-cute-4-0",
+            "placement": 1,
+            "appeal": 18,
+            "fumble": 8,
+            "finalScore": 10
+          },
+          {
+            "contestantId": "contestant:standard-cute-4-1",
+            "placement": 2,
+            "appeal": 17,
+            "fumble": 8,
+            "finalScore": 9
+          },
+          {
+            "contestantId": "contestant:standard-cute-4-3",
+            "placement": 3,
+            "appeal": 5,
+            "fumble": 4,
+            "finalScore": 1
+          },
+          {
+            "contestantId": "contestant:standard-cute-4-2",
+            "placement": 4,
+            "appeal": 12,
+            "fumble": 13,
+            "finalScore": -1
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-cute-4-0",
+            "placement": 1,
+            "totalExperience": 20,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-cute-4-1",
+            "placement": 2,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cute-4-3",
+            "placement": 3,
+            "totalExperience": 13,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cute-4-2",
+            "placement": 4,
+            "totalExperience": 12,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "a2e853e65355845e918e8b4ee21c48999818805f88c9649fbfd2080f7c193f14"
+      }
+    },
+    {
+      "id": "standard-cute-5",
+      "variantId": "standard",
+      "contestTypeId": "cute",
+      "contestantCount": 5,
+      "seed": 1022,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-cute-5-0",
+            "letter": "E",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-1",
+            "letter": "B",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-2",
+            "letter": "A",
+            "introductionTotal": 5
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-3",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-4",
+            "letter": "C",
+            "introductionTotal": 2
+          }
+        ],
+        "acceptedAppeals": 25,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-cute-5-4",
+            "placement": 1,
+            "appeal": 24,
+            "fumble": 6,
+            "finalScore": 18
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-2",
+            "placement": 2,
+            "appeal": 22,
+            "fumble": 15,
+            "finalScore": 7
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-0",
+            "placement": 3,
+            "appeal": 18,
+            "fumble": 11,
+            "finalScore": 7
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-1",
+            "placement": 4,
+            "appeal": 15,
+            "fumble": 11,
+            "finalScore": 4
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-3",
+            "placement": 5,
+            "appeal": 6,
+            "fumble": 6,
+            "finalScore": 0
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-cute-5-4",
+            "placement": 1,
+            "totalExperience": 42,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-2",
+            "placement": 2,
+            "totalExperience": 24,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-0",
+            "placement": 3,
+            "totalExperience": 20,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-1",
+            "placement": 4,
+            "totalExperience": 11,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-cute-5-3",
+            "placement": 5,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "d137e2433d928f5c471fc062e3346b1f5490fc208c5937c1545044095eab2ccb"
+      }
+    },
+    {
+      "id": "standard-smart-3",
+      "variantId": "standard",
+      "contestTypeId": "smart",
+      "contestantCount": 3,
+      "seed": 1030,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-smart-3-0",
+            "letter": "C",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:standard-smart-3-1",
+            "letter": "B",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-smart-3-2",
+            "letter": "A",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 9,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-smart-3-1",
+            "placement": 1,
+            "appeal": 14,
+            "fumble": 2,
+            "finalScore": 12
+          },
+          {
+            "contestantId": "contestant:standard-smart-3-2",
+            "placement": 2,
+            "appeal": 0,
+            "fumble": 1,
+            "finalScore": -1
+          },
+          {
+            "contestantId": "contestant:standard-smart-3-0",
+            "placement": 3,
+            "appeal": 6,
+            "fumble": 7,
+            "finalScore": -1
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-smart-3-1",
+            "placement": 1,
+            "totalExperience": 22,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-smart-3-2",
+            "placement": 2,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-smart-3-0",
+            "placement": 3,
+            "totalExperience": 10,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "838c6ca1bc7d825f09a842afb1ed10321b87463c7bef456cbf03b7f118fcf8a5"
+      }
+    },
+    {
+      "id": "standard-smart-4",
+      "variantId": "standard",
+      "contestTypeId": "smart",
+      "contestantCount": 4,
+      "seed": 1031,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-smart-4-0",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:standard-smart-4-1",
+            "letter": "B",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-smart-4-2",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-smart-4-3",
+            "letter": "A",
+            "introductionTotal": 5
+          }
+        ],
+        "acceptedAppeals": 16,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-smart-4-3",
+            "placement": 1,
+            "appeal": 19,
+            "fumble": 3,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:standard-smart-4-1",
+            "placement": 2,
+            "appeal": 14,
+            "fumble": 6,
+            "finalScore": 8
+          },
+          {
+            "contestantId": "contestant:standard-smart-4-0",
+            "placement": 3,
+            "appeal": 11,
+            "fumble": 8,
+            "finalScore": 3
+          },
+          {
+            "contestantId": "contestant:standard-smart-4-2",
+            "placement": 4,
+            "appeal": 3,
+            "fumble": 1,
+            "finalScore": 2
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-smart-4-3",
+            "placement": 1,
+            "totalExperience": 26,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-smart-4-1",
+            "placement": 2,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-smart-4-0",
+            "placement": 3,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-smart-4-2",
+            "placement": 4,
+            "totalExperience": 12,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "4f60bf262adfb937c1c553992c82ea4b1718b123e2ddcf6d3cf90c3b4e792938"
+      }
+    },
+    {
+      "id": "standard-smart-5",
+      "variantId": "standard",
+      "contestTypeId": "smart",
+      "contestantCount": 5,
+      "seed": 1032,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-smart-5-0",
+            "letter": "E",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-1",
+            "letter": "C",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-2",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-3",
+            "letter": "B",
+            "introductionTotal": 6
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-4",
+            "letter": "A",
+            "introductionTotal": 6
+          }
+        ],
+        "acceptedAppeals": 25,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-smart-5-3",
+            "placement": 1,
+            "appeal": 24,
+            "fumble": 2,
+            "finalScore": 22
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-1",
+            "placement": 2,
+            "appeal": 27,
+            "fumble": 9,
+            "finalScore": 18
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-4",
+            "placement": 3,
+            "appeal": 21,
+            "fumble": 8,
+            "finalScore": 13
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-0",
+            "placement": 4,
+            "appeal": 14,
+            "fumble": 9,
+            "finalScore": 5
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-2",
+            "placement": 5,
+            "appeal": 5,
+            "fumble": 5,
+            "finalScore": 0
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-smart-5-3",
+            "placement": 1,
+            "totalExperience": 39,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-1",
+            "placement": 2,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-4",
+            "placement": 3,
+            "totalExperience": 28,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-0",
+            "placement": 4,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-smart-5-2",
+            "placement": 5,
+            "totalExperience": 12,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "8421b9e22590074e25809b90eed6de0966f06e1dd320cbdc6550971f95dafda0"
+      }
+    },
+    {
+      "id": "standard-tough-3",
+      "variantId": "standard",
+      "contestTypeId": "tough",
+      "contestantCount": 3,
+      "seed": 1040,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-tough-3-0",
+            "letter": "A",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:standard-tough-3-1",
+            "letter": "C",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:standard-tough-3-2",
+            "letter": "B",
+            "introductionTotal": 2
+          }
+        ],
+        "acceptedAppeals": 9,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-tough-3-0",
+            "placement": 1,
+            "appeal": 24,
+            "fumble": 8,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:standard-tough-3-2",
+            "placement": 2,
+            "appeal": 22,
+            "fumble": 6,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:standard-tough-3-1",
+            "placement": 3,
+            "appeal": 1,
+            "fumble": 0,
+            "finalScore": 1
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-tough-3-0",
+            "placement": 1,
+            "totalExperience": 20,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-tough-3-2",
+            "placement": 2,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-tough-3-1",
+            "placement": 3,
+            "totalExperience": 11,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "69ac6b2bba058ebdc207d867ff634b87e4b37deb508e491783681e23e7624d3c"
+      }
+    },
+    {
+      "id": "standard-tough-4",
+      "variantId": "standard",
+      "contestTypeId": "tough",
+      "contestantCount": 4,
+      "seed": 1041,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-tough-4-0",
+            "letter": "D",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:standard-tough-4-1",
+            "letter": "C",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:standard-tough-4-2",
+            "letter": "A",
+            "introductionTotal": 4
+          },
+          {
+            "contestantId": "contestant:standard-tough-4-3",
+            "letter": "B",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 16,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-tough-4-2",
+            "placement": 1,
+            "appeal": 23,
+            "fumble": 5,
+            "finalScore": 18
+          },
+          {
+            "contestantId": "contestant:standard-tough-4-0",
+            "placement": 2,
+            "appeal": 17,
+            "fumble": 8,
+            "finalScore": 9
+          },
+          {
+            "contestantId": "contestant:standard-tough-4-1",
+            "placement": 3,
+            "appeal": 3,
+            "fumble": 3,
+            "finalScore": 0
+          },
+          {
+            "contestantId": "contestant:standard-tough-4-3",
+            "placement": 4,
+            "appeal": 4,
+            "fumble": 9,
+            "finalScore": -5
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-tough-4-2",
+            "placement": 1,
+            "totalExperience": 24,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-tough-4-0",
+            "placement": 2,
+            "totalExperience": 20,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-tough-4-1",
+            "placement": 3,
+            "totalExperience": 11,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-tough-4-3",
+            "placement": 4,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "54db73a840d645abb5108148cf01ea3c61f589982c437df2c7acbcb666723636"
+      }
+    },
+    {
+      "id": "standard-tough-5",
+      "variantId": "standard",
+      "contestTypeId": "tough",
+      "contestantCount": 5,
+      "seed": 1042,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:standard-tough-5-0",
+            "letter": "E",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-1",
+            "letter": "D",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-2",
+            "letter": "B",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-3",
+            "letter": "C",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-4",
+            "letter": "A",
+            "introductionTotal": 7
+          }
+        ],
+        "acceptedAppeals": 25,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:standard-tough-5-0",
+            "placement": 1,
+            "appeal": 37,
+            "fumble": 8,
+            "finalScore": 29
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-2",
+            "placement": 2,
+            "appeal": 29,
+            "fumble": 3,
+            "finalScore": 26
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-1",
+            "placement": 3,
+            "appeal": 7,
+            "fumble": 2,
+            "finalScore": 5
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-4",
+            "placement": 4,
+            "appeal": 13,
+            "fumble": 8,
+            "finalScore": 5
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-3",
+            "placement": 5,
+            "appeal": 8,
+            "fumble": 12,
+            "finalScore": -4
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:standard-tough-5-0",
+            "placement": 1,
+            "totalExperience": 30,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-2",
+            "placement": 2,
+            "totalExperience": 24,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-1",
+            "placement": 3,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-4",
+            "placement": 4,
+            "totalExperience": 14,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:standard-tough-5-3",
+            "placement": 5,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "a50d9e359f19d0d5ab99891c8df7903f253baf71e32dbb4041ca53d381bd94d0"
+      }
+    },
+    {
+      "id": "supercontest-five",
+      "variantId": "supercontest",
+      "contestTypeId": "cute",
+      "contestantCount": 5,
+      "seed": 2001,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:supercontest-five-0",
+            "letter": "E",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:supercontest-five-1",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:supercontest-five-2",
+            "letter": "B",
+            "introductionTotal": 4
+          },
+          {
+            "contestantId": "contestant:supercontest-five-3",
+            "letter": "C",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:supercontest-five-4",
+            "letter": "A",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 25,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [
+          "beauty",
+          "beauty",
+          "smart",
+          "cool",
+          "tough"
+        ],
+        "placements": [
+          {
+            "contestantId": "contestant:supercontest-five-4",
+            "placement": 1,
+            "appeal": 28,
+            "fumble": 8,
+            "finalScore": 20
+          },
+          {
+            "contestantId": "contestant:supercontest-five-2",
+            "placement": 2,
+            "appeal": 31,
+            "fumble": 18,
+            "finalScore": 13
+          },
+          {
+            "contestantId": "contestant:supercontest-five-0",
+            "placement": 3,
+            "appeal": 25,
+            "fumble": 13,
+            "finalScore": 12
+          },
+          {
+            "contestantId": "contestant:supercontest-five-1",
+            "placement": 4,
+            "appeal": 14,
+            "fumble": 7,
+            "finalScore": 7
+          },
+          {
+            "contestantId": "contestant:supercontest-five-3",
+            "placement": 5,
+            "appeal": 7,
+            "fumble": 0,
+            "finalScore": 7
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:supercontest-five-4",
+            "placement": 1,
+            "totalExperience": 42,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:supercontest-five-2",
+            "placement": 2,
+            "totalExperience": 24,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:supercontest-five-0",
+            "placement": 3,
+            "totalExperience": 20,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:supercontest-five-1",
+            "placement": 4,
+            "totalExperience": 11,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:supercontest-five-3",
+            "placement": 5,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "efc2b758fbda1d8d35e0eca849383b8fba13cb071ae8b2c66933fc964bf4d27f"
+      }
+    },
+    {
+      "id": "festival-five",
+      "variantId": "festival",
+      "contestTypeId": "beauty",
+      "contestantCount": 5,
+      "seed": 2002,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:festival-five-0",
+            "letter": "E",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:festival-five-1",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:festival-five-2",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:festival-five-3",
+            "letter": "A",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:festival-five-4",
+            "letter": "B",
+            "introductionTotal": 2
+          }
+        ],
+        "acceptedAppeals": 50,
+        "festivalHeat": 3,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:festival-five-1",
+            "placement": 1,
+            "appeal": 61,
+            "fumble": 9,
+            "finalScore": 52
+          },
+          {
+            "contestantId": "contestant:festival-five-4",
+            "placement": 2,
+            "appeal": 50,
+            "fumble": 6,
+            "finalScore": 44
+          },
+          {
+            "contestantId": "contestant:festival-five-2",
+            "placement": 3,
+            "appeal": 36,
+            "fumble": 1,
+            "finalScore": 35
+          },
+          {
+            "contestantId": "contestant:festival-five-0",
+            "placement": 4,
+            "appeal": 12,
+            "fumble": 3,
+            "finalScore": 9
+          },
+          {
+            "contestantId": "contestant:festival-five-3",
+            "placement": 5,
+            "appeal": 11,
+            "fumble": 12,
+            "finalScore": -1
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:festival-five-1",
+            "placement": 1,
+            "totalExperience": 33,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:festival-five-4",
+            "placement": 2,
+            "totalExperience": 28,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:festival-five-2",
+            "placement": 3,
+            "totalExperience": 24,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:festival-five-0",
+            "placement": 4,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:festival-five-3",
+            "placement": 5,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "a5c5178b18240d0be863d85e365e3613f760072b59f5bef3eca93dcfa1e89ec0"
+      }
+    },
+    {
+      "id": "rotation-three",
+      "variantId": "rotation",
+      "contestTypeId": "smart",
+      "contestantCount": 3,
+      "seed": 2003,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:rotation-three-0",
+            "letter": "B",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:rotation-three-1",
+            "letter": "C",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:rotation-three-2",
+            "letter": "A",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 9,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "placements": [
+          {
+            "contestantId": "contestant:rotation-three-2",
+            "placement": 1,
+            "appeal": 11,
+            "fumble": 0,
+            "finalScore": 11
+          },
+          {
+            "contestantId": "contestant:rotation-three-1",
+            "placement": 2,
+            "appeal": 8,
+            "fumble": 4,
+            "finalScore": 4
+          },
+          {
+            "contestantId": "contestant:rotation-three-0",
+            "placement": 3,
+            "appeal": 4,
+            "fumble": 6,
+            "finalScore": -2
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:rotation-three-2",
+            "placement": 1,
+            "totalExperience": 144,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:rotation-three-1",
+            "placement": 2,
+            "totalExperience": 66,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:rotation-three-0",
+            "placement": 3,
+            "totalExperience": 30,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "ba586897499cf9cab92c16569db3f4754a6bae786f745c25c02fc3f2a1cfd394"
+      }
+    }
+  ]
+}

@@ -10,7 +10,7 @@ export type ItemCatalogImplementationState = typeof ITEM_CATALOG_IMPLEMENTATION_
 
 export const ITEM_CATALOG_PROVIDER_IDS = [
   'machine-move', 'evolution', 'permanent-advancement', 'exploration', 'breeding',
-  'guided-adjudication', 'equipment', 'core-item-spec', 'capture',
+  'guided-adjudication', 'equipment', 'core-item-spec', 'capture', 'contest',
   'interpretive-campaign-tool', 'canonical-data-defect',
 ] as const
 export type ItemCatalogProviderId = typeof ITEM_CATALOG_PROVIDER_IDS[number]
