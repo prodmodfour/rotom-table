@@ -1,6 +1,6 @@
 ---
 name: ui-design-workflow
-description: Rotom Table's autonomous UI design-and-implementation workflow for Nuxt/Vue pages, components, CSS, layouts, responsive/accessibility presentation, interactions, design-system primitives, and three.js visuals. Load proactively whenever work has a visible or interactive consequence, even when no mockup was requested. For substantive open visual decisions, generate and iteratively critique target-state mockups with the resource-capped Codex native image wrapper before coding; ground every result in DESIGN.md, authorised projections, domain contracts, tokens, current implementation, and liveplay validation.
+description: Rotom Table's autonomous UI design-and-implementation workflow for Nuxt/Vue pages, components, CSS, layouts, responsive/accessibility presentation, interactions, design-system primitives, and three.js visuals. Load proactively whenever work has a visible or interactive consequence, even when no mockup was requested. For substantive open visual decisions, generate and iteratively critique target-state mockups—and multi-frame storyboards for flows, state progressions, and cross-projection sequences—with the resource-capped Codex native image wrapper before coding; ground every result in DESIGN.md, authorised projections, domain contracts, tokens, current implementation, and liveplay validation.
 compatibility: Requires Linux user systemd and an authenticated Codex CLI with native image generation.
 ---
 
@@ -15,9 +15,10 @@ This skill applies to:
 - pages, layouts, Vue components, CSS, visual tokens, icons, and typography;
 - interaction states, navigation, forms, overlays, responsive behavior, and accessibility presentation;
 - three.js scenes, cameras, controls, visual effects, and UI layered over rendered worlds;
-- visual bug fixes, UI reviews, screenshot changes, and frontend implementation plans.
+- visual bug fixes, UI reviews, screenshot changes, and frontend implementation plans;
+- multi-step flows, state-transition sequences, and cross-projection exchanges (see Storyboarding flows).
 
-Generate a target-state mockup before substantive visible changes when consequential hierarchy, composition, density, state presentation, or visual-language decisions remain open. Do not wait for the user to mention mockups, GPT Image, this skill, or a `/skill` command, and do not ask permission merely to invoke it.
+Generate a target-state mockup before substantive visible changes when consequential hierarchy, composition, density, state presentation, or visual-language decisions remain open. When the open decision spans a sequence of moments rather than one screen, storyboard it instead (see Storyboarding flows). Do not wait for the user to mention mockups, GPT Image, this skill, or a `/skill` command, and do not ask permission merely to invoke it.
 
 Load the skill but skip image generation when it would add no material information:
 
@@ -71,7 +72,7 @@ Keep every screen/state auditable under the ignored project artifact directory:
 └── v002-review.md
 ```
 
-Use lowercase kebab-case. Never overwrite an iteration. `brief.md` is the stable source of truth; each prompt and review must correspond to its PNG.
+Use lowercase kebab-case. Never overwrite an iteration. `brief.md` is the stable source of truth; each prompt and review must correspond to its PNG. Storyboards use the parallel layout under `.pi/artifacts/ui-storyboards/<flow-slug>/` defined in [the storyboard workflow](references/storyboard-workflow.md).
 
 ## Resolve and check the renderer
 
@@ -131,12 +132,23 @@ Run focused validation appropriate to the touched UI. For encounter design-syste
 
 Compare implementation screenshots against the selected mock for hierarchy and intent, not pixel identity. Document deliberate differences where domain authority, accessibility, responsive behavior, or existing primitives require them.
 
+## Storyboarding flows
+
+When the open design question is a sequence rather than a single screen—multi-step tasks, state progressions over time, cross-actor or cross-projection exchanges, onboarding, error/recovery paths—design it as a storyboard: an ordered set of frames under `.pi/artifacts/ui-storyboards/<flow-slug>/`, each frame produced and gated exactly like a single mockup, plus flow-level continuity control. Follow [the storyboard workflow](references/storyboard-workflow.md). Core rules:
+
+- Write `flow.md` first: a mermaid flow/sequence diagram plus a frame table of triggers, state deltas, and invariants. It is the flow authority; frames illustrate it and may not invent steps, actors, data, or state changes.
+- Advance to the next frame only after the current frame passes the per-frame quality gate; render frame N+1 with accepted frame N as the labeled continuity reference, chained within a lane.
+- Frames sharing a moment across authorised projections form lanes (e.g., GM and player views of the same instant); each lane shows only what its projection authorises.
+- After all frames pass, run the flow-level continuity review. Continuity hard failures—illegal state progressions, unexplained data changes, jumping persistent regions, invented steps—block acceptance like any other hard failure.
+- Validate in liveplay by walking the same sequence with Playwright and comparing each step against its frame for hierarchy and intent.
+
 ## Completion report
 
 Report only after autonomous design and requested implementation work stop:
 
 - selected mockup path, score, render count, and reference lineage;
 - stable brief and selected prompt/review paths;
+- for storyboards: `flow.md` path, frame lineup with accepted versions and scores, continuity review verdict, and contact sheet path;
 - implementation files changed;
 - focused checks and liveplay/Playwright validation performed;
 - deliberate implementation differences from the mock;

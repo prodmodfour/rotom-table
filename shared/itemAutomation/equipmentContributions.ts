@@ -43,11 +43,19 @@ export interface EquipmentContributionV1 {
   readonly predicates: readonly EquipmentContributionPredicateV1[]
 }
 
+export interface EquipmentContributionGrantFinalStateV1 {
+  readonly grantId: string
+  readonly kind: 'weapon-profile' | 'move' | 'capability' | 'ability' | 'action'
+  readonly finalState: 'native' | 'guided' | 'passive'
+}
+
 export interface EquipmentContributionDefinitionV1 {
   readonly canonicalItemId: string
   readonly canonicalRecordSha256: string
   readonly equipmentDefinitionSha256: string
   readonly contributions: readonly EquipmentContributionV1[]
+  /** Final grant authority copied from the reviewed grant registry; never inferred from prose. */
+  readonly grantFinalStates: readonly EquipmentContributionGrantFinalStateV1[]
   readonly deferredMechanics: readonly string[]
 }
 
@@ -87,6 +95,7 @@ export interface EquipmentContributionDocumentV1 {
   readonly ticket: 'P8-046'
   readonly catalogSha256: string
   readonly equipmentDefinitionsSha256: string
+  readonly equipmentGrantsSha256: string
   readonly definitionCount: number
   readonly contributingItemCount: number
   readonly classificationPolicy: {
@@ -95,6 +104,7 @@ export interface EquipmentContributionDocumentV1 {
     readonly unknownOrStalePolicy: 'fail-closed-no-contribution'
     readonly inactiveOrSuppressedPolicy: 'no-contribution'
     readonly deferredMechanicsRemainInert: true
+    readonly finalGrantMechanicsAreNotDeferred: true
   }
   readonly definitions: readonly EquipmentContributionDefinitionV1[]
 }
@@ -113,6 +123,8 @@ const CONFIGURATION_KEY = /^[a-z][a-zA-Z0-9]*$/
 const METRICS = new Set<string>(EQUIPMENT_CONTRIBUTION_METRICS)
 const OPERATIONS = new Set(['add', 'set', 'multiply-floor'])
 const TARGET_KINDS = new Set(['fixed', 'configuration', 'configuration-array'])
+const GRANT_KINDS = new Set(['weapon-profile', 'move', 'capability', 'ability', 'action'])
+const GRANT_FINAL_STATES = new Set(['native', 'guided', 'passive'])
 const PREDICATE_KINDS = new Set([
   'environment', 'effectiveness', 'critical-hit', 'owner-untransformed',
   'move-type', 'move-type-configuration', 'owner-species',
@@ -275,7 +287,7 @@ export const parseEquipmentContributionDocument = (value: unknown): EquipmentCon
   }), 'equipmentContributions')
   exact(input, [
     'schemaVersion', 'ticket', 'catalogSha256', 'equipmentDefinitionsSha256',
-    'definitionCount', 'contributingItemCount', 'classificationPolicy', 'definitions',
+    'equipmentGrantsSha256', 'definitionCount', 'contributingItemCount', 'classificationPolicy', 'definitions',
   ], 'equipmentContributions')
   if (input.schemaVersion !== EQUIPMENT_CONTRIBUTION_SCHEMA_VERSION || input.ticket !== 'P8-046') {
     fail('equipmentContributions.schemaVersion', 'is unsupported.')
@@ -284,11 +296,13 @@ export const parseEquipmentContributionDocument = (value: unknown): EquipmentCon
   exact(policy, [
     'status', 'runtimeProseParsing', 'unknownOrStalePolicy',
     'inactiveOrSuppressedPolicy', 'deferredMechanicsRemainInert',
+    'finalGrantMechanicsAreNotDeferred',
   ], 'equipmentContributions.classificationPolicy')
   if (policy.status !== 'reviewed' || policy.runtimeProseParsing !== false
     || policy.unknownOrStalePolicy !== 'fail-closed-no-contribution'
     || policy.inactiveOrSuppressedPolicy !== 'no-contribution'
-    || policy.deferredMechanicsRemainInert !== true) {
+    || policy.deferredMechanicsRemainInert !== true
+    || policy.finalGrantMechanicsAreNotDeferred !== true) {
     fail('equipmentContributions.classificationPolicy', 'must retain reviewed fail-closed semantics.')
   }
   const definitions = array(input.definitions, 'equipmentContributions.definitions', 256)
@@ -297,11 +311,27 @@ export const parseEquipmentContributionDocument = (value: unknown): EquipmentCon
       const row = record(entry, path)
       exact(row, [
         'canonicalItemId', 'canonicalRecordSha256', 'equipmentDefinitionSha256',
-        'contributions', 'deferredMechanics',
+        'contributions', 'grantFinalStates', 'deferredMechanics',
       ], path)
       const contributions = array(row.contributions, `${path}.contributions`, 16)
         .map((value, contributionIndex) => parseContribution(value, `${path}.contributions[${contributionIndex}]`))
       unique(contributions.map(value => value.contributionId), `${path}.contributions.contributionId`)
+      const grantFinalStates = array(row.grantFinalStates, `${path}.grantFinalStates`, 16)
+        .map((value, grantIndex): EquipmentContributionGrantFinalStateV1 => {
+          const grantPath = `${path}.grantFinalStates[${grantIndex}]`
+          const grant = record(value, grantPath)
+          exact(grant, ['grantId', 'kind', 'finalState'], grantPath)
+          if (typeof grant.kind !== 'string' || !GRANT_KINDS.has(grant.kind)) fail(`${grantPath}.kind`, 'is unsupported.')
+          if (typeof grant.finalState !== 'string' || !GRANT_FINAL_STATES.has(grant.finalState)) {
+            fail(`${grantPath}.finalState`, 'must be a final reviewed state.')
+          }
+          return {
+            grantId: stableId(grant.grantId, `${grantPath}.grantId`),
+            kind: grant.kind as EquipmentContributionGrantFinalStateV1['kind'],
+            finalState: grant.finalState as EquipmentContributionGrantFinalStateV1['finalState'],
+          }
+        })
+      unique(grantFinalStates.map(value => value.grantId), `${path}.grantFinalStates.grantId`)
       const deferredMechanics = array(row.deferredMechanics, `${path}.deferredMechanics`, 8)
         .map((value, deferredIndex) => text(value, `${path}.deferredMechanics[${deferredIndex}]`))
       unique(deferredMechanics, `${path}.deferredMechanics`)
@@ -310,6 +340,7 @@ export const parseEquipmentContributionDocument = (value: unknown): EquipmentCon
         canonicalRecordSha256: hash(row.canonicalRecordSha256, `${path}.canonicalRecordSha256`),
         equipmentDefinitionSha256: hash(row.equipmentDefinitionSha256, `${path}.equipmentDefinitionSha256`),
         contributions,
+        grantFinalStates,
         deferredMechanics,
       }
     })
@@ -326,6 +357,7 @@ export const parseEquipmentContributionDocument = (value: unknown): EquipmentCon
     ticket: 'P8-046',
     catalogSha256: hash(input.catalogSha256, 'equipmentContributions.catalogSha256'),
     equipmentDefinitionsSha256: hash(input.equipmentDefinitionsSha256, 'equipmentContributions.equipmentDefinitionsSha256'),
+    equipmentGrantsSha256: hash(input.equipmentGrantsSha256, 'equipmentContributions.equipmentGrantsSha256'),
     definitionCount,
     contributingItemCount,
     classificationPolicy: {
@@ -334,6 +366,7 @@ export const parseEquipmentContributionDocument = (value: unknown): EquipmentCon
       unknownOrStalePolicy: 'fail-closed-no-contribution',
       inactiveOrSuppressedPolicy: 'no-contribution',
       deferredMechanicsRemainInert: true,
+      finalGrantMechanicsAreNotDeferred: true,
     },
     definitions,
   })

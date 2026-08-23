@@ -10,6 +10,7 @@ import { parseSerializedEquipmentInventoryState } from '#shared/itemAutomation/e
 import { itemInventoryInstanceId, type ItemInventorySection } from '#shared/itemAutomation/inventory'
 import type { TabletopMap } from '~/types/map'
 import type { InventoryEntry, TrainerSheet } from '~/types/trainerSheet'
+import { findItem } from '~~/data/ptuReference'
 import { sheetHasCanonicalEdge } from '#shared/edgeAutomation/sheetEdges'
 import { ITEM_AUTOMATION_RUNTIME_REGISTRY } from './registry'
 import { projectEncounterItemEligibility } from './eligibility'
@@ -178,14 +179,20 @@ export const projectEncounterItemOffers = (input: {
     const sourceInstanceId = rowId ? itemInventoryInstanceId({
       containerKind: 'trainer', containerSlug: input.trainerSheet.slug, section: row.section, rowId,
     }) : null
+    const baseId = encounterPresentationStableId('item', input.map.slug, input.actor.participantId, row.section, rowId ?? `legacy-${index}`)
+    const projectedInventoryId = encounterPresentationStableId(
+      'inventory', input.map.slug, input.actor.participantId, row.section, String(index),
+    )
+    const canonicalItem = findItem(row.entry.name)
+    const privateConversionIdentity = canonicalItem?.name === 'Snag Machine'
+      || canonicalItem?.categories.includes('Poké Ball') === true
     const source = {
       sourceKind: 'item' as const,
       canonicalId: definition?.canonicalId ?? row.entry.name,
-      instanceId: sourceInstanceId,
+      instanceId: privateConversionIdentity ? projectedInventoryId : sourceInstanceId,
       displayName: row.entry.name,
       referenceHref: definition ? `/items/${encodeURIComponent(definition.canonicalId)}` : null,
     }
-    const baseId = encounterPresentationStableId('item', input.map.slug, input.actor.participantId, row.section, rowId ?? `legacy-${index}`)
     const supported = (definition?.spec.implementationState === 'native'
       || definition?.spec.implementationState === 'guided')
       && definition.spec.contexts.includes('encounter')
@@ -263,7 +270,9 @@ export const projectEncounterItemOffers = (input: {
       schemaVersion: ENCOUNTER_PRESENTATION_SCHEMA_VERSION,
       affordanceId: encounterPresentationStableId('affordance', baseId),
       contextKind: 'inventory',
-      contextId: sourceInstanceId ?? encounterPresentationStableId('inventory', input.trainerSheet.slug, row.section, String(index)),
+      contextId: privateConversionIdentity
+        ? projectedInventoryId
+        : sourceInstanceId ?? encounterPresentationStableId('inventory', input.trainerSheet.slug, row.section, String(index)),
       source,
       actor: input.actor,
       linkedOfferId: offerId,

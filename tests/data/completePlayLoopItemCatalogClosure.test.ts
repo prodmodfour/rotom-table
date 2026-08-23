@@ -6,6 +6,7 @@ import cohorts from '../../data/complete-play-loop/item-catalog-cohorts.v1.json'
 import guided from '../../data/complete-play-loop/guided-catalog-items.v1.json'
 import capture from '../../data/complete-play-loop/capture-pokeballs.v1.json'
 import remediation from '../../data/complete-play-loop/canonical-data-remediation.v1.json'
+import successors from '../../data/deferred-closure/successor-chain.v1.json'
 import { LATEST_STORAGE_SCHEMA_VERSION } from '../../server/storage/migrations'
 
 const sha256 = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex')
@@ -18,7 +19,7 @@ describe('P8-093 canonical item catalog closure certification', () => {
       status: 'implemented',
       contract: 'canonical-item-catalog-closure-v1',
       runtimeProseParsing: false,
-      storageSchemaVersion: LATEST_STORAGE_SCHEMA_VERSION,
+      storageSchemaVersion: 46,
       catalog: {
         canonicalItemCount: 349,
         cohortCount: 19,
@@ -32,6 +33,7 @@ describe('P8-093 canonical item catalog closure certification', () => {
         closedRows: 60,
       },
     })
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBeGreaterThanOrEqual(closure.storageSchemaVersion)
     expect(cohorts.implementationStateCounts).toEqual({ native: 205, guided: 40, passive: 104 })
     expect(cohorts.cohorts.some(cohort => cohort.implementationState === 'blocked')).toBe(false)
     expect(cohorts.cohorts.some(cohort => cohort.implementationState === 'reference-only')).toBe(false)
@@ -87,7 +89,22 @@ describe('P8-093 canonical item catalog closure certification', () => {
       expect(source.path).not.toMatch(/^\//)
       expect(source.path.split('/')).not.toContain('..')
       expect(source.sha256).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(source.path)), source.path).toBe(source.sha256)
+      const currentSha256 = sha256(readFileSync(source.path))
+      if (currentSha256 !== source.sha256) {
+        const edges = successors.edges.filter(edge => (
+          edge.surface === source.path && edge.reviewStatus === 'accepted'
+        ))
+        const visited = new Set<string>()
+        let cursor = source.sha256
+        while (cursor !== currentSha256) {
+          expect(visited.has(cursor), `${source.path} successor chain must not cycle`).toBe(false)
+          visited.add(cursor)
+          const candidates = edges.filter(edge => edge.beforeSha256 === cursor)
+          expect(candidates, `${source.path} must have one contiguous accepted successor from ${cursor}`).toHaveLength(1)
+          cursor = candidates[0]!.afterSha256
+        }
+      }
+      else expect(currentSha256, source.path).toBe(source.sha256)
     }
     expect(closure.privacy.forbidden).toEqual(expect.arrayContaining([
       'operation IDs', 'request IDs', 'source instance IDs', 'inventory row IDs',

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import movesJson from '../data/reference/moves.json'
-import { createContestDocument, emptyContestDicePools, contestCurrentContestant, contestCurrentPerformer, type ContestMoveOptionV1, type ContestPerformerSnapshotV1 } from '../shared/contests/document'
+import { createContestDocument, emptyContestDicePools, contestCurrentContestant, contestCurrentPerformer, type ContestMoveOptionV1, type ContestPokemonPerformerSnapshotV1 } from '../shared/contests/document'
 import { createSeededContestRandomSource } from '../shared/contests/dice'
 import { createContestantState, executeContestEngineCommand } from '../server/domain/contests/engine'
 import type { ContestStatId, ContestVariantId } from '../shared/contests/ids'
@@ -28,9 +28,9 @@ const scenarios: readonly Scenario[] = Object.freeze([
   { id: 'festival-five', variantId: 'festival', contestTypeId: 'beauty', contestantCount: 5, seed: 2_002 },
   { id: 'rotation-three', variantId: 'rotation', contestTypeId: 'smart', contestantCount: 3, seed: 2_003 },
 ])
-const performer = (scenario: Scenario, contestant: number, index: number): ContestPerformerSnapshotV1 => {
+const performer = (scenario: Scenario, contestant: number, index: number): ContestPokemonPerformerSnapshotV1 => {
   const typeId = statIds[(statIds.indexOf(scenario.contestTypeId) + contestant + index) % statIds.length]!
-  return Object.freeze({ performerId: `performer:${scenario.id}-${contestant}-${index}`, pokemonSheetSlug: `pokemon-${scenario.id}-${contestant}-${index}`, pokemonSheetRevision: 1, displayName: `Partner ${contestant + 1}.${index + 1}`, species: 'Pikachu', level: 10 + contestant, portraitUrl: null, moves: Object.freeze(movesFor(typeId)), dicePools: emptyContestDicePools(), providerIds: Object.freeze([]) })
+  return Object.freeze({ performerKind: 'pokemon', performerId: `performer:${scenario.id}-${contestant}-${index}`, pokemonSheetSlug: `pokemon-${scenario.id}-${contestant}-${index}`, pokemonSheetRevision: 1, displayName: `Partner ${contestant + 1}.${index + 1}`, species: 'Pikachu', level: 10 + contestant, portraitUrl: null, moves: Object.freeze(movesFor(typeId)), dicePools: emptyContestDicePools(), providerIds: Object.freeze([]) })
 }
 const run = (scenario: Scenario) => {
   const random = createSeededContestRandomSource(scenario.seed)

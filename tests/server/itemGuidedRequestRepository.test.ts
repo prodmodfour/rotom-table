@@ -57,6 +57,33 @@ describe('guided item request repository', () => {
     })).toMatchObject({ kind: 'stale', record: { revision: 1 } })
   })
 
+  it('lists only map-scoped fishing and Snag requests without scanning unrelated guided work', () => {
+    const repository = createSqliteItemGuidedRequestRepository({ database: open(), now: () => 10 })
+    repository.create({
+      requestId: 'item-guided:v1:55555555555555555555555555555555',
+      requestKind: 'fishing-adjudication', canonicalItemId: 'Old Rod',
+      canonicalDefinitionSha256: 'b'.repeat(64), declarationPrincipalKey: 'profile_guided01',
+      actorKind: 'trainer', actorSlug: 'mira', targetKind: 'trainer', targetSlug: 'mira',
+      itemOperationId: null,
+      declarationOperationId: 'item-guided-operation:v1:66666666666666666666666666666666',
+      declarationCommand: { schemaVersion: 1, operationId: 'item-guided-operation:v1:66666666666666666666666666666666' },
+      authority: {
+        schemaVersion: 1, sourceKind: 'equipped-fishing-rod',
+        actorLabel: 'Mira', targetLabel: 'Water', timingLabel: '15-minute Extended Action',
+        prompt: 'Resolve fishing.', canonicalFacts: [], settlementFacts: [],
+        reservationLabel: 'Exact equipped rod reserved', boundaryLabel: 'No hook before acceptance.',
+        mapSlug: 'fishing-arena', declarationMapRevision: 4, actorPlacementId: 'mira-token',
+        ownerKind: 'trainer', ownerSlug: 'mira', sheetRevision: 2, equipmentRevision: 1,
+        instanceId: 'equipped-item:v1:77777777777777777777777777777777', instanceRevision: 0,
+        actionId: 'equipment.fishing.old-rod', waterCell: { x: 2, y: 0, z: 1 },
+        campaignClockRevision: 0, startedAtCampaignMinute: 100, readyAtCampaignMinute: 115,
+        skillCheckIntegrationId: 'skill-check-integration:v1:88888888888888888888888888888888',
+      },
+    })
+    expect(repository.listForMap('fishing-arena')).toHaveLength(1)
+    expect(repository.listForMap('another-arena')).toEqual([])
+  })
+
   it('rejects request identity reuse with changed declaration evidence', () => {
     const repository = createSqliteItemGuidedRequestRepository({ database: open() })
     const base = {

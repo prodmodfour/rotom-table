@@ -3,6 +3,7 @@
   "ticket": "P8-046",
   "catalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
   "equipmentDefinitionsSha256": "fb5d8c6cafba3c969da7b20e0c09e9d6b32d4baa6993c4005a40b4f6249316b7",
+  "equipmentGrantsSha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52",
   "definitionCount": 108,
   "contributingItemCount": 63,
   "classificationPolicy": {
@@ -10,7 +11,8 @@
     "runtimeProseParsing": false,
     "unknownOrStalePolicy": "fail-closed-no-contribution",
     "inactiveOrSuppressedPolicy": "no-contribution",
-    "deferredMechanicsRemainInert": true
+    "deferredMechanicsRemainInert": true,
+    "finalGrantMechanicsAreNotDeferred": true
   },
   "definitions": [
     {
@@ -18,108 +20,228 @@
       "canonicalRecordSha256": "d81a88d66e2445a3abd34c2fcde4b0eecb336e15c600fae98a3ee3031278be91",
       "equipmentDefinitionSha256": "bdd36deeb715cc6a9db58f359cb0c7ed09aa07ac63dc07f66d482df707d32098",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.kitchen-knife.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Baseball Bat",
       "canonicalRecordSha256": "7253402b5610e49a67ea1a2071ca5a4d4d2e24174ad0cf9aa860f5ae295d7471",
       "equipmentDefinitionSha256": "ae103558ae79a99933c104fc7225875871146228090666d70c1c17f9087c8ca1",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.baseball-bat.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Weighted Rope",
       "canonicalRecordSha256": "ab7e21588efe79f3361bf1fdbf0e43070c167477043f9a5cea338fe0df450fc4",
       "equipmentDefinitionSha256": "57e0f28094d5a1908d8140c251dfb5f08d4dbd0e7913fc6beadcb0db2a56e809",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.weighted-rope.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Slingshot",
       "canonicalRecordSha256": "df9b35c6b10d84a236a98b526e862018612fb0d8b6ec3afd4258c507a4f98e61",
       "equipmentDefinitionSha256": "579f0b2d20b620d0f8d1ed142e42c2bf6a55d1604237aa2cccd465523961feb3",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.slingshot.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Survival Knife",
       "canonicalRecordSha256": "eba363fcbaf6115538dbd63d779b0a15b1d905c41014867c645efed0043c0d7d",
       "equipmentDefinitionSha256": "3d1efc7b39bb571fc4c873c778374d3ab9b2be2f83387ac9583dd899cb67c979",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.survival-knife.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.survival-knife.cheap-shot",
+          "kind": "move",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Quarterstaff",
       "canonicalRecordSha256": "ad4d967bb0139e8f19d9c5603681e2e4c5d0a52be0cd05307424bb5c453e6a3f",
       "equipmentDefinitionSha256": "2c3adb4732ad546a11e75e70156344b68f0de7d20bb5b2994df753191518e8ca",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.quarterstaff.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.quarterstaff.backswing",
+          "kind": "move",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Throwing Hammers",
       "canonicalRecordSha256": "aeb5e26662fe2d9f567985703a749d9440c1bfdfab662d277a3d563942287135",
       "equipmentDefinitionSha256": "5f8e907b04230de8c1b408994b09af96d8f75ae2aa6cc102ef2db7ae3a7737be",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.throwing-hammers.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.throwing-hammers.bash",
+          "kind": "move",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Hunting Bow",
       "canonicalRecordSha256": "320526c83a714ee1259de012f23e9677061bb0a69ba6c6a73dafb4f2783dc8a9",
       "equipmentDefinitionSha256": "287c2da0ac61de23a1eb2aa5a6d1c934d7b715ae3154cb1165ee25a8f5e06300",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.hunting-bow.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.hunting-bow.pierce",
+          "kind": "move",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Honed Claws",
       "canonicalRecordSha256": "dc99a5c88ba1cca7d5583bde11468386c81c3f3f23dcd8e263f661b452697774",
       "equipmentDefinitionSha256": "455c9407bd15dc3e87d436acaebd3d7364e38db4a4f79e1f22584b9e86fd9221",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.honed-claws.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.honed-claws.wounding-strike",
+          "kind": "move",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.honed-claws.gouge",
+          "kind": "move",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Meteor Masher",
       "canonicalRecordSha256": "991f575b4949d945686068d5e8a491e75d26af6f2c91fcafe207e4b74077310c",
       "equipmentDefinitionSha256": "86b70e3d1f770f9921bff25910540cc47263dcc0866bb7df3c8231aad2fc226b",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.meteor-masher.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.meteor-masher.backswing",
+          "kind": "move",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.meteor-masher.titanic-slam",
+          "kind": "move",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Super Lucky Throwing Stars",
       "canonicalRecordSha256": "a8089e5384500e64e63cb0876de85521eabe104c2bd3f93a879b52e1a6861245",
       "equipmentDefinitionSha256": "6f4b0ce7a580c38c74fdb1d8f4fe94edaec423bd4adbb12aa747e4d08b7c2b5c",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.super-lucky-throwing-stars.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.super-lucky-throwing-stars.bullseye",
+          "kind": "move",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.super-lucky-throwing-stars.deadly-strike",
+          "kind": "move",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Twin-Needled Bow",
       "canonicalRecordSha256": "afa5ea75c223c7b5c9b7b1c54d171e355f5ccf88825e6290598bb2c9596e8fa6",
       "equipmentDefinitionSha256": "5905d56b7c14d061d2c60600f591048ae11b3445e5545dd7abf0aaf05423be96",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.twin-needled-bow.weapon",
+          "kind": "weapon-profile",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.twin-needled-bow.double-swipe",
+          "kind": "move",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.twin-needled-bow.triple-threat",
+          "kind": "move",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Light Armor",
@@ -141,6 +263,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -177,6 +300,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -184,6 +308,7 @@
       "canonicalRecordSha256": "5bec6c85d73f9176e2f6c22e7796afb6cab4883c0fe61281ae81e37d78e2d444",
       "equipmentDefinitionSha256": "cac0431df97ff93617fcce3bad29e96f1d5c928bfbb73268b93292c6a7062e5f",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "reference-only-contest-workflow"
       ]
@@ -208,6 +333,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -215,15 +341,21 @@
       "canonicalRecordSha256": "3cc6520de29d843b73c055f4e28e0e33d496843f57d2100c3d9594163c168a78",
       "equipmentDefinitionSha256": "e4d01191253eb50e669e7355965cd6b8ffc6d8dfe8aff9a13ce135926ac032e4",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.dark-vision-goggles.darkvision",
+          "kind": "capability",
+          "finalState": "passive"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Gas Mask",
       "canonicalRecordSha256": "4fb60266e4ab1a66f8b1410011c18c6c9550ec0dc21e176b240b210e96845438",
       "equipmentDefinitionSha256": "f70ed5949944fe8ef05b2d7302552c0ab078592b9a48347d92807215c1459041",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -252,6 +384,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -261,8 +394,19 @@
       "canonicalRecordSha256": "bd89163a1ce43a68c9146d994dca483a128c40055df90179dcf94cdb1dc86f58",
       "equipmentDefinitionSha256": "430c0cfe2cb6a80fec61d1f2bb663cb116dec5b5c8e4c5793725fca9e44ddfdf",
       "contributions": [],
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.re-breather.gilled",
+          "kind": "capability",
+          "finalState": "passive"
+        },
+        {
+          "grantId": "equipment.re-breather.activate",
+          "kind": "action",
+          "finalState": "guided"
+        }
+      ],
       "deferredMechanics": [
-        "P8-047",
         "P8-048"
       ]
     },
@@ -288,6 +432,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -315,9 +460,14 @@
           ]
         }
       ],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.snow-boots.naturewalk",
+          "kind": "capability",
+          "finalState": "passive"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Running Shoes",
@@ -353,6 +503,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -394,6 +545,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -401,63 +553,103 @@
       "canonicalRecordSha256": "0aca938e2fc0b75783758032c54b4b699f3ed0f9b64eb03e930f18beb5a8a4f4",
       "equipmentDefinitionSha256": "303f148c1f0aebdb8d4fdfdcd851c3c405c3366b60e3b1245707f968238c45de",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.jungle-boots.naturewalk",
+          "kind": "capability",
+          "finalState": "passive"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Old Rod",
       "canonicalRecordSha256": "473540938809b0d0737602e79624bbf26e3839ebe4b062131aac89388f9abb9a",
       "equipmentDefinitionSha256": "46e8fc7a1b0bf29d47ce7212bfd82d5b30a302e19a4f7e9349b40c1f0743a82d",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.old-rod.fish",
+          "kind": "action",
+          "finalState": "guided"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Good Rod",
       "canonicalRecordSha256": "492c0d769ce53153da3183e5bc36c3f8e4cb55debccb160b2676a03c84a212ba",
       "equipmentDefinitionSha256": "c9a9bb5b5e89b0279f34e6d37424ac630905bde9a5dc4872f497745f326e65d8",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.good-rod.fish",
+          "kind": "action",
+          "finalState": "guided"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Super Rod",
       "canonicalRecordSha256": "99591c7c8c9727043b9775a8a3afb1a84447fe3ae9ba0dc5a5c498266bd53cf4",
       "equipmentDefinitionSha256": "464b43c0e426c989baf27bb0f80170aa7ca7ef19407d641b346de3893f53a36c",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.super-rod.fish",
+          "kind": "action",
+          "finalState": "guided"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Glue Cannon",
       "canonicalRecordSha256": "c3507876510e140833d2f37710cb718975c2d29711f284515bfedbbd6f5b6a3c",
       "equipmentDefinitionSha256": "110c4574d419f38b628146e974f34321d054e29c4123945288c3e53416291154",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.glue-cannon.attack",
+          "kind": "action",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Hand Net",
       "canonicalRecordSha256": "c99acb256d88a1621f70fa81d3578e1ae4c53d3885fee9ae05811c31f17be28c",
       "equipmentDefinitionSha256": "5b42db59f71d51de5339f4904bbbaaa637a09b59b6316d8cccebfb53499fa94a",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.hand-net.attack",
+          "kind": "action",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Weighted Nets",
       "canonicalRecordSha256": "a20cdda73043b07266a7ec1288c72b700ef04744c3ecfe5c59e3e4928a8d7d29",
       "equipmentDefinitionSha256": "b1a79141c603898c9dbc4411773a13ef2e057e661f2eed134f0d970b64e4be44",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.weighted-nets.throw",
+          "kind": "action",
+          "finalState": "native"
+        },
+        {
+          "grantId": "equipment.weighted-nets.pull",
+          "kind": "action",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Light Shield",
@@ -481,9 +673,14 @@
           "predicates": []
         }
       ],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.light-shield.ready",
+          "kind": "action",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Heavy Shield",
@@ -507,18 +704,28 @@
           "predicates": []
         }
       ],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.heavy-shield.ready",
+          "kind": "action",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Wonder Launcher",
       "canonicalRecordSha256": "8679405ba60ea75d3c602b36d47eafaf378defe18cc66726a74917c5ed20d4a8",
       "equipmentDefinitionSha256": "76451499397408feb0a31fd6ee281a8a8f045120dcfba9cf65558d657e4f2aa0",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.wonder-launcher.apply",
+          "kind": "action",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Focus",
@@ -538,6 +745,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -545,24 +753,35 @@
       "canonicalRecordSha256": "21b4ab1aad7af502d333782ab0ddd72e681e59230c2957948e6f3fbf4687aee2",
       "equipmentDefinitionSha256": "a08852daed8d03bc68ba91bb3086e16c76355a8331eea31d42ecee5b10bb8c65",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.snag-machine.convert",
+          "kind": "action",
+          "finalState": "guided"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Mega Ring",
       "canonicalRecordSha256": "4477ebf9aaa6deeaa150fab2d5c2a2af2c2867dd07649cb8b758c192d8b9fa4d",
       "equipmentDefinitionSha256": "75eb8794564a7afdfabb6c861aab1d4a79e4e44c1c6025f6cb5f122282c813f1",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.mega-ring.evolve",
+          "kind": "action",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Big Root",
       "canonicalRecordSha256": "735d037af1ec14084ae3a0cc8eda0e445874a0ec14dce590a2bd42ea14d4cce5",
       "equipmentDefinitionSha256": "f65503384867f022728e47af0972f2f6e75e78aba79da22077d69dbb3ea62434",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -587,6 +806,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -607,6 +827,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -616,6 +837,7 @@
       "canonicalRecordSha256": "3fa09101ba877427d54f92888df524aaa637686641d3c43b6f9ca6579936ba9a",
       "equipmentDefinitionSha256": "f7a631939617fcc2ca12dc3eb8a30eb3ebab54c300fd4b76fc0fee2a824c2694",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "reference-only-contest-workflow"
       ]
@@ -625,6 +847,7 @@
       "canonicalRecordSha256": "aef0832fdd8f507717a1c082ddd93b55fe6d5e222b45d2c5aba61cb1c0f5fd2e",
       "equipmentDefinitionSha256": "0d1de887fb8038719c0e2df27054cd7fa6684a4e24e4fb88f82648ade04a4fa2",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "reference-only-contest-workflow"
       ]
@@ -634,6 +857,7 @@
       "canonicalRecordSha256": "6414c9d8bac382ad284d370ed83823cd231c47ed78be2588e4bd62cad1e7465c",
       "equipmentDefinitionSha256": "68b0c35eea9b5cde301df78cc4ab0e80cd65ca07107b96826d5587e7a371499c",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -656,6 +880,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -685,6 +910,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -694,6 +920,7 @@
       "canonicalRecordSha256": "a93e0e2e46ce6a327109b484b03a40ab895e7b783f2fbbf2a1dd6638a2e0ce36",
       "equipmentDefinitionSha256": "07e4de2543e5eb6551605d64a2b20832e8e499735337689e3f0c7274047a11b2",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -703,6 +930,7 @@
       "canonicalRecordSha256": "7749c6124a8dc390bc17338866282e4058dbbcc91856b1c1781cd4e1fca44f25",
       "equipmentDefinitionSha256": "695848033ef64989545c50d28eead06f62d179b4f13ca3f804b0143d8a36bfe4",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -712,6 +940,7 @@
       "canonicalRecordSha256": "fa2d1eb758b452f2c199427b9cfa41c533685fb6cb670dcf8e16cdb65bff2f21",
       "equipmentDefinitionSha256": "95954161a446c236699798cc6c2495c71ded7f577f91b47a852bb9937184a11e",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -721,6 +950,13 @@
       "canonicalRecordSha256": "1aabb92b7ca9a8c3812945b2f3227d11868079f8edb99bb191ac72b3c89d6203",
       "equipmentDefinitionSha256": "159b65b9d99314cc17834ba16ebe5e354b45eef655ba35ff7f1262192455cc27",
       "contributions": [],
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.full-incense.stall",
+          "kind": "ability",
+          "finalState": "passive"
+        }
+      ],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -730,6 +966,7 @@
       "canonicalRecordSha256": "cc93a51acc84f2d791cf5fcef00d0c928f9be71556f1a7c5ee071af6dcc0e13a",
       "equipmentDefinitionSha256": "e4d71f31135371f86bc2ff78ff271a4bd45906db36c1176f102e4e02f81d8795",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -754,6 +991,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -763,6 +1001,7 @@
       "canonicalRecordSha256": "2d279cde96e6abb56db70fc0ed3974ba5ef05f9b49ee6ea7b19578a7a5dccf09",
       "equipmentDefinitionSha256": "e09eb7d05bc3c3b00c75d5e182517094723deb32db49a91dc256c15e62a6e613",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -785,6 +1024,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -809,6 +1049,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -831,6 +1072,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -855,6 +1097,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -877,6 +1120,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -899,6 +1143,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -908,6 +1153,7 @@
       "canonicalRecordSha256": "72e2e7d52afb8dcd3ea6d3f28903284ddabe57c89f8343c79e79680f2200a010",
       "equipmentDefinitionSha256": "d2effc5e896ef0ce5a4f8c93ac608edd9d8aeaeb44ec3439efafd03e2b42ba37",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -917,6 +1163,7 @@
       "canonicalRecordSha256": "6c4b0e64a1ca6c8cc84778c7043e915f5a755cde2b9d7a4c79acea61c07cbef9",
       "equipmentDefinitionSha256": "77c5d066a130030ab0c8cb89bdb929ad71efc15b6ecb229e5bb8b40449dd0f9e",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -926,6 +1173,7 @@
       "canonicalRecordSha256": "e4f70060810b9cf2fe05ff5d5d00fe03ebbc7d02a5473d874e45a4ecad1d29bb",
       "equipmentDefinitionSha256": "4da9b0ce68e6e48175835de96c2cb470ee9523e8a6bbe89f71a31e9b8ee77844",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -935,9 +1183,14 @@
       "canonicalRecordSha256": "130403cf76a1514068f30b49789a0fe7fec07ac2cc6e02d356250616ee9facc9",
       "equipmentDefinitionSha256": "97a1b47756c25058ddf91df74dffe6ed3cedde1ad85c28b8ae3ecc4307f308b2",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.shock-collar.activate",
+          "kind": "action",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Stat Boosters",
@@ -1011,6 +1264,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1018,6 +1272,7 @@
       "canonicalRecordSha256": "41e09ce92867a89e6202c3082a170c7fd6372a9e26836adf65a79c9278c51305",
       "equipmentDefinitionSha256": "a846d99dfaeb3eed2dbe7a9526270f34709584d0bfbb4c07015626d019b89bb5",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -1047,6 +1302,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1074,6 +1330,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1101,6 +1358,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1128,6 +1386,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1155,6 +1414,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1182,6 +1442,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1209,6 +1470,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1236,6 +1498,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1263,6 +1526,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1290,6 +1554,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1317,6 +1582,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1344,6 +1610,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1371,6 +1638,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1398,6 +1666,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1425,6 +1694,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1452,6 +1722,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1479,6 +1750,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1506,6 +1778,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1533,6 +1806,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1560,6 +1834,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1587,6 +1862,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1614,6 +1890,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1641,6 +1918,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1668,6 +1946,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1695,6 +1974,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1722,6 +2002,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1749,6 +2030,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1776,6 +2058,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1803,6 +2086,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1830,6 +2114,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1857,6 +2142,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1884,6 +2170,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1911,6 +2198,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1938,6 +2226,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1965,6 +2254,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1992,6 +2282,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -1999,6 +2290,7 @@
       "canonicalRecordSha256": "192756eba39b76dee425c50bb3d48bf0fd7ba23bb3ab25752645a50e05a22f64",
       "equipmentDefinitionSha256": "05e96615d8df45b0418e8bbb70c9b7486ad181108950fcc052c9276e10def4ad",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -2008,6 +2300,7 @@
       "canonicalRecordSha256": "921023bdcfc789fc45b0b04445649e8e01b5db909cd0c87b5b6e92d10043619f",
       "equipmentDefinitionSha256": "c470896d9069486ac697775c411b87d5686619e2cc56df6c88544990741233c7",
       "contributions": [],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-047"
       ]
@@ -2056,6 +2349,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": []
     },
     {
@@ -2063,9 +2357,14 @@
       "canonicalRecordSha256": "a8851a58e1b5ffd2771bb231a95184011534a20ff39a8e19a2c82e02f69d9e10",
       "equipmentDefinitionSha256": "6122518228fad4b370f7e415fb6d15f262b129164c5b49fa7d5f679db812a66b",
       "contributions": [],
-      "deferredMechanics": [
-        "P8-047"
-      ]
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.mega-stone.evolve",
+          "kind": "action",
+          "finalState": "native"
+        }
+      ],
+      "deferredMechanics": []
     },
     {
       "canonicalItemId": "Metal Powder",
@@ -2109,6 +2408,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -2133,6 +2433,7 @@
           "predicates": []
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]
@@ -2142,8 +2443,14 @@
       "canonicalRecordSha256": "f3a0f5724bbb5d398bf919f2b0195705e8629187eebbda32bffdc25142e235b9",
       "equipmentDefinitionSha256": "15486e39913abd650e5a6525e67ae9a79eb3f03641537e10b99acf099af6689f",
       "contributions": [],
+      "grantFinalStates": [
+        {
+          "grantId": "equipment.thick-club.pure-power",
+          "kind": "ability",
+          "finalState": "passive"
+        }
+      ],
       "deferredMechanics": [
-        "P8-047",
         "P8-048"
       ]
     },
@@ -2193,6 +2500,7 @@
           ]
         }
       ],
+      "grantFinalStates": [],
       "deferredMechanics": [
         "P8-048"
       ]

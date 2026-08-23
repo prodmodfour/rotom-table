@@ -21,6 +21,11 @@ import {
   type ItemFormChangeCommandTemplateOffer,
 } from '../domain/itemAutomation/formChangeCommandTemplate'
 import { ITEM_FORM_CHANGE_ACTION_ID } from '#shared/itemAutomation/formChanges'
+import { EQUIPMENT_ACTION_IDS } from '#shared/itemAutomation/equipmentActions'
+import {
+  attachEncounterEquipmentActionCommandTemplate,
+  type EquipmentActionCommandTemplateOffer,
+} from '../domain/itemAutomation/equipmentActionCommandTemplate'
 
 export interface DeclareEncounterActionInput {
   readonly role: AuthRole
@@ -78,7 +83,7 @@ const loadDefaultSnapshot = (input: DeclareEncounterActionInput, mapSlug: string
 export const declareEncounterActionUseCase = (
   input: DeclareEncounterActionInput,
   dependencies: DeclareEncounterActionDependencies = {},
-): ItemCommandTemplateOffer | ItemFormChangeCommandTemplateOffer => {
+): ItemCommandTemplateOffer | ItemFormChangeCommandTemplateOffer | EquipmentActionCommandTemplateOffer => {
   const intent = parseIntent(input.intent)
   const defaultSnapshot = dependencies.loadProjection ? null : loadDefaultSnapshot(input, intent.mapSlug)
   const projection = dependencies.loadProjection
@@ -124,6 +129,20 @@ export const declareEncounterActionUseCase = (
   for (const accepted of projection.accepted) {
     if (accepted.actor) visibleParticipantIds.add(accepted.actor.participantId)
     for (const participant of accepted.affectedParticipants) visibleParticipantIds.add(participant.participantId)
+  }
+  if ((EQUIPMENT_ACTION_IDS as readonly string[]).includes(offer.intent.actionId)) {
+    const templated = attachEncounterEquipmentActionCommandTemplate({
+      offer,
+      intent,
+      map: authority.map,
+      mapRevision: authority.mapRevision,
+      pokemonSheets: authority.pokemonSheets,
+      trainerSheets: authority.trainerSheets,
+    })
+    if (!templated.equipmentActionCommand) {
+      fail(409, 'The equipment action source or choices no longer have complete command authority.')
+    }
+    return templated
   }
   if (offer.intent.actionId === ITEM_FORM_CHANGE_ACTION_ID) {
     const templated = attachEncounterItemFormChangeCommandTemplate({

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/campaign-pokemon-choice-attention.v1.json'
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 import remediation from '../../data/complete-play-loop/canonical-data-remediation.v1.json'
 import rules from '../../data/reference/rules.json'
 import {
@@ -121,7 +121,8 @@ describe('P8-085 campaign Pokémon choice attention evidence', () => {
   it('pins runtime, canonical, migration, test, and documentary-provenance bytes', () => {
     for (const source of Object.values(contract.sources)) {
       expect(source.sha256, source.path).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(source.path)), source.path).toBe(source.sha256)
+      expect(acceptedSuccessorHead(source.path, source.sha256), source.path)
+        .toBe(repositoryFileSha256(source.path))
     }
     expect(contract.sources.documentaryProvenance.runtimeAuthority).toBe(false)
   })

@@ -1,0 +1,1388 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "deferred-closure-failure-recovery-v1",
+  "ticket": "P11-010",
+  "status": "reviewed",
+  "deterministic": true,
+  "sourceFixtures": {
+    "path": "data/deferred-closure/mechanics-acceptance-fixtures.v1.json",
+    "sha256": "e7152b6100321634bfa3bc9bf343370b7d8cc9fcd18955dab04e81c6f9ee4da4"
+  },
+  "policies": {
+    "serverOwnsRandomness": true,
+    "operationKey": "operation-id-plus-command-hash",
+    "revisionPolicy": "exact-read-set-before-write",
+    "transactionPolicy": "all-authority-documents-history-receipts-and-realtime-rows-or-none",
+    "projectionPolicy": "structurally-distinct-server-projections"
+  },
+  "counts": {
+    "surfaces": 27,
+    "scenarioTemplates": 5,
+    "dualEngineFixtures": 4
+  },
+  "scenarioTemplates": [
+    {
+      "scenarioId": "stale-revision",
+      "delivery": "first",
+      "fault": {
+        "kind": "revision-conflict",
+        "point": "before-first-write"
+      },
+      "expected": {
+        "status": "conflict",
+        "validationCode": "authority.stale-revision",
+        "reroll": false,
+        "resourceSpend": 0,
+        "revisionDelta": 0,
+        "rollback": "complete"
+      }
+    },
+    {
+      "scenarioId": "duplicate-delivery",
+      "delivery": "same-operation-same-command-hash",
+      "fault": null,
+      "expected": {
+        "status": "exact-retry",
+        "sameResult": true,
+        "reroll": false,
+        "resourceSpend": "original-only",
+        "revisionDelta": 0,
+        "rollback": "not-required"
+      }
+    },
+    {
+      "scenarioId": "reconnect-pending",
+      "delivery": "journaled-command-after-client-reconnect",
+      "fault": {
+        "kind": "transport-uncertain",
+        "point": "after-send-before-response"
+      },
+      "expected": {
+        "status": "recover-by-operation-status-or-exact-retry",
+        "sameIntent": true,
+        "reroll": false,
+        "duplicateSpend": false,
+        "rollback": "terminal-state-dependent"
+      }
+    },
+    {
+      "scenarioId": "server-restart-pending",
+      "delivery": "same-operation-after-process-restart",
+      "fault": {
+        "kind": "process-restart",
+        "point": "after-pending-persistence-before-resolution"
+      },
+      "expected": {
+        "status": "resume-durable-pending",
+        "sameIntent": true,
+        "reroll": false,
+        "duplicateSpend": false,
+        "revisionDelta": "terminal-commit-only-once"
+      }
+    },
+    {
+      "scenarioId": "interrupted-atomic-commit",
+      "delivery": "first",
+      "fault": {
+        "kind": "injected-write-failure",
+        "point": "immediately-before-commit"
+      },
+      "expected": {
+        "status": "rolled-back",
+        "rerollOnExactRetry": "use-persisted-prefix-or-first-attempt-has-no-visible-result",
+        "resourceSpend": 0,
+        "revisionDelta": 0,
+        "historyRows": 0,
+        "realtimeRows": 0,
+        "rollback": "complete"
+      }
+    }
+  ],
+  "surfaces": [
+    {
+      "surfaceId": "weapon-profile.weighted-rope",
+      "kind": "weapon-profile",
+      "seed": 21010,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "range",
+          "readiness",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "surface-id",
+          "actor-and-target-refs",
+          "range",
+          "custody-status",
+          "revision-status",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-profile.slingshot",
+      "kind": "weapon-profile",
+      "seed": 21011,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "range",
+          "readiness",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "surface-id",
+          "actor-and-target-refs",
+          "range",
+          "custody-status",
+          "revision-status",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-profile.throwing-hammers",
+      "kind": "weapon-profile",
+      "seed": 21012,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "range",
+          "readiness",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "surface-id",
+          "actor-and-target-refs",
+          "range",
+          "custody-status",
+          "revision-status",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-profile.hunting-bow",
+      "kind": "weapon-profile",
+      "seed": 21013,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "range",
+          "readiness",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "surface-id",
+          "actor-and-target-refs",
+          "range",
+          "custody-status",
+          "revision-status",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-profile.super-lucky-throwing-stars",
+      "kind": "weapon-profile",
+      "seed": 21014,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "range",
+          "readiness",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "surface-id",
+          "actor-and-target-refs",
+          "range",
+          "custody-status",
+          "revision-status",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-profile.twin-needled-bow",
+      "kind": "weapon-profile",
+      "seed": 21015,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "surface-id",
+          "actor-label",
+          "target-label",
+          "range",
+          "readiness",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "surface-id",
+          "actor-and-target-refs",
+          "range",
+          "custody-status",
+          "revision-status",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-move.bash",
+      "kind": "weapon-move",
+      "seed": 21016,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "move-label",
+          "actor-label",
+          "target-labels",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "move-label",
+          "rank-gate",
+          "frequency",
+          "range",
+          "targets",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "canonical-id",
+          "source-custody",
+          "rank",
+          "frequency-ledger",
+          "read-set",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-move.pierce",
+      "kind": "weapon-move",
+      "seed": 21017,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "move-label",
+          "actor-label",
+          "target-labels",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "move-label",
+          "rank-gate",
+          "frequency",
+          "range",
+          "targets",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "canonical-id",
+          "source-custody",
+          "rank",
+          "frequency-ledger",
+          "read-set",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-move.gouge",
+      "kind": "weapon-move",
+      "seed": 21018,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "move-label",
+          "actor-label",
+          "target-labels",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "move-label",
+          "rank-gate",
+          "frequency",
+          "range",
+          "targets",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "canonical-id",
+          "source-custody",
+          "rank",
+          "frequency-ledger",
+          "read-set",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-move.titanic-slam",
+      "kind": "weapon-move",
+      "seed": 21019,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "move-label",
+          "actor-label",
+          "target-labels",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "move-label",
+          "rank-gate",
+          "frequency",
+          "range",
+          "targets",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "canonical-id",
+          "source-custody",
+          "rank",
+          "frequency-ledger",
+          "read-set",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-move.bullseye",
+      "kind": "weapon-move",
+      "seed": 21020,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "move-label",
+          "actor-label",
+          "target-labels",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "move-label",
+          "rank-gate",
+          "frequency",
+          "range",
+          "targets",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "canonical-id",
+          "source-custody",
+          "rank",
+          "frequency-ledger",
+          "read-set",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-move.deadly-strike",
+      "kind": "weapon-move",
+      "seed": 21021,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "move-label",
+          "actor-label",
+          "target-labels",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "move-label",
+          "rank-gate",
+          "frequency",
+          "range",
+          "targets",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "canonical-id",
+          "source-custody",
+          "rank",
+          "frequency-ledger",
+          "read-set",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "weapon-move.triple-threat",
+      "kind": "weapon-move",
+      "seed": 21022,
+      "authorityDocuments": [
+        "encounter",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending"
+      ],
+      "projections": {
+        "public": [
+          "move-label",
+          "actor-label",
+          "target-labels",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "move-label",
+          "rank-gate",
+          "frequency",
+          "range",
+          "targets",
+          "pending-or-accepted",
+          "own-result"
+        ],
+        "gm": [
+          "canonical-id",
+          "source-custody",
+          "rank",
+          "frequency-ledger",
+          "read-set",
+          "roll-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.old-rod.fish",
+      "kind": "item-action",
+      "seed": 21023,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.good-rod.fish",
+      "kind": "item-action",
+      "seed": 21024,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.super-rod.fish",
+      "kind": "item-action",
+      "seed": 21025,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.glue-cannon.attack",
+      "kind": "item-action",
+      "seed": 21026,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.hand-net.attack",
+      "kind": "item-action",
+      "seed": 21027,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.weighted-nets.throw",
+      "kind": "item-action",
+      "seed": 21028,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.weighted-nets.pull",
+      "kind": "item-action",
+      "seed": 21029,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.light-shield.ready",
+      "kind": "item-action",
+      "seed": 21030,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.heavy-shield.ready",
+      "kind": "item-action",
+      "seed": 21031,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.snag-machine.convert",
+      "kind": "item-action",
+      "seed": 21032,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "item-action.shock-collar.activate",
+      "kind": "item-action",
+      "seed": 21033,
+      "authorityDocuments": [
+        "encounter",
+        "sheet",
+        "inventory"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "action-label",
+          "actor-label",
+          "pending-or-accepted",
+          "public-result"
+        ],
+        "owner": [
+          "action-label",
+          "custody",
+          "cost-or-duration",
+          "pending-or-accepted",
+          "own-receipt"
+        ],
+        "gm": [
+          "action-id",
+          "source-custody",
+          "read-set",
+          "resource-ledger",
+          "roll-or-decision-journal",
+          "accepted-result",
+          "diagnostic-code"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "contest-variant.trainer-participant",
+      "kind": "contest-variant",
+      "seed": 21034,
+      "authorityDocuments": [
+        "contest",
+        "sheet"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "contest-label",
+          "stage",
+          "public-scoreboard",
+          "accepted-history",
+          "settlement-summary"
+        ],
+        "owner": [
+          "own-performers",
+          "own-dice-pools",
+          "own-legal-actions",
+          "own-pending-decisions",
+          "public-scoreboard"
+        ],
+        "gm": [
+          "policy",
+          "all-performers",
+          "all-pending-decisions",
+          "all-journals",
+          "correction-controls",
+          "diagnostics"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "contest-variant.battle",
+      "kind": "contest-variant",
+      "seed": 21035,
+      "authorityDocuments": [
+        "contest",
+        "encounter"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit",
+        "dual-engine-stale-contest",
+        "dual-engine-stale-encounter",
+        "dual-engine-duplicate-handoff",
+        "dual-engine-interrupted-settlement"
+      ],
+      "projections": {
+        "public": [
+          "contest-label",
+          "stage",
+          "public-scoreboard",
+          "accepted-history",
+          "settlement-summary"
+        ],
+        "owner": [
+          "own-performers",
+          "own-dice-pools",
+          "own-legal-actions",
+          "own-pending-decisions",
+          "public-scoreboard"
+        ],
+        "gm": [
+          "policy",
+          "all-performers",
+          "all-pending-decisions",
+          "all-journals",
+          "correction-controls",
+          "diagnostics"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    },
+    {
+      "surfaceId": "runtime.generic-skill-check",
+      "kind": "runtime-surface",
+      "seed": 21036,
+      "authorityDocuments": [
+        "skill-check",
+        "sheet",
+        "campaign-history"
+      ],
+      "requiredScenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "projections": {
+        "public": [
+          "public-label",
+          "pending-count-or-authorized-result"
+        ],
+        "owner": [
+          "own-prompt",
+          "own-skill",
+          "own-modifier-explanation",
+          "own-response",
+          "authorized-result"
+        ],
+        "gm": [
+          "requester",
+          "all-subjects",
+          "dc-or-opposed-policy",
+          "all-modifiers",
+          "gm-notes",
+          "all-journals",
+          "all-results",
+          "diagnostics"
+        ]
+      },
+      "retryExpectation": "same-operation-and-command-hash-returns-original-result-with-no-new-roll-spend-or-revision",
+      "rollbackExpectation": "any-stale-read-or-write-failure-commits-no-mechanical-document-history-receipt-or-realtime-row"
+    }
+  ],
+  "battleContestDualEngineFixtures": [
+    {
+      "fixtureId": "battle-contest-stale-contest-revision",
+      "scenarioId": "dual-engine-stale-contest",
+      "seed": 21901,
+      "link": {
+        "linkId": "battle-contest-link:v1:fixture",
+        "contestRevision": 7,
+        "encounterRevision": 18,
+        "acceptedEncounterResultId": "accepted-result:fixture-18",
+        "handoffFactHash": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "mutation": {
+        "contestRevision": 8
+      },
+      "expected": {
+        "validationCode": "battle-contest.contest-revision-stale",
+        "contestRevision": 8,
+        "encounterRevision": 18,
+        "appealDelta": 0,
+        "writes": [],
+        "retry": "refresh-link-and-redeclare-new-operation"
+      }
+    },
+    {
+      "fixtureId": "battle-contest-stale-encounter-revision",
+      "scenarioId": "dual-engine-stale-encounter",
+      "seed": 21902,
+      "link": {
+        "linkId": "battle-contest-link:v1:fixture",
+        "contestRevision": 7,
+        "encounterRevision": 18,
+        "acceptedEncounterResultId": "accepted-result:fixture-18",
+        "handoffFactHash": "2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "mutation": {
+        "encounterRevision": 19
+      },
+      "expected": {
+        "validationCode": "battle-contest.encounter-revision-stale",
+        "contestRevision": 7,
+        "encounterRevision": 19,
+        "appealDelta": 0,
+        "writes": [],
+        "retry": "derive-new-handoff-from-authoritative-accepted-result"
+      }
+    },
+    {
+      "fixtureId": "battle-contest-duplicate-handoff",
+      "scenarioId": "dual-engine-duplicate-handoff",
+      "seed": 21903,
+      "link": {
+        "linkId": "battle-contest-link:v1:fixture",
+        "contestRevision": 7,
+        "encounterRevision": 18,
+        "acceptedEncounterResultId": "accepted-result:fixture-18",
+        "handoffFactHash": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "delivery": "same-operation-and-handoff-twice",
+      "expected": {
+        "validationCode": null,
+        "exactRetry": true,
+        "contestRevision": 8,
+        "encounterRevision": 18,
+        "appealApplications": 1,
+        "contestDiceSpend": 1,
+        "encounterResourceSpend": 0,
+        "rollJournals": 1
+      }
+    },
+    {
+      "fixtureId": "battle-contest-interrupted-settlement",
+      "scenarioId": "dual-engine-interrupted-settlement",
+      "seed": 21904,
+      "link": {
+        "linkId": "battle-contest-link:v1:fixture",
+        "contestRevision": 20,
+        "encounterRevision": 44,
+        "acceptedEncounterResultId": "accepted-result:fixture-terminal",
+        "handoffFactHash": "4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "fault": {
+        "kind": "injected-write-failure",
+        "point": "after-staged-consequences-before-commit"
+      },
+      "expected": {
+        "validationCode": "battle-contest.settlement-rolled-back",
+        "contestRevision": 20,
+        "encounterRevision": 44,
+        "contestRewards": 0,
+        "encounterRewards": 0,
+        "sheetWrites": 0,
+        "historyRows": 0,
+        "retry": "same-operation-reuses-settlement-intent-and-roll-evidence"
+      }
+    }
+  ]
+}

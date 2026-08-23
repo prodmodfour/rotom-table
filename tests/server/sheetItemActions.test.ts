@@ -121,6 +121,36 @@ describe('Trainer sheet item actions', () => {
     expect(xAttack.actions.find(action => action.kind === 'inspect')).toMatchObject({ enabled: true })
   })
 
+  it('routes reviewed native equipment mechanics to the live encounter instead of calling them unsupported', () => {
+    const database = open()
+    const base = trainer()
+    seed(database, {
+      ...base,
+      inventory: {
+        ...base.inventory,
+        equipment: [{ id: 'glue-cannon-row', name: 'Glue Cannon' }],
+      },
+      equipmentState: createEmptySheetEquipmentState({ ownerKind: 'trainer', ownerSlug: 'ash' }),
+    })
+    const projection = loadSheetItemActionsUseCase({ role: 'gm', trainerSlug: 'ash' }, { database, now: () => 100 })
+    const glue = projection.offers.find(offer => offer.source.canonicalId === 'Glue Cannon')!
+    expect(glue).toMatchObject({
+      timingLabel: 'Live encounter',
+      description: 'Reviewed live encounter actions: Fire Glue Cannon.',
+      acceptanceNotice: expect.stringContaining('use Fire Glue Cannon from the live encounter Action Dock'),
+      availability: {
+        enabled: false,
+        unavailableReason: { code: 'action.encounter-only', label: expect.stringContaining('live encounter Action Dock') },
+      },
+    })
+    expect(glue.actions.find(action => action.kind === 'inspect')).toMatchObject({ enabled: true })
+    expect(glue.actions.find(action => action.kind === 'use')).toMatchObject({
+      enabled: false,
+      unavailableReason: { code: 'action.encounter-only' },
+    })
+    expect(JSON.stringify(projection)).not.toContain('glue-cannon-row')
+  })
+
   it('projects duplicate copies as exact safe rows and declares only the selected private source', () => {
     const database = open()
     const base = trainer()

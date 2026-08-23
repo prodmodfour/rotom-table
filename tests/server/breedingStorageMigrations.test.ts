@@ -83,7 +83,7 @@ describe('breeding SQLite schema migration', () => {
   it('adds every dedicated aggregate and evidence table at contiguous schema version 22', () => {
     const connection = open()
     applyThrough(connection, 22)
-    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(46)
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(50)
     expect(getStorageSchemaVersion(connection)).toBe(22)
     expect(tables(connection).filter(name => breedingTables.includes(name))).toEqual(breedingTables)
     expect(connection.prepare('SELECT * FROM campaign_clock').all()).toEqual([{ singleton: 1, revision: 0, campaign_minute: 0, last_operation_id: null }])
@@ -102,7 +102,7 @@ describe('breeding SQLite schema migration', () => {
     )
     connection.prepare(`INSERT INTO sheets (kind, slug, document_json, revision, updated_at) VALUES ('pokemon', 'legacy-child', '{}', 3, 100)`).run()
 
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 21, toVersion: 46, appliedVersions: [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 21, toVersion: 50, appliedVersions: [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50] })
     expect(connection.prepare('SELECT slug, revision FROM maps').get()).toEqual({ slug: 'legacy-map', revision: 7 })
     expect(connection.prepare('SELECT kind, slug, revision FROM sheets').get()).toEqual({ kind: 'pokemon', slug: 'legacy-child', revision: 3 })
     expect(connection.prepare('SELECT COUNT(*) AS count FROM breeding_projects').get()).toEqual({ count: 0 })
@@ -114,7 +114,7 @@ describe('breeding SQLite schema migration', () => {
     const connection = open()
     applyThrough(connection, 22)
     expect(tables(connection).filter(name => archiveTables.includes(name))).toEqual([])
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 22, toVersion: 46, appliedVersions: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 22, toVersion: 50, appliedVersions: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50] })
     expect(tables(connection).filter(name => archiveTables.includes(name))).toEqual(archiveTables)
     expect(indexes(connection, 'breeding_archives')).toContain('breeding_archives_campaign_created_idx')
     expect(() => connection.prepare(`
@@ -129,7 +129,7 @@ describe('breeding SQLite schema migration', () => {
     const connection = open()
     applyThrough(connection, 23)
     expect(tables(connection).filter(name => incubationTables.includes(name))).toEqual([])
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 23, toVersion: 46, appliedVersions: [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 23, toVersion: 50, appliedVersions: [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50] })
     expect(tables(connection).filter(name => incubationTables.includes(name))).toEqual(incubationTables)
     expect(indexes(connection, 'breeding_incubation_segments')).toContain('breeding_incubation_segments_egg_revision_idx')
     expect(columns(connection, 'breeding_incubation_segments')).toEqual([
@@ -145,7 +145,7 @@ describe('breeding SQLite schema migration', () => {
     applyThrough(connection, 24)
     const operation = insertPendingOperation(connection, 91)
     connection.prepare(`INSERT INTO breeding_operation_scopes (operation_id, scope_key, scope_kind, scope_json) VALUES (?, '2:test', 'pokemon-egg', '{}')`).run(operation)
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 24, toVersion: 46, appliedVersions: [25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 24, toVersion: 50, appliedVersions: [25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50] })
     expect(connection.prepare('SELECT operation_id, command_kind, status FROM breeding_operations').all()).toEqual([{ operation_id: operation, command_kind: 'create-breeding-project', status: 'pending' }])
     expect(connection.prepare('SELECT operation_id, scope_key FROM breeding_operation_scopes').all()).toEqual([{ operation_id: operation, scope_key: '2:test' }])
     expect(connection.prepare('PRAGMA foreign_key_check').all()).toEqual([])
@@ -201,8 +201,8 @@ describe('breeding SQLite schema migration', () => {
     `).run(operation, hash('f'))
     expect(applyStorageMigrations(connection)).toEqual({
       fromVersion: 26,
-      toVersion: 46,
-      appliedVersions: [27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
+      toVersion: 50,
+      appliedVersions: [27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50],
     })
     expect(connection.prepare(`
       SELECT trainer_sheet_slug, species_id, operation_id
@@ -265,7 +265,7 @@ describe('breeding SQLite schema migration', () => {
     `).run(operation)
     expect(connection.prepare("SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'breeding_operations'").get()?.sql)
       .not.toContain('settle-egg-transfer-consent')
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 27, toVersion: 46, appliedVersions: [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 27, toVersion: 50, appliedVersions: [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50] })
     expect(connection.prepare('SELECT operation_id, status FROM breeding_operations').get()).toEqual({ operation_id: operation, status: 'pending' })
     expect(connection.prepare('SELECT operation_id, scope_key FROM breeding_operation_scopes').get()).toEqual({ operation_id: operation, scope_key: '2:preserved' })
     expect(connection.prepare('PRAGMA foreign_key_check').all()).toEqual([])
@@ -367,7 +367,7 @@ describe('breeding SQLite schema migration', () => {
     applyThrough(connection, 35)
     expect(tables(connection)).not.toContain('item_form_change_operations')
     expect(applyStorageMigrations(connection)).toEqual({
-      fromVersion: 35, toVersion: 46, appliedVersions: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
+      fromVersion: 35, toVersion: 50, appliedVersions: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50],
     })
     expect(columns(connection, 'item_form_change_operations')).toEqual([
       'operation_id', 'command_sha256', 'principal_key', 'map_slug', 'command_json',
@@ -394,7 +394,7 @@ describe('breeding SQLite schema migration', () => {
     applyThrough(connection, 34)
     expect(tables(connection)).not.toContain('item_extended_action_activities')
     expect(applyStorageMigrations(connection)).toEqual({
-      fromVersion: 34, toVersion: 46, appliedVersions: [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
+      fromVersion: 34, toVersion: 50, appliedVersions: [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50],
     })
     expect(columns(connection, 'item_extended_action_activities')).toEqual([
       'activity_id', 'revision', 'status', 'start_operation_id', 'settlement_operation_id',
@@ -445,7 +445,7 @@ describe('breeding SQLite schema migration', () => {
     `).run(custodyId, hash('a'))
 
     expect(applyStorageMigrations(connection)).toEqual({
-      fromVersion: 33, toVersion: 46, appliedVersions: [34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
+      fromVersion: 33, toVersion: 50, appliedVersions: [34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50],
     })
     expect(connection.prepare(`
       SELECT operation_id, command_kind, created_at FROM equipment_operations WHERE operation_id = ?

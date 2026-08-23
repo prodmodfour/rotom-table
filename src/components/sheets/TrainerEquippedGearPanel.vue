@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import EquipmentEncounterActionSummary from './EquipmentEncounterActionSummary.vue'
 import { TRAINER_EQUIPMENT_SLOTS } from '~/utils/sheets/trainerInventorySections'
 import type { TrainerEquipmentSlots } from '~/types/trainerSheet'
 import type {
@@ -129,6 +130,17 @@ const fullIssueSummary = (slotId: EquipmentSlotId): string => {
     : `${issue.candidateSourceInstanceIds.length} candidate ${issue.candidateSourceInstanceIds.length === 1 ? 'source' : 'sources'}.`
   return `${issueReasonLabel(issue.reason)} ${candidateCopy}`
 }
+
+const encounterActionSources = computed(() => (authority.value?.instances ?? []).map((instance) => {
+  const reasonCodes = 'reasonCodes' in instance.activity
+    ? instance.activity.reasonCodes
+    : instance.activity.reasons.map(reason => reason.code)
+  return {
+    canonicalItemId: instance.canonicalItemId,
+    activityStatus: instance.activity.status,
+    unavailableReason: reasonCodes.map(compatibilityReasonLabel).find(Boolean) ?? null,
+  }
+}))
 </script>
 
 <template>
@@ -199,6 +211,8 @@ const fullIssueSummary = (slotId: EquipmentSlotId): string => {
         <small v-if="row.reason" class="equipment-slot-reason">{{ row.reason }}</small>
       </li>
     </ul>
+
+    <EquipmentEncounterActionSummary :sources="encounterActionSources" />
 
     <p v-if="!authority && rows.some(row => row.name)" class="equipment-legacy-note">
       Legacy equipment text is retained for review but grants no mechanical effects.

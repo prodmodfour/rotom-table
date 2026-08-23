@@ -10,6 +10,15 @@ import { loadLiveTableSnapshotUseCase } from './loadLiveTableSnapshot'
 import { createSqliteEncounterDocumentRepository } from '../storage/encounterDocumentRepository'
 import { createSqliteItemOperationRepository, type StoredItemOperationRecord } from '../storage/itemOperationRepository'
 import { projectItemOperationPresentations } from '../domain/itemAutomation/presentation'
+import { projectEquipmentActionPresentations } from '../domain/itemAutomation/equipmentActionPresentation'
+import {
+  createSqliteEquipmentActionOperationRepository,
+  type StoredEquipmentActionOperation,
+} from '../storage/equipmentActionOperationRepository'
+import {
+  createSqliteItemGuidedRequestRepository,
+  type StoredItemGuidedRequestRecord,
+} from '../storage/itemGuidedRequestRepository'
 
 export interface LoadEncounterWorkspaceInput {
   readonly role: AuthRole
@@ -29,6 +38,8 @@ export interface LoadEncounterWorkspaceDependencies {
   readonly loadEncounterDocument?: (encounterId: string) => EncounterDocument | null
   readonly findEncounterDocumentByMap?: (mapSlug: string) => EncounterDocument | null
   readonly listItemOperations?: (mapSlug: string) => readonly StoredItemOperationRecord[]
+  readonly listEquipmentActionOperations?: (mapSlug: string) => readonly StoredEquipmentActionOperation[]
+  readonly listGuidedItemRequests?: (mapSlug: string) => readonly StoredItemGuidedRequestRecord[]
 }
 
 export const resolveEncounterWorkspaceAudience = (
@@ -62,6 +73,16 @@ export const loadEncounterWorkspaceUseCase = (
     : createSqliteItemOperationRepository()
   const listItemOperations = dependencies.listItemOperations
     ?? ((mapSlug: string) => itemRepository?.listForMap(mapSlug, 200) ?? [])
+  const equipmentActionRepository = dependencies.loadSnapshot && !dependencies.listEquipmentActionOperations
+    ? null
+    : createSqliteEquipmentActionOperationRepository()
+  const listEquipmentActionOperations = dependencies.listEquipmentActionOperations
+    ?? ((mapSlug: string) => equipmentActionRepository?.listForMap(mapSlug, 200) ?? [])
+  const guidedRequestRepository = dependencies.loadSnapshot && !dependencies.listGuidedItemRequests
+    ? null
+    : createSqliteItemGuidedRequestRepository()
+  const listGuidedItemRequests = dependencies.listGuidedItemRequests
+    ?? ((mapSlug: string) => guidedRequestRepository?.listForMap(mapSlug, 200) ?? [])
   let encounterDocument = requestedId ? loadEncounterDocument(requestedId) : null
   const snapshot = loadSnapshot({
     role: input.role,
@@ -115,10 +136,17 @@ export const loadEncounterWorkspaceUseCase = (
     pokemonSheets: snapshot.pokemonSheets,
     trainerSheets: snapshot.trainerSheets,
   })
+  const equipmentPresentations = projectEquipmentActionPresentations({
+    equipmentRecords: listEquipmentActionOperations(snapshot.map.slug),
+    guidedRecords: listGuidedItemRequests(snapshot.map.slug),
+    map: snapshot.map,
+    pokemonSheets: snapshot.pokemonSheets,
+    trainerSheets: snapshot.trainerSheets,
+  })
   const pendingById = new Map(snapshot.encounterPresentation.pending.map(value => [value.interactionId, value]))
-  for (const pending of itemPresentations.pending) pendingById.set(pending.interactionId, pending)
+  for (const pending of [...itemPresentations.pending, ...equipmentPresentations.pending]) pendingById.set(pending.interactionId, pending)
   const acceptedByOperation = new Map(snapshot.encounterPresentation.accepted.map(value => [value.operationId, value]))
-  for (const accepted of itemPresentations.accepted) acceptedByOperation.set(accepted.operationId, accepted)
+  for (const accepted of [...itemPresentations.accepted, ...equipmentPresentations.accepted]) acceptedByOperation.set(accepted.operationId, accepted)
   const projectedPending = [...pendingById.values()]
   const projectedAccepted = [...acceptedByOperation.values()]
     .sort((left, right) => left.revision - right.revision || left.presentationId.localeCompare(right.presentationId))

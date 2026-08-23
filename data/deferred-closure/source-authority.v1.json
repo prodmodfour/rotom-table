@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "authorityId": "deferred-mechanics-closure-source-authority-v1",
+  "ticket": "P11-003",
+  "status": "reviewed",
+  "runtimeProseParsing": false,
+  "documentaryFingerprint": {
+    "algorithm": "sha256",
+    "sources": [
+      {
+        "path": "books/markdown/core/09-gear-and-items.md",
+        "sha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+        "authorizes": ["weapon-class-semantics", "weapon-move-registry-extension", "item-action-specs"]
+      },
+      {
+        "path": "books/markdown/core/08-pokemon-contests.md",
+        "sha256": "d4cbfef280d2b96bede24648b1ca69a8bfcbdad639d8a5537ce8518387285111",
+        "authorizes": ["trainer-participant-successor", "battle-contest-successor"]
+      },
+      {
+        "path": "books/markdown/errata-2.md",
+        "sha256": "1b8be900ac33dd8d621c7acda801ad535f0f8532142829c5409d907c081a1c70",
+        "authorizes": ["published-errata-cross-check"]
+      },
+      {
+        "path": "books/markdown/errata-3.md",
+        "sha256": "d589c68c0b12c18de4df30b5e37351297b324d7f7fa4a8cda63cda5c7ff154b8",
+        "authorizes": ["published-errata-cross-check"]
+      }
+    ]
+  },
+  "appOwnedAuthority": [
+    {
+      "path": "data/reference/items.json",
+      "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+      "policy": "Frozen canonical identity and effect rows. Reviewed registries may structure only identities present here."
+    },
+    {
+      "path": "data/reference/moves.json",
+      "sha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821",
+      "policy": "Frozen Pokémon Move catalog. Weapon Moves remain outside this file and have no Contest identity."
+    },
+    {
+      "path": "data/reference/contests.json",
+      "baselineSha256": "fadb03c328f2025dcc81fe497365db345717184bea6a9247b2f79d9d3f61362a",
+      "policy": "P11-006 may install only the reviewed successor whose before hash equals this baseline and whose source set includes the exact Contest and errata fingerprints above."
+    }
+  ],
+  "reviewedIdentitySets": {
+    "weaponProfiles": [
+      "Weighted Rope",
+      "Slingshot",
+      "Throwing Hammers",
+      "Hunting Bow",
+      "Super Lucky Throwing Stars",
+      "Twin-Needled Bow"
+    ],
+    "weaponMoves": ["Bash!", "Pierce!", "Gouge", "Titanic Slam", "Bullseye", "Deadly Strike", "Triple Threat"],
+    "itemActions": [
+      "equipment.fishing.old-rod",
+      "equipment.fishing.good-rod",
+      "equipment.fishing.super-rod",
+      "equipment.glue-cannon.attack",
+      "equipment.hand-net.attack",
+      "equipment.weighted-nets.throw",
+      "equipment.weighted-nets.pull",
+      "equipment.light-shield.ready",
+      "equipment.heavy-shield.ready",
+      "equipment.snag-machine.convert",
+      "equipment.shock-collar.activate"
+    ],
+    "contestVariants": ["trainer-participant", "battle"]
+  },
+  "identityPolicy": {
+    "canonicalIdentitySource": "app-owned-data-reference-only",
+    "documentaryUse": "reviewed-migration-provenance-only",
+    "unknownIdentity": "fail-closed-and-record-data-defect",
+    "runtimeProseInterpretation": "forbidden",
+    "openDataDefects": []
+  },
+  "frozenAcceptanceRecords": [
+    {
+      "plan": 3,
+      "path": "implementation-plans/done/CAPABILITY_AUTOMATION_PLAN.md",
+      "sha256": "90016b1c87be4909ddd59754d20589cb12c0dbb8466f1047726c8d1b0ef14aaf",
+      "touchedBy": ["weapon-move-registry-extension"],
+      "policy": "byte-immutable"
+    },
+    {
+      "plan": 3,
+      "path": "data/capability-automation/manifest.json",
+      "sha256": "ef06c9b53f3fee30fd14a9989c88d23c8685b04b7d45b5fa1914a7a8c004afce",
+      "touchedBy": ["weapon-move-registry-extension"],
+      "policy": "byte-immutable"
+    },
+    {
+      "plan": 8,
+      "path": "implementation-plans/done/COMPLETE_PLAY_LOOP_PLAN.md",
+      "sha256": "3843b49880d40c9c83021a81a892af1084219bb8fc30c54e47948181e01894c5",
+      "touchedBy": ["equipment-grants", "item-actions"],
+      "policy": "byte-immutable"
+    },
+    {
+      "plan": 8,
+      "path": "data/complete-play-loop/alpha-product-acceptance.v1.json",
+      "sha256": "79077dfe9d1c741a42d2441012a8f7b3748ebf13f3309152e2521aed85929282",
+      "touchedBy": ["equipment-grants", "item-actions"],
+      "policy": "byte-immutable"
+    },
+    {
+      "plan": 10,
+      "path": "implementation-plans/done/POKEMON_CONTESTS_PLAN.md",
+      "sha256": "e6448568b1f33273a18cc788e956282973f0c93b92476a3946d84811148d372a",
+      "touchedBy": ["contest-variant-successor"],
+      "policy": "byte-immutable"
+    },
+    {
+      "plan": 10,
+      "path": "data/contests/alpha-acceptance.v1.json",
+      "sha256": "7aaeb7f3203213cf8f0f50f386f3f37f70b515a8b1373a2126d918334e953c6b",
+      "touchedBy": ["contest-variant-successor"],
+      "policy": "byte-immutable"
+    },
+    {
+      "plan": 10,
+      "path": "data/contests/rule-coverage.v1.json",
+      "sha256": "0fb3ba8b9361d5b662934637a12a2abbb5d3cf20438d88458759933d8b54f5c8",
+      "touchedBy": ["contest-variant-successor"],
+      "policy": "byte-immutable"
+    },
+    {
+      "plan": 10,
+      "path": "scripts/reviewed-data/pokemon-contests.v1.json",
+      "sha256": "ca491986faf4427c4a20040eeb6a8c3d8c9d01961d190a301cb85e88a39fa36f",
+      "touchedBy": ["contest-variant-successor"],
+      "policy": "byte-immutable"
+    }
+  ],
+  "successorPolicy": {
+    "registryPath": "data/deferred-closure/successor-chain.v1.json",
+    "requirements": [
+      "Never edit a frozen Plan 1-10 acceptance record or its historical source hash.",
+      "Every mutable whole-file change records one contiguous before/after SHA-256 edge with owning ticket and reviewed source fingerprints.",
+      "Existing per-record authority remains unchanged unless the edge names that stable row explicitly.",
+      "Consumers admit a successor only when the complete edge chain reaches the installed bytes.",
+      "The frozen 777/761/16 Contest Move counts and frozen Pokémon Move catalog remain unchanged."
+    ],
+    "plannedEdges": [
+      {"surface": "data/complete-play-loop/equipment-grants.v1.json", "tickets": ["P11-002", "P11-004", "P11-005", "P11-042"]},
+      {"surface": "shared/capabilityAutomation/weaponMoves.ts", "tickets": ["P11-005"]},
+      {"surface": "data/reference/contests.json", "tickets": ["P11-006"]}
+    ]
+  }
+}

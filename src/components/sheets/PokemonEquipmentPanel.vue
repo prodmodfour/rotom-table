@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import EquipmentEncounterActionSummary from './EquipmentEncounterActionSummary.vue'
 import { findItem } from '~~/data/ptuReference'
 import { useEquipmentLifecycleOperations } from '~/composables/sheets/useEquipmentLifecycleOperations'
 import type { TrainerEquipmentAcceptedResult } from '~/composables/sheets/useTrainerEquipmentOperations'
@@ -70,6 +71,10 @@ const secondaryStatusLabel = computed(() => {
   if (secondaryInstance.value?.activity.status === 'broken') return 'Broken'
   return secondaryInstance.value ? 'Inactive' : 'Empty'
 })
+const encounterActionSources = computed(() => [instance.value, secondaryInstance.value].flatMap(item => item ? [{
+  canonicalItemId: item.canonicalItemId,
+  activityStatus: item.activity.status,
+}] : []))
 const selectedLifecycleInstanceId = ref<string | null>(null)
 const selectedLifecycleInstance = computed(() => props.sheet.equipmentState?.instances
   .find(item => item.instanceId === selectedLifecycleInstanceId.value) ?? null)
@@ -207,6 +212,8 @@ const issueSummary = computed(() => {
           </dd>
         </div>
       </dl>
+
+      <EquipmentEncounterActionSummary :sources="encounterActionSources" />
 
       <p v-if="!authority && displayedItemName" class="equipment-legacy-note">
         Legacy held-item text is retained for review but grants no mechanical effects.

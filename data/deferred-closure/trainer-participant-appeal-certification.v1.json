@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-appeals-v1",
+  "ticket": "P11-057",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-introduction-certification.v1.json",
+    "sha256": "e7ea3ab5aa45d529b5228dc36877fd43bec7212ea2a8afd8c63d422fe2c462ac"
+  },
+  "canonicalAuthorities": [
+    {
+      "path": "data/reference/contests.json",
+      "sha256": "95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e",
+      "rowId": "trainer-participant"
+    },
+    {
+      "path": "data/reference/moves.json",
+      "sha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821",
+      "rowId": "canonical-defined-contest-moves"
+    },
+    {
+      "path": "shared/capabilityAutomation/weaponMoves.ts",
+      "sha256": "4d7bf8aaf62c807a8eabfda4424298eefe03354049f6da9fbb1c324a1e6c9f5e",
+      "rowId": "twelve-source-bound-weapon-moves"
+    }
+  ],
+  "authorities": [
+    {
+      "id": "trainer-real-move-offer-authority",
+      "path": "shared/contests/integrations.ts",
+      "sha256": "94f195b89b5e483093b25ed902c1fd4df8c3ef8b44b46a4219e7afbacb3f4c06",
+      "guarantees": [
+        "enrollment-time-real-trainer-movelist-snapshot",
+        "canonical-move-catalog-type-effect-and-tag-binding",
+        "explicit-created-move-contest-identity-only",
+        "unknown-move-identity-missing-refusal",
+        "weapon-move-source-bound-unavailable-reason",
+        "no-documentary-or-pokemon-identity-substitution"
+      ]
+    },
+    {
+      "id": "strict-participant-appeal-document",
+      "path": "shared/contests/document.ts",
+      "sha256": "c349c5e723b7182d2e29af20ba24a646397dbe6329228fb0b92dbaa0ed1615b5",
+      "guarantees": [
+        "alternating-performance-and-pre-settlement-stage-authority",
+        "exact-enrolled-performer-and-available-option-cross-check",
+        "move-label-type-and-effect-cross-check",
+        "strict-trainer-pokemon-alternation-reconciliation",
+        "appeal-journal-contributor-score-effect-and-voltage-reconciliation",
+        "shared-spend-actor-and-paired-pokemon-reconciliation",
+        "simultaneous-performance-and-participant-settlement-refusal"
+      ]
+    },
+    {
+      "id": "source-bound-method-scheduler",
+      "path": "shared/contests/participantMethods.ts",
+      "sha256": "6af6a39d7385fb607bfa9efb0eafef8695d417771c8838a718d173575caa86c9",
+      "guarantees": [
+        "either-member-initial-alternating-lead",
+        "one-appeal-per-entry-chart-turn",
+        "exact-opposite-member-next-turn",
+        "canonical-method-policy-only"
+      ]
+    },
+    {
+      "id": "trainer-appeal-performance-engine",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "5255719f9986be4768539947c42ba2c9c79af57ab85725d81161c0471a5bb988",
+      "guarantees": [
+        "legal-paired-performer-selection",
+        "ordinary-matching-opposition-base-voltage-and-effect-assembly",
+        "ordinary-center-appeal-fumble-and-consequence-scoring",
+        "server-owned-immutable-appeal-roll",
+        "same-performer-repeat-policy",
+        "get-ready-same-performer-persistence",
+        "paired-pokemon-shared-pool-spend",
+        "rotation-round-pokemon-and-team-first-spend",
+        "ordinary-score-and-placement-completion",
+        "participant-intervention-simultaneous-and-settlement-no-write-gates"
+      ]
+    },
+    {
+      "id": "trainer-appeal-dice-journal",
+      "path": "shared/contests/dice.ts",
+      "sha256": "9e5265cbc38fe7ae782bff5dd45cfe1a9bdaf9446209eb78d89ea4772032c3e3",
+      "guarantees": [
+        "server-d6-only",
+        "operation-contestant-round-and-purpose-binding",
+        "immutable-reroll-lineage",
+        "bounded-dice-results"
+      ]
+    },
+    {
+      "id": "trainer-controller-and-transaction-authority",
+      "path": "server/useCases/contests.ts",
+      "sha256": "adb3d268bf623ec938dfb7729c201bb0707fe92b9046823c01872dd596d3b362",
+      "guarantees": [
+        "gm-or-snapshotted-profile-controller-only",
+        "cas-before-randomness",
+        "exact-retry-before-randomness",
+        "document-journal-operation-and-realtime-atomicity",
+        "frozen-enrollment-move-authority"
+      ]
+    },
+    {
+      "id": "paired-owner-action-projection",
+      "path": "shared/contests/projections.ts",
+      "sha256": "0055a21ddf93d6e8933766f8bff23f5529a4c59bf5738f81556370a29d7a618c",
+      "guarantees": [
+        "owner-legal-performer-id-list",
+        "singular-current-performer-only-when-unambiguous",
+        "ordinary-scoreboard-and-accepted-appeal-parity",
+        "public-method-and-stage-continuity"
+      ]
+    },
+    {
+      "id": "contest-operation-recovery",
+      "path": "server/storage/contestRepository.ts",
+      "sha256": "bd0d3747a32cc3e453f0cd9e3ddd6c25efcb45b4458e1da5dd908eac83be488b",
+      "guarantees": [
+        "plus-one-revision-cas",
+        "canonical-command-hash-replay",
+        "changed-input-operation-conflict",
+        "strict-corrupt-document-refusal"
+      ]
+    },
+    {
+      "id": "trainer-appeal-operator-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "81ad5f15f8413992a424c0ab9142606c29ddfdb5b104ef2c9f813d14f0624be8",
+      "guarantees": [
+        "documented-real-move-and-weapon-fail-closed-policy",
+        "documented-alternation-scoring-and-shared-spend-authority",
+        "documented-get-ready-performer-scope",
+        "documented-p11-058-p11-059-and-p11-061-gates"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestTrainerParticipantAppealsRuntime.test.ts",
+      "sha256": "baefc70713cc020e5d828d6efb9b90ec0e93b7f7d6d3afc590d65b07dcbaab0d",
+      "scenarioIds": [
+        "real-trainer-move-defined-option",
+        "unknown-and-weapon-move-zero-roll-zero-write-refusal",
+        "trainer-appeal-journal-score-effect-and-exact-retry",
+        "trainer-shared-pokemon-pool-single-spend",
+        "rotation-round-pokemon-and-team-first-spend",
+        "snapshotted-owner-controller-and-owner-legal-performer-projection",
+        "get-ready-same-performer-not-partner",
+        "complete-alternating-score-fumble-and-placement-parity",
+        "forged-sequence-and-forged-option-refusal",
+        "participant-reward-settlement-zero-write-gate"
+      ]
+    },
+    {
+      "path": "tests/shared/contestEngine.test.ts",
+      "sha256": "f9f60f6064ae89984f153dff8891236371a3bf94bdf7b0efad4f5b579a78b038",
+      "scenarioIds": [
+        "ordinary-introduction-performance-and-settlement-baseline",
+        "canonical-matching-opposition-and-effect-scoring-baseline",
+        "journaled-reroll-and-replay-baseline",
+        "supercontest-festival-and-rotation-baseline"
+      ]
+    }
+  ],
+  "acceptance": {
+    "trainerAppealsEnabled": true,
+    "alternatingPerformanceEnabled": true,
+    "simultaneousPerformanceEnabled": false,
+    "realTrainerMoveListRequired": true,
+    "canonicalMoveIdentityRequired": true,
+    "sourceBoundWeaponMoveCount": 12,
+    "weaponMovesContestAvailable": false,
+    "unknownMovesContestAvailable": false,
+    "clientAuthoredRollsAccepted": false,
+    "ordinaryAppealAssemblyAndScoringReused": true,
+    "exactAlternationRequired": true,
+    "getReadyMayBeConsumedByPartner": false,
+    "trainerParallelDicePoolWrites": 0,
+    "rotationTeamPoolSpentFirst": true,
+    "duplicateRollsOnExactRetry": 0,
+    "rollsOnWrongControllerOrStaleAuthority": 0,
+    "trainerParticipantInterventionsEnabled": false,
+    "trainerParticipantRewardSettlementEnabled": false,
+    "nextTicket": "P11-058"
+  }
+}

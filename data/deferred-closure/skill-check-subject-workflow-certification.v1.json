@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-skill-check-subject-workflow-v1",
+  "ticket": "P11-048",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/skill-check-gm-workflow-certification.v1.json",
+    "sha256": "0073124295688829a2c47946d6c3411f540f4ae800e34f8ccd68e8d37fec3988"
+  },
+  "authorities": [
+    {
+      "id": "strict-subject-projection-and-receipt-boundary",
+      "path": "shared/skillChecks/subjectWorkflow.ts",
+      "sha256": "bd3f730ea6d2e78b400acae0133908f89a7dc948e1054b1d9b34adcb03ead786",
+      "guarantees": [
+        "structurally-subject-only-request",
+        "canonical-skill-and-bounded-pool",
+        "visible-contributor-arithmetic",
+        "concealed-dc-state",
+        "own-result-or-explicit-withheld-result",
+        "receipt-current-projection-binding",
+        "unknown-field-and-private-authority-rejection"
+      ]
+    },
+    {
+      "id": "subject-modifier-preview",
+      "path": "server/domain/skillChecks/resolveCheck.ts",
+      "sha256": "b0bc7789864b020c3642656fdb5fb51b2d9a1ae0b87cdb9555ecebae8033dcfe",
+      "guarantees": [
+        "same-exact-sheet-and-provider-resolution-as-roll",
+        "no-dice-generation",
+        "gm-only-contributor-redaction",
+        "private-adjustment-presence-without-value"
+      ]
+    },
+    {
+      "id": "subject-projection-builder",
+      "path": "server/domain/skillChecks/subjectProjection.ts",
+      "sha256": "525a7f28cd9f52f7a414de7cbffc5c19f7d8d83beac7597abced3af209ec4b47",
+      "guarantees": [
+        "own-subject-label-and-skill-only",
+        "aggregate-group-count-only",
+        "dc-concealment-until-accepted",
+        "no-gm-notes-situational-value-journals-or-controller-identities",
+        "explicit-stale-expired-and-terminal-unavailability"
+      ]
+    },
+    {
+      "id": "atomic-subject-response-and-timeout-workflow",
+      "path": "server/useCases/manageSubjectSkillChecks.ts",
+      "sha256": "122002d4150dc50b49a078b7643f59bc59b33897ea2941b562dbcd77d289df07",
+      "guarantees": [
+        "stored-controller-or-gm-authorization",
+        "accept-and-legal-decline-responses",
+        "all-accepted-ready-transition",
+        "cas-and-principal-bound-operation-replay",
+        "exact-replay-without-time-read",
+        "exact-current-skill-revalidation",
+        "server-owned-expiry-command",
+        "durable-declined-and-timed-out-evidence",
+        "document-operation-atomicity"
+      ]
+    },
+    {
+      "id": "subject-read-route",
+      "path": "server/api/skill-checks/subject.get.ts",
+      "sha256": "c8bba51d50bf530f8bd243e742e52ef6be2e82f4aa3d3e1127ea0852af1a28e9",
+      "guarantees": ["authenticated-role", "resolved-player-profile-or-gm-authority", "bounded-query", "no-gm-profile-spoofing"]
+    },
+    {
+      "id": "subject-response-route",
+      "path": "server/api/skill-checks/subject.post.ts",
+      "sha256": "a9990bd3ac0d96d3dab757c31e585436f4295756934edb882aa8996c07738009",
+      "guarantees": ["authenticated-role", "strict-role-specific-envelope", "resolved-player-profile", "writable-campaign-only"]
+    },
+    {
+      "id": "server-expiry-trigger-route",
+      "path": "server/api/skill-checks/settle-expired.post.ts",
+      "sha256": "5be22bc428d54db755f8e55c0f257d594f7982adf4bf0693c5caae190bedb094",
+      "guarantees": ["authenticated-trigger", "zero-client-time-or-command-authority", "writable-campaign-only"]
+    },
+    {
+      "id": "subject-decision-surface",
+      "path": "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+      "sha256": "36c3875e56391096ced778bd97ee57cf8ba0428d5b41d4b392cbc4a8cdec0f71",
+      "guarantees": [
+        "prompted-subject-and-canonical-skill",
+        "visible-modifier-transparency",
+        "private-adjustment-without-value",
+        "accept-and-decline-controls",
+        "no-roll-input",
+        "own-result-or-withheld-presentation",
+        "exact-uncertain-response-retry",
+        "stale-expired-and-blocked-reasons"
+      ]
+    },
+    {
+      "id": "liveplay-decision-integration",
+      "path": "src/pages/play/[encounterId].vue",
+      "sha256": "75ff11e58d7f241993a95f48fa96acb6010f65b0e70b9c7ff854a99098d17d66",
+      "guarantees": [
+        "player-profile-forwarding",
+        "gm-subject-mode",
+        "existing-encounter-decision-priority",
+        "reconnect-command-blocking"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/skillCheckSubjectWorkflow.test.ts",
+      "sha256": "83d28431f022ede10cbc8f3b7bdb59058f8fe704d8298730f943d76db1880677",
+      "scenarioIds": [
+        "controlled-subject-only-projection",
+        "skill-and-visible-modifier-transparency",
+        "private-field-and-forged-projection-rejection",
+        "group-acceptance-to-ready",
+        "exact-response-replay-without-time",
+        "gm-npc-subject-authority",
+        "durable-legal-decline",
+        "unauthorized-stale-expired-and-skill-conflicts",
+        "operation-and-principal-conflicts",
+        "response-transaction-rollback",
+        "server-timeout-after-decline",
+        "timeout-transaction-rollback",
+        "own-accepted-result-and-dc-disclosure"
+      ]
+    },
+    {
+      "path": "tests/server/skillCheckSubjectRoute.test.ts",
+      "sha256": "470af125713777d47dc848c2f5da1e8d85c467455f924de8abde7028b3930857",
+      "scenarioIds": [
+        "resolved-player-profile-read",
+        "gm-subject-read-without-profile-spoofing",
+        "bounded-query-rejection",
+        "strict-player-and-gm-response-envelopes",
+        "forged-dice-and-role-authority-rejection",
+        "authority-free-expiry-trigger"
+      ]
+    },
+    {
+      "path": "tests/components/encounterSubjectSkillChecks.test.ts",
+      "sha256": "a00b9e1b724876b1503dd42df44067ed1e2145a18c97263346eb7724273fd6b4",
+      "scenarioIds": [
+        "subject-prompt-modifier-and-concealed-dc-presentation",
+        "no-roll-input-and-private-field-absence",
+        "opaque-accept-and-exact-retry",
+        "authorized-decline-control",
+        "visible-or-withheld-own-result",
+        "stale-expired-and-blocked-presentation"
+      ]
+    },
+    {
+      "path": "tests/data/completePlayLoopFinishEncounterExperience.test.ts",
+      "sha256": "4d8628399dca501895e2151c65d984d6f39926880058eca892145070e344cf1a",
+      "scenarioIds": [
+        "frozen-finish-encounter-ui-authority-preserved-by-contiguous-successors"
+      ]
+    }
+  ],
+  "privacy": {
+    "gmNotesProjected": false,
+    "situationalModifierValueProjected": false,
+    "controllerProfileIdsProjected": false,
+    "sheetRevisionProjected": false,
+    "otherSubjectIdentitiesProjected": false,
+    "diceJournalsProjected": false,
+    "operationHashesProjected": false,
+    "ownVisibleContributorsProjected": true,
+    "privateGmAdjustmentPresenceOnly": true,
+    "ownAuthorizedResultOnly": true
+  },
+  "acceptance": {
+    "prompted": true,
+    "accepted": true,
+    "declinedWhereCurrentAndPending": true,
+    "timedOut": true,
+    "trainerAndPokemon": true,
+    "playerAndGmSubjectAuthority": true,
+    "modifierTransparency": true,
+    "serverRollOnly": true,
+    "durableReceipts": true,
+    "exactRetry": true,
+    "atomicWrites": true,
+    "roleProjectionExpansionDeferredTo": "P11-049"
+  }
+}

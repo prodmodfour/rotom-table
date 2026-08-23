@@ -31,7 +31,7 @@
     },
     {
       "path": "data/complete-play-loop/equipment-grants.v1.json",
-      "fileSha256": "9e1baaa1a2dd721bf97b9c2d413e0f61590dffdeba52f3fcedf5684b68e7e515"
+      "fileSha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52"
     }
   ],
   "ruleEvidence": {
@@ -175,7 +175,7 @@
     "canonicalId": "Re-Breather",
     "canonicalRecordSha256": "bd89163a1ce43a68c9146d994dca483a128c40055df90179dcf94cdb1dc86f58",
     "equipmentDefinitionSha256": "430c0cfe2cb6a80fec61d1f2bb663cb116dec5b5c8e4c5793725fca9e44ddfdf",
-    "equipmentGrantDefinitionSha256": "767e9688f5f3dd61e2f313ef283a8ad32af5e2f7c5d1a6baa9bebdf2b24ea321",
+    "equipmentGrantDefinitionSha256": "f1d18e99fb1201edac7aaee88aec1d63e84770d8f5250b53c05386a43212d241",
     "actionId": "equipment.re-breather.activate",
     "capabilityId": "Gilled",
     "timing": "standard",

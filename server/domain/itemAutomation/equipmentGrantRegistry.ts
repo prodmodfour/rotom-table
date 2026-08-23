@@ -1,11 +1,12 @@
 import { createHash } from 'node:crypto'
 import grantJson from '~~/data/complete-play-loop/equipment-grants.v1.json'
 import equipmentDefinitionJson from '~~/data/complete-play-loop/equipment-definitions.v1.json'
+import itemActionMatrixJson from '~~/data/deferred-closure/item-action-matrix.v1.json'
 import itemsJson from '~~/data/reference/items.json'
 import abilitiesJson from '~~/data/reference/abilities.json'
 import { stableJsonStringify } from '~~/shared/automation/stableJson'
 import { parseCapabilityLabel } from '~~/shared/capabilityAutomation/catalog'
-import { capabilityWeaponMove } from '~~/shared/capabilityAutomation/weaponMoves'
+import { isNativeCapabilityWeaponMoveName } from '~~/shared/capabilityAutomation/weaponMoves'
 import {
   parseEquipmentGrantDocument,
   type EquipmentGrantDefinitionV1,
@@ -46,6 +47,10 @@ if (document.definitionCount !== expectedIds.length
   || document.definitions.some(definition => !expectedIdSet.has(definition.canonicalItemId))) {
   throw new Error('Reviewed equipment grants do not classify the exact canonical equipment catalog.')
 }
+const reviewedItemActionStates = new Map(itemActionMatrixJson.rows.map(row => [
+  row.actionId,
+  { canonicalItemId: row.canonicalItemId, finalState: row.finalState },
+] as const))
 const abilityIds = new Set(Object.keys(abilitiesJson))
 const definitions = new Map<string, EquipmentGrantDefinitionV1>()
 for (const definition of document.definitions) {
@@ -60,7 +65,7 @@ for (const definition of document.definitions) {
   }
   for (const grant of definition.grants) {
     if (grant.kind === 'move') {
-      const native = capabilityWeaponMove(grant.canonicalId) !== null
+      const native = isNativeCapabilityWeaponMoveName(grant.canonicalId)
       if ((grant.executionStatus === 'native') !== native) {
         throw new Error(`Equipment Move grant ${grant.grantId} has incorrect executable-definition status.`)
       }
@@ -74,10 +79,18 @@ for (const definition of document.definitions) {
     else if (grant.kind === 'ability' && !abilityIds.has(grant.canonicalId)) {
       throw new Error(`Equipment Ability grant ${grant.grantId} is not canonical.`)
     }
+    else if (grant.kind === 'action' && reviewedItemActionStates.has(grant.actionId)) {
+      const reviewed = reviewedItemActionStates.get(grant.actionId)!
+      if (reviewed.canonicalItemId !== definition.canonicalItemId || reviewed.finalState !== grant.finalState) {
+        throw new Error(`Equipment action grant ${grant.grantId} disagrees with reviewed final-state authority.`)
+      }
+      reviewedItemActionStates.delete(grant.actionId)
+    }
   }
   definitions.set(definition.canonicalItemId, definition)
 }
 if (definitions.size !== expectedIds.length) throw new Error('Reviewed equipment grants contain duplicate or missing identities.')
+if (reviewedItemActionStates.size > 0) throw new Error('Reviewed item-action final states are missing equipment grants.')
 
 export const equipmentGrantDocument = (): EquipmentGrantDocumentV1 => document
 export const equipmentGrantDefinitions = (): readonly EquipmentGrantDefinitionV1[] => document.definitions

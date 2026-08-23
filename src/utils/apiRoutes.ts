@@ -71,6 +71,14 @@ export const BREEDING_API_PATHS = {
   items: '/api/breeding/items',
 } as const
 
+export const SKILL_CHECK_API_PATHS = {
+  gm: '/api/skill-checks/gm',
+  subject: '/api/skill-checks/subject',
+  projections: '/api/skill-checks/projections',
+  campaignHistory: '/api/skill-checks/campaign-history',
+  settleExpired: '/api/skill-checks/settle-expired',
+} as const
+
 export const ITEM_API_PATHS = {
   use: '/api/items/use',
   resume: '/api/items/resume',
@@ -81,6 +89,7 @@ export const ITEM_API_PATHS = {
   declareGroupAction: '/api/items/group-actions/declare',
   extendedActions: '/api/items/extended-actions',
   formChanges: '/api/items/form-changes',
+  equipmentActions: '/api/items/equipment-actions',
   exploration: '/api/items/exploration',
   guided: '/api/items/guided',
 } as const

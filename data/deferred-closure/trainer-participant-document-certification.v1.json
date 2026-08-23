@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-document-v1",
+  "ticket": "P11-053",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e",
+    "rowId": "trainer-participant",
+    "completionState": "structured",
+    "structuredSemanticsVersion": 1,
+    "compatibleBaseVariantIds": ["standard", "supercontest", "festival", "rotation"]
+  },
+  "authorities": [
+    {
+      "id": "typed-participant-and-performer-identities",
+      "path": "shared/contests/ids.ts",
+      "sha256": "ddb5768b0f2d812ee952f78209e01a961ca162a3284160773f82150d8773fad5",
+      "guarantees": [
+        "additive-participant-format-identity",
+        "base-variant-identities-remain-unchanged",
+        "strict-participant-format-type-guard"
+      ]
+    },
+    {
+      "id": "source-bound-trainer-participant-catalog",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "d939fe65b467b8a26242a867db9bc266fdc1dd2e5491c30ade69fbd16d548e6a",
+      "guarantees": [
+        "structured-v1-row-validation",
+        "compatible-base-variant-allowlist",
+        "exact-trainer-plus-pokemon-performer-policy",
+        "authoritative-performer-move-list-policy",
+        "missing-contest-identity-reject-policy"
+      ]
+    },
+    {
+      "id": "strict-discriminated-contest-document",
+      "path": "shared/contests/document.ts",
+      "sha256": "c89c7a86a820a7e2b8c1d0492d077657ddb7fdb09221d6a657e773a66c9ee4d8",
+      "guarantees": [
+        "trainer-and-pokemon-discriminated-performer-snapshots",
+        "exact-cross-kind-field-rejection",
+        "one-trainer-per-participant-entry",
+        "exact-contestant-trainer-slug-and-revision-binding",
+        "ordinary-contests-reject-trainer-performers",
+        "rotation-order-references-pokemon-only",
+        "trainer-parallel-dice-pools-must-remain-empty",
+        "schema-v1-pokemon-only-additive-compatibility"
+      ]
+    },
+    {
+      "id": "ordinary-sheet-performer-snapshot-integration",
+      "path": "shared/contests/integrations.ts",
+      "sha256": "678a156154cf8b37b3af484e53600191ce7381e6873d3f58f91ec1fb699ccfb4",
+      "guarantees": [
+        "existing-trainer-sheet-slug-and-revision-only",
+        "authoritative-trainer-movelist-snapshot",
+        "canonical-contest-moves-available",
+        "unknown-created-and-weapon-moves-explicitly-unavailable",
+        "no-trainer-randomness-or-parallel-pool"
+      ]
+    },
+    {
+      "id": "strict-create-command-participant-format",
+      "path": "shared/contests/operations.ts",
+      "sha256": "49abe8bc59702dbafa71bf6cd223873139551e5858e2440a58f8c064591627b7",
+      "guarantees": [
+        "optional-reviewed-participant-format-on-create-only",
+        "unknown-participant-format-rejection",
+        "no-client-authored-performer-snapshot-or-sheet-revision"
+      ]
+    },
+    {
+      "id": "enrollment-and-progression-engine",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "88fca2223ceaca9ce1a2ae290edbe6191697cd8e36b8bcc9e7c844eec2ca61cf",
+      "guarantees": [
+        "duplicate-trainer-and-pokemon-refusal",
+        "pokemon-only-rotation-team-accounting",
+        "trainer-participant-stage-progression-fails-closed",
+        "no-roll-spend-or-revision-on-gated-progression"
+      ]
+    },
+    {
+      "id": "existing-sheet-revision-controller-and-replay-authority",
+      "path": "server/useCases/contests.ts",
+      "sha256": "acbfe2945bcad8e03b40c366ec50f207f85fec8ab4ecdbbb6fb9e46cac38c6ab",
+      "guarantees": [
+        "current-trainer-and-pokemon-sheet-read",
+        "selected-profile-controls-trainer-and-every-pokemon",
+        "gm-controller-reuses-existing-npc-authority",
+        "one-trainer-snapshot-built-from-contestant-trainer",
+        "missing-sheet-profile-or-control-rejected-before-write",
+        "exact-operation-retry-does-not-reenroll-or-reread-sheets"
+      ]
+    },
+    {
+      "id": "paired-format-role-projection",
+      "path": "shared/contests/projections.ts",
+      "sha256": "0e508757c3de98812ace4d14524b1448ef93a1419e950e1476dc5c2a10452e77",
+      "guarantees": [
+        "participant-format-lifecycle-label-is-public",
+        "pokemon-scoreboard-label-remains-stable",
+        "performer-snapshots-remain-gm-or-own-entry-only",
+        "public-projection-omits-exact-sheet-identities"
+      ]
+    },
+    {
+      "id": "unchanged-contest-cas-and-operation-journal",
+      "path": "server/storage/contestRepository.ts",
+      "sha256": "bd0d3747a32cc3e453f0cd9e3ddd6c25efcb45b4458e1da5dd908eac83be488b",
+      "guarantees": [
+        "strict-document-reparse-on-write-and-read",
+        "plus-one-revision-cas",
+        "canonical-command-hash-replay",
+        "operation-conflict-and-corrupt-row-refusal"
+      ]
+    },
+    {
+      "id": "operator-scope-and-handoff-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "bfdf68bca82f24de108955bcaf774f6a50a67ebe06520ba836433f49793b288b",
+      "guarantees": [
+        "documented-additive-base-variant-boundary",
+        "documented-no-parallel-authority-boundary",
+        "documented-p11-054-through-p11-064-handoff",
+        "documented-legacy-read-and-exact-replay-policy"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/shared/contestTrainerParticipantDocument.test.ts",
+      "sha256": "64dca5e4bdbc2050d06c7c080933c43dec9252c34669fd919d8932b6e3502c65",
+      "scenarioIds": [
+        "canonical-compatible-base-variant-bindings",
+        "trainer-snapshot-movelist-and-empty-dice",
+        "strict-composition-revision-and-cross-kind-fields",
+        "rotation-pokemon-only-order",
+        "legacy-pokemon-only-schema-v1-read",
+        "later-mechanics-stage-gate"
+      ]
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantRuntime.test.ts",
+      "sha256": "9a50baa4f5092269f9b3804c6cbc89bbe29a881da7a6020bbe5d065acf003f85",
+      "scenarioIds": [
+        "exact-trainer-pokemon-profile-enrollment",
+        "persistent-role-safe-paired-projections",
+        "exact-retry-after-source-sheet-loss",
+        "changed-input-operation-conflict",
+        "missing-sheet-and-incomplete-controller-rollback",
+        "stage-gate-no-write",
+        "unknown-participant-format-command-rejection"
+      ]
+    }
+  ],
+  "generatedRegression": {
+    "generatorPath": "scripts/generate_contest_variant_fixtures.ts",
+    "generatorSha256": "29a2c253f3eba62780a174be572c86525a3a113010363d627acdf2f32c940188",
+    "fixturePath": "data/contests/variant-matrix.v1.json",
+    "fixtureSha256": "908a7803b9d180c1a3ae5a5271d74026e6f34bb97b02e5ff8f992d39a6992b7a",
+    "ordinaryContestOutcomeDrift": false
+  },
+  "acceptance": {
+    "participantFormatModel": "additive-over-canonical-base-variant",
+    "trainerPerformersPerEntry": 1,
+    "ordinaryPokemonPerformersPerEntry": 1,
+    "rotationPokemonPerformersMinimum": 3,
+    "rotationPokemonPerformersMaximum": 5,
+    "parallelTrainerSheetAuthority": false,
+    "parallelTrainerControllerAuthority": false,
+    "parallelTrainerDiceAuthority": false,
+    "clientAuthoredSheetRevisionAccepted": false,
+    "exactRetryCanDuplicateEnrollment": false,
+    "trainerAppealExecutionEnabled": false,
+    "nextTicket": "P11-054"
+  }
+}

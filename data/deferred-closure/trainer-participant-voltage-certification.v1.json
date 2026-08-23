@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-voltage-v1",
+  "ticket": "P11-058",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-appeal-certification.v1.json",
+    "sha256": "bd371839641a6dd486f99cc77b1cdc7746899423174628c40a59c6c4f9971296"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e",
+    "rowId": "trainer-participant",
+    "methodIds": ["simultaneous", "alternating"],
+    "simultaneousVoltageScope": "per-performer",
+    "alternatingVoltageScope": "shared-entry",
+    "simultaneousAdjacentScope": "both-performers-of-adjacent-entry"
+  },
+  "authorities": [
+    {
+      "id": "paired-voltage-document-authority",
+      "path": "shared/contests/document.ts",
+      "sha256": "88025542d49a9663e9c1920657b5d9ecc188b08e299d065090b02f654e295585",
+      "guarantees": [
+        "simultaneous-exact-performer-voltage-map",
+        "simultaneous-zero-shared-compatibility-voltage",
+        "alternating-empty-map-and-shared-entry-voltage",
+        "two-distinct-performers-per-simultaneous-chart-cursor",
+        "one-open-first-member-appeal-maximum",
+        "performer-bound-voltage-consequence-receipts",
+        "actor-and-adjacent-pair-history-reconciliation",
+        "get-ready-multiplier-source-reconciliation",
+        "cross-performer-target-and-timing-validation",
+        "ordinary-schema-v1-null-and-empty-compatibility"
+      ]
+    },
+    {
+      "id": "cross-performer-command-contract",
+      "path": "shared/contests/operations.ts",
+      "sha256": "55829d57429ac2df761f1bf7ce12e99de33cd22577ac3cea93c2e089eeaf7c08",
+      "guarantees": [
+        "bounded-optional-partner-effect-target",
+        "canonical-command-hash-inclusion",
+        "no-client-voltage-or-consequence-input",
+        "unchanged-ordinary-declaration-compatibility"
+      ]
+    },
+    {
+      "id": "reviewed-pair-scheduler",
+      "path": "shared/contests/participantMethods.ts",
+      "sha256": "6af6a39d7385fb607bfa9efb0eafef8695d417771c8838a718d173575caa86c9",
+      "guarantees": [
+        "two-member-simultaneous-turn",
+        "controller-chosen-first-member",
+        "exact-partner-second-member",
+        "one-member-alternating-turn",
+        "typed-voltage-and-adjacency-scopes"
+      ]
+    },
+    {
+      "id": "paired-voltage-performance-engine",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "769de5093ba78bc1cdb054e9e5cad1ddc04a6daa2140baf0931d765d5206568e",
+      "guarantees": [
+        "simultaneous-cursor-advances-after-second-member-only",
+        "exact-actor-start-voltage-assembly",
+        "separate-actor-voltage-mutation",
+        "both-active-members-of-each-adjacent-entry",
+        "rotation-active-pokemon-only",
+        "entry-level-center-position-and-score",
+        "explicit-get-ready-partner-transfer-once",
+        "untargeted-get-ready-same-performer-retention",
+        "explicit-attention-grabber-partner-recipient",
+        "capped-journaled-voltage-debits-and-credits",
+        "ambiguous-simultaneous-voltage-correction-refusal"
+      ]
+    },
+    {
+      "id": "canonical-appeal-assembly",
+      "path": "shared/contests/appealAssembly.ts",
+      "sha256": "0d8a48f00621c37a2cf4faaa457b4bb936317c0f89976509deedc4b90720763d",
+      "guarantees": [
+        "exact-starting-voltage-dice",
+        "both-adjacent-member-voltage-vector-input",
+        "double-time-catching-up-and-good-show-derived-base",
+        "bounded-base-multiplier",
+        "unchanged-type-and-intervention-assembly"
+      ]
+    },
+    {
+      "id": "paired-owner-action-projection",
+      "path": "shared/contests/projections.ts",
+      "sha256": "fb742d3af4b0d5838c85577fc34006dae227f2fbd17af135338991746bf946cd",
+      "guarantees": [
+        "both-members-legal-before-first-simultaneous-appeal",
+        "only-partner-legal-after-first-appeal",
+        "single-entry-position-and-adjacency",
+        "rotation-lock-required-before-pair-offer"
+      ]
+    },
+    {
+      "id": "transaction-and-recovery-authority",
+      "path": "server/useCases/contests.ts",
+      "sha256": "adb3d268bf623ec938dfb7729c201bb0707fe92b9046823c01872dd596d3b362",
+      "guarantees": [
+        "controller-authorization-before-randomness",
+        "revision-cas-before-randomness",
+        "exact-retry-before-randomness",
+        "document-journal-operation-and-realtime-atomicity"
+      ]
+    },
+    {
+      "id": "contest-operation-repository",
+      "path": "server/storage/contestRepository.ts",
+      "sha256": "bd0d3747a32cc3e453f0cd9e3ddd6c25efcb45b4458e1da5dd908eac83be488b",
+      "guarantees": [
+        "plus-one-revision-cas",
+        "changed-target-operation-conflict",
+        "strict-corrupt-voltage-row-refusal",
+        "reconnect-from-persisted-pair-state"
+      ]
+    },
+    {
+      "id": "paired-voltage-operator-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "c3c1d0670a9002cab94b455d3094e0d068fabecc0aaa1c8a590c22f314695806",
+      "guarantees": [
+        "documented-method-specific-voltage-authority",
+        "documented-entry-position-and-paired-adjacency",
+        "documented-cross-performer-effect-choice",
+        "documented-rotation-and-correction-fail-closed-policy",
+        "documented-p11-059-handoff"
+      ]
+    },
+    {
+      "id": "deterministic-ordinary-variant-schema-successor",
+      "path": "data/contests/variant-matrix.v1.json",
+      "sha256": "1bcbd9e3115eda829728dde67044b54a5dc59b0f2b3178ab351b664b76a14a07",
+      "guarantees": [
+        "eighteen-seeded-ordinary-scenarios-preserved",
+        "current-canonical-catalog-source-hash",
+        "new-appeal-receipt-fields-in-evidence-hashes",
+        "unchanged-letters-scores-voltage-and-placement-outcomes"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestTrainerParticipantVoltageRuntime.test.ts",
+      "sha256": "49ea7bc7b868dd73274afe9cc4dfd2c26ad6816339d74ca07a7ff44932ef7443",
+      "scenarioIds": [
+        "independent-trainer-and-pokemon-voltage",
+        "first-member-no-advance-and-exact-partner-second",
+        "exact-retry-no-reroll",
+        "strict-map-key-and-history-reconciliation",
+        "owner-two-then-one-legal-performer-projection",
+        "explicit-get-ready-same-turn-partner-once",
+        "explicit-attention-grabber-partner-credit",
+        "rotation-active-pair-only-adjacency",
+        "eighteen-appeal-nine-position-completion",
+        "ambiguous-voltage-correction-zero-write",
+        "center-and-adjacent-pair-effect-receipts",
+        "both-adjacent-voltage-values-in-double-time-assembly",
+        "forged-target-multiplier-and-map-refusal"
+      ]
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantAppealsRuntime.test.ts",
+      "sha256": "baefc70713cc020e5d828d6efb9b90ec0e93b7f7d6d3afc590d65b07dcbaab0d",
+      "scenarioIds": [
+        "alternating-shared-entry-voltage-baseline",
+        "alternating-exact-performer-sequence",
+        "alternating-entry-level-score-and-placement",
+        "rotation-paired-pokemon-spend-baseline"
+      ]
+    }
+  ],
+  "acceptance": {
+    "alternatingVoltageScope": "shared-entry",
+    "simultaneousVoltageScope": "per-performer",
+    "simultaneousAppealsPerEntryTurn": 2,
+    "simultaneousEntryPositionsPerChartCursor": 1,
+    "simultaneousSharedCompatibilityVoltage": 0,
+    "adjacentSimultaneousMembersAffectedPerEntry": 2,
+    "rotationInactiveMembersAffected": 0,
+    "controllerChoosesFirstMember": true,
+    "exactPartnerRequiredSecond": true,
+    "getReadyPartnerTransferExplicit": true,
+    "getReadyDuplicateMultiplierApplications": 0,
+    "attentionGrabberPartnerTransferExplicit": true,
+    "clientAuthoredVoltageAccepted": false,
+    "duplicateRollsOnExactRetry": 0,
+    "ambiguousVoltageCorrectionsAccepted": false,
+    "trainerParticipantInterventionsEnabled": false,
+    "trainerParticipantRewardSettlementEnabled": false,
+    "nextTicket": "P11-059"
+  }
+}

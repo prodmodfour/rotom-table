@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/campaign-continuation-dashboard.v1.json'
 import { CAMPAIGN_CONTINUATION_SCHEMA_VERSION } from '../../shared/campaignContinuation'
 import { CAMPAIGN_CONTINUATION_LIMIT } from '../../server/useCases/loadCampaignContinuation'
 import { isLocalUiArtifactPath, readOptionalLocalUiArtifact } from '../helpers/localUiArtifacts'
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 const sha256 = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex')
 
@@ -92,10 +92,14 @@ describe('P8-090 campaign continuation dashboard evidence', () => {
   it('pins every runtime, test, document, and local UI artifact reference', () => {
     for (const source of Object.values(contract.sources)) {
       expect(source.sha256, source.path).toMatch(/^[a-f0-9]{64}$/)
-      const bytes = isLocalUiArtifactPath(source.path)
-        ? readOptionalLocalUiArtifact(process.cwd(), source.path)
-        : readFileSync(source.path)
-      if (bytes) expect(sha256(bytes), source.path).toBe(source.sha256)
+      if (isLocalUiArtifactPath(source.path)) {
+        const bytes = readOptionalLocalUiArtifact(process.cwd(), source.path)
+        if (bytes) expect(sha256(bytes), source.path).toBe(source.sha256)
+      }
+      else {
+        expect(acceptedSuccessorHead(source.path, source.sha256), source.path)
+          .toBe(repositoryFileSha256(source.path))
+      }
     }
   })
 })

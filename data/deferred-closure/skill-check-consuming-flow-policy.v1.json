@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "policyId": "generic-skill-check-consuming-flows-v1",
+  "ticket": "P11-050",
+  "status": "reviewed-and-implemented",
+  "runtimeProseParsing": false,
+  "inventoryReview": {
+    "path": "data/deferred-closure/closure-inventory.v1.json",
+    "reviewedRows": [
+      "runtime.generic-skill-check"
+    ],
+    "reviewedHandoffBoundaries": [
+      "fishing-hook-content-tooling"
+    ],
+    "finding": "The fishing-rod guided request is the only registered closure flow whose bounded settlement calls for a separately requested canonical Trainer or Pokémon Skill Check. No other closure-inventory row declares a generic Skill Check integration dependency."
+  },
+  "flows": [
+    {
+      "flowId": "equipped-fishing-rod-guided-settlement",
+      "disposition": "integrated-generic-check",
+      "canonicalScope": [
+        "equipment.fishing.old-rod",
+        "equipment.fishing.good-rod",
+        "equipment.fishing.super-rod"
+      ],
+      "authorityBindings": [
+        {
+          "path": "data/deferred-closure/skill-check-contract.v1.json",
+          "sha256": "af2dc778b80df4f5ad967168b1ca55f86bb71e008db2d236f768c2df3ade094c"
+        },
+        {
+          "path": "shared/itemAutomation/guidedAdjudication.ts",
+          "sha256": "4115b5684592314cf9147e7e8d0d76fdaff8b3e251a2ab6f4f7405bba1bfab65"
+        },
+        {
+          "path": "server/useCases/manageItemGuidedAdjudication.ts",
+          "sha256": "564d3524009819e993b106634c51aad4f8c3a30110eb4e931507014c677b0757"
+        },
+        {
+          "path": "src/components/campaign/CampaignGuidedFishingDecision.vue",
+          "sha256": "08ca28c453556fb29a8461db2149a7603fef45cc03842540ab5f6a852ba345b1"
+        }
+      ],
+      "integrationPolicy": {
+        "selectionAuthority": "authenticated-gm-projection-only",
+        "requiredCheckState": "accepted",
+        "requiredMode": "single",
+        "requiredComparison": "dc",
+        "requiredSubjectCount": 1,
+        "subjectBinding": "exact-fishing-actor-kind-and-sheet-slug",
+        "skillBinding": "exact-command-and-check-canonical-skill-id",
+        "declarationBoundary": "check-created-at-or-after-guided-request",
+        "reusePolicy": "one-accepted-check-cannot-settle-another-fishing-request-for-the-actor",
+        "hookPolicy": "accepted check is evidence; bounded hook or no-hook remains private GM campaign-content authority",
+        "clientDiceOrTotals": "forbidden",
+        "publicCheckIdentity": "forbidden"
+      },
+      "reason": "Rod fishing already separates authoritative custody, water geometry, and the 15-minute boundary from a bounded GM hook decision. A separately accepted generic check can therefore be linked without splitting a mutation that must remain atomic with its roll."
+    },
+    {
+      "flowId": "first-aid-kit-medicine-healing",
+      "disposition": "retain-bespoke-atomic-check",
+      "canonicalScope": [
+        "First Aid Kit"
+      ],
+      "authorityBindings": [
+        {
+          "path": "data/complete-play-loop/specs.v1.json",
+          "sha256": "b03d2706fa0d666b33262e215b80a0bc33ac617d07a62e5aca7319db396918ed"
+        },
+        {
+          "path": "server/domain/itemAutomation/healing.ts",
+          "sha256": "16f4c903b1f0235d69bda0ecd582e79f48ac7816cce2c50be3f3177febabe265"
+        },
+        {
+          "path": "server/useCases/manageItemExtendedAction.ts",
+          "sha256": "c702601553ed4bf20314d488cb6acfa125b536255463b36091c71be6f77b23d2"
+        }
+      ],
+      "reason": "The Medicine Education d6 pool directly computes healing inside one Extended Action transaction that also drains AP, removes one selected condition, revalidates actor/target revisions, and journals item evidence. Replacing it with a separately accepted document would split spend, healing, condition, and roll authority and permit stale reuse."
+    },
+    {
+      "flowId": "move-embedded-skill-and-opposed-checks",
+      "disposition": "retain-bespoke-atomic-check",
+      "canonicalScope": [
+        "move-resolution"
+      ],
+      "authorityBindings": [
+        {
+          "path": "server/domain/moveAutomation/checks.ts",
+          "sha256": "b108468c177239a1058cc3f3efbeb8b959036a86cefd6c9d19ab41431edfca06"
+        }
+      ],
+      "reason": "Move checks are a phase of one authoritative combat resolution with target, range, action economy, effect, and opposed-participant read sets. Their journals cannot be safely detached or replayed as a campaign-generic request."
+    },
+    {
+      "flowId": "contest-stage-dice",
+      "disposition": "retain-bespoke-document-check",
+      "canonicalScope": [
+        "contest-introduction",
+        "contest-appeal",
+        "contest-intervention"
+      ],
+      "authorityBindings": [
+        {
+          "path": "shared/contests/dice.ts",
+          "sha256": "9e5265cbc38fe7ae782bff5dd45cfe1a9bdaf9446209eb78d89ea4772032c3e3"
+        }
+      ],
+      "reason": "Contest dice are stage- and turn-bound ContestDocument evidence with voltage, position, appeal order, and intervention semantics. They are not independent DC or opposed campaign checks and must remain in the Contest transaction and replay journal."
+    },
+    {
+      "flowId": "breeding-specific-check-ledgers",
+      "disposition": "retain-bespoke-document-check",
+      "canonicalScope": [
+        "breeding-compatibility",
+        "breeding-hatch-and-inheritance"
+      ],
+      "authorityBindings": [
+        {
+          "path": "shared/breeding/ledgers.ts",
+          "sha256": "8425b98856d2115cbf86f9db3eeca4cd5ce8c1451d391aeefb4139c936af7411"
+        }
+      ],
+      "reason": "Breeding records bind rule-specific formulas, parent/egg revisions, inheritance, facilities, and campaign-clock transitions. Those checks are evidence inside the breeding ledger rather than GM-requested generic skill rolls."
+    },
+    {
+      "flowId": "route-lure-and-dowsing-exploration-rolls",
+      "disposition": "retain-bespoke-activity-roll",
+      "canonicalScope": [
+        "Fishing Lure",
+        "Dowsing Rod"
+      ],
+      "authorityBindings": [
+        {
+          "path": "data/complete-play-loop/specs.v1.json",
+          "sha256": "b03d2706fa0d666b33262e215b80a0bc33ac617d07a62e5aca7319db396918ed"
+        },
+        {
+          "path": "server/domain/itemAutomation/exploration.ts",
+          "sha256": "83e0123d2ed83e738ceccebd96331d38b6dde2427880ea88f5d6cb29ea801d3f"
+        },
+        {
+          "path": "server/useCases/executeItemExplorationOperation.ts",
+          "sha256": "db6b0f9a93c8eaf871de4c468f6ac17eab0823a78977d0d12fa83468d4b2c377"
+        }
+      ],
+      "reason": "These are reviewed item activity rolls with fixed die/interval/retry and source-custody policies, not canonical Trainer/Pokémon Skill pools against a GM-authored DC. Converting them would silently change their mechanics."
+    }
+  ],
+  "privacy": {
+    "fishingCheckIdStoredOnlyInPrivateTerminalCommand": true,
+    "fishingSyntheticIntegrationNonceRemainsPrivate": true,
+    "ownerProjectionIncludesCheckId": false,
+    "publicProjectionIncludesCheckId": false,
+    "gmMayInspectAcceptedCheckTotalAndOutcome": true,
+    "hookSpeciesLevelAndNoteRemainPrivate": true
+  }
+}

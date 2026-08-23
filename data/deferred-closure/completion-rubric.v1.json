@@ -1,0 +1,993 @@
+{
+  "schemaVersion": 1,
+  "rubricId": "deferred-mechanics-closure-completion-v1",
+  "ticket": "P11-008",
+  "status": "reviewed",
+  "inventory": {
+    "path": "data/deferred-closure/closure-inventory.v1.json",
+    "inventoryId": "deferred-mechanics-closure-v1",
+    "rowCount": 29
+  },
+  "completionStates": [
+    "native",
+    "guided",
+    "passive",
+    "reference-only",
+    "not-applicable"
+  ],
+  "temporaryActivationStates": [
+    "definition-missing",
+    "deferred",
+    "reference-only-deferral",
+    "absent",
+    "stale-pointer",
+    "stale-deferred-language",
+    "structured"
+  ],
+  "forbiddenFinalTokens": [
+    "definition-missing",
+    "deferred",
+    "blocked",
+    "reference-only-deferral",
+    "visible-with-reason",
+    "prose-inferred",
+    "silently-absent"
+  ],
+  "auditedSurfaces": [
+    "data/complete-play-loop/equipment-grants.v1.json",
+    "data/complete-play-loop/equipment-contributions.v1.json",
+    "data/complete-play-loop/item-catalog-cohorts.v1.json",
+    "data/deferred-closure/item-action-matrix.v1.json",
+    "data/reference/contests.json",
+    "data/deferred-closure/closure-inventory.v1.json"
+  ],
+  "progressPolicy": {
+    "activationDebtMayRemainOnlyWhenRegisteredInInventory": true,
+    "newDebtFailsImmediately": true,
+    "requireCompleteFlagEnforcesFinalStates": true
+  },
+  "evidenceRegistry": [
+    {
+      "id": "p11.weapon-class-authority",
+      "type": "test",
+      "path": "tests/data/deferredClosureWeaponClasses.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.ranged-runtime-certification",
+      "type": "test",
+      "path": "tests/server/deferredClosureRangedWeapons.test.ts",
+      "status": "planned",
+      "ownerTicket": "P11-022"
+    },
+    {
+      "id": "p11.weapon-move-authority",
+      "type": "test",
+      "path": "tests/data/deferredClosureWeaponMoves.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.weapon-move-runtime-certification",
+      "type": "test",
+      "path": "tests/server/deferredClosureWeaponMovesRuntime.test.ts",
+      "status": "planned",
+      "ownerTicket": "P11-030"
+    },
+    {
+      "id": "p11.item-action-runtime-certification",
+      "type": "test",
+      "path": "tests/data/deferredClosureItemActionRecovery.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.zero-deferred-item-proof",
+      "type": "test",
+      "path": "tests/data/deferredClosureItemProof.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.contest-variant-authority",
+      "type": "test",
+      "path": "tests/data/deferredClosureContestVariantAuthority.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.contest-variant-runtime-certification",
+      "type": "test",
+      "path": "tests/server/deferredClosureContestVariants.test.ts",
+      "status": "planned",
+      "ownerTicket": "P11-080"
+    },
+    {
+      "id": "p11.skill-check-contract",
+      "type": "test",
+      "path": "tests/shared/skillCheckContract.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.skill-check-server-authority",
+      "type": "test",
+      "path": "tests/data/deferredClosureSkillCheckAuthority.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.skill-check-gm-workflow",
+      "type": "test",
+      "path": "tests/data/deferredClosureSkillCheckGmWorkflow.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.skill-check-subject-workflow",
+      "type": "test",
+      "path": "tests/data/deferredClosureSkillCheckSubjectWorkflow.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.skill-check-role-projections",
+      "type": "test",
+      "path": "tests/data/deferredClosureSkillCheckProjections.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.skill-check-consuming-flows",
+      "type": "test",
+      "path": "tests/data/deferredClosureSkillCheckConsumingFlowCertification.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.skill-check-accessibility-liveplay",
+      "type": "test",
+      "path": "tests/data/deferredClosureSkillCheckAccessibility.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.skill-check-runtime-certification",
+      "type": "test",
+      "path": "tests/data/deferredClosureSkillCheckRecovery.test.ts",
+      "status": "passing"
+    },
+    {
+      "id": "p11.hygiene-closure",
+      "type": "test",
+      "path": "tests/data/deferredClosureInventory.test.ts",
+      "status": "passing"
+    }
+  ],
+  "rows": [
+    {
+      "rowId": "weapon-profile.weighted-rope",
+      "kind": "weapon-profile",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-022",
+      "owningTickets": [
+        "P11-004",
+        "P11-011",
+        "P11-012",
+        "P11-013",
+        "P11-014",
+        "P11-015",
+        "P11-021",
+        "P11-022"
+      ],
+      "authorityPaths": [
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "server/domain/itemAutomation/equipmentGrants.ts",
+        "server/domain/encounterPresentation/buildProjection.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-class-authority",
+        "p11.ranged-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-profile.slingshot",
+      "kind": "weapon-profile",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-022",
+      "owningTickets": [
+        "P11-004",
+        "P11-011",
+        "P11-012",
+        "P11-013",
+        "P11-014",
+        "P11-016",
+        "P11-021",
+        "P11-022"
+      ],
+      "authorityPaths": [
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "server/domain/itemAutomation/equipmentGrants.ts",
+        "server/domain/encounterPresentation/buildProjection.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-class-authority",
+        "p11.ranged-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-profile.throwing-hammers",
+      "kind": "weapon-profile",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-022",
+      "owningTickets": [
+        "P11-004",
+        "P11-011",
+        "P11-012",
+        "P11-013",
+        "P11-014",
+        "P11-017",
+        "P11-021",
+        "P11-022"
+      ],
+      "authorityPaths": [
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "server/domain/itemAutomation/equipmentGrants.ts",
+        "server/domain/encounterPresentation/buildProjection.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-class-authority",
+        "p11.ranged-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-profile.hunting-bow",
+      "kind": "weapon-profile",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-022",
+      "owningTickets": [
+        "P11-004",
+        "P11-011",
+        "P11-012",
+        "P11-013",
+        "P11-014",
+        "P11-018",
+        "P11-021",
+        "P11-022"
+      ],
+      "authorityPaths": [
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "server/domain/itemAutomation/equipmentGrants.ts",
+        "server/domain/encounterPresentation/buildProjection.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-class-authority",
+        "p11.ranged-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-profile.super-lucky-throwing-stars",
+      "kind": "weapon-profile",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-022",
+      "owningTickets": [
+        "P11-004",
+        "P11-011",
+        "P11-012",
+        "P11-013",
+        "P11-014",
+        "P11-019",
+        "P11-021",
+        "P11-022"
+      ],
+      "authorityPaths": [
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "server/domain/itemAutomation/equipmentGrants.ts",
+        "server/domain/encounterPresentation/buildProjection.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-class-authority",
+        "p11.ranged-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-profile.twin-needled-bow",
+      "kind": "weapon-profile",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-022",
+      "owningTickets": [
+        "P11-004",
+        "P11-011",
+        "P11-012",
+        "P11-013",
+        "P11-014",
+        "P11-020",
+        "P11-021",
+        "P11-022"
+      ],
+      "authorityPaths": [
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "server/domain/itemAutomation/equipmentGrants.ts",
+        "server/domain/encounterPresentation/buildProjection.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-class-authority",
+        "p11.ranged-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-move.bash",
+      "kind": "weapon-move",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-030",
+      "owningTickets": [
+        "P11-005",
+        "P11-023",
+        "P11-030"
+      ],
+      "authorityPaths": [
+        "shared/capabilityAutomation/weaponMoves.ts",
+        "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
+        "data/complete-play-loop/equipment-grants.v1.json"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-move-authority",
+        "p11.weapon-move-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-move.pierce",
+      "kind": "weapon-move",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-030",
+      "owningTickets": [
+        "P11-005",
+        "P11-024",
+        "P11-030"
+      ],
+      "authorityPaths": [
+        "shared/capabilityAutomation/weaponMoves.ts",
+        "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
+        "data/complete-play-loop/equipment-grants.v1.json"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-move-authority",
+        "p11.weapon-move-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-move.gouge",
+      "kind": "weapon-move",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-030",
+      "owningTickets": [
+        "P11-005",
+        "P11-025",
+        "P11-030"
+      ],
+      "authorityPaths": [
+        "shared/capabilityAutomation/weaponMoves.ts",
+        "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
+        "data/complete-play-loop/equipment-grants.v1.json"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-move-authority",
+        "p11.weapon-move-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-move.titanic-slam",
+      "kind": "weapon-move",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-030",
+      "owningTickets": [
+        "P11-005",
+        "P11-026",
+        "P11-030"
+      ],
+      "authorityPaths": [
+        "shared/capabilityAutomation/weaponMoves.ts",
+        "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
+        "data/complete-play-loop/equipment-grants.v1.json"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-move-authority",
+        "p11.weapon-move-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-move.bullseye",
+      "kind": "weapon-move",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-030",
+      "owningTickets": [
+        "P11-005",
+        "P11-027",
+        "P11-030"
+      ],
+      "authorityPaths": [
+        "shared/capabilityAutomation/weaponMoves.ts",
+        "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
+        "data/complete-play-loop/equipment-grants.v1.json"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-move-authority",
+        "p11.weapon-move-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-move.deadly-strike",
+      "kind": "weapon-move",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-030",
+      "owningTickets": [
+        "P11-005",
+        "P11-028",
+        "P11-030"
+      ],
+      "authorityPaths": [
+        "shared/capabilityAutomation/weaponMoves.ts",
+        "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
+        "data/complete-play-loop/equipment-grants.v1.json"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-move-authority",
+        "p11.weapon-move-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "weapon-move.triple-threat",
+      "kind": "weapon-move",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-030",
+      "owningTickets": [
+        "P11-005",
+        "P11-029",
+        "P11-030"
+      ],
+      "authorityPaths": [
+        "shared/capabilityAutomation/weaponMoves.ts",
+        "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
+        "data/complete-play-loop/equipment-grants.v1.json"
+      ],
+      "requiredEvidenceIds": [
+        "p11.weapon-move-authority",
+        "p11.weapon-move-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "item-action.old-rod.fish",
+      "kind": "item-action",
+      "targetState": "guided",
+      "allowedFinalStates": [
+        "guided",
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-038",
+        "P11-039",
+        "P11-050",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "item-action.good-rod.fish",
+      "kind": "item-action",
+      "targetState": "guided",
+      "allowedFinalStates": [
+        "guided",
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-038",
+        "P11-039",
+        "P11-050",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "item-action.super-rod.fish",
+      "kind": "item-action",
+      "targetState": "guided",
+      "allowedFinalStates": [
+        "guided",
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-038",
+        "P11-039",
+        "P11-050",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "item-action.glue-cannon.attack",
+      "kind": "item-action",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-034",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "item-action.hand-net.attack",
+      "kind": "item-action",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-035",
+        "P11-037",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "item-action.weighted-nets.throw",
+      "kind": "item-action",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-036",
+        "P11-037",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "item-action.weighted-nets.pull",
+      "kind": "item-action",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-036",
+        "P11-037",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "item-action.light-shield.ready",
+      "kind": "item-action",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-032",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "item-action.heavy-shield.ready",
+      "kind": "item-action",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-032",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "item-action.snag-machine.convert",
+      "kind": "item-action",
+      "targetState": "guided",
+      "allowedFinalStates": [
+        "guided",
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-040",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "item-action.shock-collar.activate",
+      "kind": "item-action",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-044",
+      "owningTickets": [
+        "P11-031",
+        "P11-033",
+        "P11-041",
+        "P11-042",
+        "P11-043",
+        "P11-044"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py",
+        "server/domain/itemAutomation/eligibility.ts",
+        "server/domain/itemAutomation/encounterOffers.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.item-action-runtime-certification",
+        "p11.zero-deferred-item-proof"
+      ]
+    },
+    {
+      "rowId": "contest-variant.trainer-participant",
+      "kind": "contest-variant",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-064",
+      "owningTickets": [
+        "P11-006",
+        "P11-053",
+        "P11-054",
+        "P11-055",
+        "P11-056",
+        "P11-057",
+        "P11-058",
+        "P11-059",
+        "P11-060",
+        "P11-061",
+        "P11-062",
+        "P11-063",
+        "P11-064"
+      ],
+      "authorityPaths": [
+        "data/reference/contests.json",
+        "server/domain/contests/engine.ts",
+        "shared/contests/ids.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.contest-variant-authority",
+        "p11.contest-variant-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "contest-variant.battle",
+      "kind": "contest-variant",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-080",
+      "owningTickets": [
+        "P11-006",
+        "P11-065",
+        "P11-066",
+        "P11-067",
+        "P11-068",
+        "P11-069",
+        "P11-070",
+        "P11-071",
+        "P11-072",
+        "P11-073",
+        "P11-074",
+        "P11-075",
+        "P11-076",
+        "P11-077",
+        "P11-078",
+        "P11-079",
+        "P11-080"
+      ],
+      "authorityPaths": [
+        "data/reference/contests.json",
+        "server/domain/contests/engine.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.contest-variant-authority",
+        "p11.contest-variant-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "runtime.generic-skill-check",
+      "kind": "runtime-surface",
+      "targetState": "native",
+      "allowedFinalStates": [
+        "native"
+      ],
+      "closureTicket": "P11-052",
+      "owningTickets": [
+        "P11-007",
+        "P11-045",
+        "P11-046",
+        "P11-047",
+        "P11-048",
+        "P11-049",
+        "P11-050",
+        "P11-051",
+        "P11-052"
+      ],
+      "authorityPaths": [
+        "data/deferred-closure/skill-check-dc-presets.v1.json",
+        "data/deferred-closure/skill-check-gm-workflow-certification.v1.json",
+        "data/deferred-closure/skill-check-subject-workflow-certification.v1.json",
+        "data/deferred-closure/skill-check-projection-certification.v1.json",
+        "data/deferred-closure/skill-check-consuming-flow-policy.v1.json",
+        "data/deferred-closure/skill-check-consuming-flow-certification.v1.json",
+        "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+        "data/deferred-closure/skill-check-recovery-certification.v1.json",
+        "shared/skillChecks/contract.ts",
+        "shared/skillChecks/persistence.ts",
+        "shared/skillChecks/difficulty.ts",
+        "shared/skillChecks/gmWorkflow.ts",
+        "shared/skillChecks/subjectWorkflow.ts",
+        "shared/skillChecks/projections.ts",
+        "shared/skillChecks/campaignHistory.ts",
+        "server/domain/skillChecks/resolveCheck.ts",
+        "server/domain/skillChecks/subjectProjection.ts",
+        "server/domain/skillChecks/roleProjections.ts",
+        "server/domain/campaignAttention/skillCheckDetector.ts",
+        "server/storage/skillCheckRepository.ts",
+        "server/useCases/resolveSkillCheck.ts",
+        "server/useCases/manageGmSkillChecks.ts",
+        "server/useCases/manageSubjectSkillChecks.ts",
+        "server/useCases/loadSkillCheckProjections.ts",
+        "server/useCases/loadCampaignSkillCheckHistory.ts",
+        "server/useCases/loadCampaignAttention.ts",
+        "server/useCases/manageItemGuidedAdjudication.ts",
+        "server/api/skill-checks/gm.get.ts",
+        "server/api/skill-checks/gm.post.ts",
+        "server/api/skill-checks/subject.get.ts",
+        "server/api/skill-checks/subject.post.ts",
+        "server/api/skill-checks/settle-expired.post.ts",
+        "server/api/skill-checks/projections.get.ts",
+        "server/api/skill-checks/campaign-history.get.ts",
+        "src/components/encounter/workspace/EncounterGmSkillChecks.vue",
+        "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+        "src/components/encounter/workspace/EncounterSkillCheckPublicFeed.vue",
+        "src/components/campaign/CampaignGuidedFishingDecision.vue",
+        "src/components/campaign/CampaignSkillCheckHistoryCard.vue",
+        "docs/skill-check-recovery-and-campaign-history.md",
+        "src/types/trainerSheet.ts"
+      ],
+      "requiredEvidenceIds": [
+        "p11.skill-check-contract",
+        "p11.skill-check-server-authority",
+        "p11.skill-check-gm-workflow",
+        "p11.skill-check-subject-workflow",
+        "p11.skill-check-role-projections",
+        "p11.skill-check-consuming-flows",
+        "p11.skill-check-accessibility-liveplay",
+        "p11.skill-check-runtime-certification"
+      ]
+    },
+    {
+      "rowId": "registry.equipment-grants-deferred-ticket-pointers",
+      "kind": "hygiene",
+      "targetState": "re-homed",
+      "allowedFinalStates": [
+        "re-homed"
+      ],
+      "closureTicket": "P11-002",
+      "owningTickets": [
+        "P11-002"
+      ],
+      "authorityPaths": [
+        "data/complete-play-loop/equipment-grants.v1.json",
+        "scripts/generate_complete_play_loop_equipment_grants.py"
+      ],
+      "requiredEvidenceIds": [
+        "p11.hygiene-closure"
+      ]
+    },
+    {
+      "rowId": "documentation.live-play-authority-trigger-registrations",
+      "kind": "hygiene",
+      "targetState": "verified-or-retired",
+      "allowedFinalStates": [
+        "verified-or-retired"
+      ],
+      "closureTicket": "P11-002",
+      "owningTickets": [
+        "P11-002"
+      ],
+      "authorityPaths": [
+        "docs/live-play-authority.md"
+      ],
+      "requiredEvidenceIds": [
+        "p11.hygiene-closure"
+      ]
+    }
+  ],
+  "finalAcceptance": {
+    "ticket": "P11-089",
+    "acceptanceRecordPath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
+    "requiredCommand": "python3 scripts/check_deferred_closure.py --require-complete",
+    "requiredCounts": {
+      "rows": 29,
+      "nonFinal": 0,
+      "unregisteredDebt": 0,
+      "blocked": 0
+    }
+  }
+}

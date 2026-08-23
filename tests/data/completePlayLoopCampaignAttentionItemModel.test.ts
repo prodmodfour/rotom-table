@@ -1,7 +1,6 @@
-import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/campaign-attention-item-model.v1.json'
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 import {
   CAMPAIGN_ATTENTION_AUDIENCES,
   CAMPAIGN_ATTENTION_ITEM_SCHEMA_VERSION,
@@ -9,8 +8,6 @@ import {
   CAMPAIGN_ATTENTION_RESOLUTION_STATES,
   CAMPAIGN_ATTENTION_URGENCIES,
 } from '../../shared/campaignAttention/model'
-
-const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
 
 describe('P8-083 campaign attention-item evidence', () => {
   it('pins the strict authority-linked schema and bounded lifecycle', () => {
@@ -72,7 +69,8 @@ describe('P8-083 campaign attention-item evidence', () => {
   it('pins every model, provider, source, test, and operator document byte-for-byte', () => {
     for (const source of Object.values(contract.sources)) {
       expect(source.sha256, source.path).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(source.path), source.path).toBe(source.sha256)
+      expect(acceptedSuccessorHead(source.path, source.sha256), source.path)
+        .toBe(repositoryFileSha256(source.path))
     }
   })
 })

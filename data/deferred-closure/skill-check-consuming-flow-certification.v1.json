@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-skill-check-consuming-flows-v1",
+  "ticket": "P11-050",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/skill-check-projection-certification.v1.json",
+    "sha256": "464d702976dbe28eced0db7d34295cd49afa6571f0631fdc87f988a03b599bd0"
+  },
+  "authorities": [
+    {
+      "id": "reviewed-consuming-flow-policy",
+      "path": "data/deferred-closure/skill-check-consuming-flow-policy.v1.json",
+      "sha256": "b07c7949cdc4ee3df139476e9ebf808c7d4b9f98fb6e9ec3036e648123baba8c",
+      "guarantees": [
+        "fishing-only-registered-generic-check-consumer",
+        "all-three-rods-integrated",
+        "five-bespoke-families-explicitly-retained-with-reasons",
+        "source-hash-bound-decisions"
+      ]
+    },
+    {
+      "id": "private-fishing-check-link-contract",
+      "path": "shared/itemAutomation/guidedAdjudication.ts",
+      "sha256": "4115b5684592314cf9147e7e8d0d76fdaff8b3e251a2ab6f4f7405bba1bfab65",
+      "guarantees": [
+        "canonical-generic-check-id-on-new-intents-and-terminal-commands",
+        "legacy-terminal-reopen-without-hash-rewrite",
+        "gm-only-exact-actor-binding",
+        "strict-unknown-field-rejection"
+      ]
+    },
+    {
+      "id": "gm-only-fishing-resolution-projection",
+      "path": "server/domain/itemAutomation/guidedAdjudication.ts",
+      "sha256": "5e6e9069b9b85705d8cc33c0e50076481eedbf09af42b7283881521a77be2462",
+      "guarantees": [
+        "exact-actor-kind-and-sheet-slug-only-for-gm",
+        "owner-and-public-resolution-redaction",
+        "canonical-skill-and-hook-options"
+      ]
+    },
+    {
+      "id": "authoritative-fishing-check-settlement",
+      "path": "server/useCases/manageItemGuidedAdjudication.ts",
+      "sha256": "564d3524009819e993b106634c51aad4f8c3a30110eb4e931507014c677b0757",
+      "guarantees": [
+        "shared-database-skill-check-read",
+        "accepted-single-dc-exact-actor-and-skill-binding",
+        "post-declaration-check-boundary",
+        "one-check-one-fishing-settlement",
+        "existing-rod-custody-water-time-and-hook-revalidation",
+        "atomic-private-terminal-evidence"
+      ]
+    },
+    {
+      "id": "gm-accepted-check-selector",
+      "path": "src/components/campaign/CampaignGuidedFishingDecision.vue",
+      "sha256": "08ca28c453556fb29a8461db2149a7603fef45cc03842540ab5f6a852ba345b1",
+      "guarantees": [
+        "authenticated-gm-accepted-projection-only",
+        "matching-single-subject-actor-filter",
+        "server-result-label-and-refresh",
+        "no-manual-id-roll-total-or-modifier-input",
+        "hook-controls-disabled-until-linked"
+      ]
+    },
+    {
+      "id": "bounded-fishing-intent-client",
+      "path": "src/composables/items/useItemGuidedAdjudication.ts",
+      "sha256": "13df1489e708361c31ba011a0883a0d709d78ec39fb379e0195b37ae3bccd762",
+      "guarantees": [
+        "selected-canonical-check-id-only",
+        "existing-uncertain-command-exact-retry",
+        "no-private-integration-nonce-from-client"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/deferredClosureFishingContract.test.ts",
+      "sha256": "f8bc6045b18736611e63864ddef696c755262361f96e6ba723798a1cd59bd4b8",
+      "scenarioIds": [
+        "all-three-rods-accepted-generic-check-link",
+        "missing-and-unavailable-check-rejection",
+        "pending-check-rejection",
+        "wrong-skill-rejection",
+        "predating-check-rejection",
+        "one-check-one-fishing-settlement",
+        "private-check-hook-and-note-projection",
+        "exact-replay-with-linked-check",
+        "terminal-rollback-with-linked-check",
+        "legacy-integration-nonce-still-bound"
+      ]
+    },
+    {
+      "path": "tests/components/campaignGuidedItemAdjudication.test.ts",
+      "sha256": "bd26162b618cec4c757a354d430e13e34a694c8dacf88226ac40802fc809ae06",
+      "scenarioIds": [
+        "accepted-matching-check-selector",
+        "hook-disabled-before-link",
+        "server-total-and-outcome-label",
+        "selected-check-intent-without-integration-nonce"
+      ]
+    },
+    {
+      "path": "tests/data/deferredClosureSkillCheckConsumingFlows.test.ts",
+      "sha256": "443105e25926f8cb6a8afddbb891ac98b1f3e77e151a96d5f41009a36865255d",
+      "scenarioIds": [
+        "source-bound-integrated-and-retained-flow-matrix",
+        "three-rod-integration-policy",
+        "closure-review-and-private-terminal-boundary"
+      ]
+    },
+    {
+      "path": ".pi/artifacts/ui-mockups/fishing-generic-skill-check/v001.png",
+      "sha256": "7b4573f9e8617f3af593a8127668616460d2a411e2945d28b32469a8aec1ac17",
+      "scenarioIds": [
+        "reviewed-fishing-check-link-target-state"
+      ]
+    }
+  ],
+  "retainedBespokeFlows": [
+    "first-aid-kit-medicine-healing",
+    "move-embedded-skill-and-opposed-checks",
+    "contest-stage-dice",
+    "breeding-specific-check-ledgers",
+    "route-lure-and-dowsing-exploration-rolls"
+  ],
+  "privacy": {
+    "checkIdInOwnerOrPublicGuidedProjection": false,
+    "checkTotalOrOutcomeInOwnerOrPublicGuidedProjection": false,
+    "hookSpeciesLevelOrNoteInOwnerOrPublicProjection": false,
+    "exactActorSheetSlugOutsideGmResolution": false,
+    "acceptedCheckVisibleToGmSelector": true,
+    "privateTerminalCommandBindsCheckId": true
+  },
+  "acceptance": {
+    "oldRod": true,
+    "goodRod": true,
+    "superRod": true,
+    "acceptedGenericCheckRequired": true,
+    "exactActorSkillAndDeclarationBinding": true,
+    "oneUseLink": true,
+    "existingBespokeTransactionsPreserved": true,
+    "noNewDeferredFlow": true,
+    "remainingAccessibilityTicket": "P11-051",
+    "remainingRecoveryAndHistoryTicket": "P11-052"
+  }
+}

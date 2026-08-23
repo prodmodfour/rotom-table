@@ -1,12 +1,16 @@
 import contestsJson from '../../data/reference/contests.json'
 import {
   CONTEST_EFFECT_IDS,
+  CONTEST_PARTICIPANT_METHOD_IDS,
   CONTEST_STAT_IDS,
   CONTEST_VARIANT_IDS,
   isContestEffectId,
+  isContestParticipantMethodId,
   isContestStatId,
+  isContestVariantId,
   type ContestEffectId,
   type ContestIntroductionSkillId,
+  type ContestParticipantMethodId,
   type ContestStatId,
   type ContestVariantId,
 } from './ids'
@@ -22,6 +26,53 @@ export interface CanonicalContestStat {
   readonly introductionSkillLabel: string
   readonly alliedStatIds: readonly ContestStatId[]
   readonly opposedStatIds: readonly ContestStatId[]
+}
+
+export interface CanonicalTrainerParticipantSimultaneousMethod {
+  readonly id: 'simultaneous'
+  readonly appealsPerEntryPerRound: 2
+  readonly appealOrderPolicy: 'controller-chooses-trainer-or-pokemon-first'
+  readonly voltageScope: 'per-performer'
+  readonly adjacentEffectScope: 'both-performers-of-adjacent-entry'
+  readonly crossPerformerEffectPolicy: readonly ['get-ready-may-apply-to-partner-same-round', 'attention-grabber-may-transfer-between-pair']
+}
+
+export interface CanonicalTrainerParticipantAlternatingMethod {
+  readonly id: 'alternating'
+  readonly appealsPerEntryPerRound: 1
+  readonly appealOrderPolicy: 'trainer-and-pokemon-alternate'
+  readonly voltageScope: 'shared-entry'
+  readonly adjacentEffectScope: 'shared-entry'
+  readonly crossPerformerEffectPolicy: readonly []
+}
+
+export type CanonicalTrainerParticipantMethod = CanonicalTrainerParticipantSimultaneousMethod | CanonicalTrainerParticipantAlternatingMethod
+
+export interface CanonicalTrainerParticipantVariant {
+  readonly id: 'trainer-participant'
+  readonly label: string
+  readonly completionState: 'structured' | 'native'
+  readonly structuredSemanticsVersion: 1
+  readonly compatibleBaseVariantIds: readonly ContestVariantId[]
+  readonly contestantMinimum: 3
+  readonly contestantMaximum: 5
+  readonly performerPolicy: {
+    readonly performersPerEntry: readonly ['trainer', 'pokemon']
+    readonly trainerMayAppeal: true
+    readonly moveAuthority: 'authoritative-performer-move-list'
+    readonly missingContestIdentityPolicy: 'reject'
+  }
+  readonly methods: readonly [CanonicalTrainerParticipantSimultaneousMethod, CanonicalTrainerParticipantAlternatingMethod]
+  readonly sharedContestDicePool: {
+    readonly scope: 'trainer-pokemon-entry'
+    readonly depletionScope: 'contest'
+    readonly spendAuthority: 'active-performer'
+    readonly singleSpendRequired: true
+  }
+  readonly featurePolicy: {
+    readonly coordinatorMayTarget: readonly ['trainer', 'pokemon']
+    readonly similarTrainerFeaturesMayTarget: readonly ['trainer', 'pokemon']
+  }
 }
 
 export interface CanonicalContestEffect {
@@ -157,6 +208,69 @@ const validateCatalog = (value: unknown): CanonicalContestCatalog => {
 }
 
 export const contestCatalog = validateCatalog(contestsJson)
+
+const trainerParticipantRow = contestCatalog.variants.find(row => row.id === 'trainer-participant') as Record<string, unknown> | undefined
+const trainerParticipantPolicy = trainerParticipantRow?.performerPolicy as Record<string, unknown> | undefined
+const trainerParticipantDicePool = trainerParticipantRow?.sharedContestDicePool as Record<string, unknown> | undefined
+const trainerParticipantFeaturePolicy = trainerParticipantRow?.featurePolicy as Record<string, unknown> | undefined
+const trainerParticipantMethods = trainerParticipantRow?.methods as Record<string, unknown>[] | undefined
+const simultaneousMethod = trainerParticipantMethods?.find(row => row.id === 'simultaneous')
+const alternatingMethod = trainerParticipantMethods?.find(row => row.id === 'alternating')
+const exactMethodFields = (row: Record<string, unknown> | undefined): boolean => Boolean(row && Object.keys(row).sort().join(',') === ['id','appealsPerEntryPerRound','appealOrderPolicy','voltageScope','adjacentEffectScope','crossPerformerEffectPolicy'].sort().join(','))
+const compatibleTrainerParticipantVariants = trainerParticipantRow?.compatibleBaseVariantIds
+if (!trainerParticipantRow
+  || !trainerParticipantPolicy
+  || trainerParticipantRow.completionState !== 'structured'
+  || trainerParticipantRow.structuredSemanticsVersion !== 1
+  || trainerParticipantRow.contestantMinimum !== 3
+  || trainerParticipantRow.contestantMaximum !== 5
+  || !Array.isArray(compatibleTrainerParticipantVariants)
+  || compatibleTrainerParticipantVariants.length !== CONTEST_VARIANT_IDS.length
+  || new Set(compatibleTrainerParticipantVariants).size !== compatibleTrainerParticipantVariants.length
+  || compatibleTrainerParticipantVariants.some(id => !isContestVariantId(id))
+  || !CONTEST_VARIANT_IDS.every(id => compatibleTrainerParticipantVariants.includes(id))
+  || !Array.isArray(trainerParticipantPolicy.performersPerEntry)
+  || trainerParticipantPolicy.performersPerEntry.join(',') !== 'trainer,pokemon'
+  || trainerParticipantPolicy.trainerMayAppeal !== true
+  || trainerParticipantPolicy.moveAuthority !== 'authoritative-performer-move-list'
+  || trainerParticipantPolicy.missingContestIdentityPolicy !== 'reject'
+  || !Array.isArray(trainerParticipantMethods)
+  || trainerParticipantMethods.length !== CONTEST_PARTICIPANT_METHOD_IDS.length
+  || new Set(trainerParticipantMethods.map(row => row.id)).size !== trainerParticipantMethods.length
+  || trainerParticipantMethods.some(row => !isContestParticipantMethodId(row.id))
+  || !exactMethodFields(simultaneousMethod)
+  || simultaneousMethod?.appealsPerEntryPerRound !== 2
+  || simultaneousMethod?.appealOrderPolicy !== 'controller-chooses-trainer-or-pokemon-first'
+  || simultaneousMethod?.voltageScope !== 'per-performer'
+  || simultaneousMethod?.adjacentEffectScope !== 'both-performers-of-adjacent-entry'
+  || !Array.isArray(simultaneousMethod?.crossPerformerEffectPolicy)
+  || (simultaneousMethod?.crossPerformerEffectPolicy as unknown[] | undefined)?.join(',') !== 'get-ready-may-apply-to-partner-same-round,attention-grabber-may-transfer-between-pair'
+  || !exactMethodFields(alternatingMethod)
+  || alternatingMethod?.appealsPerEntryPerRound !== 1
+  || alternatingMethod?.appealOrderPolicy !== 'trainer-and-pokemon-alternate'
+  || alternatingMethod?.voltageScope !== 'shared-entry'
+  || alternatingMethod?.adjacentEffectScope !== 'shared-entry'
+  || !Array.isArray(alternatingMethod?.crossPerformerEffectPolicy)
+  || (alternatingMethod?.crossPerformerEffectPolicy as unknown[] | undefined)?.length !== 0
+  || !trainerParticipantDicePool
+  || trainerParticipantDicePool.scope !== 'trainer-pokemon-entry'
+  || trainerParticipantDicePool.depletionScope !== 'contest'
+  || trainerParticipantDicePool.spendAuthority !== 'active-performer'
+  || trainerParticipantDicePool.singleSpendRequired !== true
+  || !trainerParticipantFeaturePolicy
+  || !Array.isArray(trainerParticipantFeaturePolicy.coordinatorMayTarget)
+  || trainerParticipantFeaturePolicy.coordinatorMayTarget.join(',') !== 'trainer,pokemon'
+  || !Array.isArray(trainerParticipantFeaturePolicy.similarTrainerFeaturesMayTarget)
+  || trainerParticipantFeaturePolicy.similarTrainerFeaturesMayTarget.join(',') !== 'trainer,pokemon') {
+  fail('trainer-participant structured authority drift')
+}
+
+/** Source-bound setup authority. Runtime finality remains independently gated until P11-064. */
+export const trainerParticipantContestVariant = Object.freeze(trainerParticipantRow) as unknown as CanonicalTrainerParticipantVariant
+export const trainerParticipantMethodById = new Map<ContestParticipantMethodId, CanonicalTrainerParticipantMethod>(trainerParticipantContestVariant.methods.map(method => [method.id, method]))
+export const contestBaseVariantAllowsTrainerParticipants = (variantId: ContestVariantId): boolean =>
+  trainerParticipantContestVariant.compatibleBaseVariantIds.includes(variantId)
+
 export const contestStatById = new Map<ContestStatId, CanonicalContestStat>(contestCatalog.contestStats.map(row => [row.id, row]))
 export const contestEffectById = new Map<ContestEffectId, CanonicalContestEffect>(contestCatalog.contestEffects.map(row => [row.id, row]))
 

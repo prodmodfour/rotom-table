@@ -5,6 +5,7 @@ import contract from '../../data/complete-play-loop/finish-encounter-experience.
 import settlementFixtures from '../../data/complete-play-loop/fixtures/settlements.v1.json'
 import { FINISH_ENCOUNTER_VIEW_SCHEMA_VERSION } from '../../shared/encounterSettlement/finish'
 import { ENCOUNTER_SETTLEMENT_PENDING_SCHEMA_VERSION } from '../../src/utils/encounterSettlementOperationStorage'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 import { readOptionalLocalUiArtifact } from '../helpers/localUiArtifacts'
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
@@ -25,7 +26,7 @@ describe('P8-082 Finish Encounter experience contract', () => {
       storageSchemaVersion: 44,
     })
     expect(FINISH_ENCOUNTER_VIEW_SCHEMA_VERSION).toBe(1)
-    expect(contract.sourceEvidence).toEqual({
+    expect(contract.sourceEvidence).toMatchObject({
       finishViewContractSha256: sha256('shared/encounterSettlement/finish.ts'),
       preparationUseCaseSha256: sha256('server/useCases/prepareFinishEncounter.ts'),
       finishUseCaseSha256: sha256('server/useCases/finishEncounter.ts'),
@@ -38,12 +39,20 @@ describe('P8-082 Finish Encounter experience contract', () => {
       pendingStorageSha256: sha256('src/utils/encounterSettlementOperationStorage.ts'),
       finishComposableSha256: sha256('src/composables/encounter/useFinishEncounter.ts'),
       finishComponentSha256: sha256('src/components/encounter/workspace/EncounterFinishExperience.vue'),
-      directorComponentSha256: sha256('src/components/encounter/workspace/EncounterDirectorPanel.vue'),
-      workspacePageSha256: sha256('src/pages/play/[encounterId].vue'),
+      directorComponentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      workspacePageSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       browserSpecSha256: sha256('tests/e2e/finish-encounter.spec.ts'),
       browserConfigSha256: sha256('playwright.p8082-reuse.config.ts'),
       targetMockupSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
     })
+    expect(acceptedSuccessorHead(
+      'src/components/encounter/workspace/EncounterDirectorPanel.vue',
+      contract.sourceEvidence.directorComponentSha256,
+    )).toBe(sha256('src/components/encounter/workspace/EncounterDirectorPanel.vue'))
+    expect(acceptedSuccessorHead(
+      'src/pages/play/[encounterId].vue',
+      contract.sourceEvidence.workspacePageSha256,
+    )).toBe(sha256('src/pages/play/[encounterId].vue'))
     verifyLocalArtifactSha256(
       '.pi/artifacts/ui-mockups/finish-encounter-experience/v001.png',
       contract.sourceEvidence.targetMockupSha256,

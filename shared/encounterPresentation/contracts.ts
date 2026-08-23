@@ -106,7 +106,7 @@ export interface EncounterActionIntentDescriptor {
 }
 
 export interface EncounterActionSelectionOption {
-  readonly kind: 'object' | 'device' | 'keystone' | 'egg' | 'trainer' | 'participant'
+  readonly kind: 'object' | 'device' | 'keystone' | 'egg' | 'trainer' | 'participant' | 'cell'
   /** Exact targeting/choice requirement this option satisfies. */
   readonly requirementId?: string
   readonly value: string

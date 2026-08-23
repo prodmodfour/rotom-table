@@ -62,6 +62,8 @@ const attentionLabels: Readonly<Record<CampaignAttentionReason, string>> = Objec
   'medical-review': 'Medical attention',
   'recovery-review': 'Recovery review',
   'equipment-review': 'Equipment review',
+  'skill-check-response': 'Skill Check response',
+  'skill-check-resolution': 'Skill Check GM review',
   'continuation-review': 'Campaign follow-up',
 })
 

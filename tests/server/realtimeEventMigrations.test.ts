@@ -93,6 +93,7 @@ const expectedTableNames = [
   'encounter_settlement_operations',
   'encounter_settlements',
   'encounter_ux_metric_aggregates',
+  'equipment_action_operations',
   'equipment_operations',
   'group_inventories',
   'inventory_action_operations',
@@ -124,6 +125,8 @@ const expectedTableNames = [
   'sheets',
   'shop_checkout_ops',
   'shop_tables',
+  'skill_check_operations',
+  'skill_checks',
   'trainer_species_acquisition_source_operations',
   'trainer_species_acquisitions',
 ]
@@ -135,16 +138,16 @@ const documentStoreTableColumns = [
   { name: 'updated_at', type: 'INTEGER', notNull: 1, primaryKeyPosition: 0 },
 ]
 
-const expectedMigrationVersions = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
-  15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
-] as const
+const expectedMigrationVersions = Array.from(
+  { length: LATEST_STORAGE_SCHEMA_VERSION },
+  (_, index) => index + 1,
+)
 const expectedMigrationsAfter = (version: number): number[] =>
   expectedMigrationVersions.filter(candidate => candidate > version)
 
 describe('SQLite storage migrations', () => {
   it('keeps migration versions contiguous through the declared latest schema', () => {
-    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(46)
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(50)
     expect(STORAGE_MIGRATIONS.map((migration) => migration.version))
       .toEqual(expectedMigrationVersions)
     expect(STORAGE_MIGRATIONS.at(-1)?.version).toBe(LATEST_STORAGE_SCHEMA_VERSION)
@@ -302,9 +305,52 @@ describe('SQLite storage migrations', () => {
     expect(connection.prepare(`
       SELECT request_kind FROM item_guided_requests ORDER BY request_id DESC LIMIT 1
     `).get()).toEqual({ request_kind: 'campaign-tool-adjudication' })
-    expect((connection.prepare(`
+    insert.run(
+      `item-guided:v1:${'3'.repeat(32)}`, 'fishing-adjudication', 'Old Rod',
+      'e'.repeat(64), 'profile:ash', 'ash', 'ash', 'equipment-fishing-declaration', 'f'.repeat(64),
+    )
+    insert.run(
+      `item-guided:v1:${'4'.repeat(32)}`, 'snag-conversion-adjudication', 'Snag Machine',
+      '1'.repeat(64), 'profile:ash', 'ash', 'ash', 'equipment-snag-declaration', '2'.repeat(64),
+    )
+    const guidedSql = (connection.prepare(`
       SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'item_guided_requests'
-    `).get() as { sql: string }).sql).toContain("'campaign-tool-adjudication'")
+    `).get() as { sql: string }).sql
+    expect(guidedSql).toContain("'campaign-tool-adjudication'")
+    expect(guidedSql).toContain("'fishing-adjudication'")
+    expect(guidedSql).toContain("'snag-conversion-adjudication'")
+  })
+
+  it('rebuilds v48 guided requests at v49 without rewriting fishing evidence and admits Snag conversion', () => {
+    const connection = openMemoryConnection()
+    connection.exec('PRAGMA foreign_keys = OFF')
+    applyMigrationsThroughVersion(connection, 48)
+    connection.exec('PRAGMA foreign_keys = ON')
+    const insert = connection.prepare(`
+      INSERT INTO item_guided_requests (
+        request_id, request_kind, status, revision, canonical_item_id,
+        canonical_definition_sha256, declaration_principal_key, actor_kind, actor_slug,
+        target_kind, target_slug, item_operation_id, declaration_operation_id,
+        declaration_command_sha256, declaration_command_json, authority_json,
+        created_at, updated_at
+      ) VALUES (?, ?, 'pending', 0, ?, ?, 'role:gm', 'trainer', 'ash',
+        'trainer', 'ash', NULL, ?, ?, '{}', '{}', 10, 10)
+    `)
+    const fishingId = `item-guided:v1:${'5'.repeat(32)}`
+    insert.run(fishingId, 'fishing-adjudication', 'Old Rod', 'a'.repeat(64), 'fishing-declaration-v48', 'b'.repeat(64))
+    const before = connection.prepare('SELECT * FROM item_guided_requests WHERE request_id = ?').get(fishingId)
+
+    applySingleMigrationVersion(connection, 49)
+
+    expect(getStorageSchemaVersion(connection)).toBe(49)
+    expect(connection.prepare('SELECT * FROM item_guided_requests WHERE request_id = ?').get(fishingId)).toEqual(before)
+    insert.run(
+      `item-guided:v1:${'6'.repeat(32)}`, 'snag-conversion-adjudication', 'Snag Machine',
+      'c'.repeat(64), 'snag-declaration-v49', 'd'.repeat(64),
+    )
+    expect(connection.prepare(`
+      SELECT request_kind FROM item_guided_requests WHERE request_id = ?
+    `).get(`item-guided:v1:${'6'.repeat(32)}`)).toEqual({ request_kind: 'snag-conversion-adjudication' })
   })
 
   it('upgrades v29 item rows with pending-decision and immutable resume evidence without rewriting history', () => {

@@ -24,6 +24,7 @@ export const CAMPAIGN_ATTENTION_INVALIDATION_CAUSES = [
   'item-operation',
   'equipment-operation',
   'breeding-operation',
+  'skill-check-operation',
 ] as const
 export type CampaignAttentionInvalidationCause = typeof CAMPAIGN_ATTENTION_INVALIDATION_CAUSES[number]
 

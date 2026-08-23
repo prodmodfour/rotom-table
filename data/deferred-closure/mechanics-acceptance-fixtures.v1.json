@@ -1,0 +1,1354 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "deferred-closure-mechanics-acceptance-v1",
+  "ticket": "P11-009",
+  "status": "reviewed",
+  "runtimeProseParsing": false,
+  "sourceAuthority": {
+    "path": "data/deferred-closure/source-authority.v1.json",
+    "gearDocumentSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+    "itemsCatalogSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
+  },
+  "determinism": {
+    "randomAlgorithm": "fixture-ordered-faces",
+    "serverOwned": true,
+    "clock": "fixture-campaign-minute",
+    "idPolicy": "fixture-stable-v1"
+  },
+  "reviewedFixturePolicies": {
+    "statusAttackRange": "Conservative source-bound app policy: Hand Net is melee (1m); thrown nets and Glue Cannon use the reviewed short-range 4m band. Runtime may not infer range from prose.",
+    "fishingAttemptTime": "Uses the app-owned Exploration Items 15-minute route-lure interval; the GM selects one canonical skill when requesting the integrated generic check.",
+    "fractionRounding": "Exact one-sixth HP loss uses floor for non-divisible maxima and never rounds below 1 HP."
+  },
+  "counts": {
+    "weaponProfiles": 6,
+    "weaponMoves": 7,
+    "itemActions": 11,
+    "total": 24
+  },
+  "weaponProfiles": [
+    {
+      "fixtureId": "weapon-profile-weighted-rope",
+      "kind": "weapon-profile",
+      "seed": 11009,
+      "source": {
+        "canonicalItemId": "Weighted Rope",
+        "canonicalRecordSha256": "ab7e21588efe79f3361bf1fdbf0e43070c167477043f9a5cea338fe0df450fc4",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "trainer-1",
+        "combatRank": 4,
+        "physicalAttack": 10,
+        "equipmentCustody": "active-hash-current",
+        "handsAvailable": 1
+      },
+      "target": {
+        "kind": "pokemon",
+        "placementId": "target-1",
+        "distanceMeters": 2,
+        "physicalDefense": 5,
+        "evasion": 0,
+        "lineOfSight": true
+      },
+      "declaration": {
+        "baseAccuracyCheck": 4,
+        "baseDamageBase": 4,
+        "ammunitionUnits": 0
+      },
+      "expected": {
+        "legal": true,
+        "weaponClass": "short-range",
+        "rangeMinimumMeters": 0,
+        "rangeMaximumMeters": 4,
+        "effectiveAccuracyCheck": 4,
+        "effectiveDamageBase": 4,
+        "damageFormula": "1d8+6",
+        "damageRollFaces": [
+          1
+        ],
+        "damageAfterDefense": 12,
+        "handsRequired": 1,
+        "ammunitionConsumed": 0,
+        "recoveryRequired": false,
+        "receiptKinds": [
+          "weapon-declaration",
+          "accuracy",
+          "damage",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.distanceMeters": 5
+        },
+        "validationCode": "weapon.target-out-of-range"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "expectedLegal": false,
+        "validationCode": "weapon.ranged-pokemon-ineligible"
+      }
+    },
+    {
+      "fixtureId": "weapon-profile-slingshot",
+      "kind": "weapon-profile",
+      "seed": 11010,
+      "source": {
+        "canonicalItemId": "Slingshot",
+        "canonicalRecordSha256": "df9b35c6b10d84a236a98b526e862018612fb0d8b6ec3afd4258c507a4f98e61",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "trainer-2",
+        "combatRank": 4,
+        "physicalAttack": 10,
+        "equipmentCustody": "active-hash-current",
+        "handsAvailable": 2
+      },
+      "target": {
+        "kind": "pokemon",
+        "placementId": "target-2",
+        "distanceMeters": 8,
+        "physicalDefense": 5,
+        "evasion": 0,
+        "lineOfSight": true
+      },
+      "declaration": {
+        "baseAccuracyCheck": 4,
+        "baseDamageBase": 4,
+        "ammunitionUnits": 0
+      },
+      "expected": {
+        "legal": true,
+        "weaponClass": "long-range",
+        "rangeMinimumMeters": 4,
+        "rangeMaximumMeters": 12,
+        "effectiveAccuracyCheck": 5,
+        "effectiveDamageBase": 5,
+        "damageFormula": "1d8+8",
+        "damageRollFaces": [
+          1
+        ],
+        "damageAfterDefense": 14,
+        "handsRequired": 2,
+        "ammunitionConsumed": 0,
+        "recoveryRequired": false,
+        "receiptKinds": [
+          "weapon-declaration",
+          "accuracy",
+          "damage",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.distanceMeters": 13
+        },
+        "validationCode": "weapon.target-out-of-range"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "expectedLegal": false,
+        "validationCode": "weapon.ranged-pokemon-ineligible"
+      }
+    },
+    {
+      "fixtureId": "weapon-profile-throwing-hammers",
+      "kind": "weapon-profile",
+      "seed": 11011,
+      "source": {
+        "canonicalItemId": "Throwing Hammers",
+        "canonicalRecordSha256": "aeb5e26662fe2d9f567985703a749d9440c1bfdfab662d277a3d563942287135",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "trainer-3",
+        "combatRank": 4,
+        "physicalAttack": 10,
+        "equipmentCustody": "active-hash-current",
+        "handsAvailable": 1
+      },
+      "target": {
+        "kind": "pokemon",
+        "placementId": "target-3",
+        "distanceMeters": 2,
+        "physicalDefense": 5,
+        "evasion": 0,
+        "lineOfSight": true
+      },
+      "declaration": {
+        "baseAccuracyCheck": 4,
+        "baseDamageBase": 4,
+        "ammunitionUnits": 0
+      },
+      "expected": {
+        "legal": true,
+        "weaponClass": "short-range",
+        "rangeMinimumMeters": 0,
+        "rangeMaximumMeters": 4,
+        "effectiveAccuracyCheck": 4,
+        "effectiveDamageBase": 4,
+        "damageFormula": "1d8+6",
+        "damageRollFaces": [
+          1
+        ],
+        "damageAfterDefense": 12,
+        "handsRequired": 1,
+        "ammunitionConsumed": 0,
+        "recoveryRequired": false,
+        "receiptKinds": [
+          "weapon-declaration",
+          "accuracy",
+          "damage",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.distanceMeters": 5
+        },
+        "validationCode": "weapon.target-out-of-range"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "expectedLegal": false,
+        "validationCode": "weapon.ranged-pokemon-ineligible"
+      }
+    },
+    {
+      "fixtureId": "weapon-profile-hunting-bow",
+      "kind": "weapon-profile",
+      "seed": 11012,
+      "source": {
+        "canonicalItemId": "Hunting Bow",
+        "canonicalRecordSha256": "320526c83a714ee1259de012f23e9677061bb0a69ba6c6a73dafb4f2783dc8a9",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "trainer-4",
+        "combatRank": 4,
+        "physicalAttack": 10,
+        "equipmentCustody": "active-hash-current",
+        "handsAvailable": 2
+      },
+      "target": {
+        "kind": "pokemon",
+        "placementId": "target-4",
+        "distanceMeters": 8,
+        "physicalDefense": 5,
+        "evasion": 0,
+        "lineOfSight": true
+      },
+      "declaration": {
+        "baseAccuracyCheck": 4,
+        "baseDamageBase": 4,
+        "ammunitionUnits": 0
+      },
+      "expected": {
+        "legal": true,
+        "weaponClass": "long-range",
+        "rangeMinimumMeters": 4,
+        "rangeMaximumMeters": 12,
+        "effectiveAccuracyCheck": 5,
+        "effectiveDamageBase": 5,
+        "damageFormula": "1d8+8",
+        "damageRollFaces": [
+          1
+        ],
+        "damageAfterDefense": 14,
+        "handsRequired": 2,
+        "ammunitionConsumed": 0,
+        "recoveryRequired": false,
+        "receiptKinds": [
+          "weapon-declaration",
+          "accuracy",
+          "damage",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.distanceMeters": 13
+        },
+        "validationCode": "weapon.target-out-of-range"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "expectedLegal": false,
+        "validationCode": "weapon.ranged-pokemon-ineligible"
+      }
+    },
+    {
+      "fixtureId": "weapon-profile-super-lucky-throwing-stars",
+      "kind": "weapon-profile",
+      "seed": 11013,
+      "source": {
+        "canonicalItemId": "Super Lucky Throwing Stars",
+        "canonicalRecordSha256": "a8089e5384500e64e63cb0876de85521eabe104c2bd3f93a879b52e1a6861245",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "trainer-5",
+        "combatRank": 4,
+        "physicalAttack": 10,
+        "equipmentCustody": "active-hash-current",
+        "handsAvailable": 1
+      },
+      "target": {
+        "kind": "pokemon",
+        "placementId": "target-5",
+        "distanceMeters": 2,
+        "physicalDefense": 5,
+        "evasion": 0,
+        "lineOfSight": true
+      },
+      "declaration": {
+        "baseAccuracyCheck": 4,
+        "baseDamageBase": 4,
+        "ammunitionUnits": 0
+      },
+      "expected": {
+        "legal": true,
+        "weaponClass": "short-range",
+        "rangeMinimumMeters": 0,
+        "rangeMaximumMeters": 4,
+        "effectiveAccuracyCheck": 4,
+        "effectiveDamageBase": 4,
+        "damageFormula": "1d8+6",
+        "damageRollFaces": [
+          1
+        ],
+        "damageAfterDefense": 12,
+        "handsRequired": 1,
+        "ammunitionConsumed": 0,
+        "recoveryRequired": false,
+        "receiptKinds": [
+          "weapon-declaration",
+          "accuracy",
+          "damage",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.distanceMeters": 5
+        },
+        "validationCode": "weapon.target-out-of-range"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "expectedLegal": false,
+        "validationCode": "weapon.ranged-pokemon-ineligible"
+      }
+    },
+    {
+      "fixtureId": "weapon-profile-twin-needled-bow",
+      "kind": "weapon-profile",
+      "seed": 11014,
+      "source": {
+        "canonicalItemId": "Twin-Needled Bow",
+        "canonicalRecordSha256": "afa5ea75c223c7b5c9b7b1c54d171e355f5ccf88825e6290598bb2c9596e8fa6",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "trainer-6",
+        "combatRank": 4,
+        "physicalAttack": 10,
+        "equipmentCustody": "active-hash-current",
+        "handsAvailable": 2
+      },
+      "target": {
+        "kind": "pokemon",
+        "placementId": "target-6",
+        "distanceMeters": 8,
+        "physicalDefense": 5,
+        "evasion": 0,
+        "lineOfSight": true
+      },
+      "declaration": {
+        "baseAccuracyCheck": 4,
+        "baseDamageBase": 4,
+        "ammunitionUnits": 0
+      },
+      "expected": {
+        "legal": true,
+        "weaponClass": "long-range",
+        "rangeMinimumMeters": 4,
+        "rangeMaximumMeters": 12,
+        "effectiveAccuracyCheck": 5,
+        "effectiveDamageBase": 5,
+        "damageFormula": "1d8+8",
+        "damageRollFaces": [
+          1
+        ],
+        "damageAfterDefense": 14,
+        "handsRequired": 2,
+        "ammunitionConsumed": 0,
+        "recoveryRequired": false,
+        "receiptKinds": [
+          "weapon-declaration",
+          "accuracy",
+          "damage",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.distanceMeters": 13
+        },
+        "validationCode": "weapon.target-out-of-range"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "expectedLegal": false,
+        "validationCode": "weapon.ranged-pokemon-ineligible"
+      }
+    }
+  ],
+  "weaponMoves": [
+    {
+      "fixtureId": "weapon-move-bash",
+      "kind": "weapon-move",
+      "seed": 12009,
+      "source": {
+        "canonicalItemId": "Throwing Hammers",
+        "canonicalRecordSha256": "aeb5e26662fe2d9f567985703a749d9440c1bfdfab662d277a3d563942287135",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+        "weaponMoveId": "Bash!"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "move-trainer-1",
+        "combatRank": 4,
+        "physicalAttack": 12,
+        "equipmentCustody": "active-hash-current"
+      },
+      "targets": [
+        {
+          "placementId": "move-target-1-1",
+          "distanceMeters": 1,
+          "physicalDefense": 6,
+          "evasion": 0,
+          "lineOfSight": true
+        }
+      ],
+      "expected": {
+        "legal": true,
+        "minimumCombatRank": 4,
+        "effectiveAccuracyCheck": 2,
+        "effectiveDamageBase": 7,
+        "targetCount": 1,
+        "effect": "initiative-zero-on-15-plus",
+        "frequency": "EOT",
+        "receiptKinds": [
+          "move-declaration",
+          "accuracy",
+          "damage",
+          "effect",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "actor.combatRank": 3
+        },
+        "validationCode": "weapon-move.bash.rank-required"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "combatRank": 4,
+        "expectedLegal": true,
+        "validationCode": null
+      }
+    },
+    {
+      "fixtureId": "weapon-move-pierce",
+      "kind": "weapon-move",
+      "seed": 12010,
+      "source": {
+        "canonicalItemId": "Hunting Bow",
+        "canonicalRecordSha256": "320526c83a714ee1259de012f23e9677061bb0a69ba6c6a73dafb4f2783dc8a9",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+        "weaponMoveId": "Pierce!"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "move-trainer-2",
+        "combatRank": 4,
+        "physicalAttack": 12,
+        "equipmentCustody": "active-hash-current"
+      },
+      "targets": [
+        {
+          "placementId": "move-target-2-1",
+          "distanceMeters": 6,
+          "physicalDefense": 6,
+          "evasion": 0,
+          "lineOfSight": true
+        }
+      ],
+      "expected": {
+        "legal": true,
+        "minimumCombatRank": 4,
+        "effectiveAccuracyCheck": 3,
+        "effectiveDamageBase": 8,
+        "targetCount": 1,
+        "effect": "plus-10-vs-damage-reduction",
+        "frequency": "EOT",
+        "receiptKinds": [
+          "move-declaration",
+          "accuracy",
+          "damage",
+          "effect",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "actor.combatRank": 3
+        },
+        "validationCode": "weapon-move.pierce.rank-required"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "combatRank": 4,
+        "expectedLegal": true,
+        "validationCode": null
+      }
+    },
+    {
+      "fixtureId": "weapon-move-gouge",
+      "kind": "weapon-move",
+      "seed": 12011,
+      "source": {
+        "canonicalItemId": "Honed Claws",
+        "canonicalRecordSha256": "dc99a5c88ba1cca7d5583bde11468386c81c3f3f23dcd8e263f661b452697774",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+        "weaponMoveId": "Gouge"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "move-trainer-3",
+        "combatRank": 6,
+        "physicalAttack": 12,
+        "equipmentCustody": "active-hash-current"
+      },
+      "targets": [
+        {
+          "placementId": "move-target-3-1",
+          "distanceMeters": 1,
+          "physicalDefense": 6,
+          "evasion": 0,
+          "lineOfSight": true
+        }
+      ],
+      "expected": {
+        "legal": true,
+        "minimumCombatRank": 6,
+        "effectiveAccuracyCheck": 2,
+        "effectiveDamageBase": 6,
+        "targetCount": 1,
+        "effect": "injury-if-both-double-strike-hits",
+        "frequency": "Scene x2",
+        "receiptKinds": [
+          "move-declaration",
+          "accuracy",
+          "damage",
+          "effect",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "actor.combatRank": 5
+        },
+        "validationCode": "weapon-move.gouge.rank-required"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "combatRank": 6,
+        "expectedLegal": false,
+        "validationCode": "weapon-move.pokemon-master-ineligible"
+      }
+    },
+    {
+      "fixtureId": "weapon-move-titanic-slam",
+      "kind": "weapon-move",
+      "seed": 12012,
+      "source": {
+        "canonicalItemId": "Meteor Masher",
+        "canonicalRecordSha256": "991f575b4949d945686068d5e8a491e75d26af6f2c91fcafe207e4b74077310c",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+        "weaponMoveId": "Titanic Slam"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "move-trainer-4",
+        "combatRank": 6,
+        "physicalAttack": 12,
+        "equipmentCustody": "active-hash-current"
+      },
+      "targets": [
+        {
+          "placementId": "move-target-4-1",
+          "distanceMeters": 1,
+          "physicalDefense": 6,
+          "evasion": 0,
+          "lineOfSight": true
+        }
+      ],
+      "expected": {
+        "legal": true,
+        "minimumCombatRank": 6,
+        "effectiveAccuracyCheck": 4,
+        "effectiveDamageBase": 13,
+        "targetCount": 1,
+        "effect": "slowed-one-round-on-even-accuracy",
+        "frequency": "Scene x2",
+        "receiptKinds": [
+          "move-declaration",
+          "accuracy",
+          "damage",
+          "effect",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "actor.combatRank": 5
+        },
+        "validationCode": "weapon-move.titanic-slam.rank-required"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "combatRank": 6,
+        "expectedLegal": false,
+        "validationCode": "weapon-move.pokemon-master-ineligible"
+      }
+    },
+    {
+      "fixtureId": "weapon-move-bullseye",
+      "kind": "weapon-move",
+      "seed": 12013,
+      "source": {
+        "canonicalItemId": "Super Lucky Throwing Stars",
+        "canonicalRecordSha256": "a8089e5384500e64e63cb0876de85521eabe104c2bd3f93a879b52e1a6861245",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+        "weaponMoveId": "Bullseye"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "move-trainer-5",
+        "combatRank": 4,
+        "physicalAttack": 12,
+        "equipmentCustody": "active-hash-current"
+      },
+      "targets": [
+        {
+          "placementId": "move-target-5-1",
+          "distanceMeters": 1,
+          "physicalDefense": 6,
+          "evasion": 0,
+          "lineOfSight": true
+        }
+      ],
+      "expected": {
+        "legal": true,
+        "minimumCombatRank": 4,
+        "effectiveAccuracyCheck": 2,
+        "effectiveDamageBase": 6,
+        "targetCount": 1,
+        "effect": "critical-on-16-plus",
+        "frequency": "EOT",
+        "receiptKinds": [
+          "move-declaration",
+          "accuracy",
+          "damage",
+          "effect",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "actor.combatRank": 3
+        },
+        "validationCode": "weapon-move.bullseye.rank-required"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "combatRank": 4,
+        "expectedLegal": true,
+        "validationCode": null
+      }
+    },
+    {
+      "fixtureId": "weapon-move-deadly-strike",
+      "kind": "weapon-move",
+      "seed": 12014,
+      "source": {
+        "canonicalItemId": "Super Lucky Throwing Stars",
+        "canonicalRecordSha256": "a8089e5384500e64e63cb0876de85521eabe104c2bd3f93a879b52e1a6861245",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+        "weaponMoveId": "Deadly Strike"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "move-trainer-6",
+        "combatRank": 6,
+        "physicalAttack": 12,
+        "equipmentCustody": "active-hash-current"
+      },
+      "targets": [
+        {
+          "placementId": "move-target-6-1",
+          "distanceMeters": 1,
+          "physicalDefense": 6,
+          "evasion": 0,
+          "lineOfSight": true
+        }
+      ],
+      "expected": {
+        "legal": true,
+        "minimumCombatRank": 6,
+        "effectiveAccuracyCheck": 2,
+        "effectiveDamageBase": 6,
+        "targetCount": 1,
+        "effect": "always-critical-on-hit",
+        "frequency": "Scene x2",
+        "receiptKinds": [
+          "move-declaration",
+          "accuracy",
+          "damage",
+          "effect",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "actor.combatRank": 5
+        },
+        "validationCode": "weapon-move.deadly-strike.rank-required"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "combatRank": 6,
+        "expectedLegal": false,
+        "validationCode": "weapon-move.pokemon-master-ineligible"
+      }
+    },
+    {
+      "fixtureId": "weapon-move-triple-threat",
+      "kind": "weapon-move",
+      "seed": 12015,
+      "source": {
+        "canonicalItemId": "Twin-Needled Bow",
+        "canonicalRecordSha256": "afa5ea75c223c7b5c9b7b1c54d171e355f5ccf88825e6290598bb2c9596e8fa6",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+        "weaponMoveId": "Triple Threat"
+      },
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "move-trainer-7",
+        "combatRank": 6,
+        "physicalAttack": 12,
+        "equipmentCustody": "active-hash-current"
+      },
+      "targets": [
+        {
+          "placementId": "move-target-7-1",
+          "distanceMeters": 6,
+          "physicalDefense": 6,
+          "evasion": 0,
+          "lineOfSight": true
+        },
+        {
+          "placementId": "move-target-7-2",
+          "distanceMeters": 6,
+          "physicalDefense": 6,
+          "evasion": 0,
+          "lineOfSight": true
+        },
+        {
+          "placementId": "move-target-7-3",
+          "distanceMeters": 6,
+          "physicalDefense": 6,
+          "evasion": 0,
+          "lineOfSight": true
+        }
+      ],
+      "expected": {
+        "legal": true,
+        "minimumCombatRank": 6,
+        "effectiveAccuracyCheck": 3,
+        "effectiveDamageBase": 8,
+        "targetCount": 3,
+        "effect": "three-distinct-targets",
+        "frequency": "Scene x2",
+        "receiptKinds": [
+          "move-declaration",
+          "accuracy",
+          "damage",
+          "effect",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "actor.combatRank": 5
+        },
+        "validationCode": "weapon-move.triple-threat.rank-required"
+      },
+      "pokemonWielderCase": {
+        "actorKind": "pokemon",
+        "hasWielder": true,
+        "combatRank": 6,
+        "expectedLegal": false,
+        "validationCode": "weapon-move.pokemon-master-ineligible"
+      }
+    }
+  ],
+  "itemActions": [
+    {
+      "fixtureId": "item-old-rod-fish",
+      "kind": "item-action",
+      "seed": 13009,
+      "source": {
+        "canonicalItemId": "Old Rod",
+        "canonicalRecordSha256": "473540938809b0d0737602e79624bbf26e3839ebe4b062131aac89388f9abb9a",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.fishing.old-rod",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-old-rod-fish-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "water-cell",
+        "distanceMeters": 1,
+        "adjacent": true
+      },
+      "expected": {
+        "finalState": "guided",
+        "timing": "extended",
+        "handsRequired": 2,
+        "campaignMinutesPerAttempt": 15,
+        "skillPolicy": "gm-selected-canonical-skill",
+        "hookBounds": {
+          "maximumLevel": 10,
+          "evolution": "unevolved",
+          "size": "small"
+        },
+        "receiptKinds": [
+          "fishing-declaration",
+          "skill-check-reference",
+          "gm-hook-adjudication",
+          "campaign-time",
+          "attention",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.adjacent": false
+        },
+        "validationCode": "fishing.water-not-adjacent"
+      }
+    },
+    {
+      "fixtureId": "item-good-rod-fish",
+      "kind": "item-action",
+      "seed": 13010,
+      "source": {
+        "canonicalItemId": "Good Rod",
+        "canonicalRecordSha256": "492c0d769ce53153da3183e5bc36c3f8e4cb55debccb160b2676a03c84a212ba",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.fishing.good-rod",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-good-rod-fish-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "water-cell",
+        "distanceMeters": 1,
+        "adjacent": true
+      },
+      "expected": {
+        "finalState": "guided",
+        "timing": "extended",
+        "handsRequired": 2,
+        "campaignMinutesPerAttempt": 15,
+        "skillPolicy": "gm-selected-canonical-skill",
+        "hookBounds": {
+          "evolution": "unevolved",
+          "gmBounded": true
+        },
+        "receiptKinds": [
+          "fishing-declaration",
+          "skill-check-reference",
+          "gm-hook-adjudication",
+          "campaign-time",
+          "attention",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.adjacent": false
+        },
+        "validationCode": "fishing.water-not-adjacent"
+      }
+    },
+    {
+      "fixtureId": "item-super-rod-fish",
+      "kind": "item-action",
+      "seed": 13011,
+      "source": {
+        "canonicalItemId": "Super Rod",
+        "canonicalRecordSha256": "99591c7c8c9727043b9775a8a3afb1a84447fe3ae9ba0dc5a5c498266bd53cf4",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.fishing.super-rod",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-super-rod-fish-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "water-cell",
+        "distanceMeters": 1,
+        "adjacent": true
+      },
+      "expected": {
+        "finalState": "guided",
+        "timing": "extended",
+        "handsRequired": 2,
+        "campaignMinutesPerAttempt": 15,
+        "skillPolicy": "gm-selected-canonical-skill",
+        "hookBounds": {
+          "evolution": "any",
+          "size": "any",
+          "gmBounded": true
+        },
+        "receiptKinds": [
+          "fishing-declaration",
+          "skill-check-reference",
+          "gm-hook-adjudication",
+          "campaign-time",
+          "attention",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.adjacent": false
+        },
+        "validationCode": "fishing.water-not-adjacent"
+      }
+    },
+    {
+      "fixtureId": "item-glue-cannon-attack",
+      "kind": "item-action",
+      "seed": 13012,
+      "source": {
+        "canonicalItemId": "Glue Cannon",
+        "canonicalRecordSha256": "c3507876510e140833d2f37710cb718975c2d29711f284515bfedbbd6f5b6a3c",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.glue-cannon.attack",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-glue-cannon-attack-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "participant",
+        "distanceMeters": 4,
+        "lineOfSight": true
+      },
+      "expected": {
+        "finalState": "native",
+        "timing": "standard",
+        "handsRequired": 2,
+        "rangeMaximumMeters": 4,
+        "accuracyCheck": 8,
+        "chargeConsumed": 1,
+        "normalHit": [
+          "slowed"
+        ],
+        "criticalHit": [
+          "stuck",
+          "trapped"
+        ],
+        "receiptKinds": [
+          "item-declaration",
+          "charge-consumption",
+          "accuracy",
+          "condition",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "actor.chargeCount": 0
+        },
+        "validationCode": "glue-cannon.no-charge"
+      }
+    },
+    {
+      "fixtureId": "item-hand-net-attack",
+      "kind": "item-action",
+      "seed": 13013,
+      "source": {
+        "canonicalItemId": "Hand Net",
+        "canonicalRecordSha256": "c99acb256d88a1621f70fa81d3578e1ae4c53d3885fee9ae05811c31f17be28c",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.hand-net.attack",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-hand-net-attack-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "pokemon",
+        "distanceMeters": 1,
+        "size": "small",
+        "lineOfSight": true
+      },
+      "expected": {
+        "finalState": "native",
+        "timing": "standard",
+        "handsRequired": 2,
+        "rangeMaximumMeters": 1,
+        "accuracyCheck": 6,
+        "conditions": [
+          "netted",
+          "trapped"
+        ],
+        "movementPolicy": "moves-with-wielder",
+        "captureRollModifier": -20,
+        "receiptKinds": [
+          "item-declaration",
+          "accuracy",
+          "restraint",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.size": "medium"
+        },
+        "validationCode": "hand-net.target-not-small"
+      }
+    },
+    {
+      "fixtureId": "item-weighted-nets-throw",
+      "kind": "item-action",
+      "seed": 13014,
+      "source": {
+        "canonicalItemId": "Weighted Nets",
+        "canonicalRecordSha256": "a20cdda73043b07266a7ec1288c72b700ef04744c3ecfe5c59e3e4928a8d7d29",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.weighted-nets.throw",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-weighted-nets-throw-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "pokemon",
+        "distanceMeters": 4,
+        "lineOfSight": true
+      },
+      "expected": {
+        "finalState": "native",
+        "timing": "standard",
+        "handsRequired": 2,
+        "rangeMaximumMeters": 4,
+        "accuracyCheck": 8,
+        "conditions": [
+          "netted",
+          "slowed",
+          "sky-levitate-suppressed"
+        ],
+        "captureRollModifier": -20,
+        "receiptKinds": [
+          "item-declaration",
+          "accuracy",
+          "restraint",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.distanceMeters": 5
+        },
+        "validationCode": "weighted-net.target-out-of-range"
+      }
+    },
+    {
+      "fixtureId": "item-weighted-nets-pull",
+      "kind": "item-action",
+      "seed": 13015,
+      "source": {
+        "canonicalItemId": "Weighted Nets",
+        "canonicalRecordSha256": "a20cdda73043b07266a7ec1288c72b700ef04744c3ecfe5c59e3e4928a8d7d29",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.weighted-nets.pull",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-weighted-nets-pull-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "pokemon",
+        "distanceMeters": 3,
+        "nettedByActor": true
+      },
+      "expected": {
+        "finalState": "native",
+        "timing": "standard",
+        "distanceMeters": 1,
+        "direction": "toward-wielder",
+        "receiptKinds": [
+          "item-declaration",
+          "forced-movement",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.nettedByActor": false
+        },
+        "validationCode": "weighted-net.target-not-netted-by-source"
+      }
+    },
+    {
+      "fixtureId": "item-light-shield-ready",
+      "kind": "item-action",
+      "seed": 13016,
+      "source": {
+        "canonicalItemId": "Light Shield",
+        "canonicalRecordSha256": "6b3c5542b0274e5ce0fd0140950a7994ba9e722512a1bcba3bfcb80e57899187",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.light-shield.ready",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-light-shield-ready-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "self"
+      },
+      "expected": {
+        "finalState": "native",
+        "timing": "standard",
+        "passiveEvasion": 2,
+        "readiedEvasion": 4,
+        "damageReduction": 10,
+        "conditions": [
+          "slowed"
+        ],
+        "duration": {
+          "kind": "until-end-of-next-turn",
+          "subject": "actor"
+        },
+        "handsRequired": 1,
+        "twoHandedWeaponClass": "small-melee",
+        "receiptKinds": [
+          "item-declaration",
+          "duration-effect",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "actor.equipmentCustody": "descriptive-only"
+        },
+        "validationCode": "shield.not-authoritatively-equipped"
+      }
+    },
+    {
+      "fixtureId": "item-heavy-shield-ready",
+      "kind": "item-action",
+      "seed": 13017,
+      "source": {
+        "canonicalItemId": "Heavy Shield",
+        "canonicalRecordSha256": "6322060de0415f8983072aa954fa8a65e77d22a2a0f006f2d8f0d93f6a70f799",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.heavy-shield.ready",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-heavy-shield-ready-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "self"
+      },
+      "expected": {
+        "finalState": "native",
+        "timing": "standard",
+        "passiveEvasion": 2,
+        "readiedEvasion": 6,
+        "damageReduction": 15,
+        "conditions": [
+          "slowed"
+        ],
+        "duration": {
+          "kind": "until-end-of-next-turn",
+          "subject": "actor"
+        },
+        "handsRequired": 1,
+        "twoHandedWeaponClass": "small-melee",
+        "receiptKinds": [
+          "item-declaration",
+          "duration-effect",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "actor.equipmentCustody": "descriptive-only"
+        },
+        "validationCode": "shield.not-authoritatively-equipped"
+      }
+    },
+    {
+      "fixtureId": "item-snag-machine-convert",
+      "kind": "item-action",
+      "seed": 13018,
+      "source": {
+        "canonicalItemId": "Snag Machine",
+        "canonicalRecordSha256": "21b4ab1aad7af502d333782ab0ddd72e681e59230c2957948e6f3fbf4687aee2",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.snag-machine.convert",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-snag-machine-convert-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "inventory-item",
+        "canonicalItemClass": "poke-ball",
+        "quantity": 1
+      },
+      "expected": {
+        "finalState": "guided",
+        "timing": "swift",
+        "variant": "portable",
+        "conversionDelayRounds": 1,
+        "activeDurationRounds": 1,
+        "attackPenalty": -2,
+        "ownedPokemonCapture": "gm-bounded-legality",
+        "preserveBallProperties": true,
+        "receiptKinds": [
+          "item-declaration",
+          "inventory-conversion",
+          "duration-effect",
+          "gm-legality",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.canonicalItemClass": "medicine"
+        },
+        "validationCode": "snag-machine.not-poke-ball"
+      }
+    },
+    {
+      "fixtureId": "item-shock-collar-activate",
+      "kind": "item-action",
+      "seed": 13019,
+      "source": {
+        "canonicalItemId": "Shock Collar",
+        "canonicalRecordSha256": "130403cf76a1514068f30b49789a0fe7fec07ac2cc6e02d356250616ee9facc9",
+        "documentaryPath": "books/markdown/core/09-gear-and-items.md",
+        "documentarySha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0"
+      },
+      "actionId": "equipment.shock-collar.activate",
+      "actor": {
+        "kind": "trainer",
+        "sheetSlug": "item-shock-collar-activate-trainer",
+        "equipmentCustody": "active-hash-current"
+      },
+      "target": {
+        "kind": "wearer",
+        "maxHitPoints": 60,
+        "currentHitPoints": 50,
+        "wearingCollar": true
+      },
+      "expected": {
+        "finalState": "native",
+        "timing": "standard",
+        "remoteCustodyRequired": true,
+        "hitPointLoss": 10,
+        "roundingPolicy": "exact-one-sixth-floor-after-division",
+        "groundVariantPolicy": "requires-ground-capable-collar",
+        "pressFeatureTrigger": true,
+        "receiptKinds": [
+          "item-declaration",
+          "hp-loss",
+          "feature-trigger-fact",
+          "accepted-result"
+        ]
+      },
+      "illegal": {
+        "mutation": {
+          "target.wearingCollar": false
+        },
+        "validationCode": "shock-collar.target-not-wearing-source"
+      }
+    }
+  ]
+}

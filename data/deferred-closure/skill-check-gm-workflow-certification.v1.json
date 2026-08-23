@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-skill-check-gm-workflow-v1",
+  "ticket": "P11-047",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessors": [
+    {
+      "path": "data/deferred-closure/skill-check-contract.v1.json",
+      "sha256": "af2dc778b80df4f5ad967168b1ca55f86bb71e008db2d236f768c2df3ade094c"
+    },
+    {
+      "path": "data/deferred-closure/skill-check-authority-certification.v1.json",
+      "sha256": "dc2b1e00a330b63b6530e6babdb861765353fd01a062b16292a7882b2885fc3b"
+    }
+  ],
+  "presetAuthority": {
+    "migrationPath": "scripts/migrate_deferred_closure_skill_check_presets.py",
+    "migrationSha256": "734c65525099e2557716be2b79d07765b5dac3f8a6f335222c89cc1f71b59e26",
+    "registryPath": "data/deferred-closure/skill-check-dc-presets.v1.json",
+    "registrySha256": "bf6254918111cb938724feb6c7aafed087adeb636176ca10b0dae0333ace0f69",
+    "runtimePath": "shared/skillChecks/difficulty.ts",
+    "runtimeSha256": "9f92e6e22b851050bb0abbb926f109066ad914d5c8662b3d655dc7b42d3c1bb7",
+    "presets": [
+      ["skill-check-dc-preset:v1:easy", 5],
+      ["skill-check-dc-preset:v1:challenging", 10],
+      ["skill-check-dc-preset:v1:hard", 15],
+      ["skill-check-dc-preset:v1:nigh-impossible", 25]
+    ],
+    "explicitDifficultyClassBounds": [1, 100]
+  },
+  "authorities": [
+    {
+      "id": "request-command-contract",
+      "path": "shared/skillChecks/contract.ts",
+      "sha256": "6ccf07bd47d3318e43193fbaa3f0904626bcef8b209a9018fd00c267994286f4",
+      "guarantees": [
+        "preset-or-explicit-dc-request-selection",
+        "concrete-dc-only-in-persisted-documents",
+        "no-client-dice-fields"
+      ]
+    },
+    {
+      "id": "strict-request-parser",
+      "path": "shared/skillChecks/persistence.ts",
+      "sha256": "8a12604722c003c07b38ebaeefa9d68f9f882c5fcdf8339db46fbe4833c9df18",
+      "guarantees": [
+        "unknown-preset-rejection",
+        "legacy-or-forged-dc-shape-rejection",
+        "strict-command-fields"
+      ]
+    },
+    {
+      "id": "strict-gm-response-boundary",
+      "path": "shared/skillChecks/gmWorkflow.ts",
+      "sha256": "b2f4d53ce6c27b537151a3122a19cc4859e2fbcd82f45072a4c5a33328d568d0",
+      "guarantees": [
+        "bounded-subject-catalog",
+        "exact-reviewed-presets",
+        "receipt-document-binding",
+        "unknown-field-rejection",
+        "deep-frozen-client-authority"
+      ]
+    },
+    {
+      "id": "atomic-gm-workflow",
+      "path": "server/useCases/manageGmSkillChecks.ts",
+      "sha256": "89ea1f289bceb212908af6602d0c19723eb140e011b52a7281867226cc6d8b94",
+      "guarantees": [
+        "exact-sheet-revisions",
+        "profile-and-team-derived-controller-authority",
+        "single-group-and-opposed-request-validation",
+        "preset-resolution-before-persistence",
+        "principal-bound-request-and-cancel-replay",
+        "resolve-delegates-to-server-dice-authority",
+        "document-and-operation-atomicity",
+        "private-cancellation-reason"
+      ]
+    },
+    {
+      "id": "gm-read-route",
+      "path": "server/api/skill-checks/gm.get.ts",
+      "sha256": "40ec1f3e64f55d1ef6712a956a5264b92d0ec2d6e84874271d38f197e0d24fb0",
+      "guarantees": ["gm-only", "bounded-state-and-limit-query"]
+    },
+    {
+      "id": "gm-command-route",
+      "path": "server/api/skill-checks/gm.post.ts",
+      "sha256": "df0238f8ef10afcbe7719718d629678b4ed4862292ed18a59d68acfebed8ac13",
+      "guarantees": ["gm-only", "writable-campaign-only", "command-only-envelope", "server-owned-principal"]
+    },
+    {
+      "id": "gm-director-surface",
+      "path": "src/components/encounter/workspace/EncounterGmSkillChecks.vue",
+      "sha256": "b39bf4504c1d633437b803ac32c54370f37eb5dc3b65f805cb48db273d7f6a3b",
+      "guarantees": [
+        "request-composer-for-trainers-and-pokemon",
+        "pending-and-ready-observation",
+        "server-resolve-and-private-cancel-controls",
+        "exact-command-retry",
+        "no-roll-entry",
+        "explicit-private-gm-context"
+      ]
+    },
+    {
+      "id": "director-tab-integration",
+      "path": "src/components/encounter/workspace/EncounterDirectorPanel.vue",
+      "sha256": "5e02849b3db28748c193c8ffabb6fae7bd66a7a0c5802633c8a4b94361aa8940",
+      "guarantees": ["gm-director-checks-tab", "commands-blocked-forwarding", "narrow-drawer-responsive-host"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/skillCheckGmWorkflow.test.ts",
+      "sha256": "7ebfbee753f93cffa4679490e0dd4a871bf24a1a025067f59e71c63eb5fd8cad",
+      "scenarioIds": [
+        "preset-group-request",
+        "exact-sheet-and-controller-binding",
+        "strict-gm-response-parsing",
+        "explicit-single-request",
+        "opposed-two-subject-request",
+        "expired-missing-malformed-and-duplicate-rejection",
+        "principal-bound-request-replay",
+        "gm-resolve-and-no-reroll-replay",
+        "private-cancel-and-terminal-replay",
+        "stale-and-terminal-cancel-conflict",
+        "request-and-cancel-rollback"
+      ]
+    },
+    {
+      "path": "tests/server/skillCheckGmRoute.test.ts",
+      "sha256": "0ee0044f410702d3b3a00200861799977afa3cb5cdbf43ac0ddb3ae27b0eea93",
+      "scenarioIds": [
+        "gm-only-routes",
+        "bounded-gm-query",
+        "strict-command-envelope",
+        "forged-principal-and-dice-envelope-rejection"
+      ]
+    },
+    {
+      "path": "tests/components/encounterGmSkillChecks.test.ts",
+      "sha256": "549140b53d2ad671f5a3b7cb952d10177a28676f95bfe2875c989b0467a2a424",
+      "scenarioIds": [
+        "ready-request-presentation",
+        "reviewed-preset-composer",
+        "exact-client-command-retry",
+        "blocked-private-and-no-roll-presentation"
+      ]
+    },
+    {
+      "path": "tests/data/deferredClosureSkillCheckPresets.test.ts",
+      "sha256": "70948d606b0d32e1b20d9a5b7024351654f23fed5c1d093dccb745a68c9726bd",
+      "scenarioIds": [
+        "source-hash-bound-preset-registry",
+        "preset-and-explicit-dc-fail-closed-runtime"
+      ]
+    }
+  ],
+  "privacy": {
+    "fullWorkflowRouteAudience": "gm-only",
+    "gmNotesPublic": false,
+    "privateDcPublicWhilePending": false,
+    "cancellationReasonInDocument": false,
+    "clientDiceAccepted": false,
+    "roleSafeProjectionOwnerTicket": "P11-049"
+  },
+  "acceptance": {
+    "singleRequests": true,
+    "groupRequests": true,
+    "trainerSubjects": true,
+    "pokemonSubjects": true,
+    "reviewedPresets": true,
+    "explicitDc": true,
+    "opposedChecks": true,
+    "pendingObservation": true,
+    "serverResolution": true,
+    "cancellationReceipts": true,
+    "exactRetry": true,
+    "atomicWrites": true,
+    "subjectWorkflowDeferredTo": "P11-048",
+    "projectionClosureDeferredTo": "P11-049"
+  }
+}

@@ -7,6 +7,7 @@ import {
   type ItemGuidedAdjudicationResultV1,
   type ItemGuidedDecisionOptionV1,
   type ItemGuidedReBreatherOfferV1,
+  type ResolveItemGuidedFishingIntentCommandV1,
   type ItemGuidedRequestProjectionV1,
 } from '#shared/itemAutomation/guidedAdjudication'
 import type { SheetKind } from '#shared/sheets'
@@ -204,6 +205,48 @@ export const useItemGuidedAdjudication = (options: UseItemGuidedAdjudicationOpti
     })
   }
 
+  const resolveFishing = async (
+    request: ItemGuidedRequestProjectionV1,
+    choice: Pick<ResolveItemGuidedFishingIntentCommandV1, 'skillId' | 'skillCheckId' | 'hookSpeciesId' | 'hookLevel' | 'gmNote'>,
+  ): Promise<boolean> => {
+    const authority = request.resolution
+    if (busy.value || uncertain.value || mode.value !== 'gm' || request.status !== 'pending'
+      || authority?.kind !== 'fishing'
+      || !authority.skillOptions.some(option => option.skillId === choice.skillId)
+      || ((choice.hookSpeciesId === null) !== (choice.hookLevel === null))
+      || (choice.hookSpeciesId !== null && !authority.hookOptions.some(option => option.speciesId === choice.hookSpeciesId))
+      || (choice.hookLevel !== null && (!Number.isSafeInteger(choice.hookLevel)
+        || choice.hookLevel < 1 || choice.hookLevel > authority.maximumHookLevel))) return false
+    return executeExact({
+      schemaVersion: 1,
+      operationId: createItemGuidedOperationId(),
+      action: 'resolve-fishing-intent',
+      requestId: request.requestId,
+      expectedRevision: request.revision,
+      ...choice,
+    })
+  }
+
+  const resolveSnagConversion = async (
+    request: ItemGuidedRequestProjectionV1,
+    decision: 'approve' | 'deny',
+    gmNote: string | null,
+  ): Promise<boolean> => {
+    const authority = request.resolution
+    if (busy.value || uncertain.value || mode.value !== 'gm' || request.status !== 'pending'
+      || authority?.kind !== 'snag-conversion'
+      || !authority.decisions.some(option => option.decision === decision)) return false
+    return executeExact({
+      schemaVersion: 1,
+      operationId: createItemGuidedOperationId(),
+      action: 'resolve-snag-conversion',
+      requestId: request.requestId,
+      expectedRevision: request.revision,
+      decision,
+      gmNote,
+    })
+  }
+
   const cancel = async (request: ItemGuidedRequestProjectionV1): Promise<boolean> => {
     if (busy.value || uncertain.value || request.status !== 'pending' || !request.canCancel) return false
     return executeExact({
@@ -306,6 +349,8 @@ export const useItemGuidedAdjudication = (options: UseItemGuidedAdjudicationOpti
     load,
     selectRequest,
     resolve,
+    resolveFishing,
+    resolveSnagConversion,
     cancel,
     declareReBreather,
     retryExact,

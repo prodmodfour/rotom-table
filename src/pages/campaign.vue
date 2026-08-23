@@ -56,6 +56,11 @@ useHead({ title: 'Campaign · Rotom Table' })
       <template #campaign-tools>
         <CampaignOnboardingCard />
         <CampaignContestActivityCard :profile-id="profiles.selectedProfileId.value" />
+        <CampaignSkillCheckHistoryCard
+          :profile-id="profiles.selectedProfileId.value"
+          :gm="isGm"
+          :refresh-key="dashboard.projection.value?.snapshotId ?? null"
+        />
         <section v-if="isGm" class="next-day-tool" aria-labelledby="next-day-title">
           <div class="next-day-tool__heading">
             <PhCalendarBlank :size="24" weight="duotone" aria-hidden="true" />

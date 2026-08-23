@@ -31,8 +31,14 @@
       "combatStatLabel": "Special Attack",
       "introductionSkillId": "intuition",
       "introductionSkillLabel": "Intuition",
-      "alliedStatIds": ["cool", "cute"],
-      "opposedStatIds": ["smart", "tough"]
+      "alliedStatIds": [
+        "cool",
+        "cute"
+      ],
+      "opposedStatIds": [
+        "smart",
+        "tough"
+      ]
     },
     {
       "id": "cool",
@@ -41,8 +47,14 @@
       "combatStatLabel": "Attack",
       "introductionSkillId": "command",
       "introductionSkillLabel": "Command",
-      "alliedStatIds": ["beauty", "tough"],
-      "opposedStatIds": ["cute", "smart"]
+      "alliedStatIds": [
+        "beauty",
+        "tough"
+      ],
+      "opposedStatIds": [
+        "cute",
+        "smart"
+      ]
     },
     {
       "id": "cute",
@@ -51,8 +63,14 @@
       "combatStatLabel": "Speed",
       "introductionSkillId": "charm",
       "introductionSkillLabel": "Charm",
-      "alliedStatIds": ["beauty", "smart"],
-      "opposedStatIds": ["cool", "tough"]
+      "alliedStatIds": [
+        "beauty",
+        "smart"
+      ],
+      "opposedStatIds": [
+        "cool",
+        "tough"
+      ]
     },
     {
       "id": "smart",
@@ -61,8 +79,14 @@
       "combatStatLabel": "Special Defense",
       "introductionSkillId": "guile",
       "introductionSkillLabel": "Guile",
-      "alliedStatIds": ["cute", "tough"],
-      "opposedStatIds": ["beauty", "cool"]
+      "alliedStatIds": [
+        "cute",
+        "tough"
+      ],
+      "opposedStatIds": [
+        "beauty",
+        "cool"
+      ]
     },
     {
       "id": "tough",
@@ -71,8 +95,14 @@
       "combatStatLabel": "Defense",
       "introductionSkillId": "intimidate",
       "introductionSkillLabel": "Intimidate",
-      "alliedStatIds": ["cool", "smart"],
-      "opposedStatIds": ["beauty", "cute"]
+      "alliedStatIds": [
+        "cool",
+        "smart"
+      ],
+      "opposedStatIds": [
+        "beauty",
+        "cute"
+      ]
     }
   ],
   "preparation": {
@@ -91,9 +121,20 @@
     }
   },
   "introduction": {
-    "skillIds": ["charm", "command", "guile", "intimidate", "intuition"],
+    "skillIds": [
+      "charm",
+      "command",
+      "guile",
+      "intimidate",
+      "intuition"
+    ],
     "dieSides": 6,
-    "successFaces": [3, 4, 5, 6],
+    "successFaces": [
+      3,
+      4,
+      5,
+      6
+    ],
     "standardMatchingAppealBonus": 2,
     "standardMatchingLetterTotalBonus": 2,
     "standardMatchingBasis": "selected-skill-mapped-stat",
@@ -124,20 +165,56 @@
       "opposedAtZero": "one-fumble"
     },
     "normalScoring": {
-      "1": {"appeal": 0, "fumble": 0},
-      "2": {"appeal": 1, "fumble": 0},
-      "3": {"appeal": 1, "fumble": 0},
-      "4": {"appeal": 1, "fumble": 0},
-      "5": {"appeal": 1, "fumble": 0},
-      "6": {"appeal": 2, "fumble": 0}
+      "1": {
+        "appeal": 0,
+        "fumble": 0
+      },
+      "2": {
+        "appeal": 1,
+        "fumble": 0
+      },
+      "3": {
+        "appeal": 1,
+        "fumble": 0
+      },
+      "4": {
+        "appeal": 1,
+        "fumble": 0
+      },
+      "5": {
+        "appeal": 1,
+        "fumble": 0
+      },
+      "6": {
+        "appeal": 2,
+        "fumble": 0
+      }
     },
     "centerScoring": {
-      "1": {"appeal": 0, "fumble": 1},
-      "2": {"appeal": 0, "fumble": 0},
-      "3": {"appeal": 1, "fumble": 0},
-      "4": {"appeal": 2, "fumble": 0},
-      "5": {"appeal": 2, "fumble": 0},
-      "6": {"appeal": 3, "fumble": 0}
+      "1": {
+        "appeal": 0,
+        "fumble": 1
+      },
+      "2": {
+        "appeal": 0,
+        "fumble": 0
+      },
+      "3": {
+        "appeal": 1,
+        "fumble": 0
+      },
+      "4": {
+        "appeal": 2,
+        "fumble": 0
+      },
+      "5": {
+        "appeal": 2,
+        "fumble": 0
+      },
+      "6": {
+        "appeal": 3,
+        "fumble": 0
+      }
     },
     "voltage": {
       "minimum": 0,
@@ -149,33 +226,220 @@
   },
   "charts": {
     "3": {
-      "positionTurnNumbers": [3, 1, 2],
+      "positionTurnNumbers": [
+        3,
+        1,
+        2
+      ],
       "centerPosition": 1,
       "rounds": [
-        {"round": 1, "lineup": ["C", "A", "B"], "turnOrder": ["A", "B", "C"]},
-        {"round": 2, "lineup": ["A", "B", "C"], "turnOrder": ["B", "C", "A"]},
-        {"round": 3, "lineup": ["B", "C", "A"], "turnOrder": ["C", "A", "B"]}
+        {
+          "round": 1,
+          "lineup": [
+            "C",
+            "A",
+            "B"
+          ],
+          "turnOrder": [
+            "A",
+            "B",
+            "C"
+          ]
+        },
+        {
+          "round": 2,
+          "lineup": [
+            "A",
+            "B",
+            "C"
+          ],
+          "turnOrder": [
+            "B",
+            "C",
+            "A"
+          ]
+        },
+        {
+          "round": 3,
+          "lineup": [
+            "B",
+            "C",
+            "A"
+          ],
+          "turnOrder": [
+            "C",
+            "A",
+            "B"
+          ]
+        }
       ]
     },
     "4": {
-      "positionTurnNumbers": [2, 4, 1, 3],
+      "positionTurnNumbers": [
+        2,
+        4,
+        1,
+        3
+      ],
       "centerPosition": 2,
       "rounds": [
-        {"round": 1, "lineup": ["B", "D", "A", "C"], "turnOrder": ["A", "B", "C", "D"]},
-        {"round": 2, "lineup": ["D", "C", "B", "A"], "turnOrder": ["B", "D", "A", "C"]},
-        {"round": 3, "lineup": ["A", "B", "C", "D"], "turnOrder": ["C", "A", "D", "B"]},
-        {"round": 4, "lineup": ["C", "A", "D", "B"], "turnOrder": ["D", "C", "B", "A"]}
+        {
+          "round": 1,
+          "lineup": [
+            "B",
+            "D",
+            "A",
+            "C"
+          ],
+          "turnOrder": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ]
+        },
+        {
+          "round": 2,
+          "lineup": [
+            "D",
+            "C",
+            "B",
+            "A"
+          ],
+          "turnOrder": [
+            "B",
+            "D",
+            "A",
+            "C"
+          ]
+        },
+        {
+          "round": 3,
+          "lineup": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
+          "turnOrder": [
+            "C",
+            "A",
+            "D",
+            "B"
+          ]
+        },
+        {
+          "round": 4,
+          "lineup": [
+            "C",
+            "A",
+            "D",
+            "B"
+          ],
+          "turnOrder": [
+            "D",
+            "C",
+            "B",
+            "A"
+          ]
+        }
       ]
     },
     "5": {
-      "positionTurnNumbers": [5, 3, 1, 2, 4],
+      "positionTurnNumbers": [
+        5,
+        3,
+        1,
+        2,
+        4
+      ],
       "centerPosition": 2,
       "rounds": [
-        {"round": 1, "lineup": ["E", "C", "A", "B", "D"], "turnOrder": ["A", "B", "C", "D", "E"]},
-        {"round": 2, "lineup": ["C", "D", "B", "E", "A"], "turnOrder": ["B", "E", "D", "A", "C"]},
-        {"round": 3, "lineup": ["A", "B", "C", "D", "E"], "turnOrder": ["C", "D", "B", "E", "A"]},
-        {"round": 4, "lineup": ["B", "E", "D", "A", "C"], "turnOrder": ["D", "A", "E", "C", "B"]},
-        {"round": 5, "lineup": ["D", "A", "E", "C", "B"], "turnOrder": ["E", "C", "A", "B", "D"]}
+        {
+          "round": 1,
+          "lineup": [
+            "E",
+            "C",
+            "A",
+            "B",
+            "D"
+          ],
+          "turnOrder": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ]
+        },
+        {
+          "round": 2,
+          "lineup": [
+            "C",
+            "D",
+            "B",
+            "E",
+            "A"
+          ],
+          "turnOrder": [
+            "B",
+            "E",
+            "D",
+            "A",
+            "C"
+          ]
+        },
+        {
+          "round": 3,
+          "lineup": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "turnOrder": [
+            "C",
+            "D",
+            "B",
+            "E",
+            "A"
+          ]
+        },
+        {
+          "round": 4,
+          "lineup": [
+            "B",
+            "E",
+            "D",
+            "A",
+            "C"
+          ],
+          "turnOrder": [
+            "D",
+            "A",
+            "E",
+            "C",
+            "B"
+          ]
+        },
+        {
+          "round": 5,
+          "lineup": [
+            "D",
+            "A",
+            "E",
+            "C",
+            "B"
+          ],
+          "turnOrder": [
+            "E",
+            "C",
+            "A",
+            "B",
+            "D"
+          ]
+        }
       ]
     }
   },
@@ -185,154 +449,226 @@
       "label": "Attention Grabber",
       "baseDice": 1,
       "handler": "adjacent-voltage-transfer",
-      "parameters": {"maximumLossPerAdjacent": 2}
+      "parameters": {
+        "maximumLossPerAdjacent": 2
+      }
     },
     {
       "id": "big-show",
       "label": "Big Show",
       "baseDice": 1,
       "handler": "actor-voltage-delta",
-      "parameters": {"delta": 3}
+      "parameters": {
+        "delta": 3
+      }
     },
     {
       "id": "catching-up",
       "label": "Catching Up",
       "baseDice": 2,
       "handler": "adjacent-voltage-comparison",
-      "parameters": {"comparison": "all-greater", "conditionalBonusDice": 3, "actorVoltageDelta": 1}
+      "parameters": {
+        "comparison": "all-greater",
+        "conditionalBonusDice": 3,
+        "actorVoltageDelta": 1
+      }
     },
     {
       "id": "desperation",
       "label": "Desperation",
       "baseDice": 5,
       "handler": "desperation-scoring",
-      "parameters": {"fumblePerOne": 1, "additionalAppealPerSix": 1, "stacksWithCenter": true}
+      "parameters": {
+        "fumblePerOne": 1,
+        "additionalAppealPerSix": 1,
+        "stacksWithCenter": true
+      }
     },
     {
       "id": "double-time",
       "label": "Double Time",
       "baseDice": "dynamic",
       "handler": "double-time",
-      "parameters": {"actorVoltageDeltaBeforeAssembly": -2, "adjacentVoltageDice": 1, "remainingActorVoltagePenaltyDice": 1}
+      "parameters": {
+        "actorVoltageDeltaBeforeAssembly": -2,
+        "adjacentVoltageDice": 1,
+        "remainingActorVoltagePenaltyDice": 1
+      }
     },
     {
       "id": "excitement",
       "label": "Excitement",
       "baseDice": 3,
       "handler": "actor-voltage-delta",
-      "parameters": {"delta": 2}
+      "parameters": {
+        "delta": 2
+      }
     },
     {
       "id": "exhausting-act",
       "label": "Exhausting Act",
       "baseDice": 4,
       "handler": "exhausting-act",
-      "parameters": {"minimumStartingVoltage": 2, "conditionalBonusDice": 2, "actorVoltageDelta": -2}
+      "parameters": {
+        "minimumStartingVoltage": 2,
+        "conditionalBonusDice": 2,
+        "actorVoltageDelta": -2
+      }
     },
     {
       "id": "gamble",
       "label": "Gamble",
       "baseDice": 2,
       "handler": "gamble",
-      "parameters": {"actorVoltagePerSix": 1}
+      "parameters": {
+        "actorVoltagePerSix": 1
+      }
     },
     {
       "id": "get-ready",
       "label": "Get Ready!",
       "baseDice": 1,
       "handler": "get-ready",
-      "parameters": {"actorVoltageDelta": -2, "nextRoundBaseMoveDiceMultiplier": 2, "excludedDiceSources": ["contest-stat", "voltage", "type", "intervention"]}
+      "parameters": {
+        "actorVoltageDelta": -2,
+        "nextRoundBaseMoveDiceMultiplier": 2,
+        "excludedDiceSources": [
+          "contest-stat",
+          "voltage",
+          "type",
+          "intervention"
+        ]
+      }
     },
     {
       "id": "good-show",
       "label": "Good Show!",
       "baseDice": 2,
       "handler": "adjacent-voltage-comparison",
-      "parameters": {"comparison": "all-less", "conditionalBonusDice": 3, "actorVoltageDelta": 1}
+      "parameters": {
+        "comparison": "all-less",
+        "conditionalBonusDice": 3,
+        "actorVoltageDelta": 1
+      }
     },
     {
       "id": "incentives",
       "label": "Incentives",
       "baseDice": 3,
       "handler": "matching-voltage",
-      "parameters": {"actorVoltageDelta": 1, "adjacentVoltageDelta": -1}
+      "parameters": {
+        "actorVoltageDelta": 1,
+        "adjacentVoltageDelta": -1
+      }
     },
     {
       "id": "inversed-appeal",
       "label": "Inversed Appeal",
       "baseDice": "dynamic",
       "handler": "inversed-appeal",
-      "parameters": {"constant": 5, "subtract": "starting-voltage"}
+      "parameters": {
+        "constant": 5,
+        "subtract": "starting-voltage"
+      }
     },
     {
       "id": "reflective-appeal",
       "label": "Reflective Appeal",
       "baseDice": "dynamic",
       "handler": "reflective-appeal",
-      "parameters": {"value": "starting-voltage"}
+      "parameters": {
+        "value": "starting-voltage"
+      }
     },
     {
       "id": "reliable",
       "label": "Reliable",
       "baseDice": 3,
       "handler": "reliable",
-      "parameters": {"repeatAllowed": true, "repeatBonusDice": 1, "repeatActorVoltageDelta": 1}
+      "parameters": {
+        "repeatAllowed": true,
+        "repeatBonusDice": 1,
+        "repeatActorVoltageDelta": 1
+      }
     },
     {
       "id": "sabotage",
       "label": "Sabotage",
       "baseDice": 3,
       "handler": "sabotage",
-      "parameters": {"appealScored": false, "adjacentFumblePerDie": 1}
+      "parameters": {
+        "appealScored": false,
+        "adjacentFumblePerDie": 1
+      }
     },
     {
       "id": "safe-option",
       "label": "Safe Option",
       "baseDice": 4,
       "handler": "safe-option",
-      "parameters": {"appealPerSix": 1, "preventOwnRollOneFumble": true}
+      "parameters": {
+        "appealPerSix": 1,
+        "preventOwnRollOneFumble": true
+      }
     },
     {
       "id": "saving-grace",
       "label": "Saving Grace",
       "baseDice": 1,
       "handler": "saving-grace",
-      "parameters": {"removeFumblePerVoltage": 1, "gainVoltageIfRemovedAtMost": 2, "competitorFumbleProtection": "remainder-of-round"}
+      "parameters": {
+        "removeFumblePerVoltage": 1,
+        "gainVoltageIfRemovedAtMost": 2,
+        "competitorFumbleProtection": "remainder-of-round"
+      }
     },
     {
       "id": "seen-nothing-yet",
       "label": "Seen Nothing Yet",
       "baseDice": "dynamic",
       "handler": "seen-nothing-yet",
-      "parameters": {"loseAllVoltage": true, "baseDicePerVoltageLost": 2}
+      "parameters": {
+        "loseAllVoltage": true,
+        "baseDicePerVoltageLost": 2
+      }
     },
     {
       "id": "special-attention",
       "label": "Special Attention",
       "baseDice": 5,
       "handler": "adjacent-voltage-delta",
-      "parameters": {"delta": 1}
+      "parameters": {
+        "delta": 1
+      }
     },
     {
       "id": "steady-performance",
       "label": "Steady Performance",
       "baseDice": 5,
       "handler": "actor-voltage-delta",
-      "parameters": {"delta": 1}
+      "parameters": {
+        "delta": 1
+      }
     },
     {
       "id": "tease",
       "label": "Tease",
       "baseDice": 4,
       "handler": "tease",
-      "parameters": {"appealPerFiveOrSix": 1, "adjacentFumblePerSix": 1}
+      "parameters": {
+        "appealPerFiveOrSix": 1,
+        "adjacentFumblePerSix": 1
+      }
     },
     {
       "id": "unsettling",
       "label": "Unsettling",
       "baseDice": 5,
       "handler": "unsettling",
-      "parameters": {"actorVoltageDelta": -2, "adjacentVoltageDelta": -1}
+      "parameters": {
+        "actorVoltageDelta": -2,
+        "adjacentVoltageDelta": -1
+      }
     }
   ],
   "variants": [
@@ -349,7 +685,14 @@
       "label": "Supercontest",
       "completionState": "native",
       "contestTypePolicy": "journaled-d6-each-round",
-      "typeDieMapping": {"1": "cool", "2": "tough", "3": "beauty", "4": "smart", "5": "cute", "6": "reroll"},
+      "typeDieMapping": {
+        "1": "cool",
+        "2": "tough",
+        "3": "beauty",
+        "4": "smart",
+        "5": "cute",
+        "6": "reroll"
+      },
       "contestantMinimum": 3,
       "contestantMaximum": 5
     },
@@ -385,14 +728,119 @@
     {
       "id": "trainer-participant",
       "label": "Trainer Participant Contest",
-      "completionState": "reference-only",
-      "safeReason": "Trainer appeals are deferred until the shared combat-and-contest blend is closed."
+      "completionState": "structured",
+      "structuredSemanticsVersion": 1,
+      "compatibleBaseVariantIds": [
+        "standard",
+        "supercontest",
+        "festival",
+        "rotation"
+      ],
+      "contestantMinimum": 3,
+      "contestantMaximum": 5,
+      "performerPolicy": {
+        "performersPerEntry": [
+          "trainer",
+          "pokemon"
+        ],
+        "trainerMayAppeal": true,
+        "moveAuthority": "authoritative-performer-move-list",
+        "missingContestIdentityPolicy": "reject"
+      },
+      "methods": [
+        {
+          "id": "simultaneous",
+          "appealsPerEntryPerRound": 2,
+          "appealOrderPolicy": "controller-chooses-trainer-or-pokemon-first",
+          "voltageScope": "per-performer",
+          "adjacentEffectScope": "both-performers-of-adjacent-entry",
+          "crossPerformerEffectPolicy": [
+            "get-ready-may-apply-to-partner-same-round",
+            "attention-grabber-may-transfer-between-pair"
+          ]
+        },
+        {
+          "id": "alternating",
+          "appealsPerEntryPerRound": 1,
+          "appealOrderPolicy": "trainer-and-pokemon-alternate",
+          "voltageScope": "shared-entry",
+          "adjacentEffectScope": "shared-entry",
+          "crossPerformerEffectPolicy": []
+        }
+      ],
+      "sharedContestDicePool": {
+        "scope": "trainer-pokemon-entry",
+        "depletionScope": "contest",
+        "spendAuthority": "active-performer",
+        "singleSpendRequired": true
+      },
+      "featurePolicy": {
+        "coordinatorMayTarget": [
+          "trainer",
+          "pokemon"
+        ],
+        "similarTrainerFeaturesMayTarget": [
+          "trainer",
+          "pokemon"
+        ]
+      }
     },
     {
       "id": "battle",
       "label": "Battle Contest",
-      "completionState": "reference-only",
-      "safeReason": "Battle Contests are deferred until the encounter and contest engines have a reviewed blend contract."
+      "completionState": "structured",
+      "structuredSemanticsVersion": 1,
+      "trainerCount": 2,
+      "rosterPolicy": {
+        "pokemonPerTrainerMinimum": 3,
+        "pokemonPerTrainerMaximum": 6,
+        "equalDeclaredCountRequired": true,
+        "defaultActivePokemonPerTrainer": 1
+      },
+      "roundBudget": {
+        "formula": "twice-pokemon-per-trainer",
+        "minimum": 6,
+        "maximum": 12
+      },
+      "introductionPolicy": {
+        "skillCheckPerTrainer": 1,
+        "contestDicePoolScope": "trainer-team",
+        "usableBy": "any-team-pokemon",
+        "affectsInitiative": false
+      },
+      "encounterPolicy": {
+        "turnOrder": "encounter-initiative",
+        "appealSource": "accepted-move-result",
+        "excludedActions": [
+          "struggle-attack",
+          "combat-maneuver"
+        ],
+        "contestAdjacency": "all-opposing-pokemon-on-field"
+      },
+      "voltagePolicy": {
+        "scope": "per-pokemon",
+        "appealUses": "active-pokemon-only",
+        "attackKoDelta": 2,
+        "damageOverTimeKoRecipient": "opposing-active-pokemon",
+        "recallDelta": -2,
+        "recallLossExceptions": [
+          "Baton Pass",
+          "U-Turn",
+          "Volt Switch",
+          "Juggler-equivalent-switch"
+        ]
+      },
+      "replacementPolicy": {
+        "afterKo": "center-of-attention-first-acting-turn"
+      },
+      "endPolicy": {
+        "conditions": [
+          "round-budget-exhausted",
+          "one-trainer-all-pokemon-knocked-out"
+        ],
+        "score": "appeal-points",
+        "winner": "highest-appeal-points"
+      }
     }
   ],
   "experience": {
@@ -408,61 +856,347 @@
     "rotationPolicy": "split-equally-with-remainder-in-roster-order"
   },
   "integrationRows": [
-    {"kind": "feature", "id": "Coordinator", "completionState": "native", "handler": "reroll-appeal-once-per-contest"},
-    {"kind": "feature", "id": "Decisive Director", "completionState": "not-applicable", "safeReason": "Contest turn order comes from canonical position charts, not Initiative."},
-    {"kind": "feature", "id": "Adaptable Performance", "completionState": "native", "handler": "compose-type-and-effect-once-per-contest"},
-    {"kind": "feature", "id": "Flexible Preparations", "completionState": "native", "handler": "reallocate-two-poffin-dice-until-campaign-day-end"},
-    {"kind": "feature", "id": "Innovation", "completionState": "guided", "handler": "bind-created-move-contest-identity", "safeReason": "A created Move requires an explicit reviewed type and effect choice; prose is never parsed."},
-    {"kind": "feature", "id": "Nuanced Performance", "completionState": "not-applicable", "safeReason": "Contest appeals do not expend battle Move frequencies."},
-    {"kind": "feature", "id": "Reliable Performance", "completionState": "native", "handler": "fixed-one-appeal-per-die"},
-    {"kind": "feature", "id": "Look and Learn", "completionState": "passive", "handler": "existing-feature-acquisition-authority"},
-    {"kind": "feature", "id": "Juggling Show", "completionState": "native", "handler": "introduction-half-acrobatics-bonus"},
-    {"kind": "feature", "id": "Style Expert", "completionState": "passive", "handler": "two-poffin-dice-chosen-stat"},
-    {"kind": "feature", "id": "Style Flourish", "completionState": "native", "handler": "reroll-ones-once-per-contest"},
-    {"kind": "feature", "id": "Style Entrainment", "completionState": "not-applicable", "safeReason": "Its granted Abilities have no canonical Contest action in this catalog."},
-    {"kind": "feature", "id": "Beautiful Ballet", "completionState": "native", "handler": "poffin-threshold-virtual-moves"},
-    {"kind": "feature", "id": "Fabulous Max", "completionState": "native", "handler": "improve-contest-alignment-one-step"},
-    {"kind": "feature", "id": "Enticing Beauty", "completionState": "not-applicable", "safeReason": "This Feature modifies route lure checks rather than Contest play."},
-    {"kind": "feature", "id": "Cool Conduct", "completionState": "native", "handler": "poffin-threshold-virtual-moves"},
-    {"kind": "feature", "id": "Rule of Cool", "completionState": "native", "handler": "improve-contest-alignment-one-step"},
-    {"kind": "feature", "id": "Action Hero Stunt", "completionState": "not-applicable", "safeReason": "This Feature substitutes dramatic Skill Checks outside Contest scoring."},
-    {"kind": "feature", "id": "Cute Cuddle", "completionState": "native", "handler": "poffin-threshold-virtual-moves"},
-    {"kind": "feature", "id": "Gleeful Steps", "completionState": "native", "handler": "improve-contest-alignment-one-step"},
-    {"kind": "feature", "id": "Let’s Be Friends!", "completionState": "not-applicable", "safeReason": "This Feature changes wild Pokémon disposition checks."},
-    {"kind": "feature", "id": "Smart Scheme", "completionState": "native", "handler": "poffin-threshold-virtual-moves"},
-    {"kind": "feature", "id": "Calculated Assault", "completionState": "native", "handler": "improve-contest-alignment-one-step"},
-    {"kind": "feature", "id": "Learn From Your Mistakes", "completionState": "not-applicable", "safeReason": "This Feature rerolls Skill Checks, not Appeal Rolls."},
-    {"kind": "feature", "id": "Tough Tumble", "completionState": "native", "handler": "poffin-threshold-virtual-moves"},
-    {"kind": "feature", "id": "Macho Charge", "completionState": "native", "handler": "improve-contest-alignment-one-step"},
-    {"kind": "feature", "id": "Endurance", "completionState": "not-applicable", "safeReason": "This Feature modifies falling, suffocation, and injury consequences."},
-    {"kind": "feature", "id": "Stat Ace", "completionState": "passive", "handler": "ordinary-combat-stat-derivation"},
-    {"kind": "feature", "id": "Contest Trends", "completionState": "guided", "handler": "discounted-contest-item-crafting"},
-    {"kind": "feature", "id": "Playing God", "completionState": "passive", "handler": "coloration-introduction-bonus"},
-    {"kind": "feature", "id": "Beguiling Dance", "completionState": "passive", "handler": "created-dance-effect-excitement"},
-    {"kind": "feature", "id": "Passing Waltz", "completionState": "guided", "handler": "bind-created-dance-contest-type"},
-    {"kind": "feature", "id": "Voice Lessons", "completionState": "passive", "handler": "sonic-move-bonus-die"},
-    {"kind": "feature", "id": "Marksman Orders", "completionState": "not-applicable", "safeReason": "Its ranged battle Orders do not change Contest appeals."},
-    {"kind": "edge", "id": "Grace", "completionState": "native", "handler": "poffin-cap-and-introduction-flexibility"},
-    {"kind": "edge", "id": "Groomer", "completionState": "native", "handler": "campaign-day-introduction-bonus"},
-    {"kind": "ability", "id": "Beautiful", "completionState": "native", "handler": "two-beauty-dice-once-per-contest"},
-    {"kind": "ability", "id": "Fashion Designer", "completionState": "native", "handler": "decorative-twine-two-dice"},
-    {"kind": "ability", "id": "Ugly", "completionState": "passive", "handler": "introduction-sixes-count-as-ones"},
-    {"kind": "item", "id": "Poffin Mixer", "completionState": "guided", "handler": "reviewed-berry-crafting"},
-    {"kind": "item", "id": "Fancy Clothes", "completionState": "native", "handler": "trainer-introduction-two-dice"},
-    {"kind": "item", "id": "Contest Accessory", "completionState": "native", "handler": "pokemon-introduction-two-dice"},
-    {"kind": "item", "id": "Contest Fashion", "completionState": "native", "handler": "matching-type-reroll-ones"},
-    {"kind": "item", "id": "Poffin", "completionState": "native", "handler": "permanent-contest-die-consumption"}
+    {
+      "kind": "feature",
+      "id": "Coordinator",
+      "completionState": "native",
+      "handler": "reroll-appeal-once-per-contest"
+    },
+    {
+      "kind": "feature",
+      "id": "Decisive Director",
+      "completionState": "not-applicable",
+      "safeReason": "Contest turn order comes from canonical position charts, not Initiative."
+    },
+    {
+      "kind": "feature",
+      "id": "Adaptable Performance",
+      "completionState": "native",
+      "handler": "compose-type-and-effect-once-per-contest"
+    },
+    {
+      "kind": "feature",
+      "id": "Flexible Preparations",
+      "completionState": "native",
+      "handler": "reallocate-two-poffin-dice-until-campaign-day-end"
+    },
+    {
+      "kind": "feature",
+      "id": "Innovation",
+      "completionState": "guided",
+      "handler": "bind-created-move-contest-identity",
+      "safeReason": "A created Move requires an explicit reviewed type and effect choice; prose is never parsed."
+    },
+    {
+      "kind": "feature",
+      "id": "Nuanced Performance",
+      "completionState": "not-applicable",
+      "safeReason": "Contest appeals do not expend battle Move frequencies."
+    },
+    {
+      "kind": "feature",
+      "id": "Reliable Performance",
+      "completionState": "native",
+      "handler": "fixed-one-appeal-per-die"
+    },
+    {
+      "kind": "feature",
+      "id": "Look and Learn",
+      "completionState": "passive",
+      "handler": "existing-feature-acquisition-authority"
+    },
+    {
+      "kind": "feature",
+      "id": "Juggling Show",
+      "completionState": "native",
+      "handler": "introduction-half-acrobatics-bonus"
+    },
+    {
+      "kind": "feature",
+      "id": "Style Expert",
+      "completionState": "passive",
+      "handler": "two-poffin-dice-chosen-stat"
+    },
+    {
+      "kind": "feature",
+      "id": "Style Flourish",
+      "completionState": "native",
+      "handler": "reroll-ones-once-per-contest"
+    },
+    {
+      "kind": "feature",
+      "id": "Style Entrainment",
+      "completionState": "not-applicable",
+      "safeReason": "Its granted Abilities have no canonical Contest action in this catalog."
+    },
+    {
+      "kind": "feature",
+      "id": "Beautiful Ballet",
+      "completionState": "native",
+      "handler": "poffin-threshold-virtual-moves"
+    },
+    {
+      "kind": "feature",
+      "id": "Fabulous Max",
+      "completionState": "native",
+      "handler": "improve-contest-alignment-one-step"
+    },
+    {
+      "kind": "feature",
+      "id": "Enticing Beauty",
+      "completionState": "not-applicable",
+      "safeReason": "This Feature modifies route lure checks rather than Contest play."
+    },
+    {
+      "kind": "feature",
+      "id": "Cool Conduct",
+      "completionState": "native",
+      "handler": "poffin-threshold-virtual-moves"
+    },
+    {
+      "kind": "feature",
+      "id": "Rule of Cool",
+      "completionState": "native",
+      "handler": "improve-contest-alignment-one-step"
+    },
+    {
+      "kind": "feature",
+      "id": "Action Hero Stunt",
+      "completionState": "not-applicable",
+      "safeReason": "This Feature substitutes dramatic Skill Checks outside Contest scoring."
+    },
+    {
+      "kind": "feature",
+      "id": "Cute Cuddle",
+      "completionState": "native",
+      "handler": "poffin-threshold-virtual-moves"
+    },
+    {
+      "kind": "feature",
+      "id": "Gleeful Steps",
+      "completionState": "native",
+      "handler": "improve-contest-alignment-one-step"
+    },
+    {
+      "kind": "feature",
+      "id": "Let’s Be Friends!",
+      "completionState": "not-applicable",
+      "safeReason": "This Feature changes wild Pokémon disposition checks."
+    },
+    {
+      "kind": "feature",
+      "id": "Smart Scheme",
+      "completionState": "native",
+      "handler": "poffin-threshold-virtual-moves"
+    },
+    {
+      "kind": "feature",
+      "id": "Calculated Assault",
+      "completionState": "native",
+      "handler": "improve-contest-alignment-one-step"
+    },
+    {
+      "kind": "feature",
+      "id": "Learn From Your Mistakes",
+      "completionState": "not-applicable",
+      "safeReason": "This Feature rerolls Skill Checks, not Appeal Rolls."
+    },
+    {
+      "kind": "feature",
+      "id": "Tough Tumble",
+      "completionState": "native",
+      "handler": "poffin-threshold-virtual-moves"
+    },
+    {
+      "kind": "feature",
+      "id": "Macho Charge",
+      "completionState": "native",
+      "handler": "improve-contest-alignment-one-step"
+    },
+    {
+      "kind": "feature",
+      "id": "Endurance",
+      "completionState": "not-applicable",
+      "safeReason": "This Feature modifies falling, suffocation, and injury consequences."
+    },
+    {
+      "kind": "feature",
+      "id": "Stat Ace",
+      "completionState": "passive",
+      "handler": "ordinary-combat-stat-derivation"
+    },
+    {
+      "kind": "feature",
+      "id": "Contest Trends",
+      "completionState": "guided",
+      "handler": "discounted-contest-item-crafting"
+    },
+    {
+      "kind": "feature",
+      "id": "Playing God",
+      "completionState": "passive",
+      "handler": "coloration-introduction-bonus"
+    },
+    {
+      "kind": "feature",
+      "id": "Beguiling Dance",
+      "completionState": "passive",
+      "handler": "created-dance-effect-excitement"
+    },
+    {
+      "kind": "feature",
+      "id": "Passing Waltz",
+      "completionState": "guided",
+      "handler": "bind-created-dance-contest-type"
+    },
+    {
+      "kind": "feature",
+      "id": "Voice Lessons",
+      "completionState": "passive",
+      "handler": "sonic-move-bonus-die"
+    },
+    {
+      "kind": "feature",
+      "id": "Marksman Orders",
+      "completionState": "not-applicable",
+      "safeReason": "Its ranged battle Orders do not change Contest appeals."
+    },
+    {
+      "kind": "edge",
+      "id": "Grace",
+      "completionState": "native",
+      "handler": "poffin-cap-and-introduction-flexibility"
+    },
+    {
+      "kind": "edge",
+      "id": "Groomer",
+      "completionState": "native",
+      "handler": "campaign-day-introduction-bonus"
+    },
+    {
+      "kind": "ability",
+      "id": "Beautiful",
+      "completionState": "native",
+      "handler": "two-beauty-dice-once-per-contest"
+    },
+    {
+      "kind": "ability",
+      "id": "Fashion Designer",
+      "completionState": "native",
+      "handler": "decorative-twine-two-dice"
+    },
+    {
+      "kind": "ability",
+      "id": "Ugly",
+      "completionState": "passive",
+      "handler": "introduction-sixes-count-as-ones"
+    },
+    {
+      "kind": "item",
+      "id": "Poffin Mixer",
+      "completionState": "guided",
+      "handler": "reviewed-berry-crafting"
+    },
+    {
+      "kind": "item",
+      "id": "Fancy Clothes",
+      "completionState": "native",
+      "handler": "trainer-introduction-two-dice"
+    },
+    {
+      "kind": "item",
+      "id": "Contest Accessory",
+      "completionState": "native",
+      "handler": "pokemon-introduction-two-dice"
+    },
+    {
+      "kind": "item",
+      "id": "Contest Fashion",
+      "completionState": "native",
+      "handler": "matching-type-reroll-ones"
+    },
+    {
+      "kind": "item",
+      "id": "Poffin",
+      "completionState": "native",
+      "handler": "permanent-contest-die-consumption"
+    }
   ],
   "privacy": {
-    "publicFields": ["identity", "hallPresentation", "variantId", "contestTypeId", "stage", "round", "letters", "positions", "scoreboard", "acceptedHistory", "settlementSummary"],
-    "ownerFields": ["ownDicePools", "ownLegalMoves", "ownPendingDecision", "ownInterventionOffers"],
-    "gmFields": ["policy", "prizeDraft", "gmNotes", "allPendingDecisions", "correctionControls"],
-    "diagnosticFields": ["operationHashes", "readSets", "writeSets", "rawDiceJournal", "projectionContributors"]
+    "publicFields": [
+      "identity",
+      "hallPresentation",
+      "variantId",
+      "contestTypeId",
+      "stage",
+      "round",
+      "letters",
+      "positions",
+      "scoreboard",
+      "acceptedHistory",
+      "settlementSummary"
+    ],
+    "ownerFields": [
+      "ownDicePools",
+      "ownLegalMoves",
+      "ownPendingDecision",
+      "ownInterventionOffers"
+    ],
+    "gmFields": [
+      "policy",
+      "prizeDraft",
+      "gmNotes",
+      "allPendingDecisions",
+      "correctionControls"
+    ],
+    "diagnosticFields": [
+      "operationHashes",
+      "readSets",
+      "writeSets",
+      "rawDiceJournal",
+      "projectionContributors"
+    ]
   },
   "corrections": {
-    "allowed": ["appeal-delta", "fumble-delta", "voltage-delta", "dice-pool-delta", "controller-reassignment", "cancel-contest"],
+    "allowed": [
+      "appeal-delta",
+      "fumble-delta",
+      "voltage-delta",
+      "dice-pool-delta",
+      "controller-reassignment",
+      "cancel-contest"
+    ],
     "maximumAbsoluteNumericDelta": 20,
     "diceEvidenceMutable": false,
     "receiptRequired": true
-  }
+  },
+  "reviewedSuccessors": [
+    {
+      "migrationId": "deferred-closure:contest-variants:v1",
+      "ticket": "P11-006",
+      "beforeSha256": "fadb03c328f2025dcc81fe497365db345717184bea6a9247b2f79d9d3f61362a",
+      "sourceFingerprint": {
+        "algorithm": "sha256",
+        "sources": [
+          {
+            "path": "books/markdown/core/08-pokemon-contests.md",
+            "sha256": "d4cbfef280d2b96bede24648b1ca69a8bfcbdad639d8a5537ce8518387285111"
+          },
+          {
+            "path": "books/markdown/errata-2.md",
+            "sha256": "1b8be900ac33dd8d621c7acda801ad535f0f8532142829c5409d907c081a1c70"
+          },
+          {
+            "path": "books/markdown/errata-3.md",
+            "sha256": "d589c68c0b12c18de4df30b5e37351297b324d7f7fa4a8cda63cda5c7ff154b8"
+          }
+        ]
+      },
+      "changedVariantIds": [
+        "trainer-participant",
+        "battle"
+      ],
+      "runtimeProseParsing": false
+    }
+  ]
 }

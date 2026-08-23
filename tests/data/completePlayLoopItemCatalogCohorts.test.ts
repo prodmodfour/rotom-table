@@ -1,11 +1,8 @@
-import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import certification from '../../data/complete-play-loop/item-catalog-cohort-certification.v1.json'
 import registry from '../../data/complete-play-loop/item-catalog-cohorts.v1.json'
 import { ITEM_CATALOG_COHORT_SCHEMA_VERSION } from '../../shared/itemAutomation/catalogCohorts'
-
-const sha256 = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex')
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 describe('P8-092 canonical item catalog cohort certification', () => {
   it('pins one bounded exact assignment for the complete canonical catalog', () => {
@@ -45,6 +42,20 @@ describe('P8-092 canonical item catalog cohort certification', () => {
     }
   })
 
+  it('records final action-level states without reclassifying mixed equipment cohorts', () => {
+    const actionRows = registry.cohorts.flatMap(cohort => cohort.members)
+      .flatMap(member => member.actionFinalStates.map(action => ({ canonicalId: member.canonicalId, ...action })))
+    expect(actionRows).toHaveLength(15)
+    expect(new Set(actionRows.map(row => row.actionId)).size).toBe(15)
+    expect(actionRows).toContainEqual({
+      canonicalId: 'Old Rod', actionId: 'equipment.fishing.old-rod', finalState: 'guided',
+    })
+    expect(actionRows).toContainEqual({
+      canonicalId: 'Weighted Nets', actionId: 'equipment.weighted-nets.pull', finalState: 'native',
+    })
+    expect(actionRows.every(row => row.finalState === 'native' || row.finalState === 'guided')).toBe(true)
+  })
+
   it('records exact P8-093 closure with no blocked catalog row', () => {
     expect(certification.implementationStateCounts).toEqual({
       native: 205, guided: 40, passive: 104, blocked: 0,
@@ -66,7 +77,8 @@ describe('P8-092 canonical item catalog cohort certification', () => {
   it('pins every policy, generator, runtime, test, document, and rubric source', () => {
     for (const source of Object.values(certification.sources)) {
       expect(source.sha256, source.path).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(source.path)), source.path).toBe(source.sha256)
+      expect(acceptedSuccessorHead(source.path, source.sha256), source.path)
+        .toBe(repositoryFileSha256(source.path))
     }
   })
 })

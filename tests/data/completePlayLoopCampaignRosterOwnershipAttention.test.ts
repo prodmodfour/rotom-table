@@ -1,7 +1,6 @@
-import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/campaign-roster-ownership-attention.v1.json'
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 import {
   CAMPAIGN_ATTENTION_ACTION_INTENTS,
   CAMPAIGN_ATTENTION_DECISION_KINDS,
@@ -15,8 +14,6 @@ import {
   CAMPAIGN_ROSTER_OWNERSHIP_ATTENTION_LIMIT,
 } from '../../server/domain/campaignAttention/rosterOwnershipDetector'
 import { TRAINER_TEAM_LIMIT } from '../../src/utils/trainerPokemonLinks'
-
-const sha256 = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex')
 
 describe('P8-088 campaign roster and ownership attention evidence', () => {
   it('pins complete, bounded, read-only current authority', () => {
@@ -126,7 +123,8 @@ describe('P8-088 campaign roster and ownership attention evidence', () => {
   it('pins every executable, contract, test, and documentation source', () => {
     for (const source of Object.values(contract.sources)) {
       expect(source.sha256, source.path).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(source.path)), source.path).toBe(source.sha256)
+      expect(acceptedSuccessorHead(source.path, source.sha256), source.path)
+        .toBe(repositoryFileSha256(source.path))
     }
   })
 })

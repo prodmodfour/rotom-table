@@ -11,6 +11,7 @@ import {
   equipmentGrantDefinitionFor,
   equipmentGrantDocument,
 } from '~~/server/domain/itemAutomation/equipmentGrantRegistry'
+import { EQUIPMENT_ACTION_PRESENTATIONS } from '#shared/itemAutomation/equipmentActionPresentation'
 
 const EQUIPMENT_CATEGORIES = new Set([
   'Held Item', 'Weapon', 'Hand Equipment', 'Head Equipment',
@@ -30,6 +31,10 @@ describe('P8-047 reviewed equipment grant data', () => {
     expect(document.definitions.map(row => row.canonicalItemId)).toEqual(expected)
     expect(document.equipmentDefinitionsSha256)
       .toBe(sha256File('data/complete-play-loop/equipment-definitions.v1.json'))
+    expect(document.classificationPolicy).toMatchObject({
+      finalStateAuthorityPath: 'data/deferred-closure/item-action-matrix.v1.json',
+      finalStateAuthoritySha256: sha256File('data/deferred-closure/item-action-matrix.v1.json'),
+    })
   })
 
   it('records explicit weapon, Move, Ability, Capability, and contextual-action sources', () => {
@@ -38,7 +43,7 @@ describe('P8-047 reviewed equipment grant data', () => {
       expect.objectContaining({ kind: 'move', canonicalId: 'Cheap Shot', executionStatus: 'native' }),
     ]))
     expect(equipmentGrantDefinitionFor('Honed Claws')?.grants).toEqual(expect.arrayContaining([
-      expect.objectContaining({ kind: 'move', canonicalId: 'Gouge', executionStatus: 'definition-missing' }),
+      expect.objectContaining({ kind: 'move', canonicalId: 'Gouge', executionStatus: 'native' }),
     ]))
     expect(equipmentGrantDefinitionFor('Full Incense')?.grants).toContainEqual(expect.objectContaining({
       kind: 'ability', canonicalId: 'Stall',
@@ -47,7 +52,8 @@ describe('P8-047 reviewed equipment grant data', () => {
       kind: 'capability', canonicalId: 'Darkvision',
     }))
     expect(equipmentGrantDefinitionFor('Old Rod')?.grants).toContainEqual(expect.objectContaining({
-      kind: 'action', interactionRole: 'contextual-affordance', executionStatus: 'deferred',
+      kind: 'action', interactionRole: 'contextual-affordance', executionStatus: 'native',
+      finalState: 'guided', actionId: 'equipment.fishing.old-rod', deferredTicket: null,
     }))
     expect(equipmentGrantDefinitionFor('Wonder Launcher')?.grants).toContainEqual(expect.objectContaining({
       kind: 'action', actionId: 'equipment.wonder-launcher.apply',
@@ -58,9 +64,28 @@ describe('P8-047 reviewed equipment grant data', () => {
         kind: 'capability', canonicalId: 'Gilled', activation: 'while-re-breather-active',
       }),
       expect.objectContaining({
-        kind: 'action', actionId: 'equipment.re-breather.activate', executionStatus: 'native', deferredTicket: null,
+        kind: 'action', actionId: 'equipment.re-breather.activate', executionStatus: 'native', finalState: 'guided', deferredTicket: null,
       }),
     ]))
+  })
+
+  it('keeps item-action labels, timing, ownership, and final state synchronized with the reviewed grant registry', () => {
+    const guided = new Set([
+      'equipment.fishing.old-rod', 'equipment.fishing.good-rod',
+      'equipment.fishing.super-rod', 'equipment.snag-machine.convert',
+    ])
+    for (const presentation of EQUIPMENT_ACTION_PRESENTATIONS) {
+      const grant = equipmentGrantDefinitionFor(presentation.canonicalItemId)?.grants.find(candidate => (
+        candidate.kind === 'action' && candidate.actionId === presentation.actionId
+      ))
+      expect(grant, presentation.actionId).toMatchObject({
+        kind: 'action', label: presentation.label, executionStatus: 'native',
+        finalState: guided.has(presentation.actionId) ? 'guided' : 'native', deferredTicket: null,
+      })
+      expect(presentation.timingLabel.toLocaleLowerCase('en-US')).toContain(grant!.kind === 'action'
+        ? grant!.timing === 'extended' ? 'extended action' : `${grant!.timing} action`
+        : '')
+    }
   })
 
   it('rejects shape drift, duplicate grants, prose-enabled policy, and unsafe Move status', () => {
@@ -84,7 +109,7 @@ describe('P8-047 reviewed equipment grant data', () => {
         ...row,
         grants: row.grants.map(grant => ({ ...grant, actionId: 'equipment.fake.native' })),
       } : row),
-    })).toThrow('native actions require a reviewed executor')
+    })).toThrow('native executors require a reviewed final state')
     const moveOwner = grantJson.definitions.find(row => row.grants.some(grant => grant.kind === 'move'))!
     expect(() => parseEquipmentGrantDocument({
       ...grantJson,

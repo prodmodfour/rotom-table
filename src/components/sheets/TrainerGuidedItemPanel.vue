@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick, ref, watch } from 'vue'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetKind } from '#shared/sheets'
@@ -18,6 +19,7 @@ const props = withDefaults(defineProps<{
   enabled: true,
 })
 const emit = defineEmits<{ accepted: [response: ItemGuidedAcceptedResult] }>()
+const messageRef = ref<HTMLElement | null>(null)
 
 const coordinator = useItemGuidedAdjudication({
   mode: 'owner',
@@ -26,6 +28,11 @@ const coordinator = useItemGuidedAdjudication({
   ownerRevision: () => props.sheet.revision ?? null,
   profileId: () => props.profileId,
   onAccepted: async response => emit('accepted', response),
+})
+watch(() => [coordinator.status.value, coordinator.message.value] as const, async ([status, message]) => {
+  if (!message || (status !== 'conflict' && status !== 'error')) return
+  await nextTick()
+  messageRef.value?.focus({ preventScroll: true })
 })
 </script>
 
@@ -83,7 +90,14 @@ const coordinator = useItemGuidedAdjudication({
         <p v-else>No Capability or equipment-state change occurs before GM acceptance.</p>
       </article>
 
-      <div v-if="coordinator.message.value" class="trainer-guided__message" role="status" aria-live="polite">
+      <div
+        v-if="coordinator.message.value"
+        ref="messageRef"
+        class="trainer-guided__message"
+        :role="coordinator.status.value === 'conflict' || coordinator.status.value === 'error' ? 'alert' : 'status'"
+        :aria-live="coordinator.status.value === 'conflict' || coordinator.status.value === 'error' ? 'assertive' : 'polite'"
+        tabindex="-1"
+      >
         <span>{{ coordinator.message.value }}</span>
         <button v-if="!coordinator.busy.value" type="button" @click="coordinator.dismiss">Dismiss</button>
       </div>
@@ -119,7 +133,8 @@ const coordinator = useItemGuidedAdjudication({
 .trainer-guided button { min-height: 44px; border: 1px solid var(--rt-border-strong, var(--rule)); border-radius: var(--rt-radius-medium, 8px); background: var(--rt-surface-3, var(--paper-inset)); color: var(--rt-text, var(--ink)); cursor: pointer; font: inherit; font-weight: 750; padding: .6rem .85rem; }
 .trainer-guided__offer button,
 .trainer-guided__uncertain button { border-color: var(--rt-pending, #ffc247); background: var(--rt-brand, #df2d32); color: #fff; }
-.trainer-guided button:focus-visible { outline: 3px solid color-mix(in srgb, var(--rt-focus, #20c8e5) 55%, transparent); outline-offset: 2px; }
+.trainer-guided button:focus-visible,
+.trainer-guided__message:focus-visible { outline: 3px solid color-mix(in srgb, var(--rt-focus, #20c8e5) 55%, transparent); outline-offset: 2px; }
 .trainer-guided button:disabled { cursor: not-allowed; opacity: .5; }
 .trainer-guided__uncertain { display: grid; gap: .4rem; border: 2px solid var(--rt-pending, #ffc247); padding: .8rem; }
 .trainer-guided__uncertain p { margin: 0; }

@@ -885,7 +885,8 @@ export const reduceDirectHpEffectForRecipient = (options: {
   if (operation.reasonCode === 'ability.bully.add-injury'
     || operation.reasonCode === 'ability.cruelty.add-injury'
     || operation.reasonCode === 'ability.flame-tongue.add-injury'
-    || operation.reasonCode === 'equipment.razor-fang.injury') {
+    || operation.reasonCode === 'equipment.razor-fang.injury'
+    || operation.reasonCode === 'gouge.add-injury') {
     accumulator.addInjuries(recipient.token, 1)
     const current = hpSnapshot(accumulator, recipient)
     return {

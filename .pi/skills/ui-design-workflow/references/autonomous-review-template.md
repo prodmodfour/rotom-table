@@ -15,6 +15,8 @@ Any hard failure blocks acceptance regardless of score:
 - official Pokémon game imitation, unrequested branding, device-frame/perspective presentation, or watermark
 - obvious generation artifact that would mislead implementation
 
+Storyboard frames additionally apply the continuity hard failures and review rows defined in [the storyboard workflow](storyboard-workflow.md).
+
 ## Score
 
 Score each category from 0 to 2 using visible pixel evidence:

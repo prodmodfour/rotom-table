@@ -100,6 +100,34 @@ describe('CampaignContinuationDashboard', () => {
     ]) expect(text).not.toContain(privateValue)
   })
 
+  it('routes unresolved Skill Checks back to Live Encounter with explicit response copy', () => {
+    const skillProjection = {
+      ...projection,
+      attention: {
+        ...projection.attention,
+        items: [item({
+          reason: 'skill-check-response',
+          urgency: 'normal',
+          entity: { kind: 'campaign', id: 'campaign' },
+          legalActions: [{
+            actionId: 'private-skill-action', intent: 'continue-campaign', href: '/play',
+            authority: { kind: 'resource', id: 'private-check', revision: 1 }, requiresConfirmation: false,
+          }],
+        })],
+        summary: { total: 1, blocking: 0, urgent: 0, normal: 1, informational: 0 },
+      },
+    }
+    const wrapper = mount(CampaignContinuationDashboard, {
+      props: { projection: skillProjection, status: 'ready', error: null, hasSelectedProfile: true },
+      global: { stubs: { NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } } },
+    })
+    expect(wrapper.text()).toContain('Skill Check response')
+    expect(wrapper.text()).toContain('A requested Skill Check still needs a subject response.')
+    expect(wrapper.text()).toContain('Open Live Encounter')
+    expect(wrapper.get('a[href="/play"]').text()).toContain('Open Live Encounter')
+    expect(wrapper.text()).not.toContain('private-check')
+  })
+
   it('uses a semantic alert and emits retry without replacing a retained complete snapshot', async () => {
     const wrapper = mount(CampaignContinuationDashboard, {
       props: {

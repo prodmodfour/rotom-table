@@ -11,7 +11,9 @@
     "runtimeProseParsing": false,
     "missingDefinitionPolicy": "visible-unavailable-no-execution",
     "inactiveOrSuppressedPolicy": "withdraw-immediately",
-    "acceptedDurableEffectsSurviveSourceLoss": true
+    "acceptedDurableEffectsSurviveSourceLoss": true,
+    "finalStateAuthorityPath": "data/deferred-closure/item-action-matrix.v1.json",
+    "finalStateAuthoritySha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83"
   },
   "definitions": [
     {
@@ -26,7 +28,17 @@
           "pokemonWielderSizePolicy": "small-only",
           "damageBaseBonus": 1,
           "accuracyCheckPenalty": 0,
+          "rangeMinimumMeters": 0,
+          "rangeMaximumMeters": null,
+          "handsRequired": 1,
+          "targetingPolicy": "melee",
+          "weaponRangeReplacesSingleTargetMoveRange": false,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
           "executionStatus": "native"
         }
       ]
@@ -43,7 +55,17 @@
           "pokemonWielderSizePolicy": "medium-plus",
           "damageBaseBonus": 2,
           "accuracyCheckPenalty": 1,
+          "rangeMinimumMeters": 0,
+          "rangeMaximumMeters": null,
+          "handsRequired": 2,
+          "targetingPolicy": "melee",
+          "weaponRangeReplacesSingleTargetMoveRange": false,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
           "executionStatus": "native"
         }
       ]
@@ -60,8 +82,18 @@
           "pokemonWielderSizePolicy": "trainer-only",
           "damageBaseBonus": 0,
           "accuracyCheckPenalty": 0,
+          "rangeMinimumMeters": 0,
+          "rangeMaximumMeters": 4,
+          "handsRequired": 1,
+          "targetingPolicy": "ranged-line-of-sight",
+          "weaponRangeReplacesSingleTargetMoveRange": true,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
-          "executionStatus": "definition-missing"
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+          "executionStatus": "native"
         }
       ]
     },
@@ -75,10 +107,20 @@
           "kind": "weapon-profile",
           "weaponClass": "long-range",
           "pokemonWielderSizePolicy": "trainer-only",
-          "damageBaseBonus": 0,
-          "accuracyCheckPenalty": 0,
+          "damageBaseBonus": 1,
+          "accuracyCheckPenalty": 1,
+          "rangeMinimumMeters": 4,
+          "rangeMaximumMeters": 12,
+          "handsRequired": 2,
+          "targetingPolicy": "ranged-line-of-sight",
+          "weaponRangeReplacesSingleTargetMoveRange": true,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
-          "executionStatus": "definition-missing"
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+          "executionStatus": "native"
         }
       ]
     },
@@ -94,7 +136,17 @@
           "pokemonWielderSizePolicy": "small-only",
           "damageBaseBonus": 1,
           "accuracyCheckPenalty": 0,
+          "rangeMinimumMeters": 0,
+          "rangeMaximumMeters": null,
+          "handsRequired": 1,
+          "targetingPolicy": "melee",
+          "weaponRangeReplacesSingleTargetMoveRange": false,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
           "executionStatus": "native"
         },
         {
@@ -120,7 +172,17 @@
           "pokemonWielderSizePolicy": "medium-plus",
           "damageBaseBonus": 2,
           "accuracyCheckPenalty": 1,
+          "rangeMinimumMeters": 0,
+          "rangeMaximumMeters": null,
+          "handsRequired": 2,
+          "targetingPolicy": "melee",
+          "weaponRangeReplacesSingleTargetMoveRange": false,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": true,
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
           "executionStatus": "native"
         },
         {
@@ -146,8 +208,18 @@
           "pokemonWielderSizePolicy": "trainer-only",
           "damageBaseBonus": 0,
           "accuracyCheckPenalty": 0,
+          "rangeMinimumMeters": 0,
+          "rangeMaximumMeters": 4,
+          "handsRequired": 1,
+          "targetingPolicy": "ranged-line-of-sight",
+          "weaponRangeReplacesSingleTargetMoveRange": true,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
-          "executionStatus": "definition-missing"
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+          "executionStatus": "native"
         },
         {
           "grantId": "equipment.throwing-hammers.bash",
@@ -156,7 +228,7 @@
           "minimumCombatRank": 4,
           "trainerEligible": true,
           "pokemonWielderEligible": true,
-          "executionStatus": "definition-missing"
+          "executionStatus": "native"
         }
       ]
     },
@@ -170,10 +242,20 @@
           "kind": "weapon-profile",
           "weaponClass": "long-range",
           "pokemonWielderSizePolicy": "trainer-only",
-          "damageBaseBonus": 0,
-          "accuracyCheckPenalty": 0,
+          "damageBaseBonus": 1,
+          "accuracyCheckPenalty": 1,
+          "rangeMinimumMeters": 4,
+          "rangeMaximumMeters": 12,
+          "handsRequired": 2,
+          "targetingPolicy": "ranged-line-of-sight",
+          "weaponRangeReplacesSingleTargetMoveRange": true,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
-          "executionStatus": "definition-missing"
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+          "executionStatus": "native"
         },
         {
           "grantId": "equipment.hunting-bow.pierce",
@@ -182,7 +264,7 @@
           "minimumCombatRank": 4,
           "trainerEligible": true,
           "pokemonWielderEligible": true,
-          "executionStatus": "definition-missing"
+          "executionStatus": "native"
         }
       ]
     },
@@ -198,7 +280,17 @@
           "pokemonWielderSizePolicy": "small-only",
           "damageBaseBonus": 1,
           "accuracyCheckPenalty": 0,
+          "rangeMinimumMeters": 0,
+          "rangeMaximumMeters": null,
+          "handsRequired": 1,
+          "targetingPolicy": "melee",
+          "weaponRangeReplacesSingleTargetMoveRange": false,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
           "executionStatus": "native"
         },
         {
@@ -217,7 +309,7 @@
           "minimumCombatRank": 6,
           "trainerEligible": true,
           "pokemonWielderEligible": false,
-          "executionStatus": "definition-missing"
+          "executionStatus": "native"
         }
       ]
     },
@@ -233,7 +325,17 @@
           "pokemonWielderSizePolicy": "medium-plus",
           "damageBaseBonus": 2,
           "accuracyCheckPenalty": 1,
+          "rangeMinimumMeters": 0,
+          "rangeMaximumMeters": null,
+          "handsRequired": 2,
+          "targetingPolicy": "melee",
+          "weaponRangeReplacesSingleTargetMoveRange": false,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
           "executionStatus": "native"
         },
         {
@@ -252,7 +354,7 @@
           "minimumCombatRank": 6,
           "trainerEligible": true,
           "pokemonWielderEligible": false,
-          "executionStatus": "definition-missing"
+          "executionStatus": "native"
         }
       ]
     },
@@ -268,8 +370,18 @@
           "pokemonWielderSizePolicy": "trainer-only",
           "damageBaseBonus": 0,
           "accuracyCheckPenalty": 0,
+          "rangeMinimumMeters": 0,
+          "rangeMaximumMeters": 4,
+          "handsRequired": 1,
+          "targetingPolicy": "ranged-line-of-sight",
+          "weaponRangeReplacesSingleTargetMoveRange": true,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
-          "executionStatus": "definition-missing"
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+          "executionStatus": "native"
         },
         {
           "grantId": "equipment.super-lucky-throwing-stars.bullseye",
@@ -278,7 +390,7 @@
           "minimumCombatRank": 4,
           "trainerEligible": true,
           "pokemonWielderEligible": true,
-          "executionStatus": "definition-missing"
+          "executionStatus": "native"
         },
         {
           "grantId": "equipment.super-lucky-throwing-stars.deadly-strike",
@@ -287,7 +399,7 @@
           "minimumCombatRank": 6,
           "trainerEligible": true,
           "pokemonWielderEligible": false,
-          "executionStatus": "definition-missing"
+          "executionStatus": "native"
         }
       ]
     },
@@ -301,10 +413,20 @@
           "kind": "weapon-profile",
           "weaponClass": "long-range",
           "pokemonWielderSizePolicy": "trainer-only",
-          "damageBaseBonus": 0,
-          "accuracyCheckPenalty": 0,
+          "damageBaseBonus": 1,
+          "accuracyCheckPenalty": 1,
+          "rangeMinimumMeters": 4,
+          "rangeMaximumMeters": 12,
+          "handsRequired": 2,
+          "targetingPolicy": "ranged-line-of-sight",
+          "weaponRangeReplacesSingleTargetMoveRange": true,
+          "ammunitionPolicy": "abstracted-no-tracked-consumption",
+          "recoveryPolicy": "no-canonical-projectile-recovery",
+          "allowsStab": false,
           "grantsReach": false,
-          "executionStatus": "definition-missing"
+          "sourcePath": "books/markdown/core/09-gear-and-items.md",
+          "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+          "executionStatus": "native"
         },
         {
           "grantId": "equipment.twin-needled-bow.double-swipe",
@@ -322,7 +444,7 @@
           "minimumCombatRank": 6,
           "trainerEligible": true,
           "pokemonWielderEligible": false,
-          "executionStatus": "definition-missing"
+          "executionStatus": "native"
         }
       ]
     },
@@ -397,6 +519,7 @@
           "interactionRole": "activated-action",
           "targetKind": "self",
           "executionStatus": "native",
+          "finalState": "guided",
           "deferredTicket": null
         }
       ]
@@ -460,8 +583,9 @@
           "timing": "extended",
           "interactionRole": "contextual-affordance",
           "targetKind": "cell",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-057"
+          "executionStatus": "native",
+          "finalState": "guided",
+          "deferredTicket": null
         }
       ]
     },
@@ -478,8 +602,9 @@
           "timing": "extended",
           "interactionRole": "contextual-affordance",
           "targetKind": "cell",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-057"
+          "executionStatus": "native",
+          "finalState": "guided",
+          "deferredTicket": null
         }
       ]
     },
@@ -496,8 +621,9 @@
           "timing": "extended",
           "interactionRole": "contextual-affordance",
           "targetKind": "cell",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-057"
+          "executionStatus": "native",
+          "finalState": "guided",
+          "deferredTicket": null
         }
       ]
     },
@@ -514,8 +640,9 @@
           "timing": "standard",
           "interactionRole": "activated-action",
           "targetKind": "participant",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-092"
+          "executionStatus": "native",
+          "finalState": "native",
+          "deferredTicket": null
         }
       ]
     },
@@ -532,8 +659,9 @@
           "timing": "standard",
           "interactionRole": "activated-action",
           "targetKind": "participant",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-092"
+          "executionStatus": "native",
+          "finalState": "native",
+          "deferredTicket": null
         }
       ]
     },
@@ -550,8 +678,9 @@
           "timing": "standard",
           "interactionRole": "activated-action",
           "targetKind": "participant",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-092"
+          "executionStatus": "native",
+          "finalState": "native",
+          "deferredTicket": null
         },
         {
           "grantId": "equipment.weighted-nets.pull",
@@ -561,8 +690,9 @@
           "timing": "standard",
           "interactionRole": "contextual-affordance",
           "targetKind": "participant",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-092"
+          "executionStatus": "native",
+          "finalState": "native",
+          "deferredTicket": null
         }
       ]
     },
@@ -579,8 +709,9 @@
           "timing": "standard",
           "interactionRole": "activated-action",
           "targetKind": "self",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-050"
+          "executionStatus": "native",
+          "finalState": "native",
+          "deferredTicket": null
         }
       ]
     },
@@ -597,8 +728,9 @@
           "timing": "standard",
           "interactionRole": "activated-action",
           "targetKind": "self",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-050"
+          "executionStatus": "native",
+          "finalState": "native",
+          "deferredTicket": null
         }
       ]
     },
@@ -616,6 +748,7 @@
           "interactionRole": "activated-action",
           "targetKind": "participant",
           "executionStatus": "native",
+          "finalState": "native",
           "deferredTicket": null
         }
       ]
@@ -639,8 +772,9 @@
           "timing": "swift",
           "interactionRole": "activated-action",
           "targetKind": "item",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-059"
+          "executionStatus": "native",
+          "finalState": "guided",
+          "deferredTicket": null
         }
       ]
     },
@@ -658,6 +792,7 @@
           "interactionRole": "contextual-affordance",
           "targetKind": "participant",
           "executionStatus": "native",
+          "finalState": "native",
           "deferredTicket": null
         }
       ]
@@ -825,9 +960,10 @@
           "label": "Activate Shock Collar",
           "timing": "standard",
           "interactionRole": "activated-action",
-          "targetKind": "self",
-          "executionStatus": "deferred",
-          "deferredTicket": "P8-050"
+          "targetKind": "participant",
+          "executionStatus": "native",
+          "finalState": "native",
+          "deferredTicket": null
         }
       ]
     },
@@ -1091,6 +1227,7 @@
           "interactionRole": "contextual-affordance",
           "targetKind": "self",
           "executionStatus": "native",
+          "finalState": "native",
           "deferredTicket": null
         }
       ]

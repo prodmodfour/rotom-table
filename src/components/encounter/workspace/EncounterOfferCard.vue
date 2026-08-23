@@ -31,8 +31,12 @@ const accessibleName = computed(() => [
   encounterActionUsageLabel(props.offer),
   encounterActionTargetLabel(props.offer),
   props.offer.sourceContextLabel ?? '',
-  props.offer.availability.status === 'available' ? 'available' : 'unavailable',
-].join(', '))
+  props.commandsBlocked
+    ? 'unavailable while commands are paused'
+    : props.offer.availability.status === 'available'
+      ? 'available'
+      : `unavailable: ${props.offer.availability.reasons.map(reason => reason.label).join('; ')}`,
+].filter(Boolean).join(', '))
 </script>
 
 <template>
@@ -68,7 +72,7 @@ const accessibleName = computed(() => [
       </ul>
     </details>
     <footer>
-      <button type="button" class="encounter-offer-card__inspect" @click="emit('inspect', offer)">Details</button>
+      <button type="button" class="encounter-offer-card__inspect" :aria-label="`Details for ${offer.presentation.label}`" @click="emit('inspect', offer)">Details</button>
       <button
         type="button"
         class="encounter-offer-card__activate"
@@ -99,7 +103,7 @@ const accessibleName = computed(() => [
 .encounter-offer-card dt { color: var(--rt-text-muted); font-size: var(--rt-type-meta-xs-size); text-transform: uppercase; }
 .encounter-offer-card dd { min-width: 0; margin: 0; overflow: hidden; font-size: var(--rt-type-body-sm-size); text-overflow: ellipsis; }
 .encounter-offer-card__reasons { margin: 0.4rem 0; color: var(--rt-danger); font-size: var(--rt-type-body-sm-size); }
-.encounter-offer-card__reasons summary { min-height: 2.25rem; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
+.encounter-offer-card__reasons summary { min-height: var(--rt-touch-minimum); display: flex; align-items: center; cursor: pointer; font-weight: 700; }
 .encounter-offer-card__reasons ul { margin: 0; padding-left: 1.2rem; }
 .encounter-offer-card__reasons strong,
 .encounter-offer-card__reasons span { display: block; }
@@ -108,4 +112,6 @@ const accessibleName = computed(() => [
 .encounter-offer-card > footer button { min-height: var(--rt-touch-minimum); border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); background: var(--rt-surface-2); color: var(--rt-text-strong); font: inherit; font-weight: 700; }
 .encounter-offer-card__activate { flex: 1; border-color: var(--rt-info) !important; }
 .encounter-offer-card__activate:disabled { border-color: var(--rt-rule) !important; opacity: 0.6; }
+.encounter-offer-card button:focus-visible,
+.encounter-offer-card summary:focus-visible { outline: 3px solid var(--rt-focus); outline-offset: 2px; }
 </style>

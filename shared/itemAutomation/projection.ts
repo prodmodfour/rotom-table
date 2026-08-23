@@ -6,11 +6,16 @@ import {
   parseExecuteItemFormChangeCommand,
   type ExecuteItemFormChangeCommandV1,
 } from './formChanges'
+import {
+  parseExecuteEquipmentActionCommand,
+  type ExecuteEquipmentActionCommandV1,
+} from './equipmentActions'
 
 /** Declaration-only receipt shape; `itemCommand` is absent from workspace offers. */
 export type AuthorizedItemActionOffer = EncounterActionOffer & {
   readonly itemCommand?: UseItemCommandV1
   readonly itemFormChangeCommand?: ExecuteItemFormChangeCommandV1
+  readonly equipmentActionCommand?: ExecuteEquipmentActionCommandV1
 }
 
 export const parseAuthorizedItemActionOffer = (value: unknown): AuthorizedItemActionOffer => {
@@ -20,15 +25,24 @@ export const parseAuthorizedItemActionOffer = (value: unknown): AuthorizedItemAc
   const {
     itemCommand: rawItemCommand,
     itemFormChangeCommand: rawItemFormChangeCommand,
+    equipmentActionCommand: rawEquipmentActionCommand,
     ...rawOffer
   } = value as Record<string, unknown>
   const offer = parseEncounterActionOffer(rawOffer)
-  const authorityCount = Number(rawItemCommand !== undefined) + Number(rawItemFormChangeCommand !== undefined)
+  const authorityCount = Number(rawItemCommand !== undefined)
+    + Number(rawItemFormChangeCommand !== undefined)
+    + Number(rawEquipmentActionCommand !== undefined)
   if (offer.source.sourceKind === 'item' && authorityCount !== 1) {
     throw new ItemActionProjectionError('The item declaration receipt must include exactly one private command authority.')
   }
   if (offer.source.sourceKind !== 'item' && authorityCount !== 0) {
     throw new ItemActionProjectionError('A non-item declaration included unexpected item command authority.')
+  }
+  if (rawEquipmentActionCommand !== undefined) {
+    return Object.freeze({
+      ...offer,
+      equipmentActionCommand: parseExecuteEquipmentActionCommand(rawEquipmentActionCommand),
+    })
   }
   if (rawItemCommand !== undefined) {
     return Object.freeze({ ...offer, itemCommand: parseUseItemCommand(rawItemCommand) })
@@ -61,6 +75,20 @@ export const itemFormChangeCommandFromAuthorizedOffer = (input: {
   }
   if (!input.operationId.trim()) throw new ItemActionProjectionError('An item form-change operation ID is required.')
   return parseExecuteItemFormChangeCommand({ ...template, operationId: input.operationId })
+}
+
+export const equipmentActionCommandFromAuthorizedOffer = (input: {
+  readonly offer: AuthorizedItemActionOffer
+  readonly operationId: string
+}): ExecuteEquipmentActionCommandV1 => {
+  const template = input.offer.equipmentActionCommand
+  if (input.offer.source.sourceKind !== 'item' || !template
+    || template.offerId !== input.offer.offerId
+    || template.actionId !== input.offer.intent.actionId) {
+    throw new ItemActionProjectionError('The equipment-action declaration did not include authoritative command authority.')
+  }
+  if (!input.operationId.trim()) throw new ItemActionProjectionError('An equipment action operation ID is required.')
+  return parseExecuteEquipmentActionCommand({ ...template, operationId: input.operationId })
 }
 
 export const itemCommandFromAuthorizedOffer = (input: {

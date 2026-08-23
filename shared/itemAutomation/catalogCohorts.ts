@@ -20,10 +20,17 @@ export interface ItemCatalogCohortEvidenceV1 {
   readonly sha256: string
 }
 
+export interface ItemCatalogActionFinalStateV1 {
+  readonly actionId: string
+  readonly finalState: Extract<ItemCatalogImplementationState, 'native' | 'guided'>
+}
+
 export interface ItemCatalogCohortMemberV1 {
   readonly canonicalId: string
   readonly recordSha256: string
   readonly effectSha256: string
+  /** Final action-level states from the reviewed equipment grant registry. */
+  readonly actionFinalStates: readonly ItemCatalogActionFinalStateV1[]
 }
 
 export interface ItemCatalogCohortV1 {
@@ -48,6 +55,7 @@ export interface ItemCatalogCohortRegistryV1 {
   readonly status: 'reviewed'
   readonly catalogSha256: string
   readonly policySha256: string
+  readonly equipmentGrantsSha256: string
   readonly runtimeProseParsing: false
   readonly cohortMemberLimit: number
   readonly cohortCount: number
@@ -70,7 +78,7 @@ export class ItemCatalogCohortContractError extends Error {
 type Row = Record<string, unknown>
 const ROOT_FIELDS = [
   'schemaVersion', 'ticket', 'status', 'catalogSha256', 'policySha256',
-  'runtimeProseParsing', 'cohortMemberLimit', 'cohortCount', 'itemCount',
+  'equipmentGrantsSha256', 'runtimeProseParsing', 'cohortMemberLimit', 'cohortCount', 'itemCount',
   'implementationStateCounts', 'providerCounts', 'registrySha256', 'cohorts',
 ] as const
 const COHORT_FIELDS = [
@@ -79,10 +87,12 @@ const COHORT_FIELDS = [
   'executableEvidence', 'uiProjectionEvidence', 'recoveryEvidence',
   'unresolvedRequirements',
 ] as const
-const MEMBER_FIELDS = ['canonicalId', 'recordSha256', 'effectSha256'] as const
+const MEMBER_FIELDS = ['canonicalId', 'recordSha256', 'effectSha256', 'actionFinalStates'] as const
+const ACTION_FINAL_STATE_FIELDS = ['actionId', 'finalState'] as const
 const EVIDENCE_FIELDS = ['path', 'sha256'] as const
 const SHA256 = /^[a-f0-9]{64}$/
 const COHORT_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const ACTION_ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/
 const fail = (path: string, message: string): never => {
   throw new ItemCatalogCohortContractError(path, message)
 }
@@ -164,10 +174,29 @@ const evidenceArray = (value: unknown, path: string): readonly ItemCatalogCohort
 }
 const parseMember = (value: unknown, path: string): ItemCatalogCohortMemberV1 => {
   const row = exact(value, MEMBER_FIELDS, path)
+  if (!Array.isArray(row.actionFinalStates) || row.actionFinalStates.length > 16) {
+    fail(`${path}.actionFinalStates`, 'must contain at most 16 final action states.')
+  }
+  const actionFinalStates = Object.freeze((row.actionFinalStates as unknown[]).map((value, index) => {
+    const actionPath = `${path}.actionFinalStates[${index}]`
+    const action = exact(value, ACTION_FINAL_STATE_FIELDS, actionPath)
+    const actionId = typeof action.actionId === 'string' && ACTION_ID.test(action.actionId)
+      ? action.actionId
+      : fail(`${actionPath}.actionId`, 'must be a lowercase stable action identity.')
+    if (action.finalState !== 'native' && action.finalState !== 'guided') {
+      fail(`${actionPath}.finalState`, 'must be native or guided.')
+    }
+    const finalState = action.finalState as ItemCatalogActionFinalStateV1['finalState']
+    return Object.freeze({ actionId, finalState })
+  }))
+  if (new Set(actionFinalStates.map(action => action.actionId)).size !== actionFinalStates.length) {
+    fail(`${path}.actionFinalStates`, 'must contain unique action identities.')
+  }
   return Object.freeze({
     canonicalId: boundedText(row.canonicalId, `${path}.canonicalId`, 160),
     recordSha256: sha256(row.recordSha256, `${path}.recordSha256`),
     effectSha256: sha256(row.effectSha256, `${path}.effectSha256`),
+    actionFinalStates,
   })
 }
 const implementationState = (value: unknown, path: string): ItemCatalogImplementationState => (
@@ -285,6 +314,10 @@ export const parseItemCatalogCohortRegistryV1 = (
   if (new Set(canonicalIds).size !== canonicalIds.length) {
     fail(`${path}.cohorts`, 'must assign every canonical identity at most once.')
   }
+  const actionIds = cohorts.flatMap(cohort => cohort.members.flatMap(member => member.actionFinalStates.map(action => action.actionId)))
+  if (new Set(actionIds).size !== actionIds.length) {
+    fail(`${path}.cohorts`, 'must assign every final action identity at most once.')
+  }
   cohorts.forEach((cohort, index) => {
     if (cohort.sequence !== index + 1) fail(`${path}.cohorts[${index}].sequence`, 'must be contiguous in registry order.')
   })
@@ -320,6 +353,7 @@ export const parseItemCatalogCohortRegistryV1 = (
     status: 'reviewed',
     catalogSha256: sha256(row.catalogSha256, `${path}.catalogSha256`),
     policySha256: sha256(row.policySha256, `${path}.policySha256`),
+    equipmentGrantsSha256: sha256(row.equipmentGrantsSha256, `${path}.equipmentGrantsSha256`),
     runtimeProseParsing: false,
     cohortMemberLimit,
     cohortCount,

@@ -1,5 +1,6 @@
 import { contestCatalog, contestChart, contestStatById } from './catalog'
-import { contestActiveContestants, contestCurrentContestant, contestCurrentPerformer, type ContestAppealLedgerEntryV1, type ContestDocumentV1, type ContestantStateV1 } from './document'
+import { contestActiveContestants, contestCurrentContestant, contestCurrentPerformer, contestPerformerIsPokemon, contestPerformerIsTrainer, type ContestAppealLedgerEntryV1, type ContestDocumentV1, type ContestantStateV1 } from './document'
+import { resolveTrainerParticipantMethodTurn, type ContestParticipantPerformerKind } from './participantMethods'
 import type { ContestLetter, ContestStatId } from './ids'
 
 export interface ContestPositionProjectionV1 {
@@ -30,6 +31,8 @@ export interface ContestPublicProjectionV1 {
   readonly updatedAt: number
   readonly display: ContestDocumentV1['display']
   readonly variantId: ContestDocumentV1['variantId']
+  readonly participantVariantId: ContestDocumentV1['participantVariantId']
+  readonly participantMethodId: ContestDocumentV1['participantMethodId']
   readonly rotationOrderPolicy: ContestDocumentV1['policy']['rotationOrderPolicy']
   readonly supercontestFestival: boolean
   readonly contestTypeId: ContestStatId | null
@@ -53,6 +56,7 @@ export interface ContestOwnerProjectionV1 extends ContestPublicProjectionV1 {
   readonly ownerContestantId: string
   readonly ownContestant: ContestantStateV1
   readonly ownCurrentPerformerId: string | null
+  readonly ownLegalPerformerIds: readonly string[]
   readonly ownsCurrentDecision: boolean
 }
 export interface ContestGmProjectionV1 extends ContestPublicProjectionV1 {
@@ -97,6 +101,8 @@ export const projectContestPublic = (document: ContestDocumentV1): ContestPublic
     updatedAt: document.updatedAt,
     display: document.display,
     variantId: document.variantId,
+    participantVariantId: document.participantVariantId,
+    participantMethodId: document.participantMethodId,
     rotationOrderPolicy: document.policy.rotationOrderPolicy,
     supercontestFestival: document.policy.supercontestFestival,
     contestTypeId: document.contestTypeId,
@@ -109,8 +115,9 @@ export const projectContestPublic = (document: ContestDocumentV1): ContestPublic
     pendingInterventionAppealId: document.pendingInterventionAppealId,
     festivalHeat: document.festivalHeat,
     scoreboard: Object.freeze(document.contestants.map(contestant => {
-      const rotationIndex = document.variantId === 'rotation' && document.stage === 'performance' ? contestant.rotationOrder[document.round - 1] : 0
-      const performer = Number.isInteger(rotationIndex) ? contestant.performers[Number(rotationIndex)] : undefined
+      const rotationIndex = document.variantId === 'rotation' && document.stage === 'performance' ? contestant.rotationOrder[document.round - 1] : undefined
+      const selected = Number.isInteger(rotationIndex) ? contestant.performers[Number(rotationIndex)] : undefined
+      const performer = selected && contestPerformerIsPokemon(selected) ? selected : contestant.performers.find(contestPerformerIsPokemon)
       return Object.freeze({
         contestantId: contestant.contestantId,
         displayName: contestant.displayName,
@@ -138,13 +145,30 @@ export const projectContestOwner = (document: ContestDocumentV1, profileId: stri
   const contestant = document.contestants.find(row => row.controller.kind === 'profile' && row.controller.profileId === profileId)
   if (!contestant) return null
   const current = contestCurrentContestant(document)
+  let legalPerformers: readonly ContestantStateV1['performers'][number][] = Object.freeze([])
+  if (document.stage === 'performance' && current?.contestantId === contestant.contestantId && (document.variantId !== 'rotation' || Number.isInteger(contestant.rotationOrder[document.round - 1]))) {
+    if (document.participantVariantId === 'trainer-participant' && document.participantMethodId !== null) {
+      const trainer = contestant.performers.find(contestPerformerIsTrainer)
+      const pokemon = document.variantId === 'rotation' ? contestCurrentPerformer(document, contestant) : contestant.performers.find(contestPerformerIsPokemon)
+      const currentTurn = document.turnIndex + 1
+      const atCurrentCursor = (appeal: ContestAppealLedgerEntryV1): boolean => appeal.contestantId === contestant.contestantId && appeal.round === document.round && appeal.turn === currentTurn && (document.variantId !== 'festival' || Number(/-(\d+)-(\d+)-(\d+)-(\d+)$/u.exec(appeal.appealId)?.[1] ?? 0) === document.festivalHeat)
+      const acceptedKinds = document.appealLedger.filter(atCurrentCursor).map(appeal => contestPerformerIsTrainer(contestant.performers.find(performer => performer.performerId === appeal.performerId)!) ? 'trainer' as const : 'pokemon' as const)
+      const previousAppeal = [...document.appealLedger].reverse().find(appeal => appeal.contestantId === contestant.contestantId && !atCurrentCursor(appeal))
+      const previousPerformer = previousAppeal ? contestant.performers.find(performer => performer.performerId === previousAppeal.performerId) : null
+      const previousKind: ContestParticipantPerformerKind | null = previousPerformer ? contestPerformerIsTrainer(previousPerformer) ? 'trainer' : 'pokemon' : null
+      const turn = resolveTrainerParticipantMethodTurn({ methodId: document.participantMethodId, acceptedPerformerKindsThisRound: acceptedKinds, previousRoundTerminalPerformerKind: previousKind })
+      if (trainer && pokemon && contestPerformerIsPokemon(pokemon)) legalPerformers = Object.freeze(turn.legalNextPerformerKinds.map(kind => kind === 'trainer' ? trainer : pokemon))
+    } else legalPerformers = Object.freeze([contestCurrentPerformer(document, contestant)])
+  }
+  const legalPerformerIds = Object.freeze(legalPerformers.map(performer => performer.performerId))
   return Object.freeze({
     ...projectContestPublic(document),
     history: Object.freeze(document.history.filter(row => row.visibility === 'public' || (row.visibility === 'owner' && (row.contestantId === null || row.contestantId === contestant.contestantId)))),
     audience: 'owner',
     ownerContestantId: contestant.contestantId,
     ownContestant: contestant,
-    ownCurrentPerformerId: document.stage === 'performance' && (document.variantId !== 'rotation' || Number.isInteger(contestant.rotationOrder[document.round - 1])) ? contestCurrentPerformer(document, contestant).performerId : null,
+    ownCurrentPerformerId: legalPerformerIds.length === 1 ? legalPerformerIds[0]! : null,
+    ownLegalPerformerIds: legalPerformerIds,
     ownsCurrentDecision: current?.contestantId === contestant.contestantId,
   })
 }

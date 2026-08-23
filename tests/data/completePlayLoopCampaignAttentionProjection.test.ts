@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/campaign-attention-projection.v1.json'
 import {
@@ -14,8 +12,7 @@ import {
   CAMPAIGN_ATTENTION_REALTIME_EVENT_TYPES,
   campaignAttentionChannel,
 } from '../../shared/realtime'
-
-const sha256 = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex')
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 describe('P8-089 role- and Profile-projected attention evidence', () => {
   it('pins one complete bounded authority loader and detector merge', () => {
@@ -106,7 +103,8 @@ describe('P8-089 role- and Profile-projected attention evidence', () => {
   it('pins every runtime, provider, test, and documentation source', () => {
     for (const source of Object.values(contract.sources)) {
       expect(source.sha256, source.path).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(source.path)), source.path).toBe(source.sha256)
+      expect(acceptedSuccessorHead(source.path, source.sha256), source.path)
+        .toBe(repositoryFileSha256(source.path))
     }
   })
 })

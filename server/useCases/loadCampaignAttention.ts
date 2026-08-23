@@ -10,6 +10,7 @@ import { projectCampaignAdvancementAttention } from '../domain/campaignAttention
 import { projectCampaignPokemonChoiceAttention } from '../domain/campaignAttention/pokemonChoiceDetector'
 import { projectCampaignTrainerChoiceAttention } from '../domain/campaignAttention/trainerChoiceDetector'
 import { projectCampaignRecoveryAttention } from '../domain/campaignAttention/recoveryDetector'
+import { projectCampaignSkillCheckAttention } from '../domain/campaignAttention/skillCheckDetector'
 import {
   campaignProfileAuthorityDefinitionSha256,
   projectCampaignRosterOwnershipAttention,
@@ -38,6 +39,7 @@ import {
   type BreedingOperationLedgerRecord,
 } from '../storage/breedingOperationRepository'
 import { createSqlitePokemonEggRepository } from '../storage/pokemonEggRepository'
+import { createSqliteSkillCheckRepository, type StoredSkillCheckV1 } from '../storage/skillCheckRepository'
 import { createSqliteBreedingLineageRepository } from '../storage/breedingLineageRepository'
 import { createSqliteCampaignClockRepository } from '../storage/campaignClockRepository'
 import { createSqliteSheetRepository, type StoredSheetDocument } from '../storage/sheetRepository'
@@ -54,6 +56,7 @@ export interface CampaignAttentionAuthoritySnapshot {
   readonly eggs: readonly PokemonEggDocumentV1[]
   readonly breedingOrigins: readonly PokemonBreedingOriginV1[]
   readonly breedingOperations: readonly BreedingOperationLedgerRecord[]
+  readonly skillChecks: readonly StoredSkillCheckV1[]
   readonly campaignClock: unknown
   readonly campaignMinute: number
   readonly completeness: {
@@ -65,6 +68,7 @@ export interface CampaignAttentionAuthoritySnapshot {
     readonly eggs: true
     readonly breedingOrigins: true
     readonly breedingOperations: true
+    readonly skillChecks: true
     readonly campaignClock: true
   }
 }
@@ -176,6 +180,10 @@ export const readCampaignAttentionAuthority = (input: {
     const breedingOperations = Object.freeze(identities(database, 'breeding_operations', 'operation_id')
       .map(id => required(operationRepository.get(id), `breeding operation ${id}`)))
 
+    const skillCheckRepository = createSqliteSkillCheckRepository(database)
+    const skillChecks = Object.freeze(identities(database, 'skill_checks', 'check_id')
+      .map(id => required(skillCheckRepository.get(id), `Skill Check ${id}`)))
+
     const campaignClock = createSqliteCampaignClockRepository(database).get()
     return Object.freeze({
       sheets,
@@ -186,6 +194,7 @@ export const readCampaignAttentionAuthority = (input: {
       eggs,
       breedingOrigins,
       breedingOperations,
+      skillChecks,
       campaignClock,
       campaignMinute: campaignClock.campaignMinute,
       completeness: Object.freeze({
@@ -197,6 +206,7 @@ export const readCampaignAttentionAuthority = (input: {
         eggs: true,
         breedingOrigins: true,
         breedingOperations: true,
+        skillChecks: true,
         campaignClock: true,
       }),
     })
@@ -283,7 +293,7 @@ export const collectCampaignAttentionItems = (
   if (complete.sheets !== true || complete.profiles !== true || complete.settlementSources !== true
     || complete.historyFacts !== true || complete.itemOperations !== true || complete.eggs !== true
     || complete.breedingOrigins !== true || complete.breedingOperations !== true
-    || complete.campaignClock !== true) {
+    || complete.skillChecks !== true || complete.campaignClock !== true) {
     throw new Error('Campaign attention aggregation requires one explicitly complete authority snapshot.')
   }
   const sheets = campaignAttentionRelevantSheets(authority)
@@ -317,6 +327,11 @@ export const collectCampaignAttentionItems = (
       campaignClock: authority.campaignClock,
       itemOperations: authority.itemOperations,
       completeness: { sheets: true, campaignClock: true, itemOperations: true },
+    }),
+    projectCampaignSkillCheckAttention({
+      skillChecks: authority.skillChecks,
+      campaignMinute: authority.campaignMinute,
+      completeness: { skillChecks: true },
     }),
     projectCampaignRosterOwnershipAttention({
       sheets,

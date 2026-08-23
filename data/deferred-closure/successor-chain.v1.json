@@ -1,0 +1,2177 @@
+{
+  "schemaVersion": 1,
+  "chainId": "deferred-mechanics-closure-successors-v1",
+  "ticket": "P11-003",
+  "status": "active",
+  "sourceAuthority": {
+    "path": "data/deferred-closure/source-authority.v1.json",
+    "sha256": "12f2269db5c358d94b49c2a57672c2293db8153477db825338c42791cacf5823"
+  },
+  "edges": [
+    {
+      "migrationId": "deferred-closure:equipment-grants-pointer-rehome:v1",
+      "ticket": "P11-002",
+      "surface": "data/complete-play-loop/equipment-grants.v1.json",
+      "beforeSha256": "9e1baaa1a2dd721bf97b9c2d413e0f61590dffdeba52f3fcedf5684b68e7e515",
+      "afterSha256": "1a8641a90db3cde599b90bfce2d0f1fef20ffa527657c1141c4b81974657b947",
+      "changedStableRows": [
+        "equipment.old-rod.fish",
+        "equipment.good-rod.fish",
+        "equipment.super-rod.fish",
+        "equipment.glue-cannon.attack",
+        "equipment.hand-net.attack",
+        "equipment.weighted-nets.throw",
+        "equipment.weighted-nets.pull",
+        "equipment.light-shield.ready",
+        "equipment.heavy-shield.ready",
+        "equipment.snag-machine.convert",
+        "equipment.shock-collar.activate"
+      ],
+      "changePolicy": "metadata-only-deferred-ticket-rehome",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:reviewed-weapon-classes:v1",
+      "ticket": "P11-004",
+      "surface": "data/complete-play-loop/equipment-grants.v1.json",
+      "beforeSha256": "1a8641a90db3cde599b90bfce2d0f1fef20ffa527657c1141c4b81974657b947",
+      "afterSha256": "1e2619b7f89f79c26fff0d2a7b61e05a58fe16bba7b5b25d110bfe4f01295dad",
+      "changedStableRows": [
+        "equipment.kitchen-knife.weapon",
+        "equipment.baseball-bat.weapon",
+        "equipment.weighted-rope.weapon",
+        "equipment.slingshot.weapon",
+        "equipment.survival-knife.weapon",
+        "equipment.quarterstaff.weapon",
+        "equipment.throwing-hammers.weapon",
+        "equipment.hunting-bow.weapon",
+        "equipment.honed-claws.weapon",
+        "equipment.meteor-masher.weapon",
+        "equipment.super-lucky-throwing-stars.weapon",
+        "equipment.twin-needled-bow.weapon"
+      ],
+      "sourcePath": "books/markdown/core/09-gear-and-items.md",
+      "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "changePolicy": "reviewed-class-semantics-and-six-ranged-profiles-native",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:weapon-move-definitions:v1",
+      "ticket": "P11-005",
+      "surface": "shared/capabilityAutomation/weaponMoves.ts",
+      "beforeSha256": "6993888fcebf9d63fb1d4e66b95fcbe5270a791f1831964b7da97466bfced611",
+      "afterSha256": "dd2cc286d700996132937b19032383e7c83d8e4501d894072dc96d5cd44a45a8",
+      "changedStableRows": ["Bash!", "Pierce!", "Gouge", "Titanic Slam", "Bullseye", "Deadly Strike", "Triple Threat"],
+      "sourcePath": "books/markdown/core/09-gear-and-items.md",
+      "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "changePolicy": "reviewed-supplemental-definitions-outside-frozen-pokemon-move-catalog",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:weapon-move-execution-grants:v1",
+      "ticket": "P11-030",
+      "surface": "data/complete-play-loop/equipment-grants.v1.json",
+      "beforeSha256": "1e2619b7f89f79c26fff0d2a7b61e05a58fe16bba7b5b25d110bfe4f01295dad",
+      "afterSha256": "49526b0af641be97cdc03e21bd24c29169871a93fb560f60f1e6737f91dc107d",
+      "changedStableRows": [
+        "equipment.throwing-hammers.bash",
+        "equipment.hunting-bow.pierce",
+        "equipment.honed-claws.gouge",
+        "equipment.meteor-masher.titanic-slam",
+        "equipment.super-lucky-throwing-stars.bullseye",
+        "equipment.super-lucky-throwing-stars.deadly-strike",
+        "equipment.twin-needled-bow.triple-threat"
+      ],
+      "sourcePath": "books/markdown/core/09-gear-and-items.md",
+      "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "changePolicy": "reviewed-native-execution-status-after-focused-runtime-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:weapon-move-native-set:v1",
+      "ticket": "P11-030",
+      "surface": "shared/capabilityAutomation/weaponMoves.ts",
+      "beforeSha256": "dd2cc286d700996132937b19032383e7c83d8e4501d894072dc96d5cd44a45a8",
+      "afterSha256": "4d7bf8aaf62c807a8eabfda4424298eefe03354049f6da9fbb1c324a1e6c9f5e",
+      "changedStableRows": ["Bash!", "Pierce!", "Gouge", "Titanic Slam", "Bullseye", "Deadly Strike", "Triple Threat"],
+      "sourcePath": "books/markdown/core/09-gear-and-items.md",
+      "sourceSha256": "b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0",
+      "changePolicy": "reviewed-native-handler-activation-without-pokemon-catalog-mutation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-action-grants-native-cohort:v1",
+      "ticket": "P11-038",
+      "surface": "data/complete-play-loop/equipment-grants.v1.json",
+      "beforeSha256": "49526b0af641be97cdc03e21bd24c29169871a93fb560f60f1e6737f91dc107d",
+      "afterSha256": "db84af9fe8910a9202a3f0602a072e3445d099a940d52ee930e7daf5fc49d832",
+      "changedStableRows": [
+        "equipment.light-shield.ready",
+        "equipment.heavy-shield.ready",
+        "equipment.shock-collar.activate",
+        "equipment.glue-cannon.attack",
+        "equipment.hand-net.attack",
+        "equipment.weighted-nets.throw",
+        "equipment.weighted-nets.pull",
+        "equipment.old-rod.fish",
+        "equipment.good-rod.fish",
+        "equipment.super-rod.fish"
+      ],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "reviewed-native-or-guided-activation-after-focused-item-runtime-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-guided-projection:v1",
+      "ticket": "P11-038",
+      "surface": "server/domain/itemAutomation/guidedAdjudication.ts",
+      "beforeSha256": "6dcd019ef9656fc8048566e2017ec580a1acb290ec7bb6e0f7c6f31fb0c92e5e",
+      "afterSha256": "3e3abcb18b3a403e09d5264740d99e52fb62ad8e42d67e0a6fe5464f51c73016",
+      "changedStableRows": ["fishing-adjudication-role-projection"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "role-safe-water-target-and-no-premature-gm-outcome-projection",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-guided-storage-authority:v1",
+      "ticket": "P11-038",
+      "surface": "server/storage/itemGuidedRequestRepository.ts",
+      "beforeSha256": "8d85468685d099b155a224d50cc21d43bf0ea775eff2caecaad07e95364ec8bd",
+      "afterSha256": "38bef5b422f7cf5be459398ca3c20b49d687d57d1908a671ed99cbed503c1172",
+      "changedStableRows": ["equipped-fishing-rod-authority"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "private-exact-source-water-clock-and-check-integration-evidence",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:storage-schema-v48:v1",
+      "ticket": "P11-038",
+      "surface": "server/storage/migrations.ts",
+      "beforeSha256": "f2b2a80227044e507c56f26f4eeffcc86b5ae8732e39e7dd98992a2c1e460ea6",
+      "afterSha256": "858f1d7c53fbeaf3fb92f1648bc1697e2f6e1e2178c5a069b7ecf4cc3af86c08",
+      "changedStableRows": ["schema-47-equipment-action-operations", "schema-48-fishing-adjudication"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "row-preserving-contiguous-operation-and-guided-request-migrations",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:storage-migration-acceptance-v48:v1",
+      "ticket": "P11-038",
+      "surface": "tests/server/realtimeEventMigrations.test.ts",
+      "beforeSha256": "555e167881ece81738c9b0dece8e607f97991187246b867f569c99205930149f",
+      "afterSha256": "fb28d580e1185925862e5711cbb6fb8f12a96dc80779207558af4d7b883a5235",
+      "changedStableRows": ["contiguous-schema-48", "fishing-kind-row-preservation"],
+      "sourcePath": "server/storage/migrations.ts",
+      "sourceSha256": "858f1d7c53fbeaf3fb92f1648bc1697e2f6e1e2178c5a069b7ecf4cc3af86c08",
+      "changePolicy": "fresh-and-upgrade-migration-certification",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:net-capture-modifier:v1",
+      "ticket": "P11-035",
+      "surface": "src/utils/pokeballCapture.ts",
+      "beforeSha256": "0a307591d48619ef0ef36c217242366c270149d4724ca6d07405e2918dcdc373",
+      "afterSha256": "a5d03c87208cccf8dc0dd751ad3a297d082937c486dc328568df4ac27d832883",
+      "changedStableRows": ["equipment-restraint-capture-roll-minus-20"],
+      "sourcePath": "data/reference/items.json",
+      "sourceSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+      "changePolicy": "typed-active-net-marker-capture-integration",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:storage-documentation-v48:v1",
+      "ticket": "P11-038",
+      "surface": "scripts/breedingDocumentationClosure.ts",
+      "beforeSha256": "2bc15ebd175d0f84aa7d3381e439286b55e73bc4c41483ae80b2d26182fe8560",
+      "afterSha256": "ce211272c802a8c44a50d1924a0977d9e48e85a8b1c9d3dec48ecad640b47b2a",
+      "changedStableRows": [
+        "runtimeBindings.storageSchemaVersion"
+      ],
+      "sourcePath": "server/storage/migrations.ts",
+      "sourceSha256": "858f1d7c53fbeaf3fb92f1648bc1697e2f6e1e2178c5a069b7ecf4cc3af86c08",
+      "changePolicy": "document-current-runtime-schema-successor-without-mutating-archived-json-records",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-guided-contract:v1",
+      "ticket": "P11-038",
+      "surface": "shared/itemAutomation/guidedAdjudication.ts",
+      "beforeSha256": "01ad38721047fb991f95192b369e76b49f75600d16f759a9ec0f49cec6f27098",
+      "afterSha256": "886ca02b226201dd6741ee43b9ccdc74664827e6f6fba3262b7d090359e233d4",
+      "changedStableRows": [
+        "fishing-adjudication",
+        "water-target-projection"
+      ],
+      "sourcePath": "data/reference/items.json",
+      "sourceSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+      "changePolicy": "reviewed-guided-fishing-declaration-cancellation-and-reconnect-contract",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-resolution-contract:v1",
+      "ticket": "P11-039",
+      "surface": "shared/itemAutomation/guidedAdjudication.ts",
+      "beforeSha256": "886ca02b226201dd6741ee43b9ccdc74664827e6f6fba3262b7d090359e233d4",
+      "afterSha256": "5bf3606e0ca8bfb212c8bdd80f2a2399ba36856bfc470eba2f5dc2f552ddd41b",
+      "changedStableRows": ["resolve-fishing-command"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "strict-canonical-skill-private-hook-and-bounded-level-command",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-resolution-storage:v1",
+      "ticket": "P11-039",
+      "surface": "server/storage/itemGuidedRequestRepository.ts",
+      "beforeSha256": "38bef5b422f7cf5be459398ca3c20b49d687d57d1908a671ed99cbed503c1172",
+      "afterSha256": "4d5aa8a3eef0c1c1ec09ffbcc51b0648c5df07dfc139941510b3f267a5fbf38f",
+      "changedStableRows": ["resolve-fishing-terminal-evidence"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "durable-hash-bound-terminal-fishing-receipt",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-guided-resolution:v1",
+      "ticket": "P11-039",
+      "surface": "server/useCases/manageItemGuidedAdjudication.ts",
+      "beforeSha256": "2eb9819ff1ab99b1b2c58f800ced38d3c5f030f0401e60fbe224d03c7099b563",
+      "afterSha256": "5c50ce1ba70e56f085cf7788358e1d4d65c75de04c1039e7347d5524b4197909",
+      "changedStableRows": ["old-rod-resolution", "good-rod-resolution", "super-rod-resolution"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "campaign-time-gated-source-revalidated-and-pokedex-bounded-gm-outcome",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:snag-machine-action-grant:v1",
+      "ticket": "P11-040",
+      "surface": "data/complete-play-loop/equipment-grants.v1.json",
+      "beforeSha256": "db84af9fe8910a9202a3f0602a072e3445d099a940d52ee930e7daf5fc49d832",
+      "afterSha256": "3852f849248565ba985300067ad56996b773f446e93f93b28663853877c56ce7",
+      "changedStableRows": ["equipment.snag-machine.convert"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "reviewed-guided-snag-conversion-activation-after-focused-runtime-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:snag-machine-guided-contract:v1",
+      "ticket": "P11-040",
+      "surface": "shared/itemAutomation/guidedAdjudication.ts",
+      "beforeSha256": "5bf3606e0ca8bfb212c8bdd80f2a2399ba36856bfc470eba2f5dc2f552ddd41b",
+      "afterSha256": "fefc7191e16b027ddaafa614ef4a90912899d2272b53c458803fcee07c32fef3",
+      "changedStableRows": ["snag-conversion-adjudication", "resolve-snag-conversion-command"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "strict-private-approve-or-deny-conversion-command-and-role-safe-projection-contract",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:snag-machine-guided-projection:v1",
+      "ticket": "P11-040",
+      "surface": "server/domain/itemAutomation/guidedAdjudication.ts",
+      "beforeSha256": "3e3abcb18b3a403e09d5264740d99e52fb62ad8e42d67e0a6fe5464f51c73016",
+      "afterSha256": "9b8294ec36bd669e4fd160a9a6e503abe7c02c339bb94f7344449d0cfdbca741",
+      "changedStableRows": ["snag-conversion-adjudication-role-projection"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "role-safe-poke-ball-target-without-exact-source-or-private-legality-evidence",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:snag-machine-guided-resolution:v1",
+      "ticket": "P11-040",
+      "surface": "server/useCases/manageItemGuidedAdjudication.ts",
+      "beforeSha256": "5c50ce1ba70e56f085cf7788358e1d4d65c75de04c1039e7347d5524b4197909",
+      "afterSha256": "082c344f6e29730ef250d160d87425bc2df00ebd74576dea5bcae8165cb4cea5",
+      "changedStableRows": ["portable-snag-conversion", "large-snag-conversion"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "gm-only-source-revalidated-round-and-campaign-day-bounded-conversion-settlement",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:snag-machine-guided-storage:v1",
+      "ticket": "P11-040",
+      "surface": "server/storage/itemGuidedRequestRepository.ts",
+      "beforeSha256": "4d5aa8a3eef0c1c1ec09ffbcc51b0648c5df07dfc139941510b3f267a5fbf38f",
+      "afterSha256": "25ab50d4bda6206dea651e954eddd7637a6411111a166616de7ee504dba0f1d9",
+      "changedStableRows": ["snag-machine-conversion-authority", "resolve-snag-conversion-terminal-evidence"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "private-exact-machine-ball-custody-clock-and-terminal-decision-evidence",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:storage-schema-v49:v1",
+      "ticket": "P11-040",
+      "surface": "server/storage/migrations.ts",
+      "beforeSha256": "858f1d7c53fbeaf3fb92f1648bc1697e2f6e1e2178c5a069b7ecf4cc3af86c08",
+      "afterSha256": "c5d557eed5e326eb41ef3c36e3dfee4991d3bb76f02d5c3909d062a7d9b79d54",
+      "changedStableRows": ["schema-49-snag-conversion-adjudication"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "row-preserving-guided-request-kind-migration",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:storage-migration-acceptance-v49:v1",
+      "ticket": "P11-040",
+      "surface": "tests/server/realtimeEventMigrations.test.ts",
+      "beforeSha256": "fb28d580e1185925862e5711cbb6fb8f12a96dc80779207558af4d7b883a5235",
+      "afterSha256": "7b7b157918ec6286eff565e5fead45cfe1ededac5a2bd251a9d099bf46384d45",
+      "changedStableRows": ["contiguous-schema-49", "snag-kind-row-preservation"],
+      "sourcePath": "server/storage/migrations.ts",
+      "sourceSha256": "c5d557eed5e326eb41ef3c36e3dfee4991d3bb76f02d5c3909d062a7d9b79d54",
+      "changePolicy": "fresh-and-v48-upgrade-migration-certification",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:snag-ball-capture-runtime:v1",
+      "ticket": "P11-040",
+      "surface": "src/utils/pokeballCapture.ts",
+      "beforeSha256": "a5d03c87208cccf8dc0dd751ad3a297d082937c486dc328568df4ac27d832883",
+      "afterSha256": "3801b9001efdc2787366b6ac1c69556b87552a417bd0b0d8afe0a312b7aeed1a",
+      "changedStableRows": ["snag-ball-attack-roll-minus-two", "snag-ball-role-safe-capture-log"],
+      "sourcePath": "data/reference/items.json",
+      "sourceSha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+      "changePolicy": "original-ball-properties-with-reviewed-snag-accuracy-penalty",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:snag-ball-owned-capture-command:v1",
+      "ticket": "P11-040",
+      "surface": "server/useCases/applyThrowPokeballCommand.ts",
+      "beforeSha256": "30f2e7987b316e2812bc0d4be81ddcc029c92ccc80ba3f0249cdfd80c23534b9",
+      "afterSha256": "dd2d66f2c823a203d24316e5753e68c31842a964f661b46f0aa40a991b3cf108",
+      "changedStableRows": ["exact-snag-unit-consumption", "owned-target-atomic-roster-transfer"],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "server-authoritative-owned-capture-with-former-owner-cas-and-exact-replay",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:snag-ball-owned-capture-acceptance:v1",
+      "ticket": "P11-040",
+      "surface": "tests/server/throwPokeballCommand.test.ts",
+      "beforeSha256": "c5dad7e88f5eeb7246256481e9c254d05bd751ab9304ea38dbc81260a5599ee9",
+      "afterSha256": "9fabbcb3704f7c9215d94531ecfd552f2525c8e12decf3a1bfa2a8207adb033b",
+      "changedStableRows": ["snag-ball-owned-capture-transfer-and-replay"],
+      "sourcePath": "server/useCases/applyThrowPokeballCommand.ts",
+      "sourceSha256": "dd2d66f2c823a203d24316e5753e68c31842a964f661b46f0aa40a991b3cf108",
+      "changePolicy": "focused-liveplay-capture-penalty-transfer-privacy-and-replay-certification",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:storage-documentation-v49:v1",
+      "ticket": "P11-040",
+      "surface": "scripts/breedingDocumentationClosure.ts",
+      "beforeSha256": "ce211272c802a8c44a50d1924a0977d9e48e85a8b1c9d3dec48ecad640b47b2a",
+      "afterSha256": "c4ab772a8343c18302f84e65e2fc09441efc3b0980307902b831d87c34cef90f",
+      "changedStableRows": ["runtimeBindings.storageSchemaVersion"],
+      "sourcePath": "server/storage/migrations.ts",
+      "sourceSha256": "c5d557eed5e326eb41ef3c36e3dfee4991d3bb76f02d5c3909d062a7d9b79d54",
+      "changePolicy": "document-current-runtime-schema-successor-without-mutating-archived-json-records",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-action-guided-presentation-contract:v1",
+      "ticket": "P11-041",
+      "surface": "shared/itemAutomation/guidedAdjudication.ts",
+      "beforeSha256": "fefc7191e16b027ddaafa614ef4a90912899d2272b53c458803fcee07c32fef3",
+      "afterSha256": "188e48c98b630e6465d47c1e84dff795b72f3b5c065686c9e32e87873dca5949",
+      "changedStableRows": [
+        "gm-only-fishing-resolution-bounds",
+        "gm-only-snag-decision-bounds",
+        "ui-safe-fishing-resolution-intent"
+      ],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "strict-role-safe-guided-decision-contract-with-private-authority-rebound-server-side",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-action-guided-presentation-projection:v1",
+      "ticket": "P11-041",
+      "surface": "server/domain/itemAutomation/guidedAdjudication.ts",
+      "beforeSha256": "9b8294ec36bd669e4fd160a9a6e503abe7c02c339bb94f7344449d0cfdbca741",
+      "afterSha256": "c48a8935af1e3fd73ff846ab47817ff645f0952e63cdbd373dcac453e17af94c",
+      "changedStableRows": [
+        "gm-only-fishing-species-and-level-bounds",
+        "gm-only-snag-approve-or-deny-controls",
+        "role-safe-terminal-settlement-facts"
+      ],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "audience-specific-pending-and-terminal-projection-with-private-evidence-redaction",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-action-guided-intent-settlement:v1",
+      "ticket": "P11-041",
+      "surface": "server/useCases/manageItemGuidedAdjudication.ts",
+      "beforeSha256": "082c344f6e29730ef250d160d87425bc2df00ebd74576dea5bcae8165cb4cea5",
+      "afterSha256": "3ecd9fd72ddbdbc536c70e2c0092e829f66e9d40e779edc68db4abbb61e99dd9",
+      "changedStableRows": [
+        "server-bound-private-fishing-check-integration",
+        "replay-safe-terminal-command-dispatch"
+      ],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "ui-safe-command-rebound-to-private-authority-before-atomic-guided-settlement",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-action-map-guided-history:v1",
+      "ticket": "P11-041",
+      "surface": "server/storage/itemGuidedRequestRepository.ts",
+      "beforeSha256": "25ab50d4bda6206dea651e954eddd7637a6411111a166616de7ee504dba0f1d9",
+      "afterSha256": "744d3ddfdd96ab4a5c4388c2b3e874fa9f4696e24cf13a2f7696c4c8caa6d86a",
+      "changedStableRows": [
+        "bounded-map-guided-request-history"
+      ],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "bounded-fishing-and-snag-map-history-for-role-safe-encounter-presentation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-action-guided-workshop-presentation:v1",
+      "ticket": "P11-041",
+      "surface": "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+      "beforeSha256": "eac1ea2fde7a7d1aaa1f628bdd600408f971a94f2413c1a0a15b7731ef62b332",
+      "afterSha256": "ad017d545a529ba541ef20d0bd0ae7e49c44e2c9fdb571c9c74d8eed238ce806",
+      "changedStableRows": [
+        "bounded-fishing-decision-workshop",
+        "bounded-snag-decision-workshop",
+        "guided-focus-entry-and-restoration",
+        "responsive-role-safe-settlement-presentation"
+      ],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "accessible-gm-only-guided-controls-with-public-authority-redaction",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-action-guided-workshop-acceptance:v1",
+      "ticket": "P11-041",
+      "surface": "tests/components/campaignGuidedItemAdjudication.test.ts",
+      "beforeSha256": "540f8472fbf3a383ef2816c89db5e82349c29f49e7164466da58b331c1fabc83",
+      "afterSha256": "054d9bc294e09e8cf5eb4a0c98dc74084288a8fc22a60b86880e2d6a7dc3b1a6",
+      "changedStableRows": [
+        "guided-fishing-and-snag-controls",
+        "private-note-and-authority-redaction",
+        "focus-and-reconnect-recovery"
+      ],
+      "sourcePath": "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+      "sourceSha256": "ad017d545a529ba541ef20d0bd0ae7e49c44e2c9fdb571c9c74d8eed238ce806",
+      "changePolicy": "focused-component-acceptance-for-pending-terminal-conflict-and-accessibility-states",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-grant-final-state-rebuild:v1",
+      "ticket": "P11-042",
+      "surface": "data/complete-play-loop/equipment-grants.v1.json",
+      "beforeSha256": "3852f849248565ba985300067ad56996b773f446e93f93b28663853877c56ce7",
+      "afterSha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52",
+      "changedStableRows": [
+        "eleven-item-action-final-states",
+        "guided-fishing-and-snag-finality",
+        "final-state-source-authority"
+      ],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "reviewed-action-final-state-distinct-from-native-declaration-executor-readiness",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-contribution-final-state-rebuild:v1",
+      "ticket": "P11-042",
+      "surface": "data/complete-play-loop/equipment-contributions.v1.json",
+      "beforeSha256": "1030671c7e4507bfab355babbd4bd0b540710bd4c8fea3558abb60e7363f2ce5",
+      "afterSha256": "14e6018e63750bed27c8a8299f3e33b13370d1c9b7e0403990acc9c990e50dcf",
+      "changedStableRows": [
+        "reviewed-grant-final-state-bindings",
+        "closed-p8-047-grant-ownership-markers",
+        "eleven-item-action-no-deferred-mechanics"
+      ],
+      "sourcePath": "data/complete-play-loop/equipment-grants.v1.json",
+      "sourceSha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52",
+      "changePolicy": "cross-registry-final-state-binding-without-changing-passive-contribution-semantics",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-cohort-generator-final-state-rebuild:v1",
+      "ticket": "P11-042",
+      "surface": "scripts/generate_complete_play_loop_item_catalog_cohorts.py",
+      "beforeSha256": "a6c5e6de01b2f38240b8e610fd5779cadc1bc224a1a782d4678dc2767a82e48c",
+      "afterSha256": "6c9132703ab9844204f54f38265a09c40416502997ed377b016e1b78cfb0dd71",
+      "changedStableRows": [
+        "equipment-action-final-state-input",
+        "member-action-final-state-projection",
+        "deferred-state-drift-rejection"
+      ],
+      "sourcePath": "data/complete-play-loop/equipment-grants.v1.json",
+      "sourceSha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52",
+      "changePolicy": "derived-cohort-rebuild-without-runtime-mechanic-grants-or-prose-parsing",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-cohort-final-state-rebuild:v1",
+      "ticket": "P11-042",
+      "surface": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "beforeSha256": "53f3c2c06e83d23fded29a03ff2a96021075a366f994925c21a7b1132f230f8c",
+      "afterSha256": "d67c0fc51b4c89019e32c7b3c90c20b2c559e6efe263a28b3a579194fa58cc2d",
+      "changedStableRows": [
+        "fifteen-final-equipment-action-bindings",
+        "eleven-audited-item-action-bindings",
+        "mixed-equipment-cohort-reconciliation"
+      ],
+      "sourcePath": "data/complete-play-loop/equipment-grants.v1.json",
+      "sourceSha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52",
+      "changePolicy": "member-level-finality-preserving-plan-8-item-level-cohort-classification",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-cohort-final-state-contract:v1",
+      "ticket": "P11-042",
+      "surface": "shared/itemAutomation/catalogCohorts.ts",
+      "beforeSha256": "b9c805658c486bfc57b31c4ce5e6684792734b7d4750382124f70597091cab0e",
+      "afterSha256": "30c0dbb3b819936f3c26774d0938eea750aeece484479595187d687cc31b0062",
+      "changedStableRows": [
+        "strict-native-or-guided-action-final-state",
+        "equipment-grants-source-binding",
+        "global-action-identity-uniqueness"
+      ],
+      "sourcePath": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "sourceSha256": "d67c0fc51b4c89019e32c7b3c90c20b2c559e6efe263a28b3a579194fa58cc2d",
+      "changePolicy": "strict-derived-registry-contract-with-no-deferred-action-state",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-cohort-final-state-runtime:v1",
+      "ticket": "P11-042",
+      "surface": "server/domain/itemAutomation/catalogCohortRegistry.ts",
+      "beforeSha256": "350512b597453ccd90fc48dd67b586b35d9efebe9ede892b3111fb7bea9c9f54",
+      "afterSha256": "2d980de820f329bdd5335cc9b0914ab293d6a696d4fc41c961993c90cfd484b3",
+      "changedStableRows": [
+        "grant-hash-runtime-drift-gate",
+        "exact-member-action-final-state-cross-check"
+      ],
+      "sourcePath": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "sourceSha256": "d67c0fc51b4c89019e32c7b3c90c20b2c559e6efe263a28b3a579194fa58cc2d",
+      "changePolicy": "fail-closed-cross-registry-runtime-validation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-cohort-final-state-contract-acceptance:v1",
+      "ticket": "P11-042",
+      "surface": "tests/shared/itemCatalogCohorts.test.ts",
+      "beforeSha256": "a372d30e210e97064623bc471e2a6a74202c2acbc89fd9ea916f43a1f7107cc9",
+      "afterSha256": "917ab256bb829307303da8010f40cdc7ca65d1a3be649693f637edd2a7098de5",
+      "changedStableRows": [
+        "frozen-action-final-state-contract",
+        "deferred-action-state-rejection"
+      ],
+      "sourcePath": "shared/itemAutomation/catalogCohorts.ts",
+      "sourceSha256": "30c0dbb3b819936f3c26774d0938eea750aeece484479595187d687cc31b0062",
+      "changePolicy": "strict-contract-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-cohort-final-state-runtime-acceptance:v1",
+      "ticket": "P11-042",
+      "surface": "tests/server/itemCatalogCohortRegistry.test.ts",
+      "beforeSha256": "95d8f33a98490f1a2be18efca3c8ee7f9ccd2a649ae57070e70e01ff847d3681",
+      "afterSha256": "df74b931f218a91e36160df0fb52c7e94de6943e995655688987f2c32f36bd35",
+      "changedStableRows": [
+        "guided-old-rod-final-state",
+        "native-hand-net-final-state",
+        "fifteen-action-identity-completeness"
+      ],
+      "sourcePath": "server/domain/itemAutomation/catalogCohortRegistry.ts",
+      "sourceSha256": "2d980de820f329bdd5335cc9b0914ab293d6a696d4fc41c961993c90cfd484b3",
+      "changePolicy": "cross-registry-runtime-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-cohort-final-state-data-acceptance:v1",
+      "ticket": "P11-042",
+      "surface": "tests/data/completePlayLoopItemCatalogCohorts.test.ts",
+      "beforeSha256": "215309eef48a86f6adea3c0860459227879abe456d3116b6b0bf87fc362c7034",
+      "afterSha256": "b2a77bc9bed323c289b3d7618b38ae88870896a81ecdfa7f46502e4ebf030add",
+      "changedStableRows": [
+        "fifteen-final-action-bindings",
+        "accepted-successor-source-validation"
+      ],
+      "sourcePath": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "sourceSha256": "d67c0fc51b4c89019e32c7b3c90c20b2c559e6efe263a28b3a579194fa58cc2d",
+      "changePolicy": "frozen-plan-8-certification-through-contiguous-plan-11-successors",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:guided-request-map-history-acceptance:v1",
+      "ticket": "P11-041",
+      "surface": "tests/server/itemGuidedRequestRepository.test.ts",
+      "beforeSha256": "9becdf2d9bfa530d767ac64e05547abed013e04211d3c81a63de5846e56d1bd6",
+      "afterSha256": "1873a408293ac77f9cef2c95c0bd954e0531235d58a26a9fba3ee4def522a39d",
+      "changedStableRows": [
+        "bounded-map-history-query",
+        "fishing-and-snag-history-scope"
+      ],
+      "sourcePath": "server/storage/itemGuidedRequestRepository.ts",
+      "sourceSha256": "744d3ddfdd96ab4a5c4388c2b3e874fa9f4696e24cf13a2f7696c4c8caa6d86a",
+      "changePolicy": "presentation-history-acceptance-without-private-authority-projection",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:guided-item-generator-final-state-rebind:v1",
+      "ticket": "P11-042",
+      "surface": "scripts/generate_complete_play_loop_guided_item_adjudications.py",
+      "beforeSha256": "206afa7865a99027a943eceb3b4eb399f8694f7cb266f15b7cea3a6e87be2213",
+      "afterSha256": "06c3a82ac5bf73a178fde64f65d6ba64f49eb47e7a9f2aaf0313c2f9a4505d7b",
+      "changedStableRows": [
+        "current-source-file-bindings",
+        "re-breather-grant-definition-successor",
+        "reviewed-mechanic-record-invariants"
+      ],
+      "sourcePath": "data/complete-play-loop/equipment-grants.v1.json",
+      "sourceSha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52",
+      "changePolicy": "reviewed-re-breather-final-state-rebind-without-prose-or-mechanic-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:guided-item-contract-final-state-rebuild:v1",
+      "ticket": "P11-042",
+      "surface": "data/complete-play-loop/guided-item-adjudications.v1.json",
+      "beforeSha256": "63feadb755ba8d30f0524073f6af14252cbd6d5203d8d045869a94d48523adbf",
+      "afterSha256": "0eb6b532f126f3015eafefc3427e1e1710abca0729459ed3b2e2914fdca9dc35",
+      "changedStableRows": [
+        "re-breather-grant-definition-successor",
+        "current-reviewed-source-bindings"
+      ],
+      "sourcePath": "scripts/generate_complete_play_loop_guided_item_adjudications.py",
+      "sourceSha256": "06c3a82ac5bf73a178fde64f65d6ba64f49eb47e7a9f2aaf0313c2f9a4505d7b",
+      "changePolicy": "derived-guided-contract-rebuild-preserving-bounded-adjudication-semantics",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-sheet-snag-authority:v1",
+      "ticket": "P11-040",
+      "surface": "src/types/trainerSheet.ts",
+      "beforeSha256": "775dd567f2581595e8d89f92688cae7ac52777190b6372cd1932b82e43bd1838",
+      "afterSha256": "eae9a6b7fd7de8ca62009333af8bc48a03cf2145b2e9585f8807c1be08518072",
+      "changedStableRows": [
+        "private-snag-machine-state",
+        "trainer-capture-transfer-authority"
+      ],
+      "sourcePath": "shared/itemAutomation/snagMachine.ts",
+      "sourceSha256": "3a52bb2734583691382f4bb690889a75ed6322a6bc6f6c9a87b47d4dc2a534de",
+      "changePolicy": "private-additive-trainer-authority-without-changing-canonical-skill-identities",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-cohort-skill-check-storage-source-refresh:v1",
+      "ticket": "P11-045",
+      "surface": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "beforeSha256": "d67c0fc51b4c89019e32c7b3c90c20b2c559e6efe263a28b3a579194fa58cc2d",
+      "afterSha256": "d15cd1fcc3d8804ccf0268d171dfd2b04fb8110f3fcb210ecc7bd76754ca8b20",
+      "changedStableRows": [
+        "storage-migration-source-evidence-only"
+      ],
+      "sourcePath": "server/storage/migrations.ts",
+      "sourceSha256": "69cfdda140e9449ee70d43e13d850728b52027769c3ad596c27ae2059b8264d9",
+      "changePolicy": "derived-source-evidence-refresh-with-zero-cohort-member-or-classification-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-storage-schema-v50:v1",
+      "ticket": "P11-045",
+      "surface": "server/storage/migrations.ts",
+      "beforeSha256": "c5d557eed5e326eb41ef3c36e3dfee4991d3bb76f02d5c3909d062a7d9b79d54",
+      "afterSha256": "69cfdda140e9449ee70d43e13d850728b52027769c3ad596c27ae2059b8264d9",
+      "changedStableRows": [
+        "schema-version-50",
+        "skill-check-documents-table",
+        "skill-check-operation-journal"
+      ],
+      "sourcePath": "shared/skillChecks/contract.ts",
+      "sourceSha256": "2b68e39cb556a941fa7b7953afd5a5f2a3efcf09bc2c598967d9c888c0d62ef6",
+      "changePolicy": "additive-versioned-storage-with-row-preserving-v49-upgrade",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-storage-migration-acceptance:v1",
+      "ticket": "P11-045",
+      "surface": "tests/server/realtimeEventMigrations.test.ts",
+      "beforeSha256": "7b7b157918ec6286eff565e5fead45cfe1ededac5a2bd251a9d099bf46384d45",
+      "afterSha256": "cc7e4a04f9eca5087a8136f9feee0acecdf82c8f972b1c73428eec83c07e1e7e",
+      "changedStableRows": [
+        "contiguous-schema-50",
+        "fresh-database-skill-check-tables",
+        "historical-upgrade-table-inventory"
+      ],
+      "sourcePath": "server/storage/migrations.ts",
+      "sourceSha256": "69cfdda140e9449ee70d43e13d850728b52027769c3ad596c27ae2059b8264d9",
+      "changePolicy": "fresh-and-historical-migration-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-breeding-schema-documentation:v1",
+      "ticket": "P11-045",
+      "surface": "scripts/breedingDocumentationClosure.ts",
+      "beforeSha256": "c4ab772a8343c18302f84e65e2fc09441efc3b0980307902b831d87c34cef90f",
+      "afterSha256": "da34ecae4d89d00ab9739d1c46e0137a954d4c32592321356026e488ec516f25",
+      "changedStableRows": [
+        "runtime-schema-version-50",
+        "documentation-definition-hash"
+      ],
+      "sourcePath": "server/storage/migrations.ts",
+      "sourceSha256": "69cfdda140e9449ee70d43e13d850728b52027769c3ad596c27ae2059b8264d9",
+      "changePolicy": "cross-subsystem-runtime-schema-documentation-sync",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-reviewed-contract-runtime-encoding:v1",
+      "ticket": "P11-046",
+      "surface": "data/deferred-closure/skill-check-contract.v1.json",
+      "beforeSha256": "a055d07c466482a38878797b041fa9e4e2b9e947145e5bb9f76c962b47b930bf",
+      "afterSha256": "af2dc778b80df4f5ad967168b1ca55f86bb71e008db2d236f768c2df3ade094c",
+      "changedStableRows": [
+        "journal-dice-count-and-contributors",
+        "opposed-tie-break-d6-parity-encoding"
+      ],
+      "sourcePath": "shared/skillChecks/contract.ts",
+      "sourceSha256": "8cf29a5038073adc7f37aef4fddf021020b88a8c198f28ddfccf72bcb36aca70",
+      "changePolicy": "additive-reviewed-runtime-encoding-without-semantic-policy-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-accepted-result-invariants:v1",
+      "ticket": "P11-046",
+      "surface": "shared/skillChecks/contract.ts",
+      "beforeSha256": "2b68e39cb556a941fa7b7953afd5a5f2a3efcf09bc2c598967d9c888c0d62ef6",
+      "afterSha256": "8cf29a5038073adc7f37aef4fddf021020b88a8c198f28ddfccf72bcb36aca70",
+      "changedStableRows": [
+        "unique-subject-sheet-authority",
+        "journal-contributor-arithmetic",
+        "dc-outcome-invariants",
+        "opposed-reroll-order-and-tie-coin-invariants"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-contract.v1.json",
+      "sourceSha256": "af2dc778b80df4f5ad967168b1ca55f86bb71e008db2d236f768c2df3ade094c",
+      "changePolicy": "fail-closed-accepted-evidence-hardening",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-command-subject-read-set:v1",
+      "ticket": "P11-046",
+      "surface": "shared/skillChecks/persistence.ts",
+      "beforeSha256": "be688cfe596b726dcd3ddd36bde64a0f528cf798d269b2419a6a814b5cdff913",
+      "afterSha256": "72f215e9b3cd32e6e528dacd152edb26d6ef354ab3e57f378f226de8496da46b",
+      "changedStableRows": [
+        "duplicate-subject-sheet-command-rejection"
+      ],
+      "sourcePath": "shared/skillChecks/contract.ts",
+      "sourceSha256": "8cf29a5038073adc7f37aef4fddf021020b88a8c198f28ddfccf72bcb36aca70",
+      "changePolicy": "strict-command-read-set-hardening",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-contract-acceptance-successor:v1",
+      "ticket": "P11-046",
+      "surface": "tests/shared/skillCheckContract.test.ts",
+      "beforeSha256": "5f949a19e9c395c0927b7c723a6013796837b3c098771442b451ed6f341a62df",
+      "afterSha256": "c001ba5b1a98207857c0d116a5d98d3d04bdb599d8484ee2345d7c994774e4c7",
+      "changedStableRows": [
+        "modifier-contributor-arithmetic-rejection",
+        "forged-dc-outcome-rejection"
+      ],
+      "sourcePath": "shared/skillChecks/contract.ts",
+      "sourceSha256": "8cf29a5038073adc7f37aef4fddf021020b88a8c198f28ddfccf72bcb36aca70",
+      "changePolicy": "accepted-result-invariant-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-request-difficulty-selection:v1",
+      "ticket": "P11-047",
+      "surface": "shared/skillChecks/contract.ts",
+      "beforeSha256": "8cf29a5038073adc7f37aef4fddf021020b88a8c198f28ddfccf72bcb36aca70",
+      "afterSha256": "6ccf07bd47d3318e43193fbaa3f0904626bcef8b209a9018fd00c267994286f4",
+      "changedStableRows": [
+        "reviewed-dc-preset-identities",
+        "request-only-preset-or-explicit-difficulty-selection"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-dc-presets.v1.json",
+      "sourceSha256": "bf6254918111cb938724feb6c7aafed087adeb636176ca10b0dae0333ace0f69",
+      "changePolicy": "additive-request-authoring-policy-with-concrete-persisted-dc",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-request-difficulty-parser:v1",
+      "ticket": "P11-047",
+      "surface": "shared/skillChecks/persistence.ts",
+      "beforeSha256": "72f215e9b3cd32e6e528dacd152edb26d6ef354ab3e57f378f226de8496da46b",
+      "afterSha256": "8a12604722c003c07b38ebaeefa9d68f9f882c5fcdf8339db46fbe4833c9df18",
+      "changedStableRows": [
+        "strict-request-dc-selection-parser",
+        "persisted-concrete-dc-boundary-preserved"
+      ],
+      "sourcePath": "shared/skillChecks/contract.ts",
+      "sourceSha256": "6ccf07bd47d3318e43193fbaa3f0904626bcef8b209a9018fd00c267994286f4",
+      "changePolicy": "strict-request-authoring-extension-without-client-dice-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-dc-narrowing-compatibility:v1",
+      "ticket": "P11-047",
+      "surface": "server/domain/skillChecks/resolveCheck.ts",
+      "beforeSha256": "e12eedeaa51584fc374c46b5f0579989499499a232def9df3e1939ba6e54940c",
+      "afterSha256": "5e5df108b6505890e59df567e0e6b34b37596fe64f734e505d4aed38c935cd9a",
+      "changedStableRows": [
+        "dc-comparison-local-narrowing"
+      ],
+      "sourcePath": "shared/skillChecks/contract.ts",
+      "sourceSha256": "6ccf07bd47d3318e43193fbaa3f0904626bcef8b209a9018fd00c267994286f4",
+      "changePolicy": "type-narrowing-only-no-resolution-semantic-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-sheet-payload-cast-compatibility:v1",
+      "ticket": "P11-047",
+      "surface": "server/useCases/resolveSkillCheck.ts",
+      "beforeSha256": "14b13a7258a19837a40d669442c037c700255e0c2ce77e244ca0ef5b94ec4b03",
+      "afterSha256": "ad4162c5408a3440fd73f0797726f4d9d08cc7f3ac4a8d2f5e69387b84dbd444",
+      "changedStableRows": [
+        "stored-sheet-payload-type-boundary"
+      ],
+      "sourcePath": "shared/skillChecks/contract.ts",
+      "sourceSha256": "6ccf07bd47d3318e43193fbaa3f0904626bcef8b209a9018fd00c267994286f4",
+      "changePolicy": "type-compatibility-only-no-authority-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-operation-input-context:v1",
+      "ticket": "P11-047",
+      "surface": "server/storage/skillCheckRepository.ts",
+      "beforeSha256": "94fc55f2202879eca24178824b1975574d8d5ebb309e027a3ac9af33177e4a4b",
+      "afterSha256": "481164fb1b09b232b0282c37cb1156502d925a6e47a3d1365be6c25319f8e2d3",
+      "changedStableRows": [
+        "operation-input-contextual-type"
+      ],
+      "sourcePath": "shared/skillChecks/contract.ts",
+      "sourceSha256": "6ccf07bd47d3318e43193fbaa3f0904626bcef8b209a9018fd00c267994286f4",
+      "changePolicy": "explicit-type-only-no-storage-semantic-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-request-contract-acceptance:v1",
+      "ticket": "P11-047",
+      "surface": "tests/shared/skillCheckContract.test.ts",
+      "beforeSha256": "c001ba5b1a98207857c0d116a5d98d3d04bdb599d8484ee2345d7c994774e4c7",
+      "afterSha256": "20b0e1b3d5f8e1f479293d040dc19676d4a94f60d6e8de61e40035ddb582d530",
+      "changedStableRows": [
+        "reviewed-preset-request-acceptance",
+        "forged-preset-rejection",
+        "legacy-concrete-dc-request-shape-rejection"
+      ],
+      "sourcePath": "shared/skillChecks/persistence.ts",
+      "sourceSha256": "8a12604722c003c07b38ebaeefa9d68f9f882c5fcdf8339db46fbe4833c9df18",
+      "changePolicy": "request-authoring-parser-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-actions-director-presentation:v1",
+      "ticket": "P11-041",
+      "surface": "src/components/encounter/workspace/EncounterDirectorPanel.vue",
+      "beforeSha256": "0e7fba7cc370c793698abbb3e9fecab8927abaef49e9c18f01a98717e45ed1e7",
+      "afterSha256": "be5ffc0ccc491dae5e3903fcd6282ddf7521f4dc987b3d84e7d06478e29f91c4",
+      "changedStableRows": [
+        "guided-item-decision-and-recovery-presentation"
+      ],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "additive-gm-item-action-presentation-preserving-finish-encounter-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:item-actions-liveplay-page-presentation:v1",
+      "ticket": "P11-041",
+      "surface": "src/pages/play/[encounterId].vue",
+      "beforeSha256": "3c0b8ea9779a9a13ef8bddced2a8e376748df9cbef741218982f8287d5af761f",
+      "afterSha256": "43e0285369085b137cce3245094cda5365235b3c0f6144bc2f10484bde81d93b",
+      "changedStableRows": [
+        "item-action-declaration-and-guided-receipt-integration"
+      ],
+      "sourcePath": "data/deferred-closure/item-action-matrix.v1.json",
+      "sourceSha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+      "changePolicy": "additive-liveplay-item-presentation-preserving-finish-encounter-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:gm-skill-check-director-tab:v1",
+      "ticket": "P11-047",
+      "surface": "src/components/encounter/workspace/EncounterDirectorPanel.vue",
+      "beforeSha256": "be5ffc0ccc491dae5e3903fcd6282ddf7521f4dc987b3d84e7d06478e29f91c4",
+      "afterSha256": "5e02849b3db28748c193c8ffabb6fae7bd66a7a0c5802633c8a4b94361aa8940",
+      "changedStableRows": [
+        "gm-skill-check-director-tab"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-gm-workflow-certification.v1.json",
+      "sourceSha256": "0073124295688829a2c47946d6c3411f540f4ae800e34f8ccd68e8d37fec3988",
+      "changePolicy": "additive-gm-only-workflow-preserving-finish-encounter-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:subject-skill-check-decision-layer:v1",
+      "ticket": "P11-048",
+      "surface": "src/pages/play/[encounterId].vue",
+      "beforeSha256": "43e0285369085b137cce3245094cda5365235b3c0f6144bc2f10484bde81d93b",
+      "afterSha256": "75ff11e58d7f241993a95f48fa96acb6010f65b0e70b9c7ff854a99098d17d66",
+      "changedStableRows": [
+        "subject-skill-check-noncompeting-decision-layer"
+      ],
+      "sourcePath": "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+      "sourceSha256": "36c3875e56391096ced778bd97ee57cf8ba0428d5b41d4b392cbc4a8cdec0f71",
+      "changePolicy": "additive-role-correct-skill-check-surface-preserving-existing-decision-priority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:finish-encounter-ui-successor-acceptance:v1",
+      "ticket": "P11-048",
+      "surface": "tests/data/completePlayLoopFinishEncounterExperience.test.ts",
+      "beforeSha256": "b97b894543745f8373adbdc4d00aafb0b35bd1b27b2122181fb70b165455c833",
+      "afterSha256": "4d8628399dca501895e2151c65d984d6f39926880058eca892145070e344cf1a",
+      "changedStableRows": [
+        "director-component-successor-chain",
+        "liveplay-page-successor-chain"
+      ],
+      "sourcePath": "data/complete-play-loop/finish-encounter-experience.v1.json",
+      "sourceSha256": "c057097c8ed0d577abf8fd0be590723833f029ea5ea78a6499a7b44c7e0c8927",
+      "changePolicy": "frozen-p8-source-evidence-preserved-through-contiguous-plan11-successors",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-subject-modifier-preview:v1",
+      "ticket": "P11-048",
+      "surface": "server/domain/skillChecks/resolveCheck.ts",
+      "beforeSha256": "5e5df108b6505890e59df567e0e6b34b37596fe64f734e505d4aed38c935cd9a",
+      "afterSha256": "b0bc7789864b020c3642656fdb5fb51b2d9a1ae0b87cdb9555ecebae8033dcfe",
+      "changedStableRows": [
+        "subject-visible-modifier-preview",
+        "gm-only-contributor-redaction"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-contract.v1.json",
+      "sourceSha256": "af2dc778b80df4f5ad967168b1ca55f86bb71e008db2d236f768c2df3ade094c",
+      "changePolicy": "additive-no-roll-preview-reusing-authoritative-skill-and-provider-resolution",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:gm-skill-check-expiry-settlement-trigger:v1",
+      "ticket": "P11-048",
+      "surface": "src/components/encounter/workspace/EncounterGmSkillChecks.vue",
+      "beforeSha256": "b39bf4504c1d633437b803ac32c54370f37eb5dc3b65f805cb48db273d7f6a3b",
+      "afterSha256": "6af2e5ba7672f672ea4da0238c56aeb8ca17c86e3fddc7658120d57bb5e910b7",
+      "changedStableRows": [
+        "authority-free-server-expiry-settlement-before-refresh"
+      ],
+      "sourcePath": "server/api/skill-checks/settle-expired.post.ts",
+      "sourceSha256": "5be22bc428d54db755f8e55c0f257d594f7982adf4bf0693c5caae190bedb094",
+      "changePolicy": "additive-timeout-observation-preserving-gm-request-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:gm-skill-check-expiry-component-acceptance:v1",
+      "ticket": "P11-048",
+      "surface": "tests/components/encounterGmSkillChecks.test.ts",
+      "beforeSha256": "549140b53d2ad671f5a3b7cb952d10177a28676f95bfe2875c989b0467a2a424",
+      "afterSha256": "20518f988c0e0d9a7ca906b808b8d402bbc396de9206130b236f856ae97937a1",
+      "changedStableRows": [
+        "server-expiry-trigger-mock-boundary",
+        "exact-command-call-index-preservation"
+      ],
+      "sourcePath": "src/components/encounter/workspace/EncounterGmSkillChecks.vue",
+      "sourceSha256": "6af2e5ba7672f672ea4da0238c56aeb8ca17c86e3fddc7658120d57bb5e910b7",
+      "changePolicy": "expiry-trigger-presentation-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-role-projection-contract:v1",
+      "ticket": "P11-049",
+      "surface": "shared/skillChecks/subjectWorkflow.ts",
+      "beforeSha256": "bd3f730ea6d2e78b400acae0133908f89a7dc948e1054b1d9b34adcb03ead786",
+      "afterSha256": "6ed1b9f44583e0c7735d512df3632ca7e3401eadc41463898ecdb1cea937ef45",
+      "changedStableRows": [
+        "subject-safe-history-contract",
+        "chronological-terminal-history-binding"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-projection-certification.v1.json",
+      "sourceSha256": "464d702976dbe28eced0db7d34295cd49afa6571f0631fdc87f988a03b599bd0",
+      "changePolicy": "additive-role-safe-history-with-exact-field-allowlist",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-gm-modifier-projection:v1",
+      "ticket": "P11-049",
+      "surface": "server/domain/skillChecks/resolveCheck.ts",
+      "beforeSha256": "b0bc7789864b020c3642656fdb5fb51b2d9a1ae0b87cdb9555ecebae8033dcfe",
+      "afterSha256": "cd9c24280bd51ca344f35f8bdc52fa7b9f9e19418d7992c14395ada2768219f2",
+      "changedStableRows": [
+        "gm-complete-modifier-preview",
+        "subject-redacted-modifier-preview"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-projection-certification.v1.json",
+      "sourceSha256": "464d702976dbe28eced0db7d34295cd49afa6571f0631fdc87f988a03b599bd0",
+      "changePolicy": "additive-no-roll-role-projections-reusing-authoritative-resolution",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-subject-safe-history:v1",
+      "ticket": "P11-049",
+      "surface": "server/domain/skillChecks/subjectProjection.ts",
+      "beforeSha256": "525a7f28cd9f52f7a414de7cbffc5c19f7d8d83beac7597abced3af209ec4b47",
+      "afterSha256": "737a0ca844b3735f25a0f9bcfec45a8e713cadd3d23a17d0828cf2011a0b9bb7",
+      "changedStableRows": [
+        "own-response-and-correction-history-only",
+        "opaque-derived-history-identities"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-projection-certification.v1.json",
+      "sourceSha256": "464d702976dbe28eced0db7d34295cd49afa6571f0631fdc87f988a03b599bd0",
+      "changePolicy": "additive-subject-history-preserving-existing-subject-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-subject-history-presentation:v1",
+      "ticket": "P11-049",
+      "surface": "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+      "beforeSha256": "36c3875e56391096ced778bd97ee57cf8ba0428d5b41d4b392cbc4a8cdec0f71",
+      "afterSha256": "a24fe9f5c23d8d6e1f79380f395996aeae1b795d8f0f502040ecf81c8a7c2b1c",
+      "changedStableRows": [
+        "subject-safe-history-disclosure"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-projection-certification.v1.json",
+      "sourceSha256": "464d702976dbe28eced0db7d34295cd49afa6571f0631fdc87f988a03b599bd0",
+      "changePolicy": "additive-native-history-disclosure-preserving-decision-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-spectator-liveplay-feed:v1",
+      "ticket": "P11-049",
+      "surface": "src/pages/play/[encounterId].vue",
+      "beforeSha256": "75ff11e58d7f241993a95f48fa96acb6010f65b0e70b9c7ff854a99098d17d66",
+      "afterSha256": "9531323f08d0e0108f02a59f4299490d41bf441d7d03f0c441118b2055a8bb9c",
+      "changedStableRows": [
+        "spectator-safe-skill-check-event-feed"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-projection-certification.v1.json",
+      "sourceSha256": "464d702976dbe28eced0db7d34295cd49afa6571f0631fdc87f988a03b599bd0",
+      "changePolicy": "additive-public-history-feed-preserving-existing-decision-and-finish-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-subject-history-component-acceptance:v1",
+      "ticket": "P11-049",
+      "surface": "tests/components/encounterSubjectSkillChecks.test.ts",
+      "beforeSha256": "a00b9e1b724876b1503dd42df44067ed1e2145a18c97263346eb7724273fd6b4",
+      "afterSha256": "5a17166e28f86a42ebc0a411b41a5d9f6fdb101f068b65dac81d132c6175a6e0",
+      "changedStableRows": [
+        "terminal-subject-history-fixture-and-presentation"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-projection-certification.v1.json",
+      "sourceSha256": "464d702976dbe28eced0db7d34295cd49afa6571f0631fdc87f988a03b599bd0",
+      "changePolicy": "history-presentation-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-generic-check-command-contract:v1",
+      "ticket": "P11-050",
+      "surface": "shared/itemAutomation/guidedAdjudication.ts",
+      "beforeSha256": "188e48c98b630e6465d47c1e84dff795b72f3b5c065686c9e32e87873dca5949",
+      "afterSha256": "4115b5684592314cf9147e7e8d0d76fdaff8b3e251a2ab6f4f7405bba1bfab65",
+      "changedStableRows": [
+        "fishing-generic-check-link",
+        "gm-only-fishing-actor-binding",
+        "legacy-terminal-hash-preservation"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-consuming-flow-certification.v1.json",
+      "sourceSha256": "7585470e0f25c5f032a34b5aa0ece24218505d272a52c06a282ee55b84968271",
+      "changePolicy": "additive-private-check-link-preserving-existing-guided-command-replay",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-generic-check-gm-projection:v1",
+      "ticket": "P11-050",
+      "surface": "server/domain/itemAutomation/guidedAdjudication.ts",
+      "beforeSha256": "c48a8935af1e3fd73ff846ab47817ff645f0952e63cdbd373dcac453e17af94c",
+      "afterSha256": "5e6e9069b9b85705d8cc33c0e50076481eedbf09af42b7283881521a77be2462",
+      "changedStableRows": [
+        "gm-only-exact-fishing-actor-binding"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-consuming-flow-certification.v1.json",
+      "sourceSha256": "7585470e0f25c5f032a34b5aa0ece24218505d272a52c06a282ee55b84968271",
+      "changePolicy": "additive-gm-resolution-authority-with-owner-and-public-redaction-preserved",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-generic-check-settlement:v1",
+      "ticket": "P11-050",
+      "surface": "server/useCases/manageItemGuidedAdjudication.ts",
+      "beforeSha256": "3ecd9fd72ddbdbc536c70e2c0092e829f66e9d40e779edc68db4abbb61e99dd9",
+      "afterSha256": "564d3524009819e993b106634c51aad4f8c3a30110eb4e931507014c677b0757",
+      "changedStableRows": [
+        "accepted-single-check-required",
+        "exact-actor-skill-and-declaration-binding",
+        "one-check-one-fishing-settlement"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-consuming-flow-certification.v1.json",
+      "sourceSha256": "7585470e0f25c5f032a34b5aa0ece24218505d272a52c06a282ee55b84968271",
+      "changePolicy": "additive-generic-check-evidence-preserving-rod-custody-time-water-hook-and-transaction-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-generic-check-runtime-acceptance:v1",
+      "ticket": "P11-050",
+      "surface": "tests/server/deferredClosureFishingContract.test.ts",
+      "beforeSha256": "c62e5929081757b8093dea26c7c05a089c97108786cf808f5df095c7a03db7b4",
+      "afterSha256": "f8bc6045b18736611e63864ddef696c755262361f96e6ba723798a1cd59bd4b8",
+      "changedStableRows": [
+        "three-rod-generic-check-link",
+        "missing-pending-mismatched-predating-and-reused-check-rejection",
+        "linked-check-retry-rollback-and-privacy"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-consuming-flow-certification.v1.json",
+      "sourceSha256": "7585470e0f25c5f032a34b5aa0ece24218505d272a52c06a282ee55b84968271",
+      "changePolicy": "fishing-integration-and-recovery-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-generic-check-component-acceptance:v1",
+      "ticket": "P11-050",
+      "surface": "tests/components/campaignGuidedItemAdjudication.test.ts",
+      "beforeSha256": "054d9bc294e09e8cf5eb4a0c98dc74084288a8fc22a60b86880e2d6a7dc3b1a6",
+      "afterSha256": "bd26162b618cec4c757a354d430e13e34a694c8dacf88226ac40802fc809ae06",
+      "changedStableRows": [
+        "accepted-check-selector-and-bounded-intent"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-consuming-flow-certification.v1.json",
+      "sourceSha256": "7585470e0f25c5f032a34b5aa0ece24218505d272a52c06a282ee55b84968271",
+      "changePolicy": "guided-fishing-presentation-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-generic-check-cohort-evidence:v1",
+      "ticket": "P11-050",
+      "surface": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "beforeSha256": "d15cd1fcc3d8804ccf0268d171dfd2b04fb8110f3fcb210ecc7bd76754ca8b20",
+      "afterSha256": "04121681eb574af8cde8d89e4898f0d32390e6aee788f0b6a2f20a64d39710b4",
+      "changedStableRows": [
+        "guided-provider-source-evidence-only"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-consuming-flow-certification.v1.json",
+      "sourceSha256": "7585470e0f25c5f032a34b5aa0ece24218505d272a52c06a282ee55b84968271",
+      "changePolicy": "derived-source-evidence-refresh-with-no-member-or-classification-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-gm-accessibility-presentation:v1",
+      "ticket": "P11-051",
+      "surface": "src/components/encounter/workspace/EncounterGmSkillChecks.vue",
+      "beforeSha256": "6af2e5ba7672f672ea4da0238c56aeb8ca17c86e3fddc7658120d57bb5e910b7",
+      "afterSha256": "e1423a5e79655fa706cbb4c2f23527c289d182eafda2bf9df287adcb1127a67d",
+      "changedStableRows": [
+        "focus-managed-cancellation-and-status",
+        "touch-contrast-and-validation-semantics",
+        "bounded-open-and-terminal-rendering"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+      "sourceSha256": "79548c37e25b5444d8241ab6f1b7a1c87b5dcfc8cd3c52e47ef4c22b64b0cc37",
+      "changePolicy": "accessibility-and-bounded-presentation-only-without-command-authority-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-subject-accessibility-presentation:v1",
+      "ticket": "P11-051",
+      "surface": "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+      "beforeSha256": "a24fe9f5c23d8d6e1f79380f395996aeae1b795d8f0f502040ecf81c8a7c2b1c",
+      "afterSha256": "0f5c3e8c4fef35920dadfb1e99a875fb2800c9ee929ad5556e68aeafa69b165d",
+      "changedStableRows": [
+        "dialog-description-and-busy-state",
+        "response-and-dismissal-focus-management",
+        "bounded-history-rendering-and-touch-contrast"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+      "sourceSha256": "79548c37e25b5444d8241ab6f1b7a1c87b5dcfc8cd3c52e47ef4c22b64b0cc37",
+      "changePolicy": "accessibility-and-bounded-presentation-only-without-response-authority-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-public-accessibility-presentation:v1",
+      "ticket": "P11-051",
+      "surface": "src/components/encounter/workspace/EncounterSkillCheckPublicFeed.vue",
+      "beforeSha256": "5e49f508dce3b9512edfc47ece449eba7ff3178b39f55e35c30c414e536725ef",
+      "afterSha256": "3a4f9124bf51aed960a119b68752765035d7135f31f0f625ab41e57e7d8ba856",
+      "changedStableRows": [
+        "focus-stable-refresh-and-polite-status",
+        "bounded-card-and-history-rendering",
+        "touch-contrast-and-narrow-reflow"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+      "sourceSha256": "79548c37e25b5444d8241ab6f1b7a1c87b5dcfc8cd3c52e47ef4c22b64b0cc37",
+      "changePolicy": "accessibility-and-bounded-presentation-only-without-spectator-projection-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-check-accessibility-presentation:v1",
+      "ticket": "P11-051",
+      "surface": "src/components/campaign/CampaignGuidedFishingDecision.vue",
+      "beforeSha256": "08ca28c453556fb29a8461db2149a7603fef45cc03842540ab5f6a852ba345b1",
+      "afterSha256": "37dac1f0a681411f472cc3431cdf33c5b88ce8289e23401f0fcae6d917cd4732",
+      "changedStableRows": [
+        "described-check-selector-and-status",
+        "touch-and-narrow-reflow"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+      "sourceSha256": "79548c37e25b5444d8241ab6f1b7a1c87b5dcfc8cd3c52e47ef4c22b64b0cc37",
+      "changePolicy": "accessibility-presentation-only-without-fishing-command-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-gm-accessibility-acceptance:v1",
+      "ticket": "P11-051",
+      "surface": "tests/components/encounterGmSkillChecks.test.ts",
+      "beforeSha256": "20518f988c0e0d9a7ca906b808b8d402bbc396de9206130b236f856ae97937a1",
+      "afterSha256": "f64434c04dd94cfd71b5e88cfef4bdfdfbefac6749d40f7d070d0ac5abf7e3d0",
+      "changedStableRows": [
+        "cancellation-focus-and-escape",
+        "bounded-rendering-performance"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+      "sourceSha256": "79548c37e25b5444d8241ab6f1b7a1c87b5dcfc8cd3c52e47ef4c22b64b0cc37",
+      "changePolicy": "accessibility-and-performance-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-subject-accessibility-acceptance:v1",
+      "ticket": "P11-051",
+      "surface": "tests/components/encounterSubjectSkillChecks.test.ts",
+      "beforeSha256": "5a17166e28f86a42ebc0a411b41a5d9f6fdb101f068b65dac81d132c6175a6e0",
+      "afterSha256": "14f9e79b3c3ecf5d10761c649c8e6948f16066bb99e8544f544c880305fec3cb",
+      "changedStableRows": [
+        "dialog-and-focus-semantics",
+        "bounded-history-performance"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+      "sourceSha256": "79548c37e25b5444d8241ab6f1b7a1c87b5dcfc8cd3c52e47ef4c22b64b0cc37",
+      "changePolicy": "accessibility-and-performance-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-public-accessibility-acceptance:v1",
+      "ticket": "P11-051",
+      "surface": "tests/components/encounterSkillCheckPublicFeed.test.ts",
+      "beforeSha256": "39c5074d5ac24fe28d546372b18fde2e1e8cd98ff35a813ad464533f8d20dfda",
+      "afterSha256": "a28176053ba4469a67ad9eda985c238bf7217880f1e4bbd4b3b585c769f682a1",
+      "changedStableRows": [
+        "focus-stable-refresh",
+        "bounded-card-and-history-performance"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+      "sourceSha256": "79548c37e25b5444d8241ab6f1b7a1c87b5dcfc8cd3c52e47ef4c22b64b0cc37",
+      "changePolicy": "accessibility-and-performance-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:fishing-check-accessibility-acceptance:v1",
+      "ticket": "P11-051",
+      "surface": "tests/components/campaignGuidedItemAdjudication.test.ts",
+      "beforeSha256": "bd26162b618cec4c757a354d430e13e34a694c8dacf88226ac40802fc809ae06",
+      "afterSha256": "5547dc4edea72fc28a4b0d6aa552f99568c398a23858814984641652d688d687",
+      "changedStableRows": [
+        "described-selector-disabled-state-and-status"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+      "sourceSha256": "79548c37e25b5444d8241ab6f1b7a1c87b5dcfc8cd3c52e47ef4c22b64b0cc37",
+      "changePolicy": "accessibility-presentation-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-campaign-attention-model:v1",
+      "ticket": "P11-052",
+      "surface": "shared/campaignAttention/model.ts",
+      "beforeSha256": "0fd3e9494a41bda34fd209f55b26d3db7e3a90f2eb1337ecaf4ce285365552de",
+      "afterSha256": "9cb7e0d477fda3e93b204733cac9930771df2b08fc49a5fab0c4adb52cb2dd1a",
+      "changedStableRows": [
+        "skill-check-response-and-resolution-reasons",
+        "skill-check-source-event-kind"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "strict-additive-campaign-attention-kind-registration",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-owner-attention-projection:v1",
+      "ticket": "P11-052",
+      "surface": "server/domain/campaignAttention/projection.ts",
+      "beforeSha256": "b69333120fcd845aac637574415eaf3f6d674a512d9fe4e0f5d89509dd2d3f83",
+      "afterSha256": "e319794d604bf2263558987c187904726d8f1217d07a721e9411fffb04034bdc",
+      "changedStableRows": [
+        "exact-profile-entity-match-before-owner-redaction"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "additive-owner-authority-projection-with-no-profile-identity-output",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-complete-attention-read:v1",
+      "ticket": "P11-052",
+      "surface": "server/useCases/loadCampaignAttention.ts",
+      "beforeSha256": "8f81bd35687bb5f697b6d8a3affbba884d4d23345e491f6eea210ba8e4d53df8",
+      "afterSha256": "e5fbc8d2eaa065c173ab33b075d41ab61925b117fc6cb3fcb7e8f49b3dee4bd2",
+      "changedStableRows": [
+        "complete-current-skill-check-authority",
+        "skill-check-attention-provider"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "additive-complete-provider-read-in-existing-transaction",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-attention-invalidation-cause:v1",
+      "ticket": "P11-052",
+      "surface": "server/realtime/campaignAttentionRealtime.ts",
+      "beforeSha256": "0156e953b786eb577dceea85c0a8e2725e4508f6114a232435e305282c53ede5",
+      "afterSha256": "b13ca9678d3fdff4a871f9938d0118fa1c510f52ce938aa806baf5a2f1cf7320",
+      "changedStableRows": [
+        "skill-check-operation-cause"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "payload-minimal-additive-invalidation-cause",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-attention-documentation:v1",
+      "ticket": "P11-052",
+      "surface": "docs/campaign-attention-projection.md",
+      "beforeSha256": "83ad59ce2bc2ed9441fadb5c005a804df7ea374b867067c127c98bd1143592b8",
+      "afterSha256": "2ab27988f540793a03720c01858e23abc576bc1f66ea9d5b35d2042df7c8face",
+      "changedStableRows": [
+        "seventh-skill-check-provider",
+        "controller-redaction-and-invalidation-policy"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "documentation-successor-for-additive-campaign-provider",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-attention-projection-acceptance:v1",
+      "ticket": "P11-052",
+      "surface": "tests/server/campaignAttentionProjection.test.ts",
+      "beforeSha256": "a81dfea9fdba42bd45ca88eb7f7af00dee857bbcf2f4731552ee3b5f86de4468",
+      "afterSha256": "5b1cd2387ebac9072aa9d38d1ae3b51840c6ceb47838da3e5cad4f4b2ebf927a",
+      "changedStableRows": [
+        "complete-empty-skill-check-read",
+        "payload-minimal-skill-check-invalidation"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "campaign-attention-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-campaign-day-label-compatibility:v1",
+      "ticket": "P11-052",
+      "surface": "server/useCases/prepareCampaignDay.ts",
+      "beforeSha256": "86606953e6720643f974717d6e29567a922233fb54693ff32781851c4d4d7324",
+      "afterSha256": "f3dddca4dda5d39c271ffacd333113f590e50f1e69d0638811510c80ebc9d829",
+      "changedStableRows": [
+        "skill-check-attention-preflight-labels"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "exhaustive-label-compatibility-for-additive-attention-reasons",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-campaign-dashboard-copy:v1",
+      "ticket": "P11-052",
+      "surface": "src/components/campaign/CampaignContinuationDashboard.vue",
+      "beforeSha256": "050cad265b2aa20b94f1abb192427cea5f20ff6a244f069f828321c1e05a8c0e",
+      "afterSha256": "c2d400ba74f7843c31bad39087b9683e9ab9e68be26e4e0abbbf5bd3517ed61a",
+      "changedStableRows": [
+        "skill-check-response-and-gm-review-copy",
+        "open-live-encounter-action-label"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "additive-role-safe-attention-presentation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-campaign-history-page:v1",
+      "ticket": "P11-052",
+      "surface": "src/pages/campaign.vue",
+      "beforeSha256": "36d8d45d0df425b4d78f93fc57a20509edef77dba00c0987f45ee118fc8e8bef",
+      "afterSha256": "3c416fac60573a675a3c986050e979f5c346c36404c49efcf0bc314482ee08ee",
+      "changedStableRows": [
+        "owner-safe-skill-check-history-tool"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "additive-secondary-campaign-tool-preserving-primary-dashboard",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-campaign-dashboard-acceptance:v1",
+      "ticket": "P11-052",
+      "surface": "tests/components/campaignContinuationDashboard.test.ts",
+      "beforeSha256": "1ad7ed4c8e1f430929b85981d072ddf79afe70a2a58f60dfacb28ed140ab435b",
+      "afterSha256": "ddaf492c8653276cd64d357ebf575b0ce8327e0633405ef0310013795c88a3ec",
+      "changedStableRows": [
+        "skill-check-attention-copy-action-and-no-id"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "campaign-dashboard-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-resolution-attention-recovery:v1",
+      "ticket": "P11-052",
+      "surface": "server/useCases/resolveSkillCheck.ts",
+      "beforeSha256": "ad4162c5408a3440fd73f0797726f4d9d08cc7f3ac4a8d2f5e69387b84dbd444",
+      "afterSha256": "2d06f81f6caf4b9bd8d7477c9a0dfa42c7220b33b4f2cdfe79665f400934b813",
+      "changedStableRows": [
+        "post-commit-attention-invalidation",
+        "transient-publication-failure-isolation"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "recovery-hint-after-unchanged-atomic-resolution-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-gm-attention-recovery:v1",
+      "ticket": "P11-052",
+      "surface": "server/useCases/manageGmSkillChecks.ts",
+      "beforeSha256": "89ea1f289bceb212908af6602d0c19723eb140e011b52a7281867226cc6d8b94",
+      "afterSha256": "8f88ca389144f213f7155eb7e0cb62fe9223765282a1acd61b652a9db6151178",
+      "changedStableRows": [
+        "post-commit-request-cancel-resolve-invalidation"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "recovery-hint-without-command-or-replay-authority-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-gm-route-invalidation:v1",
+      "ticket": "P11-052",
+      "surface": "server/api/skill-checks/gm.post.ts",
+      "beforeSha256": "df0238f8ef10afcbe7719718d629678b4ed4862292ed18a59d68acfebed8ac13",
+      "afterSha256": "a4ca02fc29363ace1d239553b24e46de9a2d0a515a46b007e379bedf1ab94af6",
+      "changedStableRows": [
+        "server-owned-attention-publisher-injection"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "server-dependency-injection-with-no-client-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-gm-route-invalidation-acceptance:v1",
+      "ticket": "P11-052",
+      "surface": "tests/server/skillCheckGmRoute.test.ts",
+      "beforeSha256": "0ee0044f410702d3b3a00200861799977afa3cb5cdbf43ac0ddb3ae27b0eea93",
+      "afterSha256": "45644b76f406a9f484fcb41a0d92ae3d0e27f01c9391a5095fa92f010115986a",
+      "changedStableRows": [
+        "server-owned-invalidation-dependency"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "route-authority-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-subject-attention-recovery:v1",
+      "ticket": "P11-052",
+      "surface": "server/useCases/manageSubjectSkillChecks.ts",
+      "beforeSha256": "122002d4150dc50b49a078b7643f59bc59b33897ea2941b562dbcd77d289df07",
+      "afterSha256": "07ecd08b279199299154d28d47490a572e00ccf8995921e755fd8066aa386280",
+      "changedStableRows": [
+        "post-commit-response-and-timeout-invalidation"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "recovery-hint-without-response-timeout-or-replay-authority-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-subject-route-invalidation:v1",
+      "ticket": "P11-052",
+      "surface": "server/api/skill-checks/subject.post.ts",
+      "beforeSha256": "a9990bd3ac0d96d3dab757c31e585436f4295756934edb882aa8996c07738009",
+      "afterSha256": "e1706d8a88add0888e02bbd89731fc211c2939dd6329bbed4471af643d4deb21",
+      "changedStableRows": [
+        "server-owned-response-invalidation-publisher"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "server-dependency-injection-with-no-client-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-timeout-route-invalidation:v1",
+      "ticket": "P11-052",
+      "surface": "server/api/skill-checks/settle-expired.post.ts",
+      "beforeSha256": "5be22bc428d54db755f8e55c0f257d594f7982adf4bf0693c5caae190bedb094",
+      "afterSha256": "b725b14dff079832ea4ddc9390eb5d63164a8a2267966cd1852e5f6dc017fe81",
+      "changedStableRows": [
+        "server-owned-timeout-invalidation-publisher"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "server-dependency-injection-with-no-client-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-subject-route-invalidation-acceptance:v1",
+      "ticket": "P11-052",
+      "surface": "tests/server/skillCheckSubjectRoute.test.ts",
+      "beforeSha256": "470af125713777d47dc848c2f5da1e8d85c467455f924de8abde7028b3930857",
+      "afterSha256": "a9bb231a2a6e89eb5708d9b556e6287c6270527e3223c16f67e65bf239e9d0c0",
+      "changedStableRows": [
+        "server-owned-response-and-timeout-invalidation-dependencies"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "route-authority-regression-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:successor-aware-accessibility-source-acceptance:v1",
+      "ticket": "P11-052",
+      "surface": "tests/data/completePlayLoopAccessibilityVisualAcceptance.test.ts",
+      "beforeSha256": "bb7deff57ee59019a478e9d24667bcbac0a0b47299f7aab8c8537214248a145e",
+      "afterSha256": "64d041e85275152c321b772602073437b261dd0cdb9fb4c823b9368cb07d63ca",
+      "changedStableRows": [
+        "accepted-successor-source-hash-validation"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "test-harness-only-frozen-record-successor-preservation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:successor-aware-concurrency-source-acceptance:v1",
+      "ticket": "P11-052",
+      "surface": "tests/data/completePlayLoopConcurrencyFailureAcceptance.test.ts",
+      "beforeSha256": "375acf17c898ab4aebea5a10295c3be8d07fb1d57dce41a69d1088f1d03395ee",
+      "afterSha256": "ebf84a616e241531d27460518eadc2bb9dee698d9ce30acc81ca4c591f68f513",
+      "changedStableRows": [
+        "accepted-successor-source-hash-validation"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "test-harness-only-frozen-record-successor-preservation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-runtime-inventory-finality:v1",
+      "ticket": "P11-052",
+      "surface": "data/deferred-closure/closure-inventory.v1.json",
+      "beforeSha256": "c47d0f2fe9109317fc40823eb1aa4e43192980129b3bdb37ee0d1a2a78c11c67",
+      "afterSha256": "828539128eb4f801f21f0995c0b70da1bb86c85dea34e5d133f71300222bde09",
+      "changedStableRows": [
+        "runtime.generic-skill-check"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "structured-to-native-after-complete-runtime-certification",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-runtime-rubric-finality:v1",
+      "ticket": "P11-052",
+      "surface": "data/deferred-closure/completion-rubric.v1.json",
+      "beforeSha256": "32eb381bd363c7ad1736e89cec77683883ee4350ff469edfd2de67d58419a3a8",
+      "afterSha256": "9aa0fe172ff32a79f86e4bbc2af6486cde1ee51d8a9483e87f941c4659b7f16a",
+      "changedStableRows": [
+        "p11.skill-check-runtime-certification",
+        "runtime.generic-skill-check"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "planned-to-passing-runtime-evidence-after-certification",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:skill-check-runtime-item-proof-refresh:v1",
+      "ticket": "P11-052",
+      "surface": "data/deferred-closure/item-action-closure-proof.v1.json",
+      "beforeSha256": "82ecf7a9df7a4a8e75b04664ac30f037560315ebada2ee33794f0a347138a68e",
+      "afterSha256": "a17f4f87e0cdf1c7cd157b6a8067018ae82bea88de9c1135d58f133f51e9ef0d",
+      "changedStableRows": [
+        "closure-inventory-authority-hash",
+        "completion-rubric-authority-hash"
+      ],
+      "sourcePath": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sourceSha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7",
+      "changePolicy": "authority-hash-refresh-with-no-item-action-state-change",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:contest-variants:v1",
+      "ticket": "P11-006",
+      "surface": "data/reference/contests.json",
+      "beforeSha256": "fadb03c328f2025dcc81fe497365db345717184bea6a9247b2f79d9d3f61362a",
+      "afterSha256": "95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e",
+      "changedStableRows": ["trainer-participant", "battle"],
+      "sourcePath": "books/markdown/core/08-pokemon-contests.md",
+      "sourceSha256": "d4cbfef280d2b96bede24648b1ca69a8bfcbdad639d8a5537ce8518387285111",
+      "changePolicy": "reviewed-structured-semantics-preserving-plan-10-baseline",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-document-contract:v1",
+      "ticket": "P11-053",
+      "surface": "shared/contests/document.ts",
+      "beforeSha256": "545a8e9f01ef381a1a5a4a90085433b7f827fda3e5ae011813fced25717764cb",
+      "afterSha256": "c89c7a86a820a7e2b8c1d0492d077657ddb7fdb09221d6a657e773a66c9ee4d8",
+      "changedStableRows": [
+        "participant-format-identity",
+        "trainer-and-pokemon-performer-discriminant",
+        "exact-trainer-sheet-revision-binding",
+        "trainer-empty-parallel-dice-invariant"
+      ],
+      "sourcePath": "data/deferred-closure/trainer-participant-document-certification.v1.json",
+      "sourceSha256": "ef844405a75de8d6d3452affa10abe4cad3d511479d0f3b8c909d849e9f7faa1",
+      "changePolicy": "additive-schema-v1-trainer-performer-authority-with-pokemon-only-read-compatibility",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-engine-enrollment:v1",
+      "ticket": "P11-053",
+      "surface": "server/domain/contests/engine.ts",
+      "beforeSha256": "b5b08f7bd23537a4e46ab67128487247ced921cb229a84fda0299cf063abcad6",
+      "afterSha256": "88fca2223ceaca9ce1a2ae290edbe6191697cd8e36b8bcc9e7c844eec2ca61cf",
+      "changedStableRows": [
+        "typed-performer-enrollment",
+        "pokemon-only-duplicate-and-rotation-accounting",
+        "later-mechanics-progression-gate"
+      ],
+      "sourcePath": "data/deferred-closure/trainer-participant-document-certification.v1.json",
+      "sourceSha256": "ef844405a75de8d6d3452affa10abe4cad3d511479d0f3b8c909d849e9f7faa1",
+      "changePolicy": "trainer-participant-setup-only-with-no-dice-or-stage-finality",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-sheet-controller-enrollment:v1",
+      "ticket": "P11-053",
+      "surface": "server/useCases/contests.ts",
+      "beforeSha256": "a162e55b057a386643b73a04e1dc453305f2ae47f52142c90fdacc2fc46060a6",
+      "afterSha256": "acbfe2945bcad8e03b40c366ec50f207f85fec8ab4ecdbbb6fb9e46cac38c6ab",
+      "changedStableRows": [
+        "current-trainer-performer-snapshot",
+        "existing-profile-control-over-trainer-and-pokemon",
+        "exact-enrollment-replay-without-second-sheet-read"
+      ],
+      "sourcePath": "data/deferred-closure/trainer-participant-document-certification.v1.json",
+      "sourceSha256": "ef844405a75de8d6d3452affa10abe4cad3d511479d0f3b8c909d849e9f7faa1",
+      "changePolicy": "reuse-existing-sheet-revision-controller-and-operation-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:contest-variant-matrix-source-refresh:v1",
+      "ticket": "P11-053",
+      "surface": "data/contests/variant-matrix.v1.json",
+      "beforeSha256": "e848d51550c5d2732e5d4f379c36ae51c3a0edd54a2666f1886fe9899be87ed2",
+      "afterSha256": "908a7803b9d180c1a3ae5a5271d74026e6f34bb97b02e5ff8f992d39a6992b7a",
+      "changedStableRows": [
+        "canonical-contest-catalog-successor-source-hash"
+      ],
+      "sourcePath": "data/deferred-closure/trainer-participant-document-certification.v1.json",
+      "sourceSha256": "ef844405a75de8d6d3452affa10abe4cad3d511479d0f3b8c909d849e9f7faa1",
+      "changePolicy": "generated-source-hash-refresh-with-no-ordinary-variant-outcome-drift",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-shared-dice-catalog-policy:v1",
+      "ticket": "P11-054",
+      "surface": "shared/contests/catalog.ts",
+      "beforeSha256": "d939fe65b467b8a26242a867db9bc266fdc1dd2e5491c30ade69fbd16d548e6a",
+      "afterSha256": "101a182ff2840166616d3ed6ae584d744b02cc0e31f70bb5c80de6f4fbac3e19",
+      "changedStableRows": [
+        "trainer-pokemon-entry-shared-pool-policy",
+        "paired-feature-target-policy"
+      ],
+      "sourcePath": "data/deferred-closure/trainer-participant-shared-dice-certification.v1.json",
+      "sourceSha256": "6ff75cd6fc1de0f3866da4ea2f14bac1731669fa692bdc1588831f85f10d931f",
+      "changePolicy": "exact-source-bound-policy-validation-without-prose-runtime-semantics",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-shared-dice-document:v1",
+      "ticket": "P11-054",
+      "surface": "shared/contests/document.ts",
+      "beforeSha256": "c89c7a86a820a7e2b8c1d0492d077657ddb7fdb09221d6a657e773a66c9ee4d8",
+      "afterSha256": "6940a9b741a23f3fd513f6cc0ffae919a66ba7935c22e9a9dabc5b9bf6719cbd",
+      "changedStableRows": [
+        "shared-pool-scope-marker",
+        "pokemon-pool-shared-by-reference",
+        "immutable-paired-spend-receipt",
+        "rotation-shared-first-allocation"
+      ],
+      "sourcePath": "data/deferred-closure/trainer-participant-shared-dice-certification.v1.json",
+      "sourceSha256": "6ff75cd6fc1de0f3866da4ea2f14bac1731669fa692bdc1588831f85f10d931f",
+      "changePolicy": "additive-schema-v1-journal-authority-with-p11-053-setup-read-compatibility",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-shared-dice-engine:v1",
+      "ticket": "P11-054",
+      "surface": "server/domain/contests/engine.ts",
+      "beforeSha256": "88fca2223ceaca9ce1a2ae290edbe6191697cd8e36b8bcc9e7c844eec2ca61cf",
+      "afterSha256": "663a7e5559f91a6f0ad6f3853dabcc34eb2a972061610306f1e80fdee30ae6a6",
+      "changedStableRows": [
+        "active-pair-single-spend",
+        "rotation-team-cap-and-source-order",
+        "terminal-spend-evidence-retention"
+      ],
+      "sourcePath": "data/deferred-closure/trainer-participant-shared-dice-certification.v1.json",
+      "sourceSha256": "6ff75cd6fc1de0f3866da4ea2f14bac1731669fa692bdc1588831f85f10d931f",
+      "changePolicy": "shared-dice-installed-with-later-stage-progression-still-fail-closed",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-shared-dice-sheet-refresh:v1",
+      "ticket": "P11-054",
+      "surface": "server/useCases/contests.ts",
+      "beforeSha256": "acbfe2945bcad8e03b40c366ec50f207f85fec8ab4ecdbbb6fb9e46cac38c6ab",
+      "afterSha256": "adb3d268bf623ec938dfb7729c201bb0707fe92b9046823c01872dd596d3b362",
+      "changedStableRows": [
+        "one-server-derived-pokemon-pool",
+        "feature-source-loss-single-deactivation",
+        "no-client-authored-shared-pool"
+      ],
+      "sourcePath": "data/deferred-closure/trainer-participant-shared-dice-certification.v1.json",
+      "sourceSha256": "6ff75cd6fc1de0f3866da4ea2f14bac1731669fa692bdc1588831f85f10d931f",
+      "changePolicy": "ordinary-sheet-provider-refresh-preserves-paired-reference-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-shared-dice-operator-contract:v1",
+      "ticket": "P11-054",
+      "surface": "docs/contests/trainer-participant-runtime.md",
+      "beforeSha256": "bfdf68bca82f24de108955bcaf774f6a50a67ebe06520ba836433f49793b288b",
+      "afterSha256": "573c08ea8521b67e93d119e71746b714f8b0fc0b9f3b82d6fac146d37e328ed6",
+      "changedStableRows": [
+        "shared-by-reference-storage-boundary",
+        "journal-and-replay-boundary",
+        "p11-055-progression-handoff"
+      ],
+      "sourcePath": "data/deferred-closure/trainer-participant-shared-dice-certification.v1.json",
+      "sourceSha256": "6ff75cd6fc1de0f3866da4ea2f14bac1731669fa692bdc1588831f85f10d931f",
+      "changePolicy": "operator-contract-extension-with-no-runtime-prose-parsing",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-method-identities:v1",
+      "ticket": "P11-055",
+      "surface": "shared/contests/ids.ts",
+      "beforeSha256": "ddb5768b0f2d812ee952f78209e01a961ca162a3284160773f82150d8773fad5",
+      "afterSha256": "f7e6c0f2b9500737100f1d2f815177a75987423d3c9ad7523668773760ff9aed",
+      "changedStableRows": ["simultaneous", "alternating"],
+      "sourcePath": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+      "sourceSha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94",
+      "changePolicy": "additive-typed-method-identities",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-method-catalog:v1",
+      "ticket": "P11-055",
+      "surface": "shared/contests/catalog.ts",
+      "beforeSha256": "101a182ff2840166616d3ed6ae584d744b02cc0e31f70bb5c80de6f4fbac3e19",
+      "afterSha256": "4710323c532e7b291c7edbcd3ecd6e48b7e2475682dee14b11b56be38ad0dab7",
+      "changedStableRows": ["simultaneous-method-policy", "alternating-method-policy"],
+      "sourcePath": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+      "sourceSha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94",
+      "changePolicy": "exact-source-row-method-validation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-method-document:v1",
+      "ticket": "P11-055",
+      "surface": "shared/contests/document.ts",
+      "beforeSha256": "6940a9b741a23f3fd513f6cc0ffae919a66ba7935c22e9a9dabc5b9bf6719cbd",
+      "afterSha256": "feb387ba424057c3e77a0dac58b30c24bdd6a6a870d85bd640a8711d803ce0c3",
+      "changedStableRows": ["participant-method-id", "legacy-null-method-normalization"],
+      "sourcePath": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+      "sourceSha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94",
+      "changePolicy": "additive-schema-v1-method-choice-without-invented-legacy-selection",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-method-commands:v1",
+      "ticket": "P11-055",
+      "surface": "shared/contests/operations.ts",
+      "beforeSha256": "49abe8bc59702dbafa71bf6cd223873139551e5858e2440a58f8c064591627b7",
+      "afterSha256": "da5805632dc89739b0ad71f295f87112aa1bb1e1ba90dc37389baf0e80f3247d",
+      "changedStableRows": ["create-contest-method-choice", "set-participant-method"],
+      "sourcePath": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+      "sourceSha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94",
+      "changePolicy": "strict-gm-setup-method-command-dialect",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-method-engine:v1",
+      "ticket": "P11-055",
+      "surface": "server/domain/contests/engine.ts",
+      "beforeSha256": "663a7e5559f91a6f0ad6f3853dabcc34eb2a972061610306f1e80fdee30ae6a6",
+      "afterSha256": "35b4dce6ab7c0fbbb29d2d9fc3819fe22cf9ee75575430cfd6b4e44157a90b0b",
+      "changedStableRows": ["setup-method-selection", "missing-method-gate", "introduction-stage-quarantine"],
+      "sourcePath": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+      "sourceSha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94",
+      "changePolicy": "method-policy-installed-with-trainer-introduction-still-fail-closed",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-method-projection:v1",
+      "ticket": "P11-055",
+      "surface": "shared/contests/projections.ts",
+      "beforeSha256": "0e508757c3de98812ace4d14524b1448ef93a1419e950e1476dc5c2a10452e77",
+      "afterSha256": "4d36abf1601ad8b9d42acfd54c5eb6bda0e39f51d2c51af937d77e3bfe60297f",
+      "changedStableRows": ["public-participant-method-id"],
+      "sourcePath": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+      "sourceSha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94",
+      "changePolicy": "public-format-policy-with-no-private-authority-expansion",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-method-operator-contract:v1",
+      "ticket": "P11-055",
+      "surface": "docs/contests/trainer-participant-runtime.md",
+      "beforeSha256": "573c08ea8521b67e93d119e71746b714f8b0fc0b9f3b82d6fac146d37e328ed6",
+      "afterSha256": "230231fd98ffa5f6bd45f8a9db9422775cdd1f08a8497a76e076c20d63e6c301",
+      "changedStableRows": ["two-method-scheduler", "legacy-method-recovery", "p11-056-progression-handoff"],
+      "sourcePath": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+      "sourceSha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94",
+      "changePolicy": "operator-contract-extension-with-no-runtime-prose-parsing",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-method-document-evidence:v1",
+      "ticket": "P11-055",
+      "surface": "tests/shared/contestTrainerParticipantDocument.test.ts",
+      "beforeSha256": "64dca5e4bdbc2050d06c7c080933c43dec9252c34669fd919d8932b6e3502c65",
+      "afterSha256": "2d5a0fe9303094e4f30b3755b8ab8791a2fd0ea074b3e7b92cfd79141face1a9",
+      "changedStableRows": ["explicit-method-on-participant-document-fixture"],
+      "sourcePath": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+      "sourceSha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94",
+      "changePolicy": "predecessor-evidence-extension-with-original-p11-053-assertions-preserved",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-method-runtime-evidence:v1",
+      "ticket": "P11-055",
+      "surface": "tests/server/contestTrainerParticipantRuntime.test.ts",
+      "beforeSha256": "9a50baa4f5092269f9b3804c6cbc89bbe29a881da7a6020bbe5d065acf003f85",
+      "afterSha256": "80e4db31541215d03d59894c3fede33596d5d9c68d2aecd255010a5d7f354147",
+      "changedStableRows": ["explicit-method-on-runtime-create-fixture"],
+      "sourcePath": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+      "sourceSha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94",
+      "changePolicy": "predecessor-evidence-extension-with-original-p11-053-assertions-preserved",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-method-shared-dice-runtime-evidence:v1",
+      "ticket": "P11-055",
+      "surface": "tests/server/contestTrainerParticipantSharedDiceRuntime.test.ts",
+      "beforeSha256": "5e9828dbc0203c74a980e4aa1d8c2f6f0450ab018c622ed61c4ad73a76052fa9",
+      "afterSha256": "5eb95b16aeb9d88d5e32bc9f0f1f147d196ad54d2797ad7c4db06233ff67e37b",
+      "changedStableRows": ["explicit-method-on-shared-dice-runtime-fixtures"],
+      "sourcePath": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+      "sourceSha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94",
+      "changePolicy": "predecessor-evidence-extension-with-original-p11-054-assertions-preserved",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-introduction-document:v1",
+      "ticket": "P11-056",
+      "surface": "shared/contests/document.ts",
+      "beforeSha256": "feb387ba424057c3e77a0dac58b30c24bdd6a6a870d85bd640a8711d803ce0c3",
+      "afterSha256": "168aff2bdf9c6c15079558672cdd5844f443aac67795a7f707c7b8125a3566ba",
+      "changedStableRows": ["exact-trainer-introduction-performer", "participant-introduction-stage", "shared-introduction-pool-validation"],
+      "sourcePath": "data/deferred-closure/trainer-participant-introduction-certification.v1.json",
+      "sourceSha256": "e7ea3ab5aa45d529b5228dc36877fd43bec7212ea2a8afd8c63d422fe2c462ac",
+      "changePolicy": "additive-schema-v1-introduction-actor-with-ordinary-null-compatibility",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-introduction-engine:v1",
+      "ticket": "P11-056",
+      "surface": "server/domain/contests/engine.ts",
+      "beforeSha256": "35b4dce6ab7c0fbbb29d2d9fc3819fe22cf9ee75575430cfd6b4e44157a90b0b",
+      "afterSha256": "608dfd7872789f8c5facdf38e0438bb8f04631800d716310624a6f725f2b1e37",
+      "changedStableRows": ["trainer-introduction-acceptance", "paired-pool-allocation", "letter-assignment", "performance-stage-quarantine"],
+      "sourcePath": "data/deferred-closure/trainer-participant-introduction-certification.v1.json",
+      "sourceSha256": "e7ea3ab5aa45d529b5228dc36877fd43bec7212ea2a8afd8c63d422fe2c462ac",
+      "changePolicy": "base-introduction-authority-reuse-with-trainer-appeals-still-fail-closed",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-introduction-operator-contract:v1",
+      "ticket": "P11-056",
+      "surface": "docs/contests/trainer-participant-runtime.md",
+      "beforeSha256": "230231fd98ffa5f6bd45f8a9db9422775cdd1f08a8497a76e076c20d63e6c301",
+      "afterSha256": "16f211f522af85773b2725fd725d52eee598e43367a542c2f61b43004c39dc6e",
+      "changedStableRows": ["trainer-introduction-authority", "role-and-restart-parity", "p11-057-performance-handoff"],
+      "sourcePath": "data/deferred-closure/trainer-participant-introduction-certification.v1.json",
+      "sourceSha256": "e7ea3ab5aa45d529b5228dc36877fd43bec7212ea2a8afd8c63d422fe2c462ac",
+      "changePolicy": "operator-contract-extension-with-no-runtime-prose-parsing",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-introduction-document-evidence:v1",
+      "ticket": "P11-056",
+      "surface": "tests/shared/contestTrainerParticipantDocument.test.ts",
+      "beforeSha256": "2d5a0fe9303094e4f30b3755b8ab8791a2fd0ea074b3e7b92cfd79141face1a9",
+      "afterSha256": "4b276158a1e8824d37f5236c3e87d257cddc9a32f661594c4662681a8d23656c",
+      "changedStableRows": ["incomplete-lineup-no-write-gate"],
+      "sourcePath": "data/deferred-closure/trainer-participant-introduction-certification.v1.json",
+      "sourceSha256": "e7ea3ab5aa45d529b5228dc36877fd43bec7212ea2a8afd8c63d422fe2c462ac",
+      "changePolicy": "predecessor-evidence-updated-for-introduction-stage-activation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-introduction-method-evidence:v1",
+      "ticket": "P11-056",
+      "surface": "tests/shared/contestTrainerParticipantMethods.test.ts",
+      "beforeSha256": "c2d587a9136838a1e560cb41e3bd82679679ce90e06e5d1115fa38573890ef79",
+      "afterSha256": "c51a61391f98bebdc487e07c4e741dddd2084c33440901b9da510de75bbc342c",
+      "changedStableRows": ["post-method-incomplete-lineup-gate"],
+      "sourcePath": "data/deferred-closure/trainer-participant-introduction-certification.v1.json",
+      "sourceSha256": "e7ea3ab5aa45d529b5228dc36877fd43bec7212ea2a8afd8c63d422fe2c462ac",
+      "changePolicy": "predecessor-evidence-updated-for-introduction-stage-activation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-introduction-runtime-evidence:v1",
+      "ticket": "P11-056",
+      "surface": "tests/server/contestTrainerParticipantRuntime.test.ts",
+      "beforeSha256": "80e4db31541215d03d59894c3fede33596d5d9c68d2aecd255010a5d7f354147",
+      "afterSha256": "c78d89075f59cfcfe4204781dd51e953fe772a8269f139fa74e5e14097f260ef",
+      "changedStableRows": ["incomplete-lineup-runtime-no-write-gate"],
+      "sourcePath": "data/deferred-closure/trainer-participant-introduction-certification.v1.json",
+      "sourceSha256": "e7ea3ab5aa45d529b5228dc36877fd43bec7212ea2a8afd8c63d422fe2c462ac",
+      "changePolicy": "predecessor-evidence-updated-for-introduction-stage-activation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-appeal-move-offers:v1",
+      "ticket": "P11-057",
+      "surface": "shared/contests/integrations.ts",
+      "beforeSha256": "678a156154cf8b37b3af484e53600191ce7381e6873d3f58f91ec1fb699ccfb4",
+      "afterSha256": "94f195b89b5e483093b25ed902c1fd4df8c3ef8b44b46a4219e7afbacb3f4c06",
+      "changedStableRows": ["source-bound-weapon-move-unavailable-offers", "real-trainer-movelist-contest-identities"],
+      "sourcePath": "data/deferred-closure/trainer-participant-appeal-certification.v1.json",
+      "sourceSha256": "bd371839641a6dd486f99cc77b1cdc7746899423174628c40a59c6c4f9971296",
+      "changePolicy": "explicit-fail-closed-weapon-identity-with-frozen-pokemon-move-catalog",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-appeal-document:v1",
+      "ticket": "P11-057",
+      "surface": "shared/contests/document.ts",
+      "beforeSha256": "168aff2bdf9c6c15079558672cdd5844f443aac67795a7f707c7b8125a3566ba",
+      "afterSha256": "c349c5e723b7182d2e29af20ba24a646397dbe6329228fb0b92dbaa0ed1615b5",
+      "changedStableRows": ["alternating-performance-stage", "strict-appeal-option-binding", "alternating-performer-reconciliation", "pre-settlement-gate"],
+      "sourcePath": "data/deferred-closure/trainer-participant-appeal-certification.v1.json",
+      "sourceSha256": "bd371839641a6dd486f99cc77b1cdc7746899423174628c40a59c6c4f9971296",
+      "changePolicy": "alternating-only-performance-activation-with-simultaneous-and-reward-authority-refused",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-appeal-engine:v1",
+      "ticket": "P11-057",
+      "surface": "server/domain/contests/engine.ts",
+      "beforeSha256": "608dfd7872789f8c5facdf38e0438bb8f04631800d716310624a6f725f2b1e37",
+      "afterSha256": "5255719f9986be4768539947c42ba2c9c79af57ab85725d81161c0471a5bb988",
+      "changedStableRows": ["trainer-appeal-actor-selection", "ordinary-scoring-and-effects", "paired-pool-spend", "same-performer-get-ready", "successor-mechanics-gates"],
+      "sourcePath": "data/deferred-closure/trainer-participant-appeal-certification.v1.json",
+      "sourceSha256": "bd371839641a6dd486f99cc77b1cdc7746899423174628c40a59c6c4f9971296",
+      "changePolicy": "reuse-existing-performance-authority-under-exact-alternating-scheduler",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-appeal-owner-projection:v1",
+      "ticket": "P11-057",
+      "surface": "shared/contests/projections.ts",
+      "beforeSha256": "4d36abf1601ad8b9d42acfd54c5eb6bda0e39f51d2c51af937d77e3bfe60297f",
+      "afterSha256": "0055a21ddf93d6e8933766f8bff23f5529a4c59bf5738f81556370a29d7a618c",
+      "changedStableRows": ["owner-legal-paired-performer-ids", "unambiguous-current-performer-compatibility"],
+      "sourcePath": "data/deferred-closure/trainer-participant-appeal-certification.v1.json",
+      "sourceSha256": "bd371839641a6dd486f99cc77b1cdc7746899423174628c40a59c6c4f9971296",
+      "changePolicy": "additive-owner-action-authority-before-paired-role-projection-ticket",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-appeal-operator-contract:v1",
+      "ticket": "P11-057",
+      "surface": "docs/contests/trainer-participant-runtime.md",
+      "beforeSha256": "16f211f522af85773b2725fd725d52eee598e43367a542c2f61b43004c39dc6e",
+      "afterSha256": "81ad5f15f8413992a424c0ab9142606c29ddfdb5b104ef2c9f813d14f0624be8",
+      "changedStableRows": ["real-trainer-move-authority", "alternating-appeal-scoring", "get-ready-scope", "successor-gates"],
+      "sourcePath": "data/deferred-closure/trainer-participant-appeal-certification.v1.json",
+      "sourceSha256": "bd371839641a6dd486f99cc77b1cdc7746899423174628c40a59c6c4f9971296",
+      "changePolicy": "operator-contract-extension-with-no-runtime-prose-parsing",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-appeal-introduction-evidence:v1",
+      "ticket": "P11-057",
+      "surface": "tests/shared/contestTrainerParticipantIntroductions.test.ts",
+      "beforeSha256": "e90e40cb84bfdd156250c4d414ba44a4356e9c11d70b65aa7f2d7e0dc85a29ba",
+      "afterSha256": "7ca04ac44fbee6d554f5ccd7468b4d2fb485373c5d6b9f692776fdb5288574b6",
+      "changedStableRows": ["simultaneous-voltage-successor-gate"],
+      "sourcePath": "data/deferred-closure/trainer-participant-appeal-certification.v1.json",
+      "sourceSha256": "bd371839641a6dd486f99cc77b1cdc7746899423174628c40a59c6c4f9971296",
+      "changePolicy": "predecessor-introduction-evidence-preserved-with-narrowed-successor-gate",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-appeal-introduction-runtime-evidence:v1",
+      "ticket": "P11-057",
+      "surface": "tests/server/contestTrainerParticipantIntroductionsRuntime.test.ts",
+      "beforeSha256": "dfc9f1cbe63e28e9b873c61eaeab3a689ad4dbfb99a72ac9faee69694236d10e",
+      "afterSha256": "d185fbdcf0e4cf9eb2db18935a781dc31a30dd300deeba61f08ac14f9f156bcc",
+      "changedStableRows": ["simultaneous-method-performance-gate-fixture"],
+      "sourcePath": "data/deferred-closure/trainer-participant-appeal-certification.v1.json",
+      "sourceSha256": "bd371839641a6dd486f99cc77b1cdc7746899423174628c40a59c6c4f9971296",
+      "changePolicy": "predecessor-introduction-evidence-preserved-with-alternating-now-owned-by-p11-057",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-voltage-document:v1",
+      "ticket": "P11-058",
+      "surface": "shared/contests/document.ts",
+      "beforeSha256": "c349c5e723b7182d2e29af20ba24a646397dbe6329228fb0b92dbaa0ed1615b5",
+      "afterSha256": "88025542d49a9663e9c1920657b5d9ecc188b08e299d065090b02f654e295585",
+      "changedStableRows": ["exact-performer-voltage-map", "two-appeal-chart-cursor", "performer-bound-consequences", "cross-performer-effect-receipts", "get-ready-multiplier-evidence"],
+      "sourcePath": "data/deferred-closure/trainer-participant-voltage-certification.v1.json",
+      "sourceSha256": "2fe9953dce97b36e2633c41def8a1bb3db5a0cb156a801ea94d2bd0555663783",
+      "changePolicy": "additive-schema-v1-paired-voltage-evidence-with-ordinary-read-compatibility",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-voltage-command:v1",
+      "ticket": "P11-058",
+      "surface": "shared/contests/operations.ts",
+      "beforeSha256": "da5805632dc89739b0ad71f295f87112aa1bb1e1ba90dc37389baf0e80f3247d",
+      "afterSha256": "55829d57429ac2df761f1bf7ce12e99de33cd22577ac3cea93c2e089eeaf7c08",
+      "changedStableRows": ["optional-partner-effect-target-performer"],
+      "sourcePath": "data/deferred-closure/trainer-participant-voltage-certification.v1.json",
+      "sourceSha256": "2fe9953dce97b36e2633c41def8a1bb3db5a0cb156a801ea94d2bd0555663783",
+      "changePolicy": "optional-command-field-for-two-reviewed-simultaneous-cross-performer-policies",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-voltage-engine:v1",
+      "ticket": "P11-058",
+      "surface": "server/domain/contests/engine.ts",
+      "beforeSha256": "5255719f9986be4768539947c42ba2c9c79af57ab85725d81161c0471a5bb988",
+      "afterSha256": "769de5093ba78bc1cdb054e9e5cad1ddc04a6daa2140baf0931d765d5206568e",
+      "changedStableRows": ["simultaneous-two-member-turn", "per-performer-voltage", "paired-adjacency", "rotation-active-pair", "get-ready-and-attention-transfer", "ambiguous-correction-gate"],
+      "sourcePath": "data/deferred-closure/trainer-participant-voltage-certification.v1.json",
+      "sourceSha256": "2fe9953dce97b36e2633c41def8a1bb3db5a0cb156a801ea94d2bd0555663783",
+      "changePolicy": "activate-source-bound-simultaneous-voltage-and-adjacency-with-successor-gates-preserved",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-voltage-owner-projection:v1",
+      "ticket": "P11-058",
+      "surface": "shared/contests/projections.ts",
+      "beforeSha256": "0055a21ddf93d6e8933766f8bff23f5529a4c59bf5738f81556370a29d7a618c",
+      "afterSha256": "fb742d3af4b0d5838c85577fc34006dae227f2fbd17af135338991746bf946cd",
+      "changedStableRows": ["simultaneous-two-then-one-legal-performer-ids"],
+      "sourcePath": "data/deferred-closure/trainer-participant-voltage-certification.v1.json",
+      "sourceSha256": "2fe9953dce97b36e2633c41def8a1bb3db5a0cb156a801ea94d2bd0555663783",
+      "changePolicy": "additive-owner-action-authority-before-paired-privacy-ticket",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-voltage-operator-contract:v1",
+      "ticket": "P11-058",
+      "surface": "docs/contests/trainer-participant-runtime.md",
+      "beforeSha256": "81ad5f15f8413992a424c0ab9142606c29ddfdb5b104ef2c9f813d14f0624be8",
+      "afterSha256": "c3c1d0670a9002cab94b455d3094e0d068fabecc0aaa1c8a590c22f314695806",
+      "changedStableRows": ["method-specific-voltage", "paired-adjacency", "cross-performer-effects", "p11-059-handoff"],
+      "sourcePath": "data/deferred-closure/trainer-participant-voltage-certification.v1.json",
+      "sourceSha256": "2fe9953dce97b36e2633c41def8a1bb3db5a0cb156a801ea94d2bd0555663783",
+      "changePolicy": "operator-contract-extension-with-no-runtime-prose-parsing",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-voltage-ordinary-matrix:v1",
+      "ticket": "P11-058",
+      "surface": "data/contests/variant-matrix.v1.json",
+      "beforeSha256": "908a7803b9d180c1a3ae5a5271d74026e6f34bb97b02e5ff8f992d39a6992b7a",
+      "afterSha256": "1bcbd9e3115eda829728dde67044b54a5dc59b0f2b3178ab351b664b76a14a07",
+      "changedStableRows": ["appeal-base-multiplier", "cross-performer-target-null", "shared-consequence-performer-null", "current-catalog-source-hash"],
+      "sourcePath": "data/deferred-closure/trainer-participant-voltage-certification.v1.json",
+      "sourceSha256": "2fe9953dce97b36e2633c41def8a1bb3db5a0cb156a801ea94d2bd0555663783",
+      "changePolicy": "deterministic-schema-evidence-refresh-with-ordinary-outcomes-preserved",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-voltage-introduction-evidence:v1",
+      "ticket": "P11-058",
+      "surface": "tests/shared/contestTrainerParticipantIntroductions.test.ts",
+      "beforeSha256": "7ca04ac44fbee6d554f5ccd7468b4d2fb485373c5d6b9f692776fdb5288574b6",
+      "afterSha256": "62d34660b532a623320b13eb1d60ee9fb3aed468013d1c72564a9f4822f53034",
+      "changedStableRows": ["simultaneous-performance-handoff", "zero-initial-performer-voltage-map"],
+      "sourcePath": "data/deferred-closure/trainer-participant-voltage-certification.v1.json",
+      "sourceSha256": "2fe9953dce97b36e2633c41def8a1bb3db5a0cb156a801ea94d2bd0555663783",
+      "changePolicy": "predecessor-introduction-evidence-preserved-with-p11-058-gate-removed",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:trainer-participant-voltage-introduction-runtime-evidence:v1",
+      "ticket": "P11-058",
+      "surface": "tests/server/contestTrainerParticipantIntroductionsRuntime.test.ts",
+      "beforeSha256": "d185fbdcf0e4cf9eb2db18935a781dc31a30dd300deeba61f08ac14f9f156bcc",
+      "afterSha256": "33e957321dad1c4a96faec754c364ffb41c0b5844944b116e17d854ac8d9ea5d",
+      "changedStableRows": ["persisted-simultaneous-performance-handoff", "initial-map-and-operation-evidence"],
+      "sourcePath": "data/deferred-closure/trainer-participant-voltage-certification.v1.json",
+      "sourceSha256": "2fe9953dce97b36e2633c41def8a1bb3db5a0cb156a801ea94d2bd0555663783",
+      "changePolicy": "predecessor-introduction-runtime-evidence-preserved-with-p11-058-activation",
+      "reviewStatus": "accepted"
+    }
+  ],
+  "pendingSurfaces": [
+    {
+      "surface": "data/complete-play-loop/equipment-grants.v1.json",
+      "currentSha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52",
+      "owningTickets": ["P11-042", "P11-089"]
+    },
+    {
+      "surface": "shared/capabilityAutomation/weaponMoves.ts",
+      "currentSha256": "4d7bf8aaf62c807a8eabfda4424298eefe03354049f6da9fbb1c324a1e6c9f5e",
+      "owningTickets": ["P11-030", "P11-089"]
+    },
+    {
+      "surface": "data/reference/contests.json",
+      "currentSha256": "95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e",
+      "owningTickets": ["P11-053", "P11-064", "P11-065", "P11-080"]
+    }
+  ]
+}

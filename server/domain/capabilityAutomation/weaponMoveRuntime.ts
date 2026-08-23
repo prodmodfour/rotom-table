@@ -1,8 +1,8 @@
-import { createHash } from 'node:crypto'
 import {
   CAPABILITY_WEAPON_MOVES,
   type CapabilityWeaponMoveName,
 } from '#shared/capabilityAutomation/weaponMoves'
+import { MOVE_RULESET_PROVENANCE } from '#shared/moveAutomation/ruleset'
 import type { MoveSpecV2Runtime } from '../moveAutomation/registry'
 import { validateMoveSpec } from '../moveAutomation/validateSpec'
 import { CAPABILITY_WEAPON_MOVE_HANDLER_ID } from '../moveAutomation/handlers/capabilityWeaponMoves'
@@ -13,20 +13,21 @@ import {
 } from '../moveAutomation/specs/reviewedSpecBuilder'
 
 const SOURCE_MODULE = 'server/domain/capabilityAutomation/weaponMoveRuntime.ts'
-const SOURCE_SHA256 = createHash('sha256')
-  .update(JSON.stringify(CAPABILITY_WEAPON_MOVES), 'utf8')
-  .digest('hex')
 
 const targetingFor = (canonicalId: CapabilityWeaponMoveName) => canonicalId === 'Backswing'
   ? multiTargeting(2, 2)
   : canonicalId === 'Double Swipe'
     ? multiTargeting(1, 2)
-    : singleTargeting()
+    : canonicalId === 'Triple Threat'
+      ? multiTargeting(3, 3)
+      : singleTargeting()
 
 const capabilityIdsFor = (canonicalId: CapabilityWeaponMoveName): readonly string[] => (
-  canonicalId === 'Wounding Strike' || canonicalId === 'Bleed!'
+  canonicalId === 'Wounding Strike' || canonicalId === 'Bleed!' || canonicalId === 'Gouge'
     ? ['hp.typed', 'lifecycle.effects', 'targeting.authoritative']
-    : ['targeting.authoritative']
+    : canonicalId === 'Bash!' || canonicalId === 'Titanic Slam'
+      ? ['lifecycle.effects', 'targeting.authoritative']
+      : ['targeting.authoritative']
 )
 
 const runtimeFor = (canonicalId: CapabilityWeaponMoveName): MoveSpecV2Runtime => {
@@ -39,9 +40,9 @@ const runtimeFor = (canonicalId: CapabilityWeaponMoveName): MoveSpecV2Runtime =>
   }), {
     capabilityIds: capabilityIdsFor(canonicalId),
     rulesetVersion: {
-      rulesetId: 'rotom-table-capability-weapon-moves-v1',
-      canonicalizationVersion: 1,
-      sourceDataSha256: SOURCE_SHA256,
+      rulesetId: MOVE_RULESET_PROVENANCE.rulesetId,
+      canonicalizationVersion: MOVE_RULESET_PROVENANCE.canonicalization.version,
+      sourceDataSha256: MOVE_RULESET_PROVENANCE.sourceData.sha256,
     },
   })
   return Object.freeze({

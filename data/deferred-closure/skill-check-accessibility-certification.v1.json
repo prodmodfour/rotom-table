@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-skill-check-accessibility-liveplay-v1",
+  "ticket": "P11-051",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/skill-check-consuming-flow-certification.v1.json",
+    "sha256": "7585470e0f25c5f032a34b5aa0ece24218505d272a52c06a282ee55b84968271"
+  },
+  "authorities": [
+    {
+      "id": "encounter-performance-budgets",
+      "path": "data/encounter-workspace/performance-budgets.json",
+      "sha256": "8e4b1ea7e91ec2081da8f52d0b40b1e740e055afe659872e233243a0ef788273",
+      "guarantees": [
+        "local-interaction-p95-at-most-100ms",
+        "accepted-presentation-p95-at-most-250ms",
+        "workspace-dom-at-most-5000-nodes",
+        "history-rendering-at-most-80-initial-entries"
+      ]
+    },
+    {
+      "id": "complete-play-loop-responsive-criteria",
+      "path": "data/complete-play-loop/ux-success-criteria.v1.json",
+      "sha256": "0b5018240847ed6515b8db8cabdca03432391fd2f77fb1b23eaeaf2d0cbb5a8d",
+      "guarantees": [
+        "320-css-pixel-no-horizontal-page-scroll",
+        "primary-touch-targets-at-least-44px",
+        "table-distance-and-200-percent-equivalent-reflow"
+      ]
+    },
+    {
+      "id": "gm-accessible-request-surface",
+      "path": "src/components/encounter/workspace/EncounterGmSkillChecks.vue",
+      "sha256": "e1423a5e79655fa706cbb4c2f23527c289d182eafda2bf9df287adcb1127a67d",
+      "guarantees": [
+        "keyboard-authored-request-and-server-only-resolution",
+        "focus-managed-status-and-cancellation",
+        "labeled-private-notes-and-validation",
+        "44px-high-contrast-controls",
+        "20-open-request-initial-render-batch",
+        "separate-open-and-terminal-bounded-queries",
+        "reduced-motion-and-narrow-reflow"
+      ]
+    },
+    {
+      "id": "subject-accessible-decision-surface",
+      "path": "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+      "sha256": "0f5c3e8c4fef35920dadfb1e99a875fb2800c9ee929ad5556e68aeafa69b165d",
+      "guarantees": [
+        "non-modal-dialog-name-description-and-busy-state",
+        "new-request-heading-focus",
+        "response-status-focus",
+        "terminal-escape-dismissal-and-action-dock-focus-return",
+        "20-history-entry-initial-render-batch",
+        "44px-high-contrast-controls",
+        "reduced-motion-and-320px-reflow"
+      ]
+    },
+    {
+      "id": "spectator-accessible-history-surface",
+      "path": "src/components/encounter/workspace/EncounterSkillCheckPublicFeed.vue",
+      "sha256": "3a4f9124bf51aed960a119b68752765035d7135f31f0f625ab41e57e7d8ba856",
+      "guarantees": [
+        "focus-stable-refresh",
+        "polite-load-announcement-and-alerting-errors",
+        "20-check-and-four-history-entry-initial-batches",
+        "at-most-80-initial-history-rows",
+        "44px-high-contrast-controls",
+        "generic-role-safe-history-at-table-distance"
+      ]
+    },
+    {
+      "id": "fishing-check-accessible-consumer",
+      "path": "src/components/campaign/CampaignGuidedFishingDecision.vue",
+      "sha256": "37dac1f0a681411f472cc3431cdf33c5b88ce8289e23401f0fcae6d917cd4732",
+      "guarantees": [
+        "described-accepted-check-selector",
+        "status-and-error-announcements",
+        "hook-controls-disabled-before-evidence",
+        "44px-controls-and-narrow-action-reflow"
+      ]
+    },
+    {
+      "id": "liveplay-role-surface-integration",
+      "path": "src/pages/play/[encounterId].vue",
+      "sha256": "9531323f08d0e0108f02a59f4299490d41bf441d7d03f0c441118b2055a8bb9c",
+      "guarantees": [
+        "gm-director-only-full-authority",
+        "subject-decision-priority",
+        "non-gm-public-history-rail",
+        "mobile-decision-and-history-region-navigation"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/components/encounterGmSkillChecks.test.ts",
+      "sha256": "f64434c04dd94cfd71b5e88cfef4bdfdfbefac6749d40f7d070d0ac5abf7e3d0",
+      "scenarioIds": [
+        "gm-keyboard-request-and-server-resolution",
+        "gm-cancel-focus-entry-and-escape-return",
+        "gm-20-card-batch-and-100ms-expansion",
+        "gm-250ms-bounded-fixture-presentation",
+        "gm-touch-label-private-and-blocked-semantics"
+      ]
+    },
+    {
+      "path": "tests/components/encounterSubjectSkillChecks.test.ts",
+      "sha256": "14f9e79b3c3ecf5d10761c649c8e6948f16066bb99e8544f544c880305fec3cb",
+      "scenarioIds": [
+        "subject-dialog-name-description-and-heading-focus",
+        "subject-safe-history-batch-and-100ms-expansion",
+        "subject-terminal-escape-and-action-dock-focus-return",
+        "subject-role-safe-status-and-blocked-controls"
+      ]
+    },
+    {
+      "path": "tests/components/encounterSkillCheckPublicFeed.test.ts",
+      "sha256": "a28176053ba4469a67ad9eda985c238bf7217880f1e4bbd4b3b585c769f682a1",
+      "scenarioIds": [
+        "spectator-20-card-80-history-initial-bound",
+        "spectator-250ms-bounded-fixture-presentation",
+        "spectator-100ms-explicit-expansion",
+        "spectator-focus-stable-refresh-status-and-alert"
+      ]
+    },
+    {
+      "path": "tests/components/campaignGuidedItemAdjudication.test.ts",
+      "sha256": "5547dc4edea72fc28a4b0d6aa552f99568c398a23858814984641652d688d687",
+      "scenarioIds": [
+        "fishing-described-selector-and-status",
+        "fishing-controls-disabled-before-check-link",
+        "fishing-private-identity-absent"
+      ]
+    },
+    {
+      "path": "tests/e2e/skill-check-liveplay.spec.ts",
+      "sha256": "22b92ae903417cd16586d27a7e930d2885de2c549af67df6052e56c91f0d21b2",
+      "scenarioIds": [
+        "production-gm-request-keyboard-journey",
+        "production-subject-response-keyboard-journey",
+        "production-gm-resolution-and-history-journey",
+        "production-spectator-aggregate-history-and-no-leak-journey",
+        "chromium-desktop-wcag-aa-touch-performance-and-reflow",
+        "chromium-mobile-wcag-aa-touch-performance-and-reflow",
+        "reduced-motion-table-distance-320px-no-overflow"
+      ]
+    },
+    {
+      "path": ".pi/artifacts/ui-mockups/gm-skill-check-director/v001.png",
+      "sha256": "18d77ca4e6c633f0d2e9213d910544f0e57966186a52d96f8ba88be719078c27",
+      "scenarioIds": ["reviewed-gm-target-state"]
+    },
+    {
+      "path": ".pi/artifacts/ui-mockups/subject-skill-check-decision/v001.png",
+      "sha256": "cf1a17df6ef146ad14ed12635ecd4d1bd8cfefac2b4fdc360ac0bbdef818c5a8",
+      "scenarioIds": ["reviewed-subject-target-state"]
+    },
+    {
+      "path": ".pi/artifacts/ui-mockups/spectator-skill-check-feed/v001.png",
+      "sha256": "f37caea2b1e62fe15815ca09653609bf947dddd0677bc17c50d63c7a607fd9b1",
+      "scenarioIds": ["reviewed-spectator-target-state"]
+    },
+    {
+      "path": ".pi/artifacts/ui-mockups/fishing-generic-skill-check/v001.png",
+      "sha256": "7b4573f9e8617f3af593a8127668616460d2a411e2945d28b32469a8aec1ac17",
+      "scenarioIds": ["reviewed-fishing-consumer-target-state"]
+    }
+  ],
+  "browserAcceptance": {
+    "productionBuild": true,
+    "loopbackLiveplayServer": true,
+    "projects": ["chromium", "mobile-chromium"],
+    "requestResponseResolutionAndHistory": true,
+    "keyboardOnlyCriticalPath": true,
+    "seriousOrCriticalWcagViolations": 0,
+    "primaryTouchTargetMinimumPx": 44,
+    "reflowWidthCssPx": 320,
+    "horizontalPageOverflow": false,
+    "tableDistanceMode": true,
+    "reducedMotion": true,
+    "privateFieldLeak": false
+  },
+  "performanceAcceptance": {
+    "localInteractionBudgetMs": 100,
+    "acceptedPresentationBudgetMs": 250,
+    "productionRoundTripFixtureCeilingMs": 2000,
+    "initialGmOpenRequestCards": 20,
+    "initialSpectatorCheckCards": 20,
+    "initialSpectatorHistoryEntriesMaximum": 80,
+    "initialSubjectHistoryEntries": 20,
+    "productionSpectatorSurfaceNodeCeiling": 500,
+    "explicitExpansionRequiredBeyondInitialBatches": true
+  },
+  "privacy": {
+    "gmPrivateNotesOutsideGm": false,
+    "subjectIdentityInSpectatorSurface": false,
+    "subjectPromptInSpectatorSurface": false,
+    "canonicalSkillInSpectatorSurface": false,
+    "sheetSlugInSpectatorSurface": false,
+    "resultOnlyAggregateInSpectatorSurface": true,
+    "fishingIntegrationIdentityInPresentation": false
+  },
+  "acceptance": {
+    "keyboard": true,
+    "touch": true,
+    "screenReader": true,
+    "zoomAndReflow": true,
+    "reducedMotion": true,
+    "desktopLiveplay": true,
+    "mobileLiveplay": true,
+    "requestSurface": true,
+    "responseSurface": true,
+    "historySurface": true,
+    "performanceBudgets": true,
+    "remainingRecoveryAndCampaignHistoryTicket": "P11-052"
+  }
+}

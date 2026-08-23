@@ -6,7 +6,7 @@ import { contestGmRealtimeChannel, contestOwnerRealtimeChannel, contestRealtimeC
 import type { AppendRealtimeEventInput } from '../storage/realtimeEventRepository'
 
 const eventTypeFor: Readonly<Record<ContestCommandKind, ContestRealtimeEventType>> = Object.freeze({
-  'create-contest': 'contest.created', 'update-settings': 'contest.setup.changed', 'enroll-contestant': 'contest.setup.changed', 'remove-contestant': 'contest.setup.changed',
+  'create-contest': 'contest.created', 'update-settings': 'contest.setup.changed', 'set-participant-method': 'contest.setup.changed', 'enroll-contestant': 'contest.setup.changed', 'remove-contestant': 'contest.setup.changed',
   'start-introduction': 'contest.setup.changed', 'declare-introduction': 'contest.introduction.accepted', 'restart-introduction': 'contest.setup.changed',
   'start-performance': 'contest.performance.started', 'select-rotation-performer': 'contest.rotation.performer-selected', 'declare-appeal': 'contest.appeal.accepted', 'use-intervention': 'contest.intervention.accepted', 'pass-intervention': 'contest.intervention.passed',
   'set-paused': 'contest.setup.changed', 'apply-correction': 'contest.corrected', 'declare-prize': 'contest.prize.declared', 'prepare-settlement': 'contest.settlement.prepared',

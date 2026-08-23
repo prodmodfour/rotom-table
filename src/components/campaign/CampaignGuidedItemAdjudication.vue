@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import {
   ITEM_GUIDED_CAMPAIGN_TOOL_ACCEPT_OPTION_ID,
   type ItemGuidedDecisionOptionV1,
 } from '#shared/itemAutomation/guidedAdjudication'
 import { useItemGuidedAdjudication } from '~/composables/items/useItemGuidedAdjudication'
+import CampaignGuidedFishingDecision from './CampaignGuidedFishingDecision.vue'
+import CampaignGuidedSnagDecision from './CampaignGuidedSnagDecision.vue'
 
 const coordinator = useItemGuidedAdjudication({ mode: 'gm' })
 const selectedOptionId = ref<string | null>(null)
+const workshopTitleRef = ref<HTMLElement | null>(null)
+const decisionTitleRef = ref<HTMLElement | null>(null)
+const messageRef = ref<HTMLElement | null>(null)
 
 const active = coordinator.activeRequest
 const selectedOption = computed<ItemGuidedDecisionOptionV1 | null>(() => (
@@ -21,13 +26,30 @@ const acceptLabel = computed(() => {
   return `Accept ${selectedOption.value.label.toLocaleLowerCase('en-US')} outcome`
 })
 
-watch(() => active.value?.requestId, () => {
+watch(() => [coordinator.status.value, coordinator.message.value] as const, async ([status, message]) => {
+  if (!message || (status !== 'conflict' && status !== 'error')) return
+  await nextTick()
+  messageRef.value?.focus({ preventScroll: true })
+})
+watch(() => active.value?.requestId, async (requestId, previousRequestId) => {
   selectedOptionId.value = active.value?.choices[0]?.optionId ?? null
+  if (requestId === previousRequestId) return
+  await nextTick()
+  if (requestId) decisionTitleRef.value?.focus({ preventScroll: true })
+  else if (previousRequestId) workshopTitleRef.value?.focus({ preventScroll: true })
 }, { immediate: true })
 
 const accept = async (): Promise<void> => {
   if (!active.value || !selectedOption.value) return
   await coordinator.resolve(active.value, selectedOption.value)
+}
+const resolveFishing = async (choice: Parameters<typeof coordinator.resolveFishing>[1]): Promise<void> => {
+  if (!active.value) return
+  await coordinator.resolveFishing(active.value, choice)
+}
+const resolveSnag = async (decision: 'approve' | 'deny', gmNote: string | null): Promise<void> => {
+  if (!active.value) return
+  await coordinator.resolveSnagConversion(active.value, decision, gmNote)
 }
 const cancel = async (): Promise<void> => {
   if (!active.value) return
@@ -39,7 +61,7 @@ const cancel = async (): Promise<void> => {
   <section class="guided-workshop" aria-labelledby="guided-workshop-title">
     <header class="guided-workshop__header">
       <div class="guided-workshop__title-line">
-        <h2 id="guided-workshop-title">Guided item adjudication</h2>
+        <h2 id="guided-workshop-title" ref="workshopTitleRef" tabindex="-1">Guided item adjudication</h2>
         <span class="guided-workshop__count">{{ coordinator.requests.value.length }} pending</span>
       </div>
       <button
@@ -67,7 +89,7 @@ const cancel = async (): Promise<void> => {
 
     <div v-else-if="coordinator.requests.value.length === 0" class="guided-workshop__empty">
       <strong>No guided item decisions are waiting.</strong>
-      <p>Interpretive tools, repulsive medicine, Poultice, and Re-Breather requests will appear here without exposing private custody evidence.</p>
+      <p>Fishing, Snag Machine, interpretive-tool, medicine, and Re-Breather decisions will appear here without exposing exact custody evidence.</p>
       <p v-if="coordinator.message.value" role="status">{{ coordinator.message.value }}</p>
     </div>
 
@@ -94,7 +116,7 @@ const cancel = async (): Promise<void> => {
 
       <article v-if="active" class="guided-decision">
         <p class="guided-decision__eyebrow">GM decision</p>
-        <h3>{{ active.itemLabel }}</h3>
+        <h3 ref="decisionTitleRef" tabindex="-1">{{ active.itemLabel }}</h3>
         <p class="guided-decision__declaration">
           {{ active.actorLabel }} declared this for {{ active.targetLabel }}
         </p>
@@ -105,7 +127,11 @@ const cancel = async (): Promise<void> => {
           <p v-for="fact in active.canonicalFacts" :key="fact">{{ fact }}</p>
         </section>
 
-        <fieldset class="guided-decision__choices" :disabled="coordinator.busy.value">
+        <fieldset
+          v-if="active.resolution === null"
+          class="guided-decision__choices"
+          :disabled="coordinator.busy.value"
+        >
           <legend class="sr-only">Choose exactly one server-authorized outcome</legend>
           <label v-for="choice in active.choices" :key="choice.optionId" class="guided-choice">
             <input v-model="selectedOptionId" type="radio" name="guided-outcome" :value="choice.optionId">
@@ -126,7 +152,21 @@ const cancel = async (): Promise<void> => {
           </ul>
         </section>
 
-        <div class="guided-decision__actions">
+        <CampaignGuidedFishingDecision
+          v-if="active.resolution?.kind === 'fishing'"
+          :request="active"
+          :busy="coordinator.busy.value"
+          @submit="resolveFishing"
+          @cancel="cancel"
+        />
+        <CampaignGuidedSnagDecision
+          v-else-if="active.resolution?.kind === 'snag-conversion'"
+          :request="active"
+          :busy="coordinator.busy.value"
+          @submit="resolveSnag"
+          @cancel="cancel"
+        />
+        <div v-else class="guided-decision__actions">
           <button
             type="button"
             class="guided-decision__cancel"
@@ -150,10 +190,12 @@ const cancel = async (): Promise<void> => {
 
     <div
       v-if="!coordinator.uncertain.value && coordinator.message.value"
+      ref="messageRef"
       class="guided-workshop__message"
       :class="`guided-workshop__message--${coordinator.status.value}`"
-      role="status"
-      aria-live="polite"
+      :role="coordinator.status.value === 'conflict' || coordinator.status.value === 'error' ? 'alert' : 'status'"
+      :aria-live="coordinator.status.value === 'conflict' || coordinator.status.value === 'error' ? 'assertive' : 'polite'"
+      tabindex="-1"
     >
       <span>{{ coordinator.message.value }}</span>
       <button v-if="!coordinator.busy.value" type="button" @click="coordinator.dismiss">Dismiss</button>
@@ -247,7 +289,7 @@ const cancel = async (): Promise<void> => {
   border: 2px solid var(--rt-pending, #ffc247);
   border-radius: var(--rt-radius-medium, 8px);
   background: var(--rt-brand, #df2d32);
-  color: var(--rt-on-brand, #07090d);
+  color: var(--rt-on-brand, #fff);
   cursor: pointer;
   font-weight: 900;
   padding: .7rem 1rem;
@@ -257,11 +299,14 @@ const cancel = async (): Promise<void> => {
 .guided-workshop__empty p { margin: 0; }
 .guided-workshop__uncertain { justify-content: space-between; gap: 1rem; border: 2px solid var(--rt-pending, #ffc247); background: var(--rt-surface-2, var(--paper-inset)); padding: 1rem; }
 .guided-workshop__uncertain p { margin: .25rem 0 0; }
-.guided-workshop__uncertain button { flex: 0 0 auto; border: 0; border-radius: var(--rt-radius-medium, 8px); background: var(--rt-brand, #df2d32); color: var(--rt-on-brand, #07090d); cursor: pointer; font-weight: 900; padding: .75rem 1rem; }
+.guided-workshop__uncertain button { flex: 0 0 auto; border: 0; border-radius: var(--rt-radius-medium, 8px); background: var(--rt-brand, #df2d32); color: var(--rt-on-brand, #fff); cursor: pointer; font-weight: 900; padding: .75rem 1rem; }
 .guided-workshop__message { justify-content: space-between; gap: .8rem; border-top: 1px solid var(--rt-border, var(--rule-soft)); padding-top: .75rem; color: var(--rt-text-muted, var(--ink-soft)); }
 .guided-workshop__message--conflict,
 .guided-workshop__message--error { color: var(--rt-danger, #ff9b9b); }
 .guided-workshop button:focus-visible,
+.guided-workshop h2:focus-visible,
+.guided-decision h3:focus-visible,
+.guided-workshop__message:focus-visible,
 .guided-choice:focus-within { outline: 3px solid color-mix(in srgb, var(--rt-focus, #20c8e5) 55%, transparent); outline-offset: 2px; }
 .guided-workshop button:disabled { cursor: not-allowed; opacity: .52; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }

@@ -50,9 +50,12 @@
  ],
  "finalityDecision": {
   "id": "zero-deferred-proof-surface",
-  "decision": "The zero-deferred proof reads grant-level execution statuses in the equipment-grants registry, canonical completionState fields in data/reference/contests.json, and this inventory's row states. Cohort-level implementationState in item-catalog-cohorts.v1.json is a derived item-level classification that coexisted with deferred grant rows; it is not a finality authority and P11-042 rebuilds it after intentional review.",
+  "decision": "Finality reads reviewed grant finalState values, contribution grantFinalStates, cohort member actionFinalStates, canonical Contest completionState values, and this inventory's current row states. Cohort implementationState remains a derived item-level presentation classification and cannot override member action finality.",
   "readSurfaces": [
    "data/complete-play-loop/equipment-grants.v1.json",
+   "data/complete-play-loop/equipment-contributions.v1.json",
+   "data/complete-play-loop/item-catalog-cohorts.v1.json",
+   "data/deferred-closure/item-action-matrix.v1.json",
    "data/reference/contests.json",
    "data/deferred-closure/closure-inventory.v1.json"
   ],
@@ -60,12 +63,67 @@
    "data/complete-play-loop/item-catalog-cohorts.v1.json"
   ],
   "reconciledBy": "P11-042",
+  "itemActionsProvedBy": "P11-044",
   "provedBy": "P11-089"
  },
+ "plan12HandoffBoundaries": [
+  {
+   "id": "fishing-hook-content-tooling",
+   "recordedBy": "P11-039",
+   "prospectiveOwner": "Plan 12 GM Campaign Toolkit",
+   "closedInPlan11": [
+    "authoritative rod custody, adjacent-water declaration, and 15-minute campaign boundary",
+    "GM-selected accepted generic single-subject DC Skill Check bound to the exact fishing actor, Skill, declaration, and one-use settlement",
+    "canonical Pokédex and rod-tier hook bounds",
+    "private durable terminal receipts, cancellation, replay, and campaign attention lifecycle"
+   ],
+   "handoffOnly": [
+    "campaign-specific fishing encounter tables",
+    "automatic biome-weighted hook selection",
+    "automatic hooked-Pokémon sheet creation or map spawning"
+   ],
+   "boundary": "What appears in a campaign's water and whether an accepted bounded hook becomes an encounter remain ordinary GM authority; no Plan 11 runtime path invents campaign content or automatically spawns the hook."
+  }
+ ],
+ "phaseClosureEvidence": [
+  {
+   "id": "p11-044.item-actions",
+   "scope": "all-eleven-item-actions",
+   "ticket": "P11-044",
+   "status": "proved-final",
+   "proofPath": "data/deferred-closure/item-action-closure-proof.v1.json",
+   "actionCount": 11,
+   "authorityBindings": [
+    {
+     "path": "data/deferred-closure/item-action-matrix.v1.json",
+     "sha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83"
+    },
+    {
+     "path": "data/complete-play-loop/equipment-grants.v1.json",
+     "sha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52"
+    },
+    {
+     "path": "data/complete-play-loop/equipment-contributions.v1.json",
+     "sha256": "14e6018e63750bed27c8a8299f3e33b13370d1c9b7e0403990acc9c990e50dcf"
+    },
+    {
+     "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+     "sha256": "04121681eb574af8cde8d89e4898f0d32390e6aee788f0b6a2f20a64d39710b4"
+    },
+    {
+     "path": "data/deferred-closure/item-action-recovery-certification.v1.json",
+     "sha256": "41feeed87ccac0593c5de75712d352ec1dee715196928ec152b286d40e3f71fb"
+    }
+   ]
+  }
+ ],
  "allowedCurrentStates": [
+  "native",
   "definition-missing",
   "deferred",
+  "guided",
   "reference-only-deferral",
+  "structured",
   "absent",
   "stale-pointer",
   "stale-deferred-language"
@@ -458,7 +516,7 @@
   {
    "id": "item-action.old-rod.fish",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "guided",
    "targetState": "guided",
    "owningTickets": [
     "P11-031",
@@ -476,22 +534,25 @@
     "server/domain/itemAutomation/eligibility.ts",
     "server/domain/itemAutomation/encounterOffers.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Old Rod' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
-   "privacyImplications": "Hook adjudication is GM-bounded until accepted; receipts and attention items owner-visible.",
+   "canonicalDataStatus": "Canonical Old Rod prose is closed by a reviewed hash-bound guided contract: Small unevolved hooks at Level 10 or lower, with one accepted generic single-subject DC Skill Check bound to the exact fishing actor, Skill, declaration, and one-use settlement.",
+   "privacyImplications": "Hook adjudication is GM-bounded until accepted; the selected check identity, total, exact actor binding, hook, and note remain private while receipts and attention items are owner-visible.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
     "P11-010 recovery fixtures",
+    "P11-038 authoritative declaration, cancellation, and reconnect certification",
+    "P11-039 time-gated bounded hook resolution and Plan 12 handoff boundary",
     "P11-043 recovery certification",
-    "P11-044 zero-deferred proof"
+    "P11-044 zero-deferred proof",
+    "P11-050 accepted generic check integration, no-leak, retry, rollback, and retained-flow certification"
    ],
    "grantId": "equipment.old-rod.fish",
    "canonicalItem": "Old Rod",
-   "staleDeferredTicket": "P8-057"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "item-action.good-rod.fish",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "guided",
    "targetState": "guided",
    "owningTickets": [
     "P11-031",
@@ -509,22 +570,25 @@
     "server/domain/itemAutomation/eligibility.ts",
     "server/domain/itemAutomation/encounterOffers.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Good Rod' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
-   "privacyImplications": "Hook adjudication is GM-bounded until accepted; receipts and attention items owner-visible.",
+   "canonicalDataStatus": "Canonical Good Rod prose is closed by a reviewed hash-bound guided contract: unevolved hooks at a bounded GM-selected Level, with one accepted generic single-subject DC Skill Check bound to the exact fishing actor, Skill, declaration, and one-use settlement.",
+   "privacyImplications": "Hook adjudication is GM-bounded until accepted; the selected check identity, total, exact actor binding, hook, and note remain private while receipts and attention items are owner-visible.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
     "P11-010 recovery fixtures",
+    "P11-038 authoritative declaration, cancellation, and reconnect certification",
+    "P11-039 time-gated bounded hook resolution and Plan 12 handoff boundary",
     "P11-043 recovery certification",
-    "P11-044 zero-deferred proof"
+    "P11-044 zero-deferred proof",
+    "P11-050 accepted generic check integration, no-leak, retry, rollback, and retained-flow certification"
    ],
    "grantId": "equipment.good-rod.fish",
    "canonicalItem": "Good Rod",
-   "staleDeferredTicket": "P8-057"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "item-action.super-rod.fish",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "guided",
    "targetState": "guided",
    "owningTickets": [
     "P11-031",
@@ -542,22 +606,25 @@
     "server/domain/itemAutomation/eligibility.ts",
     "server/domain/itemAutomation/encounterOffers.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Super Rod' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
-   "privacyImplications": "Hook adjudication is GM-bounded until accepted; receipts and attention items owner-visible.",
+   "canonicalDataStatus": "Canonical Super Rod prose is closed by a reviewed hash-bound guided contract: any canonical Pokémon stage or size at a bounded GM-selected Level, with one accepted generic single-subject DC Skill Check bound to the exact fishing actor, Skill, declaration, and one-use settlement.",
+   "privacyImplications": "Hook adjudication is GM-bounded until accepted; the selected check identity, total, exact actor binding, hook, and note remain private while receipts and attention items are owner-visible.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
     "P11-010 recovery fixtures",
+    "P11-038 authoritative declaration, cancellation, and reconnect certification",
+    "P11-039 time-gated bounded hook resolution and Plan 12 handoff boundary",
     "P11-043 recovery certification",
-    "P11-044 zero-deferred proof"
+    "P11-044 zero-deferred proof",
+    "P11-050 accepted generic check integration, no-leak, retry, rollback, and retained-flow certification"
    ],
    "grantId": "equipment.super-rod.fish",
    "canonicalItem": "Super Rod",
-   "staleDeferredTicket": "P8-057"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "item-action.glue-cannon.attack",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-031",
@@ -573,7 +640,7 @@
     "server/domain/itemAutomation/eligibility.ts",
     "server/domain/itemAutomation/encounterOffers.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Glue Cannon' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
+   "canonicalDataStatus": "Canonical Glue Cannon authority is closed by the reviewed native AC 8 status attack, exact three-packet resource state, and typed critical escalation.",
    "privacyImplications": "Ordinary encounter declaration and accepted-result visibility.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -583,12 +650,12 @@
    ],
    "grantId": "equipment.glue-cannon.attack",
    "canonicalItem": "Glue Cannon",
-   "staleDeferredTicket": "P8-092"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "item-action.hand-net.attack",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-031",
@@ -605,7 +672,7 @@
     "server/domain/itemAutomation/eligibility.ts",
     "server/domain/itemAutomation/encounterOffers.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Hand Net' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
+   "canonicalDataStatus": "Canonical Hand Net authority is closed by the reviewed native AC 6 Small-target restraint, linked movement, escape, and capture modifier contract.",
    "privacyImplications": "Ordinary encounter visibility; restrained-target state projects role-safely.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -615,12 +682,12 @@
    ],
    "grantId": "equipment.hand-net.attack",
    "canonicalItem": "Hand Net",
-   "staleDeferredTicket": "P8-092"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "item-action.weighted-nets.throw",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-031",
@@ -637,7 +704,7 @@
     "server/domain/itemAutomation/eligibility.ts",
     "server/domain/itemAutomation/encounterOffers.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Weighted Nets' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
+   "canonicalDataStatus": "Canonical Weighted Nets authority is closed by the reviewed native throw, exact-source restraint, movement suppression, and one-meter pull contract.",
    "privacyImplications": "Ordinary encounter visibility; restrained-target state projects role-safely.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -647,12 +714,12 @@
    ],
    "grantId": "equipment.weighted-nets.throw",
    "canonicalItem": "Weighted Nets",
-   "staleDeferredTicket": "P8-092"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "item-action.weighted-nets.pull",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-031",
@@ -669,7 +736,7 @@
     "server/domain/itemAutomation/eligibility.ts",
     "server/domain/itemAutomation/encounterOffers.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Weighted Nets' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
+   "canonicalDataStatus": "Canonical Weighted Nets authority is closed by the reviewed native throw, exact-source restraint, movement suppression, and one-meter pull contract.",
    "privacyImplications": "Ordinary encounter visibility; restrained-target state projects role-safely.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -679,12 +746,12 @@
    ],
    "grantId": "equipment.weighted-nets.pull",
    "canonicalItem": "Weighted Nets",
-   "staleDeferredTicket": "P8-092"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "item-action.light-shield.ready",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-031",
@@ -700,7 +767,7 @@
     "server/domain/itemAutomation/eligibility.ts",
     "server/domain/itemAutomation/encounterOffers.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Light Shield' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
+   "canonicalDataStatus": "Canonical Light Shield authority is closed by the reviewed native ready action, typed Evasion, Damage Reduction, Slowed, expiry, and source-loss contract.",
    "privacyImplications": "Ordinary encounter visibility; readied state is a typed public duration effect.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -710,12 +777,12 @@
    ],
    "grantId": "equipment.light-shield.ready",
    "canonicalItem": "Light Shield",
-   "staleDeferredTicket": "P8-050"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "item-action.heavy-shield.ready",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-031",
@@ -731,7 +798,7 @@
     "server/domain/itemAutomation/eligibility.ts",
     "server/domain/itemAutomation/encounterOffers.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Heavy Shield' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
+   "canonicalDataStatus": "Canonical Heavy Shield authority is closed by the reviewed native ready action, typed Evasion, Damage Reduction, Slowed, expiry, and source-loss contract.",
    "privacyImplications": "Ordinary encounter visibility; readied state is a typed public duration effect.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -741,12 +808,12 @@
    ],
    "grantId": "equipment.heavy-shield.ready",
    "canonicalItem": "Heavy Shield",
-   "staleDeferredTicket": "P8-050"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "item-action.snag-machine.convert",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "guided",
    "targetState": "guided",
    "owningTickets": [
     "P11-031",
@@ -759,25 +826,29 @@
    "owningPaths": [
     "data/complete-play-loop/equipment-grants.v1.json",
     "scripts/generate_complete_play_loop_equipment_grants.py",
-    "server/domain/itemAutomation/eligibility.ts",
-    "server/domain/itemAutomation/encounterOffers.ts"
+    "shared/itemAutomation/snagMachine.ts",
+    "server/domain/itemAutomation/snagMachine.ts",
+    "server/domain/itemAutomation/deferredEquipmentActions.ts",
+    "server/useCases/manageItemGuidedAdjudication.ts",
+    "server/useCases/applyThrowPokeballCommand.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Snag Machine' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
-   "privacyImplications": "Conversion and throws against owned Pokémon are table-visible per trusted-table policy; the GM legality decision stays private until accepted.",
+   "canonicalDataStatus": "Canonical Snag Machine prose is closed by a reviewed hash-bound guided contract for Portable one-round and Large permanent conversion variants, preserving the original canonical Poké Ball properties.",
+   "privacyImplications": "Conversion and Snag Ball throws are table-visible; exact machine and inventory identities, conversion evidence, ownership authority, and GM legality notes remain private.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
     "P11-010 recovery fixtures",
+    "P11-040 exact conversion, bounded GM settlement, owned-target capture transfer, privacy, rollback, and replay certification",
     "P11-043 recovery certification",
     "P11-044 zero-deferred proof"
    ],
    "grantId": "equipment.snag-machine.convert",
    "canonicalItem": "Snag Machine",
-   "staleDeferredTicket": "P8-059"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "item-action.shock-collar.activate",
    "kind": "item-action",
-   "currentState": "deferred",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-031",
@@ -793,7 +864,7 @@
     "server/domain/itemAutomation/eligibility.ts",
     "server/domain/itemAutomation/encounterOffers.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Shock Collar' carries substantive canonical effect prose (source 09-gear-and-items.md); a reviewed hash-bound spec pends its owning ticket.",
+   "canonicalDataStatus": "Canonical Shock Collar authority is closed by the reviewed native paired activation, authoritative one-sixth Max HP loss, Ground variant, and Press fact contract.",
    "privacyImplications": "Wearer HP loss commits through ordinary HP authority; remote custody is holder-private; Press interaction visible as ordinary Feature use.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -803,7 +874,7 @@
    ],
    "grantId": "equipment.shock-collar.activate",
    "canonicalItem": "Shock Collar",
-   "staleDeferredTicket": "P8-050"
+   "closureEvidenceId": "p11-044.item-actions"
   },
   {
    "id": "contest-variant.trainer-participant",
@@ -875,7 +946,7 @@
   {
    "id": "runtime.generic-skill-check",
    "kind": "runtime-surface",
-   "currentState": "absent",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-007",
@@ -889,14 +960,61 @@
     "P11-052"
    ],
    "owningPaths": [
-    "shared/itemAutomation/spec.ts",
+    "data/deferred-closure/skill-check-authority-certification.v1.json",
+    "data/deferred-closure/skill-check-gm-workflow-certification.v1.json",
+    "data/deferred-closure/skill-check-subject-workflow-certification.v1.json",
+    "data/deferred-closure/skill-check-projection-certification.v1.json",
+    "data/deferred-closure/skill-check-consuming-flow-policy.v1.json",
+    "data/deferred-closure/skill-check-consuming-flow-certification.v1.json",
+    "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+    "data/deferred-closure/skill-check-recovery-certification.v1.json",
+    "data/deferred-closure/skill-check-dc-presets.v1.json",
+    "shared/skillChecks/contract.ts",
+    "shared/skillChecks/persistence.ts",
+    "shared/skillChecks/difficulty.ts",
+    "shared/skillChecks/gmWorkflow.ts",
+    "shared/skillChecks/subjectWorkflow.ts",
+    "shared/skillChecks/projections.ts",
+    "shared/skillChecks/campaignHistory.ts",
+    "server/domain/skillChecks/resolveCheck.ts",
+    "server/domain/skillChecks/subjectProjection.ts",
+    "server/domain/skillChecks/roleProjections.ts",
+    "server/domain/campaignAttention/skillCheckDetector.ts",
+    "server/storage/skillCheckRepository.ts",
+    "server/storage/migrations.ts",
+    "server/useCases/resolveSkillCheck.ts",
+    "server/useCases/manageGmSkillChecks.ts",
+    "server/useCases/manageSubjectSkillChecks.ts",
+    "server/useCases/loadSkillCheckProjections.ts",
+    "server/useCases/loadCampaignSkillCheckHistory.ts",
+    "server/useCases/loadCampaignAttention.ts",
+    "server/useCases/manageItemGuidedAdjudication.ts",
+    "server/api/skill-checks/gm.get.ts",
+    "server/api/skill-checks/gm.post.ts",
+    "server/api/skill-checks/subject.get.ts",
+    "server/api/skill-checks/subject.post.ts",
+    "server/api/skill-checks/settle-expired.post.ts",
+    "server/api/skill-checks/projections.get.ts",
+    "server/api/skill-checks/campaign-history.get.ts",
+    "src/components/encounter/workspace/EncounterGmSkillChecks.vue",
+    "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+    "src/components/encounter/workspace/EncounterSkillCheckPublicFeed.vue",
+    "src/components/campaign/CampaignGuidedFishingDecision.vue",
+    "src/components/campaign/CampaignSkillCheckHistoryCard.vue",
+    "docs/skill-check-recovery-and-campaign-history.md",
     "src/types/trainerSheet.ts"
    ],
-   "canonicalDataStatus": "Sheet skill identities are canonical; no generic check document or operation exists. Only item- and move-embedded check machinery was found (skill-check healing amount kind, opposed-check move windows, breeding/exploration adjudications).",
-   "privacyImplications": "GM request intent may stay private until accepted where the reviewed contract requires; subject modifiers visible only to subject and GM; spectators see accepted results only.",
+   "canonicalDataStatus": "Sheet identities, strict versioned documents, schema-v50 persistence, authoritative Trainer/Pokémon skill and reviewed equipment-provider modifiers, server-only journaled d6s, DC/opposed comparisons, atomic accepted results, and exact no-reroll operation replay are implemented. The GM-only workflow creates single, group, preset, explicit-DC, and opposed requests from exact sheets and controller ownership, observes pending responses, resolves ready checks, cancels with private reasons, and returns replay-safe receipts. The subject workflow projects only controlled Trainer/Pokémon prompts, canonical pools and visible modifiers, concealed-or-authorized DCs, aggregate readiness, legal accept/decline controls, own visible-or-withheld results, and durable server-owned timeout evidence. Structurally distinct GM, subject, and spectator projections provide full GM authority, own-subject safe history, and public labels, pending counts, generic history, and aggregate-or-withheld accepted outcomes respectively. All three rod flows require one accepted generic single-subject DC check bound to the exact actor, Skill, declaration, and one-use settlement; five embedded check/roll families intentionally retain their atomic or document-specific authority. Keyboard, touch, screen-reader, reduced-motion, desktop/mobile production liveplay, 320 CSS-pixel table-distance reflow, WCAG AA, no-leak, and bounded decision-surface performance acceptance are certified. Single/group reconnect, real SQLite restart, duplicate delivery, CAS concurrency, stale revision, two-boundary rollback, transient attention-publication failure, unresolved owner/GM campaign attention, and owner-safe terminal campaign history are certified; the generic Skill Check surface is native and complete.",
+   "privacyImplications": "Full notes, exact modifiers, controller and sheet bindings, journals, operations, diagnostics, and subject identities remain GM-only. Subjects receive only their own identity, skill authority, visible contributors, aggregate readiness, and own safe history/result. Spectators receive no prompt, subject, skill, DC, modifier, response identity, roll, total, journal, operation, private correction, or diagnostic authority. Campaign owner history exposes only a public label, terminal lifecycle, own outcome or explicit withholding, and time through an opaque entry identity; unresolved owner attention redacts the Profile identity.",
    "acceptanceEvidence": [
-    "P11-051 accessibility/liveplay acceptance",
-    "P11-052 recovery certification"
+    "P11-045 strict document and command parsers plus fresh/upgrade/restart storage certification",
+    "P11-046 source-hash-bound server authority certification for exact sheet reads, provider modifiers, server dice, comparisons, idempotency, and rollback",
+    "P11-047 reviewed DC presets plus GM-only request, observe, resolve, cancel, receipt, route, component, and rollback certification",
+    "P11-048 role-correct subject prompt, modifier transparency, accept/decline, own-result, timeout, exact-retry, route, component, privacy, and rollback certification",
+    "P11-049 structurally distinct GM, subject, and spectator pending/accepted/history projection and no-leak certification",
+    "P11-050 all-three-rod generic check integration plus source-bound retained-bespoke-flow certification",
+    "P11-051 SHA-bound keyboard, touch, screen-reader, reduced-motion, WCAG AA, 320px/table-distance reflow, bounded-performance, and desktop/mobile production liveplay certification",
+    "P11-052 SHA-bound single/group restart, reconnect, duplicate, CAS concurrency, stale, rollback, campaign-attention, owner-safe terminal-history, realtime-invalidation, route, component, privacy, and reviewed-mockup certification"
    ]
   },
   {

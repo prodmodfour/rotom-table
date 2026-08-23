@@ -20,6 +20,8 @@ export const CAMPAIGN_ATTENTION_REASONS = [
   'medical-review',
   'recovery-review',
   'equipment-review',
+  'skill-check-response',
+  'skill-check-resolution',
   'continuation-review',
 ] as const
 export type CampaignAttentionReason = typeof CAMPAIGN_ATTENTION_REASONS[number]
@@ -47,6 +49,7 @@ export type CampaignAttentionAuthorityKind = typeof CAMPAIGN_ATTENTION_AUTHORITY
 export const CAMPAIGN_ATTENTION_SOURCE_EVENT_KINDS = [
   'encounter-settlement', 'campaign-day', 'sheet-authority', 'profile-authority',
   'item-operation', 'equipment-operation', 'breeding-operation', 'capture-operation',
+  'skill-check',
 ] as const
 export type CampaignAttentionSourceEventKind = typeof CAMPAIGN_ATTENTION_SOURCE_EVENT_KINDS[number]
 

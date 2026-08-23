@@ -79,6 +79,11 @@ const sideOption = (side: EncounterWorkspaceSide): EncounterChoiceOption => ({
   preview: { kind: 'side', sideId: side.sideId, label: side.label, accent: side.accent },
 })
 
+const projectedCell = (value: string): { readonly x: number, readonly y: number, readonly z: number } | null => {
+  const match = /^cell:(\d+):(\d+):(\d+)$/u.exec(value)
+  return match ? Object.freeze({ x: Number(match[1]), y: Number(match[2]), z: Number(match[3]) }) : null
+}
+
 const optionsForTarget = (input: {
   readonly target: EncounterActionOffer['targeting'][number]
   readonly offer: EncounterActionOffer
@@ -114,7 +119,7 @@ const optionsForTarget = (input: {
   }
   if (kind === 'side') return input.sides.map(sideOption)
   if (kind === 'item' || kind === 'move') return requirementOptions
-    .filter(option => option.kind !== 'participant')
+    .filter(option => option.kind !== 'participant' && option.kind !== 'cell')
     .map(option => ({
     optionId: option.value,
     label: option.label,
@@ -123,6 +128,27 @@ const optionsForTarget = (input: {
     unavailableReason: option.unavailableReason ?? null,
     preview: { kind: 'none' },
   }))
+  if (kind === 'cell' || kind === 'area' || kind === 'destination' || kind === 'path') {
+    return requirementOptions.flatMap((option): EncounterChoiceOption[] => {
+      if (option.kind !== 'cell') return []
+      const cell = projectedCell(option.value)
+      if (!cell) return []
+      return [{
+        optionId: option.value,
+        label: option.label,
+        description: option.description ?? null,
+        disabled: option.disabled ?? false,
+        unavailableReason: option.unavailableReason ?? null,
+        preview: {
+          kind: 'spatial',
+          cells: kind === 'cell' || kind === 'area' ? [cell] : [],
+          destination: kind === 'destination' ? cell : null,
+          path: kind === 'path' ? [cell] : [],
+          direction: null,
+        },
+      }]
+    })
+  }
   return []
 }
 

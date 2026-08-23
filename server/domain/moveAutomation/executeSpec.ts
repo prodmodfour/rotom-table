@@ -4698,7 +4698,32 @@ const executeMoveSpecInternal = (
             operationReasonCode: operation.reasonCode,
             operationKind: operation.kind,
           })
+        }).filter(recipientId => {
+          const trigger = operation.kind === 'temporary-effect' && operation.payload.action === 'add'
+            ? operation.payload.accuracyRollTrigger : undefined
+          if (!trigger) return true
+          const resolved = [...resolvedRolls].reverse().find(roll => (
+            roll.referenceId === trigger.rollId && roll.recipientId === recipientId
+          ))
+          const rolled = resolved ? input.context.random.snapshot().find(entry => (
+            entry.rollId === resolved.rollId
+          )) : null
+          if (!rolled) return false
+          return trigger.trigger.kind === 'range'
+            ? rolled.naturalResult >= trigger.trigger.minimum
+            : trigger.trigger.values.includes(rolled.naturalResult)
         })
+        if (operation.reasonCode === 'gouge.add-injury' && operation.source.kind === 'operation') {
+          const execution = [...multiHitExecutions].reverse().find(candidate => (
+            candidate.operationId === operation.source.id
+          ))
+          return uncancelled.filter(recipientId => {
+            const result = execution?.resolution.targets.find(target => target.targetId === recipientId)
+            return result !== undefined
+              && result.strikes.length === 2
+              && result.strikes.every(strike => strike.accuracy.hit)
+          })
+        }
         if (operation.reasonCode === 'ability.fiery-crash.burn'
           && operation.source.kind === 'operation') {
           return uncancelled.filter(recipientId => resolvedDamageTypes.some(resolved => (

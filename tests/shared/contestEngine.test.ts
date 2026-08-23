@@ -8,6 +8,7 @@ import { ContestRuleError } from '../../shared/contests/validation'
 
 const op = (index: number) => `contest-op:v1:engine${String(index).padStart(8, '0')}`
 const performer = (owner: number, index = 0, effects: readonly ContestEffectId[] = ['excitement', 'steady-performance']): ContestPerformerSnapshotV1 => Object.freeze({
+  performerKind: 'pokemon',
   performerId: `performer:p${owner}-${index}`,
   pokemonSheetSlug: `pokemon-${owner}-${index}`,
   pokemonSheetRevision: 1,

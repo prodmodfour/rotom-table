@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import acceptance from '../../data/complete-play-loop/accessibility-responsive-visual-acceptance.v1.json'
@@ -9,6 +8,7 @@ import {
   isLocalUiArtifactPath,
   readOptionalLocalUiArtifact,
 } from '../helpers/localUiArtifacts'
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 const root = resolve(import.meta.dirname, '../..')
 const sha256 = (value: Buffer): string => createHash('sha256').update(value).digest('hex')
@@ -168,10 +168,14 @@ describe('P8-096 accessibility, responsive, and visual acceptance', () => {
       expect(paths.has(row.path), row.path).toBe(false)
       paths.add(row.path)
       expect(row.sha256).toMatch(/^[a-f0-9]{64}$/)
-      const bytes = isLocalUiArtifactPath(row.path)
-        ? optionalArtifact(row.path)
-        : readFileSync(resolve(root, row.path))
-      if (bytes) expect(sha256(bytes), row.path).toBe(row.sha256)
+      if (isLocalUiArtifactPath(row.path)) {
+        const bytes = optionalArtifact(row.path)
+        if (bytes) expect(sha256(bytes), row.path).toBe(row.sha256)
+      }
+      else {
+        expect(acceptedSuccessorHead(row.path, row.sha256), row.path)
+          .toBe(repositoryFileSha256(row.path))
+      }
     }
     for (const surface of acceptance.surfaces) {
       for (const path of [surface.desktopEvidence, surface.mobileEvidence, surface.review]) {

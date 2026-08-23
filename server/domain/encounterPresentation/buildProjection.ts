@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { AuthRole } from '#shared/auth'
 import type { AbilityClientCapability, AbilityClientCapabilityBundle } from '#shared/abilityAutomation/clientCapabilities'
 import type {
@@ -33,6 +34,9 @@ import {
   type RuleSourceRef,
 } from '#shared/encounterPresentation'
 import type { PlayerProfile } from '#shared/playerProfiles'
+import { parseSheetEquipmentStateForOwner } from '#shared/itemAutomation/equipment'
+import { parseGlueCannonState } from '#shared/itemAutomation/glueCannon'
+import { equipmentActionPresentationsForItem } from '#shared/itemAutomation/equipmentActionPresentation'
 import type { PendingMoveResponseWindowList } from '#shared/moveAutomation/responseViews'
 import { toSlug, findAbility, findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -61,15 +65,33 @@ import {
 import type { ResolveEquipmentGrantsResult } from '../itemAutomation/equipmentGrants'
 import { createEncounterEquipmentGrantQueries } from '../moveAutomation/equipmentGrantQueries'
 import { capabilityWeaponMoveName } from '#shared/capabilityAutomation/weaponMoves'
+import {
+  applyEquipmentWeaponRangeToMoveRange,
+  equipmentWeaponRangeLabel,
+} from '#shared/itemAutomation/equipmentGrants'
 import { placementToSpawned } from '~/utils/placement'
+import { tokenGridDistance } from '~/utils/moveAutomationRange'
+import { gridFootprintCells } from '~/utils/gridGeometry'
+import { mapMovementTerrainTagsForVoxel } from '~/utils/mapMovementTerrain'
+import { ptuGridVectorDistance } from '~/utils/ptuGridDistance'
 import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
 import { pendingEncounterInteractionsFromMoveResponses } from './pendingAdapters'
+import { resolveMoveAutomationLineOfSight } from '../moveAutomation/lineOfSight'
 import { resolveEffectiveEdges } from '../edgeAutomation/effectiveEdges'
 import { canonicalEdgeReference } from '#shared/edgeAutomation/catalog'
 import { edgeChoiceValues } from '#shared/edgeAutomation/instances'
 import { projectEncounterItemOffers } from '../itemAutomation/encounterOffers'
 import { projectEncounterItemFormChangeOffers } from '../itemAutomation/formChangeOffers'
 import { activeReviewedItemFormChange } from '../itemAutomation/formChanges'
+import {
+  resolveShockCollarPairCandidates,
+  shockCollarImplicitRemoteAuthority,
+  shockCollarPairForInstance,
+} from '../itemAutomation/shockCollar'
+import {
+  largeSnagMachineInventorySources,
+  snagBallInventoryChoices,
+} from '../itemAutomation/snagMachine'
 
 export interface BuildEncounterPresentationProjectionInput {
   readonly role: AuthRole
@@ -98,6 +120,21 @@ const sourcePath: Readonly<Partial<Record<EncounterRuleSourceKind, string>>> = O
   feature: 'features',
   item: 'items',
 })
+
+/** Native actions owned by the replay-safe encounter equipment-action executor. */
+const ENCOUNTER_EQUIPMENT_ACTION_IDS: ReadonlySet<string> = new Set([
+  'equipment.light-shield.ready',
+  'equipment.heavy-shield.ready',
+  'equipment.shock-collar.activate',
+  'equipment.glue-cannon.attack',
+  'equipment.hand-net.attack',
+  'equipment.weighted-nets.throw',
+  'equipment.weighted-nets.pull',
+  'equipment.fishing.old-rod',
+  'equipment.fishing.good-rod',
+  'equipment.fishing.super-rod',
+  'equipment.snag-machine.convert',
+])
 
 const sourceRef = (input: {
   readonly kind: EncounterRuleSourceKind
@@ -344,6 +381,7 @@ const makeOffer = (input: {
   readonly intentInput?: EncounterActionOffer['intent']['input']
   readonly offerId?: string
   readonly selectionOptions?: EncounterActionOffer['selectionOptions']
+  readonly sourceContextLabel?: string | null
 }): EncounterActionOffer => {
   const targeting = input.targeting ?? []
   const economyReason = actionEconomyReason(input.map, input.actor.participantId, input.timing)
@@ -380,6 +418,7 @@ const makeOffer = (input: {
       input: hasSpatial ? 'spatial' : input.intentInput ?? (targeting.some(target => target.kind !== 'none' && target.kind !== 'self') ? 'choices' : 'immediate'),
     },
     selectionOptions: input.selectionOptions ?? [],
+    sourceContextLabel: input.sourceContextLabel ?? null,
   }
 }
 
@@ -469,14 +508,14 @@ const moveOffers = (input: {
   const reference = findMove(entry.move.name)
   const name = reference?.name ?? entry.move.name
   const frequency = reference?.frequency ?? entry.move.frequency ?? null
-  const range = reference?.range ?? entry.move.range ?? null
+  const baseRange = reference?.range ?? entry.move.range ?? null
   const damageClass = reference?.damage_class ?? entry.move.category ?? null
   const semantic = moveAutomationSemanticStatusForMenu(name)
   const usage = moveUsage(input.placement.id, name, frequency, input.map, input.sheet)
   const conditions = input.placement.sheetKind === 'pokemon'
     ? (input.sheet as CharacterSheet).combat?.conditions
     : (input.sheet as TrainerSheet).conditions
-  const conditionBlock = moveConditionUseBlock({ name, damageClass, range, frequency }, conditions)
+  const conditionBlock = moveConditionUseBlock({ name, damageClass, range: baseRange, frequency }, conditions)
   const unavailable: EncounterAvailabilityReasonCode[] = [
     ...(semantic.baseStatus === 'blocked' && !capabilityWeaponMoveName(name) ? ['action.unsupported' as const] : []),
     ...(entry.moveListProjection?.available === false ? ['source.suppressed' as const] : []),
@@ -491,6 +530,9 @@ const moveOffers = (input: {
   const equipmentWeaponSource = equipmentWeaponSources.find(source => (
     source.attackSourceId === (entry.attackSourceId ?? null)
   ))
+  const range = equipmentWeaponSource?.profile.targetingPolicy === 'ranged-line-of-sight'
+    ? applyEquipmentWeaponRangeToMoveRange(equipmentWeaponSource.profile, baseRange ?? 'Melee, 1 Target')
+    : baseRange
   const hasReach = weaponGrant?.grantsReach === true
     || equipmentWeaponSource?.profile.grantsReach === true
     || resolveEffectiveCapabilities({
@@ -886,6 +928,12 @@ const equipmentGrantPresentation = (input: {
   readonly map: TabletopMap
   readonly mapRevision: number
   readonly participant: EncounterParticipantPresentationRef
+  readonly placement: SheetPlacement
+  readonly sheet: CharacterSheet | TrainerSheet
+  readonly participants: ReadonlyMap<string, EncounterParticipantPresentationRef>
+  readonly pokemonBySlug: ReadonlyMap<string, CharacterSheet>
+  readonly trainerBySlug: ReadonlyMap<string, TrainerSheet>
+  readonly grantsForPlacement: (placementId: string) => ResolveEquipmentGrantsResult | null
   readonly resolved: ResolveEquipmentGrantsResult
   readonly offerOrderBase: number
 }): {
@@ -893,6 +941,41 @@ const equipmentGrantPresentation = (input: {
   readonly passives: readonly EncounterPassiveSummary[]
   readonly affordances: readonly EncounterContextualAffordance[]
 } => {
+  const equipmentState = parseSheetEquipmentStateForOwner(input.sheet.equipmentState, {
+    kind: input.placement.sheetKind,
+    slug: input.placement.sheetSlug,
+  })
+  const sheetLookup = {
+    pokemon: new Map(input.pokemonBySlug),
+    trainer: new Map(input.trainerBySlug),
+  }
+  const actorToken = placementToSpawned(input.placement, sheetLookup, input.map)
+  const lineOfSightPlacements = input.map.placements.flatMap((placement) => {
+    const token = placementToSpawned(placement, sheetLookup, input.map)
+    return token ? [{
+      id: placement.id,
+      position: placement.position,
+      base: token.base,
+      clearance: token.clearance,
+    }] : []
+  })
+  const targetGeometryReason = (
+    target: SheetPlacement,
+    maximumRangeMeters: number,
+    requiresLineOfSight: boolean,
+  ): EncounterAvailabilityReasonCode | null => {
+    const targetToken = placementToSpawned(target, sheetLookup, input.map)
+    if (!actorToken || !targetToken) return 'target.invalid'
+    if (tokenGridDistance(actorToken, targetToken) > maximumRangeMeters) return 'target.out-of-range'
+    if (!requiresLineOfSight) return null
+    const sight = resolveMoveAutomationLineOfSight({
+      voxels: input.map.voxels,
+      placements: lineOfSightPlacements,
+      sourcePlacementId: input.placement.id,
+      targetPlacementId: target.id,
+    })
+    return sight.targetable ? null : 'target.not-visible'
+  }
   const grouped = new Map<string, ResolveEquipmentGrantsResult['active'][number][]>()
   for (const entry of input.resolved.active) {
     const current = grouped.get(entry.instanceId) ?? []
@@ -919,20 +1002,59 @@ const equipmentGrantPresentation = (input: {
     const nativeWeaponProfile = entries.some(entry => (
       entry.grant.kind === 'weapon-profile' && entry.grant.executionStatus === 'native'
     ))
-    const facts = entries.map((entry, factIndex): EncounterPassiveFact => ({
-      factId: encounterPresentationStableId(
-        'fact', input.participant.participantId, projectedSourceId, entry.grant.grantId, String(factIndex),
-      ),
-      factKey: encounterPresentationStableId('equipment-grant', entry.grant.grantId),
-      value: booleanFact(
-        entry.grant.kind === 'weapon-profile'
-          ? entry.grant.executionStatus === 'native'
-          : entry.grant.kind === 'move'
-            ? entry.grant.executionStatus === 'native' && nativeWeaponProfile
-            : true,
-      ),
-      label: equipmentGrantLabel(entry.grant),
-    }))
+    const facts = entries.flatMap((entry, entryIndex): EncounterPassiveFact[] => {
+      const base: EncounterPassiveFact = {
+        factId: encounterPresentationStableId(
+          'fact', input.participant.participantId, projectedSourceId, entry.grant.grantId, String(entryIndex),
+        ),
+        factKey: encounterPresentationStableId('equipment-grant', entry.grant.grantId),
+        value: booleanFact(
+          entry.grant.kind === 'weapon-profile'
+            ? entry.grant.executionStatus === 'native'
+            : entry.grant.kind === 'move'
+              ? entry.grant.executionStatus === 'native' && nativeWeaponProfile
+              : true,
+        ),
+        label: equipmentGrantLabel(entry.grant),
+      }
+      if (entry.grant.kind === 'action' && entry.grant.actionId === 'equipment.glue-cannon.attack') {
+        const instance = equipmentState.instances.find(candidate => candidate.instanceId === entry.instanceId)
+        let charges: number | null = null
+        try { charges = instance ? parseGlueCannonState(instance.serializedState).charges : null }
+        catch { charges = null }
+        return [base, {
+          factId: encounterPresentationStableId(
+            'fact', input.participant.participantId, projectedSourceId, entry.grant.grantId, 'charges',
+          ),
+          factKey: encounterPresentationStableId('equipment-grant-charges', entry.grant.grantId),
+          value: charges === null ? textFact('Unavailable') : numberFact(charges, 'charges'),
+          label: charges === null ? 'Charge state unavailable' : `${charges} charge${charges === 1 ? '' : 's'} remaining`,
+        }]
+      }
+      if (entry.grant.kind !== 'weapon-profile' || entry.grant.executionStatus !== 'native') return [base]
+      return [base, {
+        factId: encounterPresentationStableId(
+          'fact', input.participant.participantId, projectedSourceId, entry.grant.grantId, 'range',
+        ),
+        factKey: encounterPresentationStableId('equipment-grant-range', entry.grant.grantId),
+        value: textFact(equipmentWeaponRangeLabel(entry.grant)),
+        label: 'Weapon range',
+      }, {
+        factId: encounterPresentationStableId(
+          'fact', input.participant.participantId, projectedSourceId, entry.grant.grantId, 'hands',
+        ),
+        factKey: encounterPresentationStableId('equipment-grant-hands', entry.grant.grantId),
+        value: numberFact(entry.grant.handsRequired, 'hands'),
+        label: 'Ready hands',
+      }, {
+        factId: encounterPresentationStableId(
+          'fact', input.participant.participantId, projectedSourceId, entry.grant.grantId, 'ammunition',
+        ),
+        factKey: encounterPresentationStableId('equipment-grant-ammunition', entry.grant.grantId),
+        value: textFact('Abstracted; no tracked consumption'),
+        label: 'Ammunition',
+      }]
+    })
     passives.push(passiveSummary({
       map: input.map,
       participant: input.participant,
@@ -946,7 +1068,224 @@ const equipmentGrantPresentation = (input: {
         && (grant.executionStatus === 'definition-missing' || !nativeWeaponProfile)
       const profileUnavailable = grant.kind === 'weapon-profile'
         && grant.executionStatus === 'definition-missing'
-      if (grant.kind === 'action' && grant.executionStatus === 'native') continue
+      if (grant.kind === 'action' && grant.executionStatus === 'native'
+        && !ENCOUNTER_EQUIPMENT_ACTION_IDS.has(grant.actionId)) continue
+      let nativeAction = grant.kind === 'action' && grant.executionStatus === 'native'
+      let nativeUnavailableCode: EncounterAvailabilityReasonCode | null = null
+      let nativeUnavailableDescription: string | null = null
+      let selectionOptions: EncounterActionOffer['selectionOptions'] = []
+      let shockTargets: ReturnType<typeof resolveShockCollarPairCandidates> = []
+      if (grant.kind === 'action' && grant.actionId === 'equipment.shock-collar.activate') {
+        const pair = shockCollarPairForInstance({
+          placement: input.placement,
+          sheet: input.sheet,
+          instanceId: entry.instanceId,
+        })
+        if (pair?.role !== 'remote') continue
+        shockTargets = resolveShockCollarPairCandidates({
+          map: input.map,
+          actorPlacement: input.placement,
+          actorSheet: input.sheet,
+          remoteSource: entry,
+          pokemonSheets: input.pokemonBySlug,
+          trainerSheets: input.trainerBySlug,
+          grantsForPlacement: input.grantsForPlacement,
+        })
+        selectionOptions = shockTargets.flatMap((candidate) => {
+          const participant = input.participants.get(candidate.placement.id)
+          const token = placementToSpawned(candidate.placement, sheetLookup, input.map)
+          const groundBlocked = token?.creatureRules?.typeIds.some(type => (
+            type.toLocaleLowerCase('en-US') === 'ground'
+          )) === true && !candidate.pair.groundCapable
+          const unavailableReason = groundBlocked ? encounterAvailabilityReason('target.invalid') : null
+          return participant ? [{
+            kind: 'participant' as const,
+            requirementId: 'equipment-shock-collar-target',
+            value: candidate.placement.id,
+            label: participant.displayName,
+            description: groundBlocked
+              ? 'Ground-type wearer requires the Ground-capable collar variant'
+              : 'Paired wearer',
+            disabled: unavailableReason !== null,
+            unavailableReason,
+          }] : []
+        })
+        nativeAction = nativeAction && selectionOptions.some(option => !option.disabled)
+        if (!nativeAction) {
+          nativeUnavailableCode = selectionOptions.find(option => option.disabled)?.unavailableReason?.code ?? 'target.invalid'
+          nativeUnavailableDescription = selectionOptions.find(option => option.disabled)?.description
+            ?? 'No paired wearer is currently eligible.'
+        }
+      }
+      if (grant.kind === 'action' && grant.actionId === 'equipment.glue-cannon.attack') {
+        const instance = equipmentState.instances.find(candidate => candidate.instanceId === entry.instanceId)
+        let chargeReady = false
+        try { chargeReady = Boolean(instance && parseGlueCannonState(instance.serializedState).charges > 0) }
+        catch { chargeReady = false }
+        selectionOptions = input.map.placements.flatMap((candidate) => {
+          const participant = input.participants.get(candidate.id)
+          if (!participant || candidate.id === input.placement.id) return []
+          const reasonCode = targetGeometryReason(candidate, 4, true)
+          const unavailableReason = reasonCode ? encounterAvailabilityReason(reasonCode) : null
+          return [{
+            kind: 'participant' as const,
+            requirementId: 'equipment-participant',
+            value: candidate.id,
+            label: participant.displayName,
+            description: unavailableReason
+              ? `${unavailableReason.label}; requires 4 meters and line of sight`
+              : 'Participant within 4 meters and line of sight',
+            disabled: unavailableReason !== null,
+            unavailableReason,
+          }]
+        })
+        nativeAction = nativeAction && chargeReady && selectionOptions.some(option => !option.disabled)
+        if (!nativeAction) {
+          nativeUnavailableCode = chargeReady
+            ? selectionOptions.find(option => option.disabled)?.unavailableReason?.code ?? 'target.invalid'
+            : 'source.item-unavailable'
+          nativeUnavailableDescription = chargeReady
+            ? selectionOptions.find(option => option.disabled)?.description ?? 'No target is currently within 4 meters and line of sight.'
+            : 'No Glue Cannon charge packet remains.'
+        }
+      }
+      if (grant.kind === 'action' && grant.actionId === 'equipment.hand-net.attack') {
+        selectionOptions = input.map.placements.flatMap((candidate) => {
+          if (candidate.sheetKind !== 'pokemon' || candidate.id === input.placement.id) return []
+          const token = placementToSpawned(candidate, sheetLookup, input.map)
+          const participant = input.participants.get(candidate.id)
+          if (!participant) return []
+          const reasonCode: EncounterAvailabilityReasonCode | null = token?.creatureRules?.size !== 'small'
+            ? 'target.invalid'
+            : targetGeometryReason(candidate, 1, true)
+          const unavailableReason = reasonCode ? encounterAvailabilityReason(reasonCode) : null
+          return [{
+            kind: 'participant' as const,
+            requirementId: 'equipment-hand-net-target',
+            value: candidate.id,
+            label: participant.displayName,
+            description: token?.creatureRules?.size !== 'small'
+              ? 'Unavailable; Hand Net requires a Small Pokémon'
+              : unavailableReason
+                ? `${unavailableReason.label}; requires adjacency and line of sight`
+                : 'Small Pokémon within 1 meter and line of sight',
+            disabled: unavailableReason !== null,
+            unavailableReason,
+          }]
+        })
+        nativeAction = nativeAction && selectionOptions.some(option => !option.disabled)
+        if (!nativeAction) {
+          nativeUnavailableCode = selectionOptions.find(option => option.disabled)?.unavailableReason?.code ?? 'target.invalid'
+          nativeUnavailableDescription = selectionOptions.find(option => option.disabled)?.description
+            ?? 'No Small Pokémon is currently adjacent and visible.'
+        }
+      }
+      if (grant.kind === 'action' && (grant.actionId === 'equipment.weighted-nets.throw'
+        || grant.actionId === 'equipment.weighted-nets.pull')) {
+        const sourceKey = createHash('sha256').update(entry.instanceId).digest('hex').slice(0, 32)
+        const sourceTag = `equipment.weighted-net.source:${sourceKey}`
+        const nettedTargetIds = new Set((input.map.encounterState?.effects ?? []).flatMap(effect => (
+          effect.kind === 'capability'
+          && effect.payload.capabilityId === 'equipment.restraint.netted'
+          && effect.tags.includes('equipment.weighted-net')
+          && effect.tags.includes(sourceTag)
+          && effect.suppression.sources.length === 0
+          && (effect.duration.remaining === null || effect.duration.remaining > 0)
+            ? effect.affected.placementIds : []
+        )))
+        if (grant.actionId === 'equipment.weighted-nets.throw') {
+          selectionOptions = input.map.placements.flatMap((candidate) => {
+            const participant = input.participants.get(candidate.id)
+            if (candidate.sheetKind !== 'pokemon' || candidate.id === input.placement.id || !participant) return []
+            const reasonCode = targetGeometryReason(candidate, 4, true)
+            const unavailableReason = reasonCode ? encounterAvailabilityReason(reasonCode) : null
+            return [{
+              kind: 'participant' as const,
+              requirementId: 'equipment-weighted-net-target',
+              value: candidate.id,
+              label: participant.displayName,
+              description: unavailableReason
+                ? `${unavailableReason.label}; requires 4 meters and line of sight`
+                : 'Pokémon within 4 meters and line of sight',
+              disabled: unavailableReason !== null,
+              unavailableReason,
+            }]
+          })
+          nativeAction = nativeAction && nettedTargetIds.size === 0
+            && selectionOptions.some(option => !option.disabled)
+          if (!nativeAction) {
+            nativeUnavailableCode = nettedTargetIds.size > 0
+              ? 'source.item-unavailable'
+              : selectionOptions.find(option => option.disabled)?.unavailableReason?.code ?? 'target.invalid'
+            nativeUnavailableDescription = nettedTargetIds.size > 0
+              ? 'This exact Weighted Net is already deployed.'
+              : selectionOptions.find(option => option.disabled)?.description
+                ?? 'No Pokémon is currently within 4 meters and line of sight.'
+          }
+        }
+        else {
+          selectionOptions = [...nettedTargetIds].flatMap((placementId) => {
+            const participant = input.participants.get(placementId)
+            return participant ? [{
+              kind: 'participant' as const,
+              requirementId: 'equipment-weighted-net-pull-target',
+              value: placementId,
+              label: participant.displayName,
+              description: 'Netted by this exact source',
+            }] : []
+          })
+          nativeAction = nativeAction && selectionOptions.length > 0
+          if (!nativeAction) {
+            nativeUnavailableCode = 'target.invalid'
+            nativeUnavailableDescription = 'This exact Weighted Net has no active netted target.'
+          }
+        }
+      }
+      if (grant.kind === 'action' && grant.actionId === 'equipment.snag-machine.convert') {
+        const trainer = input.placement.sheetKind === 'trainer' ? input.sheet as TrainerSheet : null
+        const choices = trainer ? snagBallInventoryChoices(trainer) : []
+        selectionOptions = choices.map(choice => ({
+          kind: 'object' as const,
+          requirementId: 'equipment-item',
+          value: choice.publicOptionId,
+          label: choice.option.name,
+          description: `${choice.availableUnconvertedUnits} unreserved unit${choice.availableUnconvertedUnits === 1 ? '' : 's'} available`,
+        }))
+        nativeAction = nativeAction && (selectionOptions?.length ?? 0) > 0
+        if (!nativeAction) {
+          nativeUnavailableCode = 'source.item-unavailable'
+          nativeUnavailableDescription = 'No unreserved reviewed Poké Ball unit is available.'
+        }
+      }
+      if (grant.kind === 'action' && (grant.actionId === 'equipment.fishing.old-rod'
+        || grant.actionId === 'equipment.fishing.good-rod'
+        || grant.actionId === 'equipment.fishing.super-rod')) {
+        const token = placementToSpawned(input.placement, {
+          pokemon: new Map(input.pokemonBySlug),
+          trainer: new Map(input.trainerBySlug),
+        }, input.map)
+        const footprint = token ? gridFootprintCells(input.placement.position, token) : []
+        const adjacentWater = input.map.voxels.filter(voxel => (
+          mapMovementTerrainTagsForVoxel(voxel).has('water')
+          && footprint.some(origin => ptuGridVectorDistance({
+            x: voxel.x - origin.x,
+            y: voxel.y - origin.y,
+            z: voxel.z - origin.z,
+          }) === 1)
+        )).sort((left, right) => left.x - right.x || left.y - right.y || left.z - right.z)
+        selectionOptions = adjacentWater.map(voxel => ({
+          kind: 'cell' as const,
+          requirementId: 'equipment-cell',
+          value: `cell:${voxel.x}:${voxel.y}:${voxel.z}`,
+          label: `Water cell ${voxel.x}, ${voxel.y}, ${voxel.z}`,
+          description: 'Adjacent authoritative water terrain',
+        }))
+        nativeAction = nativeAction && adjacentWater.length > 0
+        if (!nativeAction) {
+          nativeUnavailableCode = 'target.invalid'
+          nativeUnavailableDescription = 'No adjacent authoritative water cell is present.'
+        }
+      }
       if (grant.kind !== 'action' && !moveUnavailable && !profileUnavailable) continue
       const unavailableDiagnostic = grant.kind === 'move'
         ? grant.executionStatus === 'definition-missing'
@@ -959,9 +1298,77 @@ const equipmentGrantPresentation = (input: {
         ? `equipment.move:${grant.grantId}`
         : grant.kind === 'weapon-profile'
           ? `equipment.weapon:${grant.grantId}`
-          : `equipment.action:${grant.actionId}`
+          : grant.actionId
       const targeting = grant.kind === 'action'
-        ? equipmentGrantTargeting(grant.targetKind)
+        ? grant.actionId === 'equipment.shock-collar.activate'
+          ? [{
+              requirementId: 'equipment-shock-collar-target',
+              kind: 'participant' as const,
+              minSelections: 1,
+              maxSelections: 1,
+              rangeLabel: 'Paired remote',
+              relationshipLabel: 'Paired wearer',
+              requiresLineOfSight: false,
+              requiresSpatialInput: false,
+            }]
+          : grant.actionId === 'equipment.glue-cannon.attack'
+            ? [{
+                requirementId: 'equipment-participant',
+                kind: 'participant' as const,
+                minSelections: 1,
+                maxSelections: 1,
+                rangeLabel: 'Within 4 meters',
+                relationshipLabel: 'Participant',
+                requiresLineOfSight: true,
+                requiresSpatialInput: false,
+              }]
+            : grant.actionId === 'equipment.hand-net.attack'
+              ? [{
+                  requirementId: 'equipment-hand-net-target',
+                  kind: 'participant' as const,
+                  minSelections: 1,
+                  maxSelections: 1,
+                  rangeLabel: 'Melee, 1 meter',
+                  relationshipLabel: 'Small Pokémon',
+                  requiresLineOfSight: true,
+                  requiresSpatialInput: false,
+                }]
+              : grant.actionId === 'equipment.weighted-nets.throw'
+                ? [{
+                    requirementId: 'equipment-weighted-net-target',
+                    kind: 'participant' as const,
+                    minSelections: 1,
+                    maxSelections: 1,
+                    rangeLabel: 'Within 4 meters',
+                    relationshipLabel: 'Pokémon',
+                    requiresLineOfSight: true,
+                    requiresSpatialInput: false,
+                  }]
+                : grant.actionId === 'equipment.weighted-nets.pull'
+                  ? [{
+                      requirementId: 'equipment-weighted-net-pull-target',
+                      kind: 'participant' as const,
+                      minSelections: 1,
+                      maxSelections: 1,
+                      rangeLabel: '1 meter toward wielder',
+                      relationshipLabel: 'Netted by this source',
+                      requiresLineOfSight: false,
+                      requiresSpatialInput: false,
+                    }]
+                  : grant.actionId === 'equipment.fishing.old-rod'
+                    || grant.actionId === 'equipment.fishing.good-rod'
+                    || grant.actionId === 'equipment.fishing.super-rod'
+                    ? [{
+                        requirementId: 'equipment-cell',
+                        kind: 'cell' as const,
+                        minSelections: 1,
+                        maxSelections: 1,
+                        rangeLabel: 'Adjacent water cell',
+                        relationshipLabel: 'Water',
+                        requiresLineOfSight: false,
+                        requiresSpatialInput: true,
+                      }]
+                    : equipmentGrantTargeting(grant.targetKind)
         : equipmentGrantTargeting('participant')
       const timing = grant.kind === 'action'
         ? timingFromText(`${grant.timing} action`)
@@ -982,19 +1389,30 @@ const equipmentGrantPresentation = (input: {
         offerOrder: input.offerOrderBase + sourceIndex * 20 + grantIndex,
         timing,
         targeting,
-        availability: encounterUnavailable(encounterAvailabilityReason('action.unsupported', {
-          sources: [source],
-        })),
+        availability: nativeAction
+          ? encounterAvailable()
+          : encounterUnavailable(encounterAvailabilityReason(
+              nativeUnavailableCode ?? 'action.unsupported',
+              { sources: [source] },
+            )),
         copy: presentation(
           grant.kind === 'move' ? grant.canonicalId
             : grant.kind === 'weapon-profile' ? `Use ${canonicalItemId} as a weapon` : grant.label,
           {
-          description: unavailableDiagnostic,
+          description: nativeAction
+            ? grant.kind === 'action'
+              ? equipmentActionPresentationsForItem(canonicalItemId)
+                  .find(action => action.actionId === grant.actionId)?.summary
+                ?? `Authoritative ${timing.label.toLowerCase()} from exact equipped custody.`
+              : `Authoritative ${timing.label.toLowerCase()} from exact equipped custody.`
+            : nativeUnavailableDescription ?? unavailableDiagnostic,
           iconKey: 'source.item',
-            tone: 'warning',
+          tone: nativeAction ? 'neutral' : 'warning',
           },
         ),
         actionId,
+        selectionOptions,
+        sourceContextLabel: grant.kind === 'action' ? `${canonicalItemId} · equipped custody` : null,
       })
       offers.push(offer)
       if (grant.kind === 'action' && grant.interactionRole === 'contextual-affordance') {
@@ -1018,6 +1436,153 @@ const equipmentGrantPresentation = (input: {
   }
   return { offers, passives, affordances }
 }
+
+const equipmentRestraintPassives = (input: {
+  readonly map: TabletopMap
+  readonly participants: ReadonlyMap<string, EncounterParticipantPresentationRef>
+}): readonly EncounterPassiveSummary[] => Object.freeze((input.map.encounterState?.effects ?? []).flatMap((effect, index): EncounterPassiveSummary[] => {
+  if (effect.kind !== 'capability'
+    || effect.payload.capabilityId !== 'equipment.restraint.netted'
+    || !effect.tags.includes('netted')
+    || effect.suppression.sources.length > 0
+    || (effect.duration.remaining !== null && effect.duration.remaining <= 0)) return []
+  const targetId = effect.affected.placementIds[0]
+  const participant = targetId ? input.participants.get(targetId) : null
+  const hand = effect.tags.includes('equipment.hand-net')
+  const weighted = effect.tags.includes('equipment.weighted-net')
+  if (!participant || (!hand && !weighted)) return []
+  const canonicalId = hand ? 'Hand Net' : 'Weighted Nets'
+  const projectedSourceId = encounterPresentationStableId(
+    'equipment-restraint', input.map.slug, targetId!, canonicalId, String(index),
+  )
+  const source = sourceRef({ kind: 'item', canonicalId, displayName: canonicalId, instanceId: projectedSourceId })
+  const facts: EncounterPassiveFact[] = [{
+    factId: encounterPresentationStableId('fact', projectedSourceId, 'netted'),
+    factKey: 'equipment-restraint.netted',
+    value: booleanFact(true),
+    label: 'Netted',
+  }, {
+    factId: encounterPresentationStableId('fact', projectedSourceId, 'capture'),
+    factKey: 'equipment-restraint.capture-modifier',
+    value: numberFact(-20, 'capture roll'),
+    label: 'Capture rolls −20',
+  }, ...(hand ? [{
+    factId: encounterPresentationStableId('fact', projectedSourceId, 'trapped'),
+    factKey: 'equipment-restraint.trapped',
+    value: booleanFact(true),
+    label: 'Trapped; moves with the net wielder',
+  }] : [{
+    factId: encounterPresentationStableId('fact', projectedSourceId, 'slowed'),
+    factKey: 'equipment-restraint.slowed',
+    value: booleanFact(true),
+    label: 'Slowed',
+  }, {
+    factId: encounterPresentationStableId('fact', projectedSourceId, 'airborne'),
+    factKey: 'equipment-restraint.airborne-suppressed',
+    value: booleanFact(true),
+    label: 'Sky and Levitate suppressed',
+  }])]
+  return [passiveSummary({
+    map: input.map,
+    participant,
+    source,
+    facts,
+    description: hand
+      ? 'Attack the net and record damage against its configured durability to break free; source release, breakage, or removal clears the full restraint.'
+      : 'Attack the net and record damage against its configured durability to break free; source release, breakage, or removal clears Slowed, movement suppression, and the capture modifier together.',
+  })]
+}))
+
+const shockCollarImplicitRemoteOffers = (input: {
+  readonly map: TabletopMap
+  readonly mapRevision: number
+  readonly controlledIds: ReadonlySet<string>
+  readonly participants: ReadonlyMap<string, EncounterParticipantPresentationRef>
+  readonly pokemonBySlug: ReadonlyMap<string, CharacterSheet>
+  readonly trainerBySlug: ReadonlyMap<string, TrainerSheet>
+  readonly grantsForPlacement: (placementId: string) => ResolveEquipmentGrantsResult | null
+}): readonly EncounterActionOffer[] => Object.freeze(input.map.placements.flatMap((target, index): EncounterActionOffer[] => {
+  const targetSheet = target.sheetKind === 'pokemon'
+    ? input.pokemonBySlug.get(target.sheetSlug)
+    : input.trainerBySlug.get(target.sheetSlug)
+  if (!targetSheet) return []
+  const collarSource = input.grantsForPlacement(target.id)?.active.find(entry => (
+    entry.canonicalItemId === 'Shock Collar'
+    && entry.grant.kind === 'action'
+    && entry.grant.actionId === 'equipment.shock-collar.activate'
+    && entry.grant.executionStatus === 'native'
+  ))
+  if (!collarSource) return []
+  const authority = shockCollarImplicitRemoteAuthority({
+    placement: target,
+    sheet: targetSheet,
+    collarSource,
+  })
+  if (!authority) return []
+  const actorPlacement = input.map.placements.find(placement => (
+    placement.sheetKind === 'trainer'
+    && placement.sheetSlug === authority.holderTrainerSlug
+    && input.controlledIds.has(placement.id)
+  ))
+  const actor = actorPlacement ? input.participants.get(actorPlacement.id) : null
+  const wearer = input.participants.get(target.id)
+  if (!actorPlacement || !actor || !wearer) return []
+  const token = placementToSpawned(target, {
+    pokemon: new Map(input.pokemonBySlug),
+    trainer: new Map(input.trainerBySlug),
+  }, input.map)
+  const groundBlocked = token?.creatureRules?.typeIds.includes('ground') === true
+    && !authority.groundCapable
+  const projectedSourceId = encounterPresentationStableId(
+    'equipment-shock-collar-set', input.map.slug, actorPlacement.id, target.id, String(index),
+  )
+  const source = sourceRef({
+    kind: 'item', canonicalId: 'Shock Collar', displayName: 'Shock Collar', instanceId: projectedSourceId,
+  })
+  return [makeOffer({
+    map: input.map,
+    mapRevision: input.mapRevision,
+    actor,
+    source,
+    roles: ['activated-action', 'choice-only'],
+    group: 'support',
+    groupOrder: 42,
+    offerOrder: 1_720 + index,
+    timing: timingFromText('standard action'),
+    targeting: [{
+      requirementId: 'equipment-shock-collar-target',
+      kind: 'participant',
+      minSelections: 1,
+      maxSelections: 1,
+      rangeLabel: 'Paired remote',
+      relationshipLabel: 'Paired wearer',
+      requiresLineOfSight: false,
+      requiresSpatialInput: false,
+    }],
+    availability: groundBlocked
+      ? encounterUnavailable(encounterAvailabilityReason('target.invalid', { sources: [source] }))
+      : encounterAvailable(),
+    copy: presentation('Activate Shock Collar', {
+      description: groundBlocked
+        ? 'This Ground-type wearer requires the Ground-capable collar variant.'
+        : 'Authoritative Standard Action from exact paired remote custody.',
+      iconKey: 'source.item',
+      tone: groundBlocked ? 'warning' : 'neutral',
+    }),
+    actionId: 'equipment.shock-collar.activate',
+    offerId: encounterPresentationStableId(
+      'offer', input.map.slug, String(input.mapRevision), actorPlacement.id, target.id,
+      'equipment.shock-collar.activate',
+    ),
+    selectionOptions: [{
+      kind: 'participant',
+      requirementId: 'equipment-shock-collar-target',
+      value: target.id,
+      label: wearer.displayName,
+      description: 'Paired wearer',
+    }],
+  })]
+}))
 
 const capabilityPresentation = (input: {
   readonly map: TabletopMap
@@ -1062,7 +1627,9 @@ const capabilityPresentation = (input: {
         contributions: fact.sources.slice(0, 16).map((contribution, contributionIndex) => ({
           contributionId: encounterPresentationStableId('contribution', input.participant.participantId, fact.instanceId, String(contributionIndex)),
           order: contributionIndex,
-          kind: contributionIndex === 0 ? 'base' as const : 'add' as const,
+          kind: fact.active
+            ? contributionIndex === 0 ? 'base' as const : 'add' as const
+            : 'prevent' as const,
           source,
           label: contribution.label,
           value: contribution.value === null ? booleanFact(true) : numberFact(contribution.value),
@@ -1296,6 +1863,60 @@ const inventoryEntries = (sheet: TrainerSheet): InventoryEntry[] => Object.value
   .flatMap(entries => entries ?? [])
   .filter(entry => entry.name.trim().length > 0 && (entry.qty ?? 1) > 0)
 
+const largeSnagMachineOffers = (input: {
+  readonly map: TabletopMap
+  readonly mapRevision: number
+  readonly actor: EncounterParticipantPresentationRef
+  readonly trainerSheet: TrainerSheet
+  readonly offerBase: number
+}): EncounterActionOffer[] => {
+  const choices = snagBallInventoryChoices(input.trainerSheet)
+  return largeSnagMachineInventorySources(input.trainerSheet).map((machine, index) => {
+    const source = sourceRef({
+      kind: 'item',
+      canonicalId: 'Snag Machine',
+      displayName: 'Large Snag Machine',
+      instanceId: machine.publicSourceId,
+    })
+    return makeOffer({
+      map: input.map,
+      mapRevision: input.mapRevision,
+      actor: input.actor,
+      source,
+      roles: ['activated-action', 'choice-only', 'contextual-affordance'],
+      group: 'inventory',
+      groupOrder: 42,
+      offerOrder: input.offerBase + index,
+      timing: { kind: 'system', label: 'Large-machine conversion', triggerLabel: null, priority: null },
+      targeting: equipmentGrantTargeting('item'),
+      usage: emptyUsage('5 conversions per campaign day per machine'),
+      availability: choices.length > 0
+        ? encounterAvailable()
+        : encounterUnavailable(encounterAvailabilityReason('source.item-unavailable', { sources: [source] })),
+      copy: presentation('Prepare permanent Snag Ball', {
+        description: choices.length > 0
+          ? 'Choose one reviewed Poké Ball for GM-bounded permanent conversion.'
+          : 'No unreserved reviewed Poké Ball unit is available.',
+        iconKey: 'source.item',
+        tone: choices.length > 0 ? 'neutral' : 'warning',
+      }),
+      actionId: 'equipment.snag-machine.convert',
+      offerId: encounterPresentationStableId(
+        'offer', input.map.slug, String(input.mapRevision), input.actor.participantId,
+        machine.publicSourceId, 'equipment.snag-machine.convert',
+      ),
+      sourceContextLabel: 'Large Snag Machine · Trainer inventory custody',
+      selectionOptions: choices.map(choice => ({
+        kind: 'object',
+        requirementId: 'equipment-item',
+        value: choice.publicOptionId,
+        label: choice.option.name,
+        description: `${choice.availableUnconvertedUnits} unreserved unit${choice.availableUnconvertedUnits === 1 ? '' : 's'} available`,
+      })),
+    })
+  })
+}
+
 const systemOffers = (input: {
   readonly map: TabletopMap
   readonly mapRevision: number
@@ -1466,6 +2087,16 @@ export const buildEncounterPresentationProjection = (
   const offers: EncounterActionOffer[] = [...ability.offers]
   const passives: EncounterPassiveSummary[] = [...ability.passives]
   const affordances: EncounterContextualAffordance[] = []
+  passives.push(...equipmentRestraintPassives({ map: input.map, participants }))
+  offers.push(...shockCollarImplicitRemoteOffers({
+    map: input.map,
+    mapRevision: input.mapRevision,
+    controlledIds,
+    participants,
+    pokemonBySlug,
+    trainerBySlug,
+    grantsForPlacement: placementId => equipmentGrantQueries.resolve(placementId),
+  }))
   // An accepted form is public encounter mechanics even when the transformed
   // participant has no current action offer. Project only reviewed effective
   // data; immutable source instances, revisions, hashes, and operation identity
@@ -1541,6 +2172,12 @@ export const buildEncounterPresentationProjection = (
         map: input.map,
         mapRevision: input.mapRevision,
         participant: actor,
+        placement,
+        sheet,
+        participants,
+        pokemonBySlug,
+        trainerBySlug,
+        grantsForPlacement: placementId => equipmentGrantQueries.resolve(placementId),
         resolved: resolvedEquipmentGrants,
         offerOrderBase: offerBase + 70,
       })
@@ -1608,6 +2245,13 @@ export const buildEncounterPresentationProjection = (
       })
       offers.push(...itemProjection.offers)
       affordances.push(...itemProjection.affordances)
+      offers.push(...largeSnagMachineOffers({
+        map: input.map,
+        mapRevision: input.mapRevision,
+        actor,
+        trainerSheet,
+        offerBase: offerBase + 75,
+      }))
     }
     offers.push(...systemOffers({
       map: input.map,

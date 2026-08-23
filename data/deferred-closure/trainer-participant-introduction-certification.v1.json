@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-introductions-v1",
+  "ticket": "P11-056",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-method-certification.v1.json",
+    "sha256": "5a20cca82cef1d6955ed38352bb91015367592f8e104b8129fb67c41a0025b94"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e",
+    "rowId": "trainer-participant",
+    "baseIntroductionAuthority": "ptu-core-contests-v1",
+    "introductionSkillIds": ["charm", "command", "guile", "intimidate", "intuition"]
+  },
+  "authorities": [
+    {
+      "id": "trainer-introduction-document-authority",
+      "path": "shared/contests/document.ts",
+      "sha256": "168aff2bdf9c6c15079558672cdd5844f443aac67795a7f707c7b8125a3566ba",
+      "guarantees": [
+        "one-entry-level-introduction-not-parallel-rolls",
+        "exact-enrolled-trainer-performer-actor",
+        "ordinary-entry-null-actor-compatibility",
+        "legacy-participant-actor-backfill-from-exact-performer",
+        "participant-introduction-stage-admitted",
+        "participant-performance-stage-still-refused",
+        "journal-contribution-and-letter-cross-validation",
+        "trainer-parallel-dice-pools-remain-empty"
+      ]
+    },
+    {
+      "id": "server-contest-dice-journal",
+      "path": "shared/contests/dice.ts",
+      "sha256": "9e5265cbc38fe7ae782bff5dd45cfe1a9bdaf9446209eb78d89ea4772032c3e3",
+      "guarantees": [
+        "server-owned-d6-results",
+        "operation-purpose-contestant-and-round-binding",
+        "bounded-result-count",
+        "immutable-journal-identities",
+        "no-client-dice-input"
+      ]
+    },
+    {
+      "id": "trainer-introduction-engine",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "608dfd7872789f8c5facdf38e0438bb8f04631800d716310624a6f725f2b1e37",
+      "guarantees": [
+        "method-required-before-introduction",
+        "base-contest-count-and-rotation-lineup-validation",
+        "existing-skill-and-bonus-roll-assembly",
+        "exact-trainer-performer-on-accepted-state",
+        "nonrotation-generated-dice-to-paired-pokemon-only",
+        "rotation-generated-dice-to-team-pool-only",
+        "deterministic-letter-and-tie-authority",
+        "restart-removes-generated-dice-and-retains-journals",
+        "start-performance-no-write-quarantine"
+      ]
+    },
+    {
+      "id": "ordinary-sheet-skill-and-controller-use-case",
+      "path": "server/useCases/contests.ts",
+      "sha256": "adb3d268bf623ec938dfb7729c201bb0707fe92b9046823c01872dd596d3b362",
+      "guarantees": [
+        "enrollment-time-existing-trainer-skill-snapshot",
+        "existing-gm-or-profile-controller-authorization",
+        "server-built-introduction-execution-context",
+        "transactional-document-journal-operation-and-realtime-write",
+        "exact-retry-before-randomness",
+        "stale-revision-before-randomness"
+      ]
+    },
+    {
+      "id": "role-safe-introduction-projections",
+      "path": "shared/contests/projections.ts",
+      "sha256": "4d36abf1601ad8b9d42acfd54c5eb6bda0e39f51d2c51af937d77e3bfe60297f",
+      "guarantees": [
+        "public-stage-letter-and-generic-history-parity",
+        "public-performer-id-roll-skill-and-pool-absence",
+        "gm-complete-introduction-authority",
+        "exact-owner-own-introduction-authority",
+        "other-owner-evidence-exclusion"
+      ]
+    },
+    {
+      "id": "contest-cas-and-operation-recovery",
+      "path": "server/storage/contestRepository.ts",
+      "sha256": "bd0d3747a32cc3e453f0cd9e3ddd6c25efcb45b4458e1da5dd908eac83be488b",
+      "guarantees": [
+        "plus-one-revision-cas",
+        "canonical-command-hash-replay",
+        "changed-input-operation-conflict",
+        "document-journal-and-operation-atomicity",
+        "strict-corrupt-row-refusal"
+      ]
+    },
+    {
+      "id": "trainer-introduction-operator-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "16f211f522af85773b2725fd725d52eee598e43367a542c2f61b43004c39dc6e",
+      "guarantees": [
+        "documented-one-entry-introduction-boundary",
+        "documented-shared-pool-allocation",
+        "documented-letter-role-and-restart-parity",
+        "documented-legacy-actor-recovery",
+        "documented-p11-057-performance-handoff"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/shared/contestTrainerParticipantIntroductions.test.ts",
+      "sha256": "e90e40cb84bfdd156250c4d414ba44a4356e9c11d70b65aa7f2d7e0dc85a29ba",
+      "scenarioIds": [
+        "exact-trainer-actor-and-enrollment-skill-dice",
+        "server-introduction-and-bonus-journals",
+        "standard-paired-pokemon-pool-only-allocation",
+        "rotation-team-pool-only-allocation",
+        "deterministic-unique-letter-assignment",
+        "public-gm-and-exact-owner-projection-parity",
+        "restart-contribution-removal-and-journal-retention",
+        "forged-actor-and-start-performance-refusal"
+      ]
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantIntroductionsRuntime.test.ts",
+      "sha256": "dfc9f1cbe63e28e9b873c61eaeab3a689ad4dbfb99a72ac9faee69694236d10e",
+      "scenarioIds": [
+        "sqlite-create-enroll-and-introduction-stage",
+        "persisted-trainer-actor-roll-contribution-and-letters",
+        "exact-retry-zero-rerolls-and-no-duplicate-evidence",
+        "changed-input-and-stale-revision-zero-rerolls-or-operations",
+        "public-private-projection-boundary",
+        "performance-gate-zero-write"
+      ]
+    }
+  ],
+  "acceptance": {
+    "introductionsPerEntry": 1,
+    "participantIntroductionActorKind": "trainer",
+    "canonicalSkillCount": 5,
+    "clientAuthoredDiceAccepted": false,
+    "serverJournaledRolls": true,
+    "ordinaryBaseIntroductionPipelineReused": true,
+    "nonRotationTrainerPoolWrites": 0,
+    "nonRotationPokemonSharedPoolWrites": 1,
+    "rotationPerformerPoolWrites": 0,
+    "rotationTeamPoolWrites": 1,
+    "lettersAssignedByExistingAuthority": true,
+    "publicExactActorOrRollEvidence": false,
+    "ownerOtherEntryEvidence": false,
+    "restartRetainsSupersededJournals": true,
+    "duplicateRollsOnExactRetry": 0,
+    "staleRevisionRolls": 0,
+    "trainerParticipantPerformanceEnabled": false,
+    "nextTicket": "P11-057"
+  }
+}

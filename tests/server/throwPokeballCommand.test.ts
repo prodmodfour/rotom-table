@@ -3,6 +3,7 @@ import { LIVE_PLAY_COMMAND_TYPES, type ThrowPokeballLivePlayCommand } from '#sha
 import { createEmptyCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
 import { createEmptyCapabilityCampaignState } from '#shared/capabilityAutomation/campaignState'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { addSnagBallConversion, initialSnagMachineState, parseSnagMachineState } from '#shared/itemAutomation/snagMachine'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
@@ -846,6 +847,88 @@ describe('throwPokeball live-play command', () => {
     expect(env.sheets.getByRef('pokemon', 'pidgey')?.revision).toBe(0)
     expect(env.ops.getStoredOpRecord('arena', 'op_capture001')).toBeNull()
     expect(env.published).toEqual([])
+  })
+
+  it('uses one exact Snag Ball to capture an owned Pokémon with the original Ball properties, −2 attack penalty, atomic transfer, and exact replay', async () => {
+    const ballSourceInstanceId = 'item-instance:trainer:ash:pokeBalls:basic-ball-row'
+    const snagMachine = addSnagBallConversion({
+      state: initialSnagMachineState(),
+      conversion: {
+        conversionId: `snag-conversion:v1:${'a'.repeat(32)}`,
+        variant: 'large',
+        machineSourceInstanceId: 'item-instance:trainer:ash:equipment:large-snag-machine',
+        ballSourceInstanceId,
+        ballCanonicalItemId: 'Basic Ball',
+        campaignDayIndex: 0,
+        declarationRound: null,
+        readyRound: null,
+        expiresAfterRound: null,
+        approvedOperationId: 'item-guided-operation:v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        gmLegalityNote: 'Private ownership-transfer adjudication evidence',
+      },
+      historyId: `snag-history:v1:${'b'.repeat(32)}`,
+    })
+    const formerOwner = trainerSheet({
+      slug: 'gary', name: 'Gary', currentTeam: ['pidgey'], boxedPokemon: [],
+      inventory: {}, revision: 0,
+    })
+    const env = setup({
+      trainer: trainerSheet({ serverPrivate: { snagMachine } }),
+      extraTrainer: formerOwner,
+    })
+    const command = buildThrowPokeballCommandEnvelope({
+      opId: 'op_snagcapture1',
+      mapSlug: env.map.slug,
+      baseRevision: env.map.revision ?? 0,
+      trainerPlacement: env.map.placements[0]!,
+      targetPlacement: env.map.placements[1]!,
+      pokeball: {
+        sourceInstanceId: ballSourceInstanceId,
+        source: {
+          kind: 'trainer', slug: 'ash', section: 'pokeBalls',
+          rowId: 'basic-ball-row', expectedRevision: 0,
+        },
+      },
+    })
+    const random = vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0)
+
+    const first = await execute({ ...env, command, random })
+    const second = await execute({ ...env, command, random })
+
+    expect(first.result).toEqual(second.result)
+    expect(first.capture).toEqual(second.capture)
+    expect(first.capture).toMatchObject({
+      pokeballName: 'Basic Ball',
+      result: {
+        snagBall: true,
+        hit: true,
+        success: true,
+        accuracyRoll: 20,
+        userAccuracy: -2,
+      },
+    })
+    expect(JSON.stringify(first.capture)).not.toContain('snag-conversion:v1')
+    expect(JSON.stringify(first.capture)).not.toContain('Private ownership-transfer')
+    expect(random).toHaveBeenCalledTimes(2)
+    expect(env.maps.getBySlug('arena')?.metadata?.captureLog).toMatchObject([{
+      pokeballName: 'Snag Basic Ball', success: true, hit: true,
+    }])
+    const ash = env.sheets.getByRef('trainer', 'ash')!
+    expect(ash.sheet.currentTeam).toEqual(['pidgey'])
+    expect(ash.sheet.inventory).toMatchObject({ pokeBalls: [{ name: 'Basic Ball', qty: 1, mod: '0' }] })
+    expect(parseSnagMachineState((ash.sheet as unknown as TrainerSheet).serverPrivate?.snagMachine)).toMatchObject({
+      conversions: [],
+      history: [
+        { kind: 'converted' },
+        { kind: 'thrown', operationId: 'op_snagcapture1' },
+      ],
+    })
+    expect(env.sheets.getByRef('trainer', 'gary')).toMatchObject({
+      revision: 1,
+      sheet: { currentTeam: [], boxedPokemon: [] },
+    })
+    expect(env.sheets.getByRef('pokemon', 'pidgey')?.sheet.caughtBall).toBe('Basic Ball')
+    expect(env.maps.getBySlug('arena')?.placements.map(placement => placement.sheetSlug)).not.toContain('pidgey')
   })
 
   it('returns the stored capture result for duplicate opIds without rerolling, re-consuming, or advancing revisions', async () => {

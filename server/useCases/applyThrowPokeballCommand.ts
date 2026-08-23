@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -24,6 +25,10 @@ import {
   itemInventoryInstanceId,
   type ItemInventorySection,
 } from '#shared/itemAutomation/inventory'
+import {
+  resolveSnagBallForThrow,
+  SNAG_BALL_ATTACK_ROLL_PENALTY,
+} from '#shared/itemAutomation/snagMachine'
 import {
   appendPokeballCaptureLogEntry,
   applyPokeballCaptureOutcomeToPokemonSheet,
@@ -145,11 +150,16 @@ interface ResolvedThrowPokeballCommandContext {
   readonly consultedSheetRevisions: readonly { readonly kind: SheetKind; readonly slug: string; readonly revision: number }[]
   readonly consultedSheetDirectoryKeys: readonly string[]
   readonly linkedTrainerSheets: readonly ServerTokenControlLinkedTrainerSheet[]
+  readonly targetOwnerSheets: readonly PersistedSheet[]
   readonly userToken: SpawnedPokemon
   readonly targetToken: SpawnedPokemon
   readonly nextMap?: TabletopMap
   readonly nextTrainerSheet?: Record<string, unknown>
   readonly nextTargetSheet?: Record<string, unknown>
+  readonly nextTargetOwnerSheets?: readonly {
+    readonly previous: PersistedSheet
+    readonly current: Record<string, unknown>
+  }[]
   readonly sheetUpdates?: readonly LivePlayPokeballCommandSheetUpdate[]
   readonly capture?: PokeballCaptureOutcomeEvent
   readonly captureLogEntry?: PokeballCaptureLogEntry
@@ -352,8 +362,10 @@ const assertThrowPokeballScopesMatchContext = (
 
     if (scope.kind === 'sheet') {
       const trainerSheetScope = scope.sheetKind === 'trainer'
-        && scope.sheetSlug === context.trainerPlacement.sheetSlug
-        && (scope.field === TRAINER_INVENTORY_SHEET_FIELD || scope.field === TRAINER_ROSTER_SHEET_FIELD)
+        && ((scope.sheetSlug === context.trainerPlacement.sheetSlug
+          && (scope.field === TRAINER_INVENTORY_SHEET_FIELD || scope.field === TRAINER_ROSTER_SHEET_FIELD))
+          || (scope.field === TRAINER_ROSTER_SHEET_FIELD
+            && context.targetOwnerSheets.some(owner => owner.slug === scope.sheetSlug)))
       const targetSheetScope = scope.sheetKind === 'pokemon'
         && scope.sheetSlug === context.targetPlacement.sheetSlug
         && scope.field === TARGET_CAUGHT_BALL_SHEET_FIELD
@@ -418,6 +430,19 @@ const resolveContext = async (
   const allTrainerStored = await dependencies.sheetRepository.list('trainer') as readonly StoredSheetDocument<Record<string, unknown>>[]
   const allPokemonStored = await dependencies.sheetRepository.list('pokemon') as readonly StoredSheetDocument<Record<string, unknown>>[]
   const allTrainerSheets = storedTrainerSheets(allTrainerStored)
+  const targetOwnerSlugs = new Set(allTrainerSheets.filter(trainer => (
+    [...(trainer.currentTeam ?? []), ...(trainer.boxedPokemon ?? [])]
+      .some(slug => slug.trim() === targetPlacement.sheetSlug)
+  )).map(trainer => trainer.slug))
+  const targetOwnerSheets: PersistedSheet[] = allTrainerStored
+    .filter(stored => targetOwnerSlugs.has(stored.slug))
+    .map(stored => ({
+      kind: stored.kind,
+      slug: stored.slug,
+      sheet: stored.document,
+      revision: stored.revision,
+      updatedAt: stored.updatedAt,
+    }))
   const trainerBySlug = storedTrainerSheetMap(allTrainerStored)
   const pokemonBySlug = storedPokemonSheetMap(allPokemonStored)
   const storedByKey = new Map([...allTrainerStored, ...allPokemonStored]
@@ -468,6 +493,7 @@ const resolveContext = async (
     consultedSheetRevisions,
     consultedSheetDirectoryKeys: [...storedByKey.keys()].sort(),
     linkedTrainerSheets: await linkedTrainerSheetsForActor(actor, dependencies),
+    targetOwnerSheets,
     userToken,
     targetToken,
   }
@@ -505,15 +531,9 @@ const optionForPayload = (
   return option
 }
 
-const validateTargetIsUnlinked = (
+const captureLinkedPokemonSlugs = (
   context: ResolvedThrowPokeballCommandContext,
-): ReadonlySet<string> => {
-  const linkedSlugs = linkedPokemonSlugSet(context.allTrainerSheets)
-  if (linkedSlugs.has(context.targetPlacement.sheetSlug)) {
-    rejectLivePlayCommand('conflict', `Target Pokémon ${context.targetPlacement.sheetSlug} is already linked to a trainer roster`)
-  }
-  return linkedSlugs
-}
+): ReadonlySet<string> => linkedPokemonSlugSet(context.allTrainerSheets)
 
 interface MarsupialCapturePair {
   readonly motherPlacementId: string
@@ -639,16 +659,20 @@ const rejectProtectedMarsupialBabyCapture = (context: ResolvedThrowPokeballComma
 const validateTargetIsInRange = (
   context: ResolvedThrowPokeballCommandContext,
   linkedSlugs: ReadonlySet<string>,
+  allowOwnedTarget = false,
 ): void => {
   const rangeMeters = trainerThrowingRangeMeters(persistedSheetToTrainerSheet(context.trainerSheet))
   const tokens = context.map.placements
     .map((placement) => placementToSpawned(placement, context.sheetLookup, context.map))
     .filter((token): token is SpawnedPokemon => token !== null)
+  const effectiveLinkedSlugs = allowOwnedTarget
+    ? new Set([...linkedSlugs].filter(slug => slug !== context.targetPlacement.sheetSlug))
+    : linkedSlugs
   const targets = unlinkedPokemonTargetsInPokeballRange({
     user: context.userToken,
     tokens,
     rangeMeters,
-    linkedSlugs,
+    linkedSlugs: effectiveLinkedSlugs,
   })
   if (!targets.some((target) => target.id === context.targetToken.id)) {
     rejectLivePlayCommand('conflict', `Target Pokémon ${context.targetPlacement.id} is outside ${rangeMeters}m Poké Ball throwing range`)
@@ -773,6 +797,32 @@ const trainerSheetPatch = (
   },
 })
 
+const formerOwnerRosterPatch = (
+  command: ThrowPokeballLivePlayCommand,
+  revision: number,
+  context: ResolvedThrowPokeballCommandContext,
+  owner: { readonly previous: PersistedSheet, readonly current: Record<string, unknown> },
+): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.SHEET_FIELD, Record<string, unknown>, LivePlaySheetScope> => ({
+  schemaVersion: command.schemaVersion,
+  type: LIVE_PLAY_PATCH_TYPES.SHEET_FIELD,
+  mapSlug: command.mapSlug,
+  revision,
+  scopes: [{
+    kind: 'sheet', sheetKind: 'trainer', sheetSlug: owner.previous.slug, field: TRAINER_ROSTER_SHEET_FIELD,
+  }],
+  payload: {
+    command: LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
+    placementId: context.targetPlacement.id,
+    sheetKind: 'trainer',
+    sheetSlug: owner.previous.slug,
+    field: TRAINER_ROSTER_SHEET_FIELD,
+    previous: trainerPatchState(persistedSheetToTrainerSheet(owner.previous)),
+    current: trainerPatchState(owner.current as unknown as TrainerSheet),
+    sheetRevision: nextRevision(owner.previous.revision),
+    transfer: 'snag-ball-capture',
+  },
+})
+
 const targetSheetPatch = (
   command: ThrowPokeballLivePlayCommand,
   revision: number,
@@ -840,6 +890,9 @@ const patchesForAcceptedThrow = (
       nextContext.captureLogEntry,
     ),
     trainerSheetPatch(command, revision, previousContext, beforeTrainerSheet, afterTrainerSheet, trainerApplyResult),
+    ...(nextContext.nextTargetOwnerSheets ?? []).map(owner => (
+      formerOwnerRosterPatch(command, revision, previousContext, owner)
+    )),
     ...(afterTargetSheet ? [targetSheetPatch(command, revision, previousContext, beforeTargetSheet, afterTargetSheet)] : []),
     ...(capture.result.success ? [placementDeletedPatch(command, revision, previousContext, capture)] : []),
   ]
@@ -904,16 +957,45 @@ const applyThrowPokeballCommand = (
     rejectLivePlayCommand('invalid', 'Staggering Weight prevents the Trainer from taking the Standard Action required to throw a Poké Ball.')
   }
   const pokeball = optionForPayload(trainerSheet, payload)
+  const snagState = trainerSheet.serverPrivate?.snagMachine
+  const snagResolution = resolveSnagBallForThrow({
+    state: snagState ? snagState : { schemaVersion: 1, revision: 0, conversions: [], history: [] },
+    ballSourceInstanceId: pokeball.sourceInstanceId,
+    currentRound: context.map.initiative?.round ?? null,
+    operationId: command.opId,
+    historyIdFor: conversionId => `snag-history:v1:${createHash('sha256')
+      .update(`throw\u0000${command.opId}\u0000${conversionId}`).digest('hex').slice(0, 32)}`,
+  })
+  if (snagResolution.kind === 'blocked') {
+    rejectLivePlayCommand('conflict', 'The exact Portable Snag Ball is still inside its one-round conversion delay.')
+  }
+  const snagConversion = snagResolution.kind === 'snag-ball' ? snagResolution.conversion : null
+  if (snagConversion && snagConversion.ballCanonicalItemId !== pokeball.name) {
+    rejectLivePlayCommand('conflict', 'The converted Snag Ball lost its original reviewed Poké Ball identity.')
+  }
+  if (context.targetOwnerSheets.length > 1) {
+    rejectLivePlayCommand('conflict', 'The target Pokémon has ambiguous Trainer ownership and cannot be captured.')
+  }
+  const targetOwner = context.targetOwnerSheets[0] ?? null
+  if (targetOwner?.slug === trainerSheet.slug) {
+    rejectLivePlayCommand('conflict', 'A Trainer cannot use a Snag Ball to recapture their own Pokémon.')
+  }
+  if (targetOwner && !snagConversion) {
+    rejectLivePlayCommand('conflict', `Target Pokémon ${context.targetPlacement.sheetSlug} is already linked to a Trainer roster`)
+  }
   rejectCombinedParticipantCapture(context)
   rejectProtectedMarsupialBabyCapture(context)
-  const linkedSlugs = validateTargetIsUnlinked(context)
+  const linkedSlugs = captureLinkedPokemonSlugs(context)
   const prospectiveMarsupialPair = marsupialCapturePairForMother(context)
   const prospectiveCompanions = capabilityCaptureCompanions(context, prospectiveMarsupialPair)
+  if (targetOwner && prospectiveCompanions.length > 0) {
+    rejectLivePlayCommand('conflict', 'Owned linked-capability groups cannot be stolen through a partial Snag Ball capture.')
+  }
   const alreadyLinkedCompanion = prospectiveCompanions.find(companion => linkedSlugs.has(companion.sheetSlug))
   if (alreadyLinkedCompanion) {
     rejectLivePlayCommand('conflict', `The ${alreadyLinkedCompanion.kind} companion ${alreadyLinkedCompanion.sheetSlug} is already linked to a Trainer roster`)
   }
-  validateTargetIsInRange(context, linkedSlugs)
+  validateTargetIsInRange(context, linkedSlugs, targetOwner !== null)
 
   const capture = resolvePokeballCaptureAttempt({
     trainer: trainerSheet,
@@ -926,6 +1008,8 @@ const applyThrowPokeballCommand = (
     map: context.map,
     random: dependencies.random,
     now: dependencies.now,
+    attackRollModifier: snagConversion ? SNAG_BALL_ATTACK_ROLL_PENALTY : 0,
+    snagBall: snagConversion !== null,
   })
   const event: PokeballCaptureOutcomeEvent = {
     trainerId: context.trainerPlacement.id,
@@ -936,6 +1020,12 @@ const applyThrowPokeballCommand = (
   }
 
   const nextTrainer = deepCloneJson(trainerSheet) as TrainerSheet
+  if (snagState || snagResolution.state.revision > 0) {
+    nextTrainer.serverPrivate = {
+      ...(nextTrainer.serverPrivate ?? {}),
+      snagMachine: snagResolution.state,
+    }
+  }
   const trainerApplyResult = applyPokeballCaptureOutcomeToTrainerSheet(nextTrainer, event, pokeball)
   const marsupialPair = event.result.success ? prospectiveMarsupialPair : null
   const captureCompanions = event.result.success ? prospectiveCompanions : []
@@ -957,6 +1047,19 @@ const applyThrowPokeballCommand = (
   if (nextTarget) applyPokeballCaptureOutcomeToPokemonSheet(nextTarget, event)
 
   const timestamp = dependencies.now()
+  const nextTargetOwnerSheets = event.result.success && targetOwner ? (() => {
+    const owner = persistedSheetToTrainerSheet(targetOwner)
+    const currentTeam = (owner.currentTeam ?? []).filter(slug => slug !== context.targetPlacement.sheetSlug)
+    const boxedPokemon = (owner.boxedPokemon ?? []).filter(slug => slug !== context.targetPlacement.sheetSlug)
+    if (currentTeam.length === (owner.currentTeam ?? []).length
+      && boxedPokemon.length === (owner.boxedPokemon ?? []).length) {
+      rejectLivePlayCommand('conflict', 'The owned target disappeared from its exact Trainer roster before settlement.')
+    }
+    return [{
+      previous: targetOwner,
+      current: sheetPayloadForPersistence({ ...owner, currentTeam, boxedPokemon }, targetOwner.slug, timestamp),
+    }]
+  })() : []
   const removedCapturePlacementIds = new Set([
     context.targetPlacement.id,
     ...captureCompanions.map(companion => companion.placementId),
@@ -1015,6 +1118,7 @@ const applyThrowPokeballCommand = (
     ...(nextTarget ? {
       nextTargetSheet: sheetPayloadForPersistence(nextTarget as unknown as Record<string, unknown>, context.targetSheet.slug, timestamp),
     } : {}),
+    ...(nextTargetOwnerSheets.length > 0 ? { nextTargetOwnerSheets } : {}),
     capture: event,
     captureLogEntry: latestCaptureLogEntry(nextMetadata),
   }
@@ -1127,6 +1231,7 @@ const currentContextForAcceptedResult = async (
       consultedSheetRevisions: [],
       consultedSheetDirectoryKeys: [],
       linkedTrainerSheets: [],
+      targetOwnerSheets: [],
       userToken: {} as SpawnedPokemon,
       targetToken: {} as SpawnedPokemon,
       sheetUpdates,
@@ -1233,6 +1338,18 @@ export const executeThrowPokeballCommandUseCase = async (
           throw new ThrowPokeballCommandUseCaseError(409, `Trainer sheet ${nextMap.trainerSheet.slug} changed before the Poké Ball command could be persisted`)
         }
 
+        for (const owner of nextMap.nextTargetOwnerSheets ?? []) {
+          const ownerResult = deps.sheetRepository.applyLivePlayUpdate({
+            kind: 'trainer',
+            slug: owner.previous.slug,
+            expectedRevision: owner.previous.revision,
+            nextSheet: owner.current,
+          })
+          if (ownerResult === 'stale') {
+            throw new ThrowPokeballCommandUseCaseError(409, `Former owner Trainer sheet ${owner.previous.slug} changed before Snag Ball settlement`)
+          }
+        }
+
         if (nextMap.nextTargetSheet) {
           const targetResult = deps.sheetRepository.applyLivePlayUpdate({
             kind: 'pokemon',
@@ -1260,6 +1377,11 @@ export const executeThrowPokeballCommandUseCase = async (
           captureSucceeded: nextMap.capture?.result.success === true,
         })
         const updates = [sheetUpdateFromPersisted(authoritativeTrainerSheet)]
+        for (const owner of nextMap.nextTargetOwnerSheets ?? []) {
+          const authoritativeOwner = deps.sheetRepository.getByRef('trainer', owner.previous.slug)
+          if (!authoritativeOwner) throw new ThrowPokeballCommandUseCaseError(404, `Former owner Trainer sheet ${owner.previous.slug} not found after Snag Ball command`)
+          updates.push(sheetUpdateFromPersisted(authoritativeOwner))
+        }
         if (nextMap.nextTargetSheet) {
           const authoritativeTargetSheet = deps.sheetRepository.getByRef('pokemon', nextMap.targetSheet.slug)
           if (!authoritativeTargetSheet) throw new ThrowPokeballCommandUseCaseError(404, `Target Pokémon sheet ${nextMap.targetSheet.slug} not found after Poké Ball command`)

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-skill-check-authority-v1",
+  "ticket": "P11-046",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "sourceContract": {
+    "path": "data/deferred-closure/skill-check-contract.v1.json",
+    "sha256": "af2dc778b80df4f5ad967168b1ca55f86bb71e008db2d236f768c2df3ade094c"
+  },
+  "authorities": [
+    {
+      "id": "strict-check-contract",
+      "path": "shared/skillChecks/contract.ts",
+      "sha256": "8cf29a5038073adc7f37aef4fddf021020b88a8c198f28ddfccf72bcb36aca70",
+      "guarantees": [
+        "canonical-seventeen-skill-identities",
+        "dc-and-opposed-result-invariants",
+        "journal-contributor-arithmetic",
+        "bounded-ten-tie-rerolls",
+        "journaled-d6-parity-coin"
+      ]
+    },
+    {
+      "id": "strict-check-parser",
+      "path": "shared/skillChecks/persistence.ts",
+      "sha256": "72f215e9b3cd32e6e528dacd152edb26d6ef354ab3e57f378f226de8496da46b",
+      "guarantees": [
+        "unknown-and-missing-field-rejection",
+        "duplicate-sheet-subject-rejection",
+        "resolve-command-has-no-client-dice-modifier-or-outcome-fields"
+      ]
+    },
+    {
+      "id": "skill-and-dice-resolution-authority",
+      "path": "server/domain/skillChecks/resolveCheck.ts",
+      "sha256": "e12eedeaa51584fc374c46b5f0579989499499a232def9df3e1939ba6e54940c",
+      "guarantees": [
+        "exact-sheet-revision-read-set",
+        "trainer-and-pokemon-skill-resolution",
+        "reviewed-edge-and-equipment-provider-modifiers",
+        "gm-situational-modifier-separation",
+        "server-only-d6-journals",
+        "dc-per-subject-comparison",
+        "opposed-tie-rerolls-and-fair-coin"
+      ]
+    },
+    {
+      "id": "atomic-resolution-use-case",
+      "path": "server/useCases/resolveSkillCheck.ts",
+      "sha256": "14b13a7258a19837a40d669442c037c700255e0c2ce77e244ca0ef5b94ec4b03",
+      "guarantees": [
+        "operation-id-plus-canonical-command-hash",
+        "principal-bound-exact-replay",
+        "zero-reroll-on-exact-retry",
+        "revision-conflict-before-randomness",
+        "document-and-operation-single-transaction",
+        "injected-boundary-rollback"
+      ]
+    },
+    {
+      "id": "durable-check-operation-journal",
+      "path": "server/storage/skillCheckRepository.ts",
+      "sha256": "94fc55f2202879eca24178824b1975574d8d5ebb309e027a3ac9af33177e4a4b",
+      "guarantees": [
+        "canonical-command-hash",
+        "durable-result-revision",
+        "operation-conflict-rejection",
+        "corrupt-row-refusal"
+      ]
+    }
+  ],
+  "requiredScenarioIds": [
+    "dc-trainer-and-pokemon",
+    "reviewed-equipment-modifier",
+    "opposed-tie-reroll",
+    "opposed-ten-rerolls-and-coin",
+    "exact-retry-no-reroll",
+    "client-roll-field-rejection",
+    "stale-check-before-reroll",
+    "stale-sheet-before-reroll",
+    "invalid-skill-before-reroll",
+    "expired-check-before-reroll",
+    "operation-and-principal-conflict",
+    "document-operation-atomic-rollback",
+    "invalid-server-randomness-rollback"
+  ],
+  "evidence": {
+    "path": "tests/server/skillCheckAuthority.test.ts",
+    "sha256": "028247b0adb6bad7f5e6bf86a7f71a4356044f122fca187718c7c933b53248f3",
+    "scenarioIds": [
+      "dc-trainer-and-pokemon",
+      "reviewed-equipment-modifier",
+      "opposed-tie-reroll",
+      "opposed-ten-rerolls-and-coin",
+      "exact-retry-no-reroll",
+      "client-roll-field-rejection",
+      "stale-check-before-reroll",
+      "stale-sheet-before-reroll",
+      "invalid-skill-before-reroll",
+      "expired-check-before-reroll",
+      "operation-and-principal-conflict",
+      "document-operation-atomic-rollback",
+      "invalid-server-randomness-rollback"
+    ]
+  },
+  "acceptance": {
+    "comparisonKinds": ["dc", "opposed"],
+    "subjectKinds": ["trainer", "pokemon"],
+    "serverRandomnessOnly": true,
+    "clientResolvedAuthorityAccepted": false,
+    "exactRetryReturnsOriginalJournals": true,
+    "allWritesAtomic": true
+  }
+}

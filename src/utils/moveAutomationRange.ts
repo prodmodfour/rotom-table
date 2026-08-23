@@ -65,6 +65,14 @@ export const parseExplicitMultiTargetMoveRangeMeters = (range: string | null | u
     ?? rangeMetersForKeywords(splitMoveRangeKeywords(value))
 }
 
+/** Reviewed weapon profiles may add a lower bound beside the ordinary maximum. */
+export const parseMoveMinimumRangeMeters = (range: string | null | undefined): number => {
+  const match = /(?:^|[,;])\s*Minimum Range\s+(\d+)\b/iu.exec(range ?? '')
+  if (!match) return 0
+  const value = Number(match[1])
+  return Number.isSafeInteger(value) && value > 0 ? value : 0
+}
+
 export const moveAutomationTargetsInRange = (options: {
   user: SpawnedPokemon
   tokens: readonly SpawnedPokemon[]

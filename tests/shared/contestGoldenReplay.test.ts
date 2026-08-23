@@ -15,7 +15,7 @@ const move = (name: string): ContestMoveOptionV1 => {
 const pokemon = (id: string, moveNames: readonly string[], pools: Record<string, number>, providers: readonly string[] = []): ContestPerformerSnapshotV1 => {
   const dicePools = structuredClone(emptyContestDicePools())
   for (const [statId, total] of Object.entries(pools)) dicePools[statId as ContestStatId] = { total, remaining: total, contributors: [{ id: `golden:${id}:${statId}`, kind: 'poffin', statId: statId as ContestStatId, dice: total, active: true, label: 'Golden fixture', sourceId: 'golden-cute-demo', explanation: 'Reviewed documentary replay pool.' }] }
-  return Object.freeze({ performerId: `performer:${id}`, pokemonSheetSlug: id, pokemonSheetRevision: 1, displayName: id[0]!.toUpperCase() + id.slice(1), species: id[0]!.toUpperCase() + id.slice(1), level: 10, portraitUrl: null, moves: Object.freeze(moveNames.map(move)), dicePools, providerIds: Object.freeze([...providers]) })
+  return Object.freeze({ performerKind: 'pokemon', performerId: `performer:${id}`, pokemonSheetSlug: id, pokemonSheetRevision: 1, displayName: id[0]!.toUpperCase() + id.slice(1), species: id[0]!.toUpperCase() + id.slice(1), level: 10, portraitUrl: null, moves: Object.freeze(moveNames.map(move)), dicePools, providerIds: Object.freeze([...providers]) })
 }
 const initialDocument = (): ContestDocumentV1 => {
   const base = createContestDocument({ contestId: 'contest:v1:golden-cute', name: 'Golden Cute Contest', hallName: 'Demo Hall', description: '', variantId: 'standard', contestTypeId: 'cute', significanceMultiplier: 2, awardRibbon: true, prize: { declared: true, money: 0, items: [], notes: '' }, gmNotes: '', now: 1 })

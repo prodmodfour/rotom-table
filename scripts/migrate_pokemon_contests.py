@@ -18,6 +18,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "scripts/reviewed-data/pokemon-contests.v1.json"
+DEFERRED_CLOSURE_SUCCESSOR_PATH = ROOT / "scripts/reviewed-data/deferred-closure-contest-variants.v1.json"
 MOVES_PATH = ROOT / "data/reference/moves.json"
 ITEMS_PATH = ROOT / "data/reference/items.json"
 CONTESTS_PATH = ROOT / "data/reference/contests.json"
@@ -278,12 +279,26 @@ def validate_reviewed_targets(manifest: dict[str, Any]) -> None:
     for target in manifest["targets"]:
         path = ROOT / target["path"]
         data = path.read_bytes()
-        if (
-            target.get("afterBytes") != len(data)
-            or target.get("afterSha256") != sha256_bytes(data)
-            or target.get("afterGitBlob") != git_blob_bytes(data)
-        ):
-            raise RuntimeError(f"reviewed target fingerprint drift for {target['path']}")
+        exact_baseline = (
+            target.get("afterBytes") == len(data)
+            and target.get("afterSha256") == sha256_bytes(data)
+            and target.get("afterGitBlob") == git_blob_bytes(data)
+        )
+        if exact_baseline:
+            continue
+        if target["path"] == "data/reference/contests.json" and DEFERRED_CLOSURE_SUCCESSOR_PATH.exists():
+            successor = json.loads(DEFERRED_CLOSURE_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+            successor_target = successor.get("target", {})
+            if (
+                successor.get("status") == "reviewed"
+                and successor.get("migrationId") == "deferred-closure:contest-variants:v1"
+                and successor_target.get("beforeSha256") == target.get("afterSha256")
+                and successor_target.get("afterBytes") == len(data)
+                and successor_target.get("afterSha256") == sha256_bytes(data)
+                and successor_target.get("afterGitBlob") == git_blob_bytes(data)
+            ):
+                continue
+        raise RuntimeError(f"reviewed target fingerprint drift for {target['path']}")
 
 
 def main() -> int:

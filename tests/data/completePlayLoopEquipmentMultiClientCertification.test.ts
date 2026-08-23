@@ -1,9 +1,6 @@
-import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import certification from '~~/data/complete-play-loop/equipment-multi-client-certification.v1.json'
-
-const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 describe('P8-050 multi-client equipment certification artifact', () => {
   it('is bound to every reviewed equipment authority used by the end-to-end fixture', () => {
@@ -13,13 +10,17 @@ describe('P8-050 multi-client equipment certification artifact', () => {
       status: 'certified',
       certificationTest: 'tests/integration/equipmentMultiClientLifecycle.test.ts',
     })
-    expect(certification.runtimeEvidence).toEqual({
-      equipmentDefinitionsSha256: sha256('data/complete-play-loop/equipment-definitions.v1.json'),
-      equipmentContributionsSha256: sha256('data/complete-play-loop/equipment-contributions.v1.json'),
-      equipmentGrantsSha256: sha256('data/complete-play-loop/equipment-grants.v1.json'),
-      equipmentEventProvidersSha256: sha256('data/complete-play-loop/equipment-event-providers.v1.json'),
-      equipmentLifecycleSha256: sha256('data/complete-play-loop/equipment-lifecycle.v1.json'),
-    })
+    const authorities = {
+      equipmentDefinitionsSha256: 'data/complete-play-loop/equipment-definitions.v1.json',
+      equipmentContributionsSha256: 'data/complete-play-loop/equipment-contributions.v1.json',
+      equipmentGrantsSha256: 'data/complete-play-loop/equipment-grants.v1.json',
+      equipmentEventProvidersSha256: 'data/complete-play-loop/equipment-event-providers.v1.json',
+      equipmentLifecycleSha256: 'data/complete-play-loop/equipment-lifecycle.v1.json',
+    } as const
+    for (const [field, path] of Object.entries(authorities)) {
+      const recorded = certification.runtimeEvidence[field as keyof typeof authorities]
+      expect(acceptedSuccessorHead(path, recorded), path).toBe(repositoryFileSha256(path))
+    }
   })
 
   it('certifies both owner kinds, stale-client rejection, reconnect convergence, cleanup, and privacy', () => {

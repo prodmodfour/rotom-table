@@ -76,10 +76,10 @@ const mapExploration = useMapItemExploration({
   afterAccepted: async () => { emit('refresh') },
 })
 
-const tabs = ['overview', 'cast', 'story', 'system'] as const
+const tabs = ['overview', 'cast', 'story', 'checks', 'system'] as const
 type DirectorTab = typeof tabs[number]
 const tabLabels: Readonly<Record<DirectorTab, string>> = Object.freeze({
-  overview: 'Overview', cast: 'Cast', story: 'Story', system: 'System',
+  overview: 'Overview', cast: 'Cast', story: 'Story', checks: 'Checks', system: 'System',
 })
 const activeTab = ref<DirectorTab>('overview')
 const panel = ref<HTMLElement | null>(null)
@@ -128,7 +128,9 @@ const recoverablePending = computed<readonly EncounterPendingInteractionAuthoriz
 ))
 const correctedAccepted = computed(() => props.workspace.accepted.filter(accepted => accepted.correction !== null))
 const correctableItems = computed(() => props.workspace.accepted.filter(accepted => (
-  accepted.source.sourceKind === 'item' && accepted.correction === null
+  accepted.source.sourceKind === 'item'
+  && accepted.presentationId.startsWith('accepted-item:')
+  && accepted.correction === null
 )))
 const fieldKinds = computed<readonly SetFieldEffectPayload['kind'][]>(() => {
   if (fieldCategory.value === 'weather') return ['sunny', 'rainy', 'hail', 'sandstorm']
@@ -482,6 +484,16 @@ watch(() => props.busy, (busy, prior) => {
       </section>
 
       <section
+        v-else-if="activeTab === 'checks'"
+        id="director-panel-checks"
+        role="tabpanel"
+        aria-labelledby="director-tab-checks"
+        class="encounter-director__section"
+      >
+        <EncounterGmSkillChecks :commands-blocked="commandsBlocked || busy" />
+      </section>
+
+      <section
         v-else
         id="director-panel-system"
         role="tabpanel"
@@ -640,7 +652,7 @@ watch(() => props.busy, (busy, prior) => {
 .encounter-director__header p:not(.encounter-director__eyebrow) { margin: .35rem 0 0; color: var(--rt-text-muted); }
 .encounter-director__close { min-width: var(--rt-touch-minimum); min-height: var(--rt-touch-minimum); font-size: 1.5rem; }
 .encounter-director__status { display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin: var(--rt-space-4) 0; padding: .65rem .8rem; border-block: 1px solid var(--rt-rule); font-size: var(--rt-type-label-sm-size); }
-.encounter-director__tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .25rem; }
+.encounter-director__tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .25rem; }
 .encounter-director__tabs button { min-height: var(--rt-touch-minimum); padding: .4rem; }
 .encounter-director__tabs button[aria-selected="true"] { color: var(--rt-focus); border-color: var(--rt-focus); background: var(--rt-surface-2); }
 .encounter-director__section { display: grid; gap: var(--rt-space-4); padding-block: var(--rt-space-4); }

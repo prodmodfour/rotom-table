@@ -22,12 +22,14 @@ OUTPUT = ROOT / "data/complete-play-loop/guided-item-adjudications.v1.json"
 EXPECTED = {
     REVIEWED: "c68b2785bb9bca914c5d075ef2ed5eaacaaca914f73b8886902fcdd855000e00",
     ITEMS: "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
-    RULES: "94e0ec0f9a7416d807db892f501215666487357d20ab945b294a21742da6e142",
-    SPECS: "8526cc06462ab8ea0146c3e2cc9556bb3d50d2505f2d18499b230a04048de1fe",
-    MEDICAL: "fd2cddf562e33e0200b793840ab6b0c98523b8a30946bcfbb916d3a07aef5192",
-    EQUIPMENT_DEFINITIONS: "08822fc60a549c23123d8519c472fe02cb9681d54372ea42a0d1f914df4a1a2a",
-    EQUIPMENT_GRANTS: "466a621c6901a4c0d6c544deae103e82062c75c8fe32d3c84442c1e0c87836bc",
+    RULES: "f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df",
+    SPECS: "b03d2706fa0d666b33262e215b80a0bc33ac617d07a62e5aca7319db396918ed",
+    MEDICAL: "24094e072a2caee8846b2245ad3339f7471d2da76f6e5cb121cc3865a607435e",
+    EQUIPMENT_DEFINITIONS: "fb5d8c6cafba3c969da7b20e0c09e9d6b32d4baa6993c4005a40b4f6249316b7",
+    EQUIPMENT_GRANTS: "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52",
 }
+REBREATHER_GRANT_BEFORE_SHA256 = "767e9688f5f3dd61e2f313ef283a8ad32af5e2f7c5d1a6baa9bebdf2b24ea321"
+REBREATHER_GRANT_AFTER_SHA256 = "f1d18e99fb1201edac7aaee88aec1d63e84770d8f5250b53c05386a43212d241"
 
 
 def file_sha(path: Path) -> str:
@@ -100,8 +102,9 @@ def build() -> dict[str, Any]:
     )
     if not equipment_definition or value_sha(equipment_definition) != rebreather["equipmentDefinitionSha256"]:
         raise RuntimeError("Reviewed Re-Breather equipment definition changed")
-    if not grant_definition or value_sha(grant_definition) != rebreather["equipmentGrantDefinitionSha256"]:
-        raise RuntimeError("Reviewed Re-Breather grant definition changed")
+    if rebreather["equipmentGrantDefinitionSha256"] != REBREATHER_GRANT_BEFORE_SHA256 \
+            or not grant_definition or value_sha(grant_definition) != REBREATHER_GRANT_AFTER_SHA256:
+        raise RuntimeError("Reviewed Re-Breather grant successor changed")
     if [grant.get("grantId") for grant in grant_definition["grants"]] != [
         "equipment.re-breather.gilled", "equipment.re-breather.activate"
     ]:
@@ -124,7 +127,10 @@ def build() -> dict[str, Any]:
         "loyalty": reviewed["loyalty"],
         "inventoryItems": reviewed["inventoryItems"],
         "consumption": reviewed["consumption"],
-        "reBreather": reviewed["reBreather"],
+        "reBreather": {
+            **reviewed["reBreather"],
+            "equipmentGrantDefinitionSha256": REBREATHER_GRANT_AFTER_SHA256,
+        },
         "boundaries": {
             "declaration": "reserve exact consumable or bind exact equipped instance without applying mechanics",
             "acceptance": "reauthorize current definition, custody, target, revisions, bounded option, and authenticated GM role before one atomic commit",

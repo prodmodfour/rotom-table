@@ -82,6 +82,7 @@ watch(() => props.accepted, () => { historyLimit.value = HISTORY_BATCH_SIZE })
               <span>
                 <strong>{{ presentation.headline.label }}</strong>
                 <small>{{ presentation.source.displayName }}<template v-if="presentation.actor"> · {{ presentation.actor.displayName }}</template></small>
+                <small v-if="presentation.headline.description" class="encounter-event-feed__detail">{{ presentation.headline.description }}</small>
               </span>
             </button>
             <p v-if="presentation.correction" class="encounter-event-feed__correction">
@@ -103,6 +104,15 @@ watch(() => props.accepted, () => { historyLimit.value = HISTORY_BATCH_SIZE })
                 :key="explanation.explanationId"
                 :explanation="explanation"
               />
+              <section v-if="presentation.history.length" class="encounter-event-feed__receipt" aria-label="Durable receipt history">
+                <h3>Receipt history</h3>
+                <ul>
+                  <li v-for="entry in presentation.history" :key="entry.entryId">
+                    <strong>{{ entry.headline }}</strong>
+                    <span v-if="entry.detail">{{ entry.detail }}</span>
+                  </li>
+                </ul>
+              </section>
             </details>
           </article>
         </EncounterMotionCue>
@@ -139,14 +149,22 @@ watch(() => props.accepted, () => { historyLimit.value = HISTORY_BATCH_SIZE })
 .encounter-event-feed__open strong,
 .encounter-event-feed__open small { display: block; }
 .encounter-event-feed__open small { color: var(--rt-text-muted); }
+.encounter-event-feed__open .encounter-event-feed__detail { margin-top: .15rem; color: var(--rt-text); line-height: 1.35; }
 .encounter-event-feed__revision { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--rt-surface-3); }
 .encounter-event-feed__correction { margin: 0; padding: 0.5rem 0.65rem; color: var(--rt-pending); }
 .encounter-event-feed article > details { padding: 0.5rem 0.65rem; }
-.encounter-event-feed summary { min-height: 2.25rem; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
+.encounter-event-feed summary { min-height: var(--rt-touch-minimum); display: flex; align-items: center; cursor: pointer; font-weight: 700; }
 .encounter-event-feed ul { margin: 0; padding-left: 1.25rem; }
 .encounter-event-feed dl { display: grid; gap: 0.25rem; }
 .encounter-event-feed dl > div { display: flex; justify-content: space-between; gap: 0.5rem; }
 .encounter-event-feed dd { margin: 0; }
+.encounter-event-feed__receipt { margin-top: .55rem; border-top: 1px solid var(--rt-rule); padding-top: .5rem; }
+.encounter-event-feed__receipt h3 { margin: 0 0 .35rem; color: var(--rt-text-strong); font-size: var(--rt-type-label-sm-size); }
+.encounter-event-feed__receipt li { display: grid; gap: .12rem; }
+.encounter-event-feed__receipt li + li { margin-top: .35rem; }
+.encounter-event-feed__receipt span { color: var(--rt-text-muted); }
+.encounter-event-feed button:focus-visible,
+.encounter-event-feed summary:focus-visible { outline: 3px solid var(--rt-focus); outline-offset: 2px; }
 .encounter-event-feed__more { width: 100%; min-height: var(--rt-touch-minimum); border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); background: var(--rt-surface-2); color: var(--rt-text-strong); font: inherit; font-weight: 700; }
 .encounter-event-feed__empty { color: var(--rt-text-muted); }
 </style>

@@ -74,8 +74,9 @@ describe('Deferred Mechanics Closure inventory (P11-001)', () => {
       const grant = grantById.get(row.grantId)
       expect(grant, row.grantId).toBeDefined()
       const finalStates = row.targetState === 'guided' ? ['native', 'guided'] : ['native']
-      expect([row.currentState, ...finalStates]).toContain(grant!.executionStatus)
-      if (grant!.executionStatus === 'deferred') {
+      const reviewedState = grant!.finalState ?? grant!.executionStatus
+      expect([row.currentState, ...finalStates]).toContain(reviewedState)
+      if (reviewedState === 'deferred') {
         const pointer = grant!.deferredTicket as string
         expect([row.staleDeferredTicket, ...row.owningTickets]).toContain(pointer)
       }
@@ -87,8 +88,28 @@ describe('Deferred Mechanics Closure inventory (P11-001)', () => {
       const variantId = row.id.replace('contest-variant.', '')
       const variant = (contests as any).variants.find((entry: any) => entry.id === variantId)
       expect(variant, variantId).toBeDefined()
-      expect(['reference-only', row.targetState]).toContain(variant.completionState)
+      expect(['reference-only', 'structured', row.targetState]).toContain(variant.completionState)
     }
+  })
+
+  it('closes every fishing row and records the bounded Plan 12 content handoff', () => {
+    const fishingRows = rows.filter(row => row.id.startsWith('item-action.') && row.id.endsWith('-rod.fish'))
+    expect(fishingRows.map(row => row.id).sort()).toEqual([
+      'item-action.good-rod.fish',
+      'item-action.old-rod.fish',
+      'item-action.super-rod.fish',
+    ])
+    expect(fishingRows.every(row => row.currentState === 'guided')).toBe(true)
+    expect(fishingRows.every(row => grantById.get(row.grantId)?.executionStatus === 'native')).toBe(true)
+    expect(fishingRows.every(row => grantById.get(row.grantId)?.finalState === 'guided')).toBe(true)
+    expect((inventory as any).plan12HandoffBoundaries).toContainEqual(expect.objectContaining({
+      id: 'fishing-hook-content-tooling',
+      recordedBy: 'P11-039',
+      handoffOnly: expect.arrayContaining([
+        'campaign-specific fishing encounter tables',
+        'automatic hooked-Pokémon sheet creation or map spawning',
+      ]),
+    }))
   })
 
   it('records the finality decision that resolves the grants-versus-cohorts contradiction', () => {
@@ -99,9 +120,17 @@ describe('Deferred Mechanics Closure inventory (P11-001)', () => {
     expect(decision.derivedSurfaces).toContain('data/complete-play-loop/item-catalog-cohorts.v1.json')
     expect(decision.reconciledBy).toBe('P11-042')
     expect(decision.provedBy).toBe('P11-089')
-    const cohortItems = new Set((cohorts as any).cohorts.flatMap((cohort: any) => cohort.members.map((member: any) => member.canonicalId)))
+    const cohortMembers = new Map<string, any>((cohorts as any).cohorts.flatMap((cohort: any) => (
+      cohort.members.map((member: any) => [member.canonicalId, member])
+    )))
     for (const row of rows.filter(entry => entry.kind === 'item-action' || entry.kind === 'weapon-profile')) {
-      expect(cohortItems.has(row.canonicalItem), row.canonicalItem).toBe(true)
+      expect(cohortMembers.has(row.canonicalItem), row.canonicalItem).toBe(true)
+      if (row.kind === 'item-action') {
+        expect(cohortMembers.get(row.canonicalItem).actionFinalStates).toContainEqual({
+          actionId: grantById.get(row.grantId)?.actionId,
+          finalState: grantById.get(row.grantId)?.finalState,
+        })
+      }
     }
   })
 

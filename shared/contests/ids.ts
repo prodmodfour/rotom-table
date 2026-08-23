@@ -4,6 +4,13 @@ export type ContestStatId = typeof CONTEST_STAT_IDS[number]
 export const CONTEST_VARIANT_IDS = Object.freeze(['standard', 'supercontest', 'festival', 'rotation'] as const)
 export type ContestVariantId = typeof CONTEST_VARIANT_IDS[number]
 
+/** Reviewed additive Contest formats that layer onto one canonical base variant. */
+export const CONTEST_PARTICIPANT_VARIANT_IDS = Object.freeze(['trainer-participant'] as const)
+export type ContestParticipantVariantId = typeof CONTEST_PARTICIPANT_VARIANT_IDS[number]
+
+export const CONTEST_PARTICIPANT_METHOD_IDS = Object.freeze(['simultaneous', 'alternating'] as const)
+export type ContestParticipantMethodId = typeof CONTEST_PARTICIPANT_METHOD_IDS[number]
+
 export const CONTEST_STAGES = Object.freeze(['setup', 'introduction', 'performance', 'settling', 'completed', 'cancelled'] as const)
 export type ContestStage = typeof CONTEST_STAGES[number]
 
@@ -49,6 +56,12 @@ export const isContestEffectId = (value: unknown): value is ContestEffectId =>
 
 export const isContestVariantId = (value: unknown): value is ContestVariantId =>
   typeof value === 'string' && CONTEST_VARIANT_IDS.includes(value as ContestVariantId)
+
+export const isContestParticipantVariantId = (value: unknown): value is ContestParticipantVariantId =>
+  typeof value === 'string' && CONTEST_PARTICIPANT_VARIANT_IDS.includes(value as ContestParticipantVariantId)
+
+export const isContestParticipantMethodId = (value: unknown): value is ContestParticipantMethodId =>
+  typeof value === 'string' && CONTEST_PARTICIPANT_METHOD_IDS.includes(value as ContestParticipantMethodId)
 
 export const emptyContestStatRecord = <T>(factory: (id: ContestStatId) => T): Record<ContestStatId, T> => ({
   beauty: factory('beauty'),

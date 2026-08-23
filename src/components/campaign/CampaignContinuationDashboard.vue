@@ -86,6 +86,8 @@ const reasonLabel: Readonly<Record<CampaignAttentionReason, string>> = {
   'medical-review': 'Medical attention',
   'recovery-review': 'Recovery review',
   'equipment-review': 'Equipment review',
+  'skill-check-response': 'Skill Check response',
+  'skill-check-resolution': 'Skill Check GM review',
   'continuation-review': 'Campaign follow-up',
 }
 
@@ -107,10 +109,13 @@ const reasonDescription: Readonly<Record<CampaignAttentionReason, string>> = {
   'medical-review': 'Current health authority needs treatment review.',
   'recovery-review': 'Current recovery state needs follow-up.',
   'equipment-review': 'Current equipment authority needs review.',
+  'skill-check-response': 'A requested Skill Check still needs a subject response.',
+  'skill-check-resolution': 'A ready or declined Skill Check needs GM review.',
   'continuation-review': 'A campaign continuation remains to be reviewed.',
 }
 
 const actionLabel = (item: CampaignAttentionItem, intent: CampaignAttentionItem['legalActions'][number]['intent']): string => {
+  if (item.reason === 'skill-check-response' || item.reason === 'skill-check-resolution') return 'Open Live Encounter'
   const labels: Record<typeof intent, string> = {
     'review-advancement': 'Review advancement',
     'review-moves': 'Review moves',

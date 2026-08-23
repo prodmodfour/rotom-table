@@ -40,7 +40,7 @@ const result = (): ItemExplorationOperationResultV1 => ({
 describe('item exploration operation repository', () => {
   it('persists canonical principal-bound commands, results, and private evidence at current schema', () => {
     const database = open()
-    expect(database.connection.prepare('PRAGMA user_version').get()).toEqual({ user_version: 46 })
+    expect(database.connection.prepare('PRAGMA user_version').get()).toEqual({ user_version: 48 })
     const repository = createSqliteItemExplorationOperationRepository(database)
     const stored = repository.insert({
       commandSha256: 'a'.repeat(64),

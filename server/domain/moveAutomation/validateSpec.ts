@@ -1418,14 +1418,16 @@ export const validateMoveSpecOperationSequence = (
     }
     const accuracyRollTrigger = operation.kind === 'condition'
       ? operation.payload.accuracyRollTrigger
-      : operation.kind === 'combat-stage'
-        && operation.payload.trigger?.kind === 'accuracy-roll'
-        ? operation.payload.trigger
-        : operation.kind === 'roll'
-          && operation.payload.formula.kind === 'table'
-          && 'table' in operation.payload
-          ? operation.payload.accuracyRollTrigger
-          : undefined
+      : operation.kind === 'temporary-effect' && operation.payload.action === 'add'
+        ? operation.payload.accuracyRollTrigger
+        : operation.kind === 'combat-stage'
+          && operation.payload.trigger?.kind === 'accuracy-roll'
+          ? operation.payload.trigger
+          : operation.kind === 'roll'
+            && operation.payload.formula.kind === 'table'
+            && 'table' in operation.payload
+            ? operation.payload.accuracyRollTrigger
+            : undefined
     if (accuracyRollTrigger) {
       const referencePath = `${path}.payload.accuracyRollTrigger.rollId`
       const rollId = accuracyRollTrigger.rollId
@@ -1444,10 +1446,12 @@ export const validateMoveSpecOperationSequence = (
           ? 'an accuracy-triggered operation table'
           : operation.kind === 'combat-stage'
             ? 'an accuracy-triggered combat-stage operation'
-            : 'an accuracy-triggered condition',
+            : operation.kind === 'temporary-effect'
+              ? 'an accuracy-triggered temporary effect'
+              : 'an accuracy-triggered condition',
         allowResolutionWide: resolutionWide,
         allowAttackedTargets: Boolean(options.allowAttackedTargetAccuracyEffects)
-          && (operation.kind === 'condition' || operation.kind === 'combat-stage'),
+          && (operation.kind === 'condition' || operation.kind === 'combat-stage' || operation.kind === 'temporary-effect'),
       })
       const linkedDamage = indexed.find(entry => (
         entry.index < index

@@ -9,12 +9,24 @@ import rules from '../../data/contests/rule-coverage.v1.json'
 import matrix from '../../data/contests/variant-matrix.v1.json'
 import recovery from '../../data/contests/failure-recovery-fixtures.v1.json'
 import acceptance from '../../data/contests/alpha-acceptance.v1.json'
+import successorChain from '../../data/deferred-closure/successor-chain.v1.json'
 import { CONTEST_EFFECT_IDS, CONTEST_STAT_IDS } from '../../shared/contests/ids'
 import { CONTEST_COMMAND_KINDS } from '../../shared/contests/operations'
 import { CONTEST_OPERATION_ATOMICITY } from '../../shared/contests/architecture'
 
 const root = resolve(import.meta.dirname, '../..')
 const sha = (path: string) => createHash('sha256').update(readFileSync(resolve(root, path))).digest('hex')
+const expectInstalledHashOrSuccessor = (path: string, expected: string): void => {
+  const actual = sha(path)
+  if (actual === expected) return
+  const edges = successorChain.edges.filter(edge => edge.surface === path)
+  expect(edges.length, `${path} requires an explicit reviewed successor`).toBeGreaterThan(0)
+  expect(edges[0]!.beforeSha256, path).toBe(expected)
+  for (let index = 1; index < edges.length; index += 1) {
+    expect(edges[index]!.beforeSha256, path).toBe(edges[index - 1]!.afterSha256)
+  }
+  expect(edges.at(-1)!.afterSha256, path).toBe(actual)
+}
 
 describe('Pokémon Contest canonical closure', () => {
   it('keeps the canonical catalog source-hash-bound and registered as runtime authority', () => {
@@ -54,7 +66,7 @@ describe('Pokémon Contest canonical closure', () => {
   })
 
   it('pins and closes the full scale/type/variant matrix', () => {
-    expect(matrix.sources.every(source => sha(source.path) === source.sha256)).toBe(true)
+    for (const source of matrix.sources) expectInstalledHashOrSuccessor(source.path, source.sha256)
     expect(matrix.scenarios).toHaveLength(18)
     for (const typeId of CONTEST_STAT_IDS) for (const count of [3,4,5]) expect(matrix.scenarios.some(row => row.id === `standard-${typeId}-${count}`)).toBe(true)
     for (const id of ['supercontest-five','festival-five','rotation-three']) expect(matrix.scenarios.some(row => row.id === id)).toBe(true)
@@ -136,7 +148,7 @@ describe('Pokémon Contest canonical closure', () => {
       expect(paths.has(row.path), row.path).toBe(false)
       paths.add(row.path)
       expect(row.sha256).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha(row.path), row.path).toBe(row.sha256)
+      expectInstalledHashOrSuccessor(row.path, row.sha256)
     }
   })
 

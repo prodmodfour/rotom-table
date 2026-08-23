@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "deferred-closure:contest-variants:v1",
+  "ticket": "P11-006",
+  "status": "reviewed",
+  "reviewedAt": "2026-08-23",
+  "target": {
+    "path": "data/reference/contests.json",
+    "beforeSha256": "fadb03c328f2025dcc81fe497365db345717184bea6a9247b2f79d9d3f61362a",
+    "afterSha256": "95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e",
+    "afterBytes": 28914,
+    "afterGitBlob": "05a4d08033b1bf63e365d445498274507d0606ff"
+  },
+  "sources": [
+    {
+      "path": "books/markdown/core/08-pokemon-contests.md",
+      "sha256": "d4cbfef280d2b96bede24648b1ca69a8bfcbdad639d8a5537ce8518387285111",
+      "subjects": [
+        "Trainer Participant Contests",
+        "Battle Contests"
+      ]
+    },
+    {
+      "path": "books/markdown/errata-2.md",
+      "sha256": "1b8be900ac33dd8d621c7acda801ad535f0f8532142829c5409d907c081a1c70",
+      "subjects": [
+        "published errata cross-check"
+      ]
+    },
+    {
+      "path": "books/markdown/errata-3.md",
+      "sha256": "d589c68c0b12c18de4df30b5e37351297b324d7f7fa4a8cda63cda5c7ff154b8",
+      "subjects": [
+        "published errata cross-check"
+      ]
+    }
+  ],
+  "changedVariantIds": [
+    "trainer-participant",
+    "battle"
+  ],
+  "preservedAuthority": {
+    "reviewedMigrationId": "pokemon-contests:v1",
+    "unchangedVariantIds": [
+      "standard",
+      "supercontest",
+      "festival",
+      "rotation"
+    ],
+    "frozenMoveCoverage": {
+      "canonical": 777,
+      "defined": 761,
+      "unavailable": 16
+    },
+    "runtimeProseParsing": false
+  },
+  "reviewDecisions": [
+    {
+      "id": "P11-CONTEST-DATA-001",
+      "decision": "Structured is an authority-ready intermediate completion state, not a selectable native runtime state. Phase 6 and Phase 7 advance each row to native only after its engine certification."
+    },
+    {
+      "id": "P11-CONTEST-DATA-002",
+      "decision": "Trainer Participant supports the two printed methods: both performers appeal with controller-chosen order and separate Voltage, or performers alternate with shared Voltage. Both methods share one entry Contest Stat Dice pool."
+    },
+    {
+      "id": "P11-CONTEST-DATA-003",
+      "decision": "Battle Contest core scale is two Trainers with an equal declared roster of three through six Pokémon each and a six-through-twelve-round budget equal to twice that roster count. Optional double/triple battle advice does not create an additional runtime format."
+    },
+    {
+      "id": "P11-CONTEST-DATA-004",
+      "decision": "Only accepted Move results produce Battle Contest appeals. Struggle Attacks and Combat Maneuvers are excluded; all opposing field Pokémon are adjacent for Contest effects."
+    },
+    {
+      "id": "P11-CONTEST-DATA-005",
+      "decision": "Battle Voltage is per Pokémon; attack KOs grant two, damage-over-time KOs redirect two to the opposing active Pokémon, ordinary recall loses two, and the four printed switch exception identities do not lose Voltage."
+    }
+  ],
+  "variantRows": [
+    {
+      "id": "trainer-participant",
+      "label": "Trainer Participant Contest",
+      "completionState": "structured",
+      "structuredSemanticsVersion": 1,
+      "compatibleBaseVariantIds": [
+        "standard",
+        "supercontest",
+        "festival",
+        "rotation"
+      ],
+      "contestantMinimum": 3,
+      "contestantMaximum": 5,
+      "performerPolicy": {
+        "performersPerEntry": [
+          "trainer",
+          "pokemon"
+        ],
+        "trainerMayAppeal": true,
+        "moveAuthority": "authoritative-performer-move-list",
+        "missingContestIdentityPolicy": "reject"
+      },
+      "methods": [
+        {
+          "id": "simultaneous",
+          "appealsPerEntryPerRound": 2,
+          "appealOrderPolicy": "controller-chooses-trainer-or-pokemon-first",
+          "voltageScope": "per-performer",
+          "adjacentEffectScope": "both-performers-of-adjacent-entry",
+          "crossPerformerEffectPolicy": [
+            "get-ready-may-apply-to-partner-same-round",
+            "attention-grabber-may-transfer-between-pair"
+          ]
+        },
+        {
+          "id": "alternating",
+          "appealsPerEntryPerRound": 1,
+          "appealOrderPolicy": "trainer-and-pokemon-alternate",
+          "voltageScope": "shared-entry",
+          "adjacentEffectScope": "shared-entry",
+          "crossPerformerEffectPolicy": []
+        }
+      ],
+      "sharedContestDicePool": {
+        "scope": "trainer-pokemon-entry",
+        "depletionScope": "contest",
+        "spendAuthority": "active-performer",
+        "singleSpendRequired": true
+      },
+      "featurePolicy": {
+        "coordinatorMayTarget": [
+          "trainer",
+          "pokemon"
+        ],
+        "similarTrainerFeaturesMayTarget": [
+          "trainer",
+          "pokemon"
+        ]
+      }
+    },
+    {
+      "id": "battle",
+      "label": "Battle Contest",
+      "completionState": "structured",
+      "structuredSemanticsVersion": 1,
+      "trainerCount": 2,
+      "rosterPolicy": {
+        "pokemonPerTrainerMinimum": 3,
+        "pokemonPerTrainerMaximum": 6,
+        "equalDeclaredCountRequired": true,
+        "defaultActivePokemonPerTrainer": 1
+      },
+      "roundBudget": {
+        "formula": "twice-pokemon-per-trainer",
+        "minimum": 6,
+        "maximum": 12
+      },
+      "introductionPolicy": {
+        "skillCheckPerTrainer": 1,
+        "contestDicePoolScope": "trainer-team",
+        "usableBy": "any-team-pokemon",
+        "affectsInitiative": false
+      },
+      "encounterPolicy": {
+        "turnOrder": "encounter-initiative",
+        "appealSource": "accepted-move-result",
+        "excludedActions": [
+          "struggle-attack",
+          "combat-maneuver"
+        ],
+        "contestAdjacency": "all-opposing-pokemon-on-field"
+      },
+      "voltagePolicy": {
+        "scope": "per-pokemon",
+        "appealUses": "active-pokemon-only",
+        "attackKoDelta": 2,
+        "damageOverTimeKoRecipient": "opposing-active-pokemon",
+        "recallDelta": -2,
+        "recallLossExceptions": [
+          "Baton Pass",
+          "U-Turn",
+          "Volt Switch",
+          "Juggler-equivalent-switch"
+        ]
+      },
+      "replacementPolicy": {
+        "afterKo": "center-of-attention-first-acting-turn"
+      },
+      "endPolicy": {
+        "conditions": [
+          "round-budget-exhausted",
+          "one-trainer-all-pokemon-knocked-out"
+        ],
+        "score": "appeal-points",
+        "winner": "highest-appeal-points"
+      }
+    }
+  ]
+}

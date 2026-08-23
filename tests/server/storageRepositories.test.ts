@@ -150,6 +150,7 @@ describe('SQLite storage foundation', () => {
       'encounter_settlement_operations',
       'encounter_settlements',
       'encounter_ux_metric_aggregates',
+      'equipment_action_operations',
       'equipment_operations',
       'group_inventories',
       'inventory_action_operations',
@@ -181,6 +182,8 @@ describe('SQLite storage foundation', () => {
       'sheets',
       'shop_checkout_ops',
       'shop_tables',
+      'skill_check_operations',
+      'skill_checks',
       'trainer_species_acquisition_source_operations',
       'trainer_species_acquisitions',
     ])
@@ -224,6 +227,7 @@ describe('SQLite storage foundation', () => {
       'encounter_settlement_operations',
       'encounter_settlements',
       'encounter_ux_metric_aggregates',
+      'equipment_action_operations',
       'equipment_operations',
       'group_inventories',
       'inventory_action_operations',
@@ -255,6 +259,8 @@ describe('SQLite storage foundation', () => {
       'sheets',
       'shop_checkout_ops',
       'shop_tables',
+      'skill_check_operations',
+      'skill_checks',
       'trainer_species_acquisition_source_operations',
       'trainer_species_acquisitions',
     ])

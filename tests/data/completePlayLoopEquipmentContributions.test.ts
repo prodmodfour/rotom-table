@@ -25,10 +25,28 @@ describe('P8-046 reviewed equipment contribution data', () => {
     expect(document.definitions.map(row => row.canonicalItemId)).toEqual(expected)
     expect(document.equipmentDefinitionsSha256)
       .toBe(sha256File('data/complete-play-loop/equipment-definitions.v1.json'))
-    expect(document.definitions.every(row => row.contributions.length > 0 || row.deferredMechanics.length > 0)).toBe(true)
+    expect(document.equipmentGrantsSha256)
+      .toBe(sha256File('data/complete-play-loop/equipment-grants.v1.json'))
+    expect(document.definitions.every(row => (
+      row.contributions.length > 0 || row.grantFinalStates.length > 0 || row.deferredMechanics.length > 0
+    ))).toBe(true)
     expect(document.definitions.flatMap(row => row.contributions).every(row => (
       row.contributionId.startsWith('equipment.') && row.predicates.every(predicate => predicate.kind !== ('' as string))
     ))).toBe(true)
+    const audited = new Set([
+      'equipment.light-shield.ready', 'equipment.heavy-shield.ready', 'equipment.shock-collar.activate',
+      'equipment.glue-cannon.attack', 'equipment.hand-net.attack', 'equipment.weighted-nets.throw',
+      'equipment.weighted-nets.pull', 'equipment.old-rod.fish', 'equipment.good-rod.fish',
+      'equipment.super-rod.fish', 'equipment.snag-machine.convert',
+    ])
+    const final = document.definitions.flatMap(row => row.grantFinalStates).filter(row => audited.has(row.grantId))
+    expect(final).toHaveLength(11)
+    expect(final.filter(row => row.finalState === 'guided').map(row => row.grantId).sort()).toEqual([
+      'equipment.good-rod.fish', 'equipment.old-rod.fish',
+      'equipment.snag-machine.convert', 'equipment.super-rod.fish',
+    ])
+    expect(document.definitions.filter(row => row.grantFinalStates.some(grant => audited.has(grant.grantId)))
+      .every(row => row.deferredMechanics.length === 0)).toBe(true)
   })
 
   it('rejects unknown shape, duplicate IDs, unsafe operations, and prose-enabled policy', () => {

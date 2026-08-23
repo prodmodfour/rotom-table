@@ -33,7 +33,7 @@ const boundedCopy = (value: string, fallback: string, maximum = 500): string => 
   return (normalized || fallback).slice(0, maximum)
 }
 
-const participantDirectory = (input: {
+export const encounterItemParticipantDirectory = (input: {
   readonly map: TabletopMap
   readonly pokemonSheets: readonly CharacterSheet[]
   readonly trainerSheets: readonly TrainerSheet[]
@@ -551,7 +551,7 @@ export const projectItemOperationPresentations = (input: {
   readonly pokemonSheets: readonly CharacterSheet[]
   readonly trainerSheets: readonly TrainerSheet[]
 }): ProjectedItemOperationPresentations => {
-  const participants = participantDirectory(input)
+  const participants = encounterItemParticipantDirectory(input)
   const pending: EncounterPendingInteractionView[] = []
   const accepted: AcceptedEncounterPresentation[] = []
   const authorizedInteractionIds: string[] = []

@@ -17,6 +17,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 ITEMS_PATH = ROOT / "data/reference/items.json"
 EQUIPMENT_PATH = ROOT / "data/complete-play-loop/equipment-definitions.v1.json"
+GRANTS_PATH = ROOT / "data/complete-play-loop/equipment-grants.v1.json"
 OUTPUT_PATH = ROOT / "data/complete-play-loop/equipment-contributions.v1.json"
 CATALOG_SHA256 = "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef"
 EQUIPMENT_CATEGORIES = {
@@ -200,6 +201,24 @@ P8_048_ITEMS = {
 REFERENCE_ONLY_ITEMS = {"Fancy Clothes", "Contest Accessory", "Contest Fashion"}
 
 
+def reviewed_grant_final_states(grants: list[dict[str, Any]], canonical_id: str) -> list[dict[str, str]]:
+    result: list[dict[str, str]] = []
+    for grant in grants:
+        kind = grant.get("kind")
+        if kind == "action":
+            state = grant.get("finalState")
+        elif kind in {"weapon-profile", "move"}:
+            state = "native" if grant.get("executionStatus") == "native" else "deferred"
+        elif kind in {"capability", "ability"}:
+            state = "passive"
+        else:
+            raise RuntimeError(f"Unknown grant kind for {canonical_id}: {kind}")
+        if state not in {"native", "guided", "passive"}:
+            raise RuntimeError(f"Equipment grant {grant.get('grantId')} is not final for {canonical_id}")
+        result.append({"grantId": grant["grantId"], "kind": kind, "finalState": state})
+    return result
+
+
 def build_document() -> dict[str, Any]:
     raw = ITEMS_PATH.read_bytes()
     if hashlib.sha256(raw).hexdigest() != CATALOG_SHA256:
@@ -207,6 +226,10 @@ def build_document() -> dict[str, Any]:
     items: dict[str, dict[str, Any]] = json.loads(raw)
     equipment_document = json.loads(EQUIPMENT_PATH.read_text(encoding="utf-8"))
     equipment_definitions = {entry["canonicalItemId"]: entry for entry in equipment_document["definitions"]}
+    grants_document = json.loads(GRANTS_PATH.read_text(encoding="utf-8"))
+    if grants_document.get("schemaVersion") != 1 or grants_document.get("ticket") != "P8-047":
+        raise RuntimeError("Equipment grants are not the reviewed registry")
+    grants_by_item = {entry["canonicalItemId"]: entry.get("grants", []) for entry in grants_document["definitions"]}
     expected_ids = [
         canonical_id for canonical_id, item in items.items()
         if EQUIPMENT_CATEGORIES.intersection(item.get("categories", []))
@@ -217,20 +240,22 @@ def build_document() -> dict[str, Any]:
         if not equipment_definition:
             raise RuntimeError(f"Missing equipment definition for {canonical_id}")
         contributions = CONTRIBUTIONS.get(canonical_id, [])
+        grant_final_states = reviewed_grant_final_states(grants_by_item.get(canonical_id, []), canonical_id)
         deferred: list[str] = []
-        if canonical_id in P8_047_ITEMS:
+        if canonical_id in P8_047_ITEMS and not grant_final_states:
             deferred.append("P8-047")
         if canonical_id in P8_048_ITEMS:
             deferred.append("P8-048")
         if canonical_id in REFERENCE_ONLY_ITEMS:
             deferred.append("reference-only-contest-workflow")
-        if not contributions and not deferred:
+        if not contributions and not grant_final_states and not deferred:
             deferred.append("P8-048")
         definitions.append({
             "canonicalItemId": canonical_id,
             "canonicalRecordSha256": equipment_definition["canonicalRecordSha256"],
             "equipmentDefinitionSha256": sha256(equipment_definition),
             "contributions": contributions,
+            "grantFinalStates": grant_final_states,
             "deferredMechanics": deferred,
         })
     unknown = set(CONTRIBUTIONS) - set(expected_ids)
@@ -241,6 +266,7 @@ def build_document() -> dict[str, Any]:
         "ticket": "P8-046",
         "catalogSha256": CATALOG_SHA256,
         "equipmentDefinitionsSha256": hashlib.sha256(EQUIPMENT_PATH.read_bytes()).hexdigest(),
+        "equipmentGrantsSha256": hashlib.sha256(GRANTS_PATH.read_bytes()).hexdigest(),
         "definitionCount": len(definitions),
         "contributingItemCount": sum(1 for entry in definitions if entry["contributions"]),
         "classificationPolicy": {
@@ -249,6 +275,7 @@ def build_document() -> dict[str, Any]:
             "unknownOrStalePolicy": "fail-closed-no-contribution",
             "inactiveOrSuppressedPolicy": "no-contribution",
             "deferredMechanicsRemainInert": True,
+            "finalGrantMechanicsAreNotDeferred": True,
         },
         "definitions": definitions,
     }

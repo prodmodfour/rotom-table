@@ -160,13 +160,18 @@ export const projectCampaignAttentionForViewer = (input: {
       }
       profileAuthorityHash = hash(profile)
       const owned = ownedSheetKeys({ profile, sheets })
-      visible = Object.freeze(open.filter(item => (
-        item.audience === 'owner'
-        && (() => {
-          const key = itemSheetKey(item, sheets)
-          return key !== null && owned.has(key)
-        })()
-      )))
+      visible = Object.freeze(open.flatMap((item) => {
+        if (item.audience !== 'owner') return []
+        if (item.entity.kind === 'profile') {
+          if (item.entity.id !== profile.id) return []
+          return [parseCampaignAttentionItem({
+            ...item,
+            entity: { kind: 'campaign', id: 'campaign' },
+          })]
+        }
+        const key = itemSheetKey(item, sheets)
+        return key !== null && owned.has(key) ? [item] : []
+      }))
     }
   }
   const items = Object.freeze([...visible].sort(compareCampaignAttentionItems))

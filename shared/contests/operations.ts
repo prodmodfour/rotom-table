@@ -1,9 +1,9 @@
 import type { PlayerProfileId } from '../playerProfiles'
-import { emptyContestStatRecord, isContestStatId, parseContestAppealId, parseContestId, parseContestOperationId, parseContestantId, type ContestIntroductionSkillId, type ContestStatId } from './ids'
+import { emptyContestStatRecord, isContestParticipantMethodId, isContestStatId, parseContestAppealId, parseContestId, parseContestOperationId, parseContestantId, type ContestIntroductionSkillId, type ContestParticipantMethodId, type ContestStatId } from './ids'
 import { normalizeContestPrize, type ContestControllerV1, type ContestCorrectionReceiptV1, type CreateContestDocumentInput } from './document'
 
 export const CONTEST_COMMAND_KINDS = Object.freeze([
-  'create-contest', 'update-settings', 'enroll-contestant', 'remove-contestant',
+  'create-contest', 'update-settings', 'set-participant-method', 'enroll-contestant', 'remove-contestant',
   'start-introduction', 'declare-introduction', 'restart-introduction', 'start-performance', 'select-rotation-performer',
   'declare-appeal', 'use-intervention', 'pass-intervention', 'set-paused', 'apply-correction', 'declare-prize', 'prepare-settlement',
   'commit-settlement', 'cancel-contest',
@@ -34,6 +34,10 @@ export interface UpdateContestSettingsCommandV1 extends ContestCommandBaseV1 {
     readonly prize?: { readonly declared: boolean, readonly money: number, readonly items: readonly { readonly itemId: string, readonly quantity: number, readonly targetTrainerSlug: string | null }[], readonly notes: string }
     readonly gmNotes?: string
   }
+}
+export interface SetContestParticipantMethodCommandV1 extends ContestCommandBaseV1 {
+  readonly commandKind: 'set-participant-method'
+  readonly participantMethodId: ContestParticipantMethodId
 }
 export interface EnrollContestantCommandV1 extends ContestCommandBaseV1 {
   readonly commandKind: 'enroll-contestant'
@@ -68,12 +72,16 @@ export interface DeclareAppealCommandV1 extends ContestCommandBaseV1 {
   readonly contestantId: string
   readonly performerId: string
   readonly moveOptionId: string
+  /** Optional same-entry recipient for reviewed Simultaneous cross-performer effects. */
+  readonly partnerEffectTargetPerformerId?: string | null
   readonly spentDice: Readonly<Record<ContestStatId, number>>
 }
 export interface UseContestInterventionCommandV1 extends ContestCommandBaseV1 {
   readonly commandKind: 'use-intervention'
   readonly contestantId: string
   readonly interventionId: string
+  /** Exact paired performer receiving this intervention; null for ordinary Contest decisions. */
+  readonly targetPerformerId?: string | null
   readonly targetContestantId: string | null
   readonly appealId: string | null
   readonly choices: Readonly<Record<string, string | number | boolean>>
@@ -99,7 +107,7 @@ export interface CommitContestSettlementCommandV1 extends ContestCommandBaseV1 {
 export interface CancelContestCommandV1 extends ContestCommandBaseV1 { readonly commandKind: 'cancel-contest', readonly reason: string }
 
 export type ContestCommandV1 =
-  | CreateContestCommandV1 | UpdateContestSettingsCommandV1 | EnrollContestantCommandV1
+  | CreateContestCommandV1 | UpdateContestSettingsCommandV1 | SetContestParticipantMethodCommandV1 | EnrollContestantCommandV1
   | RemoveContestantCommandV1 | StartIntroductionCommandV1 | DeclareIntroductionCommandV1
   | RestartIntroductionCommandV1 | StartPerformanceCommandV1 | SelectRotationPerformerCommandV1 | DeclareAppealCommandV1
   | UseContestInterventionCommandV1 | PassContestInterventionCommandV1 | SetContestPausedCommandV1 | ApplyContestCorrectionCommandV1
@@ -134,6 +142,7 @@ const COMMON = ['schemaVersion', 'operationId', 'contestId', 'commandKind', 'exp
 const FIELDS: Readonly<Record<ContestCommandKind, readonly string[]>> = Object.freeze({
   'create-contest': [...COMMON, 'settings'],
   'update-settings': [...COMMON, 'patch'],
+  'set-participant-method': [...COMMON, 'participantMethodId'],
   'enroll-contestant': [...COMMON, 'contestantId', 'trainerSheetSlug', 'pokemonSheetSlugs', 'controller', 'rotationOrder'],
   'remove-contestant': [...COMMON, 'contestantId'],
   'start-introduction': COMMON,
@@ -141,8 +150,8 @@ const FIELDS: Readonly<Record<ContestCommandKind, readonly string[]>> = Object.f
   'restart-introduction': COMMON,
   'start-performance': COMMON,
   'select-rotation-performer': [...COMMON, 'contestantId', 'performerId'],
-  'declare-appeal': [...COMMON, 'contestantId', 'performerId', 'moveOptionId', 'spentDice'],
-  'use-intervention': [...COMMON, 'contestantId', 'interventionId', 'targetContestantId', 'appealId', 'choices'],
+  'declare-appeal': [...COMMON, 'contestantId', 'performerId', 'moveOptionId', 'partnerEffectTargetPerformerId', 'spentDice'],
+  'use-intervention': [...COMMON, 'contestantId', 'interventionId', 'targetPerformerId', 'targetContestantId', 'appealId', 'choices'],
   'pass-intervention': [...COMMON, 'contestantId', 'appealId'],
   'set-paused': [...COMMON, 'paused'],
   'apply-correction': [...COMMON, 'correctionKind', 'contestantId', 'statId', 'numericDelta', 'replacementProfileId', 'reason'],
@@ -168,7 +177,7 @@ export const parseContestCommand = (value: unknown): ContestCommandV1 => {
     const settings = object(commandKind === 'create-contest' ? row.settings : row.patch, `command.${commandKind === 'create-contest' ? 'settings' : 'patch'}`)
     if (JSON.stringify(settings).length > 20_000) fail(`command.${commandKind === 'create-contest' ? 'settings' : 'patch'}`, 'exceeds the bounded payload size')
     exact(settings, commandKind === 'create-contest'
-      ? ['name','hallName','description','variantId','contestTypeId','significanceMultiplier','awardRibbon','prize','rotationOrderPolicy','supercontestFestival','gmNotes']
+      ? ['name','hallName','description','variantId','participantVariantId','participantMethodId','contestTypeId','significanceMultiplier','awardRibbon','prize','rotationOrderPolicy','supercontestFestival','gmNotes']
       : ['name','hallName','description','significanceMultiplier','awardRibbon','prize','gmNotes'], `command.${commandKind === 'create-contest' ? 'settings' : 'patch'}`)
     const prefix = `command.${commandKind === 'create-contest' ? 'settings' : 'patch'}`
     for (const key of ['name','hallName'] as const) if (settings[key] !== undefined) text(settings[key], `${prefix}.${key}`, 120)
@@ -178,14 +187,18 @@ export const parseContestCommand = (value: unknown): ContestCommandV1 => {
     if (settings.prize !== undefined) try { normalizeContestPrize(settings.prize as never) } catch (error) { fail(`${prefix}.prize`, error instanceof Error ? error.message : 'is invalid') }
     if (commandKind === 'create-contest') {
       if (!['standard','supercontest','festival','rotation'].includes(String(settings.variantId))) fail(`${prefix}.variantId`, 'is unsupported')
+      if (settings.participantVariantId !== undefined && settings.participantVariantId !== null && settings.participantVariantId !== 'trainer-participant') fail(`${prefix}.participantVariantId`, 'is unsupported')
+      if (settings.participantVariantId === 'trainer-participant' && !isContestParticipantMethodId(settings.participantMethodId)) fail(`${prefix}.participantMethodId`, 'is required and must be canonical for Trainer Participant Contests')
+      if (settings.participantVariantId !== 'trainer-participant' && settings.participantMethodId !== undefined && settings.participantMethodId !== null) fail(`${prefix}.participantMethodId`, 'is available only to Trainer Participant Contests')
       if (settings.contestTypeId !== null && !isContestStatId(settings.contestTypeId)) fail(`${prefix}.contestTypeId`, 'must be canonical or null')
       if (settings.rotationOrderPolicy !== undefined && !['predeclared','choose-each-round'].includes(String(settings.rotationOrderPolicy))) fail(`${prefix}.rotationOrderPolicy`, 'is invalid')
       if (settings.supercontestFestival !== undefined && typeof settings.supercontestFestival !== 'boolean') fail(`${prefix}.supercontestFestival`, 'must be boolean')
     }
   }
+  if (commandKind === 'set-participant-method' && !isContestParticipantMethodId(row.participantMethodId)) fail('command.participantMethodId', 'must be canonical')
   if (commandKind === 'select-rotation-performer') text(row.performerId, 'command.performerId', 160)
   if (commandKind === 'declare-appeal') {
-    text(row.performerId, 'command.performerId', 160); text(row.moveOptionId, 'command.moveOptionId', 240)
+    text(row.performerId, 'command.performerId', 160); text(row.moveOptionId, 'command.moveOptionId', 240); if (row.partnerEffectTargetPerformerId !== undefined && row.partnerEffectTargetPerformerId !== null) text(row.partnerEffectTargetPerformerId, 'command.partnerEffectTargetPerformerId', 160)
     const spent = object(row.spentDice, 'command.spentDice')
     exact(spent, ['beauty','cool','cute','smart','tough'], 'command.spentDice')
     for (const statId of Object.keys(emptyContestStatRecord(() => 0)) as ContestStatId[]) integer(spent[statId], `command.spentDice.${statId}`, 0, 3)
@@ -212,6 +225,7 @@ export const parseContestCommand = (value: unknown): ContestCommandV1 => {
   if (commandKind === 'pass-intervention') parseContestAppealId(row.appealId, 'command.appealId')
   if (commandKind === 'use-intervention') {
     text(row.interventionId, 'command.interventionId', 120)
+    if (row.targetPerformerId !== undefined && row.targetPerformerId !== null) text(row.targetPerformerId, 'command.targetPerformerId', 160)
     if (row.targetContestantId !== null) parseContestantId(row.targetContestantId, 'command.targetContestantId')
     if (row.appealId !== null) parseContestAppealId(row.appealId, 'command.appealId')
     const choices = object(row.choices, 'command.choices')

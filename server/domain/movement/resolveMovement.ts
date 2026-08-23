@@ -1970,14 +1970,14 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   let expanded = true
   while (expanded) {
     expanded = false
+    const add = (id: string): void => {
+      if (linkedMovementGroup.has(id)) return
+      linkedMovementGroup.add(id)
+      expanded = true
+    }
     for (const link of links) {
       const owner = placements.find(candidate => candidate.id === link.ownerPlacementId)
       if (!owner?.effectiveCapabilityInstanceIds.includes(link.capabilityInstanceId)) continue
-      const add = (id: string): void => {
-        if (linkedMovementGroup.has(id)) return
-        linkedMovementGroup.add(id)
-        expanded = true
-      }
       if (link.kind === 'living-weapon'
         && (linkedMovementGroup.has(link.ownerPlacementId)
           || link.participantPlacementIds.some(id => linkedMovementGroup.has(id)))) {
@@ -1992,6 +1992,15 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
         && linkedMovementGroup.has(link.ownerPlacementId)) {
         link.participantPlacementIds.forEach(add)
       }
+    }
+    for (const effect of input.map.encounterState?.effects ?? []) {
+      if (!effect.tags.includes('equipment.hand-net')
+        || !effect.tags.includes('netted')
+        || !effect.source.placementId
+        || !linkedMovementGroup.has(effect.source.placementId)
+        || effect.suppression.sources.length > 0
+        || (effect.duration.remaining !== null && effect.duration.remaining <= 0)) continue
+      effect.affected.placementIds.forEach(add)
     }
   }
   if (mover.effectiveCapabilityIds.includes('Marsupial')

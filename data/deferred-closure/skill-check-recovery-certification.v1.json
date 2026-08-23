@@ -1,0 +1,319 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-skill-check-recovery-history-v1",
+  "ticket": "P11-052",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+    "sha256": "79548c37e25b5444d8241ab6f1b7a1c87b5dcfc8cd3c52e47ef4c22b64b0cc37"
+  },
+  "authorities": [
+    {
+      "id": "synchronous-atomic-sqlite-boundary",
+      "path": "server/storage/database.ts",
+      "sha256": "472095a114e611757bc9e86b67687d3d8e1f27ec15a1c4d6a304257ca3d1f849",
+      "guarantees": [
+        "begin-immediate-single-writer-serialization",
+        "nested-rollback-only-propagation",
+        "commit-or-complete-rollback",
+        "promise-return-refusal",
+        "file-close-and-reopen-durability"
+      ]
+    },
+    {
+      "id": "skill-check-document-and-operation-repository",
+      "path": "server/storage/skillCheckRepository.ts",
+      "sha256": "481164fb1b09b232b0282c37cb1156502d925a6e47a3d1365be6c25319f8e2d3",
+      "guarantees": [
+        "plus-one-document-cas",
+        "principal-and-command-hash-operation-replay",
+        "current-document-operation-result-binding",
+        "bounded-deterministic-terminal-listing",
+        "row-document-drift-and-corruption-refusal"
+      ]
+    },
+    {
+      "id": "gm-recovery-and-invalidation-workflow",
+      "path": "server/useCases/manageGmSkillChecks.ts",
+      "sha256": "8f88ca389144f213f7155eb7e0cb62fe9223765282a1acd61b652a9db6151178",
+      "guarantees": [
+        "atomic-request-cancel-and-resolve-delegation",
+        "duplicate-delivery-original-receipt",
+        "stale-revision-no-write",
+        "post-commit-attention-invalidation-only",
+        "transient-invalidation-failure-does-not-reject-committed-authority"
+      ]
+    },
+    {
+      "id": "subject-recovery-and-timeout-workflow",
+      "path": "server/useCases/manageSubjectSkillChecks.ts",
+      "sha256": "07ecd08b279199299154d28d47490a572e00ccf8995921e755fd8066aa386280",
+      "guarantees": [
+        "atomic-response-and-server-timeout-operations",
+        "group-response-cas-serialization",
+        "principal-bound-duplicate-replay",
+        "reconnect-projection-from-current-document",
+        "post-commit-bounded-profile-invalidation"
+      ]
+    },
+    {
+      "id": "resolution-recovery-authority",
+      "path": "server/useCases/resolveSkillCheck.ts",
+      "sha256": "2d06f81f6caf4b9bd8d7477c9a0dfa42c7220b33b4f2cdfe79665f400934b813",
+      "guarantees": [
+        "single-and-group-journal-result-atomicity",
+        "exact-retry-without-time-sheet-or-entropy-read",
+        "stale-revision-before-randomness",
+        "document-and-operation-rollback-together",
+        "one-post-commit-attention-invalidation"
+      ]
+    },
+    {
+      "id": "strict-skill-check-attention-detector",
+      "path": "server/domain/campaignAttention/skillCheckDetector.ts",
+      "sha256": "6d94a2bf779b9f135976ac752e96a8f580875a9bbb3977ccb96d697edd6629f4",
+      "guarantees": [
+        "complete-current-skill-check-read-required",
+        "pending-subject-owner-response-attention",
+        "pending-ready-or-declined-gm-review-attention",
+        "terminal-check-removal",
+        "deterministic-bounded-identities-and-actions"
+      ]
+    },
+    {
+      "id": "campaign-attention-complete-read-and-role-projection",
+      "path": "server/useCases/loadCampaignAttention.ts",
+      "sha256": "e5fbc8d2eaa065c173ab33b075d41ab61925b117fc6cb3fcb7e8f49b3dee4bd2",
+      "guarantees": [
+        "one-transaction-complete-skill-check-authority-read",
+        "corrupt-or-disappearing-check-refusal",
+        "skill-check-provider-merge",
+        "current-profile-authority-revalidation"
+      ]
+    },
+    {
+      "id": "owner-safe-campaign-history-contract",
+      "path": "shared/skillChecks/campaignHistory.ts",
+      "sha256": "38bc1876de125f545c117249fe39605d495687e92250b037359a30ca95468060",
+      "guarantees": [
+        "exact-terminal-record-shape",
+        "twenty-entry-maximum",
+        "newest-first-time-binding",
+        "resolved-cancelled-and-timed-out-only",
+        "cross-shape-and-private-field-rejection"
+      ]
+    },
+    {
+      "id": "owner-safe-campaign-history-loader",
+      "path": "server/useCases/loadCampaignSkillCheckHistory.ts",
+      "sha256": "76c8e26855028792b6ed668ecf417532c3288b1c5081ebe75bb1be623259976d",
+      "guarantees": [
+        "gm-generic-terminal-history",
+        "snapshotted-controller-owner-history-only",
+        "own-outcome-or-explicit-withholding",
+        "opaque-entry-identities",
+        "no-roll-modifier-note-subject-revision-or-operation-fields"
+      ]
+    },
+    {
+      "id": "campaign-history-authorized-route",
+      "path": "server/api/skill-checks/campaign-history.get.ts",
+      "sha256": "443ff871154915e9caf228e0274b5589b60f3df1690b5b0f3f2cc335b4e32b90",
+      "guarantees": [
+        "authenticated-gm-or-resolved-owner-only",
+        "no-spectator-fallback",
+        "no-gm-profile-spoofing",
+        "strict-query-and-twenty-record-bound"
+      ]
+    },
+    {
+      "id": "campaign-history-presentation",
+      "path": "src/components/campaign/CampaignSkillCheckHistoryCard.vue",
+      "sha256": "b7b2b9704811c1ef0e594daa43ca784bbd47b2c963ba75ce5b5f20e457bbf709",
+      "guarantees": [
+        "strict-response-reparse",
+        "four-record-initial-batch-and-explicit-expansion",
+        "word-plus-shape-terminal-states",
+        "focus-stable-refresh-and-retained-complete-projection",
+        "44px-controls-reduced-motion-and-narrow-row-stack"
+      ]
+    },
+    {
+      "id": "campaign-history-page-integration",
+      "path": "src/pages/campaign.vue",
+      "sha256": "3c416fac60573a675a3c986050e979f5c346c36404c49efcf0bc314482ee08ee",
+      "guarantees": [
+        "secondary-campaign-tool-placement",
+        "selected-profile-or-gm-authority",
+        "attention-snapshot-triggered-history-refresh",
+        "open-live-encounter-return"
+      ]
+    },
+    {
+      "id": "recovery-and-history-operator-contract",
+      "path": "docs/skill-check-recovery-and-campaign-history.md",
+      "sha256": "a74a3c8b7d9341c80a75dab03957bd7cd5260bcb03fc4bcafce20d51c16a86a5",
+      "guarantees": [
+        "documented-atomic-and-exact-replay-boundary",
+        "documented-concurrent-group-reload-policy",
+        "documented-unresolved-attention-lifecycle",
+        "documented-terminal-history-allowlist-and-limits"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/skillChecksRuntime.test.ts",
+      "sha256": "be0157437a918498d432152f99aeda9520b71f376d421b0e9bcb5ec5f5314333",
+      "scenarioIds": [
+        "single-real-sqlite-restart-reconnect-exact-replay-no-reroll-or-republication",
+        "group-concurrent-stale-cas-rejection-reconnect-and-convergence",
+        "single-request-and-group-response-resolution-two-boundary-rollback",
+        "unresolved-owner-gm-attention-to-terminal-private-safe-history",
+        "transient-attention-publication-failure-preserves-committed-command"
+      ]
+    },
+    {
+      "path": "tests/server/skillCheckStorage.test.ts",
+      "sha256": "15bdf1a95b8545adf0b279dbcda4c7d2357223ca3b1b3856793622b1f2fcc4d1",
+      "scenarioIds": [
+        "fresh-and-upgraded-storage-authority",
+        "cas-operation-conflict-and-corruption-refusal",
+        "file-close-reopen-document-and-operation-preservation"
+      ]
+    },
+    {
+      "path": "tests/server/skillCheckAuthority.test.ts",
+      "sha256": "028247b0adb6bad7f5e6bf86a7f71a4356044f122fca187718c7c933b53248f3",
+      "scenarioIds": [
+        "server-roll-exact-replay-without-entropy",
+        "single-group-opposed-authority",
+        "stale-before-roll-and-two-boundary-resolution-rollback"
+      ]
+    },
+    {
+      "path": "tests/server/skillCheckGmWorkflow.test.ts",
+      "sha256": "7ebfbee753f93cffa4679490e0dd4a871bf24a1a025067f59e71c63eb5fd8cad",
+      "scenarioIds": [
+        "request-resolve-cancel-exact-replay",
+        "stale-and-principal-conflict-no-write",
+        "request-and-cancel-two-boundary-rollback"
+      ]
+    },
+    {
+      "path": "tests/server/skillCheckSubjectWorkflow.test.ts",
+      "sha256": "83d28431f022ede10cbc8f3b7bdb59058f8fe704d8298730f943d76db1880677",
+      "scenarioIds": [
+        "group-response-convergence-and-exact-replay",
+        "stale-expired-sheet-and-principal-conflict-no-write",
+        "response-and-timeout-two-boundary-rollback"
+      ]
+    },
+    {
+      "path": "tests/server/campaignAttentionSkillCheckDetector.test.ts",
+      "sha256": "82b9bc4cff08ad7b740b3644080e04ac1eef359618811037d43bee277cfff8c1",
+      "scenarioIds": [
+        "pending-gm-and-exact-controller-owner-attention",
+        "ready-or-declined-urgent-gm-review",
+        "exact-owner-projection-and-profile-identity-redaction",
+        "terminal-removal-and-incomplete-duplicate-over-limit-refusal"
+      ]
+    },
+    {
+      "path": "tests/server/campaignSkillCheckHistory.test.ts",
+      "sha256": "bf4c59f0a843765a7f4503e206c2cdcd6e42a86da5ea92c2fed5cc9d30a8fff6",
+      "scenarioIds": [
+        "newest-owner-safe-resolved-cancelled-timed-out-history",
+        "unrelated-controller-and-private-authority-absence",
+        "gm-only-outcome-withholding-and-generic-gm-resolution",
+        "bounded-strict-cross-shape-rejection"
+      ]
+    },
+    {
+      "path": "tests/server/skillCheckCampaignHistoryRoute.test.ts",
+      "sha256": "03407b1d8241e4028a8c656c2fbdef7166a27f8deaee22f97d65c792a9d18b9d",
+      "scenarioIds": [
+        "gm-or-exact-owner-route-authority",
+        "missing-profile-spoof-extra-query-and-limit-rejection"
+      ]
+    },
+    {
+      "path": "tests/components/campaignSkillCheckHistoryCard.test.ts",
+      "sha256": "2637b38bccc690efb644bf38f72cd02b8e2a7d6fdd2f8139a0e6e8f23ca32176",
+      "scenarioIds": [
+        "four-row-bounded-owner-safe-terminal-presentation",
+        "explicit-history-expansion-and-live-encounter-action",
+        "focus-stable-malformed-refresh-with-retained-complete-history",
+        "profile-required-and-generic-gm-empty-state"
+      ]
+    },
+    {
+      "path": "tests/components/campaignContinuationDashboard.test.ts",
+      "sha256": "ddaf492c8653276cd64d357ebf575b0ce8327e0633405ef0310013795c88a3ec",
+      "scenarioIds": [
+        "skill-check-response-copy-and-open-live-encounter-action"
+      ]
+    },
+    {
+      "path": ".pi/artifacts/ui-mockups/campaign-skill-check-history/v001.png",
+      "sha256": "21b5e95a5749da715d36eb398d0fce5010a17e9e68f14d1a72b793194ee467b9",
+      "scenarioIds": [
+        "reviewed-campaign-skill-check-history-target-state"
+      ]
+    }
+  ],
+  "recoveryAcceptance": {
+    "singleReconnect": true,
+    "groupReconnect": true,
+    "realSqliteCloseReopen": true,
+    "duplicateDeliveryExactReceipt": true,
+    "duplicateRolls": 0,
+    "duplicateOperations": 0,
+    "duplicateAttentionInvalidations": 0,
+    "staleRevisionWrites": 0,
+    "documentBoundaryRollback": true,
+    "operationBoundaryRollback": true,
+    "rollbackAttentionInvalidations": 0,
+    "transientAttentionFailureChangesCommit": false
+  },
+  "historyAndAttentionAcceptance": {
+    "pendingOwnerResponseAttention": true,
+    "pendingGmObservation": true,
+    "readyOrDeclinedUrgentGmReview": true,
+    "terminalAttention": false,
+    "terminalCampaignHistory": true,
+    "historyInitialRows": 4,
+    "historyMaximumRows": 20,
+    "explicitExpansion": true,
+    "exactOwnerAuthority": true,
+    "genericGmOutcome": true,
+    "gmOnlyOwnerOutcomeWithheld": true,
+    "profileIdentityProjectedToOwner": false
+  },
+  "privacy": {
+    "gmNotesInOwnerHistory": false,
+    "situationalModifierInOwnerHistory": false,
+    "diceOrTotalsInOwnerHistory": false,
+    "controllerIdsInOwnerHistory": false,
+    "sheetSlugsOrRevisionsInOwnerHistory": false,
+    "subjectIdsInOwnerHistory": false,
+    "operationIdsOrHashesInOwnerHistory": false,
+    "otherSubjectIdentityOrResultInOwnerHistory": false,
+    "unrelatedCheckInOwnerHistory": false,
+    "withheldOutcomeExplicit": true
+  },
+  "acceptance": {
+    "singleAndGroupRecovery": true,
+    "concurrency": true,
+    "duplicateDelivery": true,
+    "staleRevisionRefusal": true,
+    "atomicRollback": true,
+    "campaignAttention": true,
+    "campaignHistory": true,
+    "strictRolePrivacy": true,
+    "boundedAccessiblePresentation": true,
+    "genericSkillCheckSurfaceComplete": true,
+    "remainingSkillCheckTicket": null
+  }
+}

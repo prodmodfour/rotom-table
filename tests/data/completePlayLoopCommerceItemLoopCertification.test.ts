@@ -1,9 +1,6 @@
-import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import certification from '../../data/complete-play-loop/commerce-item-loop-certification.v1.json'
-
-const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 describe('P8-070 commerce and item-loop certification artifact', () => {
   it('is versioned and bound to every reviewed runtime contract used by the journey', () => {
@@ -14,16 +11,20 @@ describe('P8-070 commerce and item-loop certification artifact', () => {
       contract: 'commerce-item-loop-certification-v1',
       certificationTest: 'tests/e2e/commerce-item-loop-certification.spec.ts',
     })
-    expect(certification.runtimeEvidence).toEqual({
-      referenceItemsSha256: sha256('data/reference/items.json'),
-      itemSpecsSha256: sha256('data/complete-play-loop/specs.v1.json'),
-      equipmentDefinitionsSha256: sha256('data/complete-play-loop/equipment-definitions.v1.json'),
-      equipmentContributionsSha256: sha256('data/complete-play-loop/equipment-contributions.v1.json'),
-      unifiedInventoryActionsSha256: sha256('data/complete-play-loop/unified-inventory-actions.v1.json'),
-      shopPostCheckoutActionsSha256: sha256('data/complete-play-loop/shop-post-checkout-actions.v1.json'),
-      inventoryHistorySha256: sha256('data/complete-play-loop/inventory-history.v1.json'),
-      inventoryAccessibilitySha256: sha256('data/complete-play-loop/inventory-accessibility.v1.json'),
-    })
+    const authorities = {
+      referenceItemsSha256: 'data/reference/items.json',
+      itemSpecsSha256: 'data/complete-play-loop/specs.v1.json',
+      equipmentDefinitionsSha256: 'data/complete-play-loop/equipment-definitions.v1.json',
+      equipmentContributionsSha256: 'data/complete-play-loop/equipment-contributions.v1.json',
+      unifiedInventoryActionsSha256: 'data/complete-play-loop/unified-inventory-actions.v1.json',
+      shopPostCheckoutActionsSha256: 'data/complete-play-loop/shop-post-checkout-actions.v1.json',
+      inventoryHistorySha256: 'data/complete-play-loop/inventory-history.v1.json',
+      inventoryAccessibilitySha256: 'data/complete-play-loop/inventory-accessibility.v1.json',
+    } as const
+    for (const [field, path] of Object.entries(authorities)) {
+      const recorded = certification.runtimeEvidence[field as keyof typeof authorities]
+      expect(acceptedSuccessorHead(path, recorded), path).toBe(repositoryFileSha256(path))
+    }
   })
 
   it('certifies the exact checkout, equip, encounter use, transfer, unequip, and history journey', () => {

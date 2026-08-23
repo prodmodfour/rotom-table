@@ -1,0 +1,317 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-item-action-recovery-v1",
+  "ticket": "P11-043",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "sourceFixtures": [
+    {
+      "path": "data/deferred-closure/item-action-matrix.v1.json",
+      "sha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83"
+    },
+    {
+      "path": "data/deferred-closure/failure-recovery-fixtures.v1.json",
+      "sha256": "5eeef81f0d3da21882acfaa53687fbb2df0a860746c7ad44720e41864225078b"
+    }
+  ],
+  "requiredScenarioIds": [
+    "stale-revision",
+    "duplicate-delivery",
+    "reconnect-pending",
+    "server-restart-pending",
+    "interrupted-atomic-commit"
+  ],
+  "authorities": [
+    {
+      "id": "equipment-action-transaction-authority",
+      "path": "server/useCases/executeEquipmentAction.ts",
+      "sha256": "0878a67b224dcf31bded2858d21f6d654d592aa51079161aa090dfca66ea9613",
+      "guarantees": [
+        "operation-id-plus-command-hash",
+        "exact-principal-replay",
+        "map-and-sheet-revision-read-set",
+        "single-database-transaction",
+        "post-commit-realtime-publication",
+        "injected-boundary-rollback"
+      ]
+    },
+    {
+      "id": "equipment-action-operation-ledger",
+      "path": "server/storage/equipmentActionOperationRepository.ts",
+      "sha256": "a78af72a4ad319a925403570a8c427e56482493bf37aa1ce789d73a17d847eb3",
+      "guarantees": [
+        "durable-command-result-evidence",
+        "exact-operation-identity",
+        "bounded-map-history"
+      ]
+    },
+    {
+      "id": "guided-item-settlement-authority",
+      "path": "server/useCases/manageItemGuidedAdjudication.ts",
+      "sha256": "564d3524009819e993b106634c51aad4f8c3a30110eb4e931507014c677b0757",
+      "guarantees": [
+        "durable-pending-request",
+        "exact-terminal-replay",
+        "terminal-revision-conflict",
+        "transactional-settlement-rollback"
+      ]
+    },
+    {
+      "id": "document-realtime-authority",
+      "path": "server/realtime/setupDocumentRealtime.ts",
+      "sha256": "ba1394f7dd29eee790e952dfdaf8ccf5f33aa28d3b7a85c5d78e3e6b690da0d0",
+      "guarantees": [
+        "complete-authoritative-map-payload",
+        "revision-deduplication",
+        "originating-client-attribution",
+        "map-access-projection"
+      ]
+    }
+  ],
+  "evidenceRegistry": [
+    {
+      "id": "shared-native-recovery",
+      "path": "tests/server/equipmentActionUseCase.test.ts",
+      "sha256": "f67eb9ca34fa48e2e93b995f733fb25039f9341fb0ba4afdbe97a519d0096b20",
+      "scenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "guarantees": [
+        "both-shields-exact-replay",
+        "stale-map-zero-write",
+        "post-map-failure-zero-write",
+        "database-restart-replay",
+        "client-attributed-map-convergence"
+      ]
+    },
+    {
+      "id": "glue-cannon-recovery",
+      "path": "tests/server/deferredClosureGlueCannon.test.ts",
+      "sha256": "f79fe8e3b2c7f6b1d81531578087e4e4c9179e96bfd56a96d7f7f9cf12fe3ee5",
+      "scenarioIds": [
+        "stale-revision",
+        "duplicate-delivery"
+      ],
+      "guarantees": [
+        "one-roll-on-duplicate",
+        "one-charge-spend",
+        "one-condition-family"
+      ]
+    },
+    {
+      "id": "hand-net-recovery",
+      "path": "tests/server/deferredClosureHandNet.test.ts",
+      "sha256": "c28499f58b14ebbba0caae7a54693f3ad94d7eca65c9ec64954548157f44c86f",
+      "scenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending"
+      ],
+      "guarantees": [
+        "one-roll-on-duplicate",
+        "durable-restraint-map-event",
+        "reconnected-role-safe-restraint"
+      ]
+    },
+    {
+      "id": "weighted-nets-recovery",
+      "path": "tests/server/deferredClosureWeightedNets.test.ts",
+      "sha256": "4eead38f9fb50f7d9f87578775f336c80d52171dd15c17f76d55195022eaca58",
+      "scenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending"
+      ],
+      "guarantees": [
+        "one-throw-roll-on-duplicate",
+        "one-meter-pull-on-duplicate",
+        "durable-restraint-map-event",
+        "ordered-client-attributed-revisions"
+      ]
+    },
+    {
+      "id": "shock-collar-recovery",
+      "path": "tests/server/deferredClosureShockCollar.test.ts",
+      "sha256": "7af271c292765b21b7c7b86ab781952a951c1e0ee65047a7b3b939d4e3f38c89",
+      "scenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "interrupted-atomic-commit"
+      ],
+      "guarantees": [
+        "paired-custody-stale-rejection",
+        "post-sheet-failure-zero-hp-spend",
+        "one-hp-spend-on-replay"
+      ]
+    },
+    {
+      "id": "fishing-recovery",
+      "path": "tests/server/deferredClosureFishingContract.test.ts",
+      "sha256": "f8bc6045b18736611e63864ddef696c755262361f96e6ba723798a1cd59bd4b8",
+      "scenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "server-restart-pending",
+        "interrupted-atomic-commit"
+      ],
+      "guarantees": [
+        "all-three-rods-exact-declaration-replay",
+        "pending-request-reconnect",
+        "database-restart-pending-recovery",
+        "declaration-and-settlement-rollback",
+        "all-three-rods-exact-terminal-replay"
+      ]
+    },
+    {
+      "id": "snag-machine-recovery",
+      "path": "tests/server/deferredClosureSnagMachine.test.ts",
+      "sha256": "7cddb04b87475b529027987f44b365bf829942b9c07808a589378b6dfb9f8e27",
+      "scenarioIds": [
+        "stale-revision",
+        "duplicate-delivery",
+        "reconnect-pending",
+        "interrupted-atomic-commit"
+      ],
+      "guarantees": [
+        "both-variants-exact-declaration-replay",
+        "private-pending-request-reconnect",
+        "both-variants-exact-terminal-replay",
+        "post-sheet-settlement-rollback"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "surfaceId": "item-action.light-shield.ready",
+      "actionId": "equipment.light-shield.ready",
+      "canonicalItemId": "Light Shield",
+      "finalState": "native",
+      "evidenceIds": ["shared-native-recovery"]
+    },
+    {
+      "surfaceId": "item-action.heavy-shield.ready",
+      "actionId": "equipment.heavy-shield.ready",
+      "canonicalItemId": "Heavy Shield",
+      "finalState": "native",
+      "evidenceIds": ["shared-native-recovery"]
+    },
+    {
+      "surfaceId": "item-action.shock-collar.activate",
+      "actionId": "equipment.shock-collar.activate",
+      "canonicalItemId": "Shock Collar",
+      "finalState": "native",
+      "evidenceIds": ["shared-native-recovery", "shock-collar-recovery"]
+    },
+    {
+      "surfaceId": "item-action.glue-cannon.attack",
+      "actionId": "equipment.glue-cannon.attack",
+      "canonicalItemId": "Glue Cannon",
+      "finalState": "native",
+      "evidenceIds": ["shared-native-recovery", "glue-cannon-recovery"]
+    },
+    {
+      "surfaceId": "item-action.hand-net.attack",
+      "actionId": "equipment.hand-net.attack",
+      "canonicalItemId": "Hand Net",
+      "finalState": "native",
+      "evidenceIds": ["shared-native-recovery", "hand-net-recovery"]
+    },
+    {
+      "surfaceId": "item-action.weighted-nets.throw",
+      "actionId": "equipment.weighted-nets.throw",
+      "canonicalItemId": "Weighted Nets",
+      "finalState": "native",
+      "evidenceIds": ["shared-native-recovery", "weighted-nets-recovery"]
+    },
+    {
+      "surfaceId": "item-action.weighted-nets.pull",
+      "actionId": "equipment.weighted-nets.pull",
+      "canonicalItemId": "Weighted Nets",
+      "finalState": "native",
+      "evidenceIds": ["shared-native-recovery", "weighted-nets-recovery"]
+    },
+    {
+      "surfaceId": "item-action.old-rod.fish",
+      "actionId": "equipment.fishing.old-rod",
+      "canonicalItemId": "Old Rod",
+      "finalState": "guided",
+      "evidenceIds": ["fishing-recovery"]
+    },
+    {
+      "surfaceId": "item-action.good-rod.fish",
+      "actionId": "equipment.fishing.good-rod",
+      "canonicalItemId": "Good Rod",
+      "finalState": "guided",
+      "evidenceIds": ["fishing-recovery"]
+    },
+    {
+      "surfaceId": "item-action.super-rod.fish",
+      "actionId": "equipment.fishing.super-rod",
+      "canonicalItemId": "Super Rod",
+      "finalState": "guided",
+      "evidenceIds": ["fishing-recovery"]
+    },
+    {
+      "surfaceId": "item-action.snag-machine.convert",
+      "actionId": "equipment.snag-machine.convert",
+      "canonicalItemId": "Snag Machine",
+      "finalState": "guided",
+      "evidenceIds": ["shared-native-recovery", "snag-machine-recovery"]
+    }
+  ],
+  "crossClientConvergence": [
+    {
+      "stateFamily": "readied-shield",
+      "actionIds": [
+        "equipment.light-shield.ready",
+        "equipment.heavy-shield.ready"
+      ],
+      "evidenceId": "shared-native-recovery",
+      "requiredFacts": [
+        "complete-map-revision-event",
+        "originating-client-attribution",
+        "reconnect-from-durable-map",
+        "exact-replay-emits-no-event"
+      ]
+    },
+    {
+      "stateFamily": "hand-net-restraint",
+      "actionIds": ["equipment.hand-net.attack"],
+      "evidenceId": "hand-net-recovery",
+      "requiredFacts": [
+        "complete-map-revision-event",
+        "role-safe-reconnected-projection",
+        "exact-replay-emits-no-event"
+      ]
+    },
+    {
+      "stateFamily": "weighted-net-restraint-and-pull",
+      "actionIds": [
+        "equipment.weighted-nets.throw",
+        "equipment.weighted-nets.pull"
+      ],
+      "evidenceId": "weighted-nets-recovery",
+      "requiredFacts": [
+        "ordered-map-revision-events",
+        "originating-client-attribution",
+        "one-meter-authoritative-pull",
+        "exact-replay-emits-no-event"
+      ]
+    }
+  ],
+  "acceptance": {
+    "actionCount": 11,
+    "uncoveredActionCount": 0,
+    "uncoveredScenarioCount": 0,
+    "manualRepairRequired": false,
+    "duplicateRollAllowed": false,
+    "duplicateSpendAllowed": false,
+    "partialCommitAllowed": false,
+    "privateAuthorityInRealtimeAllowed": false
+  }
+}

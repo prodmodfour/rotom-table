@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import contributionJson from '~~/data/complete-play-loop/equipment-contributions.v1.json'
 import equipmentDefinitionJson from '~~/data/complete-play-loop/equipment-definitions.v1.json'
+import equipmentGrantJson from '~~/data/complete-play-loop/equipment-grants.v1.json'
 import itemsJson from '~~/data/reference/items.json'
 import { stableJsonStringify } from '~~/shared/automation/stableJson'
 import {
@@ -12,6 +13,7 @@ import {
   equipmentDefinitionFor,
   equipmentDefinitionSha256,
 } from './equipmentDefinitionRegistry'
+import { equipmentGrantDefinitionFor } from './equipmentGrantRegistry'
 
 const EQUIPMENT_CATEGORIES = new Set([
   'Held Item', 'Weapon', 'Hand Equipment', 'Head Equipment',
@@ -50,6 +52,9 @@ if (document.catalogSha256 !== rawFileSha256(itemsJson)) {
 if (document.equipmentDefinitionsSha256 !== rawFileSha256(equipmentDefinitionJson)) {
   throw new Error('Equipment contribution definitions are stale against reviewed compatibility definitions.')
 }
+if (document.equipmentGrantsSha256 !== rawFileSha256(equipmentGrantJson)) {
+  throw new Error('Equipment contribution definitions are stale against reviewed grant final states.')
+}
 if (document.definitionCount !== expectedIds.length
   || document.definitions.some(definition => !expectedIdSet.has(definition.canonicalItemId))) {
   throw new Error('Reviewed equipment contributions do not classify the exact canonical equipment catalog.')
@@ -60,10 +65,20 @@ for (const definition of document.definitions) {
   const item = itemRecords[definition.canonicalItemId]
   const equipment = equipmentDefinitionFor(definition.canonicalItemId)
   const equipmentHash = equipmentDefinitionSha256(definition.canonicalItemId)
+  const grantDefinition = equipmentGrantDefinitionFor(definition.canonicalItemId)
+  const expectedGrantFinalStates = (grantDefinition?.grants ?? []).map((grant) => {
+    const finalState = grant.kind === 'action'
+      ? grant.finalState
+      : grant.kind === 'weapon-profile' || grant.kind === 'move'
+        ? grant.executionStatus === 'native' ? 'native' : 'deferred'
+        : 'passive'
+    return { grantId: grant.grantId, kind: grant.kind, finalState }
+  })
   if (!item || !equipment || !equipmentHash
     || sha256(item) !== definition.canonicalRecordSha256
     || equipment.canonicalRecordSha256 !== definition.canonicalRecordSha256
-    || equipmentHash !== definition.equipmentDefinitionSha256) {
+    || equipmentHash !== definition.equipmentDefinitionSha256
+    || stableJsonStringify(definition.grantFinalStates) !== stableJsonStringify(expectedGrantFinalStates)) {
     throw new Error(`Equipment contribution ${definition.canonicalItemId} is stale against canonical authority.`)
   }
   definitions.set(definition.canonicalItemId, definition)

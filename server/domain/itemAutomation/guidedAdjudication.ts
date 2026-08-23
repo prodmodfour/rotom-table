@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import guidedCatalogJson from '~~/data/complete-play-loop/guided-catalog-items.v1.json'
+import pokedexJson from '~~/data/reference/pokedex.json'
 import type { AuthRole } from '#shared/auth'
 import { encounterPresentationStableId } from '#shared/encounterPresentation'
 import {
@@ -15,8 +16,10 @@ import {
 } from '#shared/itemAutomation/guidedAdjudication'
 import { parseSheetEquipmentStateForOwner, type EquipmentOwnerKind } from '#shared/itemAutomation/equipment'
 import type { ItemRuntimeDefinition } from '#shared/itemAutomation/spec'
+import { SKILL_CHECK_SKILL_IDS } from '#shared/skillChecks/contract'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { TrainerSheet } from '~/types/trainerSheet'
+import type { PokedexRecord } from '~/types/pokemon'
+import type { TrainerSheet, TrainerSkillKey } from '~/types/trainerSheet'
 import type {
   StoredItemGuidedAuthorityV1,
   StoredItemGuidedCommonAuthorityV1,
@@ -164,6 +167,63 @@ export const buildGuidedItemOperationAuthority = (input: {
   })
 }
 
+const SKILL_LABELS: Partial<Record<TrainerSkillKey, string>> = Object.freeze({
+  generalEd: 'General Education', medicineEd: 'Medicine Education', occultEd: 'Occult Education',
+  pokeEd: 'Pokémon Education', techEd: 'Technology Education',
+})
+const skillLabel = (skillId: TrainerSkillKey): string => SKILL_LABELS[skillId]
+  ?? `${skillId.slice(0, 1).toLocaleUpperCase('en-US')}${skillId.slice(1)}`
+
+const canonicalHookRecords = Object.freeze((pokedexJson as PokedexRecord[])
+  .filter(record => typeof record.species === 'string' && record.species.trim() === record.species)
+  .sort((left, right) => left.species.localeCompare(right.species)))
+if (new Set(canonicalHookRecords.map(record => record.species)).size !== canonicalHookRecords.length
+  || canonicalHookRecords.length !== (pokedexJson as PokedexRecord[]).length
+  || canonicalHookRecords.length > 1_200) {
+  throw new Error('Canonical fishing hook presentation authority is malformed, duplicated, or exceeds its bound.')
+}
+
+const resolutionFor = (
+  record: StoredItemGuidedRequestRecord,
+  role: AuthRole,
+): ItemGuidedRequestProjectionV1['resolution'] => {
+  if (role !== 'gm' || record.status !== 'pending') return null
+  if (record.requestKind === 'fishing-adjudication') {
+    const hookRecords = record.canonicalItemId === 'Old Rod'
+      ? canonicalHookRecords.filter(candidate => candidate.evolution_stage === 1
+        && candidate.size?.toLocaleLowerCase('en-US') === 'small')
+      : record.canonicalItemId === 'Good Rod'
+        ? canonicalHookRecords.filter(candidate => candidate.evolution_stage === 1)
+        : record.canonicalItemId === 'Super Rod' ? canonicalHookRecords : []
+    return Object.freeze({
+      kind: 'fishing' as const,
+      actorKind: record.actorKind,
+      actorSheetSlug: record.actorSlug,
+      skillOptions: Object.freeze(SKILL_CHECK_SKILL_IDS.map(skillId => Object.freeze({
+        skillId, label: skillLabel(skillId),
+      }))),
+      hookOptions: Object.freeze(hookRecords.map(candidate => Object.freeze({
+        speciesId: candidate.species, label: candidate.species,
+      }))),
+      maximumHookLevel: record.canonicalItemId === 'Old Rod' ? 10 as const : 100 as const,
+      allowNoHook: true as const,
+    })
+  }
+  if (record.requestKind === 'snag-conversion-adjudication') return Object.freeze({
+    kind: 'snag-conversion' as const,
+    decisions: Object.freeze([Object.freeze({
+      decision: 'deny' as const,
+      label: 'Deny conversion',
+      description: 'Release the reservation and leave the exact Poké Ball unchanged.',
+    }), Object.freeze({
+      decision: 'approve' as const,
+      label: 'Approve conversion',
+      description: 'Apply the reviewed current Portable or Large Snag Machine conversion authority.',
+    })]),
+  })
+  return null
+}
+
 const choicesFor = (record: StoredItemGuidedRequestRecord, role: AuthRole): ItemGuidedRequestProjectionV1['choices'] => {
   if (role !== 'gm' || record.status !== 'pending') return Object.freeze([])
   if (record.requestKind === 'loyalty-consequence') return Object.freeze([
@@ -183,6 +243,8 @@ const choicesFor = (record: StoredItemGuidedRequestRecord, role: AuthRole): Item
     label: guidedCatalog.decision.optionLabel,
     description: 'Settle the exact reviewed source disposition and record this bounded GM decision.',
   })])
+  if (record.requestKind === 'fishing-adjudication'
+    || record.requestKind === 'snag-conversion-adjudication') return Object.freeze([])
   if (record.requestKind === 're-breather-activation') return Object.freeze([Object.freeze({
     optionId: ITEM_GUIDED_RE_BREATHER_ACTIVATE_OPTION_ID,
     label: 'Activate for one hour',
@@ -210,11 +272,16 @@ export const projectItemGuidedRequest = (input: {
     itemLabel: record.canonicalItemId,
     actorLabel: record.authority.actorLabel,
     targetLabel: record.authority.targetLabel,
-    targetKindLabel: record.targetKind === 'pokemon' ? 'Pokémon' : 'Trainer',
+    targetKindLabel: record.authority.sourceKind === 'equipped-fishing-rod'
+      ? 'Water'
+      : record.authority.sourceKind === 'snag-machine-conversion'
+        ? 'Poké Ball'
+        : record.targetKind === 'pokemon' ? 'Pokémon' : 'Trainer',
     timingLabel: record.authority.timingLabel,
     prompt: record.authority.prompt,
     canonicalFacts: record.authority.canonicalFacts,
     choices: choicesFor(record, input.role),
+    resolution: resolutionFor(record, input.role),
     settlementFacts: record.authority.settlementFacts,
     reservationLabel: record.authority.reservationLabel,
     boundaryLabel: record.authority.boundaryLabel,

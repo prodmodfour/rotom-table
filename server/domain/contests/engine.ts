@@ -6,8 +6,11 @@ import {
   contestActiveContestants,
   contestCurrentContestant,
   contestCurrentPerformer,
+  contestPerformerIsPokemon,
+  contestPerformerIsTrainer,
   normalizeContestPrize,
   parseContestDocument,
+  spendTrainerParticipantSharedDice,
   type ContestAppealContributorV1,
   type ContestAppealLedgerEntryV1,
   type ContestDocumentV1,
@@ -18,6 +21,7 @@ import type { ContestCommandV1 } from '#shared/contests/operations'
 import { explainContestTypeRelationship } from '#shared/contests/projections'
 import { rejectContest } from '#shared/contests/validation'
 import { assembleContestAppeal } from '#shared/contests/appealAssembly'
+import { resolveTrainerParticipantMethodTurn, type ContestParticipantPerformerKind } from '#shared/contests/participantMethods'
 
 export interface ContestIntroductionBonusRollV1 {
   readonly sourceId: string
@@ -66,6 +70,7 @@ const pendingDefaults = (): ContestantStateV1['pendingEffects'] => Object.freeze
   nextAppealTypeId: null,
   nextAppealEffectId: null,
   fixedAppealPerDie: false,
+  targetPerformerId: null,
   blockedMoveOptionIds: Object.freeze([]),
   blockedMoveRound: null,
   blockedMovePerformerId: null,
@@ -151,11 +156,32 @@ const positionContext = (document: ContestDocumentV1, actor: ContestantStateV1):
     adjacentIds: Object.freeze(round.lineup.flatMap((letter, position) => Math.abs(position - actorPosition) === 1 ? [byLetter.get(letter as any)!] : [])),
   })
 }
-interface EffectConsequence { contestantId: string, appealDelta: number, fumbleDelta: number, voltageDelta: number, reason: string }
-const addConsequence = (rows: EffectConsequence[], contestantId: string, appealDelta: number, fumbleDelta: number, voltageDelta: number, reason: string): void => {
-  const existing = rows.find(row => row.contestantId === contestantId && row.reason === reason)
+interface EffectConsequence { contestantId: string, performerId: string | null, appealDelta: number, fumbleDelta: number, voltageDelta: number, reason: string }
+interface VoltageTarget { contestant: ContestantStateV1, performerId: string | null, voltage: number }
+const simultaneousParticipant = (document: ContestDocumentV1): boolean => document.participantVariantId === 'trainer-participant' && document.participantMethodId === 'simultaneous'
+const pairedPerformersAtRound = (document: ContestDocumentV1, contestant: ContestantStateV1, round = document.round): readonly ContestantStateV1['performers'][number][] => {
+  const trainer = contestant.performers.find(contestPerformerIsTrainer)
+  const pokemon = document.variantId === 'rotation' ? contestant.performers[contestant.rotationOrder[round - 1] ?? -1] : contestant.performers.find(contestPerformerIsPokemon)
+  return trainer && pokemon && contestPerformerIsPokemon(pokemon) ? Object.freeze([trainer, pokemon]) : Object.freeze([])
+}
+const participantAppealProviderIds = (document: ContestDocumentV1, contestant: ContestantStateV1, performer: ContestantStateV1['performers'][number]): readonly string[] => {
+  if (document.participantVariantId !== 'trainer-participant') return performer.providerIds
+  const trainer = contestant.performers.find(contestPerformerIsTrainer)
+  if (!trainer) throw new Error('Parsed Trainer Participant entry has no Trainer provider authority.')
+  return Object.freeze([...new Set([...performer.providerIds, ...trainer.providerIds.filter(providerId => providerId.startsWith('feature:'))])])
+}
+const performerVoltage = (document: ContestDocumentV1, contestant: ContestantStateV1, performerId: string): number => simultaneousParticipant(document) ? contestant.performerVoltages[performerId] ?? 0 : contestant.voltage
+const setPerformerVoltage = (document: ContestDocumentV1, contestant: Mutable, performerId: string, value: number): void => {
+  if (simultaneousParticipant(document)) contestant.performerVoltages[performerId] = cappedVoltage(value)
+  else contestant.voltage = cappedVoltage(value)
+}
+const voltageTargets = (document: ContestDocumentV1, contestant: ContestantStateV1): readonly VoltageTarget[] => simultaneousParticipant(document)
+  ? pairedPerformersAtRound(document, contestant).map(performer => ({ contestant, performerId: performer.performerId, voltage: performerVoltage(document, contestant, performer.performerId) }))
+  : Object.freeze([{ contestant, performerId: null, voltage: contestant.voltage }])
+const addConsequence = (rows: EffectConsequence[], contestantId: string, performerId: string | null, appealDelta: number, fumbleDelta: number, voltageDelta: number, reason: string): void => {
+  const existing = rows.find(row => row.contestantId === contestantId && row.performerId === performerId && row.reason === reason)
   if (existing) { existing.appealDelta += appealDelta; existing.fumbleDelta += fumbleDelta; existing.voltageDelta += voltageDelta }
-  else rows.push({ contestantId, appealDelta, fumbleDelta, voltageDelta, reason })
+  else rows.push({ contestantId, performerId, appealDelta, fumbleDelta, voltageDelta, reason })
 }
 const scoreRoll = (results: readonly number[], effectId: ContestEffectId, center: boolean, fixedPerDie: boolean): { appeal: number, fumble: number } => {
   if (fixedPerDie) return { appeal: results.length, fumble: 0 }
@@ -169,17 +195,22 @@ const scoreRoll = (results: readonly number[], effectId: ContestEffectId, center
   return { appeal, fumble }
 }
 const effectConsequences = (input: {
-  document: ContestDocumentV1, actor: ContestantStateV1, effectId: ContestEffectId, results: readonly number[], adjacentIds: readonly string[], startingVoltage: number, appeal: number, fumble: number, repeatedMove: boolean, matchingType: boolean,
+  document: ContestDocumentV1, actor: ContestantStateV1, actorPerformerId: string, actorVoltageRecipientPerformerId: string | null, effectId: ContestEffectId, results: readonly number[], adjacentIds: readonly string[], startingVoltage: number, appeal: number, fumble: number, repeatedMove: boolean, matchingType: boolean,
 }): { appeal: number, fumble: number, actorVoltage: number, consequences: EffectConsequence[] } => {
   let { appeal, fumble } = input
   let actorVoltage = input.startingVoltage
   const consequences: EffectConsequence[] = []
   const adjacent = input.adjacentIds.map(id => contestantById(input.document, id))
   const changeActorVoltage = (delta: number, reason: string): void => {
-    const next = cappedVoltage(actorVoltage + delta); addConsequence(consequences, input.actor.contestantId, 0, 0, next - actorVoltage, reason); actorVoltage = next
+    const next = cappedVoltage(actorVoltage + delta); addConsequence(consequences, input.actor.contestantId, simultaneousParticipant(input.document) ? input.actorPerformerId : null, 0, 0, next - actorVoltage, reason); actorVoltage = next
   }
   const changeAdjacentVoltage = (delta: number, reason: string): void => {
-    for (const target of adjacent) { const actual = cappedVoltage(target.voltage + delta) - target.voltage; if (actual) addConsequence(consequences, target.contestantId, 0, 0, actual, reason) }
+    for (const adjacentEntry of adjacent) for (const target of voltageTargets(input.document, adjacentEntry)) { const actual = cappedVoltage(target.voltage + delta) - target.voltage; if (actual) addConsequence(consequences, adjacentEntry.contestantId, target.performerId, 0, 0, actual, reason) }
+  }
+  let recipientVoltage = input.actorVoltageRecipientPerformerId === null ? null : performerVoltage(input.document, input.actor, input.actorVoltageRecipientPerformerId)
+  const changeAttentionRecipientVoltage = (delta: number): void => {
+    if (input.actorVoltageRecipientPerformerId === null || recipientVoltage === null) return changeActorVoltage(delta, 'Attention Grabber')
+    const next = cappedVoltage(recipientVoltage + delta); addConsequence(consequences, input.actor.contestantId, input.actorVoltageRecipientPerformerId, 0, 0, next - recipientVoltage, 'Attention Grabber'); recipientVoltage = next
   }
   if (input.effectId === 'big-show') changeActorVoltage(3, 'Big Show')
   if (input.effectId === 'excitement') changeActorVoltage(2, 'Excitement')
@@ -193,13 +224,13 @@ const effectConsequences = (input: {
   if (input.effectId === 'good-show') changeActorVoltage(1, 'Good Show')
   if (input.effectId === 'exhausting-act') changeActorVoltage(-2, 'Exhausting Act')
   if (input.effectId === 'attention-grabber') {
-    for (const target of adjacent) {
+    for (const adjacentEntry of adjacent) for (const target of voltageTargets(input.document, adjacentEntry)) {
       const loss = Math.min(2, target.voltage)
-      if (loss) { addConsequence(consequences, target.contestantId, 0, 0, -loss, 'Attention Grabber'); changeActorVoltage(loss, 'Attention Grabber') }
+      if (loss) { addConsequence(consequences, adjacentEntry.contestantId, target.performerId, 0, 0, -loss, 'Attention Grabber'); changeAttentionRecipientVoltage(loss) }
     }
   }
-  if (input.effectId === 'sabotage') for (const target of adjacent) addConsequence(consequences, target.contestantId, 0, target.pendingEffects.fumbleProtectionRound === input.document.round ? 0 : input.results.length, 0, 'Sabotage')
-  if (input.effectId === 'tease') for (const target of adjacent) addConsequence(consequences, target.contestantId, 0, target.pendingEffects.fumbleProtectionRound === input.document.round ? 0 : input.results.filter(value => value === 6).length, 0, 'Tease')
+  if (input.effectId === 'sabotage') for (const target of adjacent) addConsequence(consequences, target.contestantId, null, 0, target.pendingEffects.fumbleProtectionRound === input.document.round ? 0 : input.results.length, 0, 'Sabotage')
+  if (input.effectId === 'tease') for (const target of adjacent) addConsequence(consequences, target.contestantId, null, 0, target.pendingEffects.fumbleProtectionRound === input.document.round ? 0 : input.results.filter(value => value === 6).length, 0, 'Tease')
   return { appeal, fumble, actorVoltage, consequences }
 }
 
@@ -222,7 +253,7 @@ const completePerformanceOrAdvance = (before: ContestDocumentV1, next: Mutable, 
     lowest.finalPlacement = active.length
     next.festivalHeat += 1; next.round = 1; next.turnIndex = 0
     const remaining = (next.contestants as Mutable[]).filter(row => !row.withdrawn).sort((left, right) => (right.appeal - right.fumble) - (left.appeal - left.fumble) || String(left.contestantId).localeCompare(String(right.contestantId)))
-    remaining.forEach((row, index) => { row.letter = CONTEST_LETTERS[index]; row.fumble = 0; row.voltage = 0; row.lastMoveOptionId = null; row.pendingEffects = pendingDefaults() })
+    remaining.forEach((row, index) => { row.letter = CONTEST_LETTERS[index]; row.fumble = 0; row.voltage = 0; for (const performerId of Object.keys(row.performerVoltages)) row.performerVoltages[performerId] = 0; row.lastMoveOptionId = null; row.pendingEffects = pendingDefaults() })
     if (next.policy.supercontestFestival) rollSupercontestType(next, before, operationId, 1, now, random)
     history(next, before, { type: 'festival-elimination', contestantId: lowest.contestantId, headline: `${lowest.displayName} leaves the Festival stage`, detail: `Festival heat ${next.festivalHeat} begins with appeal carried forward.`, operationId, createdAt: now })
     return
@@ -241,6 +272,43 @@ const completePerformanceOrAdvance = (before: ContestDocumentV1, next: Mutable, 
   history(next, before, { type: 'performance-completed', headline: 'Performance complete', detail: 'Final scores and placements are ready for settlement.', operationId, createdAt: now })
 }
 
+const appealFestivalHeat = (appealId: string): number => Number(/-(\d+)-(\d+)-(\d+)-(\d+)$/u.exec(appealId)?.[1] ?? 1)
+const trainerParticipantAppealAuthority = (document: ContestDocumentV1, contestant: ContestantStateV1): {
+  readonly legalPerformers: readonly ContestantStateV1['performers'][number][]
+  readonly pairedPokemon: ContestantStateV1['performers'][number]
+  readonly legalPerformerIds: readonly string[]
+  readonly acceptedAppealsThisTurn: number
+  readonly roundComplete: boolean
+} => {
+  if (document.participantVariantId !== 'trainer-participant' || document.participantMethodId === null) throw new Error('Trainer Participant appeal authority requires one locked method.')
+  const trainer = contestant.performers.find(contestPerformerIsTrainer)
+  const pairedPokemon = document.variantId === 'rotation' ? contestCurrentPerformer(document, contestant) : contestant.performers.find(contestPerformerIsPokemon)
+  if (!trainer || !pairedPokemon || !contestPerformerIsPokemon(pairedPokemon)) throw new Error('Parsed Trainer Participant entry has no exact Trainer/Pokémon appeal pair.')
+  const currentTurn = document.turnIndex + 1
+  const atCurrentCursor = (appeal: ContestAppealLedgerEntryV1): boolean => appeal.contestantId === contestant.contestantId && appeal.round === document.round && appeal.turn === currentTurn && (document.variantId !== 'festival' || appealFestivalHeat(appeal.appealId) === document.festivalHeat)
+  const acceptedAppeals = document.appealLedger.filter(atCurrentCursor)
+  const acceptedKinds = acceptedAppeals.map(appeal => {
+    const acceptedPerformer = contestant.performers.find(candidate => candidate.performerId === appeal.performerId)
+    if (!acceptedPerformer) throw new Error('Accepted participant appeal references a missing performer.')
+    return (contestPerformerIsTrainer(acceptedPerformer) ? 'trainer' : 'pokemon') as ContestParticipantPerformerKind
+  })
+  const previousAppeal = [...document.appealLedger].reverse().find(appeal => appeal.contestantId === contestant.contestantId && !atCurrentCursor(appeal))
+  const previousPerformer = previousAppeal ? contestant.performers.find(candidate => candidate.performerId === previousAppeal.performerId) : null
+  const previousKind: ContestParticipantPerformerKind | null = previousPerformer ? contestPerformerIsTrainer(previousPerformer) ? 'trainer' : 'pokemon' : null
+  const turn = resolveTrainerParticipantMethodTurn({ methodId: document.participantMethodId, acceptedPerformerKindsThisRound: acceptedKinds, previousRoundTerminalPerformerKind: previousKind })
+  const legalPerformers = turn.legalNextPerformerKinds.map(kind => kind === 'trainer' ? trainer : pairedPokemon)
+  return { legalPerformers: Object.freeze(legalPerformers), pairedPokemon, legalPerformerIds: Object.freeze(legalPerformers.map(candidate => candidate.performerId)), acceptedAppealsThisTurn: acceptedAppeals.length, roundComplete: turn.roundComplete }
+}
+
+const completeParticipantTurnOrAdvance = (before: ContestDocumentV1, next: Mutable, contestantId: string, operationId: string, now: number, random: ContestRandomSource): void => {
+  if (before.participantVariantId === 'trainer-participant') {
+    const afterAppeal = { ...before, appealLedger: next.appealLedger } as ContestDocumentV1
+    const contestant = afterAppeal.contestants.find(row => row.contestantId === contestantId)!
+    if (!trainerParticipantAppealAuthority(afterAppeal, contestant).roundComplete) return
+  }
+  completePerformanceOrAdvance(before, next, operationId, now, random)
+}
+
 const declareAppeal = (before: ContestDocumentV1, next: Mutable, command: Extract<ContestCommandV1, { commandKind: 'declare-appeal' }>, context: ContestEngineContextV1): void => {
   requireStage(before, 'performance'); requireRunning(before)
   if (before.pendingInterventionAppealId) rejectContest('contest.intervention-decision-required', 'Resolve or pass the accepted appeal reroll window before declaring another appeal.', { legalAlternatives: ['Use an offered reroll.', 'Pass the reroll window.'], statusCode: 409 })
@@ -248,16 +316,27 @@ const declareAppeal = (before: ContestDocumentV1, next: Mutable, command: Extrac
   if (!currentCandidate) return rejectContest('contest.wrong-turn', 'No contestant currently has the turn.', { contestantId: command.contestantId, legalAlternatives: [], statusCode: 409 })
   const current = currentCandidate
   if (current.contestantId !== command.contestantId) return rejectContest('contest.wrong-turn', 'It is not this contestant’s turn.', { contestantId: command.contestantId, legalAlternatives: [`Wait for ${current.displayName}.`], statusCode: 409 })
-  const performer = contestCurrentPerformer(before, current)
-  if (performer.performerId !== command.performerId) return rejectContest('contest.option-not-offered', 'That performer is not active this round.', { contestantId: current.contestantId, legalAlternatives: [performer.performerId] })
+  const participantAuthority = before.participantVariantId === 'trainer-participant' ? trainerParticipantAppealAuthority(before, current) : null
+  const ordinaryPerformer = participantAuthority ? null : contestCurrentPerformer(before, current)
+  const performer = participantAuthority?.legalPerformers.find(candidate => candidate.performerId === command.performerId) ?? ordinaryPerformer
+  const legalPerformerIds = participantAuthority?.legalPerformerIds ?? (ordinaryPerformer ? [ordinaryPerformer.performerId] : [])
+  if (!performer || !legalPerformerIds.includes(command.performerId)) return rejectContest('contest.option-not-offered', 'That performer is not active for this appeal.', { contestantId: current.contestantId, legalAlternatives: legalPerformerIds })
+  if (current.pendingEffects.targetPerformerId !== null && current.pendingEffects.targetPerformerId !== performer.performerId) rejectContest('contest.intervention-decision-required', 'The accepted pre-appeal intervention is bound to the other paired performer.', { contestantId: current.contestantId, legalAlternatives: [current.pendingEffects.targetPerformerId], field: 'performerId', statusCode: 409 })
   const optionCandidate = performer.moves.find(row => row.optionId === command.moveOptionId)
   if (!optionCandidate) return rejectContest('contest.option-not-offered', 'That move was not in the authoritative offer.', { contestantId: current.contestantId, legalAlternatives: performer.moves.map(row => row.optionId) })
   const option = optionCandidate
   if (!option.available || !isContestStatId(option.typeId) || !isContestEffectId(option.effectId)) return rejectContest('contest.move-unavailable', option.unavailableReason ?? 'That move has no canonical Contest identity.', { contestantId: current.contestantId, legalAlternatives: performer.moves.filter(row => row.available).map(row => row.optionId) })
   const actor = (next.contestants as Mutable[]).find(row => row.contestantId === current.contestantId)!
   const nextPerformer = (actor.performers as Mutable[]).find(row => row.performerId === performer.performerId)!
+  const pairedPoolPerformer = participantAuthority ? (actor.performers as Mutable[]).find(row => row.performerId === participantAuthority.pairedPokemon.performerId)! : nextPerformer
+  const activeProviderIds = participantAppealProviderIds(before, current, performer)
   let effectId = (actor.pendingEffects.nextAppealEffectId ?? option.effectId) as ContestEffectId
   let moveTypeId = (actor.pendingEffects.nextAppealTypeId ?? option.typeId) as ContestStatId
+  const partnerEffectTargetPerformerId = command.partnerEffectTargetPerformerId ?? null
+  if (partnerEffectTargetPerformerId !== null) {
+    const partnerIds = participantAuthority ? [participantAuthority.pairedPokemon.performerId, current.performers.find(contestPerformerIsTrainer)?.performerId] : []
+    if (!simultaneousParticipant(before) || !['get-ready','attention-grabber'].includes(effectId) || partnerEffectTargetPerformerId === performer.performerId || !partnerIds.includes(partnerEffectTargetPerformerId) || effectId === 'get-ready' && participantAuthority!.acceptedAppealsThisTurn !== 0) rejectContest('contest.option-not-offered', 'That partner cannot receive this cross-performer effect at the current Simultaneous timing window.', { contestantId: current.contestantId, legalAlternatives: ['Leave the partner effect target empty.', ...(participantAuthority?.legalPerformerIds ?? [])], field: 'partnerEffectTargetPerformerId' })
+  }
   const previousMoveOptionId = [...before.appealLedger].reverse().find(row => row.contestantId === current.contestantId && row.performerId === performer.performerId)?.moveOptionId ?? null
   const repeatedMove = previousMoveOptionId === option.optionId
   if (current.pendingEffects.nextAppealTypeId && current.pendingEffects.nextAppealEffectId && current.pendingEffects.blockedMoveRound === before.round + 1 && !current.pendingEffects.blockedMoveOptionIds.includes(option.optionId)) rejectContest('contest.option-not-offered', 'Adaptable Performance must perform one of its two selected source Moves.', { contestantId: current.contestantId, legalAlternatives: current.pendingEffects.blockedMoveOptionIds, field: 'moveOptionId' })
@@ -268,17 +347,22 @@ const declareAppeal = (before: ContestDocumentV1, next: Mutable, command: Extrac
   if (spentTotal > contestCatalog.performance.contestDiceSpendMaximumPerAppeal) rejectContest('contest.dice-overspend', `At most ${contestCatalog.performance.contestDiceSpendMaximumPerAppeal} Contest dice may be spent on one appeal.`, { contestantId: current.contestantId, legalAlternatives: ['Reduce the Contest dice spend.'], field: 'spentDice' })
   if (before.variantId === 'rotation' && actor.teamContestDiceSpent + spentTotal > before.contestants.length * 2) rejectContest('contest.dice-overspend', `This Rotation team may spend at most ${before.contestants.length * 2} Contest dice across the whole Contest.`, { contestantId: current.contestantId, legalAlternatives: ['Reduce the spend to the team allowance.'], field: 'spentDice' })
   for (const statId of CONTEST_STAT_IDS) {
-    const available = nextPerformer.dicePools[statId].remaining + (before.variantId === 'rotation' ? actor.teamDicePools[statId].remaining : 0)
+    const available = pairedPoolPerformer.dicePools[statId].remaining + (before.variantId === 'rotation' ? actor.teamDicePools[statId].remaining : 0)
     if (spent[statId] > available) rejectContest('contest.dice-overspend', `Only ${available} ${statId} dice remain.`, { contestantId: current.contestantId, legalAlternatives: ['Reduce the spend or choose another stat pool.'], field: `spentDice.${statId}` })
   }
   const contestTypeId = before.currentRoundContestTypeId ?? before.contestTypeId
   if (!isContestStatId(contestTypeId)) throw new Error('Running Contest has no canonical current type.')
   if (actor.pendingEffects.nextAppealAlignmentTypeId && actor.pendingEffects.nextAppealAlignmentTypeId !== moveTypeId) rejectContest('contest.intervention-window-closed', `The accepted alignment intervention requires a ${actor.pendingEffects.nextAppealAlignmentTypeId} Move.`, { contestantId: current.contestantId, legalAlternatives: performer.moves.filter(row => row.available && row.typeId === actor.pendingEffects.nextAppealAlignmentTypeId).map(row => row.optionId) })
   const effect = contestEffectById.get(effectId)!
-  const startingVoltage = current.voltage
+  const startingVoltage = performerVoltage(before, current, performer.performerId)
   const adjacency = positionContext(before, current)
-  const multiplier = Math.max(1, Number(actor.pendingEffects.nextRoundBaseMoveDiceMultiplier || 1))
-  const assembly = assembleContestAppeal({ effectId, moveTypeId, contestTypeId, spentDice: spentTotal, startingVoltage, adjacentVoltages: adjacency.adjacentIds.map(id => contestantById(before, id).voltage), repeatedMove, baseMoveDiceMultiplier: multiplier, alignmentSteps: actor.pendingEffects.nextAppealAlignmentSteps, sonic: option.tags.includes('sonic'), voiceLessonsActive: performer.providerIds.includes('feature:Voice Lessons'), acceptedInterventionBonusDice: actor.pendingEffects.nextAppealBonusDice })
+  const previousPerformerAppeal = [...before.appealLedger].reverse().find(row => row.contestantId === current.contestantId && row.performerId === performer.performerId)
+  const transferredGetReady = simultaneousParticipant(before) && before.appealLedger.some(row => row.contestantId === current.contestantId && row.round === before.round && row.turn === before.turnIndex + 1 && (before.variantId !== 'festival' || appealFestivalHeat(row.appealId) === before.festivalHeat) && row.effectId === 'get-ready' && row.partnerEffectTargetPerformerId === performer.performerId)
+  const multiplier = before.participantVariantId === 'trainer-participant'
+    ? transferredGetReady || previousPerformerAppeal?.effectId === 'get-ready' && previousPerformerAppeal.partnerEffectTargetPerformerId === null ? 2 : 1
+    : Math.max(1, Number(actor.pendingEffects.nextRoundBaseMoveDiceMultiplier || 1))
+  const adjacentVoltages = adjacency.adjacentIds.flatMap(id => voltageTargets(before, contestantById(before, id)).map(target => target.voltage))
+  const assembly = assembleContestAppeal({ effectId, moveTypeId, contestTypeId, spentDice: spentTotal, startingVoltage, adjacentVoltages, repeatedMove, baseMoveDiceMultiplier: multiplier, alignmentSteps: actor.pendingEffects.nextAppealAlignmentSteps, sonic: option.tags.includes('sonic'), voiceLessonsActive: activeProviderIds.includes('feature:Voice Lessons'), acceptedInterventionBonusDice: actor.pendingEffects.nextAppealBonusDice })
   const { baseDice, relationship, voltageDice, voiceDice, assembledRaw, assembledDice } = assembly
   const bonusDice = assembly.interventionDice
   const contributors: ContestAppealContributorV1[] = [
@@ -295,51 +379,72 @@ const declareAppeal = (before: ContestDocumentV1, next: Mutable, command: Extrac
   const acceptedResults = fixed ? Object.freeze(Array.from({ length: assembledDice }, () => 0)) : Object.freeze([...journal.results])
   let scored = scoreRoll(acceptedResults, effectId, adjacency.center, fixed)
   if (assembledRaw <= 0 && relationship.relationship === 'opposed') scored = { ...scored, fumble: scored.fumble + 1 }
-  let savingGraceRemoved = 0
+  let savingGraceRemoved = 0, effectStartingVoltage = startingVoltage
   if (effectId === 'saving-grace') {
     savingGraceRemoved = Math.min(actor.fumble, startingVoltage)
-    actor.voltage = cappedVoltage(startingVoltage + (savingGraceRemoved <= 2 ? 1 : 0))
+    effectStartingVoltage = cappedVoltage(startingVoltage + (savingGraceRemoved <= 2 ? 1 : 0))
   }
-  const applied = effectConsequences({ document: before, actor: current, effectId, results: acceptedResults, adjacentIds: adjacency.adjacentIds, startingVoltage: actor.voltage, appeal: scored.appeal, fumble: scored.fumble, repeatedMove, matchingType: relationship.relationship === 'matching' })
-  if (savingGraceRemoved) applied.consequences.push({ contestantId: actor.contestantId, appealDelta: 0, fumbleDelta: -savingGraceRemoved, voltageDelta: 0, reason: 'Saving Grace' })
-  actor.appeal += applied.appeal; actor.fumble += applied.fumble; actor.voltage = applied.actorVoltage
+  const applied = effectConsequences({ document: before, actor: current, actorPerformerId: performer.performerId, actorVoltageRecipientPerformerId: effectId === 'attention-grabber' ? partnerEffectTargetPerformerId : null, effectId, results: acceptedResults, adjacentIds: adjacency.adjacentIds, startingVoltage: effectStartingVoltage, appeal: scored.appeal, fumble: scored.fumble, repeatedMove, matchingType: relationship.relationship === 'matching' })
+  if (savingGraceRemoved) applied.consequences.push({ contestantId: actor.contestantId, performerId: null, appealDelta: 0, fumbleDelta: -savingGraceRemoved, voltageDelta: 0, reason: 'Saving Grace' })
+  actor.appeal += applied.appeal; actor.fumble += applied.fumble
+  setPerformerVoltage(before, actor, performer.performerId, applied.actorVoltage)
   for (const consequence of applied.consequences) {
     const target = (next.contestants as Mutable[]).find(row => row.contestantId === consequence.contestantId)!
     target.appeal = Math.max(0, target.appeal + consequence.appealDelta)
     if (target.pendingEffects.fumbleProtectionRound !== before.round) target.fumble = Math.max(0, target.fumble + consequence.fumbleDelta)
-    // effectConsequences already returned the actor's terminal Voltage. Only
-    // secondary targets still need their recorded delta applied here.
-    if (target.contestantId !== actor.contestantId) target.voltage = cappedVoltage(target.voltage + consequence.voltageDelta)
+    const actorVoltageConsequence = target.contestantId === actor.contestantId && (!simultaneousParticipant(before) || consequence.performerId === performer.performerId)
+    if (!actorVoltageConsequence && consequence.voltageDelta !== 0) {
+      if (consequence.performerId === null) target.voltage = cappedVoltage(target.voltage + consequence.voltageDelta)
+      else target.performerVoltages[consequence.performerId] = cappedVoltage(target.performerVoltages[consequence.performerId] + consequence.voltageDelta)
+    }
   }
-  if (effectId === 'get-ready') { actor.pendingEffects.nextRoundBaseMoveDiceMultiplier = 2; actor.voltage = cappedVoltage(actor.voltage - 2) }
+  if (effectId === 'get-ready') { actor.pendingEffects.nextRoundBaseMoveDiceMultiplier = before.participantVariantId === 'trainer-participant' ? 1 : 2; setPerformerVoltage(before, actor, performer.performerId, performerVoltage(before, actor as ContestantStateV1, performer.performerId) - 2) }
   else actor.pendingEffects.nextRoundBaseMoveDiceMultiplier = 1
-  if (effectId === 'seen-nothing-yet') actor.voltage = 0
-  if (effectId === 'double-time') actor.voltage = cappedVoltage(actor.voltage - 2)
+  if (effectId === 'seen-nothing-yet') setPerformerVoltage(before, actor, performer.performerId, 0)
+  if (effectId === 'double-time') setPerformerVoltage(before, actor, performer.performerId, performerVoltage(before, actor as ContestantStateV1, performer.performerId) - 2)
   if (effectId === 'saving-grace') actor.pendingEffects.fumbleProtectionRound = before.round
-  for (const statId of CONTEST_STAT_IDS) {
+  if (before.participantVariantId === 'trainer-participant' && spentTotal > 0) {
+    const trainer = actor.performers.find((candidate: Mutable) => candidate.performerKind === 'trainer')
+    if (!trainer) throw new Error('Parsed Trainer Participant entry has no enrolled Trainer.')
+    const transition = spendTrainerParticipantSharedDice({
+      pokemonPools: pairedPoolPerformer.dicePools,
+      teamPools: actor.teamDicePools,
+      journal: actor.sharedDiceSpendJournal,
+      enrolledPerformerIds: actor.performers.map((candidate: Mutable) => candidate.performerId),
+      trainerPerformerId: trainer.performerId,
+      pokemonPerformerId: pairedPoolPerformer.performerId,
+      performerId: performer.performerId,
+      operationId: command.operationId,
+      spentDice: spent,
+      createdAt: context.now,
+    })
+    pairedPoolPerformer.dicePools = transition.pokemonPools
+    actor.teamDicePools = transition.teamPools
+    actor.sharedDiceSpendJournal = transition.journal
+  } else for (const statId of CONTEST_STAT_IDS) {
     if (before.variantId === 'rotation') {
       const shared = actor.teamDicePools[statId]
       const sharedSpend = Math.min(shared.remaining, spent[statId])
       shared.remaining -= sharedSpend
-      nextPerformer.dicePools[statId].remaining -= spent[statId] - sharedSpend
-    } else nextPerformer.dicePools[statId].remaining -= spent[statId]
+      pairedPoolPerformer.dicePools[statId].remaining -= spent[statId] - sharedSpend
+    } else pairedPoolPerformer.dicePools[statId].remaining -= spent[statId]
   }
   if (before.variantId === 'rotation') actor.teamContestDiceSpent += spentTotal
   actor.lastMoveOptionId = option.optionId
-  actor.pendingEffects.nextAppealAlignmentSteps = 0; actor.pendingEffects.nextAppealAlignmentTypeId = null; actor.pendingEffects.nextAppealBonusDice = 0; actor.pendingEffects.nextAppealTypeId = null; actor.pendingEffects.nextAppealEffectId = null; actor.pendingEffects.fixedAppealPerDie = false
+  actor.pendingEffects.nextAppealAlignmentSteps = 0; actor.pendingEffects.nextAppealAlignmentTypeId = null; actor.pendingEffects.nextAppealBonusDice = 0; actor.pendingEffects.nextAppealTypeId = null; actor.pendingEffects.nextAppealEffectId = null; actor.pendingEffects.fixedAppealPerDie = false; actor.pendingEffects.targetPerformerId = null
   const appealId = `appeal:${before.contestId.split(':').at(-1)}-${before.festivalHeat}-${before.round}-${before.turnIndex + 1}-${before.appealLedger.length + 1}`
   const ledger: ContestAppealLedgerEntryV1 = Object.freeze({
     appealId, operationId: command.operationId, round: before.round, turn: before.turnIndex + 1, contestantId: actor.contestantId, performerId: performer.performerId,
-    moveOptionId: option.optionId, moveLabel: option.label, moveTypeId, contestTypeId, effectId, centerOfAttention: adjacency.center, adjacentContestantIds: adjacency.adjacentIds,
-    spentDice: Object.freeze(spent), contributors: Object.freeze(contributors), assembledDice, journalIds: Object.freeze([journal.journalId]), acceptedResults,
-    appealDelta: applied.appeal, fumbleDelta: applied.fumble, voltageBefore: startingVoltage, voltageAfter: actor.voltage,
+    moveOptionId: option.optionId, moveLabel: option.label, moveTypeId, contestTypeId, effectId, partnerEffectTargetPerformerId, centerOfAttention: adjacency.center, adjacentContestantIds: adjacency.adjacentIds,
+    spentDice: Object.freeze(spent), contributors: Object.freeze(contributors), baseMoveDiceMultiplier: multiplier as 1 | 2, assembledDice, journalIds: Object.freeze([journal.journalId]), acceptedResults,
+    appealDelta: applied.appeal, fumbleDelta: applied.fumble, voltageBefore: startingVoltage, voltageAfter: performerVoltage(before, actor as ContestantStateV1, performer.performerId),
     consequences: Object.freeze(applied.consequences.map(row => Object.freeze({ ...row }))), acceptedAt: context.now, correctionIds: Object.freeze([]),
   })
   next.appealLedger.push(ledger)
-  history(next, before, { type: 'appeal-accepted', contestantId: actor.contestantId, headline: `${actor.displayName} used ${option.label}`, detail: `${assembledDice}d6 resolved for +${applied.appeal} Appeal, +${applied.fumble} Fumble, Voltage ${startingVoltage} → ${actor.voltage}.`, operationId: command.operationId, createdAt: context.now })
-  const providers = performer.providerIds
+  history(next, before, { type: 'appeal-accepted', contestantId: actor.contestantId, headline: `${actor.displayName} used ${option.label}`, detail: `${assembledDice}d6 resolved for +${applied.appeal} Appeal, +${applied.fumble} Fumble, Voltage ${startingVoltage} → ${performerVoltage(before, actor as ContestantStateV1, performer.performerId)}.`, operationId: command.operationId, createdAt: context.now })
+  const providers = activeProviderIds
   const contestFashionUsageId = before.variantId === 'rotation' ? `Contest Fashion@${performer.performerId}` : 'Contest Fashion'
-  const hasPostAppealIntervention = !fixed && (
+  const hasPostAppealIntervention = before.participantVariantId !== 'trainer-participant' && !fixed && (
     (acceptedResults.length > 0 && !actor.usedInterventionIds.includes('Coordinator') && providers.includes('feature:Coordinator'))
     || (acceptedResults.includes(1) && !actor.usedInterventionIds.includes('Style Flourish') && providers.includes(`feature:Style Flourish:${moveTypeId}`))
     || (acceptedResults.includes(1) && !actor.usedInterventionIds.includes(contestFashionUsageId) && providers.includes(`item:Contest Fashion:${moveTypeId}`))
@@ -347,7 +452,7 @@ const declareAppeal = (before: ContestDocumentV1, next: Mutable, command: Extrac
   if (hasPostAppealIntervention) {
     next.pendingInterventionAppealId = appealId
     history(next, before, { type: 'intervention-window-opened', contestantId: actor.contestantId, headline: 'Appeal reroll decision', detail: 'An offered reroll must be used or explicitly passed before the turn advances.', operationId: command.operationId, createdAt: context.now })
-  } else completePerformanceOrAdvance(before, next, command.operationId, context.now, context.random)
+  } else completeParticipantTurnOrAdvance(before, next, actor.contestantId, command.operationId, context.now, context.random)
 }
 
 const recalculateRerolledAppeal = (before: ContestDocumentV1, next: Mutable, command: Extract<ContestCommandV1, { commandKind: 'use-intervention' }>, indices: readonly number[], context: ContestEngineContextV1): void => {
@@ -373,7 +478,7 @@ const recalculateRerolledAppeal = (before: ContestDocumentV1, next: Mutable, com
     const newDelta = cappedVoltage(voltageWithoutGamble + results.filter(value => value === 6).length) - voltageWithoutGamble
     actor.voltage = cappedVoltage(voltageWithoutGamble + newDelta)
     if (existing) existing.voltageDelta = newDelta
-    else if (newDelta) ledger.consequences.push({ contestantId: actor.contestantId, appealDelta: 0, fumbleDelta: 0, voltageDelta: newDelta, reason: 'Gamble' })
+    else if (newDelta) ledger.consequences.push({ contestantId: actor.contestantId, performerId: null, appealDelta: 0, fumbleDelta: 0, voltageDelta: newDelta, reason: 'Gamble' })
     ledger.voltageAfter = actor.voltage
   }
   if (ledger.effectId === 'tease') {
@@ -385,7 +490,7 @@ const recalculateRerolledAppeal = (before: ContestDocumentV1, next: Mutable, com
       const existing = (ledger.consequences as Mutable[]).find(row => row.contestantId === targetId && row.reason === 'Tease')
       const acceptedDelta = target.pendingEffects.fumbleProtectionRound === before.round ? 0 : newSixes
       if (existing) existing.fumbleDelta = acceptedDelta
-      else if (newSixes) ledger.consequences.push({ contestantId: targetId, appealDelta: 0, fumbleDelta: acceptedDelta, voltageDelta: 0, reason: 'Tease' })
+      else if (newSixes) ledger.consequences.push({ contestantId: targetId, performerId: null, appealDelta: 0, fumbleDelta: acceptedDelta, voltageDelta: 0, reason: 'Tease' })
     }
   }
   ledger.acceptedResults = results; ledger.journalIds = [...ledger.journalIds, journal.journalId]
@@ -397,9 +502,27 @@ const useIntervention = (before: ContestDocumentV1, next: Mutable, command: Extr
   requireStage(before, 'performance'); requireRunning(before)
   const source = contestantById(before, command.contestantId)
   const actor = (next.contestants as Mutable[]).find(row => row.contestantId === source.contestantId)!
-  const currentPerformer = contestCurrentPerformer(before, source)
-  const providerIds = currentPerformer.providerIds
   const id = command.interventionId
+  const preAppeal = ['Reliable Performance','Adaptable Performance','Fabulous Max','Rule of Cool','Gleeful Steps','Calculated Assault','Macho Charge','Fashion Designer','Beautiful'].includes(id)
+  const postAppeal = id === 'Coordinator' || id === 'Style Flourish' || id === 'Contest Fashion'
+  const requestedPerformerId = command.targetPerformerId ?? null
+  let currentPerformer: ContestantStateV1['performers'][number]
+  if (before.participantVariantId === 'trainer-participant') {
+    if (preAppeal) {
+      if (contestCurrentContestant(before)?.contestantId !== source.contestantId) rejectContest('contest.intervention-window-closed', `${id} is available only immediately before this contestant’s appeal.`, { contestantId: source.contestantId })
+      const authority = trainerParticipantAppealAuthority(before, source)
+      if (requestedPerformerId === null || !authority.legalPerformerIds.includes(requestedPerformerId)) rejectContest('contest.option-not-offered', 'Choose one currently legal paired performer for this intervention.', { contestantId: source.contestantId, legalAlternatives: authority.legalPerformerIds, field: 'targetPerformerId' })
+      currentPerformer = source.performers.find(performer => performer.performerId === requestedPerformerId)!
+    } else if (postAppeal) {
+      const acceptedAppeal = command.appealId ? before.appealLedger.find(appeal => appeal.appealId === command.appealId) : null
+      if (!acceptedAppeal || acceptedAppeal.contestantId !== source.contestantId || requestedPerformerId !== acceptedAppeal.performerId) rejectContest('contest.intervention-window-closed', 'Choose the exact performer from the pending paired appeal.', { contestantId: source.contestantId, field: 'targetPerformerId' })
+      currentPerformer = source.performers.find(performer => performer.performerId === acceptedAppeal.performerId)!
+    } else rejectContest('contest.option-not-offered', `${id} has no paired-performer Contest action.`, { contestantId: source.contestantId })
+  } else {
+    if (requestedPerformerId !== null) rejectContest('contest.option-not-offered', 'Ordinary Contest interventions infer their active performer.', { contestantId: source.contestantId, field: 'targetPerformerId' })
+    currentPerformer = contestCurrentPerformer(before, source)
+  }
+  const providerIds = participantAppealProviderIds(before, source, currentPerformer)
   const providerMatch = providerIds.some(provider => provider === `feature:${id}` || provider === `ability:${id}` || provider === `item:${id}` || provider.startsWith(`item:${id}:`) || provider.startsWith(`feature:${id}:`))
   if (!providerMatch) rejectContest('contest.option-not-offered', 'That intervention is not provided by the enrolled sheets.', { contestantId: source.contestantId })
   if (command.targetContestantId !== null) rejectContest('contest.option-not-offered', 'This intervention does not offer a separate target.', { contestantId: source.contestantId, field: 'targetContestantId' })
@@ -411,11 +534,10 @@ const useIntervention = (before: ContestDocumentV1, next: Mutable, command: Extr
   const performerScoped = before.variantId === 'rotation' && (id === 'Beautiful' || id === 'Contest Fashion')
   const usageId = performerScoped ? `${id}@${currentPerformer.performerId}` : id
   if (oncePerContest && actor.usedInterventionIds.includes(usageId)) rejectContest('contest.resource-exhausted', `${id} has already been used by this provider in this Contest.`, { contestantId: source.contestantId })
-  const preAppeal = ['Reliable Performance','Adaptable Performance','Fabulous Max','Rule of Cool','Gleeful Steps','Calculated Assault','Macho Charge','Fashion Designer','Beautiful'].includes(id)
   if (preAppeal && command.appealId !== null) rejectContest('contest.intervention-window-closed', 'Pre-appeal interventions cannot reference accepted appeal evidence.', { contestantId: source.contestantId, field: 'appealId' })
   if (preAppeal && before.pendingInterventionAppealId) rejectContest('contest.intervention-window-closed', 'The accepted appeal reroll window must close before another pre-appeal intervention.', { contestantId: source.contestantId })
   if (preAppeal && (before.stage !== 'performance' || contestCurrentContestant(before)?.contestantId !== source.contestantId)) rejectContest('contest.intervention-window-closed', `${id} is available only immediately before this contestant’s appeal.`, { contestantId: source.contestantId })
-  const postAppeal = id === 'Coordinator' || id === 'Style Flourish' || id === 'Contest Fashion'
+  if (preAppeal && actor.pendingEffects.targetPerformerId !== null && actor.pendingEffects.targetPerformerId !== currentPerformer.performerId) rejectContest('contest.intervention-conflict', 'Pending pre-appeal interventions are already bound to the other paired performer.', { contestantId: source.contestantId, legalAlternatives: [actor.pendingEffects.targetPerformerId] })
   if (id === 'Reliable Performance' && actor.pendingEffects.fixedAppealPerDie) rejectContest('contest.intervention-conflict', 'Reliable Performance is already committed to the pending appeal.', { contestantId: source.contestantId, legalAlternatives: ['Declare the pending appeal before using Reliable Performance again.'] })
   if (postAppeal) {
     if (!command.appealId || before.pendingInterventionAppealId !== command.appealId) rejectContest('contest.intervention-window-closed', 'Choose the currently pending accepted appeal to reroll.', { contestantId: source.contestantId })
@@ -441,7 +563,7 @@ const useIntervention = (before: ContestDocumentV1, next: Mutable, command: Extr
   }
   else if (id === 'Fashion Designer') actor.pendingEffects.nextAppealBonusDice += 2
   else if (id === 'Adaptable Performance') {
-    const performer = contestCurrentPerformer(before, source)
+    const performer = currentPerformer
     const typeSource = performer.moves.find(row => row.optionId === command.choices.typeMoveOptionId && row.available && isContestStatId(row.typeId))
     const effectSource = performer.moves.find(row => row.optionId === command.choices.effectMoveOptionId && row.available && isContestEffectId(row.effectId))
     if (!typeSource) return rejectContest('contest.option-not-offered', 'Choose an available Move to supply the Contest type.', { contestantId: source.contestantId, legalAlternatives: performer.moves.filter(row => row.available).map(row => row.optionId) })
@@ -452,17 +574,17 @@ const useIntervention = (before: ContestDocumentV1, next: Mutable, command: Extr
     actor.pendingEffects.blockedMoveRound = before.round + 1
     actor.pendingEffects.blockedMovePerformerId = performer.performerId
   } else if (id === 'Beautiful') {
-    const performer = before.stage === 'performance' ? contestCurrentPerformer(before, source) : source.performers[0]!
-    const target = (actor.performers as Mutable[]).find(row => row.performerId === performer.performerId)!
+    const target = (actor.performers as Mutable[]).find(row => row.performerId === currentPerformer.performerId)!
     target.dicePools.beauty.total += 2; target.dicePools.beauty.remaining += 2
     target.dicePools.beauty.contributors.push({ id: `ability:Beautiful:${command.operationId}`, kind: 'ability', statId: 'beauty', dice: 2, active: true, label: 'Beautiful', sourceId: command.operationId, explanation: 'Beautiful adds +2 Beauty dice for this Contest.' })
   } else rejectContest('contest.option-not-offered', `${id} has no selectable Contest action in this catalog.`, { contestantId: source.contestantId })
+  if (before.participantVariantId === 'trainer-participant' && preAppeal && id !== 'Beautiful') actor.pendingEffects.targetPerformerId = currentPerformer.performerId
   if (oncePerContest) actor.usedInterventionIds.push(usageId)
   history(next, before, { type: 'intervention-accepted', contestantId: actor.contestantId, headline: `${id} accepted`, detail: 'The intervention was applied at its canonical timing window.', operationId: command.operationId, createdAt: context.now })
   if (postAppeal) {
     const appeal = (next.appealLedger as ContestAppealLedgerEntryV1[]).find(row => row.appealId === command.appealId)!
     const activePerformer = source.performers.find(row => row.performerId === appeal.performerId)!
-    const providers = activePerformer.providerIds
+    const providers = participantAppealProviderIds(before, source, activePerformer)
     const contestFashionUsageId = before.variantId === 'rotation' ? `Contest Fashion@${appeal.performerId}` : 'Contest Fashion'
     const hasAnotherReroll = (appeal.acceptedResults.length > 0 && !actor.usedInterventionIds.includes('Coordinator') && providers.includes('feature:Coordinator'))
       || (appeal.acceptedResults.includes(1) && !actor.usedInterventionIds.includes('Style Flourish') && providers.includes(`feature:Style Flourish:${appeal.moveTypeId}`))
@@ -472,7 +594,7 @@ const useIntervention = (before: ContestDocumentV1, next: Mutable, command: Extr
       history(next, before, { type: 'intervention-window-opened', contestantId: actor.contestantId, headline: 'Another appeal reroll is available', detail: 'Use another offered reroll or explicitly keep the current result before the turn advances.', operationId: command.operationId, createdAt: context.now })
     } else {
       next.pendingInterventionAppealId = null
-      completePerformanceOrAdvance(before, next, command.operationId, context.now, context.random)
+      completeParticipantTurnOrAdvance(before, next, actor.contestantId, command.operationId, context.now, context.random)
     }
   }
 }
@@ -484,11 +606,12 @@ const passIntervention = (before: ContestDocumentV1, next: Mutable, command: Ext
   if (!appeal || appeal.contestantId !== command.contestantId) rejectContest('contest.controller-required', 'Only the appealing contestant may pass this reroll window.', { contestantId: command.contestantId, statusCode: 403 })
   next.pendingInterventionAppealId = null
   history(next, before, { type: 'intervention-window-passed', contestantId: command.contestantId, headline: 'Reroll passed', detail: 'The accepted appeal stands and turn advancement resumes.', operationId: command.operationId, createdAt: context.now })
-  completePerformanceOrAdvance(before, next, command.operationId, context.now, context.random)
+  completeParticipantTurnOrAdvance(before, next, command.contestantId, command.operationId, context.now, context.random)
 }
 
 const prepareSettlement = (before: ContestDocumentV1, next: Mutable, operationId: string, now: number): void => {
   requireStage(before, 'settling')
+  if (before.participantVariantId === 'trainer-participant') rejectContest('contest.trainer-participant-stage-unavailable', 'Trainer Participant placements and reward settlement are not active yet.', { legalAlternatives: ['Review the completed appeal ledger.', 'Pause or cancel the Contest.'], statusCode: 409 })
   if (!before.policy.prize.declared) rejectContest('contest.prize-undecided', 'Declare the final prize package, including an explicit no-prize package, before preparing settlement.', { legalAlternatives: ['Declare money and items.', 'Declare an empty prize package.'], statusCode: 409 })
   const enrolledTrainerSlugs = new Set(before.contestants.map(row => row.trainerSheetSlug))
   if (before.policy.prize.items.some(item => item.targetTrainerSlug !== null && !enrolledTrainerSlugs.has(item.targetTrainerSlug))) rejectContest('contest.prize-target-invalid', 'Every targeted prize must name an enrolled Trainer.', { legalAlternatives: ['Target the winner by leaving the Trainer blank.', 'Choose an enrolled Trainer.'] })
@@ -496,15 +619,16 @@ const prepareSettlement = (before: ContestDocumentV1, next: Mutable, operationId
   const count = before.contestants.length
   const entries = [...before.contestants].sort((left, right) => (left.finalPlacement ?? 999) - (right.finalPlacement ?? 999)).map(contestant => {
     const placement = contestant.finalPlacement ?? count
-    const lowerPlacedPokemon = before.variantId === 'rotation' ? before.contestants.filter(row => (row.finalPlacement ?? count) > placement).reduce((sum, row) => sum + row.performers.length, 0) : 0
+    const pokemon = contestant.performers.filter(contestPerformerIsPokemon)
+    const lowerPlacedPokemon = before.variantId === 'rotation' ? before.contestants.filter(row => (row.finalPlacement ?? count) > placement).reduce((sum, row) => sum + row.performers.filter(contestPerformerIsPokemon).length, 0) : 0
     const units = before.variantId === 'rotation' ? Math.ceil((lowerPlacedPokemon + 1) / 2) : Math.ceil((count - placement + 1) / 2)
-    const perPokemon = contestant.performers.map(performer => Math.ceil(performer.level * units * before.policy.significanceMultiplier))
+    const perPokemon = pokemon.map(performer => Math.ceil(performer.level * units * before.policy.significanceMultiplier))
     let experienceByPokemon: { pokemonSheetSlug: string, experience: number }[]
     if (before.variantId === 'rotation') {
       const total = perPokemon.reduce((sum, value) => sum + value, 0)
-      const base = Math.floor(total / contestant.performers.length); let remainder = total % contestant.performers.length
-      experienceByPokemon = contestant.performers.map(performer => ({ pokemonSheetSlug: performer.pokemonSheetSlug, experience: base + (remainder-- > 0 ? 1 : 0) }))
-    } else experienceByPokemon = [{ pokemonSheetSlug: contestant.performers[0]!.pokemonSheetSlug, experience: perPokemon[0]! }]
+      const base = Math.floor(total / pokemon.length); let remainder = total % pokemon.length
+      experienceByPokemon = pokemon.map(performer => ({ pokemonSheetSlug: performer.pokemonSheetSlug, experience: base + (remainder-- > 0 ? 1 : 0) }))
+    } else experienceByPokemon = [{ pokemonSheetSlug: pokemon[0]!.pokemonSheetSlug, experience: perPokemon[0]! }]
     return Object.freeze({ contestantId: contestant.contestantId, placement, finalScore: contestant.finalScore ?? contestant.appeal - contestant.fumble, experienceByPokemon: Object.freeze(experienceByPokemon), ribbon: before.policy.awardRibbon && placement === 1, trainerSheetSlug: contestant.trainerSheetSlug })
   })
   next.settlement = { settlementId: `${before.contestId}:settlement`, status: 'preview', entries, money: before.policy.prize.money, items: before.policy.prize.items, attentionItemIds: entries.flatMap(row => row.experienceByPokemon.filter(xp => xp.experience > 0).map(xp => `contest-level-check:${before.contestId}:${xp.pokemonSheetSlug}`)), committedOperationId: null, committedAt: null }
@@ -532,15 +656,24 @@ export const executeContestEngineCommand = (beforeInput: ContestDocumentV1, comm
       if (patch.gmNotes !== undefined) next.gmNotes = String(patch.gmNotes).slice(0, 4_000)
       history(next, before, { type: 'settings-updated', visibility: 'gm', headline: 'Contest settings updated', detail: 'The reviewed pre-start policy changed.', operationId: command.operationId, createdAt: context.now }); break
     }
+    case 'set-participant-method': {
+      requireStage(before, 'setup')
+      if (before.participantVariantId !== 'trainer-participant') rejectContest('contest.method-unavailable', 'Participant methods are available only to Trainer Participant Contests.', { field: 'participantMethodId' })
+      next.participantMethodId = command.participantMethodId
+      for (const contestant of next.contestants as Mutable[]) contestant.performerVoltages = command.participantMethodId === 'simultaneous' ? Object.fromEntries(contestant.performers.map((performer: Mutable) => [performer.performerId, 0])) : {}
+      history(next, before, { type: 'participant-method-selected', headline: `${command.participantMethodId === 'simultaneous' ? 'Simultaneous' : 'Alternating'} method selected`, detail: command.participantMethodId === 'simultaneous' ? 'Trainer and Pokémon will each appeal once per round in controller-chosen order.' : 'Trainer and Pokémon will alternate one appeal per entry round.', operationId: command.operationId, createdAt: context.now }); break
+    }
     case 'enroll-contestant': {
       requireStage(before, 'setup')
       const enrollment = context.enrollment ?? (() => { throw new Error('Enrollment snapshot context is required.') })()
       if (enrollment.contestantId !== command.contestantId) throw new Error('Enrollment context identity mismatch.')
       if (before.contestants.length >= 5) rejectContest('contest.contestant-count', 'A Contest supports at most five contestants.', { legalAlternatives: ['Remove a contestant before enrolling another.'] })
       if (before.contestants.some(row => row.contestantId === enrollment.contestantId || row.trainerSheetSlug === enrollment.trainerSheetSlug)) rejectContest('contest.duplicate-contestant', 'This contestant or Trainer is already enrolled.', { contestantId: enrollment.contestantId })
-      const existingPokemon = new Set(before.contestants.flatMap(row => row.performers.map(performer => performer.pokemonSheetSlug)))
-      if (enrollment.performers.some(performer => existingPokemon.has(performer.pokemonSheetSlug))) rejectContest('contest.duplicate-pokemon', 'A Pokémon may enroll only once.', { contestantId: enrollment.contestantId })
-      next.contestants.push(enrollment)
+      const existingPokemon = new Set(before.contestants.flatMap(row => row.performers.filter(contestPerformerIsPokemon).map(performer => performer.pokemonSheetSlug)))
+      if (enrollment.performers.filter(contestPerformerIsPokemon).some(performer => existingPokemon.has(performer.pokemonSheetSlug))) rejectContest('contest.duplicate-pokemon', 'A Pokémon may enroll only once.', { contestantId: enrollment.contestantId })
+      const acceptedEnrollment = structuredClone(enrollment) as Mutable
+      acceptedEnrollment.performerVoltages = before.participantVariantId === 'trainer-participant' && before.participantMethodId === 'simultaneous' ? Object.fromEntries(acceptedEnrollment.performers.map((performer: Mutable) => [performer.performerId, 0])) : {}
+      next.contestants.push(acceptedEnrollment)
       history(next, before, { type: 'contestant-enrolled', contestantId: enrollment.contestantId, headline: `${enrollment.displayName} enrolled`, detail: `${enrollment.performers.length} performer${enrollment.performers.length === 1 ? '' : 's'} ready.`, operationId: command.operationId, createdAt: context.now }); break
     }
     case 'remove-contestant': {
@@ -550,8 +683,9 @@ export const executeContestEngineCommand = (beforeInput: ContestDocumentV1, comm
     }
     case 'start-introduction': {
       requireStage(before, 'setup')
+      if (before.participantVariantId === 'trainer-participant' && before.participantMethodId === null) rejectContest('contest.method-required', 'Choose a canonical Trainer Participant method before locking setup.', { legalAlternatives: ['Select Simultaneous.', 'Select Alternating.'], field: 'participantMethodId', statusCode: 409 })
       if (before.contestants.length < 3 || before.contestants.length > 5) rejectContest('contest.contestant-count', 'Start requires three through five contestants.', { legalAlternatives: ['Enroll additional contestants.'] })
-      if (before.variantId === 'rotation' && before.contestants.some(row => row.performers.length !== before.contestants.length || (before.policy.rotationOrderPolicy === 'predeclared' ? row.rotationOrder.length !== before.contestants.length : row.rotationOrder.length !== 0))) rejectContest('contest.rotation-team-size', `A ${before.contestants.length}-contestant Rotation Contest needs exactly ${before.contestants.length} distinct performers and a ${before.policy.rotationOrderPolicy === 'predeclared' ? 'complete predeclared' : 'round-by-round'} order.`, { legalAlternatives: ['Adjust the lineup before locking enrollment.'] })
+      if (before.variantId === 'rotation' && before.contestants.some(row => row.performers.filter(contestPerformerIsPokemon).length !== before.contestants.length || (before.policy.rotationOrderPolicy === 'predeclared' ? row.rotationOrder.length !== before.contestants.length : row.rotationOrder.length !== 0))) rejectContest('contest.rotation-team-size', `A ${before.contestants.length}-contestant Rotation Contest needs exactly ${before.contestants.length} distinct Pokémon performers and a ${before.policy.rotationOrderPolicy === 'predeclared' ? 'complete predeclared' : 'round-by-round'} order.`, { legalAlternatives: ['Adjust the lineup before locking enrollment.'] })
       assertContestStageTransition('setup', 'introduction'); next.stage = 'introduction'; next.policy.lockedAt = context.now
       history(next, before, { type: 'introduction-started', headline: 'Introduction stage', detail: 'Each Trainer chooses one canonical introduction skill.', operationId: command.operationId, createdAt: context.now }); break
     }
@@ -580,13 +714,13 @@ export const executeContestEngineCommand = (beforeInput: ContestDocumentV1, comm
       const matching = before.variantId === 'standard' && mapped === before.contestTypeId
       const bonusAppeal = matching ? contestCatalog.introduction.standardMatchingAppealBonus : 0
       const row = (next.contestants as Mutable[]).find(candidate => candidate.contestantId === source.contestantId)!
-      row.introduction = { status: 'accepted', skillId: command.skillId, generatedStatId: command.generatedStatId, skillRankDice: execution.skillDice, bonusDice, results, generatedDice, matchingAppealBonus: bonusAppeal, letterTotal: generatedDice + (matching ? contestCatalog.introduction.standardMatchingLetterTotalBonus : 0), operationId: command.operationId }
+      row.introduction = { status: 'accepted', performerId: source.introduction.performerId, skillId: command.skillId, generatedStatId: command.generatedStatId, skillRankDice: execution.skillDice, bonusDice, results, generatedDice, matchingAppealBonus: bonusAppeal, letterTotal: generatedDice + (matching ? contestCatalog.introduction.standardMatchingLetterTotalBonus : 0), operationId: command.operationId }
       row.appeal += bonusAppeal
       const allocationLabels = allocations.filter(allocation => allocation.dice > 0).map(allocation => `${allocation.label} ${allocation.dice}d6 → ${allocation.generated} ${allocation.statId}`)
       for (const allocation of allocations.filter(candidate => candidate.generated > 0)) {
         const explanation = `${allocation.label} rolled ${allocation.dice}d6 and generated ${allocation.generated} ${allocation.statId} dice.${before.variantId === 'rotation' ? ' These are shared team dice; total Rotation spending remains capped separately.' : ''}`
         const contribution = { id: `introduction:${command.operationId}:${allocation.sourceId}`, kind: 'introduction', statId: allocation.statId, dice: allocation.generated, active: true, label: allocation.label, sourceId: command.operationId, explanation }
-        const pools = before.variantId === 'rotation' ? [row.teamDicePools[allocation.statId]] : row.performers.map((performer: Mutable) => performer.dicePools[allocation.statId])
+        const pools = before.variantId === 'rotation' ? [row.teamDicePools[allocation.statId]] : row.performers.filter((performer: Mutable) => before.participantVariantId !== 'trainer-participant' || performer.performerKind === 'pokemon').map((performer: Mutable) => performer.dicePools[allocation.statId])
         for (const pool of pools) { pool.total += allocation.generated; pool.remaining += allocation.generated; pool.contributors = [...pool.contributors, contribution] }
       }
       history(next, before, { type: 'introduction-accepted', contestantId: source.contestantId, headline: `${source.displayName} introduced`, detail: `${results.length}d6 generated ${generatedDice} Contest Stat dice${bonusAppeal ? ` and +${bonusAppeal} Appeal` : ''}.`, operationId: command.operationId, createdAt: context.now })
@@ -601,7 +735,7 @@ export const executeContestEngineCommand = (beforeInput: ContestDocumentV1, comm
         if (accepted.status === 'accepted' && accepted.generatedStatId && accepted.operationId) {
           let removed = false
           for (const statId of CONTEST_STAT_IDS) {
-            const pools = before.variantId === 'rotation' ? [row.teamDicePools[statId]] : row.performers.map((performer: Mutable) => performer.dicePools[statId])
+            const pools = before.variantId === 'rotation' ? [row.teamDicePools[statId]] : row.performers.filter((performer: Mutable) => before.participantVariantId !== 'trainer-participant' || performer.performerKind === 'pokemon').map((performer: Mutable) => performer.dicePools[statId])
             for (const pool of pools) {
               const contributions = pool.contributors.filter((entry: Mutable) => entry.sourceId === accepted.operationId || entry.id === `introduction:${accepted.operationId}`)
               const contributedDice = contributions.reduce((sum: number, entry: Mutable) => sum + Math.max(0, Number(entry.dice) || 0), 0)
@@ -612,11 +746,11 @@ export const executeContestEngineCommand = (beforeInput: ContestDocumentV1, comm
           }
           // Compatibility with an early schema-v1 snapshot that omitted contributor provenance.
           if (!removed) {
-            const pools = before.variantId === 'rotation' ? [row.teamDicePools[accepted.generatedStatId]] : row.performers.map((performer: Mutable) => performer.dicePools[accepted.generatedStatId])
+            const pools = before.variantId === 'rotation' ? [row.teamDicePools[accepted.generatedStatId]] : row.performers.filter((performer: Mutable) => before.participantVariantId !== 'trainer-participant' || performer.performerKind === 'pokemon').map((performer: Mutable) => performer.dicePools[accepted.generatedStatId])
             for (const pool of pools) { pool.total = Math.max(0, pool.total - accepted.generatedDice); pool.remaining = Math.max(0, pool.remaining - accepted.generatedDice) }
           }
         }
-        row.introduction = { status: 'pending', skillId: null, generatedStatId: null, skillRankDice: 0, bonusDice: 0, results: [], generatedDice: 0, matchingAppealBonus: 0, letterTotal: 0, operationId: null }; row.appeal = 0; row.letter = null
+        row.introduction = { status: 'pending', performerId: accepted.performerId, skillId: null, generatedStatId: null, skillRankDice: 0, bonusDice: 0, results: [], generatedDice: 0, matchingAppealBonus: 0, letterTotal: 0, operationId: null }; row.appeal = 0; row.letter = null
       }
       // Journal evidence is immutable; the superseded rolls remain diagnostic.
       history(next, before, { type: 'introduction-restarted', headline: 'Introduction restarted', detail: 'Prior journaled evidence remains in provenance; fresh declarations are required.', operationId: command.operationId, createdAt: context.now }); break
@@ -660,6 +794,7 @@ export const executeContestEngineCommand = (beforeInput: ContestDocumentV1, comm
         if (!rowCandidate) return rejectContest('contest.option-not-offered', 'Choose an enrolled contestant for this correction.', {})
         const row = rowCandidate
         const delta = Number(command.numericDelta)
+        if (command.correctionKind === 'voltage-delta' && simultaneousParticipant(before)) rejectContest('contest.correction-out-of-bounds', 'Simultaneous Voltage corrections require an exact performer identity and are unavailable through the shared-entry correction command.', { contestantId: command.contestantId, legalAlternatives: ['Record an explanatory correction without changing Voltage.', 'Cancel and rerun if performer Voltage authority is corrupt.'], field: 'correctionKind' })
         if (!Number.isInteger(delta) || Math.abs(delta) > contestCatalog.corrections.maximumAbsoluteNumericDelta) rejectContest('contest.correction-out-of-bounds', `Correction must be within ±${contestCatalog.corrections.maximumAbsoluteNumericDelta}.`, { field: 'numericDelta' })
         let prior: number|string|null = null; let after: number|string|null = null
         if (command.correctionKind === 'appeal-delta') { prior = row.appeal; row.appeal = Math.max(0, row.appeal + delta); after = row.appeal }
@@ -668,7 +803,7 @@ export const executeContestEngineCommand = (beforeInput: ContestDocumentV1, comm
         if (command.correctionKind === 'dice-pool-delta') {
           if (!command.statId) return rejectContest('contest.correction-out-of-bounds', 'Choose a Contest stat pool.', { field: 'statId' })
           const statId = command.statId
-          const pool = before.variantId === 'rotation' ? row.teamDicePools[statId] : row.performers[0].dicePools[statId]; prior = pool.remaining
+          const pool = before.variantId === 'rotation' ? row.teamDicePools[statId] : row.performers.find((performer: Mutable) => performer.performerKind === 'pokemon').dicePools[statId]; prior = pool.remaining
           const corrected = Math.max(0, Math.min(pool.total, pool.remaining + delta))
           pool.remaining = corrected
           after = corrected
@@ -716,12 +851,13 @@ export const executeContestEngineCommand = (beforeInput: ContestDocumentV1, comm
   return finish(before, next, context.now)
 }
 
-export const createContestantState = (input: Omit<ContestantStateV1, 'introductionSkillDice'|'introduction'|'appeal'|'fumble'|'voltage'|'letter'|'lastMoveOptionId'|'usedInterventionIds'|'teamDicePools'|'teamContestDiceSpent'|'pendingEffects'|'withdrawn'|'finalPlacement'|'finalScore'> & { readonly introductionSkillDice?: ContestantStateV1['introductionSkillDice'] }): ContestantStateV1 => Object.freeze({
+export const createContestantState = (input: Omit<ContestantStateV1, 'introductionSkillDice'|'introduction'|'appeal'|'fumble'|'voltage'|'performerVoltages'|'letter'|'lastMoveOptionId'|'usedInterventionIds'|'teamDicePools'|'sharedDiceSpendJournal'|'teamContestDiceSpent'|'pendingEffects'|'withdrawn'|'finalPlacement'|'finalScore'> & { readonly introductionSkillDice?: ContestantStateV1['introductionSkillDice'], readonly teamDicePools?: ContestantStateV1['teamDicePools'], readonly sharedDiceSpendJournal?: ContestantStateV1['sharedDiceSpendJournal'], readonly performerVoltages?: ContestantStateV1['performerVoltages'] }): ContestantStateV1 => Object.freeze({
   ...input,
   letter: null,
   introductionSkillDice: input.introductionSkillDice ?? Object.freeze({ charm: 2, command: 2, guile: 2, intimidate: 2, intuition: 2 }),
-  introduction: Object.freeze({ status: 'pending', skillId: null, generatedStatId: null, skillRankDice: 0, bonusDice: 0, results: Object.freeze([]), generatedDice: 0, matchingAppealBonus: 0, letterTotal: 0, operationId: null }),
-  appeal: 0, fumble: 0, voltage: 0, lastMoveOptionId: null, usedInterventionIds: Object.freeze([]),
-  teamDicePools: Object.freeze(emptyContestStatRecord(() => Object.freeze({ total: 0, remaining: 0, contributors: Object.freeze([]) }))), teamContestDiceSpent: 0,
+  introduction: Object.freeze({ status: 'pending', performerId: input.performers.find(performer => performer.performerKind === 'trainer')?.performerId ?? null, skillId: null, generatedStatId: null, skillRankDice: 0, bonusDice: 0, results: Object.freeze([]), generatedDice: 0, matchingAppealBonus: 0, letterTotal: 0, operationId: null }),
+  appeal: 0, fumble: 0, voltage: 0, performerVoltages: input.performerVoltages ?? Object.freeze({}), lastMoveOptionId: null, usedInterventionIds: Object.freeze([]),
+  teamDicePools: input.teamDicePools ?? Object.freeze(emptyContestStatRecord(() => Object.freeze({ total: 0, remaining: 0, contributors: Object.freeze([]) }))),
+  sharedDiceSpendJournal: input.sharedDiceSpendJournal ?? Object.freeze([]), teamContestDiceSpent: 0,
   pendingEffects: pendingDefaults(), withdrawn: false, finalPlacement: null, finalScore: null,
 })

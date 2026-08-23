@@ -123,12 +123,21 @@ describe('EncounterDirectorPanel', () => {
         causal: { groupId: 'item-group:one', parentPresentationId: null, depth: 0, sequence: 0 },
         headline: { label: 'Potion resolved', description: null, iconKey: 'source.item', tone: 'positive' },
         splash: null, vfx: [], announcements: [], history: [], correction: null,
+      }, {
+        schemaVersion: 1, presentationId: 'accepted-equipment:one', operationId: 'equipment-operation:one', mapSlug: 'arena',
+        previousRevision: 5, revision: 6,
+        source: { sourceKind: 'item', canonicalId: 'Hand Net', instanceId: null, displayName: 'Hand Net', referenceHref: null },
+        actor: null, affectedParticipants: [], outcomes: [], changes: [], explanations: [],
+        causal: { groupId: 'equipment-group:one', parentPresentationId: null, depth: 0, sequence: 0 },
+        headline: { label: 'Hand Net resolved', description: null, iconKey: 'source.item', tone: 'positive' },
+        splash: null, vfx: [], announcements: [], history: [], correction: null,
       }],
     }
     const wrapper = mount(EncounterDirectorPanel, { props: { workspace: recoveryWorkspace, open: true } })
     await wrapper.get('#director-tab-system').trigger('click')
     expect(wrapper.text()).toContain('Abandon and release item')
-    expect(wrapper.text()).toContain('Correct item use')
+    expect(wrapper.findAll('.encounter-director__recovery button').filter(button => button.text() === 'Correct item use')).toHaveLength(1)
+    expect(wrapper.text()).not.toContain('Hand Net resolved')
     await wrapper.findAll('.encounter-director__recovery button').find(button => button.text() === 'Abandon and release item')!.trigger('click')
     await wrapper.findAll('.encounter-director__recovery button').find(button => button.text() === 'Correct item use')!.trigger('click')
     expect(wrapper.emitted('recover')).toEqual([['item-pending:one', 'cancel']])

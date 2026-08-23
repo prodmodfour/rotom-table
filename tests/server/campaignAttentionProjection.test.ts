@@ -181,6 +181,12 @@ describe('campaign attention role, Profile, and realtime projection', () => {
       publish: value => { published.push(value) },
     })
     expect(published).toHaveLength(2)
+    expect(campaignAttentionInvalidationMaterials({
+      cause: 'skill-check-operation', profileIds: [first.id],
+    }).map(row => row.event.data)).toEqual([
+      { schemaVersion: 1, cause: 'skill-check-operation' },
+      { schemaVersion: 1, cause: 'skill-check-operation' },
+    ])
   })
 
   it('reads one complete bounded SQLite authority snapshot and loads an empty role projection', () => {
@@ -190,11 +196,11 @@ describe('campaign attention role, Profile, and realtime projection', () => {
       expect(authority).toMatchObject({
         campaignMinute: 0,
         sheets: [], profiles: [], settlementSources: [], historyFacts: [],
-        itemOperations: [], eggs: [], breedingOrigins: [], breedingOperations: [],
+        itemOperations: [], eggs: [], breedingOrigins: [], breedingOperations: [], skillChecks: [],
         completeness: {
           sheets: true, profiles: true, settlementSources: true, historyFacts: true,
           itemOperations: true, eggs: true, breedingOrigins: true,
-          breedingOperations: true, campaignClock: true,
+          breedingOperations: true, skillChecks: true, campaignClock: true,
         },
       })
       const result = loadCampaignAttentionUseCase({ role: 'gm' }, {

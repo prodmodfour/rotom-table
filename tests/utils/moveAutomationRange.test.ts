@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   parseExplicitMultiTargetMoveRangeMeters,
+  parseMoveMinimumRangeMeters,
   parseSingleTargetMoveRangeMeters,
   tokenGridDistance,
 } from '~/utils/moveAutomationRange'
@@ -24,6 +25,14 @@ describe('move automation range helpers', () => {
     expect(parseExplicitMultiTargetMoveRangeMeters('6, 1 Target; or 10, 2 Targets')).toBe(10)
     expect(parseExplicitMultiTargetMoveRangeMeters('Melee, 1 Target')).toBeNull()
     expect(parseExplicitMultiTargetMoveRangeMeters('Burst 1')).toBeNull()
+  })
+
+  it('parses reviewed ranged-weapon lower bounds without changing the ordinary maximum', () => {
+    const range = '12, 1 Target, Ranged Weapon, Minimum Range 4'
+    expect(parseSingleTargetMoveRangeMeters(range)).toBe(12)
+    expect(parseMoveMinimumRangeMeters(range)).toBe(4)
+    expect(parseMoveMinimumRangeMeters('4, 1 Target, Ranged Weapon')).toBe(0)
+    expect(parseMoveMinimumRangeMeters('12, Minimum Range nope')).toBe(0)
   })
 
   it('measures token range with PTU alternating diagonal costs', () => {

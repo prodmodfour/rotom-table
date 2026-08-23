@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 46
+export const LATEST_STORAGE_SCHEMA_VERSION = 50
 
 export interface StorageMigration {
   readonly version: number
@@ -1732,7 +1732,165 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     name: 'store authoritative Pokemon Contest documents operations metrics and structured preparation state',
     up: createPokemonContestTables,
   },
+  {
+    version: 47,
+    name: 'store replay-safe authoritative encounter equipment actions',
+    up: createEquipmentActionOperationTable,
+  },
+  {
+    version: 48,
+    name: 'admit durable guided fishing declarations and cancellation',
+    up: addFishingGuidedRequestKind,
+  },
+  {
+    version: 49,
+    name: 'admit durable guided Snag Machine conversion adjudication',
+    up: addSnagMachineGuidedRequestKind,
+  },
+  {
+    version: 50,
+    name: 'store versioned generic Skill Check documents and replay-safe operations',
+    up: createSkillCheckTables,
+  },
 ]
+
+function addFishingGuidedRequestKind(connection: DatabaseSync): void {
+  const row = connection.prepare(`
+    SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'item_guided_requests'
+  `).get() as { readonly sql?: unknown } | undefined
+  const sourceSql = row?.sql
+  if (typeof sourceSql !== 'string'
+    || !sourceSql.includes("'loyalty-consequence', 'campaign-tool-adjudication', 're-breather-activation'")) {
+    throw new Error('Storage migration v48 requires the exact v44 guided-request table definition')
+  }
+  const destinationSql = sourceSql
+    .replace(/CREATE TABLE\s+"?item_guided_requests"?/i, 'CREATE TABLE item_guided_requests_v48')
+    .replace(
+      "'loyalty-consequence', 'campaign-tool-adjudication', 're-breather-activation'",
+      "'loyalty-consequence', 'campaign-tool-adjudication', 'fishing-adjudication', 're-breather-activation'",
+    )
+  connection.exec(`
+    DROP INDEX item_guided_requests_status_created_idx;
+    DROP INDEX item_guided_requests_actor_status_idx;
+    DROP INDEX item_guided_requests_target_status_idx;
+    ${destinationSql};
+    INSERT INTO item_guided_requests_v48 SELECT * FROM item_guided_requests;
+    DROP TABLE item_guided_requests;
+    ALTER TABLE item_guided_requests_v48 RENAME TO item_guided_requests;
+    CREATE INDEX item_guided_requests_status_created_idx
+      ON item_guided_requests (status, created_at, request_id);
+    CREATE INDEX item_guided_requests_actor_status_idx
+      ON item_guided_requests (actor_kind, actor_slug, status, request_id);
+    CREATE INDEX item_guided_requests_target_status_idx
+      ON item_guided_requests (target_kind, target_slug, status, request_id);
+  `)
+}
+
+function addSnagMachineGuidedRequestKind(connection: DatabaseSync): void {
+  const row = connection.prepare(`
+    SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = 'item_guided_requests'
+  `).get() as { readonly sql?: unknown } | undefined
+  const sourceSql = row?.sql
+  if (typeof sourceSql !== 'string'
+    || !sourceSql.includes("'campaign-tool-adjudication', 'fishing-adjudication', 're-breather-activation'")) {
+    throw new Error('Storage migration v49 requires the exact v48 guided-request table definition')
+  }
+  const destinationSql = sourceSql
+    .replace(/CREATE TABLE\s+"?item_guided_requests"?/i, 'CREATE TABLE item_guided_requests_v49')
+    .replace(
+      "'campaign-tool-adjudication', 'fishing-adjudication', 're-breather-activation'",
+      "'campaign-tool-adjudication', 'fishing-adjudication', 'snag-conversion-adjudication', 're-breather-activation'",
+    )
+  connection.exec(`
+    DROP INDEX item_guided_requests_status_created_idx;
+    DROP INDEX item_guided_requests_actor_status_idx;
+    DROP INDEX item_guided_requests_target_status_idx;
+    ${destinationSql};
+    INSERT INTO item_guided_requests_v49 SELECT * FROM item_guided_requests;
+    DROP TABLE item_guided_requests;
+    ALTER TABLE item_guided_requests_v49 RENAME TO item_guided_requests;
+    CREATE INDEX item_guided_requests_status_created_idx
+      ON item_guided_requests (status, created_at, request_id);
+    CREATE INDEX item_guided_requests_actor_status_idx
+      ON item_guided_requests (actor_kind, actor_slug, status, request_id);
+    CREATE INDEX item_guided_requests_target_status_idx
+      ON item_guided_requests (target_kind, target_slug, status, request_id);
+  `)
+}
+
+function createSkillCheckTables(connection: DatabaseSync): void {
+  connection.exec(`
+    CREATE TABLE skill_checks (
+      check_id TEXT PRIMARY KEY CHECK (length(check_id) BETWEEN 16 AND 95),
+      document_json TEXT NOT NULL CHECK (
+        json_valid(document_json) AND length(CAST(document_json AS BLOB)) <= 8388608
+      ),
+      revision INTEGER NOT NULL CHECK (revision >= 1),
+      state TEXT NOT NULL CHECK (state IN ('pending', 'ready', 'accepted', 'cancelled', 'timed-out')),
+      mode TEXT NOT NULL CHECK (mode IN ('single', 'group')),
+      requester_principal_id TEXT NOT NULL CHECK (length(requester_principal_id) BETWEEN 1 AND 200),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+      expires_at INTEGER CHECK (expires_at IS NULL OR expires_at >= created_at),
+      terminal_at INTEGER CHECK (terminal_at IS NULL OR terminal_at >= created_at),
+      CHECK (
+        (state IN ('accepted', 'cancelled', 'timed-out') AND terminal_at IS NOT NULL)
+        OR (state IN ('pending', 'ready') AND terminal_at IS NULL)
+      )
+    );
+    CREATE INDEX skill_checks_state_updated_idx
+      ON skill_checks (state, updated_at DESC, check_id);
+    CREATE INDEX skill_checks_requester_updated_idx
+      ON skill_checks (requester_principal_id, updated_at DESC, check_id);
+    CREATE INDEX skill_checks_expiry_idx
+      ON skill_checks (expires_at, check_id) WHERE expires_at IS NOT NULL AND terminal_at IS NULL;
+
+    CREATE TABLE skill_check_operations (
+      operation_id TEXT PRIMARY KEY CHECK (length(operation_id) BETWEEN 24 AND 114),
+      check_id TEXT NOT NULL,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      principal_key TEXT NOT NULL CHECK (length(principal_key) BETWEEN 1 AND 240),
+      command_kind TEXT NOT NULL CHECK (command_kind IN (
+        'request', 'respond', 'resolve', 'cancel', 'timeout', 'correct'
+      )),
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 1048576
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 65536
+      ),
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 1),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      FOREIGN KEY (check_id) REFERENCES skill_checks(check_id) DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX skill_check_operations_check_revision_idx
+      ON skill_check_operations (check_id, result_revision, operation_id);
+  `)
+}
+
+function createEquipmentActionOperationTable(connection: DatabaseSync): void {
+  connection.exec(`
+    CREATE TABLE equipment_action_operations (
+      operation_id TEXT PRIMARY KEY CHECK (length(operation_id) BETWEEN 1 AND 180),
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      principal_key TEXT NOT NULL CHECK (length(principal_key) BETWEEN 1 AND 240),
+      map_slug TEXT NOT NULL CHECK (length(map_slug) BETWEEN 1 AND 180),
+      command_json TEXT NOT NULL CHECK (
+        json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 65536
+      ),
+      result_json TEXT NOT NULL CHECK (
+        json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 65536
+      ),
+      evidence_json TEXT NOT NULL CHECK (
+        json_valid(evidence_json) AND length(CAST(evidence_json AS BLOB)) <= 8388608
+      ),
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+    CREATE INDEX equipment_action_operations_map_revision_idx
+      ON equipment_action_operations (map_slug, result_revision, operation_id);
+  `)
+}
 
 function createPokemonContestTables(connection: DatabaseSync): void {
   connection.exec(`

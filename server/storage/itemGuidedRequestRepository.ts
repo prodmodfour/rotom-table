@@ -7,13 +7,17 @@ import {
   parseItemGuidedAdjudicationCommand,
   type ItemGuidedAdjudicationCommandV1,
   type ResolveItemGuidedRequestCommandV1,
+  type ResolveItemGuidedFishingCommandV1,
+  type ResolveItemGuidedSnagCommandV1,
   type CancelItemGuidedRequestCommandV1,
   type ItemGuidedReBreatherActionKind,
   type ItemGuidedRequestKind,
   type ItemGuidedRequestStatus,
 } from '#shared/itemAutomation/guidedAdjudication'
 import type { EquipmentOwnerKind } from '#shared/itemAutomation/equipment'
+import type { EquipmentActionId } from '#shared/itemAutomation/equipmentActions'
 import type { SheetKind } from '#shared/sheets'
+import type { GridAnchor } from '~/types/map'
 import { getRotomDatabase, type RotomDatabase } from './database'
 import {
   cloneStoredJson,
@@ -71,9 +75,53 @@ export interface StoredItemGuidedReBreatherAuthorityV1 extends StoredItemGuidedC
   readonly actionKind: ItemGuidedReBreatherActionKind
 }
 
+export interface StoredItemGuidedFishingAuthorityV1 extends StoredItemGuidedCommonAuthorityV1 {
+  readonly schemaVersion: 1
+  readonly sourceKind: 'equipped-fishing-rod'
+  readonly mapSlug: string
+  readonly declarationMapRevision: number
+  readonly actorPlacementId: string
+  readonly ownerKind: EquipmentOwnerKind
+  readonly ownerSlug: string
+  readonly sheetRevision: number
+  readonly equipmentRevision: number
+  readonly instanceId: string
+  readonly instanceRevision: number
+  readonly actionId: Extract<EquipmentActionId,
+    'equipment.fishing.old-rod' | 'equipment.fishing.good-rod' | 'equipment.fishing.super-rod'>
+  readonly waterCell: GridAnchor
+  readonly campaignClockRevision: number
+  readonly startedAtCampaignMinute: number
+  readonly readyAtCampaignMinute: number
+  readonly skillCheckIntegrationId: string
+}
+
+export interface StoredItemGuidedSnagAuthorityV1 extends StoredItemGuidedCommonAuthorityV1 {
+  readonly schemaVersion: 1
+  readonly sourceKind: 'snag-machine-conversion'
+  readonly variant: 'portable' | 'large'
+  readonly mapSlug: string
+  readonly declarationMapRevision: number
+  readonly actorPlacementId: string
+  readonly trainerSlug: string
+  readonly sheetRevision: number
+  readonly equipmentRevision: number | null
+  readonly machineSourceInstanceId: string
+  readonly machineSourceRevision: number
+  readonly ballSourceInstanceId: string
+  readonly ballCanonicalItemId: string
+  readonly ballQuantityAtDeclaration: number
+  readonly declarationRound: number | null
+  readonly campaignClockRevision: number
+  readonly campaignMinute: number
+  readonly campaignDayIndex: number
+}
+
 export type StoredItemGuidedAuthorityV1 =
   | StoredItemGuidedItemOperationAuthorityV1
   | StoredItemGuidedReBreatherAuthorityV1
+  | StoredItemGuidedFishingAuthorityV1
+  | StoredItemGuidedSnagAuthorityV1
 
 export interface StoredItemGuidedRequestResultV1 {
   readonly schemaVersion: 1
@@ -81,7 +129,10 @@ export interface StoredItemGuidedRequestResultV1 {
   readonly acceptedSummary: string | null
 }
 
-export type ItemGuidedTerminalCommandV1 = ResolveItemGuidedRequestCommandV1 | CancelItemGuidedRequestCommandV1
+export type ItemGuidedTerminalCommandV1 = ResolveItemGuidedRequestCommandV1
+  | ResolveItemGuidedFishingCommandV1
+  | ResolveItemGuidedSnagCommandV1
+  | CancelItemGuidedRequestCommandV1
 
 export interface StoredItemGuidedRequestRecord {
   readonly schemaVersion: typeof ITEM_GUIDED_REQUEST_STORE_SCHEMA_VERSION
@@ -147,6 +198,7 @@ export interface ItemGuidedRequestRepository {
   getByTerminalOperation(operationId: string): StoredItemGuidedRequestRecord | null
   listPending(): readonly StoredItemGuidedRequestRecord[]
   listForActor(kind: SheetKind, slug: string): readonly StoredItemGuidedRequestRecord[]
+  listForMap(mapSlug: string, limit?: number): readonly StoredItemGuidedRequestRecord[]
   create(input: CreateItemGuidedRequestInput): StoredItemGuidedRequestRecord
   settle(input: SettleItemGuidedRequestInput): { readonly kind: 'applied' | 'stale'; readonly record: StoredItemGuidedRequestRecord }
 }
@@ -183,8 +235,8 @@ const SHA256 = /^[a-f0-9]{64}$/
 const ITEM_OPERATION_ID = /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{7,199}$/
 const EQUIPPED_INSTANCE_ID = /^equipped-item:v1:[a-f0-9]{32}$/
 const KINDS = new Set<ItemGuidedRequestKind>([
-  'loyalty-consequence', 'campaign-tool-adjudication',
-  're-breather-activation', 're-breather-refill',
+  'loyalty-consequence', 'campaign-tool-adjudication', 'fishing-adjudication',
+  'snag-conversion-adjudication', 're-breather-activation', 're-breather-refill',
 ])
 const STATUSES = new Set<ItemGuidedRequestStatus>(['pending', 'accepted', 'cancelled'])
 const SHEET_KINDS = new Set<SheetKind>(['trainer', 'pokemon'])
@@ -309,6 +361,126 @@ export const parseStoredItemGuidedAuthority = (value: unknown): StoredItemGuided
       actionKind: input.actionKind,
     })
   }
+  if (input.sourceKind === 'equipped-fishing-rod') {
+    exact(input, [
+      ...commonFields, 'mapSlug', 'declarationMapRevision', 'actorPlacementId',
+      'ownerKind', 'ownerSlug', 'sheetRevision', 'equipmentRevision', 'instanceId',
+      'instanceRevision', 'actionId', 'waterCell', 'campaignClockRevision',
+      'startedAtCampaignMinute', 'readyAtCampaignMinute', 'skillCheckIntegrationId',
+    ], 'itemGuidedRequest.authority')
+    if (input.ownerKind !== 'trainer' && input.ownerKind !== 'pokemon') {
+      throw new Error('itemGuidedRequest.authority.ownerKind is invalid.')
+    }
+    const actionId = input.actionId
+    if (actionId !== 'equipment.fishing.old-rod'
+      && actionId !== 'equipment.fishing.good-rod'
+      && actionId !== 'equipment.fishing.super-rod') {
+      throw new Error('itemGuidedRequest.authority.actionId is invalid.')
+    }
+    const instanceId = text(input.instanceId, 'itemGuidedRequest.authority.instanceId', 200)
+    if (!EQUIPPED_INSTANCE_ID.test(instanceId)) throw new Error('itemGuidedRequest.authority.instanceId is invalid.')
+    const rawCell = plain(input.waterCell, 'itemGuidedRequest.authority.waterCell')
+    exact(rawCell, ['x', 'y', 'z'], 'itemGuidedRequest.authority.waterCell')
+    const startedAtCampaignMinute = integer(
+      input.startedAtCampaignMinute,
+      'itemGuidedRequest.authority.startedAtCampaignMinute',
+    )
+    const readyAtCampaignMinute = integer(
+      input.readyAtCampaignMinute,
+      'itemGuidedRequest.authority.readyAtCampaignMinute',
+    )
+    if (readyAtCampaignMinute !== startedAtCampaignMinute + 15) {
+      throw new Error('itemGuidedRequest.authority fishing interval must be exactly 15 campaign minutes.')
+    }
+    return Object.freeze({
+      schemaVersion: 1,
+      sourceKind: 'equipped-fishing-rod',
+      ...commonAuthority(input, 'itemGuidedRequest.authority'),
+      mapSlug: text(input.mapSlug, 'itemGuidedRequest.authority.mapSlug', 180),
+      declarationMapRevision: integer(input.declarationMapRevision, 'itemGuidedRequest.authority.declarationMapRevision'),
+      actorPlacementId: text(input.actorPlacementId, 'itemGuidedRequest.authority.actorPlacementId', 200),
+      ownerKind: input.ownerKind as EquipmentOwnerKind,
+      ownerSlug: text(input.ownerSlug, 'itemGuidedRequest.authority.ownerSlug', 200),
+      sheetRevision: integer(input.sheetRevision, 'itemGuidedRequest.authority.sheetRevision'),
+      equipmentRevision: integer(input.equipmentRevision, 'itemGuidedRequest.authority.equipmentRevision'),
+      instanceId,
+      instanceRevision: integer(input.instanceRevision, 'itemGuidedRequest.authority.instanceRevision'),
+      actionId,
+      waterCell: Object.freeze({
+        x: integer(rawCell.x, 'itemGuidedRequest.authority.waterCell.x'),
+        y: integer(rawCell.y, 'itemGuidedRequest.authority.waterCell.y'),
+        z: integer(rawCell.z, 'itemGuidedRequest.authority.waterCell.z'),
+      }),
+      campaignClockRevision: integer(input.campaignClockRevision, 'itemGuidedRequest.authority.campaignClockRevision'),
+      startedAtCampaignMinute,
+      readyAtCampaignMinute,
+      skillCheckIntegrationId: text(
+        input.skillCheckIntegrationId,
+        'itemGuidedRequest.authority.skillCheckIntegrationId',
+        200,
+      ),
+    })
+  }
+  if (input.sourceKind === 'snag-machine-conversion') {
+    exact(input, [
+      ...commonFields, 'variant', 'mapSlug', 'declarationMapRevision', 'actorPlacementId',
+      'trainerSlug', 'sheetRevision', 'equipmentRevision', 'machineSourceInstanceId',
+      'machineSourceRevision', 'ballSourceInstanceId', 'ballCanonicalItemId',
+      'ballQuantityAtDeclaration', 'declarationRound', 'campaignClockRevision',
+      'campaignMinute', 'campaignDayIndex',
+    ], 'itemGuidedRequest.authority')
+    if (input.variant !== 'portable' && input.variant !== 'large') {
+      throw new Error('itemGuidedRequest.authority.variant is invalid.')
+    }
+    const machineSourceInstanceId = text(
+      input.machineSourceInstanceId,
+      'itemGuidedRequest.authority.machineSourceInstanceId',
+      240,
+    )
+    const ballSourceInstanceId = text(
+      input.ballSourceInstanceId,
+      'itemGuidedRequest.authority.ballSourceInstanceId',
+      240,
+    )
+    if (!ballSourceInstanceId.startsWith('item-instance:')
+      || (input.variant === 'portable' && !EQUIPPED_INSTANCE_ID.test(machineSourceInstanceId))
+      || (input.variant === 'large' && !machineSourceInstanceId.startsWith('item-instance:'))) {
+      throw new Error('itemGuidedRequest.authority Snag Machine source identities are invalid.')
+    }
+    const equipmentRevision = input.equipmentRevision === null
+      ? null : integer(input.equipmentRevision, 'itemGuidedRequest.authority.equipmentRevision')
+    const declarationRound = input.declarationRound === null
+      ? null : integer(input.declarationRound, 'itemGuidedRequest.authority.declarationRound')
+    if ((input.variant === 'portable') !== (equipmentRevision !== null && declarationRound !== null && declarationRound >= 1)) {
+      throw new Error('itemGuidedRequest.authority Snag Machine variant timing or equipment authority is invalid.')
+    }
+    const campaignMinute = integer(input.campaignMinute, 'itemGuidedRequest.authority.campaignMinute')
+    const campaignDayIndex = integer(input.campaignDayIndex, 'itemGuidedRequest.authority.campaignDayIndex')
+    if (campaignDayIndex !== Math.floor(campaignMinute / 1_440)) {
+      throw new Error('itemGuidedRequest.authority Snag Machine campaign day is inconsistent.')
+    }
+    return Object.freeze({
+      schemaVersion: 1,
+      sourceKind: 'snag-machine-conversion',
+      ...commonAuthority(input, 'itemGuidedRequest.authority'),
+      variant: input.variant,
+      mapSlug: text(input.mapSlug, 'itemGuidedRequest.authority.mapSlug', 180),
+      declarationMapRevision: integer(input.declarationMapRevision, 'itemGuidedRequest.authority.declarationMapRevision'),
+      actorPlacementId: text(input.actorPlacementId, 'itemGuidedRequest.authority.actorPlacementId', 200),
+      trainerSlug: text(input.trainerSlug, 'itemGuidedRequest.authority.trainerSlug', 200),
+      sheetRevision: integer(input.sheetRevision, 'itemGuidedRequest.authority.sheetRevision'),
+      equipmentRevision,
+      machineSourceInstanceId,
+      machineSourceRevision: integer(input.machineSourceRevision, 'itemGuidedRequest.authority.machineSourceRevision'),
+      ballSourceInstanceId,
+      ballCanonicalItemId: text(input.ballCanonicalItemId, 'itemGuidedRequest.authority.ballCanonicalItemId', 200),
+      ballQuantityAtDeclaration: integer(input.ballQuantityAtDeclaration, 'itemGuidedRequest.authority.ballQuantityAtDeclaration'),
+      declarationRound,
+      campaignClockRevision: integer(input.campaignClockRevision, 'itemGuidedRequest.authority.campaignClockRevision'),
+      campaignMinute,
+      campaignDayIndex,
+    })
+  }
   throw new Error('itemGuidedRequest.authority.sourceKind is unsupported.')
 }
 
@@ -345,7 +517,10 @@ const rowToRecord = (row: Row): StoredItemGuidedRequestRecord => {
   const terminalParsed = row.terminal_command_json === null
     ? null
     : parseItemGuidedAdjudicationCommand(parseStoredDocumentJson<unknown>(String(row.terminal_command_json), `guided request ${id} terminal command`))
-  if (terminalParsed?.action === 'declare-re-breather') throw new Error(`Guided request ${id} stored a declaration as terminal evidence.`)
+  if (terminalParsed?.action === 'declare-re-breather'
+    || terminalParsed?.action === 'resolve-fishing-intent') {
+    throw new Error(`Guided request ${id} stored a non-terminal command as terminal evidence.`)
+  }
   const terminalCommand: ItemGuidedTerminalCommandV1 | null = terminalParsed
   const terminalHash = row.terminal_command_sha256 === null ? null : digest(row.terminal_command_sha256, `guided request ${id} terminal hash`)
   if ((terminalCommand === null) !== (terminalHash === null)
@@ -371,7 +546,11 @@ const rowToRecord = (row: Row): StoredItemGuidedRequestRecord => {
     || (requestKind === 'campaign-tool-adjudication') !== (authority.sourceKind === 'item-operation'
       && 'campaignToolChoiceId' in authority)
     || (requestKind === 'loyalty-consequence') !== (authority.sourceKind === 'item-operation'
-      && 'loyaltyChoiceId' in authority)) {
+      && 'loyaltyChoiceId' in authority)
+    || (requestKind === 'fishing-adjudication') !== (authority.sourceKind === 'equipped-fishing-rod')
+    || (requestKind === 'snag-conversion-adjudication') !== (authority.sourceKind === 'snag-machine-conversion')
+    || ((requestKind === 're-breather-activation' || requestKind === 're-breather-refill')
+      !== (authority.sourceKind === 'equipped-re-breather'))) {
     throw new Error(`Guided request ${id} source authority drifted.`)
   }
   return Object.freeze({
@@ -421,6 +600,19 @@ export const createSqliteItemGuidedRequestRepository = (input: {
     getByTerminalOperation: id => select('terminal_operation_id', operationId(id, 'terminal operation ID', true)),
     listPending: () => Object.freeze((database.connection.prepare(`${SELECT} WHERE status = 'pending' ORDER BY created_at, request_id`).all() as unknown as Row[]).map(rowToRecord)),
     listForActor: (kind, slug) => Object.freeze((database.connection.prepare(`${SELECT} WHERE actor_kind = ? AND actor_slug = ? ORDER BY created_at DESC, request_id DESC`).all(sheetKind(kind, 'actor kind'), text(slug, 'actor slug', 200)) as unknown as Row[]).map(rowToRecord)),
+    listForMap: (mapSlug, limit = 200) => {
+      const slug = text(mapSlug, 'guided request map slug', 200)
+      if (!/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,199}$/u.test(slug)
+        || !Number.isSafeInteger(limit) || limit < 1 || limit > 500) {
+        throw new Error('Guided request map history query is invalid.')
+      }
+      return Object.freeze((database.connection.prepare(`${SELECT}
+        WHERE request_kind IN ('fishing-adjudication', 'snag-conversion-adjudication')
+          AND json_extract(authority_json, '$.mapSlug') = ?
+        ORDER BY updated_at DESC, request_id DESC
+        LIMIT ?
+      `).all(slug, limit) as unknown as Row[]).map(rowToRecord))
+    },
     create: value => database.withTransaction(() => {
       const id = requestId(value.requestId, 'guided request ID')
       const declarationOperationId = operationId(value.declarationOperationId, 'declaration operation ID')
@@ -433,7 +625,13 @@ export const createSqliteItemGuidedRequestRepository = (input: {
         || (value.requestKind === 'campaign-tool-adjudication') !== (authority.sourceKind === 'item-operation'
           && 'campaignToolChoiceId' in authority)
         || (value.requestKind === 'loyalty-consequence') !== (authority.sourceKind === 'item-operation'
-          && 'loyaltyChoiceId' in authority)) throw new Error('Guided request item operation authority is inconsistent.')
+          && 'loyaltyChoiceId' in authority)
+        || (value.requestKind === 'fishing-adjudication') !== (authority.sourceKind === 'equipped-fishing-rod')
+        || (value.requestKind === 'snag-conversion-adjudication') !== (authority.sourceKind === 'snag-machine-conversion')
+        || ((value.requestKind === 're-breather-activation' || value.requestKind === 're-breather-refill')
+          !== (authority.sourceKind === 'equipped-re-breather'))) {
+        throw new Error('Guided request item operation authority is inconsistent.')
+      }
       const existing = repository.get(id)
       if (existing) {
         if (existing.declarationOperationId !== declarationOperationId
@@ -469,10 +667,14 @@ export const createSqliteItemGuidedRequestRepository = (input: {
     settle: value => database.withTransaction(() => {
       const id = requestId(value.requestId, 'guided request ID')
       const parsedCommand = parseItemGuidedAdjudicationCommand(value.command)
-      if (parsedCommand.action === 'declare-re-breather') throw new Error('Guided settlement requires a terminal command.')
+      if (parsedCommand.action === 'declare-re-breather'
+        || parsedCommand.action === 'resolve-fishing-intent') {
+        throw new Error('Guided settlement requires a terminal command.')
+      }
       const command: ItemGuidedTerminalCommandV1 = parsedCommand
       if (command.requestId !== id || command.expectedRevision !== value.expectedRevision
-        || (value.status === 'accepted') !== (command.action === 'resolve')
+        || (value.status === 'accepted') !== (command.action === 'resolve'
+          || command.action === 'resolve-fishing' || command.action === 'resolve-snag-conversion')
         || (value.status === 'cancelled') !== (command.action === 'cancel')) throw new Error('Guided terminal command does not match its requested settlement.')
       if (value.result.schemaVersion !== 1 || value.result.status !== value.status
         || (value.status === 'cancelled' && value.result.acceptedSummary !== null)) throw new Error('Guided terminal result does not match its settlement.')

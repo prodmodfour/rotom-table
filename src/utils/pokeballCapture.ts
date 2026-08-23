@@ -141,6 +141,8 @@ export interface PokeballCaptureAttemptResult {
   naturalCaptureSuccess: boolean
   failureReason: string | null
   breakdown: PokeballCaptureBreakdown
+  /** True only when an authoritative converted unit supplied the throw. */
+  snagBall: boolean
 }
 
 export interface PokeballCaptureOutcomeApplyResult {
@@ -205,7 +207,7 @@ export const buildPokeballCaptureLogLines = (event: PokeballCaptureOutcomeEvent)
   const { result } = event
   const captureLine = captureRollLogLine(result)
   return [
-    `${result.trainerName} threw ${result.pokeballName} at ${result.targetName}.`,
+    `${result.trainerName} threw ${result.snagBall ? `Snag ${result.pokeballName}` : result.pokeballName} at ${result.targetName}.`,
     captureAccuracyLogLine(result),
     ...(captureLine ? [captureLine] : []),
     ...(result.naturalCaptureSuccess ? ['Natural 100: automatic capture.'] : []),
@@ -225,7 +227,7 @@ export const appendPokeballCaptureLogEntry = (
     userId: event.trainerId,
     userName: event.result.trainerName,
     actionName: `Throw ${event.pokeballName}`,
-    pokeballName: event.pokeballName,
+    pokeballName: event.result.snagBall ? `Snag ${event.pokeballName}` : event.pokeballName,
     targetId: event.targetId,
     targetName: event.result.targetName,
     success: event.result.success,
@@ -620,10 +622,11 @@ const combinedHitAndCapturePercent = (options: {
   captureRate: number
   rollModifier: number
   capturable: boolean
+  attackRollModifier?: number
 }): number => {
   if (!options.capturable) return 0
 
-  const userAccuracy = moveAutomationUserAccuracy(options.user)
+  const userAccuracy = moveAutomationUserAccuracy(options.user) + (options.attackRollModifier ?? 0)
   const targetEvasion = resolveMoveAutomationTargetEvasion(options.script, options.target, { attacker: options.user }).value
   let successes = 0
   for (let roll = 1; roll <= 20; roll += 1) {
@@ -648,6 +651,8 @@ export const buildPokeballCaptureBreakdown = (options: {
   pokemonBySlug?: ReadonlyMap<string, CharacterSheet>
   currentRound?: number | null
   map?: TabletopMap | null
+  /** Server-reviewed modifier to the Poké Ball attack roll. */
+  attackRollModifier?: number
 }): PokeballCaptureBreakdown => {
   const targetSheet = options.targetSheet ?? null
   const policy = capturePokeballPolicies.get(options.pokeball.name)
@@ -681,16 +686,26 @@ export const buildPokeballCaptureBreakdown = (options: {
     currentRound: options.currentRound,
     map: options.map,
   })
+  const nettedCaptureModifier = options.map?.encounterState?.effects.some(effect => (
+    effect.affected.placementIds.includes(options.target.id)
+    && effect.tags.includes('netted')
+    && effect.tags.includes('capture-roll-modifier.minus-20')
+    && effect.suppression.sources.length === 0
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+  )) === true ? -20 : 0
   const rollModifierLines: PokeballCaptureBreakdownLine[] = [
     { label: `Trainer Level ${options.trainer.level}`, value: -Math.max(0, Math.floor(options.trainer.level ?? 0)) },
     { label: `${options.pokeball.name} modifier`, value: options.pokeball.rollModifier },
+    ...(nettedCaptureModifier ? [{ label: 'Netted target', value: nettedCaptureModifier }] : []),
     ...ballConditionalLines,
   ]
   const rollModifier = rollModifierLines.reduce((sum, line) => sum + line.value, 0)
 
   const rangeMeters = trainerThrowingRangeMeters(options.trainer)
   const script = createPokeballThrowScript(rangeMeters)
-  const baseHitChance = moveAutomationTargetHitChance(script, options.user, options.target)
+  const baseHitChance = moveAutomationTargetHitChance(script, options.user, options.target, {
+    userAccuracyModifier: options.attackRollModifier ?? 0,
+  })
   const captureChance = captureSuccessPercent({ captureRate, rollModifier, capturable })
   const naturalTwentyCaptureChance = captureSuccessPercent({
     captureRate,
@@ -704,6 +719,7 @@ export const buildPokeballCaptureBreakdown = (options: {
     captureRate,
     rollModifier,
     capturable,
+    attackRollModifier: options.attackRollModifier,
   })
   const combinedChanceLabel = formatCaptureChancePercent(combinedChance)
 
@@ -727,7 +743,10 @@ export const buildPokeballCaptureBreakdown = (options: {
     combinedChanceLabel,
     capturable,
     uncatchableReason,
-    notes: conditionalBallNotes(policy),
+    notes: [
+      ...conditionalBallNotes(policy),
+      ...(options.attackRollModifier ? [`Snag Ball attack roll ${signed(options.attackRollModifier)}.`] : []),
+    ],
   }
 }
 
@@ -744,11 +763,13 @@ export const resolvePokeballCaptureAttempt = (options: {
   map?: TabletopMap | null
   random?: () => number
   now?: () => number
+  attackRollModifier?: number
+  snagBall?: boolean
 }): PokeballCaptureAttemptResult => {
   const breakdown = buildPokeballCaptureBreakdown(options)
   const rangeMeters = trainerThrowingRangeMeters(options.trainer)
   const script = createPokeballThrowScript(rangeMeters)
-  const userAccuracy = moveAutomationUserAccuracy(options.user)
+  const userAccuracy = moveAutomationUserAccuracy(options.user) + (options.attackRollModifier ?? 0)
   const targetEvasion = resolveMoveAutomationTargetEvasion(script, options.target, { attacker: options.user })
   const accuracyRoll = randomD20(options.random)
   const accuracy = resolveMoveAutomationAccuracyRoll(script, accuracyRoll, {
@@ -808,6 +829,7 @@ export const resolvePokeballCaptureAttempt = (options: {
     naturalCaptureSuccess,
     failureReason,
     breakdown,
+    snagBall: options.snagBall === true,
   }
 }
 

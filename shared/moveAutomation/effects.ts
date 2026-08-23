@@ -1368,6 +1368,8 @@ export interface MoveAddTemporaryEffectPayload {
   readonly definition: EncounterEffectDefinition
   /** Omitted legacy operations address placements; actor-side is derived authoritatively server-side. */
   readonly recipientScope?: MoveEffectTemporaryRecipientScope
+  /** Optional reviewed natural-accuracy gate for a durable secondary effect. */
+  readonly accuracyRollTrigger?: MoveConditionAccuracyRollTrigger
 }
 
 export interface MoveRemoveTemporaryEffectPayload {
@@ -2130,7 +2132,7 @@ const COMBAT_STAGE_OPERATION_TRIGGER_FIELDS = [
   'operationId',
   'outcome',
 ] as const
-const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition', 'recipientScope'] as const
+const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition', 'recipientScope', 'accuracyRollTrigger'] as const
 const LEGACY_ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition'] as const
 const REMOVE_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId'] as const
 const APPLY_FIELD_FIELDS = ['action', 'category', 'fieldId', 'rounds'] as const
@@ -4704,11 +4706,15 @@ const parseTemporaryEffectPayload = (
           `${path}.recipientScope`,
           'placements or actor-side',
         )
+    const accuracyRollTrigger = input.accuracyRollTrigger === undefined
+      ? undefined
+      : parseAccuracyRollTrigger(input.accuracyRollTrigger, `${path}.accuracyRollTrigger`)
     return {
       action,
       effectId: parseStableId(ownValue(input, 'effectId', path), `${path}.effectId`),
       definition,
       ...(recipientScope === undefined ? {} : { recipientScope }),
+      ...(accuracyRollTrigger === undefined ? {} : { accuracyRollTrigger }),
     }
   }
   if (action === 'remove') {

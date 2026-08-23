@@ -2,10 +2,11 @@ import { randomInt } from 'node:crypto'
 import type { AuthRole } from '#shared/auth'
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import type { PlayerProfile } from '#shared/playerProfiles'
-import { appendContestHistory, ContestContractError, contestCurrentPerformer, createContestDocument, parseContestDocument, type ContestDocumentV1, type ContestantStateV1 } from '#shared/contests/document'
+import { appendContestHistory, ContestContractError, contestCurrentPerformer, contestPerformerIsPokemon, createContestDocument, parseContestDocument, type ContestDocumentV1, type ContestantStateV1 } from '#shared/contests/document'
 import { parseContestCommand, type ContestCommandV1, type ContestOperationResultV1 } from '#shared/contests/operations'
 import { projectContestDiagnostic, projectContestGm, projectContestOwner, projectContestPublic, type ContestRoleProjectionV1 } from '#shared/contests/projections'
-import { buildContestPerformerSnapshot } from '#shared/contests/integrations'
+import { buildContestPerformerSnapshot, buildContestTrainerPerformerSnapshot } from '#shared/contests/integrations'
+import { contestBaseVariantAllowsTrainerParticipants } from '#shared/contests/catalog'
 import { resolvedSheetFeatureClosure } from '#shared/featureAutomation/sheetFeatures'
 import { FEATURE_AUTOMATION_MANIFEST_BY_ID } from '#shared/featureAutomation/manifest'
 import { beginAbilityDailyUsagePeriod, createEmptyAbilityDailyUsageLedger, parseAbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
@@ -97,7 +98,14 @@ const refreshContestProviderSnapshots = (document: ContestDocumentV1, repositori
     const trainerStored = repositories.sheets.get('trainer', contestant.trainerSheetSlug)
     if (!trainerStored) continue // Keep the enrolled snapshot readable while ordinary-sheet recovery is required.
     const trainer = trainerStored.document as unknown as TrainerSheet
+    const enrolledTrainerPerformer = contestant.performers.find((performer: any) => performer.performerKind === 'trainer')
+    if (enrolledTrainerPerformer) {
+      const freshTrainerPerformer = buildContestTrainerPerformerSnapshot({ sheet: trainer, revision: enrolledTrainerPerformer.trainerSheetRevision })
+      const activeTrainerProviderIds = new Set(freshTrainerPerformer.providerIds), retainedTrainerProviderIds = enrolledTrainerPerformer.providerIds.filter((providerId: string) => activeTrainerProviderIds.has(providerId))
+      if (stableJsonStringify(retainedTrainerProviderIds) !== stableJsonStringify(enrolledTrainerPerformer.providerIds)) { enrolledTrainerPerformer.providerIds = retainedTrainerProviderIds; changed = true }
+    }
     for (const performer of contestant.performers) {
+      if (performer.performerKind !== 'pokemon') continue
       const pokemonStored = repositories.sheets.get('pokemon', performer.pokemonSheetSlug)
       if (!pokemonStored) continue
       const pokemon = pokemonStored.document as unknown as CharacterSheet
@@ -105,7 +113,9 @@ const refreshContestProviderSnapshots = (document: ContestDocumentV1, repositori
       const activeProviderIds = new Set(fresh.providerIds), retainedProviderIds = performer.providerIds.filter((id: string) => activeProviderIds.has(id))
       if (stableJsonStringify(retainedProviderIds) !== stableJsonStringify(performer.providerIds)) { performer.providerIds = retainedProviderIds; changed = true }
       for (const statId of CONTEST_STAT_IDS) {
-        const pool = performer.dicePools[statId], freshContributions = new Map(fresh.dicePools[statId].contributors.map(row => [row.id, row]))
+        const pool = performer.dicePools[statId]
+        const freshPool = fresh.dicePools[statId]
+        const freshContributions = new Map(freshPool.contributors.map(row => [row.id, row]))
         const contributors = pool.contributors.map((entry: any) => {
           if (!['poffin','feature-poffin-equivalent','temporary-reallocation','ability'].includes(entry.kind)) return entry
           if (!entry.active) return entry
@@ -131,6 +141,7 @@ const refreshContestProviderSnapshots = (document: ContestDocumentV1, repositori
 }
 
 const enrollmentContext = (command: Extract<ContestCommandV1, { commandKind: 'enroll-contestant' }>, document: ContestDocumentV1, repositories: ReturnType<typeof runtime>): ContestantStateV1 => {
+  if (document.participantVariantId === 'trainer-participant' && !contestBaseVariantAllowsTrainerParticipants(document.variantId)) fail(400, 'contest.variant-unsupported', 'Trainer performers are not permitted by this base Contest variant.')
   const trainer = sheet<TrainerSheet>(repositories.sheets, 'trainer', command.trainerSheetSlug)
   const controllerProfile = command.controller.kind === 'profile'
     ? repositories.readProfile(command.controller.profileId) ?? fail(400, 'contest.invalid-controller', 'Selected player profile no longer exists.')
@@ -141,13 +152,21 @@ const enrollmentContext = (command: Extract<ContestCommandV1, { commandKind: 'en
     const requiredOrderLength = document.policy.rotationOrderPolicy === 'predeclared' ? command.pokemonSheetSlugs.length : 0
     if (new Set(command.rotationOrder).size !== command.rotationOrder.length || command.rotationOrder.length !== requiredOrderLength) fail(400, 'contest.rotation-order', document.policy.rotationOrderPolicy === 'predeclared' ? 'Rotation order must use each team performer exactly once.' : 'This Rotation Contest chooses one unused performer at each round turn.')
   } else if (command.pokemonSheetSlugs.length !== 1) fail(400, 'contest.team-not-supported', 'This Contest variant enrolls exactly one Pokémon per contestant.')
+  if (new Set(command.pokemonSheetSlugs).size !== command.pokemonSheetSlugs.length) fail(400, 'contest.duplicate-pokemon', 'A Pokémon may enroll only once in an entry.')
   const campaignDay = Math.floor(createSqliteCampaignClockRepository(repositories.database).get().campaignMinute / 1_440)
-  const performers = command.pokemonSheetSlugs.map(slug => {
+  const preparedPokemonPerformers = command.pokemonSheetSlugs.map(slug => {
     if (controllerProfile && !linkedToProfile(controllerProfile, 'pokemon', slug)) fail(400, 'contest.invalid-controller', 'Selected player profile does not control every enrolled Pokémon.')
     const pokemon = sheet<CharacterSheet>(repositories.sheets, 'pokemon', slug)
     if (pokemon.document.letterPressCombinedInto || pokemon.document.zygardeDisassembledIntoCells) fail(400, 'contest.pokemon-ineligible', `${pokemon.document.nickname || slug} cannot act independently.`)
     return buildContestPerformerSnapshot({ sheet: pokemon.document, trainer: trainer.document, campaignDay, revision: pokemon.revision })
   })
+  const performers = document.participantVariantId === 'trainer-participant'
+    ? (() => {
+        const trainerPerformer = buildContestTrainerPerformerSnapshot({ sheet: trainer.document, revision: trainer.revision }), trainerProviderIds = new Set(trainerPerformer.providerIds)
+        const pokemonPerformers = preparedPokemonPerformers.map(performer => Object.freeze({ ...performer, providerIds: Object.freeze(performer.providerIds.filter(providerId => !trainerProviderIds.has(providerId))) }))
+        return Object.freeze([...pokemonPerformers, trainerPerformer])
+      })()
+    : Object.freeze(preparedPokemonPerformers)
   return createContestantState({
     contestantId: command.contestantId,
     trainerSheetSlug: trainer.document.slug,
@@ -162,7 +181,7 @@ const enrollmentContext = (command: Extract<ContestCommandV1, { commandKind: 'en
 const introductionContext = (command: Extract<ContestCommandV1, { commandKind: 'declare-introduction' }>, document: ContestDocumentV1) => {
   const contestant = document.contestants.find(row => row.contestantId === command.contestantId) ?? fail(400, 'contest.contestant-not-found', 'Contestant is not enrolled.')
   const skillDice = contestant.introductionSkillDice[command.skillId] ?? 2
-  const providers = contestant.performers[0]!.providerIds
+  const providers = contestant.performers.find(contestPerformerIsPokemon)?.providerIds ?? []
   const bonusRolls: Array<{ sourceId: string, label: string, dice: number, statId: ContestStatId }> = []
   const add = (sourceId: string, label: string, dice: number, statId: ContestStatId): void => { if (dice > 0) bonusRolls.push({ sourceId, label, dice, statId }) }
   if (providers.includes('edge:Groomer:groomed')) add('groomer', 'Groomer', 1, command.generatedStatId)
@@ -225,7 +244,7 @@ const assertReplacementController = (command: Extract<ContestCommandV1, { comman
   if (command.correctionKind !== 'controller-reassignment' || command.replacementProfileId === null) return
   const contestant = document.contestants.find(row => row.contestantId === command.contestantId) ?? fail(400, 'contest.contestant-not-found', 'Contestant is not enrolled.')
   const profile = repositories.readProfile(command.replacementProfileId) ?? fail(400, 'contest.invalid-controller', 'Replacement player profile no longer exists.')
-  if (!linkedToProfile(profile, 'trainer', contestant.trainerSheetSlug) || contestant.performers.some(performer => !linkedToProfile(profile, 'pokemon', performer.pokemonSheetSlug))) fail(400, 'contest.invalid-controller', 'Replacement profile must own the enrolled Trainer and every performer.')
+  if (!linkedToProfile(profile, 'trainer', contestant.trainerSheetSlug) || contestant.performers.filter(contestPerformerIsPokemon).some(performer => !linkedToProfile(profile, 'pokemon', performer.pokemonSheetSlug))) fail(400, 'contest.invalid-controller', 'Replacement profile must own the enrolled Trainer and every Pokémon performer.')
 }
 
 const appendPrizeItem = (trainer: TrainerSheet, itemId: string, quantity: number, contestId: string, ordinal: number): void => {
@@ -268,7 +287,8 @@ const applySettlementWrites = (before: ContestDocumentV1, next: ContestDocumentV
   for (const entry of settlement.entries) {
     const contestant = before.contestants.find(row => row.contestantId === entry.contestantId)!
     const trainer = trainerFor(entry.trainerSheetSlug)
-    const result: TrainerContestResultRecordV1 = Object.freeze({ schemaVersion: 1, resultId: `${before.contestId}:result:${entry.contestantId}`, contestId: before.contestId, hallName: before.display.hallName, contestName: before.display.name, contestTypeId: before.contestTypeId, variantId: before.variantId, placement: entry.placement, score: entry.finalScore, pokemonSheetSlugs: Object.freeze(contestant.performers.map(row => row.pokemonSheetSlug)), ribbonAwarded: entry.ribbon, ribbonIds: Object.freeze(entry.ribbon ? contestant.performers.map(row => `${before.contestId}:ribbon:${row.pokemonSheetSlug}`) : []), completedAt: now })
+    const pokemonPerformers = contestant.performers.filter(contestPerformerIsPokemon)
+    const result: TrainerContestResultRecordV1 = Object.freeze({ schemaVersion: 1, resultId: `${before.contestId}:result:${entry.contestantId}`, contestId: before.contestId, hallName: before.display.hallName, contestName: before.display.name, contestTypeId: before.contestTypeId, variantId: before.variantId, placement: entry.placement, score: entry.finalScore, pokemonSheetSlugs: Object.freeze(pokemonPerformers.map(row => row.pokemonSheetSlug)), ribbonAwarded: entry.ribbon, ribbonIds: Object.freeze(entry.ribbon ? pokemonPerformers.map(row => `${before.contestId}:ribbon:${row.pokemonSheetSlug}`) : []), completedAt: now })
     trainer.contestResults = [...(trainer.contestResults ?? []).filter(row => row.resultId !== result.resultId), result]
     for (const award of entry.experienceByPokemon) {
       const pokemon = pokemonFor(award.pokemonSheetSlug)
@@ -276,7 +296,7 @@ const applySettlementWrites = (before: ContestDocumentV1, next: ContestDocumentV
       pokemon.totalExp = Math.max(0, currentTotal + award.experience)
       pokemon.level = Math.max(pokemon.level, calculatePokemonLevelFromExperience(pokemon.totalExp) ?? pokemon.level)
     }
-    if (entry.ribbon) for (const performer of contestant.performers) {
+    if (entry.ribbon) for (const performer of pokemonPerformers) {
       const pokemon = pokemonFor(performer.pokemonSheetSlug)
       const ribbon: ContestRibbonRecordV1 = Object.freeze({ schemaVersion: 1, ribbonId: `${before.contestId}:ribbon:${performer.pokemonSheetSlug}`, contestId: before.contestId, hallName: before.display.hallName, contestName: before.display.name, contestTypeId: before.contestTypeId, variantId: before.variantId, placement: 1, awardedAt: now, trainerSheetSlug: entry.trainerSheetSlug, pokemonSheetSlug: performer.pokemonSheetSlug })
       pokemon.contestRibbons = [...(pokemon.contestRibbons ?? []).filter(row => row.ribbonId !== ribbon.ribbonId), ribbon]

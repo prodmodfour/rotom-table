@@ -1,4 +1,6 @@
+import { createHash } from 'node:crypto'
 import { parseCapabilityRuntimeState } from '#shared/capabilityAutomation/state'
+import { parseSheetEquipmentStateForOwner } from '#shared/itemAutomation/equipment'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -61,6 +63,60 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
       instance.sources.some(source => source.sourceId === sourceId)
     ))
   }
+  const equipmentTemporarySourceEffective = (effect: NonNullable<TabletopMap['encounterState']>['effects'][number]): boolean => {
+    const family = effect.tags.includes('equipment.shield.ready') ? 'shield'
+      : effect.tags.includes('equipment.hand-net') ? 'hand-net'
+        : effect.tags.includes('equipment.weighted-net') ? 'weighted-net' : null
+    if (!family) return true
+    const prefix = family === 'shield' ? 'equipment.shield.ready:'
+      : family === 'hand-net' ? 'equipment.hand-net.source:' : 'equipment.weighted-net.source:'
+    const instanceTag = effect.tags.find(tag => tag.startsWith(prefix))
+    const instanceKey = instanceTag?.slice(prefix.length)
+    const placementId = effect.source.placementId
+    const placement = placementId ? placementById.get(placementId) : null
+    const sheet = placement ? sheetForPlacement(placement, input.sheets) : null
+    if (!instanceKey || !placement || !sheet?.equipmentState) return false
+    const state = parseSheetEquipmentStateForOwner(sheet.equipmentState, {
+      kind: placement.sheetKind,
+      slug: placement.sheetSlug,
+    })
+    return state.instances.some(instance => (
+      createHash('sha256').update(instance.instanceId).digest('hex').slice(0, 32) === instanceKey
+      && instance.activity.status === 'active'
+      && state.slots.some(slot => slot.instanceId === instance.instanceId)
+      && (family === 'shield'
+        ? instance.canonicalItemId === 'Light Shield' || instance.canonicalItemId === 'Heavy Shield'
+        : family === 'hand-net'
+          ? instance.canonicalItemId === 'Hand Net'
+          : instance.canonicalItemId === 'Weighted Nets')
+    ))
+  }
+  const retainCompleteEquipmentRestraintGroups = (
+    effects: NonNullable<TabletopMap['encounterState']>['effects'],
+  ): NonNullable<TabletopMap['encounterState']>['effects'] => {
+    const groups = new Map<string, typeof effects>()
+    for (const effect of effects) {
+      const tag = effect.tags.find(candidate => candidate.startsWith('equipment.hand-net.source:')
+        || candidate.startsWith('equipment.weighted-net.source:'))
+      if (!tag) continue
+      groups.set(tag, [...(groups.get(tag) ?? []), effect])
+    }
+    const invalid = new Set<string>()
+    for (const [tag, group] of groups) {
+      const targetIds = new Set(group.flatMap(effect => effect.affected.placementIds))
+      const targetPresent = targetIds.size === 1 && [...targetIds].every(id => placementById.has(id))
+      const hand = tag.startsWith('equipment.hand-net.source:')
+      const complete = hand
+        ? group.some(effect => effect.kind === 'capability' && effect.payload.capabilityId === 'equipment.restraint.netted')
+          && group.some(effect => effect.kind === 'condition' && effect.payload.conditionId === 'trapped')
+        : group.some(effect => effect.kind === 'capability' && effect.payload.capabilityId === 'equipment.restraint.netted')
+          && group.some(effect => effect.kind === 'condition' && effect.payload.conditionId === 'slowed')
+          && group.some(effect => effect.kind === 'capability' && effect.payload.capabilityId === 'movement.sky' && effect.payload.action === 'suppress')
+          && group.some(effect => effect.kind === 'capability' && effect.payload.capabilityId === 'movement.levitate' && effect.payload.action === 'suppress')
+      if (!targetPresent || !complete) invalid.add(tag)
+    }
+    return effects.filter(effect => !effect.tags.some(tag => invalid.has(tag)))
+  }
   let attachmentSourceRemoved = false
   const capabilityObjects = Array.isArray(input.map.metadata?.capabilityObjects)
     ? input.map.metadata.capabilityObjects.map((raw) => {
@@ -102,9 +158,11 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
     : input.map
   const runtime = encounter.capabilityRuntime
   if (!runtime) {
-    const effects = encounter.effects.filter(effect => (
+    const sourceEffectiveEffects = encounter.effects.filter(effect => (
       !effect.tags.includes('capability.living-weapon.light-shield')
+      && equipmentTemporarySourceEffective(effect)
     ))
+    const effects = retainCompleteEquipmentRestraintGroups(sourceEffectiveEffects)
     if (effects.length === encounter.effects.length && !attachmentSourceRemoved) return input.map
     return {
       ...input.map,
@@ -139,14 +197,16 @@ export const reconcileCapabilityRuntimeSourceLoss = (input: {
     sourceEffective(entry)
     && (entry.continuationId === undefined || retainedTaskIds.has(entry.continuationId))
   ))
-  const effects = encounter.effects.filter(effect => (
-    !effect.tags.includes('capability.living-weapon.light-shield')
-    || links.some(link => (
-      link.kind === 'living-weapon'
-      && link.ownerPlacementId === effect.source.placementId
-      && effect.affected.placementIds.some(id => link.participantPlacementIds.includes(id))
-    ))
+  const sourceEffectiveEffects = encounter.effects.filter(effect => (
+    equipmentTemporarySourceEffective(effect)
+    && (!effect.tags.includes('capability.living-weapon.light-shield')
+      || links.some(link => (
+        link.kind === 'living-weapon'
+        && link.ownerPlacementId === effect.source.placementId
+        && effect.affected.placementIds.some(id => link.participantPlacementIds.includes(id))
+      )))
   ))
+  const effects = retainCompleteEquipmentRestraintGroups(sourceEffectiveEffects)
   let pouchStateChanged = false
   const capabilityMarsupialPouches = Array.isArray(input.map.metadata?.capabilityMarsupialPouches)
     ? input.map.metadata.capabilityMarsupialPouches.filter((raw) => {

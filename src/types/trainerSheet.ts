@@ -19,6 +19,7 @@ import type { EquipmentContributionProjectionV1 } from '#shared/itemAutomation/e
 import type { ItemMedicalTreatmentProjectionV1, ItemMedicalTreatmentStateV1 } from '#shared/itemAutomation/medicalTreatments'
 import type { ItemMachineUsageStateV1 } from '#shared/itemAutomation/moveLearning'
 import type { ItemGuidedCampaignToolStateV1 } from '#shared/itemAutomation/guidedAdjudication'
+import type { SnagMachineStateV1 } from '#shared/itemAutomation/snagMachine'
 import type { TrainerContestResultRecordV1 } from '#shared/contests/ribbons'
 import type {
   ItemExplorationProjectionV1,
@@ -310,6 +311,8 @@ export interface TrainerSheetServerPrivate {
   itemBreeding?: ItemBreedingStateV1
   /** Private bounded receipts for accepted interpretive campaign-tool uses. */
   itemGuidedCampaignTools?: ItemGuidedCampaignToolStateV1
+  /** Private exact Snag Ball conversions, legality receipts, durations, and daily Large-machine usage. */
+  snagMachine?: SnagMachineStateV1
 }
 
 export interface TrainerSheet {

@@ -13,6 +13,10 @@ import {
 } from '#shared/itemAutomation/sheetActions'
 import { itemInventoryInstanceId, type ItemInventorySection } from '#shared/itemAutomation/inventory'
 import {
+  equipmentActionPresentationsForItem,
+  equipmentEncounterContinuationLabel,
+} from '#shared/itemAutomation/equipmentActionPresentation'
+import {
   parseSerializedEquipmentInventoryState,
   parseSheetEquipmentStateForOwner,
 } from '#shared/itemAutomation/equipment'
@@ -359,6 +363,8 @@ export const projectTrainerSheetItemActions = (
     const canonicalId = resolveCanonicalItemId(row.entry.name)
     const definition = ITEM_AUTOMATION_RUNTIME_REGISTRY.resolve(row.entry.name)
     const executable = commonSheetDefinition(definition)
+    const encounterActions = equipmentActionPresentationsForItem(canonicalId)
+    const encounterContinuation = equipmentEncounterContinuationLabel(canonicalId)
     let sourceIdentityValid = false
     let sourceInstanceId: string | null = null
     try {
@@ -399,9 +405,11 @@ export const projectTrainerSheetItemActions = (
           ? reason('source.identity-required', 'Save this inventory row before using it.')
           : !canonicalId
             ? reason('action.unsupported', 'No reviewed item action is available.')
-            : !executable
-              ? reason('action.unsupported', 'No reviewed common sheet action is available for this item.')
-              : eligibility?.reasons[0] ? projectedReason(eligibility.reasons[0]) : null
+            : !executable && encounterContinuation
+              ? reason('action.encounter-only', encounterContinuation)
+              : !executable
+                ? reason('action.unsupported', 'No reviewed common sheet action is available for this item.')
+                : eligibility?.reasons[0] ? projectedReason(eligibility.reasons[0]) : null
     const inspectHref = canonicalId ? `/items/${encodeURIComponent(canonicalId)}` : null
     const equipUnavailable = trainerEquipmentUnavailable({
       trainerSheet: input.trainerSheet,
@@ -439,14 +447,18 @@ export const projectTrainerSheetItemActions = (
         quantity: quantity(row.entry, row.section),
       }),
       context: 'sheet' as const,
-      description: executable ? definition.spec.presentation.description : null,
-      timingLabel: timingLabel(executable ? definition : null),
+      description: executable
+        ? definition.spec.presentation.description
+        : encounterActions.length
+          ? `Reviewed live encounter actions: ${encounterActions.map(action => action.label).join(', ')}.`
+          : null,
+      timingLabel: executable ? timingLabel(definition) : encounterActions.length ? 'Live encounter' : timingLabel(null),
       costs: projectedCosts(executable ? definition : null, row.entry),
       acceptanceNotice: executable
         ? definition.spec.consumption.reusable
           ? 'Reusable item; no inventory unit is consumed.'
           : `Consumes ${definition.spec.consumption.quantity} when accepted.`
-        : 'No item use will be submitted.',
+        : encounterContinuation ?? 'No item use will be submitted.',
       availability: Object.freeze({ enabled: useUnavailable === null, unavailableReason: useUnavailable }),
       actions: controls({ useUnavailable, inspectHref, equipUnavailable }),
       targeting: executable ? Object.freeze({
@@ -530,6 +542,8 @@ export const projectGroupInventoryItemActions = (
     const definition = ITEM_AUTOMATION_RUNTIME_REGISTRY.resolve(row.entry.name)
     const commonExecutable = commonSheetDefinition(definition)
     const immediateExecutable = commonExecutable && definition.spec.timing !== 'extended'
+    const encounterActions = equipmentActionPresentationsForItem(canonicalId)
+    const encounterContinuation = equipmentEncounterContinuationLabel(canonicalId)
     let sourceInstanceId: string | null = null
     let sourceIdentityValid = false
     try {
@@ -583,9 +597,11 @@ export const projectGroupInventoryItemActions = (
             ? reason('source.quantity-reserved', 'Every unit in this shared row is reserved by pending item use.')
             : !canonicalId
               ? reason('action.unsupported', 'No reviewed item action is available.')
-              : !commonExecutable
-                ? reason('action.unsupported', 'No reviewed common sheet action is available for this item.')
-                : !immediateExecutable
+              : !commonExecutable && encounterContinuation
+                ? reason('action.encounter-only', `Transfer this item to a Trainer first. ${encounterContinuation}`)
+                : !commonExecutable
+                  ? reason('action.unsupported', 'No reviewed common sheet action is available for this item.')
+                  : !immediateExecutable
                   ? reason('source.trainer-custody-required', 'Transfer this item to a Trainer before starting its Extended Action.')
                   : eligibility?.reasons[0] ? projectedReason(eligibility.reasons[0]) : null
     const inspectHref = canonicalId ? `/items/${encodeURIComponent(canonicalId)}` : null
@@ -621,14 +637,20 @@ export const projectGroupInventoryItemActions = (
         quantity: availableQuantity,
       }),
       context: 'sheet' as const,
-      description: immediateExecutable ? definition.spec.presentation.description : null,
-      timingLabel: timingLabel(commonExecutable ? definition : null),
+      description: immediateExecutable
+        ? definition.spec.presentation.description
+        : encounterActions.length
+          ? `Reviewed live encounter actions after Trainer transfer: ${encounterActions.map(action => action.label).join(', ')}.`
+          : null,
+      timingLabel: commonExecutable ? timingLabel(definition) : encounterActions.length ? 'Live encounter' : timingLabel(null),
       costs: projectedCosts(immediateExecutable ? definition : null, row.entry),
       acceptanceNotice: immediateExecutable
         ? definition.spec.consumption.reusable
           ? 'Reusable item; no inventory unit is consumed.'
           : `Consumes ${definition.spec.consumption.quantity} only when accepted.`
-        : 'No shared item use will be submitted.',
+        : encounterContinuation
+          ? `Transfer this item to a Trainer first. ${encounterContinuation}`
+          : 'No shared item use will be submitted.',
       availability: Object.freeze({ enabled: useUnavailable === null, unavailableReason: useUnavailable }),
       actions: controls({ useUnavailable, inspectHref }),
       targeting: immediateExecutable ? Object.freeze({

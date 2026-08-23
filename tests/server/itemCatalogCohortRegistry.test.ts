@@ -37,6 +37,12 @@ describe('canonical item catalog cohort registry', () => {
     expect(requireCanonicalItemCatalogCohortDecision('Kitchen Knife').cohort).toMatchObject({
       providerId: 'equipment', implementationState: 'passive',
     })
+    expect(requireCanonicalItemCatalogCohortDecision('Old Rod').member.actionFinalStates).toEqual([{
+      actionId: 'equipment.fishing.old-rod', finalState: 'guided',
+    }])
+    expect(requireCanonicalItemCatalogCohortDecision('Hand Net').member.actionFinalStates).toEqual([{
+      actionId: 'equipment.hand-net.attack', finalState: 'native',
+    }])
     expect(requireCanonicalItemCatalogCohortDecision('Energy Powder').cohort).toMatchObject({
       providerId: 'guided-adjudication', implementationState: 'guided',
     })
@@ -52,6 +58,11 @@ describe('canonical item catalog cohort registry', () => {
     expect(requireCanonicalItemCatalogCohortDecision('Poffin').cohort).toMatchObject({
       providerId: 'contest', implementationState: 'native', unresolvedRequirements: [],
     })
+    const actionStates = listCanonicalItemCatalogCohortDecisions()
+      .flatMap(decision => decision.member.actionFinalStates)
+    expect(actionStates).toHaveLength(15)
+    expect(new Set(actionStates.map(action => action.actionId)).size).toBe(15)
+    expect(actionStates.every(action => action.finalState === 'native' || action.finalState === 'guided')).toBe(true)
     expect(canonicalItemCatalogCohortDecision('Invented Item')).toBeNull()
     expect(() => requireCanonicalItemCatalogCohortDecision('Invented Item')).toThrow(
       'has no reviewed cohort decision',

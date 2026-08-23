@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import EncounterOfferCard from './EncounterOfferCard.vue'
+import EncounterContextualAffordances from './EncounterContextualAffordances.vue'
 import { ENCOUNTER_ACTION_GROUPS, type EncounterActionGroup } from '#shared/encounterPresentation/catalog'
-import type { EncounterActionOffer } from '#shared/encounterPresentation/contracts'
+import type { EncounterActionOffer, EncounterContextualAffordance } from '#shared/encounterPresentation/contracts'
 import {
   encounterActionGroupLabel,
   encounterActionRecencyKey,
@@ -13,13 +14,16 @@ import {
   type EncounterActionDockFilters,
 } from '#shared/encounterWorkspace/actionDock'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   offers: readonly EncounterActionOffer[]
+  affordances?: readonly EncounterContextualAffordance[]
   actorParticipantId: string | null
   actorLabel: string
   selectedOfferId: string | null
   commandsBlocked: boolean
-}>()
+}>(), {
+  affordances: () => [],
+})
 const emit = defineEmits<{
   activate: [offer: EncounterActionOffer]
   inspect: [offer: EncounterActionOffer]
@@ -116,6 +120,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', keyboardHandler))
       <button type="button" class="encounter-action-dock__recent" :aria-pressed="recentOnly" @click="recentOnly = !recentOnly">Recent</button>
     </div>
 
+    <EncounterContextualAffordances
+      :affordances="affordances"
+      :offers="offers"
+      :actor-participant-id="actorParticipantId"
+      :commands-blocked="commandsBlocked"
+      @activate="activate"
+      @inspect="emit('inspect', $event)"
+    />
+
     <div v-if="grouped.length" class="encounter-action-dock__groups">
       <section v-for="actionGroup in grouped" :key="actionGroup.group" :aria-labelledby="`action-group-${actionGroup.group}`">
         <h3 :id="`action-group-${actionGroup.group}`">{{ encounterActionGroupLabel(actionGroup.group) }}</h3>
@@ -175,4 +188,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', keyboardHandler))
 .encounter-action-dock__groups section > div { display: flex; gap: 0.55rem; }
 .encounter-action-dock__empty { color: var(--rt-text-muted); }
 .encounter-action-dock__more { min-height: var(--rt-touch-minimum); margin-top: .55rem; padding: .45rem .75rem; border: 1px solid var(--rt-focus); border-radius: var(--rt-radius-small); background: var(--rt-surface-2); color: var(--rt-text-strong); font: inherit; font-weight: 700; }
+.encounter-action-dock button:focus-visible,
+.encounter-action-dock input:focus-visible,
+.encounter-action-dock select:focus-visible { outline: 3px solid var(--rt-focus); outline-offset: 2px; }
 </style>

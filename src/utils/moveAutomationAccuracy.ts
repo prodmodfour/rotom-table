@@ -357,13 +357,17 @@ export const moveAutomationTargetHitChance = (
   script: MoveAutomationScript,
   user: SpawnedPokemon,
   target: SpawnedPokemon,
-  context: Omit<MoveAutomationEvasionContext, 'attacker'> = {},
+  context: Omit<MoveAutomationEvasionContext, 'attacker'> & {
+    /** Server-reviewed contextual modifier such as a Snag Ball attack-roll penalty. */
+    readonly userAccuracyModifier?: number
+  } = {},
 ): MoveAutomationTargetHitChance => {
+  const { userAccuracyModifier = 0, ...evasionContext } = context
   const userAccuracy = moveAutomationUserAccuracy(user, {
-    fieldEffects: context.fieldEffects,
-  })
+    fieldEffects: evasionContext.fieldEffects,
+  }) + userAccuracyModifier
   const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, {
-    ...context,
+    ...evasionContext,
     attacker: user,
   })
   const percent = resolveMoveAutomationHitChancePercent(script, {

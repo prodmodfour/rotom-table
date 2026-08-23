@@ -30,6 +30,7 @@ describe('canonical item catalog cohort contract', () => {
     expect(Object.isFrozen(parsed)).toBe(true)
     expect(Object.isFrozen(parsed.cohorts)).toBe(true)
     expect(Object.isFrozen(parsed.cohorts[0]?.members)).toBe(true)
+    expect(Object.isFrozen(parsed.cohorts[0]?.members[0]?.actionFinalStates)).toBe(true)
   })
 
   it('rejects expanded shapes, unsafe evidence paths, invalid states, and incomplete counts', () => {
@@ -38,6 +39,12 @@ describe('canonical item catalog cohort contract', () => {
     expectError(value => { value.cohorts[0].implementationState = 'partial' }, 'itemCatalogCohortRegistry.cohorts[0].implementationState')
     expectError(value => { value.cohorts[0].memberCount -= 1 }, 'itemCatalogCohortRegistry.cohorts[0].memberCount')
     expectError(value => { value.itemCount -= 1 }, 'itemCatalogCohortRegistry.itemCount')
+    const actionMember = registryJson.cohorts.flatMap(cohort => cohort.members).find(member => member.actionFinalStates.length > 0)!
+    expect(actionMember.actionFinalStates.every(action => action.finalState === 'native' || action.finalState === 'guided')).toBe(true)
+    expectError(value => {
+      const member = value.cohorts.flatMap((cohort: any) => cohort.members).find((entry: any) => entry.actionFinalStates.length > 0)
+      member.actionFinalStates[0].finalState = 'deferred'
+    }, 'itemCatalogCohortRegistry.cohorts[8].members[5].actionFinalStates[0].finalState')
   })
 
   it('requires unique identities, contiguous sequence, no hidden gaps, and explicit remediation for any blocked mutation', () => {

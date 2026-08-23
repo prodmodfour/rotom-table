@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "matrixId": "deferred-closure-item-actions-v1",
+  "ticket": "P11-031",
+  "status": "frozen",
+  "sourceFixtureSet": "data/deferred-closure/mechanics-acceptance-fixtures.v1.json",
+  "runtimeProseParsing": false,
+  "privacyPolicy": "project-safe-facts-only; exact equipment and inventory instance identity stays server-only",
+  "rows": [
+    {
+      "actionId": "equipment.light-shield.ready",
+      "canonicalItemId": "Light Shield",
+      "closureTicket": "P11-032",
+      "finalState": "native",
+      "custody": "active-hash-current-equipped-one-hand",
+      "timing": "standard",
+      "duration": "through-end-of-next-actor-turn",
+      "resources": ["standard-action"],
+      "privateFacts": ["equipment-instance-id"]
+    },
+    {
+      "actionId": "equipment.heavy-shield.ready",
+      "canonicalItemId": "Heavy Shield",
+      "closureTicket": "P11-032",
+      "finalState": "native",
+      "custody": "active-hash-current-equipped-one-hand",
+      "timing": "standard",
+      "duration": "through-end-of-next-actor-turn",
+      "resources": ["standard-action"],
+      "privateFacts": ["equipment-instance-id"]
+    },
+    {
+      "actionId": "equipment.shock-collar.activate",
+      "canonicalItemId": "Shock Collar",
+      "closureTicket": "P11-033",
+      "finalState": "native",
+      "custody": "active-hash-current-remote-and-target-worn-source-pair",
+      "timing": "standard",
+      "duration": "immediate",
+      "resources": ["standard-action", "one-sixth-target-max-hp"],
+      "privateFacts": ["remote-instance-id", "collar-instance-id", "consent-note"]
+    },
+    {
+      "actionId": "equipment.glue-cannon.attack",
+      "canonicalItemId": "Glue Cannon",
+      "closureTicket": "P11-034",
+      "finalState": "native",
+      "custody": "active-hash-current-equipped-two-hands",
+      "timing": "standard",
+      "duration": "condition-family",
+      "resources": ["standard-action", "one-charge", "accuracy-roll"],
+      "privateFacts": ["equipment-instance-id", "remaining-charges"]
+    },
+    {
+      "actionId": "equipment.hand-net.attack",
+      "canonicalItemId": "Hand Net",
+      "closureTicket": "P11-035",
+      "finalState": "native",
+      "custody": "active-hash-current-equipped-two-hands",
+      "timing": "standard",
+      "duration": "until-escape-release-or-source-loss",
+      "resources": ["standard-action", "accuracy-roll"],
+      "privateFacts": ["equipment-instance-id"]
+    },
+    {
+      "actionId": "equipment.weighted-nets.throw",
+      "canonicalItemId": "Weighted Nets",
+      "closureTicket": "P11-036",
+      "finalState": "native",
+      "custody": "active-hash-current-equipped-two-hands",
+      "timing": "standard",
+      "duration": "until-escape-release-or-source-loss",
+      "resources": ["standard-action", "accuracy-roll"],
+      "privateFacts": ["equipment-instance-id"]
+    },
+    {
+      "actionId": "equipment.weighted-nets.pull",
+      "canonicalItemId": "Weighted Nets",
+      "closureTicket": "P11-036",
+      "finalState": "native",
+      "custody": "same-source-netted-target",
+      "timing": "standard",
+      "duration": "immediate",
+      "resources": ["standard-action", "one-meter-forced-movement"],
+      "privateFacts": ["equipment-instance-id", "restraint-source-id"]
+    },
+    {
+      "actionId": "equipment.fishing.old-rod",
+      "canonicalItemId": "Old Rod",
+      "closureTicket": "P11-038",
+      "finalState": "guided",
+      "custody": "active-hash-current-equipped-two-hands",
+      "timing": "extended",
+      "duration": "fifteen-campaign-minutes",
+      "resources": ["campaign-time", "skill-check-reference", "gm-hook-adjudication"],
+      "privateFacts": ["gm-hook-note", "check-modifiers"]
+    },
+    {
+      "actionId": "equipment.fishing.good-rod",
+      "canonicalItemId": "Good Rod",
+      "closureTicket": "P11-038",
+      "finalState": "guided",
+      "custody": "active-hash-current-equipped-two-hands",
+      "timing": "extended",
+      "duration": "fifteen-campaign-minutes",
+      "resources": ["campaign-time", "skill-check-reference", "gm-hook-adjudication"],
+      "privateFacts": ["gm-hook-note", "check-modifiers"]
+    },
+    {
+      "actionId": "equipment.fishing.super-rod",
+      "canonicalItemId": "Super Rod",
+      "closureTicket": "P11-038",
+      "finalState": "guided",
+      "custody": "active-hash-current-equipped-two-hands",
+      "timing": "extended",
+      "duration": "fifteen-campaign-minutes",
+      "resources": ["campaign-time", "skill-check-reference", "gm-hook-adjudication"],
+      "privateFacts": ["gm-hook-note", "check-modifiers"]
+    },
+    {
+      "actionId": "equipment.snag-machine.convert",
+      "canonicalItemId": "Snag Machine",
+      "closureTicket": "P11-040",
+      "finalState": "guided",
+      "custody": "active-hash-current-equipped-variant",
+      "timing": "swift",
+      "duration": "one-round-conversion-and-active-window",
+      "resources": ["swift-action", "one-poke-ball", "gm-capture-legality"],
+      "privateFacts": ["equipment-instance-id", "inventory-row-id", "gm-legality-note"]
+    }
+  ]
+}

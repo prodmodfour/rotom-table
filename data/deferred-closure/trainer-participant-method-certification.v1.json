@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-methods-v1",
+  "ticket": "P11-055",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-shared-dice-certification.v1.json",
+    "sha256": "6ff75cd6fc1de0f3866da4ea2f14bac1731669fa692bdc1588831f85f10d931f"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e",
+    "rowId": "trainer-participant",
+    "structuredSemanticsVersion": 1,
+    "methodIds": ["simultaneous", "alternating"]
+  },
+  "authorities": [
+    {
+      "id": "typed-method-identities",
+      "path": "shared/contests/ids.ts",
+      "sha256": "f7e6c0f2b9500737100f1d2f815177a75987423d3c9ad7523668773760ff9aed",
+      "guarantees": [
+        "exact-simultaneous-and-alternating-identities",
+        "strict-method-type-guard",
+        "no-free-text-method-identity"
+      ]
+    },
+    {
+      "id": "source-bound-method-catalog",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "4710323c532e7b291c7edbcd3ecd6e48b7e2475682dee14b11b56be38ad0dab7",
+      "guarantees": [
+        "exact-two-method-cardinality",
+        "exact-method-field-sets",
+        "simultaneous-two-appeals-controller-order-and-per-performer-voltage",
+        "alternating-one-appeal-and-shared-voltage",
+        "exact-adjacency-and-cross-performer-policies",
+        "unknown-or-drifted-policy-load-refusal"
+      ]
+    },
+    {
+      "id": "canonical-pair-scheduler",
+      "path": "shared/contests/participantMethods.ts",
+      "sha256": "6af6a39d7385fb607bfa9efb0eafef8695d417771c8838a718d173575caa86c9",
+      "guarantees": [
+        "simultaneous-controller-chooses-first-member",
+        "simultaneous-each-member-exactly-once",
+        "alternating-either-member-legal-with-no-predecessor",
+        "alternating-opposite-member-required-after-predecessor",
+        "method-specific-round-completion",
+        "source-bound-voltage-adjacency-and-cross-effect-output",
+        "overfilled-duplicate-or-broken-sequence-refusal"
+      ]
+    },
+    {
+      "id": "method-document-authority",
+      "path": "shared/contests/document.ts",
+      "sha256": "feb387ba424057c3e77a0dac58b30c24bdd6a6a870d85bd640a8711d803ce0c3",
+      "guarantees": [
+        "explicit-participant-method-id",
+        "ordinary-contest-method-refusal",
+        "legacy-setup-null-method-normalization",
+        "unknown-method-refusal",
+        "participant-method-projected-as-format-not-private-plan"
+      ]
+    },
+    {
+      "id": "strict-method-command-dialect",
+      "path": "shared/contests/operations.ts",
+      "sha256": "da5805632dc89739b0ad71f295f87112aa1bb1e1ba90dc37389baf0e80f3247d",
+      "guarantees": [
+        "new-participant-create-requires-canonical-method",
+        "ordinary-create-rejects-method",
+        "bounded-set-participant-method-command",
+        "unknown-and-extra-command-fields-rejected"
+      ]
+    },
+    {
+      "id": "setup-method-engine",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "35b4dce6ab7c0fbbb29d2d9fc3819fe22cf9ee75575430cfd6b4e44157a90b0b",
+      "guarantees": [
+        "gm-setup-only-method-selection",
+        "public-method-selection-history",
+        "missing-method-setup-lock-refusal",
+        "selected-method-introduction-stage-quarantine",
+        "no-roll-or-stage-write-on-gated-progression"
+      ]
+    },
+    {
+      "id": "public-role-method-projection",
+      "path": "shared/contests/projections.ts",
+      "sha256": "4d36abf1601ad8b9d42acfd54c5eb6bda0e39f51d2c51af937d77e3bfe60297f",
+      "guarantees": [
+        "method-id-public-to-all-roles",
+        "method-choice-does-not-expose-sheet-or-pool-authority",
+        "gm-and-owner-shapes-retain-existing-private-boundaries"
+      ]
+    },
+    {
+      "id": "method-command-atomicity",
+      "path": "shared/contests/architecture.ts",
+      "sha256": "d2804527fac83b425f5298d51d7b42d447d6b0f82f8bf38868e93856b9e6728f",
+      "guarantees": [
+        "contest-document-and-catalog-read-set",
+        "single-contest-document-write-set",
+        "single-sqlite-transaction",
+        "exact-retry-required"
+      ]
+    },
+    {
+      "id": "method-realtime-convergence",
+      "path": "server/realtime/contestRealtime.ts",
+      "sha256": "36b92f4fb874f4bd96290ea1296653fd2db70f387ad43a8c54246c1b79b47c06",
+      "guarantees": [
+        "setup-changed-public-gm-owner-invalidation",
+        "operation-derived-dedupe-keys",
+        "no-private-method-payload"
+      ]
+    },
+    {
+      "id": "accessible-setup-method-choice",
+      "path": "src/pages/contests/[contestId].vue",
+      "sha256": "2fea25e21fcc295dca4474aa2e17224a3f4b2101f85a8f5ded4fa13a2d45a7bf",
+      "guarantees": [
+        "labelled-method-fieldset",
+        "forty-four-pixel-choice-controls",
+        "aria-pressed-selection-state",
+        "public-header-method-label",
+        "missing-method-lock-disabled-with-text-reason",
+        "narrow-layout-stacks-without-horizontal-method-scroll"
+      ]
+    },
+    {
+      "id": "method-operator-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "230231fd98ffa5f6bd45f8a9db9422775cdd1f08a8497a76e076c20d63e6c301",
+      "guarantees": [
+        "documented-two-method-scheduler",
+        "documented-no-predecessor-alternating-boundary",
+        "documented-voltage-and-adjacency-handoff",
+        "documented-legacy-null-selection-recovery",
+        "documented-p11-056-stage-handoff"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/shared/contestTrainerParticipantMethods.test.ts",
+      "sha256": "c2d587a9136838a1e560cb41e3bd82679679ce90e06e5d1115fa38573890ef79",
+      "scenarioIds": [
+        "exact-source-method-rows",
+        "simultaneous-controller-first-and-exact-partner-second",
+        "simultaneous-duplicate-and-overfill-refusal",
+        "alternating-open-first-and-opposite-next-round",
+        "alternating-repeat-and-overfill-refusal",
+        "strict-create-and-setup-command-parsing",
+        "legacy-null-method-normalization",
+        "missing-method-and-later-stage-gates",
+        "ordinary-and-unknown-method-refusal"
+      ]
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantMethodsRuntime.test.ts",
+      "sha256": "49360db67b1d6dfd9923787f11559cb4136a6d489a6f12194a1fe4f60e1cf315",
+      "scenarioIds": [
+        "create-persists-explicit-method",
+        "public-role-projects-method",
+        "setup-method-change-cas-and-history",
+        "exact-retry-without-duplicate-revision-history-or-operation",
+        "changed-input-and-stale-revision-no-write",
+        "non-gm-and-ordinary-contest-no-write"
+      ]
+    }
+  ],
+  "acceptance": {
+    "methodIds": ["simultaneous", "alternating"],
+    "simultaneousAppealsPerEntryPerRound": 2,
+    "simultaneousFirstChoiceKinds": ["trainer", "pokemon"],
+    "simultaneousVoltageScope": "per-performer",
+    "alternatingAppealsPerEntryPerRound": 1,
+    "alternatingFirstChoiceKindsWithoutPredecessor": ["trainer", "pokemon"],
+    "alternatingRequiresOppositePriorKind": true,
+    "alternatingVoltageScope": "shared-entry",
+    "unknownMethodAccepted": false,
+    "ordinaryContestMethodAccepted": false,
+    "legacyMethodInvented": false,
+    "methodChoicePublic": true,
+    "methodChoiceGmOnly": true,
+    "duplicateSelectionOnExactRetry": 0,
+    "trainerParticipantLifecycleEnabled": false,
+    "mockupRequired": false,
+    "mockupSkipReason": "exact-mechanical-extension-of-existing-workshop-fieldset-and-button-primitives",
+    "nextTicket": "P11-056"
+  }
+}

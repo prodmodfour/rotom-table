@@ -1,4 +1,5 @@
 import { normalizeRevision } from '#shared/sessionRevisions'
+import { applyEquipmentWeaponRangeToMoveRange } from '#shared/itemAutomation/equipmentGrants'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import type { AbilityInstanceData } from '#shared/abilityAutomation/parameters'
 import type { MoveResolutionTraceAncestryEntry } from '#shared/moveAutomation/trace'
@@ -2330,9 +2331,12 @@ export const buildAuthoritativeMoveRulesContext = (
             ? null : baseDamage + weaponModifier.damageBaseBonus
           const ac = baseAc === null
             ? null : Number(baseAc) + weaponModifier.accuracyCheckPenalty
-          const range = weaponModifier.grantsReach && /\bmelee\b/i.test(resolved.entry.script.range)
-            ? `${['large', 'huge', 'gigantic'].includes(actorToken.size.trim().toLocaleLowerCase('en-US')) ? 3 : 2}, ${resolved.entry.script.targetCount === 2 ? '2 Targets' : '1 Target'}`
-            : resolved.entry.script.range
+          const equipmentProfile = matchingEquipmentWeaponSources[0]?.profile ?? null
+          const range = equipmentProfile?.targetingPolicy === 'ranged-line-of-sight'
+            ? applyEquipmentWeaponRangeToMoveRange(equipmentProfile, resolved.entry.script.range)
+            : weaponModifier.grantsReach && /\bmelee\b/i.test(resolved.entry.script.range)
+              ? `${['large', 'huge', 'gigantic'].includes(actorToken.size.trim().toLocaleLowerCase('en-US')) ? 3 : 2}, ${resolved.entry.script.targetCount === 2 ? '2 Targets' : '1 Target'}`
+              : resolved.entry.script.range
           resolved = {
             ...resolved,
             entry: {

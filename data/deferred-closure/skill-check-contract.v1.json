@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "contractId": "generic-liveplay-skill-check-v1",
+  "ticket": "P11-007",
+  "status": "reviewed",
+  "existingSurfaceReview": {
+    "finding": "No generic server-authoritative SkillCheckDocument, repository, command family, route family, or role projection existed at review time.",
+    "searchedAuthorities": [
+      {
+        "path": "src/types/trainerSheet.ts",
+        "sha256": "775dd567f2581595e8d89f92688cae7ac52777190b6372cd1932b82e43bd1838",
+        "finding": "Canonical Trainer skill identities and sheet entries only."
+      },
+      {
+        "path": "src/types/characterSheet.ts",
+        "sha256": "30ca01ce8637fe483b2d450fc04e0b98b958058b7262f7e10912ec280a2ad78a",
+        "finding": "Pokémon skill values only."
+      },
+      {
+        "path": "shared/itemAutomation/spec.ts",
+        "sha256": "bc085124e229cafe4342f2194323c1651c5ed16a0f7b150a19aa9edf6b4363cb",
+        "finding": "Item-embedded skill-check amount kind; not a generic request surface."
+      },
+      {
+        "path": "server/domain/moveAutomation/checks.ts",
+        "sha256": "b108468c177239a1058cc3f3efbeb8b959036a86cefd6c9d19ab41431edfca06",
+        "finding": "Move-embedded opposed-check authority; not a campaign check document."
+      },
+      {
+        "path": "shared/contests/dice.ts",
+        "sha256": "9e5265cbc38fe7ae782bff5dd45cfe1a9bdaf9446209eb78d89ea4772032c3e3",
+        "finding": "Contest-specific journaled dice only."
+      },
+      {
+        "path": "shared/breeding/ledgers.ts",
+        "sha256": "8425b98856d2115cbf86f9db3eeca4cd5ce8c1451d391aeefb4139c936af7411",
+        "finding": "Breeding-specific check records only."
+      }
+    ]
+  },
+  "canonicalSkillIds": [
+    "acrobatics",
+    "athletics",
+    "charm",
+    "combat",
+    "command",
+    "generalEd",
+    "medicineEd",
+    "occultEd",
+    "pokeEd",
+    "techEd",
+    "focus",
+    "guile",
+    "intimidate",
+    "intuition",
+    "perception",
+    "stealth",
+    "survival"
+  ],
+  "document": {
+    "schemaVersion": 1,
+    "identity": "skill-check:v1:<stable-id>",
+    "revisionPolicy": "monotonic-plus-one",
+    "states": ["pending", "ready", "accepted", "cancelled", "timed-out"],
+    "terminalStates": ["accepted", "cancelled", "timed-out"],
+    "subjectKinds": ["trainer", "pokemon"],
+    "subjectCountMinimum": 1,
+    "subjectCountMaximum": 32,
+    "modes": ["single", "group"],
+    "comparisonPolicies": {
+      "dc": {
+        "difficultyClassMinimum": 1,
+        "difficultyClassMaximum": 100,
+        "success": "final-total-greater-than-or-equal-to-dc",
+        "resultScope": "per-subject"
+      },
+      "opposed": {
+        "subjectCount": 2,
+        "winner": "higher-final-total",
+        "tiePolicy": "reroll-both-up-to-10-then-journaled-server-coin"
+      }
+    },
+    "modifierResolution": {
+      "sheetDice": "resolve-current-authoritative-sheet-at-commit",
+      "sheetRevision": "exact-read-set",
+      "automationModifiers": "server-provider-registry-only",
+      "situationalModifierMinimum": -20,
+      "situationalModifierMaximum": 20,
+      "clientRolls": "forbidden",
+      "clientResolvedModifiers": "forbidden"
+    },
+    "journal": {
+      "dieSides": 6,
+      "serverRandomnessOnly": true,
+      "appendOnly": true,
+      "records": ["journalId", "subjectId", "attempt", "diceCount", "flatModifier", "contributors", "results", "dieTotal", "finalTotal", "rolledAt"],
+      "opposedTieBreakEncoding": "after the initial roll and ten tied rerolls, one extra d6 journal with reserved contributor system:opposed-tie-break-coin acts as a fair coin by parity: odd selects the first subject and even selects the second"
+    },
+    "acceptedResults": {
+      "immutableWithoutCorrection": true,
+      "correctionRequiresGmReceipt": true,
+      "historyRequired": true,
+      "campaignAttentionWhenUnresolved": true
+    }
+  },
+  "operations": {
+    "kinds": ["request", "respond", "resolve", "cancel", "timeout", "correct"],
+    "operationIdentity": "skill-check-op:v1:<stable-id>",
+    "idempotency": "operation-id-plus-canonical-command-hash",
+    "exactRetry": "return-original-terminal-or-pending-result-without-reroll",
+    "expectedRevisionRequired": true,
+    "request": {
+      "authorizedRole": "gm",
+      "serverResolvedFields": ["sheet-revisions", "controllers", "skill-dice", "automation-modifiers"],
+      "clientMayDeclare": ["subjects", "skill-ids", "comparison-policy", "dc", "situational-modifier", "prompt", "visibility", "expiry"]
+    },
+    "respond": {
+      "authorizedRoles": ["gm", "subject-owner"],
+      "decisions": ["accept", "decline"],
+      "payload": "opaque-subject-id-and-decision-only"
+    },
+    "resolve": {
+      "authorizedRole": "gm-or-auto-after-all-required-acceptances",
+      "payload": "no-rolls-no-modifiers",
+      "effect": "server-resolve-read-set-roll-journal-and-accept-atomically"
+    },
+    "cancel": {"authorizedRole": "gm", "allowedStates": ["pending", "ready"]},
+    "timeout": {"authorizedRole": "server-clock", "allowedStates": ["pending", "ready"]},
+    "correct": {"authorizedRole": "gm", "allowedStates": ["accepted"], "diceEvidenceMutable": false}
+  },
+  "privacy": {
+    "gm": ["requester", "all-subjects", "dc", "opposed-policy", "all-modifiers", "notes", "all-journals", "all-results", "corrections"],
+    "subject": ["own-request", "own-skill", "own-modifier-explanation", "own-response", "authorized-accepted-results"],
+    "spectatorPending": ["check-identity", "public-label", "pending-count"],
+    "spectatorAccepted": ["public-label", "authorized-result-summary"],
+    "neverPublic": ["gm-notes", "private-dc", "other-subject-private-modifier-breakdown", "operation-hashes", "read-sets", "diagnostics"],
+    "structurallyDistinctProjections": true
+  },
+  "nonGoals": ["narrative-generation", "macro-scripting", "client-side-dice", "free-form-mechanics", "parallel-sheet-authority"]
+}

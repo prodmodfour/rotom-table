@@ -491,8 +491,8 @@ const parseActionSelectionOption = (value: unknown, path: string) => {
     fail('inconsistent-contract', path, 'disabled selection options require exactly one safe unavailable reason.')
   }
   return Object.freeze({
-    kind: enumValue<'object' | 'device' | 'keystone' | 'egg' | 'trainer' | 'participant'>(
-      input.kind, set(['object', 'device', 'keystone', 'egg', 'trainer', 'participant'] as const), `${path}.kind`,
+    kind: enumValue<'object' | 'device' | 'keystone' | 'egg' | 'trainer' | 'participant' | 'cell'>(
+      input.kind, set(['object', 'device', 'keystone', 'egg', 'trainer', 'participant', 'cell'] as const), `${path}.kind`,
     ),
     ...(hasRequirementId ? { requirementId: stableId(input.requirementId, `${path}.requirementId`) } : {}),
     value: stableId(input.value, `${path}.value`),

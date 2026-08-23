@@ -9,6 +9,7 @@ import type {
   RegisteredMoveHandlerRegistration,
 } from './registry'
 import {
+  reviewedCondition,
   reviewedDamage,
   reviewedDirectHp,
   reviewedMultiHit,
@@ -65,6 +66,36 @@ const bleedSchedule = (slug: string): MoveTemporaryEffectOperation => ({
   },
 })
 
+const bashInitiativeEffect = (slug: string): MoveTemporaryEffectOperation => ({
+  id: `${slug}.initiative-zero`,
+  kind: 'temporary-effect',
+  source: { kind: 'operation', id: `${slug}.damage` },
+  recipients: { kind: 'hit-targets' },
+  phase: 'schedule',
+  reasonCode: 'capability-weapon.bash.initiative-zero',
+  payload: {
+    action: 'add',
+    effectId: 'capability-weapon.bash.initiative-zero',
+    recipientScope: 'placements',
+    accuracyRollTrigger: {
+      rollId: `${slug}.accuracy-roll`,
+      trigger: { kind: 'range', minimum: 15 },
+    },
+    definition: {
+      kind: 'numeric-modifier',
+      duration: { kind: 'rounds', boundary: 'end', remaining: 1 },
+      stacks: 1,
+      charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null },
+      tags: ['capability-weapon-move', 'bash', 'initiative-zero'],
+      payload: { attribute: 'initiative', operation: 'set', value: 0, rounding: 'none' },
+      dispel: { policy: 'matching-tags', tags: ['capability-weapon-move', 'bash'] },
+      transferPolicy: 'expire',
+    },
+  },
+})
+
 const run = (context: RegisteredMoveHandlerContext) => {
   const canonicalId = capabilityWeaponMoveName(context.intent.moveName)
   if (!canonicalId) throw new Error(`Unknown capability weapon Move ${context.intent.moveName}.`)
@@ -87,25 +118,39 @@ const run = (context: RegisteredMoveHandlerContext) => {
       source: { kind: 'move', id: `move.${slug}` },
     }, ...standardTerminalOperations(slug)]
   }
-  else if (canonicalId === 'Double Swipe' && context.selectedPlacements.length === 1) {
+  else if ((canonicalId === 'Double Swipe' && context.selectedPlacements.length === 1) || canonicalId === 'Gouge') {
+    const multiHit = reviewedMultiHit({
+      slug,
+      damageBase,
+      damageClass: 'physical',
+      moveType: 'normal',
+      count: { kind: 'fixed', hits: 2 },
+      accuracy: {
+        kind: 'per-hit',
+        rollId: `${slug}.accuracy-roll`,
+        formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+        stopOnMiss: false,
+      },
+    })
     operations = [
-      reviewedMultiHit({
+      multiHit,
+      ...(canonicalId === 'Gouge' ? [reviewedDirectHp({
         slug,
-        damageBase,
-        damageClass: 'physical',
-        moveType: 'normal',
-        count: { kind: 'fixed', hits: 2 },
-        accuracy: {
-          kind: 'per-hit',
-          rollId: `${slug}.accuracy-roll`,
-          formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
-          stopOnMiss: false,
-        },
-      }),
+        id: 'add-injury',
+        recipients: 'hit-targets',
+        calculation: { kind: 'fixed', value: 0 },
+        sourceOperationId: multiHit.id,
+        hitPointMarkers: 'ignore',
+      })] : []),
       ...standardTerminalOperations(slug),
     ]
   }
   else {
+    const criticalHit = canonicalId === 'Bullseye'
+      ? { trigger: { kind: 'range' as const, minimum: 16 }, prevention: 'honor' as const }
+      : canonicalId === 'Deadly Strike'
+        ? { trigger: { kind: 'always' as const }, prevention: 'honor' as const }
+        : undefined
     operations = [
       standardAccuracy(slug),
       reviewedDamage({
@@ -113,6 +158,7 @@ const run = (context: RegisteredMoveHandlerContext) => {
         damageBase,
         damageClass: 'physical',
         moveType: 'normal',
+        ...(criticalHit ? { criticalHit } : {}),
       }),
       ...(canonicalId === 'Wounding Strike'
         ? [reviewedDirectHp({
@@ -124,6 +170,23 @@ const run = (context: RegisteredMoveHandlerContext) => {
           })]
         : []),
       ...(canonicalId === 'Bleed!' ? [bleedSchedule(slug)] : []),
+      ...(canonicalId === 'Bash!' ? [bashInitiativeEffect(slug)] : []),
+      ...(canonicalId === 'Titanic Slam' ? [reviewedCondition({
+        slug,
+        id: 'slowed-even-roll',
+        recipients: 'hit-targets',
+        conditionId: 'slowed',
+        sourceOperationId: `${slug}.damage`,
+        accuracyRollTrigger: {
+          rollId: `${slug}.accuracy-roll`,
+          trigger: { kind: 'natural-rolls', values: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20] },
+        },
+        duration: {
+          effectId: 'capability-weapon.titanic-slam.slowed',
+          duration: { kind: 'rounds', boundary: 'end', remaining: 1 },
+        },
+        applyTypeImmunity: true,
+      })] : []),
       ...standardTerminalOperations(slug),
     ]
   }

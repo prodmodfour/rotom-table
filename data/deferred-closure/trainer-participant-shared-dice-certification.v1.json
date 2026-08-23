@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-shared-dice-v1",
+  "ticket": "P11-054",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-document-certification.v1.json",
+    "sha256": "ef844405a75de8d6d3452affa10abe4cad3d511479d0f3b8c909d849e9f7faa1"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e",
+    "rowId": "trainer-participant",
+    "structuredSemanticsVersion": 1,
+    "sharedContestDicePool": {
+      "scope": "trainer-pokemon-entry",
+      "depletionScope": "contest",
+      "spendAuthority": "active-performer",
+      "singleSpendRequired": true
+    },
+    "featureTargetKinds": ["trainer", "pokemon"]
+  },
+  "authorities": [
+    {
+      "id": "source-bound-shared-pool-policy",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "101a182ff2840166616d3ed6ae584d744b02cc0e31f70bb5c80de6f4fbac3e19",
+      "guarantees": [
+        "exact-trainer-pokemon-entry-scope",
+        "whole-contest-depletion",
+        "active-performer-spend-authority",
+        "single-spend-required",
+        "trainer-and-pokemon-feature-target-policy"
+      ]
+    },
+    {
+      "id": "shared-pool-document-and-spend-contract",
+      "path": "shared/contests/document.ts",
+      "sha256": "6940a9b741a23f3fd513f6cc0ffae919a66ba7935c22e9a9dabc5b9bf6719cbd",
+      "guarantees": [
+        "pokemon-preparation-pool-shared-by-reference",
+        "trainer-parallel-pools-remain-empty",
+        "exact-paired-trainer-or-pokemon-spender",
+        "rotation-shared-first-allocation",
+        "bounded-whole-contest-depletion",
+        "operation-derived-immutable-spend-receipt",
+        "complete-pokemon-and-team-before-after-vectors",
+        "receipt-to-accepted-appeal-cross-reference",
+        "legacy-p11-053-setup-normalization-without-pool-relocation"
+      ]
+    },
+    {
+      "id": "canonical-preparation-contribution-authority",
+      "path": "shared/contests/preparation.ts",
+      "sha256": "3ae8db9e626d6177409fe943ea5221a347dfa43288eefeed8a1ee5ea15ff2c54",
+      "guarantees": [
+        "combat-stat-contribution",
+        "poffin-contribution",
+        "style-expert-poffin-equivalent-contribution",
+        "temporary-reallocation-provenance",
+        "canonical-total-derived-from-active-contributors"
+      ]
+    },
+    {
+      "id": "single-spend-engine-integration",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "663a7e5559f91a6f0ad6f3853dabcc34eb2a972061610306f1e80fdee30ae6a6",
+      "guarantees": [
+        "active-performer-only-spend-call",
+        "exact-paired-pokemon-pool-depletion",
+        "rotation-team-pool-shared-first",
+        "one-journal-receipt-per-nonzero-spend",
+        "rotation-cap-remains-authoritative",
+        "terminal-evidence-retained",
+        "later-stage-quarantine-remains-active"
+      ]
+    },
+    {
+      "id": "ordinary-sheet-provider-refresh",
+      "path": "server/useCases/contests.ts",
+      "sha256": "adb3d268bf623ec938dfb7729c201bb0707fe92b9046823c01872dd596d3b362",
+      "guarantees": [
+        "one-server-derived-pokemon-preparation-pool",
+        "no-client-authored-shared-pool",
+        "lost-feature-contribution-deactivates-once",
+        "accepted-spend-remains-consumed",
+        "provider-refresh-persists-through-existing-contest-cas"
+      ]
+    },
+    {
+      "id": "contest-cas-operation-replay",
+      "path": "server/storage/contestRepository.ts",
+      "sha256": "bd0d3747a32cc3e453f0cd9e3ddd6c25efcb45b4458e1da5dd908eac83be488b",
+      "guarantees": [
+        "strict-document-reparse-on-read-and-write",
+        "plus-one-revision-cas",
+        "exact-command-hash-replay",
+        "changed-input-operation-conflict",
+        "corrupt-parallel-pool-row-refusal"
+      ]
+    },
+    {
+      "id": "shared-dice-operator-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "573c08ea8521b67e93d119e71746b714f8b0fc0b9f3b82d6fac146d37e328ed6",
+      "guarantees": [
+        "documented-reference-sharing-not-copying",
+        "documented-rotation-base-policy-preservation",
+        "documented-journal-and-replay-boundary",
+        "documented-feature-source-loss-boundary",
+        "documented-p11-055-progression-handoff"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/shared/contestTrainerParticipantSharedDice.test.ts",
+      "sha256": "ae31ab890233b7ba0bf039ae2cb17669696b508277a08c09f9a35c8cd6986175",
+      "scenarioIds": [
+        "canonical-shared-pool-and-feature-target-policy",
+        "one-pokemon-pool-with-empty-trainer-and-team-copies",
+        "p11-053-setup-read-normalization-without-relocation",
+        "trainer-and-pokemon-deplete-same-style-expert-bearing-pool",
+        "exact-retry-and-changed-input-conflict",
+        "rotation-shared-first-source-allocation",
+        "overspend-pairing-forgery-orphan-and-receipt-refusal"
+      ]
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantSharedDiceRuntime.test.ts",
+      "sha256": "5e9828dbc0203c74a980e4aa1d8c2f6f0450ab018c622ed61c4ad73a76052fa9",
+      "scenarioIds": [
+        "sqlite-enrollment-persists-one-style-expert-bearing-pokemon-pool",
+        "trainer-pool-and-nonrotation-team-pool-remain-empty",
+        "ordinary-sheet-feature-source-loss-deactivates-once",
+        "post-refresh-exact-command-replay-does-not-duplicate-contribution",
+        "corrupt-persisted-trainer-pool-copy-fails-closed"
+      ]
+    }
+  ],
+  "acceptance": {
+    "storageModel": "pokemon-preparation-authority-shared-by-reference",
+    "trainerPoolCopiesPerEntry": 0,
+    "nonRotationTeamPoolCopiesPerEntry": 0,
+    "activeTrainerMaySpendPairedPool": true,
+    "activePokemonMaySpendPairedPool": true,
+    "coordinatorStyleTargetKinds": ["trainer", "pokemon"],
+    "maximumDicePerAppeal": 3,
+    "depletionScope": "contest",
+    "rotationAllocationOrder": ["team-introduction-pool", "active-pokemon-preparation-pool"],
+    "receiptPerAcceptedNonzeroSpend": 1,
+    "duplicateSpendOnExactRetry": 0,
+    "changedInputReuseAccepted": false,
+    "clientAuthoredPoolAccepted": false,
+    "orphanReceiptAccepted": false,
+    "trainerParticipantLifecycleEnabled": false,
+    "nextTicket": "P11-055"
+  }
+}

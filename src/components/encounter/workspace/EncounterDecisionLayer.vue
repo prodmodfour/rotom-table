@@ -24,6 +24,7 @@ const emit = defineEmits<{
   openTactical: [choiceId: string]
 }>()
 const headingRef = ref<HTMLElement | null>(null)
+const errorRef = ref<HTMLElement | null>(null)
 const selections = ref<EncounterDecisionSelections>(initialEncounterDecisionSelections(props.decision))
 const valid = computed(() => encounterDecisionSelectionsValid(props.decision, selections.value))
 const itemAction = computed(() => props.decision.kind === 'action' && props.decision.offer.source.sourceKind === 'item'
@@ -58,6 +59,9 @@ const submit = (): void => {
   if (!valid.value || props.busy) return
   emit('submit', encounterDecisionChoiceSelections(props.decision, selections.value))
 }
+watch(() => props.error, (error) => {
+  if (error) errorRef.value?.focus({ preventScroll: true })
+}, { flush: 'post' })
 watch(() => ({
   interactionId: props.decision.interactionId,
   defaults: props.decision.choices.map(choice => `${choice.choiceId}:${choice.defaultOptionIds.join(',')}`).join('|'),
@@ -65,7 +69,7 @@ watch(() => ({
   selections.value = initialEncounterDecisionSelections(props.decision)
   if (next.interactionId !== previous?.interactionId) {
     await nextTick()
-    headingRef.value?.focus()
+    if (!props.error) headingRef.value?.focus()
   }
 }, { immediate: true })
 </script>
@@ -194,7 +198,7 @@ watch(() => ({
     </div>
     <p v-else class="encounter-decision-layer__immediate">This action has no projected choices. Confirm to request server authorization.</p>
 
-    <p v-if="error" class="encounter-decision-layer__error" role="alert">{{ error }}</p>
+    <p v-if="error" ref="errorRef" class="encounter-decision-layer__error" role="alert" tabindex="-1">{{ error }}</p>
     <footer>
       <button v-if="decision.allowCancel" type="button" :disabled="busy" @click="emit('cancel')">{{ decision.kind === 'pending' ? 'Cancel resolution' : 'Back' }}</button>
       <button v-if="decision.allowPass" type="button" :disabled="busy" @click="emit('pass')">Pass</button>

@@ -15,11 +15,13 @@ import type {
   EquipmentMoveGrantV1,
   EquipmentWeaponProfileGrantV1,
 } from '#shared/itemAutomation/equipmentGrants'
+import { parseSheetEquipmentStateForOwner } from '#shared/itemAutomation/equipment'
 import type {
   ResolvedEquipmentGrant,
   ResolveEquipmentGrantsResult,
 } from '../itemAutomation/equipmentGrants'
 import { resolveEffectiveCapabilities } from './effectiveCapabilities'
+import { equipmentGrantDefinitionFor } from '../itemAutomation/equipmentGrantRegistry'
 import {
   livingWeaponAttackSourceId,
   livingWeaponAttackSourceLabel,
@@ -141,18 +143,46 @@ const pokemonSizeAllowsProfile = (
       : false
 }
 
+const shieldTwoHandProfile = (
+  source: ResolvedEquipmentGrant,
+): EquipmentWeaponProfileGrantV1 | null => {
+  if (source.grant.kind !== 'action'
+    || !['equipment.light-shield.ready', 'equipment.heavy-shield.ready'].includes(source.grant.actionId)) return null
+  const template = equipmentGrantDefinitionFor('Kitchen Knife')?.grants.find(grant => (
+    grant.kind === 'weapon-profile'
+  ))
+  if (!template || template.kind !== 'weapon-profile') return null
+  return Object.freeze({
+    ...template,
+    grantId: `${source.grant.actionId}.two-handed-weapon`,
+    handsRequired: 2,
+  })
+}
+
 const activeEquipmentProfiles = (
   input: ResolveCapabilityWeaponMoveGrantsInput,
   hasWielder: boolean,
-): readonly { readonly source: ResolvedEquipmentGrant; readonly profile: EquipmentWeaponProfileGrantV1 }[] => (
-  input.equipmentGrants?.active.flatMap((source) => {
-    if (source.grant.kind !== 'weapon-profile' || source.grant.executionStatus !== 'native') return []
-    if (input.placement.sheetKind === 'trainer') return [{ source, profile: source.grant }]
-    return hasWielder && pokemonSizeAllowsProfile(source.grant, input.token.size)
-      ? [{ source, profile: source.grant }]
+): readonly { readonly source: ResolvedEquipmentGrant; readonly profile: EquipmentWeaponProfileGrantV1 }[] => {
+  const state = input.sheet.equipmentState
+    ? parseSheetEquipmentStateForOwner(input.sheet.equipmentState, {
+        kind: input.placement.sheetKind,
+        slug: input.placement.sheetSlug,
+      })
+    : null
+  return input.equipmentGrants?.active.flatMap((source) => {
+    if (source.grant.kind === 'weapon-profile' && source.grant.executionStatus === 'native') {
+      if (input.placement.sheetKind === 'trainer') return [{ source, profile: source.grant }]
+      return hasWielder && pokemonSizeAllowsProfile(source.grant, input.token.size)
+        ? [{ source, profile: source.grant }]
+        : []
+    }
+    const shield = input.placement.sheetKind === 'trainer' ? shieldTwoHandProfile(source) : null
+    const occupied = state?.slots.filter(slot => slot.instanceId === source.instanceId).map(slot => slot.slotId) ?? []
+    return shield && occupied.includes('mainHand') && occupied.includes('offHand')
+      ? [{ source, profile: shield }]
       : []
   }) ?? []
-)
+}
 
 /** Exact current equipment weapon selectors, opaque outside server authority. */
 export const resolveEquipmentWeaponAttackSources = (

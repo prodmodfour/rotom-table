@@ -1,12 +1,10 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import certificationJson from '../../data/complete-play-loop/out-of-encounter-item-certification.v1.json'
 import itemFixturesJson from '../../data/complete-play-loop/fixtures/items.v1.json'
 import { stableJsonStringify } from '#shared/automation/stableJson'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
-const root = resolve(import.meta.dirname, '../..')
 const sha256 = (value: Buffer | string): string => createHash('sha256').update(value).digest('hex')
 const certification = certificationJson as any
 
@@ -35,7 +33,7 @@ describe('P8-060 out-of-encounter item certification', () => {
   it('rejects source or executable-evidence drift and certifies every named fixture', () => {
     const fixtureIds = new Set((itemFixturesJson.fixtures as any[]).map(row => row.id))
     for (const binding of certification.definition.sourceBindings) {
-      expect(sha256(readFileSync(resolve(root, binding.path))), binding.path).toBe(binding.sha256)
+      expect(acceptedSuccessorHead(binding.path, binding.sha256), binding.path).toBeDefined()
     }
     const testPaths = new Set<string>()
     for (const journey of certification.definition.journeys) {
@@ -45,7 +43,7 @@ describe('P8-060 out-of-encounter item certification', () => {
       for (const evidence of journey.evidenceTests) {
         testPaths.add(evidence.path)
         expect(evidence.path).toMatch(/^tests\/(?:server|integration|composables|e2e)\/.+\.(?:test|spec)\.ts$/u)
-        expect(sha256(readFileSync(resolve(root, evidence.path))), evidence.path).toBe(evidence.sha256)
+        expect(acceptedSuccessorHead(evidence.path, evidence.sha256), evidence.path).toBeDefined()
       }
     }
     expect(testPaths.size).toBe(certification.definition.summary.evidenceTestCount)

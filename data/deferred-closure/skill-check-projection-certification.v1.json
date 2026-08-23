@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-skill-check-projections-v1",
+  "ticket": "P11-049",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/skill-check-subject-workflow-certification.v1.json",
+    "sha256": "3f301b7a9810ef897e6154b84beccccd88c79a937d20a92fa20501a8ea97f87c"
+  },
+  "authorities": [
+    {
+      "id": "strict-role-projection-contracts",
+      "path": "shared/skillChecks/projections.ts",
+      "sha256": "1281ed6c2cf9d7d88d7d8e2ef603c3f738004fb7a15bbed5599a026b7daaaa91",
+      "guarantees": [
+        "structurally-disjoint-gm-subject-and-spectator-envelopes",
+        "exact-field-allowlists",
+        "bounded-chronological-history",
+        "terminal-state-result-and-history-binding",
+        "aggregate-or-explicitly-withheld-spectator-result",
+        "unknown-cross-role-and-private-field-rejection"
+      ]
+    },
+    {
+      "id": "subject-history-contract",
+      "path": "shared/skillChecks/subjectWorkflow.ts",
+      "sha256": "6ed1b9f44583e0c7735d512df3632ca7e3401eadc41463898ecdb1cea937ef45",
+      "guarantees": [
+        "own-subject-history-only-shape",
+        "opaque-derived-history-identities",
+        "chronological-terminal-history-binding",
+        "no-operation-or-diagnostic-fields"
+      ]
+    },
+    {
+      "id": "shared-authoritative-modifier-preview",
+      "path": "server/domain/skillChecks/resolveCheck.ts",
+      "sha256": "cd9c24280bd51ca344f35f8bdc52fa7b9f9e19418d7992c14395ada2768219f2",
+      "guarantees": [
+        "gm-complete-contributor-authority",
+        "subject-visible-contributor-redaction",
+        "same-sheet-provider-resolution-as-server-roll",
+        "zero-client-or-projection-dice-authority"
+      ]
+    },
+    {
+      "id": "subject-history-projection-builder",
+      "path": "server/domain/skillChecks/subjectProjection.ts",
+      "sha256": "737a0ca844b3735f25a0f9bcfec45a8e713cadd3d23a17d0828cf2011a0b9bb7",
+      "guarantees": [
+        "own-response-history-only",
+        "own-correction-only",
+        "generic-headlines",
+        "source-history-id-hashing",
+        "no-other-subject-or-operation-authority"
+      ]
+    },
+    {
+      "id": "gm-and-spectator-projection-builders",
+      "path": "server/domain/skillChecks/roleProjections.ts",
+      "sha256": "3d76d360dcbf929e4245b07efab9d674febb42112691b50770a7cd961bb1155d",
+      "guarantees": [
+        "gm-full-document-and-modifier-authority",
+        "spectator-public-label-and-pending-count-only-before-resolution",
+        "spectator-aggregate-or-withheld-results",
+        "generic-public-history-without-responses",
+        "private-correction-omission"
+      ]
+    },
+    {
+      "id": "role-authorized-projection-loader",
+      "path": "server/useCases/loadSkillCheckProjections.ts",
+      "sha256": "c48108688d9f9f83177737d5038f45e663bbf5037a3e0a5b55fcc41c8d809378",
+      "guarantees": [
+        "authenticated-authority-specific-builder-selection",
+        "controlled-subject-delegation",
+        "shared-database-refusal",
+        "bounded-listing",
+        "strict-response-reparse"
+      ]
+    },
+    {
+      "id": "role-projection-route",
+      "path": "server/api/skill-checks/projections.get.ts",
+      "sha256": "f4714eee765ea7173ea7b34da9b035b8bc6fcde40f34ba685730681f17ccee43",
+      "guarantees": [
+        "authenticated-gm-subject-or-spectator-selection",
+        "no-gm-profile-spoofing",
+        "resolved-subject-profile",
+        "bounded-state-and-limit-query"
+      ]
+    },
+    {
+      "id": "subject-safe-history-presentation",
+      "path": "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+      "sha256": "a24fe9f5c23d8d6e1f79380f395996aeae1b795d8f0f502040ecf81c8a7c2b1c",
+      "guarantees": [
+        "native-history-disclosure",
+        "generic-subject-history-only",
+        "touch-and-keyboard-native-semantics"
+      ]
+    },
+    {
+      "id": "spectator-safe-event-feed",
+      "path": "src/components/encounter/workspace/EncounterSkillCheckPublicFeed.vue",
+      "sha256": "5e49f508dce3b9512edfc47ece449eba7ff3178b39f55e35c30c414e536725ef",
+      "guarantees": [
+        "public-pending-count-presentation",
+        "aggregate-or-withheld-terminal-presentation",
+        "generic-history-disclosure",
+        "labeled-refresh-and-alert",
+        "no-private-authority-input"
+      ]
+    },
+    {
+      "id": "liveplay-spectator-feed-integration",
+      "path": "src/pages/play/[encounterId].vue",
+      "sha256": "9531323f08d0e0108f02a59f4299490d41bf441d7d03f0c441118b2055a8bb9c",
+      "guarantees": [
+        "non-gm-event-feed-placement",
+        "existing-decision-and-resolution-priority-preserved",
+        "gm-full-authority-remains-director-only"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/skillCheckProjections.test.ts",
+      "sha256": "4c96f669e297071dbc7d71ff56dea65484ba9f7438a70d833f5b2482573ca986",
+      "scenarioIds": [
+        "three-structurally-distinct-pending-projections",
+        "private-modifier-note-controller-sheet-journal-and-operation-absence",
+        "authorized-own-and-aggregate-public-accepted-results",
+        "gm-only-result-and-dc-withholding",
+        "cross-role-forgery-and-private-field-rejection"
+      ]
+    },
+    {
+      "path": "tests/server/skillCheckProjectionRoute.test.ts",
+      "sha256": "e00f8156b17773794a1a03bf5dee1a08eb0c096008bd66461cbcd9d1ca47c2ad",
+      "scenarioIds": [
+        "authenticated-role-to-projection-authority",
+        "profile-spoof-unknown-state-and-limit-rejection"
+      ]
+    },
+    {
+      "path": "tests/components/encounterSkillCheckPublicFeed.test.ts",
+      "sha256": "39c5074d5ac24fe28d546372b18fde2e1e8cd98ff35a813ad464533f8d20dfda",
+      "scenarioIds": [
+        "public-pending-count-and-generic-history",
+        "aggregate-withheld-cancelled-and-timeout-presentation",
+        "labeled-refresh-and-load-alert"
+      ]
+    },
+    {
+      "path": "tests/components/encounterSubjectSkillChecks.test.ts",
+      "sha256": "5a17166e28f86a42ebc0a411b41a5d9f6fdb101f068b65dac81d132c6175a6e0",
+      "scenarioIds": [
+        "subject-history-and-own-result-presentation",
+        "private-field-absence-at-decision-surface"
+      ]
+    },
+    {
+      "path": ".pi/artifacts/ui-mockups/spectator-skill-check-feed/v001.png",
+      "sha256": "f37caea2b1e62fe15815ca09653609bf947dddd0677bc17c50d63c7a607fd9b1",
+      "scenarioIds": [
+        "reviewed-spectator-event-feed-target-state"
+      ]
+    }
+  ],
+  "privacy": {
+    "gmProjectionFullAuthority": true,
+    "subjectOwnIdentitySkillAndVisibleModifiersOnly": true,
+    "subjectOtherIdentityOrResultProjected": false,
+    "spectatorPromptOrSubjectIdentityProjected": false,
+    "spectatorPendingCountProjected": true,
+    "spectatorAcceptedAggregateOnlyWhenPublic": true,
+    "withheldStateExplicit": true,
+    "gmNotesProjectedOutsideGm": false,
+    "situationalModifierValueProjectedOutsideGm": false,
+    "controllerProfileIdsProjectedOutsideGm": false,
+    "sheetRevisionsProjectedOutsideGm": false,
+    "diceJournalsProjectedOutsideGm": false,
+    "operationIdsOrHashesProjectedOutsideGm": false,
+    "diagnosticsProjectedOutsideGm": false,
+    "responseIdentityProjectedToSpectator": false,
+    "privateCorrectionProjectedToSpectator": false
+  },
+  "acceptance": {
+    "pendingGmSubjectAndSpectator": true,
+    "acceptedGmSubjectAndSpectator": true,
+    "cancelledAndTimedOutHistory": true,
+    "dcConcealment": true,
+    "publicAggregateResults": true,
+    "gmOnlyResultWithholding": true,
+    "strictStructuralSeparation": true,
+    "serverBuiltOnly": true,
+    "publicLiveplayFeed": true,
+    "remainingConsumingFlowIntegrationTicket": "P11-050",
+    "remainingFinalAccessibilityTicket": "P11-051",
+    "remainingRecoveryAndCampaignHistoryTicket": "P11-052"
+  }
+}

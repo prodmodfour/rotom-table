@@ -3,6 +3,7 @@ import { cloneStrictJson, deepFreezeStrictJson, isPlainJsonObject } from '../aut
 export const EQUIPMENT_GRANT_SCHEMA_VERSION = 1 as const
 export type EquipmentWeaponClass = 'small-melee' | 'large-melee' | 'short-range' | 'long-range'
 export type EquipmentGrantExecutionStatus = 'native' | 'definition-missing'
+export type EquipmentWeaponTargetingPolicy = 'melee' | 'ranged-line-of-sight'
 
 export interface EquipmentWeaponProfileGrantV1 {
   readonly grantId: string
@@ -11,9 +12,42 @@ export interface EquipmentWeaponProfileGrantV1 {
   readonly pokemonWielderSizePolicy: 'small-only' | 'medium-plus' | 'trainer-only'
   readonly damageBaseBonus: number
   readonly accuracyCheckPenalty: number
+  readonly rangeMinimumMeters: number
+  readonly rangeMaximumMeters: number | null
+  readonly handsRequired: 1 | 2
+  readonly targetingPolicy: EquipmentWeaponTargetingPolicy
+  readonly weaponRangeReplacesSingleTargetMoveRange: boolean
+  readonly ammunitionPolicy: 'abstracted-no-tracked-consumption'
+  readonly recoveryPolicy: 'no-canonical-projectile-recovery'
+  readonly allowsStab: false
   readonly grantsReach: boolean
+  readonly sourcePath: 'books/markdown/core/09-gear-and-items.md'
+  readonly sourceSha256: string
   readonly executionStatus: EquipmentGrantExecutionStatus
 }
+export const applyEquipmentWeaponRangeToMoveRange = (
+  profile: EquipmentWeaponProfileGrantV1,
+  moveRange: string,
+): string => {
+  if (profile.targetingPolicy !== 'ranged-line-of-sight' || profile.rangeMaximumMeters === null) return moveRange
+  const ranged = /\bMelee\b/iu.test(moveRange)
+    ? moveRange.replace(/\bMelee\b/giu, String(profile.rangeMaximumMeters))
+    : `${profile.rangeMaximumMeters}, ${moveRange}`
+  return [
+    ranged,
+    'Ranged Weapon',
+    ...(profile.rangeMinimumMeters > 0 ? [`Minimum Range ${profile.rangeMinimumMeters}`] : []),
+  ].join(', ')
+}
+
+export const equipmentWeaponRangeLabel = (
+  profile: EquipmentWeaponProfileGrantV1,
+): string => profile.rangeMaximumMeters === null
+  ? 'Melee'
+  : profile.rangeMinimumMeters > 0
+    ? `${profile.rangeMinimumMeters}–${profile.rangeMaximumMeters} meters`
+    : `${profile.rangeMaximumMeters} meters`
+
 export interface EquipmentMoveGrantV1 {
   readonly grantId: string
   readonly kind: 'move'
@@ -44,7 +78,10 @@ export interface EquipmentActionGrantV1 {
   readonly timing: 'standard' | 'swift' | 'free' | 'extended'
   readonly interactionRole: 'activated-action' | 'contextual-affordance'
   readonly targetKind: 'self' | 'participant' | 'item' | 'move' | 'cell'
+  /** Executor readiness; guided actions still have a native declaration/commit dispatcher. */
   readonly executionStatus: 'native' | 'deferred'
+  /** Reviewed end-to-end mechanic state, distinct from executor readiness. */
+  readonly finalState: 'native' | 'guided' | 'deferred'
   readonly deferredTicket: string | null
 }
 export type EquipmentGrantV1 =
@@ -74,6 +111,8 @@ export interface EquipmentGrantDocumentV1 {
     readonly missingDefinitionPolicy: 'visible-unavailable-no-execution'
     readonly inactiveOrSuppressedPolicy: 'withdraw-immediately'
     readonly acceptedDurableEffectsSurviveSourceLoss: true
+    readonly finalStateAuthorityPath: 'data/deferred-closure/item-action-matrix.v1.json'
+    readonly finalStateAuthoritySha256: string
   }
   readonly definitions: readonly EquipmentGrantDefinitionV1[]
 }
@@ -90,6 +129,33 @@ const SHA256 = /^[a-f0-9]{64}$/
 const STABLE_ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/
 const WEAPON_CLASSES = new Set(['small-melee', 'large-melee', 'short-range', 'long-range'])
 const SIZE_POLICIES = new Set(['small-only', 'medium-plus', 'trainer-only'])
+const WEAPON_TARGETING_POLICIES = new Set(['melee', 'ranged-line-of-sight'])
+const WEAPON_SOURCE_PATH = 'books/markdown/core/09-gear-and-items.md' as const
+const WEAPON_SOURCE_SHA256 = 'b700b95186df42500c49575d8e7f5396188809cb46cc22c3cb3df7b1e9f6b1e0'
+const ITEM_ACTION_FINAL_STATE_PATH = 'data/deferred-closure/item-action-matrix.v1.json' as const
+const ITEM_ACTION_FINAL_STATE_SHA256 = '1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83'
+const REVIEWED_WEAPON_CLASSES = Object.freeze({
+  'small-melee': Object.freeze({
+    pokemonWielderSizePolicy: 'small-only', damageBaseBonus: 1, accuracyCheckPenalty: 0,
+    rangeMinimumMeters: 0, rangeMaximumMeters: null, handsRequired: 1,
+    targetingPolicy: 'melee', weaponRangeReplacesSingleTargetMoveRange: false,
+  }),
+  'large-melee': Object.freeze({
+    pokemonWielderSizePolicy: 'medium-plus', damageBaseBonus: 2, accuracyCheckPenalty: 1,
+    rangeMinimumMeters: 0, rangeMaximumMeters: null, handsRequired: 2,
+    targetingPolicy: 'melee', weaponRangeReplacesSingleTargetMoveRange: false,
+  }),
+  'short-range': Object.freeze({
+    pokemonWielderSizePolicy: 'trainer-only', damageBaseBonus: 0, accuracyCheckPenalty: 0,
+    rangeMinimumMeters: 0, rangeMaximumMeters: 4, handsRequired: 1,
+    targetingPolicy: 'ranged-line-of-sight', weaponRangeReplacesSingleTargetMoveRange: true,
+  }),
+  'long-range': Object.freeze({
+    pokemonWielderSizePolicy: 'trainer-only', damageBaseBonus: 1, accuracyCheckPenalty: 1,
+    rangeMinimumMeters: 4, rangeMaximumMeters: 12, handsRequired: 2,
+    targetingPolicy: 'ranged-line-of-sight', weaponRangeReplacesSingleTargetMoveRange: true,
+  }),
+} as const satisfies Record<EquipmentWeaponClass, Record<string, unknown>>)
 const TIMINGS = new Set(['standard', 'swift', 'free', 'extended'])
 const ROLES = new Set(['activated-action', 'contextual-affordance'])
 const TARGETS = new Set(['self', 'participant', 'item', 'move', 'cell'])
@@ -147,27 +213,62 @@ const parseGrant = (value: unknown, path: string): EquipmentGrantV1 => {
   if (input.kind === 'weapon-profile') {
     exact(input, [
       'grantId', 'kind', 'weaponClass', 'pokemonWielderSizePolicy',
-      'damageBaseBonus', 'accuracyCheckPenalty', 'grantsReach', 'executionStatus',
+      'damageBaseBonus', 'accuracyCheckPenalty', 'rangeMinimumMeters', 'rangeMaximumMeters',
+      'handsRequired', 'targetingPolicy', 'weaponRangeReplacesSingleTargetMoveRange',
+      'ammunitionPolicy', 'recoveryPolicy', 'allowsStab', 'grantsReach',
+      'sourcePath', 'sourceSha256', 'executionStatus',
     ], path)
     const weaponClass = oneOf<EquipmentWeaponClass>(input.weaponClass, WEAPON_CLASSES, `${path}.weaponClass`)
     const sizePolicy = oneOf<EquipmentWeaponProfileGrantV1['pokemonWielderSizePolicy']>(input.pokemonWielderSizePolicy, SIZE_POLICIES, `${path}.pokemonWielderSizePolicy`)
-    if ((weaponClass === 'small-melee') !== (sizePolicy === 'small-only')
-      || (weaponClass === 'large-melee') !== (sizePolicy === 'medium-plus')
-      || ((weaponClass === 'short-range' || weaponClass === 'long-range') && sizePolicy !== 'trainer-only')) {
-      fail(path, 'weapon class and Pokémon Wielder size policy disagree.')
+    const targetingPolicy = oneOf<EquipmentWeaponTargetingPolicy>(input.targetingPolicy, WEAPON_TARGETING_POLICIES, `${path}.targetingPolicy`)
+    const damageBaseBonus = integer(input.damageBaseBonus, `${path}.damageBaseBonus`, 10)
+    const accuracyCheckPenalty = integer(input.accuracyCheckPenalty, `${path}.accuracyCheckPenalty`, 10)
+    const rangeMinimumMeters = integer(input.rangeMinimumMeters, `${path}.rangeMinimumMeters`, 12)
+    const rangeMaximumMeters = input.rangeMaximumMeters === null
+      ? null
+      : integer(input.rangeMaximumMeters, `${path}.rangeMaximumMeters`, 12)
+    const handsRequired = integer(input.handsRequired, `${path}.handsRequired`, 2)
+    const weaponRangeReplacesSingleTargetMoveRange = boolean(
+      input.weaponRangeReplacesSingleTargetMoveRange,
+      `${path}.weaponRangeReplacesSingleTargetMoveRange`,
+    )
+    const reviewed = REVIEWED_WEAPON_CLASSES[weaponClass]
+    if (sizePolicy !== reviewed.pokemonWielderSizePolicy
+      || damageBaseBonus !== reviewed.damageBaseBonus
+      || accuracyCheckPenalty !== reviewed.accuracyCheckPenalty
+      || rangeMinimumMeters !== reviewed.rangeMinimumMeters
+      || rangeMaximumMeters !== reviewed.rangeMaximumMeters
+      || handsRequired !== reviewed.handsRequired
+      || targetingPolicy !== reviewed.targetingPolicy
+      || weaponRangeReplacesSingleTargetMoveRange !== reviewed.weaponRangeReplacesSingleTargetMoveRange) {
+      fail(path, 'weapon profile disagrees with the reviewed class policy.')
     }
-    const executionStatus = input.executionStatus
-    if (executionStatus !== 'native' && executionStatus !== 'definition-missing') fail(`${path}.executionStatus`, 'is unsupported.')
-    if ((weaponClass === 'small-melee' || weaponClass === 'large-melee') !== (executionStatus === 'native')) {
-      fail(path, 'only reviewed melee profiles currently have executable weapon semantics.')
+    if (input.ammunitionPolicy !== 'abstracted-no-tracked-consumption'
+      || input.recoveryPolicy !== 'no-canonical-projectile-recovery') {
+      fail(path, 'weapon profile invents unreviewed ammunition or projectile recovery semantics.')
     }
+    if (input.allowsStab !== false) fail(`${path}.allowsStab`, 'weapon attacks cannot benefit from STAB.')
+    if (input.sourcePath !== WEAPON_SOURCE_PATH || input.sourceSha256 !== WEAPON_SOURCE_SHA256) {
+      fail(path, 'weapon profile is not bound to the reviewed gear source fingerprint.')
+    }
+    if (input.executionStatus !== 'native') fail(`${path}.executionStatus`, 'all reviewed weapon classes must be native.')
     return {
       grantId, kind: 'weapon-profile', weaponClass,
       pokemonWielderSizePolicy: sizePolicy,
-      damageBaseBonus: integer(input.damageBaseBonus, `${path}.damageBaseBonus`, 10),
-      accuracyCheckPenalty: integer(input.accuracyCheckPenalty, `${path}.accuracyCheckPenalty`, 10),
+      damageBaseBonus,
+      accuracyCheckPenalty,
+      rangeMinimumMeters,
+      rangeMaximumMeters,
+      handsRequired: handsRequired as 1 | 2,
+      targetingPolicy,
+      weaponRangeReplacesSingleTargetMoveRange,
+      ammunitionPolicy: 'abstracted-no-tracked-consumption',
+      recoveryPolicy: 'no-canonical-projectile-recovery',
+      allowsStab: false,
       grantsReach: boolean(input.grantsReach, `${path}.grantsReach`),
-      executionStatus: executionStatus as EquipmentGrantExecutionStatus,
+      sourcePath: WEAPON_SOURCE_PATH,
+      sourceSha256: hash(input.sourceSha256, `${path}.sourceSha256`),
+      executionStatus: 'native',
     }
   }
   if (input.kind === 'move') {
@@ -211,11 +312,16 @@ const parseGrant = (value: unknown, path: string): EquipmentGrantV1 => {
   if (input.kind === 'action') {
     exact(input, [
       'grantId', 'kind', 'actionId', 'label', 'timing', 'interactionRole',
-      'targetKind', 'executionStatus', 'deferredTicket',
+      'targetKind', 'executionStatus', 'finalState', 'deferredTicket',
     ], path)
     if (input.executionStatus !== 'deferred' && input.executionStatus !== 'native') {
       fail(`${path}.executionStatus`, 'is unsupported.')
     }
+    const finalState = oneOf<EquipmentActionGrantV1['finalState']>(
+      input.finalState,
+      new Set(['native', 'guided', 'deferred']),
+      `${path}.finalState`,
+    )
     const deferredTicket = input.deferredTicket === null
       ? null
       : text(input.deferredTicket, `${path}.deferredTicket`)
@@ -224,10 +330,22 @@ const parseGrant = (value: unknown, path: string): EquipmentGrantV1 => {
       'equipment.mega-ring.evolve',
       'equipment.mega-stone.evolve',
       'equipment.re-breather.activate',
+      'equipment.light-shield.ready',
+      'equipment.heavy-shield.ready',
+      'equipment.shock-collar.activate',
+      'equipment.glue-cannon.attack',
+      'equipment.hand-net.attack',
+      'equipment.weighted-nets.throw',
+      'equipment.weighted-nets.pull',
+      'equipment.fishing.old-rod',
+      'equipment.fishing.good-rod',
+      'equipment.fishing.super-rod',
+      'equipment.snag-machine.convert',
     ])
     if ((input.executionStatus === 'native') !== (deferredTicket === null)
+      || (finalState === 'deferred') !== (deferredTicket !== null)
       || (input.executionStatus === 'native' && !nativeActionIds.has(String(input.actionId)))) {
-      fail(path, 'native actions require a reviewed executor and deferred actions require a follow-up ticket.')
+      fail(path, 'native executors require a reviewed final state; deferred actions require a follow-up ticket.')
     }
     return {
       grantId, kind: 'action', actionId: stableId(input.actionId, `${path}.actionId`),
@@ -235,7 +353,9 @@ const parseGrant = (value: unknown, path: string): EquipmentGrantV1 => {
       timing: oneOf<EquipmentActionGrantV1['timing']>(input.timing, TIMINGS, `${path}.timing`),
       interactionRole: oneOf<EquipmentActionGrantV1['interactionRole']>(input.interactionRole, ROLES, `${path}.interactionRole`),
       targetKind: oneOf<EquipmentActionGrantV1['targetKind']>(input.targetKind, TARGETS, `${path}.targetKind`),
-      executionStatus: input.executionStatus as EquipmentActionGrantV1['executionStatus'], deferredTicket,
+      executionStatus: input.executionStatus as EquipmentActionGrantV1['executionStatus'],
+      finalState,
+      deferredTicket,
     }
   }
   return fail(`${path}.kind`, 'is unsupported.')
@@ -257,11 +377,14 @@ export const parseEquipmentGrantDocument = (value: unknown): EquipmentGrantDocum
   exact(policy, [
     'status', 'runtimeProseParsing', 'missingDefinitionPolicy',
     'inactiveOrSuppressedPolicy', 'acceptedDurableEffectsSurviveSourceLoss',
+    'finalStateAuthorityPath', 'finalStateAuthoritySha256',
   ], 'equipmentGrants.classificationPolicy')
   if (policy.status !== 'reviewed' || policy.runtimeProseParsing !== false
     || policy.missingDefinitionPolicy !== 'visible-unavailable-no-execution'
     || policy.inactiveOrSuppressedPolicy !== 'withdraw-immediately'
-    || policy.acceptedDurableEffectsSurviveSourceLoss !== true) {
+    || policy.acceptedDurableEffectsSurviveSourceLoss !== true
+    || policy.finalStateAuthorityPath !== ITEM_ACTION_FINAL_STATE_PATH
+    || policy.finalStateAuthoritySha256 !== ITEM_ACTION_FINAL_STATE_SHA256) {
     fail('equipmentGrants.classificationPolicy', 'must retain reviewed source-loss and fail-closed semantics.')
   }
   const definitions = array(input.definitions, 'equipmentGrants.definitions', 256)
@@ -300,6 +423,8 @@ export const parseEquipmentGrantDocument = (value: unknown): EquipmentGrantDocum
       missingDefinitionPolicy: 'visible-unavailable-no-execution',
       inactiveOrSuppressedPolicy: 'withdraw-immediately',
       acceptedDurableEffectsSurviveSourceLoss: true,
+      finalStateAuthorityPath: ITEM_ACTION_FINAL_STATE_PATH,
+      finalStateAuthoritySha256: hash(policy.finalStateAuthoritySha256, 'equipmentGrants.classificationPolicy.finalStateAuthoritySha256'),
     },
     definitions,
   })

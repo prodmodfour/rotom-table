@@ -3,11 +3,12 @@ import { resolvedSheetFeatureClosure, sheetHasCanonicalFeature, type FeatureShee
 import { resolvedSheetEdgeInstances, sheetHasCanonicalEdge } from '../edgeAutomation/sheetEdges'
 import type { SheetEquipmentStateV1 } from '../itemAutomation/equipment'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
-import type { TrainerSheet } from '~/types/trainerSheet'
+import type { TrainerMove, TrainerSheet } from '~/types/trainerSheet'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import { derivePokemonContestPreparation, type PokemonContestPreparationProjectionV1 } from './preparation'
 import { emptyContestStatRecord, isContestEffectId, isContestStatId, type ContestStatId } from './ids'
-import type { ContestDicePoolV1, ContestMoveOptionV1, ContestPerformerSnapshotV1 } from './document'
+import { emptyContestDicePools, type ContestDicePoolV1, type ContestMoveOptionV1, type ContestPokemonPerformerSnapshotV1, type ContestTrainerPerformerSnapshotV1 } from './document'
+import { capabilityWeaponMove } from '../capabilityAutomation/weaponMoves'
 
 interface MoveReferenceRow {
   readonly name: string
@@ -117,13 +118,17 @@ const virtualMoveSets: Readonly<Record<string, { readonly statId: ContestStatId,
   'Smart Scheme': { statId: 'smart', moves: ['Fake Tears','Calm Mind','Taunt','Flatter'] },
   'Tough Tumble': { statId: 'tough', moves: ['Scary Face','Spite','Glare','Bide'] },
 })
-const moveOption = (input: string | CharacterSheetMove, source: ContestMoveOptionV1['source']): ContestMoveOptionV1 => {
+const moveOption = (input: string | CharacterSheetMove | TrainerMove, source: ContestMoveOptionV1['source']): ContestMoveOptionV1 => {
   const name = typeof input === 'string' ? input : input.name
-  const bound = typeof input === 'string' ? undefined : input.contestIdentity
+  const bound = typeof input === 'string' || !('contestIdentity' in input) ? undefined : input.contestIdentity
   const sonic = typeof input === 'string' ? false : String(input.range ?? '').toLowerCase().includes('sonic')
   if (bound?.schemaVersion === 1 && bound.status === 'defined' && isContestStatId(bound.typeId) && isContestEffectId(bound.effectId)) return Object.freeze({ optionId: `created-move:${optionSlug(name)}`, canonicalMoveId: `created:${name}`, label: name, typeId: bound.typeId, effectId: bound.effectId, tags: Object.freeze(sonic ? ['sonic'] : []), source, available: true, unavailableCode: null, unavailableReason: null })
   const canonical = moveByIdentity.get(normalized(name))
-  if (!canonical) return Object.freeze({ optionId: `unavailable:${optionSlug(name)}`, canonicalMoveId: name, label: name, typeId: null, effectId: null, tags: Object.freeze([]), source, available: false, unavailableCode: 'contest.move-identity-missing', unavailableReason: 'This created or unknown Move needs a reviewed Contest identity binding.' })
+  if (!canonical) {
+    const weaponMove = capabilityWeaponMove(name)
+    if (weaponMove) return Object.freeze({ optionId: `weapon-move:${optionSlug(name)}`, canonicalMoveId: name, label: name, typeId: null, effectId: null, tags: Object.freeze([]), source, available: false, unavailableCode: 'weapon-move-no-canonical-contest-identity', unavailableReason: 'Weapon Moves have no reviewed canonical Contest identity.' })
+    return Object.freeze({ optionId: `unavailable:${optionSlug(name)}`, canonicalMoveId: name, label: name, typeId: null, effectId: null, tags: Object.freeze([]), source, available: false, unavailableCode: 'contest.move-identity-missing', unavailableReason: 'This created or unknown Move needs a reviewed Contest identity binding.' })
+  }
   const contest = canonical.row.contest
   if (!contest || contest.status !== 'defined' || !isContestStatId(contest.typeId) || !isContestEffectId(contest.effectId)) return Object.freeze({ optionId: `move:${optionSlug(canonical.id)}`, canonicalMoveId: canonical.id, label: canonical.row.name, typeId: null, effectId: null, tags: Object.freeze([]), source, available: false, unavailableCode: contest && 'reasonCode' in contest ? contest.reasonCode ?? 'contest.move-identity-unavailable' : 'contest.move-identity-unavailable', unavailableReason: contest && 'safeReason' in contest ? contest.safeReason ?? 'Canonical Contest identity is unavailable.' : 'Canonical Contest identity is unavailable.' })
   return Object.freeze({ optionId: `move:${optionSlug(canonical.id)}`, canonicalMoveId: canonical.id, label: canonical.row.name, typeId: contest.typeId, effectId: contest.effectId, tags: Object.freeze([...new Set([...(contest.tags ?? []), ...(String(canonical.row.range ?? '').toLowerCase().includes('sonic') ? ['sonic'] : [])])]), source, available: true, unavailableCode: null, unavailableReason: null })
@@ -134,7 +139,7 @@ export const buildContestPerformerSnapshot = (input: {
   readonly trainer: TrainerSheet
   readonly campaignDay: number
   readonly revision: number
-}): ContestPerformerSnapshotV1 => {
+}): ContestPokemonPerformerSnapshotV1 => {
   const trainer = contestTrainerIntegrations(input.trainer)
   const pokemon = contestPokemonIntegrations(input.sheet)
   const preparation = derivePokemonContestPreparation(input.sheet, { hasGrace: trainer.hasGrace, styleExpertStatIds: trainer.styleExpertStatIds, campaignDay: input.campaignDay })
@@ -148,6 +153,7 @@ export const buildContestPerformerSnapshot = (input: {
   const moves = [...baseMoves, ...virtualMoves].filter(move => !seen.has(move.optionId) && seen.add(move.optionId))
   const dicePools = emptyContestStatRecord<ContestDicePoolV1>(statId => Object.freeze({ total: preparation.rows[statId].totalDice, remaining: preparation.rows[statId].totalDice, contributors: preparation.rows[statId].contributions }))
   return Object.freeze({
+    performerKind: 'pokemon' as const,
     performerId: `performer:${optionSlug(input.sheet.slug)}`,
     pokemonSheetSlug: input.sheet.slug,
     pokemonSheetRevision: input.revision,
@@ -161,6 +167,39 @@ export const buildContestPerformerSnapshot = (input: {
       ...pokemon.contestFashionStatIds.map(statId => `item:Contest Fashion:${statId}`),
       ...(preparation.groomedToday ? ['edge:Groomer:groomed'] : []),
       ...(trainer.hasJugglingShow ? [`feature:Juggling Show:dice:${trainer.acrobaticsHalfRankDice}`] : []),
+    ]),
+  })
+}
+
+/**
+ * Snapshot one Trainer performer from the ordinary Trainer sheet. Trainer
+ * Participant Contest dice remain entry-shared authority; this performer owns
+ * no parallel preparation pool and therefore starts with exact empty pools.
+ */
+export const buildContestTrainerPerformerSnapshot = (input: {
+  readonly sheet: TrainerSheet
+  readonly revision: number
+}): ContestTrainerPerformerSnapshotV1 => {
+  const integrations = contestTrainerIntegrations(input.sheet)
+  const seen = new Set<string>()
+  const moves = (input.sheet.movelist ?? [])
+    .map(row => moveOption(row, 'sheet'))
+    .filter(move => !seen.has(move.optionId) && seen.add(move.optionId))
+  return Object.freeze({
+    performerKind: 'trainer' as const,
+    performerId: `performer:trainer-${optionSlug(input.sheet.slug)}`,
+    trainerSheetSlug: input.sheet.slug,
+    trainerSheetRevision: input.revision,
+    displayName: input.sheet.name || 'Trainer',
+    level: Math.max(1, Math.min(100, Math.floor(input.sheet.level || 1))),
+    portraitUrl: input.sheet.portraitUrl?.trim() || null,
+    moves: Object.freeze(moves),
+    dicePools: emptyContestDicePools(),
+    providerIds: Object.freeze([
+      ...integrations.providerIds,
+      ...integrations.fancyClothesStatIds.map(statId => `item:Fancy Clothes:${statId}`),
+      ...integrations.styleFlourishStatIds.map(statId => `feature:Style Flourish:${statId}`),
+      ...(integrations.hasJugglingShow ? [`feature:Juggling Show:dice:${integrations.acrobaticsHalfRankDice}`] : []),
     ]),
   })
 }

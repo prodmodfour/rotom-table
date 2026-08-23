@@ -1,13 +1,10 @@
-import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/campaign-advancement-attention.v1.json'
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 import rules from '../../data/reference/rules.json'
 import {
   CAMPAIGN_ADVANCEMENT_ATTENTION_SHEET_LIMIT,
 } from '../../server/domain/campaignAttention/advancementDetector'
-
-const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
 
 describe('P8-084 campaign advancement attention evidence', () => {
   it('pins complete bounded current authority and only app-owned canonical advancement data', () => {
@@ -82,7 +79,8 @@ describe('P8-084 campaign advancement attention evidence', () => {
   it('pins detector, canonical data, source integration, tests, and documentation byte-for-byte', () => {
     for (const source of Object.values(contract.sources)) {
       expect(source.sha256, source.path).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(source.path), source.path).toBe(source.sha256)
+      expect(acceptedSuccessorHead(source.path, source.sha256), source.path)
+        .toBe(repositoryFileSha256(source.path))
     }
   })
 })

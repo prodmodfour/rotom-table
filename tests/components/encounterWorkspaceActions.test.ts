@@ -11,6 +11,7 @@ import type {
   AcceptedEncounterPresentation,
   EncounterActionOffer,
   EncounterChoiceOffer,
+  EncounterContextualAffordance,
   EncounterPendingInteractionAuthorizedView,
   EncounterPendingInteractionPublicView,
   EncounterPendingInteractionView,
@@ -146,7 +147,10 @@ const accepted = (): AcceptedEncounterPresentation => ({
   splash: null,
   vfx: [],
   announcements: [],
-  history: [],
+  history: [{
+    entryId: 'history:one', occurredAt: 500, headline: 'Thunder Shock receipt',
+    detail: 'Authoritative damage and target state persisted.', tone: 'positive', participantIds: ['actor:one'],
+  }],
   correction: { correctsPresentationId: 'accepted:old', reasonLabel: 'GM correction' },
 })
 
@@ -204,6 +208,41 @@ describe('encounter action and resolution components', () => {
     expect(card.text()).toContain('Rowan · Medical Kit')
   })
 
+  it('surfaces contextual item actions with visible availability reasons and direct activation', async () => {
+    const contextualOffer: EncounterActionOffer = {
+      ...offer('contextual-net'),
+      source: { sourceKind: 'item', canonicalId: 'Hand Net', instanceId: null, displayName: 'Hand Net', referenceHref: null },
+      roles: ['activated-action', 'contextual-affordance'],
+      group: 'inventory',
+      timing: { kind: 'standard', label: 'Standard Action', triggerLabel: null, priority: null },
+      presentation: { label: 'Use Hand Net', description: 'Make the reviewed adjacent net attack.', iconKey: 'source.item', tone: 'neutral' },
+    }
+    const affordance: EncounterContextualAffordance = {
+      schemaVersion: 1,
+      affordanceId: 'affordance:hand-net',
+      contextKind: 'participant', contextId: 'target:one', source: contextualOffer.source,
+      actor: contextualOffer.actor, linkedOfferId: contextualOffer.offerId,
+      availability: { status: 'available', reasons: [] },
+      presentation: { label: 'Use Hand Net', description: 'Adjacent eligible target', iconKey: 'source.item', tone: 'neutral' },
+    }
+    const wrapper = mount(EncounterActionDock, {
+      props: {
+        offers: [contextualOffer], affordances: [affordance], actorParticipantId: 'actor:one', actorLabel: 'Pikachu',
+        selectedOfferId: null, commandsBlocked: false,
+      },
+    })
+    expect(wrapper.text()).toContain('Relevant actions')
+    expect(wrapper.text()).toContain('participant context')
+    await wrapper.get('.encounter-contextual__choose').trigger('click')
+    expect(wrapper.emitted('activate')?.[0]?.[0]).toMatchObject({ offerId: 'contextual-net' })
+
+    const blocked = { ...contextualOffer, availability: offer('blocked', false).availability }
+    await wrapper.setProps({ offers: [blocked] })
+    expect(wrapper.text()).toContain('Unavailable · Not this actor’s turn')
+    expect(wrapper.get('.encounter-contextual__choose').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('.encounter-contextual__choose').attributes('aria-label')).toContain('Not this actor’s turn')
+  })
+
   it('renders typed choice previews, enforces confirmation, and emits generic selections', async () => {
     const decision: EncounterDecisionModel = {
       kind: 'pending',
@@ -223,6 +262,21 @@ describe('encounter action and resolution components', () => {
     expect(wrapper.get('.encounter-decision-layer__options button').attributes('aria-pressed')).toBe('true')
     await wrapper.get('.encounter-decision-layer__confirm').trigger('click')
     expect(wrapper.emitted('submit')).toEqual([[[{ choiceId: 'target', optionIds: ['target:one'] }]]])
+  })
+
+  it('moves keyboard focus to a newly rejected decision error without losing the open decision', async () => {
+    const decision: EncounterDecisionModel = {
+      kind: 'pending', interactionId: 'decision:error-focus', title: 'Reaction', prompt: 'Choose safely',
+      interaction: pending('gm'), choices: [participantChoice()], allowPass: true, allowCancel: true,
+    }
+    const wrapper = mount(EncounterDecisionLayer, {
+      attachTo: document.body,
+      props: { decision, error: null },
+    })
+    await wrapper.setProps({ error: 'The authoritative choice changed. Review the refreshed options.' })
+    expect(document.activeElement).toBe(wrapper.get('.encounter-decision-layer__error').element)
+    expect(wrapper.get('.encounter-decision-layer__error').attributes('role')).toBe('alert')
+    expect(wrapper.get('[role="dialog"]').exists()).toBe(true)
   })
 
   it('renders server-authored healing and overheal previews without client calculation', () => {
@@ -394,6 +448,27 @@ describe('encounter action and resolution components', () => {
     expect(wrapper.emitted('recover')).toEqual([['pending:gm', 'force-pass']])
   })
 
+  it('keeps public guided waiting state non-interactive while linking only authorised GM handoff', async () => {
+    const guided = {
+      ...pending('public'),
+      source: { sourceKind: 'item' as const, canonicalId: 'Old Rod', instanceId: null, displayName: 'Old Rod', referenceHref: null },
+      prompt: 'Old Rod is waiting for authorised adjudication.',
+    }
+    const wrapper = mount(EncounterResolutionStack, {
+      props: {
+        pending: [guided], primaryInteractionId: guided.interactionId, activeInteractionId: null,
+        guidedItemHref: '/campaign#guided-workshop-title',
+      },
+      global: {
+        stubs: { NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } },
+      },
+    })
+    expect(wrapper.find('.encounter-resolution-stack__open').element.tagName).toBe('DIV')
+    expect(wrapper.findAll('button')).toHaveLength(0)
+    expect(wrapper.get('a').attributes('href')).toBe('/campaign#guided-workshop-title')
+    expect(wrapper.text()).toContain('Private options are not present')
+  })
+
   it('presents corrections, structured facts, and distinct retry/abandon affordances for uncertainty', async () => {
     const wrapper = mount(EncounterEventFeed, {
       props: {
@@ -405,6 +480,8 @@ describe('encounter action and resolution components', () => {
     expect(wrapper.text()).toContain('Corrects accepted:old')
     expect(wrapper.text()).toContain('Outcome unknown')
     expect(wrapper.text()).toContain('Damage calculation')
+    expect(wrapper.text()).toContain('Receipt history')
+    expect(wrapper.text()).toContain('Authoritative damage and target state persisted.')
     expect(wrapper.get('[data-corrected="true"]').attributes('data-active')).toBe('true')
     await wrapper.get('.encounter-event-feed__uncertain button').trigger('click')
     await wrapper.get('.encounter-event-feed__uncertain button:last-child').trigger('click')

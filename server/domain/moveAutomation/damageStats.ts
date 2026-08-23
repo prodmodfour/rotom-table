@@ -694,6 +694,34 @@ export const resolveMoveSpecDamageCalculation = (
   })?.active.filter(contribution => (
     contribution.metric === 'damage-reduction' && contribution.targetIds.includes('all')
   )) ?? []
+  const targetPlacement = options.context.queries.placements.get(options.recipient.id)
+  const targetSheet = targetPlacement
+    ? options.context.queries.sheets.forPlacement(targetPlacement)?.sheet
+    : null
+  const sheetDamageReduction = targetSheet && 'damageReduction' in targetSheet
+    && typeof targetSheet.damageReduction === 'number'
+    && Number.isFinite(targetSheet.damageReduction)
+    ? Math.max(0, Math.floor(targetSheet.damageReduction))
+    : 0
+  const pierceDamageModifiers: readonly MoveDamageModifier[] = (
+    options.script.moveName === 'Pierce!'
+    && (
+      sheetDamageReduction > 0
+      || encounterDamageReductionModifiers.some(modifier => (
+        'value' in modifier && modifier.value > 0
+      ))
+      || incomingEquipment.some(contribution => contribution.value > 0)
+    )
+  ) ? [{
+      id: 'capability-weapon.pierce.damage-reduction-bonus',
+      stage: 'pre-type-modifiers',
+      priority: 55,
+      source: { kind: 'move', id: 'Pierce!' },
+      stackingGroup: 'capability-weapon.pierce',
+      reasonCode: 'capability-weapon.pierce.damage-reduction-bonus',
+      operation: 'add',
+      value: 10,
+    }] : []
   const equipmentDamageModifiers: readonly MoveDamageModifier[] = [
     ...outgoingEquipment.map((contribution, index): MoveDamageModifier => ({
       id: `${contribution.contributionId}.outgoing.${index}`,
@@ -766,6 +794,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa082Modifiers,
         ...aa084Modifiers,
         ...remainingModifiers,
+        ...pierceDamageModifiers,
         ...(options.responseDamageModifiers ?? []),
         ...faintedLivingWeaponModifiers,
         ...encounterDamageModifiers,

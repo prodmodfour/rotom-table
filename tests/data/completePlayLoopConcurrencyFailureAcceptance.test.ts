@@ -1,12 +1,10 @@
-import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import acceptance from '../../data/complete-play-loop/concurrency-failure-acceptance.v1.json'
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 const root = resolve(import.meta.dirname, '../..')
-const sha256 = (value: Buffer): string => createHash('sha256').update(value).digest('hex')
-
 describe('P8-097 concurrency, reconnect, restart, and failure acceptance', () => {
   it('covers every required failure scenario with current executable evidence', () => {
     expect(acceptance).toMatchObject({
@@ -72,7 +70,8 @@ describe('P8-097 concurrency, reconnect, restart, and failure acceptance', () =>
       expect(evidence.has(row.path), row.path).toBe(false)
       evidence.set(row.path, row.sha256)
       expect(row.sha256).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(resolve(root, row.path))), row.path).toBe(row.sha256)
+      expect(acceptedSuccessorHead(row.path, row.sha256), row.path)
+        .toBe(repositoryFileSha256(row.path))
     }
     const matrixTests = new Set([
       ...acceptance.scenarios.flatMap(row => row.evidenceTests),

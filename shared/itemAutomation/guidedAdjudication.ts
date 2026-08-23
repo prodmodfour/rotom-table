@@ -1,6 +1,8 @@
 import { cloneStrictJson, deepFreezeStrictJson, isPlainJsonObject, type StrictJsonObject } from '../automation/strictJson'
 import { SLUG_RE } from '../paths'
 import type { EquipmentOwnerKind } from './equipment'
+import { SKILL_CHECK_SKILL_IDS, parseSkillCheckId, type SkillCheckId } from '../skillChecks/contract'
+import type { TrainerSkillKey } from '~/types/trainerSheet'
 
 export const ITEM_GUIDED_ADJUDICATION_SCHEMA_VERSION = 1 as const
 export const ITEM_GUIDED_REQUEST_ID_RE = /^item-guided:v1:[a-f0-9]{32}$/
@@ -17,6 +19,8 @@ export const ITEM_GUIDED_CAMPAIGN_TOOL_ACCEPT_OPTION_ID = 'accept-reviewed-use' 
 export type ItemGuidedRequestKind =
   | 'loyalty-consequence'
   | 'campaign-tool-adjudication'
+  | 'fishing-adjudication'
+  | 'snag-conversion-adjudication'
   | 're-breather-activation'
   | 're-breather-refill'
 export type ItemGuidedRequestStatus = 'pending' | 'accepted' | 'cancelled'
@@ -26,6 +30,36 @@ export interface ItemGuidedDecisionOptionV1 {
   readonly label: string
   readonly description: string
 }
+
+export interface ItemGuidedFishingSkillOptionV1 {
+  readonly skillId: TrainerSkillKey
+  readonly label: string
+}
+
+export interface ItemGuidedFishingHookOptionV1 {
+  readonly speciesId: string
+  readonly label: string
+}
+
+export type ItemGuidedRequestResolutionV1 =
+  | {
+      readonly kind: 'fishing'
+      /** Exact actor binding exists only inside the authenticated GM resolution projection. */
+      readonly actorKind: EquipmentOwnerKind
+      readonly actorSheetSlug: string
+      readonly skillOptions: readonly ItemGuidedFishingSkillOptionV1[]
+      readonly hookOptions: readonly ItemGuidedFishingHookOptionV1[]
+      readonly maximumHookLevel: 10 | 100
+      readonly allowNoHook: true
+    }
+  | {
+      readonly kind: 'snag-conversion'
+      readonly decisions: readonly {
+        readonly decision: 'approve' | 'deny'
+        readonly label: string
+        readonly description: string
+      }[]
+    }
 
 export interface ItemGuidedRequestProjectionV1 {
   readonly schemaVersion: typeof ITEM_GUIDED_ADJUDICATION_SCHEMA_VERSION
@@ -37,12 +71,14 @@ export interface ItemGuidedRequestProjectionV1 {
   readonly itemLabel: string
   readonly actorLabel: string
   readonly targetLabel: string
-  readonly targetKindLabel: 'Pokémon' | 'Trainer'
+  readonly targetKindLabel: 'Pokémon' | 'Trainer' | 'Water' | 'Poké Ball'
   readonly timingLabel: string
   readonly prompt: string
   readonly canonicalFacts: readonly string[]
   /** Empty outside an authenticated GM projection. */
   readonly choices: readonly ItemGuidedDecisionOptionV1[]
+  /** Null outside an authenticated GM projection and for generic bounded requests. */
+  readonly resolution: ItemGuidedRequestResolutionV1 | null
   readonly settlementFacts: readonly string[]
   readonly reservationLabel: string | null
   readonly boundaryLabel: string
@@ -93,6 +129,49 @@ export interface ResolveItemGuidedRequestCommandV1 {
   readonly optionId: string
 }
 
+/** UI-safe fishing choice; the server binds its private integration reference before persistence. */
+export interface ResolveItemGuidedFishingIntentCommandV1 {
+  readonly schemaVersion: typeof ITEM_GUIDED_ADJUDICATION_SCHEMA_VERSION
+  readonly operationId: string
+  readonly action: 'resolve-fishing-intent'
+  readonly requestId: string
+  readonly expectedRevision: number
+  readonly skillId: TrainerSkillKey
+  /** Accepted generic Skill Check selected from the authenticated GM projection. */
+  readonly skillCheckId: SkillCheckId
+  readonly hookSpeciesId: string | null
+  readonly hookLevel: number | null
+  readonly gmNote: string | null
+}
+
+export interface ResolveItemGuidedFishingCommandV1 {
+  readonly schemaVersion: typeof ITEM_GUIDED_ADJUDICATION_SCHEMA_VERSION
+  readonly operationId: string
+  readonly action: 'resolve-fishing'
+  readonly requestId: string
+  readonly expectedRevision: number
+  readonly skillId: TrainerSkillKey
+  readonly skillCheckIntegrationId: string
+  /** Missing only while reopening a pre-P11-050 terminal record; new settlements require a generic check. */
+  readonly skillCheckId?: SkillCheckId
+  /** Null pair records no hook; a present pair records one canonical hook. */
+  readonly hookSpeciesId: string | null
+  readonly hookLevel: number | null
+  /** Private bounded GM evidence; never included in role-safe request projection. */
+  readonly gmNote: string | null
+}
+
+export interface ResolveItemGuidedSnagCommandV1 {
+  readonly schemaVersion: typeof ITEM_GUIDED_ADJUDICATION_SCHEMA_VERSION
+  readonly operationId: string
+  readonly action: 'resolve-snag-conversion'
+  readonly requestId: string
+  readonly expectedRevision: number
+  readonly decision: 'approve' | 'deny'
+  /** Private bounded legality evidence; never enters role-safe projection. */
+  readonly gmNote: string | null
+}
+
 export interface CancelItemGuidedRequestCommandV1 {
   readonly schemaVersion: typeof ITEM_GUIDED_ADJUDICATION_SCHEMA_VERSION
   readonly operationId: string
@@ -104,6 +183,9 @@ export interface CancelItemGuidedRequestCommandV1 {
 export type ItemGuidedAdjudicationCommandV1 =
   | DeclareItemGuidedReBreatherCommandV1
   | ResolveItemGuidedRequestCommandV1
+  | ResolveItemGuidedFishingIntentCommandV1
+  | ResolveItemGuidedFishingCommandV1
+  | ResolveItemGuidedSnagCommandV1
   | CancelItemGuidedRequestCommandV1
 
 export interface ItemGuidedAdjudicationResultV1 {
@@ -175,8 +257,8 @@ const SHA256 = /^[a-f0-9]{64}$/
 const ITEM_OPERATION_ID = /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{7,199}$/
 const STATUS = new Set<ItemGuidedRequestStatus>(['pending', 'accepted', 'cancelled'])
 const REQUEST_KIND = new Set<ItemGuidedRequestKind>([
-  'loyalty-consequence', 'campaign-tool-adjudication',
-  're-breather-activation', 're-breather-refill',
+  'loyalty-consequence', 'campaign-tool-adjudication', 'fishing-adjudication',
+  'snag-conversion-adjudication', 're-breather-activation', 're-breather-refill',
 ])
 const OWNER_KIND = new Set<EquipmentOwnerKind>(['trainer', 'pokemon'])
 const RE_BREATHER_MODE = new Set<ItemReBreatherModeV1>(['ready', 'active', 'depleted', 'refilling'])
@@ -258,6 +340,62 @@ export const parseItemGuidedAdjudicationCommand = (value: unknown): ItemGuidedAd
       optionId: text(input.optionId, 'itemGuidedCommand.optionId', 200),
     })
   }
+  if (input.action === 'resolve-fishing-intent' || input.action === 'resolve-fishing') {
+    const legacyTerminal = input.action === 'resolve-fishing' && !Object.hasOwn(input, 'skillCheckId')
+    exact(input, [
+      'schemaVersion', 'operationId', 'action', 'requestId', 'expectedRevision',
+      'skillId', ...(input.action === 'resolve-fishing' ? ['skillCheckIntegrationId'] : []),
+      ...(!legacyTerminal ? ['skillCheckId'] : []),
+      'hookSpeciesId', 'hookLevel', 'gmNote',
+    ], 'itemGuidedCommand')
+    if (!SKILL_CHECK_SKILL_IDS.includes(input.skillId as TrainerSkillKey)) {
+      fail('itemGuidedCommand.skillId', 'must be a canonical Skill identity.')
+    }
+    const hookSpeciesId = nullableText(input.hookSpeciesId, 'itemGuidedCommand.hookSpeciesId')
+    const hookLevel = input.hookLevel === null
+      ? null : integer(input.hookLevel, 'itemGuidedCommand.hookLevel', 100)
+    if ((hookSpeciesId === null) !== (hookLevel === null) || hookLevel === 0) {
+      fail('itemGuidedCommand', 'hook species and a Level from 1 through 100 must both be present or both null.')
+    }
+    const common = {
+      schemaVersion: 1 as const,
+      operationId: id,
+      requestId: requestId(input.requestId, 'itemGuidedCommand.requestId'),
+      expectedRevision: integer(input.expectedRevision, 'itemGuidedCommand.expectedRevision'),
+      skillId: input.skillId as TrainerSkillKey,
+      hookSpeciesId,
+      hookLevel,
+      gmNote: nullableText(input.gmNote, 'itemGuidedCommand.gmNote'),
+    }
+    const skillCheckId = legacyTerminal
+      ? null
+      : parseSkillCheckId(input.skillCheckId, 'itemGuidedCommand.skillCheckId')
+    return input.action === 'resolve-fishing'
+      ? deepFreezeStrictJson({
+          ...common,
+          action: 'resolve-fishing' as const,
+          skillCheckIntegrationId: text(input.skillCheckIntegrationId, 'itemGuidedCommand.skillCheckIntegrationId', 200),
+          ...(skillCheckId === null ? {} : { skillCheckId }),
+        })
+      : deepFreezeStrictJson({ ...common, action: 'resolve-fishing-intent' as const, skillCheckId: skillCheckId! })
+  }
+  if (input.action === 'resolve-snag-conversion') {
+    exact(input, [
+      'schemaVersion', 'operationId', 'action', 'requestId', 'expectedRevision', 'decision', 'gmNote',
+    ], 'itemGuidedCommand')
+    if (input.decision !== 'approve' && input.decision !== 'deny') {
+      fail('itemGuidedCommand.decision', 'must be approve or deny.')
+    }
+    return deepFreezeStrictJson({
+      schemaVersion: 1,
+      operationId: id,
+      action: 'resolve-snag-conversion',
+      requestId: requestId(input.requestId, 'itemGuidedCommand.requestId'),
+      expectedRevision: integer(input.expectedRevision, 'itemGuidedCommand.expectedRevision'),
+      decision: input.decision as 'approve' | 'deny',
+      gmNote: nullableText(input.gmNote, 'itemGuidedCommand.gmNote'),
+    })
+  }
   if (input.action === 'cancel') {
     exact(input, ['schemaVersion', 'operationId', 'action', 'requestId', 'expectedRevision'], 'itemGuidedCommand')
     return deepFreezeStrictJson({
@@ -275,17 +413,93 @@ const parseDecisionOption = (value: unknown, path: string): ItemGuidedDecisionOp
   return { optionId: text(input.optionId, `${path}.optionId`, 200), label: text(input.label, `${path}.label`), description: text(input.description, `${path}.description`) }
 }
 
-const parseRequestProjection = (value: unknown, path: string): ItemGuidedRequestProjectionV1 => {
+const parseRequestResolution = (value: unknown, path: string): ItemGuidedRequestResolutionV1 | null => {
+  if (value === null) return null
   const input = record(value, path)
+  if (input.kind === 'fishing') {
+    exact(input, ['kind', 'actorKind', 'actorSheetSlug', 'skillOptions', 'hookOptions', 'maximumHookLevel', 'allowNoHook'], path)
+    if (typeof input.actorKind !== 'string' || !OWNER_KIND.has(input.actorKind as EquipmentOwnerKind)) {
+      fail(`${path}.actorKind`, 'must be trainer or pokemon.')
+    }
+    const actorSheetSlug = slug(input.actorSheetSlug, `${path}.actorSheetSlug`)
+    if (!Array.isArray(input.skillOptions) || input.skillOptions.length < 1 || input.skillOptions.length > SKILL_CHECK_SKILL_IDS.length) {
+      fail(`${path}.skillOptions`, 'must contain bounded canonical Skill choices.')
+    }
+    const skillOptions = (input.skillOptions as unknown[]).map((entry, index) => {
+      const optionPath = `${path}.skillOptions[${index}]`
+      const option = record(entry, optionPath)
+      exact(option, ['skillId', 'label'], optionPath)
+      if (!SKILL_CHECK_SKILL_IDS.includes(option.skillId as TrainerSkillKey)) fail(`${optionPath}.skillId`, 'must be canonical.')
+      return { skillId: option.skillId as TrainerSkillKey, label: text(option.label, `${optionPath}.label`, 80) }
+    })
+    if (new Set(skillOptions.map(option => option.skillId)).size !== skillOptions.length) {
+      fail(`${path}.skillOptions`, 'must contain unique Skill identities.')
+    }
+    if (!Array.isArray(input.hookOptions) || input.hookOptions.length > 1_200) {
+      fail(`${path}.hookOptions`, 'must contain at most 1200 canonical hook choices.')
+    }
+    const hookOptions = (input.hookOptions as unknown[]).map((entry, index) => {
+      const optionPath = `${path}.hookOptions[${index}]`
+      const option = record(entry, optionPath)
+      exact(option, ['speciesId', 'label'], optionPath)
+      return {
+        speciesId: text(option.speciesId, `${optionPath}.speciesId`, 200),
+        label: text(option.label, `${optionPath}.label`, 200),
+      }
+    })
+    if (new Set(hookOptions.map(option => option.speciesId)).size !== hookOptions.length) {
+      fail(`${path}.hookOptions`, 'must contain unique canonical species identities.')
+    }
+    if ((input.maximumHookLevel !== 10 && input.maximumHookLevel !== 100) || input.allowNoHook !== true) {
+      fail(path, 'contains unsupported fishing bounds.')
+    }
+    return {
+      kind: 'fishing', actorKind: input.actorKind as EquipmentOwnerKind, actorSheetSlug,
+      skillOptions, hookOptions, maximumHookLevel: input.maximumHookLevel as 10 | 100, allowNoHook: true,
+    }
+  }
+  if (input.kind === 'snag-conversion') {
+    exact(input, ['kind', 'decisions'], path)
+    if (!Array.isArray(input.decisions) || input.decisions.length !== 2) {
+      fail(`${path}.decisions`, 'must contain approve and deny exactly once.')
+    }
+    const decisions = (input.decisions as unknown[]).map((entry, index) => {
+      const decisionPath = `${path}.decisions[${index}]`
+      const decision = record(entry, decisionPath)
+      exact(decision, ['decision', 'label', 'description'], decisionPath)
+      if (decision.decision !== 'approve' && decision.decision !== 'deny') fail(`${decisionPath}.decision`, 'must be approve or deny.')
+      return {
+        decision: decision.decision as 'approve' | 'deny',
+        label: text(decision.label, `${decisionPath}.label`, 200),
+        description: text(decision.description, `${decisionPath}.description`, 500),
+      }
+    })
+    if (new Set(decisions.map(decision => decision.decision)).size !== 2) {
+      fail(`${path}.decisions`, 'must contain approve and deny exactly once.')
+    }
+    return { kind: 'snag-conversion', decisions }
+  }
+  return fail(`${path}.kind`, 'is unsupported.')
+}
+
+const parseRequestProjection = (value: unknown, path: string): ItemGuidedRequestProjectionV1 => {
+  const parsed = record(value, path)
+  const input: UnknownRecord = {
+    ...parsed,
+    resolution: Object.hasOwn(parsed, 'resolution') ? parsed.resolution : null,
+  }
   exact(input, [
     'schemaVersion', 'requestId', 'revision', 'status', 'requestKind', 'canonicalItemId',
     'itemLabel', 'actorLabel', 'targetLabel', 'targetKindLabel', 'timingLabel', 'prompt',
-    'canonicalFacts', 'choices', 'settlementFacts', 'reservationLabel', 'boundaryLabel',
+    'canonicalFacts', 'choices', 'resolution', 'settlementFacts', 'reservationLabel', 'boundaryLabel',
     'canCancel', 'acceptedSummary',
   ], path)
   if (input.schemaVersion !== 1 || typeof input.status !== 'string' || !STATUS.has(input.status as ItemGuidedRequestStatus)
     || typeof input.requestKind !== 'string' || !REQUEST_KIND.has(input.requestKind as ItemGuidedRequestKind)
-    || (input.targetKindLabel !== 'Pokémon' && input.targetKindLabel !== 'Trainer')) fail(path, 'contains unsupported request projection values.')
+    || (input.targetKindLabel !== 'Pokémon' && input.targetKindLabel !== 'Trainer'
+      && input.targetKindLabel !== 'Water' && input.targetKindLabel !== 'Poké Ball')) {
+    fail(path, 'contains unsupported request projection values.')
+  }
   if (!Array.isArray(input.choices) || input.choices.length > 16) fail(`${path}.choices`, 'must contain at most 16 choices.')
   const choices = (input.choices as unknown[]).map((entry, index) => parseDecisionOption(entry, `${path}.choices[${index}]`))
   if (new Set(choices.map(choice => choice.optionId)).size !== choices.length) fail(`${path}.choices`, 'must contain unique options.')
@@ -299,11 +513,12 @@ const parseRequestProjection = (value: unknown, path: string): ItemGuidedRequest
     itemLabel: text(input.itemLabel, `${path}.itemLabel`),
     actorLabel: text(input.actorLabel, `${path}.actorLabel`),
     targetLabel: text(input.targetLabel, `${path}.targetLabel`),
-    targetKindLabel: input.targetKindLabel as 'Pokémon' | 'Trainer',
+    targetKindLabel: input.targetKindLabel as 'Pokémon' | 'Trainer' | 'Water' | 'Poké Ball',
     timingLabel: text(input.timingLabel, `${path}.timingLabel`),
     prompt: text(input.prompt, `${path}.prompt`, 1_000),
     canonicalFacts: strings(input.canonicalFacts, `${path}.canonicalFacts`),
     choices,
+    resolution: parseRequestResolution(input.resolution, `${path}.resolution`),
     settlementFacts: strings(input.settlementFacts, `${path}.settlementFacts`),
     reservationLabel: nullableText(input.reservationLabel, `${path}.reservationLabel`),
     boundaryLabel: text(input.boundaryLabel, `${path}.boundaryLabel`, 1_000),

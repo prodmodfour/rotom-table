@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "proofId": "deferred-closure-zero-item-actions-v1",
+  "ticket": "P11-044",
+  "status": "proved-zero-deferred-item-actions",
+  "runtimeProseParsing": false,
+  "authorityBindings": [
+    {
+      "path": "data/deferred-closure/item-action-matrix.v1.json",
+      "sha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83"
+    },
+    {
+      "path": "data/complete-play-loop/equipment-grants.v1.json",
+      "sha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52"
+    },
+    {
+      "path": "data/complete-play-loop/equipment-contributions.v1.json",
+      "sha256": "14e6018e63750bed27c8a8299f3e33b13370d1c9b7e0403990acc9c990e50dcf"
+    },
+    {
+      "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "sha256": "04121681eb574af8cde8d89e4898f0d32390e6aee788f0b6a2f20a64d39710b4"
+    },
+    {
+      "path": "data/deferred-closure/item-action-recovery-certification.v1.json",
+      "sha256": "41feeed87ccac0593c5de75712d352ec1dee715196928ec152b286d40e3f71fb"
+    },
+    {
+      "path": "data/deferred-closure/closure-inventory.v1.json",
+      "sha256": "828539128eb4f801f21f0995c0b70da1bb86c85dea34e5d133f71300222bde09"
+    },
+    {
+      "path": "data/deferred-closure/completion-rubric.v1.json",
+      "sha256": "9aa0fe172ff32a79f86e4bbc2af6486cde1ee51d8a9483e87f941c4659b7f16a"
+    },
+    {
+      "path": "scripts/check_deferred_closure.py",
+      "sha256": "ff386dd1c9cd8e08adbc4379d6c738c616beb21ccb8d5833963ff1e132077090"
+    }
+  ],
+  "forbiddenStates": [
+    "absent",
+    "blocked",
+    "deferred",
+    "definition-missing",
+    "prose-inferred",
+    "reference-only-deferral",
+    "silently-absent",
+    "visible-with-reason"
+  ],
+  "actions": [
+    {
+      "surfaceId": "item-action.light-shield.ready",
+      "actionId": "equipment.light-shield.ready",
+      "grantId": "equipment.light-shield.ready",
+      "canonicalItemId": "Light Shield",
+      "executorStatus": "native",
+      "finalState": "native",
+      "contributionState": "native",
+      "cohortState": "native",
+      "inventoryState": "native",
+      "recoveryStatus": "certified"
+    },
+    {
+      "surfaceId": "item-action.heavy-shield.ready",
+      "actionId": "equipment.heavy-shield.ready",
+      "grantId": "equipment.heavy-shield.ready",
+      "canonicalItemId": "Heavy Shield",
+      "executorStatus": "native",
+      "finalState": "native",
+      "contributionState": "native",
+      "cohortState": "native",
+      "inventoryState": "native",
+      "recoveryStatus": "certified"
+    },
+    {
+      "surfaceId": "item-action.shock-collar.activate",
+      "actionId": "equipment.shock-collar.activate",
+      "grantId": "equipment.shock-collar.activate",
+      "canonicalItemId": "Shock Collar",
+      "executorStatus": "native",
+      "finalState": "native",
+      "contributionState": "native",
+      "cohortState": "native",
+      "inventoryState": "native",
+      "recoveryStatus": "certified"
+    },
+    {
+      "surfaceId": "item-action.glue-cannon.attack",
+      "actionId": "equipment.glue-cannon.attack",
+      "grantId": "equipment.glue-cannon.attack",
+      "canonicalItemId": "Glue Cannon",
+      "executorStatus": "native",
+      "finalState": "native",
+      "contributionState": "native",
+      "cohortState": "native",
+      "inventoryState": "native",
+      "recoveryStatus": "certified"
+    },
+    {
+      "surfaceId": "item-action.hand-net.attack",
+      "actionId": "equipment.hand-net.attack",
+      "grantId": "equipment.hand-net.attack",
+      "canonicalItemId": "Hand Net",
+      "executorStatus": "native",
+      "finalState": "native",
+      "contributionState": "native",
+      "cohortState": "native",
+      "inventoryState": "native",
+      "recoveryStatus": "certified"
+    },
+    {
+      "surfaceId": "item-action.weighted-nets.throw",
+      "actionId": "equipment.weighted-nets.throw",
+      "grantId": "equipment.weighted-nets.throw",
+      "canonicalItemId": "Weighted Nets",
+      "executorStatus": "native",
+      "finalState": "native",
+      "contributionState": "native",
+      "cohortState": "native",
+      "inventoryState": "native",
+      "recoveryStatus": "certified"
+    },
+    {
+      "surfaceId": "item-action.weighted-nets.pull",
+      "actionId": "equipment.weighted-nets.pull",
+      "grantId": "equipment.weighted-nets.pull",
+      "canonicalItemId": "Weighted Nets",
+      "executorStatus": "native",
+      "finalState": "native",
+      "contributionState": "native",
+      "cohortState": "native",
+      "inventoryState": "native",
+      "recoveryStatus": "certified"
+    },
+    {
+      "surfaceId": "item-action.old-rod.fish",
+      "actionId": "equipment.fishing.old-rod",
+      "grantId": "equipment.old-rod.fish",
+      "canonicalItemId": "Old Rod",
+      "executorStatus": "native",
+      "finalState": "guided",
+      "contributionState": "guided",
+      "cohortState": "guided",
+      "inventoryState": "guided",
+      "recoveryStatus": "certified"
+    },
+    {
+      "surfaceId": "item-action.good-rod.fish",
+      "actionId": "equipment.fishing.good-rod",
+      "grantId": "equipment.good-rod.fish",
+      "canonicalItemId": "Good Rod",
+      "executorStatus": "native",
+      "finalState": "guided",
+      "contributionState": "guided",
+      "cohortState": "guided",
+      "inventoryState": "guided",
+      "recoveryStatus": "certified"
+    },
+    {
+      "surfaceId": "item-action.super-rod.fish",
+      "actionId": "equipment.fishing.super-rod",
+      "grantId": "equipment.super-rod.fish",
+      "canonicalItemId": "Super Rod",
+      "executorStatus": "native",
+      "finalState": "guided",
+      "contributionState": "guided",
+      "cohortState": "guided",
+      "inventoryState": "guided",
+      "recoveryStatus": "certified"
+    },
+    {
+      "surfaceId": "item-action.snag-machine.convert",
+      "actionId": "equipment.snag-machine.convert",
+      "grantId": "equipment.snag-machine.convert",
+      "canonicalItemId": "Snag Machine",
+      "executorStatus": "native",
+      "finalState": "guided",
+      "contributionState": "guided",
+      "cohortState": "guided",
+      "inventoryState": "guided",
+      "recoveryStatus": "certified"
+    }
+  ],
+  "acceptance": {
+    "actionCount": 11,
+    "nativeCount": 7,
+    "guidedCount": 4,
+    "deferredCount": 0,
+    "contradictionCount": 0,
+    "missingCount": 0,
+    "staleTicketCount": 0,
+    "unresolvedRequirementCount": 0,
+    "uncoveredRecoveryCount": 0,
+    "runtimeProseRows": 0
+  }
+}

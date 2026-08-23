@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import guidedContractJson from '../../data/complete-play-loop/guided-item-adjudications.v1.json'
 import type { AuthRole } from '#shared/auth'
 import { stableJsonStringify } from '#shared/automation/stableJson'
@@ -14,6 +14,8 @@ import {
   parseItemGuidedAdjudicationCommand,
   type DeclareItemGuidedReBreatherCommandV1,
   type ResolveItemGuidedRequestCommandV1,
+  type ResolveItemGuidedFishingCommandV1,
+  type ResolveItemGuidedSnagCommandV1,
   type CancelItemGuidedRequestCommandV1,
   type ItemGuidedAdjudicationCommandV1,
   type ItemGuidedReBreatherOfferV1,
@@ -26,8 +28,20 @@ import type { SheetKind } from '#shared/sheets'
 import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import { parseSheetEquipmentStateForOwner } from '#shared/itemAutomation/equipment'
 import type { StrictJsonObject } from '#shared/automation/strictJson'
+import {
+  addSnagBallConversion,
+  parseSnagMachineState,
+  snagLargeMachineUsesOnCampaignDay,
+} from '#shared/itemAutomation/snagMachine'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import type { PokedexRecord } from '~/types/pokemon'
+import type { TabletopMap } from '~/types/map'
+import pokedexJson from '~~/data/reference/pokedex.json'
+import { placementToSpawned } from '~/utils/placement'
+import { gridFootprintCells } from '~/utils/gridGeometry'
+import { mapMovementTerrainTagsForVoxel } from '~/utils/mapMovementTerrain'
+import { ptuGridVectorDistance } from '~/utils/ptuGridDistance'
 import { toPersistableSheetPayload } from '~/utils/sheetMutations'
 import {
   buildItemGuidedReBreatherOffers,
@@ -61,10 +75,18 @@ import {
   type StoredItemGuidedRequestRecord,
   type StoredItemGuidedItemOperationAuthorityV1,
   type StoredItemGuidedReBreatherAuthorityV1,
+  type StoredItemGuidedFishingAuthorityV1,
+  type StoredItemGuidedSnagAuthorityV1,
 } from '../storage/itemGuidedRequestRepository'
 import { createSqliteItemOperationRepository, type ItemOperationRepository } from '../storage/itemOperationRepository'
 import { createSqliteRealtimeEventRepository } from '../storage/realtimeEventRepository'
 import { createSqliteSheetRepository, type PersistedSheet, type SheetRepository } from '../storage/sheetRepository'
+import { createSqliteSkillCheckRepository, type SkillCheckRepository } from '../storage/skillCheckRepository'
+import { createSqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import {
+  resolveLargeSnagMachineInventorySource,
+  resolveSnagBallInventoryChoice,
+} from '../domain/itemAutomation/snagMachine'
 import { recoverItemOperationUseCase } from './recoverItemOperation'
 import { resumeItemOperationUseCase } from './resumeItemOperation'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
@@ -80,6 +102,12 @@ interface GuidedContract {
   }
 }
 const guidedContract = guidedContractJson as GuidedContract
+const canonicalPokedexBySpecies = new Map(
+  (pokedexJson as PokedexRecord[]).map(record => [record.species, record] as const),
+)
+if (canonicalPokedexBySpecies.size !== (pokedexJson as PokedexRecord[]).length) {
+  throw new Error('Canonical Pokédex contains duplicate fishing hook identities.')
+}
 
 export class ItemGuidedAdjudicationUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -113,7 +141,9 @@ export interface ItemGuidedAdjudicationDependencies {
   readonly requestRepository?: ItemGuidedRequestRepository
   readonly itemOperationRepository?: ItemOperationRepository
   readonly sheetRepository?: SheetRepository<Record<string, unknown>>
+  readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug'> & { readonly database?: RotomDatabase }
   readonly campaignClockRepository?: CampaignClockRepository
+  readonly skillCheckRepository?: SkillCheckRepository
   readonly now?: () => number
   readonly requestId?: () => string
   readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
@@ -125,7 +155,9 @@ interface Runtime {
   readonly requests: ItemGuidedRequestRepository
   readonly itemOperations: ItemOperationRepository
   readonly sheets: SheetRepository<Record<string, unknown>>
+  readonly maps: Pick<MapRepository<TabletopMap>, 'getBySlug'>
   readonly clock: CampaignClockRepository
+  readonly skillChecks: SkillCheckRepository
   readonly now: () => number
 }
 
@@ -137,11 +169,15 @@ const runtimeFor = (dependencies: ItemGuidedAdjudicationDependencies): Runtime =
   const database = dependencies.database
     ?? dependencies.requestRepository?.database
     ?? dependencies.sheetRepository?.database
+    ?? dependencies.mapRepository?.database
     ?? dependencies.campaignClockRepository?.database
+    ?? dependencies.skillCheckRepository?.database
     ?? getRotomDatabase()
   if (dependencies.requestRepository?.database !== undefined && dependencies.requestRepository.database !== database
     || dependencies.sheetRepository?.database !== undefined && dependencies.sheetRepository.database !== database
-    || dependencies.campaignClockRepository?.database !== undefined && dependencies.campaignClockRepository.database !== database) {
+    || dependencies.mapRepository?.database !== undefined && dependencies.mapRepository.database !== database
+    || dependencies.campaignClockRepository?.database !== undefined && dependencies.campaignClockRepository.database !== database
+    || dependencies.skillCheckRepository?.database !== undefined && dependencies.skillCheckRepository.database !== database) {
     throw new Error('Guided item repositories must share one coordinator database.')
   }
   return {
@@ -149,7 +185,9 @@ const runtimeFor = (dependencies: ItemGuidedAdjudicationDependencies): Runtime =
     requests: dependencies.requestRepository ?? createSqliteItemGuidedRequestRepository({ database, now: dependencies.now }),
     itemOperations: dependencies.itemOperationRepository ?? createSqliteItemOperationRepository({ database }),
     sheets: dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(database),
+    maps: dependencies.mapRepository ?? createSqliteMapRepository<TabletopMap>(database),
     clock: dependencies.campaignClockRepository ?? createSqliteCampaignClockRepository(database),
+    skillChecks: dependencies.skillCheckRepository ?? createSqliteSkillCheckRepository(database),
     now: dependencies.now ?? Date.now,
   }
 }
@@ -328,7 +366,10 @@ const declareReBreather = (input: ManageItemGuidedAdjudicationInput & {
   }
 }
 
-type ItemGuidedTerminalCommandV1 = ResolveItemGuidedRequestCommandV1 | CancelItemGuidedRequestCommandV1
+type ItemGuidedTerminalCommandV1 = ResolveItemGuidedRequestCommandV1
+  | ResolveItemGuidedFishingCommandV1
+  | ResolveItemGuidedSnagCommandV1
+  | CancelItemGuidedRequestCommandV1
 
 const exactTerminalReplay = (input: {
   readonly runtime: Runtime
@@ -547,6 +588,265 @@ const acceptReBreatherRequest = (input: {
   }
 }
 
+const acceptFishingRequest = (input: {
+  readonly request: StoredItemGuidedRequestRecord
+  readonly command: ResolveItemGuidedFishingCommandV1
+  readonly runtime: Runtime
+}): { readonly summary: string, readonly sheets: readonly PersistedSheet[] } => {
+  const rawAuthority = input.request.authority
+  if (input.request.requestKind !== 'fishing-adjudication'
+    || rawAuthority.sourceKind !== 'equipped-fishing-rod') {
+    fail(409, 'The guided request is not backed by fishing authority.')
+  }
+  const authority = rawAuthority as StoredItemGuidedFishingAuthorityV1
+  const clock = input.runtime.clock.get()
+  if (clock.campaignMinute < authority.readyAtCampaignMinute) {
+    fail(409, `Fishing resolves at campaign minute ${authority.readyAtCampaignMinute}.`)
+  }
+  if (input.command.skillCheckIntegrationId !== authority.skillCheckIntegrationId) {
+    fail(409, 'The fishing Skill Check integration reference is stale or unrelated.')
+  }
+  const skillCheckId = input.command.skillCheckId
+    ?? fail(409, 'Fishing settlement requires one accepted generic Skill Check.')
+  const linkedCheck = input.runtime.skillChecks.get(skillCheckId)
+    ?? fail(409, 'The selected fishing Skill Check is unavailable.')
+  const linkedDocument = linkedCheck.document
+  const linkedSubject = linkedDocument.subjects[0]
+  if (linkedDocument.state !== 'accepted'
+    || linkedDocument.mode !== 'single'
+    || linkedDocument.comparison.kind !== 'dc'
+    || linkedDocument.subjects.length !== 1
+    || linkedSubject?.kind !== authority.ownerKind
+    || linkedSubject.sheetSlug !== authority.ownerSlug
+    || linkedSubject.skillId !== input.command.skillId
+    || !linkedDocument.acceptedResults.some(result => result.subjectId === linkedSubject.subjectId)
+    || linkedCheck.createdAt < input.request.createdAt) {
+    fail(409, 'The selected fishing Skill Check is not an accepted single-subject check for this actor, Skill, and declaration.')
+  }
+  const reusedCheck = input.runtime.requests.listForActor(authority.ownerKind, authority.ownerSlug)
+    .some(candidate => candidate.requestId !== input.request.requestId
+      && candidate.status === 'accepted'
+      && candidate.terminalCommand?.action === 'resolve-fishing'
+      && candidate.terminalCommand.skillCheckId === skillCheckId)
+  if (reusedCheck) fail(409, 'The selected fishing Skill Check already settles another fishing declaration.')
+  const definition = equipmentGrantDefinitionFor(input.request.canonicalItemId)
+    ?? fail(409, 'The reviewed fishing rod definition is unavailable.')
+  const definitionSha256 = equipmentGrantDefinitionSha256(input.request.canonicalItemId)
+  if (definitionSha256 !== input.request.canonicalDefinitionSha256) {
+    fail(409, 'The reviewed fishing rod definition changed after declaration.')
+  }
+  const expectedAction = input.request.canonicalItemId === 'Old Rod' ? 'equipment.fishing.old-rod'
+    : input.request.canonicalItemId === 'Good Rod' ? 'equipment.fishing.good-rod'
+      : input.request.canonicalItemId === 'Super Rod' ? 'equipment.fishing.super-rod' : null
+  const currentDefinition = definition
+  if (!expectedAction || authority.actionId !== expectedAction
+    || !currentDefinition.grants.some(grant => grant.kind === 'action'
+      && grant.actionId === expectedAction && grant.executionStatus === 'native')) {
+    fail(409, 'The reviewed fishing action identity changed after declaration.')
+  }
+  const storedSheet = sheetSnapshot(input.runtime, authority.ownerKind, authority.ownerSlug)
+  const sheet = storedSheet.sheet as unknown as CharacterSheet | TrainerSheet
+  if (!sheet.equipmentState) fail(409, 'The exact fishing rod is no longer equipped.')
+  const equipment = parseSheetEquipmentStateForOwner(sheet.equipmentState, {
+    kind: authority.ownerKind,
+    slug: authority.ownerSlug,
+  })
+  const instance = equipment.instances.find(candidate => candidate.instanceId === authority.instanceId)
+  const handSlots = new Set(equipment.slots
+    .filter(slot => slot.instanceId === authority.instanceId)
+    .map(slot => slot.slotId))
+  if (!instance || instance.revision !== authority.instanceRevision
+    || instance.canonicalItemId !== input.request.canonicalItemId
+    || instance.activity.status !== 'active'
+    || !handSlots.has('mainHand') || !handSlots.has('offHand')) {
+    fail(409, 'The exact active two-handed fishing rod is no longer in current custody.')
+  }
+  const map = input.runtime.maps.getBySlug(authority.mapSlug)
+    ?? fail(409, 'The fishing declaration map is no longer available.')
+  const placement = map.placements.find(candidate => candidate.id === authority.actorPlacementId)
+    ?? fail(409, 'The fishing actor is no longer present on the declaration map.')
+  if (placement.sheetKind !== authority.ownerKind || placement.sheetSlug !== authority.ownerSlug) {
+    fail(409, 'The fishing actor no longer matches declaration authority.')
+  }
+  const water = map.voxels.filter(voxel => (
+    voxel.x === authority.waterCell.x
+    && voxel.y === authority.waterCell.y
+    && voxel.z === authority.waterCell.z
+    && mapMovementTerrainTagsForVoxel(voxel).has('water')
+  ))
+  if (water.length !== 1) fail(409, 'The declared fishing water cell is no longer authoritative water.')
+  const token = placementToSpawned(placement, {
+    pokemon: placement.sheetKind === 'pokemon'
+      ? new Map([[placement.sheetSlug, sheet as CharacterSheet]]) : new Map(),
+    trainer: placement.sheetKind === 'trainer'
+      ? new Map([[placement.sheetSlug, sheet as TrainerSheet]]) : new Map(),
+  }, map)
+  const adjacent = token && gridFootprintCells(placement.position, token).some(origin => (
+    ptuGridVectorDistance({
+      x: authority.waterCell.x - origin.x,
+      y: authority.waterCell.y - origin.y,
+      z: authority.waterCell.z - origin.z,
+    }) === 1
+  ))
+  if (!adjacent) fail(409, 'The fishing actor is no longer adjacent to the declared water cell.')
+
+  if (input.command.hookSpeciesId !== null) {
+    const species = canonicalPokedexBySpecies.get(input.command.hookSpeciesId)
+      ?? fail(409, 'The selected hook species is not a canonical Pokédex identity.')
+    if (input.command.hookLevel === null) fail(409, 'A hooked Pokémon requires a bounded Level.')
+    const hookLevel = input.command.hookLevel as number
+    if (input.request.canonicalItemId === 'Old Rod'
+      && (hookLevel > 10
+        || species.evolution_stage !== 1
+        || species.size?.toLocaleLowerCase('en-US') !== 'small')) {
+      fail(409, 'Old Rod hooks must be Small, unevolved Pokémon at Level 10 or lower.')
+    }
+    if (input.request.canonicalItemId === 'Good Rod' && species.evolution_stage !== 1) {
+      fail(409, 'Good Rod hooks must be unevolved Pokémon.')
+    }
+  }
+  return {
+    summary: input.command.hookSpeciesId === null
+      ? `${input.request.canonicalItemId} fishing attempt resolved with no hook.`
+      : `${input.request.canonicalItemId} fishing attempt resolved with one bounded hook outcome.`,
+    sheets: [],
+  }
+}
+
+const acceptSnagConversionRequest = (input: {
+  readonly request: StoredItemGuidedRequestRecord
+  readonly command: ResolveItemGuidedSnagCommandV1
+  readonly runtime: Runtime
+  readonly dependencies: ItemGuidedAdjudicationDependencies
+  readonly clientId?: string
+  readonly events: PersistedRealtimeEvent[]
+}): { readonly summary: string, readonly sheets: readonly PersistedSheet[] } => {
+  const rawAuthority = input.request.authority
+  if (input.request.requestKind !== 'snag-conversion-adjudication'
+    || rawAuthority.sourceKind !== 'snag-machine-conversion') {
+    fail(409, 'The guided request is not backed by Snag Machine conversion authority.')
+  }
+  const authority = rawAuthority as StoredItemGuidedSnagAuthorityV1
+  if (input.command.decision === 'deny') {
+    return { summary: 'Snag Ball conversion denied; the reserved Poké Ball remains unchanged.', sheets: [] }
+  }
+  const definition = equipmentGrantDefinitionFor('Snag Machine')
+    ?? fail(409, 'The reviewed Snag Machine definition is unavailable.')
+  if (equipmentGrantDefinitionSha256('Snag Machine') !== input.request.canonicalDefinitionSha256
+    || !definition.grants.some(grant => grant.kind === 'action'
+      && grant.actionId === 'equipment.snag-machine.convert' && grant.executionStatus === 'native')) {
+    fail(409, 'The reviewed Snag Machine conversion definition changed after declaration.')
+  }
+  const stored = sheetSnapshot(input.runtime, 'trainer', authority.trainerSlug)
+  if (stored.revision !== authority.sheetRevision) {
+    fail(409, 'The Snag Machine Trainer sheet changed after declaration. Cancel and declare again.')
+  }
+  const trainer = stored.sheet as unknown as TrainerSheet
+  const map = input.runtime.maps.getBySlug(authority.mapSlug)
+    ?? fail(409, 'The Snag Machine declaration map is unavailable.')
+  const placement = map.placements.find(candidate => candidate.id === authority.actorPlacementId)
+  if (!placement || placement.sheetKind !== 'trainer' || placement.sheetSlug !== authority.trainerSlug) {
+    fail(409, 'The Snag Machine actor is no longer present with exact declaration authority.')
+  }
+  const clock = input.runtime.clock.get()
+  if (Math.floor(clock.campaignMinute / 1_440) !== authority.campaignDayIndex) {
+    fail(409, 'The Snag Machine declaration crossed a campaign-day boundary. Cancel and declare again.')
+  }
+  const ball = resolveSnagBallInventoryChoice({
+    sheet: trainer,
+    sourceInstanceId: authority.ballSourceInstanceId,
+  })
+  if (!ball || ball.option.name !== authority.ballCanonicalItemId
+    || ball.option.quantity !== authority.ballQuantityAtDeclaration) {
+    fail(409, 'The exact reserved Poké Ball row changed after declaration.')
+  }
+  const state = parseSnagMachineState(trainer.serverPrivate?.snagMachine)
+  if (authority.variant === 'portable') {
+    if (map.initiative?.round !== authority.declarationRound) {
+      fail(409, 'The Portable Snag Machine decision did not settle in its declaration round.')
+    }
+    if (!trainer.equipmentState || authority.equipmentRevision === null) {
+      fail(409, 'Portable Snag Machine equipment authority is missing.')
+    }
+    const equipment = parseSheetEquipmentStateForOwner(trainer.equipmentState, {
+      kind: 'trainer', slug: trainer.slug,
+    })
+    const instance = equipment.instances.find(candidate => candidate.instanceId === authority.machineSourceInstanceId)
+    const accessory = equipment.slots.find(slot => slot.slotId === 'accessory')
+    if (equipment.revision !== authority.equipmentRevision
+      || !instance || instance.revision !== authority.machineSourceRevision
+      || instance.canonicalItemId !== 'Snag Machine' || instance.activity.status !== 'active'
+      || accessory?.instanceId !== authority.machineSourceInstanceId
+      || state.conversions.some(conversion => conversion.variant === 'portable'
+        && conversion.machineSourceInstanceId === authority.machineSourceInstanceId)) {
+      fail(409, 'The exact active Portable Snag Machine custody changed after declaration.')
+    }
+  }
+  else {
+    if (!resolveLargeSnagMachineInventorySource({
+      sheet: trainer,
+      sourceInstanceId: authority.machineSourceInstanceId,
+    }) || authority.machineSourceRevision !== authority.sheetRevision) {
+      fail(409, 'The exact Large Snag Machine inventory custody changed after declaration.')
+    }
+    if (snagLargeMachineUsesOnCampaignDay({
+      state,
+      machineSourceInstanceId: authority.machineSourceInstanceId,
+      campaignDayIndex: authority.campaignDayIndex,
+    }) >= 5) fail(409, 'This exact Large Snag Machine already converted five balls this campaign day.')
+  }
+  const id = (label: string): string => createHash('sha256')
+    .update(`${label}\u0000${input.request.requestId}\u0000${input.command.operationId}`)
+    .digest('hex').slice(0, 32)
+  const conversionId = `snag-conversion:v1:${id('conversion')}`
+  const nextState = addSnagBallConversion({
+    state,
+    conversion: {
+      conversionId,
+      variant: authority.variant,
+      machineSourceInstanceId: authority.machineSourceInstanceId,
+      ballSourceInstanceId: authority.ballSourceInstanceId,
+      ballCanonicalItemId: authority.ballCanonicalItemId,
+      campaignDayIndex: authority.campaignDayIndex,
+      declarationRound: authority.declarationRound,
+      readyRound: authority.variant === 'portable' ? authority.declarationRound! + 1 : null,
+      expiresAfterRound: authority.variant === 'portable' ? authority.declarationRound! + 1 : null,
+      approvedOperationId: input.command.operationId,
+      gmLegalityNote: input.command.gmNote,
+    },
+    historyId: `snag-history:v1:${id('converted')}`,
+  })
+  const timestamp = input.runtime.now()
+  const nextSheet = toPersistableSheetPayload({
+    ...trainer,
+    serverPrivate: {
+      ...(trainer.serverPrivate ?? {}),
+      snagMachine: nextState,
+    },
+    updatedAt: timestamp,
+  })
+  if (input.runtime.sheets.applyLivePlayUpdate({
+    kind: 'trainer',
+    slug: authority.trainerSlug,
+    expectedRevision: stored.revision,
+    nextSheet,
+    sourceOperationId: input.command.operationId,
+  }) === 'stale') fail(409, 'The Trainer sheet changed during Snag Machine acceptance.')
+  input.dependencies.failAfterWrite?.('equipment-sheet')
+  const accepted = sheetSnapshot(input.runtime, 'trainer', authority.trainerSlug)
+  input.events.push(...createSqliteRealtimeEventRepository({ database: input.runtime.database }).appendMany(
+    setupSheetSaveRealtimeAppendInputs({
+      kind: 'trainer', slug: accepted.slug, sheet: accepted.sheet, clientId: input.clientId,
+    }),
+  ))
+  return {
+    summary: authority.variant === 'portable'
+      ? 'Portable Snag Ball conversion approved; active for exactly the next encounter round.'
+      : 'Large Snag Machine conversion approved permanently for one Poké Ball.',
+    sheets: [accepted],
+  }
+}
+
 const cancelRequest = (input: {
   readonly request: StoredItemGuidedRequestRecord
   readonly command: CancelItemGuidedRequestCommandV1
@@ -595,10 +895,29 @@ const settleRequest = (input: ManageItemGuidedAdjudicationInput & {
   if (request.revision !== input.command.expectedRevision || request.status !== 'pending') {
     fail(409, 'The guided item request changed. Refresh before retrying.')
   }
-  if (input.command.action === 'resolve' && input.role !== 'gm') fail(403, 'GM authorization is required to accept a guided item request.')
+  const accepting = input.command.action === 'resolve'
+    || input.command.action === 'resolve-fishing'
+    || input.command.action === 'resolve-snag-conversion'
+  if (accepting && input.role !== 'gm') fail(403, 'GM authorization is required to accept a guided item request.')
   const availableOptions = projectItemGuidedRequest({ record: request, role: 'gm' }).choices.map(choice => choice.optionId)
   if (input.command.action === 'resolve' && !availableOptions.includes(input.command.optionId)) {
     fail(409, 'The selected guided outcome is not currently authorized.')
+  }
+  if (input.command.action === 'resolve-fishing' && request.requestKind !== 'fishing-adjudication') {
+    fail(409, 'Fishing resolution can settle only an exact fishing request.')
+  }
+  if (input.command.action !== 'resolve-fishing' && request.requestKind === 'fishing-adjudication'
+    && input.command.action !== 'cancel') {
+    fail(409, 'Fishing requests require the bounded fishing resolution command.')
+  }
+  if (input.command.action === 'resolve-snag-conversion'
+    && request.requestKind !== 'snag-conversion-adjudication') {
+    fail(409, 'Snag Machine resolution can settle only an exact conversion request.')
+  }
+  if (input.command.action !== 'resolve-snag-conversion'
+    && request.requestKind === 'snag-conversion-adjudication'
+    && input.command.action !== 'cancel') {
+    fail(409, 'Snag Machine requests require the bounded conversion resolution command.')
   }
   const events: PersistedRealtimeEvent[] = []
   let sheets: readonly PersistedSheet[] = []
@@ -609,23 +928,36 @@ const settleRequest = (input: ManageItemGuidedAdjudicationInput & {
       role: input.role, playerProfile: input.playerProfile, clientId: input.clientId, events,
     })
     else {
-      const accepted = request.requestKind === 'loyalty-consequence'
-        || request.requestKind === 'campaign-tool-adjudication'
-        ? acceptInventoryRequest({ request, command: input.command, runtime, dependencies, clientId: input.clientId, events })
-        : acceptReBreatherRequest({ request, command: input.command, runtime, dependencies, clientId: input.clientId, events })
+      const accepted = input.command.action === 'resolve-fishing'
+        ? acceptFishingRequest({ request, command: input.command, runtime })
+        : input.command.action === 'resolve-snag-conversion'
+          ? acceptSnagConversionRequest({
+              request, command: input.command, runtime, dependencies,
+              clientId: input.clientId, events,
+            })
+          : request.requestKind === 'loyalty-consequence'
+          || request.requestKind === 'campaign-tool-adjudication'
+          ? acceptInventoryRequest({ request, command: input.command, runtime, dependencies, clientId: input.clientId, events })
+          : acceptReBreatherRequest({ request, command: input.command, runtime, dependencies, clientId: input.clientId, events })
       summary = accepted.summary
       sheets = accepted.sheets
     }
     const settlement = runtime.requests.settle({
       requestId: request.requestId,
       expectedRevision: request.revision,
-      status: input.command.action === 'resolve' ? 'accepted' : 'cancelled',
+      status: accepting ? 'accepted' : 'cancelled',
       terminalPrincipalKey: principal,
       command: input.command,
-      outcomeOptionId: input.command.action === 'resolve' ? input.command.optionId : null,
+      outcomeOptionId: input.command.action === 'resolve'
+        ? input.command.optionId
+        : input.command.action === 'resolve-fishing'
+          ? input.command.hookSpeciesId === null ? 'fishing-no-hook' : 'fishing-hook-recorded'
+          : input.command.action === 'resolve-snag-conversion'
+            ? `snag-conversion-${input.command.decision}`
+            : null,
       result: {
         schemaVersion: 1,
-        status: input.command.action === 'resolve' ? 'accepted' : 'cancelled',
+        status: accepting ? 'accepted' : 'cancelled',
         acceptedSummary: summary,
       },
       updatedAt: runtime.now(),
@@ -666,6 +998,23 @@ export const manageItemGuidedAdjudicationUseCase = (
   })()
   if (command.action === 'declare-re-breather') {
     return declareReBreather({ ...input, command }, dependencies, runtime)
+  }
+  if (command.action === 'resolve-fishing-intent') {
+    const request = runtime.requests.get(command.requestId)
+      ?? fail(404, 'The guided fishing request was not found.')
+    if (input.role !== 'gm') fail(403, 'GM authorization is required to resolve a fishing request.')
+    if (request.requestKind !== 'fishing-adjudication') {
+      fail(409, 'Fishing resolution can bind only an exact fishing request.')
+    }
+    const authority = request.authority.sourceKind === 'equipped-fishing-rod'
+      ? request.authority
+      : fail(409, 'Fishing resolution can bind only an exact fishing request.')
+    const bound = parseItemGuidedAdjudicationCommand({
+      ...command,
+      action: 'resolve-fishing',
+      skillCheckIntegrationId: authority.skillCheckIntegrationId,
+    }) as ResolveItemGuidedFishingCommandV1
+    return settleRequest({ ...input, command: bound }, dependencies, runtime)
   }
   return settleRequest({ ...input, command }, dependencies, runtime)
 }

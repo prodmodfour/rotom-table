@@ -19,6 +19,7 @@ from typing import Any, Iterable
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "data/reference/items.json"
 POLICY_PATH = ROOT / "scripts/reviewed-data/item-catalog-cohort-policy.v1.json"
+EQUIPMENT_GRANTS_PATH = ROOT / "data/complete-play-loop/equipment-grants.v1.json"
 OUTPUT_PATH = ROOT / "data/complete-play-loop/item-catalog-cohorts.v1.json"
 
 
@@ -95,6 +96,20 @@ def main() -> None:
     providers = policy.get("providers")
     if not isinstance(providers, dict):
         raise SystemExit("Item cohort policy providers must be an object")
+    equipment_grants = load(EQUIPMENT_GRANTS_PATH)
+    if equipment_grants.get("schemaVersion") != 1 or equipment_grants.get("ticket") != "P8-047":
+        raise SystemExit("Equipment action final states require the reviewed grant registry")
+    action_states_by_item: dict[str, list[dict[str, str]]] = {}
+    for definition in equipment_grants.get("definitions", []):
+        states = []
+        for grant in definition.get("grants", []):
+            if grant.get("kind") != "action":
+                continue
+            final_state = grant.get("finalState")
+            if final_state not in {"native", "guided"}:
+                raise SystemExit(f"Equipment action {grant.get('actionId')} has no final cohort state")
+            states.append({"actionId": grant["actionId"], "finalState": final_state})
+        action_states_by_item[definition["canonicalItemId"]] = states
 
     canonical_order = list(catalog)
     canonical_ids = set(canonical_order)
@@ -210,6 +225,7 @@ def main() -> None:
                 "canonicalId": canonical_id,
                 "recordSha256": sha256_value(row),
                 "effectSha256": sha256_text("\n".join(row.get("effects", []))),
+                "actionFinalStates": action_states_by_item.get(canonical_id, []),
             })
         source_registry = provider.get("sourceRegistry")
         if not isinstance(source_registry, str):
@@ -218,6 +234,7 @@ def main() -> None:
             "data/reference/items.json",
             "scripts/reviewed-data/item-catalog-cohort-policy.v1.json",
             source_registry,
+            *(["data/complete-play-loop/equipment-grants.v1.json"] if provider_id == "equipment" else []),
         ]))
         cohort = {
             "cohortId": cohort_id,
@@ -250,6 +267,7 @@ def main() -> None:
         "status": "reviewed",
         "catalogSha256": sha256_bytes(raw_catalog),
         "policySha256": sha256_bytes(POLICY_PATH.read_bytes()),
+        "equipmentGrantsSha256": sha256_bytes(EQUIPMENT_GRANTS_PATH.read_bytes()),
         "runtimeProseParsing": False,
         "cohortMemberLimit": limit,
         "cohortCount": len(cohorts),

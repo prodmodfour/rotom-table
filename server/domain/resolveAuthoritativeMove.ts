@@ -48,7 +48,9 @@ import {
 import {
   moveAutomationTargetsInRange,
   parseExplicitMultiTargetMoveRangeMeters,
+  parseMoveMinimumRangeMeters,
   parseSingleTargetMoveRangeMeters,
+  tokenGridDistance,
 } from '~/utils/moveAutomationRange'
 import { passDestinationLogLine } from '~/utils/moveAutomationPass'
 import { ptuGridVectorDistance } from '~/utils/ptuGridDistance'
@@ -1366,8 +1368,11 @@ const resolveLegalSingleTarget = (options: {
     tokens: options.context.queries.tokens.all(),
     rangeMeters,
   })
+  const minimumRangeMeters = parseMoveMinimumRangeMeters(options.script.range)
+  const belowMinimumRange = minimumRangeMeters > 0
+    && tokenGridDistance(actor, resolvedTarget.token) < minimumRangeMeters
   if (
-    !legalTargets.some(candidate => candidate.id === resolvedTarget.token.id)
+    (!legalTargets.some(candidate => candidate.id === resolvedTarget.token.id) || belowMinimumRange)
     && targetability.exception?.ignoresRange !== true
   ) {
     fail(
@@ -1677,9 +1682,14 @@ const resolveLegalTargetCountMove = (options: {
     rangeMeters,
   })
   const legalTargetIds = new Set(legalTargets.map(target => target.id))
+  const minimumRangeMeters = parseMoveMinimumRangeMeters(options.script.range)
   for (const targetId of submittedTargetIds) {
+    const target = options.context.queries.tokens.get(targetId)
+    const belowMinimumRange = minimumRangeMeters > 0
+      && target !== null
+      && tokenGridDistance(actor, target) < minimumRangeMeters
     if (
-      !legalTargetIds.has(targetId)
+      (!legalTargetIds.has(targetId) || belowMinimumRange)
       && targetabilityById.get(targetId)?.exception?.ignoresRange !== true
     ) {
       fail(

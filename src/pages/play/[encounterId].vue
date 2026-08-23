@@ -79,11 +79,13 @@ import { battlefieldWorkshopPath, encounterLibraryPath } from '#shared/encounter
 import { routeParamAsString } from '~/utils/routeParams'
 import { ENCOUNTER_WORKSPACE_API_PATHS, ITEM_API_PATHS, MAP_API_PATHS } from '~/utils/apiRoutes'
 import {
+  equipmentActionCommandFromAuthorizedOffer,
   itemCommandFromAuthorizedOffer,
   itemFormChangeCommandFromAuthorizedOffer,
   parseAuthorizedItemActionOffer,
 } from '#shared/itemAutomation/projection'
 import { parseItemFormChangePublicResult } from '#shared/itemAutomation/formChanges'
+import { parseEquipmentActionPublicResult } from '#shared/itemAutomation/equipmentActions'
 import type { ItemOperationRecoveryCommandV1 } from '#shared/itemAutomation/recovery'
 import { getClientId } from '~/utils/clientId'
 
@@ -138,7 +140,11 @@ const decisionBusy = ref(false)
 const decisionError = ref<string | null>(null)
 const pendingBusyInteractionId = ref<string | null>(null)
 const actionInspectorOffer = ref<EncounterActionOffer | null>(null)
+const actionInspectorHeading = ref<HTMLElement | null>(null)
+const actionNoticeRef = ref<HTMLElement | null>(null)
 const actionDeclarationNotice = ref<string | null>(null)
+const actionDeclarationGuided = ref(false)
+let actionInspectorOrigin: HTMLElement | null = null
 const uncertainCommands = ref<readonly EncounterUncertainCommandView[]>([])
 const tacticalStartupMs = ref<number | null>(null)
 const directorOpen = ref(false)
@@ -315,6 +321,11 @@ watch(workspace, (nextWorkspace) => {
 }, { immediate: true })
 
 watch(() => route.fullPath, () => { void applyRouteDeepLink() })
+watch(actionDeclarationNotice, async (notice) => {
+  if (!notice) return
+  await nextTick()
+  actionNoticeRef.value?.focus({ preventScroll: true })
+})
 watch(decision, (nextDecision, previousDecision) => {
   if (nextDecision && !previousDecision) {
     decisionPresentedAt.value = metricNow()
@@ -376,6 +387,7 @@ const chooseActionOffer = (offer: EncounterActionOffer, origin: string | null): 
 const chooseAction = (offer: EncounterActionOffer): void => {
   decisionError.value = null
   actionDeclarationNotice.value = null
+  actionDeclarationGuided.value = false
   activeDeepLink.value = null
   chooseActionOffer(offer, `action-${offer.offerId}`)
   void router.replace(queryForDeepLink({}))
@@ -383,12 +395,21 @@ const chooseAction = (offer: EncounterActionOffer): void => {
 const noteActionFilter = (remainingCount: number): void => {
   void uxMetrics.record('action-filtered', remainingCount)
 }
-const inspectAction = (offer: EncounterActionOffer): void => {
+const inspectAction = async (offer: EncounterActionOffer): Promise<void> => {
+  actionInspectorOrigin = document.activeElement instanceof HTMLElement ? document.activeElement : null
   actionInspectorOffer.value = offer
   selection.value = reduceEncounterWorkspaceSelection(selection.value, {
     type: 'participant-inspected',
     participantId: offer.actor.participantId,
   }, visibleParticipantIds.value)
+  await nextTick()
+  actionInspectorHeading.value?.focus({ preventScroll: true })
+}
+const closeActionInspector = async (): Promise<void> => {
+  actionInspectorOffer.value = null
+  await nextTick()
+  if (actionInspectorOrigin?.isConnected) actionInspectorOrigin.focus({ preventScroll: true })
+  actionInspectorOrigin = null
 }
 const chooseTeamOperation = (offerId: string): void => {
   const offer = workspace.value?.offers.find(value => value.offerId === offerId)
@@ -479,6 +500,7 @@ const restoreActionFocus = async (): Promise<void> => {
 }
 const dismissActionDeclarationNotice = async (): Promise<void> => {
   actionDeclarationNotice.value = null
+  actionDeclarationGuided.value = false
   await restoreActionFocus()
 }
 const dismissDecision = async (): Promise<void> => {
@@ -563,6 +585,7 @@ const submitPendingDecision = async (
         ...(loader.selectedProfileId.value ? { profileId: loader.selectedProfileId.value } : {}),
       })
       if (execution.result.status !== 'accepted') throw new Error('The item decision did not reach an accepted result.')
+      actionDeclarationGuided.value = false
       actionDeclarationNotice.value = 'The item decision was applied authoritatively.'
       await loader.refresh()
       void uxMetrics.record('resolution-settled', 1, { terminalStatus: 'accepted' })
@@ -641,7 +664,27 @@ const submitActionDecision = async (
     machine.value = transitionEncounterWorkspace(machine.value, { type: 'intent-submitted' })
     let itemPending = false
     if (authorizedOffer.source.sourceKind === 'item') {
-      if (authorizedOffer.itemFormChangeCommand) {
+      if (authorizedOffer.equipmentActionCommand) {
+        const command = equipmentActionCommandFromAuthorizedOffer({
+          offer: authorizedOffer,
+          operationId: intent.intentId,
+        })
+        const execution = await postJson<{ readonly result: unknown }>(ITEM_API_PATHS.equipmentActions, {
+          command,
+          clientId: getClientId(),
+          ...(loader.selectedProfileId.value ? { profileId: loader.selectedProfileId.value } : {}),
+        })
+        const result = parseEquipmentActionPublicResult(execution.result)
+        if (result.status !== 'accepted' && result.status !== 'guided-pending') {
+          throw new Error('The equipment action was not accepted.')
+        }
+        itemPending = result.status === 'guided-pending'
+        actionDeclarationGuided.value = itemPending
+        actionDeclarationNotice.value = itemPending
+          ? `${offer.presentation.label} is waiting for an authorised decision.`
+          : `${offer.presentation.label} was applied authoritatively.`
+      }
+      else if (authorizedOffer.itemFormChangeCommand) {
         const command = itemFormChangeCommandFromAuthorizedOffer({
           offer: authorizedOffer,
           operationId: intent.intentId,
@@ -653,6 +696,7 @@ const submitActionDecision = async (
         })
         const result = parseItemFormChangePublicResult(execution.result)
         if (result.status !== 'accepted') throw new Error('The item form change was not accepted.')
+        actionDeclarationGuided.value = false
         actionDeclarationNotice.value = result.message
       }
       else {
@@ -670,6 +714,7 @@ const submitActionDecision = async (
           throw new Error('The item operation was not accepted.')
         }
         itemPending = execution.result.status === 'pending'
+        actionDeclarationGuided.value = false
         actionDeclarationNotice.value = itemPending
           ? `${offer.presentation.label} is waiting for an authorised decision.`
           : `${offer.presentation.label} was applied authoritatively.`
@@ -677,6 +722,7 @@ const submitActionDecision = async (
       await loader.refresh()
     }
     else {
+      actionDeclarationGuided.value = false
       actionDeclarationNotice.value = `${offer.presentation.label} was authorized at revision ${offer.mapRevision}. Final source-owned targeting and mechanics remain available in the Battlefield Workshop.`
     }
     machine.value = transitionEncounterWorkspace(machine.value, { type: 'presentation-settled' })
@@ -767,6 +813,7 @@ const abandonItemDecision = async (interaction: EncounterPendingInteractionAutho
       profileId: loader.selectedProfileId.value,
       clientId: getClientId(),
     })
+    actionDeclarationGuided.value = false
     actionDeclarationNotice.value = response.result.message
     await loader.refresh()
     void uxMetrics.record('system-recovery-terminal', 1, { terminalStatus: 'cancelled' })
@@ -782,7 +829,9 @@ const abandonItemDecision = async (interaction: EncounterPendingInteractionAutho
 const correctItemOperation = async (operationId: string): Promise<void> => {
   if (!workspace.value?.viewer.canUseDirector || decisionBusy.value || loader.commandsBlocked.value) return
   const accepted = workspace.value.accepted.find(value => value.operationId === operationId
-    && value.source.sourceKind === 'item' && value.correction === null)
+    && value.source.sourceKind === 'item'
+    && value.presentationId.startsWith('accepted-item:')
+    && value.correction === null)
   if (!accepted) {
     decisionError.value = 'This item receipt is no longer available for correction.'
     return
@@ -805,6 +854,7 @@ const correctItemOperation = async (operationId: string): Promise<void> => {
       command,
       clientId: getClientId(),
     })
+    actionDeclarationGuided.value = false
     actionDeclarationNotice.value = response.result.message
     await loader.refresh()
     void uxMetrics.record('system-recovery-terminal', 1, { terminalStatus: 'accepted' })
@@ -1294,13 +1344,27 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
               @dismiss="dismissDecision"
               @open-tactical="openDecisionTacticalFocus"
             />
-            <section v-if="actionInspectorOffer" class="encounter-action-inspector rt-surface" data-rt-elevation="2">
+            <EncounterSubjectSkillChecks
+              v-else
+              :profile-id="loader.selectedProfileId.value"
+              :gm="workspace.viewer.audience === 'gm'"
+              :commands-blocked="loader.commandsBlocked.value"
+            />
+            <section
+              v-if="actionInspectorOffer"
+              class="encounter-action-inspector rt-surface"
+              data-rt-elevation="2"
+              role="dialog"
+              aria-modal="false"
+              aria-labelledby="encounter-action-inspector-title"
+              @keydown.esc.stop.prevent="closeActionInspector"
+            >
               <header>
                 <div>
                   <p class="encounter-battle-stage__eyebrow">Action details</p>
-                  <h2>{{ actionInspectorOffer.presentation.label }}</h2>
+                  <h2 id="encounter-action-inspector-title" ref="actionInspectorHeading" tabindex="-1">{{ actionInspectorOffer.presentation.label }}</h2>
                 </div>
-                <button type="button" aria-label="Close action details" @click="actionInspectorOffer = null">×</button>
+                <button type="button" aria-label="Close action details" @click="closeActionInspector">×</button>
               </header>
               <p>{{ actionInspectorOffer.presentation.description || 'No additional public description is projected.' }}</p>
               <p><strong>Source:</strong> {{ actionInspectorOffer.source.displayName }} · <strong>Timing:</strong> {{ actionInspectorOffer.timing.label }}</p>
@@ -1321,10 +1385,18 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
                 </ul>
               </section>
             </section>
-            <div v-if="actionDeclarationNotice" class="encounter-action-declaration-notice" role="status">
+            <div
+              v-if="actionDeclarationNotice"
+              ref="actionNoticeRef"
+              class="encounter-action-declaration-notice"
+              role="status"
+              tabindex="-1"
+            >
               <p>{{ actionDeclarationNotice }}</p>
+              <p v-if="actionDeclarationGuided && !isGm">Track or cancel the reconnectable request from the declaring owner’s sheet.</p>
               <div>
-                <NuxtLink :to="battlefieldWorkshopPath(workspace.source.mapSlug)">Continue in Battlefield Workshop</NuxtLink>
+                <NuxtLink v-if="actionDeclarationGuided && isGm" to="/campaign#guided-workshop-title">Open guided adjudication</NuxtLink>
+                <NuxtLink v-else-if="!actionDeclarationGuided" :to="battlefieldWorkshopPath(workspace.source.mapSlug)">Continue in Battlefield Workshop</NuxtLink>
                 <button type="button" aria-label="Dismiss action declaration receipt" @click="dismissActionDeclarationNotice">Dismiss</button>
               </div>
             </div>
@@ -1368,12 +1440,14 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
             :primary-interaction-id="primaryPriority?.interactionId ?? null"
             :active-interaction-id="activeDeepLink?.interactionId ?? null"
             :busy-interaction-id="pendingBusyInteractionId"
+            :guided-item-href="workspace.viewer.canUseDirector ? '/campaign#guided-workshop-title' : null"
             @open="openPendingDecision"
             @pass="passPendingById"
             @cancel="cancelPendingById"
             @recover="recoverPending"
           />
           <p v-if="decisionError && !decision" class="encounter-decision-error" role="alert">{{ decisionError }}</p>
+          <EncounterSkillCheckPublicFeed v-if="!workspace.viewer.canUseDirector" />
           <EncounterEventFeed
             :accepted="workspace.accepted"
             :active-presentation-id="activeDeepLink?.presentationId ?? null"
@@ -1389,6 +1463,7 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
         <EncounterActionDock
           id="encounter-action-dock"
           :offers="workspace.offers"
+          :affordances="workspace.affordances"
           :actor-participant-id="actionActor?.participantId ?? null"
           :actor-label="actionActor?.displayName || 'Select an actor'"
           :selected-offer-id="machine.actionOfferId"
@@ -1547,6 +1622,8 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
 .encounter-action-inspector__options span,
 .encounter-action-inspector__options small { color: var(--rt-text-muted); }
 .encounter-action-declaration-notice { border-color: var(--rt-info); }
+.encounter-action-inspector h2:focus-visible,
+.encounter-action-declaration-notice:focus-visible { outline: 3px solid var(--rt-focus); outline-offset: 3px; }
 .encounter-action-declaration-notice > p { margin-top: 0; }
 .encounter-action-declaration-notice > div { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .encounter-action-declaration-notice button { min-height: var(--rt-touch-minimum); border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); background: var(--rt-surface-2); color: var(--rt-text-strong); font: inherit; font-weight: 700; }
