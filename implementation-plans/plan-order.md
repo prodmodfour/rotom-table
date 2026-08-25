@@ -15,6 +15,7 @@ The plans are implemented in the following dependency order. Each plan's own led
 | 9 | [Guided Character Creation and Campaign Onboarding](done/CHARACTER_CREATION_AND_CAMPAIGN_ONBOARDING_PLAN.md) | `DONE` | Complete and archived: guided policy/slot/draft/review/atomic-commit onboarding, existing-character intake, encounter handoff, accessibility/concurrency/performance acceptance, and golden zero-to-first-encounter journeys across all 100 tickets. |
 | 10 | [Pokémon Contests](done/POKEMON_CONTESTS_PLAN.md) | `DONE` | Complete and archived: reviewed Contest authority, structured preparation, native Standard/Supercontest/Festival/Rotation runtime, role-safe liveplay, atomic ribbon/XP/prize settlement, recovery, documentation, and alpha acceptance across all 100 tickets. |
 | 11 | [Deferred Mechanics Closure](done/DEFERRED_MECHANICS_CLOSURE_PLAN.md) | `DONE` | Complete and archived: all 92 tickets and 29/29 closure rows accepted with zero core mechanics debt; integrated golden journeys, storage/recovery, accessibility, performance, privacy, documentation, drift, full repository, and traced desktop/mobile liveplay gates pass. |
+| 12 | [GM Campaign Toolkit](GM_CAMPAIGN_TOOLKIT_PLAN.md) | `NOT_STARTED` | Registered 2026-08-25 from the converted scope draft with a 96-ticket ledger, activation decision record, and machine-readable footprint. Execution is held by an explicit owner start gate (`BLOCKED_BY: OWNER_START_GATE`): registration does not authorize implementation, and no ticket may begin until the owner records a start in the ledger. |
 
 ## 1.0 release definition
 
@@ -31,5 +32,4 @@ Prospective rows record agreed scope and ordering intent only. Linked scope draf
 
 | Order | Prospective plan | Scope commitment | Depends on |
 | ---: | --- | --- | --- |
-| 12 | [GM Campaign Toolkit](drafts/GM_CAMPAIGN_TOOLKIT_PLAN.md) — scope draft registered for review; inactive | Modernize the legacy JSON encounter-table tooling into liveplay authority and complete Running the Game coverage: wild encounter generation, NPC Trainer generation, and session preparation as ordinary campaign work. | Plan 11 complete and archived; generated NPCs need its closed Move, weapon, item, Skill Check, and Contest catalogs. |
 | 13 | 1.0 Release Readiness | Versioning policy, campaign-database upgrade and migration guarantees, backup/restore certification at the release boundary, release notes and tags, repository presentation, license and fan-content notice review, a full-catalog golden regression, and the `PRODUCT_PHASE` transition out of `ALPHA`. This plan mints 1.0. | Plans 10–12 complete. |

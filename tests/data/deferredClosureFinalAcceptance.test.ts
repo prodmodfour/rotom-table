@@ -142,13 +142,20 @@ describe('Deferred Mechanics Closure final acceptance (P11-092)', () => {
 
     expect(planOrder).toContain('| 11 | [Deferred Mechanics Closure](done/DEFERRED_MECHANICS_CLOSURE_PLAN.md) | `DONE` |')
     expect(planOrder).not.toContain('[Deferred Mechanics Closure](DEFERRED_MECHANICS_CLOSURE_PLAN.md)')
-    expect(authoritativeTable).not.toMatch(/^\| 12 \|/m)
+    // Accepted successor state (2026-08-25, chain migrations
+    // deferred-closure:plan-12-activation-*-register:v1): Plan 12 is registered
+    // `NOT_STARTED` behind an explicit owner start gate. The P11-092 boundary
+    // this test protects — Plan 11 archived, nothing silently activated — holds.
+    expect(authoritativeTable).toContain('| 12 | [GM Campaign Toolkit](GM_CAMPAIGN_TOOLKIT_PLAN.md) | `NOT_STARTED` |')
+    expect(authoritativeTable).toContain('OWNER_START_GATE')
     expect(agents).toContain('Plans 1–11 are `DONE` and archived')
-    expect(agents).toContain('No numbered implementation plan is active')
+    expect(agents).toContain('registered `NOT_STARTED`')
+    expect(agents).toContain('OWNER_START_GATE')
     expect(agents).toContain('implementation-plans/done/DEFERRED_MECHANICS_CLOSURE_PLAN.md')
   })
 
-  it('registers the prospective GM Campaign Toolkit scope without activating Plan 12', () => {
+  it('carries the GM Campaign Toolkit scope into a registered owner-gated Plan 12 without implementation', () => {
+    // The recorded P11-092 acceptance facts are immutable history.
     expect(acceptance.nextProspectivePlan).toEqual({
       order: 12,
       name: 'GM Campaign Toolkit',
@@ -160,13 +167,20 @@ describe('Deferred Mechanics Closure final acceptance (P11-092)', () => {
       dependsOnPlan11: true,
     })
 
+    // Accepted successor state (2026-08-25, chain migration
+    // deferred-closure:plan-12-activation-scope-draft-convert:v1): the reviewed
+    // draft converted into the registered numbered ledger. The boundary this
+    // test protects is unchanged: no implementation has occurred.
     const draft = read(acceptance.nextProspectivePlan.draftPath)
     const planOrder = read('implementation-plans/plan-order.md')
-    expect(draft).toContain('`DRAFT_STATUS: REGISTERED_FOR_REVIEW`')
-    expect(draft).toContain('`EXECUTION_AUTHORITY: NONE`')
-    expect(draft).not.toMatch(/\bP12-\d{3}\b/)
-    expect(draft).toContain('## Activation questions')
-    expect(planOrder).toContain('[GM Campaign Toolkit](drafts/GM_CAMPAIGN_TOOLKIT_PLAN.md) — scope draft registered for review; inactive')
+    const ledger = read('implementation-plans/GM_CAMPAIGN_TOOLKIT_PLAN.md')
+    expect(draft).toContain('`DRAFT_STATUS: CONVERTED`')
+    expect(draft).toContain('`AUTHORITATIVE_LEDGER: implementation-plans/GM_CAMPAIGN_TOOLKIT_PLAN.md`')
+    expect(ledger).toContain('`PLAN_STATUS: NOT_STARTED`')
+    expect(ledger).toContain('`BLOCKED_BY: OWNER_START_GATE`')
+    expect(ledger.match(/^- \[ \] \*\*P12-\d{3}\b/gm)).toHaveLength(96)
+    expect(ledger).not.toMatch(/^- \[x\] \*\*P12-\d{3}\b/gm)
+    expect(planOrder).toContain('| 12 | [GM Campaign Toolkit](GM_CAMPAIGN_TOOLKIT_PLAN.md) | `NOT_STARTED` |')
   })
 
   it('accepts the alpha only when every final assertion holds', () => {

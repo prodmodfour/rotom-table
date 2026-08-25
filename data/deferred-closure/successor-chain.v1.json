@@ -4222,7 +4222,11 @@
       "surface": "shared/contests/document.ts",
       "beforeSha256": "e6c32ac54bb46d34d961c26b8cf2ce5e3eb1b65a0f0a660e49b6df65ee6cdf0b",
       "afterSha256": "09a76d1bfed4cb4c634e60ef93c387bf093d86a0cb26c469d7d50621866b5ecf",
-      "changedStableRows": ["mirrored-recovery-receipts", "exact-pokemon-voltage-corrections", "ordered-battle-correction-replay"],
+      "changedStableRows": [
+        "mirrored-recovery-receipts",
+        "exact-pokemon-voltage-corrections",
+        "ordered-battle-correction-replay"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
       "sourceSha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd",
       "changePolicy": "additive-reviewed-cross-engine-recovery-reconciliation",
@@ -4234,7 +4238,10 @@
       "surface": "shared/encounterDocuments/model.ts",
       "beforeSha256": "89b97101d5afcc4d940095bd8c68e10a54dc0262947b5ab45876052150d53da9",
       "afterSha256": "0c61c6ffc1d8e0ff606ce4009003cd602d063b4cdc7d9a4f16ce9df8bfa55bd1",
-      "changedStableRows": ["mirrored-recovery-receipts", "latest-recovery-lifecycle-binding"],
+      "changedStableRows": [
+        "mirrored-recovery-receipts",
+        "latest-recovery-lifecycle-binding"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
       "sourceSha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd",
       "changePolicy": "additive-reviewed-encounter-local-recovery-evidence",
@@ -4246,7 +4253,11 @@
       "surface": "server/domain/contests/engine.ts",
       "beforeSha256": "2606bdab8a26ebf75eb98b51312cc62cdb3e4ffcc17931bf43a271cd26d87899",
       "afterSha256": "82a4d1d34b76d7f0067c015d6e7719082bbd6d70022baa071176e7f7f8ed48c5",
-      "changedStableRows": ["coordinated-pause-resume-cancel", "battle-bounded-corrections", "appeal-only-corrected-placement"],
+      "changedStableRows": [
+        "coordinated-pause-resume-cancel",
+        "battle-bounded-corrections",
+        "appeal-only-corrected-placement"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
       "sourceSha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd",
       "changePolicy": "reviewed-contest-local-recovery-plan",
@@ -4258,7 +4269,9 @@
       "surface": "shared/contests/operations.ts",
       "beforeSha256": "7ecb4ceb0a9e4a949627ca572dbc840b162da6d685e9361a04461ccf2cb45325",
       "afterSha256": "dc7f8de032988e4657426f463b369dce1d426d4de5abdf224d65f05a5023ff5a",
-      "changedStableRows": ["exact-battle-voltage-performer-target"],
+      "changedStableRows": [
+        "exact-battle-voltage-performer-target"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
       "sourceSha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd",
       "changePolicy": "additive-bounded-correction-target-authority",
@@ -4270,7 +4283,11 @@
       "surface": "shared/contests/architecture.ts",
       "beforeSha256": "028918e773f7d8090b4be6e99072bd81c4b0bdd5d6f6ead0c240af78fde70336",
       "afterSha256": "79708ff3a03b37cda5c7301a81e20f26d3051544c630b44032bd1abb4e0e0482",
-      "changedStableRows": ["set-paused", "apply-correction", "cancel-contest"],
+      "changedStableRows": [
+        "set-paused",
+        "apply-correction",
+        "cancel-contest"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
       "sourceSha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd",
       "changePolicy": "declare-both-document-transaction-boundary",
@@ -4282,7 +4299,9 @@
       "surface": "shared/contests/projections.ts",
       "beforeSha256": "75128e0cf32674d6f502d8e2fee3bb51e310a0cd7639d4099f2ad76ecfc0b4f4",
       "afterSha256": "1a9061b448102e1d449471270fefcee51b882ec224eb6b20e251fcfe0a6ce1b7",
-      "changedStableRows": ["diagnostic-only-recovery-receipts"],
+      "changedStableRows": [
+        "diagnostic-only-recovery-receipts"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
       "sourceSha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd",
       "changePolicy": "retain-public-owner-and-gm-recovery-privacy",
@@ -4294,7 +4313,11 @@
       "surface": "server/useCases/contests.ts",
       "beforeSha256": "def635b3f56f7f59907faafbba1b362bc22d00e69ed5c84ed961e446164e2970",
       "afterSha256": "ae81ae805ebfaf842c2f7126f232899c91b26e91c0f9f1846e3df173f2408fdc",
-      "changedStableRows": ["two-local-plans-one-transaction", "mirrored-receipt-reread", "second-write-rollback"],
+      "changedStableRows": [
+        "two-local-plans-one-transaction",
+        "mirrored-receipt-reread",
+        "second-write-rollback"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
       "sourceSha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd",
       "changePolicy": "atomic-cross-engine-recovery-coordination",
@@ -4306,7 +4329,10 @@
       "surface": "server/livePlay/sqliteCommandExecutor.ts",
       "beforeSha256": "b1589ed4bd91ada0a89f0964fdda6543b5c8124112f37b375989ff9a716ed686",
       "afterSha256": "670e6f8571dca98ce71d2c06dbf1f8dc5eb43fa640412c32ec9d314d64e8f16e",
-      "changedStableRows": ["linked-battle-pause-gate", "cancelled-encounter-end-exception"],
+      "changedStableRows": [
+        "linked-battle-pause-gate",
+        "cancelled-encounter-end-exception"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
       "sourceSha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd",
       "changePolicy": "server-owned-liveplay-interruption-gate",
@@ -4318,7 +4344,9 @@
       "surface": "docs/contests/battle-contest-runtime.md",
       "beforeSha256": "a332d053b5b02d8312e3bd780b0909a0270ddb4f92a46c57c7468b5be68e4cde",
       "afterSha256": "80f891d61368a705b0682ca4a907d8a7fbe2f950fe8bd052ebae3a489f074179",
-      "changedStableRows": ["interruption-restart-correction-cancellation"],
+      "changedStableRows": [
+        "interruption-restart-correction-cancellation"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
       "sourceSha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd",
       "changePolicy": "additive-certified-recovery-runtime-contract",
@@ -4330,7 +4358,12 @@
       "surface": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
       "beforeSha256": "4629af94019687c6d242450146b98dd2cc399313cbf7e94ef10cad3619650b70",
       "afterSha256": "10de49617feec8a17c7eef765848bc8650387acc74dbb9a204ec984b19e608e9",
-      "changedStableRows": ["pause-resume-restart", "liveplay-interruption", "bounded-corrections", "cancellation-and-rollback"],
+      "changedStableRows": [
+        "pause-resume-restart",
+        "liveplay-interruption",
+        "bounded-corrections",
+        "cancellation-and-rollback"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
       "sourceSha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd",
       "changePolicy": "extend-runtime-evidence-with-dual-engine-recovery",
@@ -4342,7 +4375,11 @@
       "surface": "data/reference/contests.json",
       "beforeSha256": "eba1cce2536912c7b9fd6cc8662949a950671505c7282364b6c776b6fe73d65c",
       "afterSha256": "d58fa7cf9ffda19f73af37a805faf4ff0ed79023bb411ecdb9bf295e89016972",
-      "changedStableRows": ["battle-settlement-policy", "all-declared-team-pokemon-experience", "combined-transaction-reconciliation"],
+      "changedStableRows": [
+        "battle-settlement-policy",
+        "all-declared-team-pokemon-experience",
+        "combined-transaction-reconciliation"
+      ],
       "sourcePath": "scripts/reviewed-data/deferred-closure-battle-contest-settlement.v1.json",
       "sourceSha256": "005788ae375051e3df5dbc8cfb879b810e7889cce780b06d78e29abf37144eb8",
       "changePolicy": "source-hash-bound-additive-battle-settlement-authority",
@@ -4354,7 +4391,11 @@
       "surface": "shared/contests/document.ts",
       "beforeSha256": "09a76d1bfed4cb4c634e60ef93c387bf093d86a0cb26c469d7d50621866b5ecf",
       "afterSha256": "1ad2180ff9e998c0e84d9c3e7befd19fbd586a69fd3645d63921cc2abb988a7e",
-      "changedStableRows": ["battle-coordination-preview", "battle-coordination-accepted", "six-pokemon-settlement-capacity"],
+      "changedStableRows": [
+        "battle-coordination-preview",
+        "battle-coordination-accepted",
+        "six-pokemon-settlement-capacity"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "additive-private-combined-settlement-evidence",
@@ -4366,7 +4407,9 @@
       "surface": "shared/contests/catalog.ts",
       "beforeSha256": "b8f42f698bc8da28f709071c01f054d7f29fb2672c0b7cb9c8456af89784442f",
       "afterSha256": "6aaa27dac74797283258664673ce88bc048ab7d8f57e1be9f44c895a9b1f085a",
-      "changedStableRows": ["battle-settlement-policy-runtime-gate"],
+      "changedStableRows": [
+        "battle-settlement-policy-runtime-gate"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "fail-closed-reviewed-settlement-policy",
@@ -4378,7 +4421,11 @@
       "surface": "server/domain/contests/engine.ts",
       "beforeSha256": "82a4d1d34b76d7f0067c015d6e7719082bbd6d70022baa071176e7f7f8ed48c5",
       "afterSha256": "82c2e9ed779fc171e5a66c4f35f800e570b27ecf569a76db8e2152b6d845ee16",
-      "changedStableRows": ["all-declared-team-pokemon-experience", "all-winning-team-pokemon-ribbons", "accepted-coordination-receipt"],
+      "changedStableRows": [
+        "all-declared-team-pokemon-experience",
+        "all-winning-team-pokemon-ribbons",
+        "accepted-coordination-receipt"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "reuse-canonical-contest-reward-planner-for-battle-rosters",
@@ -4390,7 +4437,12 @@
       "surface": "server/useCases/contests.ts",
       "beforeSha256": "ae81ae805ebfaf842c2f7126f232899c91b26e91c0f9f1846e3df173f2408fdc",
       "afterSha256": "0538919e9929896a11816f28e750b30399cf983a225e1127bac3d2f17a4c8782",
-      "changedStableRows": ["exact-encounter-preview-binding", "one-outer-transaction", "post-commit-dual-realtime-publication", "dual-journal-exact-retry"],
+      "changedStableRows": [
+        "exact-encounter-preview-binding",
+        "one-outer-transaction",
+        "post-commit-dual-realtime-publication",
+        "dual-journal-exact-retry"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "compose-existing-contest-and-encounter-settlement-authorities",
@@ -4402,7 +4454,9 @@
       "surface": "shared/contests/architecture.ts",
       "beforeSha256": "79708ff3a03b37cda5c7301a81e20f26d3051544c630b44032bd1abb4e0e0482",
       "afterSha256": "01a89ce3a66459d22ecdd35442554fc58bbace9a3c97cec413a355ad2d7f5d1f",
-      "changedStableRows": ["commit-settlement-combined-read-write-set"],
+      "changedStableRows": [
+        "commit-settlement-combined-read-write-set"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "declare-one-combined-sqlite-transaction",
@@ -4414,7 +4468,11 @@
       "surface": "shared/contests/projections.ts",
       "beforeSha256": "1a9061b448102e1d449471270fefcee51b882ec224eb6b20e251fcfe0a6ce1b7",
       "afterSha256": "feccb64bfc44816f7ce94eb08b867491323f3105f3d4a7c97eb187bf9a84203c",
-      "changedStableRows": ["safe-experience-and-prize-summary", "attention-count-only", "diagnostic-only-coordination-evidence"],
+      "changedStableRows": [
+        "safe-experience-and-prize-summary",
+        "attention-count-only",
+        "diagnostic-only-coordination-evidence"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "remove-private-sheet-operation-and-hash-authority-from-role-projections",
@@ -4426,7 +4484,10 @@
       "surface": "server/useCases/prepareFinishEncounter.ts",
       "beforeSha256": "b349ee26b5110e782f702a1042747cf23b1cf394dba5859fe556f1bc5ad28ff7",
       "afterSha256": "2db3f0a7cb6a0980f0dffc78c9fb6cff96ed25c45e3ea68ed83da3170ddec7ae",
-      "changedStableRows": ["battle-link-coordinator-capability", "source-bound-battle-stake-resolution"],
+      "changedStableRows": [
+        "battle-link-coordinator-capability",
+        "source-bound-battle-stake-resolution"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "forbid-independent-linked-battle-encounter-settlement",
@@ -4438,7 +4499,9 @@
       "surface": "scripts/migrate_pokemon_contests.py",
       "beforeSha256": "6b0c5b58d0a7c454cb53e848e5799112b0a669350633ef19d86c667c5960571a",
       "afterSha256": "408ae82d9f0ddaa5a5921e62c12b79ae2adc1d2266573d6ffd8b48e063f00c92",
-      "changedStableRows": ["reviewed-battle-settlement-policy-check"],
+      "changedStableRows": [
+        "reviewed-battle-settlement-policy-check"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "source-hash-bind-canonical-settlement-policy",
@@ -4450,7 +4513,11 @@
       "surface": "src/pages/contests/[contestId].vue",
       "beforeSha256": "4f1ace3c5dbf932a4ab7f44e56d7fe17b978d9f5b0e6c915067b7b854458789a",
       "afterSha256": "249d448d2fcb00d42cca761d763865d95df65a6fa674d73af5096e6a795fa120",
-      "changedStableRows": ["all-roster-experience-summary", "safe-prize-target-label", "attention-count-only"],
+      "changedStableRows": [
+        "all-roster-experience-summary",
+        "safe-prize-target-label",
+        "attention-count-only"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "consume-only-role-safe-settlement-summary",
@@ -4462,7 +4529,11 @@
       "surface": "docs/contests/battle-contest-runtime.md",
       "beforeSha256": "80f891d61368a705b0682ca4a907d8a7fbe2f950fe8bd052ebae3a489f074179",
       "afterSha256": "b1ea785a53af39f05aaba83575f9a72efe6890bbc5fd35d8992ff5004f699d93",
-      "changedStableRows": ["combined-battle-settlement", "reward-ownership", "rollback-and-retry"],
+      "changedStableRows": [
+        "combined-battle-settlement",
+        "reward-ownership",
+        "rollback-and-retry"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "additive-certified-settlement-runtime-contract",
@@ -4474,7 +4545,12 @@
       "surface": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
       "beforeSha256": "10de49617feec8a17c7eef765848bc8650387acc74dbb9a204ec984b19e608e9",
       "afterSha256": "e9adae6d3df573f8190287d8d1c13fbfeb2194a9fe6667bd4700dc47ec8e8b61",
-      "changedStableRows": ["combined-settlement-success", "safe-role-projections", "exact-retry", "injected-rollback-and-recovery"],
+      "changedStableRows": [
+        "combined-settlement-success",
+        "safe-role-projections",
+        "exact-retry",
+        "injected-rollback-and-recovery"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-settlement-certification.v1.json",
       "sourceSha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0",
       "changePolicy": "extend-runtime-evidence-with-atomic-battle-settlement",
@@ -4486,7 +4562,12 @@
       "surface": "src/pages/play/[encounterId].vue",
       "beforeSha256": "9531323f08d0e0108f02a59f4299490d41bf441d7d03f0c441118b2055a8bb9c",
       "afterSha256": "f858f23e58d0453e75eb7ed378f8833ddabc1b1ed7303f46e1c22ce6618ab504",
-      "changedStableRows": ["joined-contest-rail", "blocking-appeal-decision", "combined-command-gate", "compact-mobile-scoreboard"],
+      "changedStableRows": [
+        "joined-contest-rail",
+        "blocking-appeal-decision",
+        "combined-command-gate",
+        "compact-mobile-scoreboard"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "add-contextual-battle-contest-projection-without-replacing-encounter-shell",
@@ -4498,7 +4579,11 @@
       "surface": "server/livePlay/sqliteCommandExecutor.ts",
       "beforeSha256": "670e6f8571dca98ce71d2c06dbf1f8dc5eb43fa640412c32ec9d314d64e8f16e",
       "afterSha256": "15ddca96f5b7c0b4094b56e0c208df186a1c70c0cfa0d2085ca2f2b33ed25e94",
-      "changedStableRows": ["persisted-handoff-gate", "settling-stage-gate", "fail-closed-authority-read"],
+      "changedStableRows": [
+        "persisted-handoff-gate",
+        "settling-stage-gate",
+        "fail-closed-authority-read"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "block-new-encounter-planning-until-joined-contest-authority-converges",
@@ -4510,7 +4595,12 @@
       "surface": "docs/contests/battle-contest-runtime.md",
       "beforeSha256": "b1ea785a53af39f05aaba83575f9a72efe6890bbc5fd35d8992ff5004f699d93",
       "afterSha256": "0d0b6c5f67c3cd706def12809e725f7fcfdd8ce196bf1a967d0404ba3a561501",
-      "changedStableRows": ["joined-liveplay-cockpit", "role-safe-decision-policy", "command-gate-and-exact-retry", "responsive-accessibility"],
+      "changedStableRows": [
+        "joined-liveplay-cockpit",
+        "role-safe-decision-policy",
+        "command-gate-and-exact-retry",
+        "responsive-accessibility"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "additive-certified-joined-liveplay-runtime-contract",
@@ -4522,7 +4612,13 @@
       "surface": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
       "beforeSha256": "e9adae6d3df573f8190287d8d1c13fbfeb2194a9fe6667bd4700dc47ec8e8b61",
       "afterSha256": "27c871074298175b3c49f1e11f2622dc543dfc430294f635f802ed84aedd259a",
-      "changedStableRows": ["role-safe-liveplay-projections", "pending-command-block", "exact-allocation-retry", "settling-command-block", "projection-budget"],
+      "changedStableRows": [
+        "role-safe-liveplay-projections",
+        "pending-command-block",
+        "exact-allocation-retry",
+        "settling-command-block",
+        "projection-budget"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "extend-runtime-evidence-with-joined-liveplay-coordination",
@@ -4534,7 +4630,13 @@
       "surface": "tests/e2e/contest-battle-encounter-link.spec.ts",
       "beforeSha256": "5aae7049ad888882cbecdea9a048d1a665241c5fbeda060b1ed245b2888f7504",
       "afterSha256": "45e78682555971c1fa16e02c74d29edc0192aefb69e3693ae554f57ae9657dcf",
-      "changedStableRows": ["accepted-move-to-appeal", "gm-owner-public-lanes", "realtime-convergence", "320-and-390-reflow", "axe-and-pixel-evidence"],
+      "changedStableRows": [
+        "accepted-move-to-appeal",
+        "gm-owner-public-lanes",
+        "realtime-convergence",
+        "320-and-390-reflow",
+        "axe-and-pixel-evidence"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "extend-existing-link-journey-through-authoritative-joined-scoring",
@@ -4546,7 +4648,10 @@
       "surface": "data/contests/variant-matrix.v1.json",
       "beforeSha256": "cb3b7e81a0977e721a2e4121d66ba2f995ee589bc69024a05f05ec8f11ff8116",
       "afterSha256": "945ac945477f759c46dcb5ddbfeee83e53b4538e4f49d5a7c744c9a160faac1e",
-      "changedStableRows": ["canonical-contest-source-hash", "eighteen-deterministic-ordinary-replays"],
+      "changedStableRows": [
+        "canonical-contest-source-hash",
+        "eighteen-deterministic-ordinary-replays"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "regenerate-reviewed-deterministic-fixtures-from-current-canonical-authority",
@@ -4558,7 +4663,10 @@
       "surface": "data/contests/trainer-participant-variant-matrix.v1.json",
       "beforeSha256": "0ef37bbf63103423677a3c01a28e808d0b8ead0c544a22ac21e903fbd887a0bc",
       "afterSha256": "9ebcf9eed5932146605b122d52de30750440f0886dabad301ac95aa9e10a0818",
-      "changedStableRows": ["canonical-contest-source-hash", "twenty-four-deterministic-trainer-participant-replays"],
+      "changedStableRows": [
+        "canonical-contest-source-hash",
+        "twenty-four-deterministic-trainer-participant-replays"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "regenerate-reviewed-deterministic-fixtures-from-current-canonical-authority",
@@ -4570,7 +4678,10 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-ready-to-link.png",
       "beforeSha256": "bcf9bd2fd34241519e63b31122b723da8b077afbbd5f0308026c94c976d60ccb",
       "afterSha256": "106bd2b1fa97d577ad44200230d9e86b17696bb906651266b311c455d99dc3be",
-      "changedStableRows": ["profile-owned-team-fixture", "same-ready-to-link-authority"],
+      "changedStableRows": [
+        "profile-owned-team-fixture",
+        "same-ready-to-link-authority"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "accept-production-rerender-with-equivalent-link-state-and-owner-ready-fixture",
@@ -4582,7 +4693,10 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-linked.png",
       "beforeSha256": "a01f54326a831ae9c1c056ae58f2349b7aac426aeeb19673362d88dabc0441ed",
       "afterSha256": "839926188ec0e9749e5df81f29048f98e0227bb85a9b048718819ea6b19f0468",
-      "changedStableRows": ["profile-owned-team-fixture", "same-linked-opening-authority"],
+      "changedStableRows": [
+        "profile-owned-team-fixture",
+        "same-linked-opening-authority"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "accept-production-rerender-with-equivalent-linked-state-and-owner-ready-fixture",
@@ -4594,7 +4708,10 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-linked-320.png",
       "beforeSha256": "9a0491a40a4552ef36b203ffb11fe8518c842ba1e7003040b21321b581513195",
       "afterSha256": "c2e58d0ad7635908781e67d89692b0131ae715dafee18ef53c972b5f8522da14",
-      "changedStableRows": ["profile-owned-team-fixture", "same-320px-linked-opening-authority"],
+      "changedStableRows": [
+        "profile-owned-team-fixture",
+        "same-320px-linked-opening-authority"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "accept-production-rerender-with-equivalent-narrow-linked-state",
@@ -4606,7 +4723,9 @@
       "surface": "tests/data/deferredClosureBattleContestEncounterLink.test.ts",
       "beforeSha256": "bf73730bbb7af2227d6096ce37ac981471c954d607bc3c7873a5fa5a2929a0f7",
       "afterSha256": "31552f3e4c80911dcd2dd94389dac232c37f5d2d76083da566d4a9d27d68fa44",
-      "changedStableRows": ["visual-evidence-through-accepted-successor-head"],
+      "changedStableRows": [
+        "visual-evidence-through-accepted-successor-head"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
       "sourceSha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b",
       "changePolicy": "preserve-prior-certification-hashes-and-resolve-only-contiguous-accepted-artifact-successors",
@@ -4618,7 +4737,12 @@
       "surface": "docs/contests/battle-contest-runtime.md",
       "beforeSha256": "0d0b6c5f67c3cd706def12809e725f7fcfdd8ce196bf1a967d0404ba3a561501",
       "afterSha256": "b81982a6a99a9032352fff0a0c69d2fb58936f7dd5e6724d0650e53dc5c6e641",
-      "changedStableRows": ["four-scenario-fixture-cross-product", "production-authority-replay", "exact-drift-command", "terminal-ko-boundary"],
+      "changedStableRows": [
+        "four-scenario-fixture-cross-product",
+        "production-authority-replay",
+        "exact-drift-command",
+        "terminal-ko-boundary"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-fixtures-certification.v1.json",
       "sourceSha256": "ee2f66de8007056cfa675d4bd3856ea2bab4fc9fa61dfbc44af6cf8972fdbd70",
       "changePolicy": "additive-certified-deterministic-battle-fixture-contract",
@@ -4630,47 +4754,544 @@
       "surface": "server/useCases/battleContestLiveplay.ts",
       "beforeSha256": "af161eefb14a8cfdd379e715edad973e415c893bb42319076293c8b054d1d7be",
       "afterSha256": "ced838b0c2adb016d354c774c65d46844f963de4b0ab28a62e9ae0e95397886f",
-      "changedStableRows": ["provided-repository-database-check", "accepted-move-payload-narrowing", "non-null-authoritative-round-gate"],
+      "changedStableRows": [
+        "provided-repository-database-check",
+        "accepted-move-payload-narrowing",
+        "non-null-authoritative-round-gate"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-fixtures-certification.v1.json",
       "sourceSha256": "ee2f66de8007056cfa675d4bd3856ea2bab4fc9fa61dfbc44af6cf8972fdbd70",
       "changePolicy": "type-safe-fail-closed-correction-without-mechanics-change",
       "reviewStatus": "accepted"
     },
-    {"migrationId":"deferred-closure:battle-native-canonical-row:v1","ticket":"P11-080","surface":"data/reference/contests.json","beforeSha256":"d58fa7cf9ffda19f73af37a805faf4ff0ed79023bb411ecdb9bf295e89016972","afterSha256":"7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497","changedStableRows":["variants.battle.completionState"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"activate-only-after-p11-065-through-p11-080-certification","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-catalog-gate:v1","ticket":"P11-080","surface":"shared/contests/catalog.ts","beforeSha256":"6aaa27dac74797283258664673ce88bc048ab7d8f57e1be9f44c895a9b1f085a","afterSha256":"0ce9ffd7b11d90e42e499b8bdf0d353ef11fc49a9a2351eab93e74d36a3aebd2","changedStableRows":["native-battle-row-required","structured-setup-exception-removed","native-variant-predicate"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"replace-selective-setup-activation-with-final-native-gate","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-reviewed-migration:v1","ticket":"P11-080","surface":"scripts/migrate_pokemon_contests.py","beforeSha256":"408ae82d9f0ddaa5a5921e62c12b79ae2adc1d2266573d6ffd8b48e063f00c92","afterSha256":"19f1263814a6131d5d783ad44e7a36dd7eb682299ef8d8d41a5d4f5d50a9f6bc","changedStableRows":["activation-manifest-validation","exact-native-target","contiguous-successor-check"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"extend-reviewed-migration-with-exact-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-workshop-gate:v1","ticket":"P11-080","surface":"src/pages/contests/index.vue","beforeSha256":"3458440a51a10fefc73f0a33424c67e1477c62b3fa0454e7bd86995d6350b156","afterSha256":"0184d892e74c4cf71f8241a3a36540fa1de191cd0eda1d02d2f7a11e3d43e54a","changedStableRows":["native-variant-filter","battle-special-case-removed"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"select-battle-through-the-ordinary-native-workshop-gate","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-operator-contract:v1","ticket":"P11-080","surface":"docs/contests/battle-contest-runtime.md","beforeSha256":"b81982a6a99a9032352fff0a0c69d2fb58936f7dd5e6724d0650e53dc5c6e641","afterSha256":"a77bb995481a4f0b245cf97dbf2e8967505a8af6e1f55e4650e5a3f5e30888dd","changedStableRows":["native-status","final-certification","temporary-gate-retirement"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"complete-p11-065-through-p11-080-native-operator-contract","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-ordinary-fixture-regeneration:v1","ticket":"P11-080","surface":"data/contests/variant-matrix.v1.json","beforeSha256":"945ac945477f759c46dcb5ddbfeee83e53b4538e4f49d5a7c744c9a160faac1e","afterSha256":"6056132402aa24c187d680e93d3e89ed2224a30f8c6ef47dffc87f2235622070","changedStableRows":["native-canonical-contest-source-hash","eighteen-ordinary-replays"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"regenerate-reviewed-fixtures-after-completion-state-only-canonical-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-participant-fixture-regeneration:v1","ticket":"P11-080","surface":"data/contests/trainer-participant-variant-matrix.v1.json","beforeSha256":"9ebcf9eed5932146605b122d52de30750440f0886dabad301ac95aa9e10a0818","afterSha256":"a219f6aaa1701a00600cba806189c8812a465b255acd37adde59545a1c48a195","changedStableRows":["native-canonical-contest-source-hash","twenty-four-participant-replays"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"regenerate-reviewed-fixtures-after-completion-state-only-canonical-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-battle-fixture-regeneration:v1","ticket":"P11-080","surface":"data/contests/battle-contest-scenarios.v1.json","beforeSha256":"3435929d055116f4fa746eee223335be2fe0a18fc191981617febd8b5ab3877d","afterSha256":"7dcc5a9f508cc1899de11b681fdc919fb4791ee7c88ddd3d133b5692f122d1dd","changedStableRows":["native-canonical-contest-source-hash","four-battle-replays"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"regenerate-reviewed-battle-fixtures-after-native-activation","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-setup-workshop-evidence:v1","ticket":"P11-080","surface":"tests/components/contestBattleSetupWorkshop.test.ts","beforeSha256":"2cef390a28dfb371970d5d6412f434fbe0e60489a112c79c0cc4f7291ed4d7a3","afterSha256":"73f00c6cf09d1a314d062594254b82ad64b5d6f80ae01920457e19a36b652429","changedStableRows":["ordinary-native-filter","no-battle-special-case"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"preserve-setup-evidence-under-final-native-gate","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-accepted-move-appeals-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestAcceptedMoveAppeals.test.ts","beforeSha256":"f13e6a145e4b488c85de1b2f87a222a0b3f1131dab7c39d325f42b7123baa20d","afterSha256":"868129c5fb26da4aedbfb7bd3438184925095953d62f43c2db6272b872f2a8d5","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-effects-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestEffects.test.ts","beforeSha256":"80a76e5ffef77d3b1299b2715d6bcdc6ff26bdb3f10504de44271341c0e6bde3","afterSha256":"7e505cac7225062cac785c5fe2f2da735ae4eed617b183442e6d191449f3a55e","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-encounter-link-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestEncounterLink.test.ts","beforeSha256":"31552f3e4c80911dcd2dd94389dac232c37f5d2d76083da566d4a9d27d68fa44","afterSha256":"98c3800525a6c90a1274bb7f3fe15792cf6f51a4b1f28c7b013553ab1370d5df","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-end-conditions-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestEndConditions.test.ts","beforeSha256":"b9fa7bf26dd9d837133d0c779748781ea95a45403ebd11a3b474304208ed00b7","afterSha256":"d1c6b93af2bd419c6046575ab77889278f60d97b475eec79bcc6c2f01f54b7a8","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-fixtures-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestFixtures.test.ts","beforeSha256":"5a3a3b491c5471a1f1a89031e172ef087fbac0242c3fdd1ed53c6c10ba7e8feb","afterSha256":"90c4ccc8624b3f97226949bed507c7ce64a39ad5d743abcb104c42489a6f8c9f","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-introductions-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestIntroductions.test.ts","beforeSha256":"b14c4134f230be9164d5c6b78a0cc71056e83c32640dc97936bbf5787a2b22ff","afterSha256":"64602bad185a64c44029671933250a9f9dab117a9fd92bfffabf99c1a48d1521","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-liveplay-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestLiveplay.test.ts","beforeSha256":"28bcac513308d7e165126419e291409ede18966a465514b28a54dfb7e3b0a63b","afterSha256":"1a37b69433955f97eb8e4b980afb7c624f32ba9e6609ea6250c1a70d79e74f97","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-pokemon-voltage-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestPokemonVoltage.test.ts","beforeSha256":"8e4df0a7542bdcc0d3c20660432ca356dbd07b353300d322704739bdfc80dd29","afterSha256":"894f3b0a3f3468a9e9c9a91ffdb11481c8575dd23df73589f5935f2ba21a81e9","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-recovery-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestRecovery.test.ts","beforeSha256":"960ad7419c65f507256ece0fae54f9703ea69e1313c148b8a2b607d456d770e7","afterSha256":"39db7a546b20cae7c0445a2f59caa58cf0bb3e8fc491dd618d137a26331ac2f9","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-replacement-attention-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestReplacementAttention.test.ts","beforeSha256":"8f3fc6bc7ebdb0a928646ac25886e441a68f3a0c0455ea423f005ed2250e4efb","afterSha256":"ec00b9c73e431b28fe41f4156c0eb8e0f99d88a658a89196bb134a8d0badbb89","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-settlement-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestSettlement.test.ts","beforeSha256":"7bca7722a8a622564611ce2e89c8d16bfaff4b4f4b26498e7ecc25038093c877","afterSha256":"b5b48be89cb6c84a8756d79eb562e9ba4d7a1b1c1e87386fb2dd634a07f01cb0","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-setup-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestSetup.test.ts","beforeSha256":"41a9e5c15b8ab89dee55966c2273b7f1416661deb815acab6982a2b93af560c7","afterSha256":"02ae6eea88095ecc7cb52a7ab44f4a60ba9e7ee77495814a9ad5a2370bc431b5","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-single-spend-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestSingleSpend.test.ts","beforeSha256":"6885dc862fa43f67e463f318fab00d4cc36cbba9ef9b1ef0560eb34f05cf508d","afterSha256":"bf180420b24fc998df9320f4dabaff86c880d6311663ff4890279ad3e9968876","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-voltage-lifecycle-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureBattleContestVoltageLifecycle.test.ts","beforeSha256":"f0841f2a59a6a7ecf287ac633892865ac52be343afde27ab8b19f9cbcbd296c4","afterSha256":"60067c5c0bec582b4f785c2ad4552a187fea5a3853c633e5b33e8d74c9011009","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-variant-authority-historical-evidence:v1","ticket":"P11-080","surface":"tests/data/deferredClosureContestVariantAuthority.test.ts","beforeSha256":"8c37751ee6dae483f6968ad94b9bab5a6631b3c0cfed8f11368d01dd7f0bcade","afterSha256":"f6b470b23124a17dca155b2229aa108083465cd27b24101b5187439a3620cebd","changedStableRows":["historical-structured-certificate-preserved","current-native-head-asserted"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"resolve-historical-certification-through-native-activation-successor","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-zero-debt-item-proof-head:v1","ticket":"P11-080","surface":"tests/data/deferredClosureItemProof.test.ts","beforeSha256":"d906343391839ab354681ce004dd76af4ee3160353df0c61c7a4974b1a9282c9","afterSha256":"ebf6d56c7f1ff27cb75162f34c89cc62910c310b34f0223b36922baa803a4b54","changedStableRows":["twenty-nine-final-rows","zero-nonfinal-rows"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"advance-progress-proof-after-final-contest-variant-activation","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-zero-debt-rubric-head:v1","ticket":"P11-080","surface":"tests/data/deferredClosureRubric.test.ts","beforeSha256":"2a335e744e52fec040f5e50f0272aee528377afafa41580224b4aad0d2faaa4e","afterSha256":"d311d43a485fcb8d99078c9e7644528208a8bf4cd8342368b0671d2ef74675af","changedStableRows":["twenty-nine-final-rows","final-evidence-still-pending"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"advance-progress-rubric-without-premature-final-acceptance","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-fixture-drift-commands:v1","ticket":"P11-080","surface":"package.json","beforeSha256":"efbd8d525679b92f236473e7ff25cf58ffab662b8f0c7fca316aee2fb76f7ec4","afterSha256":"0fa4c4f8a4b2276e59ba085a1c416f853604ffd4aa9d9f218e12f5e1f7f9b01f","changedStableRows":["generate-battle-contest-fixtures","check-battle-contest-fixtures","pokemon-contest-gate"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"wire-native-battle-fixtures-into-existing-contest-drift-gate","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-link-ready-production-evidence:v1","ticket":"P11-080","surface":".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-ready-to-link.png","beforeSha256":"106bd2b1fa97d577ad44200230d9e86b17696bb906651266b311c455d99dc3be","afterSha256":"6bf08d7a6b97fe68fe94b0e2bcd7eaccce0f3d63af3110b61f7b738f02287d82","changedStableRows":["native-catalog-production-rerender","same-ready-link-authority"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"accept-directly-inspected-native-production-rerender","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-link-accepted-production-evidence:v1","ticket":"P11-080","surface":".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-linked.png","beforeSha256":"839926188ec0e9749e5df81f29048f98e0227bb85a9b048718819ea6b19f0468","afterSha256":"f29a69dba889c971afecf42ac0bddaacc113b4d6f454d30f622bf6cf1daa3b0c","changedStableRows":["native-catalog-production-rerender","same-linked-authority"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"accept-directly-inspected-native-production-rerender","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-link-narrow-production-evidence:v1","ticket":"P11-080","surface":".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-linked-320.png","beforeSha256":"c2e58d0ad7635908781e67d89692b0131ae715dafee18ef53c972b5f8522da14","afterSha256":"41aa7178a4b0d64afb877e2cdd36616af6777df6ac4be707df9e5bfacc50b88e","changedStableRows":["native-catalog-production-rerender","same-320px-linked-authority"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"accept-directly-inspected-native-production-rerender","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-gm-pending-production-evidence:v1","ticket":"P11-080","surface":".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-gm-pending-wide.png","beforeSha256":"463db1d06f8ab60d8f170bb8099e0822dc182c24cdc5470114aa5f803f3a8d39","afterSha256":"ac230c42d490992ca0143e9a414d9c082b9f25e55fa9083114bcb22015df9413","changedStableRows":["native-catalog-production-rerender","same-gm-pending-authority"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"accept-directly-inspected-native-production-rerender","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-owner-pending-production-evidence:v1","ticket":"P11-080","surface":".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-owner-pending-wide.png","beforeSha256":"7c7de57758315a171debcafad4dca2f746aa089ed2cd3c59d23f98de84393034","afterSha256":"1b8f9303d141f2769cc3f32d9cffceeb6f719101be1f4b1fa99ffea5e0115ec9","changedStableRows":["native-catalog-production-rerender","same-owner-pending-authority"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"accept-directly-inspected-native-production-rerender","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-public-pending-production-evidence:v1","ticket":"P11-080","surface":".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-public-pending-wide.png","beforeSha256":"c230f98d614370fac3ea89101bb1c4aa62fa60aff7f91dfe3b390b171862d075","afterSha256":"e4fd52b5872dd14c0891175eef1354f162693a1eabdce3e54f629e4699dc6685","changedStableRows":["native-catalog-production-rerender","same-public-wait-authority"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"accept-directly-inspected-native-production-rerender","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-gm-accepted-production-evidence:v1","ticket":"P11-080","surface":".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-gm-accepted-wide.png","beforeSha256":"9c2676ffc7a9b4a2faf18304c54103b2cd376f936dc4795ec3f2778a71dfe3d2","afterSha256":"bf4357d866b09ec53f9d1f033ed50327403192bfe445de8817ada8b9d11216bb","changedStableRows":["native-catalog-production-rerender","same-gm-convergence-authority"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"accept-directly-inspected-native-production-rerender","reviewStatus":"accepted"},
-    {"migrationId":"deferred-closure:battle-native-owner-narrow-accepted-production-evidence:v1","ticket":"P11-080","surface":".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-owner-accepted-390.png","beforeSha256":"df816ac4fde77376845c77acc43548f38a56e947c9e63840115c2e148da1ac75","afterSha256":"52c68fd919708f1e60034b870c9e2ad0460c9587c3d86beaf1a90aa3bafb2c2b","changedStableRows":["native-catalog-production-rerender","same-390px-owner-convergence-authority"],"sourcePath":"data/deferred-closure/battle-contest-activation-certification.v1.json","sourceSha256":"f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318","changePolicy":"accept-directly-inspected-native-production-rerender","reviewStatus":"accepted"},
+    {
+      "migrationId": "deferred-closure:battle-native-canonical-row:v1",
+      "ticket": "P11-080",
+      "surface": "data/reference/contests.json",
+      "beforeSha256": "d58fa7cf9ffda19f73af37a805faf4ff0ed79023bb411ecdb9bf295e89016972",
+      "afterSha256": "7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497",
+      "changedStableRows": [
+        "variants.battle.completionState"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "activate-only-after-p11-065-through-p11-080-certification",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-catalog-gate:v1",
+      "ticket": "P11-080",
+      "surface": "shared/contests/catalog.ts",
+      "beforeSha256": "6aaa27dac74797283258664673ce88bc048ab7d8f57e1be9f44c895a9b1f085a",
+      "afterSha256": "0ce9ffd7b11d90e42e499b8bdf0d353ef11fc49a9a2351eab93e74d36a3aebd2",
+      "changedStableRows": [
+        "native-battle-row-required",
+        "structured-setup-exception-removed",
+        "native-variant-predicate"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "replace-selective-setup-activation-with-final-native-gate",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-reviewed-migration:v1",
+      "ticket": "P11-080",
+      "surface": "scripts/migrate_pokemon_contests.py",
+      "beforeSha256": "408ae82d9f0ddaa5a5921e62c12b79ae2adc1d2266573d6ffd8b48e063f00c92",
+      "afterSha256": "19f1263814a6131d5d783ad44e7a36dd7eb682299ef8d8d41a5d4f5d50a9f6bc",
+      "changedStableRows": [
+        "activation-manifest-validation",
+        "exact-native-target",
+        "contiguous-successor-check"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "extend-reviewed-migration-with-exact-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-workshop-gate:v1",
+      "ticket": "P11-080",
+      "surface": "src/pages/contests/index.vue",
+      "beforeSha256": "3458440a51a10fefc73f0a33424c67e1477c62b3fa0454e7bd86995d6350b156",
+      "afterSha256": "0184d892e74c4cf71f8241a3a36540fa1de191cd0eda1d02d2f7a11e3d43e54a",
+      "changedStableRows": [
+        "native-variant-filter",
+        "battle-special-case-removed"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "select-battle-through-the-ordinary-native-workshop-gate",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-operator-contract:v1",
+      "ticket": "P11-080",
+      "surface": "docs/contests/battle-contest-runtime.md",
+      "beforeSha256": "b81982a6a99a9032352fff0a0c69d2fb58936f7dd5e6724d0650e53dc5c6e641",
+      "afterSha256": "a77bb995481a4f0b245cf97dbf2e8967505a8af6e1f55e4650e5a3f5e30888dd",
+      "changedStableRows": [
+        "native-status",
+        "final-certification",
+        "temporary-gate-retirement"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "complete-p11-065-through-p11-080-native-operator-contract",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-ordinary-fixture-regeneration:v1",
+      "ticket": "P11-080",
+      "surface": "data/contests/variant-matrix.v1.json",
+      "beforeSha256": "945ac945477f759c46dcb5ddbfeee83e53b4538e4f49d5a7c744c9a160faac1e",
+      "afterSha256": "6056132402aa24c187d680e93d3e89ed2224a30f8c6ef47dffc87f2235622070",
+      "changedStableRows": [
+        "native-canonical-contest-source-hash",
+        "eighteen-ordinary-replays"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "regenerate-reviewed-fixtures-after-completion-state-only-canonical-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-participant-fixture-regeneration:v1",
+      "ticket": "P11-080",
+      "surface": "data/contests/trainer-participant-variant-matrix.v1.json",
+      "beforeSha256": "9ebcf9eed5932146605b122d52de30750440f0886dabad301ac95aa9e10a0818",
+      "afterSha256": "a219f6aaa1701a00600cba806189c8812a465b255acd37adde59545a1c48a195",
+      "changedStableRows": [
+        "native-canonical-contest-source-hash",
+        "twenty-four-participant-replays"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "regenerate-reviewed-fixtures-after-completion-state-only-canonical-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-battle-fixture-regeneration:v1",
+      "ticket": "P11-080",
+      "surface": "data/contests/battle-contest-scenarios.v1.json",
+      "beforeSha256": "3435929d055116f4fa746eee223335be2fe0a18fc191981617febd8b5ab3877d",
+      "afterSha256": "7dcc5a9f508cc1899de11b681fdc919fb4791ee7c88ddd3d133b5692f122d1dd",
+      "changedStableRows": [
+        "native-canonical-contest-source-hash",
+        "four-battle-replays"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "regenerate-reviewed-battle-fixtures-after-native-activation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-setup-workshop-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/components/contestBattleSetupWorkshop.test.ts",
+      "beforeSha256": "2cef390a28dfb371970d5d6412f434fbe0e60489a112c79c0cc4f7291ed4d7a3",
+      "afterSha256": "73f00c6cf09d1a314d062594254b82ad64b5d6f80ae01920457e19a36b652429",
+      "changedStableRows": [
+        "ordinary-native-filter",
+        "no-battle-special-case"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "preserve-setup-evidence-under-final-native-gate",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-accepted-move-appeals-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestAcceptedMoveAppeals.test.ts",
+      "beforeSha256": "f13e6a145e4b488c85de1b2f87a222a0b3f1131dab7c39d325f42b7123baa20d",
+      "afterSha256": "868129c5fb26da4aedbfb7bd3438184925095953d62f43c2db6272b872f2a8d5",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-effects-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestEffects.test.ts",
+      "beforeSha256": "80a76e5ffef77d3b1299b2715d6bcdc6ff26bdb3f10504de44271341c0e6bde3",
+      "afterSha256": "7e505cac7225062cac785c5fe2f2da735ae4eed617b183442e6d191449f3a55e",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-encounter-link-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestEncounterLink.test.ts",
+      "beforeSha256": "31552f3e4c80911dcd2dd94389dac232c37f5d2d76083da566d4a9d27d68fa44",
+      "afterSha256": "98c3800525a6c90a1274bb7f3fe15792cf6f51a4b1f28c7b013553ab1370d5df",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-end-conditions-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestEndConditions.test.ts",
+      "beforeSha256": "b9fa7bf26dd9d837133d0c779748781ea95a45403ebd11a3b474304208ed00b7",
+      "afterSha256": "d1c6b93af2bd419c6046575ab77889278f60d97b475eec79bcc6c2f01f54b7a8",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-fixtures-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestFixtures.test.ts",
+      "beforeSha256": "5a3a3b491c5471a1f1a89031e172ef087fbac0242c3fdd1ed53c6c10ba7e8feb",
+      "afterSha256": "90c4ccc8624b3f97226949bed507c7ce64a39ad5d743abcb104c42489a6f8c9f",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-introductions-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestIntroductions.test.ts",
+      "beforeSha256": "b14c4134f230be9164d5c6b78a0cc71056e83c32640dc97936bbf5787a2b22ff",
+      "afterSha256": "64602bad185a64c44029671933250a9f9dab117a9fd92bfffabf99c1a48d1521",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-liveplay-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestLiveplay.test.ts",
+      "beforeSha256": "28bcac513308d7e165126419e291409ede18966a465514b28a54dfb7e3b0a63b",
+      "afterSha256": "1a37b69433955f97eb8e4b980afb7c624f32ba9e6609ea6250c1a70d79e74f97",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-pokemon-voltage-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestPokemonVoltage.test.ts",
+      "beforeSha256": "8e4df0a7542bdcc0d3c20660432ca356dbd07b353300d322704739bdfc80dd29",
+      "afterSha256": "894f3b0a3f3468a9e9c9a91ffdb11481c8575dd23df73589f5935f2ba21a81e9",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-recovery-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestRecovery.test.ts",
+      "beforeSha256": "960ad7419c65f507256ece0fae54f9703ea69e1313c148b8a2b607d456d770e7",
+      "afterSha256": "39db7a546b20cae7c0445a2f59caa58cf0bb3e8fc491dd618d137a26331ac2f9",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-replacement-attention-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestReplacementAttention.test.ts",
+      "beforeSha256": "8f3fc6bc7ebdb0a928646ac25886e441a68f3a0c0455ea423f005ed2250e4efb",
+      "afterSha256": "ec00b9c73e431b28fe41f4156c0eb8e0f99d88a658a89196bb134a8d0badbb89",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-settlement-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestSettlement.test.ts",
+      "beforeSha256": "7bca7722a8a622564611ce2e89c8d16bfaff4b4f4b26498e7ecc25038093c877",
+      "afterSha256": "b5b48be89cb6c84a8756d79eb562e9ba4d7a1b1c1e87386fb2dd634a07f01cb0",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-setup-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestSetup.test.ts",
+      "beforeSha256": "41a9e5c15b8ab89dee55966c2273b7f1416661deb815acab6982a2b93af560c7",
+      "afterSha256": "02ae6eea88095ecc7cb52a7ab44f4a60ba9e7ee77495814a9ad5a2370bc431b5",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-single-spend-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestSingleSpend.test.ts",
+      "beforeSha256": "6885dc862fa43f67e463f318fab00d4cc36cbba9ef9b1ef0560eb34f05cf508d",
+      "afterSha256": "bf180420b24fc998df9320f4dabaff86c880d6311663ff4890279ad3e9968876",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-voltage-lifecycle-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureBattleContestVoltageLifecycle.test.ts",
+      "beforeSha256": "f0841f2a59a6a7ecf287ac633892865ac52be343afde27ab8b19f9cbcbd296c4",
+      "afterSha256": "60067c5c0bec582b4f785c2ad4552a187fea5a3853c633e5b33e8d74c9011009",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-variant-authority-historical-evidence:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureContestVariantAuthority.test.ts",
+      "beforeSha256": "8c37751ee6dae483f6968ad94b9bab5a6631b3c0cfed8f11368d01dd7f0bcade",
+      "afterSha256": "f6b470b23124a17dca155b2229aa108083465cd27b24101b5187439a3620cebd",
+      "changedStableRows": [
+        "historical-structured-certificate-preserved",
+        "current-native-head-asserted"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "resolve-historical-certification-through-native-activation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-zero-debt-item-proof-head:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureItemProof.test.ts",
+      "beforeSha256": "d906343391839ab354681ce004dd76af4ee3160353df0c61c7a4974b1a9282c9",
+      "afterSha256": "ebf6d56c7f1ff27cb75162f34c89cc62910c310b34f0223b36922baa803a4b54",
+      "changedStableRows": [
+        "twenty-nine-final-rows",
+        "zero-nonfinal-rows"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "advance-progress-proof-after-final-contest-variant-activation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-zero-debt-rubric-head:v1",
+      "ticket": "P11-080",
+      "surface": "tests/data/deferredClosureRubric.test.ts",
+      "beforeSha256": "2a335e744e52fec040f5e50f0272aee528377afafa41580224b4aad0d2faaa4e",
+      "afterSha256": "d311d43a485fcb8d99078c9e7644528208a8bf4cd8342368b0671d2ef74675af",
+      "changedStableRows": [
+        "twenty-nine-final-rows",
+        "final-evidence-still-pending"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "advance-progress-rubric-without-premature-final-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-fixture-drift-commands:v1",
+      "ticket": "P11-080",
+      "surface": "package.json",
+      "beforeSha256": "efbd8d525679b92f236473e7ff25cf58ffab662b8f0c7fca316aee2fb76f7ec4",
+      "afterSha256": "0fa4c4f8a4b2276e59ba085a1c416f853604ffd4aa9d9f218e12f5e1f7f9b01f",
+      "changedStableRows": [
+        "generate-battle-contest-fixtures",
+        "check-battle-contest-fixtures",
+        "pokemon-contest-gate"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "wire-native-battle-fixtures-into-existing-contest-drift-gate",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-link-ready-production-evidence:v1",
+      "ticket": "P11-080",
+      "surface": ".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-ready-to-link.png",
+      "beforeSha256": "106bd2b1fa97d577ad44200230d9e86b17696bb906651266b311c455d99dc3be",
+      "afterSha256": "6bf08d7a6b97fe68fe94b0e2bcd7eaccce0f3d63af3110b61f7b738f02287d82",
+      "changedStableRows": [
+        "native-catalog-production-rerender",
+        "same-ready-link-authority"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "accept-directly-inspected-native-production-rerender",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-link-accepted-production-evidence:v1",
+      "ticket": "P11-080",
+      "surface": ".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-linked.png",
+      "beforeSha256": "839926188ec0e9749e5df81f29048f98e0227bb85a9b048718819ea6b19f0468",
+      "afterSha256": "f29a69dba889c971afecf42ac0bddaacc113b4d6f454d30f622bf6cf1daa3b0c",
+      "changedStableRows": [
+        "native-catalog-production-rerender",
+        "same-linked-authority"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "accept-directly-inspected-native-production-rerender",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-link-narrow-production-evidence:v1",
+      "ticket": "P11-080",
+      "surface": ".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-linked-320.png",
+      "beforeSha256": "c2e58d0ad7635908781e67d89692b0131ae715dafee18ef53c972b5f8522da14",
+      "afterSha256": "41aa7178a4b0d64afb877e2cdd36616af6777df6ac4be707df9e5bfacc50b88e",
+      "changedStableRows": [
+        "native-catalog-production-rerender",
+        "same-320px-linked-authority"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "accept-directly-inspected-native-production-rerender",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-gm-pending-production-evidence:v1",
+      "ticket": "P11-080",
+      "surface": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-gm-pending-wide.png",
+      "beforeSha256": "463db1d06f8ab60d8f170bb8099e0822dc182c24cdc5470114aa5f803f3a8d39",
+      "afterSha256": "ac230c42d490992ca0143e9a414d9c082b9f25e55fa9083114bcb22015df9413",
+      "changedStableRows": [
+        "native-catalog-production-rerender",
+        "same-gm-pending-authority"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "accept-directly-inspected-native-production-rerender",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-owner-pending-production-evidence:v1",
+      "ticket": "P11-080",
+      "surface": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-owner-pending-wide.png",
+      "beforeSha256": "7c7de57758315a171debcafad4dca2f746aa089ed2cd3c59d23f98de84393034",
+      "afterSha256": "1b8f9303d141f2769cc3f32d9cffceeb6f719101be1f4b1fa99ffea5e0115ec9",
+      "changedStableRows": [
+        "native-catalog-production-rerender",
+        "same-owner-pending-authority"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "accept-directly-inspected-native-production-rerender",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-public-pending-production-evidence:v1",
+      "ticket": "P11-080",
+      "surface": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-public-pending-wide.png",
+      "beforeSha256": "c230f98d614370fac3ea89101bb1c4aa62fa60aff7f91dfe3b390b171862d075",
+      "afterSha256": "e4fd52b5872dd14c0891175eef1354f162693a1eabdce3e54f629e4699dc6685",
+      "changedStableRows": [
+        "native-catalog-production-rerender",
+        "same-public-wait-authority"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "accept-directly-inspected-native-production-rerender",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-gm-accepted-production-evidence:v1",
+      "ticket": "P11-080",
+      "surface": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-gm-accepted-wide.png",
+      "beforeSha256": "9c2676ffc7a9b4a2faf18304c54103b2cd376f936dc4795ec3f2778a71dfe3d2",
+      "afterSha256": "bf4357d866b09ec53f9d1f033ed50327403192bfe445de8817ada8b9d11216bb",
+      "changedStableRows": [
+        "native-catalog-production-rerender",
+        "same-gm-convergence-authority"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "accept-directly-inspected-native-production-rerender",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:battle-native-owner-narrow-accepted-production-evidence:v1",
+      "ticket": "P11-080",
+      "surface": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-owner-accepted-390.png",
+      "beforeSha256": "df816ac4fde77376845c77acc43548f38a56e947c9e63840115c2e148da1ac75",
+      "afterSha256": "52c68fd919708f1e60034b870c9e2ad0460c9587c3d86beaf1a90aa3bafb2c2b",
+      "changedStableRows": [
+        "native-catalog-production-rerender",
+        "same-390px-owner-convergence-authority"
+      ],
+      "sourcePath": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sourceSha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318",
+      "changePolicy": "accept-directly-inspected-native-production-rerender",
+      "reviewStatus": "accepted"
+    },
     {
       "migrationId": "deferred-closure:integrated-golden-journey-inventory-evidence:v1",
       "ticket": "P11-081",
@@ -4965,7 +5586,9 @@
       "surface": "docs/complete-play-loop-player-guide.md",
       "beforeSha256": "06ebe55980caedd87c2e1bf4155a22720b1dfe9ea27e31ee68a9c094bd75fb22",
       "afterSha256": "9c5b0f7f689fe20965737b9fac61d71e8731b9875bb326cc696e46e1b091f8b2",
-      "changedStableRows": ["ranged-weapon-item-skill-check-and-contest-player-workflow"],
+      "changedStableRows": [
+        "ranged-weapon-item-skill-check-and-contest-player-workflow"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "extend-frozen-complete-play-loop-player-guide-with-current-closed-surfaces",
@@ -4977,7 +5600,9 @@
       "surface": "docs/complete-play-loop-gm-guide.md",
       "beforeSha256": "bf4b4d6f153a52f3bd4acdc1675c4d13422699e7776fc8bce8a8f827eb644567",
       "afterSha256": "9958e3da7ff24268d3bbc0dcb965522603c7602ec47e3a01aaad06a7e21347a3",
-      "changedStableRows": ["ranged-weapon-item-skill-check-and-contest-gm-workflow"],
+      "changedStableRows": [
+        "ranged-weapon-item-skill-check-and-contest-gm-workflow"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "extend-frozen-complete-play-loop-gm-guide-with-current-closed-surfaces",
@@ -4989,7 +5614,9 @@
       "surface": "docs/complete-play-loop-contributor-guide.md",
       "beforeSha256": "c8ce203c2265fec585537e16d9bf6142886c75c9bcc1934b6fd58aae2baf4ca9",
       "afterSha256": "63fa3b5773c12f454d692b74c6531d6d99374d985c58f2aaba4bcc003a05eeaa",
-      "changedStableRows": ["plan-11-authority-map-and-focused-gates"],
+      "changedStableRows": [
+        "plan-11-authority-map-and-focused-gates"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "extend-frozen-complete-play-loop-contributor-guide-with-current-authorities",
@@ -5001,7 +5628,9 @@
       "surface": "docs/complete-play-loop-operator-guide.md",
       "beforeSha256": "9925dc3e50f8feb59f24ef84dfe6b292cdd4e20994e15741c46acea707a43d67",
       "afterSha256": "4a9a36b912bdee9b2698f60c437f86a74e464952c87e6a822789a38d054d10be",
-      "changedStableRows": ["schema-50-backup-reconnect-and-closure-gates"],
+      "changedStableRows": [
+        "schema-50-backup-reconnect-and-closure-gates"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "extend-frozen-complete-play-loop-operator-guide-with-current-recovery",
@@ -5013,7 +5642,9 @@
       "surface": "tests/data/completePlayLoopDocumentationClosure.test.ts",
       "beforeSha256": "b9476d0bb9c138336ca07c5fe72144e8baf3be8502306538117cf9a107053d20",
       "afterSha256": "fa6ca1e54730ff6b412af668bd14554069329347bf75b9ffc8d9fd42a7aacb07",
-      "changedStableRows": ["historical-documentation-bindings-resolve-accepted-successors"],
+      "changedStableRows": [
+        "historical-documentation-bindings-resolve-accepted-successors"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "preserve-frozen-documentation-acceptance-while-validating-current-heads",
@@ -5025,7 +5656,9 @@
       "surface": "docs/skill-check-recovery-and-campaign-history.md",
       "beforeSha256": "a74a3c8b7d9341c80a75dab03957bd7cd5260bcb03fc4bcafce20d51c16a86a5",
       "afterSha256": "baa05f0f78b4c9ec95c0634e2e3f40f09ee8a79607c48b198f12568492c879c9",
-      "changedStableRows": ["current-liveplay-request-response-and-resolution-workflow"],
+      "changedStableRows": [
+        "current-liveplay-request-response-and-resolution-workflow"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "add-current-user-workflow-to-recovery-authority",
@@ -5037,7 +5670,9 @@
       "surface": "docs/contests/trainer-participant-runtime.md",
       "beforeSha256": "bfae2a14ac649974656cc7f36abeecd8015313397c596309d926e1bc24008da8",
       "afterSha256": "5b67d932e0c73e33f359aa12e3c90d02a5bb61d9829c2c3c8194e417cac57130",
-      "changedStableRows": ["retire-intermediate-ticket-scope-language"],
+      "changedStableRows": [
+        "retire-intermediate-ticket-scope-language"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "replace-intermediate-future-tense-with-certified-current-authority",
@@ -5049,7 +5684,10 @@
       "surface": "docs/contests/README.md",
       "beforeSha256": "6777c54366c25d4496c0cbbfa4913caab4162bbd10c5637d2cee93a4007042cd",
       "afterSha256": "54aabacedf21d230cc3bd1082d6130f8b99cfb8b03d950b3fe6ae31e9e708fbe",
-      "changedStableRows": ["native-trainer-participant-and-battle-guides", "frozen-p10-successor-policy"],
+      "changedStableRows": [
+        "native-trainer-participant-and-battle-guides",
+        "frozen-p10-successor-policy"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "extend-frozen-contest-index-through-accepted-native-variant-successor",
@@ -5061,7 +5699,10 @@
       "surface": "docs/contests/player-and-gm-guide.md",
       "beforeSha256": "de8308f046f906d869580184cfd2cb5c0e237cc3aff6ce0442a51fef7ffae409",
       "afterSha256": "936dfa458a64b79cbfc7558238fa20359ed5bfd895d56a06bd7540dd6968b152",
-      "changedStableRows": ["trainer-participant-workflow", "battle-workflow-and-combined-settlement"],
+      "changedStableRows": [
+        "trainer-participant-workflow",
+        "battle-workflow-and-combined-settlement"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "replace-frozen-plan-10-unavailability-with-certified-native-workflows",
@@ -5073,7 +5714,9 @@
       "surface": "docs/adrs/019-authoritative-pokemon-contest-runtime.md",
       "beforeSha256": "e2b8237398f99c9e26fea235cd993b8d235f2463ce43f7407f8805f180bc1f6a",
       "afterSha256": "a20953f848078dd33a6bd14e695eddad9ee04e85743c9e15bfef8decf3ea289c",
-      "changedStableRows": ["plan-11-native-variant-amendment"],
+      "changedStableRows": [
+        "plan-11-native-variant-amendment"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "amend-frozen-contest-decision-with-reviewed-native-successors",
@@ -5085,7 +5728,9 @@
       "surface": "implementation-plans/plan-order.md",
       "beforeSha256": "d462aabcb6c21e19db731d25ca20946ccd628c51bf278b15ccbbbc4c5d914b55",
       "afterSha256": "0dec095916dcf3da9c28e50512691c20e06d837d1478d593a34884aa5f2a1634",
-      "changedStableRows": ["plans-9-through-11-current-registered-status"],
+      "changedStableRows": [
+        "plans-9-through-11-current-registered-status"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "preserve-frozen-plan-8-index-through-current-authoritative-plan-order",
@@ -5097,7 +5742,9 @@
       "surface": "AGENTS.md",
       "beforeSha256": "ff133bb80ebabc088785ea14d56d2982031fff63c4b39717662f1f10ef958511",
       "afterSha256": "da1a39ba77e4058bbfb73d7673273fbc62d9d818b78c42113ae3efe5c1eafb65",
-      "changedStableRows": ["current-plan-11-execution-snapshot-and-project-rules"],
+      "changedStableRows": [
+        "current-plan-11-execution-snapshot-and-project-rules"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "preserve-frozen-plan-8-guidance-through-current-authoritative-agent-rules",
@@ -5109,7 +5756,9 @@
       "surface": "tests/data/completePlayLoopAlphaAcceptance.test.ts",
       "beforeSha256": "d9f4712bdae79ecaa9086190143decabeed182ffc22af90f36bd255eafad6153",
       "afterSha256": "a4b3b23186ee15f8e4d5a6d81ade9a6aa76d6f656e246b0da19d67f473791c24",
-      "changedStableRows": ["historical-alpha-bindings-resolve-accepted-successors"],
+      "changedStableRows": [
+        "historical-alpha-bindings-resolve-accepted-successors"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "preserve-frozen-alpha-acceptance-while-validating-current-authority-heads",
@@ -5121,7 +5770,9 @@
       "surface": "implementation-plans/plan-order.md",
       "beforeSha256": "0dec095916dcf3da9c28e50512691c20e06d837d1478d593a34884aa5f2a1634",
       "afterSha256": "4429f26fffdf8594b50349b504ffd3169a0857fa4d4c0a9798c3be6f63308595",
-      "changedStableRows": ["plan-11-ticket-087-done-and-088-current"],
+      "changedStableRows": [
+        "plan-11-ticket-087-done-and-088-current"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "advance-authoritative-plan-index-after-documentation-acceptance",
@@ -5133,7 +5784,9 @@
       "surface": "AGENTS.md",
       "beforeSha256": "da1a39ba77e4058bbfb73d7673273fbc62d9d818b78c42113ae3efe5c1eafb65",
       "afterSha256": "a00c4bfcccf69aba3099c5a6dea9d1dd9dc92a087596d1823a1468f1eb15ea74",
-      "changedStableRows": ["plan-11-ticket-087-done-and-088-current"],
+      "changedStableRows": [
+        "plan-11-ticket-087-done-and-088-current"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "advance-agent-execution-snapshot-after-documentation-acceptance",
@@ -5145,19 +5798,26 @@
       "surface": "package.json",
       "beforeSha256": "0f5c3553801a6a7c992ff67438baec0f23d3739b6619f9486260ea215f7cf777",
       "afterSha256": "26e528cdec9a2df9bb8bfec732a9ef1b890abbe406039d773bd260c91689b6b8",
-      "changedStableRows": ["check:deferred-closure-docs"],
+      "changedStableRows": [
+        "check:deferred-closure-docs"
+      ],
       "sourcePath": "data/deferred-closure/final-documentation-certification.v1.json",
       "sourceSha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9",
       "changePolicy": "add-bounded-documentation-link-claim-and-stale-language-gate",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:drift-static-checker:v1",
       "ticket": "P11-088",
       "surface": "scripts/check_deferred_closure.py",
       "beforeSha256": "828a002b984006571b673c5bb1a7463e479367b0a961842bec5be57390f8e44c",
       "afterSha256": "a7dd5a1b74134101871be3616898dcb42cdcce23e97f2b1557ee18ea51aa4382",
-      "changedStableRows": ["accepted-successor-graph", "all-repaired-registries", "document-contracts", "forbidden-final-states"],
+      "changedStableRows": [
+        "accepted-successor-graph",
+        "all-repaired-registries",
+        "document-contracts",
+        "forbidden-final-states"
+      ],
       "sourcePath": "data/deferred-closure/drift-forbidden-gap-certification.v1.json",
       "sourceSha256": "ad5955c60a5320e0027e70218e7f5bc6a36e8ee5e37f2f6a88641e6ce5d391e5",
       "changePolicy": "extend-closure-checker-with-fail-closed-drift-and-forbidden-gap-mode",
@@ -5169,7 +5829,9 @@
       "surface": "package.json",
       "beforeSha256": "26e528cdec9a2df9bb8bfec732a9ef1b890abbe406039d773bd260c91689b6b8",
       "afterSha256": "21e9d20157e537aa5b75472290c2af660d365936326cb1ad9531f6caefd02dbd",
-      "changedStableRows": ["check:deferred-closure-drift"],
+      "changedStableRows": [
+        "check:deferred-closure-drift"
+      ],
       "sourcePath": "data/deferred-closure/drift-forbidden-gap-certification.v1.json",
       "sourceSha256": "ad5955c60a5320e0027e70218e7f5bc6a36e8ee5e37f2f6a88641e6ce5d391e5",
       "changePolicy": "register-generated-data-handler-document-and-successor-drift-gate",
@@ -5181,7 +5843,9 @@
       "surface": "scripts/quality-gate.sh",
       "beforeSha256": "6385abe72e4b0e62311a9d4446021f1aefdf653246499cce5eaf3f7260e534ee",
       "afterSha256": "39e70b1dccf20138aecb32c5c29d41d5f0a86dcbb97bce98bde4917f1e6f8c5d",
-      "changedStableRows": ["deferred-mechanics-closure-drift-and-forbidden-gaps"],
+      "changedStableRows": [
+        "deferred-mechanics-closure-drift-and-forbidden-gaps"
+      ],
       "sourcePath": "data/deferred-closure/drift-forbidden-gap-certification.v1.json",
       "sourceSha256": "ad5955c60a5320e0027e70218e7f5bc6a36e8ee5e37f2f6a88641e6ce5d391e5",
       "changePolicy": "wire-plan-11-drift-gate-into-repository-quality-gate",
@@ -5193,19 +5857,27 @@
       "surface": "data/complete-play-loop/item-catalog-cohorts.v1.json",
       "beforeSha256": "04121681eb574af8cde8d89e4898f0d32390e6aee788f0b6a2f20a64d39710b4",
       "afterSha256": "219011073e478a59ff2bafb841bf07f3a11c0e905784e9add2b101f40141e3ee",
-      "changedStableRows": ["equipment-cohort-recovery-evidence", "contest-cohort-source-evidence", "guided-cohort-component-evidence"],
+      "changedStableRows": [
+        "equipment-cohort-recovery-evidence",
+        "contest-cohort-source-evidence",
+        "guided-cohort-component-evidence"
+      ],
       "sourcePath": "data/deferred-closure/drift-forbidden-gap-certification.v1.json",
       "sourceSha256": "ad5955c60a5320e0027e70218e7f5bc6a36e8ee5e37f2f6a88641e6ce5d391e5",
       "changePolicy": "generated-source-hash-refresh-with-zero-cohort-member-provider-or-final-state-change",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:zero-deferred-final-inventory:v1",
       "ticket": "P11-089",
       "surface": "data/deferred-closure/closure-inventory.v1.json",
       "beforeSha256": "1e5d623174060993ef02f3417c82888eb1e30b4a029980c0c283d55cf1eca3ac",
       "afterSha256": "11ef42cf2dcd5bea28c13bcb29c36798fe6781959f8312ae0621ce76f2e3c070",
-      "changedStableRows": ["twenty-nine-final-rows", "final-surface-bindings", "zero-deferred-phase-evidence"],
+      "changedStableRows": [
+        "twenty-nine-final-rows",
+        "final-surface-bindings",
+        "zero-deferred-phase-evidence"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "90204c92a379ffe3b02b7e3d2490febd96b423f7c0b947fd0d7a702f1e7a1124",
       "changePolicy": "regenerate-reviewed-activation-inventory-as-final-29-of-29-authority",
@@ -5217,7 +5889,12 @@
       "surface": "data/deferred-closure/completion-rubric.v1.json",
       "beforeSha256": "9aa0fe172ff32a79f86e4bbc2af6486cde1ee51d8a9483e87f941c4659b7f16a",
       "afterSha256": "afbcd5cb2965ce73741db3ac7600e24c4a29ce971aeefeba27a7e22b75af4d70",
-      "changedStableRows": ["ranged-runtime-evidence", "weapon-move-runtime-evidence", "contest-variant-runtime-evidence", "strict-final-command"],
+      "changedStableRows": [
+        "ranged-runtime-evidence",
+        "weapon-move-runtime-evidence",
+        "contest-variant-runtime-evidence",
+        "strict-final-command"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "90204c92a379ffe3b02b7e3d2490febd96b423f7c0b947fd0d7a702f1e7a1124",
       "changePolicy": "advance-planned-evidence-only-to-existing-passing-production-authority",
@@ -5229,7 +5906,13 @@
       "surface": "scripts/check_deferred_closure.py",
       "beforeSha256": "a7dd5a1b74134101871be3616898dcb42cdcce23e97f2b1557ee18ea51aa4382",
       "afterSha256": "b349586b08877b2ead5b1fa7942c2046a632bb4579953ef00b919be38be4723f",
-      "changedStableRows": ["acceptance-record", "all-final-state-fields", "legacy-marker-classification", "ledger-audit", "source-bindings"],
+      "changedStableRows": [
+        "acceptance-record",
+        "all-final-state-fields",
+        "legacy-marker-classification",
+        "ledger-audit",
+        "source-bindings"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "90204c92a379ffe3b02b7e3d2490febd96b423f7c0b947fd0d7a702f1e7a1124",
       "changePolicy": "require-machine-readable-zero-gap-proof-for-strict-completion",
@@ -5241,7 +5924,9 @@
       "surface": "data/deferred-closure/drift-forbidden-gap-gate.v1.json",
       "beforeSha256": "ee889bed74b8a152da6e08ad688ae9f84385fd995574dd088682013fdb68b438",
       "afterSha256": "d1b4a4ec68fc00a17c16118faa932c07c44fe5cc637f594235efdd67f4dfe5a7",
-      "changedStableRows": ["zero-deferred-generator-gate"],
+      "changedStableRows": [
+        "zero-deferred-generator-gate"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "90204c92a379ffe3b02b7e3d2490febd96b423f7c0b947fd0d7a702f1e7a1124",
       "changePolicy": "require-final-inventory-and-acceptance-byte-regeneration-before-drift-gate",
@@ -5253,19 +5938,25 @@
       "surface": "package.json",
       "beforeSha256": "21e9d20157e537aa5b75472290c2af660d365936326cb1ad9531f6caefd02dbd",
       "afterSha256": "44f5f8b560484aea3ab93eaff4d328cb41d6796ba35db1429f099f93e5f5a0b8",
-      "changedStableRows": ["check:deferred-closure-zero", "check:deferred-closure-drift"],
+      "changedStableRows": [
+        "check:deferred-closure-zero",
+        "check:deferred-closure-drift"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "90204c92a379ffe3b02b7e3d2490febd96b423f7c0b947fd0d7a702f1e7a1124",
       "changePolicy": "enforce-final-inventory-acceptance-and-strict-checker-in-quality-gate-path",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:zero-deferred-rubric-acceptance-test:v1",
       "ticket": "P11-089",
       "surface": "tests/data/deferredClosureRubric.test.ts",
       "beforeSha256": "d311d43a485fcb8d99078c9e7644528208a8bf4cd8342368b0671d2ef74675af",
       "afterSha256": "5b44b44252ce89edf7e7b5da2078b1cca4308a188adcdc7f40a2b0dea6061482",
-      "changedStableRows": ["all-evidence-passing", "strict-final-acceptance-command"],
+      "changedStableRows": [
+        "all-evidence-passing",
+        "strict-final-acceptance-command"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "90204c92a379ffe3b02b7e3d2490febd96b423f7c0b947fd0d7a702f1e7a1124",
       "changePolicy": "replace-pre-acceptance-refusal-sentinel-with-passing-final-proof",
@@ -5277,7 +5968,11 @@
       "surface": "tests/data/deferredClosureInventory.test.ts",
       "beforeSha256": "5701df40c0492f2d1c1546bb1e98440c60f21fdc8ee724353a6bec4cbdf5ed0c",
       "afterSha256": "d08273a4d0a9f6d04d979c77cdb7e461244161c178cce17e7868d73f719dcedb",
-      "changedStableRows": ["final-inventory-status", "exact-final-row-states", "zero-gap-counts"],
+      "changedStableRows": [
+        "final-inventory-status",
+        "exact-final-row-states",
+        "zero-gap-counts"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "90204c92a379ffe3b02b7e3d2490febd96b423f7c0b947fd0d7a702f1e7a1124",
       "changePolicy": "advance-activation-progress-assertions-to-final-29-of-29-assertions",
@@ -5289,19 +5984,25 @@
       "surface": "tests/data/deferredClosureDriftGate.test.ts",
       "beforeSha256": "cfd16748250bc58bab1788fad2dea3420001a5d359ec4db5a8082fa8b0b3bcbe",
       "afterSha256": "7dc7be5c50e0e1b6402b5a7d7d83f346e705ef226528888a8d633ec2082af544",
-      "changedStableRows": ["drift-gate-authority-successor-resolution"],
+      "changedStableRows": [
+        "drift-gate-authority-successor-resolution"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "90204c92a379ffe3b02b7e3d2490febd96b423f7c0b947fd0d7a702f1e7a1124",
       "changePolicy": "resolve-frozen-drift-gate-evidence-only-through-accepted-successor",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:drift-plan-index-advance:v1",
       "ticket": "P11-088",
       "surface": "implementation-plans/plan-order.md",
       "beforeSha256": "4429f26fffdf8594b50349b504ffd3169a0857fa4d4c0a9798c3be6f63308595",
       "afterSha256": "d943675f199ff4bb8afdcbcb3c17e145e8052ce496f1b070322dc871d953e93e",
-      "changedStableRows": ["plan-11-ticket-count", "plan-11-current-ticket", "drift-gate-summary"],
+      "changedStableRows": [
+        "plan-11-ticket-count",
+        "plan-11-current-ticket",
+        "drift-gate-summary"
+      ],
       "sourcePath": "data/deferred-closure/drift-forbidden-gap-certification.v1.json",
       "sourceSha256": "ad5955c60a5320e0027e70218e7f5bc6a36e8ee5e37f2f6a88641e6ce5d391e5",
       "changePolicy": "advance-authoritative-plan-index-after-drift-gate-acceptance",
@@ -5313,31 +6014,40 @@
       "surface": "AGENTS.md",
       "beforeSha256": "a00c4bfcccf69aba3099c5a6dea9d1dd9dc92a087596d1823a1468f1eb15ea74",
       "afterSha256": "80e6c0e37f8c821d24cafba1c796700b0a4e8a53aa1b662686083070c9e57dcf",
-      "changedStableRows": ["plan-11-ticket-count", "plan-11-current-ticket"],
+      "changedStableRows": [
+        "plan-11-ticket-count",
+        "plan-11-current-ticket"
+      ],
       "sourcePath": "data/deferred-closure/drift-forbidden-gap-certification.v1.json",
       "sourceSha256": "ad5955c60a5320e0027e70218e7f5bc6a36e8ee5e37f2f6a88641e6ce5d391e5",
       "changePolicy": "advance-agent-execution-snapshot-after-drift-gate-acceptance",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:zero-deferred-evidence-lint-refresh:v1",
       "ticket": "P11-089",
       "surface": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "beforeSha256": "90204c92a379ffe3b02b7e3d2490febd96b423f7c0b947fd0d7a702f1e7a1124",
       "afterSha256": "62b888e6c2bf583391bed8e528e52d55a24f98aa06ce26bff657f99598c149ef",
-      "changedStableRows": ["zero-deferred-acceptance-test-evidence-hash"],
+      "changedStableRows": [
+        "zero-deferred-acceptance-test-evidence-hash"
+      ],
       "sourcePath": "tests/data/deferredClosureZeroDeferredAcceptance.test.ts",
       "sourceSha256": "10175b02ebb8296288ae0a1f969b63516ce6f6c319f4b96a50e1c8c45f243b4a",
       "changePolicy": "evidence-hash-refresh-after-lint-only-import-cleanup-with-zero-acceptance-semantic-change",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:zero-deferred-plan-index-advance:v1",
       "ticket": "P11-089",
       "surface": "implementation-plans/plan-order.md",
       "beforeSha256": "d943675f199ff4bb8afdcbcb3c17e145e8052ce496f1b070322dc871d953e93e",
       "afterSha256": "6cb878a614152772590c8e5ea69054c2db63296acac24d60b8c4136caed99700",
-      "changedStableRows": ["plan-11-ticket-count", "plan-11-current-ticket", "zero-deferred-proof-summary"],
+      "changedStableRows": [
+        "plan-11-ticket-count",
+        "plan-11-current-ticket",
+        "zero-deferred-proof-summary"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "62b888e6c2bf583391bed8e528e52d55a24f98aa06ce26bff657f99598c149ef",
       "changePolicy": "advance-authoritative-plan-index-after-zero-deferred-acceptance",
@@ -5349,31 +6059,41 @@
       "surface": "AGENTS.md",
       "beforeSha256": "80e6c0e37f8c821d24cafba1c796700b0a4e8a53aa1b662686083070c9e57dcf",
       "afterSha256": "9903d53762ad6653f16cbf87057853a83a0cac2fbccaf5136116d0d8870eb91e",
-      "changedStableRows": ["plan-11-ticket-count", "plan-11-current-ticket"],
+      "changedStableRows": [
+        "plan-11-ticket-count",
+        "plan-11-current-ticket"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "62b888e6c2bf583391bed8e528e52d55a24f98aa06ce26bff657f99598c149ef",
       "changePolicy": "advance-agent-execution-snapshot-after-zero-deferred-acceptance",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:bounded-full-suite-quality-gate:v1",
       "ticket": "P11-090",
       "surface": "scripts/quality-gate.sh",
       "beforeSha256": "39e70b1dccf20138aecb32c5c29d41d5f0a86dcbb97bce98bde4917f1e6f8c5d",
       "afterSha256": "0b1638e8edb362d64807884aff8eba6a6489968f6d1711232642d5d963461f0c",
-      "changedStableRows": ["bounded-full-vitest-workers", "no-file-parallelism"],
+      "changedStableRows": [
+        "bounded-full-vitest-workers",
+        "no-file-parallelism"
+      ],
       "sourcePath": "AGENTS.md",
       "sourceSha256": "9903d53762ad6653f16cbf87057853a83a0cac2fbccaf5136116d0d8870eb91e",
       "changePolicy": "apply-authoritative-shared-memory-discipline-to-full-quality-gate-suite",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:battle-lifecycle-knockout-history-head:v1",
       "ticket": "P11-069",
       "surface": "server/domain/moveAutomation/planInitiativeLifecycle.ts",
       "beforeSha256": "7bae2b6d1ace7414dc8ec06861bcb7a73fc82477ddd71d8a271123260a578941",
       "afterSha256": "2a937a334991d65b683ba853ea7b07e318535a44224c6222443fc99e0dd1e47b",
-      "changedStableRows": ["typed-lifecycle-knockout-events", "damage-over-time-ko-history", "ordered-vortex-cleanup"],
+      "changedStableRows": [
+        "typed-lifecycle-knockout-events",
+        "damage-over-time-ko-history",
+        "ordered-vortex-cleanup"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-voltage-lifecycle-certification.v1.json",
       "sourceSha256": "388019c9c29ec8da3e6cd462d1efab2765da1aa7d749347dc2bb5639ec195909",
       "changePolicy": "add-source-bound-non-move-knockout-facts-without-changing-existing-lifecycle-effects",
@@ -5385,31 +6105,37 @@
       "surface": "tests/integration/completePlayLoopGoldenCampaigns.test.ts",
       "beforeSha256": "87854e791893c9bf1c784d30e9ad87a849a3b3fc22f604648b17875540903e4d",
       "afterSha256": "82e0c1bd33e3839661c142ff574caee32af234fec54e5b61a25f663a9bbe3ac3",
-      "changedStableRows": ["frozen-source-evidence-successor-resolution"],
+      "changedStableRows": [
+        "frozen-source-evidence-successor-resolution"
+      ],
       "sourcePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "sourceSha256": "62b888e6c2bf583391bed8e528e52d55a24f98aa06ce26bff657f99598c149ef",
       "changePolicy": "preserve-frozen-p8-golden-evidence-through-contiguous-accepted-successors",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:battle-lifecycle-knockout-resource-reset:v1",
       "ticket": "P11-069",
       "surface": "server/domain/moveAutomation/reduceEncounterResources.ts",
       "beforeSha256": "16f07306d5921f165bb8f8be559a1b292b1b394f4d00eb5e79fb5f8e7c9df163",
       "afterSha256": "4454430d3b67f232d4b4a2256441a8b08deaa64be65f171f7282255e3b125b33",
-      "changedStableRows": ["lifecycle-knockout-resource-reset"],
+      "changedStableRows": [
+        "lifecycle-knockout-resource-reset"
+      ],
       "sourcePath": "data/deferred-closure/battle-contest-voltage-lifecycle-certification.v1.json",
       "sourceSha256": "388019c9c29ec8da3e6cd462d1efab2765da1aa7d749347dc2bb5639ec195909",
       "changePolicy": "apply-existing-knockout-resource-reset-to-typed-lifecycle-ko-facts",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:full-validation-finish-evidence-successors:v1",
       "ticket": "P11-090",
       "surface": "tests/data/completePlayLoopFinishEncounterExperience.test.ts",
       "beforeSha256": "4d8628399dca501895e2151c65d984d6f39926880058eca892145070e344cf1a",
       "afterSha256": "4e2fbe55b2b2647a48ae96b747a4f9fe7c848e6b12c74006fc9199496eab7646",
-      "changedStableRows": ["server-recovery-and-workspace-source-successors"],
+      "changedStableRows": [
+        "server-recovery-and-workspace-source-successors"
+      ],
       "sourcePath": "data/complete-play-loop/finish-encounter-experience.v1.json",
       "sourceSha256": "c057097c8ed0d577abf8fd0be590723833f029ea5ea78a6499a7b44c7e0c8927",
       "changePolicy": "preserve-frozen-p8-finish-evidence-through-contiguous-accepted-successors",
@@ -5421,19 +6147,26 @@
       "surface": "server/domain/moveAutomation/reducers/mapOperations.ts",
       "beforeSha256": "fc3e0f3f6459d6aa30b9cabfb9667d6109d861bd941aa6197ef2e51f469d78d1",
       "afterSha256": "be4ee560b5d7c8e7471cc3c76e6d48edf956e1cf92d927bf2fd7a313d09283e8",
-      "changedStableRows": ["canonical-program-identity-history-resolution", "display-name-independent-fury-reset"],
+      "changedStableRows": [
+        "canonical-program-identity-history-resolution",
+        "display-name-independent-fury-reset"
+      ],
       "sourcePath": "tests/server/takeDownTripContinuation.test.ts",
       "sourceSha256": "9a8bc54f98a487d49b020758d31478d3c68231fd76493ca2f1d4977f904cbdd6",
       "changePolicy": "resolve-accepted-history-from-canonical-program-id-never-presentation-label",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:full-validation-authority-guardrail-refresh:v1",
       "ticket": "P11-090",
       "surface": "data/complete-play-loop/authority-guardrails.v1.json",
       "beforeSha256": "ead997f802b9a657d3805288f062cc5ef031f4bd13c58038260a9f5b5ba20099",
       "afterSha256": "e94700c781a254b7175b7bf2db80e57e76b7a2f87fb1c81f1d0bd5526513658d",
-      "changedStableRows": ["current-provider-source-fingerprints", "current-handler-source-fingerprints", "current-completion-evidence"],
+      "changedStableRows": [
+        "current-provider-source-fingerprints",
+        "current-handler-source-fingerprints",
+        "current-completion-evidence"
+      ],
       "sourcePath": "tests/data/completePlayLoopAuthorityGuardrails.test.ts",
       "sourceSha256": "c7ac35ce92e34b1a7df5595406b36f28d40795e87d1e71ae9b85a31a7f31f73e",
       "changePolicy": "deterministic-generated-source-fingerprint-refresh-with-zero-provider-handler-or-authority-policy-change",
@@ -5445,7 +6178,9 @@
       "surface": "src/pages/play/[encounterId].vue",
       "beforeSha256": "f858f23e58d0453e75eb7ed378f8833ddabc1b1ed7303f46e1c22ce6618ab504",
       "afterSha256": "44c86714c070f4d407303d4b54e4dec98c6d2da7c3dc85b3971e4a1043af7e56",
-      "changedStableRows": ["map-backed-compatibility-workspaces-skip-inapplicable-battle-lookup"],
+      "changedStableRows": [
+        "map-backed-compatibility-workspaces-skip-inapplicable-battle-lookup"
+      ],
       "sourcePath": "data/deferred-closure/final-accessibility-certification.v1.json",
       "sourceSha256": "c3cbf3123aa6e78a84dfecf7889dde817cf9ff38cc4fb348b13735e525080110",
       "changePolicy": "avoid-expected-404-console-noise-without-changing-linked-encounter-authority",
@@ -5457,7 +6192,9 @@
       "surface": "src/composables/useBattleContestLiveplay.ts",
       "beforeSha256": "9f8567a69a65d3d3bb54bc61bb6d981583c8a84d3f65ddf8a740ccddc9177202",
       "afterSha256": "6b9da5e37f0ea3cec5b241f984ded0f101ef26a7ba76583d966b8beb49c063b1",
-      "changedStableRows": ["optional-context-clear-and-inflight-generation-invalidation"],
+      "changedStableRows": [
+        "optional-context-clear-and-inflight-generation-invalidation"
+      ],
       "sourcePath": "data/deferred-closure/final-accessibility-certification.v1.json",
       "sourceSha256": "c3cbf3123aa6e78a84dfecf7889dde817cf9ff38cc4fb348b13735e525080110",
       "changePolicy": "clear-inapplicable-optional-context-with-zero-alert-or-authority-mutation",
@@ -5469,7 +6206,9 @@
       "surface": "tests/composables/useBattleContestLiveplay.test.ts",
       "beforeSha256": "8203ac48bfba930b1b00db147e3d133c4770dbc72d1ac2a987ef6b7613924ca1",
       "afterSha256": "bc43eafa36c1d9468f23f3231c86a8a2bb7b573b5dceb8bd32c9fdcf6731b139",
-      "changedStableRows": ["inflight-optional-lookup-clear-regression"],
+      "changedStableRows": [
+        "inflight-optional-lookup-clear-regression"
+      ],
       "sourcePath": "data/deferred-closure/final-accessibility-certification.v1.json",
       "sourceSha256": "c3cbf3123aa6e78a84dfecf7889dde817cf9ff38cc4fb348b13735e525080110",
       "changePolicy": "extend-optional-context-remediation-evidence-with-explicit-clear-coverage",
@@ -5481,7 +6220,9 @@
       "surface": "tests/e2e/encounter-workspace-shell.spec.ts",
       "beforeSha256": "6b0f5a05359f7b82f498f304d431bbc4aad9012b3bed622c6cb049aabe197464",
       "afterSha256": "fd1d6e9fb0e5e6cd9add7c0b37d28387a257b300fe89ec9ac196cb1db35308ce",
-      "changedStableRows": ["dismiss-persisted-cross-project-skill-status-before-workspace-baseline"],
+      "changedStableRows": [
+        "dismiss-persisted-cross-project-skill-status-before-workspace-baseline"
+      ],
       "sourcePath": "data/deferred-closure/final-accessibility-certification.v1.json",
       "sourceSha256": "c3cbf3123aa6e78a84dfecf7889dde817cf9ff38cc4fb348b13735e525080110",
       "changePolicy": "make-visual-baseline-independent-of-serial-campaign-history-without-hiding-axe-coverage",
@@ -5493,7 +6234,10 @@
       "surface": "tests/e2e/campaign-continuation-dashboard.spec.ts",
       "beforeSha256": "67546e45447b0b8c697153e8ccab5860f944fc2a40ef081ef187ffb2c6968968",
       "afterSha256": "75503a32d59293ddbe1bfb73fde3e229f5b6bbde062d610494ab95b0ce973337",
-      "changedStableRows": ["component-owned-refresh-selector", "immutable-accepted-screenshot-default"],
+      "changedStableRows": [
+        "component-owned-refresh-selector",
+        "immutable-accepted-screenshot-default"
+      ],
       "sourcePath": "data/complete-play-loop/campaign-continuation-dashboard.v1.json",
       "sourceSha256": "aece53fffbb7cfbadbd433b836bb90f9297be7d7d31d3b51d884da0cf91dc26c",
       "changePolicy": "remove-nested-refresh-ambiguity-and-prevent-quality-runs-from-rewriting-accepted-evidence",
@@ -5505,7 +6249,10 @@
       "surface": "tests/e2e/campaign-day-continuation.spec.ts",
       "beforeSha256": "01e6907e3355b3e7f1a9c120c9ccfefcb6392f740de59d757be09600347caead",
       "afterSha256": "36aea2c7c9c9b7cc12d7ba4ba4ca56b18a45384f9885631dd059f1abe55b3346",
-      "changedStableRows": ["component-owned-refresh-selector", "immutable-accepted-screenshot-default"],
+      "changedStableRows": [
+        "component-owned-refresh-selector",
+        "immutable-accepted-screenshot-default"
+      ],
       "sourcePath": "data/complete-play-loop/campaign-day-continuation.v1.json",
       "sourceSha256": "5f942a12cb497ed7b3da67edb2b86af393fd41b53f1d6f2df6a7f358963158a3",
       "changePolicy": "remove-nested-refresh-ambiguity-and-prevent-quality-runs-from-rewriting-accepted-evidence",
@@ -5517,7 +6264,10 @@
       "surface": "tests/e2e/contest-battle-encounter-link.spec.ts",
       "beforeSha256": "45e78682555971c1fa16e02c74d29edc0192aefb69e3693ae554f57ae9657dcf",
       "afterSha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349",
-      "changedStableRows": ["project-scoped-operation-identities", "immutable-accepted-screenshot-default"],
+      "changedStableRows": [
+        "project-scoped-operation-identities",
+        "immutable-accepted-screenshot-default"
+      ],
       "sourcePath": "data/deferred-closure/final-accessibility-certification.v1.json",
       "sourceSha256": "c3cbf3123aa6e78a84dfecf7889dde817cf9ff38cc4fb348b13735e525080110",
       "changePolicy": "preserve-exact-retry-while-preventing-desktop-mobile-operation-id-collisions",
@@ -5529,7 +6279,9 @@
       "surface": "tests/e2e/contest-battle-introductions.spec.ts",
       "beforeSha256": "f7d0c3a0f5a2b532c2d429dea5d5eea243f2f8606174da8eceb2a6185c9ed5f9",
       "afterSha256": "b27a782f01a7feff6ff60a727e2b1e4c2256fcb51a6e9259eb02eda89442f1ae",
-      "changedStableRows": ["project-scoped-operation-identities"],
+      "changedStableRows": [
+        "project-scoped-operation-identities"
+      ],
       "sourcePath": "data/deferred-closure/final-accessibility-certification.v1.json",
       "sourceSha256": "c3cbf3123aa6e78a84dfecf7889dde817cf9ff38cc4fb348b13735e525080110",
       "changePolicy": "preserve-exact-retry-while-preventing-desktop-mobile-operation-id-collisions",
@@ -5541,7 +6293,10 @@
       "surface": "tests/e2e/contests-acceptance.spec.ts",
       "beforeSha256": "6f33bddd6679e3069574702921fba72cd017b97750586ba3402ab457a107d497",
       "afterSha256": "e1d4388772cdcd920ab6130b133cfbd279080f751ba58a5f9a49983c8796d322",
-      "changedStableRows": ["project-scoped-operation-identities", "immutable-accepted-screenshot-default"],
+      "changedStableRows": [
+        "project-scoped-operation-identities",
+        "immutable-accepted-screenshot-default"
+      ],
       "sourcePath": "data/deferred-closure/final-accessibility-certification.v1.json",
       "sourceSha256": "c3cbf3123aa6e78a84dfecf7889dde817cf9ff38cc4fb348b13735e525080110",
       "changePolicy": "preserve-contest-a11y-journey-while-isolating-shared-campaign-operation-identities",
@@ -5553,7 +6308,9 @@
       "surface": "tests/data/completePlayLoopAccessibilityVisualAcceptance.test.ts",
       "beforeSha256": "64d041e85275152c321b772602073437b261dd0cdb9fb4c823b9368cb07d63ca",
       "afterSha256": "e0b93d97c70659cedd3672bca186def9257a49cded1f39ac30c2ba0262b789e6",
-      "changedStableRows": ["local-visual-evidence-successor-resolution"],
+      "changedStableRows": [
+        "local-visual-evidence-successor-resolution"
+      ],
       "sourcePath": "data/complete-play-loop/accessibility-responsive-visual-acceptance.v1.json",
       "sourceSha256": "844cb3146db102c3fd7e97ed726fbac8194225a14a6449142b6ae08185eb4da8",
       "changePolicy": "preserve-frozen-p8-visual-hashes-through-contiguous-reviewed-successors",
@@ -5565,7 +6322,9 @@
       "surface": "tests/data/completePlayLoopCampaignContinuationDashboard.test.ts",
       "beforeSha256": "1cc783eef4a938c86e699ca60298289acb43205b669cd3a03a450b89978e0c91",
       "afterSha256": "d8d82eaa20428db9e16c05d6dc0e52b9544a512a306046db31d5a1b3501c51ca",
-      "changedStableRows": ["local-visual-evidence-successor-resolution"],
+      "changedStableRows": [
+        "local-visual-evidence-successor-resolution"
+      ],
       "sourcePath": "data/complete-play-loop/campaign-continuation-dashboard.v1.json",
       "sourceSha256": "aece53fffbb7cfbadbd433b836bb90f9297be7d7d31d3b51d884da0cf91dc26c",
       "changePolicy": "preserve-frozen-p8-dashboard-visual-hashes-through-contiguous-reviewed-successors",
@@ -5577,7 +6336,9 @@
       "surface": "tests/data/completePlayLoopCampaignDayContinuation.test.ts",
       "beforeSha256": "ebe2ade0ef766c365a370500c60aff488e46b99fa652710682478e84e63aa02c",
       "afterSha256": "a80caeb72fb56e351fcfd247f9ec70e82178bffcc13ada34d2882d4ad4b0dcac",
-      "changedStableRows": ["local-visual-evidence-successor-resolution"],
+      "changedStableRows": [
+        "local-visual-evidence-successor-resolution"
+      ],
       "sourcePath": "data/complete-play-loop/campaign-day-continuation.v1.json",
       "sourceSha256": "5f942a12cb497ed7b3da67edb2b86af393fd41b53f1d6f2df6a7f358963158a3",
       "changePolicy": "preserve-frozen-p8-campaign-day-visual-hashes-through-contiguous-reviewed-successors",
@@ -5589,7 +6350,10 @@
       "surface": "AGENTS.md",
       "beforeSha256": "9903d53762ad6653f16cbf87057853a83a0cac2fbccaf5136116d0d8870eb91e",
       "afterSha256": "f5006d260fb086e2b7adc09dc866c31e11de12e3d0ea7c2d56bf40945a3c33a7",
-      "changedStableRows": ["global-ui-skill-authority", "rotom-design-authority-links"],
+      "changedStableRows": [
+        "global-ui-skill-authority",
+        "rotom-design-authority-links"
+      ],
       "sourcePath": "DESIGN.md",
       "sourceSha256": "58ec063c80134df2f358c9d89eada4d2a65e1f76fe39f67c88e5abe0cab172b8",
       "changePolicy": "accept-concurrent-workflow-guidance-normalization-without-mechanics-authority-change",
@@ -5601,7 +6365,10 @@
       "surface": "docs/complete-play-loop-contributor-guide.md",
       "beforeSha256": "63fa3b5773c12f454d692b74c6531d6d99374d985c58f2aaba4bcc003a05eeaa",
       "afterSha256": "dd6e6ca26a2b4d7e0cef5798a3de6b6df3dc29f0b2fda012924d5ae45d82ce93",
-      "changedStableRows": ["global-ui-skill-authority", "deferred-closure-extension-rules"],
+      "changedStableRows": [
+        "global-ui-skill-authority",
+        "deferred-closure-extension-rules"
+      ],
       "sourcePath": "AGENTS.md",
       "sourceSha256": "f5006d260fb086e2b7adc09dc866c31e11de12e3d0ea7c2d56bf40945a3c33a7",
       "changePolicy": "accept-concurrent-contributor-guidance-clarification-without-runtime-authority-change",
@@ -5613,7 +6380,9 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-ready-to-link.png",
       "beforeSha256": "6bf08d7a6b97fe68fe94b0e2bcd7eaccce0f3d63af3110b61f7b738f02287d82",
       "afterSha256": "4cd7996a3fae0f69eb8010380502d2f64d6e313fc7912eef2dc9b6050370be20",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/contest-battle-encounter-link.spec.ts",
       "sourceSha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349",
       "changePolicy": "accept-inspected-equivalent-render-and-make-accepted-evidence-immutable-by-default",
@@ -5625,7 +6394,9 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-linked.png",
       "beforeSha256": "f29a69dba889c971afecf42ac0bddaacc113b4d6f454d30f622bf6cf1daa3b0c",
       "afterSha256": "065c2bf52c49fa2a701889b7e9c764f7e2c2fd323a15561eab73db644f773c92",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/contest-battle-encounter-link.spec.ts",
       "sourceSha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349",
       "changePolicy": "accept-inspected-equivalent-render-and-make-accepted-evidence-immutable-by-default",
@@ -5637,7 +6408,9 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-encounter-link/chromium-linked-320.png",
       "beforeSha256": "41aa7178a4b0d64afb877e2cdd36616af6777df6ac4be707df9e5bfacc50b88e",
       "afterSha256": "92148a452cd1c37f4b4deeb9fdb7928d3460121bbf1ad5dca2ab21ea1329952e",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/contest-battle-encounter-link.spec.ts",
       "sourceSha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349",
       "changePolicy": "accept-inspected-equivalent-render-and-make-accepted-evidence-immutable-by-default",
@@ -5649,7 +6422,9 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-gm-pending-wide.png",
       "beforeSha256": "18089afc85b692d16b067f29e54e2b36395409b3f2e596b4866a00b5eff2a1e1",
       "afterSha256": "4ef3f4acc320c71bcb96ef0188c21d2f632b526035a7fa1ec450492289eddaab",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/contest-battle-encounter-link.spec.ts",
       "sourceSha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349",
       "changePolicy": "accept-inspected-equivalent-render-and-make-accepted-evidence-immutable-by-default",
@@ -5661,7 +6436,9 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-owner-pending-wide.png",
       "beforeSha256": "713a7c13dffe07089e0d8698d2b0818ccd905133f52904c6e56be9ea273d16a6",
       "afterSha256": "25bb9b1567e148c90c956647aa300ac65e0d16dc03687546f98e55386578321a",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/contest-battle-encounter-link.spec.ts",
       "sourceSha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349",
       "changePolicy": "accept-inspected-equivalent-render-and-make-accepted-evidence-immutable-by-default",
@@ -5673,7 +6450,9 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-public-pending-wide.png",
       "beforeSha256": "18c286e5b32eee041bf79c66c39c33fb6b1a0ac8888781931b9520c2d988c2e9",
       "afterSha256": "cd143fcb14a111b6e859486074cfe0347ff0cee88efac5ca1f6bc43d3c700287",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/contest-battle-encounter-link.spec.ts",
       "sourceSha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349",
       "changePolicy": "accept-inspected-equivalent-render-and-make-accepted-evidence-immutable-by-default",
@@ -5685,7 +6464,9 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-gm-accepted-wide.png",
       "beforeSha256": "0f62f234b5ce9d3cdad7a20289e5d2c84c260cc828d053834369d43fcfded765",
       "afterSha256": "680343aeef8eda895e279cf9ad25517b6d7662baaa8495ca017d10ac38e9e6f9",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/contest-battle-encounter-link.spec.ts",
       "sourceSha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349",
       "changePolicy": "accept-inspected-equivalent-render-and-make-accepted-evidence-immutable-by-default",
@@ -5697,7 +6478,9 @@
       "surface": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-owner-accepted-390.png",
       "beforeSha256": "90125ab1c9a5c2576acc8fa0d75fbbbee7606ebbd561a0e1edad7c2c65cb30dd",
       "afterSha256": "8959324e4c2f20dfb52f59074852b2e9bfba8a04f5c7224c3acd0b43f6add9b7",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/contest-battle-encounter-link.spec.ts",
       "sourceSha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349",
       "changePolicy": "accept-inspected-equivalent-render-and-make-accepted-evidence-immutable-by-default",
@@ -5709,7 +6492,9 @@
       "surface": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/chromium-open.png",
       "beforeSha256": "fe2ddeba60a0c179292103b6ffca91b8b9c5cb2a0cb6ae6ca05b30314f76b7e5",
       "afterSha256": "3b524efb9fd123e26aaac70b503e17065db6a665d23c2a6dd66d549f190a4b6d",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/campaign-continuation-dashboard.spec.ts",
       "sourceSha256": "75503a32d59293ddbe1bfb73fde3e229f5b6bbde062d610494ab95b0ce973337",
       "changePolicy": "preserve-frozen-p8-hash-through-reviewed-immutable-visual-successor",
@@ -5721,7 +6506,9 @@
       "surface": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/mobile-chromium-open.png",
       "beforeSha256": "a578a194e8e850a750702d53e727acb54aec9afac00657d3237ddad404b8dcdf",
       "afterSha256": "8eb41ee569819ae91c31c6425cfe658709db1fbd01b5b4c9d34a4a0329894303",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/campaign-continuation-dashboard.spec.ts",
       "sourceSha256": "75503a32d59293ddbe1bfb73fde3e229f5b6bbde062d610494ab95b0ce973337",
       "changePolicy": "preserve-frozen-p8-hash-through-reviewed-immutable-visual-successor",
@@ -5733,7 +6520,9 @@
       "surface": ".pi/artifacts/ui-validation/campaign-continuation-dashboard/mobile-chromium-320-resolved.png",
       "beforeSha256": "8e4575a75b3b9215b3434aa8f8228e2626e86c126daa1102bda3ad824c1b381a",
       "afterSha256": "b8dc84c89710e32a3a8e3565c9862eaa9240266922bd4c4629945c25eee53712",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/campaign-continuation-dashboard.spec.ts",
       "sourceSha256": "75503a32d59293ddbe1bfb73fde3e229f5b6bbde062d610494ab95b0ce973337",
       "changePolicy": "preserve-frozen-p8-hash-through-reviewed-immutable-visual-successor",
@@ -5745,7 +6534,9 @@
       "surface": ".pi/artifacts/ui-validation/campaign-day-continuation/chromium-ready.png",
       "beforeSha256": "ac50bae70c3dca3b674b7081b96f1aa38f1b83dbb38947f9b3e4f04ddab46bce",
       "afterSha256": "5f8a24a4c53bf9469512638403860fe076ba49c3f1b107d220b14985fd231fc1",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/campaign-day-continuation.spec.ts",
       "sourceSha256": "36aea2c7c9c9b7cc12d7ba4ba4ca56b18a45384f9885631dd059f1abe55b3346",
       "changePolicy": "preserve-frozen-p8-hash-through-reviewed-immutable-visual-successor",
@@ -5757,7 +6548,9 @@
       "surface": ".pi/artifacts/ui-validation/campaign-day-continuation/chromium-accepted.png",
       "beforeSha256": "89e008a70b3b6e15142aa4a49117dfa02d574c8c217988d2c152310f09f46e86",
       "afterSha256": "ba06187e4e189f3556d33bf9ff4b6cf8d702a6abdd521ef77d9c135f9ccacaed",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/campaign-day-continuation.spec.ts",
       "sourceSha256": "36aea2c7c9c9b7cc12d7ba4ba4ca56b18a45384f9885631dd059f1abe55b3346",
       "changePolicy": "preserve-frozen-p8-hash-through-reviewed-immutable-visual-successor",
@@ -5769,7 +6562,9 @@
       "surface": ".pi/artifacts/ui-validation/campaign-day-continuation/mobile-chromium-ready.png",
       "beforeSha256": "c7d53eec33e974dcc97f607be9b7b3903fa6defb27e35e91e010fa4a8d9e6477",
       "afterSha256": "2730f3708490b9bd1e6dc75025d01e1c2060c9533c4e95b1a715bb9e9cbc4de8",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/campaign-day-continuation.spec.ts",
       "sourceSha256": "36aea2c7c9c9b7cc12d7ba4ba4ca56b18a45384f9885631dd059f1abe55b3346",
       "changePolicy": "preserve-frozen-p8-hash-through-reviewed-immutable-visual-successor",
@@ -5781,19 +6576,25 @@
       "surface": ".pi/artifacts/ui-validation/campaign-day-continuation/mobile-chromium-accepted.png",
       "beforeSha256": "6c0a87093e895ad0b7f54cd05a272e59d9d279cfb91cc88859230c1552912ac5",
       "afterSha256": "b1dacd4d396d79ab5a0429ebcd2680057679131b647081de1a4fa3582b06d21b",
-      "changedStableRows": ["inspected-production-rerender-with-pixel-preserving-provenance"],
+      "changedStableRows": [
+        "inspected-production-rerender-with-pixel-preserving-provenance"
+      ],
       "sourcePath": "tests/e2e/campaign-day-continuation.spec.ts",
       "sourceSha256": "36aea2c7c9c9b7cc12d7ba4ba4ca56b18a45384f9885631dd059f1abe55b3346",
       "changePolicy": "preserve-frozen-p8-hash-through-reviewed-immutable-visual-successor",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:full-validation-plan-index-advance:v1",
       "ticket": "P11-090",
       "surface": "implementation-plans/plan-order.md",
       "beforeSha256": "6cb878a614152772590c8e5ea69054c2db63296acac24d60b8c4136caed99700",
       "afterSha256": "20848a5740e413a7c9d3e99c0a04b07fabf84681f554b96ffeb6d58a9d441b79",
-      "changedStableRows": ["plan-11-ticket-count", "plan-11-current-ticket", "full-validation-summary"],
+      "changedStableRows": [
+        "plan-11-ticket-count",
+        "plan-11-current-ticket",
+        "full-validation-summary"
+      ],
       "sourcePath": "data/deferred-closure/full-repository-validation-certification.v1.json",
       "sourceSha256": "ebb592f56de5a9c7a7176d69d5fa49ae7701e13ee87795014e3b05d33ff729f6",
       "changePolicy": "advance-authoritative-plan-index-after-full-repository-validation",
@@ -5805,19 +6606,26 @@
       "surface": "AGENTS.md",
       "beforeSha256": "f5006d260fb086e2b7adc09dc866c31e11de12e3d0ea7c2d56bf40945a3c33a7",
       "afterSha256": "ea56d00bf4bf5a32dd1b672119e6a80dd8aa1edbbf886b848f8ecaefd649f7db",
-      "changedStableRows": ["plan-11-ticket-count", "plan-11-current-ticket"],
+      "changedStableRows": [
+        "plan-11-ticket-count",
+        "plan-11-current-ticket"
+      ],
       "sourcePath": "data/deferred-closure/full-repository-validation-certification.v1.json",
       "sourceSha256": "ebb592f56de5a9c7a7176d69d5fa49ae7701e13ee87795014e3b05d33ff729f6",
       "changePolicy": "advance-agent-execution-snapshot-after-full-repository-validation",
       "reviewStatus": "accepted"
-    }
-    ,{
+    },
+    {
       "migrationId": "deferred-closure:final-liveplay-plan-index-advance:v1",
       "ticket": "P11-091",
       "surface": "implementation-plans/plan-order.md",
       "beforeSha256": "20848a5740e413a7c9d3e99c0a04b07fabf84681f554b96ffeb6d58a9d441b79",
       "afterSha256": "5a1d3b489aaf733ce931f5c55d930bf1428ae073ee21b40205fe8badb7687f50",
-      "changedStableRows": ["plan-11-ticket-count", "plan-11-current-ticket", "final-liveplay-summary"],
+      "changedStableRows": [
+        "plan-11-ticket-count",
+        "plan-11-current-ticket",
+        "final-liveplay-summary"
+      ],
       "sourcePath": "data/deferred-closure/final-liveplay-acceptance-certification.v1.json",
       "sourceSha256": "5ff9e4f8cc855cb583609c6b6aacf557d2924c45701d5485abc277e1054bab7d",
       "changePolicy": "advance-authoritative-plan-index-after-final-liveplay-acceptance",
@@ -5829,7 +6637,10 @@
       "surface": "AGENTS.md",
       "beforeSha256": "ea56d00bf4bf5a32dd1b672119e6a80dd8aa1edbbf886b848f8ecaefd649f7db",
       "afterSha256": "872278060dd9e6dd9a83720e56d7b974bd66e3a557e65d0e73f1f54fb4f983df",
-      "changedStableRows": ["plan-11-ticket-count", "plan-11-current-ticket"],
+      "changedStableRows": [
+        "plan-11-ticket-count",
+        "plan-11-current-ticket"
+      ],
       "sourcePath": "data/deferred-closure/final-liveplay-acceptance-certification.v1.json",
       "sourceSha256": "5ff9e4f8cc855cb583609c6b6aacf557d2924c45701d5485abc277e1054bab7d",
       "changePolicy": "advance-agent-execution-snapshot-after-final-liveplay-acceptance",
@@ -5841,7 +6652,11 @@
       "surface": "implementation-plans/plan-order.md",
       "beforeSha256": "5a1d3b489aaf733ce931f5c55d930bf1428ae073ee21b40205fe8badb7687f50",
       "afterSha256": "d8b0a63a66caeb307756b07c1c194a6383712afc1926d43d0f615e240aebf2ad",
-      "changedStableRows": ["plan-11-done-and-archived", "prospective-plan-12-scope-draft-registration", "inactive-draft-boundary"],
+      "changedStableRows": [
+        "plan-11-done-and-archived",
+        "prospective-plan-12-scope-draft-registration",
+        "inactive-draft-boundary"
+      ],
       "sourcePath": "data/deferred-closure/final-acceptance.v1.json",
       "sourceSha256": "c34c979d8869fe7cb770eefb4771e696bd9ac0024f9ee61b07bccada182828e8",
       "changePolicy": "archive-plan-11-and-register-inactive-plan-12-scope-after-final-acceptance",
@@ -5853,7 +6668,11 @@
       "surface": "AGENTS.md",
       "beforeSha256": "872278060dd9e6dd9a83720e56d7b974bd66e3a557e65d0e73f1f54fb4f983df",
       "afterSha256": "3967099319d79d4914a4851b7858cbfa75bfe8ae5f588fa3cdc9e8f6f33518ba",
-      "changedStableRows": ["plans-1-through-11-archived", "no-active-numbered-plan", "inactive-plan-12-scope"],
+      "changedStableRows": [
+        "plans-1-through-11-archived",
+        "no-active-numbered-plan",
+        "inactive-plan-12-scope"
+      ],
       "sourcePath": "data/deferred-closure/final-acceptance.v1.json",
       "sourceSha256": "c34c979d8869fe7cb770eefb4771e696bd9ac0024f9ee61b07bccada182828e8",
       "changePolicy": "synchronize-agent-execution-boundary-after-plan-11-archive",
@@ -5865,7 +6684,9 @@
       "surface": "tests/data/deferredClosureInventory.test.ts",
       "beforeSha256": "d08273a4d0a9f6d04d979c77cdb7e461244161c178cce17e7868d73f719dcedb",
       "afterSha256": "fc576a2e5c169e1c1cbfe22d14bd38d18809d94f67332776422188a3edcdddcb",
-      "changedStableRows": ["authoritative-plan-11-archive-path"],
+      "changedStableRows": [
+        "authoritative-plan-11-archive-path"
+      ],
       "sourcePath": "data/deferred-closure/final-acceptance.v1.json",
       "sourceSha256": "c34c979d8869fe7cb770eefb4771e696bd9ac0024f9ee61b07bccada182828e8",
       "changePolicy": "preserve-inventory-ticket-proof-after-authoritative-ledger-archive",
@@ -5877,10 +6698,58 @@
       "surface": "data/deferred-closure/zero-deferred-acceptance.v1.json",
       "beforeSha256": "62b888e6c2bf583391bed8e528e52d55a24f98aa06ce26bff657f99598c149ef",
       "afterSha256": "55bc05aeddffbfd9ced3a7572b859959e6238bcbd82f3aeb5317da40fe39ef5b",
-      "changedStableRows": ["archived-plan-inventory-evidence-binding"],
+      "changedStableRows": [
+        "archived-plan-inventory-evidence-binding"
+      ],
       "sourcePath": "data/deferred-closure/final-acceptance.v1.json",
       "sourceSha256": "c34c979d8869fe7cb770eefb4771e696bd9ac0024f9ee61b07bccada182828e8",
       "changePolicy": "deterministic-zero-proof-regeneration-after-plan-11-ledger-archive",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:plan-12-activation-plan-index-register:v1",
+      "ticket": "P11-092",
+      "surface": "implementation-plans/plan-order.md",
+      "beforeSha256": "d8b0a63a66caeb307756b07c1c194a6383712afc1926d43d0f615e240aebf2ad",
+      "afterSha256": "dacbdf6bd416d7f354413d12bead9ebf77fbef7f85504d59775e1181befed12f",
+      "changedStableRows": [
+        "plan-12-registered-not-started-owner-start-gate",
+        "prospective-table-plan-13-only"
+      ],
+      "sourcePath": "data/gm-campaign-toolkit/generation-preparation-footprint.v1.json",
+      "sourceSha256": "161be4cb987549b3947ba65262d325fcfd28dd5538286d633528e4ef2a2f9862",
+      "changePolicy": "convert-reviewed-plan-12-scope-draft-into-registered-owner-gated-ledger-per-p11-092-registration-remit",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:plan-12-activation-agent-guidance-register:v1",
+      "ticket": "P11-092",
+      "surface": "AGENTS.md",
+      "beforeSha256": "3967099319d79d4914a4851b7858cbfa75bfe8ae5f588fa3cdc9e8f6f33518ba",
+      "afterSha256": "38120692c61aa21c454dc741ab474e3d1c1fcfb6fd42e37fda315b77692236db",
+      "changedStableRows": [
+        "plan-12-registered-owner-gated",
+        "autonomous-continuation-owner-start-carve-out"
+      ],
+      "sourcePath": "data/gm-campaign-toolkit/generation-preparation-footprint.v1.json",
+      "sourceSha256": "161be4cb987549b3947ba65262d325fcfd28dd5538286d633528e4ef2a2f9862",
+      "changePolicy": "synchronize-agent-execution-boundary-for-owner-gated-plan-12-registration",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "deferred-closure:plan-12-activation-scope-draft-convert:v1",
+      "ticket": "P11-092",
+      "surface": "implementation-plans/drafts/GM_CAMPAIGN_TOOLKIT_PLAN.md",
+      "beforeSha256": "32bf5933812634dbbc1efaae8406aca89d0c592f2e1b2ca3e329bb30feabcd6f",
+      "afterSha256": "8ca37c6e48ab2c2f9890ef0569717073b408a127400e8885e805517dddd914fe",
+      "changedStableRows": [
+        "draft-status-converted",
+        "authoritative-ledger-reference",
+        "historical-references-resolvable"
+      ],
+      "sourcePath": "data/gm-campaign-toolkit/generation-preparation-footprint.v1.json",
+      "sourceSha256": "161be4cb987549b3947ba65262d325fcfd28dd5538286d633528e4ef2a2f9862",
+      "changePolicy": "mark-reviewed-plan-12-scope-draft-converted-after-owner-gated-ledger-registration",
       "reviewStatus": "accepted"
     }
   ],

@@ -1,0 +1,423 @@
+{
+  "schemaVersion": 1,
+  "artifact": "gm-campaign-toolkit/generation-preparation-footprint",
+  "recordedAt": "2026-08-25",
+  "recordedBy": "Plan 12 activation review (draft conversion)",
+  "adoptionTicket": "P12-001",
+  "storageSchemaVersion": 50,
+  "canonicalRuntimeSources": [
+    "data/reference/moves.json",
+    "data/reference/abilities.json",
+    "data/reference/edges.json",
+    "data/reference/poke-edges.json",
+    "data/reference/capabilities.json",
+    "data/reference/features.json",
+    "data/reference/conditions.json",
+    "data/reference/items.json",
+    "data/reference/maneuvers.json",
+    "data/reference/pokedex.json",
+    "data/reference/stat-rankings.json",
+    "data/reference/pokemonExperienceChart.json",
+    "data/reference/rules.json",
+    "data/reference/contests.json"
+  ],
+  "legacyTableValidation": {
+    "tables": [
+      {
+        "path": "encounter_tables/spire-city/streets.json",
+        "name": "Streets",
+        "rows": 1,
+        "legacyTupleRows": 0,
+        "explicitNothingRows": 0,
+        "unknownSpecies": [],
+        "tableLevelRange": [
+          1,
+          5
+        ],
+        "disposition": "REUSABLE"
+      },
+      {
+        "path": "encounter_tables/thickerby_vale/cave.json",
+        "name": "Thickerby Vale Caves",
+        "rows": 6,
+        "legacyTupleRows": 0,
+        "explicitNothingRows": 0,
+        "unknownSpecies": [],
+        "tableLevelRange": [
+          8,
+          14
+        ],
+        "disposition": "REUSABLE"
+      },
+      {
+        "path": "encounter_tables/thickerby_vale/forest.json",
+        "name": "Thickerby Vale Forest",
+        "rows": 8,
+        "legacyTupleRows": 0,
+        "explicitNothingRows": 0,
+        "unknownSpecies": [],
+        "tableLevelRange": [
+          4,
+          8
+        ],
+        "disposition": "REUSABLE"
+      },
+      {
+        "path": "encounter_tables/thickerby_vale/riverbank.json",
+        "name": "Thickerby Vale Riverbank",
+        "rows": 7,
+        "legacyTupleRows": 0,
+        "explicitNothingRows": 0,
+        "unknownSpecies": [],
+        "tableLevelRange": [
+          6,
+          10
+        ],
+        "disposition": "REUSABLE"
+      }
+    ],
+    "totals": {
+      "tables": 4,
+      "rows": 22,
+      "legacyTupleRows": 0,
+      "unknownSpecies": 0,
+      "repairRequired": 0
+    }
+  },
+  "rows": [
+    {
+      "path": "encounter_tables/spire-city/streets.json",
+      "kind": "campaign-table",
+      "classification": "reusable-campaign-content",
+      "finalState": "MIGRATE_TO_CAMPAIGN_TABLE_DOCUMENT",
+      "sha256": "65edb80d7f85923783949f70befe04748833075244a817c2ac1293eb7a7711b1",
+      "notes": "Weighted-object rows only; species and levels validated against canonical pokedex."
+    },
+    {
+      "path": "encounter_tables/thickerby_vale/cave.json",
+      "kind": "campaign-table",
+      "classification": "reusable-campaign-content",
+      "finalState": "MIGRATE_TO_CAMPAIGN_TABLE_DOCUMENT",
+      "sha256": "d08a25560d06aae637e576b446e6460ecc98c59ac68bf04358e5afee076a37a4",
+      "notes": "Weighted-object rows only; species and levels validated against canonical pokedex."
+    },
+    {
+      "path": "encounter_tables/thickerby_vale/forest.json",
+      "kind": "campaign-table",
+      "classification": "reusable-campaign-content",
+      "finalState": "MIGRATE_TO_CAMPAIGN_TABLE_DOCUMENT",
+      "sha256": "d87ce500d3dbc7257e21e27354547473f1f25f648d4fbbe16214844690f150c3",
+      "notes": "Weighted-object rows only; species and levels validated against canonical pokedex."
+    },
+    {
+      "path": "encounter_tables/thickerby_vale/riverbank.json",
+      "kind": "campaign-table",
+      "classification": "reusable-campaign-content",
+      "finalState": "MIGRATE_TO_CAMPAIGN_TABLE_DOCUMENT",
+      "sha256": "6634598eaa13c03eebe26e0883cc56ce09b55186cb40a8282d20d7fc3402947f",
+      "notes": "Weighted-object rows only; species and levels validated against canonical pokedex."
+    },
+    {
+      "path": "shared/encounterTables.ts",
+      "kind": "shared-normalization-seam",
+      "classification": "reusable-seam",
+      "finalState": "EXTEND_INTO_STRICT_TABLE_SCHEMA",
+      "sha256": "deb81acd67d031e306c803fee4cc905fec6f5dfbe103967ec54bf69835ff9c32",
+      "notes": "Weighted + legacy cumulative-ceiling tuple normalization; ceiling-to-weight conversion becomes a reviewed deterministic transform."
+    },
+    {
+      "path": "server/utils/encounterTableStorage.ts",
+      "kind": "campaign-file-store",
+      "classification": "migration-input",
+      "finalState": "RETIRE_AFTER_DB_MIGRATION",
+      "sha256": "1122e4c06f601878335efa62fad4be6f16bba8b777fafec5bd2afa6c18e1b146",
+      "notes": "File CRUD under campaignPath(encounter_tables); tables move into DB-backed campaign documents."
+    },
+    {
+      "path": "server/useCases/encounterTableLibrary.ts",
+      "kind": "file-library-use-case",
+      "classification": "migration-input",
+      "finalState": "REPLACE_WITH_CAMPAIGN_TABLE_REPOSITORY",
+      "sha256": "080875b34a5a30efed40287630094b972ba506451b31f82f02260a3215894075",
+      "notes": "Folder/file library semantics re-homed onto versioned campaign table documents."
+    },
+    {
+      "path": "server/utils/encounterGeneration.ts",
+      "kind": "generation-request-seam",
+      "classification": "reusable-seam",
+      "finalState": "PRESERVE_BEHAVIORS_INTO_JOURNALED_OPERATION",
+      "sha256": "f40cee1aab935cdb555de88cfdf7681b631ca66bef8bc33b1d0f14dade50fc67",
+      "notes": "Carries in-production route-Repel exploration authority and preview/rolled-echo exact-commit semantics; both must survive modernization."
+    },
+    {
+      "path": "server/useCases/generateEncounters.ts",
+      "kind": "pokegen-orchestrator",
+      "classification": "migration-input",
+      "finalState": "REPLACE_WITH_JOURNALED_GENERATION",
+      "sha256": "047d382c78196f98374a2b52719afd4b3a100203a5e06c1ac0161455b04919a2",
+      "notes": "Orchestrates host pokegen batch and file outputs; replaced by journaled server generation committing ordinary sheets."
+    },
+    {
+      "path": "server/utils/pokegenBatch.ts",
+      "kind": "host-file-writer",
+      "classification": "obsolete-tooling",
+      "finalState": "RETIRE",
+      "sha256": "0e915c7bd25a61b0a6b7299d75d43a6ee7a7b7f23687a4ea31eee43d98116726",
+      "notes": "Writes CharacterSheet JSON files to outRoot."
+    },
+    {
+      "path": "server/utils/pokegenRunner.ts",
+      "kind": "host-process-spawner",
+      "classification": "obsolete-tooling",
+      "finalState": "RETIRE",
+      "sha256": "9182cc6a1e7e40addb39ca90b2937627c5ccd85fde49326c529e4dd62ad2f7e5",
+      "notes": "Spawns scripts/pokegen.sh on the host."
+    },
+    {
+      "path": "server/api/encounters/generate.post.ts",
+      "kind": "api-route",
+      "classification": "migration-input",
+      "finalState": "RECONTRACT_TO_JOURNALED_OPERATION",
+      "sha256": "f502d6bded2b1a044b021d274abf1d20509330616f3b23d13249c40fb14a1f67",
+      "notes": "Self-labelled local-development/private-host tool; incompatible with liveplay-only authority."
+    },
+    {
+      "path": "scripts/pokegen.sh",
+      "kind": "host-wrapper",
+      "classification": "obsolete-tooling",
+      "finalState": "RETIRE",
+      "sha256": "e7c8a6a4fdb6a3cf168da966a8787f8f8ae5a5dbc35e0c9c596942bdb9ecaf58",
+      "notes": "Wraps ptu-data/cli.py (documentary parser tree) as a runtime generator."
+    },
+    {
+      "path": "justfile",
+      "kind": "tooling-recipe",
+      "classification": "obsolete-tooling",
+      "finalState": "RETIRE_ENCOUNTER_RECIPE",
+      "sha256": "b7f55188ebbad29649a47abd4e95001a9479da68fb3f91e4fb7108c4ab6c59ed",
+      "notes": "just encounter recipe mirrors the deprecated host generation path; only the encounter recipe is in scope."
+    },
+    {
+      "path": "ptu-data/cli.py",
+      "kind": "documentary-generator",
+      "classification": "documentary",
+      "finalState": "FORBID_AT_RUNTIME_REMAIN_DOCUMENTARY",
+      "sha256": "315a52cc96342e58ded0e75d05250b9d4a75672152aacbf702a71b5e1e7528e3",
+      "notes": "Documentary/provenance material; never runtime authority per repository instructions."
+    },
+    {
+      "path": "src/pages/encounter-tables.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "113074a47d3475a6733f6d00f1ca1dbb9fef33b09c28fc2d2ba5e6d80f282e9f",
+      "notes": "Workshop page for tables and generation."
+    },
+    {
+      "path": "src/utils/encounterGeneration.ts",
+      "kind": "ui-util",
+      "classification": "reusable-seam",
+      "finalState": "PRESERVE",
+      "sha256": "8f2df673c052c3a5f9cd069a92d41665674d86058db330dbc630beae631c7f16",
+      "notes": "Count-range and generation client utilities shared with the server seam."
+    },
+    {
+      "path": "src/types/encounterTable.ts",
+      "kind": "types",
+      "classification": "reusable-seam",
+      "finalState": "EXTEND_INTO_STRICT_TABLE_SCHEMA",
+      "sha256": "dece25ff2431138b75058874f1cef8649c3e2f3cb55b48fa93e237a16c4f4dff",
+      "notes": "Table and rolled-encounter types extended by the strict v1 schema."
+    },
+    {
+      "path": "src/components/encounters/EncounterGenerateErrorCard.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "REBUILD_FOR_INERT_PREVIEW_AND_BUILDER_COMMIT",
+      "sha256": "9530b0667b00f7217079dd1cc0d1e282fe22c01609b1a97743360fa18f2182d3",
+      "notes": "File-oriented generation result/setup surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterGenerateResultCard.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "REBUILD_FOR_INERT_PREVIEW_AND_BUILDER_COMMIT",
+      "sha256": "b681bd9f5aedf1cdd2a928549d91601e036683edd89a38e796956bbd3fba962e",
+      "notes": "File-oriented generation result/setup surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterGenerateResultFileRow.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "REBUILD_FOR_INERT_PREVIEW_AND_BUILDER_COMMIT",
+      "sha256": "a979777339391225c60a0676a18fa311a5bfb5c4eb03ccf1756a62b563721d9e",
+      "notes": "File-oriented generation result/setup surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterGenerateResultFiles.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "REBUILD_FOR_INERT_PREVIEW_AND_BUILDER_COMMIT",
+      "sha256": "86c1cf9954d4c581a861d182fd0a86c34b9c41c598fefd61ac7f8fc1a3b20482",
+      "notes": "File-oriented generation result/setup surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterGenerateResultHeader.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "REBUILD_FOR_INERT_PREVIEW_AND_BUILDER_COMMIT",
+      "sha256": "f73f65036ec3832ac799172278a8a168b9d52ce0d2229a86c6d37db5c8f64763",
+      "notes": "File-oriented generation result/setup surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterGenerateSelectedTableMeta.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "REBUILD_FOR_INERT_PREVIEW_AND_BUILDER_COMMIT",
+      "sha256": "26f6e70218bfdd1dd4ba0fcc48bbea83346a81daea2d0a2769ad95fb1d1cb331",
+      "notes": "File-oriented generation result/setup surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterGenerateSetupActions.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "REBUILD_FOR_INERT_PREVIEW_AND_BUILDER_COMMIT",
+      "sha256": "cfe8bac39c60448a0825e6ae07287624eed6d1e9117c0d3d0a9f14b6c3e6b6cb",
+      "notes": "File-oriented generation result/setup surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterGenerateSetupCard.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "REBUILD_FOR_INERT_PREVIEW_AND_BUILDER_COMMIT",
+      "sha256": "dcd3c8d23a36520dd585db1733cee43320953f8a113c0c9f24af5e78fd4921fe",
+      "notes": "File-oriented generation result/setup surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterGenerateSetupFields.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "REBUILD_FOR_INERT_PREVIEW_AND_BUILDER_COMMIT",
+      "sha256": "707c59edc18b39a44a07b291eba241c08a08441d33e922e36751c4a5dafe98da",
+      "notes": "File-oriented generation result/setup surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTableDetailHeader.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "90f19064c2586ac3931840bbe29310184f1ad5415caeb1eae9ce32097de44bac",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTableDetailPanel.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "f687fe8d2277a1354a8dec56f7e9a0532eaff4fc07a08c0cf13c21e439a67c2b",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTableEditForm.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "b1e8c1a63c276fede378d0b1ce5c13cb3c92c7175f0bc0505f2d491fbfd35f91",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTableLibraryCard.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "c71de8295764bba5d3d9e4f293d6ff92f07b995bb205e4b00a0c5417770a34f4",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTableLibraryGrid.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "fa8e0a50ea31608c51da716358c351bc094686d4dcab9fba56d1dec533efa94d",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTableLibraryIntroPanel.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "6ea2345d76d106a70abc6ef3333283a8297080e0812f1477fb6d1faa6cd7de82",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTableRollList.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "6bbb6f91b51de94445987e2410f3929e142cac7393b11f2979375ba414e276af",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTablesRegionList.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "32b17596b989ab209136011aefec60d8251ff381e476d75872b4b8e47ffc51c7",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTablesRegionListItem.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "f42fe4ec3781fd771b631a6d97408108fcb53337b5d13f6e35e3a307b8d5292f",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTablesSidebar.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "b4689533a001c746d1a7282b8d5c8e55904451461f3fe87383685aebb0348fd0",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": "src/components/encounters/EncounterTablesSidebarHeader.vue",
+      "kind": "ui-surface",
+      "classification": "ui-surface",
+      "finalState": "MODERNIZE_WORKSHOP_PREPARATION_SURFACE",
+      "sha256": "4d790d717eced935a09133d6cd5d0605baad2ee5c8fba3075bfcada12c349133",
+      "notes": "Table library/editing surface."
+    },
+    {
+      "path": null,
+      "surface": "npc-trainer-generation",
+      "kind": "absent-surface",
+      "classification": "absent-surface",
+      "finalState": "BUILD_NATIVE",
+      "sha256": null,
+      "notes": "No reviewed NPC Trainer generation contract exists; built natively in Phase 4."
+    },
+    {
+      "path": null,
+      "surface": "session-preparation-document",
+      "kind": "absent-surface",
+      "classification": "absent-surface",
+      "finalState": "BUILD_NATIVE",
+      "sha256": null,
+      "notes": "No durable session-preparation document exists; built natively in Phase 5."
+    }
+  ],
+  "summary": {
+    "rowCount": 40,
+    "byClassification": {
+      "reusable-campaign-content": 4,
+      "reusable-seam": 4,
+      "migration-input": 4,
+      "obsolete-tooling": 4,
+      "documentary": 1,
+      "ui-surface": 21,
+      "absent-surface": 2
+    }
+  }
+}
